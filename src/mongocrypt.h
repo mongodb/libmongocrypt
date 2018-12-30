@@ -39,6 +39,12 @@ typedef struct {
    uint32_t len;
 } mongoc_crypt_bson_t;
 
+void
+mongoc_crypt_init();
+
+void
+mongoc_crypt_cleanup();
+
 mongoc_crypt_opts_t *
 mongoc_crypt_opts_new (void);
 

@@ -31,5 +31,8 @@ target_link_libraries(mongocrypt PRIVATE /Users/kevinalbertson/bin/kms/lib/libkm
 target_include_directories(mongocrypt PRIVATE /Users/kevinalbertson/bin/kms/include/)
 
 add_executable(test-mongocrypt test/test-mongocrypt.c)
-target_link_libraries (test-mongocrypt mongocrypt)
+target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
 target_include_directories(test-mongocrypt PRIVATE ./src)
+target_include_directories(test-mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
+target_link_libraries(test-mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
+target_compile_definitions (test-mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")

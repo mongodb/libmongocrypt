@@ -201,6 +201,7 @@ _get_data_key_from_response (kms_response_t* response, mongoc_crypt_key_t* key, 
    }
 
    b64_str = (char*)bson_iter_utf8 (&iter, &b64_strlen);
+   CRYPT_TRACE("response plaintext: %s, %d\n", b64_str, b64_strlen);
    /* We need to doubly base64 decode. */
    decoded_data = bson_malloc(b64_strlen + 1);
    decoded_len = kms_message_b64_pton (b64_str, decoded_data, b64_strlen);

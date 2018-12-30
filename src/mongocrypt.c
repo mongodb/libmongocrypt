@@ -16,6 +16,7 @@
 
 #include <mongoc/mongoc.h>
 #include "mongocrypt-private.h"
+#include "kms_message/kms_message.h"
 
 void
 _mongoc_crypt_set_error (mongoc_crypt_error_t *error, /* OUT */
@@ -82,6 +83,17 @@ _spawn_mongocryptd (void)
 #endif
 }
 
+void
+mongoc_crypt_init() {
+   mongoc_init();
+   kms_message_init ();
+}
+
+void
+mongoc_crypt_cleanup() {
+   mongoc_cleanup ();
+   kms_message_cleanup ();
+}
 
 mongoc_crypt_opts_t *
 mongoc_crypt_opts_new (void) {
