@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef MONGOCRYPT_MONGOCCRYPT_H
 #define MONGOCRYPT_MONGOCCRYPT_H
 
-#include <mongoc/mongoc.h>
+#include <stdint.h>
 
 typedef struct _mongoc_crypt_t mongoc_crypt_t;
 typedef struct _mongoc_crypt_opts_t mongoc_crypt_opts_t;
@@ -28,6 +27,17 @@ typedef enum {
    MONGOCRYPT_MONGOCRYPTD_URI,
    MONGOCRYPT_DEFAULT_KEYVAULT_CLIENT_URI
 } mongoc_crypt_opt_t;
+
+typedef struct _mongoc_crypt_error_t {
+   uint32_t domain;
+   uint32_t code;
+   char message[1024];
+} mongoc_crypt_error_t;
+
+typedef struct {
+   uint8_t* data;
+   uint32_t len;
+} mongoc_crypt_bson_t;
 
 mongoc_crypt_opts_t *
 mongoc_crypt_opts_new (void);
@@ -41,22 +51,22 @@ mongoc_crypt_opts_set_opt (mongoc_crypt_opts_t* opts,
                            void* value);
 
 mongoc_crypt_t *
-mongoc_crypt_new (mongoc_crypt_opts_t* opts, bson_error_t *error);
+mongoc_crypt_new (mongoc_crypt_opts_t* opts, mongoc_crypt_error_t *error);
 
 void
 mongoc_crypt_destroy (mongoc_crypt_t *crypt);
 
-bool
+int
 mongoc_crypt_encrypt (mongoc_crypt_t *crypt,
-                      const bson_t *schema,
-                      const bson_t *doc,
-                      bson_t *out,
-                      bson_error_t *error);
+                      const mongoc_crypt_bson_t *bson_schema,
+                      const mongoc_crypt_bson_t *bson_doc,
+                      mongoc_crypt_bson_t *bson_out,
+                      mongoc_crypt_error_t *error);
 
-bool
+int
 mongoc_crypt_decrypt (mongoc_crypt_t *crypt,
-                      const bson_t *doc,
-                      bson_t *out,
-                      bson_error_t *error);
+                      const mongoc_crypt_bson_t *bson_doc,
+                      mongoc_crypt_bson_t *bson_out,
+                      mongoc_crypt_error_t *error);
 
 #endif

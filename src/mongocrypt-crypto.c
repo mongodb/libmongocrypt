@@ -32,7 +32,7 @@ _openssl_encrypt (const uint8_t *iv,
                   uint32_t data_len,
                   uint8_t **out,
                   uint32_t *out_len,
-                  bson_error_t *error)
+                  mongoc_crypt_error_t *error)
 {
    const EVP_CIPHER *cipher;
    EVP_CIPHER_CTX ctx;
@@ -90,7 +90,7 @@ _openssl_decrypt (const uint8_t *iv,
                   uint32_t data_len,
                   uint8_t **out,
                   uint32_t *out_len,
-                  bson_error_t *error)
+                  mongoc_crypt_error_t *error)
 {
    const EVP_CIPHER *cipher;
    EVP_CIPHER_CTX ctx;
@@ -149,7 +149,7 @@ _mongoc_crypt_do_encryption (const uint8_t *iv,
                              uint32_t data_len,
                              uint8_t **out,
                              uint32_t *out_len,
-                             bson_error_t *error)
+                             mongoc_crypt_error_t *error)
 {
    CRYPT_ENTRY;
 
@@ -168,7 +168,7 @@ _mongoc_crypt_do_decryption (const uint8_t *iv,
                              uint32_t data_len,
                              uint8_t **out,
                              uint32_t *out_len,
-                             bson_error_t *error)
+                             mongoc_crypt_error_t *error)
 {
    CRYPT_ENTRY;
 #ifdef MONGOC_ENABLE_SSL_OPENSSL

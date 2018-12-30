@@ -3,10 +3,7 @@
 
 #include "mongocrypt.h"
 
-/* TODO: use a new error code. */
-#define SET_CRYPT_ERR(...) \
-   bson_set_error (        \
-      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_NOT_READY, __VA_ARGS__)
+#define SET_CRYPT_ERR(...) _mongoc_crypt_set_error(error, 1, 1, __VA_ARGS__)
 
 /* TOOD: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
@@ -32,7 +29,16 @@
 const char *
 tmp_json (const bson_t *bson);
 
-struct _mongoc_crypt_opts_t {
+void
+_mongoc_crypt_set_error (mongoc_crypt_error_t *error, /* OUT */
+                         uint32_t domain,     /* IN */
+                         uint32_t code,       /* IN */
+                         const char *format,  /* IN */
+                         ...);
+
+void _bson_to_mongocrypt_error (const bson_error_t* bson_error, mongoc_crypt_error_t* error);
+
+   struct _mongoc_crypt_opts_t {
    char *aws_region;
    char *aws_secret_access_key;
    char *aws_access_key_id;
@@ -44,7 +50,7 @@ struct _mongoc_crypt_t {
    /* initially only one supported. Later, use from marking/ciphertext. */
    mongoc_client_t *keyvault_client;
    mongoc_client_t *mongocryptd_client;
-   mongoc_crypt_opts_t opts;
+   mongoc_crypt_opts_t* opts;
 };
 
 
@@ -92,15 +98,15 @@ typedef struct {
 bool
 _mongoc_crypt_marking_parse_unowned (const bson_t *bson,
                                      mongoc_crypt_marking_t *out,
-                                     bson_error_t *error);
+                                     mongoc_crypt_error_t* error);
 bool
 _mongoc_crypt_encrypted_parse_unowned (const bson_t *bson,
                                        mongoc_crypt_encrypted_t *out,
-                                       bson_error_t *error);
+                                       mongoc_crypt_error_t* error);
 bool
 _mongoc_crypt_key_parse (const bson_t *bson,
                          mongoc_crypt_key_t *out,
-                         bson_error_t *error);
+                         mongoc_crypt_error_t* error);
 
 void mongoc_crypt_key_cleanup(mongoc_crypt_key_t* key);
 
@@ -111,7 +117,7 @@ _mongoc_crypt_do_encryption (const uint8_t *iv,
                              uint32_t data_len,
                              uint8_t **out,
                              uint32_t *out_len,
-                             bson_error_t *error);
+                             mongoc_crypt_error_t* error);
 
 
 bool
@@ -121,12 +127,12 @@ _mongoc_crypt_do_decryption (const uint8_t *iv,
                              uint32_t data_len,
                              uint8_t **out,
                              uint32_t *out_len,
-                             bson_error_t *error);
+                             mongoc_crypt_error_t* error);
 
 /* Modifies key */
 bool
 _mongoc_crypt_kms_decrypt (mongoc_crypt_t* crypt,
                            mongoc_crypt_key_t* key,
-                           bson_error_t* error);
+                           mongoc_crypt_error_t* error);
 
 #endif

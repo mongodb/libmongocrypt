@@ -11,22 +11,25 @@ message ("--   mongoc libraries \"${MONGOC_LIBRARIES}\"")
 include (FindOpenSSL)
 
 set (MONGOCRYPT_SOURCES
-   mongocrypt.c
-   mongocrypt.h
-   mongocrypt-private.h
-   mongocrypt-parsing.c
-   mongocrypt-kms.c
-   mongocrypt-crypto.c)
+   src/mongocrypt.c
+   src/mongocrypt.h
+   src/mongocrypt-private.h
+   src/mongocrypt-parsing.c
+   src/mongocrypt-kms.c
+   src/mongocrypt-crypto.c)
 
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
 target_include_directories(mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
 target_link_libraries(mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
 target_compile_definitions (mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
-message("OpenSSL libs are: ${OPENSSL_LIBRARIES}")
 target_link_libraries(mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
 target_include_directories(mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
 
 # TODO: do better than this.
 target_link_libraries(mongocrypt PRIVATE /Users/kevinalbertson/bin/kms/lib/libkms_message_static.a)
 target_include_directories(mongocrypt PRIVATE /Users/kevinalbertson/bin/kms/include/)
+
+add_executable(test-mongocrypt test/test-mongocrypt.c)
+target_link_libraries (test-mongocrypt mongocrypt)
+target_include_directories(test-mongocrypt PRIVATE ./src)

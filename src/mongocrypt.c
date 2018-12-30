@@ -17,6 +17,34 @@
 #include <mongoc/mongoc.h>
 #include "mongocrypt-private.h"
 
+void
+_mongoc_crypt_set_error (mongoc_crypt_error_t *error, /* OUT */
+                uint32_t domain,     /* IN */
+                uint32_t code,       /* IN */
+                const char *format,  /* IN */
+                ...)                 /* IN */
+{
+   va_list args;
+
+   if (error) {
+      error->domain = domain;
+      error->code = code;
+
+      va_start (args, format);
+      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      va_end (args);
+
+      error->message[sizeof error->message - 1] = '\0';
+   }
+}
+
+
+void _bson_to_mongocrypt_error (const bson_error_t* bson_error, mongoc_crypt_error_t* error) {
+   error->code = bson_error->code;
+   error->domain = bson_error->domain;
+   strncpy(error->message, bson_error->message, sizeof(error->message));
+}
+
 
 const char *
 tmp_json (const bson_t *bson)
@@ -71,12 +99,14 @@ mongoc_crypt_opts_destroy (mongoc_crypt_opts_t* opts) {
 }
 
 
-static void mongoc_crypt_opts_copy (const mongoc_crypt_opts_t* src, mongoc_crypt_opts_t* dst) {
+static mongoc_crypt_opts_t* mongoc_crypt_opts_copy (const mongoc_crypt_opts_t* src) {
+   mongoc_crypt_opts_t* dst = bson_malloc0(sizeof(mongoc_crypt_opts_t));
    dst->aws_region = bson_strdup(src->aws_region);
    dst->aws_secret_access_key = bson_strdup(src->aws_secret_access_key);
    dst->aws_access_key_id = bson_strdup(src->aws_access_key_id);
    dst->mongocryptd_uri = bson_strdup(src->mongocryptd_uri);
    dst->default_keyvault_client_uri = bson_strdup(src->default_keyvault_client_uri);
+   return dst;
 }
 
 
@@ -106,7 +136,7 @@ mongoc_crypt_opts_set_opt (mongoc_crypt_opts_t* opts, mongoc_crypt_opt_t opt, vo
 
 
 mongoc_crypt_t *
-mongoc_crypt_new (mongoc_crypt_opts_t* opts, bson_error_t *error)
+mongoc_crypt_new (mongoc_crypt_opts_t* opts, mongoc_crypt_error_t *error)
 {
    /* store AWS credentials, init structures in client, store schema
     * somewhere. */
@@ -135,7 +165,7 @@ mongoc_crypt_new (mongoc_crypt_opts_t* opts, bson_error_t *error)
       mongoc_crypt_destroy (crypt);
       return NULL;
    }
-   mongoc_crypt_opts_copy (opts, &crypt->opts);
+   crypt->opts = mongoc_crypt_opts_copy (opts);
    return crypt;
 }
 
@@ -147,7 +177,7 @@ mongoc_crypt_destroy (mongoc_crypt_t *crypt)
    if (!crypt) {
       return;
    }
-   mongoc_crypt_opts_destroy (&crypt->opts);
+   mongoc_crypt_opts_destroy (crypt->opts);
    mongoc_client_destroy (crypt->mongocryptd_client);
    mongoc_client_destroy (crypt->keyvault_client);
    bson_free (crypt);
@@ -162,7 +192,7 @@ _get_key (mongoc_crypt_t *crypt,
           mongoc_crypt_binary_t *key_id,
           const char *key_alt_name,
           mongoc_crypt_key_t *out,
-          bson_error_t *error)
+          mongoc_crypt_error_t *error)
 {
    mongoc_collection_t *datakey_coll;
    mongoc_cursor_t *cursor;
@@ -217,7 +247,7 @@ static bool
 _get_key_by_uuid (mongoc_crypt_t *crypt,
                   mongoc_crypt_binary_t *key_id,
                   mongoc_crypt_key_t *out,
-                  bson_error_t *error)
+                  mongoc_crypt_error_t *error)
 {
    CRYPT_ENTRY;
    return _get_key (crypt, key_id, NULL, out, error);
@@ -230,7 +260,7 @@ _append_encrypted (mongoc_crypt_t *crypt,
                    bson_t *out,
                    const char *field,
                    uint32_t field_len,
-                   bson_error_t *error)
+                   mongoc_crypt_error_t *error)
 {
    bool ret = false;
    /* will hold { 'k': <key id>, 'iv': <iv>, 'e': <encrypted data> } */
@@ -298,7 +328,7 @@ _append_decrypted (mongoc_crypt_t *crypt,
                    bson_t *out,
                    const char *field,
                    uint32_t field_len,
-                   bson_error_t *error)
+                   mongoc_crypt_error_t *error)
 {
    mongoc_crypt_key_t key = {{0}};
    uint8_t *decrypted;
@@ -346,7 +376,7 @@ static bool
 _copy_and_transform (mongoc_crypt_t *crypt,
                      bson_iter_t iter,
                      bson_t *out,
-                     bson_error_t *error,
+                     mongoc_crypt_error_t *error,
                      transform_t transform)
 {
    CRYPT_ENTRY;
@@ -435,7 +465,7 @@ static bool
 _replace_markings (mongoc_crypt_t *crypt,
                    const bson_t *reply,
                    bson_t *out,
-                   bson_error_t *error)
+                   mongoc_crypt_error_t *error)
 {
    bson_iter_t iter;
 
@@ -475,56 +505,76 @@ _make_marking_cmd (const bson_t *data, const bson_t *schema, bson_t *cmd)
    BSON_APPEND_DOCUMENT (cmd, "schema", schema);
 }
 
-bool
+int
 mongoc_crypt_encrypt (mongoc_crypt_t *crypt,
-                      const bson_t *schema,
-                      const bson_t *doc,
-                      bson_t *out,
-                      bson_error_t *error)
+                      const mongoc_crypt_bson_t *bson_schema,
+                      const mongoc_crypt_bson_t *bson_doc,
+                      mongoc_crypt_bson_t *bson_out,
+                      mongoc_crypt_error_t *error)
 {
    bson_t cmd, reply;
+   bson_t schema, doc, out;
+   bson_error_t bson_error;
    bool ret;
 
    CRYPT_ENTRY;
    ret = false;
-   bson_init (out);
-   _make_marking_cmd (doc, schema, &cmd);
+   memset (bson_out, 0, sizeof(*bson_out));
+
+   bson_init (&out);
+   bson_init_static(&doc, bson_doc->data, bson_doc->len);
+   bson_init_static(&schema, bson_schema->data, bson_schema->len);
+
+   _make_marking_cmd (&doc, &schema, &cmd);
    if (!mongoc_client_command_simple (crypt->mongocryptd_client,
                                       "admin",
                                       &cmd,
                                       NULL /* read prefs */,
                                       &reply,
-                                      error)) {
+                                      &bson_error)) {
+      _bson_to_mongocrypt_error (&bson_error, error);
       goto cleanup;
    }
 
    CRYPT_TRACE ("sent marking cmd: %s", tmp_json (&cmd));
    CRYPT_TRACE ("got back: %s", tmp_json (&reply));
 
-   if (!_replace_markings (crypt, &reply, out, error)) {
+   if (!_replace_markings (crypt, &reply, &out, error)) {
       goto cleanup;
    }
 
    ret = true;
 cleanup:
+   if (ret) {
+      bson_out->data = bson_destroy_with_steal (&out, true, &bson_out->len);
+   } else {
+      bson_destroy (&out);
+   }
    bson_destroy (&cmd);
    bson_destroy (&reply);
    return ret;
 }
 
-bool
+int
 mongoc_crypt_decrypt (mongoc_crypt_t *crypt,
-                      const bson_t *doc,
-                      bson_t *out,
-                      bson_error_t *error)
+                      const mongoc_crypt_bson_t *bson_doc,
+                      mongoc_crypt_bson_t *bson_out,
+                      mongoc_crypt_error_t *error)
 {
    bson_iter_t iter;
+   bson_t doc;
+   bson_t out;
 
    CRYPT_ENTRY;
-   bson_iter_init (&iter, doc);
-   bson_init (out);
-   if (!_copy_and_transform (crypt, iter, out, error, ENCRYPTED_TO_PLAIN)) {
+   memset (bson_out, 0, sizeof(*bson_out));
+
+   bson_init (&out);
+   bson_init_static (&doc, bson_doc->data, bson_doc->len);
+   bson_iter_init (&iter, &doc);
+   if (!_copy_and_transform (crypt, iter, &out, error, ENCRYPTED_TO_PLAIN)) {
+      bson_destroy (&out);
       return false;
    }
+   bson_out->data = bson_destroy_with_steal (&out, true, &bson_out->len);
    return true;
 }

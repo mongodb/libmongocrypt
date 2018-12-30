@@ -25,7 +25,7 @@
 
 
 static mongoc_stream_t *
-_get_aws_stream (bson_error_t *error)
+_get_aws_stream (mongoc_crypt_error_t *error)
 {
    int errcode;
    int r;
@@ -34,6 +34,7 @@ _get_aws_stream (bson_error_t *error)
    mongoc_stream_t *stream = NULL;
    mongoc_stream_t *tls_stream = NULL;
    mongoc_ssl_opt_t ssl_opts = {0};
+   bson_error_t bson_error;
 
    memcpy (&ssl_opts, mongoc_ssl_opt_get_default (), sizeof ssl_opts);
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
@@ -71,8 +72,9 @@ _get_aws_stream (bson_error_t *error)
    }
 
    if (!mongoc_stream_tls_handshake_block (
-          tls_stream, "kms.us-east-1.amazonaws.com", 1000, error)) {
+          tls_stream, "kms.us-east-1.amazonaws.com", 1000, &bson_error)) {
       mongoc_stream_destroy (tls_stream);
+      _bson_to_mongocrypt_error (&bson_error, error);
       return NULL;
    }
 
@@ -95,7 +97,7 @@ static bool
 _api_call (mongoc_crypt_t *crypt,
    kms_request_t *request,
            kms_response_t **response,
-           bson_error_t *error)
+           mongoc_crypt_error_t *error)
 {
    bool ret = false;
    mongoc_stream_t *stream;
@@ -165,7 +167,7 @@ cleanup:
 }
 
 static bool
-_get_data_key_from_response (kms_response_t* response, mongoc_crypt_key_t* key, bson_error_t* error) {
+_get_data_key_from_response (kms_response_t* response, mongoc_crypt_key_t* key, mongoc_crypt_error_t* error) {
    bson_json_reader_t* reader = NULL;
    const char* raw_response_body;
    bson_t response_body = BSON_INITIALIZER;
@@ -176,14 +178,15 @@ _get_data_key_from_response (kms_response_t* response, mongoc_crypt_key_t* key, 
    uint32_t b64_strlen;
    uint8_t* decoded_data;
    int decoded_len;
+   bson_error_t bson_error;
 
    raw_response_body = kms_response_get_body (response);
    bson_json_data_reader_ingest (reader, (const uint8_t*) raw_response_body, strlen(raw_response_body));
-   switch (bson_json_reader_read(reader, &response_body, error)) {
+   switch (bson_json_reader_read(reader, &response_body, &bson_error)) {
    case 1:
       break;
    case -1:
-      /* error already set. */
+      _bson_to_mongocrypt_error (&bson_error, error);
       goto cleanup;
    default:
       SET_CRYPT_ERR ("Could not read JSON document from response");
@@ -227,7 +230,7 @@ cleanup:
 bool
 _mongoc_crypt_kms_decrypt (mongoc_crypt_t *crypt,
                            mongoc_crypt_key_t *key,
-                           bson_error_t *error)
+                           mongoc_crypt_error_t *error)
 {
    kms_request_t* request = NULL;
    kms_response_t* response = NULL;
@@ -239,10 +242,10 @@ _mongoc_crypt_kms_decrypt (mongoc_crypt_t *crypt,
 
    request = kms_decrypt_request_new (
       key->key_material.data, key->key_material.len /* - 1 ? */, request_opt);
-   kms_request_set_region (request, crypt->opts.aws_region);
+   kms_request_set_region (request, crypt->opts->aws_region);
    kms_request_set_service (request, "kms"); /* That seems odd. */
-   kms_request_set_access_key_id (request, crypt->opts.aws_access_key_id);
-   kms_request_set_secret_key (request, crypt->opts.aws_secret_access_key);
+   kms_request_set_access_key_id (request, crypt->opts->aws_access_key_id);
+   kms_request_set_secret_key (request, crypt->opts->aws_secret_access_key);
 
    if (!_api_call(crypt, request, &response, error)) {
       goto cleanup;

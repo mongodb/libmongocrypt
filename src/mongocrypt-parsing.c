@@ -65,7 +65,7 @@ mongoc_crypt_bson_append_binary (bson_t *bson,
 bool
 _mongoc_crypt_marking_parse_unowned (const bson_t *bson,
                              mongoc_crypt_marking_t *out,
-                             bson_error_t *error)
+                             mongoc_crypt_error_t *error)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -119,7 +119,7 @@ cleanup:
 bool
 _mongoc_crypt_encrypted_parse_unowned (const bson_t *bson,
                                mongoc_crypt_encrypted_t *out,
-                               bson_error_t *error)
+                               mongoc_crypt_error_t *error)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -170,7 +170,7 @@ cleanup:
 bool
 _mongoc_crypt_key_parse (const bson_t *bson,
                          mongoc_crypt_key_t *out,
-                         bson_error_t *error)
+                         mongoc_crypt_error_t *error)
 {
    bson_iter_t iter;
    bool ret = false;
