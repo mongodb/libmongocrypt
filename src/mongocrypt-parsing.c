@@ -25,26 +25,30 @@
 
 /* TODO: actually make this code consistent. */
 void
-mongoc_crypt_binary_from_iter_unowned (bson_iter_t *iter, mongoc_crypt_binary_t *out)
+mongoc_crypt_binary_from_iter_unowned (bson_iter_t *iter,
+                                       mongoc_crypt_binary_t *out)
 {
-   bson_iter_binary (iter, &out->subtype, &out->len, (const uint8_t**)&out->data);
+   bson_iter_binary (
+      iter, &out->subtype, &out->len, (const uint8_t **) &out->data);
    out->owned = false;
 }
 
 
 /* copies */
 void
-mongoc_crypt_binary_from_iter (bson_iter_t *iter, mongoc_crypt_binary_t *out) {
-   const uint8_t* data;
+mongoc_crypt_binary_from_iter (bson_iter_t *iter, mongoc_crypt_binary_t *out)
+{
+   const uint8_t *data;
    bson_iter_binary (iter, &out->subtype, &out->len, &data);
-   out->data = bson_malloc(out->len);
-   memcpy(out->data, data, out->len);
+   out->data = bson_malloc (out->len);
+   memcpy (out->data, data, out->len);
    out->owned = true;
 }
 
 
 void
-mongoc_crypt_binary_cleanup (mongoc_crypt_binary_t* binary) {
+mongoc_crypt_binary_cleanup (mongoc_crypt_binary_t *binary)
+{
    if (binary->owned) {
       bson_free (binary->data);
    }
@@ -64,8 +68,8 @@ mongoc_crypt_bson_append_binary (bson_t *bson,
 /* out should be zeroed */
 bool
 _mongoc_crypt_marking_parse_unowned (const bson_t *bson,
-                             mongoc_crypt_marking_t *out,
-                             mongoc_crypt_error_t *error)
+                                     mongoc_crypt_marking_t *out,
+                                     mongoc_crypt_error_t *error)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -118,8 +122,8 @@ cleanup:
 
 bool
 _mongoc_crypt_encrypted_parse_unowned (const bson_t *bson,
-                               mongoc_crypt_encrypted_t *out,
-                               mongoc_crypt_error_t *error)
+                                       mongoc_crypt_encrypted_t *out,
+                                       mongoc_crypt_error_t *error)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -209,7 +213,8 @@ cleanup:
 }
 
 void
-mongoc_crypt_key_cleanup (mongoc_crypt_key_t* key) {
+mongoc_crypt_key_cleanup (mongoc_crypt_key_t *key)
+{
    mongoc_crypt_binary_cleanup (&key->id);
    mongoc_crypt_binary_cleanup (&key->key_material);
    mongoc_crypt_binary_cleanup (&key->data_key);
