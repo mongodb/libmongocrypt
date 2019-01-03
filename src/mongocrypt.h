@@ -18,61 +18,61 @@
 
 #include <stdint.h>
 
-typedef struct _mongoc_crypt_t mongoc_crypt_t;
-typedef struct _mongoc_crypt_opts_t mongoc_crypt_opts_t;
+typedef struct _mongocrypt_t mongocrypt_t;
+typedef struct _mongocrypt_opts_t mongocrypt_opts_t;
 typedef enum {
    MONGOCRYPT_AWS_REGION,
    MONGOCRYPT_AWS_SECRET_ACCESS_KEY,
    MONGOCRYPT_AWS_ACCESS_KEY_ID,
    MONGOCRYPT_MONGOCRYPTD_URI,
    MONGOCRYPT_DEFAULT_KEYVAULT_CLIENT_URI
-} mongoc_crypt_opt_t;
+} mongocrypt_opt_t;
 
-typedef struct _mongoc_crypt_error_t {
+typedef struct _mongocrypt_error_t {
    uint32_t domain;
    uint32_t code;
    char message[1024];
-} mongoc_crypt_error_t;
+} mongocrypt_error_t;
 
 typedef struct {
    uint8_t *data;
    uint32_t len;
-} mongoc_crypt_bson_t;
+} mongocrypt_bson_t;
 
 void
-mongoc_crypt_init (void);
+mongocrypt_init (void);
 
 void
-mongoc_crypt_cleanup (void);
+mongocrypt_cleanup (void);
 
-mongoc_crypt_opts_t *
-mongoc_crypt_opts_new (void);
-
-void
-mongoc_crypt_opts_destroy (mongoc_crypt_opts_t *opts);
+mongocrypt_opts_t *
+mongocrypt_opts_new (void);
 
 void
-mongoc_crypt_opts_set_opt (mongoc_crypt_opts_t *opts,
-                           mongoc_crypt_opt_t opt,
-                           void *value);
-
-mongoc_crypt_t *
-mongoc_crypt_new (mongoc_crypt_opts_t *opts, mongoc_crypt_error_t *error);
+mongocrypt_opts_destroy (mongocrypt_opts_t *opts);
 
 void
-mongoc_crypt_destroy (mongoc_crypt_t *crypt);
+mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
+                         mongocrypt_opt_t opt,
+                         void *value);
+
+mongocrypt_t *
+mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t *error);
+
+void
+mongocrypt_destroy (mongocrypt_t *crypt);
 
 int
-mongoc_crypt_encrypt (mongoc_crypt_t *crypt,
-                      const mongoc_crypt_bson_t *bson_schema,
-                      const mongoc_crypt_bson_t *bson_doc,
-                      mongoc_crypt_bson_t *bson_out,
-                      mongoc_crypt_error_t *error);
+mongocrypt_encrypt (mongocrypt_t *crypt,
+                    const mongocrypt_bson_t *bson_schema,
+                    const mongocrypt_bson_t *bson_doc,
+                    mongocrypt_bson_t *bson_out,
+                    mongocrypt_error_t *error);
 
 int
-mongoc_crypt_decrypt (mongoc_crypt_t *crypt,
-                      const mongoc_crypt_bson_t *bson_doc,
-                      mongoc_crypt_bson_t *bson_out,
-                      mongoc_crypt_error_t *error);
+mongocrypt_decrypt (mongocrypt_t *crypt,
+                    const mongocrypt_bson_t *bson_doc,
+                    mongocrypt_bson_t *bson_out,
+                    mongocrypt_error_t *error);
 
 #endif

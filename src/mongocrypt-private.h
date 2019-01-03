@@ -3,14 +3,14 @@
 
 #include "mongocrypt.h"
 
-#define SET_CRYPT_ERR(...) _mongoc_crypt_set_error (error, 1, 1, __VA_ARGS__)
+#define SET_CRYPT_ERR(...) _mongocrypt_set_error (error, 1, 1, __VA_ARGS__)
 
 /* TOOD: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
 
-#define MONGOC_CRYPT_TRACE
+#define mongocrypt_TRACE
 
-#ifdef MONGOC_CRYPT_TRACE
+#ifdef mongocrypt_TRACE
 #define CRYPT_TRACE(...)                                 \
    do {                                                  \
       if (getenv ("MONGOCRYPT_TRACE")) {                 \
@@ -34,17 +34,17 @@ const char *
 tmp_json (const bson_t *bson);
 
 void
-_mongoc_crypt_set_error (mongoc_crypt_error_t *error, /* OUT */
-                         uint32_t domain,             /* IN */
-                         uint32_t code,               /* IN */
-                         const char *format,          /* IN */
-                         ...);
+_mongocrypt_set_error (mongocrypt_error_t *error, /* OUT */
+                       uint32_t domain,           /* IN */
+                       uint32_t code,             /* IN */
+                       const char *format,        /* IN */
+                       ...);
 
 void
 _bson_to_mongocrypt_error (const bson_error_t *bson_error,
-                           mongoc_crypt_error_t *error);
+                           mongocrypt_error_t *error);
 
-struct _mongoc_crypt_opts_t {
+struct _mongocrypt_opts_t {
    char *aws_region;
    char *aws_secret_access_key;
    char *aws_access_key_id;
@@ -52,11 +52,11 @@ struct _mongoc_crypt_opts_t {
    char *default_keyvault_client_uri;
 };
 
-struct _mongoc_crypt_t {
+struct _mongocrypt_t {
    /* initially only one supported. Later, use from marking/ciphertext. */
    mongoc_client_t *keyvault_client;
    mongoc_client_t *mongocryptd_client;
-   mongoc_crypt_opts_t *opts;
+   mongocrypt_opts_t *opts;
 };
 
 /* It's annoying passing around multiple values for bson binary values. */
@@ -65,80 +65,80 @@ typedef struct {
    bson_subtype_t subtype;
    uint32_t len;
    bool owned;
-} mongoc_crypt_binary_t;
+} mongocrypt_binary_t;
 
 void
-mongoc_crypt_binary_from_iter (bson_iter_t *iter, mongoc_crypt_binary_t *out);
+mongocrypt_binary_from_iter (bson_iter_t *iter, mongocrypt_binary_t *out);
 void
-mongoc_crypt_binary_from_iter_unowned (bson_iter_t *iter,
-                                       mongoc_crypt_binary_t *out);
+mongocrypt_binary_from_iter_unowned (bson_iter_t *iter,
+                                     mongocrypt_binary_t *out);
 void
-mongoc_crypt_binary_cleanup (mongoc_crypt_binary_t *binary);
+mongocrypt_binary_cleanup (mongocrypt_binary_t *binary);
 void
-mongoc_crypt_bson_append_binary (bson_t *bson,
-                                 const char *key,
-                                 uint32_t key_len,
-                                 mongoc_crypt_binary_t *in);
+mongocrypt_bson_append_binary (bson_t *bson,
+                               const char *key,
+                               uint32_t key_len,
+                               mongocrypt_binary_t *in);
 
 typedef struct {
    bson_iter_t v_iter;
-   mongoc_crypt_binary_t iv;
+   mongocrypt_binary_t iv;
    /* one of the following is zeroed, and the other is set. */
-   mongoc_crypt_binary_t key_id;
+   mongocrypt_binary_t key_id;
    const char *key_alt_name;
-} mongoc_crypt_marking_t;
+} mongocrypt_marking_t;
 
 /* consider renaming to encrypted_w_metadata? */
 typedef struct {
-   mongoc_crypt_binary_t e;
-   mongoc_crypt_binary_t iv;
-   mongoc_crypt_binary_t key_id;
-} mongoc_crypt_encrypted_t;
+   mongocrypt_binary_t e;
+   mongocrypt_binary_t iv;
+   mongocrypt_binary_t key_id;
+} mongocrypt_encrypted_t;
 
 typedef struct {
-   mongoc_crypt_binary_t id;
-   mongoc_crypt_binary_t key_material;
-   mongoc_crypt_binary_t data_key;
-} mongoc_crypt_key_t;
+   mongocrypt_binary_t id;
+   mongocrypt_binary_t key_material;
+   mongocrypt_binary_t data_key;
+} mongocrypt_key_t;
 
 bool
-_mongoc_crypt_marking_parse_unowned (const bson_t *bson,
-                                     mongoc_crypt_marking_t *out,
-                                     mongoc_crypt_error_t *error);
+_mongocrypt_marking_parse_unowned (const bson_t *bson,
+                                   mongocrypt_marking_t *out,
+                                   mongocrypt_error_t *error);
 bool
-_mongoc_crypt_encrypted_parse_unowned (const bson_t *bson,
-                                       mongoc_crypt_encrypted_t *out,
-                                       mongoc_crypt_error_t *error);
+_mongocrypt_encrypted_parse_unowned (const bson_t *bson,
+                                     mongocrypt_encrypted_t *out,
+                                     mongocrypt_error_t *error);
 bool
-_mongoc_crypt_key_parse (const bson_t *bson,
-                         mongoc_crypt_key_t *out,
-                         mongoc_crypt_error_t *error);
+_mongocrypt_key_parse (const bson_t *bson,
+                       mongocrypt_key_t *out,
+                       mongocrypt_error_t *error);
 
 void
-mongoc_crypt_key_cleanup (mongoc_crypt_key_t *key);
+mongocrypt_key_cleanup (mongocrypt_key_t *key);
 
 bool
-_mongoc_crypt_do_encryption (const uint8_t *iv,
-                             const uint8_t *key,
-                             const uint8_t *data,
-                             uint32_t data_len,
-                             uint8_t **out,
-                             uint32_t *out_len,
-                             mongoc_crypt_error_t *error);
+_mongocrypt_do_encryption (const uint8_t *iv,
+                           const uint8_t *key,
+                           const uint8_t *data,
+                           uint32_t data_len,
+                           uint8_t **out,
+                           uint32_t *out_len,
+                           mongocrypt_error_t *error);
 
 bool
-_mongoc_crypt_do_decryption (const uint8_t *iv,
-                             const uint8_t *key,
-                             const uint8_t *data,
-                             uint32_t data_len,
-                             uint8_t **out,
-                             uint32_t *out_len,
-                             mongoc_crypt_error_t *error);
+_mongocrypt_do_decryption (const uint8_t *iv,
+                           const uint8_t *key,
+                           const uint8_t *data,
+                           uint32_t data_len,
+                           uint8_t **out,
+                           uint32_t *out_len,
+                           mongocrypt_error_t *error);
 
 /* Modifies key */
 bool
-_mongoc_crypt_kms_decrypt (mongoc_crypt_t *crypt,
-                           mongoc_crypt_key_t *key,
-                           mongoc_crypt_error_t *error);
+_mongocrypt_kms_decrypt (mongocrypt_t *crypt,
+                         mongocrypt_key_t *key,
+                         mongocrypt_error_t *error);
 
 #endif

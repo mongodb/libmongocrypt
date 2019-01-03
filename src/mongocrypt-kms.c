@@ -24,7 +24,7 @@
     (errno == EINPROGRESS))
 
 static mongoc_stream_t *
-_get_aws_stream (mongoc_crypt_error_t *error)
+_get_aws_stream (mongocrypt_error_t *error)
 {
    int errcode;
    int r;
@@ -93,10 +93,10 @@ print_without_carriage_return (uint8_t *buf, ssize_t n)
 }
 
 static bool
-_api_call (mongoc_crypt_t *crypt,
+_api_call (mongocrypt_t *crypt,
            kms_request_t *request,
            kms_response_t **response,
-           mongoc_crypt_error_t *error)
+           mongocrypt_error_t *error)
 {
    bool ret = false;
    mongoc_stream_t *stream;
@@ -163,8 +163,8 @@ cleanup:
 
 static bool
 _get_data_key_from_response (kms_response_t *response,
-                             mongoc_crypt_key_t *key,
-                             mongoc_crypt_error_t *error)
+                             mongocrypt_key_t *key,
+                             mongocrypt_error_t *error)
 {
    bson_json_reader_t *reader = NULL;
    const char *raw_response_body;
@@ -228,9 +228,9 @@ cleanup:
 }
 
 bool
-_mongoc_crypt_kms_decrypt (mongoc_crypt_t *crypt,
-                           mongoc_crypt_key_t *key,
-                           mongoc_crypt_error_t *error)
+_mongocrypt_kms_decrypt (mongocrypt_t *crypt,
+                         mongocrypt_key_t *key,
+                         mongocrypt_error_t *error)
 {
    kms_request_t *request = NULL;
    kms_response_t *response = NULL;
