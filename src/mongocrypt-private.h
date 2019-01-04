@@ -5,12 +5,27 @@
 
 #define SET_CRYPT_ERR(...) _mongocrypt_set_error (error, 1, 1, __VA_ARGS__)
 
-/* TOOD: remove after integrating into libmongoc */
+#if defined(BSON_OS_UNIX)
+#include <pthread.h>
+#define mongocrypt_mutex_destroy pthread_mutex_destroy
+#define mongocrypt_mutex_init(_n) pthread_mutex_init ((_n), NULL)
+#define mongocrypt_mutex_lock pthread_mutex_lock
+#define mongocrypt_mutex_t pthread_mutex_t
+#define mongocrypt_mutex_unlock pthread_mutex_unlock
+#else
+#define mongocrypt_mutex_destroy DeleteCriticalSection
+#define mongocrypt_mutex_init InitializeCriticalSection
+#define mongocrypt_mutex_lock EnterCriticalSection
+#define mongocrypt_mutex_t CRITICAL_SECTION
+#define mongocrypt_mutex_unlock LeaveCriticalSection
+#endif
+
+/* TODO: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
 
-#define mongocrypt_TRACE
+#define MONGOCRYPT_TRACE
 
-#ifdef mongocrypt_TRACE
+#ifdef MONGOCRYPT_TRACE
 #define CRYPT_TRACE(...)                                 \
    do {                                                  \
       if (getenv ("MONGOCRYPT_TRACE")) {                 \
@@ -54,9 +69,10 @@ struct _mongocrypt_opts_t {
 
 struct _mongocrypt_t {
    /* initially only one supported. Later, use from marking/ciphertext. */
-   mongoc_client_t *keyvault_client;
-   mongoc_client_t *mongocryptd_client;
+   mongoc_client_pool_t *keyvault_pool;
+   mongoc_client_pool_t *mongocryptd_pool;
    mongocrypt_opts_t *opts;
+   mongocrypt_mutex_t mutex;
 };
 
 /* It's annoying passing around multiple values for bson binary values. */

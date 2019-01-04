@@ -166,30 +166,36 @@ mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t *error)
    /* store AWS credentials, init structures in client, store schema
     * somewhere. */
    mongocrypt_t *crypt;
+   mongoc_uri_t* uri;
 
    CRYPT_ENTRY;
    _spawn_mongocryptd ();
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
    if (opts->mongocryptd_uri) {
-      crypt->mongocryptd_client = mongoc_client_new (opts->mongocryptd_uri);
+      uri = mongoc_uri_new (opts->mongocryptd_uri);
+      crypt->mongocryptd_pool = mongoc_client_pool_new (uri);
+      mongoc_uri_destroy (uri);
    } else {
-      crypt->mongocryptd_client =
-         mongoc_client_new ("mongodb://%2Ftmp%2Fmongocryptd.sock");
+      uri = mongoc_uri_new ("mongodb://%2Ftmp%2Fmongocryptd.sock");
+      crypt->mongocryptd_pool = mongoc_client_pool_new (uri);
+      mongoc_uri_destroy (uri);
    }
-   if (!crypt->mongocryptd_client) {
+   if (!crypt->mongocryptd_pool) {
       SET_CRYPT_ERR ("Unable to create client to mongocryptd");
       mongocrypt_destroy (crypt);
       return NULL;
    }
    /* TODO: use 'u' from schema to get key vault clients. Note no opts here. */
-   crypt->keyvault_client =
-      mongoc_client_new (opts->default_keyvault_client_uri);
-   if (!crypt->keyvault_client) {
+   uri = mongoc_uri_new (opts->default_keyvault_client_uri);
+   crypt->keyvault_pool = mongoc_client_pool_new (uri);
+   mongoc_uri_destroy (uri);
+   if (!crypt->keyvault_pool) {
       SET_CRYPT_ERR ("Unable to create client to keyvault");
       mongocrypt_destroy (crypt);
       return NULL;
    }
    crypt->opts = mongocrypt_opts_copy (opts);
+   mongocrypt_mutex_init(&crypt->mutex);
    return crypt;
 }
 
@@ -202,8 +208,9 @@ mongocrypt_destroy (mongocrypt_t *crypt)
       return;
    }
    mongocrypt_opts_destroy (crypt->opts);
-   mongoc_client_destroy (crypt->mongocryptd_client);
-   mongoc_client_destroy (crypt->keyvault_client);
+   mongoc_client_pool_destroy (crypt->mongocryptd_pool);
+   mongoc_client_pool_destroy (crypt->keyvault_pool);
+   mongocrypt_mutex_destroy(&crypt->mutex);
    bson_free (crypt);
 }
 
@@ -218,15 +225,16 @@ _get_key (mongocrypt_t *crypt,
           mongocrypt_key_t *out,
           mongocrypt_error_t *error)
 {
-   mongoc_collection_t *datakey_coll;
-   mongoc_cursor_t *cursor;
+   mongoc_client_t* keyvault_client;
+   mongoc_collection_t *datakey_coll = NULL;
+   mongoc_cursor_t *cursor = NULL;
    bson_t filter;
    const bson_t *doc;
    bool ret = false;
 
    CRYPT_ENTRY;
-   datakey_coll = mongoc_client_get_collection (
-      crypt->keyvault_client, "admin", "datakeys");
+   keyvault_client = mongoc_client_pool_pop (crypt->keyvault_pool);
+   datakey_coll = mongoc_client_get_collection (keyvault_client, "admin", "datakeys");
    bson_init (&filter);
    if (key_id->len) {
       mongocrypt_bson_append_binary (&filter, "_id", 3, key_id);
@@ -236,7 +244,7 @@ _get_key (mongocrypt_t *crypt,
    } else {
       SET_CRYPT_ERR ("must provide key id or alt name");
       bson_destroy (&filter);
-      return ret;
+      goto cleanup;
    }
 
    CRYPT_TRACE ("finding key by filter: %s", tmp_json (&filter));
@@ -262,6 +270,7 @@ _get_key (mongocrypt_t *crypt,
    ret = true;
 
 cleanup:
+   mongoc_client_pool_push (crypt->keyvault_pool, keyvault_client);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (datakey_coll);
    return ret;
@@ -539,6 +548,7 @@ mongocrypt_encrypt (mongocrypt_t *crypt,
    bson_t cmd, reply;
    bson_t schema, doc, out;
    bson_error_t bson_error;
+   mongoc_client_t* mongocryptd_client;
    bool ret;
 
    CRYPT_ENTRY;
@@ -549,8 +559,10 @@ mongocrypt_encrypt (mongocrypt_t *crypt,
    bson_init_static (&doc, bson_doc->data, bson_doc->len);
    bson_init_static (&schema, bson_schema->data, bson_schema->len);
 
+   mongocryptd_client = mongoc_client_pool_pop (crypt->mongocryptd_pool);
+
    _make_marking_cmd (&doc, &schema, &cmd);
-   if (!mongoc_client_command_simple (crypt->mongocryptd_client,
+   if (!mongoc_client_command_simple (mongocryptd_client,
                                       "admin",
                                       &cmd,
                                       NULL /* read prefs */,
@@ -576,6 +588,7 @@ cleanup:
    }
    bson_destroy (&cmd);
    bson_destroy (&reply);
+   mongoc_client_pool_push (crypt->mongocryptd_pool, mongocryptd_client);
    return ret;
 }
 

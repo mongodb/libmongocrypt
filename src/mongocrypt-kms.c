@@ -242,10 +242,13 @@ _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
 
    request = kms_decrypt_request_new (
       key->key_material.data, key->key_material.len /* - 1 ? */, request_opt);
-   kms_request_set_region (request, crypt->opts->aws_region);
    kms_request_set_service (request, "kms"); /* That seems odd. */
+   /* This may be unnecessary for reading, but lock the mutex to use the opts. */
+   mongocrypt_mutex_lock (&crypt->mutex);
+   kms_request_set_region (request, crypt->opts->aws_region);
    kms_request_set_access_key_id (request, crypt->opts->aws_access_key_id);
    kms_request_set_secret_key (request, crypt->opts->aws_secret_access_key);
+   mongocrypt_mutex_unlock (&crypt->mutex);
 
    if (!_api_call (crypt, request, &response, error)) {
       goto cleanup;
