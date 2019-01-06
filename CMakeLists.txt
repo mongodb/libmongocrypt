@@ -26,9 +26,8 @@ target_compile_definitions (mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 target_link_libraries(mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
 target_include_directories(mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
 
-# TODO: do better than this.
-target_link_libraries(mongocrypt PRIVATE /Users/kevinalbertson/bin/kms/lib/libkms_message_static.a)
-target_include_directories(mongocrypt PRIVATE /Users/kevinalbertson/bin/kms/include/)
+find_package (kms_message REQUIRED)
+target_link_libraries(mongocrypt PRIVATE kms_message_static)
 
 add_executable(test-mongocrypt test/test-mongocrypt.c)
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
