@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mongocrypt_encrypt_prepare &mdash; libmongocrypt  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mongocrypt_encrypt_finish" href="mongocrypt_encrypt_finish.html" />
+    <link rel="prev" title="mongocrypt_destroy" href="mongocrypt_destroy.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> libmongocrypt
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="mongocrypt_t.html">mongocrypt_t</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="mongocrypt_t.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongocrypt_t.html#description">Description</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="mongocrypt_t.html#functions">Functions</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="mongocrypt_new.html">mongocrypt_new</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongocrypt_destroy.html">mongocrypt_destroy</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">mongocrypt_encrypt_prepare</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#returns">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mongocrypt_encrypt_finish.html">mongocrypt_encrypt_finish</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongocrypt_decrypt_prepare.html">mongocrypt_decrypt_prepare</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mongocrypt_decrypt_finish.html">mongocrypt_decrypt_finish</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">libmongocrypt</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="mongocrypt_t.html">mongocrypt_t</a> &raquo;</li>
+        
+      <li>mongocrypt_encrypt_prepare</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/mongocrypt_encrypt_prepare.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mongocrypt-encrypt-prepare">
+<h1>mongocrypt_encrypt_prepare<a class="headerlink" href="#mongocrypt-encrypt-prepare" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &lt;mongocrypt.h&gt;</span>
+
+<span class="nb">bool</span>
+<span class="n">mongocrypt_encrypt_prepare</span> <span class="p">(</span><span class="n">mongocrypt_t</span> <span class="o">*</span><span class="n">crypt</span><span class="p">,</span>
+                            <span class="n">const</span> <span class="n">mongocrypt_binary_t</span> <span class="o">*</span><span class="n">schema</span><span class="p">,</span>
+                            <span class="n">const</span> <span class="n">mongocrypt_binary_t</span> <span class="o">*</span><span class="n">cmd</span><span class="p">,</span>
+                            <span class="n">mongocrypt_binary_t</span> <span class="o">**</span><span class="n">marked_cmd</span><span class="p">,</span>
+                            <span class="n">mongocrypt_datakey_request_t</span> <span class="o">**</span><span class="n">requests</span><span class="p">,</span>
+                            <span class="n">mongocrypt_error_t</span> <span class="o">*</span><span class="n">error</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">crypt</span></code>: the <a class="reference internal" href="mongocrypt_t.html#mongocrypt-t"><span class="std std-ref">mongocrypt_t</span></a> handle.</li>
+<li><code class="docutils literal notranslate"><span class="pre">schema</span></code>: a BSON document representing a JSONSchema for the collection.</li>
+<li><code class="docutils literal notranslate"><span class="pre">cmd</span></code>: a BSON document representing a MongoDB command requiring encryption.</li>
+<li><code class="docutils literal notranslate"><span class="pre">marked_cmd</span></code>: set to a transformed version of <code class="docutils literal notranslate"><span class="pre">cmd</span></code>. Fields requiring encryption in have been replaced with FLE markings. If nothing was marked, this is set to <code class="docutils literal notranslate"><span class="pre">NULL</span></code>. Caller must call mongocrypt_binary_destroy after.</li>
+<li><code class="docutils literal notranslate"><span class="pre">requests</span></code>: set to a list of keys libmongocrypt requires to do encryption in <a class="reference internal" href="mongocrypt_encrypt_finish.html#mongocrypt-encrypt-finish"><span class="std std-ref">mongocrypt_encrypt_finish</span></a>. Caller must call mongocrypt_datakey_request_destroy after.</li>
+<li><code class="docutils literal notranslate"><span class="pre">error</span></code>: set to an error. The caller must call mongocrypt_error_destroy after (even if no error occurred).</li>
+</ul>
+</div>
+<div class="section" id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
+<p>True on success, false on failure. On failure, <code class="docutils literal notranslate"><span class="pre">error</span></code> is populated.</p>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="mongocrypt_encrypt_finish.html#mongocrypt-encrypt-finish"><span class="std std-ref">mongocrypt_encrypt_finish</span></a>: The next call in the sequence to encrypt.</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mongocrypt_encrypt_finish.html" class="btn btn-neutral float-right" title="mongocrypt_encrypt_finish" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mongocrypt_destroy.html" class="btn btn-neutral" title="mongocrypt_destroy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Kevin Albertson
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
