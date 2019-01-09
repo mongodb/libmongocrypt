@@ -1,0 +1,23 @@
+datakeys
+~~~~~~~~
+``datakeys`` is a BSON document mapping key vault aliases to arrays of data keys.
+
+.. code::
+
+  {
+     "default": [
+       {
+          "_id" : UUID("148d6906-9648-4b32-ba08-8497ad838229"),
+          "status" : 1,
+          "masterKey" : { ... },
+          "creationDate" : ISODate("2018-12-31T14:23:48.172Z"),
+          "updatedDate" : ISODate("2018-12-31T14:23:48.172Z"),
+          "keyMaterial" : BinData(0,"..."),
+        }
+        ...
+     ],
+     "alias": [
+       { ... }
+     ]
+     ...
+  }

@@ -29,9 +29,10 @@ typedef enum {
 } mongocrypt_opt_t;
 
 typedef struct _mongocrypt_error_t {
-   uint32_t domain;
+   uint32_t domain; /* TODO soon to be type */
    uint32_t code;
    char message[1024];
+   void *ctx;
 } mongocrypt_error_t;
 
 typedef struct {
@@ -61,6 +62,30 @@ mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t *error);
 
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
+
+typedef struct _mongocrypt_datakey_request_t mongocrypt_datakey_request_t;
+
+struct _mongocrypt_datakey_request_t {
+   struct _mongocrypt_datakey_request_t *next;
+}
+
+void
+mongocrypt_error_cleanup (mongocrypt_error_t *error);
+
+int
+mongocrypt_encrypt_prepare (mongocrypt_t *crypt,
+                            const mongocrypt_bson_t *schema,
+                            const mongocrypt_bson_t *cmd,
+                            mongocrypt_bson_t *marked_cmd,
+                            mongocrypt_datakey_request_t **requests,
+                            mongocrypt_error_t *error);
+
+int
+mongocrypt_encrypt_finish (mongocrypt_t *crypt,
+                           const mongocrypt_bson_t *marked_cmd,
+                           mongocrypt_datakey_t *datakeys, /* stolen */
+                           mongocrypt_bson_t *encrypted_cmd,
+                           mongocrypt_error_t *error);
 
 int
 mongocrypt_encrypt (mongocrypt_t *crypt,

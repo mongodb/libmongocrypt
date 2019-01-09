@@ -1,0 +1,2 @@
+mongocrypt_destroy
+==================
