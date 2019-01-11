@@ -67,7 +67,7 @@ typedef struct _mongocrypt_datakey_request_t mongocrypt_datakey_request_t;
 
 struct _mongocrypt_datakey_request_t {
    struct _mongocrypt_datakey_request_t *next;
-}
+};
 
 void
 mongocrypt_error_cleanup (mongocrypt_error_t *error);
@@ -83,7 +83,7 @@ mongocrypt_encrypt_prepare (mongocrypt_t *crypt,
 int
 mongocrypt_encrypt_finish (mongocrypt_t *crypt,
                            const mongocrypt_bson_t *marked_cmd,
-                           mongocrypt_datakey_t *datakeys, /* stolen */
+                           mongocrypt_datakey_request_t *datakeys, /* stolen */
                            mongocrypt_bson_t *encrypted_cmd,
                            mongocrypt_error_t *error);
 
