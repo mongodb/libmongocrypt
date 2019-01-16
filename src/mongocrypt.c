@@ -14,39 +14,83 @@
  * limitations under the License.
  */
 
+#include <kms_message/kms_message.h>
 #include <mongoc/mongoc.h>
+
 #include "mongocrypt-private.h"
-#include "kms_message/kms_message.h"
+
+
+char *
+mongocrypt_version (void)
+{
+   return MONGOCRYPT_VERSION;
+}
+
+
+const char *
+mongocrypt_error_message (mongocrypt_error_t *error)
+{
+   return error->message;
+}
+
+
+uint32_t
+mongocrypt_error_code (mongocrypt_error_t *error)
+{
+   return error->code;
+}
+
+
+void *
+mongocrypt_error_ctx (mongocrypt_error_t *error)
+{
+   return error->ctx;
+}
+
 
 void
-_mongocrypt_set_error (mongocrypt_error_t *error, /* OUT */
-                       uint32_t domain,           /* IN */
-                       uint32_t code,             /* IN */
-                       const char *format,        /* IN */
-                       ...)                       /* IN */
+mongocrypt_error_destroy (mongocrypt_error_t *error)
+{
+   if (!error) {
+      return;
+   }
+   bson_free (error->ctx);
+   bson_free (error);
+}
+
+
+void
+_mongocrypt_set_error (mongocrypt_error_t **error,
+                       uint32_t type,
+                       uint32_t code,
+                       const char *format,
+                       ...)
 {
    va_list args;
 
    if (error) {
-      error->domain = domain;
-      error->code = code;
+      *error = bson_malloc (sizeof (mongocrypt_error_t));
+
+      (*error)->type = type;
+      (*error)->code = code;
 
       va_start (args, format);
-      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      bson_vsnprintf (
+         (*error)->message, sizeof (*error)->message, format, args);
       va_end (args);
 
-      error->message[sizeof error->message - 1] = '\0';
+      (*error)->message[sizeof (*error)->message - 1] = '\0';
    }
 }
 
 
 void
-_bson_to_mongocrypt_error (const bson_error_t *bson_error,
-                           mongocrypt_error_t *error)
+_bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
+                                 uint32_t type,
+                                 uint32_t code,
+                                 mongocrypt_error_t **error)
 {
-   error->code = bson_error->code;
-   error->domain = bson_error->domain;
-   strncpy (error->message, bson_error->message, sizeof (error->message));
+   _mongocrypt_set_error (error, type, code, "%s", bson_error->message);
 }
 
 
@@ -86,12 +130,14 @@ _spawn_mongocryptd (void)
 #endif
 }
 
+
 void
 mongocrypt_init ()
 {
    mongoc_init ();
    kms_message_init ();
 }
+
 
 void
 mongocrypt_cleanup ()
@@ -100,11 +146,13 @@ mongocrypt_cleanup ()
    kms_message_cleanup ();
 }
 
+
 mongocrypt_opts_t *
 mongocrypt_opts_new (void)
 {
    return bson_malloc0 (sizeof (mongocrypt_opts_t));
 }
+
 
 void
 mongocrypt_opts_destroy (mongocrypt_opts_t *opts)
@@ -161,41 +209,51 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
 
 
 mongocrypt_t *
-mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t *error)
+mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t **error)
 {
    /* store AWS credentials, init structures in client, store schema
     * somewhere. */
    mongocrypt_t *crypt;
-   mongoc_uri_t* uri;
+   mongoc_uri_t *uri;
 
    CRYPT_ENTRY;
+   BSON_ASSERT (*error == NULL);
    _spawn_mongocryptd ();
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
    if (opts->mongocryptd_uri) {
       uri = mongoc_uri_new (opts->mongocryptd_uri);
+      if (!uri) {
+         CLIENT_ERR ("invalid uri for mongocryptd");
+         mongocrypt_destroy (crypt);
+         return NULL;
+      }
       crypt->mongocryptd_pool = mongoc_client_pool_new (uri);
+      mongoc_client_pool_set_error_api (crypt->mongocryptd_pool,
+                                        MONGOC_ERROR_API_VERSION_2);
       mongoc_uri_destroy (uri);
    } else {
       uri = mongoc_uri_new ("mongodb://%2Ftmp%2Fmongocryptd.sock");
+      BSON_ASSERT (uri);
       crypt->mongocryptd_pool = mongoc_client_pool_new (uri);
       mongoc_uri_destroy (uri);
    }
    if (!crypt->mongocryptd_pool) {
-      SET_CRYPT_ERR ("Unable to create client to mongocryptd");
+      CLIENT_ERR ("Unable to create client to mongocryptd");
       mongocrypt_destroy (crypt);
       return NULL;
    }
    /* TODO: use 'u' from schema to get key vault clients. Note no opts here. */
+   /* TODO: don't create a key vault pool, request keys from the driver. */
    uri = mongoc_uri_new (opts->default_keyvault_client_uri);
    crypt->keyvault_pool = mongoc_client_pool_new (uri);
    mongoc_uri_destroy (uri);
    if (!crypt->keyvault_pool) {
-      SET_CRYPT_ERR ("Unable to create client to keyvault");
+      CLIENT_ERR ("Unable to create client to keyvault");
       mongocrypt_destroy (crypt);
       return NULL;
    }
    crypt->opts = mongocrypt_opts_copy (opts);
-   mongocrypt_mutex_init(&crypt->mutex);
+   mongocrypt_mutex_init (&crypt->mutex);
    return crypt;
 }
 
@@ -210,22 +268,22 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    mongocrypt_opts_destroy (crypt->opts);
    mongoc_client_pool_destroy (crypt->mongocryptd_pool);
    mongoc_client_pool_destroy (crypt->keyvault_pool);
-   mongocrypt_mutex_destroy(&crypt->mutex);
+   mongocrypt_mutex_destroy (&crypt->mutex);
    bson_free (crypt);
 }
 
 
 /*
- * _get_key
+ * _get_key - to be removed, don't bother fixing.
 */
 static bool
 _get_key (mongocrypt_t *crypt,
           mongocrypt_binary_t *key_id,
           const char *key_alt_name,
           mongocrypt_key_t *out,
-          mongocrypt_error_t *error)
+          mongocrypt_error_t **error)
 {
-   mongoc_client_t* keyvault_client;
+   mongoc_client_t *keyvault_client;
    mongoc_collection_t *datakey_coll = NULL;
    mongoc_cursor_t *cursor = NULL;
    bson_t filter;
@@ -234,7 +292,8 @@ _get_key (mongocrypt_t *crypt,
 
    CRYPT_ENTRY;
    keyvault_client = mongoc_client_pool_pop (crypt->keyvault_pool);
-   datakey_coll = mongoc_client_get_collection (keyvault_client, "admin", "datakeys");
+   datakey_coll =
+      mongoc_client_get_collection (keyvault_client, "admin", "datakeys");
    bson_init (&filter);
    if (key_id->len) {
       mongocrypt_bson_append_binary (&filter, "_id", 3, key_id);
@@ -242,7 +301,7 @@ _get_key (mongocrypt_t *crypt,
       bson_append_utf8 (
          &filter, "keyAltName", 10, key_alt_name, (int) strlen (key_alt_name));
    } else {
-      SET_CRYPT_ERR ("must provide key id or alt name");
+      CLIENT_ERR ("must provide key id or alt name");
       bson_destroy (&filter);
       goto cleanup;
    }
@@ -253,7 +312,7 @@ _get_key (mongocrypt_t *crypt,
    bson_destroy (&filter);
 
    if (!mongoc_cursor_next (cursor, &doc)) {
-      SET_CRYPT_ERR ("key not found");
+      CLIENT_ERR ("key not found");
       goto cleanup;
    }
 
@@ -276,11 +335,12 @@ cleanup:
    return ret;
 }
 
+/* Don't bother fixing */
 static bool
 _get_key_by_uuid (mongocrypt_t *crypt,
                   mongocrypt_binary_t *key_id,
                   mongocrypt_key_t *out,
-                  mongocrypt_error_t *error)
+                  mongocrypt_error_t **error)
 {
    CRYPT_ENTRY;
    return _get_key (crypt, key_id, NULL, out, error);
@@ -293,7 +353,7 @@ _append_encrypted (mongocrypt_t *crypt,
                    bson_t *out,
                    const char *field,
                    uint32_t field_len,
-                   mongocrypt_error_t *error)
+                   mongocrypt_error_t **error)
 {
    bool ret = false;
    /* will hold { 'k': <key id>, 'iv': <iv>, 'e': <encrypted data> } */
@@ -307,7 +367,7 @@ _append_encrypted (mongocrypt_t *crypt,
    CRYPT_ENTRY;
    if (!_get_key (
           crypt, &marking->key_id, marking->key_alt_name, &key, error)) {
-      SET_CRYPT_ERR ("could not get key");
+      CLIENT_ERR ("could not get key");
       goto cleanup;
    }
 
@@ -360,7 +420,7 @@ _append_decrypted (mongocrypt_t *crypt,
                    bson_t *out,
                    const char *field,
                    uint32_t field_len,
-                   mongocrypt_error_t *error)
+                   mongocrypt_error_t **error)
 {
    mongocrypt_key_t key = {{0}};
    uint8_t *decrypted;
@@ -386,7 +446,7 @@ _append_decrypted (mongocrypt_t *crypt,
       bson_init_static (&wrapped, decrypted, decrypted_len);
       if (!bson_iter_init_find (&wrapped_iter, &wrapped, "v")) {
          bson_destroy (&wrapped);
-         SET_CRYPT_ERR ("invalid encrypted data, missing 'v' field");
+         CLIENT_ERR ("invalid encrypted data, missing 'v' field");
          goto cleanup;
       }
       bson_append_value (
@@ -408,7 +468,7 @@ static bool
 _copy_and_transform (mongocrypt_t *crypt,
                      bson_iter_t iter,
                      bson_t *out,
-                     mongocrypt_error_t *error,
+                     mongocrypt_error_t **error,
                      transform_t transform)
 {
    CRYPT_ENTRY;
@@ -498,19 +558,19 @@ static bool
 _replace_markings (mongocrypt_t *crypt,
                    const bson_t *reply,
                    bson_t *out,
-                   mongocrypt_error_t *error)
+                   mongocrypt_error_t **error)
 {
    bson_iter_t iter;
 
    CRYPT_ENTRY;
    BSON_ASSERT (bson_iter_init_find (&iter, reply, "ok"));
    if (!bson_iter_as_bool (&iter)) {
-      SET_CRYPT_ERR ("markFields returned ok:0");
+      CLIENT_ERR ("markFields returned ok:0");
       return false;
    }
 
    if (!bson_iter_init_find (&iter, reply, "data")) {
-      SET_CRYPT_ERR ("markFields returned ok:0");
+      CLIENT_ERR ("markFields returned ok:0");
       return false;
    }
    /* recurse into array. */
@@ -543,15 +603,16 @@ mongocrypt_encrypt (mongocrypt_t *crypt,
                     const mongocrypt_bson_t *bson_schema,
                     const mongocrypt_bson_t *bson_doc,
                     mongocrypt_bson_t *bson_out,
-                    mongocrypt_error_t *error)
+                    mongocrypt_error_t **error)
 {
    bson_t cmd, reply;
    bson_t schema, doc, out;
    bson_error_t bson_error;
-   mongoc_client_t* mongocryptd_client;
+   mongoc_client_t *mongocryptd_client;
    bool ret;
 
    CRYPT_ENTRY;
+   BSON_ASSERT (*error == NULL);
    ret = false;
    memset (bson_out, 0, sizeof (*bson_out));
 
@@ -568,7 +629,7 @@ mongocrypt_encrypt (mongocrypt_t *crypt,
                                       NULL /* read prefs */,
                                       &reply,
                                       &bson_error)) {
-      _bson_to_mongocrypt_error (&bson_error, error);
+      MONGOCRYPTD_ERR_W_REPLY (bson_error, &reply);
       goto cleanup;
    }
 
@@ -596,13 +657,14 @@ int
 mongocrypt_decrypt (mongocrypt_t *crypt,
                     const mongocrypt_bson_t *bson_doc,
                     mongocrypt_bson_t *bson_out,
-                    mongocrypt_error_t *error)
+                    mongocrypt_error_t **error)
 {
    bson_iter_t iter;
    bson_t doc;
    bson_t out;
 
    CRYPT_ENTRY;
+   BSON_ASSERT (*error == NULL);
    memset (bson_out, 0, sizeof (*bson_out));
 
    bson_init (&out);

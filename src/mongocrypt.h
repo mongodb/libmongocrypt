@@ -18,6 +18,11 @@
 
 #include <stdint.h>
 
+#define MONGOCRYPT_VERSION "0.1.0"
+
+char *
+mongocrypt_version (void);
+
 typedef struct _mongocrypt_t mongocrypt_t;
 typedef struct _mongocrypt_opts_t mongocrypt_opts_t;
 typedef enum {
@@ -28,12 +33,28 @@ typedef enum {
    MONGOCRYPT_DEFAULT_KEYVAULT_CLIENT_URI
 } mongocrypt_opt_t;
 
-typedef struct _mongocrypt_error_t {
-   uint32_t domain; /* TODO soon to be type */
-   uint32_t code;
-   char message[1024];
-   void *ctx;
-} mongocrypt_error_t;
+typedef enum {
+   MONGOCRYPT_ERROR_TYPE_MONGOCRYPTD,
+   MONGOCRYPT_ERROR_TYPE_KMS,
+   MONGOCRYPT_ERROR_TYPE_CLIENT
+} mongocrypt_error_type_t;
+
+typedef struct _mongocrypt_error_t mongocrypt_error_t;
+
+void
+mongocrypt_error_destroy (mongocrypt_error_t *error);
+
+mongocrypt_error_type_t
+mongocrypt_error_type (mongocrypt_error_t *error);
+
+uint32_t
+mongocrypt_error_code (mongocrypt_error_t *error);
+
+const char *
+mongocrypt_error_message (mongocrypt_error_t *error);
+
+void *
+mongocrypt_error_ctx (mongocrypt_error_t *error);
 
 typedef struct {
    uint8_t *data;
@@ -58,7 +79,7 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
                          void *value);
 
 mongocrypt_t *
-mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t *error);
+mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t **error);
 
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
@@ -92,12 +113,12 @@ mongocrypt_encrypt (mongocrypt_t *crypt,
                     const mongocrypt_bson_t *bson_schema,
                     const mongocrypt_bson_t *bson_doc,
                     mongocrypt_bson_t *bson_out,
-                    mongocrypt_error_t *error);
+                    mongocrypt_error_t **error);
 
 int
 mongocrypt_decrypt (mongocrypt_t *crypt,
                     const mongocrypt_bson_t *bson_doc,
                     mongocrypt_bson_t *bson_out,
-                    mongocrypt_error_t *error);
+                    mongocrypt_error_t **error);
 
 #endif

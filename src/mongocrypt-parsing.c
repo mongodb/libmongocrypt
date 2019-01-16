@@ -69,44 +69,44 @@ mongocrypt_bson_append_binary (bson_t *bson,
 bool
 _mongocrypt_marking_parse_unowned (const bson_t *bson,
                                    mongocrypt_marking_t *out,
-                                   mongocrypt_error_t *error)
+                                   mongocrypt_error_t **error)
 {
    bson_iter_t iter;
    bool ret = false;
 
    if (!bson_iter_init_find (&iter, bson, "k")) {
-      SET_CRYPT_ERR ("invalid marking, no 'k'");
+      CLIENT_ERR ("invalid marking, no 'k'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_UTF8 (&iter)) {
       out->key_alt_name = bson_iter_utf8 (&iter, NULL);
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
       mongocrypt_binary_from_iter_unowned (&iter, &out->key_id);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
-         SET_CRYPT_ERR ("key id must be a UUID");
+         CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
       }
    } else {
-      SET_CRYPT_ERR ("invalid marking, no 'k' is not utf8 or UUID");
+      CLIENT_ERR ("invalid marking, no 'k' is not utf8 or UUID");
       goto cleanup;
    }
 
    if (!bson_iter_init_find (&iter, bson, "iv")) {
-      SET_CRYPT_ERR ("'iv' not part of marking. C driver does not support "
-                     "generating iv yet. (TODO)");
+      CLIENT_ERR ("'iv' not part of marking. C driver does not support "
+                  "generating iv yet. (TODO)");
       goto cleanup;
    } else if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-      SET_CRYPT_ERR ("invalid marking, 'iv' is not binary");
+      CLIENT_ERR ("invalid marking, 'iv' is not binary");
       goto cleanup;
    }
    mongocrypt_binary_from_iter_unowned (&iter, &out->iv);
 
    if (out->iv.len != 16) {
-      SET_CRYPT_ERR ("iv must be 16 bytes");
+      CLIENT_ERR ("iv must be 16 bytes");
       goto cleanup;
    }
 
    if (!bson_iter_init_find (&iter, bson, "v")) {
-      SET_CRYPT_ERR ("invalid marking, no 'v'");
+      CLIENT_ERR ("invalid marking, no 'v'");
       goto cleanup;
    } else {
       memcpy (&out->v_iter, &iter, sizeof (bson_iter_t));
@@ -123,42 +123,42 @@ cleanup:
 bool
 _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
                                      mongocrypt_encrypted_t *out,
-                                     mongocrypt_error_t *error)
+                                     mongocrypt_error_t **error)
 {
    bson_iter_t iter;
    bool ret = false;
 
    if (!bson_iter_init_find (&iter, bson, "k")) {
-      SET_CRYPT_ERR ("invalid marking, no 'k'");
+      CLIENT_ERR ("invalid marking, no 'k'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
       mongocrypt_binary_from_iter_unowned (&iter, &out->key_id);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
-         SET_CRYPT_ERR ("key id must be a UUID");
+         CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
       }
    } else {
-      SET_CRYPT_ERR ("invalid marking, no 'k' is not UUID");
+      CLIENT_ERR ("invalid marking, no 'k' is not UUID");
       goto cleanup;
    }
 
    if (!bson_iter_init_find (&iter, bson, "iv")) {
-      SET_CRYPT_ERR ("'iv' not part of marking. C driver does not support "
-                     "generating iv yet. (TODO)");
+      CLIENT_ERR ("'iv' not part of marking. C driver does not support "
+                  "generating iv yet. (TODO)");
       goto cleanup;
    } else if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-      SET_CRYPT_ERR ("invalid marking, 'iv' is not binary");
+      CLIENT_ERR ("invalid marking, 'iv' is not binary");
       goto cleanup;
    }
    mongocrypt_binary_from_iter_unowned (&iter, &out->iv);
 
    if (out->iv.len != 16) {
-      SET_CRYPT_ERR ("iv must be 16 bytes");
+      CLIENT_ERR ("iv must be 16 bytes");
       goto cleanup;
    }
 
    if (!bson_iter_init_find (&iter, bson, "e")) {
-      SET_CRYPT_ERR ("invalid marking, no 'e'");
+      CLIENT_ERR ("invalid marking, no 'e'");
       goto cleanup;
    } else {
       mongocrypt_binary_from_iter (&iter, &out->e);
@@ -174,36 +174,36 @@ cleanup:
 bool
 _mongocrypt_key_parse (const bson_t *bson,
                        mongocrypt_key_t *out,
-                       mongocrypt_error_t *error)
+                       mongocrypt_error_t **error)
 {
    bson_iter_t iter;
    bool ret = false;
 
    if (!bson_iter_init_find (&iter, bson, "_id")) {
-      SET_CRYPT_ERR ("invalid key, no '_id'");
+      CLIENT_ERR ("invalid key, no '_id'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
       mongocrypt_binary_from_iter (&iter, &out->id);
       if (out->id.subtype != BSON_SUBTYPE_UUID) {
-         SET_CRYPT_ERR ("key id must be a UUID");
+         CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
       }
    } else {
-      SET_CRYPT_ERR ("invalid key, no 'k' is not binary");
+      CLIENT_ERR ("invalid key, no 'k' is not binary");
       goto cleanup;
    }
 
    if (!bson_iter_init_find (&iter, bson, "keyMaterial")) {
-      SET_CRYPT_ERR ("invalid key, no 'keyMaterial'");
+      CLIENT_ERR ("invalid key, no 'keyMaterial'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
       mongocrypt_binary_from_iter (&iter, &out->key_material);
       if (out->key_material.subtype != BSON_SUBTYPE_BINARY) {
-         SET_CRYPT_ERR ("key material must be a binary");
+         CLIENT_ERR ("key material must be a binary");
          goto cleanup;
       }
    } else {
-      SET_CRYPT_ERR ("invalid key material is not binary");
+      CLIENT_ERR ("invalid key material is not binary");
       goto cleanup;
    }
 

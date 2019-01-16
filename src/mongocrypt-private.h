@@ -3,7 +3,37 @@
 
 #include "mongocrypt.h"
 
-#define SET_CRYPT_ERR(...) _mongocrypt_set_error (error, 1, 1, __VA_ARGS__)
+#define MONGOCRYPT_GENERIC_ERROR_CODE 1
+
+#define CLIENT_ERR_W_CODE(code, ...) \
+   _mongocrypt_set_error (           \
+      error, MONGOCRYPT_ERROR_TYPE_CLIENT, code, __VA_ARGS__)
+
+#define CLIENT_ERR(...) \
+   CLIENT_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
+
+#define KMS_ERR_W_CODE(code, ...) \
+   _mongocrypt_set_error (error, MONGOCRYPT_ERROR_TYPE_KMS, code, __VA_ARGS__)
+
+#define KMS_ERR(...) KMS_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
+
+/* TODO: consider changing this into a function */
+#define MONGOCRYPTD_ERR_W_REPLY(bson_err, reply)                    \
+   do {                                                             \
+      if (bson_err.domain == MONGOC_ERROR_SERVER) {                 \
+         _mongocrypt_set_error (error,                              \
+                                MONGOCRYPT_ERROR_TYPE_MONGOCRYPTD,  \
+                                bson_err.code,                      \
+                                "%s",                               \
+                                NULL);                              \
+         if (reply) {                                               \
+            (*error)->ctx = bson_copy (reply);                      \
+         }                                                          \
+      } else { /* actually a client-side error. */                  \
+         CLIENT_ERR_W_CODE (bson_err.code, "%s", bson_err.message); \
+      }                                                             \
+   } while (0)
+
 
 #if defined(BSON_OS_UNIX)
 #include <pthread.h>
@@ -49,15 +79,17 @@ const char *
 tmp_json (const bson_t *bson);
 
 void
-_mongocrypt_set_error (mongocrypt_error_t *error, /* OUT */
-                       uint32_t domain,           /* IN */
-                       uint32_t code,             /* IN */
-                       const char *format,        /* IN */
+_mongocrypt_set_error (mongocrypt_error_t **error,
+                       mongocrypt_error_type_t type,
+                       uint32_t code,
+                       const char *format,
                        ...);
 
 void
-_bson_to_mongocrypt_error (const bson_error_t *bson_error,
-                           mongocrypt_error_t *error);
+_bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
+                                 mongocrypt_error_type_t type,
+                                 uint32_t code,
+                                 mongocrypt_error_t **error);
 
 struct _mongocrypt_opts_t {
    char *aws_region;
@@ -82,6 +114,13 @@ typedef struct {
    uint32_t len;
    bool owned;
 } mongocrypt_binary_t;
+
+struct _mongocrypt_error_t {
+   uint32_t type;
+   uint32_t code;
+   char message[1024];
+   void *ctx;
+};
 
 void
 mongocrypt_binary_from_iter (bson_iter_t *iter, mongocrypt_binary_t *out);
@@ -120,15 +159,15 @@ typedef struct {
 bool
 _mongocrypt_marking_parse_unowned (const bson_t *bson,
                                    mongocrypt_marking_t *out,
-                                   mongocrypt_error_t *error);
+                                   mongocrypt_error_t **error);
 bool
 _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
                                      mongocrypt_encrypted_t *out,
-                                     mongocrypt_error_t *error);
+                                     mongocrypt_error_t **error);
 bool
 _mongocrypt_key_parse (const bson_t *bson,
                        mongocrypt_key_t *out,
-                       mongocrypt_error_t *error);
+                       mongocrypt_error_t **error);
 
 void
 mongocrypt_key_cleanup (mongocrypt_key_t *key);
@@ -140,7 +179,7 @@ _mongocrypt_do_encryption (const uint8_t *iv,
                            uint32_t data_len,
                            uint8_t **out,
                            uint32_t *out_len,
-                           mongocrypt_error_t *error);
+                           mongocrypt_error_t **error);
 
 bool
 _mongocrypt_do_decryption (const uint8_t *iv,
@@ -149,12 +188,12 @@ _mongocrypt_do_decryption (const uint8_t *iv,
                            uint32_t data_len,
                            uint8_t **out,
                            uint32_t *out_len,
-                           mongocrypt_error_t *error);
+                           mongocrypt_error_t **error);
 
 /* Modifies key */
 bool
 _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
                          mongocrypt_key_t *key,
-                         mongocrypt_error_t *error);
+                         mongocrypt_error_t **error);
 
 #endif

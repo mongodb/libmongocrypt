@@ -32,10 +32,10 @@ _openssl_encrypt (const uint8_t *iv,
                   uint32_t data_len,
                   uint8_t **out,
                   uint32_t *out_len,
-                  mongocrypt_error_t *error)
+                  mongocrypt_error_t **error)
 {
    const EVP_CIPHER *cipher;
-   EVP_CIPHER_CTX* ctx = NULL;
+   EVP_CIPHER_CTX *ctx = NULL;
    bool ret = false;
    int r;
    uint8_t *encrypted = NULL;
@@ -51,7 +51,7 @@ _openssl_encrypt (const uint8_t *iv,
    r = EVP_EncryptInit_ex (ctx, cipher, NULL /* engine */, key, iv);
    if (!r) {
       /* TODO: use ERR_get_error or similar to get OpenSSL error message? */
-      SET_CRYPT_ERR ("failed to initialize cipher");
+      CLIENT_ERR ("failed to initialize cipher");
       goto cleanup;
    }
 
@@ -61,14 +61,14 @@ _openssl_encrypt (const uint8_t *iv,
    encrypted = bson_malloc0 (data_len + (block_size - 1) + block_size);
    r = EVP_EncryptUpdate (ctx, encrypted, &bytes_written, data, data_len);
    if (!r) {
-      SET_CRYPT_ERR ("failed to encrypt");
+      CLIENT_ERR ("failed to encrypt");
       goto cleanup;
    }
 
    encrypted_len += bytes_written;
    r = EVP_EncryptFinal_ex (ctx, encrypted + bytes_written, &bytes_written);
    if (!r) {
-      SET_CRYPT_ERR ("failed to finalize\n");
+      CLIENT_ERR ("failed to finalize\n");
       goto cleanup;
    }
 
@@ -90,10 +90,10 @@ _openssl_decrypt (const uint8_t *iv,
                   uint32_t data_len,
                   uint8_t **out,
                   uint32_t *out_len,
-                  mongocrypt_error_t *error)
+                  mongocrypt_error_t **error)
 {
    const EVP_CIPHER *cipher;
-   EVP_CIPHER_CTX* ctx = NULL;
+   EVP_CIPHER_CTX *ctx = NULL;
    bool ret = false;
    int r;
    uint8_t *decrypted = NULL;
@@ -109,7 +109,7 @@ _openssl_decrypt (const uint8_t *iv,
    r = EVP_DecryptInit_ex (ctx, cipher, NULL /* engine */, key, iv);
    if (!r) {
       /* TODO: use ERR_get_error or similar to get OpenSSL error message? */
-      SET_CRYPT_ERR ("failed to initialize cipher");
+      CLIENT_ERR ("failed to initialize cipher");
       goto cleanup;
    }
 
@@ -119,14 +119,14 @@ _openssl_decrypt (const uint8_t *iv,
    decrypted = bson_malloc0 (data_len + block_size);
    r = EVP_DecryptUpdate (ctx, decrypted, &bytes_written, data, data_len);
    if (!r) {
-      SET_CRYPT_ERR ("failed to decrypt");
+      CLIENT_ERR ("failed to decrypt");
       goto cleanup;
    }
 
    decrypted_len += bytes_written;
    r = EVP_DecryptFinal_ex (ctx, decrypted + bytes_written, &bytes_written);
    if (!r) {
-      SET_CRYPT_ERR ("failed to finalize\n");
+      CLIENT_ERR ("failed to finalize\n");
       goto cleanup;
    }
 
@@ -149,14 +149,14 @@ _mongocrypt_do_encryption (const uint8_t *iv,
                            uint32_t data_len,
                            uint8_t **out,
                            uint32_t *out_len,
-                           mongocrypt_error_t *error)
+                           mongocrypt_error_t **error)
 {
    CRYPT_ENTRY;
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    return _openssl_encrypt (iv, key, data, data_len, out, out_len, error);
 #else
-   SET_CRYPT_ERR ("not configured with any supported crypto library");
+   CLIENT_ERR ("not configured with any supported crypto library");
    return false;
 #endif
 }
@@ -168,13 +168,13 @@ _mongocrypt_do_decryption (const uint8_t *iv,
                            uint32_t data_len,
                            uint8_t **out,
                            uint32_t *out_len,
-                           mongocrypt_error_t *error)
+                           mongocrypt_error_t **error)
 {
    CRYPT_ENTRY;
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    return _openssl_decrypt (iv, key, data, data_len, out, out_len, error);
 #else
-   SET_CRYPT_ERR ("not configured with any supported crypto library");
+   CLIENT_ERR ("not configured with any supported crypto library");
    return false;
 #endif
 }

@@ -4,7 +4,8 @@
 #include <mongoc/mongoc.h>
 #include <mongocrypt.h>
 
-#define ASSERT_OR_PRINT(_statement, _err)             \
+
+#define ASSERT_OR_PRINT_MSG(_statement, msg)          \
    do {                                               \
       if (!(_statement)) {                            \
          fprintf (stderr,                             \
@@ -13,12 +14,17 @@
                   __LINE__,                           \
                   BSON_FUNC,                          \
                   #_statement,                        \
-                  _err.message);                      \
+                  (msg));                             \
          fflush (stderr);                             \
          abort ();                                    \
       }                                               \
    } while (0)
 
+#define ASSERT_OR_PRINT(_statement, _err) \
+   ASSERT_OR_PRINT_MSG (_statement, mongocrypt_error_message (_err))
+
+#define ASSERT_OR_PRINT_BSON(_statement, _err) \
+   ASSERT_OR_PRINT_MSG (_statement, _err.message)
 
 static void
 _setup (mongocrypt_opts_t *opts, bson_t *schema)
@@ -28,11 +34,11 @@ _setup (mongocrypt_opts_t *opts, bson_t *schema)
    int status;
 
    reader = bson_json_reader_new_from_file ("./test/schema.json", &error);
-   ASSERT_OR_PRINT (reader, error);
+   ASSERT_OR_PRINT_BSON (reader, error);
 
    bson_init (schema);
    status = bson_json_reader_read (reader, schema, &error);
-   ASSERT_OR_PRINT (status == 1, error);
+   ASSERT_OR_PRINT_BSON (status == 1, error);
 
    mongocrypt_opts_set_opt (
       opts, MONGOCRYPT_AWS_ACCESS_KEY_ID, getenv ("AWS_ACCESS_KEY_ID"));
@@ -52,7 +58,7 @@ roundtrip_test (void)
 {
    mongocrypt_opts_t *opts;
    mongocrypt_t *crypt;
-   mongocrypt_error_t error;
+   mongocrypt_error_t *error = NULL;
    bson_t schema, out;
    bson_t *doc;
    mongocrypt_bson_t bson_schema = {0}, bson_doc = {0}, bson_out = {0};
@@ -62,10 +68,8 @@ roundtrip_test (void)
    _setup (opts, &schema);
 
    crypt = mongocrypt_new (opts, &error);
-   if (!crypt) {
-      fprintf (stderr, "error creating crypt: %s\n", error.message);
-      abort ();
-   }
+   ASSERT_OR_PRINT (crypt, error);
+   mongocrypt_error_destroy (error);
 
    doc = BCON_NEW ("name", "Todd Davis", "ssn", "457-55-5642");
 
@@ -77,6 +81,8 @@ roundtrip_test (void)
 
    ret = mongocrypt_encrypt (crypt, &bson_schema, &bson_doc, &bson_out, &error);
    ASSERT_OR_PRINT (ret, error);
+   mongocrypt_error_destroy (error);
+
    bson_init_static (&out, bson_out.data, bson_out.len);
    printf ("encrypted: %s\n", bson_as_json (&out, NULL));
 

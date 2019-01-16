@@ -24,7 +24,7 @@
     (errno == EINPROGRESS))
 
 static mongoc_stream_t *
-_get_aws_stream (mongocrypt_error_t *error)
+_get_aws_stream (mongocrypt_error_t **error)
 {
    int errcode;
    int r;
@@ -38,7 +38,7 @@ _get_aws_stream (mongocrypt_error_t *error)
    memcpy (&ssl_opts, mongoc_ssl_opt_get_default (), sizeof ssl_opts);
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    if (!conn_sock) {
-      SET_CRYPT_ERR ("could not create socket to AWS");
+      KMS_ERR ("could not create socket to AWS");
       return NULL;
    }
 
@@ -53,10 +53,9 @@ _get_aws_stream (mongocrypt_error_t *error)
    errcode = mongoc_socket_errno (conn_sock);
    if (!(r == 0 || ERRNO_IS_AGAIN (errcode))) {
       mongoc_socket_destroy (conn_sock);
-      SET_CRYPT_ERR (
-         "mongoc_socket_connect unexpected return: %d (errno: %d)\n",
-         r,
-         errcode);
+      KMS_ERR ("mongoc_socket_connect unexpected return: %d (errno: %d)\n",
+               r,
+               errcode);
       return NULL;
    }
 
@@ -65,7 +64,7 @@ _get_aws_stream (mongocrypt_error_t *error)
       stream, "kms.us-east-1.amazonaws.com", &ssl_opts, 1 /* client */);
 
    if (!tls_stream) {
-      SET_CRYPT_ERR ("could not create TLS stream on AWS");
+      KMS_ERR ("could not create TLS stream on AWS");
       mongoc_stream_destroy (stream);
       return NULL;
    }
@@ -73,7 +72,7 @@ _get_aws_stream (mongocrypt_error_t *error)
    if (!mongoc_stream_tls_handshake_block (
           tls_stream, "kms.us-east-1.amazonaws.com", 1000, &bson_error)) {
       mongoc_stream_destroy (tls_stream);
-      _bson_to_mongocrypt_error (&bson_error, error);
+      KMS_ERR_W_CODE (bson_error.code, "%s", bson_error.message);
       return NULL;
    }
 
@@ -96,7 +95,7 @@ static bool
 _api_call (mongocrypt_t *crypt,
            kms_request_t *request,
            kms_response_t **response,
-           mongocrypt_error_t *error)
+           mongocrypt_error_t **error)
 {
    bool ret = false;
    mongoc_stream_t *stream;
@@ -120,22 +119,21 @@ _api_call (mongocrypt_t *crypt,
    n = mongoc_stream_write (stream, sreq, sreq_len, timeout_msec);
    /* TODO: don't error, just keep writing. */
    if (n != (ssize_t) sreq_len) {
-      SET_CRYPT_ERR (
-         "Only wrote %zd of %zu bytes (errno: %d)\n", n, sreq_len, errno);
+      KMS_ERR ("Only wrote %zd of %zu bytes (errno: %d)\n", n, sreq_len, errno);
       goto cleanup;
    }
 
    start = bson_get_monotonic_time ();
    while (kms_response_parser_wants_bytes (parser, sizeof (read_buf))) {
       if (bson_get_monotonic_time () - start > timeout_msec * 1000) {
-         SET_CRYPT_ERR ("Timed out reading response\n");
+         KMS_ERR ("Timed out reading response\n");
          goto cleanup;
       }
 
       n = mongoc_stream_read (
          stream, read_buf, sizeof (read_buf), 1, timeout_msec);
       if (n < 0) {
-         SET_CRYPT_ERR ("Read returned %zd (errno: %d)\n", n, errno);
+         KMS_ERR ("Read returned %zd (errno: %d)\n", n, errno);
          goto cleanup;
       }
 
@@ -149,7 +147,7 @@ _api_call (mongocrypt_t *crypt,
 
    *response = kms_response_parser_get_response (parser);
    if (!*response) {
-      SET_CRYPT_ERR ("Could not get kms response");
+      KMS_ERR ("Could not get kms response");
       goto cleanup;
    }
 
@@ -164,7 +162,7 @@ cleanup:
 static bool
 _get_data_key_from_response (kms_response_t *response,
                              mongocrypt_key_t *key,
-                             mongocrypt_error_t *error)
+                             mongocrypt_error_t **error)
 {
    bson_json_reader_t *reader = NULL;
    const char *raw_response_body;
@@ -185,17 +183,17 @@ _get_data_key_from_response (kms_response_t *response,
    case 1:
       break;
    case -1:
-      _bson_to_mongocrypt_error (&bson_error, error);
+      KMS_ERR_W_CODE (bson_error.code, "%s", bson_error.message);
       goto cleanup;
    default:
-      SET_CRYPT_ERR ("Could not read JSON document from response");
+      KMS_ERR ("Could not read JSON document from response");
       goto cleanup;
    }
 
    CRYPT_TRACE ("kms response: %s", tmp_json (&response_body));
 
    if (!bson_iter_init_find (&iter, &response_body, "Plaintext")) {
-      SET_CRYPT_ERR ("JSON response does not include Plaintext");
+      KMS_ERR ("JSON response does not include Plaintext");
       goto cleanup;
    }
 
@@ -230,7 +228,7 @@ cleanup:
 bool
 _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
                          mongocrypt_key_t *key,
-                         mongocrypt_error_t *error)
+                         mongocrypt_error_t **error)
 {
    kms_request_t *request = NULL;
    kms_response_t *response = NULL;
@@ -243,7 +241,8 @@ _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
    request = kms_decrypt_request_new (
       key->key_material.data, key->key_material.len /* - 1 ? */, request_opt);
    kms_request_set_service (request, "kms"); /* That seems odd. */
-   /* This may be unnecessary for reading, but lock the mutex to use the opts. */
+   /* This may be unnecessary for reading, but lock the mutex to use the opts.
+    */
    mongocrypt_mutex_lock (&crypt->mutex);
    kms_request_set_region (request, crypt->opts->aws_region);
    kms_request_set_access_key_id (request, crypt->opts->aws_access_key_id);
