@@ -1,27 +1,24 @@
 {
-  "ns": "test.crypt",
-  "schema": {
-    "bsonType": "object",
-    "properties": {
-      "ssn": {
-        "encrypt": {
-          "type": "string",
-          "algorithm": "Deterministic",
-          "keyId": {
-            "$binary": {
-              "base64": "1+niXaxyRL6AB6xRzUp/Ew==",
-              "subType": "04"
-            }
-          },
-          "iv": {
-            "$binary": {
-              "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
-              "subType": "00"
-            }
-          },
-          "keyVaultURI": "mongodb://localhost:27017/admin"
-        }
-      }
-    }
+      "properties": {
+          "ssn": {
+              "encrypt": {
+                  "keyVaultURI": "mongodb://localhost:27017/admin",
+                  "keyId": {
+                      "$binary": {
+                          "base64": "lNqvhBOnQgirLqraZ4oOPw==",
+                          "subType": "04"
+                      }
+                  },
+                  "type": "string",
+                  "algorithm": "Deterministic",
+                  "iv": {
+                      "$binary": {
+                          "base64": "aWlpaWlpaWlpaWlpaWlpaQ==",
+                          "subType": "00"
+                      }
+                  }
+              }
+          }
+      },
+      "bsonType": "object"
   }
-}

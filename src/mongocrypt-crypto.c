@@ -43,7 +43,10 @@ _openssl_encrypt (const uint8_t *iv,
 
    CRYPT_ENTRY;
    EVP_CIPHER_CTX_init (&ctx);
-   cipher = EVP_aes_256_cbc_hmac_sha256 ();
+   cipher = EVP_aes_256_cbc ();
+   /* Odd, EVP_aes_256_cbc_hmac_sha256 suddenly returns null on my machine. Why?
+    */
+   BSON_ASSERT (cipher);
    block_size = EVP_CIPHER_block_size (cipher);
    BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == 16);
    BSON_ASSERT (block_size == 16);
@@ -101,7 +104,7 @@ _openssl_decrypt (const uint8_t *iv,
 
    CRYPT_ENTRY;
    EVP_CIPHER_CTX_init (&ctx);
-   cipher = EVP_aes_256_cbc_hmac_sha256 ();
+   cipher = EVP_aes_256_cbc ();
    block_size = EVP_CIPHER_block_size (cipher);
    BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == 16);
    BSON_ASSERT (block_size == 16);
