@@ -62,8 +62,8 @@ roundtrip_test (void)
    mongocrypt_error_t *error = NULL;
    bson_t schema, out;
    bson_t *doc;
-   mongocrypt_bson_t bson_schema = {0}, bson_doc = {0}, bson_out = {0},
-                     decrypted_out = {0};
+   mongocrypt_binary_t bson_schema = {0}, bson_doc = {0}, bson_out = {0},
+                       decrypted_out = {0};
    int ret;
 
    opts = mongocrypt_opts_new ();
@@ -102,21 +102,11 @@ roundtrip_test (void)
    mongocrypt_opts_destroy (opts);
 }
 
-
-#include <openssl/evp.h>
-static void
-_test_openssl (void)
-{
-   EVP_CIPHER *cipher = EVP_aes_256_cbc_hmac_sha256 ();
-   BSON_ASSERT (cipher != NULL);
-}
-
 int
 main (int argc, char **argv)
 {
    mongocrypt_init ();
    printf ("Test runner\n");
-   _test_openssl ();
-   /* roundtrip_test (); */
+   roundtrip_test ();
    mongocrypt_cleanup ();
 }

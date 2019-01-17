@@ -41,6 +41,8 @@ typedef enum {
 
 typedef struct _mongocrypt_error_t mongocrypt_error_t;
 
+typedef struct _mongocrypt_request_t mongocrypt_request_t;
+
 void
 mongocrypt_error_destroy (mongocrypt_error_t *error);
 
@@ -59,7 +61,7 @@ mongocrypt_error_ctx (mongocrypt_error_t *error);
 typedef struct {
    uint8_t *data;
    uint32_t len;
-} mongocrypt_bson_t;
+} mongocrypt_binary_t;
 
 void
 mongocrypt_init (void);
@@ -84,41 +86,34 @@ mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t **error);
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
 
-typedef struct _mongocrypt_datakey_request_t mongocrypt_datakey_request_t;
-
-struct _mongocrypt_datakey_request_t {
-   struct _mongocrypt_datakey_request_t *next;
-};
-
 void
 mongocrypt_error_cleanup (mongocrypt_error_t *error);
 
-int
-mongocrypt_encrypt_prepare (mongocrypt_t *crypt,
-                            const mongocrypt_bson_t *schema,
-                            const mongocrypt_bson_t *cmd,
-                            mongocrypt_bson_t *marked_cmd,
-                            mongocrypt_datakey_request_t **requests,
-                            mongocrypt_error_t *error);
+mongocrypt_request_t *
+mongocrypt_encrypt_start (mongocrypt_t *crypt,
+                          const mongocrypt_opts_t *opts,
+                          const mongocrypt_binary_t *schema,
+                          const mongocrypt_binary_t *cmd,
+                          mongocrypt_error_t *error);
 
-int
-mongocrypt_encrypt_finish (mongocrypt_t *crypt,
-                           const mongocrypt_bson_t *marked_cmd,
-                           mongocrypt_datakey_request_t *datakeys, /* stolen */
-                           mongocrypt_bson_t *encrypted_cmd,
-                           mongocrypt_error_t *error);
+bool
+mongocrypt_encrypt_finish (mongocrypt_request_t *request,
+                           const mongocrypt_opts_t *opts,
+                           mongocrypt_binary_t *encrypted_cmd,
+                           mongocrypt_error_t **error);
 
 int
 mongocrypt_encrypt (mongocrypt_t *crypt,
-                    const mongocrypt_bson_t *bson_schema,
-                    const mongocrypt_bson_t *bson_doc,
-                    mongocrypt_bson_t *bson_out,
+                    const mongocrypt_binary_t *bson_schema,
+                    const mongocrypt_binary_t *bson_doc,
+                    mongocrypt_binary_t *bson_out,
                     mongocrypt_error_t **error);
+
 
 int
 mongocrypt_decrypt (mongocrypt_t *crypt,
-                    const mongocrypt_bson_t *bson_doc,
-                    mongocrypt_bson_t *bson_out,
+                    const mongocrypt_binary_t *bson_doc,
+                    mongocrypt_binary_t *bson_out,
                     mongocrypt_error_t **error);
 
 #endif

@@ -107,13 +107,18 @@ struct _mongocrypt_t {
    mongocrypt_mutex_t mutex;
 };
 
-/* It's annoying passing around multiple values for bson binary values. */
+/* This is an internal struct to make working with binary values more
+ * convenient.
+ * - a non-owning be constructed by iterating BSON.
+ * - can transform to an owned buffer.
+ * - can be appended directly to a BSON doc.
+ */
 typedef struct {
    uint8_t *data;
    bson_subtype_t subtype;
    uint32_t len;
    bool owned;
-} mongocrypt_binary_t;
+} _mongocrypt_buffer_t;
 
 struct _mongocrypt_error_t {
    uint32_t type;
@@ -123,38 +128,42 @@ struct _mongocrypt_error_t {
 };
 
 void
-mongocrypt_binary_from_iter (bson_iter_t *iter, mongocrypt_binary_t *out);
+_mongocrypt_owned_buffer_from_iter (bson_iter_t *iter,
+                                    _mongocrypt_buffer_t *out);
+
 void
-mongocrypt_binary_from_iter_unowned (bson_iter_t *iter,
-                                     mongocrypt_binary_t *out);
+_mongocrypt_unowned_buffer_from_iter (bson_iter_t *iter,
+                                      _mongocrypt_buffer_t *out);
+
 void
-mongocrypt_binary_cleanup (mongocrypt_binary_t *binary);
+_mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *binary);
+
 void
-mongocrypt_bson_append_binary (bson_t *bson,
-                               const char *key,
-                               uint32_t key_len,
-                               mongocrypt_binary_t *in);
+_mongocrypt_bson_append_buffer (bson_t *bson,
+                                const char *key,
+                                uint32_t key_len,
+                                _mongocrypt_buffer_t *in);
 
 typedef struct {
    bson_iter_t v_iter;
-   mongocrypt_binary_t iv;
+   _mongocrypt_buffer_t iv;
    /* one of the following is zeroed, and the other is set. */
-   mongocrypt_binary_t key_id;
+   _mongocrypt_buffer_t key_id;
    const char *key_alt_name;
 } mongocrypt_marking_t;
 
 /* consider renaming to encrypted_w_metadata? */
 typedef struct {
-   mongocrypt_binary_t e;
-   mongocrypt_binary_t iv;
-   mongocrypt_binary_t key_id;
+   _mongocrypt_buffer_t e;
+   _mongocrypt_buffer_t iv;
+   _mongocrypt_buffer_t key_id;
 } mongocrypt_encrypted_t;
 
 typedef struct {
-   mongocrypt_binary_t id;
-   mongocrypt_binary_t key_material;
-   mongocrypt_binary_t data_key;
-} mongocrypt_key_t;
+   _mongocrypt_buffer_t id;
+   _mongocrypt_buffer_t key_material;
+   _mongocrypt_buffer_t data_key;
+} _mongocrypt_key_t;
 
 bool
 _mongocrypt_marking_parse_unowned (const bson_t *bson,
@@ -166,11 +175,11 @@ _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
                                      mongocrypt_error_t **error);
 bool
 _mongocrypt_key_parse (const bson_t *bson,
-                       mongocrypt_key_t *out,
+                       _mongocrypt_key_t *out,
                        mongocrypt_error_t **error);
 
 void
-mongocrypt_key_cleanup (mongocrypt_key_t *key);
+mongocrypt_key_cleanup (_mongocrypt_key_t *key);
 
 bool
 _mongocrypt_do_encryption (const uint8_t *iv,
@@ -193,7 +202,7 @@ _mongocrypt_do_decryption (const uint8_t *iv,
 /* Modifies key */
 bool
 _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
-                         mongocrypt_key_t *key,
+                         _mongocrypt_key_t *key,
                          mongocrypt_error_t **error);
 
 #endif

@@ -278,9 +278,9 @@ mongocrypt_destroy (mongocrypt_t *crypt)
 */
 static bool
 _get_key (mongocrypt_t *crypt,
-          mongocrypt_binary_t *key_id,
+          _mongocrypt_buffer_t *key_id,
           const char *key_alt_name,
-          mongocrypt_key_t *out,
+          _mongocrypt_key_t *out,
           mongocrypt_error_t **error)
 {
    mongoc_client_t *keyvault_client;
@@ -296,7 +296,7 @@ _get_key (mongocrypt_t *crypt,
       mongoc_client_get_collection (keyvault_client, "admin", "datakeys");
    bson_init (&filter);
    if (key_id->len) {
-      mongocrypt_bson_append_binary (&filter, "_id", 3, key_id);
+      _mongocrypt_bson_append_buffer (&filter, "_id", 3, key_id);
    } else if (key_alt_name) {
       bson_append_utf8 (
          &filter, "keyAltName", 10, key_alt_name, (int) strlen (key_alt_name));
@@ -338,8 +338,8 @@ cleanup:
 /* Don't bother fixing */
 static bool
 _get_key_by_uuid (mongocrypt_t *crypt,
-                  mongocrypt_binary_t *key_id,
-                  mongocrypt_key_t *out,
+                  _mongocrypt_buffer_t *key_id,
+                  _mongocrypt_key_t *out,
                   mongocrypt_error_t **error)
 {
    CRYPT_ENTRY;
@@ -362,7 +362,7 @@ _append_encrypted (mongocrypt_t *crypt,
    bson_t to_encrypt = BSON_INITIALIZER;
    uint8_t *encrypted = NULL;
    uint32_t encrypted_len;
-   mongocrypt_key_t key = {{0}};
+   _mongocrypt_key_t key = {{0}};
 
    CRYPT_ENTRY;
    if (!_get_key (
@@ -387,9 +387,10 @@ _append_encrypted (mongocrypt_t *crypt,
    CRYPT_TRACE ("did encryption");
 
    /* append { 'k': <key id>, 'iv': <iv>, 'e': <encrypted { v: <val> } > } */
-   mongocrypt_bson_append_binary (
+   _mongocrypt_bson_append_buffer (
       &encrypted_w_metadata, "k", 1, &marking->key_id);
-   mongocrypt_bson_append_binary (&encrypted_w_metadata, "iv", 2, &marking->iv);
+   _mongocrypt_bson_append_buffer (
+      &encrypted_w_metadata, "iv", 2, &marking->iv);
    bson_append_binary (&encrypted_w_metadata,
                        "e",
                        1,
@@ -422,7 +423,7 @@ _append_decrypted (mongocrypt_t *crypt,
                    uint32_t field_len,
                    mongocrypt_error_t **error)
 {
-   mongocrypt_key_t key = {{0}};
+   _mongocrypt_key_t key = {{0}};
    uint8_t *decrypted;
    uint32_t decrypted_len;
    bool ret = false;
@@ -474,10 +475,10 @@ _copy_and_transform (mongocrypt_t *crypt,
    CRYPT_ENTRY;
    while (bson_iter_next (&iter)) {
       if (BSON_ITER_HOLDS_BINARY (&iter)) {
-         mongocrypt_binary_t value;
+         _mongocrypt_buffer_t value;
          bson_t as_bson;
 
-         mongocrypt_binary_from_iter_unowned (&iter, &value);
+         _mongocrypt_unowned_buffer_from_iter (&iter, &value);
          bson_init_static (&as_bson, value.data, value.len);
          CRYPT_TRACE ("found FLE binary: %s", tmp_json (&as_bson));
          if (value.subtype == BSON_SUBTYPE_ENCRYPTED) {
@@ -600,9 +601,9 @@ _make_marking_cmd (const bson_t *data, const bson_t *schema, bson_t *cmd)
 
 int
 mongocrypt_encrypt (mongocrypt_t *crypt,
-                    const mongocrypt_bson_t *bson_schema,
-                    const mongocrypt_bson_t *bson_doc,
-                    mongocrypt_bson_t *bson_out,
+                    const mongocrypt_binary_t *bson_schema,
+                    const mongocrypt_binary_t *bson_doc,
+                    mongocrypt_binary_t *bson_out,
                     mongocrypt_error_t **error)
 {
    bson_t cmd, reply;
@@ -655,8 +656,8 @@ cleanup:
 
 int
 mongocrypt_decrypt (mongocrypt_t *crypt,
-                    const mongocrypt_bson_t *bson_doc,
-                    mongocrypt_bson_t *bson_out,
+                    const mongocrypt_binary_t *bson_doc,
+                    mongocrypt_binary_t *bson_out,
                     mongocrypt_error_t **error)
 {
    bson_iter_t iter;
@@ -676,4 +677,26 @@ mongocrypt_decrypt (mongocrypt_t *crypt,
    }
    bson_out->data = bson_destroy_with_steal (&out, true, &bson_out->len);
    return true;
+}
+typedef enum {
+   MONGOCRYPT_REQUEST_ENCRYPT,
+   MONGOCRYPT_REQUEST_ENCRYPT_VALUE,
+   MONGOCRYPT_REQUEST_DECRYPT,
+   MONGOCRYPT_REQUEST_DECRYPT_VALUE
+} _mongocrypt_request_type_t;
+
+struct _mongocrypt_request_t {
+   _mongocrypt_request_type_t type;
+   _mongocrypt_buffer_t input;
+   _mongocrypt_buffer_t marked;
+};
+
+mongocrypt_request_t *
+mongocrypt_encrypt_start (mongocrypt_t *crypt,
+                          const mongocrypt_opts_t *opts,
+                          const mongocrypt_binary_t *schema,
+                          const mongocrypt_binary_t *cmd,
+                          mongocrypt_error_t *error)
+{
+   return NULL;
 }

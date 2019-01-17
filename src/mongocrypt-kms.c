@@ -161,7 +161,7 @@ cleanup:
 
 static bool
 _get_data_key_from_response (kms_response_t *response,
-                             mongocrypt_key_t *key,
+                             _mongocrypt_key_t *key,
                              mongocrypt_error_t **error)
 {
    bson_json_reader_t *reader = NULL;
@@ -227,7 +227,7 @@ cleanup:
 
 bool
 _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
-                         mongocrypt_key_t *key,
+                         _mongocrypt_key_t *key,
                          mongocrypt_error_t **error)
 {
    kms_request_t *request = NULL;

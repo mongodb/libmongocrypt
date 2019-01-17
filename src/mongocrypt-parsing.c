@@ -25,8 +25,8 @@
 
 /* TODO: actually make this code consistent. */
 void
-mongocrypt_binary_from_iter_unowned (bson_iter_t *iter,
-                                     mongocrypt_binary_t *out)
+_mongocrypt_owned_buffer_from_iter (bson_iter_t *iter,
+                                    _mongocrypt_buffer_t *out)
 {
    bson_iter_binary (
       iter, &out->subtype, &out->len, (const uint8_t **) &out->data);
@@ -36,7 +36,8 @@ mongocrypt_binary_from_iter_unowned (bson_iter_t *iter,
 
 /* copies */
 void
-mongocrypt_binary_from_iter (bson_iter_t *iter, mongocrypt_binary_t *out)
+_mongocrypt_unowned_buffer_from_iter (bson_iter_t *iter,
+                                      _mongocrypt_buffer_t *out)
 {
    const uint8_t *data;
    bson_iter_binary (iter, &out->subtype, &out->len, &data);
@@ -47,19 +48,19 @@ mongocrypt_binary_from_iter (bson_iter_t *iter, mongocrypt_binary_t *out)
 
 
 void
-mongocrypt_binary_cleanup (mongocrypt_binary_t *binary)
+_mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buffer)
 {
-   if (binary->owned) {
-      bson_free (binary->data);
+   if (buffer->owned) {
+      bson_free (buffer->data);
    }
 }
 
 
 void
-mongocrypt_bson_append_binary (bson_t *bson,
-                               const char *key,
-                               uint32_t key_len,
-                               mongocrypt_binary_t *in)
+_mongocrypt_bson_append_buffer (bson_t *bson,
+                                const char *key,
+                                uint32_t key_len,
+                                _mongocrypt_buffer_t *in)
 {
    bson_append_binary (bson, key, key_len, in->subtype, in->data, in->len);
 }
@@ -80,7 +81,7 @@ _mongocrypt_marking_parse_unowned (const bson_t *bson,
    } else if (BSON_ITER_HOLDS_UTF8 (&iter)) {
       out->key_alt_name = bson_iter_utf8 (&iter, NULL);
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      mongocrypt_binary_from_iter_unowned (&iter, &out->key_id);
+      _mongocrypt_unowned_buffer_from_iter (&iter, &out->key_id);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -98,7 +99,7 @@ _mongocrypt_marking_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, 'iv' is not binary");
       goto cleanup;
    }
-   mongocrypt_binary_from_iter_unowned (&iter, &out->iv);
+   _mongocrypt_unowned_buffer_from_iter (&iter, &out->iv);
 
    if (out->iv.len != 16) {
       CLIENT_ERR ("iv must be 16 bytes");
@@ -132,7 +133,7 @@ _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, no 'k'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      mongocrypt_binary_from_iter_unowned (&iter, &out->key_id);
+      _mongocrypt_unowned_buffer_from_iter (&iter, &out->key_id);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -150,7 +151,7 @@ _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, 'iv' is not binary");
       goto cleanup;
    }
-   mongocrypt_binary_from_iter_unowned (&iter, &out->iv);
+   _mongocrypt_unowned_buffer_from_iter (&iter, &out->iv);
 
    if (out->iv.len != 16) {
       CLIENT_ERR ("iv must be 16 bytes");
@@ -161,7 +162,7 @@ _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, no 'e'");
       goto cleanup;
    } else {
-      mongocrypt_binary_from_iter (&iter, &out->e);
+      _mongocrypt_owned_buffer_from_iter (&iter, &out->e);
    }
 
    ret = true;
@@ -173,7 +174,7 @@ cleanup:
 /* Takes ownership of all fields. */
 bool
 _mongocrypt_key_parse (const bson_t *bson,
-                       mongocrypt_key_t *out,
+                       _mongocrypt_key_t *out,
                        mongocrypt_error_t **error)
 {
    bson_iter_t iter;
@@ -183,7 +184,7 @@ _mongocrypt_key_parse (const bson_t *bson,
       CLIENT_ERR ("invalid key, no '_id'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      mongocrypt_binary_from_iter (&iter, &out->id);
+      _mongocrypt_owned_buffer_from_iter (&iter, &out->id);
       if (out->id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -197,7 +198,7 @@ _mongocrypt_key_parse (const bson_t *bson,
       CLIENT_ERR ("invalid key, no 'keyMaterial'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      mongocrypt_binary_from_iter (&iter, &out->key_material);
+      _mongocrypt_owned_buffer_from_iter (&iter, &out->key_material);
       if (out->key_material.subtype != BSON_SUBTYPE_BINARY) {
          CLIENT_ERR ("key material must be a binary");
          goto cleanup;
@@ -213,9 +214,9 @@ cleanup:
 }
 
 void
-mongocrypt_key_cleanup (mongocrypt_key_t *key)
+mongocrypt_key_cleanup (_mongocrypt_key_t *key)
 {
-   mongocrypt_binary_cleanup (&key->id);
-   mongocrypt_binary_cleanup (&key->key_material);
-   mongocrypt_binary_cleanup (&key->data_key);
+   _mongocrypt_buffer_cleanup (&key->id);
+   _mongocrypt_buffer_cleanup (&key->key_material);
+   _mongocrypt_buffer_cleanup (&key->data_key);
 }
