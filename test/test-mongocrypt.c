@@ -62,7 +62,7 @@ roundtrip_test (void)
    mongocrypt_error_t *error = NULL;
    bson_t schema, out;
    bson_t *doc;
-   mongocrypt_binary_t bson_schema = {0}, bson_doc = {0}, bson_out = {0},
+   mongocrypt_binary_t schema_bin = {0}, doc_bin = {0}, bson_out = {0},
                        decrypted_out = {0};
    int ret;
 
@@ -75,13 +75,13 @@ roundtrip_test (void)
 
    doc = BCON_NEW ("name", "Todd Davis", "ssn", "457-55-5642");
 
-   bson_schema.data = (uint8_t *) bson_get_data (&schema);
-   bson_schema.len = schema.len;
+   schema_bin.data = (uint8_t *) bson_get_data (&schema);
+   schema_bin.len = schema.len;
 
-   bson_doc.data = (uint8_t *) bson_get_data (doc);
-   bson_doc.len = doc->len;
+   doc_bin.data = (uint8_t *) bson_get_data (doc);
+   doc_bin.len = doc->len;
 
-   ret = mongocrypt_encrypt (crypt, &bson_schema, &bson_doc, &bson_out, &error);
+   ret = mongocrypt_encrypt (crypt, &schema_bin, &doc_bin, &bson_out, &error);
    ASSERT_OR_PRINT (ret, error);
    mongocrypt_error_destroy (error);
 
@@ -102,11 +102,66 @@ roundtrip_test (void)
    mongocrypt_opts_destroy (opts);
 }
 
+static void
+test_new_api (void)
+{
+   mongocrypt_opts_t *opts;
+   mongocrypt_t *crypt;
+   mongocrypt_error_t *error = NULL;
+   bson_t schema, out;
+   bson_t *cmd;
+   mongocrypt_binary_t schema_bin = {0}, cmd_bin = {0}, out_bin = {0},
+                       decrypted_out = {0};
+   mongocrypt_request_t *request;
+   int ret;
+
+   opts = mongocrypt_opts_new ();
+   _setup (opts, &schema);
+
+   crypt = mongocrypt_new (opts, &error);
+   ASSERT_OR_PRINT (crypt, error);
+   mongocrypt_error_destroy (error);
+
+   cmd = BCON_NEW ("find",
+                   "collection",
+                   "filter",
+                   "{",
+                   "name",
+                   "Todd Davis",
+                   "ssn",
+                   "457-55-5642",
+                   "}");
+
+   schema_bin.data = (uint8_t *) bson_get_data (&schema);
+   schema_bin.len = schema.len;
+
+   cmd_bin.data = (uint8_t *) bson_get_data (cmd);
+   cmd_bin.len = cmd->len;
+
+   request =
+      mongocrypt_encrypt_start (crypt, NULL, &schema_bin, &cmd_bin, &error);
+   ASSERT_OR_PRINT (request, error);
+   mongocrypt_error_destroy (error);
+
+   BSON_ASSERT (mongocrypt_request_needs_keys (request));
+   while (mongocrypt_request_needs_keys (request)) {
+      mongocrypt_key_query_t *key_query =
+         mongocrypt_request_next_key_query (request, NULL);
+      mongocrypt_binary_t *filter_bin;
+      bson_t filter;
+
+      filter_bin = mongocrypt_key_query_filter (key_query);
+      bson_init_static (&filter, filter_bin->data, filter_bin->len);
+      printf ("Got filter: %s\n", bson_as_json (&filter, NULL));
+   }
+   printf ("Did we get here, if not, we crashed!\n");
+}
+
 int
 main (int argc, char **argv)
 {
    mongocrypt_init ();
    printf ("Test runner\n");
-   roundtrip_test ();
+   test_new_api ();
    mongocrypt_cleanup ();
 }

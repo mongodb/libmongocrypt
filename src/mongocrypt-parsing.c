@@ -66,32 +66,40 @@ _mongocrypt_bson_append_buffer (bson_t *bson,
 }
 
 
-/* out should be zeroed */
+/* out should be zeroed, TODO: instead of bson, take a buffer */
 bool
-_mongocrypt_marking_parse_unowned (const bson_t *bson,
-                                   mongocrypt_marking_t *out,
+_mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
+                                   _mongocrypt_marking_t *out,
                                    mongocrypt_error_t **error)
 {
+   bson_t bson;
    bson_iter_t iter;
    bool ret = false;
 
-   if (!bson_iter_init_find (&iter, bson, "k")) {
-      CLIENT_ERR ("invalid marking, no 'k'");
+   if (in->len < 5) {
+      CLIENT_ERR ("invalid marking, length < 5");
       goto cleanup;
-   } else if (BSON_ITER_HOLDS_UTF8 (&iter)) {
-      out->key_alt_name = bson_iter_utf8 (&iter, NULL);
-   } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
+   }
+
+   bson_init_static (&bson, in->data + 1, in->len - 1);
+
+   if (bson_iter_init_find (&iter, &bson, "ki")) {
+      if (!BSON_ITER_HOLDS_BINARY (&iter)) {
+         CLIENT_ERR ("key id must be a binary type");
+      }
       _mongocrypt_unowned_buffer_from_iter (&iter, &out->key_id);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
       }
+   } else if (bson_iter_init_find (&iter, &bson, "ka")) {
+      out->key_alt_name = bson_iter_value (&iter);
    } else {
-      CLIENT_ERR ("invalid marking, no 'k' is not utf8 or UUID");
+      CLIENT_ERR ("marking must include 'ki' or 'ka'");
       goto cleanup;
    }
 
-   if (!bson_iter_init_find (&iter, bson, "iv")) {
+   if (!bson_iter_init_find (&iter, &bson, "iv")) {
       CLIENT_ERR ("'iv' not part of marking. C driver does not support "
                   "generating iv yet. (TODO)");
       goto cleanup;
@@ -106,14 +114,19 @@ _mongocrypt_marking_parse_unowned (const bson_t *bson,
       goto cleanup;
    }
 
-   if (!bson_iter_init_find (&iter, bson, "v")) {
+   if (!bson_iter_init_find (&iter, &bson, "v")) {
       CLIENT_ERR ("invalid marking, no 'v'");
       goto cleanup;
-   } else {
-      memcpy (&out->v_iter, &iter, sizeof (bson_iter_t));
    }
+   memcpy (&out->v_iter, &iter, sizeof (bson_iter_t));
 
-   /* TODO: parse "a" and "u" */
+   if (!bson_iter_init_find (&iter, &bson, "va")) {
+      CLIENT_ERR ("invalid marking, no 'va'");
+      goto cleanup;
+   }
+   out->keyvault_alias = bson_iter_utf8 (&iter, NULL);
+
+   /* TODO: parse "a" and "va" */
 
    ret = true;
 cleanup:
@@ -219,4 +232,195 @@ mongocrypt_key_cleanup (_mongocrypt_key_t *key)
    _mongocrypt_buffer_cleanup (&key->id);
    _mongocrypt_buffer_cleanup (&key->key_material);
    _mongocrypt_buffer_cleanup (&key->data_key);
+}
+
+typedef struct {
+   void *ctx;
+   bson_iter_t iter;
+   bson_t *copy; /* implies transform */
+   char *path;   /* only enabled during tracing. */
+   _mongocrypt_traverse_callback_t traverse_cb;
+   _mongocrypt_transform_callback_t transform_cb;
+   mongocrypt_error_t **error;
+   uint8_t match_first_byte;
+} _recurse_state_t;
+
+static bool
+_recurse (_recurse_state_t *state)
+{
+   mongocrypt_error_t **error;
+
+   CRYPT_ENTRY;
+   error = state->error;
+   while (bson_iter_next (&state->iter)) {
+      if (BSON_ITER_HOLDS_BINARY (&state->iter)) {
+         _mongocrypt_buffer_t value, out;
+
+         _mongocrypt_unowned_buffer_from_iter (&state->iter, &value);
+         if (value.subtype == 6 && value.len > 0 &&
+             value.data[0] == state->match_first_byte) {
+            bool ret;
+            /* call the right callback. */
+            if (state->copy) {
+               ret = state->transform_cb (state->ctx, &value, &out, error);
+               _mongocrypt_bson_append_buffer (state->copy,
+                                               bson_iter_key (&state->iter),
+                                               bson_iter_key_len (&state->iter),
+                                               &out);
+            } else {
+               ret = state->traverse_cb (state->ctx, &value, error);
+            }
+
+            if (!ret) {
+               return false;
+            }
+         }
+      } else if (BSON_ITER_HOLDS_ARRAY (&state->iter)) {
+         _recurse_state_t child_state;
+         bool ret;
+
+         memcpy (&child_state, state, sizeof (_recurse_state_t));
+         bson_iter_recurse (&state->iter, &child_state.iter);
+
+         if (state->copy) {
+            bson_append_array_begin (state->copy,
+                                     bson_iter_key (&state->iter),
+                                     bson_iter_key_len (&state->iter),
+                                     child_state.copy);
+         }
+         ret = _recurse (&child_state);
+
+         if (state->copy) {
+            bson_append_array_end (state->copy, child_state.copy);
+         }
+         if (!ret) {
+            return false;
+         }
+      } else if (BSON_ITER_HOLDS_DOCUMENT (&state->iter)) {
+         _recurse_state_t child_state;
+         bool ret;
+
+         memcpy (&child_state, state, sizeof (_recurse_state_t));
+         if (!bson_iter_recurse (&state->iter, &child_state.iter)) {
+            CLIENT_ERR ("error recursing into array");
+            return false;
+         }
+         /* TODO: check for errors everywhere. */
+         if (state->copy) {
+            bson_append_document_begin (state->copy,
+                                        bson_iter_key (&state->iter),
+                                        bson_iter_key_len (&state->iter),
+                                        child_state.copy);
+         }
+
+         ret = _recurse (&child_state);
+
+         if (state->copy) {
+            bson_append_document_end (state->copy, child_state.copy);
+         }
+
+         if (!ret) {
+            return false;
+         }
+      } else {
+         if (state->copy) {
+            bson_append_value (state->copy,
+                               bson_iter_key (&state->iter),
+                               bson_iter_key_len (&state->iter),
+                               bson_iter_value (&state->iter));
+         }
+      }
+   }
+   return true;
+}
+
+bool
+_mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
+                                      void *ctx,
+                                      uint8_t match_first_byte,
+                                      bson_iter_t iter,
+                                      bson_t *out,
+                                      mongocrypt_error_t **error)
+{
+   _recurse_state_t starting_state = {ctx,
+                                      iter,
+                                      out /* copy */,
+                                      NULL /* path */,
+                                      NULL /* traverse callback */,
+                                      cb,
+                                      error,
+                                      match_first_byte};
+
+   return _recurse (&starting_state);
+}
+
+
+/*-----------------------------------------------------------------------------
+ *
+ * _mongocrypt_traverse_binary_in_bson
+ *
+ *    Traverse the BSON being iterated with iter, and call cb for every binary
+ *    subtype 06 value where the first byte equals 'match_first_byte'.
+ *
+ * Return:
+ *    True on success. Returns false on failure and sets error.
+ *
+ *-----------------------------------------------------------------------------
+ */
+bool
+_mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
+                                     void *ctx,
+                                     uint8_t match_first_byte,
+                                     bson_iter_t iter,
+                                     mongocrypt_error_t **error)
+{
+   _recurse_state_t starting_state = {ctx,
+                                      iter,
+                                      NULL /* copy */,
+                                      NULL /* path */,
+                                      cb,
+                                      NULL /* transform callback */,
+                                      error,
+                                      match_first_byte};
+
+   return _recurse (&starting_state);
+}
+
+/*
+ * _mongocryptd_marking_reply_parse
+ *
+ *    Parse a reply from mongocryptd into an encryption request. The reply has
+ * the form: { "hasEncryptedPlacholders": <bool>, "result": <doc> }
+ *
+ * Return:
+ *    True on success. Returns false on failure and sets error.
+ */
+bool
+_mongocryptd_marking_reply_parse (const bson_t *bson,
+                                  mongocrypt_request_t *request,
+                                  mongocrypt_error_t **error)
+{
+   bson_iter_t iter;
+
+   if (!bson_iter_init_find (&iter, bson, "hasEncryptedPlaceholders")) {
+      CLIENT_ERR (
+         "mongocryptd response does not include 'hasEncryptedPlaceholders': %s",
+         tmp_json (bson));
+      return false;
+   }
+
+   request->has_encryption_placeholders = bson_iter_as_bool (&iter);
+
+   if (bson_iter_init_find (&iter, bson, "result")) {
+      bson_iter_t nested;
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         CLIENT_ERR ("mongocryptd repsonse 'result' must be document: %s",
+                     tmp_json (bson));
+         return false;
+      }
+      bson_iter_recurse (&iter, &nested);
+      memcpy (&request->result_iter, &nested, sizeof (bson_iter_t));
+   }
+
+   return true;
 }

@@ -149,8 +149,9 @@ typedef struct {
    _mongocrypt_buffer_t iv;
    /* one of the following is zeroed, and the other is set. */
    _mongocrypt_buffer_t key_id;
-   const char *key_alt_name;
-} mongocrypt_marking_t;
+   const bson_value_t *key_alt_name;
+   const char *keyvault_alias;
+} _mongocrypt_marking_t;
 
 /* consider renaming to encrypted_w_metadata? */
 typedef struct {
@@ -166,8 +167,8 @@ typedef struct {
 } _mongocrypt_key_t;
 
 bool
-_mongocrypt_marking_parse_unowned (const bson_t *bson,
-                                   mongocrypt_marking_t *out,
+_mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
+                                   _mongocrypt_marking_t *out,
                                    mongocrypt_error_t **error);
 bool
 _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
@@ -177,6 +178,11 @@ bool
 _mongocrypt_key_parse (const bson_t *bson,
                        _mongocrypt_key_t *out,
                        mongocrypt_error_t **error);
+
+bool
+_mongocryptd_marking_reply_parse (const bson_t *bson,
+                                  mongocrypt_request_t *request,
+                                  mongocrypt_error_t **error);
 
 void
 mongocrypt_key_cleanup (_mongocrypt_key_t *key);
@@ -206,3 +212,57 @@ _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
                          mongocrypt_error_t **error);
 
 #endif
+
+
+typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
+                                                 _mongocrypt_buffer_t *in,
+                                                 mongocrypt_error_t **error);
+
+
+typedef bool (*_mongocrypt_transform_callback_t) (void *ctx,
+                                                  _mongocrypt_buffer_t *in,
+                                                  _mongocrypt_buffer_t *out,
+                                                  mongocrypt_error_t **error);
+
+
+bool
+_mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
+                                     void *ctx,
+                                     uint8_t match_first_byte,
+                                     bson_iter_t iter,
+                                     mongocrypt_error_t **error);
+
+bool
+_mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
+                                      void *ctx,
+                                      uint8_t match_first_byte,
+                                      bson_iter_t iter,
+                                      bson_t *out,
+                                      mongocrypt_error_t **error);
+
+typedef enum {
+   MONGOCRYPT_REQUEST_ENCRYPT,
+   MONGOCRYPT_REQUEST_ENCRYPT_VALUE,
+   MONGOCRYPT_REQUEST_DECRYPT,
+   MONGOCRYPT_REQUEST_DECRYPT_VALUE
+} _mongocrypt_request_type_t;
+
+struct _mongocrypt_key_query_t {
+   bson_t filter;
+   mongocrypt_binary_t filter_bin;
+   char *keyvault_alias;
+};
+
+struct _mongocrypt_request_t {
+   _mongocrypt_request_type_t type;
+   bool has_encryption_placeholders;
+   bson_t mongocryptd_reply;
+   bson_iter_t result_iter;
+   uint32_t num_key_queries;
+   /* TODO: do something better for key_query requests.
+      Consider copying mongoc_array, vendoring something,
+      or just power-of-two growth.
+    */
+   mongocrypt_key_query_t key_queries[32];
+   uint32_t key_query_iter;
+};

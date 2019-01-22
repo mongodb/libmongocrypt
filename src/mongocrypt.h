@@ -39,9 +39,20 @@ typedef enum {
    MONGOCRYPT_ERROR_TYPE_CLIENT
 } mongocrypt_error_type_t;
 
+typedef struct {
+   uint8_t *data;
+   uint32_t len;
+} mongocrypt_binary_t; /* TODO: likely rename to BSON */
+
 typedef struct _mongocrypt_error_t mongocrypt_error_t;
 
-typedef struct _mongocrypt_request_t mongocrypt_request_t;
+typedef struct _mongocrypt_key_query_t mongocrypt_key_query_t;
+
+const mongocrypt_binary_t *
+mongocrypt_key_query_filter (mongocrypt_key_query_t *key_query);
+
+const char *
+mongocrypt_key_query_alias (mongocrypt_key_query_t *key_query);
 
 void
 mongocrypt_error_destroy (mongocrypt_error_t *error);
@@ -58,10 +69,17 @@ mongocrypt_error_message (mongocrypt_error_t *error);
 void *
 mongocrypt_error_ctx (mongocrypt_error_t *error);
 
-typedef struct {
-   uint8_t *data;
-   uint32_t len;
-} mongocrypt_binary_t;
+typedef struct _mongocrypt_request_t mongocrypt_request_t;
+
+bool
+mongocrypt_request_needs_keys (mongocrypt_request_t *request);
+
+mongocrypt_key_query_t *
+mongocrypt_request_next_key_query (mongocrypt_request_t *request,
+                                   mongocrypt_opts_t *opts);
+
+void
+mongocrypt_request_destroy (mongocrypt_request_t *request);
 
 void
 mongocrypt_init (void);
@@ -94,7 +112,7 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_opts_t *opts,
                           const mongocrypt_binary_t *schema,
                           const mongocrypt_binary_t *cmd,
-                          mongocrypt_error_t *error);
+                          mongocrypt_error_t **error);
 
 bool
 mongocrypt_encrypt_finish (mongocrypt_request_t *request,

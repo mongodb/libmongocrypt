@@ -349,7 +349,7 @@ _get_key_by_uuid (mongocrypt_t *crypt,
 
 static bool
 _append_encrypted (mongocrypt_t *crypt,
-                   mongocrypt_marking_t *marking,
+                   _mongocrypt_marking_t *marking,
                    bson_t *out,
                    const char *field,
                    uint32_t field_len,
@@ -472,85 +472,87 @@ _copy_and_transform (mongocrypt_t *crypt,
                      mongocrypt_error_t **error,
                      transform_t transform)
 {
-   CRYPT_ENTRY;
-   while (bson_iter_next (&iter)) {
-      if (BSON_ITER_HOLDS_BINARY (&iter)) {
-         _mongocrypt_buffer_t value;
-         bson_t as_bson;
+   // CRYPT_ENTRY;
+   // while (bson_iter_next (&iter)) {
+   //    if (BSON_ITER_HOLDS_BINARY (&iter)) {
+   //       _mongocrypt_buffer_t value;
+   //       bson_t as_bson;
 
-         _mongocrypt_unowned_buffer_from_iter (&iter, &value);
-         bson_init_static (&as_bson, value.data, value.len);
-         CRYPT_TRACE ("found FLE binary: %s", tmp_json (&as_bson));
-         if (value.subtype == BSON_SUBTYPE_ENCRYPTED) {
-            if (transform == MARKING_TO_ENCRYPTED) {
-               mongocrypt_marking_t marking = {{0}};
+   //       _mongocrypt_unowned_buffer_from_iter (&iter, &value);
+   //       if (value.subtype == BSON_SUBTYPE_ENCRYPTED) {
+   //          bson_init_static (&as_bson, value.data, value.len);
+   //          CRYPT_TRACE ("found FLE binary: %s", tmp_json (&as_bson));
+   //          if (transform == MARKING_TO_ENCRYPTED) {
+   //             mongocrypt_marking_t marking = {{0}};
 
-               if (!_mongocrypt_marking_parse_unowned (
-                      &as_bson, &marking, error)) {
-                  return false;
-               }
-               if (!_append_encrypted (crypt,
-                                       &marking,
-                                       out,
-                                       bson_iter_key (&iter),
-                                       bson_iter_key_len (&iter),
-                                       error))
-                  return false;
-            } else {
-               mongocrypt_encrypted_t encrypted = {{0}};
+   //             if (!_mongocrypt_marking_parse_unowned (
+   //                    &as_bson, &marking, error)) {
+   //                return false;
+   //             }
+   //             if (!_append_encrypted (crypt,
+   //                                     &marking,
+   //                                     out,
+   //                                     bson_iter_key (&iter),
+   //                                     bson_iter_key_len (&iter),
+   //                                     error))
+   //                return false;
+   //          } else {
+   //             mongocrypt_encrypted_t encrypted = {{0}};
 
-               if (!_mongocrypt_encrypted_parse_unowned (
-                      &as_bson, &encrypted, error)) {
-                  return false;
-               }
-               if (!_append_decrypted (crypt,
-                                       &encrypted,
-                                       out,
-                                       bson_iter_key (&iter),
-                                       bson_iter_key_len (&iter),
-                                       error))
-                  return false;
-            }
-            continue;
-         }
-         /* otherwise, fall through. copy over like a normal value. */
-      }
+   //             if (!_mongocrypt_encrypted_parse_unowned (
+   //                    &as_bson, &encrypted, error)) {
+   //                return false;
+   //             }
+   //             if (!_append_decrypted (crypt,
+   //                                     &encrypted,
+   //                                     out,
+   //                                     bson_iter_key (&iter),
+   //                                     bson_iter_key_len (&iter),
+   //                                     error))
+   //                return false;
+   //          }
+   //          continue;
+   //       }
+   //       /* otherwise, fall through. copy over like a normal value. */
+   //    }
 
-      if (BSON_ITER_HOLDS_ARRAY (&iter)) {
-         bson_iter_t child_iter;
-         bson_t child_out;
-         bool ret;
+   //    if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+   //       bson_iter_t child_iter;
+   //       bson_t child_out;
+   //       bool ret;
 
-         bson_iter_recurse (&iter, &child_iter);
-         bson_append_array_begin (
-            out, bson_iter_key (&iter), bson_iter_key_len (&iter), &child_out);
-         ret = _copy_and_transform (
-            crypt, child_iter, &child_out, error, transform);
-         bson_append_array_end (out, &child_out);
-         if (!ret) {
-            return false;
-         }
-      } else if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_iter_t child_iter;
-         bson_t child_out;
-         bool ret;
+   //       bson_iter_recurse (&iter, &child_iter);
+   //       bson_append_array_begin (
+   //          out, bson_iter_key (&iter), bson_iter_key_len (&iter),
+   //          &child_out);
+   //       ret = _copy_and_transform (
+   //          crypt, child_iter, &child_out, error, transform);
+   //       bson_append_array_end (out, &child_out);
+   //       if (!ret) {
+   //          return false;
+   //       }
+   //    } else if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+   //       bson_iter_t child_iter;
+   //       bson_t child_out;
+   //       bool ret;
 
-         bson_iter_recurse (&iter, &child_iter);
-         bson_append_document_begin (
-            out, bson_iter_key (&iter), bson_iter_key_len (&iter), &child_out);
-         ret = _copy_and_transform (
-            crypt, child_iter, &child_out, error, transform);
-         bson_append_document_end (out, &child_out);
-         if (!ret) {
-            return false;
-         }
-      } else {
-         bson_append_value (out,
-                            bson_iter_key (&iter),
-                            bson_iter_key_len (&iter),
-                            bson_iter_value (&iter));
-      }
-   }
+   //       bson_iter_recurse (&iter, &child_iter);
+   //       bson_append_document_begin (
+   //          out, bson_iter_key (&iter), bson_iter_key_len (&iter),
+   //          &child_out);
+   //       ret = _copy_and_transform (
+   //          crypt, child_iter, &child_out, error, transform);
+   //       bson_append_document_end (out, &child_out);
+   //       if (!ret) {
+   //          return false;
+   //       }
+   //    } else {
+   //       bson_append_value (out,
+   //                          bson_iter_key (&iter),
+   //                          bson_iter_key_len (&iter),
+   //                          bson_iter_value (&iter));
+   //    }
+   // }
    return true;
 }
 
@@ -678,25 +680,145 @@ mongocrypt_decrypt (mongocrypt_t *crypt,
    bson_out->data = bson_destroy_with_steal (&out, true, &bson_out->len);
    return true;
 }
-typedef enum {
-   MONGOCRYPT_REQUEST_ENCRYPT,
-   MONGOCRYPT_REQUEST_ENCRYPT_VALUE,
-   MONGOCRYPT_REQUEST_DECRYPT,
-   MONGOCRYPT_REQUEST_DECRYPT_VALUE
-} _mongocrypt_request_type_t;
 
-struct _mongocrypt_request_t {
-   _mongocrypt_request_type_t type;
-   _mongocrypt_buffer_t input;
-   _mongocrypt_buffer_t marked;
-};
+void
+mongocrypt_request_destroy (mongocrypt_request_t *request)
+{
+   if (!request) {
+      return;
+   }
+   bson_destroy (&request->mongocryptd_reply);
+   /* TODO: destroy key queries. */
+}
+
+bool
+mongocrypt_request_needs_keys (mongocrypt_request_t *request)
+{
+   return request->key_query_iter < request->num_key_queries;
+}
+
+mongocrypt_key_query_t *
+mongocrypt_request_next_key_query (mongocrypt_request_t *request,
+                                   mongocrypt_opts_t *opts)
+{
+   mongocrypt_key_query_t *key_query =
+      &request->key_queries[request->key_query_iter];
+   request->key_query_iter++;
+   return key_query;
+}
+
+const mongocrypt_binary_t *
+mongocrypt_key_query_filter (mongocrypt_key_query_t *key_query)
+{
+   return &key_query->filter_bin;
+}
+
+const char *
+mongocrypt_key_query_alias (mongocrypt_key_query_t *key_query)
+{
+   return key_query->keyvault_alias;
+}
+
+typedef struct {
+   mongocrypt_t *crypt;
+   mongocrypt_request_t *request;
+} _collect_key_ctx_t;
+
+static bool
+_collect_key_from_marking (void *ctx_void,
+                           _mongocrypt_buffer_t *in,
+                           mongocrypt_error_t **error)
+{
+   _collect_key_ctx_t *ctx;
+   _mongocrypt_marking_t marking;
+   bson_t filter;
+   mongocrypt_key_query_t *key_query;
+
+   ctx = (_collect_key_ctx_t *) ctx_void;
+
+   if (!_mongocrypt_marking_parse_unowned (in, &marking, error)) {
+      return false;
+   }
+
+   /* TODO: check key cache for the key ID. */
+   /* If the key cache does not have the key, add a new key query. */
+   key_query = &ctx->request->key_queries[ctx->request->num_key_queries++];
+   bson_init (&key_query->filter);
+   if (marking.key_id.len) {
+      _mongocrypt_bson_append_buffer (
+         &key_query->filter, "keyId", 5, &marking.key_id);
+   } else if (marking.key_alt_name) {
+      bson_append_value (
+         &key_query->filter, "keyAltName", 10, marking.key_alt_name);
+   }
+   key_query->filter_bin.data = (uint8_t *) bson_get_data (&key_query->filter);
+   key_query->filter_bin.len = key_query->filter.len;
+   key_query->keyvault_alias = bson_strdup (marking.keyvault_alias);
+   return true;
+}
 
 mongocrypt_request_t *
 mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_opts_t *opts,
-                          const mongocrypt_binary_t *schema,
-                          const mongocrypt_binary_t *cmd,
-                          mongocrypt_error_t *error)
+                          const mongocrypt_binary_t *schema_in,
+                          const mongocrypt_binary_t *cmd_in,
+                          mongocrypt_error_t **error)
 {
-   return NULL;
+   bson_t schema, cmd;
+   bson_t marking_cmd;
+   bson_error_t bson_error;
+   bool succeeded = false;
+   mongoc_client_t *mongocryptd_client = NULL;
+   mongocrypt_request_t *request = NULL;
+
+   CRYPT_ENTRY;
+   bson_init_static (&schema, schema_in->data, schema_in->len);
+   bson_init_static (&cmd, cmd_in->data, cmd_in->len);
+   /* Construct the marking command to send. This consists of the original
+    * command with the field "jsonSchema" added. */
+   bson_copy_to (&cmd, &marking_cmd);
+   bson_append_document (&marking_cmd, "jsonSchema", 10, &schema);
+   mongocryptd_client = mongoc_client_pool_pop (crypt->mongocryptd_pool);
+   CRYPT_TRACE ("sending marking cmd\n\t%s", tmp_json (&marking_cmd));
+   request = bson_malloc0 (sizeof (mongocrypt_request_t));
+   request->type = MONGOCRYPT_REQUEST_ENCRYPT;
+   if (!mongoc_client_command_simple (mongocryptd_client,
+                                      "admin",
+                                      &marking_cmd,
+                                      NULL /* read prefs */,
+                                      &request->mongocryptd_reply,
+                                      &bson_error)) {
+      MONGOCRYPTD_ERR_W_REPLY (bson_error, &request->mongocryptd_reply);
+      goto fail;
+   }
+   CRYPT_TRACE ("got reply back\n\t%s", tmp_json (&request->mongocryptd_reply));
+
+   if (!_mongocryptd_marking_reply_parse (
+          &request->mongocryptd_reply, request, error)) {
+      goto fail;
+   }
+   if (request->has_encryption_placeholders) {
+      _collect_key_ctx_t ctx = {crypt, request};
+      if (!_mongocrypt_traverse_binary_in_bson (_collect_key_from_marking,
+                                                (void *) &ctx,
+                                                0,
+                                                request->result_iter,
+                                                error)) {
+         goto fail;
+      }
+   }
+
+   succeeded = true;
+
+fail:
+   if (mongocryptd_client) {
+      mongoc_client_pool_push (crypt->mongocryptd_pool, mongocryptd_client);
+   }
+   bson_destroy (&schema);
+   bson_destroy (&cmd);
+   if (!succeeded) {
+      mongocrypt_request_destroy (request);
+      request = NULL;
+   }
+   return request;
 }

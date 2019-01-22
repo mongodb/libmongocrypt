@@ -3,9 +3,10 @@
         "ssn": {
             "encrypt": {
                 "keyVaultURI": "mongodb://localhost:27017/admin",
+                "keyVaultAlias": "default",
                 "keyId": {
                     "$binary": {
-                        "base64": "lNqvhBOnQgirLqraZ4oOPw==",
+                        "base64": "8ym2FTfvSBS0l7ncI6pQ1w==",
                         "subType": "04"
                     }
                 },
@@ -19,6 +20,5 @@
                 }
             }
         }
-    },
-    "bsonType": "object"
+    }
 }
