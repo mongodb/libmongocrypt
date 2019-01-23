@@ -2,6 +2,7 @@
 #define MONGOCRYPT_MONGOCRYPT_PRIVATE_H
 
 #include "mongocrypt.h"
+#include "mongoc/mongoc.h"
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
@@ -91,22 +92,6 @@ _bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
                                  uint32_t code,
                                  mongocrypt_error_t **error);
 
-struct _mongocrypt_opts_t {
-   char *aws_region;
-   char *aws_secret_access_key;
-   char *aws_access_key_id;
-   char *mongocryptd_uri;
-   char *default_keyvault_client_uri;
-};
-
-struct _mongocrypt_t {
-   /* initially only one supported. Later, use from marking/ciphertext. */
-   mongoc_client_pool_t *keyvault_pool;
-   mongoc_client_pool_t *mongocryptd_pool;
-   mongocrypt_opts_t *opts;
-   mongocrypt_mutex_t mutex;
-};
-
 /* This is an internal struct to make working with binary values more
  * convenient.
  * - a non-owning be constructed by iterating BSON.
@@ -126,6 +111,49 @@ struct _mongocrypt_error_t {
    char message[1024];
    void *ctx;
 };
+
+struct _mongocrypt_opts_t {
+   char *aws_region;
+   char *aws_secret_access_key;
+   char *aws_access_key_id;
+   char *mongocryptd_uri;
+   char *default_keyvault_client_uri;
+};
+
+typedef struct {
+   _mongocrypt_buffer_t id;
+   _mongocrypt_buffer_t key_material;
+   _mongocrypt_buffer_t data_key;
+} _mongocrypt_key_t;
+
+/* Dear reader, please have a laugh at the "key cache". */
+typedef struct {
+   bson_t *key_bson;
+   _mongocrypt_key_t key;
+   bool used;
+} _mongocrypt_keycache_entry_t;
+
+struct _mongocrypt_t {
+   /* Initially only one supported. Later, use from marking/ciphertext. */
+   mongoc_client_pool_t *keyvault_pool;
+   mongoc_client_pool_t *mongocryptd_pool;
+   mongocrypt_opts_t *opts;
+   mongocrypt_mutex_t mutex;
+   /* For now, this "key cache" is just guarded by the same mutex. */
+   _mongocrypt_keycache_entry_t keycache[64];
+};
+
+bool
+_mongocrypt_keycache_add (mongocrypt_t *crypt,
+                          _mongocrypt_buffer_t *docs,
+                          uint32_t num_docs,
+                          mongocrypt_error_t **error);
+const _mongocrypt_key_t *
+_mongocrypt_keycache_get_by_id (mongocrypt_t *crypt,
+                          const _mongocrypt_buffer_t *uuid,
+                          mongocrypt_error_t **error);
+void
+_mongocrypt_keycache_dump (mongocrypt_t *crypt);
 
 void
 _mongocrypt_owned_buffer_from_iter (bson_iter_t *iter,
@@ -155,24 +183,19 @@ typedef struct {
 
 /* consider renaming to encrypted_w_metadata? */
 typedef struct {
-   _mongocrypt_buffer_t e;
+   _mongocrypt_buffer_t data;
    _mongocrypt_buffer_t iv;
    _mongocrypt_buffer_t key_id;
-} mongocrypt_encrypted_t;
-
-typedef struct {
-   _mongocrypt_buffer_t id;
-   _mongocrypt_buffer_t key_material;
-   _mongocrypt_buffer_t data_key;
-} _mongocrypt_key_t;
+   const char* keyvault_alias;
+} _mongocrypt_ciphertext_t;
 
 bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    _mongocrypt_marking_t *out,
                                    mongocrypt_error_t **error);
 bool
-_mongocrypt_encrypted_parse_unowned (const bson_t *bson,
-                                     mongocrypt_encrypted_t *out,
+_mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
+                                     _mongocrypt_ciphertext_t *out,
                                      mongocrypt_error_t **error);
 bool
 _mongocrypt_key_parse (const bson_t *bson,
@@ -254,6 +277,7 @@ struct _mongocrypt_key_query_t {
 };
 
 struct _mongocrypt_request_t {
+   mongocrypt_t *crypt;
    _mongocrypt_request_type_t type;
    bool has_encryption_placeholders;
    bson_t mongocryptd_reply;

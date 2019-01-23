@@ -3,6 +3,7 @@
 
 #include <mongoc/mongoc.h>
 #include <mongocrypt.h>
+#include <mongocrypt-private.h>
 
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
@@ -50,6 +51,48 @@ _setup (mongocrypt_opts_t *opts, bson_t *schema)
                             "mongodb://localhost:27017");
 
    bson_json_reader_destroy (reader);
+}
+
+static void
+_satisfy_key_queries (mongoc_client_t *keyvault_client,
+                      mongocrypt_request_t *request)
+{
+   mongoc_collection_t *keyvault_coll;
+
+   keyvault_coll =
+      mongoc_client_get_collection (keyvault_client, "admin", "datakeys");
+   while (mongocrypt_request_needs_keys (request)) {
+      mongocrypt_key_query_t *key_query;
+      const mongocrypt_binary_t *filter_bin;
+      bson_t filter;
+      const bson_t *result;
+      mongoc_cursor_t *cursor;
+      int ret;
+      mongocrypt_error_t *error;
+
+      key_query = mongocrypt_request_next_key_query (request, NULL);
+      filter_bin = mongocrypt_key_query_filter (key_query);
+      bson_init_static (&filter, filter_bin->data, filter_bin->len);
+
+      cursor = mongoc_collection_find_with_opts (
+         keyvault_coll, &filter, NULL /* opts */, NULL /* read prefs */);
+      if (!cursor) {
+         bson_error_t bson_error;
+         mongoc_cursor_error (cursor, &bson_error);
+         ASSERT_OR_PRINT_BSON (cursor, bson_error);
+      }
+
+      while (mongoc_cursor_next (cursor, &result)) {
+         mongocrypt_binary_t key_bin;
+
+         key_bin.data = (uint8_t *) bson_get_data (result);
+         key_bin.len = result->len;
+         ret = mongocrypt_request_add_keys (request, NULL, &key_bin, 1, &error);
+         ASSERT_OR_PRINT (ret, error);
+      }
+   }
+
+   /* TODO: leaks, leaks everywhere. */
 }
 
 
@@ -110,13 +153,15 @@ test_new_api (void)
    mongocrypt_error_t *error = NULL;
    bson_t schema, out;
    bson_t *cmd;
-   mongocrypt_binary_t schema_bin = {0}, cmd_bin = {0}, out_bin = {0},
-                       decrypted_out = {0};
+   mongocrypt_binary_t schema_bin = {0}, cmd_bin = {0}, encrypted_bin = {0}, decrypted_bin = {0};
    mongocrypt_request_t *request;
+   mongoc_client_t *keyvault_client;
    int ret;
 
    opts = mongocrypt_opts_new ();
    _setup (opts, &schema);
+
+   keyvault_client = mongoc_client_new ("mongodb://localhost:27017");
 
    crypt = mongocrypt_new (opts, &error);
    ASSERT_OR_PRINT (crypt, error);
@@ -144,17 +189,14 @@ test_new_api (void)
    mongocrypt_error_destroy (error);
 
    BSON_ASSERT (mongocrypt_request_needs_keys (request));
-   while (mongocrypt_request_needs_keys (request)) {
-      mongocrypt_key_query_t *key_query =
-         mongocrypt_request_next_key_query (request, NULL);
-      mongocrypt_binary_t *filter_bin;
-      bson_t filter;
+   _satisfy_key_queries (keyvault_client, request);
+   _mongocrypt_keycache_dump (crypt);
 
-      filter_bin = mongocrypt_key_query_filter (key_query);
-      bson_init_static (&filter, filter_bin->data, filter_bin->len);
-      printf ("Got filter: %s\n", bson_as_json (&filter, NULL));
-   }
-   printf ("Did we get here, if not, we crashed!\n");
+   ret = mongocrypt_encrypt_finish (request, NULL, &encrypted_bin, &error);
+   ASSERT_OR_PRINT (ret, error);
+   bson_init_static (&out, encrypted_bin.data, encrypted_bin.len);
+   printf("Final encrypted document: %s\n", tmp_json(&out));
+   printf ("Did we get here? If not, we crashed!\n");
 }
 
 int

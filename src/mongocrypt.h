@@ -18,6 +18,9 @@
 
 #include <stdint.h>
 
+/* TODO: instead of int, consider using bool. Consider copying over what
+ * bson-compat does. */
+
 #define MONGOCRYPT_VERSION "0.1.0"
 
 char *
@@ -71,12 +74,20 @@ mongocrypt_error_ctx (mongocrypt_error_t *error);
 
 typedef struct _mongocrypt_request_t mongocrypt_request_t;
 
-bool
+int
 mongocrypt_request_needs_keys (mongocrypt_request_t *request);
 
 mongocrypt_key_query_t *
 mongocrypt_request_next_key_query (mongocrypt_request_t *request,
                                    mongocrypt_opts_t *opts);
+
+int
+mongocrypt_request_add_keys (mongocrypt_request_t *request,
+                             const mongocrypt_opts_t *opts,
+                             const mongocrypt_binary_t *responses,
+                             uint32_t num_responses,
+                             mongocrypt_error_t **error);
+
 
 void
 mongocrypt_request_destroy (mongocrypt_request_t *request);
@@ -114,7 +125,7 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_binary_t *cmd,
                           mongocrypt_error_t **error);
 
-bool
+int
 mongocrypt_encrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t *encrypted_cmd,

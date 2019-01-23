@@ -135,8 +135,8 @@ cleanup:
 
 
 bool
-_mongocrypt_encrypted_parse_unowned (const bson_t *bson,
-                                     mongocrypt_encrypted_t *out,
+_mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
+                                     _mongocrypt_ciphertext_t *out,
                                      mongocrypt_error_t **error)
 {
    bson_iter_t iter;
@@ -175,7 +175,7 @@ _mongocrypt_encrypted_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, no 'e'");
       goto cleanup;
    } else {
-      _mongocrypt_owned_buffer_from_iter (&iter, &out->e);
+      _mongocrypt_owned_buffer_from_iter (&iter, &out->data);
    }
 
    ret = true;
@@ -283,6 +283,7 @@ _recurse (_recurse_state_t *state)
          bson_iter_recurse (&state->iter, &child_state.iter);
 
          if (state->copy) {
+            child_state.copy = bson_new();
             bson_append_array_begin (state->copy,
                                      bson_iter_key (&state->iter),
                                      bson_iter_key_len (&state->iter),
@@ -292,6 +293,7 @@ _recurse (_recurse_state_t *state)
 
          if (state->copy) {
             bson_append_array_end (state->copy, child_state.copy);
+            bson_destroy (child_state.copy);
          }
          if (!ret) {
             return false;
@@ -307,6 +309,7 @@ _recurse (_recurse_state_t *state)
          }
          /* TODO: check for errors everywhere. */
          if (state->copy) {
+            child_state.copy = bson_new();
             bson_append_document_begin (state->copy,
                                         bson_iter_key (&state->iter),
                                         bson_iter_key_len (&state->iter),
@@ -317,6 +320,7 @@ _recurse (_recurse_state_t *state)
 
          if (state->copy) {
             bson_append_document_end (state->copy, child_state.copy);
+            bson_destroy (child_state.copy);
          }
 
          if (!ret) {
@@ -386,6 +390,10 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
    return _recurse (&starting_state);
 }
 
+/* TODO: consider changing this function to parse into a new struct.
+ * If we have the parsing self-contained, than it will likely be easier to port
+ * to using and IDL later.
+ */
 /*
  * _mongocryptd_marking_reply_parse
  *

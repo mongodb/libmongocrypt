@@ -16,7 +16,8 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-private.h
    src/mongocrypt-parsing.c
    src/mongocrypt-kms.c
-   src/mongocrypt-crypto.c)
+   src/mongocrypt-crypto.c
+   src/mongocrypt-keycache.c)
 
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
 target_include_directories(mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})

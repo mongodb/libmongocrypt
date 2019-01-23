@@ -417,7 +417,7 @@ cleanup:
 
 static bool
 _append_decrypted (mongocrypt_t *crypt,
-                   mongocrypt_encrypted_t *encrypted,
+                   _mongocrypt_ciphertext_t *encrypted,
                    bson_t *out,
                    const char *field,
                    uint32_t field_len,
@@ -435,8 +435,8 @@ _append_decrypted (mongocrypt_t *crypt,
 
    if (!_mongocrypt_do_decryption (encrypted->iv.data,
                                    key.data_key.data,
-                                   encrypted->e.data,
-                                   encrypted->e.len,
+                                   encrypted->data.data,
+                                   encrypted->data.len,
                                    &decrypted,
                                    &decrypted_len,
                                    error)) {
@@ -691,7 +691,7 @@ mongocrypt_request_destroy (mongocrypt_request_t *request)
    /* TODO: destroy key queries. */
 }
 
-bool
+int
 mongocrypt_request_needs_keys (mongocrypt_request_t *request)
 {
    return request->key_query_iter < request->num_key_queries;
@@ -705,6 +705,26 @@ mongocrypt_request_next_key_query (mongocrypt_request_t *request,
       &request->key_queries[request->key_query_iter];
    request->key_query_iter++;
    return key_query;
+}
+
+int
+mongocrypt_request_add_keys (mongocrypt_request_t *request,
+                             const mongocrypt_opts_t *opts,
+                             const mongocrypt_binary_t *responses,
+                             uint32_t num_responses,
+                             mongocrypt_error_t **error)
+{
+   int i;
+   for (i = 0; i < num_responses; i++) {
+      /* TODO: don't marshal this. */
+      _mongocrypt_buffer_t buf = {0};
+      buf.data = responses[i].data;
+      buf.len = responses[i].len;
+      if (!_mongocrypt_keycache_add (request->crypt, &buf, 1, error)) {
+         return 0;
+      }
+   }
+   return 1;
 }
 
 const mongocrypt_binary_t *
@@ -746,7 +766,7 @@ _collect_key_from_marking (void *ctx_void,
    bson_init (&key_query->filter);
    if (marking.key_id.len) {
       _mongocrypt_bson_append_buffer (
-         &key_query->filter, "keyId", 5, &marking.key_id);
+         &key_query->filter, "_id", 3, &marking.key_id);
    } else if (marking.key_alt_name) {
       bson_append_value (
          &key_query->filter, "keyAltName", 10, marking.key_alt_name);
@@ -781,6 +801,7 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
    mongocryptd_client = mongoc_client_pool_pop (crypt->mongocryptd_pool);
    CRYPT_TRACE ("sending marking cmd\n\t%s", tmp_json (&marking_cmd));
    request = bson_malloc0 (sizeof (mongocrypt_request_t));
+   request->crypt = crypt;
    request->type = MONGOCRYPT_REQUEST_ENCRYPT;
    if (!mongoc_client_command_simple (mongocryptd_client,
                                       "admin",
@@ -821,4 +842,86 @@ fail:
       request = NULL;
    }
    return request;
+}
+
+typedef struct {
+   mongocrypt_t *crypt; /* TODO: redundant, request already has a crypt */
+   mongocrypt_request_t *request; 
+} _replace_marking_with_ciphertext_ctx_t;
+
+static void _serialize_ciphertext (_mongocrypt_ciphertext_t* ciphertext, _mongocrypt_buffer_t* out) {
+   /* TODO: serialize with respect to endianness. Move this to mongocrypt-parsing.c? */
+   uint16_t keyvault_alias_len = (uint16_t)strlen(ciphertext->keyvault_alias);
+
+   out->len = 1 + 2 + 1 + 16 + keyvault_alias_len + ciphertext->iv.len + ciphertext->data.len;
+   out->data = bson_malloc0(out->len);
+   out->data[0] = '\01'; /* TODO: account for randomized. */
+   memcpy(out->data + 1, &keyvault_alias_len, 2);
+   /* Don't copy null byte. */
+   memcpy(out->data + 1 + 2, ciphertext->keyvault_alias, keyvault_alias_len);
+   memcpy(out->data + 1 + 2 + keyvault_alias_len, ciphertext->key_id.data, ciphertext->key_id.len);
+   memcpy(out->data + 1 + 2 + keyvault_alias_len + ciphertext->key_id.len, ciphertext->data.data, ciphertext->data.len);
+}
+
+static bool
+_replace_marking_with_ciphertext (void* ctx_in, _mongocrypt_buffer_t* in, _mongocrypt_buffer_t* out, mongocrypt_error_t** error) {
+   _mongocrypt_marking_t marking = {0};
+   _mongocrypt_ciphertext_t ciphertext = {0};
+   _replace_marking_with_ciphertext_ctx_t* ctx;
+   _mongocrypt_key_t* key;
+   bson_t wrapper = BSON_INITIALIZER;
+   int ret;
+
+   ctx = (_replace_marking_with_ciphertext_ctx_t*) ctx_in;
+
+   if (!_mongocrypt_marking_parse_unowned (in, &marking, error)) {
+      return false;
+   }
+
+   memcpy(&ciphertext.iv, &marking.iv, sizeof(_mongocrypt_buffer_t));
+   /* get the key associated with the marking. */
+   if (marking.key_alt_name) {
+      CLIENT_ERR("looking up key by keyAltName not yet supported");
+      return false;
+   }
+
+   key = _mongocrypt_keycache_get_by_id (ctx->crypt, &marking.key_id, error);
+   printf("here\n");
+   _mongocrypt_keycache_dump (ctx->crypt);
+   if (!key) {
+      return false;
+   }
+
+   MONGOCRYPT_TRACE ("about to encrypt");
+   bson_append_iter (&wrapper, "", 0, &marking.v_iter);
+
+   ret = _mongocrypt_do_encryption(ciphertext.iv.data, key->data_key.data, bson_get_data(&wrapper), wrapper.len, &ciphertext.data.data, &ciphertext.data.len, error);
+   if (!ret) {
+      return false;
+   }
+   
+   memcpy(&ciphertext.key_id, &marking.iv, sizeof(_mongocrypt_buffer_t));
+   ciphertext.keyvault_alias = marking.keyvault_alias;
+   _serialize_ciphertext (&ciphertext, out);
+
+   ret = true;
+   return ret;
+}
+
+int
+mongocrypt_encrypt_finish (mongocrypt_request_t* request, const mongocrypt_opts_t* opts, mongocrypt_binary_t* encrypted_out, mongocrypt_error_t** error) {
+   int ret = 0;
+   bson_t out = BSON_INITIALIZER;
+   _replace_marking_with_ciphertext_ctx_t ctx = { request->crypt, request };
+
+   ret = _mongocrypt_transform_binary_in_bson (_replace_marking_with_ciphertext, &ctx, 0, request->result_iter, &out, error);
+   if (!ret) {
+      bson_destroy (&out);
+      goto fail;
+   }   
+   encrypted_out->data = bson_destroy_with_steal(&out, true, &encrypted_out->len);
+
+   ret = 1;
+fail:
+   return ret;
 }
