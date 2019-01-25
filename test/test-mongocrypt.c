@@ -73,6 +73,7 @@ _satisfy_key_queries (mongoc_client_t *keyvault_client,
       key_query = mongocrypt_request_next_key_query (request, NULL);
       filter_bin = mongocrypt_key_query_filter (key_query);
       bson_init_static (&filter, filter_bin->data, filter_bin->len);
+      printf ("using filter: %s\n", bson_as_json (&filter, NULL));
 
       cursor = mongoc_collection_find_with_opts (
          keyvault_coll, &filter, NULL /* opts */, NULL /* read prefs */);
@@ -153,7 +154,8 @@ test_new_api (void)
    mongocrypt_error_t *error = NULL;
    bson_t schema, out;
    bson_t *cmd;
-   mongocrypt_binary_t schema_bin = {0}, cmd_bin = {0}, encrypted_bin = {0}, decrypted_bin = {0};
+   mongocrypt_binary_t schema_bin = {0}, cmd_bin = {0}, encrypted_bin = {0},
+                       *decrypted_bin;
    mongocrypt_request_t *request;
    mongoc_client_t *keyvault_client;
    int ret;
@@ -195,8 +197,36 @@ test_new_api (void)
    ret = mongocrypt_encrypt_finish (request, NULL, &encrypted_bin, &error);
    ASSERT_OR_PRINT (ret, error);
    bson_init_static (&out, encrypted_bin.data, encrypted_bin.len);
-   printf("Final encrypted document: %s\n", tmp_json(&out));
-   printf ("Did we get here? If not, we crashed!\n");
+   printf ("Encrypted document: %s\n", tmp_json (&out));
+
+   request = mongocrypt_decrypt_start (crypt, NULL, &encrypted_bin, 1, &error);
+   ASSERT_OR_PRINT (request, error);
+
+   /* Because no caching, we actually need to fetch keys again. */
+   BSON_ASSERT (mongocrypt_request_needs_keys (request));
+   _satisfy_key_queries (keyvault_client, request);
+   _mongocrypt_keycache_dump (crypt);
+
+   ret = mongocrypt_decrypt_finish (request, NULL, &decrypted_bin, &error);
+   ASSERT_OR_PRINT (ret, error);
+   bson_init_static (&out, decrypted_bin->data, decrypted_bin->len);
+   printf ("Decrypted document: %s\n", tmp_json (&out));
+}
+
+static void
+test_ciphertext (void)
+{
+   _mongocrypt_ciphertext_t ct = {0}, out;
+   ct.keyvault_alias = "abc";
+   ct.keyvault_alias_len = (uint16_t) 3;
+
+   _mongocrypt_buffer_t b;
+   _serialize_ciphertext (&ct, &b);
+   uint16_t len;
+   memcpy (&len, b.data + 1, 2);
+   printf ("got: %d\n", len);
+   _parse_ciphertext_unowned (&b, &out, NULL);
+   printf ("char[0] = %c\n", out.keyvault_alias[0]);
 }
 
 int
@@ -205,5 +235,6 @@ main (int argc, char **argv)
    mongocrypt_init ();
    printf ("Test runner\n");
    test_new_api ();
+   // test_ciphertext();
    mongocrypt_cleanup ();
 }

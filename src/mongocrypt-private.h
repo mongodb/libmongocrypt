@@ -150,8 +150,8 @@ _mongocrypt_keycache_add (mongocrypt_t *crypt,
                           mongocrypt_error_t **error);
 const _mongocrypt_key_t *
 _mongocrypt_keycache_get_by_id (mongocrypt_t *crypt,
-                          const _mongocrypt_buffer_t *uuid,
-                          mongocrypt_error_t **error);
+                                const _mongocrypt_buffer_t *uuid,
+                                mongocrypt_error_t **error);
 void
 _mongocrypt_keycache_dump (mongocrypt_t *crypt);
 
@@ -186,7 +186,8 @@ typedef struct {
    _mongocrypt_buffer_t data;
    _mongocrypt_buffer_t iv;
    _mongocrypt_buffer_t key_id;
-   const char* keyvault_alias;
+   const char *keyvault_alias; /* not null terminated. */
+   uint16_t keyvault_alias_len;
 } _mongocrypt_ciphertext_t;
 
 bool
@@ -195,8 +196,8 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    mongocrypt_error_t **error);
 bool
 _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
-                                     _mongocrypt_ciphertext_t *out,
-                                     mongocrypt_error_t **error);
+                                      _mongocrypt_ciphertext_t *out,
+                                      mongocrypt_error_t **error);
 bool
 _mongocrypt_key_parse (const bson_t *bson,
                        _mongocrypt_key_t *out,
@@ -244,7 +245,7 @@ typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
 
 typedef bool (*_mongocrypt_transform_callback_t) (void *ctx,
                                                   _mongocrypt_buffer_t *in,
-                                                  _mongocrypt_buffer_t *out,
+                                                  bson_value_t *out,
                                                   mongocrypt_error_t **error);
 
 
@@ -289,4 +290,7 @@ struct _mongocrypt_request_t {
     */
    mongocrypt_key_query_t key_queries[32];
    uint32_t key_query_iter;
+
+   const mongocrypt_binary_t *encrypted_docs;
+   uint32_t num_input_docs;
 };

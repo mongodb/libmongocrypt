@@ -136,8 +136,8 @@ cleanup:
 
 bool
 _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
-                                     _mongocrypt_ciphertext_t *out,
-                                     mongocrypt_error_t **error)
+                                      _mongocrypt_ciphertext_t *out,
+                                      mongocrypt_error_t **error)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -262,11 +262,14 @@ _recurse (_recurse_state_t *state)
             bool ret;
             /* call the right callback. */
             if (state->copy) {
-               ret = state->transform_cb (state->ctx, &value, &out, error);
-               _mongocrypt_bson_append_buffer (state->copy,
-                                               bson_iter_key (&state->iter),
-                                               bson_iter_key_len (&state->iter),
-                                               &out);
+               bson_value_t value_out;
+               ret =
+                  state->transform_cb (state->ctx, &value, &value_out, error);
+               bson_append_value (state->copy,
+                                  bson_iter_key (&state->iter),
+                                  bson_iter_key_len (&state->iter),
+                                  &value_out);
+               bson_value_destroy (&value_out);
             } else {
                ret = state->traverse_cb (state->ctx, &value, error);
             }
@@ -283,7 +286,7 @@ _recurse (_recurse_state_t *state)
          bson_iter_recurse (&state->iter, &child_state.iter);
 
          if (state->copy) {
-            child_state.copy = bson_new();
+            child_state.copy = bson_new ();
             bson_append_array_begin (state->copy,
                                      bson_iter_key (&state->iter),
                                      bson_iter_key_len (&state->iter),
@@ -309,7 +312,7 @@ _recurse (_recurse_state_t *state)
          }
          /* TODO: check for errors everywhere. */
          if (state->copy) {
-            child_state.copy = bson_new();
+            child_state.copy = bson_new ();
             bson_append_document_begin (state->copy,
                                         bson_iter_key (&state->iter),
                                         bson_iter_key_len (&state->iter),

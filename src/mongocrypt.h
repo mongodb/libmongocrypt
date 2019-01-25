@@ -145,4 +145,17 @@ mongocrypt_decrypt (mongocrypt_t *crypt,
                     mongocrypt_binary_t *bson_out,
                     mongocrypt_error_t **error);
 
+mongocrypt_request_t *
+mongocrypt_decrypt_start (mongocrypt_t *crypt,
+                          const mongocrypt_opts_t *opts,
+                          const mongocrypt_binary_t *encrypted_docs,
+                          uint32_t num_docs,
+                          mongocrypt_error_t **error);
+
+int
+mongocrypt_decrypt_finish (mongocrypt_request_t *request,
+                           const mongocrypt_opts_t *opts,
+                           mongocrypt_binary_t **docs,
+                           mongocrypt_error_t **error);
+
 #endif
