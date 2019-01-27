@@ -24,6 +24,7 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/evp.h>
+#include <openssl/err.h>
 
 static bool
 _openssl_encrypt (const uint8_t *iv,
@@ -35,23 +36,29 @@ _openssl_encrypt (const uint8_t *iv,
                   mongocrypt_error_t **error)
 {
    const EVP_CIPHER *cipher;
-   EVP_CIPHER_CTX ctx;
+   EVP_CIPHER_CTX* ctx;
    bool ret = false;
    int r;
    uint8_t *encrypted = NULL;
    int block_size, bytes_written, encrypted_len = 0;
 
    CRYPT_ENTRY;
-   EVP_CIPHER_CTX_init (&ctx);
+   ctx = EVP_CIPHER_CTX_new();
    cipher = EVP_aes_256_cbc ();
-   /* Odd, EVP_aes_256_cbc_hmac_sha256 suddenly returns null on my machine. Why?
+   /* TODO: add hmac_256 afterwards. */
+   // unsigned long err = ERR_get_error();
+   // printf("error=%d\n", (int)err);
+   // printf("%s\n", ERR_reason_error_string(err));
+   /* EVP_aes_256_cbc_hmac_sha256 returns NULL. Why?
+      https://www.openssl.org/docs/manmaster/man3/EVP_aes_256_cbc_hmac_sha256.html:
+      WARNING: this is not intended for usage outside of TLS and requires calling of some undocumented ctrl functions. These ciphers do not conform to the EVP AEAD interface.
     */
    BSON_ASSERT (cipher);
    block_size = EVP_CIPHER_block_size (cipher);
    BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == 16);
    BSON_ASSERT (block_size == 16);
    BSON_ASSERT (EVP_CIPHER_key_length (cipher) == 32);
-   r = EVP_EncryptInit_ex (&ctx, cipher, NULL /* engine */, key, iv);
+   r = EVP_EncryptInit_ex (ctx, cipher, NULL /* engine */, key, iv);
    if (!r) {
       /* TODO: use ERR_get_error or similar to get OpenSSL error message? */
       CLIENT_ERR ("failed to initialize cipher");
@@ -62,14 +69,14 @@ _openssl_encrypt (const uint8_t *iv,
     * anything from zero bytes to (inl + cipher_block_size - 1)" and for
     * finalize: "should have sufficient space for one block */
    encrypted = bson_malloc0 (data_len + (block_size - 1) + block_size);
-   r = EVP_EncryptUpdate (&ctx, encrypted, &bytes_written, data, data_len);
+   r = EVP_EncryptUpdate (ctx, encrypted, &bytes_written, data, data_len);
    if (!r) {
       CLIENT_ERR ("failed to encrypt");
       goto cleanup;
    }
 
    encrypted_len += bytes_written;
-   r = EVP_EncryptFinal_ex (&ctx, encrypted + bytes_written, &bytes_written);
+   r = EVP_EncryptFinal_ex (ctx, encrypted + bytes_written, &bytes_written);
    if (!r) {
       CLIENT_ERR ("failed to finalize\n");
       goto cleanup;
@@ -81,7 +88,7 @@ _openssl_encrypt (const uint8_t *iv,
    encrypted = NULL;
    ret = true;
 cleanup:
-   EVP_CIPHER_CTX_cleanup (&ctx);
+   EVP_CIPHER_CTX_free (ctx);
    bson_free (encrypted);
    return ret;
 }
@@ -96,20 +103,20 @@ _openssl_decrypt (const uint8_t *iv,
                   mongocrypt_error_t **error)
 {
    const EVP_CIPHER *cipher;
-   EVP_CIPHER_CTX ctx;
+   EVP_CIPHER_CTX* ctx;
    bool ret = false;
    int r;
    uint8_t *decrypted = NULL;
    int block_size, bytes_written, decrypted_len = 0;
 
    CRYPT_ENTRY;
-   EVP_CIPHER_CTX_init (&ctx);
+   ctx = EVP_CIPHER_CTX_new ();
    cipher = EVP_aes_256_cbc ();
    block_size = EVP_CIPHER_block_size (cipher);
    BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == 16);
    BSON_ASSERT (block_size == 16);
    BSON_ASSERT (EVP_CIPHER_key_length (cipher) == 32);
-   r = EVP_DecryptInit_ex (&ctx, cipher, NULL /* engine */, key, iv);
+   r = EVP_DecryptInit_ex (ctx, cipher, NULL /* engine */, key, iv);
    if (!r) {
       /* TODO: use ERR_get_error or similar to get OpenSSL error message? */
       CLIENT_ERR ("failed to initialize cipher");
@@ -120,14 +127,14 @@ _openssl_decrypt (const uint8_t *iv,
      * cipher_block_size) bytes" */
    /* decrypted length <= decrypted_len. */
    decrypted = bson_malloc0 (data_len + block_size);
-   r = EVP_DecryptUpdate (&ctx, decrypted, &bytes_written, data, data_len);
+   r = EVP_DecryptUpdate (ctx, decrypted, &bytes_written, data, data_len);
    if (!r) {
       CLIENT_ERR ("failed to decrypt");
       goto cleanup;
    }
 
    decrypted_len += bytes_written;
-   r = EVP_DecryptFinal_ex (&ctx, decrypted + bytes_written, &bytes_written);
+   r = EVP_DecryptFinal_ex (ctx, decrypted + bytes_written, &bytes_written);
    if (!r) {
       CLIENT_ERR ("failed to finalize\n");
       goto cleanup;
@@ -139,7 +146,7 @@ _openssl_decrypt (const uint8_t *iv,
    decrypted = NULL;
    ret = true;
 cleanup:
-   EVP_CIPHER_CTX_cleanup (&ctx);
+   EVP_CIPHER_CTX_free (ctx);
    bson_free (decrypted);
    return ret;
 }

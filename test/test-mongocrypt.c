@@ -95,57 +95,7 @@ _satisfy_key_queries (mongoc_client_t *keyvault_client,
 
    /* TODO: leaks, leaks everywhere. */
 }
-
-
-/* TODO: clean up this test. */
-static void
-roundtrip_test (void)
-{
-   mongocrypt_opts_t *opts;
-   mongocrypt_t *crypt;
-   mongocrypt_error_t *error = NULL;
-   bson_t schema, out;
-   bson_t *doc;
-   mongocrypt_binary_t schema_bin = {0}, doc_bin = {0}, bson_out = {0},
-                       decrypted_out = {0};
-   int ret;
-
-   opts = mongocrypt_opts_new ();
-   _setup (opts, &schema);
-
-   crypt = mongocrypt_new (opts, &error);
-   ASSERT_OR_PRINT (crypt, error);
-   mongocrypt_error_destroy (error);
-
-   doc = BCON_NEW ("name", "Todd Davis", "ssn", "457-55-5642");
-
-   schema_bin.data = (uint8_t *) bson_get_data (&schema);
-   schema_bin.len = schema.len;
-
-   doc_bin.data = (uint8_t *) bson_get_data (doc);
-   doc_bin.len = doc->len;
-
-   ret = mongocrypt_encrypt (crypt, &schema_bin, &doc_bin, &bson_out, &error);
-   ASSERT_OR_PRINT (ret, error);
-   mongocrypt_error_destroy (error);
-
-   bson_init_static (&out, bson_out.data, bson_out.len);
-   printf ("encrypted: %s\n", bson_as_json (&out, NULL));
-
-   ret = mongocrypt_decrypt (crypt, &bson_out, &decrypted_out, &error);
-   ASSERT_OR_PRINT (ret, error);
-   mongocrypt_error_destroy (error);
-
-   bson_destroy (&out);
-   bson_init_static (&out, decrypted_out.data, decrypted_out.len);
-   printf ("decrypted: %s\n", bson_as_json (&out, NULL));
-
-   bson_destroy (doc);
-   bson_destroy (&schema);
-   mongocrypt_destroy (crypt);
-   mongocrypt_opts_destroy (opts);
-}
-
+   
 static void
 test_new_api (void)
 {
@@ -213,21 +163,6 @@ test_new_api (void)
    printf ("Decrypted document: %s\n", tmp_json (&out));
 }
 
-static void
-test_ciphertext (void)
-{
-   _mongocrypt_ciphertext_t ct = {0}, out;
-   ct.keyvault_alias = "abc";
-   ct.keyvault_alias_len = (uint16_t) 3;
-
-   _mongocrypt_buffer_t b;
-   _serialize_ciphertext (&ct, &b);
-   uint16_t len;
-   memcpy (&len, b.data + 1, 2);
-   printf ("got: %d\n", len);
-   _parse_ciphertext_unowned (&b, &out, NULL);
-   printf ("char[0] = %c\n", out.keyvault_alias[0]);
-}
 
 int
 main (int argc, char **argv)
@@ -235,6 +170,5 @@ main (int argc, char **argv)
    mongocrypt_init ();
    printf ("Test runner\n");
    test_new_api ();
-   // test_ciphertext();
    mongocrypt_cleanup ();
 }

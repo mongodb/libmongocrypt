@@ -13,6 +13,7 @@ include (FindOpenSSL)
 set (MONGOCRYPT_SOURCES
    src/mongocrypt.c
    src/mongocrypt.h
+   src/mongocrypt-compat.h
    src/mongocrypt-private.h
    src/mongocrypt-parsing.c
    src/mongocrypt-kms.c
