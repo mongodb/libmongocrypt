@@ -2,10 +2,18 @@
 The companion C library for field-level encryption in drivers. This is a work-in-progress and subject to sweeping changes.
 
 ## Building libmongocrypt-stub ##
-While full implementation is underway, the stub library is provided for drivers to test integrating with libmongocrypt. Functions that do blocking I/O in libmongocrypt simply sleep for one second in libmongocrypt-stub.
+While full implementation is underway, the stub library is provided for drivers to test integrating with libmongocrypt. The stub library has no external dependencies. Functions that do blocking I/O in libmongocrypt simply sleep for one second in libmongocrypt-stub.
+
+```
+git clone git@github.com:10gen/libmongocrypt.git
+cd libmongocrypt
+mkdir cmake-build && cd cmake-build
+cmake ../
+make mongocrypt-stub
+```
 
 ## Building libmongocrypt ##
-These instructions have only been tested on macOS 10.14.1.
+These instructions have only been tested on macOS 10.14.1 with OpenSSL 1.1.1a.
 
 First build the following dependencies.
 

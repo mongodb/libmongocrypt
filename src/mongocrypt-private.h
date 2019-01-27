@@ -73,7 +73,7 @@
    } while (0)
 #else
 #define TRACE(msg, ...)
-#define ENTRY
+#define CRYPT_ENTRY
 #endif
 
 const char *
