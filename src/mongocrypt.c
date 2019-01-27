@@ -283,7 +283,7 @@ mongocrypt_request_destroy (mongocrypt_request_t *request)
    /* TODO: destroy key queries. */
 }
 
-int
+bool
 mongocrypt_request_needs_keys (mongocrypt_request_t *request)
 {
    return request->key_query_iter < request->num_key_queries;
@@ -299,7 +299,7 @@ mongocrypt_request_next_key_query (mongocrypt_request_t *request,
    return key_query;
 }
 
-int
+bool
 mongocrypt_request_add_keys (mongocrypt_request_t *request,
                              const mongocrypt_opts_t *opts,
                              const mongocrypt_binary_t *responses,
@@ -313,10 +313,10 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
       buf.data = responses[i].data;
       buf.len = responses[i].len;
       if (!_mongocrypt_keycache_add (request->crypt, &buf, 1, error)) {
-         return 0;
+         return false;
       }
    }
-   return 1;
+   return true;
 }
 
 
@@ -590,13 +590,13 @@ _replace_marking_with_ciphertext (void *ctx,
    return ret;
 }
 
-int
+bool
 mongocrypt_encrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t *encrypted_out,
                            mongocrypt_error_t **error)
 {
-   int ret = 0;
+   int ret = false;
    bson_t out = BSON_INITIALIZER;
 
    ret = _mongocrypt_transform_binary_in_bson (_replace_marking_with_ciphertext,
@@ -612,7 +612,7 @@ mongocrypt_encrypt_finish (mongocrypt_request_t *request,
    encrypted_out->data =
       bson_destroy_with_steal (&out, true, &encrypted_out->len);
 
-   ret = 1;
+   ret = true;
 fail:
    return ret;
 }
@@ -731,7 +731,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
    return true;
 }
 
-int
+bool
 mongocrypt_decrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t **docs,

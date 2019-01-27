@@ -119,7 +119,7 @@ const char *
 mongocrypt_key_query_alias (mongocrypt_key_query_t *key_query);
 
 
-int
+bool
 mongocrypt_request_needs_keys (mongocrypt_request_t *request);
 
 
@@ -128,7 +128,7 @@ mongocrypt_request_next_key_query (mongocrypt_request_t *request,
                                    mongocrypt_opts_t *opts);
 
 
-int
+bool
 mongocrypt_request_add_keys (mongocrypt_request_t *request,
                              const mongocrypt_opts_t *opts,
                              const mongocrypt_binary_t *responses,
@@ -152,7 +152,7 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           mongocrypt_error_t **error);
 
 
-int
+bool
 mongocrypt_encrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t *encrypted_cmd,
@@ -167,7 +167,7 @@ mongocrypt_decrypt_start (mongocrypt_t *crypt,
                           mongocrypt_error_t **error);
 
 
-int
+bool
 mongocrypt_decrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t **docs,
