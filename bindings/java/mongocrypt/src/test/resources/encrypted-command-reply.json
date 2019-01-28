@@ -1,0 +1,16 @@
+{
+  "cursor" : {
+    "firstBatch" : [
+      {
+        "_id": 1,
+        "ssn": {
+          "$binary": "AQAAAAAAAAAAAAAAAAAAAAACaWlpaWlpaWlpaWlpaWlpabxsgJndMBCMERBAi/fCAOAQu6/LKU2mu5X7FLmEJlhkHsRr7TxMoz/2akbqBBzCVn1FXiIe9esJCgNhan6EY8g=",
+          "$type": "06"
+        }
+      }
+    ],
+    "id" : 0,
+    "ns" : "test.test"
+  },
+  "ok" : 1
+}
