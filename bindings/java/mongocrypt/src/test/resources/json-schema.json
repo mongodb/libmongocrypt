@@ -1,0 +1,19 @@
+{
+  "properties": {
+    "ssn": {
+      "encrypt": {
+        "keyId": {
+          "$binary": "AAAAAAAAAAAAAAAAAAAAAA==",
+          "$type": "04"
+        },
+        "type": "string",
+        "algorithm": "Deterministic",
+        "iv": {
+          "$binary": "aWlpaWlpaWlpaWlpaWlpaQ==",
+          "$type": "00"
+        }
+      }
+    }
+  },
+  "bsonType": "object"
+}
