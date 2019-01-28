@@ -3,13 +3,13 @@ project (mongocrypt C)
 
 set (CMAKE_C_STANDARD 99)
 
-find_package(libmongoc-static-1.0 1.13)
+find_package(libmongoc-static-1.0 1.11)
 
-if(${MONGOC_VERSION})
+if(MONGOC_STATIC_VERSION)
    message("Found libmongoc and libbson, configuring to add real libmongocrypt target")
-   message ("--   mongoc found version \"${MONGOC_VERSION}\"")
-   message ("--   mongoc include path \"${MONGOC_INCLUDE_DIRS}\"")
-   message ("--   mongoc libraries \"${MONGOC_LIBRARIES}\"")
+   message ("--   mongoc found version \"${MONGOC_STATIC_VERSION}\"")
+   message ("--   mongoc include path \"${MONGOC_STATIC_INCLUDE_DIRS}\"")
+   message ("--   mongoc libraries \"${MONGOC_STATIC_LIBRARIES}\"")
 
    include (FindOpenSSL)
 
@@ -41,7 +41,7 @@ if(${MONGOC_VERSION})
    target_link_libraries(test-mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (test-mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 else()
-   message("libmongoc and libbson *NOT* found. Only configuring to only build stub target")
+   message("libmongoc and libbson *NOT* found. Only configuring mongocrypt-stub target")
 endif()
 
 set (MONGOCRYPT_STUB_SOURCES
