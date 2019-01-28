@@ -1,0 +1,9 @@
+{
+  "filter": {
+    "ssn": {
+      "$binary": "AQAAAAAAAAAAAAAAAAAAAAACaWlpaWlpaWlpaWlpaWlpabxsgJndMBCMERBAi/fCAOAQu6/LKU2mu5X7FLmEJlhkHsRr7TxMoz/2akbqBBzCVn1FXiIe9esJCgNhan6EY8g=",
+      "$type": "06"
+    }
+  },
+  "find": "test"
+}

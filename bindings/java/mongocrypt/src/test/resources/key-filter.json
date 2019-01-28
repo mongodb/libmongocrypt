@@ -1,0 +1,10 @@
+{
+  "_id": {
+    "$in": [
+      {
+        "$binary": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "$type": "04"
+      }
+    ]
+  }
+}
