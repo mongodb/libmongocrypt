@@ -15,6 +15,8 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "mongocrypt.h"
@@ -38,6 +40,33 @@
 #define TRACE(msg, ...)
 #define CRYPT_ENTRY
 #endif
+
+
+struct _mongocrypt_status_t {
+   uint32_t code;
+   char *message;
+};
+
+
+struct _mongocrypt_t {
+   int placeholder;
+};
+
+
+struct _mongocrypt_request_t {
+   int placeholder;
+};
+
+
+struct _mongocrypt_opts_t {
+   int placeholder;
+};
+
+
+struct _mongocrypt_key_query_t {
+   int placeholder;
+};
+
 
 char *
 mongocrypt_version (void)
@@ -64,7 +93,7 @@ mongocrypt_opts_t *
 mongocrypt_opts_new (void)
 {
    CRYPT_ENTRY;
-   return NULL;
+   return calloc (1, sizeof (mongocrypt_opts_t));
 }
 
 
@@ -72,6 +101,7 @@ void
 mongocrypt_opts_destroy (mongocrypt_opts_t *opts)
 {
    CRYPT_ENTRY;
+   free (opts);
 }
 
 
@@ -83,12 +113,14 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
    CRYPT_ENTRY;
 }
 
+
 mongocrypt_t *
 mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   return NULL;
+   return calloc (1, sizeof (mongocrypt_t));
 }
+
 
 void
 mongocrypt_destroy (mongocrypt_t *crypt)
@@ -97,23 +129,32 @@ mongocrypt_destroy (mongocrypt_t *crypt)
 }
 
 
-void
-mongocrypt_error_destroy (mongocrypt_status_t *status)
+mongocrypt_status_t *
+mongocrypt_status_new (void)
 {
    CRYPT_ENTRY;
+   return calloc (1, sizeof (mongocrypt_status_t));
+}
+
+
+void
+mongocrypt_status_destroy (mongocrypt_status_t *status)
+{
+   CRYPT_ENTRY;
+   free (status);
 }
 
 
 mongocrypt_error_type_t
-mongocrypt_error_type (mongocrypt_status_t *status)
+mongocrypt_status_error_type (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   return MONGOCRYPT_ERROR_TYPE_CLIENT;
+   return MONGOCRYPT_ERROR_TYPE_NONE;
 }
 
 
 uint32_t
-mongocrypt_error_code (mongocrypt_status_t *status)
+mongocrypt_status_code (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return 0;
@@ -121,34 +162,38 @@ mongocrypt_error_code (mongocrypt_status_t *status)
 
 
 const char *
-mongocrypt_error_message (mongocrypt_status_t *status)
+mongocrypt_status_message (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   return "example error message";
-}
-
-
-void *
-mongocrypt_error_ctx (mongocrypt_status_t *status)
-{
-   CRYPT_ENTRY;
-   return NULL;
+   return "everything is fine";
 }
 
 
 const mongocrypt_binary_t *
-mongocrypt_key_query_filter (mongocrypt_key_query_t *key_query)
+mongocrypt_key_query_filter (const mongocrypt_key_query_t *key_query)
 {
+   static mongocrypt_binary_t bin = {0};
+
    CRYPT_ENTRY;
-   return NULL;
+   return &bin;
 }
 
 
 const char *
-mongocrypt_key_query_alias (mongocrypt_key_query_t *key_query)
+mongocrypt_key_query_keyvault_name (const mongocrypt_key_query_t *key_query)
+{
+   static char *name = "default";
+
+   CRYPT_ENTRY;
+   return name;
+}
+
+
+void
+mongocrypt_key_query_destroy (mongocrypt_key_query_t *key_query)
 {
    CRYPT_ENTRY;
-   return NULL;
+   free (key_query);
 }
 
 
@@ -160,12 +205,14 @@ mongocrypt_request_needs_keys (mongocrypt_request_t *request)
 }
 
 
-mongocrypt_key_query_t *
+const mongocrypt_key_query_t *
 mongocrypt_request_next_key_query (mongocrypt_request_t *request,
                                    mongocrypt_opts_t *opts)
 {
+   static mongocrypt_key_query_t key_query = {0};
+
    CRYPT_ENTRY;
-   return NULL;
+   return &key_query;
 }
 
 
@@ -186,13 +233,7 @@ void
 mongocrypt_request_destroy (mongocrypt_request_t *request)
 {
    CRYPT_ENTRY;
-}
-
-
-void
-mongocrypt_error_cleanup (mongocrypt_status_t *status)
-{
-   CRYPT_ENTRY;
+   free (request);
 }
 
 
@@ -205,7 +246,7 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
 {
    CRYPT_ENTRY;
    sleep (1);
-   return NULL;
+   return calloc (1, sizeof (mongocrypt_request_t));
 }
 
 
@@ -228,7 +269,7 @@ mongocrypt_decrypt_start (mongocrypt_t *crypt,
                           mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   return NULL;
+   return calloc (1, sizeof (mongocrypt_request_t));
 }
 
 

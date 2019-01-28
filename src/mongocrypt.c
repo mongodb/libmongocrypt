@@ -286,7 +286,7 @@ mongocrypt_request_needs_keys (mongocrypt_request_t *request)
    return request->key_query_iter < request->num_key_queries;
 }
 
-mongocrypt_key_query_t *
+const mongocrypt_key_query_t *
 mongocrypt_request_next_key_query (mongocrypt_request_t *request,
                                    mongocrypt_opts_t *opts)
 {
@@ -318,14 +318,14 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
 
 
 const mongocrypt_binary_t *
-mongocrypt_key_query_filter (mongocrypt_key_query_t *key_query)
+mongocrypt_key_query_filter (const mongocrypt_key_query_t *key_query)
 {
    return &key_query->filter_bin;
 }
 
 
 const char *
-mongocrypt_key_query_alias (mongocrypt_key_query_t *key_query)
+mongocrypt_key_query_keyvault_name (const mongocrypt_key_query_t *key_query)
 {
    return key_query->keyvault_alias;
 }

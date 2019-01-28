@@ -62,7 +62,7 @@ _satisfy_key_queries (mongoc_client_t *keyvault_client,
    keyvault_coll =
       mongoc_client_get_collection (keyvault_client, "admin", "datakeys");
    while (mongocrypt_request_needs_keys (request)) {
-      mongocrypt_key_query_t *key_query;
+      const mongocrypt_key_query_t *key_query;
       const mongocrypt_binary_t *filter_bin;
       bson_t filter;
       const bson_t *result;
