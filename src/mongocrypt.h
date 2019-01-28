@@ -22,7 +22,7 @@
 #define MONGOCRYPT_VERSION "0.1.0"
 
 
-char *
+const char *
 mongocrypt_version (void);
 
 

@@ -68,7 +68,7 @@ struct _mongocrypt_key_query_t {
 };
 
 
-char *
+const char *
 mongocrypt_version (void)
 {
    return MONGOCRYPT_VERSION;

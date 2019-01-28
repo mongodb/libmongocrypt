@@ -20,7 +20,7 @@
 #include "mongocrypt-private.h"
 
 
-char *
+const char *
 mongocrypt_version (void)
 {
    return MONGOCRYPT_VERSION;
