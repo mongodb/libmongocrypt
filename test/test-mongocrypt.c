@@ -22,7 +22,7 @@
    } while (0)
 
 #define ASSERT_OR_PRINT(_statement, _err) \
-   ASSERT_OR_PRINT_MSG (_statement, mongocrypt_error_message (_err))
+   ASSERT_OR_PRINT_MSG (_statement, mongocrypt_status_message (_err))
 
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, _err.message)
@@ -68,7 +68,7 @@ _satisfy_key_queries (mongoc_client_t *keyvault_client,
       const bson_t *result;
       mongoc_cursor_t *cursor;
       int ret;
-      mongocrypt_error_t *error;
+      mongocrypt_status_t *status = mongocrypt_status_new ();
 
       key_query = mongocrypt_request_next_key_query (request, NULL);
       filter_bin = mongocrypt_key_query_filter (key_query);
@@ -88,20 +88,21 @@ _satisfy_key_queries (mongoc_client_t *keyvault_client,
 
          key_bin.data = (uint8_t *) bson_get_data (result);
          key_bin.len = result->len;
-         ret = mongocrypt_request_add_keys (request, NULL, &key_bin, 1, &error);
-         ASSERT_OR_PRINT (ret, error);
+         ret = mongocrypt_request_add_keys (request, NULL, &key_bin, 1, status);
+         ASSERT_OR_PRINT (ret, status);
       }
+      mongocrypt_status_destroy (status);
    }
 
    /* TODO: leaks, leaks everywhere. */
 }
-   
+
 static void
 test_new_api (void)
 {
    mongocrypt_opts_t *opts;
    mongocrypt_t *crypt;
-   mongocrypt_error_t *error = NULL;
+   mongocrypt_status_t *status = mongocrypt_status_new ();
    bson_t schema, out;
    bson_t *cmd;
    mongocrypt_binary_t schema_bin = {0}, cmd_bin = {0}, encrypted_bin = {0},
@@ -115,9 +116,8 @@ test_new_api (void)
 
    keyvault_client = mongoc_client_new ("mongodb://localhost:27017");
 
-   crypt = mongocrypt_new (opts, &error);
-   ASSERT_OR_PRINT (crypt, error);
-   mongocrypt_error_destroy (error);
+   crypt = mongocrypt_new (opts, status);
+   ASSERT_OR_PRINT (crypt, status);
 
    cmd = BCON_NEW ("find",
                    "collection",
@@ -136,31 +136,32 @@ test_new_api (void)
    cmd_bin.len = cmd->len;
 
    request =
-      mongocrypt_encrypt_start (crypt, NULL, &schema_bin, &cmd_bin, &error);
-   ASSERT_OR_PRINT (request, error);
-   mongocrypt_error_destroy (error);
+      mongocrypt_encrypt_start (crypt, NULL, &schema_bin, &cmd_bin, status);
+   ASSERT_OR_PRINT (request, status);
 
    BSON_ASSERT (mongocrypt_request_needs_keys (request));
    _satisfy_key_queries (keyvault_client, request);
    _mongocrypt_keycache_dump (crypt);
 
-   ret = mongocrypt_encrypt_finish (request, NULL, &encrypted_bin, &error);
-   ASSERT_OR_PRINT (ret, error);
+   ret = mongocrypt_encrypt_finish (request, NULL, &encrypted_bin, status);
+   ASSERT_OR_PRINT (ret, status);
    bson_init_static (&out, encrypted_bin.data, encrypted_bin.len);
    printf ("Encrypted document: %s\n", tmp_json (&out));
 
-   request = mongocrypt_decrypt_start (crypt, NULL, &encrypted_bin, 1, &error);
-   ASSERT_OR_PRINT (request, error);
+   request = mongocrypt_decrypt_start (crypt, NULL, &encrypted_bin, 1, status);
+   ASSERT_OR_PRINT (request, status);
 
    /* Because no caching, we actually need to fetch keys again. */
    BSON_ASSERT (mongocrypt_request_needs_keys (request));
    _satisfy_key_queries (keyvault_client, request);
    _mongocrypt_keycache_dump (crypt);
 
-   ret = mongocrypt_decrypt_finish (request, NULL, &decrypted_bin, &error);
-   ASSERT_OR_PRINT (ret, error);
+   ret = mongocrypt_decrypt_finish (request, NULL, &decrypted_bin, status);
+   ASSERT_OR_PRINT (ret, status);
    bson_init_static (&out, decrypted_bin->data, decrypted_bin->len);
    printf ("Decrypted document: %s\n", tmp_json (&out));
+
+   mongocrypt_status_destroy (status);
 }
 
 

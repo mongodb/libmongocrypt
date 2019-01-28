@@ -42,6 +42,7 @@ typedef enum {
 
 
 typedef enum {
+   MONGOCRYPT_ERROR_TYPE_NONE,
    MONGOCRYPT_ERROR_TYPE_MONGOCRYPTD,
    MONGOCRYPT_ERROR_TYPE_KMS,
    MONGOCRYPT_ERROR_TYPE_CLIENT
@@ -54,7 +55,7 @@ typedef struct {
 } mongocrypt_binary_t; /* TODO: likely rename to BSON */
 
 
-typedef struct _mongocrypt_error_t mongocrypt_error_t;
+typedef struct _mongocrypt_status_t mongocrypt_status_t;
 
 
 typedef struct _mongocrypt_key_query_t mongocrypt_key_query_t;
@@ -84,31 +85,33 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
                          mongocrypt_opt_t opt,
                          void *value);
 
+
 mongocrypt_t *
-mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t **error);
+mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_status_t *status);
+
 
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
 
 
 void
-mongocrypt_error_destroy (mongocrypt_error_t *error);
+mongocrypt_status_destroy (mongocrypt_status_t *status);
+
+
+mongocrypt_status_t *
+mongocrypt_status_new (void);
 
 
 mongocrypt_error_type_t
-mongocrypt_error_type (mongocrypt_error_t *error);
+mongocrypt_status_error_type (mongocrypt_status_t *status);
 
 
 uint32_t
-mongocrypt_error_code (mongocrypt_error_t *error);
+mongocrypt_status_code (mongocrypt_status_t *status);
 
 
 const char *
-mongocrypt_error_message (mongocrypt_error_t *error);
-
-
-void *
-mongocrypt_error_ctx (mongocrypt_error_t *error);
+mongocrypt_status_message (mongocrypt_status_t *status);
 
 
 const mongocrypt_binary_t *
@@ -133,7 +136,7 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
                              const mongocrypt_opts_t *opts,
                              const mongocrypt_binary_t *responses,
                              uint32_t num_responses,
-                             mongocrypt_error_t **error);
+                             mongocrypt_status_t *status);
 
 
 void
@@ -141,7 +144,7 @@ mongocrypt_request_destroy (mongocrypt_request_t *request);
 
 
 void
-mongocrypt_error_cleanup (mongocrypt_error_t *error);
+mongocrypt_error_cleanup (mongocrypt_status_t *status);
 
 
 mongocrypt_request_t *
@@ -149,14 +152,14 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_opts_t *opts,
                           const mongocrypt_binary_t *schema,
                           const mongocrypt_binary_t *cmd,
-                          mongocrypt_error_t **error);
+                          mongocrypt_status_t *status);
 
 
 bool
 mongocrypt_encrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t *encrypted_cmd,
-                           mongocrypt_error_t **error);
+                           mongocrypt_status_t *status);
 
 
 mongocrypt_request_t *
@@ -164,12 +167,12 @@ mongocrypt_decrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_opts_t *opts,
                           const mongocrypt_binary_t *encrypted_docs,
                           uint32_t num_docs,
-                          mongocrypt_error_t **error);
+                          mongocrypt_status_t *status);
 
 
 bool
 mongocrypt_decrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t **docs,
-                           mongocrypt_error_t **error);
+                           mongocrypt_status_t *status);
 #endif

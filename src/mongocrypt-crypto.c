@@ -33,17 +33,17 @@ _openssl_encrypt (const uint8_t *iv,
                   uint32_t data_len,
                   uint8_t **out,
                   uint32_t *out_len,
-                  mongocrypt_error_t **error)
+                  mongocrypt_status_t *status)
 {
    const EVP_CIPHER *cipher;
-   EVP_CIPHER_CTX* ctx;
+   EVP_CIPHER_CTX *ctx;
    bool ret = false;
    int r;
    uint8_t *encrypted = NULL;
    int block_size, bytes_written, encrypted_len = 0;
 
    CRYPT_ENTRY;
-   ctx = EVP_CIPHER_CTX_new();
+   ctx = EVP_CIPHER_CTX_new ();
    cipher = EVP_aes_256_cbc ();
    /* TODO: add hmac_256 afterwards. */
    // unsigned long err = ERR_get_error();
@@ -51,7 +51,9 @@ _openssl_encrypt (const uint8_t *iv,
    // printf("%s\n", ERR_reason_error_string(err));
    /* EVP_aes_256_cbc_hmac_sha256 returns NULL. Why?
       https://www.openssl.org/docs/manmaster/man3/EVP_aes_256_cbc_hmac_sha256.html:
-      WARNING: this is not intended for usage outside of TLS and requires calling of some undocumented ctrl functions. These ciphers do not conform to the EVP AEAD interface.
+      WARNING: this is not intended for usage outside of TLS and requires
+      calling of some undocumented ctrl functions. These ciphers do not conform
+      to the EVP AEAD interface.
     */
    BSON_ASSERT (cipher);
    block_size = EVP_CIPHER_block_size (cipher);
@@ -100,10 +102,10 @@ _openssl_decrypt (const uint8_t *iv,
                   uint32_t data_len,
                   uint8_t **out,
                   uint32_t *out_len,
-                  mongocrypt_error_t **error)
+                  mongocrypt_status_t *status)
 {
    const EVP_CIPHER *cipher;
-   EVP_CIPHER_CTX* ctx;
+   EVP_CIPHER_CTX *ctx;
    bool ret = false;
    int r;
    uint8_t *decrypted = NULL;
@@ -159,12 +161,12 @@ _mongocrypt_do_encryption (const uint8_t *iv,
                            uint32_t data_len,
                            uint8_t **out,
                            uint32_t *out_len,
-                           mongocrypt_error_t **error)
+                           mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   return _openssl_encrypt (iv, key, data, data_len, out, out_len, error);
+   return _openssl_encrypt (iv, key, data, data_len, out, out_len, status);
 #else
    CLIENT_ERR ("not configured with any supported crypto library");
    return false;
@@ -178,11 +180,11 @@ _mongocrypt_do_decryption (const uint8_t *iv,
                            uint32_t data_len,
                            uint8_t **out,
                            uint32_t *out_len,
-                           mongocrypt_error_t **error)
+                           mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   return _openssl_decrypt (iv, key, data, data_len, out, out_len, error);
+   return _openssl_decrypt (iv, key, data, data_len, out, out_len, status);
 #else
    CLIENT_ERR ("not configured with any supported crypto library");
    return false;

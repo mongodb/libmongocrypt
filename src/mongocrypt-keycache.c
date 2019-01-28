@@ -20,7 +20,7 @@ bool
 _mongocrypt_keycache_add (mongocrypt_t *crypt,
                           _mongocrypt_buffer_t *docs,
                           uint32_t num_docs,
-                          mongocrypt_error_t **error)
+                          mongocrypt_status_t *status)
 {
    bool ret = false;
    int i, j;
@@ -37,7 +37,7 @@ _mongocrypt_keycache_add (mongocrypt_t *crypt,
       _mongocrypt_key_t parsed_key;
 
       copied = bson_new_from_data (docs[i].data, docs[i].len);
-      if (!_mongocrypt_key_parse (copied, &parsed_key, error)) {
+      if (!_mongocrypt_key_parse (copied, &parsed_key, status)) {
          bson_destroy (copied);
          goto cleanup;
       }
@@ -69,7 +69,7 @@ _mongocrypt_keycache_add (mongocrypt_t *crypt,
       }
 
       /* decrypt the key material. */
-      if (!_mongocrypt_kms_decrypt (crypt, &parsed_key, error)) {
+      if (!_mongocrypt_kms_decrypt (crypt, &parsed_key, status)) {
          bson_destroy (copied);
          goto cleanup;
       }
@@ -93,7 +93,7 @@ cleanup:
 const _mongocrypt_key_t *
 _mongocrypt_keycache_get_by_id (mongocrypt_t *crypt,
                                 const _mongocrypt_buffer_t *uuid,
-                                mongocrypt_error_t **error)
+                                mongocrypt_status_t *status)
 {
    int i;
 

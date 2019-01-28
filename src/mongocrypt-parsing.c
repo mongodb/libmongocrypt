@@ -70,7 +70,7 @@ _mongocrypt_bson_append_buffer (bson_t *bson,
 bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    _mongocrypt_marking_t *out,
-                                   mongocrypt_error_t **error)
+                                   mongocrypt_status_t *status)
 {
    bson_t bson;
    bson_iter_t iter;
@@ -137,7 +137,7 @@ cleanup:
 bool
 _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
                                       _mongocrypt_ciphertext_t *out,
-                                      mongocrypt_error_t **error)
+                                      mongocrypt_status_t *status)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -188,7 +188,7 @@ cleanup:
 bool
 _mongocrypt_key_parse (const bson_t *bson,
                        _mongocrypt_key_t *out,
-                       mongocrypt_error_t **error)
+                       mongocrypt_status_t *status)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -241,17 +241,17 @@ typedef struct {
    char *path;   /* only enabled during tracing. */
    _mongocrypt_traverse_callback_t traverse_cb;
    _mongocrypt_transform_callback_t transform_cb;
-   mongocrypt_error_t **error;
+   mongocrypt_status_t *status;
    uint8_t match_first_byte;
 } _recurse_state_t;
 
 static bool
 _recurse (_recurse_state_t *state)
 {
-   mongocrypt_error_t **error;
+   mongocrypt_status_t *status;
 
    CRYPT_ENTRY;
-   error = state->error;
+   status = state->status;
    while (bson_iter_next (&state->iter)) {
       if (BSON_ITER_HOLDS_BINARY (&state->iter)) {
          _mongocrypt_buffer_t value, out;
@@ -264,14 +264,14 @@ _recurse (_recurse_state_t *state)
             if (state->copy) {
                bson_value_t value_out;
                ret =
-                  state->transform_cb (state->ctx, &value, &value_out, error);
+                  state->transform_cb (state->ctx, &value, &value_out, status);
                bson_append_value (state->copy,
                                   bson_iter_key (&state->iter),
                                   bson_iter_key_len (&state->iter),
                                   &value_out);
                bson_value_destroy (&value_out);
             } else {
-               ret = state->traverse_cb (state->ctx, &value, error);
+               ret = state->traverse_cb (state->ctx, &value, status);
             }
 
             if (!ret) {
@@ -347,7 +347,7 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       uint8_t match_first_byte,
                                       bson_iter_t iter,
                                       bson_t *out,
-                                      mongocrypt_error_t **error)
+                                      mongocrypt_status_t *status)
 {
    _recurse_state_t starting_state = {ctx,
                                       iter,
@@ -355,7 +355,7 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       NULL /* path */,
                                       NULL /* traverse callback */,
                                       cb,
-                                      error,
+                                      status,
                                       match_first_byte};
 
    return _recurse (&starting_state);
@@ -379,7 +379,7 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                      void *ctx,
                                      uint8_t match_first_byte,
                                      bson_iter_t iter,
-                                     mongocrypt_error_t **error)
+                                     mongocrypt_status_t *status)
 {
    _recurse_state_t starting_state = {ctx,
                                       iter,
@@ -387,7 +387,7 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                       NULL /* path */,
                                       cb,
                                       NULL /* transform callback */,
-                                      error,
+                                      status,
                                       match_first_byte};
 
    return _recurse (&starting_state);
@@ -409,7 +409,7 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
 bool
 _mongocryptd_marking_reply_parse (const bson_t *bson,
                                   mongocrypt_request_t *request,
-                                  mongocrypt_error_t **error)
+                                  mongocrypt_status_t *status)
 {
    bson_iter_t iter;
 

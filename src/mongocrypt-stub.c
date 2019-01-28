@@ -84,7 +84,7 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
 }
 
 mongocrypt_t *
-mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_error_t **error)
+mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return NULL;
@@ -98,14 +98,14 @@ mongocrypt_destroy (mongocrypt_t *crypt)
 
 
 void
-mongocrypt_error_destroy (mongocrypt_error_t *error)
+mongocrypt_error_destroy (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
 }
 
 
 mongocrypt_error_type_t
-mongocrypt_error_type (mongocrypt_error_t *error)
+mongocrypt_error_type (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return MONGOCRYPT_ERROR_TYPE_CLIENT;
@@ -113,7 +113,7 @@ mongocrypt_error_type (mongocrypt_error_t *error)
 
 
 uint32_t
-mongocrypt_error_code (mongocrypt_error_t *error)
+mongocrypt_error_code (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return 0;
@@ -121,7 +121,7 @@ mongocrypt_error_code (mongocrypt_error_t *error)
 
 
 const char *
-mongocrypt_error_message (mongocrypt_error_t *error)
+mongocrypt_error_message (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return "example error message";
@@ -129,7 +129,7 @@ mongocrypt_error_message (mongocrypt_error_t *error)
 
 
 void *
-mongocrypt_error_ctx (mongocrypt_error_t *error)
+mongocrypt_error_ctx (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return NULL;
@@ -174,10 +174,10 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
                              const mongocrypt_opts_t *opts,
                              const mongocrypt_binary_t *responses,
                              uint32_t num_responses,
-                             mongocrypt_error_t **error)
+                             mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   sleep(1);
+   sleep (1);
    return false;
 }
 
@@ -190,7 +190,7 @@ mongocrypt_request_destroy (mongocrypt_request_t *request)
 
 
 void
-mongocrypt_error_cleanup (mongocrypt_error_t *error)
+mongocrypt_error_cleanup (mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
 }
@@ -201,10 +201,10 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_opts_t *opts,
                           const mongocrypt_binary_t *schema,
                           const mongocrypt_binary_t *cmd,
-                          mongocrypt_error_t **error)
+                          mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   sleep(1);
+   sleep (1);
    return NULL;
 }
 
@@ -213,7 +213,7 @@ bool
 mongocrypt_encrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t *encrypted_cmd,
-                           mongocrypt_error_t **error)
+                           mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return false;
@@ -225,7 +225,7 @@ mongocrypt_decrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_opts_t *opts,
                           const mongocrypt_binary_t *encrypted_docs,
                           uint32_t num_docs,
-                          mongocrypt_error_t **error)
+                          mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return NULL;
@@ -236,7 +236,7 @@ bool
 mongocrypt_decrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t **docs,
-                           mongocrypt_error_t **error)
+                           mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return false;

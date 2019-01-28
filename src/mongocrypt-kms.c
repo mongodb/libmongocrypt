@@ -24,7 +24,7 @@
     (errno == EINPROGRESS))
 
 static mongoc_stream_t *
-_get_aws_stream (mongocrypt_error_t **error)
+_get_aws_stream (mongocrypt_status_t *status)
 {
    int errcode;
    int r;
@@ -95,7 +95,7 @@ static bool
 _api_call (mongocrypt_t *crypt,
            kms_request_t *request,
            kms_response_t **response,
-           mongocrypt_error_t **error)
+           mongocrypt_status_t *status)
 {
    bool ret = false;
    mongoc_stream_t *stream;
@@ -107,7 +107,7 @@ _api_call (mongocrypt_t *crypt,
    int64_t start;
    const int32_t timeout_msec = 1000;
 
-   stream = _get_aws_stream (error);
+   stream = _get_aws_stream (status);
    if (!stream) {
       goto cleanup;
    }
@@ -162,7 +162,7 @@ cleanup:
 static bool
 _get_data_key_from_response (kms_response_t *response,
                              _mongocrypt_key_t *key,
-                             mongocrypt_error_t **error)
+                             mongocrypt_status_t *status)
 {
    bson_json_reader_t *reader = NULL;
    const char *raw_response_body;
@@ -228,7 +228,7 @@ cleanup:
 bool
 _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
                          _mongocrypt_key_t *key,
-                         mongocrypt_error_t **error)
+                         mongocrypt_status_t *status)
 {
    kms_request_t *request = NULL;
    kms_response_t *response = NULL;
@@ -245,11 +245,11 @@ _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
    kms_request_set_access_key_id (request, crypt->opts->aws_access_key_id);
    kms_request_set_secret_key (request, crypt->opts->aws_secret_access_key);
 
-   if (!_api_call (crypt, request, &response, error)) {
+   if (!_api_call (crypt, request, &response, status)) {
       goto cleanup;
    }
 
-   if (!_get_data_key_from_response (response, key, error)) {
+   if (!_get_data_key_from_response (response, key, status)) {
       goto cleanup;
    }
 
