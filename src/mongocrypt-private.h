@@ -117,7 +117,6 @@ struct _mongocrypt_opts_t {
    char *aws_secret_access_key;
    char *aws_access_key_id;
    char *mongocryptd_uri;
-   char *default_keyvault_client_uri;
 };
 
 typedef struct {
@@ -134,8 +133,6 @@ typedef struct {
 } _mongocrypt_keycache_entry_t;
 
 struct _mongocrypt_t {
-   /* Initially only one supported. Later, use from marking/ciphertext. */
-   mongoc_client_pool_t *keyvault_pool;
    mongoc_client_pool_t *mongocryptd_pool;
    mongocrypt_opts_t *opts;
    mongocrypt_mutex_t mutex;

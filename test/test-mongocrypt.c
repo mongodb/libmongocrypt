@@ -46,9 +46,6 @@ _setup (mongocrypt_opts_t *opts, bson_t *schema)
    mongocrypt_opts_set_opt (
       opts, MONGOCRYPT_AWS_SECRET_ACCESS_KEY, getenv ("AWS_SECRET_ACCESS_KEY"));
    mongocrypt_opts_set_opt (opts, MONGOCRYPT_AWS_REGION, getenv ("AWS_REGION"));
-   mongocrypt_opts_set_opt (opts,
-                            MONGOCRYPT_DEFAULT_KEYVAULT_CLIENT_URI,
-                            "mongodb://localhost:27017");
 
    bson_json_reader_destroy (reader);
 }

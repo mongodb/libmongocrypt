@@ -36,8 +36,8 @@ typedef enum {
    MONGOCRYPT_AWS_REGION,
    MONGOCRYPT_AWS_SECRET_ACCESS_KEY,
    MONGOCRYPT_AWS_ACCESS_KEY_ID,
-   MONGOCRYPT_MONGOCRYPTD_URI,
-   MONGOCRYPT_DEFAULT_KEYVAULT_CLIENT_URI
+   MONGOCRYPT_AWS_KMS_URI,
+   MONGOCRYPT_MONGOCRYPTD_URI
 } mongocrypt_opt_t;
 
 
@@ -87,7 +87,7 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
 
 
 mongocrypt_t *
-mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_status_t *status);
+mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status);
 
 
 void
@@ -128,7 +128,7 @@ mongocrypt_request_needs_keys (mongocrypt_request_t *request);
 
 const mongocrypt_key_query_t *
 mongocrypt_request_next_key_query (mongocrypt_request_t *request,
-                                   mongocrypt_opts_t *opts);
+                                   const mongocrypt_opts_t *opts);
 
 
 bool
