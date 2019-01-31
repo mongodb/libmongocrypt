@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "mongocrypt.h"
 
@@ -29,18 +31,27 @@
 #define BSON_FUNC __func__
 #endif
 
-#ifdef MONGOCRYPT_TRACE
 #define CRYPT_ENTRY                                             \
    do {                                                         \
       if (getenv ("MONGOCRYPT_TRACE")) {                        \
          printf ("[CRYPT entry] %s:%d\n", BSON_FUNC, __LINE__); \
       }                                                         \
    } while (0)
-#else
-#define TRACE(msg, ...)
-#define CRYPT_ENTRY
-#endif
 
+static void _simulate_latency (void) {
+   int ms = 1000;
+   struct timespec to_sleep = {0};
+
+   if (getenv("MONGOCRYPT_LATENCY_MS")) {
+      if (0 == sscanf(getenv("MONGOCRYPT_LATENCY_MS"), "%d", &ms)) {
+         printf("Invalid MONGOCRYPT_LATENCY_MS\n");
+      }
+   }
+
+   to_sleep.tv_sec = ms / 1000;
+   to_sleep.tv_nsec = (ms % 1000) * 1000;
+   nanosleep(&to_sleep, NULL);
+}
 
 struct _mongocrypt_status_t {
    uint32_t code;
@@ -115,7 +126,7 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
 
 
 mongocrypt_t *
-mongocrypt_new (mongocrypt_opts_t *opts, mongocrypt_status_t *status)
+mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
    return calloc (1, sizeof (mongocrypt_t));
@@ -207,7 +218,7 @@ mongocrypt_request_needs_keys (mongocrypt_request_t *request)
 
 const mongocrypt_key_query_t *
 mongocrypt_request_next_key_query (mongocrypt_request_t *request,
-                                   mongocrypt_opts_t *opts)
+                                   const mongocrypt_opts_t *opts)
 {
    static mongocrypt_key_query_t key_query = {0};
 
@@ -224,7 +235,7 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
                              mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   sleep (1);
+   _simulate_latency ();
    return false;
 }
 
@@ -245,7 +256,7 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           mongocrypt_status_t *status)
 {
    CRYPT_ENTRY;
-   sleep (1);
+   _simulate_latency ();
    return calloc (1, sizeof (mongocrypt_request_t));
 }
 

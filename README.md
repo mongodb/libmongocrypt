@@ -12,6 +12,34 @@ cmake ../
 make mongocrypt-stub
 ```
 
+There is also a very simple sanity check to call a few functions in the stub:
+```
+$ make test-mongocrypt-stub
+$ ./test-mongocrypt-stub
+Hello mongocrypt-stub!
+```
+
+You can enable tracing in the library by setting the environment variable `MONGOCRYPT_TRACE`.
+
+```
+$ MONGOCRYPT_TRACE=ON ./test-mongocrypt-stub
+Hello mongocrypt-stub!
+[CRYPT entry] mongocrypt_new:131
+[CRYPT entry] mongocrypt_encrypt_start:258
+[CRYPT entry] mongocrypt_request_destroy:246
+[CRYPT entry] mongocrypt_destroy:139
+```
+
+Functions that do blocking I/O in the real implementation sleep in the stub. By default this is one second. This is configurable with an environment variable `MONGOCRYPT_LATENCY_MS`:
+```
+$ time MONGOCRYPT_LATENCY_MS=5000 ./test-mongocrypt-stub
+Hello mongocrypt-stub!
+
+real	0m5.020s
+user	0m0.006s
+sys	0m0.009s
+```
+
 ## Building libmongocrypt ##
 These instructions have only been tested on macOS 10.14.1 with OpenSSL 1.1.1a.
 

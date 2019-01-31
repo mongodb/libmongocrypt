@@ -51,3 +51,7 @@ set (MONGOCRYPT_STUB_SOURCES
    src/mongocrypt-private.h)
 
 add_library (mongocrypt-stub SHARED ${MONGOCRYPT_STUB_SOURCES})
+
+add_executable (test-mongocrypt-stub test/test-mongocrypt-stub.c)
+target_link_libraries (test-mongocrypt-stub PRIVATE mongocrypt-stub)
+target_include_directories (test-mongocrypt-stub PRIVATE ./src)
