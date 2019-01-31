@@ -4,6 +4,15 @@
 #include "mongocrypt.h"
 #include "mongoc/mongoc.h"
 
+#define MONGOCRYPT_MAC_KEY_LEN 32
+#define MONGOCRYPT_ENC_KEY_LEN 32
+#define MONGOCRYPT_IV_LEN 16
+#define MONGOCRYPT_HMAC_LEN 32
+#define MONGOCRYPT_BLOCK_SIZE 16
+
+/* TODO: when native crypto support is added, conditionally define this. */
+#define MONGOC_ENABLE_SSL_OPENSSL
+
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
 #define CLIENT_ERR_W_CODE(code, ...) \
@@ -94,15 +103,15 @@ _bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
 
 /* This is an internal struct to make working with binary values more
  * convenient.
- * - a non-owning be constructed by iterating BSON.
- * - can transform to an owned buffer.
- * - can be appended directly to a BSON doc.
+ * - a non-owning buffer can be constructed from a bson_iter_t.
+ * - a non-owning buffer can become an owned buffer by copying.
+ * - a buffer can be appended as a BSON binary in a bson_t.
  */
 typedef struct {
    uint8_t *data;
-   bson_subtype_t subtype;
    uint32_t len;
    bool owned;
+   bson_subtype_t subtype;
 } _mongocrypt_buffer_t;
 
 struct _mongocrypt_status_t {
@@ -208,22 +217,24 @@ _mongocryptd_marking_reply_parse (const bson_t *bson,
 void
 mongocrypt_key_cleanup (_mongocrypt_key_t *key);
 
+uint32_t
+_mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len);
+
 bool
-_mongocrypt_do_encryption (const uint8_t *iv,
-                           const uint8_t *key,
-                           const uint8_t *data,
-                           uint32_t data_len,
-                           uint8_t **out,
-                           uint32_t *out_len,
+_mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
+                           const _mongocrypt_buffer_t *associated_data,
+                           const _mongocrypt_buffer_t *key,
+                           const _mongocrypt_buffer_t *plaintext,
+                           _mongocrypt_buffer_t *ciphertext,
+                           uint32_t *bytes_written,
                            mongocrypt_status_t *status);
 
 bool
-_mongocrypt_do_decryption (const uint8_t *iv,
-                           const uint8_t *key,
-                           const uint8_t *data,
-                           uint32_t data_len,
-                           uint8_t **out,
-                           uint32_t *out_len,
+_mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
+                           const _mongocrypt_buffer_t *key,
+                           const _mongocrypt_buffer_t *ciphertext,
+                           _mongocrypt_buffer_t *plaintext,
+                           uint32_t *bytes_written,
                            mongocrypt_status_t *status);
 
 /* Modifies key */
@@ -231,8 +242,6 @@ bool
 _mongocrypt_kms_decrypt (mongocrypt_t *crypt,
                          _mongocrypt_key_t *key,
                          mongocrypt_status_t *status);
-
-#endif
 
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
@@ -291,3 +300,5 @@ struct _mongocrypt_request_t {
    const mongocrypt_binary_t *encrypted_docs;
    uint32_t num_input_docs;
 };
+
+#endif

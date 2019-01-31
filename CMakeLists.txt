@@ -21,6 +21,7 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-parsing.c
       src/mongocrypt-kms.c
       src/mongocrypt-crypto.c
+      src/mongocrypt-openssl.c
       src/mongocrypt-keycache.c)
 
    add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})

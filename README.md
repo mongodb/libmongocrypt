@@ -81,6 +81,9 @@ make
 
 This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the CMAKE_PREFIX_PATH must include the paths to the kms-message and C driver installation directories if they were not the defaults.
 
+### Testing ###
+Generate a test schema and key vault by using `etc/setup_key_vault.py`. Then build and run `test-mongocrypt`.
+
 ### Troubleshooting ###
 If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt. 
 

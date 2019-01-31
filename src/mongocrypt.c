@@ -19,6 +19,16 @@
 
 #include "mongocrypt-private.h"
 
+static void
+_print_bin (_mongocrypt_buffer_t *buf)
+{
+   uint32_t i;
+
+   for (i = 0; i < buf->len; i++) {
+      printf ("%02x", buf->data[i]);
+   }
+   printf ("\n");
+}
 
 const char *
 mongocrypt_version (void)
@@ -565,10 +575,12 @@ _replace_marking_with_ciphertext (void *ctx,
    _mongocrypt_marking_t marking = {0};
    _mongocrypt_ciphertext_t ciphertext = {0};
    _mongocrypt_buffer_t serialized_ciphertext = {0};
+   _mongocrypt_buffer_t plaintext = {0};
    mongocrypt_request_t *request;
    bson_t wrapper = BSON_INITIALIZER;
    const _mongocrypt_key_t *key;
    bool ret;
+   uint32_t bytes_written;
 
    BSON_ASSERT (ctx);
    BSON_ASSERT (in);
@@ -597,16 +609,27 @@ _replace_marking_with_ciphertext (void *ctx,
    CRYPT_TRACE ("performing encryption");
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
 
-   ret = _mongocrypt_do_encryption (ciphertext.iv.data,
-                                    key->data_key.data,
-                                    bson_get_data (&wrapper),
-                                    wrapper.len,
-                                    &ciphertext.data.data,
-                                    &ciphertext.data.len,
+   plaintext.data = (uint8_t *) bson_get_data (&wrapper);
+   plaintext.len = wrapper.len;
+
+   printf ("Encrypting:");
+   _print_bin (&plaintext);
+   ciphertext.data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
+   ciphertext.data.data = bson_malloc (ciphertext.data.len);
+   ciphertext.data.owned = true;
+   ret = _mongocrypt_do_encryption (&ciphertext.iv,
+                                    NULL,
+                                    &key->data_key,
+                                    &plaintext,
+                                    &ciphertext.data,
+                                    &bytes_written,
                                     status);
    if (!ret) {
       goto fail;
    }
+   BSON_ASSERT (bytes_written == ciphertext.data.len);
+   printf ("to:");
+   _print_bin (&ciphertext.data);
 
    memcpy (&ciphertext.key_id, &marking.key_id, sizeof (_mongocrypt_buffer_t));
    ciphertext.keyvault_alias = marking.keyvault_alias;
@@ -751,6 +774,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
    bson_t wrapper;
    bson_iter_t iter;
    const _mongocrypt_key_t *key;
+   uint32_t bytes_written;
    bool ret = false;
 
    CRYPT_ENTRY;
@@ -771,15 +795,22 @@ _replace_ciphertext_with_plaintext (void *ctx,
       goto fail;
    }
 
-   if (!_mongocrypt_do_decryption (ciphertext.iv.data,
-                                   key->data_key.data,
-                                   ciphertext.data.data,
-                                   ciphertext.data.len,
-                                   &plaintext.data,
-                                   &plaintext.len,
+   printf ("Decrypting:");
+   _print_bin (&ciphertext.data);
+   plaintext.len = ciphertext.data.len;
+   plaintext.data = bson_malloc0 (plaintext.len);
+   plaintext.owned = true;
+   if (!_mongocrypt_do_decryption (NULL,
+                                   &key->data_key,
+                                   &ciphertext.data,
+                                   &plaintext,
+                                   &bytes_written,
                                    status)) {
       goto fail;
    }
+   plaintext.len = bytes_written;
+   printf ("To:");
+   _print_bin (&plaintext);
 
    bson_init_static (&wrapper, plaintext.data, plaintext.len);
    bson_iter_init_find (&iter, &wrapper, "");

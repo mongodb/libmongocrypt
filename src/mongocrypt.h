@@ -19,7 +19,7 @@
 #include "mongocrypt-compat.h"
 #include <stdint.h>
 
-#define MONGOCRYPT_VERSION "0.1.0"
+#define MONGOCRYPT_VERSION "0.2.0"
 
 
 const char *

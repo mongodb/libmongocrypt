@@ -27,19 +27,37 @@
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, _err.message)
 
+/* read the schema file, create mongocrypt_t handle with options. */
 static void
-_setup (mongocrypt_opts_t *opts, bson_t *schema)
+_setup (mongocrypt_opts_t *opts, bson_t *one_schema)
 {
    bson_json_reader_t *reader;
    bson_error_t error;
    int status;
+   bson_iter_t iter;
+   bson_t schemas;
+   const uint8_t *data;
+   uint32_t len;
+   bson_t temp;
 
    reader = bson_json_reader_new_from_file ("./test/schema.json", &error);
    ASSERT_OR_PRINT_BSON (reader, error);
 
-   bson_init (schema);
-   status = bson_json_reader_read (reader, schema, &error);
+   bson_init (&schemas);
+   status = bson_json_reader_read (reader, &schemas, &error);
    ASSERT_OR_PRINT_BSON (status == 1, error);
+
+   printf ("schema: %s\n", tmp_json (&schemas));
+
+   BSON_ASSERT (bson_iter_init_find (&iter, &schemas, "test.crypt"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   bson_iter_recurse (&iter, &iter);
+   BSON_ASSERT (bson_iter_find (&iter, "schema"));
+   bson_iter_document (&iter, &len, &data);
+   bson_init_static (&temp, data, len);
+   bson_copy_to (&temp, one_schema);
+   bson_destroy (&schemas);
+   printf ("schema: %s\n", tmp_json (one_schema));
 
    mongocrypt_opts_set_opt (
       opts, MONGOCRYPT_AWS_ACCESS_KEY_ID, getenv ("AWS_ACCESS_KEY_ID"));
@@ -95,7 +113,7 @@ _satisfy_key_queries (mongoc_client_t *keyvault_client,
 }
 
 static void
-test_new_api (void)
+test_roundtrip (void)
 {
    mongocrypt_opts_t *opts;
    mongocrypt_t *crypt;
@@ -162,11 +180,14 @@ test_new_api (void)
 }
 
 
+extern void
+_mongocrypt_test_roundtrip ();
+
 int
 main (int argc, char **argv)
 {
    mongocrypt_init ();
    printf ("Test runner\n");
-   test_new_api ();
+   _mongocrypt_test_roundtrip ();
    mongocrypt_cleanup ();
 }

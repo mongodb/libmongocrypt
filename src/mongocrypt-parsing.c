@@ -120,11 +120,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
    }
    memcpy (&out->v_iter, &iter, sizeof (bson_iter_t));
 
-   if (!bson_iter_init_find (&iter, &bson, "va")) {
-      CLIENT_ERR ("invalid marking, no 'va'");
-      goto cleanup;
-   }
-   out->keyvault_alias = bson_iter_utf8 (&iter, NULL);
+   out->keyvault_alias = "deprecated";
 
    /* TODO: parse "a" and "va" */
 
