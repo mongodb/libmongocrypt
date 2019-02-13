@@ -18,8 +18,9 @@
 #include <mongoc/mongoc.h>
 
 #include "mongocrypt-binary.h"
-#include "mongocrypt-private.h"
 #include "mongocrypt-key-query-private.h"
+#include "mongocrypt-private.h"
+#include "mongocrypt-opts-private.h"
 
 static void
 _print_bin (_mongocrypt_buffer_t *buf)
@@ -37,39 +38,6 @@ mongocrypt_version (void)
 {
    return MONGOCRYPT_VERSION;
 }
-
-
-mongocrypt_status_t *
-mongocrypt_status_new (void)
-{
-   return bson_malloc0 (sizeof (mongocrypt_status_t));
-}
-
-
-const char *
-mongocrypt_status_message (mongocrypt_status_t *status)
-{
-   return status->message;
-}
-
-
-uint32_t
-mongocrypt_status_code (mongocrypt_status_t *status)
-{
-   return status->code;
-}
-
-
-void
-mongocrypt_status_destroy (mongocrypt_status_t *status)
-{
-   if (!status) {
-      return;
-   }
-   bson_free (status->ctx);
-   bson_free (status);
-}
-
 
 void
 _mongocrypt_set_error (mongocrypt_status_t *status,
@@ -156,60 +124,6 @@ mongocrypt_cleanup ()
 }
 
 
-mongocrypt_opts_t *
-mongocrypt_opts_new (void)
-{
-   return bson_malloc0 (sizeof (mongocrypt_opts_t));
-}
-
-
-void
-mongocrypt_opts_destroy (mongocrypt_opts_t *opts)
-{
-   bson_free (opts->aws_region);
-   bson_free (opts->aws_secret_access_key);
-   bson_free (opts->aws_access_key_id);
-   bson_free (opts->mongocryptd_uri);
-   bson_free (opts);
-}
-
-
-static mongocrypt_opts_t *
-mongocrypt_opts_copy (const mongocrypt_opts_t *src)
-{
-   mongocrypt_opts_t *dst = bson_malloc0 (sizeof (mongocrypt_opts_t));
-   dst->aws_region = bson_strdup (src->aws_region);
-   dst->aws_secret_access_key = bson_strdup (src->aws_secret_access_key);
-   dst->aws_access_key_id = bson_strdup (src->aws_access_key_id);
-   dst->mongocryptd_uri = bson_strdup (src->mongocryptd_uri);
-   return dst;
-}
-
-
-void
-mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
-                         mongocrypt_opt_t opt,
-                         void *value)
-{
-   switch (opt) {
-   case MONGOCRYPT_AWS_REGION:
-      opts->aws_region = bson_strdup ((char *) value);
-      break;
-   case MONGOCRYPT_AWS_SECRET_ACCESS_KEY:
-      opts->aws_secret_access_key = bson_strdup ((char *) value);
-      break;
-   case MONGOCRYPT_AWS_ACCESS_KEY_ID:
-      opts->aws_access_key_id = bson_strdup ((char *) value);
-      break;
-   case MONGOCRYPT_MONGOCRYPTD_URI:
-      opts->mongocryptd_uri = bson_strdup ((char *) value);
-      break;
-   default:
-      fprintf (stderr, "Invalid option: %d\n", (int) opt);
-      abort ();
-   }
-}
-
 
 mongocrypt_t *
 mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
@@ -246,6 +160,8 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
                                      MONGOC_ERROR_API_VERSION_2);
    crypt->opts = mongocrypt_opts_copy (opts);
    mongocrypt_mutex_init (&crypt->mutex);
+
+   crypt->cache = _mongocrypt_key_cache_new (_mongocrypt_kms_decrypt, crypt);
    success = true;
 
 fail:
@@ -267,79 +183,9 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    }
    mongocrypt_opts_destroy (crypt->opts);
    mongoc_client_pool_destroy (crypt->mongocryptd_pool);
+   _mongocrypt_key_cache_destroy (crypt->cache);
    mongocrypt_mutex_destroy (&crypt->mutex);
    bson_free (crypt);
-}
-
-
-void
-mongocrypt_request_destroy (mongocrypt_request_t *request)
-{
-   int i;
-
-   CRYPT_ENTRY;
-   if (!request) {
-      return;
-   }
-
-   bson_destroy (&request->mongocryptd_reply);
-
-   for (i = 0; i < request->num_key_queries; i++) {
-      bson_destroy (&request->key_queries[i].filter);
-      bson_free (&request->key_queries[i].keyvault_alias);
-   }
-
-   bson_free (request);
-}
-
-
-bool
-mongocrypt_request_needs_keys (mongocrypt_request_t *request)
-{
-   CRYPT_ENTRY;
-   BSON_ASSERT (request);
-   return request->key_query_iter < request->num_key_queries;
-}
-
-
-const mongocrypt_key_query_t *
-mongocrypt_request_next_key_query (mongocrypt_request_t *request,
-                                   const mongocrypt_opts_t *opts)
-{
-   mongocrypt_key_query_t *key_query;
-
-   CRYPT_ENTRY;
-   BSON_ASSERT (request);
-   key_query = &request->key_queries[request->key_query_iter];
-   request->key_query_iter++;
-   return key_query;
-}
-
-
-bool
-mongocrypt_request_add_keys (mongocrypt_request_t *request,
-                             const mongocrypt_opts_t *opts,
-                             const mongocrypt_binary_t *responses,
-                             uint32_t num_responses,
-                             mongocrypt_status_t *status)
-{
-   int i;
-
-   BSON_ASSERT (request);
-   BSON_ASSERT (responses);
-   BSON_ASSERT (status);
-   CRYPT_ENTRY;
-   for (i = 0; i < num_responses; i++) {
-      /* TODO: don't marshal and add one at a time. Each call to
-       * _mongocrypt_keycache_add locks. */
-      _mongocrypt_buffer_t buf = {0};
-      buf.data = responses[i].data;
-      buf.len = responses[i].len;
-      if (!_mongocrypt_keycache_add (request->crypt, &buf, 1, status)) {
-         return false;
-      }
-   }
-   return true;
 }
 
 
@@ -589,7 +435,7 @@ _replace_marking_with_ciphertext (void *ctx,
 
    /* get the key for this marking. */
    key =
-      _mongocrypt_keycache_get_by_id (request->crypt, &marking.key_id, status);
+      _mongocrypt_key_cache_get_by_id (request->crypt->cache, &marking.key_id, status);
    if (!key) {
       goto fail;
    }
@@ -777,8 +623,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
    }
 
    /* look up the key */
-   key = _mongocrypt_keycache_get_by_id (
-      request->crypt, &ciphertext.key_id, status);
+   key = _mongocrypt_key_cache_get_by_id (
+      request->crypt->cache, &ciphertext.key_id, status);
    if (!key) {
       goto fail;
    }

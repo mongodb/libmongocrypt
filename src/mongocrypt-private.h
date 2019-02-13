@@ -4,6 +4,9 @@
 #include "mongocrypt.h"
 #include "mongoc/mongoc.h"
 
+/* Need the typedef for the key cache */
+#include "mongocrypt-key-cache-private.h"
+
 #define MONGOCRYPT_MAC_KEY_LEN 32
 #define MONGOCRYPT_ENC_KEY_LEN 32
 #define MONGOCRYPT_IV_LEN 16
@@ -114,52 +117,13 @@ typedef struct {
    bson_subtype_t subtype;
 } _mongocrypt_buffer_t;
 
-struct _mongocrypt_status_t {
-   uint32_t type;
-   uint32_t code;
-   char message[1024];
-   void *ctx;
-};
-
-struct _mongocrypt_opts_t {
-   char *aws_region;
-   char *aws_secret_access_key;
-   char *aws_access_key_id;
-   char *mongocryptd_uri;
-};
-
-typedef struct {
-   _mongocrypt_buffer_t id;
-   _mongocrypt_buffer_t key_material;
-   _mongocrypt_buffer_t data_key;
-} _mongocrypt_key_t;
-
-/* Dear reader, please have a laugh at the "key cache". */
-typedef struct {
-   bson_t *key_bson;
-   _mongocrypt_key_t key;
-   bool used;
-} _mongocrypt_keycache_entry_t;
-
 struct _mongocrypt_t {
    mongoc_client_pool_t *mongocryptd_pool;
    mongocrypt_opts_t *opts;
    mongocrypt_mutex_t mutex;
-   /* For now, this "key cache" is just guarded by the same mutex. */
-   _mongocrypt_keycache_entry_t keycache[64];
+   /* The cache has its own interal mutex. */
+   _mongocrypt_key_cache_t *cache;
 };
-
-bool
-_mongocrypt_keycache_add (mongocrypt_t *crypt,
-                          _mongocrypt_buffer_t *docs,
-                          uint32_t num_docs,
-                          mongocrypt_status_t *status);
-const _mongocrypt_key_t *
-_mongocrypt_keycache_get_by_id (mongocrypt_t *crypt,
-                                const _mongocrypt_buffer_t *uuid,
-                                mongocrypt_status_t *status);
-void
-_mongocrypt_keycache_dump (mongocrypt_t *crypt);
 
 void
 _mongocrypt_owned_buffer_from_iter (bson_iter_t *iter,

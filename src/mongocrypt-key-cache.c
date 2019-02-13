@@ -16,8 +16,42 @@ _cmp_uuid (const _mongocrypt_buffer_t *uuid1, const _mongocrypt_buffer_t *uuid2)
    return memcmp (uuid1->data, uuid2->data, uuid1->len);
 }
 
+mongocrypt_key_cache_t *
+_mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
+			   void *decrypt_key_ctx)
+{
+   mongocrypt_key_cache_t *cache;
+
+   cache = (mongocrypt_key_cache_t *) bson_malloc0 (sizeof *mongocrypt_key_cache_t);
+
+   cache->decrypt_key = decrypt_key;
+   cache->decrypt_key_ctx = decrypt_key_ctx;
+
+   mongocrypt_mutex_init (&cache->mutex);
+
+   return cache;
+}
+
+void
+_mongocrypt_key_cache_destroy (mongocrypt_key_cache_t *cache)
+{
+   int i;
+
+   if (!cache) {
+      return;
+   }
+
+   for (int i; i < _mongocrypt_key_cache_size (cache); i++) {
+      /* TODO free the entries? Do we need to? */
+   }
+
+   mongocrypt_mutex_destroy (&cache->mutex);
+   bson_free (cache);
+}
+
+
 bool
-_mongocrypt_keycache_add (mongocrypt_t *crypt,
+_mongocrypt_key_cache_add (mongocrypt_key_cache_t *cache,
                           _mongocrypt_buffer_t *docs,
                           uint32_t num_docs,
                           mongocrypt_status_t *status)
@@ -29,7 +63,7 @@ _mongocrypt_keycache_add (mongocrypt_t *crypt,
    /* lock mutex, add entry (idemptotently) then unlock */
    /* copy the document into the entry. */
    /* than parse */
-   mongocrypt_mutex_lock (&crypt->mutex);
+   mongocrypt_mutex_lock (&cache->mutex);
 
    for (i = 0; i < num_docs; i++) {
       bson_t *copied;
@@ -43,21 +77,21 @@ _mongocrypt_keycache_add (mongocrypt_t *crypt,
       }
 
       /* Check if key already exists. */
-      for (j = 0; j < sizeof (crypt->keycache) / sizeof (crypt->keycache[0]);
+      for (j = 0; j < sizeof (cache->keycache) / sizeof (cache->keycache[0]);
            j++) {
-         if (crypt->keycache[j].used &&
-             0 == _cmp_uuid (&crypt->keycache[j].key.id, &parsed_key.id)) {
-            entry = crypt->keycache + j;
+         if (cache->keycache[j].used &&
+             0 == _cmp_uuid (&cache->keycache[j].key.id, &parsed_key.id)) {
+            entry = cache->keycache + j;
             printf ("found existing duplicate key\n");
             break;
          }
       }
 
       /* Get a free entry. */
-      for (j = 0; j < sizeof (crypt->keycache) / sizeof (crypt->keycache[0]);
+      for (j = 0; j < sizeof (cache->keycache) / sizeof (cache->keycache[0]);
            j++) {
-         if (!crypt->keycache[j].used) {
-            entry = crypt->keycache + j;
+         if (!cache->keycache[j].used) {
+            entry = cache->keycache + j;
             break;
          }
       }
@@ -69,7 +103,7 @@ _mongocrypt_keycache_add (mongocrypt_t *crypt,
       }
 
       /* decrypt the key material. */
-      if (!_mongocrypt_kms_decrypt (crypt, &parsed_key, status)) {
+      if (!cache->decrypt_key (&parsed_key, status, decrypt_key_ctx)) {
          bson_destroy (copied);
          goto cleanup;
       }
@@ -85,23 +119,22 @@ _mongocrypt_keycache_add (mongocrypt_t *crypt,
    ret = true;
 
 cleanup:
-   mongocrypt_mutex_unlock (&crypt->mutex);
+   mongocrypt_mutex_unlock (&cache->mutex);
    return ret;
 }
 
 /* TODO: this should hold a reader lock. */
 const _mongocrypt_key_t *
-_mongocrypt_keycache_get_by_id (mongocrypt_t *crypt,
+_mongocrypt_keycache_get_by_id (mongocrypt_key_cache_t *cache,
                                 const _mongocrypt_buffer_t *uuid,
                                 mongocrypt_status_t *status)
 {
    int i;
 
-   for (i = 0; i < sizeof (crypt->keycache) / sizeof (crypt->keycache[0]);
-        i++) {
+   for (i = 0; i < _mongocrypt_key_cache_size (cache); i++) {
       _mongocrypt_keycache_entry_t *entry;
 
-      entry = crypt->keycache + i;
+      entry = cache->keycache + i;
       if (!entry->used) {
          continue;
       }
@@ -114,18 +147,25 @@ _mongocrypt_keycache_get_by_id (mongocrypt_t *crypt,
    return NULL;
 }
 
+
+int
+_mongocrypt_key_cache_size (mongocrypt_key_cache_t *cache)
+{
+   return (sizeof (cache->keycache) / sizeof (cache->keycache[0]));
+}
+
+
 void
-_mongocrypt_keycache_dump (mongocrypt_t *crypt)
+_mongocrypt_keycache_dump (mongocrypt_key_cache_t *cache)
 {
    int i;
    int total_used = 0;
 
    printf ("Key cache contents:\n");
-   for (i = 0; i < sizeof (crypt->keycache) / sizeof (crypt->keycache[0]);
-        i++) {
+   for (i = 0; i < _mongocrypt_key_cache_size (cache); i++) {
       _mongocrypt_keycache_entry_t *entry;
 
-      entry = crypt->keycache + i;
+      entry = cache->keycache + i;
       if (!entry->used) {
          continue;
       }

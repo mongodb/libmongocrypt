@@ -18,15 +18,27 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt.h
       src/mongocrypt-binary.h
       src/mongocrypt-compat.h
-      src/mongocrypt-private.h
-      src/mongocrypt-parsing.c
+      src/mongocrypt-crypto.c
       src/mongocrypt-key-query.c
       src/mongocrypt-key-query.h
       src/mongocrypt-key-query-private.h
       src/mongocrypt-kms.c
-      src/mongocrypt-crypto.c
+      src/mongocrypt-key-cache.c
+      src/mongocrypt-key-cache.h
+      src/mongocrypt-key-cache-private.h
       src/mongocrypt-openssl.c
-      src/mongocrypt-keycache.c)
+      src/mongocrypt-opts.c
+      src/mongocrypt-opts.h
+      src/mongocrypt-opts-private.h
+      src/mongocrypt-private.h
+      src/mongocrypt-parsing.c
+      src/mongocrypt-request.c
+      src/mongocrypt-request.h
+      src/mongocrypt-request-private.h
+      src/mongocrypt-status.c
+      src/mongocrypt-status.h
+      src/mongocrypt-status-private.h
+      )
 
    add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
    target_include_directories(mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
