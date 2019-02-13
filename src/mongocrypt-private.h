@@ -277,12 +277,6 @@ typedef enum {
    MONGOCRYPT_REQUEST_DECRYPT_VALUE
 } _mongocrypt_request_type_t;
 
-struct _mongocrypt_key_query_t {
-   bson_t filter;
-   mongocrypt_binary_t filter_bin;
-   char *keyvault_alias;
-};
-
 struct _mongocrypt_request_t {
    mongocrypt_t *crypt;
    _mongocrypt_request_type_t type;

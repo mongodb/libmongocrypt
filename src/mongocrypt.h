@@ -19,6 +19,9 @@
 #include "mongocrypt-compat.h"
 #include <stdint.h>
 
+/* The typedef for key query is in here */
+#include "mongocrypt-key-query.h"
+
 #define MONGOCRYPT_VERSION "0.2.0"
 
 
@@ -49,16 +52,7 @@ typedef enum {
 } mongocrypt_error_type_t;
 
 
-typedef struct {
-   uint8_t *data;
-   uint32_t len;
-} mongocrypt_binary_t; /* TODO: likely rename to BSON */
-
-
 typedef struct _mongocrypt_status_t mongocrypt_status_t;
-
-
-typedef struct _mongocrypt_key_query_t mongocrypt_key_query_t;
 
 
 typedef struct _mongocrypt_request_t mongocrypt_request_t;
@@ -112,14 +106,6 @@ mongocrypt_status_code (mongocrypt_status_t *status);
 
 const char *
 mongocrypt_status_message (mongocrypt_status_t *status);
-
-
-const mongocrypt_binary_t *
-mongocrypt_key_query_filter (const mongocrypt_key_query_t *key_query);
-
-
-const char *
-mongocrypt_key_query_keyvault_name (const mongocrypt_key_query_t *key_query);
 
 
 bool

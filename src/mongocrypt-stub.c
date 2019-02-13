@@ -23,6 +23,8 @@
 #include <time.h>
 
 #include "mongocrypt.h"
+#include "mongocrypt-binary.h"
+#include "mongocrypt-key-query.h"
 
 #if defined(_WIN32)
 #define BSON_FUNC __FUNCTION__

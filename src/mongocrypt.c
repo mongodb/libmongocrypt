@@ -17,7 +17,9 @@
 #include <kms_message/kms_message.h>
 #include <mongoc/mongoc.h>
 
+#include "mongocrypt-binary.h"
 #include "mongocrypt-private.h"
+#include "mongocrypt-key-query-private.h"
 
 static void
 _print_bin (_mongocrypt_buffer_t *buf)
@@ -338,20 +340,6 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
       }
    }
    return true;
-}
-
-
-const mongocrypt_binary_t *
-mongocrypt_key_query_filter (const mongocrypt_key_query_t *key_query)
-{
-   return &key_query->filter_bin;
-}
-
-
-const char *
-mongocrypt_key_query_keyvault_name (const mongocrypt_key_query_t *key_query)
-{
-   return key_query->keyvault_alias;
 }
 
 

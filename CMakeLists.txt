@@ -16,9 +16,13 @@ if(MONGOC_STATIC_VERSION)
    set (MONGOCRYPT_SOURCES
       src/mongocrypt.c
       src/mongocrypt.h
+      src/mongocrypt-binary.h
       src/mongocrypt-compat.h
       src/mongocrypt-private.h
       src/mongocrypt-parsing.c
+      src/mongocrypt-key-query.c
+      src/mongocrypt-key-query.h
+      src/mongocrypt-key-query-private.h
       src/mongocrypt-kms.c
       src/mongocrypt-crypto.c
       src/mongocrypt-openssl.c
