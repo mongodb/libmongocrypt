@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <bson/bson.h>
+
 #include "mongocrypt-status-private.h"
 
 mongocrypt_status_t *

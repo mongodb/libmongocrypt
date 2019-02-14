@@ -17,6 +17,11 @@
 #ifndef MONGOCRYPT_REQUEST_PRIVATE_H
 #define MONGOCRYPT_REQUEST_PRIVATE_H
 
+#include <bson/bson.h>
+
+#include "mongocrypt-key-query-private.h"
+/* TODO (Sam) Unlink this dependency later, if possible */
+#include "mongocrypt-private.h"
 
 typedef enum {
    MONGOCRYPT_REQUEST_ENCRYPT,

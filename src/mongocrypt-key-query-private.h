@@ -17,6 +17,8 @@
 #ifndef MONGOCRYPT_KEY_QUERY_PRIVATE_H
 #define MONGOCRYPT_KEY_QUERY_PRIVATE_H
 
+#include <bson/bson.h>
+
 #include "mongocrypt-key-query.h"
 
 struct _mongocrypt_key_query_t {

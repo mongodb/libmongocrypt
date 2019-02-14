@@ -4,8 +4,10 @@
 #include "mongocrypt.h"
 #include "mongoc/mongoc.h"
 
-/* Need the typedef for the key cache */
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-cache-private.h"
+#include "mongocrypt-key-query-private.h"
+#include "mongocrypt-mutex-private.h"
 
 #define MONGOCRYPT_MAC_KEY_LEN 32
 #define MONGOCRYPT_ENC_KEY_LEN 32
@@ -48,21 +50,6 @@
    } while (0)
 
 
-#if defined(BSON_OS_UNIX)
-#include <pthread.h>
-#define mongocrypt_mutex_destroy pthread_mutex_destroy
-#define mongocrypt_mutex_init(_n) pthread_mutex_init ((_n), NULL)
-#define mongocrypt_mutex_lock pthread_mutex_lock
-#define mongocrypt_mutex_t pthread_mutex_t
-#define mongocrypt_mutex_unlock pthread_mutex_unlock
-#else
-#define mongocrypt_mutex_destroy DeleteCriticalSection
-#define mongocrypt_mutex_init InitializeCriticalSection
-#define mongocrypt_mutex_lock EnterCriticalSection
-#define mongocrypt_mutex_t CRITICAL_SECTION
-#define mongocrypt_mutex_unlock LeaveCriticalSection
-#endif
-
 /* TODO: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
 
@@ -104,18 +91,6 @@ _bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
                                  uint32_t code,
                                  mongocrypt_status_t *status);
 
-/* This is an internal struct to make working with binary values more
- * convenient.
- * - a non-owning buffer can be constructed from a bson_iter_t.
- * - a non-owning buffer can become an owned buffer by copying.
- * - a buffer can be appended as a BSON binary in a bson_t.
- */
-typedef struct {
-   uint8_t *data;
-   uint32_t len;
-   bool owned;
-   bson_subtype_t subtype;
-} _mongocrypt_buffer_t;
 
 struct _mongocrypt_t {
    mongoc_client_pool_t *mongocryptd_pool;
@@ -124,23 +99,6 @@ struct _mongocrypt_t {
    /* The cache has its own interal mutex. */
    _mongocrypt_key_cache_t *cache;
 };
-
-void
-_mongocrypt_owned_buffer_from_iter (bson_iter_t *iter,
-                                    _mongocrypt_buffer_t *out);
-
-void
-_mongocrypt_unowned_buffer_from_iter (bson_iter_t *iter,
-                                      _mongocrypt_buffer_t *out);
-
-void
-_mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *binary);
-
-void
-_mongocrypt_bson_append_buffer (bson_t *bson,
-                                const char *key,
-                                uint32_t key_len,
-                                _mongocrypt_buffer_t *in);
 
 typedef struct {
    bson_iter_t v_iter;
@@ -203,9 +161,9 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
 
 /* Modifies key */
 bool
-_mongocrypt_kms_decrypt (mongocrypt_t *crypt,
-                         _mongocrypt_key_t *key,
-                         mongocrypt_status_t *status);
+_mongocrypt_kms_decrypt (_mongocrypt_key_t *key,
+                         mongocrypt_status_t *status,
+			 void *ctx);
 
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
@@ -233,30 +191,5 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       bson_iter_t iter,
                                       bson_t *out,
                                       mongocrypt_status_t *status);
-
-typedef enum {
-   MONGOCRYPT_REQUEST_ENCRYPT,
-   MONGOCRYPT_REQUEST_ENCRYPT_VALUE,
-   MONGOCRYPT_REQUEST_DECRYPT,
-   MONGOCRYPT_REQUEST_DECRYPT_VALUE
-} _mongocrypt_request_type_t;
-
-struct _mongocrypt_request_t {
-   mongocrypt_t *crypt;
-   _mongocrypt_request_type_t type;
-   bool has_encryption_placeholders;
-   bson_t mongocryptd_reply;
-   bson_iter_t result_iter;
-   uint32_t num_key_queries;
-   /* TODO: do something better for key_query requests.
-      Consider copying mongoc_array, vendoring something,
-      or just power-of-two growth.
-    */
-   mongocrypt_key_query_t key_queries[32];
-   uint32_t key_query_iter;
-
-   const mongocrypt_binary_t *encrypted_docs;
-   uint32_t num_input_docs;
-};
 
 #endif

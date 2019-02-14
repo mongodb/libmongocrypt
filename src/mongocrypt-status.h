@@ -17,6 +17,8 @@
 #ifndef MONGOCRYPT_STATUS_H
 #define MONGOCRYPT_STATUS_H
 
+#include <stdint.h>
+
 typedef enum {
    MONGOCRYPT_ERROR_TYPE_NONE,
    MONGOCRYPT_ERROR_TYPE_MONGOCRYPTD,

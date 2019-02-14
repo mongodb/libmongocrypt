@@ -17,6 +17,9 @@
 #ifndef KEY_CACHE_PRIVATE_H
 #define KEY_CACHE_PRIVATE_H
 
+#include "mongocrypt-buffer-private.h"
+#include "mongocrypt-mutex-private.h"
+#include "mongocrypt-status-private.h"
 
 typedef struct {
    _mongocrypt_buffer_t id;
@@ -33,7 +36,8 @@ typedef struct {
 } _mongocrypt_keycache_entry_t;
 
 typedef bool (*mongocrypt_key_decrypt_fn)(_mongocrypt_key_t *key,
-					  mongocrypt_status_t *status);
+					  mongocrypt_status_t *status,
+					  void *ctx);
 
 typedef struct {
    mongocrypt_key_decrypt_fn decrypt_key;
@@ -44,32 +48,32 @@ typedef struct {
 } _mongocrypt_key_cache_t;
 
 
-mongocrypt_key_cache_t *
+_mongocrypt_key_cache_t *
 _mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
 			   void *decrypt_key_ctx);
 
 void
-_mongocrypt_key_cache_destroy (mongocrypt_key_cache_t *cache);
+_mongocrypt_key_cache_destroy (_mongocrypt_key_cache_t *cache);
 
 bool
-_mongocrypt_key_cache_add (mongocrypt_key_cache_t *cache,
+_mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
 			   _mongocrypt_buffer_t *docs,
 			   uint32_t num_docs,
 			   mongocrypt_status_t *status);
 
 
 const _mongocrypt_key_t *
-_mongocrypt_key_cache_get_by_id (mongocrypt_key_cache_t *cache,
+_mongocrypt_key_cache_get_by_id (_mongocrypt_key_cache_t *cache,
 				 const _mongocrypt_buffer_t *uuid,
 				 mongocrypt_status_t *status);
 
 
 void
-_mongocrypt_key_cache_dump (mongocrypt_key_cache_t *cache);
+_mongocrypt_key_cache_dump (_mongocrypt_key_cache_t *cache);
 
 
 int
-_mongocrypt_key_cache_size (mongocrypt_key_cache_t *cache);
+_mongocrypt_key_cache_size (_mongocrypt_key_cache_t *cache);
 
 
 #endif /* KEY_CACHE_PRIVATE_H */

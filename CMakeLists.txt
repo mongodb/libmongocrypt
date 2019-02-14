@@ -17,6 +17,8 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt.c
       src/mongocrypt.h
       src/mongocrypt-binary.h
+      src/mongocrypt-buffer.c
+      src/mongocrypt-buffer-private.h
       src/mongocrypt-compat.h
       src/mongocrypt-crypto.c
       src/mongocrypt-key-query.c
@@ -25,6 +27,7 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-kms.c
       src/mongocrypt-key-cache.c
       src/mongocrypt-key-cache-private.h
+      src/mongocrypt-mutex-private.h
       src/mongocrypt-openssl.c
       src/mongocrypt-opts.c
       src/mongocrypt-opts.h

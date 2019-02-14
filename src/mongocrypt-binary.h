@@ -17,6 +17,8 @@
 #ifndef MONGOCRYPT_BINARY_H
 #define MONGOCRYPT_BINARY_H
 
+#include <stdint.h>
+
 typedef struct {
    uint8_t *data;
    uint32_t len;

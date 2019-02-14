@@ -17,6 +17,7 @@
 #include "kms_message/kms_b64.h"
 #include "kms_message/kms_message.h"
 #include "mongoc/mongoc.h"
+#include "mongocrypt-opts-private.h"
 #include "mongocrypt-private.h"
 
 #define ERRNO_IS_AGAIN(errno)                                          \
@@ -226,15 +227,16 @@ cleanup:
 }
 
 bool
-_mongocrypt_kms_decrypt (mongocrypt_t *crypt,
-                         _mongocrypt_key_t *key,
-                         mongocrypt_status_t *status)
+_mongocrypt_kms_decrypt (_mongocrypt_key_t *key,
+                         mongocrypt_status_t *status,
+			 void *ctx)
 {
+   mongocrypt_t *crypt = (mongocrypt_t *)ctx;
    kms_request_t *request = NULL;
    kms_response_t *response = NULL;
    kms_request_opt_t *request_opt = NULL;
    bool ret = false;
-
+   
    request_opt = kms_request_opt_new ();
    kms_request_opt_set_connection_close (request_opt, true);
 

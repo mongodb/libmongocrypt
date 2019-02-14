@@ -17,6 +17,7 @@
 #include <mongoc/mongoc.h>
 
 #include "mongocrypt-binary.h"
+#include "mongocrypt-key-cache-private.h"
 #include "mongocrypt-key-query-private.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-request-private.h"
@@ -84,7 +85,7 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
       _mongocrypt_buffer_t buf = {0};
       buf.data = responses[i].data;
       buf.len = responses[i].len;
-      if (!_mongocrypt_keycache_add (request->crypt, &buf, 1, status)) {
+      if (!_mongocrypt_key_cache_add (request->crypt->cache, &buf, 1, status)) {
          return false;
       }
    }

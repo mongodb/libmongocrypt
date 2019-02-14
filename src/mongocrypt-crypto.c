@@ -18,9 +18,12 @@
  * Comments in this implementation refer to:
  * [MCGREW] https://tools.ietf.org/html/draft-mcgrew-aead-aes-cbc-hmac-sha2-05
  */
-#include "mongocrypt-private.h"
 
 #include <bson/bson.h>
+
+#include "mongocrypt-buffer-private.h"
+#include "mongocrypt-private.h"
+#include "mongocrypt-status-private.h"
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include "mongocrypt-openssl-private.h"

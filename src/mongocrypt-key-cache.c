@@ -16,13 +16,13 @@ _cmp_uuid (const _mongocrypt_buffer_t *uuid1, const _mongocrypt_buffer_t *uuid2)
    return memcmp (uuid1->data, uuid2->data, uuid1->len);
 }
 
-mongocrypt_key_cache_t *
+_mongocrypt_key_cache_t *
 _mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
 			   void *decrypt_key_ctx)
 {
-   mongocrypt_key_cache_t *cache;
+   _mongocrypt_key_cache_t *cache;
 
-   cache = (mongocrypt_key_cache_t *) bson_malloc0 (sizeof *cache);
+   cache = (_mongocrypt_key_cache_t *) bson_malloc0 (sizeof *cache);
 
    cache->decrypt_key = decrypt_key;
    cache->decrypt_key_ctx = decrypt_key_ctx;
@@ -33,7 +33,7 @@ _mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
 }
 
 void
-_mongocrypt_key_cache_destroy (mongocrypt_key_cache_t *cache)
+_mongocrypt_key_cache_destroy (_mongocrypt_key_cache_t *cache)
 {
    int i;
 
@@ -51,7 +51,7 @@ _mongocrypt_key_cache_destroy (mongocrypt_key_cache_t *cache)
 
 
 bool
-_mongocrypt_key_cache_add (mongocrypt_key_cache_t *cache,
+_mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
                           _mongocrypt_buffer_t *docs,
                           uint32_t num_docs,
                           mongocrypt_status_t *status)
@@ -103,7 +103,7 @@ _mongocrypt_key_cache_add (mongocrypt_key_cache_t *cache,
       }
 
       /* decrypt the key material. */
-      if (!cache->decrypt_key (&parsed_key, status, decrypt_key_ctx)) {
+      if (!cache->decrypt_key (&parsed_key, status, cache->decrypt_key_ctx)) {
          bson_destroy (copied);
          goto cleanup;
       }
@@ -125,9 +125,9 @@ cleanup:
 
 /* TODO: this should hold a reader lock. */
 const _mongocrypt_key_t *
-_mongocrypt_keycache_get_by_id (mongocrypt_key_cache_t *cache,
-                                const _mongocrypt_buffer_t *uuid,
-                                mongocrypt_status_t *status)
+_mongocrypt_key_cache_get_by_id (_mongocrypt_key_cache_t *cache,
+				 const _mongocrypt_buffer_t *uuid,
+				 mongocrypt_status_t *status)
 {
    int i;
 
@@ -149,14 +149,14 @@ _mongocrypt_keycache_get_by_id (mongocrypt_key_cache_t *cache,
 
 
 int
-_mongocrypt_key_cache_size (mongocrypt_key_cache_t *cache)
+_mongocrypt_key_cache_size (_mongocrypt_key_cache_t *cache)
 {
    return (sizeof (cache->keycache) / sizeof (cache->keycache[0]));
 }
 
 
 void
-_mongocrypt_keycache_dump (mongocrypt_key_cache_t *cache)
+_mongocrypt_keycache_dump (_mongocrypt_key_cache_t *cache)
 {
    int i;
    int total_used = 0;

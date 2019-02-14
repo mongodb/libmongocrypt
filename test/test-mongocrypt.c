@@ -4,7 +4,7 @@
 #include <mongoc/mongoc.h>
 #include <mongocrypt.h>
 #include <mongocrypt-private.h>
-
+#include <mongocrypt-key-cache-private.h>
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
    do {                                               \
@@ -156,7 +156,7 @@ test_roundtrip (void)
 
    BSON_ASSERT (mongocrypt_request_needs_keys (request));
    _satisfy_key_queries (keyvault_client, request);
-   _mongocrypt_keycache_dump (crypt);
+   _mongocrypt_key_cache_dump (crypt->cache);
 
    ret = mongocrypt_encrypt_finish (request, NULL, &encrypted_bin, status);
    ASSERT_OR_PRINT (ret, status);
@@ -169,7 +169,7 @@ test_roundtrip (void)
    /* Because no caching, we actually need to fetch keys again. */
    BSON_ASSERT (mongocrypt_request_needs_keys (request));
    _satisfy_key_queries (keyvault_client, request);
-   _mongocrypt_keycache_dump (crypt);
+   _mongocrypt_key_cache_dump (crypt->cache);
 
    ret = mongocrypt_decrypt_finish (request, NULL, &decrypted_bin, status);
    ASSERT_OR_PRINT (ret, status);

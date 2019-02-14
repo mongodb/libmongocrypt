@@ -27,6 +27,6 @@ struct _mongocrypt_opts_t {
 };
 
 mongocrypt_opts_t *
-mongocrypt_opts_copy (const mongocrypt_opts_t *src)
+mongocrypt_opts_copy (const mongocrypt_opts_t *src);
 
 #endif /* OPTS_PRIVATE_H */

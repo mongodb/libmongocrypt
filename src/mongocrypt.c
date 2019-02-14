@@ -21,6 +21,8 @@
 #include "mongocrypt-key-query-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-opts-private.h"
+#include "mongocrypt-request-private.h"
+#include "mongocrypt-status-private.h"
 
 static void
 _print_bin (_mongocrypt_buffer_t *buf)
