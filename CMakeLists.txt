@@ -24,7 +24,6 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-key-query-private.h
       src/mongocrypt-kms.c
       src/mongocrypt-key-cache.c
-      src/mongocrypt-key-cache.h
       src/mongocrypt-key-cache-private.h
       src/mongocrypt-openssl.c
       src/mongocrypt-opts.c
