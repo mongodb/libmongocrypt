@@ -22,7 +22,7 @@ _mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
 {
    mongocrypt_key_cache_t *cache;
 
-   cache = (mongocrypt_key_cache_t *) bson_malloc0 (sizeof *mongocrypt_key_cache_t);
+   cache = (mongocrypt_key_cache_t *) bson_malloc0 (sizeof *cache);
 
    cache->decrypt_key = decrypt_key;
    cache->decrypt_key_ctx = decrypt_key_ctx;
