@@ -1,0 +1,17 @@
+pre:
+- command: shell.exec
+  params: { script: "pre.sh" }
+
+tasks:
+- name: compile-openssl
+  commands:
+  - command: shell.exec
+    params:
+      script: |-
+        echo "Compile placholder"
+
+buildvariants:
+- name: Ubuntu 16.04
+  run_on: ubuntu1604-test
+  tasks:
+  - compile-openssl
