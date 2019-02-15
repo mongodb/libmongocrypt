@@ -1,9 +1,19 @@
 #!/bin/sh
 
-set -o xtrace   # Write all commands first to stderr
-set -o errexit  # Exit the script with error if any of the commands fail
+# Print information about the environment.
 
-echo "Machine environment"
+set -o xtrace
+
+evergreen_root=$(pwd)
+
 git --version
-openssl --version
+openssl version
 python --version
+
+if which gcc; then
+    gcc --version
+fi
+
+if which clang; then
+    clang --version
+fi

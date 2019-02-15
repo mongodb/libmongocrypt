@@ -25,7 +25,7 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOCRYPT_CRYPTO_OPENSSL
 #include "mongocrypt-openssl-private.h"
 #endif
 
@@ -129,7 +129,7 @@ _mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
    BSON_ASSERT (ciphertext->len >=
                 _mongocrypt_calculate_ciphertext_len (plaintext->len));
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOCRYPT_CRYPTO_OPENSSL
    return _openssl_aes256_cbc_sha512_encrypt (
       iv, associated_data, key, plaintext, ciphertext, bytes_written, status);
 #else
@@ -186,7 +186,7 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
    BSON_ASSERT (plaintext->len >=
                 _mongocrypt_calculate_plaintext_len (ciphertext->len));
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOCRYPT_CRYPTO_OPENSSL
    return _openssl_aes256_cbc_sha512_decrypt (
       associated_data, key, ciphertext, plaintext, bytes_written, status);
 #else
@@ -218,7 +218,7 @@ bool
 _mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
 {
    BSON_ASSERT (out->len >= 16);
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOCRYPT_CRYPTO_OPENSSL
    return _openssl_random_iv (out, status);
 #else
    CLIENT_ERR ("not configured with any supported crypto library");

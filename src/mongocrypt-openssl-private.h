@@ -22,7 +22,7 @@ _openssl_aes256_cbc_sha512_encrypt (const _mongocrypt_buffer_t *iv,
                                     const _mongocrypt_buffer_t *key,
                                     const _mongocrypt_buffer_t *plaintext,
                                     _mongocrypt_buffer_t *ciphertext,
-                                    uint32_t* bytes_written,
+                                    uint32_t *bytes_written,
                                     mongocrypt_status_t *status);
 
 bool
@@ -30,5 +30,8 @@ _openssl_aes256_cbc_sha512_decrypt (const _mongocrypt_buffer_t *associated_data,
                                     const _mongocrypt_buffer_t *key,
                                     const _mongocrypt_buffer_t *ciphertext,
                                     _mongocrypt_buffer_t *plaintext,
-                                    uint32_t* bytes_written,
+                                    uint32_t *bytes_written,
                                     mongocrypt_status_t *status);
+
+bool
+_openssl_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);

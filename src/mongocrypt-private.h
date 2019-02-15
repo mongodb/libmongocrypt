@@ -16,7 +16,7 @@
 #define MONGOCRYPT_BLOCK_SIZE 16
 
 /* TODO: when native crypto support is added, conditionally define this. */
-#define MONGOC_ENABLE_SSL_OPENSSL
+#define MONGOCRYPT_CRYPTO_OPENSSL
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 

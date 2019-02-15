@@ -22,7 +22,7 @@
 
 #include <bson/bson.h>
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOCRYPT_CRYPTO_OPENSSL
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>

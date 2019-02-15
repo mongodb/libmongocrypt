@@ -1,17 +1,44 @@
-pre:
-- command: shell.exec
-  params: { script: "pre.sh" }
-
-tasks:
-- name: compile-openssl
-  commands:
+functions:
+  "fetch source":
+  - command: git.get_project
+    params: {directory: libmongocrypt}
   - command: shell.exec
     params:
       script: |-
-        echo "Compile placholder"
+        set -o errexit
+        for i in $(find libmongocrypt/.evergreen -name \*.sh); do
+          chmod +x $i
+        done
+  "tar and upload libmongocrypt libraries":
+  - command: archive.targz_pack
+    params:
+      target: libmongocrypt.tar.gz
+      source_dir: install/libmongocrypt
+      include: [./**]
+  - command: s3.put
+    params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
+      bucket: mciuploads, permissions: public-read, local_file: 'libmongocrypt.tar.gz',
+      content_type: '${content_type|application/x-gzip}'}
+
+pre:
+- func: "fetch source"
+- command: shell.exec
+  params:
+    script: ./libmongocrypt/.evergreen/pre.sh
+
+tasks:
+# Compile tasks take the form:
+# compile-{debug|release}-ssl:{openssl|mac|windows}
+- name: compile-debug-ssl:openssl
+  commands:
+  - command: shell.exec
+    params:
+      script: ./libmongocrypt/.evergreen/compile.sh
+  - func: "tar and upload libmongocrypt libraries"
 
 buildvariants:
-- name: Ubuntu 16.04
+- name: ubuntu1604
+  display_name: "Ubuntu 16.04"
   run_on: ubuntu1604-test
   tasks:
-  - compile-openssl
+  - compile-debug-ssl:openssl

@@ -156,7 +156,7 @@ _mongocrypt_key_cache_size (_mongocrypt_key_cache_t *cache)
 
 
 void
-_mongocrypt_keycache_dump (_mongocrypt_key_cache_t *cache)
+_mongocrypt_key_cache_dump (_mongocrypt_key_cache_t *cache)
 {
    int i;
    int total_used = 0;

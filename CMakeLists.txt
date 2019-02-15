@@ -5,6 +5,16 @@ set (CMAKE_C_STANDARD 99)
 
 find_package(libmongoc-static-1.0 1.11)
 
+set (MONGOCRYPT_PUBLIC_HEADERS
+   src/mongocrypt.h
+   src/mongocrypt-binary.h
+   src/mongocrypt-compat.h
+   src/mongocrypt-key-query.h
+   src/mongocrypt-opts.h
+   src/mongocrypt-request.h
+   src/mongocrypt-status.h
+)
+
 if(MONGOC_STATIC_VERSION)
    message("Found libmongoc and libbson, configuring to add real libmongocrypt target")
    message ("--   mongoc found version \"${MONGOC_STATIC_VERSION}\"")
@@ -12,34 +22,20 @@ if(MONGOC_STATIC_VERSION)
    message ("--   mongoc libraries \"${MONGOC_STATIC_LIBRARIES}\"")
 
    include (FindOpenSSL)
+   message ("Found OpenSSL version ${OPENSSL_VERSION}")
 
    set (MONGOCRYPT_SOURCES
       src/mongocrypt.c
-      src/mongocrypt.h
-      src/mongocrypt-binary.h
       src/mongocrypt-buffer.c
-      src/mongocrypt-buffer-private.h
-      src/mongocrypt-compat.h
       src/mongocrypt-crypto.c
       src/mongocrypt-key-query.c
-      src/mongocrypt-key-query.h
-      src/mongocrypt-key-query-private.h
       src/mongocrypt-kms.c
       src/mongocrypt-key-cache.c
-      src/mongocrypt-key-cache-private.h
-      src/mongocrypt-mutex-private.h
       src/mongocrypt-openssl.c
       src/mongocrypt-opts.c
-      src/mongocrypt-opts.h
-      src/mongocrypt-opts-private.h
-      src/mongocrypt-private.h
       src/mongocrypt-parsing.c
       src/mongocrypt-request.c
-      src/mongocrypt-request.h
-      src/mongocrypt-request-private.h
       src/mongocrypt-status.c
-      src/mongocrypt-status.h
-      src/mongocrypt-status-private.h
       )
 
    add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
@@ -64,13 +60,24 @@ else()
 endif()
 
 set (MONGOCRYPT_STUB_SOURCES
-   src/mongocrypt-stub.c
-   src/mongocrypt.h
-   src/mongocrypt-compat.h
-   src/mongocrypt-private.h)
+   src/mongocrypt-stub.c)
 
 add_library (mongocrypt-stub SHARED ${MONGOCRYPT_STUB_SOURCES})
 
 add_executable (test-mongocrypt-stub test/test-mongocrypt-stub.c)
 target_link_libraries (test-mongocrypt-stub PRIVATE mongocrypt-stub)
 target_include_directories (test-mongocrypt-stub PRIVATE ./src)
+
+install (TARGETS mongocrypt mongocrypt-stub
+   LIBRARY DESTINATION lib
+   ARCHIVE DESTINATION lib
+   RUNTIME DESTINATION bin
+   INCLUDES DESTINATION include
+)
+
+install (
+   FILES
+   ${MONGOCRYPT_PUBLIC_HEADERS}
+   DESTINATION include/mongocrypt
+   COMPONENT Devel
+)
