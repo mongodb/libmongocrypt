@@ -28,6 +28,35 @@
 #include <openssl/hmac.h>
 #include <openssl/crypto.h>
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+   (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+EVP_CIPHER_CTX *
+EVP_CIPHER_CTX_new (void)
+{
+   return bson_malloc0 (sizeof (EVP_CIPHER_CTX));
+}
+
+void
+EVP_CIPHER_CTX_free (EVP_CIPHER_CTX *ctx)
+{
+   EVP_CIPHER_CTX_cleanup (ctx);
+   bson_free (ctx);
+}
+
+HMAC_CTX *
+HMAC_CTX_new (void)
+{
+   return bson_malloc0 (sizeof (HMAC_CTX));
+}
+
+void
+HMAC_CTX_free (HMAC_CTX *ctx)
+{
+   HMAC_CTX_cleanup (ctx);
+   bson_free (ctx);
+}
+#endif
+
 /* ----------------------------------------------------------------------------
  *
  * _openssl_aes256_cbc_encrypt --
