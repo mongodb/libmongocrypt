@@ -159,11 +159,14 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
                            uint32_t *bytes_written,
                            mongocrypt_status_t *status);
 
+bool
+_mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);
+
 /* Modifies key */
 bool
 _mongocrypt_kms_decrypt (_mongocrypt_key_t *key,
                          mongocrypt_status_t *status,
-			 void *ctx);
+                         void *ctx);
 
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,

@@ -196,6 +196,37 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
 }
 
 
+/* ----------------------------------------------------------------------------
+ *
+ * _mongocrypt_random_iv --
+ *
+ *    Generate a random 16 byte IV.
+ *
+ * Parameters:
+ *    @out an output buffer that has been pre-allocated.
+ *    @status set on error.
+ *
+ * Returns:
+ *    True on success. On error, sets @status and returns false.
+ *
+ *  Preconditions:
+ *    1. out has been pre-allocated with at least 16 bytes of space.
+ *
+ * ----------------------------------------------------------------------------
+ */
+bool
+_mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
+{
+   BSON_ASSERT (out->len >= 16);
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   return _openssl_random_iv (out, status);
+#else
+   CLIENT_ERR ("not configured with any supported crypto library");
+   return false;
+#endif
+}
+
+
 /* Testing code below. */
 
 /* Return a repeated character with no null terminator. */

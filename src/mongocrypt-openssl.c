@@ -23,10 +23,11 @@
 #include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/hmac.h>
-#include <openssl/crypto.h>
+#include <openssl/rand.h>
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
    (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
@@ -569,4 +570,22 @@ done:
    return ret;
 }
 
+bool
+_openssl_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
+{
+   int ret = RAND_bytes (out->data, 16);
+   /* From man page: "RAND_bytes() and RAND_priv_bytes() return 1 on success, -1
+    * if not supported by the current RAND method, or 0 on other failure. The
+    * error code can be obtained by ERR_get_error(3)" */
+   if (ret == -1) {
+      CLIENT_ERR ("secure random IV not supported: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      return false;
+   } else if (ret == 0) {
+      CLIENT_ERR ("failed to generate random IV: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      return false;
+   }
+   return true;
+}
 #endif
