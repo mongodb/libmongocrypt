@@ -1,0 +1,5 @@
+GitPython
+boto3
+pymongo
+git+https://github.com/mongodb-labs/mockupcryptd.git
+virtualenv

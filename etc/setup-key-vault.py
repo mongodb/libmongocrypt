@@ -14,32 +14,29 @@ This setup script does the following:
 1. drops admin.datakeys collection
 2. uses your AWS credentials and customer master key (CMK) to encrypt three example 64-byte keys 
 3. inserts those keys into the admin.datakeys collection
-4. creates an example-schemas.json file using the resulting data key ids
+4. prints an example schema using the resulting data key ids
 
-AWS_CMK_ID may be set as an environment variable.
-
-Prior to running, install the AWS CLI tools and run `aws configure` to set your AWS access key id,
-secret key, and region in ~/.aws.
-
-Run with Python 3.
+Set the following environment variables:
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION - e.g. "us-east-1"
+AWS_CMK_ID - customer master key. e.g: arn:aws:kms:us-east-1:524754917239:key/70b3825c-602f-4d65-aeeb-087e565c6abc
 """
-print(instructions)
 
-response = input("Proceed? (y/n) ")
-if response != "y":
-    sys.exit(0)
-
-if "AWS_CMK_ID" in os.environ:
+try:
     cmk_id = os.environ["AWS_CMK_ID"]
-else:
-    cmk_id = input("Enter CMK key ID\n(example: arn:aws:kms:us-east-1:524754917239:key/70b3825c-602f-4d65-aeeb-087e565c6abc)\n")
+    access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
+    secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
+    region = os.environ["AWS_REGION"]
+except KeyError:
+    print(instructions)
+    sys.exit(1)
 
 mongo_client = pymongo.MongoClient()
 datakeys = mongo_client.admin.get_collection("datakeys", codec_options=CodecOptions(uuid_representation=bson.binary.STANDARD))
 datakeys.drop()
 
-print("cmk_id=%s\n" % cmk_id)
-kms_client = boto3.client("kms")
+kms_client = boto3.client("kms", aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key, region_name=region)
 
 # Not sure if this is the right way to create a random bson.binary.UUID in pymongo.
 def randomUUID():
@@ -86,9 +83,6 @@ for data_key in example_keys:
     data_key["keyMaterial"] = bson.binary.Binary(response["CiphertextBlob"])
     datakeys.insert_one(data_key)
 
-
-print("Inserted %d keys into %s" % (len(example_keys), datakeys.full_name))
-
 example_schema = {
    "test.crypt" : {
         "schema": {
@@ -99,8 +93,7 @@ example_schema = {
                         "type": "string",
                         "algorithm": "Deterministic",
                         "keyId": example_keys[0]["_id"],
-                        "iv": bson.binary.Binary(b"i" * 16),
-                        "keyVaultURI": "mongodb://localhost:27017/admin"
+                        "iv": bson.binary.Binary(b"i" * 16)
                     }
                 }
             }
@@ -112,11 +105,5 @@ opts = json_util.JSONOptions(json_mode=json_util.JSONMode.CANONICAL,
                              uuid_representation=bson.binary.STANDARD
                              )
 
-print("Created an example schema for the test.crypt collection:")
 print(json_util.dumps(example_schema, indent=4, json_options=opts))
-
-print("Saved schema to ../test/schema.json")
-f = open("../test/schema.json", "w")
-f.write(json_util.dumps(example_schema, indent=4, json_options=opts))
-f.close()
 

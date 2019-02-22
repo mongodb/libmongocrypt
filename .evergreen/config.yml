@@ -1,44 +1,72 @@
+# Welcome. Evergreen configuration can be time consuming to modify and test. 
+# So each script has a header comment describing how to run it locally.
+# 
+# Some environment variables are hidden by ${inject_env_from_evergreen}.
+# This is set in the evergreen project.
+# View this in Evergreen => Projects => libmongocrypt.
+#
 functions:
   "fetch source":
-  - command: git.get_project
-    params: {directory: libmongocrypt}
-  - command: shell.exec
-    params:
-      script: |-
-        set -o errexit
-        for i in $(find libmongocrypt/.evergreen -name \*.sh); do
-          chmod +x $i
-        done
-  "tar and upload libmongocrypt libraries":
-  - command: archive.targz_pack
-    params:
-      target: libmongocrypt.tar.gz
-      source_dir: install/libmongocrypt
-      include: [./**]
-  - command: s3.put
-    params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
-      bucket: mciuploads, permissions: public-read, local_file: 'libmongocrypt.tar.gz',
-      content_type: '${content_type|application/x-gzip}'}
+    - command: git.get_project
+      params: {directory: libmongocrypt}
+    - command: shell.exec
+      params:
+        script: |-
+          set -o errexit
+          chmod u+x libmongocrypt/.evergreen/*.sh
+          ./libmongocrypt/.evergreen/print-env-info.sh
 
-pre:
-- func: "fetch source"
-- command: shell.exec
-  params:
-    script: ./libmongocrypt/.evergreen/pre.sh
+  "tar and upload libmongocrypt libraries":
+    - command: archive.targz_pack
+      params:
+        target: libmongocrypt.tar.gz
+        source_dir: install/libmongocrypt
+        include: [./**]
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/libmongocrypt.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+
+  "upload logs":
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${revision}/${task_name}/${build_id}/mockupcryptd.logs'
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'mockupcryptd.logs'
+        content_type: 'text/plain'
 
 tasks:
-# Compile tasks take the form:
-# compile-{debug|release}-ssl:{openssl|mac|windows}
-- name: compile-debug-ssl:openssl
+- name: build-and-test:openssl
   commands:
-  - command: shell.exec
+  - func: "fetch source"
+  - command: "shell.exec"
     params:
-      script: ./libmongocrypt/.evergreen/compile.sh
+      script: |-
+        eval "${inject_env_from_evergreen}"
+        ./libmongocrypt/.evergreen/compile.sh
+        ./libmongocrypt/.evergreen/test.sh
+        
   - func: "tar and upload libmongocrypt libraries"
+
+post:
+  - func: "upload logs"
 
 buildvariants:
 - name: ubuntu1604
   display_name: "Ubuntu 16.04"
   run_on: ubuntu1604-test
   tasks:
-  - compile-debug-ssl:openssl
+  - build-and-test:openssl
+- name: rhel76
+  display_name: "RHEL 7.6"
+  run_on: rhel76-test
+  tasks:
+  - build-and-test:openssl

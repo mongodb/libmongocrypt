@@ -1,6 +1,6 @@
 #!/bin/sh
-
 # Print information about the environment.
+#
 
 set -o xtrace
 
