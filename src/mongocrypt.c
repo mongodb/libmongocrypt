@@ -18,6 +18,7 @@
 #include <mongoc/mongoc.h>
 
 #include "mongocrypt-binary.h"
+#include "mongocrypt-crypto-private.h"
 #include "mongocrypt-key-query-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-opts-private.h"

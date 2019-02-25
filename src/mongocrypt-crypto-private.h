@@ -22,25 +22,58 @@
 #define MONGOCRYPT_MAC_KEY_LEN 32
 #define MONGOCRYPT_ENC_KEY_LEN 32
 #define MONGOCRYPT_IV_LEN 16
+#define MONGOCRYPT_HMAC_SHA512_LEN 64
 #define MONGOCRYPT_HMAC_LEN 32
 #define MONGOCRYPT_BLOCK_SIZE 16
+
+uint32_t
+_mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len);
+
+uint32_t
+_mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len);
+
+bool
+_mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
+                           const _mongocrypt_buffer_t *associated_data,
+                           const _mongocrypt_buffer_t *key,
+                           const _mongocrypt_buffer_t *plaintext,
+                           _mongocrypt_buffer_t *ciphertext,
+                           uint32_t *bytes_written,
+                           mongocrypt_status_t *status);
+
+bool
+_mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
+                           const _mongocrypt_buffer_t *key,
+                           const _mongocrypt_buffer_t *ciphertext,
+                           _mongocrypt_buffer_t *plaintext,
+                           uint32_t *bytes_written,
+                           mongocrypt_status_t *status);
+
+bool
+_mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);
+
+int
+_mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len);
 
 /* Crypto implementations must implement these functions. */
 void *
 _crypto_encrypt_new (const _mongocrypt_buffer_t *key,
                      const _mongocrypt_buffer_t *iv,
                      mongocrypt_status_t *status);
+
 bool
 _crypto_encrypt_update (void *ctx,
                         const _mongocrypt_buffer_t *in,
                         _mongocrypt_buffer_t *out,
                         uint32_t *bytes_written,
                         mongocrypt_status_t *status);
+
 bool
 _crypto_encrypt_finalize (void *ctx,
                           _mongocrypt_buffer_t *out,
                           uint32_t *bytes_written,
                           mongocrypt_status_t *status);
+
 void
 _crypto_encrypt_destroy (void *ctx);
 
@@ -48,38 +81,41 @@ void *
 _crypto_decrypt_new (const _mongocrypt_buffer_t *key,
                      const _mongocrypt_buffer_t *iv,
                      mongocrypt_status_t *status);
+
 bool
 _crypto_decrypt_update (void *ctx,
                         const _mongocrypt_buffer_t *in,
                         _mongocrypt_buffer_t *out,
                         uint32_t *bytes_written,
                         mongocrypt_status_t *status);
+
 bool
 _crypto_decrypt_finalize (void *ctx,
                           _mongocrypt_buffer_t *out,
                           uint32_t *bytes_written,
                           mongocrypt_status_t *status);
+
 void
 _crypto_decrypt_destroy (void *ctx);
 
 void *
 _crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status);
+
 bool
 _crypto_hmac_update (void *ctx,
                      const _mongocrypt_buffer_t *in,
                      mongocrypt_status_t *status);
+
 bool
 _crypto_hmac_finalize (void *ctx,
                        _mongocrypt_buffer_t *out,
                        uint32_t *bytes_written,
                        mongocrypt_status_t *status);
+
 void
 _crypto_hmac_destroy (void *ctx);
 
 bool
 _crypto_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);
-
-bool
-_crypto_memcmp (const uint8_t* a, const uint8_t* b, uint32_t len);
 
 #endif

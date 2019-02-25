@@ -95,21 +95,18 @@ done:
       _crypto_encrypt_destroy (ctx);
       return NULL;
    }
-   return (void *) ctx;
+   return ctx;
 }
 
 
 bool
-_crypto_encrypt_update (void *ctx_void,
+_crypto_encrypt_update (void *ctx,
                         const _mongocrypt_buffer_t *in,
                         _mongocrypt_buffer_t *out,
                         uint32_t *bytes_written,
                         mongocrypt_status_t *status)
 {
-   EVP_CIPHER_CTX *ctx;
    bool ret = false;
-
-   ctx = (EVP_CIPHER_CTX *) ctx_void;
 
    if (!EVP_EncryptUpdate (
           ctx, out->data, (int *) bytes_written, in->data, in->len)) {
@@ -125,15 +122,12 @@ done:
 
 
 bool
-_crypto_encrypt_finalize (void *ctx_void,
+_crypto_encrypt_finalize (void *ctx,
                           _mongocrypt_buffer_t *out,
                           uint32_t *bytes_written,
                           mongocrypt_status_t *status)
 {
-   EVP_CIPHER_CTX *ctx;
    bool ret = false;
-
-   ctx = (EVP_CIPHER_CTX *) ctx_void;
 
    if (!EVP_EncryptFinal_ex (ctx, out->data, (int *) bytes_written)) {
       CLIENT_ERR ("error finalizing: %s",
@@ -151,7 +145,7 @@ void
 _crypto_encrypt_destroy (void *ctx)
 {
    if (ctx) {
-      EVP_CIPHER_CTX_free ((EVP_CIPHER_CTX *) ctx);
+      EVP_CIPHER_CTX_free (ctx);
    }
 }
 
@@ -189,21 +183,19 @@ done:
       _crypto_decrypt_destroy (ctx);
       return NULL;
    }
-   return (void *) ctx;
+   return ctx;
 }
 
 
 bool
-_crypto_decrypt_update (void *ctx_void,
+_crypto_decrypt_update (void *ctx,
                         const _mongocrypt_buffer_t *in,
                         _mongocrypt_buffer_t *out,
                         uint32_t *bytes_written,
                         mongocrypt_status_t *status)
 {
-   EVP_CIPHER_CTX *ctx;
    bool ret = false;
 
-   ctx = (EVP_CIPHER_CTX *) ctx_void;
    if (!EVP_DecryptUpdate (
           ctx, out->data, (int *) bytes_written, in->data, in->len)) {
       CLIENT_ERR ("error decrypting: %s",
@@ -218,15 +210,13 @@ done:
 
 
 bool
-_crypto_decrypt_finalize (void *ctx_void,
+_crypto_decrypt_finalize (void *ctx,
                           _mongocrypt_buffer_t *out,
                           uint32_t *bytes_written,
                           mongocrypt_status_t *status)
 {
-   EVP_CIPHER_CTX *ctx;
    bool ret = false;
 
-   ctx = (EVP_CIPHER_CTX *) ctx_void;
    if (!EVP_DecryptFinal_ex (ctx, out->data, (int *) bytes_written)) {
       CLIENT_ERR ("error decrypting: %s",
                   ERR_error_string (ERR_get_error (), NULL));
@@ -242,7 +232,7 @@ done:
 void
 _crypto_decrypt_destroy (void *ctx)
 {
-   EVP_CIPHER_CTX_free ((EVP_CIPHER_CTX *) ctx);
+   EVP_CIPHER_CTX_free (ctx);
 }
 
 
@@ -271,19 +261,17 @@ done:
       _crypto_hmac_destroy (ctx);
       return NULL;
    }
-   return (void *) ctx;
+   return ctx;
 }
 
 
 bool
-_crypto_hmac_update (void *ctx_void,
+_crypto_hmac_update (void *ctx,
                      const _mongocrypt_buffer_t *in,
                      mongocrypt_status_t *status)
 {
-   HMAC_CTX *ctx;
    bool ret = false;
 
-   ctx = (HMAC_CTX *) ctx_void;
    if (!HMAC_Update (ctx, in->data, in->len)) {
       CLIENT_ERR ("error updating HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
@@ -297,29 +285,19 @@ done:
 
 
 bool
-_crypto_hmac_finalize (void *ctx_void,
+_crypto_hmac_finalize (void *ctx,
                        _mongocrypt_buffer_t *out,
                        uint32_t *bytes_written,
                        mongocrypt_status_t *status)
 {
-   HMAC_CTX *ctx;
-   uint8_t tag[64];
-   uint32_t tag_bytes_written;
    bool ret = false;
 
-   ctx = (HMAC_CTX *) ctx_void;
-   if (!HMAC_Final (ctx, tag, &tag_bytes_written)) {
+   BSON_ASSERT (out->len >= 64);
+   if (!HMAC_Final (ctx, out->data, bytes_written)) {
       CLIENT_ERR ("error finalizing: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
-
-   BSON_ASSERT (64 == tag_bytes_written);
-
-   /* [MCGREW 2.7] "The HMAC-SHA-512 value is truncated to T_LEN=32 octets" */
-   memcpy (out->data, tag, MONGOCRYPT_HMAC_LEN);
-
-   *bytes_written = MONGOCRYPT_HMAC_LEN;
 
    ret = true;
 done:
@@ -355,9 +333,4 @@ _crypto_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
    return true;
 }
 
-
-bool
-_crypto_memcmp (const uint8_t* a, const uint8_t* b, uint32_t len) {
-   return CRYPTO_memcmp (a, b, len);
-}
 #endif

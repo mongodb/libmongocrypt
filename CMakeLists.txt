@@ -21,9 +21,6 @@ if(MONGOC_STATIC_VERSION)
    message ("--   mongoc include path \"${MONGOC_STATIC_INCLUDE_DIRS}\"")
    message ("--   mongoc libraries \"${MONGOC_STATIC_LIBRARIES}\"")
 
-   include (FindOpenSSL)
-   message ("Found OpenSSL version ${OPENSSL_VERSION}")
-
    set (MONGOCRYPT_SOURCES
       src/mongocrypt.c
       src/mongocrypt-buffer.c
@@ -44,8 +41,17 @@ if(MONGOC_STATIC_VERSION)
    target_link_libraries(mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
-   target_link_libraries(mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
-   target_include_directories(mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
+   if (APPLE)
+      message ("Building with common crypto")
+      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
+   else ()
+      message ("Building with OpenSSL")
+      include (FindOpenSSL)
+      message ("Found OpenSSL version ${OPENSSL_VERSION}")
+      target_link_libraries(mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
+      target_include_directories(mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
+      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
+   endif ()
 
    find_package (kms_message REQUIRED)
    target_link_libraries(mongocrypt PRIVATE kms_message_static)

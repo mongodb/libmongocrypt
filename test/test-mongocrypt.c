@@ -3,8 +3,10 @@
 
 #include <mongoc/mongoc.h>
 #include <mongocrypt.h>
-#include <mongocrypt-private.h>
+#include <mongocrypt-crypto-private.h>
 #include <mongocrypt-key-cache-private.h>
+#include <mongocrypt-private.h>
+
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
    do {                                               \
@@ -237,7 +239,6 @@ _mongocrypt_test_roundtrip (void)
 
    ret = _mongocrypt_do_decryption (
       &associated_data, &key, &ciphertext, &decrypted, &bytes_written, status);
-   printf ("%s\n", status->message);
    BSON_ASSERT (ret);
 
 
@@ -348,7 +349,6 @@ _mongocrypt_test_mcgrew (void)
    BSON_ASSERT (0 == memcmp (ciphertext_actual.data,
                              ciphertext_expected.data,
                              ciphertext_actual.len));
-   _print_buf ("generated ciphertext", &ciphertext_actual);
 
    _mongocrypt_buffer_cleanup (&key);
    _mongocrypt_buffer_cleanup (&iv);

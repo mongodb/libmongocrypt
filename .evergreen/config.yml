@@ -44,7 +44,7 @@ functions:
         content_type: 'text/plain'
 
 tasks:
-- name: build-and-test:openssl
+- name: build-and-test
   commands:
   - func: "fetch source"
   - command: "shell.exec"
@@ -64,9 +64,14 @@ buildvariants:
   display_name: "Ubuntu 16.04"
   run_on: ubuntu1604-test
   tasks:
-  - build-and-test:openssl
+  - build-and-test
 - name: rhel76
   display_name: "RHEL 7.6"
   run_on: rhel76-test
   tasks:
-  - build-and-test:openssl
+  - build-and-test
+- name: macos
+  display_name: "macOS 10.14"
+  run_on: macos-1014
+  tasks:
+  - build-and-test

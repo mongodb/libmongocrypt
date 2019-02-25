@@ -25,9 +25,6 @@
 #include "mongocrypt-key-query-private.h"
 #include "mongocrypt-mutex-private.h"
 
-/* TODO: when native crypto support is added, conditionally define this. */
-#define MONGOCRYPT_CRYPTO_OPENSSL
-
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
 #define CLIENT_ERR_W_CODE(code, ...) \
@@ -149,31 +146,6 @@ _mongocryptd_marking_reply_parse (const bson_t *bson,
 void
 mongocrypt_key_cleanup (_mongocrypt_key_t *key);
 
-uint32_t
-_mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len);
-
-uint32_t
-_mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len);
-
-bool
-_mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
-                           const _mongocrypt_buffer_t *associated_data,
-                           const _mongocrypt_buffer_t *key,
-                           const _mongocrypt_buffer_t *plaintext,
-                           _mongocrypt_buffer_t *ciphertext,
-                           uint32_t *bytes_written,
-                           mongocrypt_status_t *status);
-
-bool
-_mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
-                           const _mongocrypt_buffer_t *key,
-                           const _mongocrypt_buffer_t *ciphertext,
-                           _mongocrypt_buffer_t *plaintext,
-                           uint32_t *bytes_written,
-                           mongocrypt_status_t *status);
-
-bool
-_mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);
 
 /* Modifies key */
 bool

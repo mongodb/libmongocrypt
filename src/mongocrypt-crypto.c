@@ -26,12 +26,21 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 
-#if defined(MONGOCRYPT_CRYPTO_OPENSSL)
-#include "mongocrypt-openssl-private.h"
-#elif defined(MONGOCRYPT_CRYPTO_COMMONCRYPTO)
-#include "mongocrypt-commoncrypto-private.h"
-#endif
+/*
+ * Secure memcmp copied from the C driver.
+ */
+int
+_mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len)
+{
+   const unsigned char *p1 = b1, *p2 = b2;
+   int ret = 0;
 
+   for (; len > 0; len--) {
+      ret |= *p1++ ^ *p2++;
+   }
+
+   return ret ? 1 : 0;
+}
 
 /* ----------------------------------------------------------------------------
  *
@@ -123,8 +132,10 @@ _aes256_cbc_encrypt (const _mongocrypt_buffer_t *iv,
    void *ctx = NULL;
    bool ret = false;
    uint32_t intermediate_bytes_written;
+   uint32_t unaligned;
    uint32_t padding_byte;
-   _mongocrypt_buffer_t padding, intermediate;
+   _mongocrypt_buffer_t intermediate_in, intermediate_out;
+   uint8_t final_block_storage[MONGOCRYPT_BLOCK_SIZE];
 
    CRYPT_ENTRY;
    BSON_ASSERT (bytes_written);
@@ -135,49 +146,68 @@ _aes256_cbc_encrypt (const _mongocrypt_buffer_t *iv,
       goto done;
    }
 
-   if (!_crypto_encrypt_update (
-          ctx, plaintext, ciphertext, &intermediate_bytes_written, status)) {
+   /* calculate how many extra bytes there are after a block boundary */
+   unaligned = plaintext->len % MONGOCRYPT_BLOCK_SIZE;
+
+   /* Some crypto providers disallow variable length inputs, and require
+    * the input to be a multiple of the block size. So add everything up
+    * to but excluding the last block if not block aligned, then add
+    * the last block with padding. */
+   intermediate_in.data = (uint8_t *) plaintext->data;
+   intermediate_in.len = plaintext->len - unaligned;
+   intermediate_out.data = (uint8_t *) ciphertext->data;
+   intermediate_out.len = ciphertext->len;
+   if (!_crypto_encrypt_update (ctx,
+                                &intermediate_in,
+                                &intermediate_out,
+                                &intermediate_bytes_written,
+                                status)) {
       goto done;
    }
 
    *bytes_written += intermediate_bytes_written;
+   intermediate_out.data = ciphertext->data + *bytes_written;
+   intermediate_out.len = ciphertext->len - *bytes_written;
 
    /* [MCGREW]: "Prior to CBC encryption, the plaintext P is padded by appending
     * a padding string PS to that data, to ensure that len(P || PS) is a
-    * multiple of 128". */
-   padding_byte =
-      MONGOCRYPT_BLOCK_SIZE - (plaintext->len % MONGOCRYPT_BLOCK_SIZE);
-   if (!padding_byte) {
+    * multiple of 128". This is also known as PKCS #7 padding. */
+   intermediate_in.data = final_block_storage;
+   intermediate_in.len = sizeof (final_block_storage);
+   if (unaligned) {
+      /* Copy the unaligned bytes. */
+      memcpy (intermediate_in.data,
+              plaintext->data + (plaintext->len - unaligned),
+              unaligned);
+      /* Fill the rest with the padding byte. */
+      padding_byte = MONGOCRYPT_BLOCK_SIZE - unaligned;
+      memset (intermediate_in.data + unaligned, padding_byte, padding_byte);
+   } else {
+      /* Fill the rest with the padding byte. */
       padding_byte = MONGOCRYPT_BLOCK_SIZE;
+      memset (intermediate_in.data, padding_byte, padding_byte);
    }
 
-   padding.data = bson_malloc (padding_byte);
-   memset (padding.data, padding_byte, padding_byte);
-   padding.len = padding_byte;
-   padding.owned = true;
-
-   intermediate.data = ciphertext->data + *bytes_written;
-   intermediate.len = ciphertext->len - *bytes_written;
-
-   if (!_crypto_encrypt_update (
-          ctx, &padding, &intermediate, &intermediate_bytes_written, status)) {
+   if (!_crypto_encrypt_update (ctx,
+                                &intermediate_in,
+                                &intermediate_out,
+                                &intermediate_bytes_written,
+                                status)) {
       goto done;
    }
 
-   _mongocrypt_buffer_cleanup (&padding);
    *bytes_written += intermediate_bytes_written;
+   intermediate_out.data = ciphertext->data + *bytes_written;
+   intermediate_out.len = ciphertext->len - *bytes_written;
+
    BSON_ASSERT (*bytes_written % MONGOCRYPT_BLOCK_SIZE == 0);
 
-   intermediate.data = ciphertext->data + *bytes_written;
-   intermediate.len = ciphertext->len - *bytes_written;
-
    if (!_crypto_encrypt_finalize (
-          ctx, &intermediate, &intermediate_bytes_written, status)) {
+          ctx, &intermediate_out, &intermediate_bytes_written, status)) {
       goto done;
    }
 
    BSON_ASSERT (intermediate_bytes_written == 0);
-
    *bytes_written += intermediate_bytes_written;
    ret = true;
 
@@ -260,8 +290,7 @@ _hmac_sha512 (const _mongocrypt_buffer_t *key,
    /* Add associated data length in bits. */
    associated_data_len_be = 8 * associated_data->len;
    associated_data_len_be = BSON_UINT64_TO_BE (associated_data_len_be);
-   associated_data_len.data =
-      (uint8_t *) &associated_data_len_be; /* TODO: for failures, check this. */
+   associated_data_len.data = (uint8_t *) &associated_data_len_be;
    associated_data_len.len = sizeof (uint64_t);
    if (!_crypto_hmac_update (ctx, &associated_data_len, status)) {
       goto done;
@@ -273,7 +302,7 @@ _hmac_sha512 (const _mongocrypt_buffer_t *key,
       goto done;
    }
 
-   BSON_ASSERT (MONGOCRYPT_HMAC_LEN == bytes_written);
+   BSON_ASSERT (MONGOCRYPT_HMAC_SHA512_LEN == bytes_written);
 
    /* [MCGREW 2.7] "The HMAC-SHA-512 value is truncated to T_LEN=32 octets" */
    memcpy (out->data, tag.data, MONGOCRYPT_HMAC_LEN);
@@ -440,7 +469,7 @@ _aes256_cbc_decrypt (const _mongocrypt_buffer_t *iv,
    }
 
    if (!_crypto_decrypt_update (
-          ctx, ciphertext, plaintext, bytes_written, status)) {
+          ctx, ciphertext, plaintext, &intermediate_bytes_written, status)) {
       goto done;
    }
 
@@ -547,10 +576,10 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
    }
 
    /* [MCGREW] "using a comparison routine that takes constant time". */
-   /* TODO: CRYPTO_memcmp */
-   if (0 != memcmp (hmac_tag.data,
-                    ciphertext->data + (ciphertext->len - MONGOCRYPT_HMAC_LEN),
-                    MONGOCRYPT_HMAC_LEN)) {
+   if (0 != _mongocrypt_memcmp (hmac_tag.data,
+                                ciphertext->data +
+                                   (ciphertext->len - MONGOCRYPT_HMAC_LEN),
+                                MONGOCRYPT_HMAC_LEN)) {
       CLIENT_ERR ("HMAC validation failure");
       goto done;
    }
