@@ -1,3 +1,19 @@
+/*
+ * Copyright 2019-present MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef MONGOCRYPT_MONGOCRYPT_PRIVATE_H
 #define MONGOCRYPT_MONGOCRYPT_PRIVATE_H
 
@@ -8,12 +24,6 @@
 #include "mongocrypt-key-cache-private.h"
 #include "mongocrypt-key-query-private.h"
 #include "mongocrypt-mutex-private.h"
-
-#define MONGOCRYPT_MAC_KEY_LEN 32
-#define MONGOCRYPT_ENC_KEY_LEN 32
-#define MONGOCRYPT_IV_LEN 16
-#define MONGOCRYPT_HMAC_LEN 32
-#define MONGOCRYPT_BLOCK_SIZE 16
 
 /* TODO: when native crypto support is added, conditionally define this. */
 #define MONGOCRYPT_CRYPTO_OPENSSL
@@ -141,6 +151,9 @@ mongocrypt_key_cleanup (_mongocrypt_key_t *key);
 
 uint32_t
 _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len);
+
+uint32_t
+_mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len);
 
 bool
 _mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,

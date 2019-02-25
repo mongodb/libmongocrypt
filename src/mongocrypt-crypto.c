@@ -22,11 +22,14 @@
 #include <bson/bson.h>
 
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-crypto-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 
-#ifdef MONGOCRYPT_CRYPTO_OPENSSL
+#if defined(MONGOCRYPT_CRYPTO_OPENSSL)
 #include "mongocrypt-openssl-private.h"
+#elif defined(MONGOCRYPT_CRYPTO_COMMONCRYPTO)
+#include "mongocrypt-commoncrypto-private.h"
 #endif
 
 
@@ -83,6 +86,206 @@ _mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len)
 
 /* ----------------------------------------------------------------------------
  *
+ * _aes256_cbc_encrypt --
+ *
+ *    Encrypts using AES256 CBC using a secret key and a known IV.
+ *
+ * Parameters:
+ *    @iv a 16 byte IV.
+ *    @key a 32 byte key.
+ *    @plaintext the plaintext to encrypt.
+ *    @ciphertext the resulting ciphertext.
+ *    @bytes_written a location for the resulting number of bytes written into
+ *    ciphertext->data.
+ *    @status set on error.
+ *
+ * Returns:
+ *    True on success. On error, sets @status and returns false.
+ *
+ * Preconditions:
+ *    1. ciphertext->data has been pre-allocated with enough space for the
+ *    resulting ciphertext.
+ *
+ * Postconditions:
+ *    1. bytes_written is set to the length of the written ciphertext. This
+ *    is the same as _mongocrypt_calculate_ciphertext_len (plaintext->len).
+ *
+ * ----------------------------------------------------------------------------
+ */
+static bool
+_aes256_cbc_encrypt (const _mongocrypt_buffer_t *iv,
+                     const _mongocrypt_buffer_t *key,
+                     const _mongocrypt_buffer_t *plaintext,
+                     _mongocrypt_buffer_t *ciphertext,
+                     uint32_t *bytes_written,
+                     mongocrypt_status_t *status)
+{
+   void *ctx = NULL;
+   bool ret = false;
+   uint32_t intermediate_bytes_written;
+   uint32_t padding_byte;
+   _mongocrypt_buffer_t padding, intermediate;
+
+   CRYPT_ENTRY;
+   BSON_ASSERT (bytes_written);
+   *bytes_written = 0;
+
+   ctx = _crypto_encrypt_new (key, iv, status);
+   if (!ctx) {
+      goto done;
+   }
+
+   if (!_crypto_encrypt_update (
+          ctx, plaintext, ciphertext, &intermediate_bytes_written, status)) {
+      goto done;
+   }
+
+   *bytes_written += intermediate_bytes_written;
+
+   /* [MCGREW]: "Prior to CBC encryption, the plaintext P is padded by appending
+    * a padding string PS to that data, to ensure that len(P || PS) is a
+    * multiple of 128". */
+   padding_byte =
+      MONGOCRYPT_BLOCK_SIZE - (plaintext->len % MONGOCRYPT_BLOCK_SIZE);
+   if (!padding_byte) {
+      padding_byte = MONGOCRYPT_BLOCK_SIZE;
+   }
+
+   padding.data = bson_malloc (padding_byte);
+   memset (padding.data, padding_byte, padding_byte);
+   padding.len = padding_byte;
+   padding.owned = true;
+
+   intermediate.data = ciphertext->data + *bytes_written;
+   intermediate.len = ciphertext->len - *bytes_written;
+
+   if (!_crypto_encrypt_update (
+          ctx, &padding, &intermediate, &intermediate_bytes_written, status)) {
+      goto done;
+   }
+
+   _mongocrypt_buffer_cleanup (&padding);
+   *bytes_written += intermediate_bytes_written;
+   BSON_ASSERT (*bytes_written % MONGOCRYPT_BLOCK_SIZE == 0);
+
+   intermediate.data = ciphertext->data + *bytes_written;
+   intermediate.len = ciphertext->len - *bytes_written;
+
+   if (!_crypto_encrypt_finalize (
+          ctx, &intermediate, &intermediate_bytes_written, status)) {
+      goto done;
+   }
+
+   BSON_ASSERT (intermediate_bytes_written == 0);
+
+   *bytes_written += intermediate_bytes_written;
+   ret = true;
+
+done:
+   _crypto_encrypt_destroy (ctx);
+   return ret;
+}
+
+
+/* ----------------------------------------------------------------------------
+ *
+ * _hmac_sha512 --
+ *
+ *    Compute the SHA512 HMAC with a secret key.
+ *
+ * Parameters:
+ *    @key a 32 byte key.
+ *    @associated_data associated data to add into the HMAC. This may be
+ *    an empty buffer.
+ *    @ciphertext the ciphertext to add into the HMAC.
+ *    @out a location for the resulting HMAC tag.
+ *    @status set on error.
+ *
+ * Returns:
+ *    True on success. On error, sets @status and returns false.
+ *
+ * Preconditions:
+ *    1. out->data has been pre-allocated with at least 64 bytes.
+ *
+ * Postconditions:
+ *    1. out->data will have a 64 byte tag appended.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static bool
+_hmac_sha512 (const _mongocrypt_buffer_t *key,
+              const _mongocrypt_buffer_t *associated_data,
+              const _mongocrypt_buffer_t *ciphertext,
+              _mongocrypt_buffer_t *out,
+              mongocrypt_status_t *status)
+{
+   void *ctx = NULL;
+   bool ret = false;
+   uint64_t associated_data_len_be;
+   uint32_t bytes_written;
+   uint8_t tag_storage[64];
+   _mongocrypt_buffer_t tag, associated_data_len;
+
+   CRYPT_ENTRY;
+   BSON_ASSERT (MONGOCRYPT_MAC_KEY_LEN == key->len);
+   BSON_ASSERT (out->len >= MONGOCRYPT_HMAC_LEN);
+
+   ctx = _crypto_hmac_new (key, status);
+   if (!ctx) {
+      goto done;
+   }
+
+   /* [MCGREW]:
+    * """
+    * 4.  The octet string AL is equal to the number of bits in A expressed as a
+    * 64-bit unsigned integer in network byte order.
+    * 5.  A message authentication tag T is computed by applying HMAC [RFC2104]
+    * to the following data, in order:
+    *      the associated data A,
+    *      the ciphertext S computed in the previous step, and
+    *      the octet string AL defined above.
+    * """
+    */
+
+   /* Add associated data. */
+   if (!_crypto_hmac_update (ctx, associated_data, status)) {
+      goto done;
+   }
+
+   /* Add ciphertext. */
+   if (!_crypto_hmac_update (ctx, ciphertext, status)) {
+      goto done;
+   }
+
+   /* Add associated data length in bits. */
+   associated_data_len_be = 8 * associated_data->len;
+   associated_data_len_be = BSON_UINT64_TO_BE (associated_data_len_be);
+   associated_data_len.data =
+      (uint8_t *) &associated_data_len_be; /* TODO: for failures, check this. */
+   associated_data_len.len = sizeof (uint64_t);
+   if (!_crypto_hmac_update (ctx, &associated_data_len, status)) {
+      goto done;
+   }
+
+   tag.data = tag_storage;
+   tag.len = sizeof (tag_storage);
+   if (!_crypto_hmac_finalize (ctx, &tag, &bytes_written, status)) {
+      goto done;
+   }
+
+   BSON_ASSERT (MONGOCRYPT_HMAC_LEN == bytes_written);
+
+   /* [MCGREW 2.7] "The HMAC-SHA-512 value is truncated to T_LEN=32 octets" */
+   memcpy (out->data, tag.data, MONGOCRYPT_HMAC_LEN);
+
+   ret = true;
+done:
+   _crypto_hmac_destroy (ctx);
+   return ret;
+}
+
+/* ----------------------------------------------------------------------------
+ *
  * _mongocrypt_do_encryption --
  *
  *    Defer encryption to whichever crypto library libmongocrypt is using.
@@ -118,24 +321,147 @@ _mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
                            uint32_t *bytes_written,
                            mongocrypt_status_t *status)
 {
-   _mongocrypt_buffer_t empty_buffer = {0};
+   bool ret = false;
+   _mongocrypt_buffer_t mac_key = {0}, enc_key = {0}, intermediate = {0},
+                        intermediate_hmac = {0}, empty_buffer = {0};
+   uint32_t intermediate_bytes_written = 0;
 
    CRYPT_ENTRY;
-
-   if (!associated_data) {
-      associated_data = &empty_buffer;
-   }
 
    BSON_ASSERT (ciphertext->len >=
                 _mongocrypt_calculate_ciphertext_len (plaintext->len));
 
-#ifdef MONGOCRYPT_CRYPTO_OPENSSL
-   return _openssl_aes256_cbc_sha512_encrypt (
-      iv, associated_data, key, plaintext, ciphertext, bytes_written, status);
-#else
-   CLIENT_ERR ("not configured with any supported crypto library");
-   return false;
-#endif
+   *bytes_written = 0;
+   intermediate.len = ciphertext->len;
+   intermediate.data = ciphertext->data;
+
+   /* [MCGREW]: Step 1. "MAC_KEY consists of the initial MAC_KEY_LEN octets of
+    * K, in order. ENC_KEY consists of the final ENC_KEY_LEN octets of K, in
+    * order." */
+   mac_key.data = (uint8_t *) key->data;
+   mac_key.len = MONGOCRYPT_MAC_KEY_LEN;
+   enc_key.data = (uint8_t *) key->data + (key->len - MONGOCRYPT_ENC_KEY_LEN);
+   enc_key.len = MONGOCRYPT_ENC_KEY_LEN;
+
+   /* Prepend the IV. */
+   memcpy (intermediate.data, iv->data, iv->len);
+   intermediate.data += iv->len;
+   intermediate.len -= iv->len;
+   *bytes_written += iv->len;
+
+   /* [MCGREW]: Steps 2 & 3. */
+   if (!_aes256_cbc_encrypt (iv,
+                             &enc_key,
+                             plaintext,
+                             &intermediate,
+                             &intermediate_bytes_written,
+                             status)) {
+      goto done;
+   }
+
+   *bytes_written += intermediate_bytes_written;
+
+   /* Append the HMAC tag. */
+   intermediate_hmac.data = ciphertext->data + *bytes_written;
+   intermediate_hmac.len = MONGOCRYPT_HMAC_LEN;
+
+   intermediate.data = ciphertext->data;
+   intermediate.len = *bytes_written;
+
+   /* [MCGREW]: Steps 4 & 5, compute the HMAC. */
+   if (!_hmac_sha512 (&mac_key,
+                      associated_data ? associated_data : &empty_buffer,
+                      &intermediate,
+                      &intermediate_hmac,
+                      status)) {
+      goto done;
+   }
+
+   *bytes_written += MONGOCRYPT_HMAC_LEN;
+   ret = true;
+done:
+   return ret;
+}
+
+
+/* ----------------------------------------------------------------------------
+ *
+ * _aes256_cbc_decrypt --
+ *
+ *    Decrypts using AES256 CBC using a secret key and a known IV.
+ *
+ * Parameters:
+ *    @key a 32 byte key.
+ *    @ciphertext the ciphertext to decrypt.
+ *    @plaintext the resulting plaintext.
+ *    @bytes_written a location for the resulting number of bytes written into
+ *    plaintext->data.
+ *    @status set on error.
+ *
+ * Returns:
+ *    True on success. On error, sets @status and returns false.
+ *
+ * Preconditions:
+ *    1. plaintext->data has been pre-allocated with enough space for the
+ *    resulting plaintext.
+ *
+ * Postconditions:
+ *    1. bytes_written is set to the length of the written plaintext, excluding
+ *    padding. This may be less than
+ *    _mongocrypt_calculate_plaintext_len (ciphertext->len).
+ *
+ * ----------------------------------------------------------------------------
+ */
+static bool
+_aes256_cbc_decrypt (const _mongocrypt_buffer_t *iv,
+                     const _mongocrypt_buffer_t *key,
+                     const _mongocrypt_buffer_t *ciphertext,
+                     _mongocrypt_buffer_t *plaintext,
+                     uint32_t *bytes_written,
+                     mongocrypt_status_t *status)
+{
+   void *ctx = NULL;
+   bool ret = false;
+   uint32_t intermediate_bytes_written;
+   _mongocrypt_buffer_t intermediate;
+
+   CRYPT_ENTRY;
+   BSON_ASSERT (bytes_written);
+   *bytes_written = 0;
+
+   if (ciphertext->len % MONGOCRYPT_BLOCK_SIZE > 0) {
+      CLIENT_ERR ("error, ciphertext length is not a multiple of block size");
+      goto done;
+   }
+
+   ctx = _crypto_decrypt_new (key, iv, status);
+   if (!ctx) {
+      goto done;
+   }
+
+   if (!_crypto_decrypt_update (
+          ctx, ciphertext, plaintext, bytes_written, status)) {
+      goto done;
+   }
+
+   *bytes_written += intermediate_bytes_written;
+
+   intermediate.data = plaintext->data + *bytes_written;
+   intermediate.len = plaintext->len - *bytes_written;
+   if (!_crypto_decrypt_finalize (
+          ctx, &intermediate, &intermediate_bytes_written, status)) {
+      goto done;
+   }
+
+   BSON_ASSERT (intermediate_bytes_written == 0);
+   *bytes_written += intermediate_bytes_written;
+
+   /* Subtract the padding. */
+   *bytes_written -= plaintext->data[*bytes_written - 1];
+   ret = true;
+done:
+   _crypto_decrypt_destroy (ctx);
+   return ret;
 }
 
 
@@ -175,24 +501,73 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
                            uint32_t *bytes_written,
                            mongocrypt_status_t *status)
 {
-   _mongocrypt_buffer_t empty_buffer = {0};
+   bool ret = false;
+   _mongocrypt_buffer_t mac_key = {0}, enc_key = {0}, intermediate = {0},
+                        hmac_tag = {0}, iv = {0}, empty_buffer = {0};
+   uint8_t hmac_tag_storage[MONGOCRYPT_HMAC_LEN];
 
    CRYPT_ENTRY;
-
-   if (!associated_data) {
-      associated_data = &empty_buffer;
-   }
 
    BSON_ASSERT (plaintext->len >=
                 _mongocrypt_calculate_plaintext_len (ciphertext->len));
 
-#ifdef MONGOCRYPT_CRYPTO_OPENSSL
-   return _openssl_aes256_cbc_sha512_decrypt (
-      associated_data, key, ciphertext, plaintext, bytes_written, status);
-#else
-   CLIENT_ERR ("not configured with any supported crypto library");
-   return false;
-#endif
+   if (ciphertext->len <
+       MONGOCRYPT_HMAC_LEN + MONGOCRYPT_IV_LEN + MONGOCRYPT_BLOCK_SIZE) {
+      CLIENT_ERR ("corrupt ciphertext - must be > %d bytes",
+                  MONGOCRYPT_HMAC_LEN + MONGOCRYPT_IV_LEN +
+                     MONGOCRYPT_BLOCK_SIZE);
+      goto done;
+   }
+
+   plaintext->len = ciphertext->len - (MONGOCRYPT_HMAC_LEN + MONGOCRYPT_IV_LEN);
+   plaintext->data = bson_malloc0 (plaintext->len);
+   plaintext->owned = true;
+
+   mac_key.data = (uint8_t *) key->data;
+   mac_key.len = MONGOCRYPT_MAC_KEY_LEN;
+   enc_key.data = (uint8_t *) key->data + (key->len - MONGOCRYPT_ENC_KEY_LEN);
+   enc_key.len = MONGOCRYPT_ENC_KEY_LEN;
+
+   iv.data = ciphertext->data;
+   iv.len = MONGOCRYPT_IV_LEN;
+
+   intermediate.data = (uint8_t *) ciphertext->data;
+   intermediate.len = ciphertext->len - MONGOCRYPT_HMAC_LEN;
+
+   hmac_tag.data = hmac_tag_storage;
+   hmac_tag.len = MONGOCRYPT_HMAC_LEN;
+
+   /* [MCGREW 2.2]: Step 3: HMAC check. */
+   if (!_hmac_sha512 (&mac_key,
+                      associated_data ? associated_data : &empty_buffer,
+                      &intermediate,
+                      &hmac_tag,
+                      status)) {
+      goto done;
+   }
+
+   /* [MCGREW] "using a comparison routine that takes constant time". */
+   /* TODO: CRYPTO_memcmp */
+   if (0 != memcmp (hmac_tag.data,
+                    ciphertext->data + (ciphertext->len - MONGOCRYPT_HMAC_LEN),
+                    MONGOCRYPT_HMAC_LEN)) {
+      CLIENT_ERR ("HMAC validation failure");
+      goto done;
+   }
+
+   /* Decrypt data excluding IV + HMAC. */
+   intermediate.data = (uint8_t *) ciphertext->data + MONGOCRYPT_IV_LEN;
+   intermediate.len =
+      ciphertext->len - (MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
+
+   if (!_aes256_cbc_decrypt (
+          &iv, &enc_key, &intermediate, plaintext, bytes_written, status)) {
+      goto done;
+   }
+
+   ret = true;
+done:
+   return ret;
 }
 
 
@@ -218,191 +593,5 @@ bool
 _mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
 {
    BSON_ASSERT (out->len >= 16);
-#ifdef MONGOCRYPT_CRYPTO_OPENSSL
-   return _openssl_random_iv (out, status);
-#else
-   CLIENT_ERR ("not configured with any supported crypto library");
-   return false;
-#endif
-}
-
-
-/* Testing code below. */
-
-/* Return a repeated character with no null terminator. */
-static char *
-_repeat_char (char c, uint32_t times)
-{
-   char *result;
-   uint32_t i;
-
-   result = bson_malloc (times);
-   for (i = 0; i < times; i++) {
-      result[i] = c;
-   }
-
-   return result;
-}
-
-
-/* Helper to print binary. */
-void
-_print_buf (const char *prefix, const _mongocrypt_buffer_t *buf)
-{
-   uint32_t i;
-
-   printf ("%s has length: %d\n", prefix, buf->len);
-
-   for (i = 0; i < buf->len; i++) {
-      printf ("%02x", buf->data[i]);
-   }
-   printf ("\n");
-}
-
-
-void
-_mongocrypt_test_roundtrip (void)
-{
-   mongocrypt_status_t *status;
-   _mongocrypt_buffer_t key = {0}, iv = {0}, associated_data = {0},
-                        plaintext = {0}, ciphertext = {0}, decrypted = {0};
-   uint32_t bytes_written;
-   bool ret;
-
-   plaintext.data = (uint8_t *) "test";
-   plaintext.len = 5; /* include NULL. */
-
-   ciphertext.len = _mongocrypt_calculate_ciphertext_len (5);
-   ciphertext.data = bson_malloc (ciphertext.len);
-   ciphertext.owned = true;
-
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
-   decrypted.data = bson_malloc (decrypted.len);
-   decrypted.owned = true;
-
-   key.data = (uint8_t *) _repeat_char ('k', 64);
-   key.len = 64;
-   key.owned = true;
-
-   iv.data = (uint8_t *) _repeat_char ('i', 16);
-   iv.len = 16;
-   iv.owned = true;
-
-   status = mongocrypt_status_new ();
-   ret = _mongocrypt_do_encryption (&iv,
-                                    &associated_data,
-                                    &key,
-                                    &plaintext,
-                                    &ciphertext,
-                                    &bytes_written,
-                                    status);
-   BSON_ASSERT (ret);
-
-   BSON_ASSERT (bytes_written == ciphertext.len);
-
-   ret = _mongocrypt_do_decryption (
-      &associated_data, &key, &ciphertext, &decrypted, &bytes_written, status);
-   BSON_ASSERT (ret);
-
-
-   BSON_ASSERT (bytes_written == plaintext.len);
-   decrypted.len = bytes_written;
-   BSON_ASSERT (0 == strcmp ((char *) decrypted.data, (char *) plaintext.data));
-
-   /* Modify a bit in the ciphertext hash to ensure HMAC integrity check. */
-   ciphertext.data[ciphertext.len - 1] &= 1;
-
-   _mongocrypt_buffer_cleanup (&decrypted);
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
-   decrypted.data = bson_malloc (decrypted.len);
-   decrypted.owned = true;
-
-   ret = _mongocrypt_do_decryption (
-      &associated_data, &key, &ciphertext, &decrypted, &bytes_written, status);
-   BSON_ASSERT (!ret);
-   BSON_ASSERT (0 == strcmp (status->message, "HMAC validation failure"));
-
-   mongocrypt_status_destroy (status);
-   _mongocrypt_buffer_cleanup (&decrypted);
-   _mongocrypt_buffer_cleanup (&ciphertext);
-   _mongocrypt_buffer_cleanup (&key);
-   _mongocrypt_buffer_cleanup (&iv);
-}
-
-
-static void
-_init_buffer (_mongocrypt_buffer_t *out, const char *hex_string)
-{
-   int i;
-
-   out->len = strlen (hex_string) / 2;
-   out->data = bson_malloc (out->len);
-   out->owned = true;
-   for (i = 0; i < out->len; i++) {
-      int tmp;
-      BSON_ASSERT (sscanf (hex_string + (2 * i), "%02x", &tmp));
-      *(out->data + i) = (uint8_t) tmp;
-   }
-}
-
-
-/* From [MCGREW], see comment at the top of this file. */
-void
-_mongocrypt_test_mcgrew (void)
-{
-   mongocrypt_status_t *status;
-   _mongocrypt_buffer_t key, iv, associated_data, plaintext,
-      ciphertext_expected, ciphertext_actual;
-   uint32_t bytes_written;
-   bool ret;
-
-   _init_buffer (&key,
-                 "000102030405060708090a0b0c0d0e0f101112131415161718191a1"
-                 "b1c1d1e1f202122232425262728292a2b2c2d2e2f30313233343536"
-                 "3738393a3b3c3d3e3f");
-   _init_buffer (&iv, "1af38c2dc2b96ffdd86694092341bc04");
-   _init_buffer (&plaintext,
-                 "41206369706865722073797374656d206d757374206e6f742"
-                 "0626520726571756972656420746f20626520736563726574"
-                 "2c20616e64206974206d7573742062652061626c6520746f2"
-                 "066616c6c20696e746f207468652068616e6473206f662074"
-                 "686520656e656d7920776974686f757420696e636f6e76656"
-                 "e69656e6365");
-   _init_buffer (&associated_data,
-                 "546865207365636f6e64207072696e6369706c65206"
-                 "f662041756775737465204b6572636b686f666673");
-   _init_buffer (&ciphertext_expected,
-                 "1af38c2dc2b96ffdd86694092341bc044affaaadb78c31c5da4b1b590d10f"
-                 "fbd3dd8d5d302423526912da037ecbcc7bd822c301dd67c373bccb584ad3e"
-                 "9279c2e6d12a1374b77f077553df829410446b36ebd97066296ae6427ea75"
-                 "c2e0846a11a09ccf5370dc80bfecbad28c73f09b3a3b75e662a2594410ae4"
-                 "96b2e2e6609e31e6e02cc837f053d21f37ff4f51950bbe2638d09dd7a4930"
-                 "930806d0703b1f64dd3b4c088a7f45c216839645b2012bf2e6269a8c56a81"
-                 "6dbc1b267761955bc5");
-
-   ciphertext_actual.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
-   ciphertext_actual.data = bson_malloc (ciphertext_actual.len);
-   ciphertext_actual.owned = true;
-
-   status = mongocrypt_status_new ();
-   ret = _mongocrypt_do_encryption (&iv,
-                                    &associated_data,
-                                    &key,
-                                    &plaintext,
-                                    &ciphertext_actual,
-                                    &bytes_written,
-                                    status);
-   BSON_ASSERT (ret);
-   BSON_ASSERT (ciphertext_actual.len == ciphertext_expected.len);
-   BSON_ASSERT (0 == memcmp (ciphertext_actual.data,
-                             ciphertext_expected.data,
-                             ciphertext_actual.len));
-
-   _mongocrypt_buffer_cleanup (&key);
-   _mongocrypt_buffer_cleanup (&iv);
-   _mongocrypt_buffer_cleanup (&plaintext);
-   _mongocrypt_buffer_cleanup (&associated_data);
-   _mongocrypt_buffer_cleanup (&ciphertext_expected);
-   _mongocrypt_buffer_cleanup (&ciphertext_actual);
-   mongocrypt_status_destroy (status);
+   return _crypto_random_iv (out, status);
 }

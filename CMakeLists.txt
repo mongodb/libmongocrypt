@@ -27,6 +27,7 @@ if(MONGOC_STATIC_VERSION)
    set (MONGOCRYPT_SOURCES
       src/mongocrypt.c
       src/mongocrypt-buffer.c
+      src/mongocrypt-commoncrypto.c
       src/mongocrypt-crypto.c
       src/mongocrypt-key-query.c
       src/mongocrypt-kms.c
