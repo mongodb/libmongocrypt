@@ -45,14 +45,13 @@ These instructions have only been tested on macOS 10.14.1 with OpenSSL 1.1.1a.
 
 First build the following dependencies.
 
-1. [The C driver](https://github.com/mongodb/mongo-c-driver), consisting of libmongoc and libbson.
-   You can follow the [installation instructions on mongoc.org](http://mongoc.org/libmongoc/current/installing.html) or if you'd prefer installing in a custom directory, build from source.
+1. [The C driver](https://github.com/mongodb/mongo-c-driver), consisting of libmongoc and libbson. Build it from source.
    ```
    wget https://github.com/mongodb/mongo-c-driver/releases/download/1.13.1/mongo-c-driver-1.13.1.tar.gz
    tar xzf mongo-c-driver-1.13.1.tar.gz
    cd mongo-c-driver-1.13.1
    mkdir cmake-build && cd cmake-build
-   cmake -DCMAKE_INSTALL_PATH="/path/to/c-install" ../
+   cmake -DCMAKE_INSTALL_PATH="/path/to/c-install" -DCMAKE_C_FLAGS="-fPIC" ../
    make -j8 install
    ```
    This installs the library and includes into /path/to/c-install. The prefix can be omitted if you prefer installing in /usr/local.
@@ -62,7 +61,7 @@ First build the following dependencies.
    git clone git@github.com:10gen/kms-message.git
    cd kms-message
    mkdir cmake-build && cd cmake-build
-   cmake -DCMAKE_INSTALL_PREFIX="/path/to/kms-install" ../
+   cmake -DCMAKE_INSTALL_PREFIX="/path/to/kms-install" -DCMAKE_C_FLAGS="-fPIC" ../
    make install
    ```
    This installs the library and includes into /path/to/kms-install. The prefix can be omitted if you prefer installing in /usr/local.
