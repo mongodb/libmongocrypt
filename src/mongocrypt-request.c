@@ -21,6 +21,7 @@
 #include "mongocrypt-key-query-private.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-request-private.h"
+#include "mongocrypt-log-private.h"
 
 void
 mongocrypt_request_destroy (mongocrypt_request_t *request)

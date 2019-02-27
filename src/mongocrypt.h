@@ -32,8 +32,7 @@ mongocrypt_version (void);
 typedef struct _mongocrypt_t mongocrypt_t;
 
 void
-mongocrypt_init (void);
-
+mongocrypt_init (const mongocrypt_opts_t *opts);
 
 void
 mongocrypt_cleanup (void);

@@ -23,6 +23,7 @@
 
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-log-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 

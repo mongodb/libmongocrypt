@@ -6,6 +6,7 @@
 #include <mongocrypt-crypto-private.h>
 #include <mongocrypt-key-cache-private.h>
 #include <mongocrypt-private.h>
+#include <mongocrypt-log-private.h>
 
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
@@ -360,6 +361,45 @@ _mongocrypt_test_mcgrew (void)
 }
 
 
+typedef struct {
+   mongocrypt_log_level_t expected_level;
+} log_test_ctx_t;
+
+
+static void
+_mongocrypt_test_log_fn (mongocrypt_log_level_t level,
+                         const char *message,
+                         void *ctx_void)
+{
+   log_test_ctx_t *ctx = (log_test_ctx_t *) ctx_void;
+   BSON_ASSERT (level == ctx->expected_level);
+   BSON_ASSERT (0 == strcmp (message, "test"));
+}
+
+
+/* Test a custom log handler on all log levels except for trace. */
+void
+_mongocrypt_test_log (void)
+{
+   log_test_ctx_t log_ctx = {0};
+   mongocrypt_log_level_t levels[] = {MONGOCRYPT_LOG_LEVEL_FATAL,
+                                      MONGOCRYPT_LOG_LEVEL_ERROR,
+                                      MONGOCRYPT_LOG_LEVEL_WARNING,
+                                      MONGOCRYPT_LOG_LEVEL_INFO};
+   int i;
+
+   /* Test logging with a custom handler messages. */
+   _mongocrypt_log_set_fn (_mongocrypt_test_log_fn, &log_ctx);
+   for (i = 0; i < sizeof (levels) / sizeof (*levels); i++) {
+      log_ctx.expected_level = levels[i];
+      _mongocrypt_log (levels[i], "test");
+   }
+
+   /* Restore the default handler. */
+   _mongocrypt_log_set_fn (_mongocrypt_default_log_fn, NULL);
+}
+
+
 #define RUN_TEST(fn)                          \
    do {                                       \
       bool found = true;                      \
@@ -383,12 +423,13 @@ _mongocrypt_test_mcgrew (void)
 int
 main (int argc, char **argv)
 {
-   mongocrypt_init ();
+   mongocrypt_init (NULL);
    printf ("Test runner.\n");
    printf ("Pass a list of test names to run only specific tests. E.g.:\n");
    printf ("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
    RUN_TEST (_mongocrypt_test_roundtrip);
    RUN_TEST (_mongocrypt_test_mcgrew);
+   RUN_TEST (_mongocrypt_test_log);
 
    mongocrypt_cleanup ();
 }

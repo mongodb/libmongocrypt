@@ -18,12 +18,15 @@
 #define OPTS_PRIVATE_H
 
 #include "mongocrypt-opts.h"
+#include "mongocrypt-log-private.h"
 
 struct _mongocrypt_opts_t {
    char *aws_region;
    char *aws_secret_access_key;
    char *aws_access_key_id;
    char *mongocryptd_uri;
+   mongocrypt_log_fn_t log_fn;
+   void *log_ctx;
 };
 
 mongocrypt_opts_t *

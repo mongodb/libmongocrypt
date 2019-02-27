@@ -60,28 +60,6 @@
 /* TODO: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
 
-#define MONGOCRYPT_TRACE
-
-#ifdef MONGOCRYPT_TRACE
-#define CRYPT_TRACE(...)                                 \
-   do {                                                  \
-      if (getenv ("MONGOCRYPT_TRACE")) {                 \
-         printf ("[CRYPT %s:%d] ", BSON_FUNC, __LINE__); \
-         printf (__VA_ARGS__);                           \
-         printf ("\n");                                  \
-      }                                                  \
-   } while (0)
-#define CRYPT_ENTRY                                             \
-   do {                                                         \
-      if (getenv ("MONGOCRYPT_TRACE")) {                        \
-         printf ("[CRYPT entry] %s:%d\n", BSON_FUNC, __LINE__); \
-      }                                                         \
-   } while (0)
-#else
-#define TRACE(msg, ...)
-#define CRYPT_ENTRY
-#endif
-
 const char *
 tmp_json (const bson_t *bson);
 

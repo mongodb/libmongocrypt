@@ -24,6 +24,7 @@
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-request-private.h"
 #include "mongocrypt-status-private.h"
+#include "mongocrypt-log-private.h"
 
 static void
 _print_bin (_mongocrypt_buffer_t *buf)
@@ -88,34 +89,23 @@ tmp_json (const bson_t *bson)
 }
 
 
-static void
-_spawn_mongocryptd (void)
+MONGOCRYPT_ONCE_FUNC (_mongocrypt_do_init)
 {
-/* oddly, starting mongocryptd in libmongoc starts multiple instances. */
-#ifdef SPAWN_BUG_FIXED
-   pid_t pid = fork ();
-
-   CRYPT_ENTRY;
-   CRYPT_TRACE ("spawning mongocryptd\n");
-   if (pid == 0) {
-      int ret;
-      /* child */
-      CRYPT_TRACE ("child starting mongocryptd\n");
-      ret = execlp ("mongocryptd", "mongocryptd", (char *) NULL);
-      if (ret == -1) {
-         MONGOC_ERROR ("child process unable to exec mongocryptd");
-         abort ();
-      }
-   }
-#endif
+   mongoc_init ();
+   kms_message_init ();
+   _mongocrypt_log_init ();
+   MONGOCRYPT_ONCE_RETURN;
 }
 
 
 void
-mongocrypt_init ()
+mongocrypt_init (const mongocrypt_opts_t *opts)
 {
-   mongoc_init ();
-   kms_message_init ();
+   static mongocrypt_once_t once = MONGOCRYPT_ONCE_INIT;
+   mongocrypt_once (&once, _mongocrypt_do_init);
+   if (opts && opts->log_fn) {
+      _mongocrypt_log_set_fn (opts->log_fn, opts->log_ctx);
+   }
 }
 
 
@@ -125,7 +115,6 @@ mongocrypt_cleanup ()
    mongoc_cleanup ();
    kms_message_cleanup ();
 }
-
 
 
 mongocrypt_t *
@@ -138,7 +127,6 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
    CRYPT_ENTRY;
    BSON_ASSERT (opts);
    BSON_ASSERT (status);
-   _spawn_mongocryptd ();
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
 
    if (opts->mongocryptd_uri) {
@@ -257,8 +245,8 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
    bson_copy_to (&cmd, &marking_cmd);
    bson_append_document (&marking_cmd, "jsonSchema", 10, &schema);
    mongocryptd_client = mongoc_client_pool_pop (crypt->mongocryptd_pool);
-   CRYPT_TRACE ("=> marking cmd to mongocryptd:\n\t%s",
-                tmp_json (&marking_cmd));
+   CRYPT_TRACEF ("=> marking cmd to mongocryptd:\n\t%s",
+                 tmp_json (&marking_cmd));
    request = bson_malloc0 (sizeof (mongocrypt_request_t));
    request->crypt = crypt;
    request->type = MONGOCRYPT_REQUEST_ENCRYPT;
@@ -273,8 +261,8 @@ mongocrypt_encrypt_start (mongocrypt_t *crypt,
       goto fail;
    }
 
-   CRYPT_TRACE ("<= mongocryptd replied:\n\t%s",
-                tmp_json (&request->mongocryptd_reply));
+   CRYPT_TRACEF ("<= mongocryptd replied:\n\t%s",
+                 tmp_json (&request->mongocryptd_reply));
 
    if (!_mongocryptd_marking_reply_parse (
           &request->mongocryptd_reply, request, status)) {
@@ -437,8 +425,8 @@ _replace_marking_with_ciphertext (void *ctx,
    memcpy (&ciphertext.iv, &marking.iv, sizeof (_mongocrypt_buffer_t));
 
    /* get the key for this marking. */
-   key =
-      _mongocrypt_key_cache_get_by_id (request->crypt->cache, &marking.key_id, status);
+   key = _mongocrypt_key_cache_get_by_id (
+      request->crypt->cache, &marking.key_id, status);
    if (!key) {
       goto fail;
    }

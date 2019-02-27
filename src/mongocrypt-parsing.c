@@ -15,7 +15,9 @@
  */
 
 #include <mongoc/mongoc.h>
+
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-log-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-request-private.h"
 #include "mongocrypt-status-private.h"

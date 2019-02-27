@@ -17,6 +17,7 @@
 #include <mongoc/mongoc.h>
 
 #include "mongocrypt-opts-private.h"
+#include "mongocrypt-log-private.h"
 
 mongocrypt_opts_t *
 mongocrypt_opts_new (void)
@@ -65,6 +66,12 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
       break;
    case MONGOCRYPT_MONGOCRYPTD_URI:
       opts->mongocryptd_uri = bson_strdup ((char *) value);
+      break;
+   case MONGOCRYPT_LOG_FN:
+      opts->log_fn = (mongocrypt_log_fn_t) value;
+      break;
+   case MONGOCRYPT_LOG_CTX:
+      opts->log_ctx = value;
       break;
    default:
       fprintf (stderr, "Invalid option: %d\n", (int) opt);

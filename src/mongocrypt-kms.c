@@ -191,7 +191,7 @@ _get_data_key_from_response (kms_response_t *response,
       goto cleanup;
    }
 
-   CRYPT_TRACE ("kms response: %s", tmp_json (&response_body));
+   CRYPT_TRACEF ("kms response: %s", tmp_json (&response_body));
 
    if (!bson_iter_init_find (&iter, &response_body, "Plaintext")) {
       KMS_ERR ("JSON response does not include Plaintext");
@@ -199,20 +199,20 @@ _get_data_key_from_response (kms_response_t *response,
    }
 
    b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
-   CRYPT_TRACE ("response plaintext: %s, %d\n", b64_str, b64_strlen);
+   CRYPT_TRACEF ("response plaintext: %s, %d\n", b64_str, b64_strlen);
    /* We need to doubly base64 decode. */
    decoded_data = bson_malloc (b64_strlen + 1);
    decoded_len = kms_message_b64_pton (b64_str, decoded_data, b64_strlen);
 
    b64_str = (char *) decoded_data;
    b64_str[decoded_len + 1] = '\0';
-   CRYPT_TRACE ("decryption #1: %s\n", b64_str);
+   CRYPT_TRACEF ("decryption #1: %s\n", b64_str);
    decoded_data = bson_malloc ((size_t) decoded_len + 1);
 
    decoded_len =
       kms_message_b64_pton (b64_str, decoded_data, (size_t) decoded_len);
    decoded_data[decoded_len] = '\0';
-   CRYPT_TRACE ("decryption #2: %s\n", (char *) decoded_data);
+   CRYPT_TRACEF ("decryption #2: %s\n", (char *) decoded_data);
 
    bson_free (b64_str);
 
@@ -229,14 +229,14 @@ cleanup:
 bool
 _mongocrypt_kms_decrypt (_mongocrypt_key_t *key,
                          mongocrypt_status_t *status,
-			 void *ctx)
+                         void *ctx)
 {
-   mongocrypt_t *crypt = (mongocrypt_t *)ctx;
+   mongocrypt_t *crypt = (mongocrypt_t *) ctx;
    kms_request_t *request = NULL;
    kms_response_t *response = NULL;
    kms_request_opt_t *request_opt = NULL;
    bool ret = false;
-   
+
    request_opt = kms_request_opt_new ();
    kms_request_opt_set_connection_close (request_opt, true);
 

@@ -5,6 +5,9 @@ set (CMAKE_C_STANDARD 99)
 
 find_package(libmongoc-static-1.0 1.11)
 
+
+option (ENABLE_TRACE "Enable verbose trace logs. Requires MONGOCRYPT_TRACE environment variable at runtime" OFF)
+
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt.h
    src/mongocrypt-binary.h
@@ -29,6 +32,7 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-key-query.c
       src/mongocrypt-kms.c
       src/mongocrypt-key-cache.c
+      src/mongocrypt-log.c
       src/mongocrypt-openssl.c
       src/mongocrypt-opts.c
       src/mongocrypt-parsing.c
@@ -55,6 +59,10 @@ if(MONGOC_STATIC_VERSION)
 
    find_package (kms_message REQUIRED)
    target_link_libraries(mongocrypt PRIVATE kms_message_static)
+
+   if (ENABLE_TRACE)
+      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
+   endif ()
 
    add_executable(test-mongocrypt test/test-mongocrypt.c)
    target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
