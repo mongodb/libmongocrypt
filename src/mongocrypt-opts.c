@@ -29,6 +29,10 @@ mongocrypt_opts_new (void)
 void
 mongocrypt_opts_destroy (mongocrypt_opts_t *opts)
 {
+   if (!opts) {
+      return;
+   }
+
    bson_free (opts->aws_region);
    bson_free (opts->aws_secret_access_key);
    bson_free (opts->aws_access_key_id);
@@ -40,7 +44,13 @@ mongocrypt_opts_destroy (mongocrypt_opts_t *opts)
 mongocrypt_opts_t *
 mongocrypt_opts_copy (const mongocrypt_opts_t *src)
 {
-   mongocrypt_opts_t *dst = bson_malloc0 (sizeof (mongocrypt_opts_t));
+   mongocrypt_opts_t *dst;
+
+   if (!src) {
+      return NULL;
+   }
+
+   dst = bson_malloc0 (sizeof (mongocrypt_opts_t));
    dst->aws_region = bson_strdup (src->aws_region);
    dst->aws_secret_access_key = bson_strdup (src->aws_secret_access_key);
    dst->aws_access_key_id = bson_strdup (src->aws_access_key_id);
