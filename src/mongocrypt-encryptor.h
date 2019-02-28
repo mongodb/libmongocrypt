@@ -19,9 +19,11 @@
 
 
 #include "mongocrypt-binary.h"
+#include "mongocrypt-key-decrypt-request.h"
 #include "mongocrypt-key-query.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
+
 
 typedef struct _mongocrypt_encryptor_t mongocrypt_encryptor_t;
 
@@ -35,14 +37,6 @@ typedef enum {
    MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED,
    MONGOCRYPT_ENCRYPTOR_STATE_ERROR
 } mongocrypt_encryptor_state_t;
-
-
-/* TODO move this type elsewhere, and flesh out
-   with types and logic for generating HTTP requests
-   and parsing HTTP responses */
-typedef struct _mongocrypt_key_decrypt_request {
-   /* TODO */
-} mongocrypt_key_decrypt_request_t;
 
 
 mongocrypt_encryptor_t *

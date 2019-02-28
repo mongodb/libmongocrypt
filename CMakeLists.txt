@@ -13,6 +13,7 @@ set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-binary.h
    src/mongocrypt-compat.h
    src/mongocrypt-encryptor.h
+   src/mongocrypt-key-decrypt-request.h
    src/mongocrypt-key-query.h
    src/mongocrypt-opts.h
    src/mongocrypt-request.h
