@@ -86,7 +86,7 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
       _mongocrypt_buffer_t buf = {0};
       buf.data = responses[i].data;
       buf.len = responses[i].len;
-      if (!_mongocrypt_key_cache_add (request->crypt->cache, &buf, 1, status)) {
+      if (!_mongocrypt_key_cache_add (request->crypt->key_cache, &buf, 1, status)) {
          return false;
       }
    }

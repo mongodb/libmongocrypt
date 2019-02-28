@@ -24,6 +24,7 @@
 #include "mongocrypt-key-cache-private.h"
 #include "mongocrypt-key-query-private.h"
 #include "mongocrypt-mutex-private.h"
+#include "mongocrypt-schema-cache-private.h"
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
@@ -63,6 +64,7 @@
 const char *
 tmp_json (const bson_t *bson);
 
+
 void
 _mongocrypt_set_error (mongocrypt_status_t *status,
                        mongocrypt_error_type_t type,
@@ -81,8 +83,9 @@ struct _mongocrypt_t {
    mongoc_client_pool_t *mongocryptd_pool;
    mongocrypt_opts_t *opts;
    mongocrypt_mutex_t mutex;
-   /* The cache has its own interal mutex. */
-   _mongocrypt_key_cache_t *cache;
+   _mongocrypt_schema_cache_t *schema_cache;
+   /* The key cache has its own interal mutex. */
+   _mongocrypt_key_cache_t *key_cache;
 };
 
 typedef struct {

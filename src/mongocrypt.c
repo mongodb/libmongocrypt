@@ -23,6 +23,7 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-request-private.h"
+#include "mongocrypt-schema-cache-private.h"
 #include "mongocrypt-status-private.h"
 #include "mongocrypt-log-private.h"
 
@@ -125,11 +126,12 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
    bool success = false;
 
    CRYPT_ENTRY;
-   BSON_ASSERT (opts);
-   BSON_ASSERT (status);
+
+   _spawn_mongocryptd ();
+
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
 
-   if (opts->mongocryptd_uri) {
+   if (opts && opts->mongocryptd_uri) {
       uri = mongoc_uri_new (opts->mongocryptd_uri);
       if (!uri) {
          CLIENT_ERR ("invalid uri for mongocryptd");
@@ -152,7 +154,9 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
    crypt->opts = mongocrypt_opts_copy (opts);
    mongocrypt_mutex_init (&crypt->mutex);
 
-   crypt->cache = _mongocrypt_key_cache_new (_mongocrypt_kms_decrypt, crypt);
+   crypt->schema_cache = _mongocrypt_schema_cache_new ();
+
+   crypt->key_cache = _mongocrypt_key_cache_new (_mongocrypt_kms_decrypt, crypt);
    success = true;
 
 fail:
@@ -174,7 +178,8 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    }
    mongocrypt_opts_destroy (crypt->opts);
    mongoc_client_pool_destroy (crypt->mongocryptd_pool);
-   _mongocrypt_key_cache_destroy (crypt->cache);
+   _mongocrypt_schema_cache_destroy (crypt->schema_cache);
+   _mongocrypt_key_cache_destroy (crypt->key_cache);
    mongocrypt_mutex_destroy (&crypt->mutex);
    bson_free (crypt);
 }
@@ -425,8 +430,13 @@ _replace_marking_with_ciphertext (void *ctx,
    memcpy (&ciphertext.iv, &marking.iv, sizeof (_mongocrypt_buffer_t));
 
    /* get the key for this marking. */
+<<<<<<< HEAD
    key = _mongocrypt_key_cache_get_by_id (
       request->crypt->cache, &marking.key_id, status);
+=======
+   key =
+      _mongocrypt_key_cache_get_by_id (request->crypt->key_cache, &marking.key_id, status);
+>>>>>>> Add a placeholder schema cache type
    if (!key) {
       goto fail;
    }
@@ -615,7 +625,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    /* look up the key */
    key = _mongocrypt_key_cache_get_by_id (
-      request->crypt->cache, &ciphertext.key_id, status);
+      request->crypt->key_cache, &ciphertext.key_id, status);
    if (!key) {
       goto fail;
    }

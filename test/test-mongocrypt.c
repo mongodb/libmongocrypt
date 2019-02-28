@@ -159,7 +159,7 @@ test_roundtrip (void)
 
    BSON_ASSERT (mongocrypt_request_needs_keys (request));
    _satisfy_key_queries (keyvault_client, request);
-   _mongocrypt_key_cache_dump (crypt->cache);
+   _mongocrypt_key_cache_dump (crypt->key_cache);
 
    ret = mongocrypt_encrypt_finish (request, NULL, &encrypted_bin, status);
    ASSERT_OR_PRINT (ret, status);
@@ -172,7 +172,7 @@ test_roundtrip (void)
    /* Because no caching, we actually need to fetch keys again. */
    BSON_ASSERT (mongocrypt_request_needs_keys (request));
    _satisfy_key_queries (keyvault_client, request);
-   _mongocrypt_key_cache_dump (crypt->cache);
+   _mongocrypt_key_cache_dump (crypt->key_cache);
 
    ret = mongocrypt_decrypt_finish (request, NULL, &decrypted_bin, status);
    ASSERT_OR_PRINT (ret, status);

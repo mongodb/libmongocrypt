@@ -38,6 +38,7 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-opts.c
       src/mongocrypt-parsing.c
       src/mongocrypt-request.c
+      src/mongocrypt-schema-cache.c
       src/mongocrypt-status.c
       )
 
