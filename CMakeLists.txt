@@ -44,11 +44,13 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-status.c
       )
 
+    # Define mongocrypt library
    add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
    target_include_directories(mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
    target_link_libraries(mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
+   # Add ssl libraries to mongocrypt
    if (APPLE)
       message ("Building with common crypto")
       target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
@@ -61,6 +63,7 @@ if(MONGOC_STATIC_VERSION)
       target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
    endif ()
 
+   # kms-message
    find_package (kms_message REQUIRED)
    target_link_libraries(mongocrypt PRIVATE kms_message_static)
 
@@ -68,12 +71,22 @@ if(MONGOC_STATIC_VERSION)
       target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
    endif ()
 
+   # Define test-mongocrypt
    add_executable(test-mongocrypt test/test-mongocrypt.c)
    target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
    target_include_directories(test-mongocrypt PRIVATE ./src)
    target_include_directories(test-mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
    target_link_libraries(test-mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (test-mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
+
+   # Define test-state-machine
+   add_executable (test-state-machine test/test-state-machine.c)
+   target_link_libraries (test-state-machine PRIVATE mongocrypt)
+   target_include_directories (test-state-machine PRIVATE ./src)
+   target_include_directories (test-state-machine PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
+   target_link_libraries (test-state-machine PRIVATE ${MONGOC_STATIC_LIBRARIES})
+   target_compile_definitions (test-state-machine PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
+
 else()
    message("libmongoc and libbson *NOT* found. Only configuring mongocrypt-stub target")
 endif()
