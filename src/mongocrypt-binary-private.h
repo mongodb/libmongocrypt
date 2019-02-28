@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef MONGOCRYPT_BINARY_H
-#define MONGOCRYPT_BINARY_H
+#ifndef MONGOCRYPT_BINARY_PRIVATE_H
+#define MONGOCRYPT_BINARY_PRIVATE_H
 
-#include <stdint.h>
-
-typedef struct {
-   uint8_t *data;
-   uint32_t len;
-} mongocrypt_binary_t; /* TODO: likely rename to BSON */
-
-
-mongocrypt_binary_t *
-mongocrypt_binary_new (void);
+#include <bson/bson.h>
 
 void
-mongocrypt_binary_destroy (mongocrypt_binary_t *binary);
+mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out);
 
 
-#endif /* MONGOCRYPT_BINARY_H */
+#endif /* MONGOCRYPT_BINARY_PRIVATE_H */
