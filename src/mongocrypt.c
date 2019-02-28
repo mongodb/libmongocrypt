@@ -127,8 +127,6 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
 
    CRYPT_ENTRY;
 
-   _spawn_mongocryptd ();
-
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
 
    if (opts && opts->mongocryptd_uri) {
@@ -430,13 +428,8 @@ _replace_marking_with_ciphertext (void *ctx,
    memcpy (&ciphertext.iv, &marking.iv, sizeof (_mongocrypt_buffer_t));
 
    /* get the key for this marking. */
-<<<<<<< HEAD
-   key = _mongocrypt_key_cache_get_by_id (
-      request->crypt->cache, &marking.key_id, status);
-=======
    key =
       _mongocrypt_key_cache_get_by_id (request->crypt->key_cache, &marking.key_id, status);
->>>>>>> Add a placeholder schema cache type
    if (!key) {
       goto fail;
    }

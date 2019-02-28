@@ -21,6 +21,7 @@
 
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-private.h"
+#include "mongocrypt-log-private.h"
 
 #include <bson/bson.h>
 

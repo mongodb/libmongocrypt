@@ -94,7 +94,7 @@ mongocrypt_version (void)
 
 
 void
-mongocrypt_init (void)
+mongocrypt_init (const mongocrypt_opts_t* opts)
 {
    CRYPT_ENTRY;
 }
