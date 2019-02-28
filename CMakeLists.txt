@@ -12,6 +12,7 @@ set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt.h
    src/mongocrypt-binary.h
    src/mongocrypt-compat.h
+   src/mongocrypt-decryptor.h
    src/mongocrypt-encryptor.h
    src/mongocrypt-key-decrypt-request.h
    src/mongocrypt-key-query.h
@@ -32,6 +33,7 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-buffer.c
       src/mongocrypt-commoncrypto.c
       src/mongocrypt-crypto.c
+      src/mongocrypt-decryptor.c
       src/mongocrypt-encryptor.c
       src/mongocrypt-key-query.c
       src/mongocrypt-kms.c
