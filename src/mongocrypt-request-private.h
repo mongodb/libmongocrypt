@@ -19,7 +19,6 @@
 
 #include <bson/bson.h>
 
-#include "mongocrypt-key-query-private.h"
 /* TODO (Sam) Unlink this dependency later, if possible */
 #include "mongocrypt-private.h"
 
@@ -38,12 +37,6 @@ struct _mongocrypt_request_t {
    bson_t mongocryptd_reply;
    bson_iter_t result_iter;
    uint32_t num_key_queries;
-   /* TODO: do something better for key_query requests.
-      Consider copying mongoc_array, vendoring something,
-      or just power-of-two growth.
-    */
-   mongocrypt_key_query_t key_queries[32];
-   uint32_t key_query_iter;
 
    const mongocrypt_binary_t *encrypted_docs;
    uint32_t num_input_docs;

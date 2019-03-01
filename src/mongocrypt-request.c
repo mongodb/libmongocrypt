@@ -18,7 +18,6 @@
 
 #include "mongocrypt-binary.h"
 #include "mongocrypt-key-cache-private.h"
-#include "mongocrypt-key-query-private.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-request-private.h"
 #include "mongocrypt-log-private.h"
@@ -35,10 +34,6 @@ mongocrypt_request_destroy (mongocrypt_request_t *request)
 
    bson_destroy (&request->mongocryptd_reply);
 
-   for (i = 0; i < request->num_key_queries; i++) {
-      bson_destroy (&request->key_queries[i].filter);
-      bson_free (&request->key_queries[i].keyvault_alias);
-   }
 
    bson_free (request);
 }
@@ -49,21 +44,7 @@ mongocrypt_request_needs_keys (mongocrypt_request_t *request)
 {
    CRYPT_ENTRY;
    BSON_ASSERT (request);
-   return request->key_query_iter < request->num_key_queries;
-}
-
-
-const mongocrypt_key_query_t *
-mongocrypt_request_next_key_query (mongocrypt_request_t *request,
-                                   const mongocrypt_opts_t *opts)
-{
-   mongocrypt_key_query_t *key_query;
-
-   CRYPT_ENTRY;
-   BSON_ASSERT (request);
-   key_query = &request->key_queries[request->key_query_iter];
-   request->key_query_iter++;
-   return key_query;
+   return false;
 }
 
 
@@ -86,7 +67,8 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
       _mongocrypt_buffer_t buf = {0};
       buf.data = responses[i].data;
       buf.len = responses[i].len;
-      if (!_mongocrypt_key_cache_add (request->crypt->key_cache, &buf, 1, status)) {
+      if (!_mongocrypt_key_cache_add (
+             request->crypt->key_cache, &buf, 1, status)) {
          return false;
       }
    }

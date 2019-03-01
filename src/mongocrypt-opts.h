@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef OPTS_H
-#define OPTS_H
+#ifndef MONGOCRYPT_OPTS_H
+#define MONGOCRYPT_OPTS_H
 
 typedef struct _mongocrypt_opts_t mongocrypt_opts_t;
 
@@ -43,4 +43,4 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
                          void *value);
 
 
-#endif /* OPTS_H */
+#endif /* MONGOCRYPT_OPTS_H */

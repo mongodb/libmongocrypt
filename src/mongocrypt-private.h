@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef MONGOCRYPT_MONGOCRYPT_PRIVATE_H
-#define MONGOCRYPT_MONGOCRYPT_PRIVATE_H
+#ifndef MONGOCRYPT_PRIVATE_H
+#define MONGOCRYPT_PRIVATE_H
 
 #include "mongocrypt.h"
 #include "mongoc/mongoc.h"
 
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-cache-private.h"
-#include "mongocrypt-key-query-private.h"
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-schema-cache-private.h"
 
@@ -61,8 +60,12 @@
 /* TODO: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
 
+/* TODO: Move these to mongocrypt-log-private.h? */
 const char *
 tmp_json (const bson_t *bson);
+
+const char *
+tmp_buf (const _mongocrypt_buffer_t *buf);
 
 
 void
@@ -114,18 +117,11 @@ bool
 _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
                                       _mongocrypt_ciphertext_t *out,
                                       mongocrypt_status_t *status);
-bool
-_mongocrypt_key_parse (const bson_t *bson,
-                       _mongocrypt_key_t *out,
-                       mongocrypt_status_t *status);
 
 bool
 _mongocryptd_marking_reply_parse (const bson_t *bson,
                                   mongocrypt_request_t *request,
                                   mongocrypt_status_t *status);
-
-void
-mongocrypt_key_cleanup (_mongocrypt_key_t *key);
 
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
@@ -154,4 +150,4 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       bson_t *out,
                                       mongocrypt_status_t *status);
 
-#endif
+#endif /* MONGOCRYPT_PRIVATE_H */

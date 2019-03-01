@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef MONGOCRYPT_MONGOCCRYPT_COMPAT_H
-#define MONGOCRYPT_MONGOCCRYPT_COMPAT_H
+#ifndef MONGOCRYPT_COMPAT_H
+#define MONGOCRYPT_COMPAT_H
 
 /* Utilities for cross-platform and C89 compatibility */
 
@@ -31,4 +31,4 @@ typedef signed char bool;
 #define __bool_true_false_are_defined 1
 #endif
 
-#endif /* MONGOCRYPT_MONGOCCRYPT_COMPAT_H */
+#endif /* MONGOCRYPT_COMPAT_H */

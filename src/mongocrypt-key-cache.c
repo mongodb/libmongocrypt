@@ -18,7 +18,7 @@ _cmp_uuid (const _mongocrypt_buffer_t *uuid1, const _mongocrypt_buffer_t *uuid2)
 
 _mongocrypt_key_cache_t *
 _mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
-			   void *decrypt_key_ctx)
+                           void *decrypt_key_ctx)
 {
    _mongocrypt_key_cache_t *cache;
 
@@ -52,9 +52,9 @@ _mongocrypt_key_cache_destroy (_mongocrypt_key_cache_t *cache)
 
 bool
 _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
-                          _mongocrypt_buffer_t *docs,
-                          uint32_t num_docs,
-                          mongocrypt_status_t *status)
+                           _mongocrypt_buffer_t *docs,
+                           uint32_t num_docs,
+                           mongocrypt_status_t *status)
 {
    bool ret = false;
    int i, j;
@@ -71,7 +71,7 @@ _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
       _mongocrypt_key_t parsed_key;
 
       copied = bson_new_from_data (docs[i].data, docs[i].len);
-      if (!_mongocrypt_key_parse (copied, &parsed_key, status)) {
+      if (!_mongocrypt_key_parse_owned (copied, &parsed_key, status)) {
          bson_destroy (copied);
          goto cleanup;
       }
@@ -126,8 +126,8 @@ cleanup:
 /* TODO: this should hold a reader lock. */
 const _mongocrypt_key_t *
 _mongocrypt_key_cache_get_by_id (_mongocrypt_key_cache_t *cache,
-				 const _mongocrypt_buffer_t *uuid,
-				 mongocrypt_status_t *status)
+                                 const _mongocrypt_buffer_t *uuid,
+                                 mongocrypt_status_t *status)
 {
    int i;
 

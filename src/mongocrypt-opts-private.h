@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef OPTS_PRIVATE_H
-#define OPTS_PRIVATE_H
+#ifndef MONGOCRYPT_OPTS_PRIVATE_H
+#define MONGOCRYPT_OPTS_PRIVATE_H
 
 #include "mongocrypt-opts.h"
 #include "mongocrypt-log-private.h"
@@ -32,4 +32,4 @@ struct _mongocrypt_opts_t {
 mongocrypt_opts_t *
 mongocrypt_opts_copy (const mongocrypt_opts_t *src);
 
-#endif /* OPTS_PRIVATE_H */
+#endif /* MONGOCRYPT_OPTS_PRIVATE_H */

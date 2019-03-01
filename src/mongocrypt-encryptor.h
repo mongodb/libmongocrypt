@@ -19,8 +19,7 @@
 
 
 #include "mongocrypt-binary.h"
-#include "mongocrypt-key-decrypt-request.h"
-#include "mongocrypt-key-query.h"
+#include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
@@ -28,11 +27,12 @@
 typedef struct _mongocrypt_encryptor_t mongocrypt_encryptor_t;
 
 typedef enum {
-   MONGOCRYPT_ENCRYPTOR_STATE_NEED_NS,
+   MONGOCRYPT_ENCRYPTOR_STATE_NEED_NS = 0,
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA,
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS,
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS,
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS_DECRYPTED,
+   MONGOCRYPT_ENCRYPTOR_STATE_NEED_ENCRYPTION,
    MONGOCRYPT_ENCRYPTOR_STATE_NO_ENCRYPTION_NEEDED,
    MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED,
    MONGOCRYPT_ENCRYPTOR_STATE_ERROR
@@ -40,71 +40,80 @@ typedef enum {
 
 
 mongocrypt_encryptor_t *
-mongocrypt_encryptor_new (mongocrypt_t *crypt,
-			  const mongocrypt_opts_t *opts);
+mongocrypt_encryptor_new (mongocrypt_t *crypt, const mongocrypt_opts_t *opts);
 
 
 mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *request,
-			     const char *ns,
-			     const mongocrypt_opts_t *opts);
+mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor,
+                             const char *ns,
+                             const mongocrypt_opts_t *opts);
+
+/* TODO: consider renaming this to "add_collection_info" since we give back the
+ * listCollections response. */
+mongocrypt_encryptor_state_t
+mongocrypt_encryptor_add_collection_info (
+   mongocrypt_encryptor_t *encryptor,
+   const mongocrypt_binary_t *list_collections_reply,
+   const mongocrypt_opts_t *opts);
+
+const mongocrypt_binary_t *
+mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor,
+                                 const mongocrypt_opts_t *opts);
+
 
 mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_schema (mongocrypt_encryptor_t *request,
-				 mongocrypt_binary_t *schema,
-				 const mongocrypt_opts_t *opts);
+mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
+                                   mongocrypt_binary_t *marked_reply,
+                                   const mongocrypt_opts_t *opts);
+
+
+const mongocrypt_binary_t *
+mongocrypt_encryptor_get_key_filter (mongocrypt_encryptor_t *encryptor,
+                                     const mongocrypt_opts_t *opts);
+
+
+bool
+mongocrypt_encryptor_add_key (mongocrypt_encryptor_t *encryptor,
+                              const mongocrypt_opts_t *opts,
+                              mongocrypt_binary_t *key,
+                              mongocrypt_status_t *status);
+
+
+mongocrypt_encryptor_state_t
+mongocrypt_encryptor_done_adding_keys (mongocrypt_encryptor_t *encryptor);
+
+
+mongocrypt_key_decryptor_t *
+mongocrypt_encryptor_next_key_decryptor (mongocrypt_encryptor_t *encryptor);
+
+
+mongocrypt_encryptor_state_t
+mongocrypt_encryptor_add_decrypted_key (
+   mongocrypt_encryptor_t *encryptor,
+   mongocrypt_key_decryptor_t *kms_encryptor);
+
+mongocrypt_encryptor_state_t
+mongocrypt_encryptor_done_decrypting_keys (mongocrypt_encryptor_t *encryptor);
+
+
+mongocrypt_encryptor_state_t
+mongocrypt_encryptor_encrypt (mongocrypt_encryptor_t *encryptor);
+
+
+mongocrypt_encryptor_state_t
+mongocrypt_encryptor_state (mongocrypt_encryptor_t *encryptor);
+
 
 mongocrypt_binary_t *
-mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *request,
-				 const mongocrypt_opts_t *opts);
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *request,
-				   mongocrypt_binary_t *marked_reply,
-				   const mongocrypt_opts_t *opts);
-
-
-const mongocrypt_key_query_t *
-mongocrypt_encryptor_get_key_query (mongocrypt_encryptor_t *request,
-				    const mongocrypt_opts_t *opts);
-
-
-void
-mongocrypt_encryptor_add_key (mongocrypt_encryptor_t *request,
-			      const mongocrypt_opts_t *opts,
-			      mongocrypt_binary_t *key,
-			      mongocrypt_status_t *status);
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_done_adding_keys (mongocrypt_encryptor_t *request);
-
-
-mongocrypt_key_decrypt_request_t *
-mongocrypt_encryptor_next_kms_request (mongocrypt_encryptor_t *request);
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_decrypted_key (mongocrypt_encryptor_t *request,
-					mongocrypt_key_decrypt_request_t *kms_request);
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_state (mongocrypt_encryptor_t *request);
-
-
-mongocrypt_binary_t *
-mongocrypt_encryptor_encrypted_cmd (mongocrypt_encryptor_t *request);
+mongocrypt_encryptor_encrypted_cmd (mongocrypt_encryptor_t *encryptor);
 
 
 mongocrypt_status_t *
-mongocrypt_encryptor_status (mongocrypt_encryptor_t *request);
+mongocrypt_encryptor_status (mongocrypt_encryptor_t *encryptor);
 
 
 void
-mongocrypt_encryptor_destroy (mongocrypt_encryptor_t *request);
-
+mongocrypt_encryptor_destroy (mongocrypt_encryptor_t *encryptor);
 
 
 #endif /* MONGOCRYPT_ENCRYPTOR_H */

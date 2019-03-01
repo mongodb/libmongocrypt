@@ -28,6 +28,8 @@
  * Parsing does not copy, but requires the BSON to be around.
  */
 
+/* TODO: I wonder if this file really serves any purpose, or if we should split
+ * this up. Address in CDRIVER-2947 */
 /* out should be zeroed, TODO: instead of bson, take a buffer */
 bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
@@ -144,9 +146,9 @@ cleanup:
 
 /* Takes ownership of all fields. */
 bool
-_mongocrypt_key_parse (const bson_t *bson,
-                       _mongocrypt_key_t *out,
-                       mongocrypt_status_t *status)
+_mongocrypt_key_parse_owned (const bson_t *bson,
+                             _mongocrypt_key_t *out,
+                             mongocrypt_status_t *status)
 {
    bson_iter_t iter;
    bool ret = false;
@@ -185,7 +187,7 @@ cleanup:
 }
 
 void
-mongocrypt_key_cleanup (_mongocrypt_key_t *key)
+_mongocrypt_key_cleanup (_mongocrypt_key_t *key)
 {
    _mongocrypt_buffer_cleanup (&key->id);
    _mongocrypt_buffer_cleanup (&key->key_material);

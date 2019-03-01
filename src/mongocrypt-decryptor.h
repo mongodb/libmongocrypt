@@ -19,8 +19,7 @@
 
 
 #include "mongocrypt-binary.h"
-#include "mongocrypt-key-decrypt-request.h"
-#include "mongocrypt-key-query.h"
+#include "mongocrypt-key-decryptor.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
@@ -42,50 +41,49 @@ mongocrypt_decryptor_new (mongocrypt_t *crypt,
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *request,
+mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
 			      mongocrypt_binary_t *encrypted_doc,
 			      const mongocrypt_opts_t *opts);
 
 
-const mongocrypt_key_query_t *
-mongocrypt_decryptor_get_key_query (mongocrypt_decryptor_t *request,
+const mongocrypt_binary_t *
+mongocrypt_decryptor_get_key_filter (mongocrypt_decryptor_t *decryptor,
 				    const mongocrypt_opts_t *opts);
 
 
 void
-mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *request,
+mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *decryptor,
 			      const mongocrypt_opts_t *opts,
 			      const mongocrypt_binary_t *key,
 			      mongocrypt_status_t *status);
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_done_adding_keys (mongocrypt_decryptor_t *request);
+mongocrypt_decryptor_done_adding_keys (mongocrypt_decryptor_t *decryptor);
 
 
-mongocrypt_key_decrypt_request_t *
-mongocrypt_decryptor_next_kms_request (mongocrypt_decryptor_t *request);
-
-
-mongocrypt_decryptor_state_t
-mongocrypt_decryptor_add_decrypted_key (mongocrypt_decryptor_t *request,
-					mongocrypt_key_decrypt_request_t *kms_request);
+mongocrypt_key_decryptor_t *
+mongocrypt_decryptor_next_key_decryptor (mongocrypt_decryptor_t *decryptor);
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_state (mongocrypt_decryptor_t *request);
+mongocrypt_decryptor_add_decrypted_key (mongocrypt_decryptor_t *decryptor, mongocrypt_key_decryptor_t *key_decryptor);
+
+
+mongocrypt_decryptor_state_t
+mongocrypt_decryptor_state (mongocrypt_decryptor_t *decryptor);
 
 
 mongocrypt_binary_t *
-mongocrypt_decryptor_decrypted_cmd (mongocrypt_decryptor_t *request);
+mongocrypt_decryptor_decrypted_cmd (mongocrypt_decryptor_t *decryptor);
 
 
 mongocrypt_status_t *
-mongocrypt_decryptor_status (mongocrypt_decryptor_t *request);
+mongocrypt_decryptor_status (mongocrypt_decryptor_t *decryptor);
 
 
 void
-mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *request);
+mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *decryptor);
 
 
 

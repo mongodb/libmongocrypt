@@ -26,38 +26,38 @@ mongocrypt_decryptor_t *
 mongocrypt_decryptor_new (mongocrypt_t *crypt,
 			  const mongocrypt_opts_t *opts)
 {
-   mongocrypt_decryptor_t *request;
+   mongocrypt_decryptor_t *decryptor;
 
-   request = (mongocrypt_decryptor_t *) bson_malloc0 (sizeof *request);
+   decryptor = (mongocrypt_decryptor_t *) bson_malloc0 (sizeof *decryptor);
 
-   request->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_DOC;
-   request->crypt = crypt;
+   decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_DOC;
+   decryptor->crypt = crypt;
 
-   return request;
+   return decryptor;
 }
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *request,
+mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
 			      mongocrypt_binary_t *encrypted_doc,
 			      const mongocrypt_opts_t *opts)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
    /* TODO determine if we can skip decryption */
 
-   request->encrypted_doc = encrypted_doc;
-   request->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS;
+   decryptor->encrypted_doc = encrypted_doc;
+   decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS;
 
-   return request->state;
+   return decryptor->state;
 }
 
 
-const mongocrypt_key_query_t *
-mongocrypt_decryptor_get_key_query (mongocrypt_decryptor_t *request,
+const mongocrypt_binary_t *
+mongocrypt_decryptor_get_key_filter (mongocrypt_decryptor_t *decryptor,
 				    const mongocrypt_opts_t *opts)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
    /* TODO */
 
@@ -66,14 +66,14 @@ mongocrypt_decryptor_get_key_query (mongocrypt_decryptor_t *request,
 
 
 void
-mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *request,
+mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *decryptor,
 			      const mongocrypt_opts_t *opts,
 			      const mongocrypt_binary_t *key,
 			      mongocrypt_status_t *status)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
-   if (request->state != MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS) {
+   if (decryptor->state != MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS) {
       return;
    }
 
@@ -84,24 +84,24 @@ mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *request,
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_done_adding_keys (mongocrypt_decryptor_t *request)
+mongocrypt_decryptor_done_adding_keys (mongocrypt_decryptor_t *decryptor)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
    /* TODO check if we have all keys, error if not */
 
    /* TODO check if we actually need keys decrypted */
-   request->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED;
+   decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED;
 
-   return request->state;
+   return decryptor->state;
 }
 
 
 
-mongocrypt_key_decrypt_request_t *
-mongocrypt_decryptor_next_kms_request (mongocrypt_decryptor_t *request)
+mongocrypt_key_decryptor_t *
+mongocrypt_decryptor_next_key_decryptor (mongocrypt_decryptor_t *decryptor)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
    /* TODO */
 
@@ -109,62 +109,62 @@ mongocrypt_decryptor_next_kms_request (mongocrypt_decryptor_t *request)
 }
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_add_decrypted_key (mongocrypt_decryptor_t *request,
-					mongocrypt_key_decrypt_request_t *key)
+mongocrypt_decryptor_add_decrypted_key (mongocrypt_decryptor_t *decryptor,
+					mongocrypt_key_decryptor_t *key)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
-   if (request->state != MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED) {
-      return request->state;
+   if (decryptor->state != MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED) {
+      return decryptor->state;
    }
    
    /* TODO: add logic to only advance the state once all
       decrypted keys have been added */
 
-   request->state = MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED;
+   decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED;
 
-   return request->state;
+   return decryptor->state;
 }
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_state (mongocrypt_decryptor_t *request)
+mongocrypt_decryptor_state (mongocrypt_decryptor_t *decryptor)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
-   return request->state;
+   return decryptor->state;
 }
 
 
 mongocrypt_status_t *
-mongocrypt_decryptor_status (mongocrypt_decryptor_t *request)
+mongocrypt_decryptor_status (mongocrypt_decryptor_t *decryptor)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
-   return request->status;
+   return decryptor->status;
 }
 
 
 mongocrypt_binary_t *
-mongocrypt_decryptor_decrypted_doc (mongocrypt_decryptor_t *request)
+mongocrypt_decryptor_decrypted_doc (mongocrypt_decryptor_t *decryptor)
 {
-   BSON_ASSERT (request);
+   BSON_ASSERT (decryptor);
 
-   return request->decrypted_doc;
+   return decryptor->decrypted_doc;
 }
 
 
 void
-mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *request)
+mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *decryptor)
 {
-   if (!request) {
+   if (!decryptor) {
       return;
    }
 
-   mongocrypt_binary_destroy (request->encrypted_doc);
+   mongocrypt_binary_destroy (decryptor->encrypted_doc);
 
    /* TODO: ownership of this buffer? */
-   mongocrypt_binary_destroy (request->decrypted_doc);
+   mongocrypt_binary_destroy (decryptor->decrypted_doc);
 
-   bson_free (request);
+   bson_free (decryptor);
 }

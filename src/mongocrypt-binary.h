@@ -19,6 +19,16 @@
 
 #include <stdint.h>
 
+/* TODO CDRIVER-2990: we have three ways of representing binary/BSON
+ * mongocrypt_binary_t - public
+ * _mongocrypt_buffer_t - private, has conveniences
+ * bson_t - for working with bson
+ * TODO: consider having _mongocrypt_buffer_t contain a bson member.
+ * TODO: consider having _mongocrypt_buffer_t data inherit mongocrypt_binary_t
+ * so we can return them from functions.
+ * TODO: be consistent about when to pass pointers, and const-ness.
+ * TODO: return only const pointers to mongocrypt_binary_t?
+ */
 typedef struct {
    uint8_t *data;
    uint32_t len;

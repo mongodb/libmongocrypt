@@ -1,2 +1,3 @@
 docs/_build
 test/schema.json
+test/example/*

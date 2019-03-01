@@ -14,8 +14,7 @@ set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-compat.h
    src/mongocrypt-decryptor.h
    src/mongocrypt-encryptor.h
-   src/mongocrypt-key-decrypt-request.h
-   src/mongocrypt-key-query.h
+   src/mongocrypt-key-decryptor.h
    src/mongocrypt-opts.h
    src/mongocrypt-request.h
    src/mongocrypt-status.h
@@ -35,7 +34,8 @@ if (MONGOC_STATIC_VERSION)
       src/mongocrypt-crypto.c
       src/mongocrypt-decryptor.c
       src/mongocrypt-encryptor.c
-      src/mongocrypt-key-query.c
+      src/mongocrypt-key-broker.c
+      src/mongocrypt-key-decryptor.c
       src/mongocrypt-key-cache.c
       src/mongocrypt-log.c
       src/mongocrypt-openssl.c
@@ -67,11 +67,7 @@ if (MONGOC_STATIC_VERSION)
 
    # kms-message
    find_package (kms_message REQUIRED)
-   target_link_libraries (mongocrypt PRIVATE kms_message_static)
-
-   if (ENABLE_TRACE)
-      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
-   endif ()
+   target_link_libraries (mongocrypt PUBLIC kms_message_static)
 
    # Define test-mongocrypt
    add_executable (test-mongocrypt test/test-mongocrypt.c)
@@ -89,9 +85,15 @@ if (MONGOC_STATIC_VERSION)
    target_link_libraries (test-state-machine PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (test-state-machine PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
-else ()
+   if (ENABLE_TRACE)
+      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
+      target_compile_definitions (test-mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
+      target_compile_definitions (test-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
+   endif ()
+
+else()
    message ("libmongoc and libbson *NOT* found. Only configuring mongocrypt-stub target")
-endif ()
+endif()
 
 set (MONGOCRYPT_STUB_SOURCES
    src/mongocrypt-stub.c)

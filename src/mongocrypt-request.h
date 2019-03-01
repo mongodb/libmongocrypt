@@ -18,7 +18,6 @@
 #define MONGOCRYPT_REQUEST_H
 
 #include "mongocrypt-binary.h"
-#include "mongocrypt-key-query.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
@@ -27,11 +26,6 @@ typedef struct _mongocrypt_request_t mongocrypt_request_t;
 
 bool
 mongocrypt_request_needs_keys (mongocrypt_request_t *request);
-
-
-const mongocrypt_key_query_t *
-mongocrypt_request_next_key_query (mongocrypt_request_t *request,
-                                   const mongocrypt_opts_t *opts);
 
 
 bool

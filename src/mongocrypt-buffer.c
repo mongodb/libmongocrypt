@@ -42,6 +42,17 @@ _mongocrypt_unowned_buffer_from_iter (bson_iter_t *iter,
 
 
 void
+_mongocrypt_unowned_buffer_from_binary (const mongocrypt_binary_t *binary,
+                                        _mongocrypt_buffer_t *out)
+{
+   out->data = binary->data;
+   out->len = binary->len;
+   out->owned = false;
+   out->subtype = 0;
+}
+
+
+void
 _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buffer)
 {
    if (buffer->owned) {
@@ -57,4 +68,40 @@ _mongocrypt_bson_append_buffer (bson_t *bson,
                                 _mongocrypt_buffer_t *in)
 {
    bson_append_binary (bson, key, key_len, in->subtype, in->data, in->len);
+}
+
+
+void
+_mongocrypt_buffer_copy_to (const _mongocrypt_buffer_t *src,
+                            _mongocrypt_buffer_t *dst)
+{
+   if (src == dst) {
+      return;
+   }
+   BSON_ASSERT (src);
+   BSON_ASSERT (dst);
+   dst->data = bson_malloc ((size_t) src->len);
+   memcpy (dst->data, src->data, src->len);
+   dst->len = src->len;
+   dst->subtype = src->subtype;
+   dst->owned = true;
+}
+
+
+void
+_mongocrypt_buffer_to_unowned_bson (const _mongocrypt_buffer_t *buf,
+                                    bson_t *bson)
+{
+   bson_init_static (bson, buf->data, buf->len);
+}
+
+
+int
+_mongocrypt_buffer_cmp (const _mongocrypt_buffer_t *a,
+                        const _mongocrypt_buffer_t *b)
+{
+   if (a->len != b->len) {
+      return a->len - b->len;
+   }
+   return memcmp (a->data, b->data, a->len);
 }

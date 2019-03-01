@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MONGOCRYPT_MONGOCRYPT_CRYPTO_PRIVATE_H
-#define MONGOCRYPT_MONGOCRYPT_CRYPTO_PRIVATE_H
+#ifndef MONGOCRYPT_CRYPTO_PRIVATE_H
+#define MONGOCRYPT_CRYPTO_PRIVATE_H
 
 #include "mongocrypt-private.h"
 
@@ -118,4 +118,4 @@ _crypto_hmac_destroy (void *ctx);
 bool
 _crypto_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);
 
-#endif
+#endif /* MONGOCRYPT_CRYPTO_PRIVATE_H */

@@ -45,6 +45,11 @@ echo "Starting mockupcryptd in background."
 MOCKUPCRYPTD_DEBUG=ON mockupcryptd > mockupcryptd.logs 2>&1 &
 echo $! > mockupcryptd.pid
 
+echo "Generating test data"
+cd libmongocrypt
+python ./.evergreen/generate-test-data.py
+cd ..
+
 echo "Running tests."
 cd libmongocrypt
 MONGOCRYPT_TRACE=ON ./cmake-build/test-mongocrypt

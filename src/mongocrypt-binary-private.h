@@ -19,6 +19,8 @@
 
 #include <bson/bson.h>
 
+#include "mongocrypt-binary.h"
+
 void
 mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out);
 

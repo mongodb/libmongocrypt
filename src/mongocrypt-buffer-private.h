@@ -17,6 +17,9 @@
 #ifndef MONGOCRYPT_BUFFER_H
 #define MONGOCRYPT_BUFFER_H
 
+#include <bson/bson.h>
+#include "mongocrypt.h"
+
 /* This is an internal struct to make working with binary values more
  * convenient.
  * - a non-owning buffer can be constructed from a bson_iter_t.
@@ -39,6 +42,14 @@ _mongocrypt_unowned_buffer_from_iter (bson_iter_t *iter,
                                       _mongocrypt_buffer_t *out);
 
 void
+_mongocrypt_unowned_buffer_from_binary (const mongocrypt_binary_t *binary,
+                                        _mongocrypt_buffer_t *out);
+
+void
+_mongocrypt_buffer_to_unowned_bson (const _mongocrypt_buffer_t *buf,
+                                    bson_t *bson);
+
+void
 _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *binary);
 
 void
@@ -46,5 +57,13 @@ _mongocrypt_bson_append_buffer (bson_t *bson,
                                 const char *key,
                                 uint32_t key_len,
                                 _mongocrypt_buffer_t *in);
+
+void
+_mongocrypt_buffer_copy_to (const _mongocrypt_buffer_t *src,
+                            _mongocrypt_buffer_t *dst);
+
+int
+_mongocrypt_buffer_cmp (const _mongocrypt_buffer_t *a,
+                        const _mongocrypt_buffer_t *b);
 
 #endif /* MONGOCRYPT_BUFFER_H */

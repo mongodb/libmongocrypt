@@ -4,9 +4,10 @@
 #include <mongoc/mongoc.h>
 #include <mongocrypt.h>
 #include <mongocrypt-crypto-private.h>
+#include <mongocrypt-encryptor.h>
 #include <mongocrypt-key-cache-private.h>
-#include <mongocrypt-private.h>
 #include <mongocrypt-log-private.h>
+#include <mongocrypt-private.h>
 
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
@@ -71,118 +72,6 @@ _setup (mongocrypt_opts_t *opts, bson_t *one_schema)
    bson_json_reader_destroy (reader);
 }
 
-static void
-_satisfy_key_queries (mongoc_client_t *keyvault_client,
-                      mongocrypt_request_t *request)
-{
-   mongoc_collection_t *keyvault_coll;
-
-   keyvault_coll =
-      mongoc_client_get_collection (keyvault_client, "admin", "datakeys");
-   while (mongocrypt_request_needs_keys (request)) {
-      const mongocrypt_key_query_t *key_query;
-      const mongocrypt_binary_t *filter_bin;
-      bson_t filter;
-      const bson_t *result;
-      mongoc_cursor_t *cursor;
-      int ret;
-      mongocrypt_status_t *status = mongocrypt_status_new ();
-
-      key_query = mongocrypt_request_next_key_query (request, NULL);
-      filter_bin = mongocrypt_key_query_filter (key_query);
-      bson_init_static (&filter, filter_bin->data, filter_bin->len);
-      printf ("using filter: %s\n", bson_as_json (&filter, NULL));
-
-      cursor = mongoc_collection_find_with_opts (
-         keyvault_coll, &filter, NULL /* opts */, NULL /* read prefs */);
-      if (!cursor) {
-         bson_error_t bson_error;
-         mongoc_cursor_error (cursor, &bson_error);
-         ASSERT_OR_PRINT_BSON (cursor, bson_error);
-      }
-
-      while (mongoc_cursor_next (cursor, &result)) {
-         mongocrypt_binary_t key_bin;
-
-         key_bin.data = (uint8_t *) bson_get_data (result);
-         key_bin.len = result->len;
-         ret = mongocrypt_request_add_keys (request, NULL, &key_bin, 1, status);
-         ASSERT_OR_PRINT (ret, status);
-      }
-      mongocrypt_status_destroy (status);
-   }
-
-   /* TODO: leaks, leaks everywhere. */
-}
-
-static void
-test_roundtrip (void)
-{
-   mongocrypt_opts_t *opts;
-   mongocrypt_t *crypt;
-   mongocrypt_status_t *status = mongocrypt_status_new ();
-   bson_t schema, out;
-   bson_t *cmd;
-   mongocrypt_binary_t schema_bin = {0}, cmd_bin = {0}, encrypted_bin = {0},
-                       *decrypted_bin;
-   mongocrypt_request_t *request;
-   mongoc_client_t *keyvault_client;
-   int ret;
-
-   opts = mongocrypt_opts_new ();
-   _setup (opts, &schema);
-
-   keyvault_client = mongoc_client_new ("mongodb://localhost:27017");
-
-   crypt = mongocrypt_new (opts, status);
-   ASSERT_OR_PRINT (crypt, status);
-
-   cmd = BCON_NEW ("find",
-                   "collection",
-                   "filter",
-                   "{",
-                   "name",
-                   "Todd Davis",
-                   "ssn",
-                   "457-55-5642",
-                   "}");
-
-   schema_bin.data = (uint8_t *) bson_get_data (&schema);
-   schema_bin.len = schema.len;
-
-   cmd_bin.data = (uint8_t *) bson_get_data (cmd);
-   cmd_bin.len = cmd->len;
-
-   request =
-      mongocrypt_encrypt_start (crypt, NULL, &schema_bin, &cmd_bin, status);
-   ASSERT_OR_PRINT (request, status);
-
-   BSON_ASSERT (mongocrypt_request_needs_keys (request));
-   _satisfy_key_queries (keyvault_client, request);
-   _mongocrypt_key_cache_dump (crypt->key_cache);
-
-   ret = mongocrypt_encrypt_finish (request, NULL, &encrypted_bin, status);
-   ASSERT_OR_PRINT (ret, status);
-   bson_init_static (&out, encrypted_bin.data, encrypted_bin.len);
-   printf ("Encrypted document: %s\n", tmp_json (&out));
-
-   request = mongocrypt_decrypt_start (crypt, NULL, &encrypted_bin, 1, status);
-   ASSERT_OR_PRINT (request, status);
-
-   /* Because no caching, we actually need to fetch keys again. */
-   BSON_ASSERT (mongocrypt_request_needs_keys (request));
-   _satisfy_key_queries (keyvault_client, request);
-   _mongocrypt_key_cache_dump (crypt->key_cache);
-
-   ret = mongocrypt_decrypt_finish (request, NULL, &decrypted_bin, status);
-   ASSERT_OR_PRINT (ret, status);
-   bson_init_static (&out, decrypted_bin->data, decrypted_bin->len);
-   printf ("Decrypted document: %s\n", tmp_json (&out));
-
-   mongocrypt_status_destroy (status);
-}
-
-
 /* Return a repeated character with no null terminator. */
 static char *
 _repeat_char (char c, uint32_t times)
@@ -198,8 +87,8 @@ _repeat_char (char c, uint32_t times)
    return result;
 }
 
-void
-_mongocrypt_test_roundtrip (void)
+static void
+_test_roundtrip (void)
 {
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t key = {0}, iv = {0}, associated_data = {0},
@@ -268,21 +157,6 @@ _mongocrypt_test_roundtrip (void)
 }
 
 
-/* Helper to print binary. */
-static void
-_print_buf (const char *prefix, const _mongocrypt_buffer_t *buf)
-{
-   uint32_t i;
-
-   printf ("%s has length: %d\n", prefix, buf->len);
-
-   for (i = 0; i < buf->len; i++) {
-      printf ("%02x", buf->data[i]);
-   }
-   printf ("\n");
-}
-
-
 static void
 _init_buffer (_mongocrypt_buffer_t *out, const char *hex_string)
 {
@@ -300,8 +174,8 @@ _init_buffer (_mongocrypt_buffer_t *out, const char *hex_string)
 
 
 /* From [MCGREW], see comment at the top of this file. */
-void
-_mongocrypt_test_mcgrew (void)
+static void
+_test_mcgrew (void)
 {
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t key, iv, associated_data, plaintext,
@@ -367,9 +241,7 @@ typedef struct {
 
 
 static void
-_mongocrypt_test_log_fn (mongocrypt_log_level_t level,
-                         const char *message,
-                         void *ctx_void)
+_test_log_fn (mongocrypt_log_level_t level, const char *message, void *ctx_void)
 {
    log_test_ctx_t *ctx = (log_test_ctx_t *) ctx_void;
    BSON_ASSERT (level == ctx->expected_level);
@@ -378,8 +250,8 @@ _mongocrypt_test_log_fn (mongocrypt_log_level_t level,
 
 
 /* Test a custom log handler on all log levels except for trace. */
-void
-_mongocrypt_test_log (void)
+static void
+_test_log (void)
 {
    log_test_ctx_t log_ctx = {0};
    mongocrypt_log_level_t levels[] = {MONGOCRYPT_LOG_LEVEL_FATAL,
@@ -389,7 +261,7 @@ _mongocrypt_test_log (void)
    int i;
 
    /* Test logging with a custom handler messages. */
-   _mongocrypt_log_set_fn (_mongocrypt_test_log_fn, &log_ctx);
+   _mongocrypt_log_set_fn (_test_log_fn, &log_ctx);
    for (i = 0; i < sizeof (levels) / sizeof (*levels); i++) {
       log_ctx.expected_level = levels[i];
       _mongocrypt_log (levels[i], "test");
@@ -400,7 +272,172 @@ _mongocrypt_test_log (void)
 }
 
 
-#define RUN_TEST(fn)                          \
+static mongocrypt_binary_t *
+_load_json_from_file (const char *path)
+{
+   bson_error_t error;
+   bson_json_reader_t *reader;
+   bson_t out;
+   bool ret;
+   mongocrypt_binary_t *to_return;
+
+   reader = bson_json_reader_new_from_file (path, &error);
+   ASSERT_OR_PRINT_BSON (reader, error);
+
+   bson_init (&out);
+   ret = bson_json_reader_read (reader, &out, &error);
+   ASSERT_OR_PRINT_BSON (ret, error);
+   CRYPT_TRACEF ("read BSON from %s: %s", path, tmp_json (&out));
+   to_return = mongocrypt_binary_new ();
+   to_return->data = bson_destroy_with_steal (&out, true, &to_return->len);
+   return to_return;
+}
+
+static mongocrypt_binary_t *
+_load_http_from_file (const char *path)
+{
+   bson_error_t error;
+   int fd;
+   bool ret;
+   char *out;
+   mongocrypt_binary_t *to_return;
+   int n_read;
+   int filesize;
+   char buf[512];
+   int slen;
+   int i;
+
+   filesize = 0;
+   out = NULL;
+   fd = open (path, O_RDONLY);
+   while ((n_read = read (fd, buf, sizeof (buf))) > 0) {
+      filesize += n_read;
+      /* Append buf. Performance does not matter. */
+      out = bson_realloc (out, filesize);
+      memcpy (out + (filesize - n_read), buf, n_read);
+   }
+
+   if (n_read < 0) {
+      fprintf (stderr, "failed to read %s\n", path);
+      abort ();
+   }
+
+   close (fd);
+
+   /* copy and fix newlines */
+   to_return = mongocrypt_binary_new ();
+   /* allocate twice the size since \n may become \r\n */
+   to_return->data = bson_malloc0 (filesize * 2);
+   to_return->len = 0;
+   for (i = 0; i < filesize; i++) {
+      if (out[i] == '\n' && out[i - 1] != '\r') {
+         to_return->data[to_return->len++] = '\r';
+      }
+      to_return->data[to_return->len++] = out[i];
+   }
+
+   bson_free (out);
+
+   if (filesize > 0) {
+      CRYPT_TRACEF ("read http request from %s: %s", path, to_return->data);
+   }
+
+   return to_return;
+}
+
+
+static void
+_test_state_machine (void)
+{
+   mongocrypt_status_t *status;
+   mongocrypt_binary_t *command;
+   mongocrypt_binary_t *list_collections_reply;
+   mongocrypt_binary_t *marked_reply;
+   mongocrypt_binary_t *key_document;
+   mongocrypt_binary_t *kms_reply;
+   mongocrypt_t *mongocrypt;
+   mongocrypt_encryptor_t *encryptor;
+   const mongocrypt_binary_t *key_query;
+   mongocrypt_key_decryptor_t *key_decryptor;
+   bson_t tmp;
+   _mongocrypt_buffer_t tmp_buf;
+   bson_iter_t iter;
+
+   status = mongocrypt_status_new ();
+   list_collections_reply =
+      _load_json_from_file ("./test/example/list-collections-reply.json");
+   key_document = _load_json_from_file ("./test/example/key-document.json");
+   kms_reply = _load_http_from_file ("./test/example/kms-reply.txt");
+   command = _load_json_from_file ("./test/example/command.json");
+   marked_reply = _load_json_from_file ("./test/example/marked-reply.json");
+
+   mongocrypt = mongocrypt_new (NULL, status);
+
+   encryptor = mongocrypt_encryptor_new (mongocrypt, NULL);
+
+   BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
+                MONGOCRYPT_ENCRYPTOR_STATE_NEED_NS);
+   mongocrypt_encryptor_add_ns (encryptor, "test.test", NULL);
+
+   BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
+                MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
+   mongocrypt_encryptor_add_collection_info (
+      encryptor, list_collections_reply, NULL);
+
+   BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
+                MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
+   mongocrypt_encryptor_add_markings (encryptor, marked_reply, NULL);
+
+   BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
+                MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS);
+   key_query = mongocrypt_encryptor_get_key_filter (encryptor, NULL);
+   /* check that the key query has the form { _id: $in : [ ] }. */
+   _mongocrypt_unowned_buffer_from_binary (key_query, &tmp_buf);
+   _mongocrypt_buffer_to_unowned_bson (&tmp_buf, &tmp);
+   bson_iter_init (&iter, &tmp);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, "_id.$in.0", &iter));
+
+   ASSERT_OR_PRINT (
+      mongocrypt_encryptor_add_key (encryptor, NULL, key_document, status),
+      status);
+   mongocrypt_encryptor_done_adding_keys (encryptor);
+
+   BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
+                MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS_DECRYPTED);
+   key_decryptor = mongocrypt_encryptor_next_key_decryptor (encryptor);
+
+   int bytes_needed =
+      mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1024);
+
+   while (bytes_needed > 0) {
+      /* feed the whole reply */
+      BSON_ASSERT (
+         mongocrypt_key_decryptor_feed (key_decryptor, kms_reply, status));
+      bytes_needed =
+         mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1024);
+   }
+   mongocrypt_encryptor_add_decrypted_key (encryptor, key_decryptor);
+   mongocrypt_encryptor_done_decrypting_keys (encryptor);
+
+   BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
+                MONGOCRYPT_ENCRYPTOR_STATE_NEED_ENCRYPTION);
+   mongocrypt_encryptor_encrypt (encryptor);
+
+   _mongocrypt_unowned_buffer_from_binary (
+      mongocrypt_encryptor_encrypted_cmd (encryptor), &tmp_buf);
+   _mongocrypt_buffer_to_unowned_bson (&tmp_buf, &tmp);
+   CRYPT_TRACEF ("encrypted to: %s", tmp_json (&tmp));
+
+   mongocrypt_destroy (mongocrypt);
+   mongocrypt_binary_destroy (command);
+   mongocrypt_binary_destroy (marked_reply);
+   mongocrypt_binary_destroy (kms_reply);
+   mongocrypt_binary_destroy (key_document);
+   mongocrypt_binary_destroy (list_collections_reply);
+}
+
+
+#define ADD_TEST(fn)                          \
    do {                                       \
       bool found = true;                      \
       if (argc > 1) {                         \
@@ -417,6 +454,7 @@ _mongocrypt_test_log (void)
       }                                       \
       printf ("running test: %s\n", #fn);     \
       fn ();                                  \
+      printf ("done running: %s\n", #fn);     \
    } while (0);
 
 
@@ -427,9 +465,10 @@ main (int argc, char **argv)
    printf ("Test runner.\n");
    printf ("Pass a list of test names to run only specific tests. E.g.:\n");
    printf ("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
-   RUN_TEST (_mongocrypt_test_roundtrip);
-   RUN_TEST (_mongocrypt_test_mcgrew);
-   RUN_TEST (_mongocrypt_test_log);
+   ADD_TEST (_test_roundtrip);
+   ADD_TEST (_test_mcgrew);
+   ADD_TEST (_test_log);
+   ADD_TEST (_test_state_machine)
 
    mongocrypt_cleanup ();
 }

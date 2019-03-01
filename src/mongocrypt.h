@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef MONGOCRYPT_MONGOCCRYPT_H
-#define MONGOCRYPT_MONGOCCRYPT_H
+#ifndef MONGOCCRYPT_H
+#define MONGOCCRYPT_H
 
 #include "mongocrypt-compat.h"
 #include <stdint.h>
@@ -80,4 +80,4 @@ mongocrypt_decrypt_finish (mongocrypt_request_t *request,
                            const mongocrypt_opts_t *opts,
                            mongocrypt_binary_t **docs,
                            mongocrypt_status_t *status);
-#endif
+#endif /* MONGOCRYPT_H */
