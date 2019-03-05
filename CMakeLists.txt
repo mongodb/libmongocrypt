@@ -3,7 +3,7 @@ project (mongocrypt C)
 
 set (CMAKE_C_STANDARD 99)
 
-find_package(libmongoc-static-1.0 1.11)
+find_package (libmongoc-static-1.0 1.11)
 
 
 option (ENABLE_TRACE "Enable verbose trace logs. Requires MONGOCRYPT_TRACE environment variable at runtime" OFF)
@@ -21,8 +21,8 @@ set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-status.h
 )
 
-if(MONGOC_STATIC_VERSION)
-   message("Found libmongoc and libbson, configuring to add real libmongocrypt target")
+if (MONGOC_STATIC_VERSION)
+   message ("Found libmongoc and libbson, configuring to add real libmongocrypt target")
    message ("--   mongoc found version \"${MONGOC_STATIC_VERSION}\"")
    message ("--   mongoc include path \"${MONGOC_STATIC_INCLUDE_DIRS}\"")
    message ("--   mongoc libraries \"${MONGOC_STATIC_LIBRARIES}\"")
@@ -48,8 +48,8 @@ if(MONGOC_STATIC_VERSION)
 
     # Define mongocrypt library
    add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
-   target_include_directories(mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
-   target_link_libraries(mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
+   target_include_directories (mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
+   target_link_libraries (mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
    # Add ssl libraries to mongocrypt
@@ -60,25 +60,25 @@ if(MONGOC_STATIC_VERSION)
       message ("Building with OpenSSL")
       include (FindOpenSSL)
       message ("Found OpenSSL version ${OPENSSL_VERSION}")
-      target_link_libraries(mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
-      target_include_directories(mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
+      target_link_libraries (mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
+      target_include_directories (mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
       target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
    endif ()
 
    # kms-message
    find_package (kms_message REQUIRED)
-   target_link_libraries(mongocrypt PRIVATE kms_message_static)
+   target_link_libraries (mongocrypt PRIVATE kms_message_static)
 
    if (ENABLE_TRACE)
       target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
    endif ()
 
    # Define test-mongocrypt
-   add_executable(test-mongocrypt test/test-mongocrypt.c)
+   add_executable (test-mongocrypt test/test-mongocrypt.c)
    target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
-   target_include_directories(test-mongocrypt PRIVATE ./src)
-   target_include_directories(test-mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
-   target_link_libraries(test-mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
+   target_include_directories (test-mongocrypt PRIVATE ./src)
+   target_include_directories (test-mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
+   target_link_libraries (test-mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (test-mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
    # Define test-state-machine
@@ -89,9 +89,9 @@ if(MONGOC_STATIC_VERSION)
    target_link_libraries (test-state-machine PRIVATE ${MONGOC_STATIC_LIBRARIES})
    target_compile_definitions (test-state-machine PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
-else()
-   message("libmongoc and libbson *NOT* found. Only configuring mongocrypt-stub target")
-endif()
+else ()
+   message ("libmongoc and libbson *NOT* found. Only configuring mongocrypt-stub target")
+endif ()
 
 set (MONGOCRYPT_STUB_SOURCES
    src/mongocrypt-stub.c)
