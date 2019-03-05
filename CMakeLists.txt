@@ -36,7 +36,6 @@ if(MONGOC_STATIC_VERSION)
       src/mongocrypt-decryptor.c
       src/mongocrypt-encryptor.c
       src/mongocrypt-key-query.c
-      src/mongocrypt-kms.c
       src/mongocrypt-key-cache.c
       src/mongocrypt-log.c
       src/mongocrypt-openssl.c

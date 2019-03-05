@@ -128,13 +128,6 @@ void
 mongocrypt_key_cleanup (_mongocrypt_key_t *key);
 
 
-/* Modifies key */
-bool
-_mongocrypt_kms_decrypt (_mongocrypt_key_t *key,
-                         mongocrypt_status_t *status,
-                         void *ctx);
-
-
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
                                                  _mongocrypt_buffer_t *in,
                                                  mongocrypt_status_t *status);

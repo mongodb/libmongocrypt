@@ -92,7 +92,6 @@ tmp_json (const bson_t *bson)
 
 MONGOCRYPT_ONCE_FUNC (_mongocrypt_do_init)
 {
-   mongoc_init ();
    kms_message_init ();
    _mongocrypt_log_init ();
    MONGOCRYPT_ONCE_RETURN;
@@ -113,7 +112,6 @@ mongocrypt_init (const mongocrypt_opts_t *opts)
 void
 mongocrypt_cleanup ()
 {
-   mongoc_cleanup ();
    kms_message_cleanup ();
 }
 
@@ -122,43 +120,20 @@ mongocrypt_t *
 mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
 {
    mongocrypt_t *crypt = NULL;
-   mongoc_uri_t *uri = NULL;
    bool success = false;
 
    CRYPT_ENTRY;
 
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
 
-   if (opts && opts->mongocryptd_uri) {
-      uri = mongoc_uri_new (opts->mongocryptd_uri);
-      if (!uri) {
-         CLIENT_ERR ("invalid uri for mongocryptd");
-         goto fail;
-      }
-      crypt->mongocryptd_pool = mongoc_client_pool_new (uri);
-   } else {
-      uri = mongoc_uri_new ("mongodb://%2Ftmp%2Fmongocryptd.sock");
-      BSON_ASSERT (uri);
-      crypt->mongocryptd_pool = mongoc_client_pool_new (uri);
-   }
-
-   if (!crypt->mongocryptd_pool) {
-      CLIENT_ERR ("Unable to create client to mongocryptd");
-      goto fail;
-   }
-
-   mongoc_client_pool_set_error_api (crypt->mongocryptd_pool,
-                                     MONGOC_ERROR_API_VERSION_2);
    crypt->opts = mongocrypt_opts_copy (opts);
    mongocrypt_mutex_init (&crypt->mutex);
 
    crypt->schema_cache = _mongocrypt_schema_cache_new ();
-
-   crypt->key_cache = _mongocrypt_key_cache_new (_mongocrypt_kms_decrypt, crypt);
+   
    success = true;
 
 fail:
-   mongoc_uri_destroy (uri);
    if (!success) {
       mongocrypt_destroy (crypt);
       crypt = NULL;
@@ -175,7 +150,6 @@ mongocrypt_destroy (mongocrypt_t *crypt)
       return;
    }
    mongocrypt_opts_destroy (crypt->opts);
-   mongoc_client_pool_destroy (crypt->mongocryptd_pool);
    _mongocrypt_schema_cache_destroy (crypt->schema_cache);
    _mongocrypt_key_cache_destroy (crypt->key_cache);
    mongocrypt_mutex_destroy (&crypt->mutex);
