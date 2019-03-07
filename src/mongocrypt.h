@@ -45,6 +45,13 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status);
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
 
+
+/* ALL METHODS BELOW HERE ARE DEPRECATED, DO NOT USE */
+
+/* For the new encryption and decryption APIs, see
+   mongocrypt-encryptor.h and mongocrypt-decryptor.h,
+   and the API example in test/test-state-machine.c */
+
 mongocrypt_request_t *
 mongocrypt_encrypt_start (mongocrypt_t *crypt,
                           const mongocrypt_opts_t *opts,
