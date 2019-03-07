@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <mongoc/mongoc.h>
+#include <bson/bson.h>
 #include <mongocrypt.h>
 #include <mongocrypt-crypto-private.h>
 #include <mongocrypt-encryptor.h>

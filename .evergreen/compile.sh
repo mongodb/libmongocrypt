@@ -19,8 +19,7 @@ evergreen_root="$(pwd)"
 cd $evergreen_root
 mkdir -p ${evergreen_root}/install
 
-# Build and install the C driver.
-# TODO: after removing dependency of libmongoc (and only need libbson) update to save task time (CDRIVER-2956).
+# Build and install libbson.
 git clone git@github.com:mongodb/mongo-c-driver.git
 cd mongo-c-driver
 
@@ -31,8 +30,8 @@ python ./build/calc_release_version.py > VERSION_CURRENT
 python ./build/calc_release_version.py -p > VERSION_RELEASED
 mkdir cmake-build && cd cmake-build
 # To statically link when using a shared library, compile shared library with -fPIC: https://stackoverflow.com/a/8810996/774658
-$CMAKE -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXTRA_ALIGNMENT=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${evergreen_root}/install/mongo-c-driver ../
-echo "Installing C driver"
+$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXTRA_ALIGNMENT=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${evergreen_root}/install/mongo-c-driver ../
+echo "Installing libbson"
 make -j8 install
 cd $evergreen_root
 

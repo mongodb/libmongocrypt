@@ -15,7 +15,7 @@
  */
 
 #include <kms_message/kms_message.h>
-#include <mongoc/mongoc.h>
+#include <bson/bson.h>
 
 #include "mongocrypt-binary.h"
 #include "mongocrypt-crypto-private.h"

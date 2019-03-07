@@ -18,7 +18,7 @@
 #define MONGOCRYPT_PRIVATE_H
 
 #include "mongocrypt.h"
-#include "mongoc/mongoc.h"
+#include "bson/bson.h"
 
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-buffer-private.h"
@@ -39,24 +39,6 @@
    _mongocrypt_set_error (status, MONGOCRYPT_ERROR_TYPE_KMS, code, __VA_ARGS__)
 
 #define KMS_ERR(...) KMS_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
-
-/* TODO: consider changing this into a function */
-#define MONGOCRYPTD_ERR_W_REPLY(bson_err, reply)                    \
-   do {                                                             \
-      if (bson_err.domain == MONGOC_ERROR_SERVER) {                 \
-         _mongocrypt_set_error (status,                             \
-                                MONGOCRYPT_ERROR_TYPE_MONGOCRYPTD,  \
-                                bson_err.code,                      \
-                                "%s",                               \
-                                NULL);                              \
-         if (reply) {                                               \
-            status->ctx = bson_copy (reply);                        \
-         }                                                          \
-      } else { /* actually a client-side error. */                  \
-         CLIENT_ERR_W_CODE (bson_err.code, "%s", bson_err.message); \
-      }                                                             \
-   } while (0)
-
 
 /* TODO: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
@@ -83,7 +65,6 @@ _bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
                                  mongocrypt_status_t *status);
 
 struct _mongocrypt_t {
-   mongoc_client_pool_t *mongocryptd_pool;
    mongocrypt_opts_t *opts;
    mongocrypt_mutex_t mutex;
    _mongocrypt_schema_cache_t *schema_cache;

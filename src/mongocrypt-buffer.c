@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
+#include <bson/bson.h>
 #include "mongocrypt-buffer-private.h"
 
 /* TODO: actually make this code consistent. */
