@@ -25,7 +25,6 @@ _auto_encrypt (mongocrypt_t *crypt)
 
    list_collections_reply = NULL;
    encryptor = mongocrypt_encryptor_new (crypt, NULL);
-   state = mongocrypt_encryptor_add_ns (encryptor, "test.test", NULL);
    status = mongocrypt_status_new ();
 
    /* Crank the state machine until we reach a terminal state */
