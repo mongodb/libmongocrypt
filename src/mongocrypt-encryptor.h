@@ -48,13 +48,13 @@ mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor,
                              const char *ns,
                              const mongocrypt_opts_t *opts);
 
-/* TODO: consider renaming this to "add_collection_info" since we give back the
- * listCollections response. */
+
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_collection_info (
    mongocrypt_encryptor_t *encryptor,
    const mongocrypt_binary_t *list_collections_reply,
    const mongocrypt_opts_t *opts);
+
 
 const mongocrypt_binary_t *
 mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor,
@@ -91,6 +91,7 @@ mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_decrypted_key (
    mongocrypt_encryptor_t *encryptor,
    mongocrypt_key_decryptor_t *kms_encryptor);
+
 
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_done_decrypting_keys (mongocrypt_encryptor_t *encryptor);
