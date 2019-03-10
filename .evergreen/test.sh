@@ -47,7 +47,8 @@ echo $! > mockupcryptd.pid
 
 echo "Generating test data"
 cd libmongocrypt
-python ./.evergreen/generate-test-data.py
+mkdir ./test/example
+python ./etc/generate-test-data.py
 cd ..
 
 echo "Running tests."

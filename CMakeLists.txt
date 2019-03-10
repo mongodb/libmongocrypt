@@ -3,7 +3,7 @@ project (mongocrypt C)
 
 set (CMAKE_C_STANDARD 99)
 
-find_package (libmongoc-static-1.0 1.11)
+find_package (libmongoc-static-1.0 1.11 REQUIRED)
 
 
 option (ENABLE_TRACE "Enable verbose trace logs. Requires MONGOCRYPT_TRACE environment variable at runtime" OFF)
@@ -20,91 +20,77 @@ set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-status.h
 )
 
-if (MONGOC_STATIC_VERSION)
-   message ("Found libmongoc and libbson, configuring to add real libmongocrypt target")
-   message ("--   mongoc found version \"${MONGOC_STATIC_VERSION}\"")
-   message ("--   mongoc include path \"${MONGOC_STATIC_INCLUDE_DIRS}\"")
-   message ("--   mongoc libraries \"${MONGOC_STATIC_LIBRARIES}\"")
+message ("Found libmongoc and libbson, configuring to add real libmongocrypt target")
+message ("--   mongoc found version \"${MONGOC_STATIC_VERSION}\"")
+message ("--   mongoc include path \"${MONGOC_STATIC_INCLUDE_DIRS}\"")
+message ("--   mongoc libraries \"${MONGOC_STATIC_LIBRARIES}\"")
 
-   set (MONGOCRYPT_SOURCES
-      src/mongocrypt.c
-      src/mongocrypt-binary.c
-      src/mongocrypt-buffer.c
-      src/mongocrypt-commoncrypto.c
-      src/mongocrypt-crypto.c
-      src/mongocrypt-decryptor.c
-      src/mongocrypt-encryptor.c
-      src/mongocrypt-key-broker.c
-      src/mongocrypt-key-decryptor.c
-      src/mongocrypt-key-cache.c
-      src/mongocrypt-log.c
-      src/mongocrypt-openssl.c
-      src/mongocrypt-opts.c
-      src/mongocrypt-parsing.c
-      src/mongocrypt-request.c
-      src/mongocrypt-schema-cache.c
-      src/mongocrypt-status.c
-      )
+set (MONGOCRYPT_SOURCES
+   src/mongocrypt.c
+   src/mongocrypt-binary.c
+   src/mongocrypt-buffer.c
+   src/mongocrypt-commoncrypto.c
+   src/mongocrypt-crypto.c
+   src/mongocrypt-decryptor.c
+   src/mongocrypt-encryptor.c
+   src/mongocrypt-key-broker.c
+   src/mongocrypt-key-decryptor.c
+   src/mongocrypt-key-cache.c
+   src/mongocrypt-log.c
+   src/mongocrypt-openssl.c
+   src/mongocrypt-opts.c
+   src/mongocrypt-parsing.c
+   src/mongocrypt-request.c
+   src/mongocrypt-schema-cache.c
+   src/mongocrypt-status.c
+   )
 
-    # Define mongocrypt library
-   add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
-   target_include_directories (mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
-   target_link_libraries (mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
-   target_compile_definitions (mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
+   # Define mongocrypt library
+add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
+target_include_directories (mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
+target_link_libraries (mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
+target_compile_definitions (mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
-   # Add ssl libraries to mongocrypt
-   if (APPLE)
-      message ("Building with common crypto")
-      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
-   else ()
-      message ("Building with OpenSSL")
-      include (FindOpenSSL)
-      message ("Found OpenSSL version ${OPENSSL_VERSION}")
-      target_link_libraries (mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
-      target_include_directories (mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
-      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
-   endif ()
+# Add ssl libraries to mongocrypt
+if (APPLE)
+   message ("Building with common crypto")
+   target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
+else ()
+   message ("Building with OpenSSL")
+   include (FindOpenSSL)
+   message ("Found OpenSSL version ${OPENSSL_VERSION}")
+   target_link_libraries (mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
+   target_include_directories (mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
+   target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
+endif ()
 
-   # kms-message
-   find_package (kms_message REQUIRED)
-   target_link_libraries (mongocrypt PUBLIC kms_message_static)
+# kms-message
+find_package (kms_message REQUIRED)
+target_link_libraries (mongocrypt PUBLIC kms_message_static)
 
-   # Define test-mongocrypt
-   add_executable (test-mongocrypt test/test-mongocrypt.c)
-   target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
-   target_include_directories (test-mongocrypt PRIVATE ./src)
-   target_include_directories (test-mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
-   target_link_libraries (test-mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
-   target_compile_definitions (test-mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
+# Define test-mongocrypt
+add_executable (test-mongocrypt test/test-mongocrypt.c)
+target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
+target_include_directories (test-mongocrypt PRIVATE ./src)
+target_include_directories (test-mongocrypt PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
+target_link_libraries (test-mongocrypt PRIVATE ${MONGOC_STATIC_LIBRARIES})
+target_compile_definitions (test-mongocrypt PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
-   # Define test-state-machine
-   add_executable (test-state-machine test/test-state-machine.c)
-   target_link_libraries (test-state-machine PRIVATE mongocrypt)
-   target_include_directories (test-state-machine PRIVATE ./src)
-   target_include_directories (test-state-machine PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
-   target_link_libraries (test-state-machine PRIVATE ${MONGOC_STATIC_LIBRARIES})
-   target_compile_definitions (test-state-machine PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
+# Define test-state-machine
+add_executable (test-state-machine test/test-state-machine.c)
+target_link_libraries (test-state-machine PRIVATE mongocrypt)
+target_include_directories (test-state-machine PRIVATE ./src)
+target_include_directories (test-state-machine PRIVATE ${MONGOC_STATIC_INCLUDE_DIRS})
+target_link_libraries (test-state-machine PRIVATE ${MONGOC_STATIC_LIBRARIES})
+target_compile_definitions (test-state-machine PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
 
-   if (ENABLE_TRACE)
-      target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
-      target_compile_definitions (test-mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
-      target_compile_definitions (test-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
-   endif ()
+if (ENABLE_TRACE)
+   target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
+   target_compile_definitions (test-mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
+   target_compile_definitions (test-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
+endif ()
 
-else()
-   message ("libmongoc and libbson *NOT* found. Only configuring mongocrypt-stub target")
-endif()
-
-set (MONGOCRYPT_STUB_SOURCES
-   src/mongocrypt-stub.c)
-
-add_library (mongocrypt-stub SHARED ${MONGOCRYPT_STUB_SOURCES})
-
-add_executable (test-mongocrypt-stub test/test-mongocrypt-stub.c)
-target_link_libraries (test-mongocrypt-stub PRIVATE mongocrypt-stub)
-target_include_directories (test-mongocrypt-stub PRIVATE ./src)
-
-install (TARGETS mongocrypt mongocrypt-stub
+install (TARGETS mongocrypt
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
    RUNTIME DESTINATION bin
