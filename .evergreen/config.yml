@@ -26,22 +26,11 @@ functions:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/libmongocrypt.tar.gz'
+        remote_file: '${libmongocrypt_s3_path}'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
-
-  "upload logs":
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${revision}/${task_name}/${build_id}/mockupcryptd.logs'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'mockupcryptd.logs'
-        content_type: 'text/plain'
 
 tasks:
 - name: build-and-test
@@ -56,8 +45,24 @@ tasks:
         
   - func: "tar and upload libmongocrypt libraries"
 
-post:
-  - func: "upload logs"
+pre:
+  # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_path} expansion.
+  # If this is a patch build, we want a URL specific to the patch, like:
+  # /mciuploads/libmongocrypt/ubuntu1604/24411/build-and-test/libmongocrypt_ubuntu1604_24411/libmongocrypt.tar.gz
+  # If this is a waterfall build, we want a fixed "latest" URL, like:
+  # /mciuploads/libmongocrypt/ubuntu1604/latest/libmongocrypt.tar.gz
+  - command: "shell.exec"
+    params:
+      script: |-
+        REMOTE_PATH="${project}/${build_variant}/latest/libmongocrypt.tar.gz"
+        if [ "${is_patch}" = "true" ]; then
+           REMOTE_PATH="${project}/${build_variant}/${revision}/${task_name}/${build_id}/libmongocrypt.tar.gz"
+        fi
+        echo "libmongocrypt_s3_path: $REMOTE_PATH"
+        echo "libmongocrypt_s3_path: $REMOTE_PATH" > expansion.yml
+  - command: expansions.update
+    params:
+      file: expansion.yml
 
 buildvariants:
 - name: ubuntu1604
