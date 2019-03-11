@@ -33,7 +33,6 @@ _check_state (mongocrypt_encryptor_t *encryptor,
                                 "NEED_SCHEMA",
                                 "NEED_MARKINGS",
                                 "NEED_KEYS",
-                                "NEED_KEYS_DECRYPTED",
                                 "NEED_ENCRYPTION",
                                 "NO_ENCRYPTION_NEEDED",
                                 "ENCRYPTED",
@@ -300,108 +299,16 @@ done:
 }
 
 
-const mongocrypt_binary_t *
-mongocrypt_encryptor_get_key_filter (mongocrypt_encryptor_t *encryptor,
-                                     const mongocrypt_opts_t *opts)
+mongocrypt_key_broker_t *
+mongocrypt_encryptor_get_key_broker (mongocrypt_encryptor_t *encryptor)
 {
-   _mongocrypt_buffer_t buf;
-
    BSON_ASSERT (encryptor);
 
    if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS)) {
       return NULL;
    }
 
-   /* TODO CDRIVER-2990 it seems a little odd that we're creating a buffer_t
-    * here
-    * just to marshal it into a binary_t. */
-   if (!_mongocrypt_key_broker_filter (
-          &encryptor->kb, &buf, encryptor->status)) {
-      _mongocrypt_buffer_cleanup (&buf);
-      return NULL;
-   }
-
-   /* "steal" the buffer data. */
-   encryptor->filter->data = buf.data;
-   encryptor->filter->len = buf.len;
-   buf.owned = false;
-   return encryptor->filter;
-}
-
-
-bool
-mongocrypt_encryptor_add_key (mongocrypt_encryptor_t *encryptor,
-                              const mongocrypt_opts_t *opts,
-                              mongocrypt_binary_t *key,
-                              mongocrypt_status_t *status)
-{
-   _mongocrypt_buffer_t key_buf;
-
-   BSON_ASSERT (encryptor);
-
-   if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS)) {
-      return false;
-   }
-
-   _mongocrypt_unowned_buffer_from_binary (key, &key_buf);
-   return _mongocrypt_key_broker_add_doc (&encryptor->kb, &key_buf, status);
-}
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_done_adding_keys (mongocrypt_encryptor_t *encryptor)
-{
-   mongocrypt_status_t *status;
-
-   BSON_ASSERT (encryptor);
-   status = encryptor->status;
-
-   if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS)) {
-      return encryptor->state;
-   }
-
-   if (_mongocrypt_key_broker_has (&encryptor->kb, KEY_EMPTY)) {
-      CLIENT_ERR ("client did not provide all keys");
-      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
-   } else {
-      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS_DECRYPTED;
-   }
-
-   return encryptor->state;
-}
-
-
-mongocrypt_key_decryptor_t *
-mongocrypt_encryptor_next_key_decryptor (mongocrypt_encryptor_t *encryptor)
-{
-   BSON_ASSERT (encryptor);
-
-   if (!_check_state (encryptor,
-                      MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS_DECRYPTED)) {
-      return NULL;
-   }
-
-   return _mongocrypt_key_broker_next_key_decryptor (&encryptor->kb);
-}
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_decrypted_key (mongocrypt_encryptor_t *encryptor,
-                                        mongocrypt_key_decryptor_t *decryptor)
-{
-   BSON_ASSERT (encryptor);
-
-   if (!_check_state (encryptor,
-                      MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS_DECRYPTED)) {
-      return encryptor->state;
-   }
-
-   if (!_mongocrypt_key_broker_add_decrypted_key (
-          &encryptor->kb, decryptor, encryptor->status)) {
-      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
-   }
-
-   return encryptor->state;
+   return &encryptor->kb;
 }
 
 
@@ -472,7 +379,7 @@ _replace_marking_with_ciphertext (void *ctx,
    _mongocrypt_ciphertext_t ciphertext = {0};
    _mongocrypt_buffer_t serialized_ciphertext = {0};
    _mongocrypt_buffer_t plaintext = {0};
-   _mongocrypt_key_broker_t *kb;
+   mongocrypt_key_broker_t *kb;
    bson_t wrapper = BSON_INITIALIZER;
    const _mongocrypt_buffer_t *key_material;
    bool ret = false;
@@ -482,7 +389,7 @@ _replace_marking_with_ciphertext (void *ctx,
    BSON_ASSERT (in);
    BSON_ASSERT (out);
    BSON_ASSERT (status);
-   kb = (_mongocrypt_key_broker_t *) ctx;
+   kb = (mongocrypt_key_broker_t *) ctx;
 
    if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
       goto fail;
@@ -544,15 +451,14 @@ fail:
 
 
 mongocrypt_encryptor_state_t
-mongocrypt_encryptor_done_decrypting_keys (mongocrypt_encryptor_t *encryptor)
+mongocrypt_encryptor_key_broker_done (mongocrypt_encryptor_t *encryptor)
 {
    mongocrypt_status_t *status;
 
    BSON_ASSERT (encryptor);
    status = encryptor->status;
 
-   if (!_check_state (encryptor,
-                      MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS_DECRYPTED)) {
+   if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS)) {
       return encryptor->state;
    }
 

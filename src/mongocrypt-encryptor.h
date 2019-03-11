@@ -19,7 +19,7 @@
 
 
 #include "mongocrypt-binary.h"
-#include "mongocrypt-key-broker-private.h"
+#include "mongocrypt-key-broker.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
@@ -31,7 +31,6 @@ typedef enum {
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA,
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS,
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS,
-   MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS_DECRYPTED,
    MONGOCRYPT_ENCRYPTOR_STATE_NEED_ENCRYPTION,
    MONGOCRYPT_ENCRYPTOR_STATE_NO_ENCRYPTION_NEEDED,
    MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED,
@@ -66,35 +65,12 @@ mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
                                    mongocrypt_binary_t *marked_reply,
                                    const mongocrypt_opts_t *opts);
 
-
-const mongocrypt_binary_t *
-mongocrypt_encryptor_get_key_filter (mongocrypt_encryptor_t *encryptor,
-                                     const mongocrypt_opts_t *opts);
-
-
-bool
-mongocrypt_encryptor_add_key (mongocrypt_encryptor_t *encryptor,
-                              const mongocrypt_opts_t *opts,
-                              mongocrypt_binary_t *key,
-                              mongocrypt_status_t *status);
+mongocrypt_key_broker_t *
+mongocrypt_encryptor_get_key_broker (mongocrypt_encryptor_t *encryptor);
 
 
 mongocrypt_encryptor_state_t
-mongocrypt_encryptor_done_adding_keys (mongocrypt_encryptor_t *encryptor);
-
-
-mongocrypt_key_decryptor_t *
-mongocrypt_encryptor_next_key_decryptor (mongocrypt_encryptor_t *encryptor);
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_decrypted_key (
-   mongocrypt_encryptor_t *encryptor,
-   mongocrypt_key_decryptor_t *key_decryptor);
-
-
-mongocrypt_encryptor_state_t
-mongocrypt_encryptor_done_decrypting_keys (mongocrypt_encryptor_t *encryptor);
+mongocrypt_encryptor_key_broker_done (mongocrypt_encryptor_t *encryptor);
 
 
 mongocrypt_encryptor_state_t

@@ -26,7 +26,7 @@ struct _mongocrypt_encryptor_t {
    mongocrypt_encryptor_state_t state;
    mongocrypt_status_t *status;
 
-   _mongocrypt_key_broker_t kb;
+   mongocrypt_key_broker_t kb;
 
    const char *ns;
    mongocrypt_binary_t *schema;

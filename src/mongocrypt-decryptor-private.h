@@ -26,7 +26,7 @@ struct _mongocrypt_decryptor_t {
    mongocrypt_decryptor_state_t state;
    mongocrypt_status_t *status;
 
-   _mongocrypt_key_broker_t kb;
+   mongocrypt_key_broker_t kb;
 
    mongocrypt_binary_t *filter;
    mongocrypt_binary_t *encrypted_doc;

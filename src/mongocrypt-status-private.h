@@ -20,7 +20,7 @@
 #include "mongocrypt-status.h"
 
 struct _mongocrypt_status_t {
-   uint32_t type;
+   mongocrypt_error_type_t type;
    uint32_t code;
    char message[1024];
    void *ctx;

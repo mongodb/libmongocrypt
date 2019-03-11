@@ -14,6 +14,7 @@ set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-compat.h
    src/mongocrypt-decryptor.h
    src/mongocrypt-encryptor.h
+   src/mongocrypt-key-broker.h
    src/mongocrypt-key-decryptor.h
    src/mongocrypt-opts.h
    src/mongocrypt-request.h

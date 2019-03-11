@@ -19,7 +19,7 @@
 
 
 #include "mongocrypt-binary.h"
-#include "mongocrypt-key-decryptor.h"
+#include "mongocrypt-key-broker.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
@@ -28,7 +28,6 @@ typedef struct _mongocrypt_decryptor_t mongocrypt_decryptor_t;
 typedef enum {
    MONGOCRYPT_DECRYPTOR_STATE_NEED_DOC = 0,
    MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS,
-   MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED,
    MONGOCRYPT_DECRYPTOR_STATE_NEED_DECRYPTION,
    MONGOCRYPT_DECRYPTOR_STATE_NO_DECRYPTION_NEEDED,
    MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED,
@@ -45,35 +44,12 @@ mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
                               mongocrypt_binary_t *encrypted_doc,
                               const mongocrypt_opts_t *opts);
 
-
-const mongocrypt_binary_t *
-mongocrypt_decryptor_get_key_filter (mongocrypt_decryptor_t *decryptor,
-                                     const mongocrypt_opts_t *opts);
-
-
-bool
-mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *decryptor,
-                              const mongocrypt_opts_t *opts,
-                              const mongocrypt_binary_t *key,
-                              mongocrypt_status_t *status);
+mongocrypt_key_broker_t *
+mongocrypt_decryptor_get_key_broker (mongocrypt_decryptor_t *decryptor);
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_done_adding_keys (mongocrypt_decryptor_t *decryptor);
-
-
-mongocrypt_key_decryptor_t *
-mongocrypt_decryptor_next_key_decryptor (mongocrypt_decryptor_t *decryptor);
-
-
-mongocrypt_decryptor_state_t
-mongocrypt_decryptor_add_decrypted_key (
-   mongocrypt_decryptor_t *decryptor,
-   mongocrypt_key_decryptor_t *key_decryptor);
-
-
-mongocrypt_decryptor_state_t
-mongocrypt_decryptor_done_decrypting_keys (mongocrypt_decryptor_t *decryptor);
+mongocrypt_decryptor_key_broker_done (mongocrypt_decryptor_t *decryptor);
 
 
 mongocrypt_decryptor_state_t

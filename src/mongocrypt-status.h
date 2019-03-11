@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 typedef enum {
-   MONGOCRYPT_ERROR_TYPE_NONE,
+   MONGOCRYPT_ERROR_TYPE_NONE = 0,
    MONGOCRYPT_ERROR_TYPE_MONGOCRYPTD,
    MONGOCRYPT_ERROR_TYPE_KMS,
    MONGOCRYPT_ERROR_TYPE_CLIENT
@@ -47,6 +47,9 @@ mongocrypt_status_code (mongocrypt_status_t *status);
 
 const char *
 mongocrypt_status_message (mongocrypt_status_t *status);
+
+bool
+mongocrypt_status_ok (mongocrypt_status_t *status);
 
 
 #endif /* MONGOCRYPT_STATUS_H */

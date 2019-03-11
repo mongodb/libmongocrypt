@@ -39,6 +39,20 @@ mongocrypt_status_code (mongocrypt_status_t *status)
 }
 
 
+mongocrypt_error_type_t
+mongocrypt_status_error_type (mongocrypt_status_t *status)
+{
+   return status->type;
+}
+
+
+bool
+mongocrypt_status_ok (mongocrypt_status_t *status)
+{
+   return (status->type == MONGOCRYPT_ERROR_TYPE_NONE);
+}
+
+
 void
 mongocrypt_status_destroy (mongocrypt_status_t *status)
 {

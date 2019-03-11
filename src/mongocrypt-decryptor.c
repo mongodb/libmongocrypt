@@ -30,7 +30,6 @@ _check_state (mongocrypt_decryptor_t *decryptor,
    mongocrypt_status_t *status;
    const char *state_names[] = {"NEED_DOC",
                                 "NEED_KEYS",
-                                "NEED_KEYS_DECRYPTED",
                                 "NEED_DECRYPTION",
                                 "NO_DECRYPTION_NEEDED",
                                 "DECRYPTED",
@@ -174,122 +173,25 @@ done:
 }
 
 
-const mongocrypt_binary_t *
-mongocrypt_decryptor_get_key_filter (mongocrypt_decryptor_t *decryptor,
-                                     const mongocrypt_opts_t *opts)
+mongocrypt_key_broker_t *
+mongocrypt_decryptor_get_key_broker (mongocrypt_decryptor_t *decryptor)
 {
-   _mongocrypt_buffer_t buf;
-
    BSON_ASSERT (decryptor);
 
    if (!_check_state (decryptor, MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS)) {
       return NULL;
    }
 
-   /* TODO CDRIVER-2990 clean up the buffer -> binary story */
-   if (!_mongocrypt_key_broker_filter (
-          &decryptor->kb, &buf, decryptor->status)) {
-      _mongocrypt_buffer_cleanup (&buf);
-      return NULL;
-   }
-
-   /* "steal" the buffer data */
-   /* TODO CDRIVER-3011 have the key broker own this filter instead */
-   decryptor->filter = mongocrypt_binary_new ();
-   decryptor->filter->data = buf.data;
-   decryptor->filter->len = buf.len;
-   buf.owned = false;
-
-   return decryptor->filter;
-}
-
-
-bool
-mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *decryptor,
-                              const mongocrypt_opts_t *opts,
-                              const mongocrypt_binary_t *key,
-                              mongocrypt_status_t *status)
-{
-   _mongocrypt_buffer_t key_buf;
-
-   BSON_ASSERT (decryptor);
-
-   if (!_check_state (decryptor, MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS)) {
-      return false;
-   }
-
-   /* TODO this is only for testing, remove! */
-   if (!key) {
-      return true;
-   }
-
-   _mongocrypt_unowned_buffer_from_binary (key, &key_buf);
-   return _mongocrypt_key_broker_add_doc (&decryptor->kb, &key_buf, status);
+   return &decryptor->kb;
 }
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_done_adding_keys (mongocrypt_decryptor_t *decryptor)
+mongocrypt_decryptor_key_broker_done (mongocrypt_decryptor_t *decryptor)
 {
    mongocrypt_status_t *status;
 
-   BSON_ASSERT (decryptor);
-   status = decryptor->status;
-
    if (!_check_state (decryptor, MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS)) {
-      return decryptor->state;
-   }
-
-   if (_mongocrypt_key_broker_has (&decryptor->kb, KEY_EMPTY)) {
-      CLIENT_ERR ("client did not provide all keys");
-      decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
-   } else {
-      decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED;
-   }
-
-   return decryptor->state;
-}
-
-
-mongocrypt_key_decryptor_t *
-mongocrypt_decryptor_next_key_decryptor (mongocrypt_decryptor_t *decryptor)
-{
-   BSON_ASSERT (decryptor);
-
-   if (!_check_state (decryptor,
-                      MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED)) {
-      return NULL;
-   }
-
-   return _mongocrypt_key_broker_next_key_decryptor (&decryptor->kb);
-}
-
-mongocrypt_decryptor_state_t
-mongocrypt_decryptor_add_decrypted_key (
-   mongocrypt_decryptor_t *decryptor, mongocrypt_key_decryptor_t *key_decryptor)
-{
-   BSON_ASSERT (decryptor);
-
-   if (!_check_state (decryptor,
-                      MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED)) {
-      return decryptor->state;
-   }
-
-   if (!_mongocrypt_key_broker_add_decrypted_key (
-          &decryptor->kb, key_decryptor, decryptor->status)) {
-      decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
-   }
-
-   return decryptor->state;
-}
-
-mongocrypt_decryptor_state_t
-mongocrypt_decryptor_done_decrypting_keys (mongocrypt_decryptor_t *decryptor)
-{
-   mongocrypt_status_t *status;
-
-   if (!_check_state (decryptor,
-                      MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED)) {
       return decryptor->state;
    }
 
