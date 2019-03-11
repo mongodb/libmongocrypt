@@ -160,7 +160,6 @@ _crypto_decrypt_new (const _mongocrypt_buffer_t *key,
    EVP_CIPHER_CTX *ctx;
    bool ret = false;
 
-   CRYPT_ENTRY;
    ctx = EVP_CIPHER_CTX_new ();
    cipher = EVP_aes_256_cbc ();
 
@@ -244,7 +243,6 @@ _crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status)
    HMAC_CTX *ctx;
    bool ret = false;
 
-   CRYPT_ENTRY;
    ctx = HMAC_CTX_new ();
    algo = EVP_sha512 ();
    BSON_ASSERT (EVP_MD_block_size (algo) == 128);

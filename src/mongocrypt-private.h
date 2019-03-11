@@ -20,6 +20,7 @@
 #include "mongocrypt.h"
 #include "mongoc/mongoc.h"
 
+#include "mongocrypt-log-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-cache-private.h"
 #include "mongocrypt-mutex-private.h"
@@ -81,7 +82,6 @@ _bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
                                  uint32_t code,
                                  mongocrypt_status_t *status);
 
-
 struct _mongocrypt_t {
    mongoc_client_pool_t *mongocryptd_pool;
    mongocrypt_opts_t *opts;
@@ -89,6 +89,7 @@ struct _mongocrypt_t {
    _mongocrypt_schema_cache_t *schema_cache;
    /* The key cache has its own interal mutex. */
    _mongocrypt_key_cache_t *key_cache;
+   _mongocrypt_log_t log;
 };
 
 typedef struct {

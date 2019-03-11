@@ -113,26 +113,6 @@ tmp_buf (const _mongocrypt_buffer_t *buf)
 MONGOCRYPT_ONCE_FUNC (_mongocrypt_do_init)
 {
    kms_message_init ();
-   _mongocrypt_log_init ();
-   MONGOCRYPT_ONCE_RETURN;
-}
-
-
-void
-mongocrypt_init (const mongocrypt_opts_t *opts)
-{
-   static mongocrypt_once_t once = MONGOCRYPT_ONCE_INIT;
-   mongocrypt_once (&once, _mongocrypt_do_init);
-   if (opts && opts->log_fn) {
-      _mongocrypt_log_set_fn (opts->log_fn, opts->log_ctx);
-   }
-}
-
-
-void
-mongocrypt_cleanup ()
-{
-   kms_message_cleanup ();
 }
 
 
@@ -142,15 +122,12 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
    mongocrypt_t *crypt = NULL;
    bool success = false;
 
-   CRYPT_ENTRY;
-
+   _mongocrypt_do_init ();
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
-
    crypt->opts = mongocrypt_opts_copy (opts);
    mongocrypt_mutex_init (&crypt->mutex);
-
+   _mongocrypt_log_init (&crypt->log, opts);
    crypt->schema_cache = _mongocrypt_schema_cache_new ();
-
    success = true;
 
 fail:
@@ -165,7 +142,6 @@ fail:
 void
 mongocrypt_destroy (mongocrypt_t *crypt)
 {
-   CRYPT_ENTRY;
    if (!crypt) {
       return;
    }
@@ -173,6 +149,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    _mongocrypt_schema_cache_destroy (crypt->schema_cache);
    _mongocrypt_key_cache_destroy (crypt->key_cache);
    mongocrypt_mutex_destroy (&crypt->mutex);
+   _mongocrypt_log_cleanup (&crypt->log);
    bson_free (crypt);
 }
 
@@ -302,7 +279,6 @@ _replace_ciphertext_with_plaintext (void *ctx,
    uint32_t bytes_written;
    bool ret = false;
 
-   CRYPT_ENTRY;
    BSON_ASSERT (ctx);
    BSON_ASSERT (in);
    BSON_ASSERT (out);
@@ -357,7 +333,6 @@ mongocrypt_decrypt_finish (mongocrypt_request_t *request,
    mongocrypt_binary_t *results;
    bool ret = false;
 
-   CRYPT_ENTRY;
    results =
       bson_malloc0 (sizeof (mongocrypt_binary_t) * request->num_input_docs);
 

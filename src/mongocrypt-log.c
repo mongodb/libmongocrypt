@@ -15,16 +15,29 @@
  */
 
 #include "mongocrypt-log-private.h"
+#include "mongocrypt-opts-private.h"
 
 #include <bson/bson.h>
 
-static struct _log_globals_t {
-   mongocrypt_mutex_t mutex; /* protects fn and ctx. */
-   mongocrypt_log_fn_t fn;
-   void *ctx;
-   bool trace_enabled;
-} log_globals;
+void
+_mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts)
+{
+   mongocrypt_mutex_init (&log->mutex);
+   if (opts && opts->log_fn) {
+      _mongocrypt_log_set_fn (log, opts->log_fn, opts->log_ctx);
+   } else {
+      _mongocrypt_log_set_fn (log, _mongocrypt_default_log_fn, NULL);
+   }
+   log->trace_enabled = getenv ("MONGOCRYPT_TRACE");
+}
 
+
+void
+_mongocrypt_log_cleanup (_mongocrypt_log_t *log)
+{
+   mongocrypt_mutex_destroy (&log->mutex);
+   memset (log, 0, sizeof(*log));
+}
 
 void
 _mongocrypt_default_log_fn (mongocrypt_log_level_t level,
@@ -51,32 +64,29 @@ _mongocrypt_default_log_fn (mongocrypt_log_level_t level,
    printf (" %s\n", message);
 }
 
-void
-_mongocrypt_log_init (void)
-{
-   /* initialize globals. */
-   mongocrypt_mutex_init (&log_globals.mutex);
-   log_globals.fn = _mongocrypt_default_log_fn;
-   log_globals.ctx = NULL;
-   log_globals.trace_enabled = getenv ("MONGOCRYPT_TRACE");
-}
 
 void
-_mongocrypt_log_set_fn (mongocrypt_log_fn_t fn, void *ctx)
+_mongocrypt_log_set_fn (_mongocrypt_log_t *log,
+                        mongocrypt_log_fn_t fn,
+                        void *ctx)
 {
-   mongocrypt_mutex_lock (&log_globals.mutex);
-   log_globals.fn = fn;
-   log_globals.ctx = ctx;
-   mongocrypt_mutex_unlock (&log_globals.mutex);
+   mongocrypt_mutex_lock (&log->mutex);
+   log->fn = fn;
+   log->ctx = ctx;
+   mongocrypt_mutex_unlock (&log->mutex);
 }
 
+
 void
-_mongocrypt_log (mongocrypt_log_level_t level, const char *format, ...)
+_mongocrypt_log (_mongocrypt_log_t *log,
+                 mongocrypt_log_level_t level,
+                 const char *format,
+                 ...)
 {
    va_list args;
    char *message;
 
-   if (level == MONGOCRYPT_LOG_LEVEL_TRACE && !log_globals.trace_enabled) {
+   if (level == MONGOCRYPT_LOG_LEVEL_TRACE && !log->trace_enabled) {
       return;
    }
 
@@ -86,8 +96,8 @@ _mongocrypt_log (mongocrypt_log_level_t level, const char *format, ...)
    message = bson_strdupv_printf (format, args);
    va_end (args);
 
-   mongocrypt_mutex_lock (&log_globals.mutex);
-   log_globals.fn (level, message, log_globals.ctx);
-   mongocrypt_mutex_unlock (&log_globals.mutex);
+   mongocrypt_mutex_lock (&log->mutex);
+   log->fn (level, message, log->ctx);
+   mongocrypt_mutex_unlock (&log->mutex);
    bson_free (message);
 }

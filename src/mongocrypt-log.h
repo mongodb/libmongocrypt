@@ -16,8 +16,6 @@
 #ifndef MONGOCRYPT_LOG_H
 #define MONGOCRYPT_LOG_H
 
-#include "mongocrypt-private.h"
-
 /* TRACE messages are only generated if libmongocrypt is compiled with
  * ENABLE_TRACING=ON.
  * They are only logged at runtime if the MONGOCRYPT_TRACE environment variable

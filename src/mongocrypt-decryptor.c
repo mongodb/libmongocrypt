@@ -196,7 +196,7 @@ mongocrypt_decryptor_key_broker_done (mongocrypt_decryptor_t *decryptor)
 
    if (_mongocrypt_key_broker_has (&decryptor->kb, KEY_ENCRYPTED)) {
       /* We allow partial decryption, so this is not an error. */
-      _mongocrypt_log (MONGOCRYPT_LOG_LEVEL_WARNING,
+      _mongocrypt_log (&decryptor->crypt->log, MONGOCRYPT_LOG_LEVEL_WARNING,
                        "Some keys are still encrypted, the decryptor"
                        "can only partially decrypt this document.");
    }
@@ -218,11 +218,9 @@ _replace_ciphertext_with_plaintext (void *ctx,
    const _mongocrypt_buffer_t *key_material;
    bson_t wrapper;
    bson_iter_t iter;
-   const _mongocrypt_key_t *key;
    uint32_t bytes_written;
    bool ret = false;
 
-   CRYPT_ENTRY;
    BSON_ASSERT (ctx);
    BSON_ASSERT (in);
    BSON_ASSERT (out);
@@ -239,7 +237,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
       &decryptor->kb, &ciphertext.key_id, status);
    if (!key_material) {
       /* We allow partial decryption, so this is not an error. */
-      _mongocrypt_log (MONGOCRYPT_LOG_LEVEL_WARNING,
+      _mongocrypt_log (&decryptor->crypt->log, MONGOCRYPT_LOG_LEVEL_WARNING,
                        "Missing key, skipping decryption for this ciphertext");
       ret = true;
       goto fail;
@@ -250,7 +248,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
    plaintext.owned = true;
 
    if (!_mongocrypt_do_decryption (NULL,
-                                   &key->data_key,
+                                   key_material,
                                    &ciphertext.data,
                                    &plaintext,
                                    &bytes_written,

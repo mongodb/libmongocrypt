@@ -22,6 +22,7 @@
 #include "mongocrypt-key-decryptor.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-log-private.h"
+#include "mongocrypt-private.h"
 
 struct __mongocrypt_key_broker_entry_t {
    mongocrypt_status_t *status;
@@ -81,6 +82,40 @@ _mongocrypt_key_broker_add_id (mongocrypt_key_broker_t *kb,
    return true;
 }
 
+
+bool
+_mongocrypt_key_broker_filter (mongocrypt_key_broker_t *kb,
+                               _mongocrypt_buffer_t *out,
+                               mongocrypt_status_t *status)
+{
+   _mongocrypt_key_broker_entry_t *kbi;
+   int i;
+   bson_t filter, _id, _id_in;
+
+   bson_init (&filter);
+   bson_append_document_begin (&filter, "_id", 3, &_id);
+   bson_append_array_begin (&_id, "$in", 3, &_id_in);
+   i = 0;
+   for (kbi = kb->kb_entry; kbi != NULL; kbi = kbi->next) {
+      char *key_str;
+
+      if (kbi->state != KEY_EMPTY) {
+         continue;
+      }
+      key_str = bson_strdup_printf ("%d", i++);
+      _mongocrypt_bson_append_buffer (
+         &_id_in, key_str, strlen (key_str), &kbi->key_id);
+      bson_free (key_str);
+   }
+   bson_append_array_end (&_id, &_id_in);
+   bson_append_document_end (&filter, &_id);
+
+   out->data = bson_destroy_with_steal (&filter, true, &out->len);
+   out->owned = true;
+   return true;
+}
+
+
 bool
 _mongocrypt_key_broker_add_doc (mongocrypt_key_broker_t *kb,
                                 const _mongocrypt_buffer_t *doc,
@@ -102,8 +137,6 @@ _mongocrypt_key_broker_add_doc (mongocrypt_key_broker_t *kb,
    for (kbi = kb->kb_entry; kbi != NULL; kbi = kbi->next) {
       /* TODO: support keyAltName. */
       if (0 == _mongocrypt_buffer_cmp (&kbi->key_id, &key.id)) {
-         CRYPT_TRACEF ("found matching key, updating %s",
-                       tmp_buf (&kbi->key_id));
          /* take ownership of the key document. */
          memcpy (&kbi->key_returned, &key, sizeof (key));
          kbi->state = KEY_ENCRYPTED;
@@ -195,14 +228,10 @@ _mongocrypt_key_broker_add_decrypted_key (mongocrypt_key_broker_t *kb,
    }
 
    b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
-   CRYPT_TRACEF ("response plaintext: %s, %d", b64_str, b64_strlen);
 
    kbi->decrypted_key_material.data = bson_malloc (b64_strlen + 1);
    kbi->decrypted_key_material.len = kms_message_b64_pton (
       b64_str, kbi->decrypted_key_material.data, b64_strlen);
-   CRYPT_TRACEF ("decrypted %d, km=%s",
-                 kbi->decrypted_key_material.len,
-                 tmp_buf (&kbi->decrypted_key_material));
    kbi->state = KEY_DECRYPTED;
 
    /* TODO CDRIVER-2951 Add decrypted keys to the key cache */
@@ -272,8 +301,6 @@ mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb,
 
    bson_append_array_end (&_id, &_id_in);
    bson_append_document_end (&filter, &_id);
-
-   CRYPT_TRACEF ("constructed key query: %s", tmp_json (&filter));
 
    kb->filter = mongocrypt_binary_new ();
    kb->filter->data = bson_destroy_with_steal (&filter, true, &kb->filter->len);

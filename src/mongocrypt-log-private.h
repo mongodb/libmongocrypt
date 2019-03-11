@@ -18,7 +18,15 @@
 #define MONGOCRYPT_LOG_PRIVATE_H
 
 #include "mongocrypt-log.h"
-#include "mongocrypt-private.h"
+#include "mongocrypt-mutex-private.h"
+#include "mongocrypt-opts.h"
+
+typedef struct {
+   mongocrypt_mutex_t mutex; /* protects fn and ctx. */
+   mongocrypt_log_fn_t fn;
+   void *ctx;
+   bool trace_enabled;
+} _mongocrypt_log_t;
 
 void
 _mongocrypt_default_log_fn (mongocrypt_log_level_t level,
@@ -26,64 +34,77 @@ _mongocrypt_default_log_fn (mongocrypt_log_level_t level,
                             void *ctx);
 
 void
-_mongocrypt_log (mongocrypt_log_level_t level, const char *message, ...)
-   BSON_GNUC_PRINTF (2, 3);
+_mongocrypt_log (_mongocrypt_log_t *log,
+                 mongocrypt_log_level_t level,
+                 const char *message,
+                 ...) BSON_GNUC_PRINTF (3, 4);
 
 void
-_mongocrypt_log_init (void);
+_mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts);
 
 void
-_mongocrypt_log_set_fn (mongocrypt_log_fn_t fn, void *ctx);
+_mongocrypt_log_cleanup (_mongocrypt_log_t *log);
+
+void
+_mongocrypt_log_set_fn (_mongocrypt_log_t *log,
+                        mongocrypt_log_fn_t fn,
+                        void *ctx);
 
 
 #ifdef MONGOCRYPT_TRACE
 
-#define CRYPT_TRACEF(fmt, ...)                  \
-   _mongocrypt_log (MONGOCRYPT_LOG_LEVEL_TRACE, \
+#define CRYPT_TRACEF(log, fmt, ...)          \
+   _mongocrypt_log (log,                     \
+                    MONGOCRYPT_LOG_LEVEL_TRACE, \
                     "(%s:%d) " fmt,             \
                     BSON_FUNC,                  \
                     __LINE__,                   \
                     __VA_ARGS__)
 
-#define CRYPT_TRACE(msg) CRYPT_TRACEF ("%s", msg)
+#define CRYPT_TRACE(log, msg) CRYPT_TRACEF (crypt, "%s", msg)
 
-#define CRYPT_ENTRY  \
-   _mongocrypt_log ( \
-      MONGOCRYPT_LOG_LEVEL_TRACE, "entry (%s:%d)", BSON_FUNC, __LINE__)
+#define CRYPT_ENTRY(log) \
+   _mongocrypt_log (        \
+      crypt, MONGOCRYPT_LOG_LEVEL_TRACE, "entry (%s:%d)", BSON_FUNC, __LINE__)
 
-#define CRYPT_EXIT                                                         \
-   do {                                                                    \
-      _mongocrypt_log (                                                    \
-         MONGOCRYPT_LOG_LEVEL_TRACE, "exit (%s:%d)", BSON_FUNC, __LINE__); \
-      return;                                                              \
+#define CRYPT_EXIT(log)                         \
+   do {                                            \
+      _mongocrypt_log (crypt,                      \
+                       MONGOCRYPT_LOG_LEVEL_TRACE, \
+                       "exit (%s:%d)",             \
+                       BSON_FUNC,                  \
+                       __LINE__);                  \
+      return;                                      \
    } while (0)
 
-#define CRYPT_RETURN                                                         \
-   (x) do                                                                    \
-   {                                                                         \
-      _mongocrypt_log (                                                      \
-         MONGOCRYPT_LOG_LEVEL_TRACE, "return (%s:%d)", BSON_FUNC, __LINE__); \
-      return (x);                                                            \
-   }                                                                         \
-   while (0)
+#define CRYPT_RETURN(log, x)                    \
+   do {                                            \
+      _mongocrypt_log (log,                     \
+                       MONGOCRYPT_LOG_LEVEL_TRACE, \
+                       "return (%s:%d)",           \
+                       BSON_FUNC,                  \
+                       __LINE__);                  \
+      return (x);                                  \
+   } while (0)
 
-#define CRYPT_GOTO                                                         \
-   (x) do                                                                  \
-   {                                                                       \
-      _mongocrypt_log (                                                    \
-         MONGOCRYPT_LOG_LEVEL_TRACE, "goto (%s:%d)", BSON_FUNC, __LINE__); \
-      goto x;                                                              \
-   }                                                                       \
-   while (0)
+#define CRYPT_GOTO(log, x)                      \
+   do {                                            \
+      _mongocrypt_log (log,                     \
+                       MONGOCRYPT_LOG_LEVEL_TRACE, \
+                       "goto (%s:%d)",             \
+                       BSON_FUNC,                  \
+                       __LINE__);                  \
+      goto x;                                      \
+   } while (0)
 
 #else
 
-#define CRYPT_TRACEF(fmt, ...)
-#define CRYPT_TRACE(msg)
-#define CRYPT_ENTRY
-#define CRYPT_EXIT
-#define CRYPT_RETURN(x) return (x);
-#define CRYPT_GOTO(x) goto x;
+#define CRYPT_TRACEF(log, fmt, ...)
+#define CRYPT_TRACE(log, msg)
+#define CRYPT_ENTRY(log)
+#define CRYPT_EXIT(log)
+#define CRYPT_RETURN(log, x) return (x);
+#define CRYPT_GOTO(log, x) goto x;
 
 #endif /* MONGOCRYPT_TRACE */
 

@@ -33,6 +33,7 @@ _check_state (mongocrypt_encryptor_t *encryptor,
                                 "NEED_SCHEMA",
                                 "NEED_MARKINGS",
                                 "NEED_KEYS",
+                                "NEED_KEYS_DECRYPTED",
                                 "NEED_ENCRYPTION",
                                 "NO_ENCRYPTION_NEEDED",
                                 "ENCRYPTED",
@@ -405,7 +406,6 @@ _replace_marking_with_ciphertext (void *ctx,
       goto fail;
    }
 
-   CRYPT_TRACE ("performing encryption");
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
 
    plaintext.data = (uint8_t *) bson_get_data (&wrapper);

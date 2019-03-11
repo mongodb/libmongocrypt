@@ -260,21 +260,25 @@ _test_log (void)
                                       MONGOCRYPT_LOG_LEVEL_WARNING,
                                       MONGOCRYPT_LOG_LEVEL_INFO};
    int i;
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
 
+   status = mongocrypt_status_new ();
+   crypt = mongocrypt_new (NULL, status);
    /* Test logging with a custom handler messages. */
-   _mongocrypt_log_set_fn (_test_log_fn, &log_ctx);
+   _mongocrypt_log_set_fn (&crypt->log, _test_log_fn, &log_ctx);
    for (i = 0; i < sizeof (levels) / sizeof (*levels); i++) {
       log_ctx.expected_level = levels[i];
-      _mongocrypt_log (levels[i], "test");
+      _mongocrypt_log (&crypt->log, levels[i], "test");
    }
 
-   /* Restore the default handler. */
-   _mongocrypt_log_set_fn (_mongocrypt_default_log_fn, NULL);
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
 }
 
 
 static mongocrypt_binary_t *
-_load_json_from_file (const char *path)
+_load_json_from_file (mongocrypt_t *crypt, const char *path)
 {
    bson_error_t error;
    bson_json_reader_t *reader;
@@ -288,14 +292,14 @@ _load_json_from_file (const char *path)
    bson_init (&out);
    ret = bson_json_reader_read (reader, &out, &error);
    ASSERT_OR_PRINT_BSON (ret, error);
-   CRYPT_TRACEF ("read BSON from %s: %s", path, tmp_json (&out));
+   CRYPT_TRACEF (&crypt->log, "read BSON from %s: %s", path, tmp_json (&out));
    to_return = mongocrypt_binary_new ();
    to_return->data = bson_destroy_with_steal (&out, true, &to_return->len);
    return to_return;
 }
 
 static mongocrypt_binary_t *
-_load_http_from_file (const char *path)
+_load_http_from_file (mongocrypt_t *crypt, const char *path)
 {
    bson_error_t error;
    int fd;
@@ -340,7 +344,8 @@ _load_http_from_file (const char *path)
    bson_free (out);
 
    if (filesize > 0) {
-      CRYPT_TRACEF ("read http request from %s: %s", path, to_return->data);
+      CRYPT_TRACEF (
+         &crypt->log, "read http request from %s: %s", path, to_return->data);
    }
 
    return to_return;
@@ -366,14 +371,17 @@ _test_state_machine (void)
    bson_iter_t iter;
 
    status = mongocrypt_status_new ();
-   list_collections_reply =
-      _load_json_from_file ("./test/example/list-collections-reply.json");
-   key_document = _load_json_from_file ("./test/example/key-document.json");
-   kms_reply = _load_http_from_file ("./test/example/kms-reply.txt");
-   command = _load_json_from_file ("./test/example/command.json");
-   marked_reply = _load_json_from_file ("./test/example/marked-reply.json");
-
    mongocrypt = mongocrypt_new (NULL, status);
+
+   list_collections_reply = _load_json_from_file (
+      mongocrypt, "./test/example/list-collections-reply.json");
+   key_document =
+      _load_json_from_file (mongocrypt, "./test/example/key-document.json");
+   kms_reply =
+      _load_http_from_file (mongocrypt, "./test/example/kms-reply.txt");
+   command = _load_json_from_file (mongocrypt, "./test/example/command.json");
+   marked_reply =
+      _load_json_from_file (mongocrypt, "./test/example/marked-reply.json");
 
    encryptor = mongocrypt_encryptor_new (mongocrypt);
 
@@ -430,7 +438,7 @@ _test_state_machine (void)
    _mongocrypt_unowned_buffer_from_binary (
       mongocrypt_encryptor_encrypted_cmd (encryptor), &tmp_buf);
    _mongocrypt_buffer_to_unowned_bson (&tmp_buf, &tmp);
-   CRYPT_TRACEF ("encrypted to: %s", tmp_json (&tmp));
+   CRYPT_TRACEF (&mongocrypt->log, "encrypted to: %s", tmp_json (&tmp));
 
    mongocrypt_destroy (mongocrypt);
    mongocrypt_binary_destroy (command);
@@ -506,7 +514,6 @@ _test_random_generator (void)
 int
 main (int argc, char **argv)
 {
-   mongocrypt_init (NULL);
    printf ("Test runner.\n");
    printf ("Pass a list of test names to run only specific tests. E.g.:\n");
    printf ("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
@@ -516,5 +523,4 @@ main (int argc, char **argv)
    ADD_TEST (_test_state_machine)
    ADD_TEST (_test_random_generator);
 
-   mongocrypt_cleanup ();
 }

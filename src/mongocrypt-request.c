@@ -27,7 +27,6 @@ mongocrypt_request_destroy (mongocrypt_request_t *request)
 {
    int i;
 
-   CRYPT_ENTRY;
    if (!request) {
       return;
    }
@@ -42,7 +41,6 @@ mongocrypt_request_destroy (mongocrypt_request_t *request)
 bool
 mongocrypt_request_needs_keys (mongocrypt_request_t *request)
 {
-   CRYPT_ENTRY;
    BSON_ASSERT (request);
    return false;
 }
@@ -60,7 +58,6 @@ mongocrypt_request_add_keys (mongocrypt_request_t *request,
    BSON_ASSERT (request);
    BSON_ASSERT (responses);
    BSON_ASSERT (status);
-   CRYPT_ENTRY;
    for (i = 0; i < num_responses; i++) {
       /* TODO: don't marshal and add one at a time. Each call to
        * _mongocrypt_keycache_add locks. */

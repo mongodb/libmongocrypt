@@ -138,7 +138,6 @@ _aes256_cbc_encrypt (const _mongocrypt_buffer_t *iv,
    _mongocrypt_buffer_t intermediate_in, intermediate_out;
    uint8_t final_block_storage[MONGOCRYPT_BLOCK_SIZE];
 
-   CRYPT_ENTRY;
    BSON_ASSERT (bytes_written);
    *bytes_written = 0;
 
@@ -257,7 +256,6 @@ _hmac_sha512 (const _mongocrypt_buffer_t *key,
    uint8_t tag_storage[64];
    _mongocrypt_buffer_t tag, associated_data_len;
 
-   CRYPT_ENTRY;
    BSON_ASSERT (MONGOCRYPT_MAC_KEY_LEN == key->len);
    BSON_ASSERT (out->len >= MONGOCRYPT_HMAC_LEN);
 
@@ -356,8 +354,6 @@ _mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
                         intermediate_hmac = {0}, empty_buffer = {0};
    uint32_t intermediate_bytes_written = 0;
 
-   CRYPT_ENTRY;
-
    BSON_ASSERT (ciphertext->len >=
                 _mongocrypt_calculate_ciphertext_len (plaintext->len));
 
@@ -455,7 +451,6 @@ _aes256_cbc_decrypt (const _mongocrypt_buffer_t *iv,
    uint32_t intermediate_bytes_written;
    _mongocrypt_buffer_t intermediate;
 
-   CRYPT_ENTRY;
    BSON_ASSERT (bytes_written);
    *bytes_written = 0;
 
@@ -535,8 +530,6 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
    _mongocrypt_buffer_t mac_key = {0}, enc_key = {0}, intermediate = {0},
                         hmac_tag = {0}, iv = {0}, empty_buffer = {0};
    uint8_t hmac_tag_storage[MONGOCRYPT_HMAC_LEN];
-
-   CRYPT_ENTRY;
 
    BSON_ASSERT (plaintext->len >=
                 _mongocrypt_calculate_plaintext_len (ciphertext->len));
