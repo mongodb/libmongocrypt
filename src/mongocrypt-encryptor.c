@@ -43,7 +43,7 @@ _check_state (mongocrypt_encryptor_t *encryptor,
 
    if (encryptor->state != state) {
       CLIENT_ERR (
-         "Expected state %s, but in state %s", state, encryptor->state);
+         "Expected state %s, but in state %s", state_names[state], state_names[encryptor->state]);
       return false;
    }
    return true;
@@ -58,9 +58,6 @@ mongocrypt_encryptor_new (mongocrypt_t *crypt)
    encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_NEED_NS;
    encryptor->crypt = crypt;
    encryptor->status = mongocrypt_status_new ();
-   encryptor->encrypted_cmd = mongocrypt_binary_new ();
-   encryptor->filter = mongocrypt_binary_new ();
-   encryptor->schema = mongocrypt_binary_new ();
    _mongocrypt_key_broker_init (&encryptor->kb);
 
    return encryptor;
@@ -104,8 +101,6 @@ mongocrypt_encryptor_add_collection_info (
 {
    bson_t reply;
    bson_iter_t iter, validator_iter;
-   const uint8_t *data;
-   uint32_t len;
    bool found_schema, validator_has_siblings;
    mongocrypt_status_t *status;
 
@@ -142,10 +137,7 @@ mongocrypt_encryptor_add_collection_info (
       if (bson_iter_find (&iter, "$jsonSchema") &&
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          found_schema = true;
-         bson_iter_document (&iter, &len, &data);
-         encryptor->schema->data = bson_malloc (len);
-         memcpy (encryptor->schema->data, data, len);
-         encryptor->schema->len = len;
+         _mongocrypt_buffer_copy_from_document_iter (&encryptor->schema, &iter);
       }
 
       while (bson_iter_next (&validator_iter)) {
@@ -165,14 +157,14 @@ mongocrypt_encryptor_add_collection_info (
    return encryptor->state;
 }
 
-const mongocrypt_binary_t *
+mongocrypt_binary_t *
 mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor)
 {
    if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS)) {
       return NULL;
    }
 
-   return encryptor->schema;
+   return _mongocrypt_buffer_to_binary(&encryptor->schema);
 }
 
 
@@ -212,8 +204,6 @@ mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
    mongocrypt_status_t *status;
    bson_iter_t iter;
    bson_t parsed_reply;
-   const uint8_t *tmp_data;
-   uint32_t tmp_len;
    bool has_encrypted_placeholders;
 
    BSON_ASSERT (encryptor);
@@ -273,8 +263,7 @@ mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
       goto done;
    }
 
-   bson_iter_document (&iter, &tmp_len, &tmp_data);
-   encryptor->marked = bson_new_from_data (tmp_data, tmp_len);
+   _mongocrypt_buffer_from_document_iter (&encryptor->marked, &iter);
 
    bson_iter_recurse (&iter, &iter);
    if (!_mongocrypt_traverse_binary_in_bson (
@@ -477,6 +466,7 @@ mongocrypt_encryptor_encrypt (mongocrypt_encryptor_t *encryptor)
    bson_iter_t iter;
    int ret = false;
    bson_t out = BSON_INITIALIZER;
+   bson_t as_bson;
    mongocrypt_status_t *status;
 
    BSON_ASSERT (encryptor);
@@ -486,7 +476,8 @@ mongocrypt_encryptor_encrypt (mongocrypt_encryptor_t *encryptor)
       return encryptor->state;
    }
 
-   bson_iter_init (&iter, encryptor->marked);
+   _mongocrypt_buffer_to_bson (&encryptor->marked, &as_bson);
+   bson_iter_init (&iter, &as_bson);
 
    ret = _mongocrypt_transform_binary_in_bson (
       _replace_marking_with_ciphertext, &encryptor->kb, 0, &iter, &out, status);
@@ -496,8 +487,8 @@ mongocrypt_encryptor_encrypt (mongocrypt_encryptor_t *encryptor)
       goto done;
    }
 
-   encryptor->encrypted_cmd->data =
-      bson_destroy_with_steal (&out, true, &encryptor->encrypted_cmd->len);
+   encryptor->encrypted_cmd.data =
+      bson_destroy_with_steal (&out, true, &encryptor->encrypted_cmd.len);
    encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED;
 done:
    return encryptor->state;
@@ -527,7 +518,7 @@ mongocrypt_encryptor_encrypted_cmd (mongocrypt_encryptor_t *encryptor)
 {
    BSON_ASSERT (encryptor);
 
-   return encryptor->encrypted_cmd;
+   return _mongocrypt_buffer_to_binary(&encryptor->encrypted_cmd);
 }
 
 
@@ -538,10 +529,6 @@ mongocrypt_encryptor_destroy (mongocrypt_encryptor_t *encryptor)
       return;
    }
 
-   mongocrypt_binary_destroy (encryptor->filter);
-   mongocrypt_binary_destroy (encryptor->schema);
-   mongocrypt_binary_destroy (encryptor->encrypted_cmd);
-   bson_destroy (encryptor->marked);
    _mongocrypt_key_broker_cleanup (&encryptor->kb);
    mongocrypt_status_destroy (encryptor->status);
 

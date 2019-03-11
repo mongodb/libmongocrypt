@@ -3,6 +3,7 @@
 
 #include <bson/bson.h>
 #include <mongocrypt.h>
+#include <mongocrypt-binary-private.h>
 #include <mongocrypt-crypto-private.h>
 #include <mongocrypt-encryptor.h>
 #include <mongocrypt-key-broker.h>
@@ -293,7 +294,7 @@ _load_json_from_file (mongocrypt_t *crypt, const char *path)
    ret = bson_json_reader_read (reader, &out, &error);
    ASSERT_OR_PRINT_BSON (ret, error);
    CRYPT_TRACEF (&crypt->log, "read BSON from %s: %s", path, tmp_json (&out));
-   to_return = mongocrypt_binary_new ();
+   to_return = mongocrypt_binary_new (NULL, 0);
    to_return->data = bson_destroy_with_steal (&out, true, &to_return->len);
    return to_return;
 }
@@ -330,7 +331,7 @@ _load_http_from_file (mongocrypt_t *crypt, const char *path)
    close (fd);
 
    /* copy and fix newlines */
-   to_return = mongocrypt_binary_new ();
+   to_return = mongocrypt_binary_new (NULL, 0);
    /* allocate twice the size since \n may become \r\n */
    to_return->data = bson_malloc0 (filesize * 2);
    to_return->len = 0;
@@ -406,8 +407,8 @@ _test_state_machine (void)
    key_query = mongocrypt_key_broker_get_key_filter (kb);
 
    /* check that the key query has the form { _id: $in : [ ] }. */
-   _mongocrypt_unowned_buffer_from_binary (key_query, &tmp_buf);
-   _mongocrypt_buffer_to_unowned_bson (&tmp_buf, &tmp);
+   _mongocrypt_buffer_from_binary (&tmp_buf, key_query);
+   _mongocrypt_buffer_to_bson (&tmp_buf, &tmp);
    bson_iter_init (&iter, &tmp);
    BSON_ASSERT (bson_iter_find_descendant (&iter, "_id.$in.0", &iter));
 
@@ -433,9 +434,8 @@ _test_state_machine (void)
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_ENCRYPTION);
    mongocrypt_encryptor_encrypt (encryptor);
 
-   _mongocrypt_unowned_buffer_from_binary (
-      mongocrypt_encryptor_encrypted_cmd (encryptor), &tmp_buf);
-   _mongocrypt_buffer_to_unowned_bson (&tmp_buf, &tmp);
+   _mongocrypt_buffer_from_binary (&tmp_buf, mongocrypt_encryptor_encrypted_cmd (encryptor));
+   _mongocrypt_buffer_to_bson (&tmp_buf, &tmp);
    CRYPT_TRACEF (&mongocrypt->log, "encrypted to: %s", tmp_json (&tmp));
 
    mongocrypt_destroy (mongocrypt);
@@ -505,6 +505,7 @@ _test_random_generator (void)
       }                                       \
       printf ("running test: %s\n", #fn);     \
       fn ();                                  \
+      count++;                                \
       printf ("done running: %s\n", #fn);     \
    } while (0);
 
@@ -512,6 +513,9 @@ _test_random_generator (void)
 int
 main (int argc, char **argv)
 {
+   int count;
+
+   count = 0;
    printf ("Test runner.\n");
    printf ("Pass a list of test names to run only specific tests. E.g.:\n");
    printf ("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
@@ -520,4 +524,5 @@ main (int argc, char **argv)
    ADD_TEST (_test_log);
    ADD_TEST (_test_state_machine)
    ADD_TEST (_test_random_generator);
+   printf ("All %d tests passed\n", count);
 }

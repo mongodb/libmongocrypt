@@ -23,7 +23,7 @@
 typedef struct _mongocrypt_key_broker_t mongocrypt_key_broker_t;
 
 /* Create a filter for all keys which must be fetched from the key vault. */
-const mongocrypt_binary_t *
+mongocrypt_binary_t *
 mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb);
 
 

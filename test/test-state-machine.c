@@ -15,10 +15,11 @@ _decrypt_via_kms (mongocrypt_key_decryptor_t *key_decryptor,
    mongocrypt_binary_t *bytes_received = NULL;
    uint32_t to_read;
    const uint32_t max_bytes_to_read = 1024;
-   const mongocrypt_binary_t *msg;
+   mongocrypt_binary_t *msg;
 
    msg = mongocrypt_key_decryptor_msg (key_decryptor);
    /* send_message_to_kms (msg); */
+   mongocrypt_binary_destroy (msg);
    to_read =
       mongocrypt_key_decryptor_bytes_needed (key_decryptor, max_bytes_to_read);
    while (to_read > 0) {
@@ -104,7 +105,7 @@ _auto_encrypt (mongocrypt_t *crypt)
    mongocrypt_key_broker_t *kb;
    mongocrypt_encryptor_t *encryptor;
    mongocrypt_binary_t *list_collections_reply;
-   const mongocrypt_binary_t *schema;
+   mongocrypt_binary_t *schema;
    mongocrypt_binary_t *marking_response = NULL;
    mongocrypt_encryptor_state_t state;
    mongocrypt_status_t *status;
@@ -147,6 +148,7 @@ _auto_encrypt (mongocrypt_t *crypt)
             send that request to mongocryptd, and
             return the response to the encryptor. */
          schema = mongocrypt_encryptor_get_schema (encryptor);
+         mongocrypt_binary_destroy (schema);
          /* marking_request = build_mongocryptd_command (schema); */
          /* marking_response = mongocryptd.run_command (marking_request); */
          state =
@@ -202,7 +204,6 @@ _auto_decrypt (mongocrypt_t *crypt)
    mongocrypt_decryptor_t *decryptor;
    mongocrypt_decryptor_state_t state;
    mongocrypt_binary_t *encrypted_doc = NULL;
-   mongocrypt_binary_t *key_doc = NULL;
    bool res = false;
    mongocrypt_status_t *status;
    mongocrypt_status_t *error;

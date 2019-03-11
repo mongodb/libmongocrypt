@@ -16,14 +16,17 @@
 
 #include <bson/bson.h>
 
-#include "mongocrypt-binary.h"
+#include "mongocrypt-binary-private.h"
+#include "mongocrypt-buffer-private.h"
 
 mongocrypt_binary_t *
-mongocrypt_binary_new ()
+mongocrypt_binary_new (uint8_t* data, uint32_t len)
 {
    mongocrypt_binary_t *binary;
 
    binary = (mongocrypt_binary_t *) bson_malloc0 (sizeof *binary);
+   binary->data = data;
+   binary->len = len;
 
    return binary;
 }
@@ -43,6 +46,5 @@ mongocrypt_binary_destroy (mongocrypt_binary_t *binary)
       return;
    }
 
-   bson_free (binary->data);
    bson_free (binary);
 }

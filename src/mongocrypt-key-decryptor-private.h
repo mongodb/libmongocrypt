@@ -25,7 +25,7 @@ struct _mongocrypt_key_decryptor_t {
    kms_request_t *req;
    kms_response_parser_t *parser;
    mongocrypt_status_t *status;
-   mongocrypt_binary_t *msg;
+   _mongocrypt_buffer_t msg;
    void *ctx;
 };
 

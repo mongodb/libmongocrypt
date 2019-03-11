@@ -57,7 +57,7 @@ struct _mongocrypt_key_broker_t {
    struct __mongocrypt_key_broker_entry_t *decryptor_iter;
 
    mongocrypt_status_t *status;
-   mongocrypt_binary_t *filter;
+   _mongocrypt_buffer_t filter;
    bool all_keys_added;
 };
 

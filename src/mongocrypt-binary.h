@@ -19,25 +19,60 @@
 
 #include <stdint.h>
 
-/* TODO CDRIVER-2990: we have three ways of representing binary/BSON
- * mongocrypt_binary_t - public
- * _mongocrypt_buffer_t - private, has conveniences
- * bson_t - for working with bson
- * TODO: consider having _mongocrypt_buffer_t contain a bson member.
- * TODO: consider having _mongocrypt_buffer_t data inherit mongocrypt_binary_t
- * so we can return them from functions.
- * TODO: be consistent about when to pass pointers, and const-ness.
- * TODO: return only const pointers to mongocrypt_binary_t?
+
+/**
+ * A non-owning view of a byte buffer.
+ *
+ * Functions returning a mongocrypt_binary_t* expect it to be destroyed with
+ * mongocrypt_binary_destroy.
+ *
+ * Functions taking a mongocrypt_binary_t* argument may either copy or keep a
+ * pointer to the data. See individual function documentation.
+*/
+typedef struct _mongocrypt_binary_t mongocrypt_binary_t;
+
+/**
+ * Create a new non-owning view of a buffer (data + length). Free the view with
+ * mongocrypt_binary_destroy.
+ *
+ * @param data A pointer to an array of bytes. This is not copied. @data must
+ * outlive the binary object.
+ * @param len The length of the @data array.
+ *
+ * @returns A new mongocrypt_binary_t that must later be destroyed with
+ * mongocrypt_binary_destroy.
  */
-typedef struct {
-   uint8_t *data;
-   uint32_t len;
-} mongocrypt_binary_t; /* TODO: likely rename to BSON */
-
-
 mongocrypt_binary_t *
-mongocrypt_binary_new (void);
+mongocrypt_binary_new (uint8_t *data, uint32_t len);
 
+
+/**
+ * Get a pointer to the referenced data.
+ *
+ * @param binary The mongocrypt_binary_t from which to retrieve the data.
+ *
+ * @returns A pointer to the referenced data.
+ */
+const uint8_t *
+mongocrypt_binary_data (const mongocrypt_binary_t *binary);
+
+
+/**
+ * Get the length of the referenced data.
+ *
+ * @param binary The mongocrypt_binary_t from which to retrieve the length.
+ *
+ * @returns The length of the referenced data.
+ */
+uint32_t
+mongocrypt_binary_len (const mongocrypt_binary_t *binary);
+
+
+/**
+ * Free the mongocrypt_binary_t. Does not free the referenced data.
+ *
+ * @param binary The mongocrypt_binary_t destroy.
+ */
 void
 mongocrypt_binary_destroy (mongocrypt_binary_t *binary);
 

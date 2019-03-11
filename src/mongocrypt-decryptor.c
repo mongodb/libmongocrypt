@@ -39,7 +39,7 @@ _check_state (mongocrypt_decryptor_t *decryptor,
 
    if (decryptor->state != state) {
       CLIENT_ERR (
-         "Expected state %s, but in state %s", state, decryptor->state);
+         "Expected state %s, but in state %s", state_names[state], state_names[decryptor->state]);
       return false;
    }
 
@@ -147,9 +147,9 @@ mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
       goto done;
    }
 
-   decryptor->encrypted_doc = encrypted_doc;
+   _mongocrypt_buffer_from_binary (&decryptor->encrypted_doc, encrypted_doc);
 
-   mongocrypt_binary_to_bson (encrypted_doc, &tmp);
+   _mongocrypt_buffer_to_bson (&decryptor->encrypted_doc, &tmp);
    bson_iter_init (&iter, &tmp);
 
    if (!_mongocrypt_traverse_binary_in_bson (_collect_key_from_ciphertext,
@@ -286,13 +286,13 @@ mongocrypt_decryptor_decrypt (mongocrypt_decryptor_t *decryptor)
    }
 
    /* TODO testing, remove */
-   if (!decryptor->encrypted_doc) {
+   if (_mongocrypt_buffer_empty(&decryptor->encrypted_doc)) {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED;
       res = true;
       goto done;
    }
 
-   mongocrypt_binary_to_bson (decryptor->encrypted_doc, &tmp);
+   _mongocrypt_buffer_to_bson (&decryptor->encrypted_doc, &tmp);
    bson_iter_init (&iter, &tmp);
 
    /* TODO: move transform_binary out of mongocrypt-private.h */
@@ -304,8 +304,8 @@ mongocrypt_decryptor_decrypt (mongocrypt_decryptor_t *decryptor)
       goto done;
    }
 
-   decryptor->decrypted_doc->data =
-      bson_destroy_with_steal (&out, true, &decryptor->decrypted_doc->len);
+   decryptor->decrypted_doc.data =
+      bson_destroy_with_steal (&out, true, &decryptor->decrypted_doc.len);
    decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED;
 
 done:
@@ -340,7 +340,7 @@ mongocrypt_decryptor_decrypted_doc (mongocrypt_decryptor_t *decryptor)
       return NULL;
    }
 
-   return decryptor->decrypted_doc;
+   return _mongocrypt_buffer_to_binary(&decryptor->decrypted_doc);
 }
 
 
@@ -351,12 +351,8 @@ mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *decryptor)
       return;
    }
 
-   mongocrypt_binary_destroy (decryptor->encrypted_doc);
-   mongocrypt_binary_destroy (decryptor->filter);
    mongocrypt_status_destroy (decryptor->status);
    _mongocrypt_key_broker_cleanup (&decryptor->kb);
-
-   mongocrypt_binary_destroy (decryptor->decrypted_doc);
 
    bson_free (decryptor);
 }

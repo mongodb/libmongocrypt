@@ -16,6 +16,7 @@
 
 #include "kms_message/kms_request_opt.h"
 
+#include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-decryptor.h"
 #include "mongocrypt-key-decryptor-private.h"
@@ -35,12 +36,13 @@ _mongocrypt_key_decryptor_init (mongocrypt_key_decryptor_t *kd,
       kms_decrypt_request_new (key_material->data, key_material->len, opt);
    kd->parser = kms_response_parser_new ();
    kd->ctx = ctx;
+
    kd->status = mongocrypt_status_new ();
-   kd->msg = mongocrypt_binary_new ();
+   _mongocrypt_buffer_init (&kd->msg);
    kms_request_opt_destroy (opt);
 }
 
-const mongocrypt_binary_t *
+mongocrypt_binary_t *
 mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd)
 {
    /* TODO testing, remove? */
@@ -48,12 +50,14 @@ mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd)
       return NULL;
    }
 
-   if (kd->msg->data) {
-      return kd->msg;
+   if (kd->msg.data) {
+      return _mongocrypt_buffer_to_binary (&kd->msg);
    }
-   kd->msg->data = (uint8_t *) kms_request_get_signed (kd->req);
-   kd->msg->len = strlen ((char *) kd->msg->data);
-   return kd->msg;
+
+   kd->msg.data = (uint8_t *) kms_request_get_signed (kd->req);
+   kd->msg.len = strlen ((char *) kd->msg.data);
+   kd->msg.owned = true;
+   return _mongocrypt_buffer_to_binary (&kd->msg);
 }
 
 
@@ -95,5 +99,5 @@ _mongocrypt_key_decryptor_cleanup (mongocrypt_key_decryptor_t *kd)
    kms_request_destroy (kd->req);
    kms_response_parser_destroy (kd->parser);
    mongocrypt_status_destroy (kd->status);
-   mongocrypt_binary_destroy (kd->msg);
+   _mongocrypt_buffer_cleanup (&kd->msg);
 }

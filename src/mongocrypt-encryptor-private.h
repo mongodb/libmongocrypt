@@ -29,10 +29,9 @@ struct _mongocrypt_encryptor_t {
    mongocrypt_key_broker_t kb;
 
    const char *ns;
-   mongocrypt_binary_t *schema;
-   bson_t *marked;
-   mongocrypt_binary_t *filter;
-   mongocrypt_binary_t *encrypted_cmd;
+   _mongocrypt_buffer_t schema;
+   _mongocrypt_buffer_t marked;
+   _mongocrypt_buffer_t encrypted_cmd;
 };
 
 

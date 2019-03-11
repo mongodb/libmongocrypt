@@ -25,7 +25,7 @@ typedef struct _mongocrypt_key_decryptor_t mongocrypt_key_decryptor_t;
 
 /* Return the HTTP message to send. TODO: should this indicate the URI endpoint?
  */
-const mongocrypt_binary_t *
+mongocrypt_binary_t *
 mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd);
 
 /* Does this key decryptor need more bytes from the response? If it does need

@@ -51,7 +51,7 @@ mongocrypt_encryptor_add_collection_info (
    const mongocrypt_binary_t *list_collections_reply);
 
 
-const mongocrypt_binary_t *
+mongocrypt_binary_t *
 mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor);
 
 

@@ -50,7 +50,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       if (!BSON_ITER_HOLDS_BINARY (&iter)) {
          CLIENT_ERR ("key id must be a binary type");
       }
-      _mongocrypt_unowned_buffer_from_iter (&iter, &out->key_id);
+      _mongocrypt_buffer_from_iter (&out->key_id, &iter);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -70,7 +70,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       CLIENT_ERR ("invalid marking, 'iv' is not binary");
       goto cleanup;
    }
-   _mongocrypt_unowned_buffer_from_iter (&iter, &out->iv);
+   _mongocrypt_buffer_from_iter (&out->iv, &iter);
 
    if (out->iv.len != 16) {
       CLIENT_ERR ("iv must be 16 bytes");
@@ -105,7 +105,7 @@ _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, no 'k'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      _mongocrypt_unowned_buffer_from_iter (&iter, &out->key_id);
+      _mongocrypt_buffer_from_iter (&out->key_id, &iter);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -123,7 +123,7 @@ _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, 'iv' is not binary");
       goto cleanup;
    }
-   _mongocrypt_unowned_buffer_from_iter (&iter, &out->iv);
+   _mongocrypt_buffer_from_iter (&out->iv, &iter);
 
    if (out->iv.len != 16) {
       CLIENT_ERR ("iv must be 16 bytes");
@@ -134,7 +134,7 @@ _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
       CLIENT_ERR ("invalid marking, no 'e'");
       goto cleanup;
    } else {
-      _mongocrypt_owned_buffer_from_iter (&iter, &out->data);
+      _mongocrypt_buffer_from_iter (&out->data, &iter);
    }
 
    ret = true;
@@ -156,7 +156,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
       CLIENT_ERR ("invalid key, no '_id'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      _mongocrypt_owned_buffer_from_iter (&iter, &out->id);
+      _mongocrypt_buffer_copy_from_iter (&out->id, &iter);
       if (out->id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -170,7 +170,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
       CLIENT_ERR ("invalid key, no 'keyMaterial'");
       goto cleanup;
    } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      _mongocrypt_owned_buffer_from_iter (&iter, &out->key_material);
+      _mongocrypt_buffer_copy_from_iter (&out->key_material, &iter);
       if (out->key_material.subtype != BSON_SUBTYPE_BINARY) {
          CLIENT_ERR ("key material must be a binary");
          goto cleanup;
@@ -214,7 +214,7 @@ _recurse (_recurse_state_t *state)
       if (BSON_ITER_HOLDS_BINARY (&state->iter)) {
          _mongocrypt_buffer_t value, out;
 
-         _mongocrypt_unowned_buffer_from_iter (&state->iter, &value);
+         _mongocrypt_buffer_from_iter (&value, &state->iter);
          if (value.subtype == 6 && value.len > 0 &&
              value.data[0] == state->match_first_byte) {
             bool ret;
