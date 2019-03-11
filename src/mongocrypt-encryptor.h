@@ -90,7 +90,7 @@ mongocrypt_encryptor_next_key_decryptor (mongocrypt_encryptor_t *encryptor);
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_decrypted_key (
    mongocrypt_encryptor_t *encryptor,
-   mongocrypt_key_decryptor_t *kms_encryptor);
+   mongocrypt_key_decryptor_t *key_decryptor);
 
 
 mongocrypt_encryptor_state_t

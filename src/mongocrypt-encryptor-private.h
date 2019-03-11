@@ -24,15 +24,15 @@
 struct _mongocrypt_encryptor_t {
    mongocrypt_t *crypt;
    mongocrypt_encryptor_state_t state;
+   mongocrypt_status_t *status;
+
+   _mongocrypt_key_broker_t kb;
+
+   const char *ns;
    mongocrypt_binary_t *schema;
    bson_t *marked;
    mongocrypt_binary_t *filter;
    mongocrypt_binary_t *encrypted_cmd;
-   mongocrypt_status_t *status;
-   _mongocrypt_key_broker_t kb;
-   /* used to iterate over keys to decrypt. */
-   _mongocrypt_key_broker_entry_t *kb_item;
-   const char *ns;
 };
 
 

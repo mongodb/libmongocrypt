@@ -44,6 +44,11 @@ mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd,
                               const mongocrypt_opts_t *opts,
                               mongocrypt_status_t *status)
 {
+   /* TODO testing, remove? */
+   if (!kd) {
+      return NULL;
+   }
+
    if (kd->msg->data) {
       return kd->msg;
    }
@@ -57,6 +62,10 @@ int
 mongocrypt_key_decryptor_bytes_needed (mongocrypt_key_decryptor_t *kd,
                                        uint32_t max_bytes)
 {
+   /* TODO test, change to assert later */
+   if (!kd) {
+      return 0;
+   }
    return kms_response_parser_wants_bytes (kd->parser, (int32_t) max_bytes);
 }
 

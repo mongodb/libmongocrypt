@@ -17,8 +17,10 @@ _auto_encrypt (mongocrypt_t *crypt)
    const mongocrypt_binary_t *msg;
    mongocrypt_key_decryptor_t *key_decryptor = NULL;
    mongocrypt_binary_t *key_doc = NULL;
+   mongocrypt_binary_t *bytes_received = NULL;
    mongocrypt_encryptor_state_t state;
    mongocrypt_status_t *status;
+   mongocrypt_status_t *error;
    bool res = false;
    uint32_t to_read;
    const uint32_t max_bytes_to_read = 1024;
@@ -102,15 +104,21 @@ _auto_encrypt (mongocrypt_t *crypt)
             keys have been added, it will progress to the next
                  state automatically. */
          key_decryptor = mongocrypt_encryptor_next_key_decryptor (encryptor);
+         /* If it returned a NULL key decryptor, we are done */
+         if (!key_decryptor) {
+            state = mongocrypt_encryptor_done_decrypting_keys (encryptor);
+            break;
+         }
+
+         /* Otherwise, must ask KMS to decrypt key */
          msg = mongocrypt_key_decryptor_msg (key_decryptor, NULL, status);
          /* send msg to kms */
          to_read = mongocrypt_key_decryptor_bytes_needed (key_decryptor,
                                                           max_bytes_to_read);
          while (to_read > 0) {
-            uint32_t bytes_read = 0;
-            /* recv to_read from the kms socket */
+            /* recv to_read from the kms socket into bytes_received */
             if (!mongocrypt_key_decryptor_feed (
-                   key_decryptor, bytes_read, status)) {
+                   key_decryptor, bytes_received, status)) {
                goto done;
             }
             to_read = mongocrypt_key_decryptor_bytes_needed (key_decryptor,
@@ -132,7 +140,8 @@ _auto_encrypt (mongocrypt_t *crypt)
          goto done;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_ERROR:
-         printf ("Error, could not complete encryption\n");
+         error = mongocrypt_encryptor_status (encryptor);
+         printf ("Error, could not complete encryption: %s\n", error->message);
          res = false;
          goto done;
 
@@ -159,11 +168,13 @@ _auto_decrypt (mongocrypt_t *crypt)
    mongocrypt_binary_t *key_doc = NULL;
    mongocrypt_key_decryptor_t *key_decryptor = NULL;
    const mongocrypt_binary_t *key_filter = NULL;
+   mongocrypt_binary_t *bytes_received = NULL;
    bool res = false;
    const mongocrypt_binary_t *msg;
    uint32_t to_read;
    const uint32_t max_bytes_to_read = 1024;
-   mongocrypt_status_t* status;
+   mongocrypt_status_t *status;
+   mongocrypt_status_t *error;
 
    decryptor = mongocrypt_decryptor_new (crypt, NULL);
    state = mongocrypt_decryptor_state (decryptor);
@@ -220,15 +231,21 @@ _auto_decrypt (mongocrypt_t *crypt)
             keys have been added, it will progress to the next
                  state automatically. */
          key_decryptor = mongocrypt_decryptor_next_key_decryptor (decryptor);
+         /* If it returned a NULL key decryptor, we are done */
+         if (!key_decryptor) {
+            state = mongocrypt_decryptor_done_decrypting_keys (decryptor);
+            break;
+         }
+
+         /* Otherwise, must ask KMS to decrypt key */
          msg = mongocrypt_key_decryptor_msg (key_decryptor, NULL, status);
          /* send msg to kms */
          to_read = mongocrypt_key_decryptor_bytes_needed (key_decryptor,
                                                           max_bytes_to_read);
          while (to_read > 0) {
-            uint32_t bytes_read = 0;
-            /* recv to_read from the kms socket */
+            /* recv to_read from the kms socket into bytes_received */
             if (!mongocrypt_key_decryptor_feed (
-                   key_decryptor, bytes_read, status)) {
+                   key_decryptor, bytes_received, status)) {
                goto done;
             }
             to_read = mongocrypt_key_decryptor_bytes_needed (key_decryptor,
@@ -239,6 +256,11 @@ _auto_decrypt (mongocrypt_t *crypt)
             mongocrypt_decryptor_add_decrypted_key (decryptor, key_decryptor);
          break;
 
+
+      case MONGOCRYPT_DECRYPTOR_STATE_NEED_DECRYPTION:
+         /* Decrypt! */
+         state = mongocrypt_decryptor_decrypt (decryptor);
+         break;
 
       case MONGOCRYPT_DECRYPTOR_STATE_NO_DECRYPTION_NEEDED:
          printf ("No decryption needed\n");
@@ -251,12 +273,13 @@ _auto_decrypt (mongocrypt_t *crypt)
          goto done;
 
       case MONGOCRYPT_DECRYPTOR_STATE_ERROR:
-         printf ("Error, could not complete encryption\n");
+         error = mongocrypt_decryptor_status (decryptor);
+         printf ("Error, could not complete encryption: %s\n", error->message);
          res = false;
          goto done;
 
       default:
-         printf ("Error, unknown encryption state\n");
+         printf ("Error, unknown decryptor state\n");
          abort ();
       }
    }

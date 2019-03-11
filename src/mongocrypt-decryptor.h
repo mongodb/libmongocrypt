@@ -26,9 +26,10 @@
 typedef struct _mongocrypt_decryptor_t mongocrypt_decryptor_t;
 
 typedef enum {
-   MONGOCRYPT_DECRYPTOR_STATE_NEED_DOC,
+   MONGOCRYPT_DECRYPTOR_STATE_NEED_DOC = 0,
    MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS,
    MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS_DECRYPTED,
+   MONGOCRYPT_DECRYPTOR_STATE_NEED_DECRYPTION,
    MONGOCRYPT_DECRYPTOR_STATE_NO_DECRYPTION_NEEDED,
    MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED,
    MONGOCRYPT_DECRYPTOR_STATE_ERROR
@@ -36,26 +37,25 @@ typedef enum {
 
 
 mongocrypt_decryptor_t *
-mongocrypt_decryptor_new (mongocrypt_t *crypt,
-			  const mongocrypt_opts_t *opts);
+mongocrypt_decryptor_new (mongocrypt_t *crypt, const mongocrypt_opts_t *opts);
 
 
 mongocrypt_decryptor_state_t
 mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
-			      mongocrypt_binary_t *encrypted_doc,
-			      const mongocrypt_opts_t *opts);
+                              mongocrypt_binary_t *encrypted_doc,
+                              const mongocrypt_opts_t *opts);
 
 
 const mongocrypt_binary_t *
 mongocrypt_decryptor_get_key_filter (mongocrypt_decryptor_t *decryptor,
-				    const mongocrypt_opts_t *opts);
+                                     const mongocrypt_opts_t *opts);
 
 
-void
+bool
 mongocrypt_decryptor_add_key (mongocrypt_decryptor_t *decryptor,
-			      const mongocrypt_opts_t *opts,
-			      const mongocrypt_binary_t *key,
-			      mongocrypt_status_t *status);
+                              const mongocrypt_opts_t *opts,
+                              const mongocrypt_binary_t *key,
+                              mongocrypt_status_t *status);
 
 
 mongocrypt_decryptor_state_t
@@ -67,7 +67,17 @@ mongocrypt_decryptor_next_key_decryptor (mongocrypt_decryptor_t *decryptor);
 
 
 mongocrypt_decryptor_state_t
-mongocrypt_decryptor_add_decrypted_key (mongocrypt_decryptor_t *decryptor, mongocrypt_key_decryptor_t *key_decryptor);
+mongocrypt_decryptor_add_decrypted_key (
+   mongocrypt_decryptor_t *decryptor,
+   mongocrypt_key_decryptor_t *key_decryptor);
+
+
+mongocrypt_decryptor_state_t
+mongocrypt_decryptor_done_decrypting_keys (mongocrypt_decryptor_t *decryptor);
+
+
+mongocrypt_decryptor_state_t
+mongocrypt_decryptor_decrypt (mongocrypt_decryptor_t *decryptor);
 
 
 mongocrypt_decryptor_state_t
@@ -84,7 +94,6 @@ mongocrypt_decryptor_status (mongocrypt_decryptor_t *decryptor);
 
 void
 mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *decryptor);
-
 
 
 #endif /* MONGOCRYPT_DECRYPTOR_H */

@@ -19,13 +19,18 @@
 
 #include "mongocrypt-private.h"
 #include "mongocrypt-decryptor.h"
+#include "mongocrypt-key-broker-private.h"
 
 struct _mongocrypt_decryptor_t {
    mongocrypt_t *crypt;
    mongocrypt_decryptor_state_t state;
+   mongocrypt_status_t *status;
+
+   _mongocrypt_key_broker_t kb;
+
+   mongocrypt_binary_t *filter;
    mongocrypt_binary_t *encrypted_doc;
    mongocrypt_binary_t *decrypted_doc;
-   mongocrypt_status_t *status;
 };
 
 

@@ -70,7 +70,7 @@ _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
 {
    _mongocrypt_key_broker_entry_t *kbi;
 
-   /* TODO: check if we already have this key cached. */
+   /* TODO CDRIVER-2951 check if we have this key cached. */
    kbi = bson_malloc0 (sizeof (*kbi));
    _mongocrypt_buffer_copy_to (key_id, &kbi->key_id);
    kbi->state = KEY_EMPTY;
@@ -100,6 +100,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
       if (kbi->state != KEY_EMPTY) {
          continue;
       }
+
       key_str = bson_strdup_printf ("%d", i++);
       _mongocrypt_bson_append_buffer (
          &_id_in, key_str, strlen (key_str), &kbi->key_id);
@@ -158,6 +159,12 @@ _mongocrypt_key_broker_next_key_decryptor (_mongocrypt_key_broker_t *kb)
 {
    _mongocrypt_key_broker_entry_t *kbi;
 
+   BSON_ASSERT (kb);
+
+   if (_mongocrypt_key_broker_empty (kb)) {
+      return NULL;
+   }
+
    kbi = kb->decryptor_iter;
 
    while (kbi && kbi->state != KEY_ENCRYPTED) {
@@ -183,6 +190,14 @@ _mongocrypt_key_broker_add_decrypted_key (_mongocrypt_key_broker_t *kb,
    bson_iter_t iter;
    char *b64_str = NULL;
    uint32_t b64_strlen;
+
+   BSON_ASSERT (kb);
+
+   /* TODO: this is for testing, BSON_ASSERT (kd) */
+   if (!kd) {
+      bson_destroy (&response_body);
+      return true;
+   }
 
    kbi = (_mongocrypt_key_broker_entry_t *) kd->ctx;
 
@@ -224,6 +239,8 @@ _mongocrypt_key_broker_add_decrypted_key (_mongocrypt_key_broker_t *kb,
                  kbi->decrypted_key_material.len,
                  tmp_buf (&kbi->decrypted_key_material));
    kbi->state = KEY_DECRYPTED;
+
+   /* TODO CDRIVER-2951 Add decrypted keys to the key cache */
 
    ret = true;
 done:

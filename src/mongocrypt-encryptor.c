@@ -30,14 +30,14 @@ _check_state (mongocrypt_encryptor_t *encryptor,
 {
    mongocrypt_status_t *status;
    const char *state_names[] = {"NEED_NS",
-                              "NEED_SCHEMA",
-                              "NEED_MARKINGS",
-                              "NEED_KEYS",
-                              "NEED_KEYS_DECRYPTED",
-                              "NEED_ENCRYPTION",
-                              "NO_ENCRYPTION_NEEDED",
-                              "ENCRYPTED",
-                              "ERROR"};
+                                "NEED_SCHEMA",
+                                "NEED_MARKINGS",
+                                "NEED_KEYS",
+                                "NEED_KEYS_DECRYPTED",
+                                "NEED_ENCRYPTION",
+                                "NO_ENCRYPTION_NEEDED",
+                                "ENCRYPTED",
+                                "ERROR"};
 
    status = encryptor->status;
 
@@ -307,6 +307,10 @@ mongocrypt_encryptor_get_key_filter (mongocrypt_encryptor_t *encryptor,
    _mongocrypt_buffer_t buf;
 
    BSON_ASSERT (encryptor);
+
+   if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS)) {
+      return NULL;
+   }
 
    /* TODO CDRIVER-2990 it seems a little odd that we're creating a buffer_t
     * here
