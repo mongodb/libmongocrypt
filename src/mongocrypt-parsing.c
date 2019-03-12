@@ -19,7 +19,6 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-private.h"
-#include "mongocrypt-request-private.h"
 #include "mongocrypt-status-private.h"
 
 /* TODO: be very careful. Audit this.
@@ -350,47 +349,4 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                       match_first_byte};
 
    return _recurse (&starting_state);
-}
-
-/* TODO: consider changing this function to parse into a new struct.
- * If we have the parsing self-contained, than it will likely be easier to port
- * to using and IDL later.
- */
-/*
- * _mongocryptd_marking_reply_parse
- *
- *    Parse a reply from mongocryptd into an encryption request. The reply has
- * the form: { "hasEncryptedPlacholders": <bool>, "result": <doc> }
- *
- * Return:
- *    True on success. Returns false on failure and sets error.
- */
-bool
-_mongocryptd_marking_reply_parse (const bson_t *bson,
-                                  mongocrypt_request_t *request,
-                                  mongocrypt_status_t *status)
-{
-   bson_iter_t iter;
-
-   if (!bson_iter_init_find (&iter, bson, "hasEncryptedPlaceholders")) {
-      CLIENT_ERR (
-         "mongocryptd response does not include 'hasEncryptedPlaceholders': %s",
-         tmp_json (bson));
-      return false;
-   }
-
-   request->has_encryption_placeholders = bson_iter_as_bool (&iter);
-
-   if (bson_iter_init_find (&iter, bson, "result")) {
-      bson_iter_t nested;
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         CLIENT_ERR ("mongocryptd repsonse 'result' must be document: %s",
-                     tmp_json (bson));
-         return false;
-      }
-      bson_iter_recurse (&iter, &nested);
-      memcpy (&request->result_iter, &nested, sizeof (bson_iter_t));
-   }
-
-   return true;
 }

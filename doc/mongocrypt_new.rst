@@ -1,4 +1,0 @@
-mongocrypt_new
-==============
-
-TODO

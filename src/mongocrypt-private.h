@@ -119,11 +119,6 @@ _mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
                                       _mongocrypt_ciphertext_t *out,
                                       mongocrypt_status_t *status);
 
-bool
-_mongocryptd_marking_reply_parse (const bson_t *bson,
-                                  mongocrypt_request_t *request,
-                                  mongocrypt_status_t *status);
-
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
                                                  _mongocrypt_buffer_t *in,

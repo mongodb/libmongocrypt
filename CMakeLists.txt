@@ -17,7 +17,6 @@ set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-key-broker.h
    src/mongocrypt-key-decryptor.h
    src/mongocrypt-opts.h
-   src/mongocrypt-request.h
    src/mongocrypt-status.h
 )
 
@@ -41,7 +40,6 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-openssl.c
    src/mongocrypt-opts.c
    src/mongocrypt-parsing.c
-   src/mongocrypt-request.c
    src/mongocrypt-schema-cache.c
    src/mongocrypt-status.c
    )

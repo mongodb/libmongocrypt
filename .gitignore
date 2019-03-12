@@ -1,3 +1,4 @@
-docs/_build
+doc/html
+doc/latex
 test/schema.json
 test/example/*

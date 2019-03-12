@@ -74,9 +74,6 @@ mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
    case MONGOCRYPT_AWS_ACCESS_KEY_ID:
       opts->aws_access_key_id = bson_strdup ((char *) value);
       break;
-   case MONGOCRYPT_MONGOCRYPTD_URI:
-      opts->mongocryptd_uri = bson_strdup ((char *) value);
-      break;
    case MONGOCRYPT_LOG_FN:
       opts->log_fn = (mongocrypt_log_fn_t) value;
       break;

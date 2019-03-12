@@ -16,28 +16,63 @@
 #ifndef MONGOCCRYPT_H
 #define MONGOCCRYPT_H
 
-#include "mongocrypt-compat.h"
+/** @file mongocrypt.h The top-level handle to libmongocrypt. */
+
 #include <stdint.h>
+
+#include "mongocrypt-binary.h"
+#include "mongocrypt-compat.h"
+#include "mongocrypt-opts.h"
+#include "mongocrypt-status.h"
 
 #define MONGOCRYPT_VERSION "0.2.0"
 
-#include "mongocrypt-binary.h"
-#include "mongocrypt-opts.h"
-#include "mongocrypt-request.h"
-#include "mongocrypt-status.h"
-
+/**
+ * Returns the version string x.y.z for libmongocrypt.
+ *
+ * @returns the version string x.y.z for libmongocrypt.
+ */
 const char *
 mongocrypt_version (void);
 
+/**
+ * The top-level handle to libmongocrypt.
+ *
+ * Create a mongocrypt_t handle to perform operations within libmongocrypt:
+ * encryption, decryption, registering log callbacks, etc.
+ *
+ * Functions on a mongocrypt_t are thread safe, though functions on derived
+ * handle (e.g. mongocrypt_encryptor_t) are not and must be owned by a single
+ * thread. See each handle's documentation for thread-safety considerations.
+ *
+ * Multiple mongocrypt_t handles may be created.
+ */
 typedef struct _mongocrypt_t mongocrypt_t;
+
 
 void
 mongocrypt_init (const mongocrypt_opts_t *opts);
+
 
 void
 mongocrypt_cleanup (void);
 
 
+/**
+ * Create a new mongocrypt_t handle.
+ *
+ * @param opts A pointer to a `mongocrypt_opts_t`. The following options may be
+ * set:
+ * - MONGOCRYPT_AWS_REGION Should be set to a char*, e.g. "us-east-1"
+ * - MONGOCRYPT_AWS_SECRET_ACCESS_KEY Should be set to a char*
+ * - MONGOCRYPT_AWS_ACCESS_KEY_ID Should be set to a char*
+ * - MONGOCRYPT_LOG_FN An optional log handler. Should be set to a
+ * mongocrypt_log_fn_t
+ * - MONGOCRYPT_LOG_CTX An optional void* context that is passed to the
+ * MONGOCRYPT_LOG_FN. Should be set to a void*.
+ *
+ * @returns A new mongocrypt_t handle which may be used for other operations.
+ */
 mongocrypt_t *
 mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status);
 
@@ -45,39 +80,4 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status);
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
 
-
-/* ALL METHODS BELOW HERE ARE DEPRECATED, DO NOT USE */
-
-/* For the new encryption and decryption APIs, see
-   mongocrypt-encryptor.h and mongocrypt-decryptor.h,
-   and the API example in test/test-state-machine.c */
-
-mongocrypt_request_t *
-mongocrypt_encrypt_start (mongocrypt_t *crypt,
-                          const mongocrypt_opts_t *opts,
-                          const mongocrypt_binary_t *schema,
-                          const mongocrypt_binary_t *cmd,
-                          mongocrypt_status_t *status);
-
-
-bool
-mongocrypt_encrypt_finish (mongocrypt_request_t *request,
-                           const mongocrypt_opts_t *opts,
-                           mongocrypt_binary_t *encrypted_cmd,
-                           mongocrypt_status_t *status);
-
-
-mongocrypt_request_t *
-mongocrypt_decrypt_start (mongocrypt_t *crypt,
-                          const mongocrypt_opts_t *opts,
-                          const mongocrypt_binary_t *encrypted_docs,
-                          uint32_t num_docs,
-                          mongocrypt_status_t *status);
-
-
-bool
-mongocrypt_decrypt_finish (mongocrypt_request_t *request,
-                           const mongocrypt_opts_t *opts,
-                           mongocrypt_binary_t **docs,
-                           mongocrypt_status_t *status);
 #endif /* MONGOCRYPT_H */
