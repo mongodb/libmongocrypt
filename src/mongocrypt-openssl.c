@@ -316,9 +316,11 @@ _crypto_hmac_destroy (void *ctx)
 
 
 bool
-_crypto_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
+_crypto_random (_mongocrypt_buffer_t *out,
+                mongocrypt_status_t *status,
+                uint32_t count)
 {
-   int ret = RAND_bytes (out->data, 16);
+   int ret = RAND_bytes (out->data, count);
    /* From man page: "RAND_bytes() and RAND_priv_bytes() return 1 on success, -1
     * if not supported by the current RAND method, or 0 on other failure. The
     * error code can be obtained by ERR_get_error(3)" */
