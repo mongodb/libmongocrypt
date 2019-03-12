@@ -157,7 +157,7 @@ mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
    bson_iter_init (&iter, &tmp);
 
    if (!_mongocrypt_traverse_binary_in_bson (
-          _collect_key_from_ciphertext, (void *) decryptor, 0, iter, status)) {
+          _collect_key_from_ciphertext, (void *) decryptor, 0, &iter, status)) {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
       goto done;
    }
@@ -299,7 +299,7 @@ mongocrypt_decryptor_decrypt (mongocrypt_decryptor_t *decryptor)
 
    /* TODO: move transform_binary out of mongocrypt-private.h */
    res = _mongocrypt_transform_binary_in_bson (
-      _replace_ciphertext_with_plaintext, decryptor, 1, iter, &out, status);
+      _replace_ciphertext_with_plaintext, decryptor, 1, &iter, &out, status);
 
    if (!res) {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;

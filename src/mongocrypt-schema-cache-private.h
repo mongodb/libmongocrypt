@@ -27,6 +27,7 @@ typedef struct {
 
 typedef struct {
    /* TODO */
+   int todo_placeholder; /* Temporary workaround for C2016 */
 } _mongocrypt_schema_cache_t;
 
 

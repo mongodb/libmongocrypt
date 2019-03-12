@@ -271,7 +271,7 @@ mongocrypt_decrypt_start (mongocrypt_t *crypt,
       bson_init_static (&bson, encrypted_docs[i].data, encrypted_docs[i].len);
       bson_iter_init (&iter, &bson);
       if (!_mongocrypt_traverse_binary_in_bson (
-             _collect_key_from_ciphertext, request, 1, iter, status)) {
+             _collect_key_from_ciphertext, request, 1, &iter, status)) {
          goto fail;
       }
    }
@@ -373,7 +373,7 @@ mongocrypt_decrypt_finish (mongocrypt_request_t *request,
              _replace_ciphertext_with_plaintext,
              request,
              1,
-             iter,
+             &iter,
              &out,
              status)) {
          goto fail;
