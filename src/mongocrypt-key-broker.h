@@ -18,28 +18,34 @@
 #define MONGOCRYPT_KEY_BROKER_H
 
 #include "mongocrypt-binary.h"
+#include "mongocrypt-export.h"
 #include "mongocrypt-key-decryptor.h"
 
 typedef struct _mongocrypt_key_broker_t mongocrypt_key_broker_t;
 
 /* Create a filter for all keys which must be fetched from the key vault. */
+MONGOCRYPT_EXPORT
 mongocrypt_binary_t *
 mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb);
 
 
+MONGOCRYPT_EXPORT
 bool
 mongocrypt_key_broker_add_key (mongocrypt_key_broker_t *kb,
                                const mongocrypt_binary_t *key);
 
 
+MONGOCRYPT_EXPORT
 bool
 mongocrypt_key_broker_done_adding_keys (mongocrypt_key_broker_t *kb);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_key_decryptor_t *
 mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb);
 
 
+MONGOCRYPT_EXPORT
 bool
 mongocrypt_key_broker_add_decrypted_key (
    mongocrypt_key_broker_t *kb,

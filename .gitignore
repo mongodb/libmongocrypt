@@ -4,3 +4,20 @@ test/schema.json
 
 # Default build directory
 cmake-build
+test/example/*
+
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.xcodeproj
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Debug/*
+Makefile
+Win32/*
+cmake_install.cmake
+x64/*
+
+# Generated header
+src/mongocrypt-export.h

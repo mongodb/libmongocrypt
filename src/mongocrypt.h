@@ -22,6 +22,7 @@
 
 #include "mongocrypt-binary.h"
 #include "mongocrypt-compat.h"
+#include "mongocrypt-export.h"
 #include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
@@ -32,6 +33,7 @@
  *
  * @returns the version string x.y.z for libmongocrypt.
  */
+MONGOCRYPT_EXPORT
 const char *
 mongocrypt_version (void);
 
@@ -50,10 +52,12 @@ mongocrypt_version (void);
 typedef struct _mongocrypt_t mongocrypt_t;
 
 
+MONGOCRYPT_EXPORT
 void
 mongocrypt_init (const mongocrypt_opts_t *opts);
 
 
+MONGOCRYPT_EXPORT
 void
 mongocrypt_cleanup (void);
 
@@ -73,10 +77,12 @@ mongocrypt_cleanup (void);
  *
  * @returns A new mongocrypt_t handle which may be used for other operations.
  */
+MONGOCRYPT_EXPORT
 mongocrypt_t *
 mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status);
 
 
+MONGOCRYPT_EXPORT
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
 

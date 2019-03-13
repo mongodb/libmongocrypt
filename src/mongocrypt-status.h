@@ -19,6 +19,8 @@
 
 #include <stdint.h>
 
+#include "mongocrypt-export.h"
+
 typedef enum {
    MONGOCRYPT_ERROR_TYPE_NONE = 0,
    MONGOCRYPT_ERROR_TYPE_MONGOCRYPTD,
@@ -29,25 +31,31 @@ typedef enum {
 typedef struct _mongocrypt_status_t mongocrypt_status_t;
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_status_t *
 mongocrypt_status_new (void);
 
 
+MONGOCRYPT_EXPORT
 void
 mongocrypt_status_destroy (mongocrypt_status_t *status);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_error_type_t
 mongocrypt_status_error_type (mongocrypt_status_t *status);
 
 
+MONGOCRYPT_EXPORT
 uint32_t
 mongocrypt_status_code (mongocrypt_status_t *status);
 
 
+MONGOCRYPT_EXPORT
 const char *
 mongocrypt_status_message (mongocrypt_status_t *status);
 
+MONGOCRYPT_EXPORT
 bool
 mongocrypt_status_ok (mongocrypt_status_t *status);
 

@@ -19,6 +19,7 @@
 
 
 #include "mongocrypt-binary.h"
+#include "mongocrypt-export.h"
 #include "mongocrypt-key-broker.h"
 #include "mongocrypt-status.h"
 
@@ -34,38 +35,47 @@ typedef enum {
 } mongocrypt_decryptor_state_t;
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_decryptor_t *
 mongocrypt_decryptor_new (mongocrypt_t *crypt);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_decryptor_state_t
 mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
                               mongocrypt_binary_t *encrypted_doc);
 
+MONGOCRYPT_EXPORT
 mongocrypt_key_broker_t *
 mongocrypt_decryptor_get_key_broker (mongocrypt_decryptor_t *decryptor);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_decryptor_state_t
 mongocrypt_decryptor_key_broker_done (mongocrypt_decryptor_t *decryptor);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_decryptor_state_t
 mongocrypt_decryptor_decrypt (mongocrypt_decryptor_t *decryptor);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_decryptor_state_t
 mongocrypt_decryptor_state (mongocrypt_decryptor_t *decryptor);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_binary_t *
 mongocrypt_decryptor_decrypted_cmd (mongocrypt_decryptor_t *decryptor);
 
 
+MONGOCRYPT_EXPORT
 mongocrypt_status_t *
 mongocrypt_decryptor_status (mongocrypt_decryptor_t *decryptor);
 
 
+MONGOCRYPT_EXPORT
 void
 mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *decryptor);
 

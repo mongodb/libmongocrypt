@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include "mongocrypt-export.h"
 
 /**
  * A non-owning view of a byte buffer.
@@ -42,6 +43,7 @@ typedef struct _mongocrypt_binary_t mongocrypt_binary_t;
  * @returns A new mongocrypt_binary_t that must later be destroyed with
  * mongocrypt_binary_destroy.
  */
+MONGOCRYPT_EXPORT
 mongocrypt_binary_t *
 mongocrypt_binary_new (uint8_t *data, uint32_t len);
 
@@ -53,6 +55,7 @@ mongocrypt_binary_new (uint8_t *data, uint32_t len);
  *
  * @returns A pointer to the referenced data.
  */
+MONGOCRYPT_EXPORT
 const uint8_t *
 mongocrypt_binary_data (const mongocrypt_binary_t *binary);
 
@@ -64,6 +67,7 @@ mongocrypt_binary_data (const mongocrypt_binary_t *binary);
  *
  * @returns The length of the referenced data.
  */
+MONGOCRYPT_EXPORT
 uint32_t
 mongocrypt_binary_len (const mongocrypt_binary_t *binary);
 
@@ -73,6 +77,7 @@ mongocrypt_binary_len (const mongocrypt_binary_t *binary);
  *
  * @param binary The mongocrypt_binary_t destroy.
  */
+MONGOCRYPT_EXPORT
 void
 mongocrypt_binary_destroy (mongocrypt_binary_t *binary);
 

@@ -1,10 +1,17 @@
 cmake_minimum_required (VERSION 3.0)
-project (mongocrypt C)
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
+   project (mongocrypt C)
+else()
+   # GenerateExportHeader only works with C with 3.12 - https://gitlab.kitware.com/cmake/cmake/commit/de348a9638bd51af4523f36c68884b901d4aff18
+   project (mongocrypt C CXX)
+endif()
 
 set (CMAKE_C_STANDARD 99)
 
 find_package (libbson-static-1.0 1.11 REQUIRED)
 
+include(GenerateExportHeader)
 
 option (ENABLE_TRACE "Enable verbose trace logs. Requires MONGOCRYPT_TRACE environment variable at runtime" OFF)
 
@@ -47,8 +54,11 @@ set (MONGOCRYPT_SOURCES
 # Define mongocrypt library
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
 target_include_directories (mongocrypt PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
+target_include_directories (mongocrypt PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
 target_link_libraries (mongocrypt PRIVATE ${BSON_STATIC_LIBRARIES})
 target_compile_definitions (mongocrypt PRIVATE "${BSON_STATIC_DEFINITIONS}")
+
+generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 # Add ssl libraries to mongocrypt
 if (APPLE)
@@ -99,7 +109,8 @@ install (TARGETS mongocrypt
 
 install (
    FILES
-   ${MONGOCRYPT_PUBLIC_HEADERS}
+      ${MONGOCRYPT_PUBLIC_HEADERS}
+      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-export.h
    DESTINATION include/mongocrypt
    COMPONENT Devel
 )
