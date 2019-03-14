@@ -88,7 +88,7 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
 }
 
 mongocrypt_decryptor_t *
-mongocrypt_decryptor_new (mongocrypt_t *crypt, const mongocrypt_opts_t *opts)
+mongocrypt_decryptor_new (mongocrypt_t *crypt)
 {
    mongocrypt_decryptor_t *decryptor;
 
@@ -131,8 +131,7 @@ _collect_key_from_ciphertext (void *ctx,
 
 mongocrypt_decryptor_state_t
 mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
-                              mongocrypt_binary_t *encrypted_doc,
-                              const mongocrypt_opts_t *opts)
+                              mongocrypt_binary_t *encrypted_doc)
 {
    mongocrypt_status_t *status;
    bson_iter_t iter;

@@ -49,7 +49,7 @@ _check_state (mongocrypt_encryptor_t *encryptor,
 }
 
 mongocrypt_encryptor_t *
-mongocrypt_encryptor_new (mongocrypt_t *crypt, const mongocrypt_opts_t *opts)
+mongocrypt_encryptor_new (mongocrypt_t *crypt)
 {
    mongocrypt_encryptor_t *encryptor;
 
@@ -67,8 +67,7 @@ mongocrypt_encryptor_new (mongocrypt_t *crypt, const mongocrypt_opts_t *opts)
 
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor,
-                             const char *ns,
-                             const mongocrypt_opts_t *opts)
+                             const char *ns)
 {
    _mongocrypt_schema_cache_t *cache;
    _mongocrypt_schema_handle_t *handle;
@@ -101,8 +100,7 @@ mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor,
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_collection_info (
    mongocrypt_encryptor_t *encryptor,
-   const mongocrypt_binary_t *list_collections_reply,
-   const mongocrypt_opts_t *opts)
+   const mongocrypt_binary_t *list_collections_reply)
 {
    bson_t reply;
    bson_iter_t iter, validator_iter;
@@ -168,8 +166,7 @@ mongocrypt_encryptor_add_collection_info (
 }
 
 const mongocrypt_binary_t *
-mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor,
-                                 const mongocrypt_opts_t *opts)
+mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor)
 {
    if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS)) {
       return NULL;
@@ -210,8 +207,7 @@ _collect_key_from_marking (void *ctx,
 
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
-                                   mongocrypt_binary_t *marked_reply,
-                                   const mongocrypt_opts_t *opts)
+                                   mongocrypt_binary_t *marked_reply)
 {
    mongocrypt_status_t *status;
    bson_iter_t iter;

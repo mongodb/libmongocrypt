@@ -17,7 +17,7 @@ _decrypt_via_kms (mongocrypt_key_decryptor_t *key_decryptor,
    const uint32_t max_bytes_to_read = 1024;
    const mongocrypt_binary_t *msg;
 
-   msg = mongocrypt_key_decryptor_msg (key_decryptor, NULL, status);
+   msg = mongocrypt_key_decryptor_msg (key_decryptor, status);
    /* send_message_to_kms (msg); */
    to_read =
       mongocrypt_key_decryptor_bytes_needed (key_decryptor, max_bytes_to_read);
@@ -115,7 +115,7 @@ _auto_encrypt (mongocrypt_t *crypt)
    bool res = false;
 
    list_collections_reply = NULL;
-   encryptor = mongocrypt_encryptor_new (crypt, NULL);
+   encryptor = mongocrypt_encryptor_new (crypt);
    status = mongocrypt_status_new ();
 
    /* Crank the state machine until we reach a terminal state */
@@ -125,7 +125,7 @@ _auto_encrypt (mongocrypt_t *crypt)
          /* Driver: when the encryptor is first created,
             it needs a namespace to begin the encryption
             process. Add the namespace at this step. */
-         state = mongocrypt_encryptor_add_ns (encryptor, "test.test", NULL);
+         state = mongocrypt_encryptor_add_ns (encryptor, "test.test");
          break;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA:
@@ -136,7 +136,7 @@ _auto_encrypt (mongocrypt_t *crypt)
             Then, give the resulting document or NULL
             to the encryptor. */
          state = mongocrypt_encryptor_add_collection_info (
-            encryptor, list_collections_reply, NULL);
+            encryptor, list_collections_reply);
          break;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS:
@@ -147,11 +147,11 @@ _auto_encrypt (mongocrypt_t *crypt)
             formulate a mongocryptd request driver-side,
             send that request to mongocryptd, and
             return the response to the encryptor. */
-         schema = mongocrypt_encryptor_get_schema (encryptor, NULL);
+         schema = mongocrypt_encryptor_get_schema (encryptor);
          /* marking_request = build_mongocryptd_command (schema); */
          /* marking_response = mongocryptd.run_command (marking_request); */
          state = mongocrypt_encryptor_add_markings (
-            encryptor, marking_response, NULL);
+            encryptor, marking_response);
          break;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS:
@@ -208,7 +208,7 @@ _auto_decrypt (mongocrypt_t *crypt)
    mongocrypt_status_t *status;
    mongocrypt_status_t *error;
 
-   decryptor = mongocrypt_decryptor_new (crypt, NULL);
+   decryptor = mongocrypt_decryptor_new (crypt);
    state = mongocrypt_decryptor_state (decryptor);
    status = mongocrypt_status_new ();
 
@@ -220,7 +220,7 @@ _auto_decrypt (mongocrypt_t *crypt)
             it needs a document to decrypt to begin the
             state machine. Add the encrypted document
             at this step. */
-         state = mongocrypt_decryptor_add_doc (decryptor, encrypted_doc, NULL);
+         state = mongocrypt_decryptor_add_doc (decryptor, encrypted_doc);
          break;
 
       case MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS:

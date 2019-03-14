@@ -375,27 +375,29 @@ _test_state_machine (void)
 
    mongocrypt = mongocrypt_new (NULL, status);
 
-   encryptor = mongocrypt_encryptor_new (mongocrypt, NULL);
+   encryptor = mongocrypt_encryptor_new (mongocrypt);
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_NS);
-   mongocrypt_encryptor_add_ns (encryptor, "test.test", NULL);
+   mongocrypt_encryptor_add_ns (encryptor, "test.test");
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
    mongocrypt_encryptor_add_collection_info (
-      encryptor, list_collections_reply, NULL);
+      encryptor, list_collections_reply);
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
-   mongocrypt_encryptor_add_markings (encryptor, marked_reply, NULL);
+   mongocrypt_encryptor_add_markings (encryptor, marked_reply);
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS);
+
    kb = mongocrypt_encryptor_get_key_broker (encryptor);
    BSON_ASSERT (kb);
 
    key_query = mongocrypt_key_broker_get_key_filter (kb, NULL);
+
    /* check that the key query has the form { _id: $in : [ ] }. */
    _mongocrypt_unowned_buffer_from_binary (key_query, &tmp_buf);
    _mongocrypt_buffer_to_unowned_bson (&tmp_buf, &tmp);

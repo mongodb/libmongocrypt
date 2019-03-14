@@ -41,7 +41,6 @@ _mongocrypt_key_decryptor_init (mongocrypt_key_decryptor_t *kd,
 
 const mongocrypt_binary_t *
 mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd,
-                              const mongocrypt_opts_t *opts,
                               mongocrypt_status_t *status)
 {
    /* TODO testing, remove? */

@@ -18,7 +18,6 @@
 #define MONGOCRYPT_KEY_DECRYPTOR_H
 
 #include "mongocrypt-binary.h"
-#include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
 /* Represents a request/response parser for the decryption of a key material. */
@@ -28,7 +27,6 @@ typedef struct _mongocrypt_key_decryptor_t mongocrypt_key_decryptor_t;
  */
 const mongocrypt_binary_t *
 mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd,
-                              const mongocrypt_opts_t *opts,
                               mongocrypt_status_t *status);
 
 /* Does this key decryptor need more bytes from the response? If it does need

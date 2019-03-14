@@ -20,7 +20,6 @@
 
 #include "mongocrypt-binary.h"
 #include "mongocrypt-key-broker.h"
-#include "mongocrypt-opts.h"
 #include "mongocrypt-status.h"
 
 
@@ -39,31 +38,27 @@ typedef enum {
 
 
 mongocrypt_encryptor_t *
-mongocrypt_encryptor_new (mongocrypt_t *crypt, const mongocrypt_opts_t *opts);
+mongocrypt_encryptor_new (mongocrypt_t *crypt);
 
 
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor,
-                             const char *ns,
-                             const mongocrypt_opts_t *opts);
+                             const char *ns);
 
 
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_collection_info (
    mongocrypt_encryptor_t *encryptor,
-   const mongocrypt_binary_t *list_collections_reply,
-   const mongocrypt_opts_t *opts);
+   const mongocrypt_binary_t *list_collections_reply);
 
 
 const mongocrypt_binary_t *
-mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor,
-                                 const mongocrypt_opts_t *opts);
+mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor);
 
 
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
-                                   mongocrypt_binary_t *marked_reply,
-                                   const mongocrypt_opts_t *opts);
+                                   mongocrypt_binary_t *marked_reply);
 
 mongocrypt_key_broker_t *
 mongocrypt_encryptor_get_key_broker (mongocrypt_encryptor_t *encryptor);
