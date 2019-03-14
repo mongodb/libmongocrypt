@@ -60,11 +60,20 @@ target_compile_definitions (mongocrypt PRIVATE "${BSON_STATIC_DEFINITIONS}")
 
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
+add_library (mongocrypt-static STATIC ${MONGOCRYPT_SOURCES})
+target_include_directories (mongocrypt-static PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
+target_include_directories (mongocrypt-static PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
+target_link_libraries (mongocrypt-static PRIVATE ${BSON_STATIC_LIBRARIES})
+target_compile_definitions (mongocrypt-static PRIVATE "${BSON_STATIC_DEFINITIONS}")
+target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_STATIC_DEFINE)
+
 # Add ssl libraries to mongocrypt
 if (APPLE)
    message ("Building with common crypto")
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
+   target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
    target_link_libraries (mongocrypt PRIVATE "-framework CoreFoundation -framework Security")
+   target_link_libraries (mongocrypt-static PRIVATE "-framework CoreFoundation -framework Security")
 else ()
    message ("Building with OpenSSL")
    include (FindOpenSSL)
@@ -72,15 +81,21 @@ else ()
    target_link_libraries (mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
    target_include_directories (mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
+
+   target_link_libraries (mongocrypt-static PRIVATE ${OPENSSL_LIBRARIES})
+   target_include_directories (mongocrypt-static PRIVATE ${OPENSSL_INCLUDE_DIR})
+   target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
 endif ()
 
 # kms-message
 find_package (kms_message REQUIRED)
 target_link_libraries (mongocrypt PUBLIC kms_message_static)
+target_link_libraries (mongocrypt-static PUBLIC kms_message_static)
 
 # Define test-mongocrypt
 add_executable (test-mongocrypt test/test-mongocrypt.c)
-target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
+# Use the static version since it allows the test binary to use private symbols
+target_link_libraries (test-mongocrypt PRIVATE mongocrypt-static)
 target_include_directories (test-mongocrypt PRIVATE ./src)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_STATIC_LIBRARIES})
@@ -96,6 +111,7 @@ target_compile_definitions (test-state-machine PRIVATE "${BSON_STATIC_DEFINITION
 
 if (ENABLE_TRACE)
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
+   target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_TRACE=1")
    target_compile_definitions (test-mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
    target_compile_definitions (test-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
 endif ()
