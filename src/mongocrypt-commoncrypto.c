@@ -270,14 +270,16 @@ _crypto_hmac_destroy (void *ctx)
 
 
 bool
-_crypto_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
+_crypto_random (_mongocrypt_buffer_t *out,
+                mongocrypt_status_t *status,
+                uint32_t count)
 {
-   int ret =
-      SecRandomCopyBytes (kSecRandomDefault, (size_t) out->len, out->data);
+   int ret = SecRandomCopyBytes (kSecRandomDefault, (size_t) count, out->data);
    if (ret != errSecSuccess) {
       CLIENT_ERR ("failed to generate random iv: %d", ret);
+      return false;
    }
-   return false;
+   return true;
 }
 
 #endif
