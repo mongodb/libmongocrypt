@@ -616,7 +616,7 @@ done:
  *    True on success. On error, sets @status and returns false.
  *
  *  Preconditions:
- *    1. out has been pre-allocated with at least 16 bytes of space.
+ *    1. out has been pre-allocated with at least 'count' bytes of space.
  *
  * ----------------------------------------------------------------------------
  */

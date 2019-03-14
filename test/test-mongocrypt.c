@@ -442,11 +442,8 @@ static void
 _init_buffer_with_count (_mongocrypt_buffer_t *out, uint32_t count)
 {
    out->len = count;
-   out->data = bson_malloc (out->len);
+   out->data = bson_malloc0 (out->len);
    out->owned = true;
-   for (int i = 0; i < out->len; i++) {
-      *(out->data + i) = 0;
-   }
 }
 
 static void
