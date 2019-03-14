@@ -50,7 +50,9 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
                            mongocrypt_status_t *status);
 
 bool
-_mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);
+_mongocrypt_random (_mongocrypt_buffer_t *out,
+                    mongocrypt_status_t *status,
+                    uint32_t count);
 
 int
 _mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len);
@@ -116,6 +118,8 @@ void
 _crypto_hmac_destroy (void *ctx);
 
 bool
-_crypto_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status);
+_crypto_random (_mongocrypt_buffer_t *out,
+                mongocrypt_status_t *status,
+                uint32_t count);
 
 #endif /* MONGOCRYPT_CRYPTO_PRIVATE_H */

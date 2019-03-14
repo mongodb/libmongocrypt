@@ -603,25 +603,28 @@ done:
 
 /* ----------------------------------------------------------------------------
  *
- * _mongocrypt_random_iv --
+ * _mongocrypt_random --
  *
- *    Generate a random 16 byte IV.
+ *    Generates a string of random bytes.
  *
  * Parameters:
  *    @out an output buffer that has been pre-allocated.
  *    @status set on error.
+ *    @count the size of the random string in bytes.
  *
  * Returns:
  *    True on success. On error, sets @status and returns false.
  *
  *  Preconditions:
- *    1. out has been pre-allocated with at least 16 bytes of space.
+ *    1. out has been pre-allocated with at least 'count' bytes of space.
  *
  * ----------------------------------------------------------------------------
  */
 bool
-_mongocrypt_random_iv (_mongocrypt_buffer_t *out, mongocrypt_status_t *status)
+_mongocrypt_random (_mongocrypt_buffer_t *out,
+                    mongocrypt_status_t *status,
+                    uint32_t count)
 {
-   BSON_ASSERT (out->len >= 16);
-   return _crypto_random_iv (out, status);
+   BSON_ASSERT (out->len >= count);
+   return _crypto_random (out, status, count);
 }
