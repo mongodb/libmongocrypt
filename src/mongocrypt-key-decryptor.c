@@ -35,13 +35,13 @@ _mongocrypt_key_decryptor_init (mongocrypt_key_decryptor_t *kd,
       kms_decrypt_request_new (key_material->data, key_material->len, opt);
    kd->parser = kms_response_parser_new ();
    kd->ctx = ctx;
+   kd->status = mongocrypt_status_new ();
    kd->msg = mongocrypt_binary_new ();
    kms_request_opt_destroy (opt);
 }
 
 const mongocrypt_binary_t *
-mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd,
-                              mongocrypt_status_t *status)
+mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd)
 {
    /* TODO testing, remove? */
    if (!kd) {
@@ -71,14 +71,20 @@ mongocrypt_key_decryptor_bytes_needed (mongocrypt_key_decryptor_t *kd,
 
 bool
 mongocrypt_key_decryptor_feed (mongocrypt_key_decryptor_t *kd,
-                               mongocrypt_binary_t *bytes,
-                               mongocrypt_status_t *status)
+                               mongocrypt_binary_t *bytes)
 {
    /* TODO: KMS error handling in CDRIVER-3000? */
    kms_response_parser_feed (kd->parser, bytes->data, bytes->len);
    return true;
 }
 
+mongocrypt_status_t *
+mongocrypt_key_decryptor_status (mongocrypt_key_decryptor_t *kd)
+{
+   BSON_ASSERT (kd);
+
+   return kd->status;
+}
 
 void
 _mongocrypt_key_decryptor_cleanup (mongocrypt_key_decryptor_t *kd)
@@ -88,5 +94,6 @@ _mongocrypt_key_decryptor_cleanup (mongocrypt_key_decryptor_t *kd)
    }
    kms_request_destroy (kd->req);
    kms_response_parser_destroy (kd->parser);
+   mongocrypt_status_destroy (kd->status);
    mongocrypt_binary_destroy (kd->msg);
 }

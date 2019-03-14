@@ -40,6 +40,7 @@ _mongocrypt_key_broker_init (mongocrypt_key_broker_t *kb)
 {
    memset (kb, 0, sizeof (*kb));
    kb->all_keys_added = false;
+   kb->status = mongocrypt_status_new ();
 }
 
 
@@ -67,8 +68,7 @@ _mongocrypt_key_broker_empty (mongocrypt_key_broker_t *kb)
 
 bool
 _mongocrypt_key_broker_add_id (mongocrypt_key_broker_t *kb,
-                               const _mongocrypt_buffer_t *key_id,
-                               mongocrypt_status_t *status)
+                               const _mongocrypt_buffer_t *key_id)
 {
    _mongocrypt_key_broker_entry_t *kbi;
 
@@ -118,12 +118,15 @@ _mongocrypt_key_broker_filter (mongocrypt_key_broker_t *kb,
 
 bool
 _mongocrypt_key_broker_add_doc (mongocrypt_key_broker_t *kb,
-                                const _mongocrypt_buffer_t *doc,
-                                mongocrypt_status_t *status)
+                                const _mongocrypt_buffer_t *doc)
 {
+   mongocrypt_status_t *status;
    bson_t doc_bson;
    _mongocrypt_key_t key;
    _mongocrypt_key_broker_entry_t *kbi;
+
+   BSON_ASSERT (kb);
+   status = kb->status;
 
    /* 1. parse the key doc
     * 2. check which _id/keyAltName this key doc matches.
@@ -175,10 +178,10 @@ _mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb)
 
 bool
 _mongocrypt_key_broker_add_decrypted_key (mongocrypt_key_broker_t *kb,
-                                          mongocrypt_key_decryptor_t *kd,
-                                          mongocrypt_status_t *status)
+                                          mongocrypt_key_decryptor_t *kd)
 {
    int ret = false;
+   mongocrypt_status_t *status;
    _mongocrypt_key_broker_entry_t *kbi;
    kms_response_t *kms_response = NULL;
    const char *kms_body;
@@ -190,6 +193,7 @@ _mongocrypt_key_broker_add_decrypted_key (mongocrypt_key_broker_t *kb,
    uint32_t b64_strlen;
 
    BSON_ASSERT (kb);
+   status = kb->status;
 
    /* TODO: this is for testing, BSON_ASSERT (kd) */
    if (!kd) {
@@ -247,11 +251,13 @@ done:
 
 const _mongocrypt_buffer_t *
 _mongocrypt_key_broker_decrypted_key_material_by_id (
-   mongocrypt_key_broker_t *kb,
-   _mongocrypt_buffer_t *key_id,
-   mongocrypt_status_t *status)
+   mongocrypt_key_broker_t *kb, _mongocrypt_buffer_t *key_id)
 {
+   mongocrypt_status_t *status;
    _mongocrypt_key_broker_entry_t *kbi;
+
+   BSON_ASSERT (kb);
+   status = kb->status;
 
    for (kbi = kb->kb_entry; kbi != NULL; kbi = kbi->next) {
       if (0 == _mongocrypt_buffer_cmp (&kbi->key_id, key_id)) {
@@ -268,8 +274,7 @@ _mongocrypt_key_broker_decrypted_key_material_by_id (
 
 
 const mongocrypt_binary_t *
-mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb,
-                                      mongocrypt_status_t *status)
+mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb)
 {
    _mongocrypt_key_broker_entry_t *iter;
    int i = 0;
@@ -310,12 +315,13 @@ mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb,
 
 bool
 mongocrypt_key_broker_add_key (mongocrypt_key_broker_t *kb,
-                               const mongocrypt_binary_t *key,
-                               mongocrypt_status_t *status)
+                               const mongocrypt_binary_t *key)
 {
    _mongocrypt_buffer_t key_buf;
+   mongocrypt_status_t *status;
 
    BSON_ASSERT (kb);
+   status = kb->status;
 
    if (!key) {
       CLIENT_ERR ("attempted to add a NULL key");
@@ -324,14 +330,16 @@ mongocrypt_key_broker_add_key (mongocrypt_key_broker_t *kb,
 
    _mongocrypt_unowned_buffer_from_binary (key, &key_buf);
 
-   return _mongocrypt_key_broker_add_doc (kb, &key_buf, status);
+   return _mongocrypt_key_broker_add_doc (kb, &key_buf);
 }
 
 bool
-mongocrypt_key_broker_done_adding_keys (mongocrypt_key_broker_t *kb,
-                                        mongocrypt_status_t *status)
+mongocrypt_key_broker_done_adding_keys (mongocrypt_key_broker_t *kb)
 {
+   mongocrypt_status_t *status;
+
    BSON_ASSERT (kb);
+   status = kb->status;
 
    if (_mongocrypt_key_broker_has (kb, KEY_EMPTY)) {
       CLIENT_ERR ("client did not provide all keys");
@@ -344,10 +352,12 @@ mongocrypt_key_broker_done_adding_keys (mongocrypt_key_broker_t *kb,
 }
 
 mongocrypt_key_decryptor_t *
-mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb,
-                                      mongocrypt_status_t *status)
+mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb)
 {
+   mongocrypt_status_t *status;
+
    BSON_ASSERT (kb);
+   status = kb->status;
 
    if (!kb->all_keys_added) {
       CLIENT_ERR ("client did not provide all keys");
@@ -359,18 +369,27 @@ mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb,
 
 bool
 mongocrypt_key_broker_add_decrypted_key (
-   mongocrypt_key_broker_t *kb,
-   mongocrypt_key_decryptor_t *key_decryptor,
-   mongocrypt_status_t *status)
+   mongocrypt_key_broker_t *kb, mongocrypt_key_decryptor_t *key_decryptor)
 {
+   mongocrypt_status_t *status;
+
    BSON_ASSERT (kb);
+   status = kb->status;
 
    if (!kb->all_keys_added) {
       CLIENT_ERR ("client did not provide all keys");
       return false;
    }
 
-   return _mongocrypt_key_broker_add_decrypted_key (kb, key_decryptor, status);
+   return _mongocrypt_key_broker_add_decrypted_key (kb, key_decryptor);
+}
+
+mongocrypt_status_t *
+mongocrypt_key_broker_status (mongocrypt_key_broker_t *kb)
+{
+   BSON_ASSERT (kb);
+
+   return kb->status;
 }
 
 void
@@ -396,5 +415,6 @@ _mongocrypt_key_broker_cleanup (mongocrypt_key_broker_t *kb)
 
    kb->kb_entry = NULL;
 
+   mongocrypt_status_destroy (kb->status);
    mongocrypt_binary_destroy (kb->filter);
 }

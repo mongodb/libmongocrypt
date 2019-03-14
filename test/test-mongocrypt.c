@@ -391,8 +391,7 @@ _test_state_machine (void)
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
-   mongocrypt_encryptor_add_collection_info (
-      encryptor, list_collections_reply);
+   mongocrypt_encryptor_add_collection_info (encryptor, list_collections_reply);
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
@@ -404,7 +403,7 @@ _test_state_machine (void)
    kb = mongocrypt_encryptor_get_key_broker (encryptor);
    BSON_ASSERT (kb);
 
-   key_query = mongocrypt_key_broker_get_key_filter (kb, NULL);
+   key_query = mongocrypt_key_broker_get_key_filter (kb);
 
    /* check that the key query has the form { _id: $in : [ ] }. */
    _mongocrypt_unowned_buffer_from_binary (key_query, &tmp_buf);
@@ -412,23 +411,22 @@ _test_state_machine (void)
    bson_iter_init (&iter, &tmp);
    BSON_ASSERT (bson_iter_find_descendant (&iter, "_id.$in.0", &iter));
 
-   ASSERT_OR_PRINT (mongocrypt_key_broker_add_key (kb, key_document, status),
-                    status);
-   mongocrypt_key_broker_done_adding_keys (kb, status);
+   ASSERT_OR_PRINT (mongocrypt_key_broker_add_key (kb, key_document),
+                    mongocrypt_key_broker_status (kb));
+   mongocrypt_key_broker_done_adding_keys (kb);
 
-   key_decryptor = mongocrypt_key_broker_next_decryptor (kb, status);
+   key_decryptor = mongocrypt_key_broker_next_decryptor (kb);
 
    int bytes_needed =
       mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1024);
 
    while (bytes_needed > 0) {
       /* feed the whole reply */
-      BSON_ASSERT (
-         mongocrypt_key_decryptor_feed (key_decryptor, kms_reply, status));
+      BSON_ASSERT (mongocrypt_key_decryptor_feed (key_decryptor, kms_reply));
       bytes_needed =
          mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1024);
    }
-   mongocrypt_key_broker_add_decrypted_key (kb, key_decryptor, status);
+   mongocrypt_key_broker_add_decrypted_key (kb, key_decryptor);
    mongocrypt_encryptor_key_broker_done (encryptor);
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
@@ -522,5 +520,4 @@ main (int argc, char **argv)
    ADD_TEST (_test_log);
    ADD_TEST (_test_state_machine)
    ADD_TEST (_test_random_generator);
-
 }

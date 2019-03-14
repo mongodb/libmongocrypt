@@ -67,8 +67,7 @@ mongocrypt_encryptor_new (mongocrypt_t *crypt)
 }
 
 mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor,
-                             const char *ns)
+mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor, const char *ns)
 {
    _mongocrypt_schema_cache_t *cache;
    _mongocrypt_schema_handle_t *handle;
@@ -178,16 +177,16 @@ mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor)
 
 
 static bool
-_collect_key_from_marking (void *ctx,
-                           _mongocrypt_buffer_t *in,
-                           mongocrypt_status_t *status)
+_collect_key_from_marking (void *ctx, _mongocrypt_buffer_t *in)
 {
+   mongocrypt_status_t *status;
    _mongocrypt_marking_t marking = {0};
    mongocrypt_encryptor_t *encryptor;
 
    encryptor = (mongocrypt_encryptor_t *) ctx;
+   status = encryptor->status;
 
-   if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
+   if (!_mongocrypt_marking_parse_unowned (in, &marking, encryptor->status)) {
       return false;
    }
 
@@ -198,8 +197,8 @@ _collect_key_from_marking (void *ctx,
       return false;
    }
 
-   if (!_mongocrypt_key_broker_add_id (
-          &encryptor->kb, &marking.key_id, status)) {
+   if (!_mongocrypt_key_broker_add_id (&encryptor->kb, &marking.key_id)) {
+      mongocrypt_status_copy_to (encryptor->kb.status, encryptor->status);
       return false;
    }
    return true;
@@ -369,9 +368,9 @@ _serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
 static bool
 _replace_marking_with_ciphertext (void *ctx,
                                   _mongocrypt_buffer_t *in,
-                                  bson_value_t *out,
-                                  mongocrypt_status_t *status)
+                                  bson_value_t *out)
 {
+   mongocrypt_status_t *status;
    _mongocrypt_marking_t marking = {0};
    _mongocrypt_ciphertext_t ciphertext = {0};
    _mongocrypt_buffer_t serialized_ciphertext = {0};
@@ -387,6 +386,7 @@ _replace_marking_with_ciphertext (void *ctx,
    BSON_ASSERT (out);
    BSON_ASSERT (status);
    kb = (mongocrypt_key_broker_t *) ctx;
+   status = kb->status;
 
    if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
       goto fail;
@@ -400,9 +400,10 @@ _replace_marking_with_ciphertext (void *ctx,
    memcpy (&ciphertext.iv, &marking.iv, sizeof (_mongocrypt_buffer_t));
 
    /* get the key for this marking. */
-   key_material = _mongocrypt_key_broker_decrypted_key_material_by_id (
-      kb, &marking.key_id, status);
+   key_material =
+      _mongocrypt_key_broker_decrypted_key_material_by_id (kb, &marking.key_id);
    if (!key_material) {
+      mongocrypt_status_copy_to (kb->status, status);
       goto fail;
    }
 

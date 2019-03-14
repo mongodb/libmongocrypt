@@ -17,14 +17,13 @@ _decrypt_via_kms (mongocrypt_key_decryptor_t *key_decryptor,
    const uint32_t max_bytes_to_read = 1024;
    const mongocrypt_binary_t *msg;
 
-   msg = mongocrypt_key_decryptor_msg (key_decryptor, status);
+   msg = mongocrypt_key_decryptor_msg (key_decryptor);
    /* send_message_to_kms (msg); */
    to_read =
       mongocrypt_key_decryptor_bytes_needed (key_decryptor, max_bytes_to_read);
    while (to_read > 0) {
       /* recv to_read from the kms socket into bytes_received */
-      if (!mongocrypt_key_decryptor_feed (
-             key_decryptor, bytes_received, status)) {
+      if (!mongocrypt_key_decryptor_feed (key_decryptor, bytes_received)) {
          return false;
       }
 
@@ -41,13 +40,13 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    const mongocrypt_binary_t *filter;
    mongocrypt_binary_t *key_doc = NULL;
    mongocrypt_key_decryptor_t *key_decryptor = NULL;
-   mongocrypt_status_t *status = mongocrypt_status_new ();
+   mongocrypt_status_t *status = mongocrypt_key_broker_status (kb);
    bool res = false;
 
    /* First, get a filter to run against the
       key vault. Run a find command with this
       filter against the database. */
-   filter = mongocrypt_key_broker_get_key_filter (kb, status);
+   filter = mongocrypt_key_broker_get_key_filter (kb);
    if (!filter) {
       printf ("error getting key filter: %s\n",
               mongocrypt_status_message (status));
@@ -59,13 +58,13 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
 
    /* cursor = collection.find (filter); */
    /* for key_doc in cursor: */
-   if (!mongocrypt_key_broker_add_key (kb, key_doc, status)) {
+   if (!mongocrypt_key_broker_add_key (kb, key_doc)) {
       printf ("error adding key: %s\n", mongocrypt_status_message (status));
       goto done;
    }
 
    /* Once all keys are added, signal the key broker. */
-   if (!mongocrypt_key_broker_done_adding_keys (kb, status)) {
+   if (!mongocrypt_key_broker_done_adding_keys (kb)) {
       printf ("couldn't add all keys\n");
       goto done;
    }
@@ -75,7 +74,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
       key broker. For each key_decryptor, run the
       KMS request against KMS and return the response
       to the key broker. This may be done in parallel. */
-   key_decryptor = mongocrypt_key_broker_next_decryptor (kb, status);
+   key_decryptor = mongocrypt_key_broker_next_decryptor (kb);
    while (key_decryptor) {
       if (!_decrypt_via_kms (key_decryptor, status)) {
          printf ("error decrypting key: %s\n",
@@ -83,7 +82,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
          goto done;
       }
 
-      key_decryptor = mongocrypt_key_broker_next_decryptor (kb, status);
+      key_decryptor = mongocrypt_key_broker_next_decryptor (kb);
    }
 
    /* Sometimes when next_decryptor returns NULL, it's an error */
@@ -96,8 +95,6 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    res = true;
 
 done:
-   mongocrypt_status_destroy (status);
-
    return res;
 }
 
@@ -152,8 +149,8 @@ _auto_encrypt (mongocrypt_t *crypt)
          schema = mongocrypt_encryptor_get_schema (encryptor);
          /* marking_request = build_mongocryptd_command (schema); */
          /* marking_response = mongocryptd.run_command (marking_request); */
-         state = mongocrypt_encryptor_add_markings (
-            encryptor, marking_response);
+         state =
+            mongocrypt_encryptor_add_markings (encryptor, marking_response);
          break;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS:

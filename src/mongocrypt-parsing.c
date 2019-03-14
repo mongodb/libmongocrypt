@@ -221,15 +221,14 @@ _recurse (_recurse_state_t *state)
             /* call the right callback. */
             if (state->copy) {
                bson_value_t value_out;
-               ret =
-                  state->transform_cb (state->ctx, &value, &value_out, status);
+               ret = state->transform_cb (state->ctx, &value, &value_out);
                bson_append_value (state->copy,
                                   bson_iter_key (&state->iter),
                                   bson_iter_key_len (&state->iter),
                                   &value_out);
                bson_value_destroy (&value_out);
             } else {
-               ret = state->traverse_cb (state->ctx, &value, status);
+               ret = state->traverse_cb (state->ctx, &value);
             }
 
             if (!ret) {

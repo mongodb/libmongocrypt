@@ -42,8 +42,7 @@ mongocrypt_encryptor_new (mongocrypt_t *crypt);
 
 
 mongocrypt_encryptor_state_t
-mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor,
-                             const char *ns);
+mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor, const char *ns);
 
 
 mongocrypt_encryptor_state_t

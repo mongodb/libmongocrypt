@@ -56,6 +56,7 @@ struct _mongocrypt_key_broker_t {
       *kb_entry; /* head of a linked-list. */
    struct __mongocrypt_key_broker_entry_t *decryptor_iter;
 
+   mongocrypt_status_t *status;
    mongocrypt_binary_t *filter;
    bool all_keys_added;
 };
@@ -79,16 +80,14 @@ _mongocrypt_key_broker_empty (mongocrypt_key_broker_t *kb);
 /* Add an ID into the key broker. Key is added as KEY_EMPTY. */
 bool
 _mongocrypt_key_broker_add_id (mongocrypt_key_broker_t *kb,
-                               const _mongocrypt_buffer_t *key_id,
-                               mongocrypt_status_t *status);
+                               const _mongocrypt_buffer_t *key_id);
 
 
 /* Add a document with encrypted key material, transitioning a KEY_EMPTY key to
  * KEY_ENCRYPTED (or KEY_ERROR). */
 bool
 _mongocrypt_key_broker_add_doc (mongocrypt_key_broker_t *kb,
-                                const _mongocrypt_buffer_t *doc,
-                                mongocrypt_status_t *status);
+                                const _mongocrypt_buffer_t *doc);
 
 
 /* Return an the next decryption request. Pass NULL to get the first. */
@@ -99,15 +98,13 @@ _mongocrypt_key_broker_next_key_decryptor (mongocrypt_key_broker_t *kb);
 /* Transitions a key from KEY_ENCRYPTED to KEY_DECRYPTED (or KEY_ERROR) */
 bool
 _mongocrypt_key_broker_add_decrypted_key (mongocrypt_key_broker_t *kb,
-                                          mongocrypt_key_decryptor_t *req,
-                                          mongocrypt_status_t *status);
+                                          mongocrypt_key_decryptor_t *req);
 
 
 const _mongocrypt_buffer_t *
 _mongocrypt_key_broker_decrypted_key_material_by_id (
    mongocrypt_key_broker_t *kb,
-   _mongocrypt_buffer_t *key_id,
-   mongocrypt_status_t *status);
+   _mongocrypt_buffer_t *key_id);
 
 
 /* TODO: provide an interface for getting a list of the keys in KEY_ERROR state?

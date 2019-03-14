@@ -24,31 +24,30 @@ typedef struct _mongocrypt_key_broker_t mongocrypt_key_broker_t;
 
 /* Create a filter for all keys which must be fetched from the key vault. */
 const mongocrypt_binary_t *
-mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb,
-                                      mongocrypt_status_t *status);
+mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb);
 
 
 bool
 mongocrypt_key_broker_add_key (mongocrypt_key_broker_t *kb,
-                               const mongocrypt_binary_t *key,
-                               mongocrypt_status_t *status);
+                               const mongocrypt_binary_t *key);
 
 
 bool
-mongocrypt_key_broker_done_adding_keys (mongocrypt_key_broker_t *kb,
-                                        mongocrypt_status_t *status);
+mongocrypt_key_broker_done_adding_keys (mongocrypt_key_broker_t *kb);
 
 
 mongocrypt_key_decryptor_t *
-mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb,
-                                      mongocrypt_status_t *status);
+mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb);
 
 
 bool
 mongocrypt_key_broker_add_decrypted_key (
    mongocrypt_key_broker_t *kb,
-   mongocrypt_key_decryptor_t *key_decryptor,
-   mongocrypt_status_t *status);
+   mongocrypt_key_decryptor_t *key_decryptor);
+
+
+mongocrypt_status_t *
+mongocrypt_key_broker_status (mongocrypt_key_broker_t *kb);
 
 
 #endif /* MONGOCRYPT_KEY_BROKER_H */

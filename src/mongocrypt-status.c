@@ -52,6 +52,28 @@ mongocrypt_status_ok (mongocrypt_status_t *status)
    return (status->type == MONGOCRYPT_ERROR_TYPE_NONE);
 }
 
+void
+mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
+{
+   BSON_ASSERT (dst);
+   BSON_ASSERT (src);
+
+   if (dst == src) {
+      return;
+   }
+
+   dst->type = src->type;
+   dst->code = src->code;
+   strncpy (dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN);
+}
+
+void
+mongocrypt_status_reset (mongocrypt_status_t *status)
+{
+   status->type = MONGOCRYPT_ERROR_TYPE_NONE;
+   status->code = 0;
+   memset (status->message, 0, MONGOCRYPT_STATUS_MSG_LEN);
+}
 
 void
 mongocrypt_status_destroy (mongocrypt_status_t *status)
@@ -59,6 +81,6 @@ mongocrypt_status_destroy (mongocrypt_status_t *status)
    if (!status) {
       return;
    }
-   bson_free (status->ctx);
+
    bson_free (status);
 }

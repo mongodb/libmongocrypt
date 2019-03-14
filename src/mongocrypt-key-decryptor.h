@@ -26,8 +26,7 @@ typedef struct _mongocrypt_key_decryptor_t mongocrypt_key_decryptor_t;
 /* Return the HTTP message to send. TODO: should this indicate the URI endpoint?
  */
 const mongocrypt_binary_t *
-mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd,
-                              mongocrypt_status_t *status);
+mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd);
 
 /* Does this key decryptor need more bytes from the response? If it does need
  * bytes, cap it to max_bytes. */
@@ -38,7 +37,9 @@ mongocrypt_key_decryptor_bytes_needed (mongocrypt_key_decryptor_t *kd,
 /* Add bytes received in the response. */
 bool
 mongocrypt_key_decryptor_feed (mongocrypt_key_decryptor_t *kd,
-                               mongocrypt_binary_t *bytes,
-                               mongocrypt_status_t *status);
+                               mongocrypt_binary_t *bytes);
+
+mongocrypt_status_t *
+mongocrypt_key_decryptor_status (mongocrypt_key_decryptor_t *kb);
 
 #endif /* MONGOCRYPT_KEY_DECRYPTOR_H */

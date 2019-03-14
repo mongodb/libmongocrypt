@@ -19,11 +19,19 @@
 
 #include "mongocrypt-status.h"
 
+#define MONGOCRYPT_STATUS_MSG_LEN 1024
+
 struct _mongocrypt_status_t {
    mongocrypt_error_type_t type;
    uint32_t code;
-   char message[1024];
-   void *ctx;
+   char message[MONGOCRYPT_STATUS_MSG_LEN];
 };
+
+
+void
+mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst);
+
+void
+mongocrypt_status_reset (mongocrypt_status_t *status);
 
 #endif /* MONGOCRYPT_STATUS_PRIVATE_H */
