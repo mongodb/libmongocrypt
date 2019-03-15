@@ -13,6 +13,8 @@ find_package (libbson-static-1.0 1.11 REQUIRED)
 
 include(GenerateExportHeader)
 
+enable_testing()
+
 option (ENABLE_TRACE "Enable verbose trace logs. Requires MONGOCRYPT_TRACE environment variable at runtime" OFF)
 
 set (MONGOCRYPT_PUBLIC_HEADERS
@@ -101,6 +103,9 @@ target_include_directories (test-mongocrypt PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_STATIC_LIBRARIES})
 target_compile_definitions (test-mongocrypt PRIVATE "${BSON_STATIC_DEFINITIONS}")
 
+add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+
 # Define test-state-machine
 add_executable (test-state-machine test/test-state-machine.c)
 target_link_libraries (test-state-machine PRIVATE mongocrypt)
@@ -108,6 +113,7 @@ target_include_directories (test-state-machine PRIVATE ./src)
 target_include_directories (test-state-machine PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
 target_link_libraries (test-state-machine PRIVATE ${BSON_STATIC_LIBRARIES})
 target_compile_definitions (test-state-machine PRIVATE "${BSON_STATIC_DEFINITIONS}")
+add_test(state-machine test-state-machine )
 
 if (ENABLE_TRACE)
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")

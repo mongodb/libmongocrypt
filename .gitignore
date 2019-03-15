@@ -6,11 +6,13 @@ test/schema.json
 cmake-build
 test/example/*
 
+# CMake generated files
 *.sln
 *.vcxproj
 *.vcxproj.filters
 *.xcodeproj
 CMakeCache.txt
+CTestTestFile.cmake
 CMakeFiles
 CMakeScripts
 Debug/*
@@ -18,6 +20,7 @@ Makefile
 Win32/*
 cmake_install.cmake
 x64/*
+Testing/
 
 # Generated header
 src/mongocrypt-export.h

@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import boto3
 import sys
 import os
@@ -140,7 +141,7 @@ marked_reply = {
         "filter": {
             "ssn": bson.binary.Binary(b"\00" + bson.BSON.encode({
                 "v": "457-55-5462",
-                "a": "Deterministic", 
+                "a": "Deterministic",
                 "iv": bson.binary.Binary(b"i" * 16),
                 "ki": key_docs[0]["_id"]
             }, codec_options=CodecOptions(uuid_representation=bson.binary.STANDARD)), subtype=6)
@@ -161,11 +162,11 @@ kms_reply = "HTTP/1.1 200 OK\n" + \
     "Content-Type: application/x-amz-json-1.1\n" + \
     "Content-Length: %d\n\n" % len(kms_reply_json) + \
     kms_reply_json
-    
+
 
 opts = json_util.JSONOptions(json_mode=json_util.JSONMode.CANONICAL,
                              uuid_representation=bson.binary.STANDARD)
-                             
+
 with open("test/example/key-document.json", "w") as f:
     f.write(json_util.dumps(key_docs[0], indent=4, json_options=opts))
 
