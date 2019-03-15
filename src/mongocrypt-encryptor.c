@@ -17,6 +17,7 @@
 #include <bson/bson.h>
 
 #include "mongocrypt.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-encryptor-private.h"
 #include "mongocrypt-key-broker-private.h"
@@ -113,10 +114,8 @@ mongocrypt_encryptor_add_collection_info (
    bson_t reply;
    bson_iter_t iter, validator_iter;
    bool found_schema, validator_has_siblings;
-   mongocrypt_status_t *status;
 
    BSON_ASSERT (encryptor);
-   status = encryptor->status;
 
    if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA)) {
       return encryptor->state;
@@ -155,6 +154,9 @@ mongocrypt_encryptor_add_collection_info (
          }
       }
    }
+
+   /* TODO - implement, quiet warning for now */
+   (void) validator_has_siblings;
 
    if (found_schema) {
       encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS;
@@ -446,7 +448,6 @@ mongocrypt_encryptor_key_broker_done (mongocrypt_encryptor_t *encryptor)
    }
 
    encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_NEED_ENCRYPTION;
-done:
    return encryptor->state;
 }
 

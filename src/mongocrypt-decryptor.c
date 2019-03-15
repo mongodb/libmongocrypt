@@ -176,7 +176,7 @@ mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
                                              (void *) decryptor,
                                              TRAVERSE_MATCH_CIPHERTEXT,
                                              &iter,
-                                             decryptor->status)) {
+                                             status)) {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
       goto done;
    }
@@ -210,8 +210,6 @@ mongocrypt_decryptor_get_key_broker (mongocrypt_decryptor_t *decryptor)
 mongocrypt_decryptor_state_t
 mongocrypt_decryptor_key_broker_done (mongocrypt_decryptor_t *decryptor)
 {
-   mongocrypt_status_t *status;
-
    if (!_check_state (decryptor, MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS)) {
       return decryptor->state;
    }

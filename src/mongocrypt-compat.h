@@ -20,8 +20,12 @@
 
 /* Copied from bson-compat.h from the C driver. */
 
-#ifdef BSON_HAVE_STDBOOL_H
 #include <stdbool.h>
+#ifdef MONGOCRYPT_HAVE_STDBOOL_H
+/*
+ TODO - check for stdbool.h if we need to support older compilers and reconile
+ with kms-message's rules for including stdbool.h
+*/
 #elif !defined(__bool_true_false_are_defined)
 #ifndef __cplusplus
 typedef signed char bool;

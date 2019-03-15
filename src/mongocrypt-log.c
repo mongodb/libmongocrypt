@@ -28,7 +28,7 @@ _mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts)
    } else {
       _mongocrypt_log_set_fn (log, _mongocrypt_default_log_fn, NULL);
    }
-   log->trace_enabled = getenv ("MONGOCRYPT_TRACE");
+   log->trace_enabled = (getenv ("MONGOCRYPT_TRACE") != NULL);
 }
 
 

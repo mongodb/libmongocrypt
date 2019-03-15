@@ -43,21 +43,21 @@ mongocrypt_status_destroy (mongocrypt_status_t *status);
 
 MONGOCRYPT_EXPORT
 mongocrypt_error_type_t
-mongocrypt_status_error_type (mongocrypt_status_t *status);
+mongocrypt_status_error_type (const mongocrypt_status_t *status);
 
 
 MONGOCRYPT_EXPORT
 uint32_t
-mongocrypt_status_code (mongocrypt_status_t *status);
+mongocrypt_status_code (const mongocrypt_status_t *status);
 
 
 MONGOCRYPT_EXPORT
 const char *
-mongocrypt_status_message (mongocrypt_status_t *status);
+mongocrypt_status_message (const mongocrypt_status_t *status);
 
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_status_ok (mongocrypt_status_t *status);
+mongocrypt_status_ok (const mongocrypt_status_t *status);
 
 
 #endif /* MONGOCRYPT_STATUS_H */

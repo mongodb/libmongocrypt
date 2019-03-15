@@ -92,9 +92,9 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
 static void
 _init_buffer (_mongocrypt_buffer_t *out, const char *hex_string)
 {
-   int i;
+   uint32_t i;
 
-   out->len = strlen (hex_string) / 2;
+   out->len = (uint32_t) strlen (hex_string) / 2;
    out->data = bson_malloc (out->len);
    out->owned = true;
    for (i = 0; i < out->len; i++) {

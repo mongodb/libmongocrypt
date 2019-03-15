@@ -217,7 +217,7 @@ _auto_decrypt (mongocrypt_t *crypt)
    mongocrypt_decryptor_state_t state;
    mongocrypt_binary_t *encrypted_doc = NULL;
    bool res = false;
-   const mongocrypt_status_t *status;
+   mongocrypt_status_t *status;
 
    decryptor = mongocrypt_decryptor_new (crypt);
    state = mongocrypt_decryptor_state (decryptor);

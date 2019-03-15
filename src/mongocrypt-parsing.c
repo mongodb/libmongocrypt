@@ -178,7 +178,7 @@ _recurse (_recurse_state_t *state)
    status = state->status;
    while (bson_iter_next (&state->iter)) {
       if (BSON_ITER_HOLDS_BINARY (&state->iter)) {
-         _mongocrypt_buffer_t value, out;
+         _mongocrypt_buffer_t value;
 
          _mongocrypt_buffer_from_iter (&value, &state->iter);
          

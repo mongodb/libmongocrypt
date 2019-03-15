@@ -41,7 +41,7 @@ _mongocrypt_key_cache_destroy (_mongocrypt_key_cache_t *cache)
       return;
    }
 
-   for (int i; i < _mongocrypt_key_cache_size (cache); i++) {
+   for (i = 0; i < _mongocrypt_key_cache_size (cache); i++) {
       /* TODO free the entries? Do we need to? */
    }
 
@@ -57,7 +57,7 @@ _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
                            mongocrypt_status_t *status)
 {
    bool ret = false;
-   int i, j;
+   uint32_t i, j;
 
 
    /* lock mutex, add entry (idemptotently) then unlock */

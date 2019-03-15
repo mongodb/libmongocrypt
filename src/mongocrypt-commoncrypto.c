@@ -227,7 +227,6 @@ _crypto_decrypt_destroy (void *ctx)
 void *
 _crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status)
 {
-   bool ret;
    CCHmacContext *ctx;
 
    ctx = bson_malloc0 (sizeof (*ctx));

@@ -17,6 +17,7 @@
 #include <mongocrypt.h>
 
 #include "test-mongocrypt.h"
+#include "mongocrypt-crypto-private.h"
 
 static void
 _init_buffer_with_count (_mongocrypt_buffer_t *out, uint32_t count)
@@ -31,26 +32,26 @@ _test_random_generator (_mongocrypt_tester_t *tester)
 {
    _mongocrypt_buffer_t out;
    mongocrypt_status_t *status;
-   uint32_t count = 32;
-   int mid = count / 2;
-   char zero[count];
+   #define TEST_COUNT 32
+   int mid = TEST_COUNT / 2;
+   char zero[TEST_COUNT];
 
    /* _mongocrypt_random handles the case where the count size is greater
     * than the buffer by throwing an error. Because of that, no additional tests
     * for this case is needed here. */
 
-   memset (zero, 0, count);
+   memset (zero, 0, TEST_COUNT);
    status = mongocrypt_status_new ();
-   _init_buffer_with_count (&out, count);
+   _init_buffer_with_count (&out, TEST_COUNT);
 
-   BSON_ASSERT (_mongocrypt_random (&out, status, count));
-   BSON_ASSERT (0 != memcmp (zero, out.data, count)); /* initialized */
+   BSON_ASSERT (_mongocrypt_random (&out, status, TEST_COUNT));
+   BSON_ASSERT (0 != memcmp (zero, out.data, TEST_COUNT)); /* initialized */
 
    mongocrypt_status_destroy (status);
    _mongocrypt_buffer_cleanup (&out);
 
    status = mongocrypt_status_new ();
-   _init_buffer_with_count (&out, count);
+   _init_buffer_with_count (&out, TEST_COUNT);
 
    BSON_ASSERT (_mongocrypt_random (&out, status, mid));
    BSON_ASSERT (0 != memcmp (zero, out.data, mid));       /* initialized */

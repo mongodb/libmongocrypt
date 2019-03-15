@@ -45,7 +45,7 @@ mongocrypt_version (void)
 
 void
 _mongocrypt_set_error (mongocrypt_status_t *status,
-                       uint32_t type,
+                       mongocrypt_error_type_t type,
                        uint32_t code,
                        const char *format,
                        ...)
@@ -67,7 +67,7 @@ _mongocrypt_set_error (mongocrypt_status_t *status,
 
 void
 _bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
-                                 uint32_t type,
+                                 mongocrypt_error_type_t type,
                                  uint32_t code,
                                  mongocrypt_status_t *status)
 {
@@ -93,7 +93,7 @@ const char *
 tmp_buf (const _mongocrypt_buffer_t *buf)
 {
    static char storage[1024];
-   int i, n;
+   uint32_t i, n;
 
    memset (storage, 0, 1024);
    /* capped at two characters per byte, minus 1 for trailing \0 */
@@ -113,8 +113,6 @@ void _mongocrypt_do_init(void)
 {
    kms_message_init ();
 }
-
-
 mongocrypt_t *
 mongocrypt_new (const mongocrypt_opts_t *opts)
 {

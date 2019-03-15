@@ -27,7 +27,7 @@ struct _mongocrypt_binary_t {
 };
 
 void
-_mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out);
+_mongocrypt_binary_to_bson (const mongocrypt_binary_t *binary, bson_t *out);
 
 
 #endif /* MONGOCRYPT_BINARY_PRIVATE_H */

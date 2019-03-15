@@ -26,28 +26,28 @@ mongocrypt_status_new (void)
 
 
 const char *
-mongocrypt_status_message (mongocrypt_status_t *status)
+mongocrypt_status_message (const mongocrypt_status_t *status)
 {
    return status->message;
 }
 
 
 uint32_t
-mongocrypt_status_code (mongocrypt_status_t *status)
+mongocrypt_status_code (const mongocrypt_status_t *status)
 {
    return status->code;
 }
 
 
 mongocrypt_error_type_t
-mongocrypt_status_error_type (mongocrypt_status_t *status)
+mongocrypt_status_error_type (const mongocrypt_status_t *status)
 {
    return status->type;
 }
 
 
 bool
-mongocrypt_status_ok (mongocrypt_status_t *status)
+mongocrypt_status_ok (const mongocrypt_status_t *status)
 {
    return (status->type == MONGOCRYPT_ERROR_TYPE_NONE);
 }

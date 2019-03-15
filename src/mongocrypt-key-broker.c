@@ -271,7 +271,7 @@ mongocrypt_key_broker_get_key_filter (mongocrypt_key_broker_t *kb)
       }
 
       key_str = bson_strdup_printf ("%d", i++);
-      _mongocrypt_buffer_append (&iter->key_id, &_id_in, key_str, strlen (key_str));
+      _mongocrypt_buffer_append (&iter->key_id, &_id_in, key_str, (uint32_t) strlen (key_str));
 
       bson_free (key_str);
    }

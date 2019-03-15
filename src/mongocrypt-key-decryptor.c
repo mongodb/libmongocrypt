@@ -55,7 +55,7 @@ mongocrypt_key_decryptor_msg (mongocrypt_key_decryptor_t *kd)
    }
 
    kd->msg.data = (uint8_t *) kms_request_get_signed (kd->req);
-   kd->msg.len = strlen ((char *) kd->msg.data);
+   kd->msg.len = (uint32_t) strlen ((char *) kd->msg.data);
    kd->msg.owned = true;
    return _mongocrypt_buffer_to_binary (&kd->msg);
 }

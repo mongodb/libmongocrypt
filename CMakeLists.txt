@@ -67,6 +67,17 @@ else()
 endif()
 
 
+if ( MSVC )
+   # W4996 - POSIX name for this item is deprecated
+   set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX")
+
+   # TODO: add support for clang-cl which is detected as MSVC
+else()
+   # GNU, Clang, AppleClang
+   set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Werror -Wno-missing-braces -Wno-unused-function")
+endif()
+
+
 # Define mongocrypt library
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
 target_include_directories (mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
@@ -83,7 +94,7 @@ target_include_directories (mongocrypt-static PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
 target_link_libraries (mongocrypt-static PRIVATE ${BSON_LIBRARIES})
 target_link_libraries (mongocrypt-static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_compile_definitions (mongocrypt-static PRIVATE "${BSON_DEFINITIONS}")
-target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_DEFINE)
+target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_STATIC_DEFINE)
 
 # Add ssl libraries to mongocrypt
 if (APPLE)
