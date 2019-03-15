@@ -358,7 +358,7 @@ _test_state_machine (void)
 {
    mongocrypt_status_t *status;
    mongocrypt_binary_t *command;
-   mongocrypt_binary_t *list_collections_reply;
+   mongocrypt_binary_t *collection_info;
    mongocrypt_binary_t *marked_reply;
    mongocrypt_binary_t *key_document;
    mongocrypt_binary_t *kms_reply;
@@ -374,8 +374,8 @@ _test_state_machine (void)
    status = mongocrypt_status_new ();
    mongocrypt = mongocrypt_new (NULL, status);
 
-   list_collections_reply = _load_json_from_file (
-      mongocrypt, "./test/example/list-collections-reply.json");
+   collection_info = _load_json_from_file (
+      mongocrypt, "./test/example/collection-info.json");
    key_document =
       _load_json_from_file (mongocrypt, "./test/example/key-document.json");
    kms_reply =
@@ -392,7 +392,8 @@ _test_state_machine (void)
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
-   mongocrypt_encryptor_add_collection_info (encryptor, list_collections_reply);
+   mongocrypt_encryptor_add_collection_info (
+      encryptor, collection_info);
 
    BSON_ASSERT (mongocrypt_encryptor_state (encryptor) ==
                 MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
@@ -443,7 +444,7 @@ _test_state_machine (void)
    mongocrypt_binary_destroy (marked_reply);
    mongocrypt_binary_destroy (kms_reply);
    mongocrypt_binary_destroy (key_document);
-   mongocrypt_binary_destroy (list_collections_reply);
+   mongocrypt_binary_destroy (collection_info);
 }
 
 

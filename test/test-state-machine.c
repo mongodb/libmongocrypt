@@ -104,7 +104,7 @@ _auto_encrypt (mongocrypt_t *crypt)
 {
    mongocrypt_key_broker_t *kb;
    mongocrypt_encryptor_t *encryptor;
-   mongocrypt_binary_t *list_collections_reply;
+   mongocrypt_binary_t *collection_info;
    mongocrypt_binary_t *schema;
    mongocrypt_binary_t *marking_response = NULL;
    mongocrypt_encryptor_state_t state;
@@ -112,7 +112,7 @@ _auto_encrypt (mongocrypt_t *crypt)
    mongocrypt_status_t *error;
    bool res = false;
 
-   list_collections_reply = NULL;
+   collection_info = NULL;
    encryptor = mongocrypt_encryptor_new (crypt);
    status = mongocrypt_status_new ();
 
@@ -136,7 +136,7 @@ _auto_encrypt (mongocrypt_t *crypt)
             Then, give the resulting document or NULL
             to the encryptor. */
          state = mongocrypt_encryptor_add_collection_info (
-            encryptor, list_collections_reply);
+            encryptor, collection_info);
          break;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS:

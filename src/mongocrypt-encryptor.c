@@ -97,7 +97,7 @@ mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor, const char *ns)
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_collection_info (
    mongocrypt_encryptor_t *encryptor,
-   const mongocrypt_binary_t *list_collections_reply)
+   const mongocrypt_binary_t *collection_info)
 {
    bson_t reply;
    bson_iter_t iter, validator_iter;
@@ -111,7 +111,7 @@ mongocrypt_encryptor_add_collection_info (
       return encryptor->state;
    }
 
-   if (!list_collections_reply) {
+   if (!collection_info) {
       encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
       CLIENT_ERR (
          "Schema not provided. Cannot determine if encryption required.");
@@ -127,10 +127,10 @@ mongocrypt_encryptor_add_collection_info (
    validator_has_siblings = false;
 
    BSON_ASSERT (bson_init_static (
-      &reply, list_collections_reply->data, list_collections_reply->len));
+      &reply, collection_info->data, collection_info->len));
    bson_iter_init (&iter, &reply);
    if (bson_iter_find_descendant (
-          &iter, "cursor.firstBatch.0.options.validator", &iter)) {
+          &iter, "options.validator", &iter)) {
       bson_iter_recurse (&iter, &iter);
       memcpy (&validator_iter, &iter, sizeof (iter));
 

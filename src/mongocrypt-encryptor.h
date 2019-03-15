@@ -48,7 +48,7 @@ mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor, const char *ns);
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_collection_info (
    mongocrypt_encryptor_t *encryptor,
-   const mongocrypt_binary_t *list_collections_reply);
+   const mongocrypt_binary_t *collection_info);
 
 
 mongocrypt_binary_t *

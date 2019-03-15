@@ -104,43 +104,34 @@ command = {
     }
 }
 
-list_collections_reply = {
-    "cursor": {
-        "id": 0,
-        "ns": "test.$cmd.listCollections",
-        "firstBatch": [
-            {
-                "name": "test",
-                "type": "collection",
-                "options": {
-                    "validator": {
-                        "$jsonSchema": {
-                            "bsonType": "object",
-                            "properties": {
-                                "ssn": {
-                                    "encrypt": {
-                                        "keyId": key_docs[0]["_id"],
-                                        "type": "string", 
-                                        "algorithm": "Deterministic",
-                                        "iv": bson.binary.Binary(b"i" * 16)
-                                    }
-                                }
-                            }
+collection_info = {
+    "name": "test",
+    "type": "collection",
+    "options": {
+        "validator": {
+            "$jsonSchema": {
+                "bsonType": "object",
+                "properties": {
+                    "ssn": {
+                        "encrypt": {
+                            "keyId": key_docs[0]["_id"],
+                            "type": "string",
+                            "algorithm": "Deterministic",
+                            "iv": bson.binary.Binary(b"i" * 16)
                         }
                     }
-                },
-                "idIndex": {
-                    "v": 2,
-                    "key": {
-                        "_id": 1
-                    },
-                    "name": "_id_",
-                    "ns": "test.test"
                 }
             }
-        ]
+        }
     },
-    "ok": 1
+    "idIndex": {
+        "v": 2,
+        "key": {
+            "_id": 1
+        },
+        "name": "_id_",
+        "ns": "test.test"
+    }
 }
 
 marked_reply = {
@@ -178,8 +169,8 @@ opts = json_util.JSONOptions(json_mode=json_util.JSONMode.CANONICAL,
 with open("test/example/key-document.json", "w") as f:
     f.write(json_util.dumps(key_docs[0], indent=4, json_options=opts))
 
-with open("test/example/list-collections-reply.json", "w") as f:
-    f.write(json_util.dumps(list_collections_reply, indent=4, json_options=opts))
+with open("test/example/collection-info.json", "w") as f:
+    f.write(json_util.dumps(collection_info, indent=4, json_options=opts))
 
 with open("test/example/command.json", "w") as f:
     f.write(json_util.dumps(command, indent=4, json_options=opts))
