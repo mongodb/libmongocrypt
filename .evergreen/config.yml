@@ -80,3 +80,8 @@ buildvariants:
   run_on: macos-1014
   tasks:
   - build-and-test
+- name: ubuntu1604-zseries
+  display_name: "Ubuntu 16.04 on zSeries"
+  run_on: ubuntu1604-zseries-small
+  tasks:
+  - build-and-test

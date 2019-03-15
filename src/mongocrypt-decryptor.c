@@ -38,52 +38,70 @@ _check_state (mongocrypt_decryptor_t *decryptor,
    status = decryptor->status;
 
    if (decryptor->state != state) {
-      CLIENT_ERR (
-         "Expected state %s, but in state %s", state_names[state], state_names[decryptor->state]);
+      CLIENT_ERR ("Expected state %s, but in state %s",
+                  state_names[state],
+                  state_names[decryptor->state]);
       return false;
    }
 
    return true;
 }
 
-/* TODO CDRIVER-3001 this may not be the right home for this method */
-static bool
-_parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
-                           _mongocrypt_ciphertext_t *ciphertext,
-                           mongocrypt_status_t *status)
+
+/* From BSON Binary subtype 6 specification:
+struct fle_blob {
+ uint8  fle_blob_subtype = (1 or 2);
+ uint8  key_uuid[16];
+ uint8  original_bson_type;
+ uint8  ciphertext[ciphertext_length];
+}
+TODO CDRIVER-3001 this may not be the right home for this method.
+*/
+bool
+_mongocrypt_decryptor_parse_ciphertext_unowned (
+   _mongocrypt_buffer_t *in,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
 {
    uint32_t offset;
-   /* TODO: serialize with respect to endianness. Move this to
-    * mongocrypt-parsing.c? Check mongoc scatter/gatter for inspiration. */
 
    BSON_ASSERT (in);
    BSON_ASSERT (ciphertext);
    BSON_ASSERT (status);
-   /* skip first byte */
-   offset = 1;
 
-   memcpy (&ciphertext->keyvault_alias_len, in->data + offset, 2);
-   offset += 2;
+   offset = 0;
 
-   ciphertext->keyvault_alias = (char *) in->data + offset;
-   offset += ciphertext->keyvault_alias_len;
+   /* At a minimum, a ciphertext must be 19 bytes:
+    * fle_blob_subtype (1) +
+    * key_uuid (16) +
+    * original_bson_type (1) +
+    * ciphertext (> 0)
+    */
+   if (in->len < 19) {
+      CLIENT_ERR ("malformed ciphertext, too small");
+      return false;
+   }
+   ciphertext->blob_subtype = in->data[0];
+   offset += 1;
+   if (ciphertext->blob_subtype != 1 && ciphertext->blob_subtype != 2) {
+      CLIENT_ERR ("malformed ciphertext, expected blob subtype of 1 or 2");
+      return false;
+   }
 
+   /* TODO: after merging CDRIVER-3003, use _mongocrypt_buffer_init. */
+   memset (&ciphertext->key_id, 0, sizeof (ciphertext->key_id));
    ciphertext->key_id.data = in->data + offset;
    ciphertext->key_id.len = 16;
    ciphertext->key_id.subtype = BSON_SUBTYPE_UUID;
    offset += 16;
 
-   offset += 1; /* Original BSON type, skip for now. */
+   ciphertext->original_bson_type = in->data[offset];
+   offset += 1;
 
-   ciphertext->iv.data = in->data + offset;
-   ciphertext->iv.len = 16;
-   ciphertext->iv.subtype = BSON_SUBTYPE_BINARY;
-   offset += 16;
-
-   memcpy (&ciphertext->data.len, in->data + offset, 4);
-   offset += 4;
-
+   memset (&ciphertext->data, 0, sizeof (ciphertext->data));
    ciphertext->data.data = in->data + offset;
+   ciphertext->data.len = in->len - offset;
+
    return true;
 }
 
@@ -113,7 +131,8 @@ _collect_key_from_ciphertext (void *ctx, _mongocrypt_buffer_t *in)
 
    decryptor = (mongocrypt_decryptor_t *) ctx;
 
-   if (!_parse_ciphertext_unowned (in, &ciphertext, decryptor->status)) {
+   if (!_mongocrypt_decryptor_parse_ciphertext_unowned (
+          in, &ciphertext, decryptor->status)) {
       return false;
    }
 
@@ -227,7 +246,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    decryptor = (mongocrypt_decryptor_t *) ctx;
 
-   if (!_parse_ciphertext_unowned (in, &ciphertext, decryptor->status)) {
+   if (!_mongocrypt_decryptor_parse_ciphertext_unowned (
+          in, &ciphertext, decryptor->status)) {
       goto fail;
    }
 
@@ -286,7 +306,7 @@ mongocrypt_decryptor_decrypt (mongocrypt_decryptor_t *decryptor)
    }
 
    /* TODO testing, remove */
-   if (_mongocrypt_buffer_empty(&decryptor->encrypted_doc)) {
+   if (_mongocrypt_buffer_empty (&decryptor->encrypted_doc)) {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED;
       res = true;
       goto done;
@@ -340,7 +360,7 @@ mongocrypt_decryptor_decrypted_doc (mongocrypt_decryptor_t *decryptor)
       return NULL;
    }
 
-   return _mongocrypt_buffer_to_binary(&decryptor->decrypted_doc);
+   return _mongocrypt_buffer_to_binary (&decryptor->decrypted_doc);
 }
 
 

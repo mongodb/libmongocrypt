@@ -83,59 +83,11 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
    }
    memcpy (&out->v_iter, &iter, sizeof (bson_iter_t));
 
-   out->keyvault_alias = "deprecated";
-
-   /* TODO: parse "a" and "va" */
-
-   ret = true;
-cleanup:
-   return ret;
-}
-
-
-bool
-_mongocrypt_ciphertext_parse_unowned (const bson_t *bson,
-                                      _mongocrypt_ciphertext_t *out,
-                                      mongocrypt_status_t *status)
-{
-   bson_iter_t iter;
-   bool ret = false;
-
-   if (!bson_iter_init_find (&iter, bson, "k")) {
-      CLIENT_ERR ("invalid marking, no 'k'");
-      goto cleanup;
-   } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      _mongocrypt_buffer_from_iter (&out->key_id, &iter);
-      if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
-         CLIENT_ERR ("key id must be a UUID");
-         goto cleanup;
-      }
-   } else {
-      CLIENT_ERR ("invalid marking, no 'k' is not UUID");
+   if (!bson_iter_init_find (&iter, &bson, "a")) {
+      CLIENT_ERR ("invalid marking, no 'a'");
       goto cleanup;
    }
-
-   if (!bson_iter_init_find (&iter, bson, "iv")) {
-      CLIENT_ERR ("'iv' not part of marking. C driver does not support "
-                  "generating iv yet. (TODO)");
-      goto cleanup;
-   } else if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-      CLIENT_ERR ("invalid marking, 'iv' is not binary");
-      goto cleanup;
-   }
-   _mongocrypt_buffer_from_iter (&out->iv, &iter);
-
-   if (out->iv.len != 16) {
-      CLIENT_ERR ("iv must be 16 bytes");
-      goto cleanup;
-   }
-
-   if (!bson_iter_init_find (&iter, bson, "e")) {
-      CLIENT_ERR ("invalid marking, no 'e'");
-      goto cleanup;
-   } else {
-      _mongocrypt_buffer_from_iter (&out->data, &iter);
-   }
+   out->algorithm = (uint8_t) bson_iter_int32 (&iter);
 
    ret = true;
 cleanup:

@@ -297,60 +297,41 @@ mongocrypt_encryptor_get_key_broker (mongocrypt_encryptor_t *encryptor)
 }
 
 
-/* From Driver's spec:
+/* From BSON Binary subtype 6 specification:
 struct fle_blob {
  uint8  fle_blob_subtype = (1 or 2);
- uint16 key_vault_alias_length;
- uint8  key_vault_alias[key_vault_alias_length];
  uint8  key_uuid[16];
  uint8  original_bson_type;
- uint8  iv[16];
- uint32 ciphertext_length;
  uint8  ciphertext[ciphertext_length];
 }
+TODO CDRIVER-3001 this may not be the right home for this method.
 */
-static void
-_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
-                       _mongocrypt_buffer_t *out)
+void
+_mongocrypt_encryptor_serialize_ciphertext (
+   _mongocrypt_ciphertext_t *ciphertext, _mongocrypt_buffer_t *out)
 {
    uint32_t offset;
 
    BSON_ASSERT (ciphertext);
    BSON_ASSERT (out);
-   /* TODO CDRIVER-2997: serialize with respect to endianness. Move this to
-    * mongocrypt-parsing.c? Check mongoc scatter/gatter for inspiration. */
-   out->len = 1 + 2 + ciphertext->keyvault_alias_len + 16 + 1 + 16 + 4 +
-              ciphertext->data.len;
-   out->data = bson_malloc0 (out->len);
-   offset = 0;
-
-   out->data[offset] = '\01'; /* TODO: account for randomized. */
-   offset += 1;
-
-   memcpy (out->data + offset, &ciphertext->keyvault_alias_len, 2);
-   offset += 2;
-
-   memcpy (out->data + offset,
-           ciphertext->keyvault_alias,
-           ciphertext->keyvault_alias_len);
-   offset += ciphertext->keyvault_alias_len;
-
    BSON_ASSERT (ciphertext->key_id.len == 16);
-   memcpy (out->data + offset, ciphertext->key_id.data, 16);
-   offset += 16;
 
-   /* TODO: ciphertext is just a document: { '': <value> } for now. */
-   out->data[offset] = '\05';
+   /* TODO CDRIVER-3001: relocate this logic? */
+   offset = 0;
+   out->len = 1 + ciphertext->key_id.len + 1 + ciphertext->data.len;
+   out->data = bson_malloc0 (out->len);
+
+   out->data[offset] = ciphertext->blob_subtype;
    offset += 1;
 
-   BSON_ASSERT (ciphertext->iv.len == 16);
-   memcpy (out->data + offset, ciphertext->iv.data, 16);
-   offset += 16;
+   memcpy (out->data + offset, ciphertext->key_id.data, ciphertext->key_id.len);
+   offset += ciphertext->key_id.len;
 
-   memcpy (out->data + offset, &ciphertext->data.len, 4);
-   offset += 4;
+   out->data[offset] = ciphertext->original_bson_type;
+   offset += 1;
 
    memcpy (out->data + offset, ciphertext->data.data, ciphertext->data.len);
+   offset += ciphertext->data.len;
 }
 
 
@@ -386,7 +367,8 @@ _replace_marking_with_ciphertext (void *ctx,
       goto fail;
    }
 
-   memcpy (&ciphertext.iv, &marking.iv, sizeof (_mongocrypt_buffer_t));
+   ciphertext.blob_subtype = marking.algorithm;
+   ciphertext.original_bson_type = (uint8_t) bson_iter_type (&marking.v_iter);
 
    /* get the key for this marking. */
    key_material =
@@ -396,15 +378,17 @@ _replace_marking_with_ciphertext (void *ctx,
       goto fail;
    }
 
+   /* TODO: for simplicity, we wrap the thing we encrypt in a BSON document
+    * with an empty key, i.e. { "": <thing to encrypt> }
+    * CDRIVER-3021 will remove this. */
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
-
    plaintext.data = (uint8_t *) bson_get_data (&wrapper);
    plaintext.len = wrapper.len;
 
    ciphertext.data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext.data.data = bson_malloc (ciphertext.data.len);
    ciphertext.data.owned = true;
-   ret = _mongocrypt_do_encryption (&ciphertext.iv,
+   ret = _mongocrypt_do_encryption (&marking.iv,
                                     NULL,
                                     key_material,
                                     &plaintext,
@@ -417,9 +401,8 @@ _replace_marking_with_ciphertext (void *ctx,
    BSON_ASSERT (bytes_written == ciphertext.data.len);
 
    memcpy (&ciphertext.key_id, &marking.key_id, sizeof (_mongocrypt_buffer_t));
-   ciphertext.keyvault_alias = marking.keyvault_alias;
-   ciphertext.keyvault_alias_len = strlen (marking.keyvault_alias);
-   _serialize_ciphertext (&ciphertext, &serialized_ciphertext);
+   _mongocrypt_encryptor_serialize_ciphertext (&ciphertext,
+                                               &serialized_ciphertext);
 
    /* ownership of serialized_ciphertext is transferred to caller. */
    out->value_type = BSON_TYPE_BINARY;

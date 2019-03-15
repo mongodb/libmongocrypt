@@ -32,5 +32,8 @@ struct _mongocrypt_decryptor_t {
    _mongocrypt_buffer_t decrypted_doc;
 };
 
-
+bool
+_mongocrypt_decryptor_parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
+                           _mongocrypt_ciphertext_t *ciphertext,
+                           mongocrypt_status_t *status);
 #endif /* MONGOCRYPT_DECRYPTOR_PRIVATE_H */

@@ -35,4 +35,7 @@ struct _mongocrypt_encryptor_t {
 };
 
 
+void
+_mongocrypt_encryptor_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext, _mongocrypt_buffer_t *out);
+
 #endif /* MONGOCRYPT_ENCRYPTOR_PRIVATE_H */

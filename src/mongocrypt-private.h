@@ -74,21 +74,20 @@ struct _mongocrypt_t {
 };
 
 typedef struct {
+   uint8_t algorithm;
    bson_iter_t v_iter;
    _mongocrypt_buffer_t iv;
    /* one of the following is zeroed, and the other is set. */
    _mongocrypt_buffer_t key_id;
    const bson_value_t *key_alt_name;
-   const char *keyvault_alias;
 } _mongocrypt_marking_t;
 
-/* consider renaming to encrypted_w_metadata? */
+
 typedef struct {
-   _mongocrypt_buffer_t data;
-   _mongocrypt_buffer_t iv;
    _mongocrypt_buffer_t key_id;
-   const char *keyvault_alias; /* not null terminated. */
-   uint16_t keyvault_alias_len;
+   uint8_t blob_subtype;
+   uint8_t original_bson_type;
+   _mongocrypt_buffer_t data;
 } _mongocrypt_ciphertext_t;
 
 bool
