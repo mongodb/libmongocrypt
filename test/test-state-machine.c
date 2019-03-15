@@ -118,6 +118,8 @@ _auto_encrypt (mongocrypt_t *crypt)
    encryptor = mongocrypt_encryptor_new (crypt);
    status = mongocrypt_status_new ();
 
+   state = mongocrypt_encryptor_state (encryptor);
+
    /* Crank the state machine until we reach a terminal state */
    while (true) {
       switch (state) {
