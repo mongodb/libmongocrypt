@@ -2,3 +2,6 @@ doc/html
 doc/latex
 test/schema.json
 test/example/*
+
+# Default build directory
+cmake-build
