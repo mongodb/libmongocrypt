@@ -94,10 +94,19 @@ find_package (kms_message REQUIRED)
 target_link_libraries (mongocrypt PUBLIC kms_message_static)
 target_link_libraries (mongocrypt-static PUBLIC kms_message_static)
 
+set (TEST_MONGOCRYPT_SOURCES
+   test/test-mongocrypt.c
+   test/test-mongocrypt-crypto.c
+   test/test-mongocrypt-data-key.c
+   test/test-mongocrypt-encryptor.c
+   test/test-mongocrypt-log.c
+   test/test-mongocrypt-ciphertext.c
+)
 # Define test-mongocrypt
-add_executable (test-mongocrypt test/test-mongocrypt.c)
+add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt-static)
+target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
 target_include_directories (test-mongocrypt PRIVATE ./src)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_STATIC_LIBRARIES})
@@ -105,21 +114,19 @@ target_compile_definitions (test-mongocrypt PRIVATE "${BSON_STATIC_DEFINITIONS}"
 
 add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-
-# Define test-state-machine
-add_executable (test-state-machine test/test-state-machine.c)
-target_link_libraries (test-state-machine PRIVATE mongocrypt)
-target_include_directories (test-state-machine PRIVATE ./src)
-target_include_directories (test-state-machine PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
-target_link_libraries (test-state-machine PRIVATE ${BSON_STATIC_LIBRARIES})
-target_compile_definitions (test-state-machine PRIVATE "${BSON_STATIC_DEFINITIONS}")
-add_test(state-machine test-state-machine )
+# Define example-state-machine
+add_executable (example-state-machine test/example-state-machine.c)
+target_link_libraries (example-state-machine PRIVATE mongocrypt)
+target_include_directories (example-state-machine PRIVATE ./src)
+target_include_directories (example-state-machine PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
+target_link_libraries (example-state-machine PRIVATE ${BSON_STATIC_LIBRARIES})
+target_compile_definitions (example-state-machine PRIVATE "${BSON_STATIC_DEFINITIONS}")
 
 if (ENABLE_TRACE)
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
    target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_TRACE=1")
    target_compile_definitions (test-mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
-   target_compile_definitions (test-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
+   target_compile_definitions (example-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
 endif ()
 
 install (TARGETS mongocrypt
