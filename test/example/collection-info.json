@@ -1,0 +1,43 @@
+{
+    "type": "collection", 
+    "name": "test", 
+    "idIndex": {
+        "ns": "test.test", 
+        "name": "_id_", 
+        "key": {
+            "_id": {
+                "$numberInt": "1"
+            }
+        }, 
+        "v": {
+            "$numberInt": "2"
+        }
+    }, 
+    "options": {
+        "validator": {
+            "$jsonSchema": {
+                "properties": {
+                    "ssn": {
+                        "encrypt": {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "AAAAAAAAAAAAAAAAAAAAAA==", 
+                                    "subType": "04"
+                                }
+                            }, 
+                            "type": "string", 
+                            "algorithm": "Deterministic", 
+                            "iv": {
+                                "$binary": {
+                                    "base64": "aWlpaWlpaWlpaWlpaWlpaQ==", 
+                                    "subType": "00"
+                                }
+                            }
+                        }
+                    }
+                }, 
+                "bsonType": "object"
+            }
+        }
+    }
+}

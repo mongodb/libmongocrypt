@@ -100,7 +100,7 @@ for (data_key, key_doc) in zip(data_keys, key_docs):
 command = {
     "find": "test",
     "filter": {
-        "ssn": "457-55-5642"
+        "ssn": "457-55-5462"
     }
 }
 
@@ -119,9 +119,9 @@ list_collections_reply = {
                             "properties": {
                                 "ssn": {
                                     "encrypt": {
-                                        "keyId": key_docs[0]["_id"], 
+                                        "keyId": key_docs[0]["_id"],
                                         "type": "string", 
-                                        "algorithm": "Deterministic", 
+                                        "algorithm": "Deterministic",
                                         "iv": bson.binary.Binary(b"i" * 16)
                                     }
                                 }
@@ -148,7 +148,7 @@ marked_reply = {
         "find": "test",
         "filter": {
             "ssn": bson.binary.Binary(b"\00" + bson.BSON.encode({
-                "v": "457-55-5642",
+                "v": "457-55-5462",
                 "a": "Deterministic", 
                 "iv": bson.binary.Binary(b"i" * 16),
                 "ki": key_docs[0]["_id"]
