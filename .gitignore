@@ -4,7 +4,6 @@ test/schema.json
 
 # Default build directory
 cmake-build
-test/example/*
 
 # CMake generated files
 *.sln

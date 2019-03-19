@@ -42,8 +42,10 @@ _check_state (mongocrypt_encryptor_t *encryptor,
    status = encryptor->status;
 
    if (encryptor->state != state) {
-      CLIENT_ERR (
-         "Expected state %s, but in state %s", state_names[state], state_names[encryptor->state]);
+      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
+      CLIENT_ERR ("Expected state %s, but in state %s",
+                  state_names[state],
+                  state_names[encryptor->state]);
       return false;
    }
    return true;
@@ -68,8 +70,17 @@ mongocrypt_encryptor_add_ns (mongocrypt_encryptor_t *encryptor, const char *ns)
 {
    _mongocrypt_schema_cache_t *cache;
    _mongocrypt_schema_handle_t *handle;
+   mongocrypt_status_t *status;
+
+   status = encryptor->status;
 
    if (!_check_state (encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_NS)) {
+      return encryptor->state;
+   }
+
+   if (!ns || !strstr (ns, ".")) {
+      CLIENT_ERR ("invalid namespace");
+      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
       return encryptor->state;
    }
 
@@ -111,10 +122,8 @@ mongocrypt_encryptor_add_collection_info (
       return encryptor->state;
    }
 
-   if (!collection_info) {
-      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
-      CLIENT_ERR (
-         "Schema not provided. Cannot determine if encryption required.");
+   if (!collection_info || !collection_info->data) {
+      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_NO_ENCRYPTION_NEEDED;
       return encryptor->state;
    }
 
@@ -126,11 +135,10 @@ mongocrypt_encryptor_add_collection_info (
     * one $jsonSchema in the validators. */
    validator_has_siblings = false;
 
-   BSON_ASSERT (bson_init_static (
-      &reply, collection_info->data, collection_info->len));
+   BSON_ASSERT (
+      bson_init_static (&reply, collection_info->data, collection_info->len));
    bson_iter_init (&iter, &reply);
-   if (bson_iter_find_descendant (
-          &iter, "options.validator", &iter)) {
+   if (bson_iter_find_descendant (&iter, "options.validator", &iter)) {
       bson_iter_recurse (&iter, &iter);
       memcpy (&validator_iter, &iter, sizeof (iter));
 
@@ -164,7 +172,7 @@ mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor)
       return NULL;
    }
 
-   return _mongocrypt_buffer_to_binary(&encryptor->schema);
+   return _mongocrypt_buffer_to_binary (&encryptor->schema);
 }
 
 
@@ -199,7 +207,7 @@ _collect_key_from_marking (void *ctx, _mongocrypt_buffer_t *in)
 
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
-                                   mongocrypt_binary_t *marked_reply)
+                                   const mongocrypt_binary_t *marked_reply)
 {
    mongocrypt_status_t *status;
    bson_iter_t iter;
@@ -213,13 +221,13 @@ mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
       return encryptor->state;
    }
 
-   // todo this is for the sake of the test, remove it
    if (!marked_reply) {
-      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS;
+      CLIENT_ERR ("invalid markings");
+      encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
       goto done;
    }
 
-   mongocrypt_binary_to_bson (marked_reply, &parsed_reply);
+   _mongocrypt_binary_to_bson (marked_reply, &parsed_reply);
 
    /* TODO: move this parsing logic to mongocrypt-parsing.c and parse into a
     * struct. */
@@ -354,7 +362,6 @@ _replace_marking_with_ciphertext (void *ctx,
    BSON_ASSERT (ctx);
    BSON_ASSERT (in);
    BSON_ASSERT (out);
-   BSON_ASSERT (status);
    kb = (mongocrypt_key_broker_t *) ctx;
    status = kb->status;
 
@@ -431,7 +438,8 @@ mongocrypt_encryptor_key_broker_done (mongocrypt_encryptor_t *encryptor)
       return encryptor->state;
    }
 
-   if (_mongocrypt_key_broker_has (&encryptor->kb, KEY_ENCRYPTED)) {
+   if (_mongocrypt_key_broker_has (&encryptor->kb, KEY_ENCRYPTED) ||
+       _mongocrypt_key_broker_has (&encryptor->kb, KEY_EMPTY)) {
       CLIENT_ERR ("client did not provide all keys");
       encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
       return encryptor->state;
@@ -487,21 +495,12 @@ mongocrypt_encryptor_state (mongocrypt_encryptor_t *encryptor)
 }
 
 
-mongocrypt_status_t *
-mongocrypt_encryptor_status (mongocrypt_encryptor_t *encryptor)
-{
-   BSON_ASSERT (encryptor);
-
-   return encryptor->status;
-}
-
-
 mongocrypt_binary_t *
 mongocrypt_encryptor_encrypted_cmd (mongocrypt_encryptor_t *encryptor)
 {
    BSON_ASSERT (encryptor);
 
-   return _mongocrypt_buffer_to_binary(&encryptor->encrypted_cmd);
+   return _mongocrypt_buffer_to_binary (&encryptor->encrypted_cmd);
 }
 
 
@@ -513,7 +512,20 @@ mongocrypt_encryptor_destroy (mongocrypt_encryptor_t *encryptor)
    }
 
    _mongocrypt_key_broker_cleanup (&encryptor->kb);
-   mongocrypt_status_destroy (encryptor->status);
 
    bson_free (encryptor);
+   mongocrypt_status_destroy (encryptor->status);
+}
+
+
+bool
+mongocrypt_encryptor_status (mongocrypt_encryptor_t *encryptor,
+                             mongocrypt_status_t *out)
+{
+   if (!mongocrypt_status_ok (encryptor->status)) {
+      mongocrypt_status_copy_to (encryptor->status, out);
+      return false;
+   }
+   mongocrypt_status_reset (out);
+   return true;
 }

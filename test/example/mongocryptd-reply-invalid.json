@@ -1,0 +1,18 @@
+{
+    "schemaRequiresEncryption": true, 
+    "ok": {
+        "$numberInt": "1"
+    }, 
+    "result": {
+        "filter": {
+            "ssn": {
+                "$binary": {
+                    "base64": "AEwAAAACYQAOAAAARGV0ZXJtaW5pc3RpYwAFa2kAEAAAAAQAAAAAAAAAAAAAAAAAAAAABWl2ABAAAAAAaWlpaWlpaWlpaWlpaWlpaQA=", 
+                    "subType": "06"
+                }
+            }
+        }, 
+        "find": "test"
+    }, 
+    "hasEncryptedPlaceholders": true
+}

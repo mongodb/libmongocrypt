@@ -62,7 +62,7 @@ mongocrypt_encryptor_get_schema (mongocrypt_encryptor_t *encryptor);
 MONGOCRYPT_EXPORT
 mongocrypt_encryptor_state_t
 mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
-                                   mongocrypt_binary_t *marked_reply);
+                                   const mongocrypt_binary_t *marked_reply);
 
 MONGOCRYPT_EXPORT
 mongocrypt_key_broker_t *
@@ -90,13 +90,12 @@ mongocrypt_encryptor_encrypted_cmd (mongocrypt_encryptor_t *encryptor);
 
 
 MONGOCRYPT_EXPORT
-mongocrypt_status_t *
-mongocrypt_encryptor_status (mongocrypt_encryptor_t *encryptor);
-
-
-MONGOCRYPT_EXPORT
 void
 mongocrypt_encryptor_destroy (mongocrypt_encryptor_t *encryptor);
 
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_encryptor_status (mongocrypt_encryptor_t *encryptor,
+                             mongocrypt_status_t *out);
 
 #endif /* MONGOCRYPT_ENCRYPTOR_H */

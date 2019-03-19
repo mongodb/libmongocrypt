@@ -73,6 +73,8 @@ _mongocrypt_repeat_char (char c, uint32_t times);
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, _err.message)
 
+#define ASSERT_STATUS_CONTAINS(_str) BSON_ASSERT (strstr(status->message, _str))
+
 
 void
 _mongocrypt_tester_install (_mongocrypt_tester_t *tester,

@@ -152,6 +152,23 @@ marked_reply = {
     "ok": 1
 }
 
+invalid_marked_reply = {
+    "result": {
+        "find": "test",
+        "filter": {
+            "ssn": bson.binary.Binary(b"\00" + bson.BSON.encode({
+                # missing "v"
+                "a": "Deterministic",
+                "iv": bson.binary.Binary(b"i" * 16),
+                "ki": key_docs[0]["_id"]
+            }, codec_options=CodecOptions(uuid_representation=bson.binary.STANDARD)), subtype=6)
+        }
+    },
+    "hasEncryptedPlaceholders": True,
+    "schemaRequiresEncryption": True,
+    "ok": 1
+}
+
 kms_reply_json = json_util.dumps({
     "KeyId": cmk_id,
     "Plaintext": base64.b64encode(data_key)
@@ -176,11 +193,30 @@ with open("test/example/collection-info.json", "w") as f:
 with open("test/example/command.json", "w") as f:
     f.write(json_util.dumps(command, indent=4, json_options=opts))
 
-with open("test/example/marked-reply.json", "w") as f:
+with open("test/example/mongocryptd-reply.json", "w") as f:
     f.write(json_util.dumps(marked_reply, indent=4, json_options=opts))
+
+with open("test/example/mongocryptd-reply-no-encryption-needed.json", "w") as f:
+    f.write(json_util.dumps({
+        "hasEncryptedPlaceholders": False,
+        "schemaRequiresEncryption": False,
+        "ok": 1
+    }, indent=4, json_options=opts))
+
+with open("test/example/mongocryptd-reply-no-markings.json", "w") as f:
+    f.write(json_util.dumps({
+        "hasEncryptedPlaceholders": False,
+        "schemaRequiresEncryption": True,
+        "ok": 1
+    }, indent=4, json_options=opts))
+
+with open("test/example/mongocryptd-reply-invalid.json", "w") as f:
+    f.write(json_util.dumps(invalid_marked_reply, indent=4, json_options=opts))
 
 with open("test/example/kms-reply.txt", "w") as f:
     f.write(kms_reply)
+
+
 
 print("Done writing to test/ directory.")
 

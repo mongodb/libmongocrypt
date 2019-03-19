@@ -96,8 +96,12 @@ _mongocrypt_key_decryptor_cleanup (mongocrypt_key_decryptor_t *kd)
    if (!kd) {
       return;
    }
-   kms_request_destroy (kd->req);
-   kms_response_parser_destroy (kd->parser);
+   if (kd->req) {
+      kms_request_destroy (kd->req);
+   }
+   if (kd->parser) {
+      kms_response_parser_destroy (kd->parser);
+   }
    mongocrypt_status_destroy (kd->status);
    _mongocrypt_buffer_cleanup (&kd->msg);
 }

@@ -24,8 +24,7 @@
 #include <mongocrypt-status.h>
 
 static bool
-_decrypt_via_kms (mongocrypt_key_decryptor_t *key_decryptor,
-                  mongocrypt_status_t *status)
+_decrypt_via_kms (mongocrypt_key_decryptor_t *key_decryptor)
 {
    mongocrypt_binary_t *bytes_received = NULL;
    uint32_t to_read;
@@ -56,7 +55,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    const mongocrypt_binary_t *filter;
    mongocrypt_binary_t *key_doc = NULL;
    mongocrypt_key_decryptor_t *key_decryptor = NULL;
-   mongocrypt_status_t *status = mongocrypt_key_broker_status (kb);
+   const mongocrypt_status_t *status = mongocrypt_key_broker_status (kb);
    bool res = false;
 
    /* First, get a filter to run against the
@@ -92,7 +91,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
       to the key broker. This may be done in parallel. */
    key_decryptor = mongocrypt_key_broker_next_decryptor (kb);
    while (key_decryptor) {
-      if (!_decrypt_via_kms (key_decryptor, status)) {
+      if (!_decrypt_via_kms (key_decryptor)) {
          printf ("error decrypting key: %s\n",
                  mongocrypt_status_message (status));
          goto done;
@@ -124,12 +123,11 @@ _auto_encrypt (mongocrypt_t *crypt)
    mongocrypt_binary_t *marking_response = NULL;
    mongocrypt_encryptor_state_t state;
    mongocrypt_status_t *status;
-   mongocrypt_status_t *error;
    bool res = false;
 
    collection_info = NULL;
-   encryptor = mongocrypt_encryptor_new (crypt);
    status = mongocrypt_status_new ();
+   encryptor = mongocrypt_encryptor_new (crypt);
 
    state = mongocrypt_encryptor_state (encryptor);
 
@@ -150,8 +148,8 @@ _auto_encrypt (mongocrypt_t *crypt)
             "options.validator.$jsonSchema": {"$exists": True}.
             Then, give the resulting document or NULL
             to the encryptor. */
-         state = mongocrypt_encryptor_add_collection_info (
-            encryptor, collection_info);
+         state = mongocrypt_encryptor_add_collection_info (encryptor,
+                                                           collection_info);
          break;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS:
@@ -192,9 +190,8 @@ _auto_encrypt (mongocrypt_t *crypt)
          goto done;
 
       case MONGOCRYPT_ENCRYPTOR_STATE_ERROR:
-         error = mongocrypt_encryptor_status (encryptor);
          printf ("Error, could not complete encryption: %s\n",
-                 mongocrypt_status_message (error));
+                 mongocrypt_status_message (status));
          res = false;
          goto done;
 
@@ -220,8 +217,7 @@ _auto_decrypt (mongocrypt_t *crypt)
    mongocrypt_decryptor_state_t state;
    mongocrypt_binary_t *encrypted_doc = NULL;
    bool res = false;
-   mongocrypt_status_t *status;
-   mongocrypt_status_t *error;
+   const mongocrypt_status_t *status;
 
    decryptor = mongocrypt_decryptor_new (crypt);
    state = mongocrypt_decryptor_state (decryptor);
@@ -264,9 +260,9 @@ _auto_decrypt (mongocrypt_t *crypt)
          goto done;
 
       case MONGOCRYPT_DECRYPTOR_STATE_ERROR:
-         error = mongocrypt_decryptor_status (decryptor);
+         mongocrypt_decryptor_status (decryptor, status);
          printf ("Error, could not complete encryption: %s\n",
-                 mongocrypt_status_message (error));
+                 mongocrypt_status_message (status));
          res = false;
          goto done;
 

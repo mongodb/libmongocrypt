@@ -1,0 +1,19 @@
+{
+    "type": "collection", 
+    "name": "test", 
+    "idIndex": {
+        "ns": "test.test", 
+        "name": "_id_", 
+        "key": {
+            "_id": {
+                "$numberInt": "1"
+            }
+        }, 
+        "v": {
+            "$numberInt": "2"
+        }
+    }, 
+    "options": {
+        "validator": { }
+    }
+}

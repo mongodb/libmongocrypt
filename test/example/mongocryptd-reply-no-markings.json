@@ -1,0 +1,7 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    }, 
+    "schemaRequiresEncryption": true, 
+    "hasEncryptedPlaceholders": false
+}

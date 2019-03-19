@@ -166,7 +166,7 @@ main (int argc, char **argv)
 
       if (argc > 1) {
          for (j = 1; j < argc; j++) {
-            found = (0 == strcmp (argv[i], tester.test_names[j]));
+            found = (0 == strcmp (argv[j], tester.test_names[i]));
             if (found)
                break;
          }

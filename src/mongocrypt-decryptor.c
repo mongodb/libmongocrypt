@@ -38,6 +38,7 @@ _check_state (mongocrypt_decryptor_t *decryptor,
    status = decryptor->status;
 
    if (decryptor->state != state) {
+      decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
       CLIENT_ERR ("Expected state %s, but in state %s",
                   state_names[state],
                   state_names[decryptor->state]);
@@ -342,12 +343,18 @@ mongocrypt_decryptor_state (mongocrypt_decryptor_t *decryptor)
 }
 
 
-mongocrypt_status_t *
-mongocrypt_decryptor_status (mongocrypt_decryptor_t *decryptor)
+bool
+mongocrypt_decryptor_status (mongocrypt_decryptor_t *decryptor,
+                             mongocrypt_status_t *out)
 {
    BSON_ASSERT (decryptor);
 
-   return decryptor->status;
+   if (!mongocrypt_status_ok (decryptor->status)) {
+      mongocrypt_status_copy_to (decryptor->status, out);
+      return false;
+   }
+   mongocrypt_status_reset (out);
+   return true;
 }
 
 
