@@ -28,12 +28,12 @@ _check_state (mongocrypt_decryptor_t *decryptor,
               mongocrypt_decryptor_state_t state)
 {
    mongocrypt_status_t *status;
-   const char *state_names[] = {"NEED_DOC",
+   const char *state_names[] = {"ERROR",
+                                "NEED_DOC",
                                 "NEED_KEYS",
                                 "NEED_DECRYPTION",
                                 "NO_DECRYPTION_NEEDED",
-                                "DECRYPTED",
-                                "ERROR"};
+                                "DECRYPTED"};
 
    status = decryptor->status;
 

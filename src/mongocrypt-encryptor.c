@@ -29,15 +29,15 @@ _check_state (mongocrypt_encryptor_t *encryptor,
               mongocrypt_encryptor_state_t state)
 {
    mongocrypt_status_t *status;
-   const char *state_names[] = {"NEED_NS",
+   const char *state_names[] = {"ERROR",
+                                "NEED_NS",
                                 "NEED_SCHEMA",
                                 "NEED_MARKINGS",
                                 "NEED_KEYS",
                                 "NEED_KEYS_DECRYPTED",
                                 "NEED_ENCRYPTION",
                                 "NO_ENCRYPTION_NEEDED",
-                                "ENCRYPTED",
-                                "ERROR"};
+                                "ENCRYPTED"};
 
    status = encryptor->status;
 
