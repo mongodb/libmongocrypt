@@ -26,6 +26,7 @@ cd mongo-c-driver
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
 chmod u+x ./.evergreen/find-cmake.sh
 . ./.evergreen/find-cmake.sh
+$CMAKE --version
 python ./build/calc_release_version.py > VERSION_CURRENT
 python ./build/calc_release_version.py -p > VERSION_RELEASED
 mkdir cmake-build && cd cmake-build
