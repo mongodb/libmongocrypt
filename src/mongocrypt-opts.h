@@ -17,6 +17,8 @@
 #ifndef MONGOCRYPT_OPTS_H
 #define MONGOCRYPT_OPTS_H
 
+#include "mongocrypt-export.h"
+
 typedef struct _mongocrypt_opts_t mongocrypt_opts_t;
 
 typedef enum {
@@ -27,14 +29,17 @@ typedef enum {
    MONGOCRYPT_LOG_CTX
 } mongocrypt_opt_t;
 
+MONGOCRYPT_EXPORT
 mongocrypt_opts_t *
 mongocrypt_opts_new (void);
 
 
+MONGOCRYPT_EXPORT
 void
 mongocrypt_opts_destroy (mongocrypt_opts_t *opts);
 
 
+MONGOCRYPT_EXPORT
 void
 mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
                          mongocrypt_opt_t opt,
