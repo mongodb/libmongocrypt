@@ -9,7 +9,7 @@ endif()
 
 set (CMAKE_C_STANDARD 99)
 
-find_package (libbson-static-1.0 1.11 REQUIRED)
+find_package (libbson-1.0 1.11 REQUIRED)
 
 include(GenerateExportHeader)
 
@@ -30,9 +30,9 @@ set (MONGOCRYPT_PUBLIC_HEADERS
 )
 
 message ("Found libbson, configuring to add real libmongocrypt target")
-message ("--   bson found version \"${BSON_STATIC_VERSION}\"")
-message ("--   bson include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
-message ("--   bson libraries \"${BSON_STATIC_LIBRARIES}\"")
+message ("--   bson found version \"${BSON_VERSION}\"")
+message ("--   bson include path \"${BSON_INCLUDE_DIRS}\"")
+message ("--   bson libraries \"${BSON_LIBRARIES}\"")
 
 set (MONGOCRYPT_SOURCES
    src/mongocrypt.c
@@ -55,19 +55,19 @@ set (MONGOCRYPT_SOURCES
 
 # Define mongocrypt library
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
-target_include_directories (mongocrypt PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
+target_include_directories (mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
 target_include_directories (mongocrypt PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
-target_link_libraries (mongocrypt PRIVATE ${BSON_STATIC_LIBRARIES})
-target_compile_definitions (mongocrypt PRIVATE "${BSON_STATIC_DEFINITIONS}")
+target_link_libraries (mongocrypt PRIVATE ${BSON_LIBRARIES})
+target_compile_definitions (mongocrypt PRIVATE "${BSON_DEFINITIONS}")
 
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 add_library (mongocrypt-static STATIC ${MONGOCRYPT_SOURCES})
-target_include_directories (mongocrypt-static PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
+target_include_directories (mongocrypt-static PRIVATE ${BSON_INCLUDE_DIRS})
 target_include_directories (mongocrypt-static PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
-target_link_libraries (mongocrypt-static PRIVATE ${BSON_STATIC_LIBRARIES})
-target_compile_definitions (mongocrypt-static PRIVATE "${BSON_STATIC_DEFINITIONS}")
-target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_STATIC_DEFINE)
+target_link_libraries (mongocrypt-static PRIVATE ${BSON_LIBRARIES})
+target_compile_definitions (mongocrypt-static PRIVATE "${BSON_DEFINITIONS}")
+target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_DEFINE)
 
 # Add ssl libraries to mongocrypt
 if (APPLE)
@@ -108,9 +108,9 @@ add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt-static)
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
 target_include_directories (test-mongocrypt PRIVATE ./src)
-target_include_directories (test-mongocrypt PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
-target_link_libraries (test-mongocrypt PRIVATE ${BSON_STATIC_LIBRARIES})
-target_compile_definitions (test-mongocrypt PRIVATE "${BSON_STATIC_DEFINITIONS}")
+target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
+target_link_libraries (test-mongocrypt PRIVATE ${BSON_LIBRARIES})
+target_compile_definitions (test-mongocrypt PRIVATE "${BSON_DEFINITIONS}")
 
 add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -118,9 +118,9 @@ add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR
 add_executable (example-state-machine test/example-state-machine.c)
 target_link_libraries (example-state-machine PRIVATE mongocrypt)
 target_include_directories (example-state-machine PRIVATE ./src)
-target_include_directories (example-state-machine PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
-target_link_libraries (example-state-machine PRIVATE ${BSON_STATIC_LIBRARIES})
-target_compile_definitions (example-state-machine PRIVATE "${BSON_STATIC_DEFINITIONS}")
+target_include_directories (example-state-machine PRIVATE ${BSON_INCLUDE_DIRS})
+target_link_libraries (example-state-machine PRIVATE ${BSON_LIBRARIES})
+target_compile_definitions (example-state-machine PRIVATE "${BSON_DEFINITIONS}")
 
 if (ENABLE_TRACE)
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
