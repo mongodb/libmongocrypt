@@ -19,6 +19,7 @@
 
 #include <bson/bson.h>
 #include <mongocrypt.h>
+#include <mongocrypt-key-broker.h>
 
 #include "test-mongocrypt.h"
 
@@ -143,6 +144,56 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
 }
 
 
+/* Satisfy the key requests of a key broker using example data. */
+void
+_mongocrypt_tester_satisfy_key_broker (_mongocrypt_tester_t *tester,
+                                       mongocrypt_key_broker_t *key_broker)
+{
+   mongocrypt_binary_t *bin;
+   mongocrypt_key_decryptor_t *key_decryptor;
+
+   /* Add the single key document. */
+   bin = _mongocrypt_tester_file (tester, "./test/example/key-document.json");
+   BSON_ASSERT (mongocrypt_key_broker_add_key (key_broker, bin));
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_key_broker_done_adding_keys (key_broker);
+
+   /* Decrypt the key material. */
+   key_decryptor = mongocrypt_key_broker_next_decryptor (key_broker);
+   bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
+   BSON_ASSERT (mongocrypt_key_decryptor_feed (key_decryptor, bin));
+   mongocrypt_binary_destroy (bin);
+   BSON_ASSERT (0 == mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1));
+   BSON_ASSERT (mongocrypt_key_broker_add_decrypted_key (key_broker, key_decryptor));
+   BSON_ASSERT (!mongocrypt_key_broker_next_decryptor (key_broker));
+}
+
+
+mongocrypt_binary_t* _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t* tester) {
+   mongocrypt_t* crypt;
+   mongocrypt_encryptor_t *encryptor;
+   mongocrypt_status_t *status;
+   mongocrypt_binary_t *tmp;
+
+   if (!_mongocrypt_buffer_empty(&tester->encrypted_doc)) {
+      return _mongocrypt_buffer_to_binary (&tester->encrypted_doc);
+   }
+
+   status = mongocrypt_status_new ();
+   crypt = mongocrypt_new (NULL, status);
+   ASSERT_OR_PRINT (crypt, status);
+
+   encryptor = mongocrypt_encryptor_new (crypt);
+   _mongocrypt_tester_run_encryptor_to (tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED);
+   tmp = mongocrypt_encryptor_encrypted_cmd (encryptor);
+   _mongocrypt_buffer_copy_from_binary (&tester->encrypted_doc, tmp);
+   mongocrypt_binary_destroy (tmp);
+   mongocrypt_encryptor_destroy (encryptor);
+   mongocrypt_destroy (crypt);
+   return _mongocrypt_buffer_to_binary (&tester->encrypted_doc);
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -158,6 +209,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_data_key (&tester);
    _mongocrypt_tester_install_encryptor (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);
+   _mongocrypt_tester_install_decryptor (&tester);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

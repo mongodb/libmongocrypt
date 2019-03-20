@@ -19,8 +19,9 @@
 #include "mongocrypt-buffer-private.h"
 
 void
-_mongocrypt_buffer_init (_mongocrypt_buffer_t* buf) {
-   memset (buf, 0, sizeof(*buf));
+_mongocrypt_buffer_init (_mongocrypt_buffer_t *buf)
+{
+   memset (buf, 0, sizeof (*buf));
 }
 
 void
@@ -75,8 +76,7 @@ _mongocrypt_buffer_copy_from_document_iter (_mongocrypt_buffer_t *buf,
 
 
 void
-_mongocrypt_buffer_steal_from_bson (_mongocrypt_buffer_t *buf,
-                                    bson_t *bson)
+_mongocrypt_buffer_steal_from_bson (_mongocrypt_buffer_t *buf, bson_t *bson)
 {
    _mongocrypt_buffer_init (buf);
    buf->data = bson_destroy_with_steal (bson, true, &buf->len);
@@ -121,6 +121,17 @@ _mongocrypt_buffer_from_binary (_mongocrypt_buffer_t *buf,
    buf->owned = false;
 }
 
+
+void
+_mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
+                                     const struct _mongocrypt_binary_t *binary)
+{
+   _mongocrypt_buffer_init (buf);
+   buf->len = binary->len;
+   buf->data = bson_malloc (buf->len);
+   memcpy (buf->data, binary->data, binary->len);
+   buf->owned = true;
+}
 
 mongocrypt_binary_t *
 _mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf)
@@ -167,6 +178,7 @@ _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buf)
 
 
 bool
-_mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf) {
+_mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf)
+{
    return buf->data == NULL;
 }

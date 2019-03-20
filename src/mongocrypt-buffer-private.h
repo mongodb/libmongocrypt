@@ -35,7 +35,7 @@ typedef struct __mongocrypt_buffer_t {
 
 
 void
-_mongocrypt_buffer_init (_mongocrypt_buffer_t* buf);
+_mongocrypt_buffer_init (_mongocrypt_buffer_t *buf);
 
 
 /* @iter is iterated to a BSON binary value. */
@@ -62,8 +62,7 @@ _mongocrypt_buffer_copy_from_document_iter (_mongocrypt_buffer_t *buf,
 
 
 void
-_mongocrypt_buffer_steal_from_bson (_mongocrypt_buffer_t *buf,
-                                    bson_t *bson);
+_mongocrypt_buffer_steal_from_bson (_mongocrypt_buffer_t *buf, bson_t *bson);
 
 
 void
@@ -84,6 +83,10 @@ _mongocrypt_buffer_append (const _mongocrypt_buffer_t *buf,
 void
 _mongocrypt_buffer_from_binary (_mongocrypt_buffer_t *buf,
                                 const struct _mongocrypt_binary_t *binary);
+
+void
+_mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
+                                     const struct _mongocrypt_binary_t *binary);
 
 
 struct _mongocrypt_binary_t *

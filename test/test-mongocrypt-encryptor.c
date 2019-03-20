@@ -16,31 +16,10 @@
 
 #include <mongocrypt.h>
 #include <mongocrypt-encryptor-private.h>
+#include <mongocrypt-decryptor-private.h>
 #include <mongocrypt-key-broker-private.h>
 
 #include "test-mongocrypt.h"
-
-static void
-_satisfy_key_broker (_mongocrypt_tester_t *tester,
-                     mongocrypt_key_broker_t *key_broker)
-{
-   mongocrypt_binary_t *bin;
-   mongocrypt_key_decryptor_t *key_decryptor;
-
-   /* Add the single key document. */
-   bin = _mongocrypt_tester_file (tester, "./test/example/key-document.json");
-   BSON_ASSERT (mongocrypt_key_broker_add_key (key_broker, bin));
-   mongocrypt_binary_destroy (bin);
-   mongocrypt_key_broker_done_adding_keys (key_broker);
-
-   /* Decrypt the key material. */
-   key_decryptor = mongocrypt_key_broker_next_decryptor (key_broker);
-   bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
-   mongocrypt_key_decryptor_feed (key_decryptor, bin);
-   mongocrypt_binary_destroy (bin);
-   mongocrypt_key_broker_add_decrypted_key (key_broker, key_decryptor);
-}
-
 
 /* Run the encryptor state machine on example data until hitting stop_state or a
  * terminal state. */
@@ -73,7 +52,7 @@ _mongocrypt_tester_run_encryptor_to (_mongocrypt_tester_t *tester,
          break;
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS:
          key_broker = mongocrypt_encryptor_get_key_broker (encryptor);
-         _satisfy_key_broker (tester, key_broker);
+         _mongocrypt_tester_satisfy_key_broker (tester, key_broker);
          state = mongocrypt_encryptor_key_broker_done (encryptor);
          break;
       case MONGOCRYPT_ENCRYPTOR_STATE_NEED_ENCRYPTION:
@@ -86,6 +65,7 @@ _mongocrypt_tester_run_encryptor_to (_mongocrypt_tester_t *tester,
          return;
       }
    }
+   BSON_ASSERT (state == stop_state);
 }
 
 
@@ -316,7 +296,7 @@ _test_encryptor_need_keys (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS);
    key_broker = mongocrypt_encryptor_get_key_broker (encryptor);
-   _satisfy_key_broker (tester, key_broker);
+   _mongocrypt_tester_satisfy_key_broker (tester, key_broker);
    state = mongocrypt_encryptor_key_broker_done (encryptor);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_NEED_ENCRYPTION);
    BSON_ASSERT (mongocrypt_encryptor_status (encryptor, status));
@@ -347,6 +327,12 @@ _test_encryptor_need_encryption (_mongocrypt_tester_t *tester)
    mongocrypt_status_t *status;
    mongocrypt_encryptor_t *encryptor;
    mongocrypt_encryptor_state_t state;
+   mongocrypt_binary_t *encrypted_cmd;
+   _mongocrypt_buffer_t ciphertext_buf;
+   _mongocrypt_ciphertext_t ciphertext;
+   bson_t as_bson;
+   bson_iter_t iter;
+   bool ret;
 
    status = mongocrypt_status_new ();
    crypt = mongocrypt_new (NULL);
@@ -359,6 +345,18 @@ _test_encryptor_need_encryption (_mongocrypt_tester_t *tester)
    state = mongocrypt_encryptor_encrypt (encryptor);
    BSON_ASSERT (mongocrypt_encryptor_status (encryptor, status));
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED);
+
+   /* check that the encrypted command has a valid ciphertext. */
+   encrypted_cmd = mongocrypt_encryptor_encrypted_cmd (encryptor);
+   _mongocrypt_binary_to_bson (encrypted_cmd, &as_bson);
+   bson_iter_init (&iter, &as_bson);
+   bson_iter_find_descendant (&iter, "filter.ssn", &iter);
+   BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
+   _mongocrypt_buffer_from_iter (&ciphertext_buf, &iter);
+   ret = _mongocrypt_decryptor_parse_ciphertext_unowned (
+      &ciphertext_buf, &ciphertext, status);
+   ASSERT_OR_PRINT (ret, status);
+   mongocrypt_binary_destroy (encrypted_cmd);
    mongocrypt_encryptor_destroy (encryptor);
 
    mongocrypt_destroy (crypt);

@@ -275,7 +275,7 @@ mongocrypt_encryptor_add_markings (mongocrypt_encryptor_t *encryptor,
 
    bson_iter_recurse (&iter, &iter);
    if (!_mongocrypt_traverse_binary_in_bson (
-          _collect_key_from_marking, (void *) encryptor, 0, &iter, status)) {
+          _collect_key_from_marking, (void *) encryptor, TRAVERSE_MATCH_MARKING, &iter, status)) {
       encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;
       goto done;
    }
@@ -471,7 +471,7 @@ mongocrypt_encryptor_encrypt (mongocrypt_encryptor_t *encryptor)
    bson_iter_init (&iter, &as_bson);
 
    ret = _mongocrypt_transform_binary_in_bson (
-      _replace_marking_with_ciphertext, &encryptor->kb, 0, &iter, &out, status);
+      _replace_marking_with_ciphertext, &encryptor->kb, TRAVERSE_MATCH_MARKING, &iter, &out, status);
    if (!ret) {
       bson_destroy (&out);
       encryptor->state = MONGOCRYPT_ENCRYPTOR_STATE_ERROR;

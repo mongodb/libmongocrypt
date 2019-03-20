@@ -20,8 +20,10 @@
 #include <bson/bson.h>
 #include <stdint.h>
 
-#include "mongocrypt-buffer-private.h"
 #include "mongocrypt-binary.h"
+#include "mongocrypt-buffer-private.h"
+#include "mongocrypt-encryptor-private.h"
+#include "mongocrypt-key-broker-private.h"
 
 struct __mongocrypt_tester_t;
 typedef void (*_mongocrypt_test_fn) (struct __mongocrypt_tester_t *tester);
@@ -37,12 +39,30 @@ typedef struct __mongocrypt_tester_t {
    /* Arbitrary max of 512 files. Increase as needed. */
    char *file_paths[512];
    _mongocrypt_buffer_t file_bufs[512];
+
+   /* Example encrypted doc. */
+   _mongocrypt_buffer_t encrypted_doc;
 } _mongocrypt_tester_t;
 
 
 /* Return either a .json file as BSON or a .txt file as characters. */
 mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
+
+
+void
+_mongocrypt_tester_satisfy_key_broker (_mongocrypt_tester_t *tester,
+                                       mongocrypt_key_broker_t *key_broker);
+
+
+void
+_mongocrypt_tester_run_encryptor_to (_mongocrypt_tester_t *tester,
+                                     mongocrypt_encryptor_t *encryptor,
+                                     mongocrypt_encryptor_state_t stop_state);
+
+
+mongocrypt_binary_t *
+_mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester);
 
 
 /* Return a repeated character with no null terminator. */
@@ -73,7 +93,8 @@ _mongocrypt_repeat_char (char c, uint32_t times);
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, _err.message)
 
-#define ASSERT_STATUS_CONTAINS(_str) BSON_ASSERT (strstr(status->message, _str))
+#define ASSERT_STATUS_CONTAINS(_str) \
+   BSON_ASSERT (strstr (status->message, _str))
 
 
 void
@@ -96,6 +117,10 @@ _mongocrypt_tester_install_data_key (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_encryptor (_mongocrypt_tester_t *tester);
+
+
+void
+_mongocrypt_tester_install_decryptor (_mongocrypt_tester_t *tester);
 
 
 void

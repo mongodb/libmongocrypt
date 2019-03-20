@@ -141,7 +141,7 @@ marked_reply = {
         "filter": {
             "ssn": bson.binary.Binary(b"\00" + bson.BSON.encode({
                 "v": "457-55-5462",
-                "a": "Deterministic",
+                "a": 1,
                 "iv": bson.binary.Binary(b"i" * 16),
                 "ki": key_docs[0]["_id"]
             }, codec_options=CodecOptions(uuid_representation=bson.binary.STANDARD)), subtype=6)

@@ -153,6 +153,7 @@ mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
    mongocrypt_status_t *status;
    bson_iter_t iter;
    bson_t tmp;
+   _mongocrypt_buffer_t encrypted_buf;
 
    BSON_ASSERT (decryptor);
    status = decryptor->status;
@@ -161,20 +162,19 @@ mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
       goto done;
    }
 
-   /* TODO this is only for testing, remove */
    if (!encrypted_doc) {
-      decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS;
+      CLIENT_ERR ("malformed document");
+      decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
       goto done;
    }
 
-   _mongocrypt_buffer_from_binary (&decryptor->encrypted_doc, encrypted_doc);
-
-   _mongocrypt_buffer_to_bson (&decryptor->encrypted_doc, &tmp);
+   _mongocrypt_buffer_from_binary (&encrypted_buf, encrypted_doc);
+   _mongocrypt_buffer_to_bson (&encrypted_buf, &tmp);
    bson_iter_init (&iter, &tmp);
 
    if (!_mongocrypt_traverse_binary_in_bson (_collect_key_from_ciphertext,
                                              (void *) decryptor,
-                                             0,
+                                             TRAVERSE_MATCH_CIPHERTEXT,
                                              &iter,
                                              decryptor->status)) {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
@@ -185,6 +185,8 @@ mongocrypt_decryptor_add_doc (mongocrypt_decryptor_t *decryptor,
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_NO_DECRYPTION_NEEDED;
    } else {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS;
+      /* Copy the encrypted doc. We'll need it later during decryption. */
+      _mongocrypt_buffer_copy_to (&encrypted_buf, &decryptor->encrypted_doc);
    }
 
 done:
@@ -317,16 +319,20 @@ mongocrypt_decryptor_decrypt (mongocrypt_decryptor_t *decryptor)
    bson_iter_init (&iter, &tmp);
 
    /* TODO: move transform_binary out of mongocrypt-private.h */
-   res = _mongocrypt_transform_binary_in_bson (
-      _replace_ciphertext_with_plaintext, decryptor, 1, &iter, &out, status);
+   res =
+      _mongocrypt_transform_binary_in_bson (_replace_ciphertext_with_plaintext,
+                                            decryptor,
+                                            TRAVERSE_MATCH_CIPHERTEXT,
+                                            &iter,
+                                            &out,
+                                            status);
 
    if (!res) {
       decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_ERROR;
       goto done;
    }
 
-   decryptor->decrypted_doc.data =
-      bson_destroy_with_steal (&out, true, &decryptor->decrypted_doc.len);
+   _mongocrypt_buffer_steal_from_bson (&decryptor->decrypted_doc, &out);
    decryptor->state = MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED;
 
 done:
@@ -363,7 +369,7 @@ mongocrypt_decryptor_decrypted_doc (mongocrypt_decryptor_t *decryptor)
 {
    BSON_ASSERT (decryptor);
 
-   if (!_check_state (decryptor, MONGOCRYPT_DECRYPTOR_STATE_NEED_DECRYPTION)) {
+   if (!_check_state (decryptor, MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED)) {
       return NULL;
    }
 
@@ -378,6 +384,7 @@ mongocrypt_decryptor_destroy (mongocrypt_decryptor_t *decryptor)
       return;
    }
 
+   _mongocrypt_buffer_cleanup (&decryptor->decrypted_doc);
    mongocrypt_status_destroy (decryptor->status);
    _mongocrypt_key_broker_cleanup (&decryptor->kb);
 

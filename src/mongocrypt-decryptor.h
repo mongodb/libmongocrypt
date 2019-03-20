@@ -67,7 +67,7 @@ mongocrypt_decryptor_state (mongocrypt_decryptor_t *decryptor);
 
 MONGOCRYPT_EXPORT
 mongocrypt_binary_t *
-mongocrypt_decryptor_decrypted_cmd (mongocrypt_decryptor_t *decryptor);
+mongocrypt_decryptor_decrypted_doc (mongocrypt_decryptor_t *decryptor);
 
 
 MONGOCRYPT_EXPORT

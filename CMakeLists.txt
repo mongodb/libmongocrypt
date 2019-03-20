@@ -115,6 +115,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-data-key.c
    test/test-mongocrypt-encryptor.c
+   test/test-mongocrypt-decryptor.c
    test/test-mongocrypt-log.c
    test/test-mongocrypt-ciphertext.c
 )

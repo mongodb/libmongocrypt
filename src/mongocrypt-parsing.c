@@ -152,8 +152,23 @@ typedef struct {
    _mongocrypt_traverse_callback_t traverse_cb;
    _mongocrypt_transform_callback_t transform_cb;
    mongocrypt_status_t *status;
-   uint8_t match_first_byte;
+   traversal_match_t match;
 } _recurse_state_t;
+
+static bool
+_check_first_byte (uint8_t byte, traversal_match_t match) {
+   #define FIRST_BYTE_MARKING 0
+   #define FIRST_BYTE_DETERMINISTIC 1
+   #define FIRST_BYTE_RANDOMIZED 2
+   
+   switch (match) {
+      case TRAVERSE_MATCH_MARKING:
+      return byte == FIRST_BYTE_MARKING;
+      case TRAVERSE_MATCH_CIPHERTEXT:
+      return byte == FIRST_BYTE_DETERMINISTIC || byte == FIRST_BYTE_RANDOMIZED;
+   }
+   return false;
+}
 
 static bool
 _recurse (_recurse_state_t *state)
@@ -166,8 +181,8 @@ _recurse (_recurse_state_t *state)
          _mongocrypt_buffer_t value, out;
 
          _mongocrypt_buffer_from_iter (&value, &state->iter);
-         if (value.subtype == 6 && value.len > 0 &&
-             value.data[0] == state->match_first_byte) {
+         
+         if (value.subtype == 6 && value.len > 0 && _check_first_byte (value.data[0], state->match)) {
             bool ret;
             /* call the right callback. */
             if (state->copy) {
@@ -252,7 +267,7 @@ _recurse (_recurse_state_t *state)
 bool
 _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       void *ctx,
-                                      uint8_t match_first_byte,
+                                      traversal_match_t match,
                                       bson_iter_t *iter,
                                       bson_t *out,
                                       mongocrypt_status_t *status)
@@ -264,7 +279,7 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       NULL /* traverse callback */,
                                       cb,
                                       status,
-                                      match_first_byte};
+                                      match};
 
    return _recurse (&starting_state);
 }
@@ -275,7 +290,7 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
  * _mongocrypt_traverse_binary_in_bson
  *
  *    Traverse the BSON being iterated with iter, and call cb for every binary
- *    subtype 06 value where the first byte equals 'match_first_byte'.
+ *    subtype 06 value where the first byte corresponds to 'match'.
  *
  * Return:
  *    True on success. Returns false on failure and sets error.
@@ -285,7 +300,7 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
 bool
 _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                      void *ctx,
-                                     uint8_t match_first_byte,
+                                     traversal_match_t match,
                                      bson_iter_t *iter,
                                      mongocrypt_status_t *status)
 {
@@ -296,7 +311,7 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                       cb,
                                       NULL /* transform callback */,
                                       status,
-                                      match_first_byte};
+                                      match};
 
    return _recurse (&starting_state);
 }

@@ -24,7 +24,6 @@
 typedef struct {
    _mongocrypt_buffer_t id;
    _mongocrypt_buffer_t key_material;
-   _mongocrypt_buffer_t data_key;
 } _mongocrypt_key_t;
 
 bool
