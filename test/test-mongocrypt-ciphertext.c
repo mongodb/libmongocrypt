@@ -51,6 +51,7 @@ _test_ciphertext_serialization (_mongocrypt_tester_t* tester)
                     "\x0D\x0E\x0F\x02\x00\x01";
    mongocrypt_status_t *status;
 
+   _mongocrypt_buffer_init (&serialized);
    status = mongocrypt_status_new ();
 
    original.blob_subtype = 1;

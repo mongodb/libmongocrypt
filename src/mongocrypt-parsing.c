@@ -142,7 +142,6 @@ _mongocrypt_key_cleanup (_mongocrypt_key_t *key)
 {
    _mongocrypt_buffer_cleanup (&key->id);
    _mongocrypt_buffer_cleanup (&key->key_material);
-   _mongocrypt_buffer_cleanup (&key->data_key);
 }
 
 typedef struct {

@@ -513,8 +513,8 @@ mongocrypt_encryptor_destroy (mongocrypt_encryptor_t *encryptor)
 
    _mongocrypt_key_broker_cleanup (&encryptor->kb);
 
-   bson_free (encryptor);
    mongocrypt_status_destroy (encryptor->status);
+   bson_free (encryptor);
 }
 
 

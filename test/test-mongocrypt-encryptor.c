@@ -195,9 +195,9 @@ _test_encryptor_need_schema (_mongocrypt_tester_t *tester)
    encryptor = mongocrypt_encryptor_new (crypt);
    state = mongocrypt_encryptor_add_collection_info (encryptor, NULL);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_ERROR);
-   mongocrypt_encryptor_destroy (encryptor);
    BSON_ASSERT (!mongocrypt_encryptor_status (encryptor, status));
    ASSERT_STATUS_CONTAINS ("Expected state");
+   mongocrypt_encryptor_destroy (encryptor);
    mongocrypt_destroy (crypt);
 
    mongocrypt_status_destroy (status);

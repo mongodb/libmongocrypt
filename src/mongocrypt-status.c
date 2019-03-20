@@ -64,7 +64,7 @@ mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
 
    dst->type = src->type;
    dst->code = src->code;
-   strncpy (dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN);
+   strncpy (dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN - 1);
 }
 
 void
