@@ -21,6 +21,7 @@
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-opts-private.h"
+#include "mongocrypt-os-private.h"
 #include "mongocrypt-schema-cache-private.h"
 #include "mongocrypt-status-private.h"
 #include "mongocrypt-log-private.h"
@@ -108,8 +109,7 @@ tmp_buf (const _mongocrypt_buffer_t *buf)
    return (const char *) storage;
 }
 
-
-MONGOCRYPT_ONCE_FUNC (_mongocrypt_do_init)
+void _mongocrypt_do_init(void)
 {
    kms_message_init ();
 }
@@ -121,10 +121,13 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
    mongocrypt_t *crypt = NULL;
    bool success = false;
 
-   _mongocrypt_do_init ();
+   if (0 != _mongocrypt_once (_mongocrypt_do_init)) {
+      goto fail;
+   }
+
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
    crypt->opts = mongocrypt_opts_copy (opts);
-   mongocrypt_mutex_init (&crypt->mutex);
+   _mongocrypt_mutex_init (&crypt->mutex);
    _mongocrypt_log_init (&crypt->log, opts);
    crypt->schema_cache = _mongocrypt_schema_cache_new ();
    success = true;
@@ -147,7 +150,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    mongocrypt_opts_destroy (crypt->opts);
    _mongocrypt_schema_cache_destroy (crypt->schema_cache);
    _mongocrypt_key_cache_destroy (crypt->key_cache);
-   mongocrypt_mutex_destroy (&crypt->mutex);
+   _mongocrypt_mutex_destroy (&crypt->mutex);
    _mongocrypt_log_cleanup (&crypt->log);
    bson_free (crypt);
 }

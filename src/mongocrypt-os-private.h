@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2019-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef MONGOCRYPT_MUTEX_PRIVATE_H
-#define MONGOCRYPT_MUTEX_PRIVATE_H
+#ifndef MONGOCRYPT_OS_PRIVATE_H
+#define MONGOCRYPT_OS_PRIVATE_H
 
-#include <bson/bson.h>
+int
+_mongocrypt_once(void (*init_routine)(void));
 
-#if defined(BSON_OS_UNIX)
-#include <pthread.h>
-#define mongocrypt_mutex_t pthread_mutex_t
-#else
-#define mongocrypt_mutex_t CRITICAL_SECTION
-#endif
 
-void _mongocrypt_mutex_init(mongocrypt_mutex_t* mutex);
-
-void _mongocrypt_mutex_destroy(mongocrypt_mutex_t* mutex);
-
-void _mongocrypt_mutex_lock(mongocrypt_mutex_t* mutex);
-
-void _mongocrypt_mutex_unlock(mongocrypt_mutex_t* mutex);
-
-#endif /* MONGOCRYPT_MUTEX_PRIVATE_H */
+#endif /* MONGOCRYPT_OS_PRIVATE_H */

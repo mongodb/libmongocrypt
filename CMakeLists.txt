@@ -10,6 +10,7 @@ endif()
 set (CMAKE_C_STANDARD 99)
 
 find_package (libbson-1.0 1.11 REQUIRED)
+find_package ( Threads REQUIRED )
 
 include(GenerateExportHeader)
 
@@ -53,11 +54,25 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-status.c
    )
 
+if (WIN32)
+   list(APPEND MONGOCRYPT_SOURCES
+      src/os_win/os_mutex.c
+      src/os_win/os_once.c
+   )
+else()
+   list(APPEND MONGOCRYPT_SOURCES
+      src/os_posix/os_mutex.c
+      src/os_posix/os_once.c
+   )
+endif()
+
+
 # Define mongocrypt library
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
 target_include_directories (mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
 target_include_directories (mongocrypt PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
 target_link_libraries (mongocrypt PRIVATE ${BSON_LIBRARIES})
+target_link_libraries (mongocrypt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_compile_definitions (mongocrypt PRIVATE "${BSON_DEFINITIONS}")
 
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
@@ -66,6 +81,7 @@ add_library (mongocrypt-static STATIC ${MONGOCRYPT_SOURCES})
 target_include_directories (mongocrypt-static PRIVATE ${BSON_INCLUDE_DIRS})
 target_include_directories (mongocrypt-static PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src)
 target_link_libraries (mongocrypt-static PRIVATE ${BSON_LIBRARIES})
+target_link_libraries (mongocrypt-static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_compile_definitions (mongocrypt-static PRIVATE "${BSON_DEFINITIONS}")
 target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_DEFINE)
 

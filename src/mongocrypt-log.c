@@ -22,7 +22,7 @@
 void
 _mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts)
 {
-   mongocrypt_mutex_init (&log->mutex);
+   _mongocrypt_mutex_init (&log->mutex);
    if (opts && opts->log_fn) {
       _mongocrypt_log_set_fn (log, opts->log_fn, opts->log_ctx);
    } else {
@@ -35,7 +35,7 @@ _mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts)
 void
 _mongocrypt_log_cleanup (_mongocrypt_log_t *log)
 {
-   mongocrypt_mutex_destroy (&log->mutex);
+   _mongocrypt_mutex_destroy (&log->mutex);
    memset (log, 0, sizeof(*log));
 }
 
@@ -70,10 +70,10 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
                         mongocrypt_log_fn_t fn,
                         void *ctx)
 {
-   mongocrypt_mutex_lock (&log->mutex);
+   _mongocrypt_mutex_lock (&log->mutex);
    log->fn = fn;
    log->ctx = ctx;
-   mongocrypt_mutex_unlock (&log->mutex);
+   _mongocrypt_mutex_unlock (&log->mutex);
 }
 
 
@@ -96,8 +96,8 @@ _mongocrypt_log (_mongocrypt_log_t *log,
    message = bson_strdupv_printf (format, args);
    va_end (args);
 
-   mongocrypt_mutex_lock (&log->mutex);
+   _mongocrypt_mutex_lock (&log->mutex);
    log->fn (level, message, log->ctx);
-   mongocrypt_mutex_unlock (&log->mutex);
+   _mongocrypt_mutex_unlock (&log->mutex);
    bson_free (message);
 }

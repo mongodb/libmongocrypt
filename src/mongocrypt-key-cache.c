@@ -27,7 +27,7 @@ _mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
    cache->decrypt_key = decrypt_key;
    cache->decrypt_key_ctx = decrypt_key_ctx;
 
-   mongocrypt_mutex_init (&cache->mutex);
+   _mongocrypt_mutex_init (&cache->mutex);
 
    return cache;
 }
@@ -45,7 +45,7 @@ _mongocrypt_key_cache_destroy (_mongocrypt_key_cache_t *cache)
       /* TODO free the entries? Do we need to? */
    }
 
-   mongocrypt_mutex_destroy (&cache->mutex);
+   _mongocrypt_mutex_destroy (&cache->mutex);
    bson_free (cache);
 }
 
@@ -63,7 +63,7 @@ _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
    /* lock mutex, add entry (idemptotently) then unlock */
    /* copy the document into the entry. */
    /* than parse */
-   mongocrypt_mutex_lock (&cache->mutex);
+   _mongocrypt_mutex_lock (&cache->mutex);
 
    for (i = 0; i < num_docs; i++) {
       bson_t *copied;
@@ -119,7 +119,7 @@ _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
    ret = true;
 
 cleanup:
-   mongocrypt_mutex_unlock (&cache->mutex);
+   _mongocrypt_mutex_unlock (&cache->mutex);
    return ret;
 }
 
