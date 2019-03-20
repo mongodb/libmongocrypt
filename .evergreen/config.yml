@@ -1,6 +1,6 @@
-# Welcome. Evergreen configuration can be time consuming to modify and test. 
+# Welcome. Evergreen configuration can be time consuming to modify and test.
 # So each script has a header comment describing how to run it locally.
-# 
+#
 # Some environment variables are hidden by ${inject_env_from_evergreen}.
 # This is set in the evergreen project.
 # View this in Evergreen => Projects => libmongocrypt.
@@ -42,7 +42,7 @@ tasks:
         eval "${inject_env_from_evergreen}"
         ./libmongocrypt/.evergreen/compile.sh
         ./libmongocrypt/.evergreen/test.sh
-        
+
   - func: "tar and upload libmongocrypt libraries"
 
 pre:
@@ -80,8 +80,8 @@ buildvariants:
   run_on: macos-1014
   tasks:
   - build-and-test
-- name: ubuntu1604-zseries
-  display_name: "Ubuntu 16.04 on zSeries"
-  run_on: ubuntu1604-zseries-small
+- name: rhel72-zseries-test
+  display_name: "RHEL 7,2 on zSeries"
+  run_on: rhel72-zseries-test
   tasks:
   - build-and-test

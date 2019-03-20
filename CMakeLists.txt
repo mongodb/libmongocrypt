@@ -1,4 +1,5 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.7)
+# 3.7 is the minimum for VERSION_GREATER_EQUAL
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
    project (mongocrypt C)
