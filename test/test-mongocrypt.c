@@ -144,6 +144,17 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
 }
 
 
+void
+_mongocrypt_tester_satisfy_key_decryptor (_mongocrypt_tester_t *tester, mongocrypt_key_decryptor_t* key_decryptor) {
+   mongocrypt_binary_t *bin;
+
+   bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
+   mongocrypt_key_decryptor_feed (key_decryptor, bin);
+   BSON_ASSERT (0 == mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1));
+   mongocrypt_binary_destroy (bin);
+}
+
+
 /* Satisfy the key requests of a key broker using example data. */
 void
 _mongocrypt_tester_satisfy_key_broker (_mongocrypt_tester_t *tester,
@@ -160,11 +171,8 @@ _mongocrypt_tester_satisfy_key_broker (_mongocrypt_tester_t *tester,
 
    /* Decrypt the key material. */
    key_decryptor = mongocrypt_key_broker_next_decryptor (key_broker);
-   bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
-   BSON_ASSERT (mongocrypt_key_decryptor_feed (key_decryptor, bin));
-   mongocrypt_binary_destroy (bin);
-   BSON_ASSERT (0 == mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1));
-   BSON_ASSERT (mongocrypt_key_broker_add_decrypted_key (key_broker, key_decryptor));
+   _mongocrypt_tester_satisfy_key_decryptor (tester, key_decryptor);
+   mongocrypt_key_broker_add_decrypted_key (key_broker, key_decryptor);
    BSON_ASSERT (!mongocrypt_key_broker_next_decryptor (key_broker));
 }
 
@@ -194,6 +202,21 @@ mongocrypt_binary_t* _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t* tes
 }
 
 
+void
+_mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n)
+{
+   uint8_t i;
+
+   memset (buf, 0, sizeof (*buf));
+   buf->data = bson_malloc (n);
+   for (i = 0; i < n; i++) {
+      buf->data[i] = i;
+   }
+   buf->len = n;
+   buf->owned = true;
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -210,6 +233,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_encryptor (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);
    _mongocrypt_tester_install_decryptor (&tester);
+   _mongocrypt_tester_install_key_broker (&tester);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

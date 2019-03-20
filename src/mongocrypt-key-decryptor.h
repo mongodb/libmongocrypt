@@ -45,7 +45,7 @@ mongocrypt_key_decryptor_feed (mongocrypt_key_decryptor_t *kd,
                                mongocrypt_binary_t *bytes);
 
 MONGOCRYPT_EXPORT
-mongocrypt_status_t *
-mongocrypt_key_decryptor_status (mongocrypt_key_decryptor_t *kb);
+bool
+mongocrypt_key_decryptor_status (mongocrypt_key_decryptor_t *kb, mongocrypt_status_t* out);
 
 #endif /* MONGOCRYPT_KEY_DECRYPTOR_H */

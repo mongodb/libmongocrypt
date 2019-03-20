@@ -20,6 +20,7 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-decryptor.h"
 #include "mongocrypt-key-decryptor-private.h"
+#include "mongocrypt-status-private.h"
 
 void
 _mongocrypt_key_decryptor_init (mongocrypt_key_decryptor_t *kd,
@@ -82,12 +83,17 @@ mongocrypt_key_decryptor_feed (mongocrypt_key_decryptor_t *kd,
    return true;
 }
 
-mongocrypt_status_t *
-mongocrypt_key_decryptor_status (mongocrypt_key_decryptor_t *kd)
+bool
+mongocrypt_key_decryptor_status (mongocrypt_key_decryptor_t *kd, mongocrypt_status_t* out)
 {
    BSON_ASSERT (kd);
 
-   return kd->status;
+   if (!mongocrypt_status_ok (kd->status)) {
+      mongocrypt_status_copy_to (kd->status, out);
+      return false;
+   }
+   mongocrypt_status_reset (out);
+   return true;
 }
 
 void

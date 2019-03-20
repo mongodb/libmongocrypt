@@ -52,8 +52,8 @@ mongocrypt_key_broker_add_decrypted_key (
    mongocrypt_key_decryptor_t *key_decryptor);
 
 MONGOCRYPT_EXPORT
-mongocrypt_status_t *
-mongocrypt_key_broker_status (mongocrypt_key_broker_t *kb);
+bool
+mongocrypt_key_broker_status (mongocrypt_key_broker_t *kb, mongocrypt_status_t* out);
 
 
 #endif /* MONGOCRYPT_KEY_BROKER_H */

@@ -49,6 +49,8 @@ typedef struct __mongocrypt_tester_t {
 mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 
+void
+_mongocrypt_tester_satisfy_key_decryptor (_mongocrypt_tester_t *tester, mongocrypt_key_decryptor_t* key_decryptor);
 
 void
 _mongocrypt_tester_satisfy_key_broker (_mongocrypt_tester_t *tester,
@@ -68,6 +70,9 @@ _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester);
 /* Return a repeated character with no null terminator. */
 char *
 _mongocrypt_repeat_char (char c, uint32_t times);
+
+void
+_mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n);
 
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
@@ -125,6 +130,9 @@ _mongocrypt_tester_install_decryptor (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_ciphertext (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester);
 
 
 #define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn)

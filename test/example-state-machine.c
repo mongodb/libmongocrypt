@@ -55,14 +55,16 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    const mongocrypt_binary_t *filter;
    mongocrypt_binary_t *key_doc = NULL;
    mongocrypt_key_decryptor_t *key_decryptor = NULL;
-   const mongocrypt_status_t *status = mongocrypt_key_broker_status (kb);
+   mongocrypt_status_t *status = mongocrypt_status_new();
    bool res = false;
+
 
    /* First, get a filter to run against the
       key vault. Run a find command with this
       filter against the database. */
    filter = mongocrypt_key_broker_get_key_filter (kb);
    if (!filter) {
+      mongocrypt_key_broker_status (kb, status);
       printf ("error getting key filter: %s\n",
               mongocrypt_status_message (status));
       goto done;
@@ -74,6 +76,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    /* cursor = collection.find (filter); */
    /* for key_doc in cursor: */
    if (!mongocrypt_key_broker_add_key (kb, key_doc)) {
+      mongocrypt_key_broker_status (kb, status);
       printf ("error adding key: %s\n", mongocrypt_status_message (status));
       goto done;
    }
@@ -92,6 +95,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    key_decryptor = mongocrypt_key_broker_next_decryptor (kb);
    while (key_decryptor) {
       if (!_decrypt_via_kms (key_decryptor)) {
+         mongocrypt_key_broker_status (kb, status);
          printf ("error decrypting key: %s\n",
                  mongocrypt_status_message (status));
          goto done;
@@ -101,6 +105,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    }
 
    /* Sometimes when next_decryptor returns NULL, it's an error */
+   mongocrypt_key_broker_status (kb, status);
    if (!mongocrypt_status_ok (status)) {
       printf ("error: %s\n", mongocrypt_status_message (status));
       goto done;
@@ -110,6 +115,7 @@ _fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
    res = true;
 
 done:
+   mongocrypt_status_destroy (status);
    return res;
 }
 

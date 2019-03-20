@@ -19,20 +19,6 @@
 
 #include "test-mongocrypt.h"
 
-static void
-_init_and_fill_buffer (_mongocrypt_buffer_t *buf, int n)
-{
-   uint8_t i;
-
-   memset (buf, 0, sizeof (*buf));
-   buf->data = bson_malloc (n);
-   for (i = 0; i < n; i++) {
-      buf->data[i] = i;
-   }
-   buf->len = n;
-   buf->owned = true;
-}
-
 
 /* From BSON Binary subtype 6 specification:
 struct fle_blob {
@@ -56,8 +42,8 @@ _test_ciphertext_serialization (_mongocrypt_tester_t* tester)
 
    original.blob_subtype = 1;
    original.original_bson_type = 2;
-   _init_and_fill_buffer (&original.data, 2);
-   _init_and_fill_buffer (&original.key_id, 16);
+   _mongocrypt_tester_fill_buffer (&original.data, 2);
+   _mongocrypt_tester_fill_buffer (&original.key_id, 16);
 
    _mongocrypt_encryptor_serialize_ciphertext (&original, &serialized);
    BSON_ASSERT (0 == memcmp (expected, serialized.data, serialized.len));
@@ -87,7 +73,7 @@ _test_malformed_ciphertext (_mongocrypt_tester_t *tester)
 
    status = mongocrypt_status_new ();
    /* the minimum size for a ciphertext is 19 bytes. */
-   _init_and_fill_buffer (&serialized, 18);
+   _mongocrypt_tester_fill_buffer (&serialized, 18);
 
    BSON_ASSERT (!_mongocrypt_decryptor_parse_ciphertext_unowned (
       &serialized, &returned, status));
@@ -95,7 +81,7 @@ _test_malformed_ciphertext (_mongocrypt_tester_t *tester)
                 strcmp (status->message, "malformed ciphertext, too small"));
    _mongocrypt_buffer_cleanup (&serialized);
 
-   _init_and_fill_buffer (&serialized, 19);
+   _mongocrypt_tester_fill_buffer (&serialized, 19);
    /* give a valid blob_subtype. */
    serialized.data[0] = 1;
    BSON_ASSERT (_mongocrypt_decryptor_parse_ciphertext_unowned (

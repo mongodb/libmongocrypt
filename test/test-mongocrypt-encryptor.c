@@ -151,7 +151,7 @@ _test_encryptor_need_schema (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
    collinfo = _mongocrypt_tester_file (
-      tester, "./test/example/collection-info-no-schema.json");
+      tester, "./test/data/collection-info-no-schema.json");
    state = mongocrypt_encryptor_add_collection_info (encryptor, collinfo);
    mongocrypt_binary_destroy (collinfo);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_NO_ENCRYPTION_NEEDED);
@@ -215,7 +215,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
    markings = _mongocrypt_tester_file (
-      tester, "./test/example/mongocryptd-reply-no-markings.json");
+      tester, "./test/data/mongocryptd-reply-no-markings.json");
    state = mongocrypt_encryptor_add_markings (encryptor, markings);
    mongocrypt_binary_destroy (markings);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_NO_ENCRYPTION_NEEDED);
@@ -229,7 +229,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
    markings = _mongocrypt_tester_file (
-      tester, "./test/example/mongocryptd-reply-no-encryption-needed.json");
+      tester, "./test/data/mongocryptd-reply-no-encryption-needed.json");
    state = mongocrypt_encryptor_add_markings (encryptor, markings);
    mongocrypt_binary_destroy (markings);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_NO_ENCRYPTION_NEEDED);
@@ -243,7 +243,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
    markings = _mongocrypt_tester_file (
-      tester, "./test/example/mongocryptd-reply-invalid.json");
+      tester, "./test/data/mongocryptd-reply-invalid.json");
    state = mongocrypt_encryptor_add_markings (encryptor, markings);
    mongocrypt_binary_destroy (markings);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_ERROR);
@@ -349,6 +349,7 @@ _test_encryptor_need_encryption (_mongocrypt_tester_t *tester)
    /* check that the encrypted command has a valid ciphertext. */
    encrypted_cmd = mongocrypt_encryptor_encrypted_cmd (encryptor);
    _mongocrypt_binary_to_bson (encrypted_cmd, &as_bson);
+   CRYPT_TRACEF (&crypt->log, "encrypted doc: %s", tmp_json(&as_bson));
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));

@@ -130,6 +130,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-decryptor.c
    test/test-mongocrypt-log.c
    test/test-mongocrypt-ciphertext.c
+   test/test-mongocrypt-key-broker.c
 )
 # Define test-mongocrypt
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
