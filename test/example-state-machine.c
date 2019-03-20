@@ -283,7 +283,7 @@ main ()
 {
    mongocrypt_t *crypt;
 
-   crypt = mongocrypt_new (NULL, NULL);
+   crypt = mongocrypt_new (NULL);
 
    _auto_encrypt (crypt);
    _auto_decrypt (crypt);

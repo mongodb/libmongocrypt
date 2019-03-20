@@ -116,13 +116,12 @@ void _mongocrypt_do_init(void)
 
 
 mongocrypt_t *
-mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
+mongocrypt_new (const mongocrypt_opts_t *opts)
 {
    mongocrypt_t *crypt = NULL;
-   bool success = false;
 
    if (0 != _mongocrypt_once (_mongocrypt_do_init)) {
-      goto fail;
+      return NULL;
    }
 
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
@@ -130,16 +129,20 @@ mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status)
    _mongocrypt_mutex_init (&crypt->mutex);
    _mongocrypt_log_init (&crypt->log, opts);
    crypt->schema_cache = _mongocrypt_schema_cache_new ();
-   success = true;
-
-fail:
-   if (!success) {
-      mongocrypt_destroy (crypt);
-      crypt = NULL;
-   }
+   crypt->status = mongocrypt_status_new();
    return crypt;
 }
 
+
+bool
+mongocrypt_status (mongocrypt_t *crypt, mongocrypt_status_t* out) {
+   if (!mongocrypt_status_ok (crypt->status)) {
+      mongocrypt_status_copy_to (crypt->status, out);
+      return false;
+   }
+   mongocrypt_status_reset (out);
+   return true;
+}
 
 void
 mongocrypt_destroy (mongocrypt_t *crypt)
@@ -152,5 +155,6 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    _mongocrypt_key_cache_destroy (crypt->key_cache);
    _mongocrypt_mutex_destroy (&crypt->mutex);
    _mongocrypt_log_cleanup (&crypt->log);
+   mongocrypt_status_destroy (crypt->status);
    bson_free (crypt);
 }

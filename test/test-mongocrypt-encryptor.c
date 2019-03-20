@@ -99,7 +99,7 @@ _test_encryptor_need_ns (_mongocrypt_tester_t *tester)
    mongocrypt_encryptor_state_t state;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    ASSERT_OR_PRINT (crypt, status);
 
    /* Success. */
@@ -152,7 +152,7 @@ _test_encryptor_need_schema (_mongocrypt_tester_t *tester)
    status = mongocrypt_status_new ();
 
    /* Success. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
@@ -166,7 +166,7 @@ _test_encryptor_need_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Coll info with no schema. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
@@ -180,7 +180,7 @@ _test_encryptor_need_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Coll info with no schema. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA);
@@ -191,7 +191,7 @@ _test_encryptor_need_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Wrong state. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    state = mongocrypt_encryptor_add_collection_info (encryptor, NULL);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_ERROR);
@@ -216,7 +216,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    status = mongocrypt_status_new ();
 
    /* Success. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
@@ -230,7 +230,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* No placeholders. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
@@ -244,7 +244,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* No encryption in schema. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
@@ -258,7 +258,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Invalid marking. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
@@ -273,7 +273,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* NULL markings. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS);
@@ -285,7 +285,7 @@ _test_encryptor_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Wrong state. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    state = mongocrypt_encryptor_add_markings (encryptor, markings);
    BSON_ASSERT (state == MONGOCRYPT_ENCRYPTOR_STATE_ERROR);
@@ -311,7 +311,7 @@ _test_encryptor_need_keys (_mongocrypt_tester_t *tester)
    status = mongocrypt_status_new ();
 
    /* Success. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS);
@@ -324,7 +324,7 @@ _test_encryptor_need_keys (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Unsatisfied key broker. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encryptor = mongocrypt_encryptor_new (crypt);
    _mongocrypt_tester_run_encryptor_to (
       tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS);
@@ -349,7 +349,7 @@ _test_encryptor_need_encryption (_mongocrypt_tester_t *tester)
    mongocrypt_encryptor_state_t state;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    ASSERT_OR_PRINT (crypt, status);
 
    /* Success. */

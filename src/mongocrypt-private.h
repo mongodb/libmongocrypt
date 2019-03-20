@@ -71,6 +71,7 @@ struct _mongocrypt_t {
    /* The key cache has its own interal mutex. */
    _mongocrypt_key_cache_t *key_cache;
    _mongocrypt_log_t log;
+   mongocrypt_status_t *status;
 };
 
 typedef struct {

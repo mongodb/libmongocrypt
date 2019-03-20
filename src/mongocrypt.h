@@ -52,16 +52,6 @@ mongocrypt_version (void);
 typedef struct _mongocrypt_t mongocrypt_t;
 
 
-MONGOCRYPT_EXPORT
-void
-mongocrypt_init (const mongocrypt_opts_t *opts);
-
-
-MONGOCRYPT_EXPORT
-void
-mongocrypt_cleanup (void);
-
-
 /**
  * Create a new mongocrypt_t handle.
  *
@@ -79,7 +69,12 @@ mongocrypt_cleanup (void);
  */
 MONGOCRYPT_EXPORT
 mongocrypt_t *
-mongocrypt_new (const mongocrypt_opts_t *opts, mongocrypt_status_t *status);
+mongocrypt_new (const mongocrypt_opts_t *opts);
+
+
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_status (mongocrypt_t *crypt, mongocrypt_status_t* out);
 
 
 MONGOCRYPT_EXPORT
