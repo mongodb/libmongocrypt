@@ -139,7 +139,13 @@ _mongocrypt_key_broker_next_decryptor (mongocrypt_key_broker_t *kb)
       kbi = kbi->next;
    }
 
-   return &kbi->key_decryptor;
+   if (kbi) {
+      kb->decryptor_iter = kbi->next;
+      return &kbi->key_decryptor;
+   } else {
+      kb->decryptor_iter = NULL;
+      return NULL;
+   }
 }
 
 
