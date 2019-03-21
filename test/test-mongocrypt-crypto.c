@@ -109,6 +109,7 @@ _init_buffer (_mongocrypt_buffer_t *out, const char *hex_string)
 static void
 _test_mcgrew (_mongocrypt_tester_t *tester)
 {
+   mongocrypt_t *crypt;
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t key, iv, associated_data, plaintext,
       ciphertext_expected, ciphertext_actual;
@@ -143,6 +144,8 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    ciphertext_actual.data = bson_malloc (ciphertext_actual.len);
    ciphertext_actual.owned = true;
 
+   /* Force the crypto stack to initialize with mongocrypt_new */
+   crypt = mongocrypt_new (NULL);
    status = mongocrypt_status_new ();
    ret = _mongocrypt_do_encryption (&iv,
                                     &associated_data,
@@ -164,6 +167,7 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&ciphertext_expected);
    _mongocrypt_buffer_cleanup (&ciphertext_actual);
    mongocrypt_status_destroy (status);
+   mongocrypt_destroy(crypt);
 }
 
 

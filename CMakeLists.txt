@@ -81,6 +81,8 @@ endif()
 set (MONGOCRYPT_CRYPTO OpenSSL)
 if (APPLE)
    set (MONGOCRYPT_CRYPTO CommonCrypto)
+elseif (WIN32)
+   set (MONGOCRYPT_CRYPTO CNG)
 endif ()
 
 
@@ -88,6 +90,11 @@ if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    message ("Building with common crypto")
    list(APPEND MONGOCRYPT_SOURCES
       src/crypto/commoncrypto.c
+   )
+elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
+   message ("Building with CNG")
+   list(APPEND MONGOCRYPT_SOURCES
+      src/crypto/cng.c
    )
 else ()
    message ("Building with OpenSSL")
@@ -121,6 +128,9 @@ target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_STATIC_DEFINE)
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    target_link_libraries (mongocrypt PRIVATE "-framework CoreFoundation -framework Security")
    target_link_libraries (mongocrypt-static PRIVATE "-framework CoreFoundation -framework Security")
+elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
+   target_link_libraries (mongocrypt PRIVATE "bcrypt")
+   target_link_libraries (mongocrypt-static PRIVATE "bcrypt")
 else ()
    target_link_libraries (mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
    target_include_directories (mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
