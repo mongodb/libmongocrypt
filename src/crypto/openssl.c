@@ -61,6 +61,13 @@ HMAC_CTX_free (HMAC_CTX *ctx)
 #endif
 
 
+void
+_crypto_init ()
+{
+
+}
+
+
 void *
 _crypto_encrypt_new (const _mongocrypt_buffer_t *key,
                      const _mongocrypt_buffer_t *iv,

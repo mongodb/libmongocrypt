@@ -23,6 +23,13 @@
 #include <Security/SecRandom.h>
 
 
+void
+_crypto_init ()
+{
+
+}
+
+
 void *
 _crypto_encrypt_new (const _mongocrypt_buffer_t *key,
                      const _mongocrypt_buffer_t *iv,

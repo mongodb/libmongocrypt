@@ -112,6 +112,7 @@ tmp_buf (const _mongocrypt_buffer_t *buf)
 void _mongocrypt_do_init(void)
 {
    kms_message_init ();
+   _crypto_init ();
 }
 mongocrypt_t *
 mongocrypt_new (const mongocrypt_opts_t *opts)

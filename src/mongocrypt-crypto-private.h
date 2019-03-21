@@ -58,6 +58,10 @@ int
 _mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len);
 
 /* Crypto implementations must implement these functions. */
+
+void
+_crypto_init();
+
 void *
 _crypto_encrypt_new (const _mongocrypt_buffer_t *key,
                      const _mongocrypt_buffer_t *iv,
