@@ -40,7 +40,6 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
-   src/mongocrypt-commoncrypto.c
    src/mongocrypt-crypto.c
    src/mongocrypt-decryptor.c
    src/mongocrypt-encryptor.c
@@ -48,7 +47,6 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-key-decryptor.c
    src/mongocrypt-key-cache.c
    src/mongocrypt-log.c
-   src/mongocrypt-openssl.c
    src/mongocrypt-opts.c
    src/mongocrypt-parsing.c
    src/mongocrypt-schema-cache.c
@@ -78,6 +76,27 @@ else()
    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Werror -Wno-missing-braces -Wno-unused-function")
 endif()
 
+# Choose a Crypto provider
+set (MONGOCRYPT_CRYPTO OpenSSL)
+if (APPLE)
+   set (MONGOCRYPT_CRYPTO CommonCrypto)
+endif ()
+
+
+if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
+   message ("Building with common crypto")
+   list(APPEND MONGOCRYPT_SOURCES
+      src/crypto/commoncrypto.c
+   )
+else ()
+   message ("Building with OpenSSL")
+   include (FindOpenSSL)
+   message ("Found OpenSSL version ${OPENSSL_VERSION}")
+   list(APPEND MONGOCRYPT_SOURCES
+      src/crypto/openssl.c
+   )
+endif ()
+
 
 # Define mongocrypt library
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
@@ -97,24 +116,16 @@ target_link_libraries (mongocrypt-static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_compile_definitions (mongocrypt-static PRIVATE "${BSON_DEFINITIONS}")
 target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_STATIC_DEFINE)
 
-# Add ssl libraries to mongocrypt
-if (APPLE)
-   message ("Building with common crypto")
-   target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
-   target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_CRYPTO_COMMONCRYPTO=1")
+
+if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    target_link_libraries (mongocrypt PRIVATE "-framework CoreFoundation -framework Security")
    target_link_libraries (mongocrypt-static PRIVATE "-framework CoreFoundation -framework Security")
 else ()
-   message ("Building with OpenSSL")
-   include (FindOpenSSL)
-   message ("Found OpenSSL version ${OPENSSL_VERSION}")
    target_link_libraries (mongocrypt PRIVATE ${OPENSSL_LIBRARIES})
    target_include_directories (mongocrypt PRIVATE ${OPENSSL_INCLUDE_DIR})
-   target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
 
    target_link_libraries (mongocrypt-static PRIVATE ${OPENSSL_LIBRARIES})
    target_include_directories (mongocrypt-static PRIVATE ${OPENSSL_INCLUDE_DIR})
-   target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_CRYPTO_OPENSSL=1")
 endif ()
 
 # kms-message

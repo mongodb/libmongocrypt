@@ -19,13 +19,12 @@
  * [MCGREW] https://tools.ietf.org/html/draft-mcgrew-aead-aes-cbc-hmac-sha2-05
  */
 
-#include "mongocrypt-crypto-private.h"
-#include "mongocrypt-private.h"
-#include "mongocrypt-log-private.h"
+#include "../mongocrypt-crypto-private.h"
+#include "../mongocrypt-private.h"
+#include "../mongocrypt-log-private.h"
 
 #include <bson/bson.h>
 
-#ifdef MONGOCRYPT_CRYPTO_OPENSSL
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
@@ -333,5 +332,3 @@ _crypto_random (_mongocrypt_buffer_t *out,
    }
    return true;
 }
-
-#endif

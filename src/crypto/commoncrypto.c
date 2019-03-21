@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongocrypt-crypto-private.h"
-#include "mongocrypt-private.h"
-
-#ifdef MONGOCRYPT_CRYPTO_COMMONCRYPTO
+#include "../mongocrypt-crypto-private.h"
+#include "../mongocrypt-private.h"
 
 #include <CommonCrypto/CommonCryptor.h>
 #include <CommonCrypto/CommonHMAC.h>
 #include <Security/Security.h>
 #include <Security/SecRandom.h>
+
 
 void *
 _crypto_encrypt_new (const _mongocrypt_buffer_t *key,
@@ -280,5 +279,3 @@ _crypto_random (_mongocrypt_buffer_t *out,
    }
    return true;
 }
-
-#endif
