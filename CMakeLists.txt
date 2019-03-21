@@ -22,14 +22,7 @@ option (ENABLE_TRACE "Enable verbose trace logs. Requires MONGOCRYPT_TRACE envir
 
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt.h
-   src/mongocrypt-binary.h
    src/mongocrypt-compat.h
-   src/mongocrypt-decryptor.h
-   src/mongocrypt-encryptor.h
-   src/mongocrypt-key-broker.h
-   src/mongocrypt-key-decryptor.h
-   src/mongocrypt-opts.h
-   src/mongocrypt-status.h
 )
 
 message ("Found libbson, configuring to add real libmongocrypt target")
@@ -42,10 +35,11 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
    src/mongocrypt-crypto.c
-   src/mongocrypt-decryptor.c
-   src/mongocrypt-encryptor.c
+   src/mongocrypt-ctx.c
+   src/mongocrypt-ctx-decrypt.c
+   src/mongocrypt-ctx-encrypt.c
    src/mongocrypt-key-broker.c
-   src/mongocrypt-key-decryptor.c
+   src/mongocrypt-kms-ctx.c
    src/mongocrypt-key-cache.c
    src/mongocrypt-log.c
    src/mongocrypt-opts.c
@@ -148,8 +142,8 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt.c
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-data-key.c
-   test/test-mongocrypt-encryptor.c
-   test/test-mongocrypt-decryptor.c
+   test/test-mongocrypt-ctx-encrypt.c
+   test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-log.c
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-key-broker.c

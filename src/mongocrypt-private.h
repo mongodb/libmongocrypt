@@ -30,13 +30,13 @@
 
 #define CLIENT_ERR_W_CODE(code, ...) \
    _mongocrypt_set_error (           \
-      status, MONGOCRYPT_ERROR_TYPE_CLIENT, code, __VA_ARGS__)
+      status, MONGOCRYPT_STATUS_ERROR_CLIENT, code, __VA_ARGS__)
 
 #define CLIENT_ERR(...) \
    CLIENT_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
 
 #define KMS_ERR_W_CODE(code, ...) \
-   _mongocrypt_set_error (status, MONGOCRYPT_ERROR_TYPE_KMS, code, __VA_ARGS__)
+   _mongocrypt_set_error (status, MONGOCRYPT_STATUS_ERROR_KMS, code, __VA_ARGS__)
 
 #define KMS_ERR(...) KMS_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
 
@@ -53,16 +53,11 @@ tmp_buf (const _mongocrypt_buffer_t *buf);
 
 void
 _mongocrypt_set_error (mongocrypt_status_t *status,
-                       mongocrypt_error_type_t type,
+                       mongocrypt_status_type_t type,
                        uint32_t code,
                        const char *format,
                        ...);
 
-void
-_bson_error_to_mongocrypt_error (const bson_error_t *bson_error,
-                                 mongocrypt_error_type_t type,
-                                 uint32_t code,
-                                 mongocrypt_status_t *status);
 
 struct _mongocrypt_t {
    mongocrypt_opts_t *opts;
@@ -91,21 +86,31 @@ typedef struct {
    _mongocrypt_buffer_t data;
 } _mongocrypt_ciphertext_t;
 
+/* TODO: reconsider where to put these parsing functions please. */
 bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    _mongocrypt_marking_t *out,
                                    mongocrypt_status_t *status);
+bool
+_test_mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *buf,
+                                      _mongocrypt_ciphertext_t *out,
+                                      mongocrypt_status_t *status);
+
+void
+_test_mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
+                                  _mongocrypt_buffer_t *out);
+
+typedef enum { TRAVERSE_MATCH_CIPHERTEXT, TRAVERSE_MATCH_MARKING} traversal_match_t;
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
-                                                 _mongocrypt_buffer_t *in);
+                                                 _mongocrypt_buffer_t *in,
+                                                 mongocrypt_status_t* status);
 
 
 typedef bool (*_mongocrypt_transform_callback_t) (void *ctx,
                                                   _mongocrypt_buffer_t *in,
-                                                  bson_value_t *out);
-
-
-typedef enum { TRAVERSE_MATCH_CIPHERTEXT, TRAVERSE_MATCH_MARKING} traversal_match_t;
+                                                  bson_value_t *out,
+                                                  mongocrypt_status_t* status);
 
 bool
 _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,

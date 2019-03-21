@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-#include <mongocrypt.h>
-#include <mongocrypt-private.h>
-#include <mongocrypt-log-private.h>
-
+#include "mongocrypt.h"
+#include "mongocrypt-private.h"
+#include "mongocrypt-log-private.h"
 #include "test-mongocrypt.h"
 
 typedef struct {
@@ -48,7 +47,8 @@ _test_log (_mongocrypt_tester_t *tester)
    mongocrypt_status_t *status;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL);
+   crypt = mongocrypt_new ();
+   BSON_ASSERT (mongocrypt_init (crypt, NULL));
    /* Test logging with a custom handler messages. */
    _mongocrypt_log_set_fn (&crypt->log, _test_log_fn, &log_ctx);
    for (i = 0; i < sizeof (levels) / sizeof (*levels); i++) {

@@ -20,9 +20,11 @@
 #include <bson/bson.h>
 #include <stdint.h>
 
-#include "mongocrypt-binary.h"
+#include "mongocrypt.h"
+#include "mongocrypt-ctx-private.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt-buffer-private.h"
-#include "mongocrypt-encryptor-private.h"
+#include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 
 struct __mongocrypt_tester_t;
@@ -49,18 +51,16 @@ typedef struct __mongocrypt_tester_t {
 mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 
-void
-_mongocrypt_tester_satisfy_key_decryptor (_mongocrypt_tester_t *tester, mongocrypt_key_decryptor_t* key_decryptor);
 
 void
-_mongocrypt_tester_satisfy_key_broker (_mongocrypt_tester_t *tester,
-                                       mongocrypt_key_broker_t *key_broker);
+_mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
+                                mongocrypt_kms_ctx_t *kms);
 
 
 void
-_mongocrypt_tester_run_encryptor_to (_mongocrypt_tester_t *tester,
-                                     mongocrypt_encryptor_t *encryptor,
-                                     mongocrypt_encryptor_state_t stop_state);
+_mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
+                               mongocrypt_ctx_t *ctx,
+                               mongocrypt_ctx_state_t stop_state);
 
 
 mongocrypt_binary_t *
@@ -94,6 +94,43 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n);
 #define ASSERT_OR_PRINT(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, mongocrypt_status_message (_err))
 
+#define ASSERT_OK(_stmt, _obj)                                       \
+   do {                                                              \
+      bool _retval = (_stmt);                                        \
+      bool _status_ok = mongocrypt_status_ok ((_obj)->status);       \
+      const char *_msg = mongocrypt_status_message ((_obj)->status); \
+      if (!_retval) {                                                \
+         fprintf (stderr, "%s failed with msg: %s", #_stmt, _msg);   \
+      } else if (!_status_ok) {                                      \
+         fprintf (stderr,                                            \
+                  "%s resulted in unexpected error status: %s\n",    \
+                  #_stmt,                                            \
+                  _msg);                                             \
+      }                                                              \
+      BSON_ASSERT (_retval &&_status_ok);                            \
+   } while (0)
+
+#define ASSERT_FAILS(_stmt, _obj, _msg_pattern)                            \
+   do {                                                                    \
+      bool _retval = (_stmt);                                              \
+      bool _status_ok = mongocrypt_status_ok ((_obj)->status);             \
+      const char *_msg = mongocrypt_status_message ((_obj)->status);       \
+      bool _found_msg = _msg && strstr (_msg, _msg_pattern) != NULL;               \
+      if (_retval) {                                                       \
+         fprintf (stderr,                                                  \
+                  "%s succeeded (but should have failed) with msg: %s",    \
+                  #_stmt,                                                  \
+                  _msg_pattern);                                                   \
+      } else if (_status_ok) {                                             \
+         fprintf (stderr,                                                  \
+                  "%s resulted in unexpected ok status: %s\n",             \
+                  #_stmt,                                                  \
+                  _msg);                                                   \
+      } else if (!_found_msg) {                                            \
+         fprintf (stderr, "%s does not contain %s\n", _msg, _msg_pattern); \
+      }                                                                    \
+      BSON_ASSERT (!_retval && !_status_ok &&_found_msg);                     \
+   } while (0)
 
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, _err.message)
@@ -121,11 +158,11 @@ _mongocrypt_tester_install_data_key (_mongocrypt_tester_t *tester);
 
 
 void
-_mongocrypt_tester_install_encryptor (_mongocrypt_tester_t *tester);
+_mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester);
 
 
 void
-_mongocrypt_tester_install_decryptor (_mongocrypt_tester_t *tester);
+_mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester);
 
 
 void

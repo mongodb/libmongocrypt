@@ -20,7 +20,18 @@
 #include "mongocrypt-buffer-private.h"
 
 mongocrypt_binary_t *
-mongocrypt_binary_new (uint8_t *data, uint32_t len)
+mongocrypt_binary_new (void)
+{
+   mongocrypt_binary_t *binary;
+
+   binary = (mongocrypt_binary_t *) bson_malloc0 (sizeof *binary);
+
+   return binary;
+}
+
+
+mongocrypt_binary_t *
+mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len)
 {
    mongocrypt_binary_t *binary;
 
@@ -32,10 +43,10 @@ mongocrypt_binary_new (uint8_t *data, uint32_t len)
 }
 
 
-void
-_mongocrypt_binary_to_bson (const mongocrypt_binary_t *binary, bson_t *out)
+bool
+_mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out)
 {
-   bson_init_static (out, binary->data, binary->len);
+   return bson_init_static (out, binary->data, binary->len);
 }
 
 

@@ -16,283 +16,228 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
+#include <bson/bson.h>
 #include <mongocrypt.h>
-#include <mongocrypt-decryptor.h>
-#include <mongocrypt-encryptor.h>
-#include <mongocrypt-key-broker.h>
-#include <mongocrypt-status.h>
 
-static bool
-_decrypt_via_kms (mongocrypt_key_decryptor_t *key_decryptor)
+static mongocrypt_binary_t *
+_read_json (const char *path, uint8_t **data)
 {
-   mongocrypt_binary_t *bytes_received = NULL;
-   uint32_t to_read;
-   const uint32_t max_bytes_to_read = 1024;
-   mongocrypt_binary_t *msg;
+   bson_error_t error;
+   bson_json_reader_t *reader;
+   bson_t as_bson;
+   uint32_t len;
 
-   msg = mongocrypt_key_decryptor_msg (key_decryptor);
-   /* send_message_to_kms (msg); */
-   mongocrypt_binary_destroy (msg);
-   to_read =
-      mongocrypt_key_decryptor_bytes_needed (key_decryptor, max_bytes_to_read);
-   while (to_read > 0) {
-      /* recv to_read from the kms socket into bytes_received */
-      if (!mongocrypt_key_decryptor_feed (key_decryptor, bytes_received)) {
-         return false;
-      }
-
-      to_read = mongocrypt_key_decryptor_bytes_needed (key_decryptor,
-                                                       max_bytes_to_read);
+   reader = bson_json_reader_new_from_file (path, &error);
+   if (!reader) {
+      fprintf (stderr, "could not open: %s\n", path);
+      abort ();
+   }
+   bson_init (&as_bson);
+   if (!bson_json_reader_read (reader, &as_bson, &error)) {
+      fprintf (stderr, "could not read json from: %s\n", path);
+      abort ();
    }
 
-   return true;
+   *data = bson_destroy_with_steal (&as_bson, true, &len);
+   return mongocrypt_binary_new_from_data (*data, len);
 }
 
-static bool
-_fetch_and_decrypt_keys (mongocrypt_key_broker_t *kb)
+static mongocrypt_binary_t *
+_read_http (const char *path, uint8_t **data)
 {
-   const mongocrypt_binary_t *filter;
-   mongocrypt_binary_t *key_doc = NULL;
-   mongocrypt_key_decryptor_t *key_decryptor = NULL;
-   mongocrypt_status_t *status = mongocrypt_status_new();
-   bool res = false;
+   int fd;
+   char *contents = NULL;
+   int n_read;
+   int filesize = 0;
+   char storage[512];
+   int i;
+   uint32_t len;
 
-
-   /* First, get a filter to run against the
-      key vault. Run a find command with this
-      filter against the database. */
-   filter = mongocrypt_key_broker_get_key_filter (kb);
-   if (!filter) {
-      mongocrypt_key_broker_status (kb, status);
-      printf ("error getting key filter: %s\n",
-              mongocrypt_status_message (status));
-      goto done;
+   fd = open (path, O_RDONLY);
+   while ((n_read = read (fd, storage, sizeof (storage))) > 0) {
+      filesize += n_read;
+      contents = bson_realloc (contents, filesize);
+      memcpy (contents + (filesize - n_read), storage, n_read);
    }
 
-   /* Next, Add the resulting key documents to
-      the key broker. */
-
-   /* cursor = collection.find (filter); */
-   /* for key_doc in cursor: */
-   if (!mongocrypt_key_broker_add_key (kb, key_doc)) {
-      mongocrypt_key_broker_status (kb, status);
-      printf ("error adding key: %s\n", mongocrypt_status_message (status));
-      goto done;
+   if (n_read < 0) {
+      fprintf (stderr, "failed to read %s\n", path);
+      abort ();
    }
 
-   /* Once all keys are added, signal the key broker. */
-   if (!mongocrypt_key_broker_done_adding_keys (kb)) {
-      printf ("couldn't add all keys\n");
-      goto done;
-   }
+   close (fd);
+   len = 0;
 
-   /* Next, decrypt the keys. To do this, iterate
-      through the key_decryptors returned by the
-      key broker. For each key_decryptor, run the
-      KMS request against KMS and return the response
-      to the key broker. This may be done in parallel. */
-   key_decryptor = mongocrypt_key_broker_next_decryptor (kb);
-   while (key_decryptor) {
-      if (!_decrypt_via_kms (key_decryptor)) {
-         mongocrypt_key_broker_status (kb, status);
-         printf ("error decrypting key: %s\n",
-                 mongocrypt_status_message (status));
-         goto done;
+   /* Copy and fix newlines: \n becomes \r\n. */
+   *data = bson_malloc0 (filesize * 2);
+   for (i = 0; i < filesize; i++) {
+      if (contents[i] == '\n' && contents[i - 1] != '\r') {
+         (*data)[len++] = '\r';
       }
-
-      key_decryptor = mongocrypt_key_broker_next_decryptor (kb);
+      (*data)[len++] = contents[i];
    }
 
-   /* Sometimes when next_decryptor returns NULL, it's an error */
-   mongocrypt_key_broker_status (kb, status);
-   if (!mongocrypt_status_ok (status)) {
-      printf ("error: %s\n", mongocrypt_status_message (status));
-      goto done;
-   }
-
-   /* Otherwise, we are done! */
-   res = true;
-
-done:
-   mongocrypt_status_destroy (status);
-   return res;
+   bson_free (contents);
+   return mongocrypt_binary_new_from_data (*data, len);
 }
 
-static bool
-_auto_encrypt (mongocrypt_t *crypt)
+static void
+_print_binary_as_bson (mongocrypt_binary_t *binary)
 {
-   mongocrypt_key_broker_t *kb;
-   mongocrypt_encryptor_t *encryptor;
-   mongocrypt_binary_t *collection_info;
-   mongocrypt_binary_t *schema;
-   mongocrypt_binary_t *marking_response = NULL;
-   mongocrypt_encryptor_state_t state;
+   bson_t as_bson;
+   char *str;
+
+   bson_init_static (&as_bson,
+                     mongocrypt_binary_data (binary),
+                     mongocrypt_binary_len (binary));
+   str = bson_as_json (&as_bson, NULL);
+   printf ("%s\n", str);
+   bson_free (str);
+}
+
+static void
+_print_binary_as_text (mongocrypt_binary_t *binary)
+{
+   int i;
+   uint8_t *ptr;
+
+   ptr = (uint8_t *) mongocrypt_binary_data (binary);
+   for (i = 0; i < mongocrypt_binary_len (binary); i++) {
+      if (ptr[i] == '\r')
+         printf ("\\r");
+      else if (ptr[i] == '\n')
+         printf ("\\n");
+      else
+         printf ("%c", (char) ptr[i]);
+   }
+   printf ("\n");
+}
+
+#define CHECK(stmt) \
+   do {             \
+      if (!stmt) {  \
+         continue;  \
+      }             \
+   } while (0);
+
+static void
+_run_state_machine (mongocrypt_ctx_t *ctx)
+{
+   mongocrypt_binary_t *input, *output;
+   mongocrypt_kms_ctx_t *kms;
+   mongocrypt_ctx_state_t state;
    mongocrypt_status_t *status;
-   bool res = false;
+   uint8_t *data;
+   bool done;
 
-   collection_info = NULL;
+   done = false;
+   output = mongocrypt_binary_new ();
    status = mongocrypt_status_new ();
-   encryptor = mongocrypt_encryptor_new (crypt);
+   while (!done) {
+      state = mongocrypt_ctx_state (ctx);
 
-   state = mongocrypt_encryptor_state (encryptor);
-
-   /* Crank the state machine until we reach a terminal state */
-   while (true) {
       switch (state) {
-      case MONGOCRYPT_ENCRYPTOR_STATE_NEED_NS:
-         /* Driver: when the encryptor is first created,
-            it needs a namespace to begin the encryption
-            process. Add the namespace at this step. */
-         state = mongocrypt_encryptor_add_ns (encryptor, "test.test");
+      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+         CHECK (mongocrypt_ctx_mongo_op (ctx, output));
+         printf ("\nrunning listCollections on mongod with this filter:\n");
+         _print_binary_as_bson (output);
+         printf ("\nmocking reply from file:\n");
+         input = _read_json ("./test/example/collection-info.json", &data);
+         _print_binary_as_bson (input);
+         CHECK (mongocrypt_ctx_mongo_feed (ctx, input));
+         mongocrypt_binary_destroy (input);
+         bson_free (data);
+         CHECK (mongocrypt_ctx_mongo_done (ctx));
          break;
-
-      case MONGOCRYPT_ENCRYPTOR_STATE_NEED_SCHEMA:
-         /* Driver: when the encryptor needs a schema
-            for the given namespace, run listCollections
-            with a filter for that ns, and also with
-            "options.validator.$jsonSchema": {"$exists": True}.
-            Then, give the resulting document or NULL
-            to the encryptor. */
-         state = mongocrypt_encryptor_add_collection_info (encryptor,
-                                                           collection_info);
+      case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+         CHECK (mongocrypt_ctx_mongo_op (ctx, output));
+         printf ("\nrunning cmd on mongocryptd with this schema:\n");
+         _print_binary_as_bson (output);
+         printf ("\nmocking reply from file:\n");
+         input = _read_json ("./test/example/mongocryptd-reply.json", &data);
+         _print_binary_as_bson (input);
+         CHECK (mongocrypt_ctx_mongo_feed (ctx, input));
+         mongocrypt_binary_destroy (input);
+         bson_free (data);
+         CHECK (mongocrypt_ctx_mongo_done (ctx));
          break;
-
-      case MONGOCRYPT_ENCRYPTOR_STATE_NEED_MARKINGS:
-         /* Driver: when the encryptor is ready for
-            markings, first get the schema from the
-            encryptor. If you have just added the schema
-            via add_schema, you may skip this step. Then,
-            formulate a mongocryptd request driver-side,
-            send that request to mongocryptd, and
-            return the response to the encryptor. */
-         schema = mongocrypt_encryptor_get_schema (encryptor);
-         mongocrypt_binary_destroy (schema);
-         /* marking_request = build_mongocryptd_command (schema); */
-         /* marking_response = mongocryptd.run_command (marking_request); */
-         state =
-            mongocrypt_encryptor_add_markings (encryptor, marking_response);
+      case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+         CHECK (mongocrypt_ctx_mongo_op (ctx, output));
+         printf ("\nrunning a find on the key vault coll with this filter:\n");
+         _print_binary_as_bson (output);
+         printf ("\nmocking reply from file:\n");
+         input = _read_json ("./test/example/key-document.json", &data);
+         _print_binary_as_bson (input);
+         CHECK (mongocrypt_ctx_mongo_feed (ctx, input));
+         mongocrypt_binary_destroy (input);
+         bson_free (data);
+         CHECK (mongocrypt_ctx_mongo_done (ctx));
          break;
-
-      case MONGOCRYPT_ENCRYPTOR_STATE_NEED_KEYS:
-         /* Driver: when the encryptor needs keys,
-       transition to talking to its key broker. */
-         kb = mongocrypt_encryptor_get_key_broker (encryptor);
-         if (!_fetch_and_decrypt_keys (kb)) {
-            goto done;
+      case MONGOCRYPT_CTX_NEED_KMS:
+         while ((kms = mongocrypt_ctx_next_kms_ctx (ctx))) {
+            CHECK (mongocrypt_kms_ctx_message (kms, output));
+            printf ("\nsending the following to kms:\n");
+            _print_binary_as_text (output);
+            printf ("\nmocking reply from file\n");
+            input = _read_http ("./test/example/kms-reply.txt", &data);
+            _print_binary_as_text (input);
+            CHECK (mongocrypt_kms_ctx_feed (kms, input));
+            mongocrypt_binary_destroy (input);
+            bson_free (data);
+            assert (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
          }
-
-         state = mongocrypt_encryptor_key_broker_done (encryptor);
+         mongocrypt_ctx_kms_done (ctx);
          break;
-
-      case MONGOCRYPT_ENCRYPTOR_STATE_NO_ENCRYPTION_NEEDED:
-         printf ("No encryption needed\n");
-         res = true;
-         goto done;
-
-      case MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED:
-         printf ("Completed encryption\n");
-         res = true;
-         goto done;
-
-      case MONGOCRYPT_ENCRYPTOR_STATE_ERROR:
-         printf ("Error, could not complete encryption: %s\n",
-                 mongocrypt_status_message (status));
-         res = false;
-         goto done;
-
-      default:
-         printf ("Error, unknown encryption state\n");
-         abort ();
+      case MONGOCRYPT_CTX_READY:
+         CHECK (mongocrypt_ctx_finalize (ctx, output));
+         printf ("\nfinal bson is:\n");
+         _print_binary_as_bson (output);
+         break;
+      case MONGOCRYPT_CTX_DONE:
+         done = true;
+         break;
+      case MONGOCRYPT_CTX_NOTHING_TO_DO:
+         printf ("\nnothing to do\n");
+         done = true;
+         break;
+      case MONGOCRYPT_CTX_ERROR:
+         mongocrypt_ctx_status (ctx, status);
+         printf ("\ngot error: %s\n", mongocrypt_status_message (status));
+         done = true;
+         break;
       }
    }
-
-done:
-   mongocrypt_encryptor_destroy (encryptor);
+   mongocrypt_binary_destroy (output);
    mongocrypt_status_destroy (status);
-
-   return res;
 }
 
-
-static bool
-_auto_decrypt (mongocrypt_t *crypt)
-{
-   mongocrypt_key_broker_t *kb;
-   mongocrypt_decryptor_t *decryptor;
-   mongocrypt_decryptor_state_t state;
-   mongocrypt_binary_t *encrypted_doc = NULL;
-   bool res = false;
-   mongocrypt_status_t *status;
-
-   decryptor = mongocrypt_decryptor_new (crypt);
-   state = mongocrypt_decryptor_state (decryptor);
-   status = mongocrypt_status_new ();
-
-   /* Crank the state machine until we reach a terminal state */
-   while (true) {
-      switch (state) {
-      case MONGOCRYPT_DECRYPTOR_STATE_NEED_DOC:
-         /* Driver: when the decryptor is first created,
-            it needs a document to decrypt to begin the
-            state machine. Add the encrypted document
-            at this step. */
-         state = mongocrypt_decryptor_add_doc (decryptor, encrypted_doc);
-         break;
-
-      case MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS:
-         /* Driver: when the decryptor needs keys,
-       transition to talking to the key broker. */
-         kb = mongocrypt_decryptor_get_key_broker (decryptor);
-         if (!_fetch_and_decrypt_keys (kb)) {
-            goto done;
-         }
-         state = mongocrypt_decryptor_key_broker_done (decryptor);
-         break;
-
-      case MONGOCRYPT_DECRYPTOR_STATE_NEED_DECRYPTION:
-         /* Decrypt! */
-         state = mongocrypt_decryptor_decrypt (decryptor);
-         break;
-
-      case MONGOCRYPT_DECRYPTOR_STATE_NO_DECRYPTION_NEEDED:
-         printf ("No decryption needed\n");
-         res = true;
-         goto done;
-
-      case MONGOCRYPT_DECRYPTOR_STATE_DECRYPTED:
-         printf ("Completed decryption\n");
-         res = false;
-         goto done;
-
-      case MONGOCRYPT_DECRYPTOR_STATE_ERROR:
-         mongocrypt_decryptor_status (decryptor, status);
-         printf ("Error, could not complete encryption: %s\n",
-                 mongocrypt_status_message (status));
-         res = false;
-         goto done;
-
-      default:
-         printf ("Error, unknown decryptor state\n");
-         abort ();
-      }
-   }
-
-done:
-   mongocrypt_decryptor_destroy (decryptor);
-   mongocrypt_status_destroy (status);
-   return res;
-}
 
 int
 main ()
 {
    mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *input;
+   uint8_t *data;
 
-   crypt = mongocrypt_new (NULL);
+   printf ("******* ENCRYPTION *******\n\n");
+   crypt = mongocrypt_new ();
+   mongocrypt_init (crypt, NULL);
+   ctx = mongocrypt_ctx_new (crypt);
+   mongocrypt_ctx_encrypt_init (ctx, "test.test", 9);
+   _run_state_machine (ctx);
+   mongocrypt_ctx_destroy (ctx);
 
-   _auto_encrypt (crypt);
-   _auto_decrypt (crypt);
+   printf ("\n******* DECRYPTION *******\n\n");
+   ctx = mongocrypt_ctx_new (crypt);
+   input = _read_json ("./test/example/encrypted-document.json", &data);
+   mongocrypt_ctx_decrypt_init (ctx, input);
+   mongocrypt_binary_destroy (input);
+   bson_free (data);
+   _run_state_machine (ctx);
+   mongocrypt_ctx_destroy (ctx);
 
    mongocrypt_destroy (crypt);
 }

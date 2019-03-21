@@ -19,15 +19,15 @@
 
 #include <bson/bson.h>
 
-#include "mongocrypt-binary.h"
+#include "mongocrypt.h"
 
 struct _mongocrypt_binary_t {
    uint8_t *data;
    uint32_t len;
 };
 
-void
-_mongocrypt_binary_to_bson (const mongocrypt_binary_t *binary, bson_t *out);
+bool
+_mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out);
 
 
 #endif /* MONGOCRYPT_BINARY_PRIVATE_H */

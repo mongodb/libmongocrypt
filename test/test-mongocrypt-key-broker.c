@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <mongocrypt.h>
-#include <mongocrypt-key-broker-private.h>
-
+#include "mongocrypt.h"
+#include "mongocrypt-key-broker-private.h"
 #include "test-mongocrypt.h"
 
 
@@ -59,20 +58,22 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t key_id1, key_id2;
    mongocrypt_binary_t *filter;
-   mongocrypt_key_broker_t key_broker;
+   _mongocrypt_key_broker_t key_broker;
    bson_t as_bson;
    bson_t *expected;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL);
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_init (crypt, NULL), crypt);
    _gen_uuid (1, &key_id1);
    _gen_uuid (2, &key_id2);
 
    /* Multiple different key ids. */
-   _mongocrypt_key_broker_init (&key_broker);
-   _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
-   _mongocrypt_key_broker_add_id (&key_broker, &key_id2);
-   filter = mongocrypt_key_broker_get_key_filter (&key_broker);
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id2), &key_broker);
+   filter = mongocrypt_binary_new ();
+   ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
    _mongocrypt_binary_to_bson (filter, &as_bson);
    expected = BCON_NEW ("_id",
                         "{",
@@ -84,14 +85,15 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
                         "}");
    BSON_ASSERT (0 == bson_compare (expected, &as_bson));
    bson_destroy (expected);
-   BSON_ASSERT (mongocrypt_key_broker_status (&key_broker, status));
    _mongocrypt_key_broker_cleanup (&key_broker);
+   mongocrypt_binary_destroy (filter);
 
    /* Duplicate key ids. */
-   _mongocrypt_key_broker_init (&key_broker);
-   _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
-   _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
-   filter = mongocrypt_key_broker_get_key_filter (&key_broker);
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
+   filter = mongocrypt_binary_new ();
+   ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
    _mongocrypt_binary_to_bson (filter, &as_bson);
    expected = BCON_NEW ("_id",
                         "{",
@@ -102,15 +104,15 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
                         "}");
    BSON_ASSERT (0 == bson_compare (expected, &as_bson));
    bson_destroy (expected);
-   BSON_ASSERT (mongocrypt_key_broker_status (&key_broker, status));
    _mongocrypt_key_broker_cleanup (&key_broker);
-
+   mongocrypt_binary_destroy (filter);
 
    /* No keys. */
-   _mongocrypt_key_broker_init (&key_broker);
-   filter = mongocrypt_key_broker_get_key_filter (&key_broker);
-   BSON_ASSERT (NULL == filter);
-   BSON_ASSERT (mongocrypt_key_broker_status (&key_broker, status));
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   filter = mongocrypt_binary_new ();
+   ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
+   BSON_ASSERT (!filter->data);
+   mongocrypt_binary_destroy (filter);
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    _mongocrypt_buffer_cleanup (&key_id1);
@@ -126,70 +128,55 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t key_id1, key_id2, key_doc1, key_doc2, malformed_buf;
-   mongocrypt_binary_t *key_doc1_bin, *key_doc2_bin, *malformed_bin;
    bson_t *malformed;
-   mongocrypt_key_broker_t key_broker;
+   _mongocrypt_key_broker_t key_broker;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL);
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_init (crypt, NULL), crypt);
    _gen_uuid_and_key (tester, 1, &key_id1, &key_doc1);
    _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
-   key_doc1_bin = _mongocrypt_buffer_to_binary (&key_doc1);
-   key_doc2_bin = _mongocrypt_buffer_to_binary (&key_doc2);
 
    /* Valid key documents. */
-   _mongocrypt_key_broker_init (&key_broker);
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id2));
-   BSON_ASSERT (mongocrypt_key_broker_add_key (&key_broker, key_doc2_bin));
-   BSON_ASSERT (mongocrypt_key_broker_add_key (&key_broker, key_doc1_bin));
-   BSON_ASSERT (mongocrypt_key_broker_status (&key_broker, status));
-   BSON_ASSERT (mongocrypt_key_broker_done_adding_keys (&key_broker));
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id2), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc2), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc1), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_done_adding_docs (&key_broker), &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Malformed key document. */
    malformed = BCON_NEW ("abc", BCON_INT32 (123));
-   _mongocrypt_key_broker_init (&key_broker);
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
    _mongocrypt_buffer_from_bson (&malformed_buf, malformed);
-   malformed_bin = _mongocrypt_buffer_to_binary (&malformed_buf);
-   BSON_ASSERT (!mongocrypt_key_broker_add_key (&key_broker, malformed_bin));
-   BSON_ASSERT (!mongocrypt_key_broker_status (&key_broker, status));
-   ASSERT_STATUS_CONTAINS ("invalid key");
+   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&key_broker, &malformed_buf), &key_broker, "invalid key");
    _mongocrypt_key_broker_cleanup (&key_broker);
    bson_destroy (malformed);
 
    /* NULL key document. */
-   _mongocrypt_key_broker_init (&key_broker);
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
    _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
-   BSON_ASSERT (!mongocrypt_key_broker_add_key (&key_broker, NULL));
-   BSON_ASSERT (!mongocrypt_key_broker_status (&key_broker, status));
-   ASSERT_STATUS_CONTAINS ("attempted to add a NULL");
+   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&key_broker, NULL), &key_broker, "invalid key");
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Unmatched key document. */
-   _mongocrypt_key_broker_init (&key_broker);
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
-   BSON_ASSERT (!mongocrypt_key_broker_add_key (&key_broker, key_doc2_bin));
-   BSON_ASSERT (!mongocrypt_key_broker_status (&key_broker, status));
-   ASSERT_STATUS_CONTAINS ("no key matching passed ID");
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
+   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc2), &key_broker, "no key matching passed ID");
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Calling done before supplying all keys. */
-   _mongocrypt_key_broker_init (&key_broker);
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
-   BSON_ASSERT (!mongocrypt_key_broker_done_adding_keys (&key_broker));
-   BSON_ASSERT (!mongocrypt_key_broker_status (&key_broker, status));
-   ASSERT_STATUS_CONTAINS ("client did not provide all keys");
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
+   ASSERT_FAILS (_mongocrypt_key_broker_done_adding_docs (&key_broker), &key_broker, "client did not provide all keys");
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    _mongocrypt_buffer_cleanup (&key_id1);
    _mongocrypt_buffer_cleanup (&key_id2);
    _mongocrypt_buffer_cleanup (&key_doc1);
    _mongocrypt_buffer_cleanup (&key_doc2);
-   mongocrypt_binary_destroy (key_doc1_bin);
-   mongocrypt_binary_destroy (key_doc2_bin);
-   mongocrypt_binary_destroy (malformed_bin);
    mongocrypt_status_destroy (status);
    mongocrypt_destroy (crypt);
 }
@@ -201,57 +188,37 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t key_id1, key_id2, key_doc1, key_doc2;
-   mongocrypt_binary_t *key_doc1_bin, *key_doc2_bin;
-   mongocrypt_key_broker_t key_broker;
-   mongocrypt_key_decryptor_t *key_decryptor;
+   _mongocrypt_key_broker_t key_broker;
+   mongocrypt_kms_ctx_t *kms;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL);
+   crypt = mongocrypt_new ();
+   mongocrypt_init (crypt, NULL);
    _gen_uuid_and_key (tester, 1, &key_id1, &key_doc1);
    _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
-   key_doc1_bin = _mongocrypt_buffer_to_binary (&key_doc1);
-   key_doc2_bin = _mongocrypt_buffer_to_binary (&key_doc2);
 
    /* Success. */
-   _mongocrypt_key_broker_init (&key_broker);
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id2));
-   BSON_ASSERT (mongocrypt_key_broker_add_key (&key_broker, key_doc2_bin));
-   BSON_ASSERT (mongocrypt_key_broker_add_key (&key_broker, key_doc1_bin));
-   BSON_ASSERT (mongocrypt_key_broker_done_adding_keys (&key_broker));
-   key_decryptor = mongocrypt_key_broker_next_decryptor (&key_broker);
-   BSON_ASSERT (key_decryptor);
-   _mongocrypt_tester_satisfy_key_decryptor (tester, key_decryptor);
-   BSON_ASSERT (
-      mongocrypt_key_broker_add_decrypted_key (&key_broker, key_decryptor));
-   key_decryptor = mongocrypt_key_broker_next_decryptor (&key_broker);
-   _mongocrypt_tester_satisfy_key_decryptor (tester, key_decryptor);
-   BSON_ASSERT (
-      mongocrypt_key_broker_add_decrypted_key (&key_broker, key_decryptor));
-   BSON_ASSERT (!mongocrypt_key_broker_next_decryptor (&key_broker));
-   BSON_ASSERT (mongocrypt_key_broker_done_adding_keys (&key_broker));
-   BSON_ASSERT (mongocrypt_key_broker_status (&key_broker, status));
+   _mongocrypt_key_broker_init (&key_broker, crypt, NULL);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id2), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc2), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc1), &key_broker);
+   ASSERT_OK (_mongocrypt_key_broker_done_adding_docs (&key_broker), &key_broker);
+   kms = _mongocrypt_key_broker_next_kms (&key_broker);
+   BSON_ASSERT (kms);
+   _mongocrypt_tester_satisfy_kms (tester, kms);
+   kms = _mongocrypt_key_broker_next_kms (&key_broker);
+   BSON_ASSERT (kms);
+   _mongocrypt_tester_satisfy_kms (tester, kms);
+   BSON_ASSERT (!_mongocrypt_key_broker_next_kms (&key_broker));
+   ASSERT_OK (_mongocrypt_key_broker_kms_done (&key_broker), &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
 
-   /* NULL decryptor. */
-   _mongocrypt_key_broker_init (&key_broker);
-   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
-   BSON_ASSERT (mongocrypt_key_broker_add_key (&key_broker, key_doc1_bin));
-   BSON_ASSERT (mongocrypt_key_broker_done_adding_keys (&key_broker));
-   key_decryptor = mongocrypt_key_broker_next_decryptor (&key_broker);
-   BSON_ASSERT (key_decryptor);
-   _mongocrypt_tester_satisfy_key_decryptor (tester, key_decryptor);
-   BSON_ASSERT (!mongocrypt_key_broker_add_decrypted_key (&key_broker, NULL));
-   BSON_ASSERT (!mongocrypt_key_broker_status (&key_broker, status));
-   ASSERT_STATUS_CONTAINS ("key decryptor NULL");
-   _mongocrypt_key_broker_cleanup (&key_broker);
 
    _mongocrypt_buffer_cleanup (&key_id1);
    _mongocrypt_buffer_cleanup (&key_id2);
    _mongocrypt_buffer_cleanup (&key_doc1);
    _mongocrypt_buffer_cleanup (&key_doc2);
-   mongocrypt_binary_destroy (key_doc1_bin);
-   mongocrypt_binary_destroy (key_doc2_bin);
    mongocrypt_status_destroy (status);
    mongocrypt_destroy (crypt);
 }

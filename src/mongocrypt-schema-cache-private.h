@@ -17,7 +17,7 @@
 #ifndef MONGOCRYPT_SCHEMA_CACHE_H
 #define MONGOCRYPT_SCHEMA_CACHE_H
 
-#include "mongocrypt-binary.h"
+#include "mongocrypt.h"
 
 typedef struct {
    bson_t *schema;

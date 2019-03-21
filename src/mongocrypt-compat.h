@@ -19,7 +19,7 @@
 /* Utilities for cross-platform and C89 compatibility */
 
 /* Copied from bson-compat.h from the C driver. */
-
+#include <stdint.h>
 #include <stdbool.h>
 #ifdef MONGOCRYPT_HAVE_STDBOOL_H
 /*

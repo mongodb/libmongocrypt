@@ -26,34 +26,37 @@ mongocrypt_status_new (void)
 
 
 const char *
-mongocrypt_status_message (const mongocrypt_status_t *status)
+mongocrypt_status_message (mongocrypt_status_t *status)
 {
+   if (mongocrypt_status_ok(status)) {
+      return NULL;
+   }
    return status->message;
 }
 
 
 uint32_t
-mongocrypt_status_code (const mongocrypt_status_t *status)
+mongocrypt_status_code (mongocrypt_status_t *status)
 {
    return status->code;
 }
 
 
-mongocrypt_error_type_t
-mongocrypt_status_error_type (const mongocrypt_status_t *status)
+mongocrypt_status_type_t
+mongocrypt_status_type (mongocrypt_status_t *status)
 {
    return status->type;
 }
 
 
 bool
-mongocrypt_status_ok (const mongocrypt_status_t *status)
+mongocrypt_status_ok (mongocrypt_status_t *status)
 {
-   return (status->type == MONGOCRYPT_ERROR_TYPE_NONE);
+   return (status->type == MONGOCRYPT_STATUS_OK);
 }
 
 void
-mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
+_mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
 {
    BSON_ASSERT (dst);
    BSON_ASSERT (src);
@@ -64,13 +67,13 @@ mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
 
    dst->type = src->type;
    dst->code = src->code;
-   strncpy (dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN - 1);
+   bson_strncpy (dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN - 1);
 }
 
 void
-mongocrypt_status_reset (mongocrypt_status_t *status)
+_mongocrypt_status_reset (mongocrypt_status_t *status)
 {
-   status->type = MONGOCRYPT_ERROR_TYPE_NONE;
+   status->type = MONGOCRYPT_STATUS_OK;
    status->code = 0;
    memset (status->message, 0, MONGOCRYPT_STATUS_MSG_LEN);
 }

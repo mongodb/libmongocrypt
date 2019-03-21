@@ -127,16 +127,18 @@ _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
                                      const struct _mongocrypt_binary_t *binary)
 {
    _mongocrypt_buffer_init (buf);
+   buf->data = bson_malloc (binary->len);
    buf->len = binary->len;
-   buf->data = bson_malloc (buf->len);
-   memcpy (buf->data, binary->data, binary->len);
+   memcpy (buf->data, binary->data, buf->len);
    buf->owned = true;
 }
 
-mongocrypt_binary_t *
-_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf)
+
+void
+_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf, mongocrypt_binary_t* binary)
 {
-   return mongocrypt_binary_new (buf->data, buf->len);
+   binary->data = buf->data;
+   binary->len = buf->len;
 }
 
 

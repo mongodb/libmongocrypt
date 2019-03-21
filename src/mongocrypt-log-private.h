@@ -17,9 +17,8 @@
 #ifndef MONGOCRYPT_LOG_PRIVATE_H
 #define MONGOCRYPT_LOG_PRIVATE_H
 
-#include "mongocrypt-log.h"
+#include "mongocrypt.h"
 #include "mongocrypt-mutex-private.h"
-#include "mongocrypt-opts.h"
 
 typedef struct {
    mongocrypt_mutex_t mutex; /* protects fn and ctx. */

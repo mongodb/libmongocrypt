@@ -18,9 +18,8 @@
 #include <stdlib.h>
 
 #include <bson/bson.h>
-#include <mongocrypt.h>
-#include <mongocrypt-key-broker.h>
 
+#include "mongocrypt.h"
 #include "test-mongocrypt.h"
 
 
@@ -125,10 +124,12 @@ mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
 {
    int i;
+   mongocrypt_binary_t *to_return = mongocrypt_binary_new ();
 
    for (i = 0; i < tester->file_count; i++) {
       if (0 == strcmp (tester->file_paths[i], path)) {
-         return _mongocrypt_buffer_to_binary (&tester->file_bufs[i]);
+         _mongocrypt_buffer_to_binary (&tester->file_bufs[i], to_return);
+         return to_return;
       }
    }
 
@@ -139,66 +140,112 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
       _load_http (tester, path);
    }
 
-   return _mongocrypt_buffer_to_binary (
-      &tester->file_bufs[tester->file_count - 1]);
+   _mongocrypt_buffer_to_binary (&tester->file_bufs[tester->file_count - 1],
+                                 to_return);
+   return to_return;
 }
 
 
 void
-_mongocrypt_tester_satisfy_key_decryptor (_mongocrypt_tester_t *tester, mongocrypt_key_decryptor_t* key_decryptor) {
+_mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
+                                mongocrypt_kms_ctx_t *kms)
+{
    mongocrypt_binary_t *bin;
 
    bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
-   mongocrypt_key_decryptor_feed (key_decryptor, bin);
-   BSON_ASSERT (0 == mongocrypt_key_decryptor_bytes_needed (key_decryptor, 1));
+   mongocrypt_kms_ctx_feed (kms, bin);
+   BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
    mongocrypt_binary_destroy (bin);
 }
 
 
-/* Satisfy the key requests of a key broker using example data. */
+/* Run the state machine on example data until hitting stop_state or a
+ * terminal state. */
 void
-_mongocrypt_tester_satisfy_key_broker (_mongocrypt_tester_t *tester,
-                                       mongocrypt_key_broker_t *key_broker)
+_mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
+                               mongocrypt_ctx_t *ctx,
+                               mongocrypt_ctx_state_t stop_state)
 {
+   mongocrypt_ctx_state_t state;
+   mongocrypt_kms_ctx_t *kms;
    mongocrypt_binary_t *bin;
-   mongocrypt_key_decryptor_t *key_decryptor;
 
-   /* Add the single key document. */
-   bin = _mongocrypt_tester_file (tester, "./test/example/key-document.json");
-   BSON_ASSERT (mongocrypt_key_broker_add_key (key_broker, bin));
-   mongocrypt_binary_destroy (bin);
-   mongocrypt_key_broker_done_adding_keys (key_broker);
-
-   /* Decrypt the key material. */
-   key_decryptor = mongocrypt_key_broker_next_decryptor (key_broker);
-   _mongocrypt_tester_satisfy_key_decryptor (tester, key_decryptor);
-   mongocrypt_key_broker_add_decrypted_key (key_broker, key_decryptor);
-   BSON_ASSERT (!mongocrypt_key_broker_next_decryptor (key_broker));
+   state = mongocrypt_ctx_state (ctx);
+   while (state != stop_state) {
+      switch (state) {
+      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+         BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
+         bin = _mongocrypt_tester_file (tester,
+                                        "./test/example/collection-info.json");
+         BSON_ASSERT (mongocrypt_ctx_mongo_feed (ctx, bin));
+         BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
+         mongocrypt_binary_destroy (bin);
+         break;
+      case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+         BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
+         bin = _mongocrypt_tester_file (
+            tester, "./test/example/mongocryptd-reply.json");
+         BSON_ASSERT (mongocrypt_ctx_mongo_feed (ctx, bin));
+         BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
+         mongocrypt_binary_destroy (bin);
+         break;
+      case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+         bin = _mongocrypt_tester_file (tester,
+                                        "./test/example/key-document.json");
+         BSON_ASSERT (mongocrypt_ctx_mongo_feed (ctx, bin));
+         BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
+         mongocrypt_binary_destroy (bin);
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS:
+         kms = mongocrypt_ctx_next_kms_ctx (ctx);
+         _mongocrypt_tester_satisfy_kms (tester, kms);
+         BSON_ASSERT (!mongocrypt_ctx_next_kms_ctx (ctx));
+         mongocrypt_ctx_kms_done (ctx);
+         break;
+      case MONGOCRYPT_CTX_READY:
+         bin = mongocrypt_binary_new ();
+         state = mongocrypt_ctx_finalize (ctx, bin);
+         mongocrypt_binary_destroy (bin);
+         break;
+      case MONGOCRYPT_CTX_NOTHING_TO_DO:
+      case MONGOCRYPT_CTX_DONE:
+      case MONGOCRYPT_CTX_ERROR:
+         BSON_ASSERT (state == stop_state);
+         return;
+      }
+      state = mongocrypt_ctx_state (ctx);
+   }
+   BSON_ASSERT (state == stop_state);
 }
 
 
-mongocrypt_binary_t* _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t* tester) {
-   mongocrypt_t* crypt;
-   mongocrypt_encryptor_t *encryptor;
-   mongocrypt_status_t *status;
-   mongocrypt_binary_t *tmp;
+mongocrypt_binary_t *
+_mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *bin;
 
-   if (!_mongocrypt_buffer_empty(&tester->encrypted_doc)) {
-      return _mongocrypt_buffer_to_binary (&tester->encrypted_doc);
+   bin = mongocrypt_binary_new ();
+   if (!_mongocrypt_buffer_empty (&tester->encrypted_doc)) {
+      _mongocrypt_buffer_to_binary (&tester->encrypted_doc, bin);
+      return bin;
    }
 
-   status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL);
-   ASSERT_OR_PRINT (crypt, status);
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_init (crypt, NULL), crypt);
 
-   encryptor = mongocrypt_encryptor_new (crypt);
-   _mongocrypt_tester_run_encryptor_to (tester, encryptor, MONGOCRYPT_ENCRYPTOR_STATE_ENCRYPTED);
-   tmp = mongocrypt_encryptor_encrypted_cmd (encryptor);
-   _mongocrypt_buffer_copy_from_binary (&tester->encrypted_doc, tmp);
-   mongocrypt_binary_destroy (tmp);
-   mongocrypt_encryptor_destroy (encryptor);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test.test", 9), ctx);
+
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   bin = mongocrypt_binary_new ();
+   mongocrypt_ctx_finalize (ctx, bin);
+   _mongocrypt_buffer_copy_from_binary (&tester->encrypted_doc, bin);
+   mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
-   return _mongocrypt_buffer_to_binary (&tester->encrypted_doc);
+   _mongocrypt_buffer_to_binary (&tester->encrypted_doc, bin);
+   return bin;
 }
 
 
@@ -230,9 +277,9 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_crypto (&tester);
    _mongocrypt_tester_install_log (&tester);
    _mongocrypt_tester_install_data_key (&tester);
-   _mongocrypt_tester_install_encryptor (&tester);
+   _mongocrypt_tester_install_ctx_encrypt (&tester);
+   _mongocrypt_tester_install_ctx_decrypt (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);
-   _mongocrypt_tester_install_decryptor (&tester);
    _mongocrypt_tester_install_key_broker (&tester);
 
    printf ("Running tests...\n");

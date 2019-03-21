@@ -145,7 +145,8 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    ciphertext_actual.owned = true;
 
    /* Force the crypto stack to initialize with mongocrypt_new */
-   crypt = mongocrypt_new (NULL);
+   crypt = mongocrypt_new ();
+   mongocrypt_init (crypt, NULL);
    status = mongocrypt_status_new ();
    ret = _mongocrypt_do_encryption (&iv,
                                     &associated_data,

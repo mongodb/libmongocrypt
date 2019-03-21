@@ -1,0 +1,40 @@
+{
+    "ok": 1,
+    "cursor": {
+        "id": 0,
+        "firstBatch": [
+            {
+                "status": {
+                    "$numberInt": "1"
+                },
+                "_id": {
+                    "$binary": {
+                        "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                        "subType": "04"
+                    }
+                },
+                "masterKey": {
+                    "awsKey": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
+                    "awsRegion": "us-east-1",
+                    "provider": "aws"
+                },
+                "updatedDate": {
+                    "$date": {
+                        "$numberLong": "1552949630483"
+                    }
+                },
+                "keyMaterial": {
+                    "$binary": {
+                        "base64": "AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gEseZD3pQK21IQydtAgPuMjAAAAojCBnwYJKoZIhvcNAQcGoIGRMIGOAgEAMIGIBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDCRqOG6J3KQJ6fZH/AIBEIBbRtAOLl2PRknCve94T9OfEV+sLeE3Jn+Ewtsq1eGuj9Vldxxfq1lFSou7YwZVJyQpx5nZTsUVx3LgCk7B/WY/j4f6FWHteJ63zw6CNMPC5Gi1fubsu1tqwjwRLg==",
+                        "subType": "00"
+                    }
+                },
+                "creationDate": {
+                    "$date": {
+                        "$numberLong": "1552949630483"
+                    }
+                }
+            }
+        ]
+    }
+}

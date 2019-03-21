@@ -19,6 +19,7 @@
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-log-private.h"
 
+
 mongocrypt_opts_t *
 mongocrypt_opts_new (void)
 {
@@ -36,13 +37,12 @@ mongocrypt_opts_destroy (mongocrypt_opts_t *opts)
    bson_free (opts->aws_region);
    bson_free (opts->aws_secret_access_key);
    bson_free (opts->aws_access_key_id);
-   bson_free (opts->mongocryptd_uri);
    bson_free (opts);
 }
 
 
 mongocrypt_opts_t *
-mongocrypt_opts_copy (const mongocrypt_opts_t *src)
+_mongocrypt_opts_copy (const mongocrypt_opts_t *src)
 {
    mongocrypt_opts_t *dst;
 
@@ -54,7 +54,6 @@ mongocrypt_opts_copy (const mongocrypt_opts_t *src)
    dst->aws_region = bson_strdup (src->aws_region);
    dst->aws_secret_access_key = bson_strdup (src->aws_secret_access_key);
    dst->aws_access_key_id = bson_strdup (src->aws_access_key_id);
-   dst->mongocryptd_uri = bson_strdup (src->mongocryptd_uri);
    return dst;
 }
 

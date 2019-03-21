@@ -35,14 +35,8 @@ _mongocrypt_key_cache_new (mongocrypt_key_decrypt_fn decrypt_key,
 void
 _mongocrypt_key_cache_destroy (_mongocrypt_key_cache_t *cache)
 {
-   int i;
-
    if (!cache) {
       return;
-   }
-
-   for (i = 0; i < _mongocrypt_key_cache_size (cache); i++) {
-      /* TODO free the entries? Do we need to? */
    }
 
    _mongocrypt_mutex_destroy (&cache->mutex);

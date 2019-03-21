@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-#include <mongocrypt-encryptor-private.h>
-#include <mongocrypt-decryptor-private.h>
+#include "mongocrypt-private.h"
 
 #include "test-mongocrypt.h"
 
@@ -45,12 +44,11 @@ _test_ciphertext_serialization (_mongocrypt_tester_t* tester)
    _mongocrypt_tester_fill_buffer (&original.data, 2);
    _mongocrypt_tester_fill_buffer (&original.key_id, 16);
 
-   _mongocrypt_encryptor_serialize_ciphertext (&original, &serialized);
+   _test_mongocrypt_serialize_ciphertext (&original, &serialized);
    BSON_ASSERT (0 == memcmp (expected, serialized.data, serialized.len));
 
    /* Now parse it back, should get the same ciphertext. */
-   BSON_ASSERT (_mongocrypt_decryptor_parse_ciphertext_unowned (
-      &serialized, &returned, status));
+   BSON_ASSERT (_test_mongocrypt_ciphertext_parse_unowned (&serialized, &returned, status));
    BSON_ASSERT (original.blob_subtype == returned.blob_subtype);
    BSON_ASSERT (original.original_bson_type == returned.original_bson_type);
    BSON_ASSERT (0 ==
@@ -75,7 +73,7 @@ _test_malformed_ciphertext (_mongocrypt_tester_t *tester)
    /* the minimum size for a ciphertext is 19 bytes. */
    _mongocrypt_tester_fill_buffer (&serialized, 18);
 
-   BSON_ASSERT (!_mongocrypt_decryptor_parse_ciphertext_unowned (
+   BSON_ASSERT (!_test_mongocrypt_ciphertext_parse_unowned (
       &serialized, &returned, status));
    BSON_ASSERT (0 ==
                 strcmp (status->message, "malformed ciphertext, too small"));
@@ -84,12 +82,12 @@ _test_malformed_ciphertext (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_fill_buffer (&serialized, 19);
    /* give a valid blob_subtype. */
    serialized.data[0] = 1;
-   BSON_ASSERT (_mongocrypt_decryptor_parse_ciphertext_unowned (
+   BSON_ASSERT (_test_mongocrypt_ciphertext_parse_unowned (
       &serialized, &returned, status));
 
    /* now an invalid blob_subtype. */
    serialized.data[0] = 16;
-   BSON_ASSERT (!_mongocrypt_decryptor_parse_ciphertext_unowned (
+   BSON_ASSERT (!_test_mongocrypt_ciphertext_parse_unowned (
       &serialized, &returned, status));
    BSON_ASSERT (
       0 == strcmp (status->message,

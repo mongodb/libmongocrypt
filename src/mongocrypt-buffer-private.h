@@ -89,8 +89,8 @@ _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
                                      const struct _mongocrypt_binary_t *binary);
 
 
-struct _mongocrypt_binary_t *
-_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf);
+void
+_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf, struct _mongocrypt_binary_t * binary);
 
 
 void
