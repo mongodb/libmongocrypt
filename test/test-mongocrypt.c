@@ -180,7 +180,7 @@ mongocrypt_binary_t* _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t* tes
    }
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    ASSERT_OR_PRINT (crypt, status);
 
    encryptor = mongocrypt_encryptor_new (crypt);

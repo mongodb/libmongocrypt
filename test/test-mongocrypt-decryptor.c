@@ -70,7 +70,7 @@ _test_decryptor_need_doc (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *encrypted;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
    ASSERT_OR_PRINT (crypt, status);
 
@@ -117,7 +117,7 @@ _test_decryptor_need_keys (_mongocrypt_tester_t *tester)
    status = mongocrypt_status_new ();
 
    /* Success. */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    decryptor = mongocrypt_decryptor_new (crypt);
    _mongocrypt_tester_run_decryptor_to (
       tester, decryptor, MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS);
@@ -130,7 +130,7 @@ _test_decryptor_need_keys (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Unsatisfied key broker (not an error). */
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    decryptor = mongocrypt_decryptor_new (crypt);
    _mongocrypt_tester_run_decryptor_to (
       tester, decryptor, MONGOCRYPT_DECRYPTOR_STATE_NEED_KEYS);
@@ -156,7 +156,7 @@ _test_decryptor_need_decryption (_mongocrypt_tester_t *tester)
    bson_iter_t iter;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new (NULL, status);
+   crypt = mongocrypt_new (NULL);
    ASSERT_OR_PRINT (crypt, status);
 
    /* Success. */
