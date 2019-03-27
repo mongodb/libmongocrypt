@@ -14,6 +14,7 @@ find_package (libbson-1.0 1.11 REQUIRED)
 find_package ( Threads REQUIRED )
 
 include(GenerateExportHeader)
+include (GNUInstallDirs)
 
 enable_testing()
 
@@ -171,16 +172,16 @@ if (ENABLE_TRACE)
 endif ()
 
 install (TARGETS mongocrypt
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-   RUNTIME DESTINATION bin
-   INCLUDES DESTINATION include
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install (
    FILES
       ${MONGOCRYPT_PUBLIC_HEADERS}
       ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-export.h
-   DESTINATION include/mongocrypt
+   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt
    COMPONENT Devel
 )
