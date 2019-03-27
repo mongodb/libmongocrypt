@@ -192,3 +192,70 @@ install (
    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt
    COMPONENT Devel
 )
+
+set (PROJECT_VERSION "0.2.0")
+set (PKG_CONFIG_REQUIRES_PRIVATE "libbson-1.0")
+set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
+set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
+set (PKG_CONFIG_LIBS "-L\${libdir} -lmongocrypt")
+set (PKG_CONFIG_CFLAGS "-I\${includedir}")
+configure_file (
+   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt.pc.in"
+   "${CMAKE_CURRENT_BINARY_DIR}/libmongocrypt.pc"
+)
+set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
+configure_file (
+   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-static.pc.in"
+   "${CMAKE_CURRENT_BINARY_DIR}/libmongocrypt-static.pc"
+)
+
+install (
+   FILES "${CMAKE_BINARY_DIR}/libmongocrypt.pc"
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
+install (
+   FILES "${CMAKE_BINARY_DIR}/libmongocrypt-static.pc"
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
+
+include (CMakePackageConfigHelpers)
+set (INCLUDE_INSTALL_DIRS "${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
+set (LIBRARY_INSTALL_DIRS ${CMAKE_INSTALL_LIBDIR})
+
+write_basic_package_version_file (
+   "${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config-version.cmake"
+   COMPATIBILITY AnyNewerVersion
+)
+write_basic_package_version_file (
+   "${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config-version.cmake"
+   COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file (
+   cmake/libmongocrypt-config.cmake.in
+   ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config.cmake
+   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt-config.cmake
+   PATH_VARS INCLUDE_INSTALL_DIRS LIBRARY_INSTALL_DIRS
+)
+configure_package_config_file (
+   cmake/libmongocrypt-static-config.cmake.in
+   ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config.cmake
+   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt-static-config.cmake
+   PATH_VARS INCLUDE_INSTALL_DIRS LIBRARY_INSTALL_DIRS
+)
+
+install (
+   FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config-version.cmake
+   DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt
+)
+install (
+   FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config-version.cmake
+   DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt-static
+)
+
