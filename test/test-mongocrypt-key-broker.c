@@ -48,6 +48,7 @@ _gen_uuid_and_key (_mongocrypt_tester_t *tester,
    bson_copy_to_excluding_noinit (&as_bson, &copied, "_id", NULL);
    _mongocrypt_buffer_append (id, &copied, "_id", 3);
    _mongocrypt_buffer_steal_from_bson (doc, &copied);
+   mongocrypt_binary_destroy (key_doc);
 }
 
 

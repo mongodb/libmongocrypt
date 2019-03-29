@@ -542,10 +542,6 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
       goto done;
    }
 
-   plaintext->len = ciphertext->len - (MONGOCRYPT_HMAC_LEN + MONGOCRYPT_IV_LEN);
-   plaintext->data = bson_malloc0 (plaintext->len);
-   plaintext->owned = true;
-
    mac_key.data = (uint8_t *) key->data;
    mac_key.len = MONGOCRYPT_MAC_KEY_LEN;
    enc_key.data = (uint8_t *) key->data + (key->len - MONGOCRYPT_ENC_KEY_LEN);

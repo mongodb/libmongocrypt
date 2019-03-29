@@ -32,16 +32,36 @@ functions:
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
+  "build and test":
+    - command: "shell.exec"
+      params:
+        script: |-
+          eval "${inject_env_from_evergreen}"
+          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          ${test_env|} ./libmongocrypt/.evergreen/test.sh
+
 tasks:
 - name: build-and-test
   commands:
   - func: "fetch source"
-  - command: "shell.exec"
-    params:
-      script: |-
-        eval "${inject_env_from_evergreen}"
-        ./libmongocrypt/.evergreen/compile.sh
-        ./libmongocrypt/.evergreen/test.sh
+  - func: "build and test"
+  - func: "tar and upload libmongocrypt libraries"
+
+- name: build-and-test-asan
+  commands:
+  - func: "fetch source"
+  - func: "build and test"
+    vars:
+      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      test_env: ASAN_OPTIONS="detect_leaks=1" LSAN_OPTIONS="suppressions=.lsan-suppressions"
+  - func: "tar and upload libmongocrypt libraries"
+
+- name: build-and-test-valgrind
+  commands:
+  - func: "fetch source"
+  - func: "build and test"
+    vars:
+      test_env: VALGRIND="valgrind --leak-check=full"
 
   - func: "tar and upload libmongocrypt libraries"
 
@@ -70,18 +90,23 @@ buildvariants:
   run_on: ubuntu1604-test
   tasks:
   - build-and-test
+  - build-and-test-asan
+  - build-and-test-valgrind
 - name: rhel76
   display_name: "RHEL 7.6"
   run_on: rhel76-test
   tasks:
   - build-and-test
+  - build-and-test-asan
 - name: macos
   display_name: "macOS 10.14"
   run_on: macos-1014
   tasks:
   - build-and-test
+  - build-and-test-asan
 - name: rhel72-zseries-test
-  display_name: "RHEL 7,2 on zSeries"
+  display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
   tasks:
   - build-and-test
+  - build-and-test-asan

@@ -5,6 +5,8 @@
 # So script should be called like: ./libmongocrypt/.evergreen/test.sh
 # The current working directory should be empty aside from 'libmongocrypt'.
 #
+# Set the VALGRIND environment variable to "valgrind <opts>" to run through valgrind.
+#
 
 set -o errexit
 set -o xtrace
@@ -14,5 +16,5 @@ evergreen_root="$(pwd)"
 
 echo "Running tests."
 cd libmongocrypt
-MONGOCRYPT_TRACE=ON ./cmake-build/test-mongocrypt
+MONGOCRYPT_TRACE=ON $VALGRIND ./cmake-build/test-mongocrypt
 cd ..

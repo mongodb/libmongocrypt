@@ -123,9 +123,9 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
    kms_response_parser_feed (kms->parser, bytes->data, bytes->len);
 
    if (0 == mongocrypt_kms_ctx_bytes_needed (kms)) {
-      kms_response_t *response;
+      kms_response_t *response = NULL;
       const char *body;
-      bson_t body_bson;
+      bson_t body_bson = BSON_INITIALIZER;
       bson_json_reader_t *reader;
       bool ret;
       int reader_ret;
@@ -143,7 +143,6 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
       /* TODO: extra strlen can be avoided by exposing length in kms-message. */
       bson_json_data_reader_ingest (
          reader, (const uint8_t *) body, strlen (body));
-      bson_init (&body_bson);
 
       reader_ret = bson_json_reader_read (reader, &body_bson, &bson_error);
       if (reader_ret == -1) {
@@ -170,6 +169,8 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
       kms->result.owned = true;
       ret = true;
    fail:
+      bson_destroy (&body_bson);
+      kms_response_destroy (response);
       bson_json_reader_destroy (reader);
       return ret;
    }

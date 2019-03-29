@@ -116,6 +116,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
     * 3. copy the key doc, set the entry to KEY_ENCRYPTED. */
    _mongocrypt_buffer_to_bson (doc, &doc_bson);
    if (!_mongocrypt_key_parse_owned (&doc_bson, &key, status)) {
+      _mongocrypt_key_cleanup (&key);
       return false;
    }
 
@@ -138,6 +139,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    }
 
    CLIENT_ERR ("no key matching passed ID");
+   _mongocrypt_key_cleanup (&key);
    return false;
 }
 
@@ -283,7 +285,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
    bson_append_array_end (&_id, &_id_in);
    bson_append_document_end (&filter, &_id);
 
-   kb->filter.data = bson_destroy_with_steal (&filter, true, &kb->filter.len);
+   _mongocrypt_buffer_steal_from_bson (&kb->filter, &filter);
    _mongocrypt_buffer_to_binary (&kb->filter, out);
    return true;
 }
@@ -321,6 +323,7 @@ _mongocrypt_key_broker_cleanup (_mongocrypt_key_broker_t *kb)
       _mongocrypt_key_cleanup (&kbe->key_returned);
       _mongocrypt_kms_ctx_cleanup (&kbe->kms);
       _mongocrypt_buffer_cleanup (&kbe->decrypted_key_material);
+      bson_free (kbe);
       kbe = tmp;
    }
 

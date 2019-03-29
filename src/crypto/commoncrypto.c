@@ -19,8 +19,7 @@
 
 #include <CommonCrypto/CommonCryptor.h>
 #include <CommonCrypto/CommonHMAC.h>
-#include <Security/Security.h>
-#include <Security/SecRandom.h>
+#include <CommonCrypto/CommonRandom.h>
 
 
 void
@@ -279,9 +278,9 @@ _crypto_random (_mongocrypt_buffer_t *out,
                 mongocrypt_status_t *status,
                 uint32_t count)
 {
-   int ret = SecRandomCopyBytes (kSecRandomDefault, (size_t) count, out->data);
-   if (ret != errSecSuccess) {
-      CLIENT_ERR ("failed to generate random iv: %d", ret);
+   CCRNGStatus ret = CCRandomGenerateBytes (out->data, (size_t) count);
+   if (ret != kCCSuccess) {
+      CLIENT_ERR ("failed to generate random iv: %d", (int)ret);
       return false;
    }
    return true;

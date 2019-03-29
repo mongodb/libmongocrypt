@@ -105,6 +105,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
    bson_iter_t iter;
    bool ret = false;
 
+   memset (out, 0, sizeof(_mongocrypt_key_t));
    if (!bson_iter_init_find (&iter, bson, "_id")) {
       CLIENT_ERR ("invalid key, no '_id'");
       goto cleanup;
@@ -154,6 +155,7 @@ typedef struct {
    _mongocrypt_transform_callback_t transform_cb;
    mongocrypt_status_t *status;
    traversal_match_t match;
+   bson_t child;
 } _recurse_state_t;
 
 static bool
@@ -210,17 +212,16 @@ _recurse (_recurse_state_t *state)
          bson_iter_recurse (&state->iter, &child_state.iter);
 
          if (state->copy) {
-            child_state.copy = bson_new ();
             bson_append_array_begin (state->copy,
                                      bson_iter_key (&state->iter),
                                      bson_iter_key_len (&state->iter),
-                                     child_state.copy);
+                                     &state->child);
+            child_state.copy = &state->child;
          }
          ret = _recurse (&child_state);
 
          if (state->copy) {
-            bson_append_array_end (state->copy, child_state.copy);
-            bson_destroy (child_state.copy);
+            bson_append_array_end (state->copy, &state->child);
          }
          if (!ret) {
             return false;
@@ -236,18 +237,17 @@ _recurse (_recurse_state_t *state)
          }
          /* TODO: check for errors everywhere. */
          if (state->copy) {
-            child_state.copy = bson_new ();
             bson_append_document_begin (state->copy,
                                         bson_iter_key (&state->iter),
                                         bson_iter_key_len (&state->iter),
-                                        child_state.copy);
+                                        &state->child);
+            child_state.copy = &state->child;
          }
 
          ret = _recurse (&child_state);
 
          if (state->copy) {
-            bson_append_document_end (state->copy, child_state.copy);
-            bson_destroy (child_state.copy);
+            bson_append_document_end (state->copy, &state->child);
          }
 
          if (!ret) {
@@ -280,7 +280,8 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       NULL /* traverse callback */,
                                       cb,
                                       status,
-                                      match};
+                                      match,
+                                      0};
 
    return _recurse (&starting_state);
 }
@@ -312,7 +313,8 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                       cb,
                                       NULL /* transform callback */,
                                       status,
-                                      match};
+                                      match,
+                                      0};
 
    return _recurse (&starting_state);
 }

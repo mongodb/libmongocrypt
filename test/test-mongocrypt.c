@@ -58,6 +58,7 @@ _load_json (_mongocrypt_tester_t *tester, const char *path)
    _mongocrypt_buffer_steal_from_bson (buf, &as_bson);
    tester->file_paths[tester->file_count] = bson_strdup (path);
    tester->file_count++;
+   bson_json_reader_destroy (reader);
 }
 
 
@@ -239,7 +240,6 @@ _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester)
    ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test.test", 9), ctx);
 
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
-   bin = mongocrypt_binary_new ();
    mongocrypt_ctx_finalize (ctx, bin);
    _mongocrypt_buffer_copy_from_binary (&tester->encrypted_doc, bin);
    mongocrypt_ctx_destroy (ctx);
@@ -308,7 +308,13 @@ main (int argc, char **argv)
    }
 
    /* Clean up tester. */
+   for (i = 0; i < tester.test_count; i++) {
+      bson_free (tester.test_names[i]);
+   }
+   
    for (i = 0; i < tester.file_count; i++) {
       _mongocrypt_buffer_cleanup (&tester.file_bufs[i]);
+      bson_free (tester.file_paths[i]);
    }
+   _mongocrypt_buffer_cleanup (&tester.encrypted_doc);
 }

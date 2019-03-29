@@ -196,9 +196,11 @@ _serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
    BSON_ASSERT (ciphertext->key_id.len == 16);
 
    /* TODO CDRIVER-3001: relocate this logic? */
+   _mongocrypt_buffer_init (out);
    offset = 0;
    out->len = 1 + ciphertext->key_id.len + 1 + ciphertext->data.len;
    out->data = bson_malloc0 (out->len);
+   out->owned = true;
 
    out->data[offset] = ciphertext->blob_subtype;
    offset += 1;
@@ -322,7 +324,8 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                               ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
-   out->data = bson_destroy_with_steal (&converted, true, &out->len);
+   _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
+   _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
    ctx->state = MONGOCRYPT_CTX_DONE;
    return true;
 }
