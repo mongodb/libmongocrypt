@@ -152,7 +152,10 @@ _mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
                                 mongocrypt_kms_ctx_t *kms)
 {
    mongocrypt_binary_t *bin;
+   const char* endpoint;
 
+   BSON_ASSERT (mongocrypt_kms_ctx_endpoint (kms, &endpoint));
+   BSON_ASSERT (endpoint == strstr (endpoint, "kms.") && strstr(endpoint, ".amazonaws.com"));
    bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
    mongocrypt_kms_ctx_feed (kms, bin);
    BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
@@ -233,8 +236,7 @@ _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester)
       return bin;
    }
 
-   crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_init (crypt, NULL), crypt);
+   crypt = _mongocrypt_tester_mongocrypt ();
 
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test.test", 9), ctx);
@@ -261,6 +263,21 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n)
    }
    buf->len = n;
    buf->owned = true;
+}
+
+
+mongocrypt_t*
+_mongocrypt_tester_mongocrypt (void) {
+   mongocrypt_opts_t* opts;
+   mongocrypt_t* crypt;
+
+   opts = mongocrypt_opts_new ();
+   mongocrypt_opts_set_opt (opts, MONGOCRYPT_AWS_SECRET_ACCESS_KEY, "example");
+   mongocrypt_opts_set_opt (opts, MONGOCRYPT_AWS_ACCESS_KEY_ID, "example");
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_init (crypt, opts), crypt);
+   mongocrypt_opts_destroy (opts);
+   return crypt;
 }
 
 

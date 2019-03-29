@@ -203,7 +203,7 @@ typedef struct _mongocrypt_opts_t mongocrypt_opts_t;
 
 
 typedef enum {
-   MONGOCRYPT_AWS_REGION = 0,
+   MONGOCRYPT_AWS_REGION = 0, /* TODO: CDRIVER-3055 remove this option. */
    MONGOCRYPT_AWS_SECRET_ACCESS_KEY = 1,
    MONGOCRYPT_AWS_ACCESS_KEY_ID = 2,
    MONGOCRYPT_LOG_FN = 3,
@@ -229,7 +229,6 @@ mongocrypt_opts_new (void);
  * @param[in] value The type-erased option value.
  *
  * Options values depend on @p opt.
- * - MONGOCRYPT_AWS_REGION expects a char *.
  * - MONGOCRYPT_AWS_SECRET_ACCESS_KEY expects a char *.
  * - MONGOCRYPT_AWS_ACCESS_KEY_ID expects a char *.
  * - MONGOCRYPT_LOG_FN expects a @ref mongocrypt_log_fn_t.
@@ -503,6 +502,22 @@ MONGOCRYPT_EXPORT
 bool
 mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
                             mongocrypt_binary_t *msg);
+
+
+/**
+ * Get the hostname from which to connect over TLS.
+ *
+ * The storage for @p endpoint is not owned by the caller, but
+ * is valid until calling @ref mongocrypt_ctx_kms_done on the
+ * parent @ref mongocrypt_ctx_t.
+ *
+ * @param[in] kms A @ref mongocrypt_kms_ctx_t.
+ * @param[out] endpoint The output hostname.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms, const char **endpoint);
 
 
 /**

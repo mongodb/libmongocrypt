@@ -17,4 +17,6 @@ evergreen_root="$(pwd)"
 echo "Running tests."
 cd libmongocrypt
 MONGOCRYPT_TRACE=ON $VALGRIND ./cmake-build/test-mongocrypt
+echo "Running example state machine."
+$VALGRIND ./cmake-build/example-state-machine
 cd ..

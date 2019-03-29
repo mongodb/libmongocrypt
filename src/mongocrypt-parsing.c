@@ -87,7 +87,8 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       CLIENT_ERR ("invalid marking, no 'a'");
       goto cleanup;
    }
-   /* TODO: once SERVER-40243 is resolved, use the algorithm from the marking. */
+   /* TODO: once SERVER-40243 is resolved, use the algorithm from the marking.
+    */
    out->algorithm = 1;
 
    ret = true;
@@ -102,37 +103,85 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
                              _mongocrypt_key_t *out,
                              mongocrypt_status_t *status)
 {
-   bson_iter_t iter;
+   bson_iter_t iter, subiter;
    bool ret = false;
 
-   memset (out, 0, sizeof(_mongocrypt_key_t));
+   memset (out, 0, sizeof (_mongocrypt_key_t));
+
+   /* _id */
    if (!bson_iter_init_find (&iter, bson, "_id")) {
       CLIENT_ERR ("invalid key, no '_id'");
       goto cleanup;
-   } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      _mongocrypt_buffer_copy_from_iter (&out->id, &iter);
-      if (out->id.subtype != BSON_SUBTYPE_UUID) {
-         CLIENT_ERR ("key id must be a UUID");
-         goto cleanup;
-      }
-   } else {
+   }
+
+   if (!BSON_ITER_HOLDS_BINARY (&iter)) {
       CLIENT_ERR ("invalid key, no 'k' is not binary");
       goto cleanup;
    }
 
+   _mongocrypt_buffer_copy_from_iter (&out->id, &iter);
+   if (out->id.subtype != BSON_SUBTYPE_UUID) {
+      CLIENT_ERR ("key id must be a UUID");
+      goto cleanup;
+   }
+
+   /* keyMaterial */
    if (!bson_iter_init_find (&iter, bson, "keyMaterial")) {
       CLIENT_ERR ("invalid key, no 'keyMaterial'");
       goto cleanup;
-   } else if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      _mongocrypt_buffer_copy_from_iter (&out->key_material, &iter);
-      if (out->key_material.subtype != BSON_SUBTYPE_BINARY) {
-         CLIENT_ERR ("key material must be a binary");
-         goto cleanup;
-      }
-   } else {
+   }
+
+   if (!BSON_ITER_HOLDS_BINARY (&iter)) {
       CLIENT_ERR ("invalid key material is not binary");
       goto cleanup;
    }
+
+   _mongocrypt_buffer_copy_from_iter (&out->key_material, &iter);
+   if (out->key_material.subtype != BSON_SUBTYPE_BINARY) {
+      CLIENT_ERR ("key material must be a binary");
+      goto cleanup;
+   }
+
+   /* masterKey */
+   if (!bson_iter_init_find (&iter, bson, "masterKey")) {
+      CLIENT_ERR ("invalid key, no 'masterKey'");
+      goto cleanup;
+   }
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      CLIENT_ERR ("invalid 'masterKey', expected document");
+      goto cleanup;
+   }
+
+   if (!bson_iter_recurse (&iter, &subiter)) {
+      CLIENT_ERR ("invalid 'masterKey', malformed BSON");
+      goto cleanup;
+   }
+
+   if (!bson_iter_find (&subiter, "provider")) {
+      CLIENT_ERR ("invalid 'masterKey', expected 'provider'");
+      goto cleanup;
+   }
+
+   if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
+      CLIENT_ERR ("invalid 'masterKey.provider', expected string");
+      goto cleanup;
+   }
+
+   out->masterkey_provider = bson_strdup (bson_iter_utf8 (&subiter, NULL));
+
+   if (!bson_iter_recurse (&iter, &subiter)) {
+      CLIENT_ERR ("invalid 'masterKey', malformed BSON");
+      goto cleanup;
+   }
+   if (bson_iter_find (&subiter, "region")) {
+      if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
+         CLIENT_ERR ("invalid 'masterKey.region', expected string");
+         goto cleanup;
+      }
+      out->masterkey_region = bson_strdup (bson_iter_utf8 (&subiter, NULL));
+   }
+
 
    ret = true;
 cleanup:
@@ -144,6 +193,8 @@ _mongocrypt_key_cleanup (_mongocrypt_key_t *key)
 {
    _mongocrypt_buffer_cleanup (&key->id);
    _mongocrypt_buffer_cleanup (&key->key_material);
+   bson_free (key->masterkey_provider);
+   bson_free (key->masterkey_region);
 }
 
 typedef struct {
@@ -159,15 +210,16 @@ typedef struct {
 } _recurse_state_t;
 
 static bool
-_check_first_byte (uint8_t byte, traversal_match_t match) {
-   #define FIRST_BYTE_MARKING 0
-   #define FIRST_BYTE_DETERMINISTIC 1
-   #define FIRST_BYTE_RANDOMIZED 2
-   
+_check_first_byte (uint8_t byte, traversal_match_t match)
+{
+#define FIRST_BYTE_MARKING 0
+#define FIRST_BYTE_DETERMINISTIC 1
+#define FIRST_BYTE_RANDOMIZED 2
+
    switch (match) {
-      case TRAVERSE_MATCH_MARKING:
+   case TRAVERSE_MATCH_MARKING:
       return byte == FIRST_BYTE_MARKING;
-      case TRAVERSE_MATCH_CIPHERTEXT:
+   case TRAVERSE_MATCH_CIPHERTEXT:
       return byte == FIRST_BYTE_DETERMINISTIC || byte == FIRST_BYTE_RANDOMIZED;
    }
    return false;
@@ -184,13 +236,15 @@ _recurse (_recurse_state_t *state)
          _mongocrypt_buffer_t value;
 
          _mongocrypt_buffer_from_iter (&value, &state->iter);
-         
-         if (value.subtype == 6 && value.len > 0 && _check_first_byte (value.data[0], state->match)) {
+
+         if (value.subtype == 6 && value.len > 0 &&
+             _check_first_byte (value.data[0], state->match)) {
             bool ret;
             /* call the right callback. */
             if (state->copy) {
                bson_value_t value_out;
-               ret = state->transform_cb (state->ctx, &value, &value_out, status);
+               ret =
+                  state->transform_cb (state->ctx, &value, &value_out, status);
                bson_append_value (state->copy,
                                   bson_iter_key (&state->iter),
                                   bson_iter_key_len (&state->iter),

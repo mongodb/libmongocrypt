@@ -1,5 +1,5 @@
 # libmongocrypt #
-The companion C library for field-level encryption in drivers. This is a work-in-progress and subject to sweeping changes.
+The companion C library for field-level encryption in drivers.
 
 ## Building libmongocrypt ##
 These instructions have been tested on macOS 10.14.1 and Ubuntu 16.04. Windows support coming soon.
@@ -42,7 +42,7 @@ make
 This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the `CMAKE_PREFIX_PATH` must include the paths to the kms-message and BSON library installation directories if they were not the defaults.
 
 ### Testing ###
-Generate test data by running the script `etc/generate-test-data.py`. Then build and run `test-mongocrypt`.
+`test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories.
 
 ### Troubleshooting ###
 If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt. 

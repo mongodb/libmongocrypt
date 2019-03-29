@@ -30,16 +30,39 @@
  */
 #define DEFAULT_MAX_KMS_BYTE_REQUEST 1024
 
-void
+bool
 _mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
-                          mongocrypt_opts_t *opts,
-                          _mongocrypt_buffer_t *key_material,
+                          mongocrypt_opts_t *crypt_opts,
+                          _mongocrypt_key_t *key,
                           _kms_request_type_t request_type,
                           void *ctx)
 {
    kms_request_opt_t *opt;
+   mongocrypt_status_t *status;
 
+
+   kms->parser = kms_response_parser_new ();
+   kms->ctx = ctx;
+   kms->status = mongocrypt_status_new ();
+   status = kms->status;
    kms->req_type = request_type;
+   _mongocrypt_buffer_init (&kms->result);
+
+   if (!key->masterkey_provider) {
+      CLIENT_ERR ("no KMS provider specified on key");
+      return false;
+   }
+
+   if (0 == strcmp ("local", key->masterkey_provider)) {
+      CLIENT_ERR ("TODO: CDRIVER-3050 support local KMS provider");
+      return false;
+   }
+
+   if (0 != strcmp ("aws", key->masterkey_provider)) {
+      CLIENT_ERR ("unrecognized KMS provider: %s\n", key->masterkey_provider);
+      return false;
+   }
+
    /* create the KMS request. */
    opt = kms_request_opt_new ();
    /* TODO: we might want to let drivers control whether or not we send
@@ -48,45 +71,53 @@ _mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
 
    switch (kms->req_type) {
    case MONGOCRYPT_KMS_ENCRYPT:
-      /* TODO: for data key creation.
-      kms->req = kms_encrypt_request_new (key_material->data, key_material->len,
-      NULL, opt);
-      */
+      /* For data key creation. */
+      kms->req = kms_encrypt_request_new (key->key_material.data,
+                                          key->key_material.len,
+                                          (const char *) key->id.data,
+                                          opt);
       break;
    case MONGOCRYPT_KMS_DECRYPT:
-      kms->req =
-         kms_decrypt_request_new (key_material->data, key_material->len, opt);
+      kms->req = kms_decrypt_request_new (
+         key->key_material.data, key->key_material.len, opt);
       break;
-   }
-
-   kms_request_set_service (kms->req, "kms");
-
-   if (opts) {
-      /* TODO: we should have errored in mongocrypt_init if required opts were
-       * not given. */
-      if (opts->aws_region) {
-         kms_request_set_region (kms->req, opts->aws_region);
-      }
-
-      if (opts->aws_access_key_id) {
-         kms_request_set_access_key_id (kms->req, opts->aws_access_key_id);
-      }
-
-      if (opts->aws_secret_access_key) {
-         kms_request_set_secret_key (kms->req, opts->aws_secret_access_key);
-      }
    }
 
    kms_request_opt_destroy (opt);
+   kms_request_set_service (kms->req, "kms");
 
-   kms->parser = kms_response_parser_new ();
-   kms->ctx = ctx;
-   kms->status = mongocrypt_status_new ();
+   if (!key->masterkey_region) {
+      CLIENT_ERR ("no key region provided");
+      return false;
+   }
+
+   if (!kms_request_set_region (kms->req, key->masterkey_region)) {
+      CLIENT_ERR ("failed to set region");
+      return false;
+   }
+
+   if (!crypt_opts->aws_access_key_id) {
+      CLIENT_ERR ("aws access key id not provided");
+      return false;
+   }
+
+   kms_request_set_access_key_id (kms->req, crypt_opts->aws_access_key_id);
+
+   if (!crypt_opts->aws_secret_access_key) {
+      CLIENT_ERR ("aws secret access key not provided");
+      return false;
+   }
+
+   kms_request_set_secret_key (kms->req, crypt_opts->aws_secret_access_key);
+
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
    kms->msg.len = strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
-   _mongocrypt_buffer_init (&kms->result);
+
+   /* construct the endpoint */
+   kms->endpoint = bson_strdup_printf("kms.%s.amazonaws.com", key->masterkey_region);
+   return true;
 }
 
 
@@ -225,6 +256,7 @@ _mongocrypt_kms_ctx_cleanup (mongocrypt_kms_ctx_t *kms)
    mongocrypt_status_destroy (kms->status);
    _mongocrypt_buffer_cleanup (&kms->msg);
    _mongocrypt_buffer_cleanup (&kms->result);
+   bson_free (kms->endpoint);
 }
 
 
@@ -233,5 +265,13 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *msg)
 {
    msg->data = kms->msg.data;
    msg->len = kms->msg.len;
+   return true;
+}
+
+
+bool
+mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms,
+                            const char **endpoint) {
+   *endpoint = kms->endpoint;
    return true;
 }

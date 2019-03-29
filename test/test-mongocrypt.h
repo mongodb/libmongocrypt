@@ -75,6 +75,10 @@ void
 _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n);
 
 
+/* Return a new initialized mongocrypt_t for testing. */
+mongocrypt_t* _mongocrypt_tester_mongocrypt (void);
+
+
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
    do {                                               \
       if (!(_statement)) {                            \

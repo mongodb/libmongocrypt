@@ -145,8 +145,7 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    ciphertext_actual.owned = true;
 
    /* Force the crypto stack to initialize with mongocrypt_new */
-   crypt = mongocrypt_new ();
-   mongocrypt_init (crypt, NULL);
+   crypt = _mongocrypt_tester_mongocrypt ();
    status = mongocrypt_status_new ();
    ret = _mongocrypt_do_encryption (&iv,
                                     &associated_data,
@@ -168,7 +167,7 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&ciphertext_expected);
    _mongocrypt_buffer_cleanup (&ciphertext_actual);
    mongocrypt_status_destroy (status);
-   mongocrypt_destroy(crypt);
+   mongocrypt_destroy (crypt);
 }
 
 

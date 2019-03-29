@@ -47,8 +47,7 @@ _test_log (_mongocrypt_tester_t *tester)
    mongocrypt_status_t *status;
 
    status = mongocrypt_status_new ();
-   crypt = mongocrypt_new ();
-   BSON_ASSERT (mongocrypt_init (crypt, NULL));
+   crypt = _mongocrypt_tester_mongocrypt ();
    /* Test logging with a custom handler messages. */
    _mongocrypt_log_set_fn (&crypt->log, _test_log_fn, &log_ctx);
    for (i = 0; i < sizeof (levels) / sizeof (*levels); i++) {

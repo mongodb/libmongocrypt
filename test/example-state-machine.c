@@ -40,6 +40,8 @@ _read_json (const char *path, uint8_t **data)
       abort ();
    }
 
+   bson_json_reader_destroy (reader);
+
    *data = bson_destroy_with_steal (&as_bson, true, &len);
    return mongocrypt_binary_new_from_data (*data, len);
 }
@@ -218,13 +220,27 @@ int
 main ()
 {
    mongocrypt_t *crypt;
+   mongocrypt_opts_t *opts;
    mongocrypt_ctx_t *ctx;
    mongocrypt_binary_t *input;
    uint8_t *data;
 
    printf ("******* ENCRYPTION *******\n\n");
+
+   opts = mongocrypt_opts_new ();
+   mongocrypt_opts_set_opt (opts, MONGOCRYPT_AWS_SECRET_ACCESS_KEY, "example");
+   mongocrypt_opts_set_opt (opts, MONGOCRYPT_AWS_ACCESS_KEY_ID, "example");
+
    crypt = mongocrypt_new ();
-   mongocrypt_init (crypt, NULL);
+   if (!mongocrypt_init (crypt, opts)) {
+      mongocrypt_status_t* status;
+      status = mongocrypt_status_new ();
+      mongocrypt_status (crypt, status);
+      printf("hmm: %s\n", mongocrypt_status_message(status));
+      fprintf (stderr, "failed to initialize");
+      abort ();
+   }
+
    ctx = mongocrypt_ctx_new (crypt);
    mongocrypt_ctx_encrypt_init (ctx, "test.test", 9);
    _run_state_machine (ctx);
@@ -239,5 +255,6 @@ main ()
    _run_state_machine (ctx);
    mongocrypt_ctx_destroy (ctx);
 
+   mongocrypt_opts_destroy (opts);
    mongocrypt_destroy (crypt);
 }

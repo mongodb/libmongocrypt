@@ -102,19 +102,24 @@ mongocrypt_new (void)
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
    _mongocrypt_mutex_init (&crypt->mutex);
    crypt->schema_cache = _mongocrypt_schema_cache_new ();
-   crypt->status = mongocrypt_status_new();
+   crypt->status = mongocrypt_status_new ();
    return crypt;
 }
 
 
 bool
-mongocrypt_init (mongocrypt_t* crypt, mongocrypt_opts_t *opts)
+mongocrypt_init (mongocrypt_t *crypt, mongocrypt_opts_t *opts)
 {
-   mongocrypt_status_t* status;
+   mongocrypt_status_t *status;
 
    status = crypt->status;
    if (0 != _mongocrypt_once (_mongocrypt_do_init)) {
       CLIENT_ERR ("failed to initialize");
+      return false;
+   }
+
+   if (!opts) {
+      CLIENT_ERR ("missing options parameter");
       return false;
    }
    crypt->opts = _mongocrypt_opts_copy (opts);

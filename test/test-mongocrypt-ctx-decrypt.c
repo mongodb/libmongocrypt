@@ -27,8 +27,7 @@ _test_decrypt_init (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
    mongocrypt_binary_t *encrypted;
 
-   crypt = mongocrypt_new ();
-   mongocrypt_init (crypt, NULL);
+   crypt = _mongocrypt_tester_mongocrypt ();
 
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
 
@@ -57,10 +56,9 @@ _test_decrypt_need_keys (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *encrypted, *key;
 
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
-   
+
    /* Success. */
-   crypt = mongocrypt_new ();
-   mongocrypt_init (crypt, NULL);
+   crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, encrypted), ctx);
    key = _mongocrypt_tester_file (tester, "./test/example/key-document.json");
@@ -71,7 +69,8 @@ _test_decrypt_need_keys (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
-   /* TODO: CDRIVER-3044 test that decryption warns when keys are not found/inactive. */
+   /* TODO: CDRIVER-3044 test that decryption warns when keys are not
+    * found/inactive. */
 
    mongocrypt_binary_destroy (encrypted);
 }
@@ -88,8 +87,7 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
 
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
    decrypted = mongocrypt_binary_new ();
-   crypt = mongocrypt_new ();
-   mongocrypt_init (crypt, NULL);
+   crypt = _mongocrypt_tester_mongocrypt ();
 
    /* Success. */
    ctx = mongocrypt_ctx_new (crypt);

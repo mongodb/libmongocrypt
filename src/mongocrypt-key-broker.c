@@ -78,7 +78,7 @@ _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
    _mongocrypt_key_broker_entry_t *kbe;
 
    for (kbe = kb->kb_entry; kbe; kbe = kbe->next) {
-      if (0 == _mongocrypt_buffer_cmp(&kbe->key_id, key_id)) {
+      if (0 == _mongocrypt_buffer_cmp (&kbe->key_id, key_id)) {
          return true;
       }
    }
@@ -100,15 +100,17 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 {
    mongocrypt_status_t *status;
    bson_t doc_bson;
-   _mongocrypt_key_t key;
+   _mongocrypt_key_t key = {0};
    _mongocrypt_key_broker_entry_t *kbe;
+   bool ret;
 
    BSON_ASSERT (kb);
+   ret = false;
    status = kb->status;
 
    if (!doc) {
       CLIENT_ERR ("invalid key");
-      return false;
+      goto done;
    }
 
    /* 1. parse the key doc
@@ -116,31 +118,37 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
     * 3. copy the key doc, set the entry to KEY_ENCRYPTED. */
    _mongocrypt_buffer_to_bson (doc, &doc_bson);
    if (!_mongocrypt_key_parse_owned (&doc_bson, &key, status)) {
-      _mongocrypt_key_cleanup (&key);
-      return false;
+      goto done;
    }
 
    /* find which _id/keyAltName this key doc matches. */
    for (kbe = kb->kb_entry; kbe != NULL; kbe = kbe->next) {
       /* TODO: support keyAltName. */
-      /* TODO: check key status. */
       if (0 == _mongocrypt_buffer_cmp (&kbe->key_id, &key.id)) {
          /* take ownership of the key document. */
          memcpy (&kbe->key_returned, &key, sizeof (key));
+         memset (&key, 0, sizeof (key));
          kbe->state = KEY_ENCRYPTED;
 
-         _mongocrypt_kms_ctx_init (&kbe->kms,
-                                   kb->crypt_opts,
-                                   &kbe->key_returned.key_material,
-                                   MONGOCRYPT_KMS_DECRYPT,
-                                   kbe);
-         return true;
+         if (!_mongocrypt_kms_ctx_init (&kbe->kms,
+                                        kb->crypt_opts,
+                                        &kbe->key_returned,
+                                        MONGOCRYPT_KMS_DECRYPT,
+                                        kbe)) {
+            mongocrypt_kms_ctx_status (&kbe->kms, status);
+            goto done;
+         }
+         ret = true;
+         goto done;
       }
    }
-
    CLIENT_ERR ("no key matching passed ID");
-   _mongocrypt_key_cleanup (&key);
-   return false;
+   ret = false;
+done:
+   if (!ret) {
+      _mongocrypt_key_cleanup (&key);
+   }
+   return ret;
 }
 
 
