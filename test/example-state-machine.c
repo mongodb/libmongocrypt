@@ -102,7 +102,7 @@ _print_binary_as_bson (mongocrypt_binary_t *binary)
 static void
 _print_binary_as_text (mongocrypt_binary_t *binary)
 {
-   int i;
+   uint32_t i;
    uint8_t *ptr;
 
    ptr = (uint8_t *) mongocrypt_binary_data (binary);

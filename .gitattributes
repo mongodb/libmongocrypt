@@ -1,0 +1,2 @@
+# Shell scripts require lf endings
+*.sh            text eol=lf

@@ -110,7 +110,7 @@ _mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
 
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
-   kms->msg.len = strlen ((char *) kms->msg.data);
+   kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
 
    /* construct the endpoint */
@@ -188,7 +188,7 @@ _mongocrypt_kms_ctx_init_encrypt (mongocrypt_kms_ctx_t *kms,
 
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
-   kms->msg.len = strlen ((char *) kms->msg.data);
+   kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
 
    /* construct the endpoint */

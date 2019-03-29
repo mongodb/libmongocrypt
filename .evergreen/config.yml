@@ -110,3 +110,8 @@ buildvariants:
   tasks:
   - build-and-test
   - build-and-test-asan
+- name: windows-test
+  display_name: "Windows 2016"
+  run_on: windows-64-vs2017-test
+  tasks:
+  - build-and-test

@@ -20,7 +20,8 @@
 
 static INIT_ONCE once_control = INIT_ONCE_STATIC_INIT;
 
-static BOOL __cdecl _mongocrypt_init_once_callback (_Inout_ PINIT_ONCE InitOnce,
+static BOOL WINAPI
+_mongocrypt_init_once_callback (_Inout_ PINIT_ONCE InitOnce,
                                                     _Inout_opt_ PVOID Parameter,
                                                     _Out_opt_ PVOID *Context)
 {
