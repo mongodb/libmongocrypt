@@ -152,10 +152,11 @@ _mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
                                 mongocrypt_kms_ctx_t *kms)
 {
    mongocrypt_binary_t *bin;
-   const char* endpoint;
+   const char *endpoint;
 
    BSON_ASSERT (mongocrypt_kms_ctx_endpoint (kms, &endpoint));
-   BSON_ASSERT (endpoint == strstr (endpoint, "kms.") && strstr(endpoint, ".amazonaws.com"));
+   BSON_ASSERT (endpoint == strstr (endpoint, "kms.") &&
+                strstr (endpoint, ".amazonaws.com"));
    bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
    mongocrypt_kms_ctx_feed (kms, bin);
    BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
@@ -266,18 +267,44 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n)
 }
 
 
-mongocrypt_t*
-_mongocrypt_tester_mongocrypt (void) {
-   mongocrypt_opts_t* opts;
-   mongocrypt_t* crypt;
+mongocrypt_t *
+_mongocrypt_tester_mongocrypt (void)
+{
+   mongocrypt_t *crypt;
 
-   opts = mongocrypt_opts_new ();
-   mongocrypt_opts_set_opt (opts, MONGOCRYPT_AWS_SECRET_ACCESS_KEY, "example");
-   mongocrypt_opts_set_opt (opts, MONGOCRYPT_AWS_ACCESS_KEY_ID, "example");
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_init (crypt, opts), crypt);
-   mongocrypt_opts_destroy (opts);
+   mongocrypt_setopt_kms_provider_aws (crypt, "example", "example");
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
    return crypt;
+}
+
+
+static void
+_test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+
+   /* Reinitialization must fail. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_provider_aws (crypt, "example", "example"),
+              crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "already initialized");
+   mongocrypt_destroy (crypt);
+   /* Setting options after initialization must fail. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_provider_aws (crypt, "example", "example"),
+              crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ASSERT_FAILS (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", "example"),
+      crypt,
+      "options cannot be set after initialization");
+   mongocrypt_destroy (crypt);
+   /* Omitting required options must fail. */
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "required kms provider");
+   mongocrypt_destroy (crypt);
 }
 
 
@@ -298,6 +325,8 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_ctx_decrypt (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);
    _mongocrypt_tester_install_key_broker (&tester);
+   _mongocrypt_tester_install (
+      &tester, "_test_mongocrypt_bad_init", _test_mongocrypt_bad_init);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {
@@ -328,7 +357,7 @@ main (int argc, char **argv)
    for (i = 0; i < tester.test_count; i++) {
       bson_free (tester.test_names[i]);
    }
-   
+
    for (i = 0; i < tester.file_count; i++) {
       _mongocrypt_buffer_cleanup (&tester.file_bufs[i]);
       bson_free (tester.file_paths[i]);

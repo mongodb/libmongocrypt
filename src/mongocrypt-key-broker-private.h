@@ -64,14 +64,14 @@ struct __mongocrypt_key_broker_t {
    _mongocrypt_buffer_t find_cmd;
    bool all_keys_added;
    bool err_on_missing_keys;
-   mongocrypt_opts_t *crypt_opts;
+   _mongocrypt_opts_t *crypt_opts;
 };
 
 
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
                              bool err_on_missing_keys,
-                             mongocrypt_opts_t *opts);
+                             _mongocrypt_opts_t *opts);
 
 
 bool

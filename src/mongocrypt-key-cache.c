@@ -39,7 +39,7 @@ _mongocrypt_key_cache_destroy (_mongocrypt_key_cache_t *cache)
       return;
    }
 
-   _mongocrypt_mutex_destroy (&cache->mutex);
+   _mongocrypt_mutex_cleanup (&cache->mutex);
    bson_free (cache);
 }
 

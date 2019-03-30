@@ -17,6 +17,7 @@
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-log-private.h"
+#include "mongocrypt-opts-private.h"
 #include "test-mongocrypt.h"
 
 typedef struct {

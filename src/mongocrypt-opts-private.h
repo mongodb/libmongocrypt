@@ -20,15 +20,25 @@
 #include "mongocrypt.h"
 #include "mongocrypt-log-private.h"
 
-struct _mongocrypt_opts_t {
-   char *aws_region;
+typedef struct {
    char *aws_secret_access_key;
    char *aws_access_key_id;
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
-};
+} _mongocrypt_opts_t;
 
-mongocrypt_opts_t *
-_mongocrypt_opts_copy (const mongocrypt_opts_t *src);
+
+void
+_mongocrypt_opts_init (_mongocrypt_opts_t *opts);
+
+
+void
+_mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts);
+
+
+bool
+_mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
+                           mongocrypt_status_t *status);
+
 
 #endif /* MONGOCRYPT_OPTS_PRIVATE_H */

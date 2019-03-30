@@ -20,14 +20,10 @@
 #include <bson/bson.h>
 
 void
-_mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts)
+_mongocrypt_log_init (_mongocrypt_log_t *log)
 {
    _mongocrypt_mutex_init (&log->mutex);
-   if (opts && opts->log_fn) {
-      _mongocrypt_log_set_fn (log, opts->log_fn, opts->log_ctx);
-   } else {
-      _mongocrypt_log_set_fn (log, _mongocrypt_default_log_fn, NULL);
-   }
+   _mongocrypt_log_set_fn (log, _mongocrypt_default_log_fn, NULL);
    log->trace_enabled = (getenv ("MONGOCRYPT_TRACE") != NULL);
 }
 
@@ -35,8 +31,8 @@ _mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts)
 void
 _mongocrypt_log_cleanup (_mongocrypt_log_t *log)
 {
-   _mongocrypt_mutex_destroy (&log->mutex);
-   memset (log, 0, sizeof(*log));
+   _mongocrypt_mutex_cleanup (&log->mutex);
+   memset (log, 0, sizeof (*log));
 }
 
 void

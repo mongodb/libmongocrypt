@@ -196,63 +196,6 @@ void
 mongocrypt_status_destroy (mongocrypt_status_t *status);
 
 
-/**
- * Contains all options passed on initialization of a @ref mongocrypt_ctx_t.
- */
-typedef struct _mongocrypt_opts_t mongocrypt_opts_t;
-
-
-typedef enum {
-   MONGOCRYPT_AWS_REGION = 0, /* TODO: CDRIVER-3055 remove this option. */
-   MONGOCRYPT_AWS_SECRET_ACCESS_KEY = 1,
-   MONGOCRYPT_AWS_ACCESS_KEY_ID = 2,
-   MONGOCRYPT_LOG_FN = 3,
-   MONGOCRYPT_LOG_CTX = 4
-} mongocrypt_opt_t;
-
-
-/**
- * Create a new options object.
- *
- * @returns A new @ref mongocrypt_opts_t object.
- */
-MONGOCRYPT_EXPORT
-mongocrypt_opts_t *
-mongocrypt_opts_new (void);
-
-
-/**
- * Set an option.
- *
- * @param[in] opts The options object.
- * @param[in] opt The option to set.
- * @param[in] value The type-erased option value.
- *
- * Options values depend on @p opt.
- * - MONGOCRYPT_AWS_SECRET_ACCESS_KEY expects a char *.
- * - MONGOCRYPT_AWS_ACCESS_KEY_ID expects a char *.
- * - MONGOCRYPT_LOG_FN expects a @ref mongocrypt_log_fn_t.
- * - MONGOCRYPT_LOG_CTX expects a void*.
- *
- * Passing the wrong type has dire consequences.
- */
-MONGOCRYPT_EXPORT
-void
-mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
-                         mongocrypt_opt_t opt,
-                         void *value);
-
-
-/**
- * Destroy an options object.
- *
- * @param[in] opts The options object to destroy.
- */
-MONGOCRYPT_EXPORT
-void
-mongocrypt_opts_destroy (mongocrypt_opts_t *opts);
-
-
 typedef enum {
    MONGOCRYPT_LOG_LEVEL_FATAL = 0,
    MONGOCRYPT_LOG_LEVEL_ERROR = 1,
@@ -264,7 +207,7 @@ typedef enum {
 
 /**
  * A log callback function. Set a custom log callback with @ref
- * mongocrypt_opts_set_opt.
+ * mongocrypt_setopt_log_handler.
  */
 typedef void (*mongocrypt_log_fn_t) (mongocrypt_log_level_t level,
                                      const char *message,
@@ -289,7 +232,8 @@ typedef struct _mongocrypt_t mongocrypt_t;
 /**
  * Allocate a new @ref mongocrypt_t object.
  *
- * Initialize with @ref mongocrypt_init. When done, free with @ref
+ * Set options using mongocrypt_setopt_* functions, then initialize with @ref
+ * mongocrypt_init. When done with the @ref mongocrypt_t, free with @ref
  * mongocrypt_destroy.
  *
  * @returns A new @ref mongocrypt_t object.
@@ -300,16 +244,50 @@ mongocrypt_new (void);
 
 
 /**
- * Initialize new @ref mongocrypt_t object.
+ * Set a handler to get called on every log message.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
- * @param[in] opts An options object.
- *
+ * @param[in] log_fn The log callback.
+ * @param[in] log_ctx A context passed as an argument to the log callback every
+ * invokation.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_init (mongocrypt_t *crypt, mongocrypt_opts_t *opts);
+mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
+                               mongocrypt_log_fn_t log_fn,
+                               void *log_ctx);
+
+
+/**
+ * Set a handler to get called on every log message.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] aws_access_key_id The AWS access key ID used to generate KMS
+ * messages.
+ * @param[in] aws_secret_access_key The AWS secret access key used to generate
+ * KMS messages.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
+                                    const char *aws_access_key_id,
+                                    const char *aws_secret_access_key);
+
+/**
+ * Initialize new @ref mongocrypt_t object.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ *
+ * @returns A boolean indicating success. Failure may occur if previously set
+ * options are invalid.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_init (mongocrypt_t *crypt);
 
 
 /**

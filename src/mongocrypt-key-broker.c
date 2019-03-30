@@ -39,7 +39,7 @@ struct __mongocrypt_key_broker_entry_t {
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
                              bool err_on_missing_keys,
-                             mongocrypt_opts_t *opts)
+                             _mongocrypt_opts_t *opts)
 {
    memset (kb, 0, sizeof (*kb));
    kb->err_on_missing_keys = err_on_missing_keys; /* TODO: use this. */

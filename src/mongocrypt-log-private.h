@@ -39,7 +39,7 @@ _mongocrypt_log (_mongocrypt_log_t *log,
                  ...) BSON_GNUC_PRINTF (3, 4);
 
 void
-_mongocrypt_log_init (_mongocrypt_log_t *log, const mongocrypt_opts_t *opts);
+_mongocrypt_log_init (_mongocrypt_log_t *log);
 
 void
 _mongocrypt_log_cleanup (_mongocrypt_log_t *log);
@@ -52,8 +52,8 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
 
 #ifdef MONGOCRYPT_TRACE
 
-#define CRYPT_TRACEF(log, fmt, ...)          \
-   _mongocrypt_log (log,                     \
+#define CRYPT_TRACEF(log, fmt, ...)             \
+   _mongocrypt_log (log,                        \
                     MONGOCRYPT_LOG_LEVEL_TRACE, \
                     "(%s:%d) " fmt,             \
                     BSON_FUNC,                  \
@@ -63,10 +63,10 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
 #define CRYPT_TRACE(log, msg) CRYPT_TRACEF (crypt, "%s", msg)
 
 #define CRYPT_ENTRY(log) \
-   _mongocrypt_log (        \
+   _mongocrypt_log (     \
       crypt, MONGOCRYPT_LOG_LEVEL_TRACE, "entry (%s:%d)", BSON_FUNC, __LINE__)
 
-#define CRYPT_EXIT(log)                         \
+#define CRYPT_EXIT(log)                            \
    do {                                            \
       _mongocrypt_log (crypt,                      \
                        MONGOCRYPT_LOG_LEVEL_TRACE, \
@@ -76,9 +76,9 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
       return;                                      \
    } while (0)
 
-#define CRYPT_RETURN(log, x)                    \
+#define CRYPT_RETURN(log, x)                       \
    do {                                            \
-      _mongocrypt_log (log,                     \
+      _mongocrypt_log (log,                        \
                        MONGOCRYPT_LOG_LEVEL_TRACE, \
                        "return (%s:%d)",           \
                        BSON_FUNC,                  \
@@ -86,9 +86,9 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
       return (x);                                  \
    } while (0)
 
-#define CRYPT_GOTO(log, x)                      \
+#define CRYPT_GOTO(log, x)                         \
    do {                                            \
-      _mongocrypt_log (log,                     \
+      _mongocrypt_log (log,                        \
                        MONGOCRYPT_LOG_LEVEL_TRACE, \
                        "goto (%s:%d)",             \
                        BSON_FUNC,                  \

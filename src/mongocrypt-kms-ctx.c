@@ -32,7 +32,7 @@
 
 bool
 _mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
-                          mongocrypt_opts_t *crypt_opts,
+                          _mongocrypt_opts_t *crypt_opts,
                           _mongocrypt_key_t *key,
                           _kms_request_type_t request_type,
                           void *ctx)

@@ -24,6 +24,7 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-cache-private.h"
 #include "mongocrypt-mutex-private.h"
+#include "mongocrypt-opts-private.h"
 #include "mongocrypt-schema-cache-private.h"
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
@@ -36,7 +37,8 @@
    CLIENT_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
 
 #define KMS_ERR_W_CODE(code, ...) \
-   _mongocrypt_set_error (status, MONGOCRYPT_STATUS_ERROR_KMS, code, __VA_ARGS__)
+   _mongocrypt_set_error (        \
+      status, MONGOCRYPT_STATUS_ERROR_KMS, code, __VA_ARGS__)
 
 #define KMS_ERR(...) KMS_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
 
@@ -60,7 +62,8 @@ _mongocrypt_set_error (mongocrypt_status_t *status,
 
 
 struct _mongocrypt_t {
-   mongocrypt_opts_t *opts;
+   bool initialized;
+   _mongocrypt_opts_t opts;
    mongocrypt_mutex_t mutex;
    _mongocrypt_schema_cache_t *schema_cache;
    /* The key cache has its own interal mutex. */
@@ -93,24 +96,27 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    mongocrypt_status_t *status);
 bool
 _test_mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *buf,
-                                      _mongocrypt_ciphertext_t *out,
-                                      mongocrypt_status_t *status);
+                                           _mongocrypt_ciphertext_t *out,
+                                           mongocrypt_status_t *status);
 
 void
 _test_mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
-                                  _mongocrypt_buffer_t *out);
+                                       _mongocrypt_buffer_t *out);
 
-typedef enum { TRAVERSE_MATCH_CIPHERTEXT, TRAVERSE_MATCH_MARKING} traversal_match_t;
+typedef enum {
+   TRAVERSE_MATCH_CIPHERTEXT,
+   TRAVERSE_MATCH_MARKING
+} traversal_match_t;
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
                                                  _mongocrypt_buffer_t *in,
-                                                 mongocrypt_status_t* status);
+                                                 mongocrypt_status_t *status);
 
 
 typedef bool (*_mongocrypt_transform_callback_t) (void *ctx,
                                                   _mongocrypt_buffer_t *in,
                                                   bson_value_t *out,
-                                                  mongocrypt_status_t* status);
+                                                  mongocrypt_status_t *status);
 
 bool
 _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,

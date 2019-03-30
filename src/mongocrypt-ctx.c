@@ -58,7 +58,7 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
    ctx->crypt = crypt;
    /* TODO: whether the key broker aborts due to missing keys might be
     * responsibility of sub-contexts. */
-   _mongocrypt_key_broker_init (&ctx->kb, true, crypt->opts);
+   _mongocrypt_key_broker_init (&ctx->kb, true, &crypt->opts);
    ctx->status = mongocrypt_status_new ();
    return ctx;
 }

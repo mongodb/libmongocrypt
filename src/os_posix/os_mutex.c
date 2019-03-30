@@ -26,7 +26,7 @@ _mongocrypt_mutex_init (mongocrypt_mutex_t *mutex)
 }
 
 void
-_mongocrypt_mutex_destroy (mongocrypt_mutex_t *mutex)
+_mongocrypt_mutex_cleanup (mongocrypt_mutex_t *mutex)
 {
    int ret = pthread_mutex_destroy (mutex);
    if (ret) {

@@ -18,69 +18,34 @@
 
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-log-private.h"
+#include "mongocrypt-private.h"
 
-
-mongocrypt_opts_t *
-mongocrypt_opts_new (void)
+void
+_mongocrypt_opts_init (_mongocrypt_opts_t *opts)
 {
-   return bson_malloc0 (sizeof (mongocrypt_opts_t));
+   memset (opts, 0, sizeof (*opts));
 }
 
 
 void
-mongocrypt_opts_destroy (mongocrypt_opts_t *opts)
+_mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
-   if (!opts) {
-      return;
-   }
-
-   bson_free (opts->aws_region);
    bson_free (opts->aws_secret_access_key);
    bson_free (opts->aws_access_key_id);
-   bson_free (opts);
 }
 
 
-mongocrypt_opts_t *
-_mongocrypt_opts_copy (const mongocrypt_opts_t *src)
+bool
+_mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
+                           mongocrypt_status_t *status)
 {
-   mongocrypt_opts_t *dst;
-
-   if (!src) {
-      return NULL;
+   if (!opts->aws_secret_access_key) {
+      CLIENT_ERR ("required kms provider option aws_secret_access_key unset");
+      return false;
    }
-
-   dst = bson_malloc0 (sizeof (mongocrypt_opts_t));
-   dst->aws_region = bson_strdup (src->aws_region);
-   dst->aws_secret_access_key = bson_strdup (src->aws_secret_access_key);
-   dst->aws_access_key_id = bson_strdup (src->aws_access_key_id);
-   return dst;
-}
-
-
-void
-mongocrypt_opts_set_opt (mongocrypt_opts_t *opts,
-                         mongocrypt_opt_t opt,
-                         void *value)
-{
-   switch (opt) {
-   case MONGOCRYPT_AWS_REGION:
-      opts->aws_region = bson_strdup ((char *) value);
-      break;
-   case MONGOCRYPT_AWS_SECRET_ACCESS_KEY:
-      opts->aws_secret_access_key = bson_strdup ((char *) value);
-      break;
-   case MONGOCRYPT_AWS_ACCESS_KEY_ID:
-      opts->aws_access_key_id = bson_strdup ((char *) value);
-      break;
-   case MONGOCRYPT_LOG_FN:
-      opts->log_fn = (mongocrypt_log_fn_t) value;
-      break;
-   case MONGOCRYPT_LOG_CTX:
-      opts->log_ctx = value;
-      break;
-   default:
-      fprintf (stderr, "Invalid option: %d\n", (int) opt);
-      abort ();
+   if (!opts->aws_access_key_id) {
+      CLIENT_ERR ("required kms provider option aws_access_key_id unset");
+      return false;
    }
+   return true;
 }

@@ -21,6 +21,7 @@
 #include "mongocrypt-compat.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-cache-private.h"
+#include "mongocrypt-opts-private.h"
 #include "kms_message/kms_message.h"
 
 typedef enum {
@@ -36,13 +37,13 @@ struct _mongocrypt_kms_ctx_t {
    _mongocrypt_buffer_t msg;
    void *ctx;
    _mongocrypt_buffer_t result;
-   char* endpoint;
+   char *endpoint;
 };
 
 
 bool
 _mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
-                          mongocrypt_opts_t *crypt_opts,
+                          _mongocrypt_opts_t *crypt_opts,
                           _mongocrypt_key_t *key,
                           _kms_request_type_t request_type,
                           void *ctx);
