@@ -21,30 +21,32 @@
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-status-private.h"
 
+#define MONGOCRYPT_KEYMATERIAL_LEN 64
 typedef struct {
    _mongocrypt_buffer_t id;
    _mongocrypt_buffer_t key_material;
    char *masterkey_provider;
    char *masterkey_region;
-} _mongocrypt_key_t;
+   char *masterkey_cmk;
+} _mongocrypt_key_doc_t;
 
 bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
-                             _mongocrypt_key_t *out,
+                             _mongocrypt_key_doc_t *out,
                              mongocrypt_status_t *status);
 
 void
-_mongocrypt_key_cleanup (_mongocrypt_key_t *key);
+_mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key);
 
 
 /* Dear reader, please have a laugh at the "key cache". */
 typedef struct {
    bson_t *key_bson;
-   _mongocrypt_key_t key;
+   _mongocrypt_key_doc_t key;
    bool used;
 } _mongocrypt_keycache_entry_t;
 
-typedef bool (*mongocrypt_key_decrypt_fn) (_mongocrypt_key_t *key,
+typedef bool (*mongocrypt_key_decrypt_fn) (_mongocrypt_key_doc_t *key,
                                            mongocrypt_status_t *status,
                                            void *ctx);
 
@@ -71,7 +73,7 @@ _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
                            mongocrypt_status_t *status);
 
 
-const _mongocrypt_key_t *
+const _mongocrypt_key_doc_t *
 _mongocrypt_key_cache_get_by_id (_mongocrypt_key_cache_t *cache,
                                  const _mongocrypt_buffer_t *uuid,
                                  mongocrypt_status_t *status);

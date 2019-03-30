@@ -80,8 +80,8 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
 /* For tests to hook onto. */
 bool
 _test_mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *buf,
-                                      _mongocrypt_ciphertext_t *out,
-                                      mongocrypt_status_t *status)
+                                           _mongocrypt_ciphertext_t *out,
+                                           mongocrypt_status_t *status)
 {
    return _parse_ciphertext_unowned (buf, out, status);
 }
@@ -157,7 +157,7 @@ fail:
 static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
-   bson_t as_bson, final;
+   bson_t as_bson, final_bson;
    bson_iter_t iter;
    _mongocrypt_ctx_decrypt_t *dctx;
    bool res;
@@ -165,18 +165,18 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
    _mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson);
    bson_iter_init (&iter, &as_bson);
-   bson_init (&final);
+   bson_init (&final_bson);
    res =
       _mongocrypt_transform_binary_in_bson (_replace_ciphertext_with_plaintext,
                                             &ctx->kb,
                                             TRAVERSE_MATCH_CIPHERTEXT,
                                             &iter,
-                                            &final,
+                                            &final_bson,
                                             ctx->status);
    if (!res) {
       return _mongocrypt_ctx_fail (ctx);
    }
-   _mongocrypt_buffer_steal_from_bson (&dctx->decrypted_doc, &final);
+   _mongocrypt_buffer_steal_from_bson (&dctx->decrypted_doc, &final_bson);
    out->data = dctx->decrypted_doc.data;
    out->len = dctx->decrypted_doc.len;
    ctx->state = MONGOCRYPT_CTX_DONE;
@@ -220,6 +220,25 @@ _cleanup (mongocrypt_ctx_t *ctx)
 }
 
 
+static mongocrypt_kms_ctx_t *
+_next_kms_ctx (mongocrypt_ctx_t *ctx)
+{
+   return _mongocrypt_key_broker_next_kms (&ctx->kb);
+}
+
+
+static bool
+_kms_done (mongocrypt_ctx_t *ctx)
+{
+   if (!_mongocrypt_key_broker_kms_done (&ctx->kb)) {
+      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
+      return _mongocrypt_ctx_fail (ctx);
+   }
+   ctx->state = MONGOCRYPT_CTX_READY;
+   return true;
+}
+
+
 bool
 mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
 {
@@ -235,8 +254,15 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
 
+   if (ctx->opts.aws_region || ctx->opts.aws_cmk) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "aws masterkey options must not be set");
+   }
+
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
+   ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 

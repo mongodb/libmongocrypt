@@ -55,9 +55,8 @@ typedef struct __mongocrypt_key_broker_entry_t _mongocrypt_key_broker_entry_t;
 
 
 struct __mongocrypt_key_broker_t {
-   struct __mongocrypt_key_broker_entry_t
-      *kb_entry; /* head of a linked-list. */
-   struct __mongocrypt_key_broker_entry_t *decryptor_iter;
+   _mongocrypt_key_broker_entry_t *kb_entry; /* head of a linked-list. */
+   _mongocrypt_key_broker_entry_t *decryptor_iter;
 
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t filter;

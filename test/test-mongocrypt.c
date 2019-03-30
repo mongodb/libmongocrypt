@@ -157,7 +157,8 @@ _mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
    BSON_ASSERT (mongocrypt_kms_ctx_endpoint (kms, &endpoint));
    BSON_ASSERT (endpoint == strstr (endpoint, "kms.") &&
                 strstr (endpoint, ".amazonaws.com"));
-   bin = _mongocrypt_tester_file (tester, "./test/example/kms-reply.txt");
+   bin =
+      _mongocrypt_tester_file (tester, "./test/example/kms-decrypt-reply.txt");
    mongocrypt_kms_ctx_feed (kms, bin);
    BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
    mongocrypt_binary_destroy (bin);

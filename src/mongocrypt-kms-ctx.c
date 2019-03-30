@@ -18,6 +18,7 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-ctx-private.h"
 #include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-status-private.h"
@@ -30,22 +31,24 @@
  */
 #define DEFAULT_MAX_KMS_BYTE_REQUEST 1024
 
+
+/* TODO: CDRIVER-3050 refactor this logic to check that the master key kms
+ * provider
+ * has an associated configured kms providers on the _mongocrypt_opts_t. */
 bool
-_mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
-                          _mongocrypt_opts_t *crypt_opts,
-                          _mongocrypt_key_t *key,
-                          _kms_request_type_t request_type,
-                          void *ctx)
+_mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
+                                  _mongocrypt_opts_t *crypt_opts,
+                                  _mongocrypt_key_doc_t *key,
+                                  void *ctx)
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
-
 
    kms->parser = kms_response_parser_new ();
    kms->ctx = ctx;
    kms->status = mongocrypt_status_new ();
    status = kms->status;
-   kms->req_type = request_type;
+   kms->req_type = MONGOCRYPT_KMS_DECRYPT;
    _mongocrypt_buffer_init (&kms->result);
 
    if (!key->masterkey_provider) {
@@ -63,36 +66,8 @@ _mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
       return false;
    }
 
-   /* create the KMS request. */
-   opt = kms_request_opt_new ();
-   /* TODO: we might want to let drivers control whether or not we send
-      * Connection: close header. Unsure right now. */
-   kms_request_opt_set_connection_close (opt, true);
-
-   switch (kms->req_type) {
-   case MONGOCRYPT_KMS_ENCRYPT:
-      /* For data key creation. */
-      kms->req = kms_encrypt_request_new (key->key_material.data,
-                                          key->key_material.len,
-                                          (const char *) key->id.data,
-                                          opt);
-      break;
-   case MONGOCRYPT_KMS_DECRYPT:
-      kms->req = kms_decrypt_request_new (
-         key->key_material.data, key->key_material.len, opt);
-      break;
-   }
-
-   kms_request_opt_destroy (opt);
-   kms_request_set_service (kms->req, "kms");
-
    if (!key->masterkey_region) {
       CLIENT_ERR ("no key region provided");
-      return false;
-   }
-
-   if (!kms_request_set_region (kms->req, key->masterkey_region)) {
-      CLIENT_ERR ("failed to set region");
       return false;
    }
 
@@ -101,14 +76,37 @@ _mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
       return false;
    }
 
-   kms_request_set_access_key_id (kms->req, crypt_opts->aws_access_key_id);
-
    if (!crypt_opts->aws_secret_access_key) {
       CLIENT_ERR ("aws secret access key not provided");
       return false;
    }
 
-   kms_request_set_secret_key (kms->req, crypt_opts->aws_secret_access_key);
+   /* create the KMS request. */
+   opt = kms_request_opt_new ();
+   /* TODO: we might want to let drivers control whether or not we send
+      * Connection: close header. Unsure right now. */
+   kms_request_opt_set_connection_close (opt, true);
+
+   kms->req = kms_decrypt_request_new (
+      key->key_material.data, key->key_material.len, opt);
+
+   kms_request_opt_destroy (opt);
+   kms_request_set_service (kms->req, "kms");
+
+   if (!kms_request_set_region (kms->req, key->masterkey_region)) {
+      CLIENT_ERR ("failed to set region");
+      return false;
+   }
+
+   if (!kms_request_set_access_key_id (kms->req,
+                                       crypt_opts->aws_access_key_id)) {
+      CLIENT_ERR ("failed to set aws access key id");
+      return false;
+   }
+   if (!kms_request_set_secret_key (kms->req,
+                                    crypt_opts->aws_secret_access_key)) {
+      CLIENT_ERR ("failed to set aws secret access key");
+   }
 
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
@@ -116,7 +114,86 @@ _mongocrypt_kms_ctx_init (mongocrypt_kms_ctx_t *kms,
    kms->msg.owned = true;
 
    /* construct the endpoint */
-   kms->endpoint = bson_strdup_printf("kms.%s.amazonaws.com", key->masterkey_region);
+   kms->endpoint =
+      bson_strdup_printf ("kms.%s.amazonaws.com", key->masterkey_region);
+   return true;
+}
+
+
+bool
+_mongocrypt_kms_ctx_init_encrypt (mongocrypt_kms_ctx_t *kms,
+                                  _mongocrypt_opts_t *crypt_opts,
+                                  _mongocrypt_ctx_opts_t *ctx_opts,
+                                  _mongocrypt_buffer_t *plaintext_key_material,
+                                  void *ctx)
+{
+   kms_request_opt_t *opt;
+   mongocrypt_status_t *status;
+
+   kms->parser = kms_response_parser_new ();
+   kms->ctx = ctx;
+   kms->status = mongocrypt_status_new ();
+   status = kms->status;
+   kms->req_type = MONGOCRYPT_KMS_ENCRYPT;
+   _mongocrypt_buffer_init (&kms->result);
+
+   if (!ctx_opts->aws_region) {
+      CLIENT_ERR ("no key region provided");
+      return false;
+   }
+
+   if (!ctx_opts->aws_cmk) {
+      CLIENT_ERR ("no aws cmk provided");
+      return false;
+   }
+
+   if (!crypt_opts->aws_access_key_id) {
+      CLIENT_ERR ("aws access key id not provided");
+      return false;
+   }
+
+   if (!crypt_opts->aws_secret_access_key) {
+      CLIENT_ERR ("aws secret access key not provided");
+      return false;
+   }
+
+   /* create the KMS request. */
+   opt = kms_request_opt_new ();
+   /* TODO: we might want to let drivers control whether or not we send
+      * Connection: close header. Unsure right now. */
+   kms_request_opt_set_connection_close (opt, true);
+
+   kms->req = kms_encrypt_request_new (plaintext_key_material->data,
+                                       plaintext_key_material->len,
+                                       ctx_opts->aws_cmk,
+                                       opt);
+
+   kms_request_opt_destroy (opt);
+   kms_request_set_service (kms->req, "kms");
+
+   if (!kms_request_set_region (kms->req, ctx_opts->aws_region)) {
+      CLIENT_ERR ("failed to set region");
+      return false;
+   }
+
+   if (!kms_request_set_access_key_id (kms->req,
+                                       crypt_opts->aws_access_key_id)) {
+      CLIENT_ERR ("failed to set aws access key id");
+      return false;
+   }
+   if (!kms_request_set_secret_key (kms->req,
+                                    crypt_opts->aws_secret_access_key)) {
+      CLIENT_ERR ("failed to set aws secret access key");
+   }
+
+   _mongocrypt_buffer_init (&kms->msg);
+   kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
+   kms->msg.len = strlen ((char *) kms->msg.data);
+   kms->msg.owned = true;
+
+   /* construct the endpoint */
+   kms->endpoint =
+      bson_strdup_printf ("kms.%s.amazonaws.com", ctx_opts->aws_region);
    return true;
 }
 
@@ -270,8 +347,8 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *msg)
 
 
 bool
-mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms,
-                            const char **endpoint) {
+mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms, const char **endpoint)
+{
    *endpoint = kms->endpoint;
    return true;
 }

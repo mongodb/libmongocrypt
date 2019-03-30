@@ -212,25 +212,14 @@ mongocrypt_ctx_state (mongocrypt_ctx_t *ctx)
 mongocrypt_kms_ctx_t *
 mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
 {
-   mongocrypt_kms_ctx_t *kms;
-
-   kms = _mongocrypt_key_broker_next_kms (&ctx->kb);
-   if (!kms) {
-      return NULL;
-   }
-   return (mongocrypt_kms_ctx_t *) kms;
+   return ctx->vtable.next_kms_ctx (ctx);
 }
 
 
 bool
 mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx)
 {
-   if (!_mongocrypt_key_broker_kms_done (&ctx->kb)) {
-      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
-      return _mongocrypt_ctx_fail (ctx);
-   }
-   ctx->state = MONGOCRYPT_CTX_READY;
-   return true;
+   return ctx->vtable.kms_done (ctx);
 }
 
 
@@ -267,8 +256,38 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       ctx->vtable.cleanup (ctx);
    }
 
+   bson_free (ctx->opts.aws_region);
+   bson_free (ctx->opts.aws_cmk);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
    bson_free (ctx);
    return;
+}
+
+
+bool
+mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
+                                     const char *region,
+                                     uint32_t region_len,
+                                     const char *cmk,
+                                     uint32_t cmk_len)
+{
+   if (!region) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL region");
+   }
+
+   if (!cmk) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL CMK");
+   }
+
+   if (ctx->opts.aws_region || ctx->opts.aws_cmk) {
+      bson_free (ctx->opts.aws_region);
+      bson_free (ctx->opts.aws_cmk);
+   }
+
+   ctx->opts.aws_region = bson_strndup (region, region_len);
+   ctx->opts.aws_region_len = region_len;
+   ctx->opts.aws_cmk = bson_strndup (cmk, cmk_len);
+   ctx->opts.aws_cmk_len = cmk_len;
+   return true;
 }

@@ -213,7 +213,7 @@ with open("test/example/mongocryptd-reply-no-markings.json", "w") as f:
 with open("test/example/mongocryptd-reply-invalid.json", "w") as f:
     f.write(json_util.dumps(invalid_marked_reply, indent=4, json_options=opts))
 
-with open("test/example/kms-reply.txt", "w") as f:
+with open("test/example/kms-decrypt-reply.txt", "w") as f:
     f.write(kms_reply)
 
 

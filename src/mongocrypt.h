@@ -347,6 +347,37 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out);
 
 
 /**
+ * Identify the AWS KMS master key to use for creating a data key.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] region The AWS region.
+ * @param[in] region_len The string length of @p region.
+ * @param[in] cmk_len The string length of @p cmk_len.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
+                                     const char *region,
+                                     uint32_t region_len,
+                                     const char *cmk,
+                                     uint32_t cmk_len);
+
+
+/**
+ * Initialize a context to create a data key.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @returns A boolean indicating success.
+ * @pre A master key option has been set, and an associated KMS provider
+ * has been set on the parent @ref mongocrypt_t.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
+
+
+/**
  * Initialize a context for encryption.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.

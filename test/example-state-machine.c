@@ -183,7 +183,7 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
             printf ("\nsending the following to kms:\n");
             _print_binary_as_text (output);
             printf ("\nmocking reply from file\n");
-            input = _read_http ("./test/example/kms-reply.txt", &data);
+            input = _read_http ("./test/example/kms-decrypt-reply.txt", &data);
             _print_binary_as_text (input);
             CHECK (mongocrypt_kms_ctx_feed (kms, input));
             mongocrypt_binary_destroy (input);

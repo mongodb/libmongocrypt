@@ -42,6 +42,8 @@
 
 #define KMS_ERR(...) KMS_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
 
+#define MONGOCRYPT_STR_AND_LEN(x) (x) , ( sizeof(x) / sizeof((x)[0]) - 1 )
+
 /* TODO: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
 

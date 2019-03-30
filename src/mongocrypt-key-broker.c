@@ -29,13 +29,16 @@ struct __mongocrypt_key_broker_entry_t {
    mongocrypt_status_t *status;
    _mongocrypt_key_state_t state;
    _mongocrypt_buffer_t key_id;
-   _mongocrypt_key_t key_returned;
+   _mongocrypt_key_doc_t key_returned;
    mongocrypt_kms_ctx_t kms;
    _mongocrypt_buffer_t decrypted_key_material;
    struct __mongocrypt_key_broker_entry_t *next;
 };
 
 
+/* TODO: CDRIVER-3044 instead of err_on_missing keys, provide API for checking
+ * if
+ * keys are incomplete (i.e. not encrypted or decrypted) */
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
                              bool err_on_missing_keys,
@@ -100,7 +103,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 {
    mongocrypt_status_t *status;
    bson_t doc_bson;
-   _mongocrypt_key_t key = {0};
+   _mongocrypt_key_doc_t key = {0};
    _mongocrypt_key_broker_entry_t *kbe;
    bool ret;
 
@@ -123,18 +126,15 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 
    /* find which _id/keyAltName this key doc matches. */
    for (kbe = kb->kb_entry; kbe != NULL; kbe = kbe->next) {
-      /* TODO: support keyAltName. */
+      /* TODO: CDRIVER-3057 support keyAltName. */
       if (0 == _mongocrypt_buffer_cmp (&kbe->key_id, &key.id)) {
          /* take ownership of the key document. */
          memcpy (&kbe->key_returned, &key, sizeof (key));
          memset (&key, 0, sizeof (key));
          kbe->state = KEY_ENCRYPTED;
 
-         if (!_mongocrypt_kms_ctx_init (&kbe->kms,
-                                        kb->crypt_opts,
-                                        &kbe->key_returned,
-                                        MONGOCRYPT_KMS_DECRYPT,
-                                        kbe)) {
+         if (!_mongocrypt_kms_ctx_init_decrypt (
+                &kbe->kms, kb->crypt_opts, &kbe->key_returned, kbe)) {
             mongocrypt_kms_ctx_status (&kbe->kms, status);
             goto done;
          }
@@ -273,8 +273,8 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
    }
 
    bson_init (&filter);
-   bson_append_document_begin (&filter, "_id", 3, &_id);
-   bson_append_array_begin (&_id, "$in", 3, &_id_in);
+   bson_append_document_begin (&filter, MONGOCRYPT_STR_AND_LEN("_id"), &_id);
+   bson_append_array_begin (&_id, MONGOCRYPT_STR_AND_LEN("$in"), &_id_in);
 
    for (iter = kb->kb_entry; iter != NULL; iter = iter->next) {
       char *key_str;

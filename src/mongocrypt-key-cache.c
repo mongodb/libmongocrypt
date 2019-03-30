@@ -62,7 +62,7 @@ _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
    for (i = 0; i < num_docs; i++) {
       bson_t *copied;
       _mongocrypt_keycache_entry_t *entry = NULL;
-      _mongocrypt_key_t parsed_key;
+      _mongocrypt_key_doc_t parsed_key;
 
       copied = bson_new_from_data (docs[i].data, docs[i].len);
       if (!_mongocrypt_key_parse_owned (copied, &parsed_key, status)) {
@@ -106,7 +106,7 @@ _mongocrypt_key_cache_add (_mongocrypt_key_cache_t *cache,
        * to the UUID and keymaterial. TODO: consider just copying the bits we
        * need instead. */
       entry->key_bson = copied; /* stolen. */
-      memcpy (&entry->key, &parsed_key, sizeof (_mongocrypt_key_t));
+      memcpy (&entry->key, &parsed_key, sizeof (_mongocrypt_key_doc_t));
       entry->used = true;
    }
 
@@ -118,7 +118,7 @@ cleanup:
 }
 
 /* TODO: this should hold a reader lock. */
-const _mongocrypt_key_t *
+const _mongocrypt_key_doc_t *
 _mongocrypt_key_cache_get_by_id (_mongocrypt_key_cache_t *cache,
                                  const _mongocrypt_buffer_t *uuid,
                                  mongocrypt_status_t *status)

@@ -36,6 +36,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-buffer.c
    src/mongocrypt-crypto.c
    src/mongocrypt-ctx.c
+   src/mongocrypt-ctx-datakey.c
    src/mongocrypt-ctx-decrypt.c
    src/mongocrypt-ctx-encrypt.c
    src/mongocrypt-key-broker.c
@@ -138,7 +139,7 @@ target_link_libraries (mongocrypt-static PRIVATE kms_message_static)
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt.c
    test/test-mongocrypt-crypto.c
-   test/test-mongocrypt-data-key.c
+   test/test-mongocrypt-datakey.c
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-log.c

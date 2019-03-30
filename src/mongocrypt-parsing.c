@@ -100,13 +100,13 @@ cleanup:
 /* Takes ownership of all fields. */
 bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
-                             _mongocrypt_key_t *out,
+                             _mongocrypt_key_doc_t *out,
                              mongocrypt_status_t *status)
 {
    bson_iter_t iter, subiter;
    bool ret = false;
 
-   memset (out, 0, sizeof (_mongocrypt_key_t));
+   memset (out, 0, sizeof (_mongocrypt_key_doc_t));
 
    /* _id */
    if (!bson_iter_init_find (&iter, bson, "_id")) {
@@ -189,7 +189,7 @@ cleanup:
 }
 
 void
-_mongocrypt_key_cleanup (_mongocrypt_key_t *key)
+_mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key)
 {
    _mongocrypt_buffer_cleanup (&key->id);
    _mongocrypt_buffer_cleanup (&key->key_material);

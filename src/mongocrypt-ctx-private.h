@@ -25,7 +25,17 @@ typedef enum {
    _MONGOCRYPT_TYPE_NONE,
    _MONGOCRYPT_TYPE_ENCRYPT,
    _MONGOCRYPT_TYPE_DECRYPT,
+   _MONGOCRYPT_TYPE_CREATE_DATA_KEY,
 } _mongocrypt_ctx_type_t;
+
+
+typedef struct __mongocrypt_ctx_opts_t {
+   char *kms_provider;
+   char *aws_cmk;
+   uint32_t aws_cmk_len;
+   char *aws_region;
+   uint32_t aws_region_len;
+} _mongocrypt_ctx_opts_t;
 
 
 typedef bool (*_mongocrypt_ctx_mongo_op_fn) (mongocrypt_ctx_t *ctx,
@@ -44,6 +54,11 @@ typedef bool (*_mongocrypt_ctx_finalize_fn) (mongocrypt_ctx_t *ctx,
 
 typedef void (*_mongocrypt_ctx_cleanup_fn) (mongocrypt_ctx_t *ctx);
 
+typedef mongocrypt_kms_ctx_t *(*_mongocrypt_ctx_next_kms_fn) (
+   mongocrypt_ctx_t *ctx);
+
+typedef bool (*_mongocrypt_ctx_kms_done_fn) (mongocrypt_ctx_t *ctx);
+
 
 typedef struct {
    _mongocrypt_ctx_mongo_op_fn mongo_op_collinfo;
@@ -53,6 +68,9 @@ typedef struct {
    _mongocrypt_ctx_mongo_op_fn mongo_op_markings;
    _mongocrypt_ctx_mongo_feed_fn mongo_feed_markings;
    _mongocrypt_ctx_mongo_done_fn mongo_done_markings;
+
+   _mongocrypt_ctx_next_kms_fn next_kms_ctx;
+   _mongocrypt_ctx_kms_done_fn kms_done;
 
    _mongocrypt_ctx_finalize_fn finalize;
 
@@ -67,6 +85,7 @@ struct _mongocrypt_ctx_t {
    mongocrypt_status_t *status;
    _mongocrypt_key_broker_t kb;
    _mongocrypt_vtable_t vtable;
+   _mongocrypt_ctx_opts_t opts;
 };
 
 
@@ -99,6 +118,14 @@ typedef struct {
    _mongocrypt_buffer_t decrypted_doc;
 } _mongocrypt_ctx_decrypt_t;
 
+
+typedef struct {
+   mongocrypt_ctx_t parent;
+   mongocrypt_kms_ctx_t kms;
+   bool kms_returned;
+   _mongocrypt_buffer_t key_doc;
+} _mongocrypt_ctx_datakey_t;
+
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *ns,
@@ -106,5 +133,8 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
 
 bool
 mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
+
+bool
+mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
 
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */

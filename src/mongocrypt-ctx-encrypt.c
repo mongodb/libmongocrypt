@@ -106,7 +106,7 @@ _collect_key_from_marking (void *ctx,
    }
 
    /* TODO: check if the key cache has the key. */
-   /* TODO: support keyAltName. */
+   /* TODO: CDRIVER-3057 support keyAltName. */
    if (marking.key_alt_name) {
       CLIENT_ERR ("keyAltName not supported yet");
       return false;
@@ -347,6 +347,25 @@ _cleanup (mongocrypt_ctx_t *ctx)
 }
 
 
+static mongocrypt_kms_ctx_t *
+_next_kms_ctx (mongocrypt_ctx_t *ctx)
+{
+   return _mongocrypt_key_broker_next_kms (&ctx->kb);
+}
+
+
+static bool
+_kms_done (mongocrypt_ctx_t *ctx)
+{
+   if (!_mongocrypt_key_broker_kms_done (&ctx->kb)) {
+      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
+      return _mongocrypt_ctx_fail (ctx);
+   }
+   ctx->state = MONGOCRYPT_CTX_READY;
+   return true;
+}
+
+
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *ns,
@@ -363,6 +382,11 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
 
+   if (ctx->opts.aws_region || ctx->opts.aws_cmk) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "aws masterkey options must not be set");
+   }
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->ns = bson_strdup (ns);
@@ -377,6 +401,8 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    ctx->vtable.mongo_op_markings = _mongo_op_markings;
    ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
    ctx->vtable.mongo_done_markings = _mongo_done_markings;
+   ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
    return true;
