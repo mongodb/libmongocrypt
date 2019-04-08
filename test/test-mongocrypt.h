@@ -76,7 +76,8 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n);
 
 
 /* Return a new initialized mongocrypt_t for testing. */
-mongocrypt_t* _mongocrypt_tester_mongocrypt (void);
+mongocrypt_t *
+_mongocrypt_tester_mongocrypt (void);
 
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)          \
@@ -114,26 +115,26 @@ mongocrypt_t* _mongocrypt_tester_mongocrypt (void);
       BSON_ASSERT (_retval &&_status_ok);                            \
    } while (0)
 
-#define ASSERT_FAILS(_stmt, _obj, _msg_pattern)                            \
-   do {                                                                    \
-      bool _retval = (_stmt);                                              \
-      bool _status_ok = mongocrypt_status_ok ((_obj)->status);             \
-      const char *_msg = mongocrypt_status_message ((_obj)->status);       \
-      bool _found_msg = _msg && strstr (_msg, _msg_pattern) != NULL;               \
-      if (_retval) {                                                       \
-         fprintf (stderr,                                                  \
-                  "%s succeeded (but should have failed) with msg: %s",    \
-                  #_stmt,                                                  \
-                  _msg_pattern);                                                   \
-      } else if (_status_ok) {                                             \
-         fprintf (stderr,                                                  \
-                  "%s resulted in unexpected ok status: %s\n",             \
-                  #_stmt,                                                  \
-                  _msg);                                                   \
-      } else if (!_found_msg) {                                            \
-         fprintf (stderr, "%s does not contain %s\n", _msg, _msg_pattern); \
-      }                                                                    \
-      BSON_ASSERT (!_retval && !_status_ok &&_found_msg);                     \
+#define ASSERT_FAILS(_stmt, _obj, _msg_pattern)                                \
+   do {                                                                        \
+      bool _retval = (_stmt);                                                  \
+      bool _status_ok = mongocrypt_status_ok ((_obj)->status);                 \
+      const char *_msg = mongocrypt_status_message ((_obj)->status);           \
+      bool _found_msg = _msg && strstr (_msg, _msg_pattern) != NULL;           \
+      if (_retval) {                                                           \
+         fprintf (stderr,                                                      \
+                  "%s succeeded (but should have failed) with msg: '%s'",      \
+                  #_stmt,                                                      \
+                  _msg_pattern);                                               \
+      } else if (_status_ok) {                                                 \
+         fprintf (stderr,                                                      \
+                  "%s resulted in unexpected ok status: %s\n",                 \
+                  #_stmt,                                                      \
+                  _msg);                                                       \
+      } else if (!_found_msg) {                                                \
+         fprintf (stderr, "'%s' does not contain '%s'\n", _msg, _msg_pattern); \
+      }                                                                        \
+      BSON_ASSERT (!_retval && !_status_ok && _found_msg);                     \
    } while (0)
 
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
@@ -147,6 +148,10 @@ void
 _mongocrypt_tester_install (_mongocrypt_tester_t *tester,
                             char *name,
                             _mongocrypt_test_fn fn);
+
+
+const char *
+_mongocrypt_tester_plaintext (_mongocrypt_tester_t *tester);
 
 
 void
@@ -174,6 +179,9 @@ _mongocrypt_tester_install_ciphertext (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_local_kms (_mongocrypt_tester_t *tester);
 
 
 #define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn)

@@ -18,11 +18,29 @@
 #define MONGOCRYPT_OPTS_PRIVATE_H
 
 #include "mongocrypt.h"
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt-log-private.h"
 
+/* KMS providers are used in a bit set.
+ *
+ * Check for set membership using bitwise and:
+ *   int kms_set = fn();
+ *   if (kms_set & MONGOCRYPT_KMS_PROVIDER_AWS)
+ * Add to a set using bitwise or:
+ *   kms_set |= MONGOCRYPT_KMS_PROVIDER_LOCAL
+ */
+typedef enum {
+   MONGOCRYPT_KMS_PROVIDER_NONE = 0,
+   MONGOCRYPT_KMS_PROVIDER_AWS = 1 << 0,
+   MONGOCRYPT_KMS_PROVIDER_LOCAL = 1 << 1
+} _mongocrypt_kms_provider_t;
+
+
 typedef struct {
-   char *aws_secret_access_key;
-   char *aws_access_key_id;
+   int kms_providers; /* A bit set of _mongocrypt_kms_provider_t */
+   char *kms_aws_secret_access_key;    /* Set for AWS provider. */
+   char *kms_aws_access_key_id;        /* Set for AWS provider. */
+   _mongocrypt_buffer_t kms_local_key; /* Set for local provider. */
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
 } _mongocrypt_opts_t;

@@ -435,7 +435,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
 
-   if (ctx->opts.aws_region || ctx->opts.aws_cmk) {
+   if (ctx->opts.masterkey_aws_region || ctx->opts.masterkey_aws_cmk) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "aws masterkey options must not be set");
    }

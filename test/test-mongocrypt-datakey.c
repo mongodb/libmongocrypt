@@ -77,7 +77,8 @@ _print_binary_as_text (mongocrypt_binary_t *binary)
 }
 
 static void
-_test_create_data_key (_mongocrypt_tester_t *tester)
+_test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
+                                     _mongocrypt_kms_provider_t provider)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
@@ -90,22 +91,31 @@ _test_create_data_key (_mongocrypt_tester_t *tester)
 
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_setopt_masterkey_aws (ctx, "region", 6, "cmk", 3),
-              ctx);
+   if (provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_masterkey_aws (ctx, "region", 6, "cmk", 3), ctx);
+   } else {
+      ASSERT_OK (mongocrypt_ctx_setopt_masterkey_local (ctx), ctx);
+   }
+
    ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
-   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
-   bin =
-      _mongocrypt_tester_file (tester, "./test/example/kms-encrypt-reply.txt");
-   kms = mongocrypt_ctx_next_kms_ctx (ctx);
-   BSON_ASSERT (kms);
-   ASSERT_OK (mongocrypt_kms_ctx_feed (kms, bin), kms);
-   BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
-   ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
+   if (provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+      BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+      bin = _mongocrypt_tester_file (tester,
+                                     "./test/example/kms-encrypt-reply.txt");
+      kms = mongocrypt_ctx_next_kms_ctx (ctx);
+      BSON_ASSERT (kms);
+      ASSERT_OK (mongocrypt_kms_ctx_feed (kms, bin), kms);
+      BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
+      ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
+      mongocrypt_binary_destroy (bin);
+   }
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   bin = mongocrypt_binary_new ();
    ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
    /* Check the BSON document created. */
    _mongocrypt_binary_to_bson (bin, &as_bson);
-   CRYPT_TRACEF (&crypt->log, "we got: %s\n", tmp_json (&as_bson));
+   CRYPT_TRACEF (&crypt->log, "created data key: %s\n", tmp_json (&as_bson));
    /* _id is a UUID */
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "_id"));
    _mongocrypt_buffer_from_iter (&buf, &iter);
@@ -122,22 +132,35 @@ _test_create_data_key (_mongocrypt_tester_t *tester)
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "updateDate"));
    BSON_ASSERT (BSON_ITER_HOLDS_DATE_TIME (&iter));
    BSON_ASSERT (created_date == bson_iter_date_time (&iter));
+
    /* masterKey matches set options. */
    BSON_ASSERT (bson_iter_init (&iter, &as_bson));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "masterKey.provider", &iter));
    BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-   BSON_ASSERT (0 == strcmp ("aws", bson_iter_utf8 (&iter, NULL)));
-   BSON_ASSERT (bson_iter_init (&iter, &as_bson));
-   BSON_ASSERT (bson_iter_find_descendant (&iter, "masterKey.region", &iter));
-   BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-   BSON_ASSERT (0 == strcmp ("region", bson_iter_utf8 (&iter, NULL)));
-   BSON_ASSERT (bson_iter_init (&iter, &as_bson));
-   BSON_ASSERT (bson_iter_find_descendant (&iter, "masterKey.key", &iter));
-   BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-   BSON_ASSERT (0 == strcmp ("cmk", bson_iter_utf8 (&iter, NULL)));
+   if (provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+      BSON_ASSERT (0 == strcmp ("aws", bson_iter_utf8 (&iter, NULL)));
+      BSON_ASSERT (bson_iter_init (&iter, &as_bson));
+      BSON_ASSERT (
+         bson_iter_find_descendant (&iter, "masterKey.region", &iter));
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      BSON_ASSERT (0 == strcmp ("region", bson_iter_utf8 (&iter, NULL)));
+      BSON_ASSERT (bson_iter_init (&iter, &as_bson));
+      BSON_ASSERT (bson_iter_find_descendant (&iter, "masterKey.key", &iter));
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      BSON_ASSERT (0 == strcmp ("cmk", bson_iter_utf8 (&iter, NULL)));
+   } else {
+      BSON_ASSERT (0 == strcmp ("local", bson_iter_utf8 (&iter, NULL)));
+   }
    mongocrypt_binary_destroy (bin);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
+}
+
+static void
+_test_create_data_key (_mongocrypt_tester_t *tester)
+{
+   _test_create_data_key_with_provider (tester, MONGOCRYPT_KMS_PROVIDER_AWS);
+   _test_create_data_key_with_provider (tester, MONGOCRYPT_KMS_PROVIDER_LOCAL);
 }
 
 void

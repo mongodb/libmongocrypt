@@ -186,7 +186,14 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
       goto cleanup;
    }
 
-   out->masterkey_provider = bson_strdup (bson_iter_utf8 (&subiter, NULL));
+   if (0 == strcmp (bson_iter_utf8 (&subiter, NULL), "aws")) {
+      out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
+   } else if (0 == strcmp (bson_iter_utf8 (&subiter, NULL), "local")) {
+      out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+   } else {
+      CLIENT_ERR ("invalid 'masterKey.provider', expected 'aws' or 'local'");
+      goto cleanup;
+   }
 
    if (!bson_iter_recurse (&iter, &subiter)) {
       CLIENT_ERR ("invalid 'masterKey', malformed BSON");
@@ -211,7 +218,6 @@ _mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key)
 {
    _mongocrypt_buffer_cleanup (&key->id);
    _mongocrypt_buffer_cleanup (&key->key_material);
-   bson_free (key->masterkey_provider);
    bson_free (key->masterkey_region);
 }
 

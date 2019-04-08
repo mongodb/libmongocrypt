@@ -54,6 +54,9 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
    if (sizeof (_mongocrypt_ctx_decrypt_t) > ctx_size) {
       ctx_size = sizeof (_mongocrypt_ctx_decrypt_t);
    }
+   if (sizeof (_mongocrypt_ctx_datakey_t) > ctx_size) {
+      ctx_size = sizeof (_mongocrypt_ctx_datakey_t);
+   }
    ctx = bson_malloc0 (ctx_size);
    ctx->crypt = crypt;
    /* TODO: whether the key broker aborts due to missing keys might be
@@ -94,10 +97,16 @@ _mongo_feed_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 static bool
 _mongo_done_keys (mongocrypt_ctx_t *ctx)
 {
-   ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    if (!_mongocrypt_key_broker_done_adding_docs (&ctx->kb)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
       return _mongocrypt_ctx_fail (ctx);
+   }
+   if (_mongocrypt_key_broker_has (&ctx->kb, KEY_ENCRYPTED)) {
+      ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+   } else {
+      /* If all keys were obtained from cache, or keys were decrypted with "local"
+       * KMS provider, then skip right to READY. */
+      ctx->state = MONGOCRYPT_CTX_READY;
    }
    return true;
 }
@@ -257,8 +266,8 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       ctx->vtable.cleanup (ctx);
    }
 
-   bson_free (ctx->opts.aws_region);
-   bson_free (ctx->opts.aws_cmk);
+   bson_free (ctx->opts.masterkey_aws_region);
+   bson_free (ctx->opts.masterkey_aws_cmk);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
    bson_free (ctx);
@@ -273,6 +282,10 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
                                      const char *cmk,
                                      uint32_t cmk_len)
 {
+   if (ctx->opts.masterkey_kms_provider) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "master key already set");
+   }
+
    if (!region) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL region");
    }
@@ -281,14 +294,22 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL CMK");
    }
 
-   if (ctx->opts.aws_region || ctx->opts.aws_cmk) {
-      bson_free (ctx->opts.aws_region);
-      bson_free (ctx->opts.aws_cmk);
+   ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
+   ctx->opts.masterkey_aws_region = bson_strndup (region, region_len);
+   ctx->opts.masterkey_aws_region_len = region_len;
+   ctx->opts.masterkey_aws_cmk = bson_strndup (cmk, cmk_len);
+   ctx->opts.masterkey_aws_cmk_len = cmk_len;
+   return true;
+}
+
+
+bool
+mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx)
+{
+   if (ctx->opts.masterkey_kms_provider) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "master key already set");
    }
 
-   ctx->opts.aws_region = bson_strndup (region, region_len);
-   ctx->opts.aws_region_len = region_len;
-   ctx->opts.aws_cmk = bson_strndup (cmk, cmk_len);
-   ctx->opts.aws_cmk_len = cmk_len;
+   ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
    return true;
 }

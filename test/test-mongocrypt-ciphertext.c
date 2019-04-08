@@ -138,6 +138,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
   iv.data = ciphertext.data.data;
   iv.len = MONGOCRYPT_IV_LEN;
   BSON_ASSERT (_mongocrypt_buffer_cmp (&iv, &marking.iv) == 0);
+  _mongocrypt_buffer_cleanup (&ciphertext.data);
 
   /* Use a marking with type 2, make sure iv is random */
   marking.algorithm = 2;
@@ -148,6 +149,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
   BSON_ASSERT (_mongocrypt_buffer_cmp (&iv, &marking.iv) != 0);
 
   _mongocrypt_marking_cleanup (&marking);
+  _mongocrypt_buffer_cleanup (&ciphertext.data);
   mongocrypt_ctx_destroy (ctx);
   mongocrypt_destroy (crypt);
   bson_destroy (bson);

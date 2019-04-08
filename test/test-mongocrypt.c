@@ -231,6 +231,34 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
 }
 
 
+/* Get the plaintext associated with the encrypted doc for assertions. */
+const char *
+_mongocrypt_tester_plaintext (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_binary_t *bin;
+   bson_t as_bson;
+   bson_iter_t iter;
+   _mongocrypt_marking_t marking;
+   _mongocrypt_buffer_t buf;
+   mongocrypt_status_t *status;
+
+   bin =
+      _mongocrypt_tester_file (tester, "./test/example/mongocryptd-reply.json");
+   _mongocrypt_binary_to_bson (bin, &as_bson);
+   /* Underlying binary data lives on in tester */
+   mongocrypt_binary_destroy (bin);
+   BSON_ASSERT (bson_iter_init (&iter, &as_bson));
+   BSON_ASSERT (bson_iter_find_descendant (&iter, "result.filter.ssn", &iter));
+   _mongocrypt_buffer_from_iter (&buf, &iter);
+   status = mongocrypt_status_new ();
+   ASSERT_OR_PRINT (_mongocrypt_marking_parse_unowned (&buf, &marking, status),
+                    status);
+   mongocrypt_status_destroy (status);
+   BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&marking.v_iter));
+   return bson_iter_utf8 (&marking.v_iter, NULL);
+}
+
+
 mongocrypt_binary_t *
 _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester)
 {
@@ -278,9 +306,15 @@ mongocrypt_t *
 _mongocrypt_tester_mongocrypt (void)
 {
    mongocrypt_t *crypt;
+   char localkey_data[64] = {0};
+   mongocrypt_binary_t *localkey;
 
    crypt = mongocrypt_new ();
    mongocrypt_setopt_kms_provider_aws (crypt, "example", "example");
+   localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
+                                               sizeof localkey_data);
+   mongocrypt_setopt_kms_provider_local (crypt, localkey);
+   mongocrypt_binary_destroy (localkey);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    return crypt;
 }
@@ -290,6 +324,40 @@ static void
 _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
+   mongocrypt_binary_t *local_key;
+
+
+   /* Omitting a KMS provider must fail. */
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "no kms provider set");
+   mongocrypt_destroy (crypt);
+
+   /* Bad KMS provider options must fail. */
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_kms_provider_aws (crypt, "example", NULL),
+                 crypt,
+                 "aws_secret_access_key unset");
+   mongocrypt_destroy (crypt);
+
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_kms_provider_aws (crypt, NULL, "example"),
+                 crypt,
+                 "aws_access_key_id unset");
+   mongocrypt_destroy (crypt);
+
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_kms_provider_local (crypt, NULL),
+                 crypt,
+                 "passed null key");
+   mongocrypt_destroy (crypt);
+
+   crypt = mongocrypt_new ();
+   local_key = mongocrypt_binary_new ();
+   ASSERT_FAILS (mongocrypt_setopt_kms_provider_local (crypt, local_key),
+                 crypt,
+                 "local key must be 64 bytes");
+   mongocrypt_binary_destroy (local_key);
+   mongocrypt_destroy (crypt);
 
    /* Reinitialization must fail. */
    crypt = mongocrypt_new ();
@@ -307,10 +375,6 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
       mongocrypt_setopt_kms_provider_aws (crypt, "example", "example"),
       crypt,
       "options cannot be set after initialization");
-   mongocrypt_destroy (crypt);
-   /* Omitting required options must fail. */
-   crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "required kms provider");
    mongocrypt_destroy (crypt);
 }
 
@@ -334,6 +398,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_key_broker (&tester);
    _mongocrypt_tester_install (
       &tester, "_test_mongocrypt_bad_init", _test_mongocrypt_bad_init);
+   _mongocrypt_tester_install_local_kms (&tester);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

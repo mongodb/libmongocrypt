@@ -244,7 +244,8 @@ mongocrypt_new (void);
 
 
 /**
- * Set a handler to get called on every log message.
+ * Set a handler on the @ref mongocrypt_t object to get called on every log
+ * message.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] log_fn The log callback.
@@ -261,7 +262,7 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
 
 
 /**
- * Set a handler to get called on every log message.
+ * Configure an AWS KMS provider on the @ref mongocrypt_t object.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] aws_access_key_id The AWS access key ID used to generate KMS
@@ -276,6 +277,22 @@ bool
 mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_access_key_id,
                                     const char *aws_secret_access_key);
+
+
+/**
+ * Configure a local KMS provider on the @ref mongocrypt_t object.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] key A 64 byte master key used to encrypt and decrypt key vault
+ * keys.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
+                                      mongocrypt_binary_t *key);
+
 
 /**
  * Initialize new @ref mongocrypt_t object.
@@ -352,6 +369,8 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out);
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] region The AWS region.
  * @param[in] region_len The string length of @p region.
+ * @param[in] cmk The Amazon Resource Name (ARN) of the customer master key
+ * (CMK).
  * @param[in] cmk_len The string length of @p cmk_len.
  * @returns A boolean indicating success.
  */
@@ -362,6 +381,17 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
                                      uint32_t region_len,
                                      const char *cmk,
                                      uint32_t cmk_len);
+
+
+/**
+ * Set the master key to "local" for creating a data key.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 
 
 /**

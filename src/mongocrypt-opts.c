@@ -30,8 +30,9 @@ _mongocrypt_opts_init (_mongocrypt_opts_t *opts)
 void
 _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
-   bson_free (opts->aws_secret_access_key);
-   bson_free (opts->aws_access_key_id);
+   bson_free (opts->kms_aws_secret_access_key);
+   bson_free (opts->kms_aws_access_key_id);
+   _mongocrypt_buffer_cleanup (&opts->kms_local_key);
 }
 
 
@@ -39,13 +40,24 @@ bool
 _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
                            mongocrypt_status_t *status)
 {
-   if (!opts->aws_secret_access_key) {
-      CLIENT_ERR ("required kms provider option aws_secret_access_key unset");
+   if (!opts->kms_providers) {
+      CLIENT_ERR ("no kms provider set");
       return false;
    }
-   if (!opts->aws_access_key_id) {
-      CLIENT_ERR ("required kms provider option aws_access_key_id unset");
-      return false;
+
+   if (opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
+      if (!opts->kms_aws_access_key_id || !opts->kms_aws_secret_access_key) {
+         CLIENT_ERR ("aws credentials unset");
+         return false;
+      }
    }
+
+   if (opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+      if (_mongocrypt_buffer_empty (&opts->kms_local_key)) {
+         CLIENT_ERR ("local data key unset");
+         return false;
+      }
+   }
+
    return true;
 }

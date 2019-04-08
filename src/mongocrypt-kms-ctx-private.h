@@ -44,18 +44,19 @@ struct _mongocrypt_kms_ctx_t {
 
 
 bool
-_mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
-                                  _mongocrypt_opts_t *crypt_opts,
-                                  _mongocrypt_key_doc_t *key,
-                                  void *ctx);
+_mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
+                                      _mongocrypt_opts_t *crypt_opts,
+                                      _mongocrypt_key_doc_t *key,
+                                      void *ctx);
 
 
 bool
-_mongocrypt_kms_ctx_init_encrypt (mongocrypt_kms_ctx_t *kms,
-                                  _mongocrypt_opts_t *crypt_opts,
-                                  struct __mongocrypt_ctx_opts_t *ctx_opts,
-                                  _mongocrypt_buffer_t *decrypted_key_material,
-                                  void *ctx);
+_mongocrypt_kms_ctx_init_aws_encrypt (
+   mongocrypt_kms_ctx_t *kms,
+   _mongocrypt_opts_t *crypt_opts,
+   struct __mongocrypt_ctx_opts_t *ctx_opts,
+   _mongocrypt_buffer_t *decrypted_key_material,
+   void *ctx);
 
 
 bool

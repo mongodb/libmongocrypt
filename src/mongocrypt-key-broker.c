@@ -20,6 +20,7 @@
 #include "kms_message/kms_b64.h"
 
 #include "mongocrypt.h"
+#include "mongocrypt-crypto-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-private.h"
@@ -150,21 +151,63 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 
    /* find which _id/keyAltName this key doc matches. */
    for (kbe = kb->kb_entry; kbe != NULL; kbe = kbe->next) {
-      /* TODO: CDRIVER-3057 support keyAltName. */
-      if (0 == _mongocrypt_buffer_cmp (&kbe->key_id, &key.id)) {
-         /* take ownership of the key document. */
-         memcpy (&kbe->key_returned, &key, sizeof (key));
-         memset (&key, 0, sizeof (key));
-         kbe->state = KEY_ENCRYPTED;
+      _mongocrypt_kms_provider_t masterkey_provider;
 
-         if (!_mongocrypt_kms_ctx_init_decrypt (
+      /* TODO: CDRIVER-3057 support keyAltName. */
+      if (0 != _mongocrypt_buffer_cmp (&kbe->key_id, &key.id)) {
+         continue;
+      }
+
+      /* found a match, take ownership of the key document. */
+      memcpy (&kbe->key_returned, &key, sizeof (key));
+      memset (&key, 0, sizeof (key));
+      kbe->state = KEY_ENCRYPTED;
+
+      masterkey_provider = kbe->key_returned.masterkey_provider;
+      if (0 == (masterkey_provider & kb->crypt_opts->kms_providers)) {
+         /* mongocrypt_t was not configured with the KMS provider necessary to
+          * decrypt. */
+         /* TODO CDRIVER-3044 warn instead of erroring? */
+         CLIENT_ERR (
+            "client not configured with KMS provider necessary to decrypt");
+         goto done;
+      }
+
+      /* Check that the mongocrypt_t was configured with the KMS provider
+       * needed. */
+      if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+         bool crypt_ret;
+         uint32_t bytes_written;
+
+         kbe->decrypted_key_material.len = _mongocrypt_calculate_plaintext_len (
+            kbe->key_returned.key_material.len);
+         kbe->decrypted_key_material.data =
+            bson_malloc (kbe->decrypted_key_material.len);
+         kbe->decrypted_key_material.owned = true;
+
+         crypt_ret = _mongocrypt_do_decryption (NULL /* associated data. */,
+                                                &kb->crypt_opts->kms_local_key,
+                                                &kbe->key_returned.key_material,
+                                                &kbe->decrypted_key_material,
+                                                &bytes_written,
+                                                status);
+
+         if (!crypt_ret) {
+            goto done;
+         }
+         kbe->state = KEY_DECRYPTED;
+      } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+         if (!_mongocrypt_kms_ctx_init_aws_decrypt (
                 &kbe->kms, kb->crypt_opts, &kbe->key_returned, kbe)) {
             mongocrypt_kms_ctx_status (&kbe->kms, status);
             goto done;
          }
-         ret = true;
+      } else {
+         CLIENT_ERR ("unrecognized kms provider");
          goto done;
       }
+      ret = true;
+      goto done;
    }
    CLIENT_ERR ("no key matching passed ID");
    ret = false;
@@ -225,7 +268,6 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
 {
    mongocrypt_status_t *status;
    _mongocrypt_key_broker_entry_t *kbe;
-   _mongocrypt_buffer_t tmp;
 
    status = kb->status;
    for (kbe = kb->kb_entry; kbe != NULL; kbe = kbe->next) {
@@ -235,7 +277,8 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
          return false;
       }
 
-      if (!_mongocrypt_kms_ctx_result (&kbe->kms, &tmp)) {
+      if (!_mongocrypt_kms_ctx_result (&kbe->kms,
+                                       &kbe->decrypted_key_material)) {
          /* Always fatal. Key attempted to decrypt but failed. */
          mongocrypt_kms_ctx_status (&kbe->kms, status);
          return false;
@@ -266,12 +309,11 @@ _mongocrypt_key_broker_decrypted_key_material_by_id (
          CLIENT_ERR ("key found, but material not decrypted");
          return false;
       }
-      /* If we have a local decrypted key, use it instead of KMS */
-      if (!_mongocrypt_buffer_empty (&kbe->decrypted_key_material)) {
-	_mongocrypt_buffer_copy_to (&kbe->decrypted_key_material, out);
-	return true;
-      }
-      return _mongocrypt_kms_ctx_result (&kbe->kms, out);
+
+      _mongocrypt_buffer_init (out);
+      out->data = kbe->decrypted_key_material.data;
+      out->len = kbe->decrypted_key_material.len;
+      return true;
    }
    CLIENT_ERR ("no matching key found");
    return false;
@@ -302,8 +344,8 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
    }
 
    bson_init (&filter);
-   bson_append_document_begin (&filter, MONGOCRYPT_STR_AND_LEN("_id"), &_id);
-   bson_append_array_begin (&_id, MONGOCRYPT_STR_AND_LEN("$in"), &_id_in);
+   bson_append_document_begin (&filter, MONGOCRYPT_STR_AND_LEN ("_id"), &_id);
+   bson_append_array_begin (&_id, MONGOCRYPT_STR_AND_LEN ("$in"), &_id_in);
 
    for (iter = kb->kb_entry; iter != NULL; iter = iter->next) {
       char *key_str;

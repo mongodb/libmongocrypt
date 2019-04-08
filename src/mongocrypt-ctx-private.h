@@ -30,11 +30,11 @@ typedef enum {
 
 
 typedef struct __mongocrypt_ctx_opts_t {
-   char *kms_provider;
-   char *aws_cmk;
-   uint32_t aws_cmk_len;
-   char *aws_region;
-   uint32_t aws_region_len;
+   _mongocrypt_kms_provider_t masterkey_kms_provider;
+   char *masterkey_aws_cmk;
+   uint32_t masterkey_aws_cmk_len;
+   char *masterkey_aws_region;
+   uint32_t masterkey_aws_region_len;
 } _mongocrypt_ctx_opts_t;
 
 
@@ -124,6 +124,7 @@ typedef struct {
    mongocrypt_kms_ctx_t kms;
    bool kms_returned;
    _mongocrypt_buffer_t key_doc;
+   _mongocrypt_buffer_t encrypted_key_material;
 } _mongocrypt_ctx_datakey_t;
 
 bool

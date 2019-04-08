@@ -98,7 +98,8 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
    BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&iter, NULL), "457-55-5462"));
+   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&iter, NULL),
+                             _mongocrypt_tester_plaintext (tester)));
    mongocrypt_binary_destroy (decrypted);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);

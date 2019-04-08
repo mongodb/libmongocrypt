@@ -27,6 +27,7 @@ _cleanup (mongocrypt_ctx_t *ctx)
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
    _mongocrypt_buffer_cleanup (&dkctx->key_doc);
    _mongocrypt_kms_ctx_cleanup (&dkctx->kms);
+   _mongocrypt_buffer_cleanup (&dkctx->encrypted_key_material);
 }
 
 
@@ -56,6 +57,19 @@ _kms_done (mongocrypt_ctx_t *ctx)
 
    if (mongocrypt_kms_ctx_bytes_needed (&dkctx->kms) != 0) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "KMS response unfinished");
+   }
+
+   /* Store the result. */
+   if (!_mongocrypt_kms_ctx_result (&dkctx->kms,
+                                    &dkctx->encrypted_key_material)) {
+      BSON_ASSERT (!mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status));
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   /* The encrypted key material must be at least as large as the plaintext. */
+   if (dkctx->encrypted_key_material.len < MONGOCRYPT_KEYMATERIAL_LEN) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "key material not expected length");
    }
 
    ctx->state = MONGOCRYPT_CTX_READY;
@@ -92,7 +106,6 @@ static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    _mongocrypt_ctx_datakey_t *dkctx;
-   _mongocrypt_buffer_t key_material;
    bson_t key_doc, child;
    int64_t current_time_ms;
 
@@ -103,41 +116,46 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    }
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
-   if (!mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status)) {
-      return _mongocrypt_ctx_fail (ctx);
-   }
-
-   if (!_mongocrypt_kms_ctx_result (&dkctx->kms, &key_material)) {
-      BSON_ASSERT (!mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status));
-      return _mongocrypt_ctx_fail (ctx);
-   }
-
-   /* The encrypted key material must be at least as large as the plaintext. */
-   if (key_material.len < MONGOCRYPT_KEYMATERIAL_LEN) {
-      return _mongocrypt_ctx_fail_w_msg (ctx,
-                                         "key material not expected length");
-   }
 
    bson_init (&key_doc);
    if (!_append_id (&key_doc, ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
-   /* TODO: CDRIVER-3057 support key alt names. Do not add an empty array if there
-      are no keyAltNames since we do not want to prohibit a unique index. */
-   _mongocrypt_buffer_append (&key_material, &key_doc, MONGOCRYPT_STR_AND_LEN("keyMaterial"));
+   /* TODO: CDRIVER-3057 support key alt names. Do not add an empty array if
+    * there are no keyAltNames since we do not want to prohibit a unique index.
+    */
+   _mongocrypt_buffer_append (&dkctx->encrypted_key_material,
+                              &key_doc,
+                              MONGOCRYPT_STR_AND_LEN ("keyMaterial"));
    current_time_ms = bson_get_monotonic_time () * 1000;
-   BSON_CHECK (
-      bson_append_date_time (&key_doc, MONGOCRYPT_STR_AND_LEN("creationDate"), current_time_ms));
-   BSON_CHECK (
-      bson_append_date_time (&key_doc, MONGOCRYPT_STR_AND_LEN("updateDate"), current_time_ms));
-   BSON_CHECK (bson_append_int32 (&key_doc, MONGOCRYPT_STR_AND_LEN("status"), 0)); /* 0 = enabled. */
-   BSON_CHECK (bson_append_document_begin (&key_doc, MONGOCRYPT_STR_AND_LEN("masterKey"), &child));
-   /* TODO: CDRIVER-3050 support multiple providers, don't assume AWS. */
-   BSON_CHECK (bson_append_utf8 (&child, MONGOCRYPT_STR_AND_LEN("provider"), MONGOCRYPT_STR_AND_LEN("aws")));
-   BSON_CHECK (bson_append_utf8 (
-      &child, MONGOCRYPT_STR_AND_LEN("region"), ctx->opts.aws_region, ctx->opts.aws_region_len));
-   BSON_CHECK (bson_append_utf8 (
-      &child, MONGOCRYPT_STR_AND_LEN("key"), ctx->opts.aws_cmk, ctx->opts.aws_cmk_len));
+   BSON_CHECK (bson_append_date_time (
+      &key_doc, MONGOCRYPT_STR_AND_LEN ("creationDate"), current_time_ms));
+   BSON_CHECK (bson_append_date_time (
+      &key_doc, MONGOCRYPT_STR_AND_LEN ("updateDate"), current_time_ms));
+   BSON_CHECK (bson_append_int32 (
+      &key_doc, MONGOCRYPT_STR_AND_LEN ("status"), 0)); /* 0 = enabled. */
+   BSON_CHECK (bson_append_document_begin (
+      &key_doc, MONGOCRYPT_STR_AND_LEN ("masterKey"), &child));
+
+   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+      BSON_CHECK (bson_append_utf8 (&child,
+                                    MONGOCRYPT_STR_AND_LEN ("provider"),
+                                    MONGOCRYPT_STR_AND_LEN ("aws")));
+      BSON_CHECK (bson_append_utf8 (&child,
+                                    MONGOCRYPT_STR_AND_LEN ("region"),
+                                    ctx->opts.masterkey_aws_region,
+                                    ctx->opts.masterkey_aws_region_len));
+      BSON_CHECK (bson_append_utf8 (&child,
+                                    MONGOCRYPT_STR_AND_LEN ("key"),
+                                    ctx->opts.masterkey_aws_cmk,
+                                    ctx->opts.masterkey_aws_cmk_len));
+   }
+
+   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+      BSON_CHECK (bson_append_utf8 (&child,
+                                    MONGOCRYPT_STR_AND_LEN ("provider"),
+                                    MONGOCRYPT_STR_AND_LEN ("local")));
+   }
    BSON_CHECK (bson_append_document_end (&key_doc, &child));
    _mongocrypt_buffer_steal_from_bson (&dkctx->key_doc, &key_doc);
    _mongocrypt_buffer_to_binary (&dkctx->key_doc, out);
@@ -151,20 +169,25 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_datakey_t *dkctx;
    _mongocrypt_buffer_t plaintext_key_material;
+   bool ret;
+
+   ret = false;
 
    if (ctx->state != MONGOCRYPT_CTX_ERROR) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
 
-   if (!ctx->opts.aws_region || !ctx->opts.aws_cmk) {
-      return _mongocrypt_ctx_fail_w_msg (ctx,
-                                         "aws masterkey options are required");
+   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "no master key set");
+   }
+
+   if (!(ctx->opts.masterkey_kms_provider & ctx->crypt->opts.kms_providers)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "requested kms provider not configured");
    }
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_CREATE_DATA_KEY;
-   ctx->vtable.next_kms_ctx = _next_kms_ctx;
-   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 
@@ -174,20 +197,71 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    plaintext_key_material.owned = true;
    if (!_crypto_random (
           &plaintext_key_material, ctx->status, MONGOCRYPT_KEYMATERIAL_LEN)) {
-      _mongocrypt_buffer_cleanup (&plaintext_key_material);
-      return _mongocrypt_ctx_fail (ctx);
+      _mongocrypt_ctx_fail (ctx);
+      goto done;
    }
 
-   /* create the KMS message. */
-   if (!_mongocrypt_kms_ctx_init_encrypt (&dkctx->kms,
-                                          &ctx->crypt->opts,
-                                          &ctx->opts,
-                                          &plaintext_key_material,
-                                          NULL)) {
-      mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
-      return _mongocrypt_ctx_fail (ctx);
+   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+      bool crypt_ret;
+      uint32_t bytes_written;
+      _mongocrypt_buffer_t iv;
+
+      /* For a local KMS provider, the customer master key is supplied by the
+       * user in mongocrypt_setopt_kms_provider_local. We use it to
+       * encrypt/decrypt data keys directly. */
+      dkctx->encrypted_key_material.len =
+         _mongocrypt_calculate_ciphertext_len (plaintext_key_material.len);
+      dkctx->encrypted_key_material.data =
+         bson_malloc (dkctx->encrypted_key_material.len);
+      dkctx->encrypted_key_material.owned = true;
+
+      /* use a random IV. */
+      _mongocrypt_buffer_init (&iv);
+      iv.data = bson_malloc0 (MONGOCRYPT_IV_LEN);
+      iv.len = MONGOCRYPT_IV_LEN;
+      iv.owned = true;
+      if (!_crypto_random (&iv, ctx->status, MONGOCRYPT_IV_LEN)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+
+      crypt_ret = _mongocrypt_do_encryption (&iv,
+                                             NULL /* associated data. */,
+                                             &ctx->crypt->opts.kms_local_key,
+                                             &plaintext_key_material,
+                                             &dkctx->encrypted_key_material,
+                                             &bytes_written,
+                                             ctx->status);
+      _mongocrypt_buffer_cleanup (&iv);
+      if (!crypt_ret) {
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+      ctx->state = MONGOCRYPT_CTX_READY;
    }
-   ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+
+   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+      ctx->vtable.next_kms_ctx = _next_kms_ctx;
+      ctx->vtable.kms_done = _kms_done;
+
+      /* For AWS provider, AWS credentials are supplied in
+       * mongocrypt_setopt_kms_provider_aws. Data keys are encrypted with an
+       * "encrypt" HTTP message to KMS. */
+      if (!_mongocrypt_kms_ctx_init_aws_encrypt (&dkctx->kms,
+                                                 &ctx->crypt->opts,
+                                                 &ctx->opts,
+                                                 &plaintext_key_material,
+                                                 NULL)) {
+         mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+
+      ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+   }
+
+   ret = true;
+done:
    _mongocrypt_buffer_cleanup (&plaintext_key_material);
-   return true;
+   return ret;
 }

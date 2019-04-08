@@ -1,1 +1,2 @@
 leak:ccrng_cryptographic_init_once
+leak:ccrng_cryptographic_generate

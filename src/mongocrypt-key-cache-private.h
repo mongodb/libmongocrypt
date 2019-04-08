@@ -17,6 +17,7 @@
 #ifndef MONGOCRYPT_KEY_CACHE_PRIVATE_H
 #define MONGOCRYPT_KEY_CACHE_PRIVATE_H
 
+#include "mongocrypt-opts-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-status-private.h"
@@ -25,7 +26,7 @@
 typedef struct {
    _mongocrypt_buffer_t id;
    _mongocrypt_buffer_t key_material;
-   char *masterkey_provider;
+   _mongocrypt_kms_provider_t masterkey_provider;
    char *masterkey_region;
    char *masterkey_cmk;
 } _mongocrypt_key_doc_t;

@@ -32,14 +32,11 @@
 #define DEFAULT_MAX_KMS_BYTE_REQUEST 1024
 
 
-/* TODO: CDRIVER-3050 refactor this logic to check that the master key kms
- * provider
- * has an associated configured kms providers on the _mongocrypt_opts_t. */
 bool
-_mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
-                                  _mongocrypt_opts_t *crypt_opts,
-                                  _mongocrypt_key_doc_t *key,
-                                  void *ctx)
+_mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
+                                      _mongocrypt_opts_t *crypt_opts,
+                                      _mongocrypt_key_doc_t *key,
+                                      void *ctx)
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
@@ -52,17 +49,12 @@ _mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
    _mongocrypt_buffer_init (&kms->result);
 
    if (!key->masterkey_provider) {
-      CLIENT_ERR ("no KMS provider specified on key");
+      CLIENT_ERR ("no kms provider specified on key");
       return false;
    }
 
-   if (0 == strcmp ("local", key->masterkey_provider)) {
-      CLIENT_ERR ("TODO: CDRIVER-3050 support local KMS provider");
-      return false;
-   }
-
-   if (0 != strcmp ("aws", key->masterkey_provider)) {
-      CLIENT_ERR ("unrecognized KMS provider: %s\n", key->masterkey_provider);
+   if (MONGOCRYPT_KMS_PROVIDER_AWS != key->masterkey_provider) {
+      CLIENT_ERR ("expected aws kms provider");
       return false;
    }
 
@@ -71,12 +63,17 @@ _mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
       return false;
    }
 
-   if (!crypt_opts->aws_access_key_id) {
+   if (0 == (crypt_opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
+      CLIENT_ERR ("aws kms not configured");
+      return false;
+   }
+
+   if (!crypt_opts->kms_aws_access_key_id) {
       CLIENT_ERR ("aws access key id not provided");
       return false;
    }
 
-   if (!crypt_opts->aws_secret_access_key) {
+   if (!crypt_opts->kms_aws_secret_access_key) {
       CLIENT_ERR ("aws secret access key not provided");
       return false;
    }
@@ -99,12 +96,12 @@ _mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
    }
 
    if (!kms_request_set_access_key_id (kms->req,
-                                       crypt_opts->aws_access_key_id)) {
+                                       crypt_opts->kms_aws_access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
       return false;
    }
    if (!kms_request_set_secret_key (kms->req,
-                                    crypt_opts->aws_secret_access_key)) {
+                                    crypt_opts->kms_aws_secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
    }
 
@@ -121,11 +118,12 @@ _mongocrypt_kms_ctx_init_decrypt (mongocrypt_kms_ctx_t *kms,
 
 
 bool
-_mongocrypt_kms_ctx_init_encrypt (mongocrypt_kms_ctx_t *kms,
-                                  _mongocrypt_opts_t *crypt_opts,
-                                  _mongocrypt_ctx_opts_t *ctx_opts,
-                                  _mongocrypt_buffer_t *plaintext_key_material,
-                                  void *ctx)
+_mongocrypt_kms_ctx_init_aws_encrypt (
+   mongocrypt_kms_ctx_t *kms,
+   _mongocrypt_opts_t *crypt_opts,
+   _mongocrypt_ctx_opts_t *ctx_opts,
+   _mongocrypt_buffer_t *plaintext_key_material,
+   void *ctx)
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
@@ -137,22 +135,32 @@ _mongocrypt_kms_ctx_init_encrypt (mongocrypt_kms_ctx_t *kms,
    kms->req_type = MONGOCRYPT_KMS_ENCRYPT;
    _mongocrypt_buffer_init (&kms->result);
 
-   if (!ctx_opts->aws_region) {
+   if (MONGOCRYPT_KMS_PROVIDER_AWS != ctx_opts->masterkey_kms_provider) {
+      CLIENT_ERR ("expected aws kms provider");
+      return false;
+   }
+
+   if (!ctx_opts->masterkey_aws_region) {
       CLIENT_ERR ("no key region provided");
       return false;
    }
 
-   if (!ctx_opts->aws_cmk) {
+   if (!ctx_opts->masterkey_aws_cmk) {
       CLIENT_ERR ("no aws cmk provided");
       return false;
    }
 
-   if (!crypt_opts->aws_access_key_id) {
+   if (0 == (crypt_opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
+      CLIENT_ERR ("aws kms not configured");
+      return false;
+   }
+
+   if (!crypt_opts->kms_aws_access_key_id) {
       CLIENT_ERR ("aws access key id not provided");
       return false;
    }
 
-   if (!crypt_opts->aws_secret_access_key) {
+   if (!crypt_opts->kms_aws_secret_access_key) {
       CLIENT_ERR ("aws secret access key not provided");
       return false;
    }
@@ -165,24 +173,24 @@ _mongocrypt_kms_ctx_init_encrypt (mongocrypt_kms_ctx_t *kms,
 
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
                                        plaintext_key_material->len,
-                                       ctx_opts->aws_cmk,
+                                       ctx_opts->masterkey_aws_cmk,
                                        opt);
 
    kms_request_opt_destroy (opt);
    kms_request_set_service (kms->req, "kms");
 
-   if (!kms_request_set_region (kms->req, ctx_opts->aws_region)) {
+   if (!kms_request_set_region (kms->req, ctx_opts->masterkey_aws_region)) {
       CLIENT_ERR ("failed to set region");
       return false;
    }
 
    if (!kms_request_set_access_key_id (kms->req,
-                                       crypt_opts->aws_access_key_id)) {
+                                       crypt_opts->kms_aws_access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
       return false;
    }
    if (!kms_request_set_secret_key (kms->req,
-                                    crypt_opts->aws_secret_access_key)) {
+                                    crypt_opts->kms_aws_secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
    }
 
@@ -192,8 +200,8 @@ _mongocrypt_kms_ctx_init_encrypt (mongocrypt_kms_ctx_t *kms,
    kms->msg.owned = true;
 
    /* construct the endpoint */
-   kms->endpoint =
-      bson_strdup_printf ("kms.%s.amazonaws.com", ctx_opts->aws_region);
+   kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
+                                       ctx_opts->masterkey_aws_region);
    return true;
 }
 

@@ -18,6 +18,7 @@
 #include <bson/bson.h>
 
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-key-cache-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-os-private.h"
@@ -61,7 +62,7 @@ tmp_json (const bson_t *bson)
    char *json;
 
    memset (storage, 0, 1024);
-   json = bson_as_json (bson, NULL);
+   json = bson_as_canonical_extended_json (bson, NULL);
    bson_snprintf (storage, sizeof (storage), "%s", json);
    bson_free (json);
    return (const char *) storage;
@@ -132,18 +133,63 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_access_key_id,
                                     const char *aws_secret_access_key)
 {
+   mongocrypt_status_t *status = crypt->status;
+
    if (crypt->initialized) {
-      mongocrypt_status_t *status = crypt->status;
       CLIENT_ERR ("options cannot be set after initialization");
       return false;
    }
 
-   if (crypt->opts.aws_access_key_id || crypt->opts.aws_secret_access_key) {
-      bson_free (crypt->opts.aws_access_key_id);
-      bson_free (crypt->opts.aws_secret_access_key);
+   if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
+      CLIENT_ERR ("aws kms provider already set");
+      return false;
    }
-   crypt->opts.aws_access_key_id = bson_strdup (aws_access_key_id);
-   crypt->opts.aws_secret_access_key = bson_strdup (aws_secret_access_key);
+
+   if (!aws_secret_access_key) {
+      CLIENT_ERR ("aws_secret_access_key unset");
+      return false;
+   }
+
+   if (!aws_access_key_id) {
+      CLIENT_ERR ("aws_access_key_id unset");
+      return false;
+   }
+
+   crypt->opts.kms_aws_access_key_id = bson_strdup (aws_access_key_id);
+   crypt->opts.kms_aws_secret_access_key = bson_strdup (aws_secret_access_key);
+   crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+   return true;
+}
+
+
+bool
+mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
+                                      mongocrypt_binary_t *key)
+{
+   mongocrypt_status_t *status = crypt->status;
+
+   if (crypt->initialized) {
+      CLIENT_ERR ("options cannot be set after initialization");
+      return false;
+   }
+
+   if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL)) {
+      CLIENT_ERR ("local kms provider already set");
+      return false;
+   }
+
+   if (!key) {
+      CLIENT_ERR ("passed null key");
+      return false;
+   }
+
+   if (mongocrypt_binary_len (key) != MONGOCRYPT_KEYMATERIAL_LEN) {
+      CLIENT_ERR ("local key must be %d bytes", MONGOCRYPT_KEYMATERIAL_LEN);
+      return false;
+   }
+
+   _mongocrypt_buffer_copy_from_binary (&crypt->opts.kms_local_key, key);
+   crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
    return true;
 }
 
