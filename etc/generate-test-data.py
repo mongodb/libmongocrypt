@@ -54,8 +54,8 @@ def nextUUID():
 
 master_key_doc = { # not currently used in demo.
     "provider": "aws",
-    "awsKey": cmk_id,
-    "awsRegion": boto3.session.Session().region_name
+    "key": cmk_id,
+    "region": region
 }
 
 # Create three example keys.
@@ -196,21 +196,21 @@ with open("test/example/command.json", "w") as f:
 with open("test/example/mongocryptd-reply.json", "w") as f:
     f.write(json_util.dumps(marked_reply, indent=4, json_options=opts))
 
-with open("test/example/mongocryptd-reply-no-encryption-needed.json", "w") as f:
+with open("test/data/mongocryptd-reply-no-encryption-needed.json", "w") as f:
     f.write(json_util.dumps({
         "hasEncryptedPlaceholders": False,
         "schemaRequiresEncryption": False,
         "ok": 1
     }, indent=4, json_options=opts))
 
-with open("test/example/mongocryptd-reply-no-markings.json", "w") as f:
+with open("test/data/mongocryptd-reply-no-markings.json", "w") as f:
     f.write(json_util.dumps({
         "hasEncryptedPlaceholders": False,
         "schemaRequiresEncryption": True,
         "ok": 1
     }, indent=4, json_options=opts))
 
-with open("test/example/mongocryptd-reply-invalid.json", "w") as f:
+with open("test/data/mongocryptd-reply-invalid.json", "w") as f:
     f.write(json_util.dumps(invalid_marked_reply, indent=4, json_options=opts))
 
 with open("test/example/kms-decrypt-reply.txt", "w") as f:

@@ -175,6 +175,8 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
    mongocrypt_ctx_state_t state;
    mongocrypt_kms_ctx_t *kms;
    mongocrypt_binary_t *bin;
+   mongocrypt_status_t status;
+   bool res;
 
    state = mongocrypt_ctx_state (ctx);
    while (state != stop_state) {
@@ -191,14 +193,18 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
          bin = _mongocrypt_tester_file (
             tester, "./test/example/mongocryptd-reply.json");
-         BSON_ASSERT (mongocrypt_ctx_mongo_feed (ctx, bin));
+         res = mongocrypt_ctx_mongo_feed (ctx, bin);
+         mongocrypt_ctx_status (ctx, &status);
+         ASSERT_OR_PRINT (res, &status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          mongocrypt_binary_destroy (bin);
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
          bin = _mongocrypt_tester_file (tester,
                                         "./test/example/key-document.json");
-         BSON_ASSERT (mongocrypt_ctx_mongo_feed (ctx, bin));
+         res = mongocrypt_ctx_mongo_feed (ctx, bin);
+         mongocrypt_ctx_status (ctx, &status);
+         ASSERT_OR_PRINT (res, &status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          mongocrypt_binary_destroy (bin);
          break;

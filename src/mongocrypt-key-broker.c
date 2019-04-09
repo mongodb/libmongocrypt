@@ -25,6 +25,7 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 
+
 struct __mongocrypt_key_broker_entry_t {
    mongocrypt_status_t *status;
    _mongocrypt_key_state_t state;
@@ -93,7 +94,30 @@ _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
    kbe->next = kb->kb_entry;
    kb->kb_entry = kbe;
    kb->decryptor_iter = kbe;
+
    return true;
+}
+
+
+bool
+_mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
+				     const _mongocrypt_buffer_t *key_id)
+{
+  BSON_ASSERT (kb);
+
+  if (!_mongocrypt_key_broker_add_id (kb, key_id)) {
+    return false;
+  }
+
+  /* The first entry in the list should be our new one. Modify
+     it so that it is in a decrypted state for testing. Use the
+     key_id as the decrypted material, because it doesn't matter. */
+  BSON_ASSERT (kb->kb_entry);
+  kb->kb_entry->state = KEY_DECRYPTED;
+  _mongocrypt_buffer_copy_to (&kb->kb_entry->key_id,
+			      &kb->kb_entry->decrypted_key_material);
+
+  return true;
 }
 
 
@@ -241,6 +265,11 @@ _mongocrypt_key_broker_decrypted_key_material_by_id (
       if (kbe->state != KEY_DECRYPTED) {
          CLIENT_ERR ("key found, but material not decrypted");
          return false;
+      }
+      /* If we have a local decrypted key, use it instead of KMS */
+      if (!_mongocrypt_buffer_empty (&kbe->decrypted_key_material)) {
+	_mongocrypt_buffer_copy_to (&kbe->decrypted_key_material, out);
+	return true;
       }
       return _mongocrypt_kms_ctx_result (&kbe->kms, out);
    }

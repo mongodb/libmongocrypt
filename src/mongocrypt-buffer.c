@@ -24,6 +24,27 @@ _mongocrypt_buffer_init (_mongocrypt_buffer_t *buf)
    memset (buf, 0, sizeof (*buf));
 }
 
+
+void
+_mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len)
+{
+   BSON_ASSERT (buf);
+
+   /* Currently this just wipes whatever was in data before,
+      but a fancier implementation could copy over up to 'len'
+      bytes from the old buffer to the new one. */
+   if (buf->owned) {
+      bson_realloc (buf->data, len);
+      buf->len = len;
+      return;
+   }
+
+   buf->data = bson_malloc (len);
+   buf->len = len;
+   buf->owned = true;
+}
+
+
 void
 _mongocrypt_buffer_copy_from_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
 {

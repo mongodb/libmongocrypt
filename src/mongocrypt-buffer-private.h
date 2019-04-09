@@ -37,6 +37,9 @@ typedef struct __mongocrypt_buffer_t {
 void
 _mongocrypt_buffer_init (_mongocrypt_buffer_t *buf);
 
+void
+_mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len);
+
 
 /* @iter is iterated to a BSON binary value. */
 void

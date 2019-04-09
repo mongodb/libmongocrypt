@@ -44,6 +44,12 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       goto cleanup;
    }
 
+   /* Confirm that this is indeed a marking */
+   if (in->data[0] != 0) {
+      CLIENT_ERR ("invalid marking, first byte must be 0");
+      goto cleanup;
+   }
+
    bson_init_static (&bson, in->data + 1, in->len - 1);
 
    if (bson_iter_init_find (&iter, &bson, "ki")) {
@@ -87,13 +93,25 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       CLIENT_ERR ("invalid marking, no 'a'");
       goto cleanup;
    }
-   /* TODO: once SERVER-40243 is resolved, use the algorithm from the marking.
-    */
-   out->algorithm = 1;
+
+   if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+     CLIENT_ERR ("invalid marking, 'a' must be an integer");
+     goto cleanup;
+   }
+
+   out->algorithm = bson_iter_int32 (&iter);
 
    ret = true;
 cleanup:
    return ret;
+}
+
+
+void
+_mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
+{
+  _mongocrypt_buffer_cleanup (&marking->iv);
+  _mongocrypt_buffer_cleanup (&marking->key_id);
 }
 
 

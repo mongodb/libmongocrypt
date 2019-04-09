@@ -53,7 +53,6 @@ typedef enum {
 
 typedef struct __mongocrypt_key_broker_entry_t _mongocrypt_key_broker_entry_t;
 
-
 struct __mongocrypt_key_broker_t {
    _mongocrypt_key_broker_entry_t *kb_entry; /* head of a linked-list. */
    _mongocrypt_key_broker_entry_t *decryptor_iter;
@@ -93,6 +92,11 @@ _mongocrypt_key_broker_empty (_mongocrypt_key_broker_t *kb);
 bool
 _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
                                const _mongocrypt_buffer_t *key_id);
+
+/* For testing only, add a decrypted key */
+bool
+_mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
+				     const _mongocrypt_buffer_t *key_id);
 
 
 /* Add a document with encrypted key material, transitioning a KEY_EMPTY key to

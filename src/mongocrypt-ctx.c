@@ -167,6 +167,7 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    if (NULL == callme) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
+
    return callme (ctx, in);
 }
 

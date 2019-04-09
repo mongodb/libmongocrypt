@@ -15,6 +15,7 @@
  */
 
 #include "mongocrypt-private.h"
+#include "mongocrypt-crypto-private.h"
 
 #include "test-mongocrypt.h"
 
@@ -99,8 +100,63 @@ _test_malformed_ciphertext (_mongocrypt_tester_t *tester)
 
 
 void
+_test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
+{
+  mongocrypt_t *crypt;
+  mongocrypt_ctx_t *ctx;
+  mongocrypt_status_t status;
+  _mongocrypt_key_broker_t *kb;
+  _mongocrypt_buffer_t iv = {0};
+  _mongocrypt_ciphertext_t ciphertext = {{0}};
+  _mongocrypt_marking_t marking = {0};
+  bson_iter_t iter;
+  bson_t *bson;
+  bool res;
+
+  crypt = _mongocrypt_tester_mongocrypt ();
+  ctx = mongocrypt_ctx_new (crypt);
+  ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN("test.test")), ctx);
+
+  _mongocrypt_buffer_resize (&marking.key_id, MONGOCRYPT_ENC_KEY_LEN);
+  BSON_ASSERT (_crypto_random (&marking.key_id, &status, MONGOCRYPT_ENC_KEY_LEN));
+  kb = &ctx->kb;
+  BSON_ASSERT (_mongocrypt_key_broker_add_test_key (kb, &marking.key_id));
+
+  bson = BCON_NEW ("v", "hello");
+  bson_iter_init_find (&iter, bson, "v");
+  memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
+
+  /* Seed the marking's iv with anything */
+  _mongocrypt_buffer_resize (&marking.iv, MONGOCRYPT_IV_LEN);
+  BSON_ASSERT (_crypto_random (&marking.iv, &status, MONGOCRYPT_IV_LEN));
+
+  /* Use a marking with type 1, make sure iv is our original iv */
+  marking.algorithm = 1;
+  res = _marking_to_ciphertext ((void *)kb, &marking, &ciphertext, &status);
+  ASSERT_OR_PRINT (res, &status);
+  BSON_ASSERT (res);
+  iv.data = ciphertext.data.data;
+  iv.len = MONGOCRYPT_IV_LEN;
+  BSON_ASSERT (_mongocrypt_buffer_cmp (&iv, &marking.iv) == 0);
+
+  /* Use a marking with type 2, make sure iv is random */
+  marking.algorithm = 2;
+  res = _marking_to_ciphertext ((void *)kb, &marking, &ciphertext, &status);
+  BSON_ASSERT (res);
+  iv.data = ciphertext.data.data;
+  iv.len = MONGOCRYPT_IV_LEN;
+  BSON_ASSERT (_mongocrypt_buffer_cmp (&iv, &marking.iv) != 0);
+
+  _mongocrypt_marking_cleanup (&marking);
+  mongocrypt_ctx_destroy (ctx);
+  mongocrypt_destroy (crypt);
+  bson_destroy (bson);
+}
+
+void
 _mongocrypt_tester_install_ciphertext (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_malformed_ciphertext);
    INSTALL_TEST (_test_ciphertext_serialization);
+   INSTALL_TEST (_test_ciphertext_algorithm);
 }

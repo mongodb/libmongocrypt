@@ -44,8 +44,8 @@ def randomUUID():
 
 master_key_doc = { # not currently used in demo.
     "provider": "aws",
-    "awsKey": cmk_id,
-    "awsRegion": boto3.session.Session().region_name
+    "rey": cmk_id,
+    "region": boto3.session.Session().region_name
 }
 
 # Create three example keys.

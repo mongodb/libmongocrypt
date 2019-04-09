@@ -96,6 +96,16 @@ bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    _mongocrypt_marking_t *out,
                                    mongocrypt_status_t *status);
+
+void
+_mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking);
+
+bool
+_marking_to_ciphertext (void *ctx,
+			_mongocrypt_marking_t *marking,
+			_mongocrypt_ciphertext_t *ciphertext,
+			mongocrypt_status_t *status);
+
 bool
 _test_mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *buf,
                                            _mongocrypt_ciphertext_t *out,
