@@ -18,6 +18,8 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
 
+/* TODO CDRIVER-2990 have buffer operations require initialized buffer to
+ * prevent leaky code. */
 void
 _mongocrypt_buffer_init (_mongocrypt_buffer_t *buf)
 {
@@ -44,6 +46,21 @@ _mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len)
    buf->owned = true;
 }
 
+
+void
+_mongocrypt_buffer_steal (_mongocrypt_buffer_t *buf, _mongocrypt_buffer_t *src)
+{
+   if (!src->owned) {
+      _mongocrypt_buffer_copy_to (src, buf);
+      _mongocrypt_buffer_init (src);
+      return;
+   }
+
+   buf->data = src->data;
+   buf->len = src->len;
+   buf->owned = true;
+   _mongocrypt_buffer_init (src);
+}
 
 void
 _mongocrypt_buffer_copy_from_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
@@ -156,7 +173,8 @@ _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
 
 
 void
-_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf, mongocrypt_binary_t* binary)
+_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf,
+                              mongocrypt_binary_t *binary)
 {
    binary->data = buf->data;
    binary->len = buf->len;

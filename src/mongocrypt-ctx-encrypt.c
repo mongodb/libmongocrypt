@@ -27,13 +27,7 @@ _mongo_op_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t *cmd;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   cmd = BCON_NEW ("name",
-                   BCON_UTF8 (ectx->coll_name),
-                   "options.validator.$jsonSchema",
-                   "{",
-                   "$exists",
-                   BCON_BOOL (true),
-                   "}");
+   cmd = BCON_NEW ("name", BCON_UTF8 (ectx->coll_name));
    CRYPT_TRACEF (&ectx->parent.crypt->log, "constructed: %s\n", tmp_json (cmd));
    _mongocrypt_buffer_steal_from_bson (&ectx->list_collections_filter, cmd);
    out->data = ectx->list_collections_filter.data;
@@ -53,9 +47,18 @@ _mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    if (!bson_init_static (&as_bson, in->data, in->len)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
    }
+
+   /* Disallow views. */
+   if (bson_iter_init_find (&iter, &as_bson, "type") &&
+       BSON_ITER_HOLDS_UTF8 (&iter) &&
+       0 == strcmp ("view", bson_iter_utf8 (&iter, NULL))) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot auto encrypt a view");
+   }
+
    if (!bson_iter_init (&iter, &as_bson)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
    }
+
    if (bson_iter_find_descendant (
           &iter, "options.validator.$jsonSchema", &iter)) {
       _mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter);
@@ -445,12 +448,19 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    ectx->ns = bson_strdup (ns);
    ectx->coll_name = strstr (ectx->ns, ".") + 1;
 
-   /* TODO: check if schema is cached. If we know encryption isn't needed. We
-    * can avoid a needless copy. */
-   ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
-   ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
-   ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
-   ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+   if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
+      /* A local schema has been provided. */
+      _mongocrypt_buffer_steal (&ectx->schema, &ctx->opts.local_schema);
+      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+   } else {
+      /* We need a remote schema. */
+      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
+      ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
+      ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
+      ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+   }
+   /* TODO CDRIVER-2946 check if schema is cached. If we know encryption isn't
+    * needed. We can avoid a needless copy. */
    ctx->vtable.mongo_op_markings = _mongo_op_markings;
    ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
    ctx->vtable.mongo_done_markings = _mongo_done_markings;

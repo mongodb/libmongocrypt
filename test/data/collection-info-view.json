@@ -1,0 +1,11 @@
+{
+  "name": "v",
+  "type": "view",
+  "options": {
+    "viewOn": "coll",
+    "pipeline": []
+  },
+  "info": {
+    "readOnly": true
+  }
+}

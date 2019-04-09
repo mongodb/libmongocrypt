@@ -297,6 +297,9 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
 /**
  * Initialize new @ref mongocrypt_t object.
  *
+ * Set options before using @ref mongocrypt_setopt_kms_provider_local, @ref
+ * mongocrypt_setopt_kms_provider_aws, or @ref mongocrypt_setopt_log_handler.
+ *
  * @param[in] crypt The @ref mongocrypt_t object.
  *
  * @returns A boolean indicating success. Failure may occur if previously set
@@ -397,6 +400,9 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 /**
  * Initialize a context to create a data key.
  *
+ * Set options before using @ref mongocrypt_ctx_setopt_masterkey_aws and
+ * @ref mongocrypt_ctx_setopt_masterkey_local.
+ *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @returns A boolean indicating success.
  * @pre A master key option has been set, and an associated KMS provider
@@ -408,7 +414,22 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
 
 
 /**
+ * Set a local schema for encryption.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] schema A BSON local schema supplied by the user.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
+                              mongocrypt_binary_t *schema);
+
+
+/**
  * Initialize a context for encryption.
+ *
+ * Set options before using @ref mongocrypt_ctx_setopt_schema.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] ns The namespace of the collection the driver is operating on.

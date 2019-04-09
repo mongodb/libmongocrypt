@@ -104,7 +104,8 @@ _mongo_done_keys (mongocrypt_ctx_t *ctx)
    if (_mongocrypt_key_broker_has (&ctx->kb, KEY_ENCRYPTED)) {
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else {
-      /* If all keys were obtained from cache, or keys were decrypted with "local"
+      /* If all keys were obtained from cache, or keys were decrypted with
+       * "local"
        * KMS provider, then skip right to READY. */
       ctx->state = MONGOCRYPT_CTX_READY;
    }
@@ -311,5 +312,22 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx)
    }
 
    ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+   return true;
+}
+
+
+bool
+mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
+                              mongocrypt_binary_t *schema)
+{
+   if (!schema || !mongocrypt_binary_data (schema)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "passed null schema");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "already set schema");
+   }
+
+   _mongocrypt_buffer_copy_from_binary (&ctx->opts.local_schema, schema);
    return true;
 }

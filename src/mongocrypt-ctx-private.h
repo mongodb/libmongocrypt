@@ -35,6 +35,7 @@ typedef struct __mongocrypt_ctx_opts_t {
    uint32_t masterkey_aws_cmk_len;
    char *masterkey_aws_region;
    uint32_t masterkey_aws_region_len;
+   _mongocrypt_buffer_t local_schema;
 } _mongocrypt_ctx_opts_t;
 
 
