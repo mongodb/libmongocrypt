@@ -26,11 +26,12 @@
 /**
  * Returns the version string x.y.z for libmongocrypt.
  *
- * @returns the version string x.y.z for libmongocrypt.
+ * @param[out] len, an optional length of the returned string. May be NULL.
+ * @returns a NULL terminated version string x.y.z for libmongocrypt.
  */
 MONGOCRYPT_EXPORT
 const char *
-mongocrypt_version (void);
+mongocrypt_version (uint32_t *len);
 
 
 /**
@@ -166,12 +167,13 @@ mongocrypt_status_code (mongocrypt_status_t *status);
  * Get the error message associated with a status or NULL.
  *
  * @param[in] status The status object.
+ * @param[out] len, an optional length of the returned string. May be NULL.
  *
- * @returns An error message or NULL.
+ * @returns A NULL terminated error message or NULL.
  */
 MONGOCRYPT_EXPORT
 const char *
-mongocrypt_status_message (mongocrypt_status_t *status);
+mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len);
 
 
 /**
@@ -208,9 +210,15 @@ typedef enum {
 /**
  * A log callback function. Set a custom log callback with @ref
  * mongocrypt_setopt_log_handler.
+ *
+ * @param[in] message A NULL terminated message.
+ * @param[in] message_len The length of message.
+ * @param[in] ctx A context provided by the caller of @ref
+ * mongocrypt_setopt_log_handler.
  */
 typedef void (*mongocrypt_log_fn_t) (mongocrypt_log_level_t level,
                                      const char *message,
+                                     uint32_t message_len,
                                      void *ctx);
 
 
@@ -267,8 +275,14 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] aws_access_key_id The AWS access key ID used to generate KMS
  * messages.
+ * @param[in] aws_access_key_id_len The string length (in bytes) of @p
+ * aws_access_key_id. Pass -1 to determine the string length with strlen (must
+ * be NULL terminated).
  * @param[in] aws_secret_access_key The AWS secret access key used to generate
  * KMS messages.
+ * @param[in] aws_secret_access_key_len The string length (in bytes) of @p
+ * aws_secret_access_key. Pass -1 to determine the string length with strlen
+ * (must be NULL terminated).
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success.
  */
@@ -276,7 +290,9 @@ MONGOCRYPT_EXPORT
 bool
 mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_access_key_id,
-                                    const char *aws_secret_access_key);
+                                    int32_t aws_access_key_id_len,
+                                    const char *aws_secret_access_key,
+                                    int32_t aws_secret_access_key_len);
 
 
 /**
@@ -426,19 +442,21 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out);
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] region The AWS region.
- * @param[in] region_len The string length of @p region.
+ * @param[in] region_len The string length of @p region. Pass -1 to determine
+ * the string length with strlen (must be NULL terminated).
  * @param[in] cmk The Amazon Resource Name (ARN) of the customer master key
  * (CMK).
- * @param[in] cmk_len The string length of @p cmk_len.
+ * @param[in] cmk_len The string length of @p cmk_len. Pass -1 to determine the
+ * string length with strlen (must be NULL terminated).
  * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
                                      const char *region,
-                                     uint32_t region_len,
+                                     int32_t region_len,
                                      const char *cmk,
-                                     uint32_t cmk_len);
+                                     int32_t cmk_len);
 
 
 /**
@@ -488,14 +506,15 @@ mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] ns The namespace of the collection the driver is operating on.
- * @param[in] ns_len The strlen of @p ns.
+ * @param[in] ns_len The strlen of @p ns. Pass -1 to determine the string length
+ * with strlen (must be NULL terminated).
  * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *ns,
-                             uint32_t ns_len);
+                             int32_t ns_len);
 
 /**
  * Explicit helper method to encrypt a single BSON object. Contexts
@@ -658,7 +677,7 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * parent @ref mongocrypt_ctx_t.
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
- * @param[out] endpoint The output hostname.
+ * @param[out] endpoint The output hostname as a NULL terminated string.
  * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT

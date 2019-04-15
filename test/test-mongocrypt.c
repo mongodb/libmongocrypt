@@ -317,7 +317,7 @@ _mongocrypt_tester_mongocrypt (void)
    mongocrypt_binary_t *localkey;
 
    crypt = mongocrypt_new ();
-   mongocrypt_setopt_kms_provider_aws (crypt, "example", "example");
+   mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1);
    localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
                                                sizeof localkey_data);
    mongocrypt_setopt_kms_provider_local (crypt, localkey);
@@ -332,6 +332,7 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_binary_t *local_key;
+   char tmp;
 
 
    /* Omitting a KMS provider must fail. */
@@ -341,15 +342,27 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
 
    /* Bad KMS provider options must fail. */
    crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_setopt_kms_provider_aws (crypt, "example", NULL),
-                 crypt,
-                 "aws_secret_access_key unset");
+   ASSERT_FAILS (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, NULL, -1),
+      crypt,
+      "invalid aws secret access key");
    mongocrypt_destroy (crypt);
 
    crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_setopt_kms_provider_aws (crypt, NULL, "example"),
-                 crypt,
-                 "aws_access_key_id unset");
+   ASSERT_FAILS (
+      mongocrypt_setopt_kms_provider_aws (crypt, NULL, -1, "example", -1),
+      crypt,
+      "invalid aws access key id");
+   mongocrypt_destroy (crypt);
+
+   /* Malformed UTF8 */
+   /* An orphaned UTF-8 continuation byte (10xxxxxx) is malformed UTF-8. */
+   tmp = (char) 0x80;
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, &tmp, 1),
+      crypt,
+      "invalid aws secret access key");
    mongocrypt_destroy (crypt);
 
    crypt = mongocrypt_new ();
@@ -368,18 +381,20 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
 
    /* Reinitialization must fail. */
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_kms_provider_aws (crypt, "example", "example"),
-              crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    ASSERT_FAILS (mongocrypt_init (crypt), crypt, "already initialized");
    mongocrypt_destroy (crypt);
    /* Setting options after initialization must fail. */
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_kms_provider_aws (crypt, "example", "example"),
-              crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    ASSERT_FAILS (
-      mongocrypt_setopt_kms_provider_aws (crypt, "example", "example"),
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
       crypt,
       "options cannot be set after initialization");
    mongocrypt_destroy (crypt);

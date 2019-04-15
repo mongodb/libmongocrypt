@@ -245,6 +245,10 @@ _marking_to_bson_value (void *ctx,
       goto fail;
    }
 
+   if (!_marking_to_ciphertext (ctx, marking, &ciphertext, status)) {
+      goto fail;
+   }
+
    _serialize_ciphertext (&ciphertext, &serialized_ciphertext);
 
    /* ownership of serialized_ciphertext is transferred to caller. */
@@ -541,7 +545,7 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *ns,
-                             uint32_t ns_len)
+                             int32_t ns_len)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
 
@@ -577,7 +581,9 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->explicit = false;
-   ectx->ns = bson_strdup (ns);
+   if (!_mongocrypt_validate_and_copy_string (ns, ns_len, &ectx->ns)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid ns");
+   }
    ectx->coll_name = strstr (ectx->ns, ".") + 1;
 
    if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {

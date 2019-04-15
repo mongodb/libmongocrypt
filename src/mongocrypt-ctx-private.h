@@ -143,7 +143,7 @@ typedef struct {
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *ns,
-                             uint32_t ns_len);
+                             int32_t ns_len);
 
 bool
 mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);

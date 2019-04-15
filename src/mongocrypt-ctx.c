@@ -349,26 +349,26 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
 bool
 mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
                                      const char *region,
-                                     uint32_t region_len,
+                                     int32_t region_len,
                                      const char *cmk,
-                                     uint32_t cmk_len)
+                                     int32_t cmk_len)
 {
    if (ctx->opts.masterkey_kms_provider) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "master key already set");
    }
 
-   if (!region) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL region");
+   if (!_mongocrypt_validate_and_copy_string (
+          region, region_len, &ctx->opts.masterkey_aws_region)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid region");
    }
 
-   if (!cmk) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL CMK");
+   if (!_mongocrypt_validate_and_copy_string (
+          cmk, cmk_len, &ctx->opts.masterkey_aws_cmk)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid cmk passed");
    }
 
    ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
-   ctx->opts.masterkey_aws_region = bson_strndup (region, region_len);
    ctx->opts.masterkey_aws_region_len = region_len;
-   ctx->opts.masterkey_aws_cmk = bson_strndup (cmk, cmk_len);
    ctx->opts.masterkey_aws_cmk_len = cmk_len;
    return true;
 }

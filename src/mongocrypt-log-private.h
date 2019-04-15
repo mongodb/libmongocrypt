@@ -30,6 +30,7 @@ typedef struct {
 void
 _mongocrypt_default_log_fn (mongocrypt_log_level_t level,
                             const char *message,
+                            uint32_t message_len,
                             void *ctx);
 
 void

@@ -38,6 +38,7 @@ _mongocrypt_log_cleanup (_mongocrypt_log_t *log)
 void
 _mongocrypt_default_log_fn (mongocrypt_log_level_t level,
                             const char *message,
+                            uint32_t message_len,
                             void *ctx)
 {
    switch (level) {
@@ -93,7 +94,7 @@ _mongocrypt_log (_mongocrypt_log_t *log,
    va_end (args);
 
    _mongocrypt_mutex_lock (&log->mutex);
-   log->fn (level, message, log->ctx);
+   log->fn (level, message, strlen (message), log->ctx);
    _mongocrypt_mutex_unlock (&log->mutex);
    bson_free (message);
 }

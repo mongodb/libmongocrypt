@@ -26,10 +26,13 @@ mongocrypt_status_new (void)
 
 
 const char *
-mongocrypt_status_message (mongocrypt_status_t *status)
+mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len)
 {
-   if (mongocrypt_status_ok(status)) {
+   if (mongocrypt_status_ok (status)) {
       return NULL;
+   }
+   if (len) {
+      *len = status->len;
    }
    return status->message;
 }
@@ -67,7 +70,9 @@ _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
 
    dst->type = src->type;
    dst->code = src->code;
-   bson_strncpy (dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN - 1);
+   dst->len = src->len;
+   bson_strncpy (
+      dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN - 1);
 }
 
 void
@@ -75,6 +80,7 @@ _mongocrypt_status_reset (mongocrypt_status_t *status)
 {
    status->type = MONGOCRYPT_STATUS_OK;
    status->code = 0;
+   status->len = 0;
    memset (status->message, 0, MONGOCRYPT_STATUS_MSG_LEN);
 }
 

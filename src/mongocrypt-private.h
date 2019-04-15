@@ -160,4 +160,9 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       bson_t *out,
                                       mongocrypt_status_t *status);
 
+bool
+_mongocrypt_validate_and_copy_string (const char *in,
+                                      int32_t in_len,
+                                      char **out);
+
 #endif /* MONGOCRYPT_PRIVATE_H */

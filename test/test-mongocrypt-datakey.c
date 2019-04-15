@@ -93,7 +93,8 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    ctx = mongocrypt_ctx_new (crypt);
    if (provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       ASSERT_OK (
-         mongocrypt_ctx_setopt_masterkey_aws (ctx, "region", 6, "cmk", 3), ctx);
+         mongocrypt_ctx_setopt_masterkey_aws (ctx, "region", -1, "cmk", -1),
+         ctx);
    } else {
       ASSERT_OK (mongocrypt_ctx_setopt_masterkey_local (ctx), ctx);
    }

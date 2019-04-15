@@ -26,7 +26,10 @@ typedef struct {
 
 
 static void
-_test_log_fn (mongocrypt_log_level_t level, const char *message, void *ctx_void)
+_test_log_fn (mongocrypt_log_level_t level,
+              const char *message,
+              uint32_t message_len,
+              void *ctx_void)
 {
    log_test_ctx_t *ctx = (log_test_ctx_t *) ctx_void;
    BSON_ASSERT (level == ctx->expected_level);

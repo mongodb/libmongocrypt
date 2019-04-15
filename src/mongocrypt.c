@@ -27,8 +27,11 @@
 
 
 const char *
-mongocrypt_version (void)
+mongocrypt_version (uint32_t *len)
 {
+   if (len) {
+      *len = strlen (MONGOCRYPT_VERSION);
+   }
    return MONGOCRYPT_VERSION;
 }
 
@@ -47,7 +50,8 @@ _mongocrypt_set_error (mongocrypt_status_t *status,
       status->code = code;
 
       va_start (args, format);
-      bson_vsnprintf (status->message, sizeof status->message, format, args);
+      status->len = (uint32_t) bson_vsnprintf (
+         status->message, sizeof status->message, format, args);
       va_end (args);
 
       status->message[sizeof status->message - 1] = '\0';
@@ -131,7 +135,9 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
 bool
 mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_access_key_id,
-                                    const char *aws_secret_access_key)
+                                    int32_t aws_access_key_id_len,
+                                    const char *aws_secret_access_key,
+                                    int32_t aws_secret_access_key_len)
 {
    mongocrypt_status_t *status = crypt->status;
 
@@ -145,18 +151,21 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
       return false;
    }
 
-   if (!aws_secret_access_key) {
-      CLIENT_ERR ("aws_secret_access_key unset");
+   if (!_mongocrypt_validate_and_copy_string (
+          aws_access_key_id,
+          aws_access_key_id_len,
+          &crypt->opts.kms_aws_access_key_id)) {
+      CLIENT_ERR ("invalid aws access key id");
       return false;
    }
 
-   if (!aws_access_key_id) {
-      CLIENT_ERR ("aws_access_key_id unset");
+   if (!_mongocrypt_validate_and_copy_string (
+          aws_secret_access_key,
+          aws_secret_access_key_len,
+          &crypt->opts.kms_aws_secret_access_key)) {
+      CLIENT_ERR ("invalid aws secret access key");
       return false;
    }
-
-   crypt->opts.kms_aws_access_key_id = bson_strdup (aws_access_key_id);
-   crypt->opts.kms_aws_secret_access_key = bson_strdup (aws_secret_access_key);
    crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
    return true;
 }
@@ -249,4 +258,23 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    _mongocrypt_log_cleanup (&crypt->log);
    mongocrypt_status_destroy (crypt->status);
    bson_free (crypt);
+}
+
+
+bool
+_mongocrypt_validate_and_copy_string (const char *in,
+                                      int32_t in_len,
+                                      char **out)
+{
+   if (!in) {
+      return false;
+   }
+   if (in_len < 0) {
+      in_len = strlen (in);
+   }
+   if (!bson_utf8_validate (in, in_len, false)) {
+      return false;
+   }
+   *out = bson_strndup (in, in_len);
+   return true;
 }

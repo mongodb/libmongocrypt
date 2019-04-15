@@ -25,6 +25,7 @@ struct _mongocrypt_status_t {
    mongocrypt_status_type_t type;
    uint32_t code;
    char message[MONGOCRYPT_STATUS_MSG_LEN];
+   uint32_t len;
 };
 
 

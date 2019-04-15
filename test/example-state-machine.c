@@ -230,7 +230,7 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
          break;
       case MONGOCRYPT_CTX_ERROR:
          mongocrypt_ctx_status (ctx, status);
-         printf ("\ngot error: %s\n", mongocrypt_status_message (status));
+         printf ("\ngot error: %s\n", mongocrypt_status_message (status, NULL));
          done = true;
          break;
       }
@@ -273,17 +273,17 @@ main ()
    printf ("******* ENCRYPTION *******\n\n");
 
    crypt = mongocrypt_new ();
-   mongocrypt_setopt_kms_provider_aws (crypt, "example", "example");
+   mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1);
    if (!mongocrypt_init (crypt)) {
       mongocrypt_status_t *status;
       status = mongocrypt_status_new ();
       mongocrypt_status (crypt, status);
-      printf ("hmm: %s\n", mongocrypt_status_message (status));
+      fprintf (stderr, "failed to initialize");
       abort ();
    }
 
    ctx = mongocrypt_ctx_new (crypt);
-   mongocrypt_ctx_encrypt_init (ctx, "test.test", 9);
+   mongocrypt_ctx_encrypt_init (ctx, "test.test", -1);
    _run_state_machine (ctx);
    mongocrypt_ctx_destroy (ctx);
 
