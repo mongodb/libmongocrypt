@@ -38,27 +38,34 @@ _mongocrypt_repeat_char (char c, uint32_t times)
    return result;
 }
 
+void
+_load_json_as_bson (const char *path, bson_t *out)
+{
+   bson_error_t error;
+   bson_json_reader_t *reader;
+   bool ret;
+
+   reader = bson_json_reader_new_from_file (path, &error);
+   ASSERT_OR_PRINT_BSON (reader, error);
+   bson_init (out);
+   ret = bson_json_reader_read (reader, out, &error);
+   ASSERT_OR_PRINT_BSON (ret, error);
+
+   bson_json_reader_destroy (reader);
+}
 
 static void
 _load_json (_mongocrypt_tester_t *tester, const char *path)
 {
-   bson_error_t error;
-   bson_json_reader_t *reader;
    bson_t as_bson;
-   bool ret;
    _mongocrypt_buffer_t *buf;
 
-   reader = bson_json_reader_new_from_file (path, &error);
-   ASSERT_OR_PRINT_BSON (reader, error);
-   bson_init (&as_bson);
-   ret = bson_json_reader_read (reader, &as_bson, &error);
-   ASSERT_OR_PRINT_BSON (ret, error);
+   _load_json_as_bson (path, &as_bson);
 
    buf = &tester->file_bufs[tester->file_count];
    _mongocrypt_buffer_steal_from_bson (buf, &as_bson);
    tester->file_paths[tester->file_count] = bson_strdup (path);
    tester->file_count++;
-   bson_json_reader_destroy (reader);
 }
 
 

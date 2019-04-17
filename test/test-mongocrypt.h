@@ -51,10 +51,13 @@ typedef struct __mongocrypt_tester_t {
 mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 
-
+/* Load a .json file as bson */
 void
-_mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
-                                mongocrypt_kms_ctx_t *kms);
+_load_json_as_bson (const char *path, bson_t *out);
+
+
+void _mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
+				     mongocrypt_kms_ctx_t *kms);
 
 
 void

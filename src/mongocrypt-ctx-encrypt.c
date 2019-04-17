@@ -228,26 +228,21 @@ _test_mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
    _serialize_ciphertext (ciphertext, out);
 }
 
+
 static bool
-_replace_marking_with_ciphertext (void *ctx,
-                                  _mongocrypt_buffer_t *in,
-                                  bson_value_t *out,
-                                  mongocrypt_status_t *status)
+_marking_to_bson_value (void *ctx,
+                        _mongocrypt_marking_t *marking,
+                        bson_value_t *out,
+                        mongocrypt_status_t *status)
 {
    _mongocrypt_ciphertext_t ciphertext = {{0}};
    _mongocrypt_buffer_t serialized_ciphertext = {0};
-   _mongocrypt_marking_t marking = {0};
    bool ret = false;
 
-   BSON_ASSERT (in);
    BSON_ASSERT (out);
 
-   if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
+   if (!_marking_to_ciphertext (ctx, marking, &ciphertext, status)) {
       goto fail;
-    }
-
-   if (!_marking_to_ciphertext (ctx, &marking, &ciphertext, status)) {
-     goto fail;
    }
 
    _serialize_ciphertext (&ciphertext, &serialized_ciphertext);
@@ -260,16 +255,34 @@ _replace_marking_with_ciphertext (void *ctx,
 
    ret = true;
 
- fail:
+fail:
    _mongocrypt_buffer_cleanup (&ciphertext.data);
    return ret;
 }
 
+
+static bool
+_replace_marking_with_ciphertext (void *ctx,
+                                  _mongocrypt_buffer_t *in,
+                                  bson_value_t *out,
+                                  mongocrypt_status_t *status)
+{
+   _mongocrypt_marking_t marking = {0};
+
+   BSON_ASSERT (in);
+
+   if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
+      return false;
+   }
+
+   return _marking_to_bson_value (ctx, &marking, out, status);
+}
+
 bool
 _marking_to_ciphertext (void *ctx,
-			_mongocrypt_marking_t *marking,
-			_mongocrypt_ciphertext_t *ciphertext,
-			mongocrypt_status_t *status)
+                        _mongocrypt_marking_t *marking,
+                        _mongocrypt_ciphertext_t *ciphertext,
+                        mongocrypt_status_t *status)
 {
    _mongocrypt_buffer_t plaintext = {0};
    _mongocrypt_buffer_t iv = {0};
@@ -312,34 +325,34 @@ _marking_to_ciphertext (void *ctx,
    ciphertext->data.owned = true;
 
    switch (marking->algorithm) {
-   case 1:
-     /* Use deterministic encryption.
-      * In this case, we can use the iv parsed out of the marking. */
-     ret = _mongocrypt_do_encryption (&marking->iv,
-                                      NULL,
-                                      &key_material,
-                                      &plaintext,
-                                      &ciphertext->data,
-                                      &bytes_written,
-                                      status);
-     break;
-   case 2:
-     /* Use randomized encryption.
-      * In this case, we must generate a new, random iv. */
-     _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
-     _mongocrypt_random (&iv, status, MONGOCRYPT_IV_LEN);
-     ret = _mongocrypt_do_encryption (&iv,
-                                      NULL,
-                                      &key_material,
-                                      &plaintext,
-                                      &ciphertext->data,
-                                      &bytes_written,
-                                      status);
-     break;
+   case MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC:
+      /* Use deterministic encryption.
+       * In this case, we can use the iv parsed out of the marking. */
+      ret = _mongocrypt_do_encryption (&marking->iv,
+                                       NULL,
+                                       &key_material,
+                                       &plaintext,
+                                       &ciphertext->data,
+                                       &bytes_written,
+                                       status);
+      break;
+   case MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM:
+      /* Use randomized encryption.
+       * In this case, we must generate a new, random iv. */
+      _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
+      _mongocrypt_random (&iv, status, MONGOCRYPT_IV_LEN);
+      ret = _mongocrypt_do_encryption (&iv,
+                                       NULL,
+                                       &key_material,
+                                       &plaintext,
+                                       &ciphertext->data,
+                                       &bytes_written,
+                                       status);
+      break;
    default:
-     /* Error. */
-     CLIENT_ERR ("Unsupported value '%d' for encryption algorithm", marking->algorithm);
-     goto fail;
+      /* Error. */
+      CLIENT_ERR ("Unsupported value for encryption algorithm");
+      goto fail;
    }
 
    if (!ret) {
@@ -350,7 +363,8 @@ _marking_to_ciphertext (void *ctx,
 
    BSON_ASSERT (bytes_written == ciphertext->data.len);
 
-   memcpy (&ciphertext->key_id, &marking->key_id, sizeof (_mongocrypt_buffer_t));
+   memcpy (
+      &ciphertext->key_id, &marking->key_id, sizeof (_mongocrypt_buffer_t));
 
    ret = true;
 
@@ -367,22 +381,60 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t as_bson, converted;
    bson_iter_t iter;
    _mongocrypt_ctx_encrypt_t *ectx;
+   bool res = true;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   _mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson);
-   bson_iter_init (&iter, &as_bson);
-   bson_init (&converted);
-   if (!_mongocrypt_transform_binary_in_bson (_replace_marking_with_ciphertext,
-                                              &ctx->kb,
-                                              TRAVERSE_MATCH_MARKING,
-                                              &iter,
-                                              &converted,
-                                              ctx->status)) {
-      return _mongocrypt_ctx_fail (ctx);
+
+   if (!ectx->explicit) {
+      _mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson);
+      bson_iter_init (&iter, &as_bson);
+      bson_init (&converted);
+      if (!_mongocrypt_transform_binary_in_bson (
+             _replace_marking_with_ciphertext,
+             &ctx->kb,
+             TRAVERSE_MATCH_MARKING,
+             &iter,
+             &converted,
+             ctx->status)) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   } else {
+      /* For explicit encryption, we have no marking, but we can fake one */
+      _mongocrypt_marking_t marking;
+      bson_value_t value;
+
+      _mongocrypt_marking_init (&marking);
+
+      _mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson);
+      if (!bson_iter_init_find (&iter, &as_bson, "v")) {
+         return _mongocrypt_ctx_fail_w_msg (ctx,
+                                            "invalid msg, must contain 'v'");
+      }
+
+
+      memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
+      marking.algorithm = ctx->opts.algorithm;
+      _mongocrypt_buffer_set_to (&ctx->opts.iv, &marking.iv);
+      _mongocrypt_buffer_set_to (&ctx->opts.key_id, &marking.key_id);
+
+      bson_init (&converted);
+      res = _marking_to_bson_value (&ctx->kb, &marking, &value, ctx->status);
+      if (res) {
+         bson_append_value (&converted, MONGOCRYPT_STR_AND_LEN ("v"), &value);
+      }
+
+      bson_value_destroy (&value);
+      _mongocrypt_marking_cleanup (&marking);
+
+      if (!res) {
+         return false;
+      }
    }
+
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
    _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
    ctx->state = MONGOCRYPT_CTX_DONE;
+
    return true;
 }
 
@@ -423,6 +475,70 @@ _kms_done (mongocrypt_ctx_t *ctx)
 
 
 bool
+mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
+                                      mongocrypt_binary_t *msg)
+{
+   _mongocrypt_ctx_encrypt_t *ectx;
+   bson_t as_bson;
+   bson_iter_t iter;
+
+   if (!msg) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "msg required for explicit encryption");
+   }
+
+   if (_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "key_id required for explicit encryption");
+   }
+
+   /* Add their key id to the key broker. */
+   if (!_mongocrypt_key_broker_add_id (&ctx->kb, &ctx->opts.key_id)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "algorithm is required for explicit encryption");
+   }
+
+   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
+       _mongocrypt_buffer_empty (&ctx->opts.iv)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "iv is required for deterministic encryption");
+   }
+
+   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM &&
+       !_mongocrypt_buffer_empty (&ctx->opts.iv)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "iv must not be set for random encryption");
+   }
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
+   ectx->explicit = true;
+   _mongocrypt_buffer_init (&ectx->original_cmd);
+
+   _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, msg);
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "msg must be bson");
+   }
+
+   if (!bson_iter_init_find (&iter, &as_bson, "v")) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
+   }
+
+   ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+   ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.kms_done = _kms_done;
+   ctx->vtable.finalize = _finalize;
+   ctx->vtable.cleanup = _cleanup;
+
+   return true;
+}
+
+
+bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *ns,
                              uint32_t ns_len)
@@ -443,8 +559,24 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "aws masterkey options must not be set");
    }
 
+   if (!_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "key_id must not be set for auto encryption");
+   }
+
+   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "algorithm must not be set for auto encryption");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "iv must not be set for auto encryption");
+   }
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
+   ectx->explicit = false;
    ectx->ns = bson_strdup (ns);
    ectx->coll_name = strstr (ectx->ns, ".") + 1;
 

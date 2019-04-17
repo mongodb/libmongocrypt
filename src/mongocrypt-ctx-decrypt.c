@@ -163,19 +163,35 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bool res;
 
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
-   _mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson);
-   bson_iter_init (&iter, &as_bson);
-   bson_init (&final_bson);
-   res =
-      _mongocrypt_transform_binary_in_bson (_replace_ciphertext_with_plaintext,
-                                            &ctx->kb,
-                                            TRAVERSE_MATCH_CIPHERTEXT,
-                                            &iter,
-                                            &final_bson,
-                                            ctx->status);
-   if (!res) {
-      return _mongocrypt_ctx_fail (ctx);
+
+   if (!dctx->explicit) {
+      _mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson);
+      bson_iter_init (&iter, &as_bson);
+      bson_init (&final_bson);
+      res = _mongocrypt_transform_binary_in_bson (
+         _replace_ciphertext_with_plaintext,
+         &ctx->kb,
+         TRAVERSE_MATCH_CIPHERTEXT,
+         &iter,
+         &final_bson,
+         ctx->status);
+      if (!res) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   } else {
+      /* For explicit decryption, we just have a single value */
+      bson_value_t value;
+
+      if (!_replace_ciphertext_with_plaintext (
+             &ctx->kb, &dctx->unwrapped_doc, &value, ctx->status)) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
+
+      bson_init (&final_bson);
+      bson_append_value (&final_bson, MONGOCRYPT_STR_AND_LEN ("v"), &value);
+      bson_value_destroy (&value);
    }
+
    _mongocrypt_buffer_steal_from_bson (&dctx->decrypted_doc, &final_bson);
    out->data = dctx->decrypted_doc.data;
    out->len = dctx->decrypted_doc.len;
@@ -240,6 +256,72 @@ _kms_done (mongocrypt_ctx_t *ctx)
 
 
 bool
+mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
+                                      mongocrypt_binary_t *msg)
+{
+   _mongocrypt_ctx_decrypt_t *dctx;
+   bson_iter_t iter;
+   bson_t as_bson;
+
+   if (!msg) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg");
+   }
+
+   if (ctx->state != MONGOCRYPT_CTX_ERROR) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
+   }
+
+   if (ctx->opts.masterkey_aws_region || ctx->opts.masterkey_aws_cmk) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "aws masterkey options must not be set");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "key_id must not be set for decryption");
+   }
+
+   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "algorithm must not be set for decryption");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "iv must not be set for decryption");
+   }
+
+   dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
+   dctx->explicit = true;
+   ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
+   ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.kms_done = _kms_done;
+   ctx->vtable.finalize = _finalize;
+   ctx->vtable.cleanup = _cleanup;
+
+   /* We expect these to be round-tripped from explicit encrypt,
+      so they must be wrapped like { "v" : "encrypted thing" } */
+   _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, msg);
+   _mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson);
+   if (!bson_iter_init_find (&iter, &as_bson, "v")) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
+   }
+
+   _mongocrypt_buffer_from_iter (&dctx->unwrapped_doc, &iter);
+
+   /* Parse out our one key id */
+   if (!_collect_key_from_ciphertext (
+          &ctx->kb, &dctx->unwrapped_doc, ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+
+   return true;
+}
+
+
+bool
 mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
 {
    _mongocrypt_ctx_decrypt_t *dctx;
@@ -257,6 +339,21 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
    if (ctx->opts.masterkey_aws_region || ctx->opts.masterkey_aws_cmk) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "aws masterkey options must not be set");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "key_id must not be set for decryption");
+   }
+
+   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "algorithm must not be set for decryption");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "iv must not be set for decryption");
    }
 
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;

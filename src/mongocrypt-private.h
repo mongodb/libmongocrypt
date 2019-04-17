@@ -42,7 +42,10 @@
 
 #define KMS_ERR(...) KMS_ERR_W_CODE (MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
 
-#define MONGOCRYPT_STR_AND_LEN(x) (x) , ( sizeof(x) / sizeof((x)[0]) - 1 )
+#define MONGOCRYPT_STR_AND_LEN(x) (x), (sizeof (x) / sizeof ((x)[0]) - 1)
+
+#define MONGOCRYPT_DATA_AND_LEN(x) \
+   ((uint8_t *) x), (sizeof (x) / sizeof ((x)[0]) - 1)
 
 /* TODO: remove after integrating into libmongoc */
 #define BSON_SUBTYPE_ENCRYPTED 6
@@ -74,8 +77,16 @@ struct _mongocrypt_t {
    mongocrypt_status_t *status;
 };
 
+
+typedef enum {
+   MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE = 0,
+   MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC = 1,
+   MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM = 2
+} mongocrypt_encryption_algorithm_t;
+
+
 typedef struct {
-   uint8_t algorithm;
+   mongocrypt_encryption_algorithm_t algorithm;
    bson_iter_t v_iter;
    _mongocrypt_buffer_t iv;
    /* one of the following is zeroed, and the other is set. */
@@ -91,6 +102,7 @@ typedef struct {
    _mongocrypt_buffer_t data;
 } _mongocrypt_ciphertext_t;
 
+
 /* TODO: reconsider where to put these parsing functions please. */
 bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
@@ -98,13 +110,16 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    mongocrypt_status_t *status);
 
 void
+_mongocrypt_marking_init (_mongocrypt_marking_t *marking);
+
+void
 _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking);
 
 bool
 _marking_to_ciphertext (void *ctx,
-			_mongocrypt_marking_t *marking,
-			_mongocrypt_ciphertext_t *ciphertext,
-			mongocrypt_status_t *status);
+                        _mongocrypt_marking_t *marking,
+                        _mongocrypt_ciphertext_t *ciphertext,
+                        mongocrypt_status_t *status);
 
 bool
 _test_mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *buf,

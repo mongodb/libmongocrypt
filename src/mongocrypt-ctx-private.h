@@ -18,6 +18,7 @@
 #define MONGOCRYPT_CTX_PRIVATE_H
 
 #include "mongocrypt.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-broker-private.h"
 
@@ -36,6 +37,11 @@ typedef struct __mongocrypt_ctx_opts_t {
    char *masterkey_aws_region;
    uint32_t masterkey_aws_region_len;
    _mongocrypt_buffer_t local_schema;
+
+   /* For explicit encryption */
+   _mongocrypt_buffer_t key_id;
+   _mongocrypt_buffer_t iv;
+   mongocrypt_encryption_algorithm_t algorithm;
 } _mongocrypt_ctx_opts_t;
 
 
@@ -52,6 +58,7 @@ typedef bool (*_mongocrypt_ctx_mongo_done_fn) (mongocrypt_ctx_t *ctx);
 
 typedef bool (*_mongocrypt_ctx_finalize_fn) (mongocrypt_ctx_t *ctx,
                                              mongocrypt_binary_t *out);
+
 
 typedef void (*_mongocrypt_ctx_cleanup_fn) (mongocrypt_ctx_t *ctx);
 
@@ -102,6 +109,7 @@ _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg);
 
 typedef struct {
    mongocrypt_ctx_t parent;
+   bool explicit;
    char *ns;
    const char *coll_name; /* points inside ns */
    _mongocrypt_buffer_t list_collections_filter;
@@ -110,12 +118,16 @@ typedef struct {
    _mongocrypt_buffer_t marking_cmd;
    _mongocrypt_buffer_t marked_cmd;
    _mongocrypt_buffer_t encrypted_cmd;
+   _mongocrypt_buffer_t iv;
+   _mongocrypt_buffer_t key_id;
 } _mongocrypt_ctx_encrypt_t;
 
 
 typedef struct {
    mongocrypt_ctx_t parent;
+   bool explicit;
    _mongocrypt_buffer_t original_doc;
+   _mongocrypt_buffer_t unwrapped_doc; /* explicit only */
    _mongocrypt_buffer_t decrypted_doc;
 } _mongocrypt_ctx_decrypt_t;
 

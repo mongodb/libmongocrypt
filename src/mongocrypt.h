@@ -340,6 +340,61 @@ typedef struct _mongocrypt_ctx_t mongocrypt_ctx_t;
 
 
 /**
+ * Set the key id to use for explicit encryption.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] key_id The key_id to use.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
+                              mongocrypt_binary_t *key_id);
+
+/**
+ * Set the algorithm used for encryption to either
+ * deterministic or random encryption. This value
+ * should only be set when using explicit encryption.
+ *
+ * If -1 is passed in for "len", then "algorithm" is
+ * assumed to be a null-terminated string.
+ *
+ * Valid values for algorithm are:
+ *   "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+ *   "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized"
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @p algorithm A string specifying the algorithm to
+ * use for encryption.
+ * @p len The length of the algorithm string.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
+                                 char *algorithm,
+                                 int len);
+
+
+/**
+ * Set an initialization vector to be used with explicit
+ * encryption. This should not be set for auto encryption.
+ *
+ * If using randomized encryption, setting this option will
+ * cause an error. If using deterministic encryption, failing
+ * to set this option will cause an error.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] iv The initialization vector to use.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
+                                             mongocrypt_binary_t *iv);
+
+
+/**
  * Create a new uninitialized @ref mongocrypt_ctx_t.
  *
  * Initialize the context with functions like @ref mongocrypt_ctx_encrypt_init.
@@ -442,6 +497,25 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *ns,
                              uint32_t ns_len);
 
+/**
+ * Explicit helper method to encrypt a single BSON object. Contexts
+ * created for explicit encryption will not go through mongocryptd.
+ *
+ * To specify a key_id, algorithm, or iv to use, please use the
+ * corresponding mongocrypt_setopt methods before calling this.
+ *
+ * This method expects the passed-in BSON to be of the form:
+ * { "v" : BSON value to encrypt }
+ *
+ * @param[in] ctx A @ref mongocrypt_ctx_t.
+ * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value.
+ * @param[out] out A @ref mongocrypt_binary_t the encrypted BSON.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
+                                      mongocrypt_binary_t *msg);
+
 
 /**
  * Initialize a context for decryption.
@@ -453,6 +527,18 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
+
+
+/**
+ * Explicit helper method to decrypt a single BSON object.
+ *
+ * @param[in] ctx A @ref mongocrypt_ctx_t.
+ * @param[in] msg A @ref mongocrypt_binary_t the encrypted BSON.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
+                                      mongocrypt_binary_t *msg);
 
 
 typedef enum {

@@ -44,6 +44,75 @@ _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
 }
 
 
+bool
+mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
+                              mongocrypt_binary_t *key_id)
+{
+   BSON_ASSERT (ctx);
+
+   if (!key_id) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "key_id must be non-NULL");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "key_id already set");
+   }
+
+   _mongocrypt_buffer_copy_from_binary (&ctx->opts.key_id, key_id);
+
+   return true;
+}
+
+
+bool
+mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
+                                 char *algorithm,
+                                 int len)
+{
+   size_t calculated_len;
+
+   BSON_ASSERT (ctx);
+
+   calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
+
+   if (strncmp (algorithm,
+                "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic",
+                calculated_len) == 0) {
+      ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
+      return true;
+   }
+
+   if (strncmp (algorithm,
+                "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized",
+                calculated_len) == 0) {
+      ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
+      return true;
+   }
+
+   return _mongocrypt_ctx_fail_w_msg (ctx, "unsupported algorithm");
+}
+
+
+bool
+mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
+                                             mongocrypt_binary_t *iv)
+{
+   BSON_ASSERT (ctx);
+
+   if (!iv) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "iv must be non-NULL");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "iv already set");
+   }
+
+   _mongocrypt_buffer_copy_from_binary (&ctx->opts.iv, iv);
+
+   return true;
+}
+
+
 mongocrypt_ctx_t *
 mongocrypt_ctx_new (mongocrypt_t *crypt)
 {
@@ -63,6 +132,7 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
     * responsibility of sub-contexts. */
    _mongocrypt_key_broker_init (&ctx->kb, true, &crypt->opts);
    ctx->status = mongocrypt_status_new ();
+   ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
    return ctx;
 }
 
@@ -121,6 +191,7 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    if (!out) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL input");
    }
+
    callme = NULL;
    switch (ctx->state) {
    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
@@ -242,7 +313,6 @@ mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    }
    return ctx->vtable.finalize (ctx, out);
 }
-
 
 bool
 mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out)

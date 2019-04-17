@@ -19,6 +19,35 @@
 #include "test-mongocrypt.h"
 
 
+static void
+_test_explicit_decrypt_init (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *encrypted;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+
+   encrypted = _mongocrypt_tester_encrypted_doc (tester);
+
+   /* NULL document. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_FAILS (
+      mongocrypt_ctx_explicit_decrypt_init (ctx, NULL), ctx, "invalid doc");
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* Success. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (ctx, encrypted), ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   mongocrypt_ctx_destroy (ctx);
+
+   mongocrypt_binary_destroy (encrypted);
+   mongocrypt_destroy (crypt);
+}
+
+
 /* Test individual ctx states. */
 static void
 _test_decrypt_init (_mongocrypt_tester_t *tester)

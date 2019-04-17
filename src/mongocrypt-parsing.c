@@ -38,6 +38,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
    bson_t bson;
    bson_iter_t iter;
    bool ret = false;
+   int algorithm;
 
    if (in->len < 5) {
       CLIENT_ERR ("invalid marking, length < 5");
@@ -95,11 +96,24 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
    }
 
    if (!BSON_ITER_HOLDS_INT32 (&iter)) {
-     CLIENT_ERR ("invalid marking, 'a' must be an integer");
-     goto cleanup;
+      CLIENT_ERR ("invalid marking, 'a' must be an integer");
+      goto cleanup;
    }
 
-   out->algorithm = bson_iter_int32 (&iter);
+   algorithm = bson_iter_int32 (&iter);
+   switch (algorithm) {
+   case 0:
+      out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
+      break;
+   case 1:
+      out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
+      break;
+   case 2:
+      out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
+      break;
+   default:
+      CLIENT_ERR ("invalid algorithm value %d", algorithm);
+   }
 
    ret = true;
 cleanup:
@@ -108,10 +122,17 @@ cleanup:
 
 
 void
+_mongocrypt_marking_init (_mongocrypt_marking_t *marking)
+{
+   memset (marking, 0, sizeof (*marking));
+}
+
+
+void
 _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 {
-  _mongocrypt_buffer_cleanup (&marking->iv);
-  _mongocrypt_buffer_cleanup (&marking->key_id);
+   _mongocrypt_buffer_cleanup (&marking->iv);
+   _mongocrypt_buffer_cleanup (&marking->key_id);
 }
 
 

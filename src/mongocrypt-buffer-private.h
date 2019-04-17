@@ -77,7 +77,9 @@ void
 _mongocrypt_buffer_from_bson (_mongocrypt_buffer_t *buf, const bson_t *bson);
 
 
-void
+/* TODO CDRIVER-2988 audit places where we call this method,
+   determine if we should be checking this return value. */
+bool
 _mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf, bson_t *bson);
 
 
@@ -98,12 +100,17 @@ _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
 
 
 void
-_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf, struct _mongocrypt_binary_t * binary);
+_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf,
+                              struct _mongocrypt_binary_t *binary);
 
 
 void
 _mongocrypt_buffer_copy_to (const _mongocrypt_buffer_t *src,
                             _mongocrypt_buffer_t *dst);
+
+void
+_mongocrypt_buffer_set_to (const _mongocrypt_buffer_t *src,
+                           _mongocrypt_buffer_t *dst);
 
 
 int
