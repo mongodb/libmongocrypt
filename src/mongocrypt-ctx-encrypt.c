@@ -38,26 +38,22 @@ _mongo_op_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 }
 
 static bool
-_mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
+_set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
 {
-   /* Parse out the schema. */
-   bson_t as_bson;
    bson_iter_t iter;
    _mongocrypt_ctx_encrypt_t *ectx;
 
+   /* Parse out the schema. */
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (!bson_init_static (&as_bson, in->data, in->len)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
-   }
 
    /* Disallow views. */
-   if (bson_iter_init_find (&iter, &as_bson, "type") &&
+   if (bson_iter_init_find (&iter, collinfo, "type") &&
        BSON_ITER_HOLDS_UTF8 (&iter) &&
        0 == strcmp ("view", bson_iter_utf8 (&iter, NULL))) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot auto encrypt a view");
    }
 
-   if (!bson_iter_init (&iter, &as_bson)) {
+   if (!bson_iter_init (&iter, collinfo)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
    }
 
@@ -65,7 +61,33 @@ _mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
           &iter, "options.validator.$jsonSchema", &iter)) {
       _mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter);
    }
-   /* TODO: check for validator siblings. */
+
+   /* TODO CDRIVER-3096 check for validator siblings. */
+   return true;
+}
+
+static bool
+_mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
+{
+   bson_t as_bson;
+
+   _mongocrypt_ctx_encrypt_t *ectx;
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   if (!bson_init_static (&as_bson, in->data, in->len)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
+   }
+
+   /* Cache the received collinfo. */
+   if (!_mongocrypt_cache_add_copy (
+          &ctx->crypt->cache_collinfo, ectx->ns, &as_bson, ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   if (!_set_schema_from_collinfo (ctx, &as_bson)) {
+      return false;
+   }
+
    return true;
 }
 
@@ -175,8 +197,11 @@ _mongo_done_markings (mongocrypt_ctx_t *ctx)
    if (_mongocrypt_key_broker_empty (&ctx->kb)) {
       /* if there were no keys, i.e. no markings, no encryption is needed. */
       ctx->state = MONGOCRYPT_CTX_NOTHING_TO_DO;
-   } else {
+   } else if (_mongocrypt_key_broker_has (&ctx->kb, KEY_EMPTY)) {
       ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+   } else {
+      /* All keys were cached. */
+      ctx->state = MONGOCRYPT_CTX_READY;
    }
    return true;
 }
@@ -343,7 +368,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->explicit = true;
-   ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
    ctx->vtable.next_kms_ctx = _next_kms_ctx;
    ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
@@ -390,6 +414,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
+   }
+
+   if (_mongocrypt_key_broker_has (&ctx->kb, KEY_EMPTY)) {
+      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+   } else {
+      ectx->parent.state = MONGOCRYPT_CTX_READY;
    }
 
    return true;
@@ -448,19 +478,38 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    }
    ectx->coll_name = strstr (ectx->ns, ".") + 1;
 
+   /* Check if a local schema was provided. */
    if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
-      /* A local schema has been provided. */
       _mongocrypt_buffer_steal (&ectx->schema, &ctx->opts.local_schema);
-      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    } else {
-      /* We need a remote schema. */
-      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
-      ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
-      ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
-      ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+      bson_t *collinfo = NULL;
+
+      /* Otherwise, we need a remote schema. Check if we have a response to
+       * listCollections cached. */
+      if (!_mongocrypt_cache_get (&ctx->crypt->cache_collinfo,
+                                  ectx->ns /* null terminated */,
+                                  (void **) &collinfo,
+                                  ctx->status)) {
+         bson_destroy (collinfo);
+         return _mongocrypt_ctx_fail (ctx);
+      }
+
+      if (collinfo) {
+         if (!_set_schema_from_collinfo (ctx, collinfo)) {
+            return _mongocrypt_ctx_fail (ctx);
+         }
+         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+      } else {
+         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
+         ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
+         ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
+         ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+      }
+
+      bson_destroy (collinfo);
    }
    /* TODO CDRIVER-2946 check if schema is cached. If we know encryption isn't
     * needed. We can avoid a needless copy. */
-
    return true;
 }

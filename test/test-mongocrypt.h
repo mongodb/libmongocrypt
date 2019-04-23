@@ -56,8 +56,9 @@ void
 _load_json_as_bson (const char *path, bson_t *out);
 
 
-void _mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
-				     mongocrypt_kms_ctx_t *kms);
+void
+_mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
+                                mongocrypt_kms_ctx_t *kms);
 
 
 void
@@ -185,6 +186,9 @@ _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_local_kms (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_cache (_mongocrypt_tester_t *tester);
 
 
 #define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn)

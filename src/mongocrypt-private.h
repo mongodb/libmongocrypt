@@ -22,10 +22,11 @@
 
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-buffer-private.h"
-#include "mongocrypt-key-cache-private.h"
+#include "mongocrypt-cache-private.h"
+#include "mongocrypt-cache-key-private.h"
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-opts-private.h"
-#include "mongocrypt-schema-cache-private.h"
+
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
@@ -70,9 +71,9 @@ struct _mongocrypt_t {
    bool initialized;
    _mongocrypt_opts_t opts;
    mongocrypt_mutex_t mutex;
-   _mongocrypt_schema_cache_t *schema_cache;
-   /* The key cache has its own interal mutex. */
-   _mongocrypt_key_cache_t *key_cache;
+   /* The collinfo and key cache are protected with an internal mutex. */
+   _mongocrypt_cache_t cache_collinfo;
+   _mongocrypt_cache_t cache_key;
    _mongocrypt_log_t log;
    mongocrypt_status_t *status;
 };

@@ -544,6 +544,86 @@ _test_local_schema (_mongocrypt_tester_t *tester)
 }
 
 
+static void
+_test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *collinfo;
+   bson_t *cached_collinfo;
+   mongocrypt_status_t *status;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   status = mongocrypt_status_new ();
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   collinfo =
+      _mongocrypt_tester_file (tester, "./test/example/collection-info.json");
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, collinfo), ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   mongocrypt_binary_destroy (collinfo);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
+                MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   mongocrypt_ctx_destroy (ctx);
+   /* The next crypt has the schema cached. */
+   ASSERT_OR_PRINT (_mongocrypt_cache_get (&crypt->cache_collinfo,
+                                           "test.test",
+                                           (void **) &cached_collinfo,
+                                           status),
+                    status);
+   bson_destroy (cached_collinfo);
+
+   /* The next context enters the NEED_MONGO_MARKINGS state immediately. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
+                MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   mongocrypt_ctx_destroy (ctx);
+
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
+static void
+_test_encrypt_caches_keys (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *markings;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
+   mongocrypt_ctx_destroy (ctx);
+   /* The next context skips needing keys after being supplied mark documents.
+    */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   markings =
+      _mongocrypt_tester_file (tester, "./test/example/mongocryptd-reply.json");
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, markings), ctx);
+   mongocrypt_binary_destroy (markings);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -556,4 +636,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_key_missing_region);
    INSTALL_TEST (_test_view);
    INSTALL_TEST (_test_local_schema);
+   INSTALL_TEST (_test_encrypt_caches_collinfo);
+   INSTALL_TEST (_test_encrypt_caches_keys);
 }

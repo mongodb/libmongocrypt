@@ -69,7 +69,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    _gen_uuid (2, &key_id2);
 
    /* Multiple different key ids. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id2),
@@ -91,7 +91,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (filter);
 
    /* Duplicate key ids. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
@@ -112,7 +112,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (filter);
 
    /* No keys. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    filter = mongocrypt_binary_new ();
    ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
    BSON_ASSERT (!filter->data);
@@ -141,7 +141,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
 
    /* Valid key documents. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id2),
@@ -156,7 +156,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
 
    /* Malformed key document. */
    malformed = BCON_NEW ("abc", BCON_INT32 (123));
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    _mongocrypt_buffer_from_bson (&malformed_buf, malformed);
@@ -167,7 +167,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    bson_destroy (malformed);
 
    /* NULL key document. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
    ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&key_broker, NULL),
                  &key_broker,
@@ -175,7 +175,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Unmatched key document. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc2),
@@ -184,7 +184,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Calling done before supplying all keys. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_FAILS (_mongocrypt_key_broker_done_adding_docs (&key_broker),
@@ -216,7 +216,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
 
    /* Success. */
-   _mongocrypt_key_broker_init (&key_broker, false, &crypt->opts);
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id2),

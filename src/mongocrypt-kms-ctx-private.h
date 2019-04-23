@@ -20,7 +20,7 @@
 #include "mongocrypt.h"
 #include "mongocrypt-compat.h"
 #include "mongocrypt-buffer-private.h"
-#include "mongocrypt-key-cache-private.h"
+#include "mongocrypt-cache-key-private.h"
 #include "mongocrypt-opts-private.h"
 #include "kms_message/kms_message.h"
 

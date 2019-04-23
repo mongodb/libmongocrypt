@@ -33,6 +33,9 @@ message ("--   bson libraries \"${BSON_LIBRARIES}\"")
 set (MONGOCRYPT_SOURCES
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
+   src/mongocrypt-cache.c
+   src/mongocrypt-cache-collinfo.c
+   src/mongocrypt-cache-key.c
    src/mongocrypt-ciphertext.c
    src/mongocrypt-crypto.c
    src/mongocrypt-ctx-datakey.c
@@ -41,12 +44,10 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-ctx.c
    src/mongocrypt-key.c
    src/mongocrypt-key-broker.c
-   src/mongocrypt-key-cache.c
    src/mongocrypt-kms-ctx.c
    src/mongocrypt-log.c
    src/mongocrypt-marking.c
    src/mongocrypt-opts.c
-   src/mongocrypt-schema-cache.c
    src/mongocrypt-status.c
    src/mongocrypt-traverse-util.c
    src/mongocrypt.c
@@ -140,6 +141,7 @@ target_link_libraries (mongocrypt PRIVATE kms_message_static)
 target_link_libraries (mongocrypt-static PRIVATE kms_message_static)
 
 set (TEST_MONGOCRYPT_SOURCES
+   test/test-mongocrypt-cache.c
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-ctx-decrypt.c

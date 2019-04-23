@@ -19,6 +19,9 @@
 
 #define MONGOCRYPT_KEYMATERIAL_LEN 64
 
+#include "mongocrypt-buffer-private.h"
+#include "mongocrypt-opts-private.h"
+
 typedef struct {
    _mongocrypt_buffer_t id;
    _mongocrypt_buffer_t key_material;
@@ -31,6 +34,11 @@ bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
                              _mongocrypt_key_doc_t *out,
                              mongocrypt_status_t *status);
+
+void
+_mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
+                             _mongocrypt_key_doc_t *dst);
+
 
 void
 _mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key);

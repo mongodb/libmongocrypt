@@ -123,3 +123,14 @@ _mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key)
    _mongocrypt_buffer_cleanup (&key->key_material);
    bson_free (key->masterkey_region);
 }
+
+
+void
+_mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
+                             _mongocrypt_key_doc_t *dst) {
+   _mongocrypt_buffer_copy_to (&src->id, &dst->id);
+   _mongocrypt_buffer_copy_to (&src->key_material, &dst->key_material);
+   dst->masterkey_provider = src->masterkey_provider;
+   dst->masterkey_region = bson_strdup (src->masterkey_region);
+   dst->masterkey_cmk = bson_strdup (src->masterkey_cmk);
+}

@@ -306,7 +306,11 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+   if (_mongocrypt_key_broker_has (&ctx->kb, KEY_EMPTY)) {
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+   } else {
+      ctx->state = MONGOCRYPT_CTX_READY;
+   }
 
    return true;
 }
@@ -368,8 +372,11 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
 
    if (_mongocrypt_key_broker_empty (&ctx->kb)) {
       ctx->state = MONGOCRYPT_CTX_NOTHING_TO_DO;
-   } else {
+   } else if (_mongocrypt_key_broker_has (&ctx->kb, KEY_EMPTY)) {
       ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+   } else {
+      /* All keys were cached. */
+      ctx->state = MONGOCRYPT_CTX_READY;
    }
 
    return true;

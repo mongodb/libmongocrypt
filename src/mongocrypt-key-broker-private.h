@@ -20,10 +20,12 @@
 #include <bson/bson.h>
 
 #include "kms_message/kms_message.h"
+#include "mongocrypt-cache-private.h"
 #include "mongocrypt-kms-ctx-private.h"
-#include "mongocrypt-key-cache-private.h"
+#include "mongocrypt-cache-key-private.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-opts-private.h"
+#include "mongocrypt-cache-private.h"
 
 typedef struct __mongocrypt_key_broker_t _mongocrypt_key_broker_t;
 /* The key broker acts as a middle-man between an encrypt/decrypt request and
@@ -61,15 +63,15 @@ struct __mongocrypt_key_broker_t {
    _mongocrypt_buffer_t filter;
    _mongocrypt_buffer_t find_cmd;
    bool all_keys_added;
-   bool err_on_missing_keys;
    _mongocrypt_opts_t *crypt_opts;
+   _mongocrypt_cache_t *cache_key;
 };
 
 
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
-                             bool err_on_missing_keys,
-                             _mongocrypt_opts_t *opts);
+                             _mongocrypt_opts_t *opts,
+                             _mongocrypt_cache_t *cache_key);
 
 
 bool
@@ -96,7 +98,7 @@ _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
 /* For testing only, add a decrypted key */
 bool
 _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
-				     const _mongocrypt_buffer_t *key_id);
+                                     const _mongocrypt_buffer_t *key_id);
 
 
 /* Add a document with encrypted key material, transitioning a KEY_EMPTY key to

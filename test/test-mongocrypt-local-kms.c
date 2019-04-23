@@ -50,8 +50,10 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
    mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt); /* destroy because of caching. */
 
    /* Decrypt it back. */
+   crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
    _mongocrypt_buffer_to_binary (&encrypted_cmd, bin);
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);

@@ -39,19 +39,16 @@ struct __mongocrypt_key_broker_entry_t {
 };
 
 
-/* TODO: CDRIVER-3044 instead of err_on_missing keys, provide API for checking
- * if
- * keys are incomplete (i.e. not encrypted or decrypted) */
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
-                             bool err_on_missing_keys,
-                             _mongocrypt_opts_t *opts)
+                             _mongocrypt_opts_t *opts,
+                             _mongocrypt_cache_t *cache_key)
 {
    memset (kb, 0, sizeof (*kb));
-   kb->err_on_missing_keys = err_on_missing_keys; /* TODO: use this. */
    kb->all_keys_added = false;
    kb->status = mongocrypt_status_new ();
    kb->crypt_opts = opts;
+   kb->cache_key = cache_key;
 }
 
 
@@ -77,25 +74,81 @@ _mongocrypt_key_broker_empty (_mongocrypt_key_broker_t *kb)
 }
 
 
+/* Returns false on error. */
+static bool
+_try_retrieving_from_cache (_mongocrypt_key_broker_t *kb,
+                            _mongocrypt_key_broker_entry_t *kbe)
+{
+   _mongocrypt_cache_key_value_t *value;
+
+   if (kbe->state != KEY_EMPTY) {
+      mongocrypt_status_t *status;
+
+      status = kb->status;
+      CLIENT_ERR ("trying to retrieve key from cache in invalid state");
+      return false;
+   }
+
+   if (!_mongocrypt_cache_get (
+          kb->cache_key, &kbe->key_id, (void **) &value, kb->status)) {
+      return false;
+   }
+
+   if (value) {
+      kbe->state = KEY_DECRYPTED;
+      _mongocrypt_key_doc_copy_to (&value->key_doc, &kbe->key_returned);
+      _mongocrypt_buffer_copy_to (&value->decrypted_key_material,
+                                  &kbe->decrypted_key_material);
+      _mongocrypt_cache_key_value_destroy (value);
+   }
+   return true;
+}
+
+
+static bool
+_store_to_cache (_mongocrypt_key_broker_t *kb,
+                 _mongocrypt_key_broker_entry_t *kbe)
+{
+   _mongocrypt_cache_key_value_t *value;
+   bool ret;
+
+   if (kbe->state != KEY_DECRYPTED) {
+      mongocrypt_status_t *status = kb->status;
+      CLIENT_ERR ("cannot cache non-decrypted key");
+      return false;
+   }
+
+   value = _mongocrypt_cache_key_value_new (&kbe->key_returned,
+                                            &kbe->decrypted_key_material);
+   ret = _mongocrypt_cache_add_stolen (
+      kb->cache_key, &kbe->key_id, value, kb->status);
+   return ret;
+}
+
+
 bool
 _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
                                const _mongocrypt_buffer_t *key_id)
 {
-   _mongocrypt_key_broker_entry_t *kbe;
+   _mongocrypt_key_broker_entry_t *kbe = NULL;
 
+   /* Check if it already exists. */
    for (kbe = kb->kb_entry; kbe; kbe = kbe->next) {
       if (0 == _mongocrypt_buffer_cmp (&kbe->key_id, key_id)) {
          return true;
       }
    }
 
-   /* TODO CDRIVER-2951 check if we have this key cached. */
    kbe = bson_malloc0 (sizeof (*kbe));
    _mongocrypt_buffer_copy_to (key_id, &kbe->key_id);
    kbe->state = KEY_EMPTY;
    kbe->next = kb->kb_entry;
    kb->kb_entry = kbe;
    kb->decryptor_iter = kbe;
+
+   if (!_try_retrieving_from_cache (kb, kbe)) {
+      return false;
+   }
 
    return true;
 }
@@ -197,6 +250,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
             goto done;
          }
          kbe->state = KEY_DECRYPTED;
+         _store_to_cache (kb, kbe);
       } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
          if (!_mongocrypt_kms_ctx_init_aws_decrypt (
                 &kbe->kms, kb->crypt_opts, &kbe->key_returned, kbe)) {
@@ -229,7 +283,6 @@ _mongocrypt_key_broker_done_adding_docs (_mongocrypt_key_broker_t *kb)
    status = kb->status;
 
    if (_mongocrypt_key_broker_has (kb, KEY_EMPTY)) {
-      /* TODO: not an error if err_on_missing == false. */
       CLIENT_ERR ("client did not provide all keys");
       return false;
    }
@@ -273,7 +326,6 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
    status = kb->status;
    for (kbe = kb->kb_entry; kbe != NULL; kbe = kbe->next) {
       if (kbe->state != KEY_DECRYPTING) {
-         /* TODO: don't error based on err_on_missing flag. */
          CLIENT_ERR ("key not decrypted");
          return false;
       }
@@ -285,6 +337,7 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
          return false;
       }
       kbe->state = KEY_DECRYPTED;
+      _store_to_cache (kb, kbe);
    }
    return true;
 }

@@ -18,7 +18,8 @@
 #include <bson/bson.h>
 
 #include "mongocrypt-crypto-private.h"
-#include "mongocrypt-key-cache-private.h"
+#include "mongocrypt-cache-collinfo-private.h"
+#include "mongocrypt-cache-key-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-os-private.h"
@@ -108,7 +109,8 @@ mongocrypt_new (void)
 
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
    _mongocrypt_mutex_init (&crypt->mutex);
-   crypt->schema_cache = _mongocrypt_schema_cache_new ();
+   _mongocrypt_cache_collinfo_init (&crypt->cache_collinfo);
+   _mongocrypt_cache_key_init (&crypt->cache_key);
    crypt->status = mongocrypt_status_new ();
    _mongocrypt_opts_init (&crypt->opts);
    _mongocrypt_log_init (&crypt->log);
@@ -252,8 +254,8 @@ mongocrypt_destroy (mongocrypt_t *crypt)
       return;
    }
    _mongocrypt_opts_cleanup (&crypt->opts);
-   _mongocrypt_schema_cache_destroy (crypt->schema_cache);
-   _mongocrypt_key_cache_destroy (crypt->key_cache);
+   _mongocrypt_cache_cleanup (&crypt->cache_collinfo);
+   _mongocrypt_cache_cleanup (&crypt->cache_key);
    _mongocrypt_mutex_cleanup (&crypt->mutex);
    _mongocrypt_log_cleanup (&crypt->log);
    mongocrypt_status_destroy (crypt->status);
