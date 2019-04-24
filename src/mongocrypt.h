@@ -528,7 +528,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value.
- * @param[out] out A @ref mongocrypt_binary_t the encrypted BSON.
+ * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT
 bool
