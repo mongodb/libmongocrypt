@@ -646,6 +646,41 @@ _test_encrypt_random (_mongocrypt_tester_t *tester) {
 }
 
 
+static void
+_test_ctx_id (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx, *ctx2;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+
+   /* Two contexts should have different IDs */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   BSON_ASSERT (mongocrypt_ctx_id (ctx) == 1);
+
+   ctx2 = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx2, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   BSON_ASSERT (mongocrypt_ctx_id (ctx2) == 2);
+
+   /* Recreating a context results in a new ID */
+   mongocrypt_ctx_destroy (ctx);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   BSON_ASSERT (mongocrypt_ctx_id (ctx) == 3);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_ctx_destroy (ctx2);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -661,4 +696,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_caches_collinfo);
    INSTALL_TEST (_test_encrypt_caches_keys);
    INSTALL_TEST (_test_encrypt_random);
+   INSTALL_TEST (_test_ctx_id);
 }

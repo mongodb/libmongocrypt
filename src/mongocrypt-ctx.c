@@ -209,6 +209,7 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    case MONGOCRYPT_CTX_DONE:
    case MONGOCRYPT_CTX_READY:
    case MONGOCRYPT_CTX_NOTHING_TO_DO:
+   case MONGOCRYPT_CTX_WAITING:
       break;
    }
    if (NULL == callme) {
@@ -243,6 +244,7 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    case MONGOCRYPT_CTX_DONE:
    case MONGOCRYPT_CTX_READY:
    case MONGOCRYPT_CTX_NOTHING_TO_DO:
+   case MONGOCRYPT_CTX_WAITING:
       break;
    }
 
@@ -275,6 +277,7 @@ mongocrypt_ctx_mongo_done (mongocrypt_ctx_t *ctx)
    case MONGOCRYPT_CTX_DONE:
    case MONGOCRYPT_CTX_READY:
    case MONGOCRYPT_CTX_NOTHING_TO_DO:
+   case MONGOCRYPT_CTX_WAITING:
       break;
    }
 
@@ -402,5 +405,44 @@ mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
    }
 
    _mongocrypt_buffer_copy_from_binary (&ctx->opts.local_schema, schema);
+   return true;
+}
+
+
+uint32_t
+mongocrypt_ctx_id (mongocrypt_ctx_t *ctx)
+{
+   return ctx->id;
+}
+
+
+bool
+_mongocrypt_ctx_init (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_mutex_lock (&ctx->crypt->mutex);
+   ctx->id = ctx->crypt->ctx_counter++;
+   _mongocrypt_mutex_unlock (&ctx->crypt->mutex);
+   return true;
+}
+
+uint32_t
+mongocrypt_ctx_next_dependant_ctx_id (mongocrypt_ctx_t *ctx)
+{
+   /* TODO: CDRIVER-3095 */
+   return 0;
+}
+
+bool
+mongocrypt_ctx_wait_done (mongocrypt_ctx_t *ctx)
+{
+   /* TODO: CDRIVER-3095 */
+   return true;
+}
+
+
+bool
+mongocrypt_ctx_setopt_cache_noblock (mongocrypt_ctx_t *ctx)
+{
+   /* TODO: CDRIVER-3095 */
    return true;
 }

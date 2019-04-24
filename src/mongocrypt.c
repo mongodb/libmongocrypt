@@ -114,6 +114,7 @@ mongocrypt_new (void)
    crypt->status = mongocrypt_status_new ();
    _mongocrypt_opts_init (&crypt->opts);
    _mongocrypt_log_init (&crypt->log);
+   crypt->ctx_counter = 1;
    return crypt;
 }
 

@@ -323,6 +323,10 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
    bson_t as_bson;
    bson_iter_t iter;
 
+   if (!_mongocrypt_ctx_init (ctx)) {
+      return false;
+   }
+
    if (!doc) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid doc");
    }

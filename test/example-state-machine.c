@@ -222,6 +222,10 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
          printf ("\ngot error: %s\n", mongocrypt_status_message (status, NULL));
          done = true;
          break;
+      case MONGOCRYPT_CTX_WAITING:
+         printf ("\nunexpected waiting state\n");
+         done = true;
+         break;
       }
    }
 

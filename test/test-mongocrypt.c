@@ -232,6 +232,10 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
       case MONGOCRYPT_CTX_ERROR:
          BSON_ASSERT (state == stop_state);
          return;
+      case MONGOCRYPT_CTX_WAITING:
+         fprintf (stderr, "WAITING not supported\n");
+         BSON_ASSERT (false);
+         break;
       }
       state = mongocrypt_ctx_state (ctx);
    }

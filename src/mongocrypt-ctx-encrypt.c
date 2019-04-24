@@ -433,6 +433,14 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
 {
    _mongocrypt_ctx_encrypt_t *ectx;
 
+   if (ctx->state != MONGOCRYPT_CTX_ERROR) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
+   }
+
+   if (!_mongocrypt_ctx_init (ctx)) {
+      return false;
+   }
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->explicit = false;
@@ -447,10 +455,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (!ns || NULL == strstr (ns, ".")) {
       return _mongocrypt_ctx_fail_w_msg (ctx,
                                          "invalid ns. Must be <db>.<coll>");
-   }
-
-   if (ctx->state != MONGOCRYPT_CTX_ERROR) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
 
    if (ctx->opts.masterkey_aws_region || ctx->opts.masterkey_aws_cmk) {

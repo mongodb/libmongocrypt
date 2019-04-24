@@ -94,6 +94,7 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_key_broker_t kb;
    _mongocrypt_vtable_t vtable;
    _mongocrypt_ctx_opts_t opts;
+   uint32_t id;
 };
 
 
@@ -139,6 +140,10 @@ typedef struct {
    _mongocrypt_buffer_t key_doc;
    _mongocrypt_buffer_t encrypted_key_material;
 } _mongocrypt_ctx_datakey_t;
+
+/* Common initialization. */
+bool
+_mongocrypt_ctx_init (mongocrypt_ctx_t *ctx);
 
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
