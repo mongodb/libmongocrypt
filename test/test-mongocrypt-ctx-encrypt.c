@@ -18,6 +18,7 @@
 #include <mongocrypt-ciphertext-private.h>
 #include <mongocrypt-ctx-private.h>
 #include <mongocrypt-key-broker-private.h>
+#include <mongocrypt-crypto-private.h>
 
 #include "test-mongocrypt.h"
 
@@ -543,6 +544,42 @@ _test_local_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_set_plaintext (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t plaintext = {0};
+   _mongocrypt_marking_t marking = {0};
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_status_t status;
+   _mongocrypt_key_broker_t *kb;
+   bson_iter_t iter;
+   bson_t *bson;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+
+   _mongocrypt_buffer_resize (&marking.key_id, MONGOCRYPT_ENC_KEY_LEN);
+   BSON_ASSERT (
+      _crypto_random (&marking.key_id, &status, MONGOCRYPT_ENC_KEY_LEN));
+   kb = &ctx->kb;
+   BSON_ASSERT (_mongocrypt_key_broker_add_test_key (kb, &marking.key_id));
+
+   bson = BCON_NEW ("v", "hello");
+   bson_iter_init_find (&iter, bson, "v");
+   memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
+
+   _mongocrypt_buffer_resize (&marking.iv, MONGOCRYPT_IV_LEN);
+   BSON_ASSERT (_crypto_random (&marking.iv, &status, MONGOCRYPT_IV_LEN));
+
+   _set_plaintext (&plaintext, &(&marking)->v_iter, true);
+
+   mongocrypt_ctx_destroy (ctx);
+   bson_destroy (bson);
+}
 
 static void
 _test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)
@@ -697,4 +734,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_caches_keys);
    INSTALL_TEST (_test_encrypt_random);
    INSTALL_TEST (_test_ctx_id);
+   INSTALL_TEST (_test_set_plaintext);
 }
