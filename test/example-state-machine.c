@@ -177,10 +177,6 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
          mongocrypt_binary_destroy (input);
          bson_free (data);
          CHECK (mongocrypt_ctx_mongo_done (ctx));
-
-         mongocrypt_binary_destroy (output);
-         output = mongocrypt_binary_new ();
-
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
          CHECK (mongocrypt_ctx_mongo_op (ctx, output));
@@ -193,10 +189,6 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
          mongocrypt_binary_destroy (input);
          bson_free (data);
          CHECK (mongocrypt_ctx_mongo_done (ctx));
-
-         mongocrypt_binary_destroy (output);
-         output = mongocrypt_binary_new ();
-
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          while ((kms = mongocrypt_ctx_next_kms_ctx (ctx))) {
@@ -210,9 +202,6 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
             mongocrypt_binary_destroy (input);
             bson_free (data);
             assert (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
-
-            mongocrypt_binary_destroy (output);
-            output = mongocrypt_binary_new ();
          }
          mongocrypt_ctx_kms_done (ctx);
          break;
@@ -284,7 +273,8 @@ main ()
 
    ctx = mongocrypt_ctx_new (crypt);
    mongocrypt_ctx_encrypt_init (ctx, "test.test", -1);
-   _run_state_machine (ctx);
+   output = _run_state_machine (ctx);
+   mongocrypt_binary_destroy (output);
    mongocrypt_ctx_destroy (ctx);
 
    printf ("\n******* DECRYPTION *******\n\n");
@@ -294,6 +284,7 @@ main ()
    mongocrypt_binary_destroy (input);
    bson_free (data);
    output = _run_state_machine (ctx);
+   mongocrypt_binary_destroy (output);
 
    mongocrypt_ctx_destroy (ctx);
 
@@ -306,6 +297,7 @@ main ()
    bson_iter_init_find (&iter, &key_doc, "_id");
    key_id = _iter_to_binary (&iter);
    mongocrypt_ctx_setopt_key_id (ctx, key_id);
+   bson_destroy (&key_doc);
    mongocrypt_ctx_setopt_algorithm (
       ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized", -1);
 
@@ -313,6 +305,7 @@ main ()
    msg = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (wrapped),
                                           wrapped->len);
    mongocrypt_ctx_explicit_encrypt_init (ctx, msg);
+   mongocrypt_binary_destroy (msg);
    encrypted_doc = _run_state_machine (ctx);
 
    printf ("\n******* EXPLICIT DECRYPTION *******\n");

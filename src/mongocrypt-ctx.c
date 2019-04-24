@@ -341,6 +341,8 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
    bson_free (ctx->opts.masterkey_aws_cmk);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
+   _mongocrypt_buffer_cleanup (&ctx->opts.key_id);
+   _mongocrypt_buffer_cleanup (&ctx->opts.iv);
    bson_free (ctx);
    return;
 }

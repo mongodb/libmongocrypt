@@ -61,7 +61,7 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      test_env: VALGRIND="valgrind --leak-check=full"
+      test_env: VALGRIND="valgrind --leak-check=full --error-exitcode=1"
 
   - func: "tar and upload libmongocrypt libraries"
 

@@ -340,6 +340,15 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    bson_t as_bson;
    bson_iter_t iter;
 
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
+   ectx->explicit = true;
+   ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+   ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.kms_done = _kms_done;
+   ctx->vtable.finalize = _finalize;
+   ctx->vtable.cleanup = _cleanup;
+
    if (!msg) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "msg required for explicit encryption");
@@ -372,9 +381,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "iv must not be set for random encryption");
    }
 
-   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
-   ectx->explicit = true;
    _mongocrypt_buffer_init (&ectx->original_cmd);
 
    _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, msg);
@@ -386,12 +392,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
 
-   ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
-   ctx->vtable.next_kms_ctx = _next_kms_ctx;
-   ctx->vtable.kms_done = _kms_done;
-   ctx->vtable.finalize = _finalize;
-   ctx->vtable.cleanup = _cleanup;
-
    return true;
 }
 
@@ -402,6 +402,17 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              int32_t ns_len)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
+   ectx->explicit = false;
+   ctx->vtable.mongo_op_markings = _mongo_op_markings;
+   ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
+   ctx->vtable.mongo_done_markings = _mongo_done_markings;
+   ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.kms_done = _kms_done;
+   ctx->vtable.finalize = _finalize;
+   ctx->vtable.cleanup = _cleanup;
 
    if (!ns || NULL == strstr (ns, ".")) {
       return _mongocrypt_ctx_fail_w_msg (ctx,
@@ -432,9 +443,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "iv must not be set for auto encryption");
    }
 
-   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
-   ectx->explicit = false;
    if (!_mongocrypt_validate_and_copy_string (ns, ns_len, &ectx->ns)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid ns");
    }
@@ -453,12 +461,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    }
    /* TODO CDRIVER-2946 check if schema is cached. If we know encryption isn't
     * needed. We can avoid a needless copy. */
-   ctx->vtable.mongo_op_markings = _mongo_op_markings;
-   ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
-   ctx->vtable.mongo_done_markings = _mongo_done_markings;
-   ctx->vtable.next_kms_ctx = _next_kms_ctx;
-   ctx->vtable.kms_done = _kms_done;
-   ctx->vtable.finalize = _finalize;
-   ctx->vtable.cleanup = _cleanup;
+
    return true;
 }
