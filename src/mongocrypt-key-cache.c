@@ -1,4 +1,5 @@
 #include "mongocrypt-private.h"
+#include "mongocrypt-key-private.h"
 #include "bson/bson.h"
 
 /* This key cache is a very rudimentary fill-in until we design something

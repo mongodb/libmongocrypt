@@ -15,6 +15,7 @@
  */
 
 #include "mongocrypt-private.h"
+#include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
 
@@ -26,7 +27,6 @@ struct fle_blob {
  uint8  original_bson_type;
  uint8  ciphertext[ciphertext_length];
 }
-TODO CDRIVER-3001 this may not be the right home for this method.
 */
 static bool
 _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
@@ -76,15 +76,6 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
    return true;
 }
 
-
-/* For tests to hook onto. */
-bool
-_test_mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *buf,
-                                           _mongocrypt_ciphertext_t *out,
-                                           mongocrypt_status_t *status)
-{
-   return _parse_ciphertext_unowned (buf, out, status);
-}
 
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,

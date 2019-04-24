@@ -21,6 +21,7 @@
 
 #include "mongocrypt.h"
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-key-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-private.h"
@@ -102,23 +103,23 @@ _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
 
 bool
 _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
-				     const _mongocrypt_buffer_t *key_id)
+                                     const _mongocrypt_buffer_t *key_id)
 {
-  BSON_ASSERT (kb);
+   BSON_ASSERT (kb);
 
-  if (!_mongocrypt_key_broker_add_id (kb, key_id)) {
-    return false;
-  }
+   if (!_mongocrypt_key_broker_add_id (kb, key_id)) {
+      return false;
+   }
 
-  /* The first entry in the list should be our new one. Modify
-     it so that it is in a decrypted state for testing. Use the
-     key_id as the decrypted material, because it doesn't matter. */
-  BSON_ASSERT (kb->kb_entry);
-  kb->kb_entry->state = KEY_DECRYPTED;
-  _mongocrypt_buffer_copy_to (&kb->kb_entry->key_id,
-			      &kb->kb_entry->decrypted_key_material);
+   /* The first entry in the list should be our new one. Modify
+      it so that it is in a decrypted state for testing. Use the
+      key_id as the decrypted material, because it doesn't matter. */
+   BSON_ASSERT (kb->kb_entry);
+   kb->kb_entry->state = KEY_DECRYPTED;
+   _mongocrypt_buffer_copy_to (&kb->kb_entry->key_id,
+                               &kb->kb_entry->decrypted_key_material);
 
-  return true;
+   return true;
 }
 
 

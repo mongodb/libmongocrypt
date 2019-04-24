@@ -33,19 +33,22 @@ message ("--   bson libraries \"${BSON_LIBRARIES}\"")
 set (MONGOCRYPT_SOURCES
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
+   src/mongocrypt-ciphertext.c
    src/mongocrypt-crypto.c
    src/mongocrypt-ctx-datakey.c
    src/mongocrypt-ctx-decrypt.c
    src/mongocrypt-ctx-encrypt.c
    src/mongocrypt-ctx.c
+   src/mongocrypt-key.c
    src/mongocrypt-key-broker.c
    src/mongocrypt-key-cache.c
    src/mongocrypt-kms-ctx.c
    src/mongocrypt-log.c
+   src/mongocrypt-marking.c
    src/mongocrypt-opts.c
-   src/mongocrypt-parsing.c
    src/mongocrypt-schema-cache.c
    src/mongocrypt-status.c
+   src/mongocrypt-traverse-util.c
    src/mongocrypt.c
    )
 

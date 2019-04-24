@@ -19,26 +19,9 @@
 
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-key-private.h"
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-status-private.h"
-
-#define MONGOCRYPT_KEYMATERIAL_LEN 64
-typedef struct {
-   _mongocrypt_buffer_t id;
-   _mongocrypt_buffer_t key_material;
-   _mongocrypt_kms_provider_t masterkey_provider;
-   char *masterkey_region;
-   char *masterkey_cmk;
-} _mongocrypt_key_doc_t;
-
-bool
-_mongocrypt_key_parse_owned (const bson_t *bson,
-                             _mongocrypt_key_doc_t *out,
-                             mongocrypt_status_t *status);
-
-void
-_mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key);
-
 
 /* Dear reader, please have a laugh at the "key cache". */
 typedef struct {

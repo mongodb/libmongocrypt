@@ -15,8 +15,10 @@
  */
 
 #include "mongocrypt-private.h"
+#include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt-marking-private.h"
 #include "mongocrypt-key-broker-private.h"
 
 /* Construct the list collections command to send. */
@@ -180,76 +182,25 @@ _mongo_done_markings (mongocrypt_ctx_t *ctx)
 }
 
 
-/* From BSON Binary subtype 6 specification:
-struct fle_blob {
- uint8  fle_blob_subtype = (1 or 2);
- uint8  key_uuid[16];
- uint8  original_bson_type;
- uint8  ciphertext[ciphertext_length];
-}
-TODO CDRIVER-3001 this may not be the right home for this method.
-*/
-static void
-_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
-                       _mongocrypt_buffer_t *out)
-{
-   uint32_t offset;
-
-   BSON_ASSERT (ciphertext);
-   BSON_ASSERT (out);
-   BSON_ASSERT (ciphertext->key_id.len == 16);
-
-   /* TODO CDRIVER-3001: relocate this logic? */
-   _mongocrypt_buffer_init (out);
-   offset = 0;
-   out->len = 1 + ciphertext->key_id.len + 1 + ciphertext->data.len;
-   out->data = bson_malloc0 (out->len);
-   out->owned = true;
-
-   out->data[offset] = ciphertext->blob_subtype;
-   offset += 1;
-
-   memcpy (out->data + offset, ciphertext->key_id.data, ciphertext->key_id.len);
-   offset += ciphertext->key_id.len;
-
-   out->data[offset] = ciphertext->original_bson_type;
-   offset += 1;
-
-   memcpy (out->data + offset, ciphertext->data.data, ciphertext->data.len);
-   offset += ciphertext->data.len;
-}
-
-
-/* For tests to hook onto. */
-void
-_test_mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
-                                       _mongocrypt_buffer_t *out)
-{
-   _serialize_ciphertext (ciphertext, out);
-}
-
-
 static bool
 _marking_to_bson_value (void *ctx,
                         _mongocrypt_marking_t *marking,
                         bson_value_t *out,
                         mongocrypt_status_t *status)
 {
-   _mongocrypt_ciphertext_t ciphertext = {{0}};
+   _mongocrypt_ciphertext_t ciphertext;
    _mongocrypt_buffer_t serialized_ciphertext = {0};
    bool ret = false;
 
    BSON_ASSERT (out);
 
-   if (!_marking_to_ciphertext (ctx, marking, &ciphertext, status)) {
+   _mongocrypt_ciphertext_init (&ciphertext);
+
+   if (!_mongocrypt_marking_to_ciphertext (ctx, marking, &ciphertext, status)) {
       goto fail;
    }
 
-   if (!_marking_to_ciphertext (ctx, marking, &ciphertext, status)) {
-      goto fail;
-   }
-
-   _serialize_ciphertext (&ciphertext, &serialized_ciphertext);
+   _mongocrypt_serialize_ciphertext (&ciphertext, &serialized_ciphertext);
 
    /* ownership of serialized_ciphertext is transferred to caller. */
    out->value_type = BSON_TYPE_BINARY;
@@ -260,7 +211,7 @@ _marking_to_bson_value (void *ctx,
    ret = true;
 
 fail:
-   _mongocrypt_buffer_cleanup (&ciphertext.data);
+   _mongocrypt_ciphertext_cleanup (&ciphertext);
    return ret;
 }
 
@@ -281,103 +232,6 @@ _replace_marking_with_ciphertext (void *ctx,
 
    return _marking_to_bson_value (ctx, &marking, out, status);
 }
-
-bool
-_marking_to_ciphertext (void *ctx,
-                        _mongocrypt_marking_t *marking,
-                        _mongocrypt_ciphertext_t *ciphertext,
-                        mongocrypt_status_t *status)
-{
-   _mongocrypt_buffer_t plaintext = {0};
-   _mongocrypt_buffer_t iv = {0};
-   _mongocrypt_key_broker_t *kb;
-   bson_t wrapper = BSON_INITIALIZER;
-   _mongocrypt_buffer_t key_material;
-   bool ret = false;
-   uint32_t bytes_written;
-
-   BSON_ASSERT (marking);
-   BSON_ASSERT (ciphertext);
-   BSON_ASSERT (status);
-   BSON_ASSERT (ctx);
-
-   kb = (_mongocrypt_key_broker_t *) ctx;
-
-   if (marking->key_alt_name) {
-      CLIENT_ERR ("TODO looking up key by keyAltName not yet supported");
-      goto fail;
-   }
-
-   ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
-
-   /* get the key for this marking. */
-   if (!_mongocrypt_key_broker_decrypted_key_material_by_id (
-          kb, &marking->key_id, &key_material)) {
-      _mongocrypt_status_copy_to (kb->status, status);
-      goto fail;
-   }
-
-   /* TODO: for simplicity, we wrap the thing we encrypt in a BSON document
-    * with an empty key, i.e. { "": <thing to encrypt> }
-    * CDRIVER-3021 will remove this. */
-   bson_append_iter (&wrapper, "", 0, &marking->v_iter);
-   plaintext.data = (uint8_t *) bson_get_data (&wrapper);
-   plaintext.len = wrapper.len;
-
-   ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
-   ciphertext->data.data = bson_malloc (ciphertext->data.len);
-   ciphertext->data.owned = true;
-
-   switch (marking->algorithm) {
-   case MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC:
-      /* Use deterministic encryption.
-       * In this case, we can use the iv parsed out of the marking. */
-      ret = _mongocrypt_do_encryption (&marking->iv,
-                                       NULL,
-                                       &key_material,
-                                       &plaintext,
-                                       &ciphertext->data,
-                                       &bytes_written,
-                                       status);
-      break;
-   case MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM:
-      /* Use randomized encryption.
-       * In this case, we must generate a new, random iv. */
-      _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
-      _mongocrypt_random (&iv, status, MONGOCRYPT_IV_LEN);
-      ret = _mongocrypt_do_encryption (&iv,
-                                       NULL,
-                                       &key_material,
-                                       &plaintext,
-                                       &ciphertext->data,
-                                       &bytes_written,
-                                       status);
-      break;
-   default:
-      /* Error. */
-      CLIENT_ERR ("Unsupported value for encryption algorithm");
-      goto fail;
-   }
-
-   if (!ret) {
-      goto fail;
-   }
-
-   ciphertext->blob_subtype = marking->algorithm;
-
-   BSON_ASSERT (bytes_written == ciphertext->data.len);
-
-   memcpy (
-      &ciphertext->key_id, &marking->key_id, sizeof (_mongocrypt_buffer_t));
-
-   ret = true;
-
-fail:
-   _mongocrypt_buffer_cleanup (&iv);
-   bson_destroy (&wrapper);
-   return ret;
-}
-
 
 static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
