@@ -106,10 +106,11 @@ public class CAPI {
     /**
      * Returns the version string x.y.z for libmongocrypt.
      *
+     * @param len, an optional length of the returned string. May be NULL.
      * @return the version string x.y.z for libmongocrypt.
      */
     public static native cstring
-    mongocrypt_version();
+    mongocrypt_version(Pointer len);
 
 
     /**
@@ -209,10 +210,11 @@ public class CAPI {
      * Get the error message associated with a status, or an empty string.
      *
      * @param status The status object.
+     * @param len, an optional length of the returned string. May be NULL.
      * @return An error message or an empty string.
      */
     public static native cstring
-    mongocrypt_status_message(mongocrypt_status_t status);
+    mongocrypt_status_message(mongocrypt_status_t status, Pointer len);
 
 
     /**
@@ -280,14 +282,22 @@ public class CAPI {
      * @param crypt                 The @ref mongocrypt_t object.
      * @param aws_access_key_id     The AWS access key ID used to generate KMS
      *                              messages.
+     * @param aws_access_key_id_len The string length (in bytes) of @p
+     *  * aws_access_key_id. Pass -1 to determine the string length with strlen (must
+     *  * be NULL terminated).
      * @param aws_secret_access_key The AWS secret access key used to generate
      *                              KMS messages.
+     * @param aws_secret_access_key_len The string length (in bytes) of @p
+     * aws_secret_access_key. Pass -1 to determine the string length with strlen
+     * (must be NULL terminated).
      * @return A boolean indicating success.
      */
     public static native boolean
     mongocrypt_setopt_kms_provider_aws(mongocrypt_t crypt,
                                        cstring aws_access_key_id,
-                                       cstring aws_secret_access_key);
+                                       int aws_access_key_id_len,
+                                       cstring aws_secret_access_key,
+                                       int aws_secret_access_key_len);
 
     /**
      * Configure a local KMS provider on the @ref mongocrypt_t object.
@@ -331,6 +341,57 @@ public class CAPI {
 
 
     /**
+     * Set the key id to use for explicit encryption.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param key_id The key_id to use.
+     * @return A boolean indicating success.
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t ctx,
+                                  mongocrypt_binary_t key_id);
+
+    /**
+     * Set the algorithm used for encryption to either
+     * deterministic or random encryption. This value
+     * should only be set when using explicit encryption.
+     *
+     * If -1 is passed in for "len", then "algorithm" is
+     * assumed to be a null-terminated string.
+     *
+     * Valid values for algorithm are:
+     *   "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+     *   "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized"
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param algorithm A string specifying the algorithm to
+     * use for encryption.
+     * @param len The length of the algorithm string.
+     * @return A boolean indicating success.
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t ctx,
+                                     cstring algorithm,
+                                     int len);
+
+
+    /**
+     * Set an initialization vector to be used with explicit
+     * encryption. This should not be set for auto encryption.
+     *
+     * If using randomized encryption, setting this option will
+     * cause an error. If using deterministic encryption, failing
+     * to set this option will cause an error.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param iv The initialization vector to use.
+     * @return A boolean indicating success.
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t ctx,
+                                                 mongocrypt_binary_t iv);
+
+    /**
      * Create a new uninitialized @ref mongocrypt_ctx_t.
      * <p>
      * Initialize the context with functions like @ref mongocrypt_ctx_encrypt_init.
@@ -353,6 +414,54 @@ public class CAPI {
 
     public static native boolean
     mongocrypt_ctx_status(mongocrypt_ctx_t ctx, mongocrypt_status_t status);
+
+
+    /**
+     * Identify the AWS KMS master key to use for creating a data key.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param region The AWS region.
+     * @param region_len The string length of @p region. Pass -1 to determine
+     * the string length with strlen (must be NULL terminated).
+     * @param cmk The Amazon Resource Name (ARN) of the customer master key
+     * (CMK).
+     * @param cmk_len The string length of @p cmk_len. Pass -1 to determine the
+     * string length with strlen (must be NULL terminated).
+     * @return A boolean indicating success.
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t ctx,
+                                         cstring region,
+                                         int region_len,
+                                         cstring cmk,
+                                         int cmk_len);
+
+
+    /**
+     * Set the master key to "local" for creating a data key.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @return A boolean indicating success.
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t ctx);
+
+
+    /**
+     * Initialize a context to create a data key.
+     *
+     * Set options before using @ref mongocrypt_ctx_setopt_masterkey_aws and
+     * mongocrypt_ctx_setopt_masterkey_local.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @return A boolean indicating success.
+     *
+     * Assumes a master key option has been set, and an associated KMS provider
+     * has been set on the parent @ref mongocrypt_t.
+     */
+    public static native boolean
+    mongocrypt_ctx_datakey_init (mongocrypt_ctx_t ctx);
+
 
     /**
      * Set a local schema for encryption.
@@ -382,6 +491,24 @@ public class CAPI {
 
 
     /**
+     * Explicit helper method to encrypt a single BSON object. Contexts
+     * created for explicit encryption will not go through mongocryptd.
+     *
+     * To specify a key_id, algorithm, or iv to use, please use the
+     * corresponding mongocrypt_setopt methods before calling this.
+     *
+     * This method expects the passed-in BSON to be of the form:
+     * { "v" : BSON value to encrypt }
+     *
+     * @param ctx A @ref mongocrypt_ctx_t.
+     * @param msg A @ref mongocrypt_binary_t the plaintext BSON value.
+     * @return A boolean indicating success.
+     */
+    public static native boolean
+    mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t ctx,
+                                          mongocrypt_binary_t msg);
+
+    /**
      * Initialize a context for decryption.
      *
      * @param ctx The mongocrypt_ctx_t object.
@@ -390,6 +517,18 @@ public class CAPI {
      */
     public static native boolean
     mongocrypt_ctx_decrypt_init(mongocrypt_ctx_t ctx, mongocrypt_binary_t doc);
+
+
+    /**
+     * Explicit helper method to decrypt a single BSON object.
+     *
+     * @param ctx A @ref mongocrypt_ctx_t.
+     * @param msg A @ref mongocrypt_binary_t the encrypted BSON.
+     * @return A boolean indicating success.
+     */
+    public static native boolean
+    mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t ctx,
+                                          mongocrypt_binary_t msg);
 
 
     public static final int MONGOCRYPT_CTX_ERROR = 0;

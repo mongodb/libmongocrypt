@@ -44,7 +44,7 @@ public class MongoCryptException extends RuntimeException {
      * @param status the status
      */
     MongoCryptException(final mongocrypt_status_t status) {
-        super(CAPI.mongocrypt_status_message(status).toString());
+        super(CAPI.mongocrypt_status_message(status, null).toString());
         isTrue("status not ok", !CAPI.mongocrypt_status_ok(status));
         code = mongocrypt_status_code(status);
     }

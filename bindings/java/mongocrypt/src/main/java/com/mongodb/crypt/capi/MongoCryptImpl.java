@@ -65,8 +65,8 @@ class MongoCryptImpl implements MongoCrypt {
 
         if (options.getAwsKmsProviderOptions() != null) {
             success = mongocrypt_setopt_kms_provider_aws(wrapped,
-                    new cstring(options.getAwsKmsProviderOptions().getAccessKeyId()),
-                    new cstring(options.getAwsKmsProviderOptions().getSecretAccessKey()));
+                    new cstring(options.getAwsKmsProviderOptions().getAccessKeyId()), -1,
+                    new cstring(options.getAwsKmsProviderOptions().getSecretAccessKey()), -1);
             if (!success) {
                 throwExceptionFromStatus();
             }
