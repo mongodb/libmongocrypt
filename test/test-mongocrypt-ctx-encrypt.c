@@ -544,6 +544,18 @@ _test_local_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+void 
+_print_bytes(const void *in, int in_size, char *out) 
+{
+    const unsigned char *p = in;
+    int32_t out_size = sizeof(out);
+    for (int i = 0, offset = 0; i < in_size;
+         offset += 3 /* outputs 3 chars per byte */, i++) {
+       snprintf (
+          out + offset, out_size, "%02X%s", p[i], i == in_size - 1 ? "" : " ");
+    }
+}
+
 static void
 _test_set_plaintext (_mongocrypt_tester_t *tester)
 {
@@ -555,6 +567,10 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_t *kb;
    bson_iter_t iter;
    bson_t *bson;
+   char wrapper_buffer[51];
+   // char trimmed_buffer[30];
+   char trimmed_buffer[51];
+   bson_t wrapper = BSON_INITIALIZER;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
@@ -575,8 +591,17 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_resize (&marking.iv, MONGOCRYPT_IV_LEN);
    BSON_ASSERT (_crypto_random (&marking.iv, &status, MONGOCRYPT_IV_LEN));
 
-   _set_plaintext (&plaintext, &(&marking)->v_iter, true);
+   bson_append_iter (&wrapper, "", 0, &marking.v_iter);
+   _print_bytes ((uint8_t *) bson_get_data (&wrapper), wrapper.len, wrapper_buffer);
+   bson_destroy (&wrapper);
+   printf("wrapper {%s}\n", wrapper_buffer);
+   BSON_ASSERT (0 == strcmp("11 00 00 00 02 00 06 00 00 00 68 65 6C 6C 6F 00 00", wrapper_buffer));
 
+   _set_plaintext (&plaintext, &(&marking)->v_iter);
+   _print_bytes (plaintext.data, plaintext.len, trimmed_buffer);
+   printf("trimmed {%s}\n", trimmed_buffer);
+   // BSON_ASSERT (0 == strcmp("06 00 00 00 68 65 6C 6C 6F 00", trimmed_buffer));
+  
    mongocrypt_ctx_destroy (ctx);
    bson_destroy (bson);
 }
