@@ -158,8 +158,24 @@ invalid_marked_reply = {
         "filter": {
             "ssn": bson.binary.Binary(b"\00" + bson.BSON.encode({
                 # missing "v"
-                "a": "Deterministic",
+                "a": 1,
                 "iv": bson.binary.Binary(b"i" * 16),
+                "ki": key_docs[0]["_id"]
+            }, codec_options=CodecOptions(uuid_representation=bson.binary.STANDARD)), subtype=6)
+        }
+    },
+    "hasEncryptedPlaceholders": True,
+    "schemaRequiresEncryption": True,
+    "ok": 1
+}
+
+marked_reply_random = {
+    "result": {
+        "find": "test",
+        "filter": {
+            "ssn": bson.binary.Binary(b"\00" + bson.BSON.encode({
+                "v": "457-55-5462",
+                "a": 2,
                 "ki": key_docs[0]["_id"]
             }, codec_options=CodecOptions(uuid_representation=bson.binary.STANDARD)), subtype=6)
         }
@@ -212,6 +228,9 @@ with open("test/data/mongocryptd-reply-no-markings.json", "w") as f:
 
 with open("test/data/mongocryptd-reply-invalid.json", "w") as f:
     f.write(json_util.dumps(invalid_marked_reply, indent=4, json_options=opts))
+
+with open("test/data/mongocryptd-reply-random.json", "w") as f:
+    f.write(json_util.dumps(marked_reply_random, indent=4, json_options=opts))
 
 with open("test/example/kms-decrypt-reply.txt", "w") as f:
     f.write(kms_reply)

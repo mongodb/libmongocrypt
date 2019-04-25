@@ -62,21 +62,17 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       goto cleanup;
    }
 
-   /* CDRIVER-3097 fix this for randomized encryption */
-   if (!bson_iter_init_find (&iter, &bson, "iv")) {
-      CLIENT_ERR ("'iv' not part of marking. C driver does not support "
-                  "generating iv yet. (TODO)");
-      goto cleanup;
-   } else if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-      CLIENT_ERR ("invalid marking, 'iv' is not binary");
-      goto cleanup;
-   }
-   _mongocrypt_buffer_from_iter (&out->iv, &iter);
-
-   if (out->iv.len != 16) {
-      CLIENT_ERR ("iv must be 16 bytes");
-      goto cleanup;
-   }
+   if (bson_iter_init_find (&iter, &bson, "iv")) {
+      if (!BSON_ITER_HOLDS_BINARY (&iter)) {
+         CLIENT_ERR ("invalid marking, 'iv' is not binary");
+         goto cleanup;
+      }
+      _mongocrypt_buffer_from_iter (&out->iv, &iter);
+      if (out->iv.len != 16) {
+         CLIENT_ERR ("iv must be 16 bytes");
+         goto cleanup;
+      }
+   } 
 
    if (!bson_iter_init_find (&iter, &bson, "v")) {
       CLIENT_ERR ("invalid marking, no 'v'");
@@ -96,17 +92,23 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
 
    algorithm = bson_iter_int32 (&iter);
    switch (algorithm) {
-   case 0:
-      out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
-      break;
    case 1:
       out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
+      if (_mongocrypt_buffer_empty (&out->iv)) {
+         CLIENT_ERR ("deterministic algorithm specified, but no iv present");
+         goto cleanup;
+      }
       break;
    case 2:
       out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
+      if (!_mongocrypt_buffer_empty (&out->iv)) {
+         CLIENT_ERR ("randomized algorithm specified, but iv present");
+         goto cleanup;
+      }
       break;
    default:
       CLIENT_ERR ("invalid algorithm value %d", algorithm);
+      goto cleanup;
    }
 
    ret = true;

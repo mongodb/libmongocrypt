@@ -7,7 +7,7 @@
         "filter": {
             "ssn": {
                 "$binary": {
-                    "base64": "AEwAAAACYQAOAAAARGV0ZXJtaW5pc3RpYwAFa2kAEAAAAAQAAAAAAAAAAAAAAAAAAAAABWl2ABAAAAAAaWlpaWlpaWlpaWlpaWlpaQA=", 
+                    "base64": "AD4AAAAQYQABAAAABWtpABAAAAAEAAAAAAAAAAAAAAAAAAAAAAVpdgAQAAAAAGlpaWlpaWlpaWlpaWlpaWkA", 
                     "subType": "06"
                 }
             }

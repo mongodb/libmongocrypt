@@ -624,6 +624,28 @@ _test_encrypt_caches_keys (_mongocrypt_tester_t *tester)
 }
 
 
+static void
+_test_encrypt_random (_mongocrypt_tester_t *tester) {
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *markings;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   markings = _mongocrypt_tester_file (tester, "./test/data/mongocryptd-reply-random.json");
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, markings), ctx);
+   mongocrypt_binary_destroy (markings);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -638,4 +660,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_local_schema);
    INSTALL_TEST (_test_encrypt_caches_collinfo);
    INSTALL_TEST (_test_encrypt_caches_keys);
+   INSTALL_TEST (_test_encrypt_random);
 }
