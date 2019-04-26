@@ -13,6 +13,8 @@ set (CMAKE_C_STANDARD 99)
 find_package (libbson-1.0 1.11 REQUIRED)
 find_package ( Threads REQUIRED )
 
+add_subdirectory(bindings/cs)
+
 include(GenerateExportHeader)
 include (GNUInstallDirs)
 

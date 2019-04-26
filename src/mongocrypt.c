@@ -26,12 +26,15 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 
+/* Assert size for interop with wrapper purposes */
+BSON_STATIC_ASSERT(sizeof(mongocrypt_log_level_t) == 4);
+
 
 const char *
 mongocrypt_version (uint32_t *len)
 {
    if (len) {
-      *len = strlen (MONGOCRYPT_VERSION);
+      *len = (uint32_t) strlen (MONGOCRYPT_VERSION);
    }
    return MONGOCRYPT_VERSION;
 }
@@ -272,7 +275,7 @@ _mongocrypt_validate_and_copy_string (const char *in,
       return false;
    }
    if (in_len < 0) {
-      in_len = strlen (in);
+      in_len = (uint32_t) strlen (in);
    }
    if (!bson_utf8_validate (in, in_len, false)) {
       return false;

@@ -94,7 +94,7 @@ _mongocrypt_log (_mongocrypt_log_t *log,
    va_end (args);
 
    _mongocrypt_mutex_lock (&log->mutex);
-   log->fn (level, message, strlen (message), log->ctx);
+   log->fn (level, message, (uint32_t) strlen (message), log->ctx);
    _mongocrypt_mutex_unlock (&log->mutex);
    bson_free (message);
 }

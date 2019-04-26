@@ -40,6 +40,15 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
 
+  "build csharp and test":
+    - command: "shell.exec"
+      params:
+        script: |-
+          eval "${inject_env_from_evergreen}"
+          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          ${test_env|} ./libmongocrypt/.evergreen/test.sh
+          ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
+
 tasks:
 - name: build-and-test
   commands:
@@ -64,6 +73,12 @@ tasks:
       test_env: VALGRIND="valgrind --leak-check=full --error-exitcode=1"
 
   - func: "tar and upload libmongocrypt libraries"
+
+- name: build-csharp-and-test
+  commands:
+  - func: "fetch source"
+  - func: "build csharp and test"
+
 
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_path} expansion.
@@ -97,6 +112,7 @@ buildvariants:
   run_on: rhel76-test
   tasks:
   - build-and-test
+  - build-csharp-and-test
   - build-and-test-asan
 - name: macos
   display_name: "macOS 10.14"
@@ -115,3 +131,4 @@ buildvariants:
   run_on: windows-64-vs2017-test
   tasks:
   - build-and-test
+  - build-csharp-and-test
