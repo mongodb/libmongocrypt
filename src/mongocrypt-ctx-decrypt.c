@@ -18,6 +18,7 @@
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt-marking-private.h"
 
 
 /* From BSON Binary subtype 6 specification:
@@ -76,16 +77,6 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
    return true;
 }
 
-void
-___print_bytes(const void *in, int in_size) 
-{
-    const unsigned char *p = in;
-    for (int i = 0; i < in_size; i++) {
-       printf ("%02X%s", p[i], i == in_size - 1 ? "" : " ");
-    }
-    printf("\n");
-}
-
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,
                                     _mongocrypt_buffer_t *in,
@@ -100,6 +91,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
    bson_iter_t iter;
    uint32_t bytes_written;
    bool ret = false;
+   uint8_t prefix;
+   uint8_t len;
 
    BSON_ASSERT (ctx);
    BSON_ASSERT (in);
@@ -143,24 +136,22 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    plaintext.len = bytes_written;
 
-   printf("0.decrypt:\t\n" );
-   ___print_bytes(plaintext.data, plaintext.len);
 
-   uint8_t *data = bson_malloc0(plaintext.len + 7);
-   memcpy (data + 6, plaintext.data, plaintext.len);
-   int little_endian_len = BSON_UINT32_TO_LE (plaintext.len + 7);
-   memcpy (data, &little_endian_len, 2);
-   int _type = 2;
-   memcpy (data + 4, &_type, 2);
-
-   printf("1.decrypt:\t\n" );
-   ___print_bytes(data, plaintext.len + 7);
-   printf("len\t%d\n", plaintext.len );
+   prefix = OFFSET_INT32        /* adds document size */
+            + OFFSET_TYPE       /* element type */
+            + OFFSET_NULL_BYTE; /* and the key's null byte terminator */
+   
+   len = (plaintext.len + prefix + OFFSET_NULL_BYTE);
+   uint8_t *data = bson_malloc0(plaintext.len + prefix + OFFSET_NULL_BYTE);
+   memcpy (data + prefix, plaintext.data, plaintext.len);
+   int little_endian_len = BSON_UINT32_TO_LE (plaintext.len + prefix + OFFSET_NULL_BYTE);
+   memcpy (data, &little_endian_len, OFFSET_INT32);
+   memcpy (data + OFFSET_INT32, &ciphertext.original_bson_type, OFFSET_TYPE);
 
    bson_free (plaintext.data);
-   plaintext.data = bson_malloc0 (23);
+   plaintext.data = bson_malloc0 (len);
    plaintext.data = (uint8_t *) data;
-   plaintext.len = 23;
+   plaintext.len = len;
 
    bson_init_static (&wrapper, plaintext.data, plaintext.len);
    bson_iter_init_find (&iter, &wrapper, "");

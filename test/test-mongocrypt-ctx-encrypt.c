@@ -541,66 +541,119 @@ _test_local_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-void 
-_print_bytes(const void *in, int in_size, char *out) 
+char *
+_get_bytes(const void *in, int len) 
 {
+    uint8_t chars_per_byte = 3; 
+    char *out = (char *) malloc(sizeof(char) * len * chars_per_byte);
+
     const unsigned char *p = in;
     int32_t out_size = sizeof(out);
-    for (int i = 0, offset = 0; i < in_size;
-         offset += 3 /* outputs 3 chars per byte */, i++) {
+    for (int i = 0, offset = 0; i < len; offset += chars_per_byte, i++) {
        snprintf (
-          out + offset, out_size, "%02X%s", p[i], i == in_size - 1 ? "" : " ");
+          out + offset, out_size, "%02X%s", p[i], i == len - 1 ? "" : " ");
     }
+    return out;
 }
 
 static void
 _test_set_plaintext (_mongocrypt_tester_t *tester)
 {
+   /*
+    * This section explains the purpose of each byte in a BSON document. This is
+    * used to extract only the value of a BSON document for later storage. Below
+    * is an example of the leftmost derivation of a one of the BSON documents 
+    * used for this test.
+    *   
+    * NOTES:
+    * - When used as a unary operator, * means that the repetition can occur 0 
+    *   or more times.
+    * 
+    * - int32     4 bytes (32-bit signed integer, two's complement)
+    * - (byte*)   Zero or more modified UTF-8 encoded characters followed by
+    *             '\x00'. The (byte*) MUST NOT contain '\x00', hence it is
+    *             not full UTF-8.
+    * 
+    * RULES:
+    * 1. document ::=  int32 e_list "\x00"     int32 is the total number of
+    *                                          bytes comprising the doc.
+    * 2. e_list   ::=  element e_list
+    *              |  ""
+    * 3. element  ::=  "\x02" e_name string    UTF-8 string
+    *              |  "\x10" e_name int32 	  32-bit integer
+    * 4. e_name   ::=  cstring                 Key name
+    * 5. string ::= int32 (byte*) "\x00"
+    * 6. cstring  ::=  (byte*) "\x00"
+    *
+    * BELOW IS A LEFTMOST DERIVATION:
+    * Let doc = { "" : "?????" }
+    * 
+    * -  doc  ::= int32 e_list "\x00"
+    * 
+    * -- rule2 -> int32 element e_list "\x00"
+    * -- rule3 -> int32 "\x02" e_name string e_list "\x00"
+    * -- rule4 -> int32 "\x02" cstring string e_list "\x00"
+    * -- rule5 -> int32 "\x02" (byte*) "\x00" string e_list "\x00"
+    * -- key   -> int32 "\x02" "" "\x00" string e_list "\x00"
+    ** The key is an empty string, i.e. 0 bytes **
+    * -- rule5 -> int32 "\x02" "" "\x00" int32 (byte*) "\x00" e_list "\x00"
+    * -- value -> int32 "\x02" "" "\x00" int32 "?????" "\x00" e_list "\x00"
+    ** Above, the value is set. The int32 before the value is the size of the **
+    ** value in bytes, plus one for the the null char. ** 
+    * -- rule2 -> int32 "\x02" "" "\x00" int32 "?????" "\x00" "" "\x00"
+    * 
+    * Finally, we have the byte sequence:
+    *    "11000000 02 "" 00 06000000 "?????" 00 00"
+    * 
+    * Note, the hexcode for '?' is '3F'. Grouping the sequence by byte for 
+    * readability, more precisely we have:
+    *    "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00"
+    * 
+    * with the value, including its length and null terminator being:
+    *    "06 00 00 00 3F 3F 3F 3F 3F 00".
+    * This is what we will store.
+    */
+
    _mongocrypt_buffer_t plaintext = {0};
    _mongocrypt_marking_t marking = {0};
-   mongocrypt_t *crypt;
-   mongocrypt_ctx_t *ctx;
-   mongocrypt_status_t status;
-   _mongocrypt_key_broker_t *kb;
    bson_iter_t iter;
    bson_t *bson;
-   char wrapper_buffer[51];
-   // char trimmed_buffer[30];
-   char trimmed_buffer[51];
    bson_t wrapper = BSON_INITIALIZER;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (
-      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
-      ctx);
+   bson = bson_new ();
+   BSON_APPEND_UTF8 (bson, "string", "?????"); /* 0x3F3F3F3F3F */
+   BSON_APPEND_INT32 (bson, "int", 5555555); /* 0x54C563 */ 
 
-   _mongocrypt_buffer_resize (&marking.key_id, MONGOCRYPT_ENC_KEY_LEN);
-   BSON_ASSERT (
-      _crypto_random (&marking.key_id, &status, MONGOCRYPT_ENC_KEY_LEN));
-   kb = &ctx->kb;
-   BSON_ASSERT (_mongocrypt_key_broker_add_test_key (kb, &marking.key_id));
-
-   bson = BCON_NEW ("v", "?????"); /* ? = 0x3F */
-   bson_iter_init_find (&iter, bson, "v");
+   bson_iter_init_find (&iter, bson, "string");
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
 
-   _mongocrypt_buffer_resize (&marking.iv, MONGOCRYPT_IV_LEN);
-   BSON_ASSERT (_crypto_random (&marking.iv, &status, MONGOCRYPT_IV_LEN));
-
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
-   _print_bytes ((uint8_t *) bson_get_data (&wrapper), wrapper.len, wrapper_buffer);
    bson_destroy (&wrapper);
-   printf("wrapper {%s}\n", wrapper_buffer);
-   BSON_ASSERT (0 == strcmp("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00", wrapper_buffer));
+   BSON_ASSERT (0 ==
+                strcmp ("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
+                        _get_bytes (bson_get_data (&wrapper), wrapper.len)));
 
    _set_plaintext (&plaintext, &(&marking)->v_iter);
-   _print_bytes (plaintext.data, plaintext.len, trimmed_buffer);
-   printf("trimmed {%s}\n", trimmed_buffer);
-   BSON_ASSERT (0 == strcmp("06 00 00 00 3F 3F 3F 3F 3F 00", trimmed_buffer));
-   printf("len\t%d\n", plaintext.len);
-  
-   mongocrypt_ctx_destroy (ctx);
+   BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00",
+                             _get_bytes (plaintext.data, plaintext.len)));
+
+   bson_init (&wrapper);
+   _mongocrypt_buffer_init (&plaintext);
+   _mongocrypt_marking_init (&marking);
+
+   bson_iter_init_find (&iter, bson, "int");
+   memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
+
+   bson_append_iter (&wrapper, "", 0, &marking.v_iter);
+   bson_destroy (&wrapper);
+   BSON_ASSERT (0 ==
+                strcmp ("0B 00 00 00 10 00 63 C5 54 00 00",
+                        _get_bytes (bson_get_data (&wrapper), wrapper.len)));
+
+   _set_plaintext (&plaintext, &(&marking)->v_iter);
+   BSON_ASSERT (0 == strcmp ("63 C5 54 00",
+                             _get_bytes (plaintext.data, plaintext.len)));
+
    bson_destroy (bson);
 }
 
