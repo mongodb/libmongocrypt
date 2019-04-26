@@ -20,6 +20,16 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 
+typedef enum {
+   OFFSET_INT32 = 4,
+   OFFSET_TYPE = 1,
+   OFFSET_NULL_BYTE = 1,
+
+   VALUE_NULL_BYTE = 0x00,
+   VALUE_STRING = 0x02,
+   VALUE_INT32 = 0x10,
+} bson_spec;
+
 typedef struct {
    mongocrypt_encryption_algorithm_t algorithm;
    bson_iter_t v_iter;

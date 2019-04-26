@@ -132,11 +132,16 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 void
 _set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter) {
    bson_t wrapper = BSON_INITIALIZER;
-   int32_t offset = 6;
+   int32_t offset = OFFSET_INT32        /* skips document size */
+                    + OFFSET_TYPE       /* element type */
+                    + OFFSET_NULL_BYTE; /* and the key's null byte terminator */
+
+   uint8_t *wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
 
    bson_append_iter (&wrapper, "", 0, iter);
-   plaintext->data = ((uint8_t *) bson_get_data (&wrapper)) + offset;
-   plaintext->len = wrapper.len - offset - 1;
+   plaintext->data = wrapper_data + offset;
+   plaintext->len =
+      wrapper.len - offset - OFFSET_NULL_BYTE; /* the final null byte */
    bson_destroy (&wrapper);
 }
 
