@@ -129,6 +129,16 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
    _mongocrypt_buffer_cleanup (&marking->key_id);
 }
 
+void
+_set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter) {
+   bson_t wrapper = BSON_INITIALIZER;
+   int32_t offset = 6;
+
+   bson_append_iter (&wrapper, "", 0, iter);
+   plaintext->data = ((uint8_t *) bson_get_data (&wrapper)) + offset;
+   plaintext->len = wrapper.len - offset - 1;
+   bson_destroy (&wrapper);
+}
 
 bool
 _mongocrypt_marking_to_ciphertext (void *ctx,
@@ -166,12 +176,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       goto fail;
    }
 
-   /* TODO: for simplicity, we wrap the thing we encrypt in a BSON document
-    * with an empty key, i.e. { "": <thing to encrypt> }
-    * CDRIVER-3021 will remove this. */
-   bson_append_iter (&wrapper, "", 0, &marking->v_iter);
-   plaintext.data = (uint8_t *) bson_get_data (&wrapper);
-   plaintext.len = wrapper.len;
+   _set_plaintext (&plaintext, &marking->v_iter);
 
    ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext->data.data = bson_malloc (ciphertext->data.len);

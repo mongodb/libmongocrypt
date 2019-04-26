@@ -76,6 +76,15 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
    return true;
 }
 
+void
+___print_bytes(const void *in, int in_size) 
+{
+    const unsigned char *p = in;
+    for (int i = 0; i < in_size; i++) {
+       printf ("%02X%s", p[i], i == in_size - 1 ? "" : " ");
+    }
+    printf("\n");
+}
 
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,
@@ -133,6 +142,25 @@ _replace_ciphertext_with_plaintext (void *ctx,
    }
 
    plaintext.len = bytes_written;
+
+   printf("0.decrypt:\t\n" );
+   ___print_bytes(plaintext.data, plaintext.len);
+
+   uint8_t *data = bson_malloc0(plaintext.len + 7);
+   memcpy (data + 6, plaintext.data, plaintext.len);
+   int little_endian_len = BSON_UINT32_TO_LE (plaintext.len + 7);
+   memcpy (data, &little_endian_len, 2);
+   int _type = 2;
+   memcpy (data + 4, &_type, 2);
+
+   printf("1.decrypt:\t\n" );
+   ___print_bytes(data, plaintext.len + 7);
+   printf("len\t%d\n", plaintext.len );
+
+   bson_free (plaintext.data);
+   plaintext.data = bson_malloc0 (23);
+   plaintext.data = (uint8_t *) data;
+   plaintext.len = 23;
 
    bson_init_static (&wrapper, plaintext.data, plaintext.len);
    bson_iter_init_find (&iter, &wrapper, "");

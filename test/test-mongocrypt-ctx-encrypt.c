@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-#include <mongocrypt.h>
-#include <mongocrypt-ciphertext-private.h>
-#include <mongocrypt-ctx-private.h>
-#include <mongocrypt-key-broker-private.h>
+#include <mongocrypt-marking-private.h>
 #include <mongocrypt-crypto-private.h>
 
 #include "test-mongocrypt.h"
@@ -584,7 +581,7 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    kb = &ctx->kb;
    BSON_ASSERT (_mongocrypt_key_broker_add_test_key (kb, &marking.key_id));
 
-   bson = BCON_NEW ("v", "hello");
+   bson = BCON_NEW ("v", "?????"); /* ? = 0x3F */
    bson_iter_init_find (&iter, bson, "v");
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
 
@@ -595,12 +592,13 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    _print_bytes ((uint8_t *) bson_get_data (&wrapper), wrapper.len, wrapper_buffer);
    bson_destroy (&wrapper);
    printf("wrapper {%s}\n", wrapper_buffer);
-   BSON_ASSERT (0 == strcmp("11 00 00 00 02 00 06 00 00 00 68 65 6C 6C 6F 00 00", wrapper_buffer));
+   BSON_ASSERT (0 == strcmp("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00", wrapper_buffer));
 
    _set_plaintext (&plaintext, &(&marking)->v_iter);
    _print_bytes (plaintext.data, plaintext.len, trimmed_buffer);
    printf("trimmed {%s}\n", trimmed_buffer);
-   // BSON_ASSERT (0 == strcmp("06 00 00 00 68 65 6C 6C 6F 00", trimmed_buffer));
+   BSON_ASSERT (0 == strcmp("06 00 00 00 3F 3F 3F 3F 3F 00", trimmed_buffer));
+   printf("len\t%d\n", plaintext.len);
   
    mongocrypt_ctx_destroy (ctx);
    bson_destroy (bson);

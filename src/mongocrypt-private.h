@@ -86,57 +86,6 @@ typedef enum {
 } mongocrypt_encryption_algorithm_t;
 
 
-<<<<<<< HEAD
-=======
-typedef struct {
-   mongocrypt_encryption_algorithm_t algorithm;
-   bson_iter_t v_iter;
-   _mongocrypt_buffer_t iv;
-   /* one of the following is zeroed, and the other is set. */
-   _mongocrypt_buffer_t key_id;
-   const bson_value_t *key_alt_name;
-} _mongocrypt_marking_t;
-
-
-typedef struct {
-   _mongocrypt_buffer_t key_id;
-   uint8_t blob_subtype;
-   uint8_t original_bson_type;
-   _mongocrypt_buffer_t data;
-} _mongocrypt_ciphertext_t;
-
-
-/* TODO: reconsider where to put these parsing functions please. */
-bool
-_mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
-                                   _mongocrypt_marking_t *out,
-                                   mongocrypt_status_t *status);
-
-void
-_mongocrypt_marking_init (_mongocrypt_marking_t *marking);
-
-void
-_mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking);
-
-void
-_set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter);
-
-bool
-_marking_to_ciphertext (void *ctx,
-                        _mongocrypt_marking_t *marking,
-                        _mongocrypt_ciphertext_t *ciphertext,
-                        mongocrypt_status_t *status);
-
-bool
-_test_mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *buf,
-                                           _mongocrypt_ciphertext_t *out,
-                                           mongocrypt_status_t *status);
-
-void
-_test_mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
-                                       _mongocrypt_buffer_t *out);
-
->>>>>>> WIP: make test pass, needs refactoring
 typedef enum {
    TRAVERSE_MATCH_CIPHERTEXT,
    TRAVERSE_MATCH_MARKING
