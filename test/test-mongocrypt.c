@@ -300,11 +300,15 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          kms = mongocrypt_ctx_next_kms_ctx (ctx);
          _mongocrypt_tester_satisfy_kms (tester, kms);
          BSON_ASSERT (!mongocrypt_ctx_next_kms_ctx (ctx));
-         mongocrypt_ctx_kms_done (ctx);
+         res = mongocrypt_ctx_kms_done (ctx);
+         mongocrypt_ctx_status (ctx, &status);
+         ASSERT_OR_PRINT (res, &status);
          break;
       case MONGOCRYPT_CTX_READY:
          bin = mongocrypt_binary_new ();
-         state = mongocrypt_ctx_finalize (ctx, bin);
+         res = mongocrypt_ctx_finalize (ctx, bin);
+         mongocrypt_ctx_status (ctx, &status);
+         ASSERT_OR_PRINT (res, &status);
          mongocrypt_binary_destroy (bin);
          break;
       case MONGOCRYPT_CTX_NOTHING_TO_DO:
@@ -317,8 +321,9 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          BSON_ASSERT (state == stop_state);
          return;
       case MONGOCRYPT_CTX_WAITING:
-         fprintf (stderr, "WAITING not supported\n");
-         BSON_ASSERT (false);
+         res = mongocrypt_ctx_wait_done (ctx);
+         mongocrypt_ctx_status (ctx, &status);
+         ASSERT_OR_PRINT (res, &status);
          break;
       }
       state = mongocrypt_ctx_state (ctx);

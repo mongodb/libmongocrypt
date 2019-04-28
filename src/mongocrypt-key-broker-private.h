@@ -20,6 +20,7 @@
 #include <bson/bson.h>
 
 #include "kms_message/kms_message.h"
+#include "mongocrypt.h"
 #include "mongocrypt-cache-private.h"
 #include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-cache-key-private.h"
@@ -27,7 +28,6 @@
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-cache-private.h"
 
-typedef struct __mongocrypt_key_broker_t _mongocrypt_key_broker_t;
 /* The key broker acts as a middle-man between an encrypt/decrypt request and
  * the key cache.
  * Each encrypt/decrypt request has one key broker. Key brokers are not shared.
@@ -36,69 +36,59 @@ typedef struct __mongocrypt_key_broker_t _mongocrypt_key_broker_t;
  * - generating find cmd filters to fetch keys that aren't cached or are expired
  * - generating KMS decrypt requests on newly fetched keys
  * - adding newly fetched keys back to the cache
- * TODO: for decryption, errors ought not be fatal. We should decrypt whatever
- * we can, and log an error.
- * TODO: integrate the cache.
  */
 
-/* The state of the key item in the broker. */
+/* The state of a key item in the broker. */
 typedef enum {
-   KEY_EMPTY,      /* has an id/keyAltName, but nothing else. */
-   KEY_ENCRYPTED,  /* has the key document from the key vault, with encrypted
-                      keyMaterial */
-   KEY_DECRYPTING, /* caller has iterated the kms context, but not fed
-                      everything yet. */
-   KEY_DECRYPTED,  /* has decrypted keyMaterial. */
-   KEY_ERROR       /* unable to get this key. status is set. */
+   /* has an id/keyAltName, but nothing else. */
+   KEY_EMPTY,
+   /* some other context is responsible for this key. We'll get it from the
+      cache later. */
+   KEY_WAITING_FOR_OTHER_CTX,
+   /* has the key document from the key vault, with encrypted keyMaterial */
+   KEY_ENCRYPTED,
+   /* caller has iterated the kms context, but not fed everything yet. */
+   KEY_DECRYPTING,
+   /* has decrypted keyMaterial. */
+   KEY_DECRYPTED
 } _mongocrypt_key_state_t;
 
-
+/*
+ * Valid transitions are:
+ * KEY_EMPTY => KEY_WAITING_FOR_OTHER_CTX
+ * KEY_EMPTY => KEY_ENCRYPTED
+ * KEY_WAITING_FOR_OTHER_CTX => KEY_EMPTY
+ * KEY_WAITING_FOR_OTHER_CTX => KEY_DECRYPTED
+ * KEY_ENCRYPTED => KEY_DECRYPTING
+ * KEY_DECRYPTING => KEY_DECRYPTED
+ */
 typedef struct __mongocrypt_key_broker_entry_t _mongocrypt_key_broker_entry_t;
 
-struct __mongocrypt_key_broker_t {
+typedef struct {
    _mongocrypt_key_broker_entry_t *kb_entry; /* head of a linked-list. */
    _mongocrypt_key_broker_entry_t *decryptor_iter;
+   _mongocrypt_key_broker_entry_t *ctx_id_iter;
 
-   mongocrypt_status_t *status;
+   mongocrypt_status_t *status; /* TODO: remove this. */
    _mongocrypt_buffer_t filter;
-   _mongocrypt_buffer_t find_cmd;
-   bool all_keys_added;
    _mongocrypt_opts_t *crypt_opts;
    _mongocrypt_cache_t *cache_key;
-};
+   uint32_t owner_id;
+} _mongocrypt_key_broker_t;
 
 
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
+                             uint32_t owner_id,
                              _mongocrypt_opts_t *opts,
                              _mongocrypt_cache_t *cache_key);
 
 
-bool
-_mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
-                               mongocrypt_binary_t *out);
-
-
-/* Returns true or false if the key broker has keys matching the passed state.
- */
-bool
-_mongocrypt_key_broker_has (_mongocrypt_key_broker_t *kb,
-                            _mongocrypt_key_state_t state);
-
-/* Returns true if there are keys. */
-bool
-_mongocrypt_key_broker_empty (_mongocrypt_key_broker_t *kb);
-
-
-/* Add an ID or keyAltName into the key broker.
-   Key is added as KEY_EMPTY. */
-bool
-_mongocrypt_key_broker_add_name (_mongocrypt_key_broker_t *kb,
-                                 const bson_value_t *key_alt_name);
-
+/* Add an ID into the key broker. */
 bool
 _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
                                const _mongocrypt_buffer_t *key_id);
+
 
 /* For testing only, add a decrypted key */
 bool
@@ -106,25 +96,58 @@ _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
                                      const _mongocrypt_buffer_t *key_id);
 
 
-/* Add a document with encrypted key material, transitioning a KEY_EMPTY key to
- * KEY_ENCRYPTED (or KEY_ERROR). */
+/* Get the find command filter. */
+bool
+_mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
+                               mongocrypt_binary_t *out);
+
+
+/* Add keyAltName into the key broker.
+   Key is added as KEY_EMPTY. */
+bool
+_mongocrypt_key_broker_add_name (_mongocrypt_key_broker_t *kb,
+                                 const bson_value_t *key_alt_name);
+
+bool
+_mongocrypt_key_broker_all_state (_mongocrypt_key_broker_t *kb,
+                                  _mongocrypt_key_state_t state);
+
+
+bool
+_mongocrypt_key_broker_any_state (_mongocrypt_key_broker_t *kb,
+                                  _mongocrypt_key_state_t state);
+
+
+/* Add a key document. */
 bool
 _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                                 const _mongocrypt_buffer_t *doc);
 
 
-bool
-_mongocrypt_key_broker_done_adding_docs (_mongocrypt_key_broker_t *kb);
-
-
+/* Iterate the keys needing KMS decryption. */
 mongocrypt_kms_ctx_t *
 _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb);
 
 
+/* Indicate that all KMS requests are complete. */
 bool
 _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb);
 
 
+/* Iterate the contexts we're waiting on for cache entries. */
+uint32_t
+_mongocrypt_key_broker_next_ctx_id (_mongocrypt_key_broker_t *kb);
+
+
+bool
+_mongocrypt_key_broker_check_cache_and_wait (_mongocrypt_key_broker_t *kb,
+                                             bool blocking_wait);
+
+
+void
+_mongocrypt_key_broker_reset_iterators (_mongocrypt_key_broker_t *kb);
+
+/* Get the final decrypted key material from a key. */
 bool
 _mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
                                             const _mongocrypt_buffer_t *key_id,

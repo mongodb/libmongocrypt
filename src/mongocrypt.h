@@ -438,10 +438,10 @@ mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
  * the dependent context has fetched that data.
  *
  * For drivers that do not want libmongocrypt to block (e.g. async drivers)
- * setting this option puts the responsibility of waiting into the caller. If
- * (and only if) this option is set, a @ref mongocrypt_ctx_t may enter the state
- * MONGOCRYPT_CTX_WAITING. The caller can then get a list of dependent contexts
- * with @ref mongocrypt_ctx_next_dependent_ctx_id and call @ref
+ * setting this option puts the responsibility of waiting into the caller. When
+ * a @ref mongocrypt_ctx_t is in the state MONGOCRYPT_CTX_WAITING, the caller
+ * can then get a list of dependent contexts with
+ * @ref mongocrypt_ctx_next_dependent_ctx_id and call @ref
  * mongocrypt_ctx_wait_done to attempt to make progress.
  *
  * @param[in] crypt The @ref mongocrypt_t object.

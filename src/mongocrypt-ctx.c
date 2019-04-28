@@ -226,9 +226,6 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
    }
    ctx = bson_malloc0 (ctx_size);
    ctx->crypt = crypt;
-   /* TODO: whether the key broker aborts due to missing keys might be
-    * responsibility of sub-contexts. */
-   _mongocrypt_key_broker_init (&ctx->kb, &crypt->opts, &crypt->cache_key);
    ctx->status = mongocrypt_status_new ();
    ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
    ctx->state = MONGOCRYPT_CTX_NOTHING_TO_DO;
@@ -273,19 +270,10 @@ _mongo_feed_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 static bool
 _mongo_done_keys (mongocrypt_ctx_t *ctx)
 {
-   if (!_mongocrypt_key_broker_done_adding_docs (&ctx->kb)) {
-      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
-      return _mongocrypt_ctx_fail (ctx);
+   if (_mongocrypt_key_broker_any_state (&ctx->kb, KEY_EMPTY)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "did not provide all keys");
    }
-   if (_mongocrypt_key_broker_has (&ctx->kb, KEY_ENCRYPTED)) {
-      ctx->state = MONGOCRYPT_CTX_NEED_KMS;
-   } else {
-      /* If all keys were obtained from cache, or keys were decrypted with
-       * "local"
-       * KMS provider, then skip right to READY. */
-      ctx->state = MONGOCRYPT_CTX_READY;
-   }
-   return true;
+   return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
 static mongocrypt_kms_ctx_t *
@@ -453,6 +441,9 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
    if (!ctx) {
       return;
    }
+
+   /* remove any pending items from cache. */
+   _mongocrypt_cache_remove_by_owner (&ctx->crypt->cache_key, ctx->id);
 
    if (ctx->vtable.cleanup) {
       ctx->vtable.cleanup (ctx);
@@ -683,27 +674,83 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    _mongocrypt_mutex_lock (&ctx->crypt->mutex);
    ctx->id = ctx->crypt->ctx_counter++;
    _mongocrypt_mutex_unlock (&ctx->crypt->mutex);
+   _mongocrypt_key_broker_init (
+      &ctx->kb, ctx->id, &ctx->crypt->opts, &ctx->crypt->cache_key);
    return true;
 }
 
 uint32_t
-mongocrypt_ctx_next_dependant_ctx_id (mongocrypt_ctx_t *ctx)
+mongocrypt_ctx_next_dependent_ctx_id (mongocrypt_ctx_t *ctx)
 {
-   /* TODO: CDRIVER-3095 */
-   return 0;
+   return ctx->vtable.next_dependent_ctx_id (ctx);
 }
 
 bool
 mongocrypt_ctx_wait_done (mongocrypt_ctx_t *ctx)
 {
-   /* TODO: CDRIVER-3095 */
-   return true;
+   return ctx->vtable.wait_done (ctx);
 }
 
 
 bool
 mongocrypt_ctx_setopt_cache_noblock (mongocrypt_ctx_t *ctx)
 {
-   /* TODO: CDRIVER-3095 */
+   ctx->cache_noblock = true;
    return true;
+}
+
+bool
+_mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_key_broker_t *kb;
+   mongocrypt_status_t *status;
+   mongocrypt_ctx_state_t new_state;
+   bool ret;
+
+   status = ctx->status;
+   kb = &ctx->kb;
+
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+
+   if (!mongocrypt_status_ok (kb->status)) {
+      _mongocrypt_status_copy_to (kb->status, status);
+      new_state = MONGOCRYPT_CTX_ERROR;
+      ret = false;
+   } else if (kb->kb_entry == NULL) {
+      /* No key entries were ever added. */
+      new_state = MONGOCRYPT_CTX_NOTHING_TO_DO;
+      ret = true;
+   } else if (_mongocrypt_key_broker_any_state (kb, KEY_EMPTY)) {
+      /* Empty keys require documents. */
+      new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+      ret = true;
+   } else if (_mongocrypt_key_broker_any_state (kb, KEY_ENCRYPTED) ||
+              _mongocrypt_key_broker_any_state (kb, KEY_DECRYPTING)) {
+      /* Encrypted keys need KMS. */
+      new_state = MONGOCRYPT_CTX_NEED_KMS;
+      ret = true;
+   } else if (_mongocrypt_key_broker_any_state (kb,
+                                                KEY_WAITING_FOR_OTHER_CTX)) {
+      /* Keys in cache need waiting. */
+      new_state = MONGOCRYPT_CTX_WAITING;
+      ret = true;
+   } else if (!_mongocrypt_key_broker_all_state (kb, KEY_DECRYPTED)) {
+      /* All keys must be decrypted. */
+      CLIENT_ERR ("key broker in invalid state");
+      new_state = MONGOCRYPT_CTX_ERROR;
+      ret = false;
+   } else {
+      new_state = MONGOCRYPT_CTX_READY;
+      ret = true;
+   }
+
+   if (new_state != ctx->state) {
+      /* reset the ctx_id and kms iterators on state change. */
+      _mongocrypt_key_broker_reset_iterators (kb);
+      ctx->state = new_state;
+   }
+
+   return ret;
 }

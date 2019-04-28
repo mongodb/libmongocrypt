@@ -232,6 +232,25 @@ _cleanup (mongocrypt_ctx_t *ctx)
 }
 
 
+static bool
+_wait_done (mongocrypt_ctx_t *ctx)
+{
+   if (!_mongocrypt_key_broker_check_cache_and_wait (&ctx->kb,
+                                                     !ctx->cache_noblock)) {
+      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
+      return _mongocrypt_ctx_fail (ctx);
+   }
+   return true;
+}
+
+
+static uint32_t
+_next_dependent_ctx_id (mongocrypt_ctx_t *ctx)
+{
+   return _mongocrypt_key_broker_next_ctx_id (&ctx->kb);
+}
+
+
 bool
 mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
@@ -255,6 +274,9 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
+   ctx->vtable.wait_done = _wait_done;
+   ctx->vtable.next_dependent_ctx_id = _next_dependent_ctx_id;
+
 
    /* We expect these to be round-tripped from explicit encrypt,
       so they must be wrapped like { "v" : "encrypted thing" } */
@@ -275,13 +297,7 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   if (_mongocrypt_key_broker_has (&ctx->kb, KEY_EMPTY)) {
-      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
-   } else {
-      ctx->state = MONGOCRYPT_CTX_READY;
-   }
-
-   return true;
+   return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
 
@@ -305,6 +321,9 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
    ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
+   ctx->vtable.wait_done = _wait_done;
+   ctx->vtable.next_dependent_ctx_id = _next_dependent_ctx_id;
+
 
    _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, doc);
    /* get keys. */
@@ -318,14 +337,8 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   if (_mongocrypt_key_broker_empty (&ctx->kb)) {
-      ctx->state = MONGOCRYPT_CTX_NOTHING_TO_DO;
-   } else if (_mongocrypt_key_broker_has (&ctx->kb, KEY_EMPTY)) {
-      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
-   } else {
-      /* All keys were cached. */
-      ctx->state = MONGOCRYPT_CTX_READY;
-   }
+   ctx->state =
+      MONGOCRYPT_CTX_NOTHING_TO_DO; /* set default state TODO: remove. */
 
-   return true;
+   return _mongocrypt_ctx_state_from_key_broker (ctx);
 }

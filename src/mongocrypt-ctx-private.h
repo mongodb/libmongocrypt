@@ -61,6 +61,8 @@ typedef struct {
    bool (*mongo_done_keys) (mongocrypt_ctx_t *ctx);
    mongocrypt_kms_ctx_t *(*next_kms_ctx) (mongocrypt_ctx_t *ctx);
    bool (*kms_done) (mongocrypt_ctx_t *ctx);
+   bool (*wait_done) (mongocrypt_ctx_t *ctx);
+   uint32_t (*next_dependent_ctx_id) (mongocrypt_ctx_t *ctx);
    bool (*finalize) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
    void (*cleanup) (mongocrypt_ctx_t *ctx);
 } _mongocrypt_vtable_t;
@@ -76,6 +78,7 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_ctx_opts_t opts;
    uint32_t id;
    bool initialized;
+   bool cache_noblock;
 };
 
 
@@ -94,6 +97,9 @@ typedef struct {
    bool explicit;
    char *ns;
    const char *coll_name; /* points inside ns */
+   bool waiting_for_collinfo;
+   _mongocrypt_cache_pair_state_t collinfo_state;
+   uint32_t collinfo_owner;
    _mongocrypt_buffer_t list_collections_filter;
    _mongocrypt_buffer_t schema;
    _mongocrypt_buffer_t original_cmd;
@@ -152,5 +158,9 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
 
 bool
 mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
+
+/* Set the state of the context from the state of keys in the key broker. */
+bool
+_mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx);
 
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */
