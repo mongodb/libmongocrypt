@@ -18,6 +18,7 @@
 package com.mongodb.crypt.capi;
 
 import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_t;
 import org.bson.BsonDocument;
 
@@ -41,10 +42,10 @@ import static org.bson.assertions.Assertions.isTrue;
 import static org.bson.assertions.Assertions.notNull;
 
 class MongoCryptContextImpl implements MongoCryptContext {
-    private final CAPI.mongocrypt_ctx_t wrapped;
+    private final mongocrypt_ctx_t wrapped;
     private volatile boolean closed;
 
-    MongoCryptContextImpl(final CAPI.mongocrypt_ctx_t wrapped) {
+    MongoCryptContextImpl(final mongocrypt_ctx_t wrapped) {
         notNull("wrapped", wrapped);
         this.wrapped = wrapped;
     }
@@ -142,11 +143,15 @@ class MongoCryptContextImpl implements MongoCryptContext {
         closed = true;
     }
 
-    private void throwExceptionFromStatus() {
+    static void throwExceptionFromStatus(final mongocrypt_ctx_t wrapped) {
         mongocrypt_status_t status = mongocrypt_status_new();
         mongocrypt_ctx_status(wrapped, status);
         MongoCryptException e = new MongoCryptException(status);
         mongocrypt_status_destroy(status);
         throw e;
+    }
+
+    private void throwExceptionFromStatus() {
+        throwExceptionFromStatus(wrapped);
     }
 }
