@@ -20,12 +20,10 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 
-typedef enum {
-   INT32_LEN = 4,
-   TYPE_LEN = 1,
-   NULL_BYTE_LEN = 1,
-   NULL_BYTE_VAL = 0x00,
-} bson_spec;
+#define INT32_LEN 4
+#define TYPE_LEN 1
+#define NULL_BYTE_LEN 1
+#define NULL_BYTE_VAL 0x00
 
 typedef struct {
    mongocrypt_encryption_algorithm_t algorithm;

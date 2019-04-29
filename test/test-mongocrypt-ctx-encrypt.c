@@ -541,7 +541,7 @@ _test_local_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-char *
+static char *
 _get_bytes (const void *in, int len)
 {
    char *out = (char *) malloc (sizeof (char) * len * 3);
@@ -596,10 +596,10 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
     * -- key   -> int32 "\x02" "" "\x00" string e_list "\x00"
     ** The key is an empty string, i.e. 0 bytes **
     * -- rule5 -> int32 "\x02" "" "\x00" int32 (byte*) "\x00" e_list "\x00"
-    * -- value -> int32 "\x02" "" "\x00" int32 "?????" "\x00" e_list "\x00"
+    * -- value -> int32 "\x02" "" "\x00" int32=6 "?????" "\x00" e_list "\x00"
     ** Above, the value is set. The int32 before the value is the size of the **
     ** value in bytes, plus one for the the null char. **
-    * -- rule2 -> int32 "\x02" "" "\x00" int32 "?????" "\x00" "" "\x00"
+    * -- rule2 -> int32=17 "\x02" "" "\x00" int32=6 "?????" "\x00" "" "\x00"
     *
     * Finally, we have the byte sequence:
     *    "11000000 02 "" 00 06000000 "?????" 00 00"
