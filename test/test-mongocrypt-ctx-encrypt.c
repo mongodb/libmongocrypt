@@ -542,17 +542,17 @@ _test_local_schema (_mongocrypt_tester_t *tester)
 }
 
 char *
-_get_bytes(const void *in, int len) 
+_get_bytes (const void *in, int len)
 {
-    char *out = (char *) malloc(sizeof(char) * len * 3);
-    const unsigned char *p = in;
-    int32_t out_size = sizeof(out);
+   char *out = (char *) malloc (sizeof (char) * len * 3);
+   const unsigned char *p = in;
+   int32_t out_size = sizeof (out);
 
-    for (int i = 0, offset = 0; i < len; offset += 3, i++) {
-       snprintf (
-          out + offset, out_size, "%02X%s", p[i], i == len - 1 ? "\0" : " ");
-    }
-    return out;
+   for (int i = 0, offset = 0; i < len; offset += 3, i++) {
+      snprintf (
+         out + offset, out_size, "%02X%s", p[i], i == len - 1 ? "\0" : " ");
+   }
+   return out;
 }
 
 static void
@@ -561,18 +561,18 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    /*
     * This section explains the purpose of each byte in a BSON document. This is
     * used to extract only the value of a BSON document for later storage. Below
-    * is an example of the leftmost derivation of one of the BSON documents 
+    * is an example of the leftmost derivation of one of the BSON documents
     * used for this test.
-    *   
+    *
     * NOTES:
-    * - When used as a unary operator, * means that the repetition can occur 0 
+    * - When used as a unary operator, * means that the repetition can occur 0
     *   or more times.
-    * 
+    *
     * - int32     4 bytes (32-bit signed integer, two's complement)
     * - (byte*)   Zero or more modified UTF-8 encoded characters followed by
     *             '\x00'. The (byte*) MUST NOT contain '\x00', hence it is
     *             not full UTF-8.
-    * 
+    *
     * RULES:
     * 1. document ::=  int32 e_list "\x00"     int32 is the total number of
     *                                          bytes comprising the doc.
@@ -586,9 +586,9 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
     *
     * BELOW IS A LEFTMOST DERIVATION:
     * Let doc = { "" : "?????" }
-    * 
+    *
     * -  doc  ::= int32 e_list "\x00"
-    * 
+    *
     * -- rule2 -> int32 element e_list "\x00"
     * -- rule3 -> int32 "\x02" e_name string e_list "\x00"
     * -- rule4 -> int32 "\x02" cstring string e_list "\x00"
@@ -598,16 +598,16 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
     * -- rule5 -> int32 "\x02" "" "\x00" int32 (byte*) "\x00" e_list "\x00"
     * -- value -> int32 "\x02" "" "\x00" int32 "?????" "\x00" e_list "\x00"
     ** Above, the value is set. The int32 before the value is the size of the **
-    ** value in bytes, plus one for the the null char. ** 
+    ** value in bytes, plus one for the the null char. **
     * -- rule2 -> int32 "\x02" "" "\x00" int32 "?????" "\x00" "" "\x00"
-    * 
+    *
     * Finally, we have the byte sequence:
     *    "11000000 02 "" 00 06000000 "?????" 00 00"
-    * 
-    * Note, the hexcode for '?' is '3F'. Grouping the sequence by byte for 
+    *
+    * Note, the hexcode for '?' is '3F'. Grouping the sequence by byte for
     * readability, more precisely we have:
     *    "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00"
-    * 
+    *
     * with the value, including its length and null terminator being:
     *    "06 00 00 00 3F 3F 3F 3F 3F 00".
     * This is what we will store.
@@ -621,7 +621,7 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
 
    bson = bson_new ();
    BSON_APPEND_UTF8 (bson, "string", "?????"); /* 0x3F3F3F3F3F */
-   BSON_APPEND_INT32 (bson, "int", 5555555); /* 0x54C563 */ 
+   BSON_APPEND_INT32 (bson, "int", 5555555);   /* 0x54C563 */
 
    bson_iter_init_find (&iter, bson, "string");
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));

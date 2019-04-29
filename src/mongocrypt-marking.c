@@ -130,7 +130,8 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 }
 
 void
-_set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter) {
+_set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter)
+{
    bson_t wrapper = BSON_INITIALIZER;
    int32_t offset = INT32_LEN        /* skips document size */
                     + TYPE_LEN       /* element type */
