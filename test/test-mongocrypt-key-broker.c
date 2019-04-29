@@ -247,10 +247,38 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
 }
 
 
+static void
+_test_key_broker_wrong_subtype (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+   _mongocrypt_buffer_t key_id, key_doc;
+   _mongocrypt_key_broker_t key_broker;
+
+   status = mongocrypt_status_new ();
+   crypt = _mongocrypt_tester_mongocrypt ();
+   _gen_uuid_and_key (tester, 1, &key_id, &key_doc);
+
+   /* Valid key documents. */
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   key_id.subtype = 0;
+   ASSERT_FAILS (_mongocrypt_key_broker_add_id (&key_broker, &key_id),
+                 &key_broker,
+                 "expected UUID");
+
+   _mongocrypt_buffer_cleanup (&key_id);
+   _mongocrypt_buffer_cleanup (&key_doc);
+   _mongocrypt_key_broker_cleanup (&key_broker);
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_key_broker_get_key_filter);
    INSTALL_TEST (_test_key_broker_add_key);
    INSTALL_TEST (_test_key_broker_add_decrypted_key);
+   INSTALL_TEST (_test_key_broker_wrong_subtype);
 }

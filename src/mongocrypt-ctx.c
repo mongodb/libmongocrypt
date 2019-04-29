@@ -59,6 +59,7 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
    }
 
    _mongocrypt_buffer_copy_from_binary (&ctx->opts.key_id, key_id);
+   ctx->opts.key_id.subtype = BSON_SUBTYPE_UUID;
 
    return true;
 }

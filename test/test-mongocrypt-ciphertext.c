@@ -129,6 +129,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    BSON_ASSERT (
       _crypto_random (&marking.key_id, &status, MONGOCRYPT_ENC_KEY_LEN));
    kb = &ctx->kb;
+   marking.key_id.subtype = BSON_SUBTYPE_UUID;
    BSON_ASSERT (_mongocrypt_key_broker_add_test_key (kb, &marking.key_id));
 
    bson = BCON_NEW ("v", "hello");
