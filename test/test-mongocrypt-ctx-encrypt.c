@@ -544,14 +544,13 @@ _test_local_schema (_mongocrypt_tester_t *tester)
 char *
 _get_bytes(const void *in, int len) 
 {
-    uint8_t chars_per_byte = 3; 
-    char *out = (char *) malloc(sizeof(char) * len * chars_per_byte);
-
+    char *out = (char *) malloc(sizeof(char) * len * 3);
     const unsigned char *p = in;
     int32_t out_size = sizeof(out);
-    for (int i = 0, offset = 0; i < len; offset += chars_per_byte, i++) {
+
+    for (int i = 0, offset = 0; i < len; offset += 3, i++) {
        snprintf (
-          out + offset, out_size, "%02X%s", p[i], i == len - 1 ? "" : " ");
+          out + offset, out_size, "%02X%s", p[i], i == len - 1 ? "\0" : " ");
     }
     return out;
 }
@@ -562,7 +561,7 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    /*
     * This section explains the purpose of each byte in a BSON document. This is
     * used to extract only the value of a BSON document for later storage. Below
-    * is an example of the leftmost derivation of a one of the BSON documents 
+    * is an example of the leftmost derivation of one of the BSON documents 
     * used for this test.
     *   
     * NOTES:
@@ -578,11 +577,11 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
     * 1. document ::=  int32 e_list "\x00"     int32 is the total number of
     *                                          bytes comprising the doc.
     * 2. e_list   ::=  element e_list
-    *              |  ""
+    *              |   ""
     * 3. element  ::=  "\x02" e_name string    UTF-8 string
-    *              |  "\x10" e_name int32 	  32-bit integer
+    *              |   "\x10" e_name int32 	  32-bit integer
     * 4. e_name   ::=  cstring                 Key name
-    * 5. string ::= int32 (byte*) "\x00"
+    * 5. string   ::=  int32 (byte*) "\x00"
     * 6. cstring  ::=  (byte*) "\x00"
     *
     * BELOW IS A LEFTMOST DERIVATION:
@@ -593,7 +592,7 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
     * -- rule2 -> int32 element e_list "\x00"
     * -- rule3 -> int32 "\x02" e_name string e_list "\x00"
     * -- rule4 -> int32 "\x02" cstring string e_list "\x00"
-    * -- rule5 -> int32 "\x02" (byte*) "\x00" string e_list "\x00"
+    * -- rule6 -> int32 "\x02" (byte*) "\x00" string e_list "\x00"
     * -- key   -> int32 "\x02" "" "\x00" string e_list "\x00"
     ** The key is an empty string, i.e. 0 bytes **
     * -- rule5 -> int32 "\x02" "" "\x00" int32 (byte*) "\x00" e_list "\x00"
@@ -651,7 +650,7 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
                         _get_bytes (bson_get_data (&wrapper), wrapper.len)));
 
    _set_plaintext (&plaintext, &(&marking)->v_iter);
-   BSON_ASSERT (0 == strcmp ("63 C5 54 00",
+   BSON_ASSERT (0 == strcmp ("63 C5 54 00", /* length is not needed for int32 */
                              _get_bytes (plaintext.data, plaintext.len)));
 
    bson_destroy (bson);

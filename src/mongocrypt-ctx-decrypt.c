@@ -90,9 +90,11 @@ _replace_ciphertext_with_plaintext (void *ctx,
    bson_t wrapper;
    bson_iter_t iter;
    uint32_t bytes_written;
+   uint32_t data_len;
+   uint32_t le_data_len;
+   uint8_t data_prefix;
+   uint8_t *data;
    bool ret = false;
-   uint8_t prefix;
-   uint8_t len;
 
    BSON_ASSERT (ctx);
    BSON_ASSERT (in);
@@ -135,23 +137,23 @@ _replace_ciphertext_with_plaintext (void *ctx,
    }
 
    plaintext.len = bytes_written;
+   data_prefix = INT32_LEN        /* adds document size */
+                 + TYPE_LEN       /* element type */
+                 + NULL_BYTE_LEN; /* and doc's null byte terminator */
 
+   data_len = (plaintext.len + data_prefix + NULL_BYTE_LEN);
+   le_data_len = BSON_UINT32_TO_LE (data_len);
 
-   prefix = OFFSET_INT32        /* adds document size */
-            + OFFSET_TYPE       /* element type */
-            + OFFSET_NULL_BYTE; /* and the key's null byte terminator */
-   
-   len = (plaintext.len + prefix + OFFSET_NULL_BYTE);
-   uint8_t *data = bson_malloc0(plaintext.len + prefix + OFFSET_NULL_BYTE);
-   memcpy (data + prefix, plaintext.data, plaintext.len);
-   int little_endian_len = BSON_UINT32_TO_LE (plaintext.len + prefix + OFFSET_NULL_BYTE);
-   memcpy (data, &little_endian_len, OFFSET_INT32);
-   memcpy (data + OFFSET_INT32, &ciphertext.original_bson_type, OFFSET_TYPE);
+   data = bson_malloc0 (data_len);
+   memcpy (data + data_prefix, plaintext.data, plaintext.len);
+   memcpy (data, &le_data_len, INT32_LEN);
+   memcpy (data + INT32_LEN, &ciphertext.original_bson_type, TYPE_LEN);
+   data[data_len - 1] = NULL_BYTE_VAL;
 
    bson_free (plaintext.data);
-   plaintext.data = bson_malloc0 (len);
+   plaintext.data = bson_malloc0 (data_len);
    plaintext.data = (uint8_t *) data;
-   plaintext.len = len;
+   plaintext.len = data_len;
 
    bson_init_static (&wrapper, plaintext.data, plaintext.len);
    bson_iter_init_find (&iter, &wrapper, "");
