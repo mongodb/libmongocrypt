@@ -550,7 +550,7 @@ _get_bytes (const void *in, int len)
 
    for (int i = 0, offset = 0; i < len; offset += 3, i++) {
       snprintf (
-         out + offset, out_size, "%02X%s", p[i], i == len - 1 ? "\0" : " ");
+         out + offset, out_size, "%02X%c", p[i], i == len - 1 ? '\0' : ' ');
    }
    return out;
 }
@@ -653,6 +653,7 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    BSON_ASSERT (0 == strcmp ("63 C5 54 00", /* length is not needed for int32 */
                              _get_bytes (plaintext.data, plaintext.len)));
 
+   free (plaintext.data);
    bson_destroy (bson);
 }
 
