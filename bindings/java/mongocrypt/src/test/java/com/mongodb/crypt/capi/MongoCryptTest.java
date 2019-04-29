@@ -18,7 +18,10 @@
 package com.mongodb.crypt.capi;
 
 import com.mongodb.crypt.capi.MongoCryptContext.State;
+import org.bson.BsonBinary;
+import org.bson.BsonBinarySubType;
 import org.bson.BsonDocument;
+import org.bson.BsonString;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.DecoderContext;
 import org.bson.json.JsonReader;
@@ -33,6 +36,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Base64;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -99,6 +103,58 @@ public class MongoCryptTest {
         mongoCrypt.close();
     }
 
+    @Test
+    public void testDataKeyCreation() {
+        MongoCrypt mongoCrypt = createMongoCrypt();
+        assertNotNull(mongoCrypt);
+
+        MongoCryptContext dataKeyContext = mongoCrypt.createDataKeyContext("local",
+                MongoDataKeyOptions.builder().masterKey(new BsonDocument()).build());
+        assertEquals(State.READY, dataKeyContext.getState());
+
+        BsonDocument dataKeyDocument = dataKeyContext.finish();
+        assertEquals(State.DONE, dataKeyContext.getState());
+        assertNotNull(dataKeyDocument);
+
+        dataKeyContext.close();
+        mongoCrypt.close();
+    }
+
+    @Test
+    public void testExplicitEncryptionDecryption() throws IOException, URISyntaxException {
+        MongoCrypt mongoCrypt = createMongoCrypt();
+        assertNotNull(mongoCrypt);
+
+        BsonDocument documentToEncrypt = new BsonDocument("v", new BsonString("hello"));
+        MongoExplicitEncryptOptions options = MongoExplicitEncryptOptions.builder()
+                .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("AAAAAAAAAAAAAAAAAAAAAA==")))
+                .algorithm("AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic")
+                .initializationVector(Base64.getDecoder().decode("aWlpaWlpaWlpaWlpaWlpaQ=="))
+                .build();
+        MongoCryptContext encryptor = mongoCrypt.createExplicitEncryptionContext(documentToEncrypt, options);
+        assertEquals(State.NEED_MONGO_KEYS, encryptor.getState());
+
+        testKeyDecryptor(encryptor);
+
+        assertEquals(State.READY, encryptor.getState());
+
+        BsonDocument encryptedDocument = encryptor.finish();
+        assertEquals(State.DONE, encryptor.getState());
+        assertEquals(getResourceAsDocument("encrypted-value.json"), encryptedDocument);
+
+        MongoCryptContext decryptor = mongoCrypt.createExplicitDecryptionContext(encryptedDocument);
+
+        assertEquals(State.READY, decryptor.getState());
+
+        BsonDocument decryptedDocument = decryptor.finish();
+        assertEquals(State.DONE, decryptor.getState());
+        assertEquals(documentToEncrypt, decryptedDocument);
+
+        encryptor.close();
+
+        mongoCrypt.close();
+    }
+
     private void testKeyDecryptor(final MongoCryptContext context) throws URISyntaxException, IOException {
         BsonDocument keyFilter = context.getMongoOperation();
         assertEquals(getResourceAsDocument("key-filter.json"), keyFilter);
@@ -123,13 +179,16 @@ public class MongoCryptTest {
 
         context.completeKeyDecryptors();
     }
-    
+
     private MongoCrypt createMongoCrypt() {
         return MongoCrypts.create(MongoCryptOptions
                 .builder()
                 .awsKmsProviderOptions(MongoAwsKmsProviderOptions.builder()
                         .accessKeyId("example")
                         .secretAccessKey("example")
+                        .build())
+                .localKmsProviderOptions(MongoLocalKmsProviderOptions.builder()
+                        .localMasterKey(ByteBuffer.wrap(new byte[64]))
                         .build())
                 .build());
     }

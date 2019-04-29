@@ -30,8 +30,8 @@ public interface MongoCrypt extends Closeable {
     /**
      * Create a context to use for encryption
      *
-     * @param  namespace the namespace
-     * @param  localSchemaDocument local schema document, which may be null
+     * @param namespace           the namespace
+     * @param localSchemaDocument local schema document, which may be null
      * @return the context
      */
     MongoCryptContext createEncryptionContext(String namespace, BsonDocument localSchemaDocument);
@@ -40,9 +40,34 @@ public interface MongoCrypt extends Closeable {
      * Create a context to use for decryption
      *
      * @param document the document to decrypt
-     * @return the the context
+     * @return the context
      */
     MongoCryptContext createDecryptionContext(BsonDocument document);
+
+    /**
+     * Create a context to use for creating a data key
+     * @param kmsProvider the KMS provider
+     * @param options the data key options
+     * @return the context
+     */
+    MongoCryptContext createDataKeyContext(String kmsProvider, MongoDataKeyOptions options);
+    
+    /**
+     * Create a context to use for encryption
+     *
+     * @param document the document to encrypt, which must be in the form { "v" : BSON value to encrypt }}
+     * @param options  the explicit encryption options
+     * @return the context
+     */
+    MongoCryptContext createExplicitEncryptionContext(BsonDocument document, MongoExplicitEncryptOptions options);
+
+    /**
+     * Create a context to use for encryption
+     *
+     * @param document the document to decrypt,which must be in the form { "v" : encrypted BSON value }
+     * @return the context
+     */
+    MongoCryptContext createExplicitDecryptionContext(BsonDocument document);
 
     @Override
     void close();

@@ -26,15 +26,24 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_t;
 import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
 
+import java.nio.ByteBuffer;
+
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_INFO;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_TRACE;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_WARNING;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_destroy;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_new;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_initialization_vector;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_schema;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
@@ -99,7 +108,7 @@ class MongoCryptImpl implements MongoCrypt {
         isTrue("open", !closed);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
-            throwExceptionFromStatus();
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
 
         if (localSchemaDocument != null) {
@@ -107,7 +116,7 @@ class MongoCryptImpl implements MongoCrypt {
 
             try {
                 if (!mongocrypt_ctx_setopt_schema(context, binary)) {
-                    throwExceptionFromStatus();
+                    MongoCryptContextImpl.throwExceptionFromStatus(context);
                 }
             } finally {
                 mongocrypt_binary_destroy(binary);
@@ -116,7 +125,7 @@ class MongoCryptImpl implements MongoCrypt {
 
         boolean success = mongocrypt_ctx_encrypt_init(context, new cstring(namespace), namespace.length());
         if (!success) {
-            throwExceptionFromStatus();
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
         return new MongoCryptContextImpl(context);
     }
@@ -126,11 +135,112 @@ class MongoCryptImpl implements MongoCrypt {
         isTrue("open", !closed);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
-            throwExceptionFromStatus();
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
-        boolean success = mongocrypt_ctx_decrypt_init(context, toBinary(document));
+        mongocrypt_binary_t documentBinary = toBinary(document);
+        try {
+            boolean success = mongocrypt_ctx_decrypt_init(context, documentBinary);
+            if (!success) {
+                MongoCryptContextImpl.throwExceptionFromStatus(context);
+            }
+        } finally {
+            mongocrypt_binary_destroy(documentBinary);
+        }
+        return new MongoCryptContextImpl(context);
+    }
+
+    @Override
+    public MongoCryptContext createDataKeyContext(final String kmsProvider, final MongoDataKeyOptions options) {
+        isTrue("open", !closed);
+        mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
+        if (context == null) {
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        }
+
+        boolean success;
+
+        if (kmsProvider.equals("aws")) {
+            success = mongocrypt_ctx_setopt_masterkey_aws(context,
+                    new cstring(options.getMasterKey().getString("region").getValue()), -1,
+                    new cstring(options.getMasterKey().getString("key").getValue()), -1);
+        } else if (kmsProvider.equals("local")) {
+            success = mongocrypt_ctx_setopt_masterkey_local(context);
+        } else {
+            throw new IllegalArgumentException("Unsupported KMS provider " + kmsProvider);
+        }
+
         if (!success) {
-            throwExceptionFromStatus();
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        }
+
+        success = mongocrypt_ctx_datakey_init(context);
+        if (!success) {
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        }
+
+        return new MongoCryptContextImpl(context);
+    }
+
+    @Override
+    public MongoCryptContext createExplicitEncryptionContext(final BsonDocument document, final MongoExplicitEncryptOptions options) {
+        isTrue("open", !closed);
+        mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
+        if (context == null) {
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        }
+
+        boolean success;
+
+        mongocrypt_binary_t keyIdBinary = toBinary(ByteBuffer.wrap(options.getKeyId().getData()));
+        try {
+            success = mongocrypt_ctx_setopt_key_id(context, keyIdBinary);
+            if (!success) {
+                MongoCryptContextImpl.throwExceptionFromStatus(context);
+            }
+        } finally {
+            mongocrypt_binary_destroy(keyIdBinary);
+        }
+
+        success = mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1);
+        if (!success) {
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        }
+
+        if (options.getInitializationVector() != null) {
+            mongocrypt_binary_t initializationVectorBinary = toBinary(ByteBuffer.wrap(options.getInitializationVector()));
+            try {
+                success = mongocrypt_ctx_setopt_initialization_vector(context, initializationVectorBinary);
+                if (!success) {
+                    MongoCryptContextImpl.throwExceptionFromStatus(context);
+                }
+            } finally {
+                mongocrypt_binary_destroy(initializationVectorBinary);
+            }
+        }
+
+        mongocrypt_binary_t documentBinary = toBinary(document);
+        try {
+            success = mongocrypt_ctx_explicit_encrypt_init(context, documentBinary);
+            if (!success) {
+                MongoCryptContextImpl.throwExceptionFromStatus(context);
+            }
+        } finally {
+            mongocrypt_binary_destroy(documentBinary);
+        }
+
+        return new MongoCryptContextImpl(context);
+    }
+
+    @Override
+    public MongoCryptContext createExplicitDecryptionContext(final BsonDocument document) {
+        isTrue("open", !closed);
+        mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
+        if (context == null) {
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        }
+        boolean success = CAPI.mongocrypt_ctx_explicit_decrypt_init(context, toBinary(document));
+        if (!success) {
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
         return new MongoCryptContextImpl(context);
     }
