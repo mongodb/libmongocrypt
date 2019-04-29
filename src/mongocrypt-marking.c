@@ -144,8 +144,8 @@ _set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter)
    bson_append_iter (&wrapper, "", 0, iter);
    plaintext->len =
       wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
-   plaintext->data = malloc (plaintext->len);
-   memset (plaintext->data, 0, plaintext->len);
+   plaintext->data = bson_malloc (plaintext->len);
+   plaintext->owned = true;
    memcpy (plaintext->data, wrapper_data + offset, plaintext->len);
    bson_destroy (&wrapper);
 }
@@ -235,6 +235,6 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
 
 fail:
    _mongocrypt_buffer_cleanup (&iv);
-   free (plaintext.data);
+   _mongocrypt_buffer_cleanup (&plaintext);
    return ret;
 }

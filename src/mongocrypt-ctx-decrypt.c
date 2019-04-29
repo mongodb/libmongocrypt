@@ -150,12 +150,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
    memcpy (data + INT32_LEN, &ciphertext.original_bson_type, TYPE_LEN);
    data[data_len - 1] = NULL_BYTE_VAL;
 
-   bson_free (plaintext.data);
-   plaintext.data = bson_malloc0 (data_len);
-   plaintext.data = (uint8_t *) data;
-   plaintext.len = data_len;
-
-   bson_init_static (&wrapper, plaintext.data, plaintext.len);
+   bson_init_static (&wrapper, data, data_len);
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
    ret = true;
