@@ -21,13 +21,10 @@
 #include "mongocrypt-ciphertext-private.h"
 
 typedef enum {
-   OFFSET_INT32 = 4,
-   OFFSET_TYPE = 1,
-   OFFSET_NULL_BYTE = 1,
-
-   VALUE_NULL_BYTE = 0x00,
-   VALUE_STRING = 0x02,
-   VALUE_INT32 = 0x10,
+   INT32_LEN = 4,
+   TYPE_LEN = 1,
+   NULL_BYTE_LEN = 1,
+   NULL_BYTE_VAL = 0x00,
 } bson_spec;
 
 typedef struct {

@@ -134,16 +134,16 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 void
 _set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter) {
    bson_t wrapper = BSON_INITIALIZER;
-   int32_t offset = OFFSET_INT32        /* skips document size */
-                    + OFFSET_TYPE       /* element type */
-                    + OFFSET_NULL_BYTE; /* and the key's null byte terminator */
+   int32_t offset = INT32_LEN        /* skips document size */
+                    + TYPE_LEN       /* element type */
+                    + NULL_BYTE_LEN; /* and the key's null byte terminator */
 
    uint8_t *wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
 
    bson_append_iter (&wrapper, "", 0, iter);
    plaintext->data = wrapper_data + offset;
    plaintext->len =
-      wrapper.len - offset - OFFSET_NULL_BYTE; /* the final null byte */
+      wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
    bson_destroy (&wrapper);
 }
 
@@ -184,7 +184,6 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    }
 
    _set_plaintext (&plaintext, &marking->v_iter);
-
    ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext->data.data = bson_malloc (ciphertext->data.len);
    ciphertext->data.owned = true;
