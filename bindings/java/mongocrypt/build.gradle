@@ -46,9 +46,9 @@ targetCompatibility = JavaVersion.VERSION_1_8
 dependencies {
     api 'org.mongodb:bson:3.10.1'   // TODO: what version to depend on
     api "net.java.dev.jna:jna:4.5.2"
-    api 'org.slf4j:slf4j-api:1.7.6' // TODO: make optional
-    testCompile 'junit:junit:4.12'
-    testCompile 'ch.qos.logback:logback-classic:1.1.1'
+    implementation 'org.slf4j:slf4j-api:1.7.6' // TODO: make optional
+    testImplementation 'junit:junit:4.12'
+    testRuntime 'ch.qos.logback:logback-classic:1.1.1'
 }
 
 tasks.withType(Test) {
@@ -92,11 +92,6 @@ publishing {
                         url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                     }
                 }
-//                scm {
-//                    connection = 'scm:git:git://example.com/my-library.git'
-//                    developerConnection = 'scm:git:ssh://example.com/my-library.git'
-//                    url = 'http://example.com/my-library/'
-//                }
             }
         }
     }

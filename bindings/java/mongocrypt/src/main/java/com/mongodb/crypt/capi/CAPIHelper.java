@@ -53,20 +53,20 @@ final class CAPIHelper {
     }
 
     static BsonDocument toDocument(final mongocrypt_binary_t binary) {
-        // TODO: can we update RawBsonDocument so that it can be passed a ByteBuffer instead of needing to copy like this?
         ByteBuffer byteBuffer = toByteBuffer(binary);
         byte[] bytes = new byte[byteBuffer.remaining()];
         byteBuffer.get(bytes);
         return new RawBsonDocument(bytes);
     }
 
-    static mongocrypt_binary_t toBinary(final ByteBuffer bytes) {
-        int size = bytes.remaining();
-        Pointer pointer = new Memory(size);
-        // TODO: consider whether it's safe to call array() like this
-        pointer.write(0, bytes.array(), 0, size);
+    static mongocrypt_binary_t toBinary(final ByteBuffer buffer) {
+        byte[] message = new byte[buffer.remaining()];
+        buffer.get(message, 0, buffer.remaining());
 
-        return mongocrypt_binary_new_from_data(pointer, size);
+        Pointer pointer = new Memory(message.length);
+        pointer.write(0, message, 0, message.length);
+
+        return mongocrypt_binary_new_from_data(pointer, message.length);
     }
 
     static ByteBuffer toByteBuffer(final mongocrypt_binary_t binary) {

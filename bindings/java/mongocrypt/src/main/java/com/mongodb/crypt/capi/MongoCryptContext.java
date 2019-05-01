@@ -30,18 +30,39 @@ public interface MongoCryptContext extends Closeable {
      * The possible states.
      */
     enum State {
+        /**
+         *  Nothing to do
+         */
         NOTHING_TO_DO(CAPI.MONGOCRYPT_CTX_NOTHING_TO_DO),
 
+        /**
+         *  Needs collection information from the cluster encrypting to
+         */
         NEED_MONGO_COLLINFO(CAPI.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO),
 
+        /**
+         * Need to mark command with encryption markers
+         */
         NEED_MONGO_MARKINGS(CAPI.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS),
 
+        /**
+         *  Need keys from the key vault
+         */
         NEED_MONGO_KEYS(CAPI.MONGOCRYPT_CTX_NEED_MONGO_KEYS),
 
+        /**
+         * Need the key management service
+         */
         NEED_KMS(CAPI.MONGOCRYPT_CTX_NEED_KMS),
 
+        /**
+         * Ready for encryption/decryption
+         */
         READY(CAPI.MONGOCRYPT_CTX_READY),
 
+        /**
+         * Done
+         */
         DONE(CAPI.MONGOCRYPT_CTX_DONE);
 
         private final int index;

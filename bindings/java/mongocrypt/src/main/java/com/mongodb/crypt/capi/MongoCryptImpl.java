@@ -25,8 +25,6 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_t;
 import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
-import org.bson.diagnostics.Logger;
-import org.bson.diagnostics.Loggers;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
@@ -51,7 +49,7 @@ import static com.mongodb.crypt.capi.CAPIHelper.toBinary;
 import static org.bson.assertions.Assertions.isTrue;
 
 class MongoCryptImpl implements MongoCrypt {
-    private static final Logger LOGGER = Loggers.getLogger("org.mongodb.driver.crypt");
+    private static final Logger LOGGER = Loggers.getLogger();
 
     private final mongocrypt_t wrapped;
     private volatile boolean closed;
