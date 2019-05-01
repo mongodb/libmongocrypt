@@ -261,7 +261,7 @@ _mongocrypt_tester_plaintext (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (bin);
    BSON_ASSERT (bson_iter_init (&iter, &as_bson));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "result.filter.ssn", &iter));
-   _mongocrypt_buffer_from_iter (&buf, &iter);
+   _mongocrypt_buffer_from_binary_iter (&buf, &iter);
    status = mongocrypt_status_new ();
    ASSERT_OR_PRINT (_mongocrypt_marking_parse_unowned (&buf, &marking, status),
                     status);

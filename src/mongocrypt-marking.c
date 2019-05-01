@@ -50,7 +50,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       if (!BSON_ITER_HOLDS_BINARY (&iter)) {
          CLIENT_ERR ("key id must be a binary type");
       }
-      _mongocrypt_buffer_from_iter (&out->key_id, &iter);
+      _mongocrypt_buffer_from_binary_iter (&out->key_id, &iter);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -132,7 +132,7 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 }
 
 void
-_set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter)
+_mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter)
 {
    bson_t wrapper = BSON_INITIALIZER;
    int32_t offset = INT32_LEN        /* skips document size */
@@ -141,6 +141,10 @@ _set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter)
 
    uint8_t *wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
 
+   /* It is not straightforward to transform a bson_value_t to a string of
+    * bytes. As a workaround, we wrap the value in a bson document with an empty
+    * key, then use the raw buffer from inside the new bson_t, skipping the
+    * length and type header information and the key name. */
    bson_append_iter (&wrapper, "", 0, iter);
    plaintext->len =
       wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
@@ -185,7 +189,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       goto fail;
    }
 
-   _set_plaintext (&plaintext, &marking->v_iter);
+   _mongocrypt_buffer_from_iter (&plaintext, &marking->v_iter);
    ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext->data.data = bson_malloc (ciphertext->data.len);
    ciphertext->data.owned = true;

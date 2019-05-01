@@ -47,7 +47,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    mongocrypt_status_t *status);
 
 void
-_set_plaintext (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter);
+_mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext, bson_iter_t *iter);
 
 bool
 _mongocrypt_marking_to_ciphertext (void *ctx,

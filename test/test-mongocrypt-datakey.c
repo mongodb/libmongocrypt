@@ -119,11 +119,11 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    CRYPT_TRACEF (&crypt->log, "created data key: %s\n", tmp_json (&as_bson));
    /* _id is a UUID */
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "_id"));
-   _mongocrypt_buffer_from_iter (&buf, &iter);
+   _mongocrypt_buffer_from_binary_iter (&buf, &iter);
    BSON_ASSERT (buf.subtype == BSON_SUBTYPE_UUID);
    /* keyMaterial is a binary blob of >= KEYMATERIAL_LEN bytes. */
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "keyMaterial"));
-   _mongocrypt_buffer_from_iter (&buf, &iter);
+   _mongocrypt_buffer_from_binary_iter (&buf, &iter);
    BSON_ASSERT (buf.subtype == BSON_SUBTYPE_BINARY);
    BSON_ASSERT (buf.len >= MONGOCRYPT_KEYMATERIAL_LEN);
    /* creationDate and updatedDate exist and have the same value. */

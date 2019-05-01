@@ -447,7 +447,7 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
-   _mongocrypt_buffer_from_iter (&ciphertext_buf, &iter);
+   _mongocrypt_buffer_from_binary_iter (&ciphertext_buf, &iter);
    ret = _mongocrypt_ciphertext_parse_unowned (
       &ciphertext_buf, &ciphertext, status);
    ASSERT_OR_PRINT (ret, status);
@@ -541,22 +541,22 @@ _test_local_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-static char *
-_get_bytes (const void *in, int len)
+static void
+_get_bytes (const void *in, char *out, int len)
 {
-   char *out = (char *) malloc (sizeof (char) * len * 3);
    const unsigned char *p = in;
-   int32_t out_size = sizeof (out);
 
    for (int i = 0, offset = 0; i < len; offset += 3, i++) {
-      snprintf (
-         out + offset, out_size, "%02X%c", p[i], i == len - 1 ? '\0' : ' ');
+      snprintf (out + offset,
+                sizeof (out) / sizeof (char),
+                "%02X%c",
+                p[i],
+                i == len - 1 ? '\0' : ' ');
    }
-   return out;
 }
 
 static void
-_test_set_plaintext (_mongocrypt_tester_t *tester)
+_test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 {
    /*
     * This section explains the purpose of each byte in a BSON document. This is
@@ -618,6 +618,7 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
    bson_iter_t iter;
    bson_t *bson;
    bson_t wrapper = BSON_INITIALIZER;
+   char actual[100] = {0};
 
    bson = bson_new ();
    BSON_APPEND_UTF8 (bson, "string", "?????"); /* 0x3F3F3F3F3F */
@@ -628,13 +629,14 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
 
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
    bson_destroy (&wrapper);
-   BSON_ASSERT (0 ==
-                strcmp ("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
-                        _get_bytes (bson_get_data (&wrapper), wrapper.len)));
+   _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
+   BSON_ASSERT (
+      0 ==
+      strcmp ("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00", actual));
 
-   _set_plaintext (&plaintext, &(&marking)->v_iter);
-   BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00",
-                             _get_bytes (plaintext.data, plaintext.len)));
+   _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
+   _get_bytes (plaintext.data, actual, plaintext.len);
+   BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00", actual));
 
    bson_init (&wrapper);
    _mongocrypt_buffer_init (&plaintext);
@@ -645,16 +647,17 @@ _test_set_plaintext (_mongocrypt_tester_t *tester)
 
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
    bson_destroy (&wrapper);
-   BSON_ASSERT (0 ==
-                strcmp ("0B 00 00 00 10 00 63 C5 54 00 00",
-                        _get_bytes (bson_get_data (&wrapper), wrapper.len)));
+   _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
+   BSON_ASSERT (0 == strcmp ("0B 00 00 00 10 00 63 C5 54 00 00", actual));
 
-   _set_plaintext (&plaintext, &(&marking)->v_iter);
-   BSON_ASSERT (0 == strcmp ("63 C5 54 00", /* length is not needed for int32 */
-                             _get_bytes (plaintext.data, plaintext.len)));
+   _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
+   _get_bytes (plaintext.data, actual, plaintext.len);
+   BSON_ASSERT (
+      0 == strcmp ("63 C5 54 00", actual)); /* length is not needed for int32 */
 
-   free (plaintext.data);
+   bson_destroy (&wrapper);
    bson_destroy (bson);
+   _mongocrypt_buffer_cleanup (&plaintext);
 }
 
 static void
@@ -811,4 +814,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_random);
    INSTALL_TEST (_test_ctx_id);
    INSTALL_TEST (_test_set_plaintext);
+   INSTALL_TEST (_test_mongocrypt_buffer_from_iter);
 }
