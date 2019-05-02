@@ -20,7 +20,6 @@
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-marking-private.h"
 
-
 /* From BSON Binary subtype 6 specification:
 struct fle_blob {
  uint8  fle_blob_subtype = (1 or 2);
@@ -77,6 +76,33 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
    return true;
 }
 
+void
+_mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
+                                  uint8_t *type)
+{
+   uint32_t data_len;
+   uint32_t le_data_len;
+   uint8_t data_prefix;
+   uint8_t *data;
+
+   data_prefix = INT32_LEN        /* adds document size */
+                 + TYPE_LEN       /* element type */
+                 + NULL_BYTE_LEN; /* and doc's null byte terminator */
+
+   data_len = (plaintext->len + data_prefix + NULL_BYTE_LEN);
+   le_data_len = BSON_UINT32_TO_LE (data_len);
+
+   data = bson_malloc0 (data_len);
+   memcpy (data + data_prefix, plaintext->data, plaintext->len);
+   memcpy (data, &le_data_len, INT32_LEN);
+   memcpy (data + INT32_LEN, type, TYPE_LEN);
+   data[data_len - 1] = NULL_BYTE_VAL;
+
+   bson_free (plaintext->data);
+   plaintext->data = data;
+   plaintext->len = data_len;
+}
+
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,
                                     _mongocrypt_buffer_t *in,
@@ -90,10 +116,6 @@ _replace_ciphertext_with_plaintext (void *ctx,
    bson_t wrapper;
    bson_iter_t iter;
    uint32_t bytes_written;
-   uint32_t data_len;
-   uint32_t le_data_len;
-   uint8_t data_prefix;
-   uint8_t *data;
    bool ret = false;
 
    BSON_ASSERT (ctx);
@@ -137,20 +159,10 @@ _replace_ciphertext_with_plaintext (void *ctx,
    }
 
    plaintext.len = bytes_written;
-   data_prefix = INT32_LEN        /* adds document size */
-                 + TYPE_LEN       /* element type */
-                 + NULL_BYTE_LEN; /* and doc's null byte terminator */
 
-   data_len = (plaintext.len + data_prefix + NULL_BYTE_LEN);
-   le_data_len = BSON_UINT32_TO_LE (data_len);
-
-   data = bson_malloc0 (data_len);
-   memcpy (data + data_prefix, plaintext.data, plaintext.len);
-   memcpy (data, &le_data_len, INT32_LEN);
-   memcpy (data + INT32_LEN, &ciphertext.original_bson_type, TYPE_LEN);
-   data[data_len - 1] = NULL_BYTE_VAL;
-
-   bson_init_static (&wrapper, data, data_len);
+   _mongocrypt_buffer_to_bson_value (&plaintext,
+                                     &ciphertext.original_bson_type);
+   bson_init_static (&wrapper, plaintext.data, plaintext.len);
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
    ret = true;
@@ -159,7 +171,6 @@ fail:
    bson_free (plaintext.data);
    return ret;
 }
-
 
 static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)

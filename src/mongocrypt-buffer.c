@@ -77,7 +77,8 @@ _mongocrypt_buffer_copy_from_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
 
 
 void
-_mongocrypt_buffer_from_binary_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
+_mongocrypt_buffer_from_binary_iter (_mongocrypt_buffer_t *buf,
+                                     bson_iter_t *iter)
 {
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (iter));
    _mongocrypt_buffer_init (buf);

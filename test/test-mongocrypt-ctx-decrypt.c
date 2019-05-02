@@ -17,7 +17,7 @@
 #include "mongocrypt.h"
 #include "mongocrypt-ctx-private.h"
 #include "test-mongocrypt.h"
-
+#include "mongocrypt-ctx-private.h"
 
 static void
 _test_explicit_decrypt_init (_mongocrypt_tester_t *tester)
@@ -136,10 +136,50 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
 }
 
 
+static void
+_get_bytes (const void *in, char *out, int len)
+{
+   const unsigned char *p = in;
+
+   for (int i = 0, offset = 0; i < len; offset += 3, i++) {
+      snprintf (out + offset,
+                sizeof (out) / sizeof (char),
+                "%02X%c",
+                p[i],
+                i == len - 1 ? '\0' : ' ');
+   }
+}
+
+void
+_test_mongocrypt_buffer_to_bson_value (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t plaintext = {0};
+   uint8_t element_type;
+   char *data = "dummy_data";
+   char actual[100] = {0};
+
+   element_type = 2;
+   plaintext.len = 1 + strlen (data);
+   plaintext.data = bson_malloc0 (plaintext.len);
+   memcpy (plaintext.data, data, plaintext.len);
+
+   _get_bytes (plaintext.data, actual, plaintext.len);
+   BSON_ASSERT (0 == strcmp ("64 75 6D 6D 79 5F 64 61 74 61 00", actual));
+
+   _mongocrypt_buffer_to_bson_value (&plaintext, &element_type);
+   _get_bytes (plaintext.data, actual, plaintext.len);
+   BSON_ASSERT (
+      0 ==
+      strcmp ("12 00 00 00 02 00 64 75 6D 6D 79 5F 64 61 74 61 00 00", actual));
+
+   bson_free (plaintext.data);
+}
+
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_decrypt_init);
    INSTALL_TEST (_test_decrypt_need_keys);
    INSTALL_TEST (_test_decrypt_ready);
+   INSTALL_TEST (_test_mongocrypt_buffer_to_bson_value);
 }
