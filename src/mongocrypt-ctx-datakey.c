@@ -169,25 +169,23 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_datakey_t *dkctx;
    _mongocrypt_buffer_t plaintext_key_material;
+   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
    bool ret;
 
    ret = false;
+   opts_spec.masterkey = OPT_REQUIRED;
 
-   if (ctx->state != MONGOCRYPT_CTX_ERROR) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
-   }
-
-   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "no master key set");
-   }
-
-   if (!(ctx->opts.masterkey_kms_provider & ctx->crypt->opts.kms_providers)) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "requested kms provider not configured");
+   if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
+      return false;
    }
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_CREATE_DATA_KEY;
+   ctx->vtable.mongo_op_keys = NULL;
+   ctx->vtable.mongo_feed_keys = NULL;
+   ctx->vtable.mongo_done_keys = NULL;
+   ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 
@@ -241,9 +239,6 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    }
 
    if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
-      ctx->vtable.next_kms_ctx = _next_kms_ctx;
-      ctx->vtable.kms_done = _kms_done;
-
       /* For AWS provider, AWS credentials are supplied in
        * mongocrypt_setopt_kms_provider_aws. Data keys are encrypted with an
        * "encrypt" HTTP message to KMS. */

@@ -102,14 +102,13 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
    if (provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
-      bin = _mongocrypt_tester_file (tester,
-                                     "./test/example/kms-encrypt-reply.txt");
       kms = mongocrypt_ctx_next_kms_ctx (ctx);
       BSON_ASSERT (kms);
-      ASSERT_OK (mongocrypt_kms_ctx_feed (kms, bin), kms);
+      ASSERT_OK (mongocrypt_kms_ctx_feed (
+                    kms, TEST_FILE ("./test/example/kms-encrypt-reply.txt")),
+                 kms);
       BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
       ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
-      mongocrypt_binary_destroy (bin);
    }
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
    bin = mongocrypt_binary_new ();

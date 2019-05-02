@@ -133,7 +133,10 @@ mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
 {
    int i;
-   mongocrypt_binary_t *to_return = mongocrypt_binary_new ();
+   mongocrypt_binary_t *to_return;
+
+   to_return = mongocrypt_binary_new ();
+   tester->test_bin[tester->bin_count++] = to_return;
 
    for (i = 0; i < tester->file_count; i++) {
       if (0 == strcmp (tester->file_paths[i], path)) {
@@ -155,21 +158,73 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
 }
 
 
+mongocrypt_binary_t *
+_mongocrypt_tester_bin_from_json (_mongocrypt_tester_t *tester,
+                                  const char *json,
+                                  ...)
+{
+   va_list ap;
+   char *full_json;
+   bson_t *bson;
+   mongocrypt_binary_t *bin;
+   bson_error_t error;
+   char *c;
+
+   va_start (ap, json);
+   full_json = bson_strdupv_printf (json, ap);
+   /* Replace ' with " */
+   for (c = full_json; *c; c++) {
+      if (*c == '\'') {
+         *c = '"';
+      }
+   }
+
+   va_end (ap);
+   bson = &tester->test_bson[tester->bson_count++];
+   if (!bson_init_from_json (bson, full_json, strlen (full_json), &error)) {
+      fprintf (stderr, "%s", error.message);
+      abort ();
+   }
+   bin = mongocrypt_binary_new ();
+   tester->test_bin[tester->bin_count++] = bin;
+   bin->data = (uint8_t *) bson_get_data (bson);
+   bin->len = bson->len;
+   bson_free (full_json);
+   return bin;
+}
+
+
+mongocrypt_binary_t *
+_mongocrypt_tester_bin (_mongocrypt_tester_t *tester, int size)
+{
+   mongocrypt_binary_t *bin;
+   uint8_t *blob;
+   int i;
+
+   blob = bson_malloc (size);
+   for (i = 0; i < size; i++) {
+      blob[i] = (i % 3) + 1; /* 1, 2, 3, 1, 2, 3, ... */
+   }
+
+   bin = mongocrypt_binary_new_from_data (blob, size);
+
+   tester->test_blob[tester->blob_count++] = blob;
+   tester->test_bin[tester->bin_count++] = bin;
+   return bin;
+}
+
 void
 _mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
                                 mongocrypt_kms_ctx_t *kms)
 {
-   mongocrypt_binary_t *bin;
    const char *endpoint;
 
    BSON_ASSERT (mongocrypt_kms_ctx_endpoint (kms, &endpoint));
    BSON_ASSERT (endpoint == strstr (endpoint, "kms.") &&
                 strstr (endpoint, ".amazonaws.com"));
-   bin =
-      _mongocrypt_tester_file (tester, "./test/example/kms-decrypt-reply.txt");
-   mongocrypt_kms_ctx_feed (kms, bin);
+   mongocrypt_kms_ctx_feed (kms,
+                            TEST_FILE ("./test/example/kms-decrypt-reply.txt"));
    BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
-   mongocrypt_binary_destroy (bin);
 }
 
 
@@ -182,8 +237,8 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
 {
    mongocrypt_ctx_state_t state;
    mongocrypt_kms_ctx_t *kms;
-   mongocrypt_binary_t *bin;
    mongocrypt_status_t status;
+   mongocrypt_binary_t *bin;
    bool res;
 
    state = mongocrypt_ctx_state (ctx);
@@ -191,30 +246,24 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
       switch (state) {
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
          BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
-         bin = _mongocrypt_tester_file (tester,
-                                        "./test/example/collection-info.json");
-         BSON_ASSERT (mongocrypt_ctx_mongo_feed (ctx, bin));
+         BSON_ASSERT (mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/example/collection-info.json")));
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
-         mongocrypt_binary_destroy (bin);
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
          BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
-         bin = _mongocrypt_tester_file (
-            tester, "./test/example/mongocryptd-reply.json");
-         res = mongocrypt_ctx_mongo_feed (ctx, bin);
+         res = mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/example/mongocryptd-reply.json"));
          mongocrypt_ctx_status (ctx, &status);
          ASSERT_OR_PRINT (res, &status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
-         mongocrypt_binary_destroy (bin);
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
-         bin = _mongocrypt_tester_file (tester,
-                                        "./test/example/key-document.json");
-         res = mongocrypt_ctx_mongo_feed (ctx, bin);
+         res = mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/example/key-document.json"));
          mongocrypt_ctx_status (ctx, &status);
          ASSERT_OR_PRINT (res, &status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
-         mongocrypt_binary_destroy (bin);
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          kms = mongocrypt_ctx_next_kms_ctx (ctx);
@@ -251,18 +300,15 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
 const char *
 _mongocrypt_tester_plaintext (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_binary_t *bin;
    bson_t as_bson;
    bson_iter_t iter;
    _mongocrypt_marking_t marking;
    _mongocrypt_buffer_t buf;
    mongocrypt_status_t *status;
 
-   bin =
-      _mongocrypt_tester_file (tester, "./test/example/mongocryptd-reply.json");
-   _mongocrypt_binary_to_bson (bin, &as_bson);
+   _mongocrypt_binary_to_bson (
+      TEST_FILE ("./test/example/mongocryptd-reply.json"), &as_bson);
    /* Underlying binary data lives on in tester */
-   mongocrypt_binary_destroy (bin);
    BSON_ASSERT (bson_iter_init (&iter, &as_bson));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "result.filter.ssn", &iter));
    _mongocrypt_buffer_from_binary_iter (&buf, &iter);
@@ -432,6 +478,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_local_kms (&tester);
    _mongocrypt_tester_install_cache (&tester);
    _mongocrypt_tester_install_buffer (&tester);
+   _mongocrypt_tester_install_ctx_setopt (&tester);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {
@@ -467,5 +514,18 @@ main (int argc, char **argv)
       _mongocrypt_buffer_cleanup (&tester.file_bufs[i]);
       bson_free (tester.file_paths[i]);
    }
+
+   for (i = 0; i < tester.bin_count; i++) {
+      mongocrypt_binary_destroy (tester.test_bin[i]);
+   }
+
+   for (i = 0; i < tester.bson_count; i++) {
+      bson_destroy (&tester.test_bson[i]);
+   }
+
+   for (i = 0; i < tester.blob_count; i++) {
+      bson_free (tester.test_blob[i]);
+   }
+
    _mongocrypt_buffer_cleanup (&tester.encrypted_doc);
 }

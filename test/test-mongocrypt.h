@@ -42,14 +42,22 @@ typedef struct __mongocrypt_tester_t {
    char *file_paths[512];
    _mongocrypt_buffer_t file_bufs[512];
 
+   /* Arbitrary max of 512 files. Increase as needed. */
+   int bson_count;
+   bson_t test_bson[512];
+
+   /* Arbitrary max of 512 files. Increase as needed. */
+   int bin_count;
+   mongocrypt_binary_t *test_bin[512];
+
+   /* Arbitrary max of 512 files. Increase as needed. */
+   int blob_count;
+   uint8_t *test_blob[512];
+
    /* Example encrypted doc. */
    _mongocrypt_buffer_t encrypted_doc;
 } _mongocrypt_tester_t;
 
-
-/* Return either a .json file as BSON or a .txt file as characters. */
-mongocrypt_binary_t *
-_mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 
 /* Load a .json file as bson */
 void
@@ -192,6 +200,26 @@ _mongocrypt_tester_install_cache (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_ctx_setopt (_mongocrypt_tester_t *tester);
+
+/* Conveniences for getting test data. */
+mongocrypt_binary_t *
+_mongocrypt_tester_bin_from_json (_mongocrypt_tester_t *tester,
+                                  const char *json,
+                                  ...);
+#define TEST_BSON(...) _mongocrypt_tester_bin_from_json (tester, __VA_ARGS__)
+
+/* Return a binary blob with the repeating sequence of 123 */
+mongocrypt_binary_t *
+_mongocrypt_tester_bin (_mongocrypt_tester_t *tester, int size);
+#define TEST_BIN(size) _mongocrypt_tester_bin (tester, size)
+
+/* Return either a .json file as BSON or a .txt file as characters. */
+mongocrypt_binary_t *
+_mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
+#define TEST_FILE(path) _mongocrypt_tester_file (tester, path)
 
 #define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn)
 

@@ -81,7 +81,7 @@ _test_decrypt_need_keys (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *encrypted, *key;
+   mongocrypt_binary_t *encrypted;
 
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
 
@@ -89,10 +89,10 @@ _test_decrypt_need_keys (_mongocrypt_tester_t *tester)
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, encrypted), ctx);
-   key = _mongocrypt_tester_file (tester, "./test/example/key-document.json");
-   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, key), ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx, TEST_FILE ("./test/example/key-document.json")),
+              ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   mongocrypt_binary_destroy (key);
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */

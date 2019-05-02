@@ -272,9 +272,15 @@ _mongocrypt_validate_and_copy_string (const char *in,
    if (!in) {
       return false;
    }
-   if (in_len < 0) {
+
+   if (in_len < -1) {
+      return false;
+   }
+
+   if (in_len == -1) {
       in_len = strlen (in);
    }
+
    if (!bson_utf8_validate (in, in_len, false)) {
       return false;
    }

@@ -61,18 +61,15 @@ _gen_uuid_and_key (_mongocrypt_tester_t *tester,
                    _mongocrypt_buffer_t *id,
                    _mongocrypt_buffer_t *doc)
 {
-   mongocrypt_binary_t *key_doc;
    bson_t as_bson, copied;
 
    _gen_uuid (first_byte, id);
-   key_doc =
-      _mongocrypt_tester_file (tester, "./test/example/key-document.json");
-   _mongocrypt_binary_to_bson (key_doc, &as_bson);
+   _mongocrypt_binary_to_bson (TEST_FILE ("./test/example/key-document.json"),
+                               &as_bson);
    bson_init (&copied);
    bson_copy_to_excluding_noinit (&as_bson, &copied, "_id", NULL);
    _mongocrypt_buffer_append (id, &copied, "_id", 3);
    _mongocrypt_buffer_steal_from_bson (doc, &copied);
-   mongocrypt_binary_destroy (key_doc);
 }
 
 
@@ -296,7 +293,6 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t *id_x;
    _mongocrypt_key_doc_t *key_x;
    bson_t key_bson_x;
-   mongocrypt_binary_t *key_binary_x, *key_binary_y, *key_doc_names_binary;
    bson_t *malformed;
    _mongocrypt_key_broker_t key_broker;
 
@@ -322,9 +318,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    /* Valid document with a key name. */
    _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    _key_broker_add_name (&key_broker, "Kasey");
-   key_doc_names_binary = _mongocrypt_tester_file (
-      tester, "./test/example/key-document-with-alt-name.json");
-   _mongocrypt_buffer_from_binary (&key_doc_names, key_doc_names_binary);
+   _mongocrypt_buffer_from_binary (&key_doc_names, TEST_FILE("./test/example/key-document-with-alt-name.json"));
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc_names),
               &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
@@ -366,13 +360,8 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    key_x = _mongocrypt_key_new ();
    _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
 
-   key_binary_x = _mongocrypt_tester_file (
-      tester, "./test/example/key-document-with-alt-name.json");
-   key_binary_y = _mongocrypt_tester_file (
-      tester, "./test/example/key-document-with-alt-name-duplicate-id.json");
-
-   _mongocrypt_buffer_from_binary (&key_buf_x, key_binary_x);
-   _mongocrypt_buffer_from_binary (&key_buf_y, key_binary_y);
+   _mongocrypt_buffer_from_binary (&key_buf_x, TEST_FILE( "./test/example/key-document-with-alt-name.json"));
+   _mongocrypt_buffer_from_binary (&key_buf_y, TEST_FILE ("./test/example/key-document-with-alt-name-duplicate-id.json"));
 
    _mongocrypt_buffer_to_bson (&key_buf_x, &key_bson_x);
    ASSERT_OR_PRINT (_mongocrypt_key_parse_owned (&key_bson_x, key_x, status),
@@ -407,9 +396,6 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
 
    bson_destroy (&key_bson_x);
    _mongocrypt_key_destroy (key_x);
-   mongocrypt_binary_destroy (key_binary_x);
-   mongocrypt_binary_destroy (key_binary_y);
-   mongocrypt_binary_destroy (key_doc_names_binary);
    _mongocrypt_buffer_cleanup (&key_doc_names);
    _mongocrypt_buffer_cleanup (&key_id1);
    _mongocrypt_buffer_cleanup (&key_id2);
@@ -428,7 +414,6 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t key_id1, key_id2, key_doc1, key_doc2, key_doc_names,
       key_id_names;
-   mongocrypt_binary_t *key_doc_names_binary;
    _mongocrypt_key_broker_t key_broker;
    mongocrypt_kms_ctx_t *kms;
    bson_iter_t iter;
@@ -465,9 +450,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
    _key_broker_add_name (&key_broker, "Sharlene");
 
-   key_doc_names_binary = _mongocrypt_tester_file (
-      tester, "./test/example/key-document-with-alt-name.json");
-   _mongocrypt_buffer_from_binary (&key_doc_names, key_doc_names_binary);
+   _mongocrypt_buffer_from_binary (&key_doc_names, TEST_FILE("./test/example/key-document-with-alt-name.json"));
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc_names),
               &key_broker);
    kms = _mongocrypt_key_broker_next_kms (&key_broker);
@@ -503,7 +486,6 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    bson_destroy (&key_doc_names_bson);
-   mongocrypt_binary_destroy (key_doc_names_binary);
    _mongocrypt_buffer_cleanup (&key_id_names);
    _mongocrypt_buffer_cleanup (&key_id1);
    _mongocrypt_buffer_cleanup (&key_id2);

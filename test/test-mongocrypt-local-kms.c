@@ -26,6 +26,7 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    bson_t as_bson;
    bson_iter_t iter;
 
+   bin = mongocrypt_binary_new ();
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
    /* Encrypt a document. */
@@ -33,9 +34,9 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
       ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-   bin =
-      _mongocrypt_tester_file (tester, "./test/data/key-document-local.json");
-   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, bin), ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx, TEST_FILE ("./test/data/key-document-local.json")),
+              ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
 
    /* Because this is local, we skip NEED_KMS and go right to READY. */
@@ -58,10 +59,9 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_to_binary (&encrypted_cmd, bin);
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-   mongocrypt_binary_destroy (bin);
-   bin =
-      _mongocrypt_tester_file (tester, "./test/data/key-document-local.json");
-   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, bin), ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx, TEST_FILE ("./test/data/key-document-local.json")),
+              ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
 
    /* Because this is local, we skip NEED_KMS and go right to READY. */

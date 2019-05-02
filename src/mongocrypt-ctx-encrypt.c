@@ -342,25 +342,6 @@ _cleanup (mongocrypt_ctx_t *ctx)
 }
 
 
-static mongocrypt_kms_ctx_t *
-_next_kms_ctx (mongocrypt_ctx_t *ctx)
-{
-   return _mongocrypt_key_broker_next_kms (&ctx->kb);
-}
-
-
-static bool
-_kms_done (mongocrypt_ctx_t *ctx)
-{
-   if (!_mongocrypt_key_broker_kms_done (&ctx->kb)) {
-      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
-      return _mongocrypt_ctx_fail (ctx);
-   }
-   ctx->state = MONGOCRYPT_CTX_READY;
-   return true;
-}
-
-
 bool
 mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
@@ -368,76 +349,36 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t as_bson;
    bson_iter_t iter;
-   bool has_id;
-   bool has_alt_name;
+
+   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
+
+   opts_spec.key_descriptor = OPT_REQUIRED;
+   opts_spec.algorithm = OPT_REQUIRED;
+   opts_spec.iv = OPT_OPTIONAL;
+
+   if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
+      return false;
+   }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->explicit = true;
-   ctx->vtable.next_kms_ctx = _next_kms_ctx;
-   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 
-   if (!msg) {
+   if (!msg || !msg->data) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "msg required for explicit encryption");
    }
 
-   has_id = !_mongocrypt_buffer_empty (&ctx->opts.key_id);
-   has_alt_name = !_mongocrypt_buffer_empty (&ctx->opts.key_alt_name);
-
-   if (!has_id && !has_alt_name) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "either key_id or key_alt_name required for explicit encryption");
-   }
-
-   if (has_id && has_alt_name) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx,
-         "cannot have both key_id and key_alt_name for explicit encryption");
-   }
-
-   /* Add their key id or alt name to the key broker. */
-   if (has_id) {
-      if (!_mongocrypt_key_broker_add_id (&ctx->kb, &ctx->opts.key_id)) {
+   if (ctx->opts.key_alt_name) {
+      if (!_mongocrypt_key_broker_add_name (&ctx->kb, ctx->opts.key_alt_name)) {
          return _mongocrypt_ctx_fail (ctx);
       }
    } else {
-      bson_iter_t iter;
-      bson_t as_bson;
-
-      if (!_mongocrypt_buffer_to_bson (&ctx->opts.key_alt_name, &as_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx,
-                                            "invalid keyAltName bson object");
-      }
-
-      if (!bson_iter_init_find (&iter, &as_bson, "keyAltName")) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "keyAltName must have field 'keyAltName'");
-      }
-
-      if (!_mongocrypt_key_broker_add_name (&ctx->kb,
-                                            bson_iter_value (&iter))) {
+      if (!_mongocrypt_key_broker_add_id (&ctx->kb, &ctx->opts.key_id)) {
          return _mongocrypt_ctx_fail (ctx);
       }
-   }
-
-   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "algorithm is required for explicit encryption");
-   }
-
-   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
-       _mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "iv is required for deterministic encryption");
-   }
-
-   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM &&
-       !_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "iv must not be set for random encryption");
    }
 
    _mongocrypt_buffer_init (&ectx->original_cmd);
@@ -452,9 +393,9 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    if (_mongocrypt_key_broker_has (&ctx->kb, KEY_EMPTY)) {
-      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
    } else {
-      ectx->parent.state = MONGOCRYPT_CTX_READY;
+      ctx->state = MONGOCRYPT_CTX_READY;
    }
 
    return true;
@@ -467,23 +408,23 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              int32_t ns_len)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
+   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
 
-   if (ctx->state != MONGOCRYPT_CTX_ERROR) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
-   }
-
-   if (!_mongocrypt_ctx_init (ctx)) {
+   opts_spec.schema = OPT_OPTIONAL;
+   if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->explicit = false;
+   ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
+   ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
+   ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+   ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
    ctx->vtable.mongo_op_markings = _mongo_op_markings;
    ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
    ctx->vtable.mongo_done_markings = _mongo_done_markings;
-   ctx->vtable.next_kms_ctx = _next_kms_ctx;
-   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 
@@ -541,9 +482,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
       } else {
          ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
-         ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
-         ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
-         ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
       }
 
       bson_destroy (collinfo);

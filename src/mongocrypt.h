@@ -408,7 +408,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
-                                 char *algorithm,
+                                 const char *algorithm,
                                  int len);
 
 
@@ -531,8 +531,9 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 /**
  * Initialize a context to create a data key.
  *
- * Set options before using @ref mongocrypt_ctx_setopt_masterkey_aws and
- * @ref mongocrypt_ctx_setopt_masterkey_local.
+ * Associated options:
+ * - @ref mongocrypt_ctx_setopt_masterkey_aws
+ * - @ref mongocrypt_ctx_setopt_masterkey_local
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @returns A boolean indicating success.

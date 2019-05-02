@@ -232,25 +232,6 @@ _cleanup (mongocrypt_ctx_t *ctx)
 }
 
 
-static mongocrypt_kms_ctx_t *
-_next_kms_ctx (mongocrypt_ctx_t *ctx)
-{
-   return _mongocrypt_key_broker_next_kms (&ctx->kb);
-}
-
-
-static bool
-_kms_done (mongocrypt_ctx_t *ctx)
-{
-   if (!_mongocrypt_key_broker_kms_done (&ctx->kb)) {
-      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
-      return _mongocrypt_ctx_fail (ctx);
-   }
-   ctx->state = MONGOCRYPT_CTX_READY;
-   return true;
-}
-
-
 bool
 mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
@@ -259,39 +240,19 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    bson_iter_t iter;
    bson_t as_bson;
 
-   if (!msg) {
+   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
+
+   if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
+      return false;
+   }
+
+   if (!msg || !msg->data) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg");
-   }
-
-   if (ctx->state != MONGOCRYPT_CTX_ERROR) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
-   }
-
-   if (ctx->opts.masterkey_aws_region || ctx->opts.masterkey_aws_cmk) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "aws masterkey options must not be set");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "key_id must not be set for decryption");
-   }
-
-   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "algorithm must not be set for decryption");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx,
-                                         "iv must not be set for decryption");
    }
 
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
    dctx->explicit = true;
    ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
-   ctx->vtable.next_kms_ctx = _next_kms_ctx;
-   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 
@@ -327,43 +288,18 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
    _mongocrypt_ctx_decrypt_t *dctx;
    bson_t as_bson;
    bson_iter_t iter;
+   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
 
-   if (!_mongocrypt_ctx_init (ctx)) {
+   if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
    }
 
-   if (!doc) {
+   if (!doc || !doc->data) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid doc");
-   }
-
-   if (ctx->state != MONGOCRYPT_CTX_ERROR) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
-   }
-
-   if (ctx->opts.masterkey_aws_region || ctx->opts.masterkey_aws_cmk) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "aws masterkey options must not be set");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "key_id must not be set for decryption");
-   }
-
-   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "algorithm must not be set for decryption");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx,
-                                         "iv must not be set for decryption");
    }
 
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
-   ctx->vtable.next_kms_ctx = _next_kms_ctx;
-   ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 

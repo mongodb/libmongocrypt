@@ -231,7 +231,7 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
       case MONGOCRYPT_CTX_ERROR:
          mongocrypt_ctx_status (ctx, status);
          printf ("\ngot error: %s\n", mongocrypt_status_message (status, NULL));
-         done = true;
+         abort();
          break;
       case MONGOCRYPT_CTX_WAITING:
          printf ("\nunexpected waiting state\n");
@@ -313,7 +313,7 @@ main ()
    mongocrypt_ctx_setopt_key_id (ctx, key_id);
    bson_destroy (&key_doc);
    mongocrypt_ctx_setopt_algorithm (
-      ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized", -1);
+      ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Random", -1);
 
    wrapped = BCON_NEW ("v", "hello");
    msg = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (wrapped),

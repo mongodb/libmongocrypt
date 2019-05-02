@@ -30,6 +30,10 @@ typedef enum {
 } _mongocrypt_ctx_type_t;
 
 
+/* Option values are validated when set.
+ * Different contexts accept/require different options,
+ * validated when a context is initialized.
+ */
 typedef struct __mongocrypt_ctx_opts_t {
    _mongocrypt_kms_provider_t masterkey_kms_provider;
    char *masterkey_aws_cmk;
@@ -37,53 +41,28 @@ typedef struct __mongocrypt_ctx_opts_t {
    char *masterkey_aws_region;
    uint32_t masterkey_aws_region_len;
    _mongocrypt_buffer_t local_schema;
-
-   /* For explicit encryption */
    _mongocrypt_buffer_t key_id;
-   _mongocrypt_buffer_t key_alt_name;
+   bson_value_t* key_alt_name;
    _mongocrypt_buffer_t iv;
    mongocrypt_encryption_algorithm_t algorithm;
 } _mongocrypt_ctx_opts_t;
 
 
-typedef bool (*_mongocrypt_ctx_mongo_op_fn) (mongocrypt_ctx_t *ctx,
-                                             mongocrypt_binary_t *out);
-
-
-typedef bool (*_mongocrypt_ctx_mongo_feed_fn) (mongocrypt_ctx_t *ctx,
-                                               mongocrypt_binary_t *in);
-
-
-typedef bool (*_mongocrypt_ctx_mongo_done_fn) (mongocrypt_ctx_t *ctx);
-
-
-typedef bool (*_mongocrypt_ctx_finalize_fn) (mongocrypt_ctx_t *ctx,
-                                             mongocrypt_binary_t *out);
-
-
-typedef void (*_mongocrypt_ctx_cleanup_fn) (mongocrypt_ctx_t *ctx);
-
-typedef mongocrypt_kms_ctx_t *(*_mongocrypt_ctx_next_kms_fn) (
-   mongocrypt_ctx_t *ctx);
-
-typedef bool (*_mongocrypt_ctx_kms_done_fn) (mongocrypt_ctx_t *ctx);
-
-
+/* All derived contexts may override these methods. */
 typedef struct {
-   _mongocrypt_ctx_mongo_op_fn mongo_op_collinfo;
-   _mongocrypt_ctx_mongo_feed_fn mongo_feed_collinfo;
-   _mongocrypt_ctx_mongo_done_fn mongo_done_collinfo;
-
-   _mongocrypt_ctx_mongo_op_fn mongo_op_markings;
-   _mongocrypt_ctx_mongo_feed_fn mongo_feed_markings;
-   _mongocrypt_ctx_mongo_done_fn mongo_done_markings;
-
-   _mongocrypt_ctx_next_kms_fn next_kms_ctx;
-   _mongocrypt_ctx_kms_done_fn kms_done;
-
-   _mongocrypt_ctx_finalize_fn finalize;
-
-   _mongocrypt_ctx_cleanup_fn cleanup;
+   bool (*mongo_op_collinfo) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
+   bool (*mongo_feed_collinfo) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in);
+   bool (*mongo_done_collinfo) (mongocrypt_ctx_t *ctx);
+   bool (*mongo_op_markings) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
+   bool (*mongo_feed_markings) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in);
+   bool (*mongo_done_markings) (mongocrypt_ctx_t *ctx);
+   bool (*mongo_op_keys) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
+   bool (*mongo_feed_keys) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in);
+   bool (*mongo_done_keys) (mongocrypt_ctx_t *ctx);
+   mongocrypt_kms_ctx_t *(*next_kms_ctx) (mongocrypt_ctx_t *ctx);
+   bool (*kms_done) (mongocrypt_ctx_t *ctx);
+   bool (*finalize) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
+   void (*cleanup) (mongocrypt_ctx_t *ctx);
 } _mongocrypt_vtable_t;
 
 
@@ -96,6 +75,7 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_vtable_t vtable;
    _mongocrypt_ctx_opts_t opts;
    uint32_t id;
+   bool initialized;
 };
 
 
@@ -142,9 +122,25 @@ typedef struct {
    _mongocrypt_buffer_t encrypted_key_material;
 } _mongocrypt_ctx_datakey_t;
 
+
+/* Used for option validation. True means required. False means prohibited. */
+typedef enum {
+   OPT_PROHIBITED = 0,
+   OPT_REQUIRED,
+   OPT_OPTIONAL
+} _mongocrypt_ctx_opt_spec_t;
+typedef struct {
+   _mongocrypt_ctx_opt_spec_t masterkey;
+   _mongocrypt_ctx_opt_spec_t schema;
+   _mongocrypt_ctx_opt_spec_t key_descriptor; /* a key_id or key_alt_name */
+   _mongocrypt_ctx_opt_spec_t iv;
+   _mongocrypt_ctx_opt_spec_t algorithm;
+} _mongocrypt_ctx_opts_spec_t;
+
 /* Common initialization. */
 bool
-_mongocrypt_ctx_init (mongocrypt_ctx_t *ctx);
+_mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
+                      _mongocrypt_ctx_opts_spec_t *opt_spec);
 
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
