@@ -638,6 +638,10 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _get_bytes (plaintext.data, actual, plaintext.len);
    BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00", actual));
 
+   bson_destroy (&wrapper);
+   _mongocrypt_marking_cleanup (&marking);
+   _mongocrypt_buffer_cleanup (&plaintext);
+
    bson_init (&wrapper);
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_marking_init (&marking);
@@ -657,6 +661,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 
    bson_destroy (&wrapper);
    bson_destroy (bson);
+   _mongocrypt_marking_cleanup (&marking);
    _mongocrypt_buffer_cleanup (&plaintext);
 }
 

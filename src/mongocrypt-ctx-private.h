@@ -151,4 +151,8 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
 bool
 mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
 
+void
+_mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
+                                  uint8_t *type);
+
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */
