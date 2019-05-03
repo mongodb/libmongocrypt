@@ -163,6 +163,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
    _mongocrypt_buffer_to_bson_value (&plaintext,
                                      &ciphertext.original_bson_type);
    bson_init_static (&wrapper, plaintext.data, plaintext.len);
+   // goto fail if false  
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
    ret = true;
