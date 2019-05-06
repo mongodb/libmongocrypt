@@ -647,6 +647,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (5 == out.value.v_utf8.len);
 
    bson_destroy (&wrapper);
+   bson_value_destroy (&out);
    _mongocrypt_marking_cleanup (&marking);
    _mongocrypt_buffer_cleanup (&plaintext);
 
