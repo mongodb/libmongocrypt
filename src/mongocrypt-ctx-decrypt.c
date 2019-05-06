@@ -131,7 +131,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    plaintext.len = bytes_written;
 
-   _mongocrypt_buffer_to_bson_value (&plaintext, &ciphertext.original_bson_type, out);
+   _mongocrypt_buffer_to_bson_value (
+      &plaintext, &ciphertext.original_bson_type, out);
    ret = true;
 
 fail:
