@@ -19,6 +19,11 @@
 
 #include <bson/bson.h>
 
+#define INT32_LEN 4
+#define TYPE_LEN 1
+#define NULL_BYTE_LEN 1
+#define NULL_BYTE_VAL 0x00
+
 struct _mongocrypt_binary_t;
 
 /* An internal struct to make working with binary values more convenient.
@@ -125,4 +130,14 @@ _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buf);
 bool
 _mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf);
 
+void
+_mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
+      uint8_t *type,
+      bson_value_t *out);
+
+void
+_mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
+                              bson_iter_t *iter);
+
 #endif /* MONGOCRYPT_BUFFER_H */
+
