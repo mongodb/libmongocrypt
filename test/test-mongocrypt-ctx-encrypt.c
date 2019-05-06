@@ -649,9 +649,9 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_destroy (&wrapper);
    _mongocrypt_marking_cleanup (&marking);
    _mongocrypt_buffer_cleanup (&plaintext);
-   bson_value_destroy (&out);
 
    bson_init (&wrapper);
+   _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_marking_init (&marking);
 
    bson_iter_init_find (&iter, bson, "int");
