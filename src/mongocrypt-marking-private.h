@@ -20,11 +20,6 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 
-#define INT32_LEN 4
-#define TYPE_LEN 1
-#define NULL_BYTE_LEN 1
-#define NULL_BYTE_VAL 0x00
-
 typedef struct {
    mongocrypt_encryption_algorithm_t algorithm;
    bson_iter_t v_iter;
@@ -45,10 +40,6 @@ bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    _mongocrypt_marking_t *out,
                                    mongocrypt_status_t *status);
-
-void
-_mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
-                              bson_iter_t *iter);
 
 bool
 _mongocrypt_marking_to_ciphertext (void *ctx,

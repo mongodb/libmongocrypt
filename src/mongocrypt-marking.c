@@ -129,31 +129,6 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
    _mongocrypt_buffer_cleanup (&marking->key_id);
 }
 
-void
-_mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
-                              bson_iter_t *iter)
-{
-   bson_t wrapper = BSON_INITIALIZER;
-   int32_t offset = INT32_LEN        /* skips document size */
-                    + TYPE_LEN       /* element type */
-                    + NULL_BYTE_LEN; /* and the key's null byte terminator */
-
-   uint8_t *wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
-
-   /* It is not straightforward to transform a bson_value_t to a string of
-    * bytes. As a workaround, we wrap the value in a bson document with an empty
-    * key, then use the raw buffer from inside the new bson_t, skipping the
-    * length and type header information and the key name. */
-   bson_append_iter (&wrapper, "", 0, iter);
-   plaintext->len =
-      wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
-   plaintext->data = bson_malloc (plaintext->len);
-   plaintext->owned = true;
-   memcpy (plaintext->data, wrapper_data + offset, plaintext->len);
-
-   bson_destroy (&wrapper);
-}
-
 bool
 _mongocrypt_marking_to_ciphertext (void *ctx,
                                    _mongocrypt_marking_t *marking,

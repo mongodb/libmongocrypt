@@ -76,36 +76,6 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
    return true;
 }
 
-void
-_mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
-      uint8_t *type,
-      bson_value_t *out)
-{
-   uint32_t data_len;
-   uint32_t le_data_len;
-   uint8_t data_prefix;
-   uint8_t *data;
-   bson_t wrapper;
-   bson_iter_t iter;
-
-   data_prefix = INT32_LEN       /* adds document size */
-      + TYPE_LEN                 /* element type */
-      + NULL_BYTE_LEN;           /* and doc's null byte terminator */
-
-   data_len = (plaintext->len + data_prefix + NULL_BYTE_LEN);
-   le_data_len = BSON_UINT32_TO_LE (data_len);
-
-   data = bson_malloc0 (data_len);
-   memcpy (data + data_prefix, plaintext->data, plaintext->len);
-   memcpy (data, &le_data_len, INT32_LEN);
-   memcpy (data + INT32_LEN, type, TYPE_LEN);
-   data[data_len - 1] = NULL_BYTE_VAL;
-
-   bson_init_static (&wrapper, data, data_len);
-   bson_iter_init_find (&iter, &wrapper, "");
-   bson_value_copy (bson_iter_value (&iter), out);
-}
-
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,
                                     _mongocrypt_buffer_t *in,
