@@ -619,16 +619,20 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_t *bson;
    bson_t wrapper = BSON_INITIALIZER;
    char actual[100] = {0};
+   bson_value_t out;
+   uint8_t string_type = 0x02;
+   uint8_t int_type = 0x10;
+   char *expected_string = "?????"; /* 3F 3F 3F 3F 3F */
+   int expected_int = 5555555;      /* 54 C5 63 */
 
    bson = bson_new ();
-   BSON_APPEND_UTF8 (bson, "string", "?????"); /* 0x3F3F3F3F3F */
-   BSON_APPEND_INT32 (bson, "int", 5555555);   /* 0x54C563 */
+   BSON_APPEND_UTF8 (bson, "string", expected_string);
+   BSON_APPEND_INT32 (bson, "int", expected_int);
 
    bson_iter_init_find (&iter, bson, "string");
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
 
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
-   bson_destroy (&wrapper);
    _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
    BSON_ASSERT (
       0 ==
@@ -637,6 +641,10 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
    _get_bytes (plaintext.data, actual, plaintext.len);
    BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00", actual));
+
+   _mongocrypt_buffer_to_bson_value (&plaintext, &string_type, &out);
+   BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
+   BSON_ASSERT (5 == out.value.v_utf8.len);
 
    bson_destroy (&wrapper);
    _mongocrypt_marking_cleanup (&marking);
@@ -654,13 +662,17 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
    BSON_ASSERT (0 == strcmp ("0B 00 00 00 10 00 63 C5 54 00 00", actual));
 
+
    _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
    _get_bytes (plaintext.data, actual, plaintext.len);
    BSON_ASSERT (
       0 == strcmp ("63 C5 54 00", actual)); /* length is not needed for int32 */
 
-   bson_destroy (&wrapper);
+   _mongocrypt_buffer_to_bson_value (&plaintext, &int_type, &out);
+   BSON_ASSERT (expected_int == out.value.v_int32);
+
    bson_destroy (bson);
+   bson_destroy (&wrapper);
    _mongocrypt_marking_cleanup (&marking);
    _mongocrypt_buffer_cleanup (&plaintext);
 }
@@ -743,6 +755,7 @@ _test_encrypt_caches_keys (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
+<<<<<<< HEAD
 
 
 static void
