@@ -104,6 +104,8 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    bson_init_static (&wrapper, data, data_len);
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
+
+   bson_free (data);
 }
 
 static bool
