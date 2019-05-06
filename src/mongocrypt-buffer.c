@@ -251,8 +251,8 @@ _mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf)
 
 void
 _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
-      uint8_t *type,
-      bson_value_t *out)
+                                  uint8_t *type,
+                                  bson_value_t *out)
 {
    uint32_t data_len;
    uint32_t le_data_len;
@@ -261,9 +261,9 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    bson_t wrapper;
    bson_iter_t iter;
 
-   data_prefix = INT32_LEN       /* adds document size */
-      + TYPE_LEN                 /* element type */
-      + NULL_BYTE_LEN;           /* and doc's null byte terminator */
+   data_prefix = INT32_LEN        /* adds document size */
+                 + TYPE_LEN       /* element type */
+                 + NULL_BYTE_LEN; /* and doc's null byte terminator */
 
    data_len = (plaintext->len + data_prefix + NULL_BYTE_LEN);
    le_data_len = BSON_UINT32_TO_LE (data_len);
@@ -303,4 +303,3 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
 
    bson_destroy (&wrapper);
 }
-
