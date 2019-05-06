@@ -153,6 +153,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
 
 void
 _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
-                                  uint8_t *type);
+      uint8_t *type,
+      bson_value_t *out);
 
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */
