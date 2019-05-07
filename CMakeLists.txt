@@ -175,6 +175,14 @@ target_include_directories (example-state-machine PRIVATE ${BSON_INCLUDE_DIRS})
 target_link_libraries (example-state-machine PRIVATE ${BSON_LIBRARIES})
 target_compile_definitions (example-state-machine PRIVATE "${BSON_DEFINITIONS}")
 
+# Define example-state-machine-static
+add_executable (example-state-machine-static test/example-state-machine.c)
+target_link_libraries (example-state-machine-static PRIVATE mongocrypt-static)
+target_include_directories (example-state-machine-static PRIVATE ./src)
+target_include_directories (example-state-machine-static PRIVATE ${BSON_INCLUDE_DIRS})
+target_link_libraries (example-state-machine-static PRIVATE ${BSON_LIBRARIES})
+target_compile_definitions (example-state-machine-static PRIVATE "${BSON_DEFINITIONS}")
+
 if (ENABLE_TRACE)
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
    target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_TRACE=1")

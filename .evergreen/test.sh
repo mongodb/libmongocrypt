@@ -35,4 +35,6 @@ cd libmongocrypt
 MONGOCRYPT_TRACE=ON $VALGRIND ${BIN_DIR}/test-mongocrypt
 echo "Running example state machine."
 $VALGRIND ${BIN_DIR}/example-state-machine
+echo "Running example state machine (statically linked)."
+$VALGRIND ${BIN_DIR}/example-state-machine-static
 cd ..
