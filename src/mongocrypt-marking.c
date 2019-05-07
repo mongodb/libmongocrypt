@@ -129,6 +129,7 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
    _mongocrypt_buffer_cleanup (&marking->key_id);
 }
 
+
 bool
 _mongocrypt_marking_to_ciphertext (void *ctx,
                                    _mongocrypt_marking_t *marking,

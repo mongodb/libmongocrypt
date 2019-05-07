@@ -544,15 +544,13 @@ _test_local_schema (_mongocrypt_tester_t *tester)
 static void
 _get_bytes (const void *in, char *out, int len)
 {
-   const unsigned char *p = in;
+   const unsigned char *src = in;
+   char *dest = out;
 
-   for (int i = 0, offset = 0; i < len; offset += 3, i++) {
-      snprintf (out + offset,
-                sizeof (out) / sizeof (char),
-                "%02X%c",
-                p[i],
-                i == len - 1 ? '\0' : ' ');
+   for (int i = 0; i < len; i++, dest += 3) {
+      sprintf (dest, "%02X ", src[i]);
    }
+   dest[-1] = '\0';
 }
 
 static void
@@ -620,16 +618,14 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_t wrapper = BSON_INITIALIZER;
    char actual[100] = {0};
    bson_value_t out;
-   uint8_t string_type = 0x02;
-   uint8_t int_type = 0x10;
    char *expected_string = "?????"; /* 3F 3F 3F 3F 3F */
    int expected_int = 5555555;      /* 54 C5 63 */
 
    bson = bson_new ();
-   BSON_APPEND_UTF8 (bson, "string", expected_string);
-   BSON_APPEND_INT32 (bson, "int", expected_int);
+   BSON_APPEND_UTF8 (bson, "str_key", expected_string);
+   BSON_APPEND_INT32 (bson, "int_key", expected_int);
 
-   bson_iter_init_find (&iter, bson, "string");
+   bson_iter_init_find (&iter, bson, "str_key");
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
 
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
@@ -642,7 +638,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _get_bytes (plaintext.data, actual, plaintext.len);
    BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00", actual));
 
-   _mongocrypt_buffer_to_bson_value (&plaintext, &string_type, &out);
+   _mongocrypt_buffer_to_bson_value (&plaintext, 0x02, &out);
    BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
    BSON_ASSERT (5 == out.value.v_utf8.len);
 
@@ -655,7 +651,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_marking_init (&marking);
 
-   bson_iter_init_find (&iter, bson, "int");
+   bson_iter_init_find (&iter, bson, "int_key");
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
 
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
@@ -669,7 +665,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (
       0 == strcmp ("63 C5 54 00", actual)); /* length is not needed for int32 */
 
-   _mongocrypt_buffer_to_bson_value (&plaintext, &int_type, &out);
+   _mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out);
    BSON_ASSERT (expected_int == out.value.v_int32);
 
    bson_destroy (bson);

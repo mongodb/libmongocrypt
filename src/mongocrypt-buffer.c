@@ -251,7 +251,7 @@ _mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf)
 
 void
 _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
-                                  uint8_t *type,
+                                  uint8_t type,
                                   bson_value_t *out)
 {
    uint32_t data_len;
@@ -271,7 +271,7 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    data = bson_malloc0 (data_len);
    memcpy (data + data_prefix, plaintext->data, plaintext->len);
    memcpy (data, &le_data_len, INT32_LEN);
-   memcpy (data + INT32_LEN, type, TYPE_LEN);
+   memcpy (data + INT32_LEN, &type, TYPE_LEN);
    data[data_len - 1] = NULL_BYTE_VAL;
 
    bson_init_static (&wrapper, data, data_len);

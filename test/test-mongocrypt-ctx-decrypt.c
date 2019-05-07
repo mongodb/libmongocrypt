@@ -17,6 +17,7 @@
 #include "mongocrypt.h"
 #include "mongocrypt-ctx-private.h"
 #include "test-mongocrypt.h"
+
 #include "mongocrypt-ctx-private.h"
 
 static void
@@ -134,6 +135,7 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
    mongocrypt_binary_destroy (encrypted);
 }
+
 
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)

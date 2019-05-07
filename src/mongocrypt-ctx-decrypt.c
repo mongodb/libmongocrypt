@@ -18,6 +18,7 @@
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
+
 #include "mongocrypt-marking-private.h"
 
 /* From BSON Binary subtype 6 specification:
@@ -76,6 +77,7 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
    return true;
 }
 
+
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,
                                     _mongocrypt_buffer_t *in,
@@ -132,13 +134,14 @@ _replace_ciphertext_with_plaintext (void *ctx,
    plaintext.len = bytes_written;
 
    _mongocrypt_buffer_to_bson_value (
-      &plaintext, &ciphertext.original_bson_type, out);
+      &plaintext, ciphertext.original_bson_type, out);
    ret = true;
 
 fail:
    bson_free (plaintext.data);
    return ret;
 }
+
 
 static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
