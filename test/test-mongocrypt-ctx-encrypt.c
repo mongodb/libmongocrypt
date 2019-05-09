@@ -560,6 +560,22 @@ _get_bytes (const void *in, char *out, int len)
       _mongocrypt_buffer_cleanup (&plaintext); \
    } while (0)
 
+#define ROUNDTRIP                                                           \
+   do {                                                                     \
+      bson_iter_init_find (&iter, bson, "str_key");                         \
+      memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));                \
+                                                                            \
+      bson_append_iter (&wrapper, "", 0, &marking.v_iter);                  \
+      _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);           \
+      BSON_ASSERT (                                                         \
+         0 == strcmp ("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00", \
+                      actual));                                             \
+                                                                            \
+      _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);       \
+      _get_bytes (plaintext.data, actual, plaintext.len);                   \
+      BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00", actual));  \
+   } while (0)
+
 static void
 _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 {
