@@ -278,6 +278,10 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
       return false;
    }
 
+   if (!bson_validate (&wrapper, 0, NULL)) {
+      return false;
+   }
+
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
 
