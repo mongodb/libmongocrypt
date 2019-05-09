@@ -575,6 +575,13 @@ _get_bytes (const void *in, char *out, int len)
       _mongocrypt_buffer_to_bson_value (&plaintext, type, &out);      \
    } while (0)
 
+#define INIT                                \
+   do {                                     \
+      bson_init (&wrapper);                 \
+      _mongocrypt_buffer_init (&plaintext); \
+      _mongocrypt_marking_init (&marking);  \
+   } while (0)
+
 static void
 _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 {
@@ -658,10 +665,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_value_destroy (&out);
    CLEAN;
 
-   bson_init (&wrapper);
-   _mongocrypt_buffer_init (&plaintext);
-   _mongocrypt_marking_init (&marking);
-
+   INIT;
    ROUNDTRIP (
       "int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00", 0x10);
    BSON_ASSERT (expected_int == out.value.v_int32);
