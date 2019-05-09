@@ -650,7 +650,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    ROUNDTRIP ("str_key",
               "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
               "06 00 00 00 3F 3F 3F 3F 3F 00");
-   _mongocrypt_buffer_to_bson_value (&plaintext, 0x02, &out);
+   BSON_ASSERT (_mongocrypt_buffer_to_bson_value (&plaintext, 0x02, &out));
 
    BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
    BSON_ASSERT (5 == out.value.v_utf8.len);
@@ -662,7 +662,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_marking_init (&marking);
 
    ROUNDTRIP ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
-   _mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out);
+   BSON_ASSERT (_mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out));
 
    BSON_ASSERT (expected_int == out.value.v_int32);
 
@@ -673,7 +673,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_marking_init (&marking);
 
    ROUNDTRIP ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
-   _mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out);
+   _mongocrypt_buffer_to_bson_value (&plaintext, 0x99, &out);
 
    bson_destroy (bson);
    CLEAN;
