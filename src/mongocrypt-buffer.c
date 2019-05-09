@@ -18,6 +18,11 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
 
+#define INT32_LEN 4
+#define TYPE_LEN 1
+#define NULL_BYTE_LEN 1
+#define NULL_BYTE_VAL 0x00
+
 /* TODO CDRIVER-2990 have buffer operations require initialized buffer to
  * prevent leaky code. */
 void
