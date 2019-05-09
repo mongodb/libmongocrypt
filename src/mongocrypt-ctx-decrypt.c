@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "mongocrypt-private.h"
-#include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-marking-private.h"
+#include "mongocrypt-private.h"
 
 /* From BSON Binary subtype 6 specification:
 struct fle_blob {
