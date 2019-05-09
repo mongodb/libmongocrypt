@@ -575,13 +575,6 @@ _get_bytes (const void *in, char *out, int len)
       BSON_ASSERT (0 == strcmp (unwrapped, actual));                  \
    } while (0)
 
-#define INIT                                \
-   do {                                     \
-      bson_init (&wrapper);                 \
-      _mongocrypt_buffer_init (&plaintext); \
-      _mongocrypt_marking_init (&marking);  \
-   } while (0)
-
 static void
 _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 {
@@ -663,23 +656,20 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (5 == out.value.v_utf8.len);
 
    CLEAN;
-   INIT;
+
+   bson_init (&wrapper);
+   _mongocrypt_buffer_init (&plaintext);
+   _mongocrypt_marking_init (&marking);
 
    ROUNDTRIP ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
    _mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out);
 
    BSON_ASSERT (expected_int == out.value.v_int32);
 
-   CLEAN;
-   INIT;
-
-   ROUNDTRIP ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
-   plaintext.len += 1;
-   _mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out);
-
    bson_destroy (bson);
    CLEAN;
 }
+
 static void
 _test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)
 {
