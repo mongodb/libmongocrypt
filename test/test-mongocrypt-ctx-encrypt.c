@@ -647,20 +647,25 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_APPEND_UTF8 (bson, "str_key", expected_string);
    BSON_APPEND_INT32 (bson, "int_key", expected_int);
 
-   bson_iter_init_find (&iter, bson, "str_key");
-   memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
-
-   bson_append_iter (&wrapper, "", 0, &marking.v_iter);
-   _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
-   BSON_ASSERT (
-      0 ==
-      strcmp ("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00", actual));
-
-   _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
-   _get_bytes (plaintext.data, actual, plaintext.len);
-   BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00", actual));
-
-   _mongocrypt_buffer_to_bson_value (&plaintext, 0x02, &out);
+   //   bson_iter_init_find (&iter, bson, "str_key");
+   //   memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
+   //
+   //   bson_append_iter (&wrapper, "", 0, &marking.v_iter);
+   //   _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
+   //   BSON_ASSERT (
+   //      0 ==
+   //      strcmp ("11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
+   //      actual));
+   //
+   //   _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
+   //   _get_bytes (plaintext.data, actual, plaintext.len);
+   //   BSON_ASSERT (0 == strcmp ("06 00 00 00 3F 3F 3F 3F 3F 00", actual));
+   //
+   //   _mongocrypt_buffer_to_bson_value (&plaintext, 0x02, &out);
+   ROUNDTRIP ("str_key",
+              "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
+              "06 00 00 00 3F 3F 3F 3F 3F 00",
+              0x02);
    BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
    BSON_ASSERT (5 == out.value.v_utf8.len);
 
@@ -691,7 +696,6 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_destroy (bson);
    CLEAN;
 }
-
 static void
 _test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)
 {
