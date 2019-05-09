@@ -676,10 +676,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out);
    BSON_ASSERT (expected_int == out.value.v_int32);
 
-   bson_destroy (bson);
-   bson_destroy (&wrapper);
-   _mongocrypt_marking_cleanup (&marking);
-   _mongocrypt_buffer_cleanup (&plaintext);
+   CLEAN;
 }
 
 static void
