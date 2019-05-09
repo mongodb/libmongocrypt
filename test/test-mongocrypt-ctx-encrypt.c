@@ -555,6 +555,7 @@ _get_bytes (const void *in, char *out, int len)
 
 #define CLEAN                                  \
    do {                                        \
+   bson_value_destroy (&out); \
       bson_destroy (&wrapper);                 \
       _mongocrypt_marking_cleanup (&marking);  \
       _mongocrypt_buffer_cleanup (&plaintext); \
@@ -662,7 +663,6 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
    BSON_ASSERT (5 == out.value.v_utf8.len);
 
-   bson_value_destroy (&out);
    CLEAN;
    INIT;
 
@@ -670,7 +670,6 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
       "int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00", 0x10);
    BSON_ASSERT (expected_int == out.value.v_int32);
 
-   bson_value_destroy (&out);
    CLEAN;
    INIT;
 
