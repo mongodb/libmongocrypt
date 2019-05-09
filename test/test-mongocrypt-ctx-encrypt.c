@@ -553,6 +553,14 @@ _get_bytes (const void *in, char *out, int len)
    dest[-1] = '\0';
 }
 
+#define CLEAN                                  \
+   do {                                        \
+      bson_destroy (bson);                     \
+      bson_destroy (&wrapper);                 \
+      _mongocrypt_marking_cleanup (&marking);  \
+      _mongocrypt_buffer_cleanup (&plaintext); \
+   } while (0)
+
 static void
 _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 {
