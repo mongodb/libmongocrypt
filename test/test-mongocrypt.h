@@ -190,6 +190,8 @@ _mongocrypt_tester_install_local_kms (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_cache (_mongocrypt_tester_t *tester);
 
+void
+_mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester);
 
 #define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn)
 

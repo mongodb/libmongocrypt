@@ -423,7 +423,8 @@ main (int argc, char **argv)
       &tester, "_test_mongocrypt_bad_init", _test_mongocrypt_bad_init);
    _mongocrypt_tester_install_local_kms (&tester);
    _mongocrypt_tester_install_cache (&tester);
-
+   _mongocrypt_tester_install_buffer (&tester);
+   
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {
       int j;
