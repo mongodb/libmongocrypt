@@ -19,11 +19,6 @@
 
 #include <bson/bson.h>
 
-#define INT32_LEN 4
-#define TYPE_LEN 1
-#define NULL_BYTE_LEN 1
-#define NULL_BYTE_VAL 0x00
-
 struct _mongocrypt_binary_t;
 
 /* An internal struct to make working with binary values more convenient.
