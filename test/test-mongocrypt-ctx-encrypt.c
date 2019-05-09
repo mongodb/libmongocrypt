@@ -555,7 +555,7 @@ _get_bytes (const void *in, char *out, int len)
 
 #define CLEAN                                  \
    do {                                        \
-   bson_value_destroy (&out); \
+      bson_value_destroy (&out);               \
       bson_destroy (&wrapper);                 \
       _mongocrypt_marking_cleanup (&marking);  \
       _mongocrypt_buffer_cleanup (&plaintext); \
@@ -649,7 +649,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_value_t out;
    char *expected_string = "?????"; /* 3F 3F 3F 3F 3F */
    char actual[100] = {0};
-   int expected_int = 5555555;      /* 54 C5 63 */
+   int expected_int = 5555555; /* 54 C5 63 */
 
    bson = bson_new ();
    BSON_APPEND_UTF8 (bson, "str_key", expected_string);
