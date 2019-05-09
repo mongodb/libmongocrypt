@@ -666,6 +666,14 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 
    BSON_ASSERT (expected_int == out.value.v_int32);
 
+   CLEAN;
+
+   bson_init (&wrapper);
+   _mongocrypt_buffer_init (&plaintext);
+   _mongocrypt_marking_init (&marking);
+
+   // TODO 
+
    bson_destroy (bson);
    CLEAN;
 }
