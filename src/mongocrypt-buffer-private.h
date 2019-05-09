@@ -130,7 +130,7 @@ _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buf);
 bool
 _mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf);
 
-void
+bool
 _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
                                   uint8_t type,
                                   bson_value_t *out);
