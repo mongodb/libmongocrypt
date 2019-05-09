@@ -274,7 +274,11 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    memcpy (data + INT32_LEN, &type, TYPE_LEN);
    data[data_len - 1] = NULL_BYTE_VAL;
 
-   bson_init_static (&wrapper, data, data_len);
+   if (!bson_init_static (&wrapper, data, data_len)) {
+      printf ("HERE\n");
+      return;
+   }
+
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
 
