@@ -141,6 +141,7 @@ target_link_libraries (mongocrypt PRIVATE kms_message_static)
 target_link_libraries (mongocrypt-static PRIVATE kms_message_static)
 
 set (TEST_MONGOCRYPT_SOURCES
+   test/test-mongocrypt-buffer.c
    test/test-mongocrypt-cache.c
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
