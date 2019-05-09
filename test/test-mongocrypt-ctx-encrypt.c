@@ -662,26 +662,14 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_marking_init (&marking);
 
-   bson_iter_init_find (&iter, bson, "int_key");
-   memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
-
-   bson_append_iter (&wrapper, "", 0, &marking.v_iter);
-   bson_destroy (&wrapper);
-   _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
-   BSON_ASSERT (0 == strcmp ("0B 00 00 00 10 00 63 C5 54 00 00", actual));
-
-
-   _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
-   _get_bytes (plaintext.data, actual, plaintext.len);
-   BSON_ASSERT (
-      0 == strcmp ("63 C5 54 00", actual)); /* length is not needed for int32 */
-
-   _mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out);
+   ROUNDTRIP (
+      "int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00", 0x10);
    BSON_ASSERT (expected_int == out.value.v_int32);
 
    bson_destroy (bson);
    CLEAN;
 }
+
 static void
 _test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)
 {
