@@ -133,8 +133,11 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    plaintext.len = bytes_written;
 
-   _mongocrypt_buffer_to_bson_value (
-      &plaintext, ciphertext.original_bson_type, out);
+   if (!_mongocrypt_buffer_to_bson_value (
+          &plaintext, ciphertext.original_bson_type, out)) {
+      CLIENT_ERR ("malformed encrypted bson");
+      goto fail;
+   }
    ret = true;
 
 fail:
