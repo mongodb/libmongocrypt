@@ -638,9 +638,9 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_iter_t iter;
    bson_t *bson;
    bson_t wrapper = BSON_INITIALIZER;
-   char actual[100] = {0};
    bson_value_t out;
    char *expected_string = "?????"; /* 3F 3F 3F 3F 3F */
+   char actual[100] = {0};
    int expected_int = 5555555;      /* 54 C5 63 */
 
    bson = bson_new ();
