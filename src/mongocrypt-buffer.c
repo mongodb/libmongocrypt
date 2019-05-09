@@ -249,7 +249,7 @@ _mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf)
    return buf->data == NULL;
 }
 
-void
+bool
 _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
                                   uint8_t type,
                                   bson_value_t *out)
@@ -275,14 +275,14 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    data[data_len - 1] = NULL_BYTE_VAL;
 
    if (!bson_init_static (&wrapper, data, data_len)) {
-      printf ("HERE\n");
-      return;
+      return false;
    }
 
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
 
    bson_free (data);
+   return true;
 }
 
 void
