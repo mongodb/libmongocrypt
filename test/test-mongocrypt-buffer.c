@@ -151,6 +151,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (
       _mongocrypt_buffer_to_bson_value (&plaintext, 0x10 /* int type */, &out));
 
+   BSON_ASSERT (out.value_type == BSON_TYPE_INT32);
    BSON_ASSERT (expected_int == out.value.v_int32);
 
    REINITIALIZE_VARS;
