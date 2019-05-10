@@ -18,6 +18,9 @@
 
 #include "test-mongocrypt.h"
 
+#define TEST_STRING "?????" /* 3F 3F 3F 3F 3F */
+#define TEST_INT 5555555    /* 54 C5 63 */
+
 static void
 _get_bytes (const void *in, char *out, int len)
 {
@@ -34,7 +37,6 @@ bool
 assert_excess_bytes_removed (char *key,
                              char *wrapped,
                              char *unwrapped,
-                             bson_t *bson,
                              uint32_t type,
                              bson_value_t *out)
 {
@@ -44,8 +46,12 @@ assert_excess_bytes_removed (char *key,
    bson_t wrapper = BSON_INITIALIZER;
    char actual[100] = {0};
    bool ret = false;
+   bson_t bson = BSON_INITIALIZER;
 
-   bson_iter_init_find (&iter, bson, key);
+   BSON_APPEND_UTF8 (&bson, "str_key", TEST_STRING);
+   BSON_APPEND_INT32 (&bson, "int_key", TEST_INT);
+
+   bson_iter_init_find (&iter, &bson, key);
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
 
    bson_append_iter (&wrapper, "", 0, &marking.v_iter);
@@ -62,6 +68,7 @@ assert_excess_bytes_removed (char *key,
    ret = _mongocrypt_buffer_to_bson_value (&plaintext, type, out);
 
    _mongocrypt_buffer_cleanup (&plaintext);
+   bson_destroy (&bson);
    return ret;
 }
 
@@ -123,46 +130,36 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
     * This is what we will store.
     */
 
-   bson_t *bson;
    bson_t wrapper = BSON_INITIALIZER;
    bson_value_t out;
-   char *expected_string = "?????"; /* 3F 3F 3F 3F 3F */
-   int expected_int = 5555555;      /* 54 C5 63 */
 
-   bson = bson_new ();
-   BSON_APPEND_UTF8 (bson, "str_key", expected_string);
-   BSON_APPEND_INT32 (bson, "int_key", expected_int);
 
    BSON_ASSERT (assert_excess_bytes_removed (
       "str_key",
       "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
       /** no prefix **/ "06 00 00 00 3F 3F 3F 3F 3F 00",
-      bson,
       0x02, /* string type */
       &out));
 
    BSON_ASSERT (out.value_type == BSON_TYPE_UTF8);
-   BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
+   BSON_ASSERT (0 == strcmp (TEST_STRING, out.value.v_utf8.str));
    BSON_ASSERT (5 == out.value.v_utf8.len);
    bson_value_destroy (&out);
 
    BSON_ASSERT (assert_excess_bytes_removed ("int_key",
                                 "0B 00 00 00 10 00 63 C5 54 00 00",
                                 /** no prefix **/ "63 C5 54 00",
-                                bson,
                                 0x10, /* int type */
                                 &out));
 
    BSON_ASSERT (out.value_type == BSON_TYPE_INT32);
-   BSON_ASSERT (expected_int == out.value.v_int32);
+   BSON_ASSERT (TEST_INT == out.value.v_int32);
 
    BSON_ASSERT (!assert_excess_bytes_removed ("int_key",
                                 "0B 00 00 00 10 00 63 C5 54 00 00",
                                 /** no prefix **/ "63 C5 54 00",
-                                bson,
                                 0x99, /* invalid type */
                                 &out));
-   bson_destroy (bson);
    bson_destroy (&wrapper);
 }
 
