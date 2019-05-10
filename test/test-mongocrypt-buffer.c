@@ -38,7 +38,7 @@ _get_bytes (const void *in, char *out, int len)
       _mongocrypt_buffer_cleanup (&plaintext); \
    } while (0)
 
-#define ROUNDTRIP(key, wrapped, unwrapped)                            \
+#define ASSERT_EXCESS_BYTES_REMOVED(key, wrapped, unwrapped)                            \
    do {                                                               \
       bson_iter_init_find (&iter, bson, key);                         \
       memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));          \
@@ -124,7 +124,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_APPEND_UTF8 (bson, "str_key", expected_string);
    BSON_APPEND_INT32 (bson, "int_key", expected_int);
 
-   ROUNDTRIP ("str_key",
+   ASSERT_EXCESS_BYTES_REMOVED ("str_key",
               "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
               "06 00 00 00 3F 3F 3F 3F 3F 00");
    BSON_ASSERT (_mongocrypt_buffer_to_bson_value (&plaintext, 0x02, &out));
@@ -138,7 +138,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_marking_init (&marking);
 
-   ROUNDTRIP ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
+   ASSERT_EXCESS_BYTES_REMOVED ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
    BSON_ASSERT (_mongocrypt_buffer_to_bson_value (&plaintext, 0x10, &out));
 
    BSON_ASSERT (expected_int == out.value.v_int32);
@@ -149,7 +149,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_marking_init (&marking);
 
-   ROUNDTRIP ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
+   ASSERT_EXCESS_BYTES_REMOVED ("int_key", "0B 00 00 00 10 00 63 C5 54 00 00", "63 C5 54 00");
    _mongocrypt_buffer_to_bson_value (&plaintext, 0x99, &out);
 
    bson_destroy (bson);
