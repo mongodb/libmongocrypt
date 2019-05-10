@@ -163,6 +163,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
       "str_key",
       "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
       /** no prefix **/ "06 00 00 00 3F 3F 3F 3F 3F 00", bson, &plaintext);
+
    BSON_ASSERT (_mongocrypt_buffer_to_bson_value (
       &plaintext, 0x02 /* string type */, &out));
 
