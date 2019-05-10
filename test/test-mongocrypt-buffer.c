@@ -30,17 +30,20 @@ _get_bytes (const void *in, char *out, int len)
    dest[-1] = '\0';
 }
 
-_mongocrypt_buffer_t *
+bool
 assert_excess_bytes_removed (char *key,
                              char *wrapped,
                              char *unwrapped,
-                             bson_t *bson)
+                             bson_t *bson,
+                             uint32_t type,
+                             bson_value_t *out)
 {
-   _mongocrypt_buffer_t *plaintext = bson_malloc0(sizeof (_mongocrypt_buffer_t));
+   _mongocrypt_buffer_t plaintext = {0};
    _mongocrypt_marking_t marking = {0};
    bson_iter_t iter;
    bson_t wrapper = BSON_INITIALIZER;
    char actual[100] = {0};
+   bool ret = false;
 
    bson_iter_init_find (&iter, bson, key);
    memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
@@ -49,14 +52,17 @@ assert_excess_bytes_removed (char *key,
    _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
    BSON_ASSERT (0 == strcmp (wrapped, actual));
 
-   _mongocrypt_buffer_from_iter (plaintext, &(&marking)->v_iter);
-   _get_bytes (plaintext->data, actual, plaintext->len);
+   _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter);
+   _get_bytes (plaintext.data, actual, plaintext.len);
    BSON_ASSERT (0 == strcmp (unwrapped, actual));
 
    _mongocrypt_marking_cleanup (&marking);
    bson_destroy (&wrapper);
 
-   return plaintext;
+   ret = _mongocrypt_buffer_to_bson_value (&plaintext, type, out);
+
+   _mongocrypt_buffer_cleanup (&plaintext);
+   return ret;
 }
 
 static void
@@ -117,7 +123,6 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
     * This is what we will store.
     */
 
-   _mongocrypt_buffer_t *plaintext;
    bson_t *bson;
    bson_t wrapper = BSON_INITIALIZER;
    bson_value_t out;
@@ -128,45 +133,39 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_APPEND_UTF8 (bson, "str_key", expected_string);
    BSON_APPEND_INT32 (bson, "int_key", expected_int);
 
-   plaintext = assert_excess_bytes_removed (
+   BSON_ASSERT (assert_excess_bytes_removed (
       "str_key",
       "11 00 00 00 02 00 06 00 00 00 3F 3F 3F 3F 3F 00 00",
       /** no prefix **/ "06 00 00 00 3F 3F 3F 3F 3F 00",
-      bson);
-
-   BSON_ASSERT (_mongocrypt_buffer_to_bson_value (
-      plaintext, 0x02 /* string type */, &out));
-   _mongocrypt_buffer_cleanup (plaintext);
+      bson,
+      0x02, /* string type */
+      &out));
 
    BSON_ASSERT (out.value_type == BSON_TYPE_UTF8);
    BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
    BSON_ASSERT (5 == out.value.v_utf8.len);
+   bson_value_destroy (&out);
 
-
-   plaintext = assert_excess_bytes_removed ("int_key",
-                                            "0B 00 00 00 10 00 63 C5 54 00 00",
-                                            /** no prefix **/ "63 C5 54 00",
-                                            bson);
-   BSON_ASSERT (
-      _mongocrypt_buffer_to_bson_value (plaintext, 0x10 /* int type */, &out));
-   _mongocrypt_buffer_cleanup (plaintext);
+   BSON_ASSERT (assert_excess_bytes_removed ("int_key",
+                                "0B 00 00 00 10 00 63 C5 54 00 00",
+                                /** no prefix **/ "63 C5 54 00",
+                                bson,
+                                0x10, /* int type */
+                                &out));
 
    BSON_ASSERT (out.value_type == BSON_TYPE_INT32);
    BSON_ASSERT (expected_int == out.value.v_int32);
 
-   plaintext = assert_excess_bytes_removed ("int_key",
-                                            "0B 00 00 00 10 00 63 C5 54 00 00",
-                                            /** no prefix **/ "63 C5 54 00",
-                                            bson);
-   BSON_ASSERT (/* _mongocrypt_buffer_to_bson_value fails on invalid type */
-                !_mongocrypt_buffer_to_bson_value (
-                   plaintext, 0x99 /* invalid type */, &out));
-   _mongocrypt_buffer_cleanup (plaintext);
-
+   BSON_ASSERT (!assert_excess_bytes_removed ("int_key",
+                                "0B 00 00 00 10 00 63 C5 54 00 00",
+                                /** no prefix **/ "63 C5 54 00",
+                                bson,
+                                0x99, /* invalid type */
+                                &out));
    bson_destroy (bson);
-   bson_value_destroy (&out);
    bson_destroy (&wrapper);
 }
+
 void
 _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester)
 {
