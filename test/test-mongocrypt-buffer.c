@@ -38,20 +38,6 @@ _get_bytes (const void *in, char *out, int len)
       _mongocrypt_buffer_cleanup (&plaintext); \
    } while (0)
 
-#define ASSERT_EXCESS_BYTES_REMOVED(key, wrapped, unwrapped)                            \
-   do {                                                               \
-      bson_iter_init_find (&iter, bson, key);                         \
-      memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));          \
-                                                                      \
-      bson_append_iter (&wrapper, "", 0, &marking.v_iter);            \
-      _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);     \
-      BSON_ASSERT (0 == strcmp (wrapped, actual));                    \
-                                                                      \
-      _mongocrypt_buffer_from_iter (&plaintext, &(&marking)->v_iter); \
-      _get_bytes (plaintext.data, actual, plaintext.len);             \
-      BSON_ASSERT (0 == strcmp (unwrapped, actual));                  \
-   } while (0)
-
 void
 assert_excess_bytes_removed (char *key,
                              char *wrapped,
