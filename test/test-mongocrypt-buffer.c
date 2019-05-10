@@ -172,7 +172,6 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (5 == out.value.v_utf8.len);
 
 
-   REINITIALIZE_VARS;
    assert_excess_bytes_removed ("int_key",
                                 "0B 00 00 00 10 00 63 C5 54 00 00",
                                 /** no prefix **/ "63 C5 54 00", bson, &plaintext);
