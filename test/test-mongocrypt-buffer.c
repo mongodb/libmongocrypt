@@ -52,6 +52,29 @@ _get_bytes (const void *in, char *out, int len)
       BSON_ASSERT (0 == strcmp (unwrapped, actual));                  \
    } while (0)
 
+void
+assert_excess_bytes_removed (char *key, char *wrapped, char *unwrapped, bson_t *bson, _mongocrypt_buffer_t *plaintext)
+{
+   bson_iter_t iter;
+   _mongocrypt_marking_t marking = {0};
+   bson_t wrapper = BSON_INITIALIZER;
+   char actual[100] = {0};
+
+   bson_iter_init_find (&iter, bson, key);
+   memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
+
+   bson_append_iter (&wrapper, "", 0, &marking.v_iter);
+   _get_bytes (bson_get_data (&wrapper), actual, wrapper.len);
+   BSON_ASSERT (0 == strcmp (wrapped, actual));
+
+   _mongocrypt_buffer_from_iter (plaintext, &(&marking)->v_iter);
+   _get_bytes (plaintext->data, actual, plaintext->len);
+   BSON_ASSERT (0 == strcmp (unwrapped, actual));
+      
+      _mongocrypt_marking_cleanup (&marking); 
+      bson_destroy (&wrapper);                 
+}
+
 #define REINITIALIZE_VARS                   \
    do {                                     \
       CLEANUP;                              \
