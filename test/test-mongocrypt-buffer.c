@@ -34,11 +34,8 @@ _get_bytes (const void *in, char *out, int len)
 }
 
 bool
-assert_excess_bytes_removed (char *key,
-                             char *wrapped,
-                             char *unwrapped,
-                             uint32_t type,
-                             bson_value_t *out)
+assert_excess_bytes_removed (
+   char *key, char *wrapped, char *unwrapped, uint32_t type, bson_value_t *out)
 {
    _mongocrypt_buffer_t plaintext = {0};
    _mongocrypt_marking_t marking = {0};
@@ -147,19 +144,20 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_value_destroy (&out);
 
    BSON_ASSERT (assert_excess_bytes_removed ("int_key",
-                                "0B 00 00 00 10 00 63 C5 54 00 00",
-                                /** no prefix **/ "63 C5 54 00",
-                                0x10, /* int type */
-                                &out));
+                                             "0B 00 00 00 10 00 63 C5 54 00 00",
+                                             /** no prefix **/ "63 C5 54 00",
+                                             0x10, /* int type */
+                                             &out));
 
    BSON_ASSERT (out.value_type == BSON_TYPE_INT32);
    BSON_ASSERT (TEST_INT == out.value.v_int32);
 
-   BSON_ASSERT (!assert_excess_bytes_removed ("int_key",
-                                "0B 00 00 00 10 00 63 C5 54 00 00",
-                                /** no prefix **/ "63 C5 54 00",
-                                0x99, /* invalid type */
-                                &out));
+   BSON_ASSERT (
+      !assert_excess_bytes_removed ("int_key",
+                                    "0B 00 00 00 10 00 63 C5 54 00 00",
+                                    /** no prefix **/ "63 C5 54 00",
+                                    0x99, /* invalid type */
+                                    &out));
    bson_destroy (&wrapper);
 }
 
