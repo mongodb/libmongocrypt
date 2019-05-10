@@ -303,13 +303,14 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
                     + TYPE_LEN       /* element type */
                     + NULL_BYTE_LEN; /* and the key's null byte terminator */
 
-   uint8_t *wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
+   uint8_t *wrapper_data;
 
    /* It is not straightforward to transform a bson_value_t to a string of
     * bytes. As a workaround, we wrap the value in a bson document with an empty
     * key, then use the raw buffer from inside the new bson_t, skipping the
     * length and type header information and the key name. */
    bson_append_iter (&wrapper, "", 0, iter);
+   wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
    plaintext->len =
       wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
    plaintext->data = bson_malloc (plaintext->len);
