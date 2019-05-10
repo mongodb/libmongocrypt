@@ -147,12 +147,10 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 
    _mongocrypt_buffer_t plaintext = {0};
    _mongocrypt_marking_t marking = {0};
-   bson_iter_t iter;
    bson_t *bson;
    bson_t wrapper = BSON_INITIALIZER;
    bson_value_t out;
    char *expected_string = "?????"; /* 3F 3F 3F 3F 3F */
-   char actual[100] = {0};
    int expected_int = 5555555; /* 54 C5 63 */
 
    bson = bson_new ();
@@ -181,10 +179,9 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (out.value_type == BSON_TYPE_INT32);
    BSON_ASSERT (expected_int == out.value.v_int32);
 
-   REINITIALIZE_VARS;
-   ASSERT_EXCESS_BYTES_REMOVED ("int_key",
+   assert_excess_bytes_removed ("int_key",
                                 "0B 00 00 00 10 00 63 C5 54 00 00",
-                                /** no prefix **/ "63 C5 54 00");
+                                /** no prefix **/ "63 C5 54 00", bson, &plaintext);
    BSON_ASSERT (/* _mongocrypt_buffer_to_bson_value fails on invalid type */
                 !_mongocrypt_buffer_to_bson_value (
                    &plaintext, 0x99 /* invalid type */, &out));
