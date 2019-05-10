@@ -259,12 +259,13 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
                                   uint8_t type,
                                   bson_value_t *out)
 {
+   bool ret = false;
+   bson_iter_t iter;
+   bson_t wrapper;
    uint32_t data_len;
    uint32_t le_data_len;
-   uint8_t data_prefix;
    uint8_t *data;
-   bson_t wrapper;
-   bson_iter_t iter;
+   uint8_t data_prefix;
 
    data_prefix = INT32_LEN        /* adds document size */
                  + TYPE_LEN       /* element type */
@@ -280,20 +281,20 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    data[data_len - 1] = NULL_BYTE_VAL;
 
    if (!bson_init_static (&wrapper, data, data_len)) {
-      bson_free (data);
-      return false;
+      goto fail;
    }
 
    if (!bson_validate (&wrapper, 0, NULL)) {
-      bson_free (data);
-      return false;
+      goto fail;
    }
 
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
 
+   ret = true;
+fail:
    bson_free (data);
-   return true;
+   return ret;
 }
 
 void
