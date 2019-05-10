@@ -139,6 +139,7 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    BSON_ASSERT (_mongocrypt_buffer_to_bson_value (
       &plaintext, 0x02 /* string type */, &out));
 
+   BSON_ASSERT (out.value_type == BSON_TYPE_UTF8);
    BSON_ASSERT (0 == strcmp (expected_string, out.value.v_utf8.str));
    BSON_ASSERT (5 == out.value.v_utf8.len);
 
