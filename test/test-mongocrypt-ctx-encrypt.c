@@ -15,7 +15,6 @@
  */
 
 #include <mongocrypt-marking-private.h>
-#include <mongocrypt-crypto-private.h>
 
 #include "test-mongocrypt.h"
 
