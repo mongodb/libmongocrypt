@@ -65,14 +65,6 @@ assert_excess_bytes_removed (char *key,
    bson_destroy (&wrapper);
 }
 
-#define REINITIALIZE_VARS                   \
-   do {                                     \
-      CLEANUP;                              \
-      bson_init (&wrapper);                 \
-      _mongocrypt_buffer_init (&plaintext); \
-      _mongocrypt_marking_init (&marking);  \
-   } while (0)
-
 static void
 _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 {
