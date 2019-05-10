@@ -173,9 +173,9 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
 
 
    REINITIALIZE_VARS;
-   ASSERT_EXCESS_BYTES_REMOVED ("int_key",
+   assert_excess_bytes_removed ("int_key",
                                 "0B 00 00 00 10 00 63 C5 54 00 00",
-                                /** no prefix **/ "63 C5 54 00");
+                                /** no prefix **/ "63 C5 54 00", bson, &plaintext);
    BSON_ASSERT (
       _mongocrypt_buffer_to_bson_value (&plaintext, 0x10 /* int type */, &out));
 
