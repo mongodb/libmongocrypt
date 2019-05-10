@@ -99,14 +99,28 @@ namespace drivertest
             _kmsEndpoint = kmsEndpoint;
         }
 
-        public BsonDocument EncryptCommand(IMongoCollection<BsonDocument> coll, BsonDocument cmd)
+        public Guid GenerateKey(IKmsCredentials credentials, IKmsKeyId kmsKeyId)
         {
             CryptOptions options = new CryptOptions();
-            options.KmsCredentials = new AwsKmsCredentials()
+            options.KmsCredentials = credentials;
+
+            BsonDocument key = null;
+
+            using (var foo = CryptClientFactory.Create(options))
+            using (var context = foo.StartCreateDataKeyContext(kmsKeyId))
             {
-                AwsSecretAccessKey = "us-east-1",
-                AwsAccessKeyId = "us-east-1",
-            };
+                key = ProcessState(context, _keyVault.Database, null);
+            }
+
+            _keyVault.InsertOne(key);
+            Guid g =  key["_id"].AsGuid;
+            return g;
+        }
+
+        public BsonDocument EncryptCommand(IKmsCredentials credentials, IMongoCollection<BsonDocument> coll, BsonDocument cmd)
+        {
+            CryptOptions options = new CryptOptions();
+            options.KmsCredentials = credentials;
 
             using (var foo = CryptClientFactory.Create(options))
             using (var context = foo.StartEncryptionContext(coll.CollectionNamespace.FullName, null))
@@ -116,14 +130,10 @@ namespace drivertest
             }
         }
 
-        public BsonDocument DecryptCommand(IMongoDatabase db, BsonDocument doc)
+        public BsonDocument DecryptCommand(IKmsCredentials credentials, IMongoDatabase db, BsonDocument doc)
         {
             CryptOptions options = new CryptOptions();
-            options.KmsCredentials = new AwsKmsCredentials()
-            {
-                AwsSecretAccessKey = "us-east-1",
-                AwsAccessKeyId = "us-east-1",
-            };
+            options.KmsCredentials = credentials;
 
             using (var foo = CryptClientFactory.Create(options))
             using (var context = foo.StartDecryptionContext(BsonUtil.ToBytes(doc)))
@@ -151,12 +161,21 @@ namespace drivertest
         void DoKmsRequest(KmsRequest request)
         {
             TcpClient tcpClient = new TcpClient();
-            tcpClient.Connect(_kmsEndpoint.DnsSafeHost, _kmsEndpoint.Port);
+
+            Console.WriteLine("KMS: " + request.Endpoint);
+
+            if (_kmsEndpoint != null)
+            {
+                tcpClient.Connect(_kmsEndpoint.DnsSafeHost, _kmsEndpoint.Port);
+            } else
+            {
+                tcpClient.Connect(request.Endpoint, 443);
+            }
             SslStream stream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate));
 
             stream.AuthenticateAsClient("localhost");
 
-            Binary bin = request.GetMessage();
+            Binary bin = request.Message;
             stream.Write(bin.ToArray());
 
 
@@ -202,6 +221,7 @@ namespace drivertest
 
                             foreach (var replyDoc in replyDocs)
                             {
+                                Console.WriteLine("ListCollections Reply: " + replyDoc);
                                 context.Feed(BsonUtil.ToBytes(replyDoc));
                             }
                             context.MarkDone();
@@ -233,6 +253,8 @@ namespace drivertest
                     case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_KEYS:
                         {
                             var binary = context.GetOperation();
+                            Console.WriteLine("Buffer:" + BitConverter.ToString(binary.ToArray()));
+
                             var doc = BsonUtil.ToDocument(binary);
 
                             Console.WriteLine("GetKeys Query: " + doc);
@@ -264,7 +286,7 @@ namespace drivertest
                     case CryptContext.StateCode.MONGOCRYPT_CTX_READY:
                         {
                             Binary b = context.FinalizeForEncryption();
-                            Console.WriteLine("Buffer:" + b.ToArray());
+                            Console.WriteLine("Buffer:" + BitConverter.ToString(b.ToArray()));
                             ret = BsonUtil.ToDocument(b);
                             break;
                         }
@@ -291,39 +313,13 @@ namespace drivertest
 
     class Program
     {
-        static IMongoCollection<BsonDocument> SetupKeyStore(MongoClient client, Guid keyID)
+        static IMongoCollection<BsonDocument> SetupKeyStore(MongoClient client)
         {
             var dbAdmin = client.GetDatabase("admin");
             var collKeyVault = dbAdmin.GetCollection<BsonDocument>("datakeys");
 
             // Clear the key vault
             collKeyVault.DeleteMany(new BsonDocumentFilterDefinition<BsonDocument>(new BsonDocument()));
-
-            string secretKeyForMockPrefix = "SECRET";
-
-            MemoryStream ms = new MemoryStream();
-
-            var bytes = Encoding.UTF8.GetBytes(secretKeyForMockPrefix);
-            ms.Write(bytes, 0, bytes.Length);
-            ms.Write(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }, 0, 16);
-            var secretKeyForMock = ms.GetBuffer();
-
-            // Add a key
-            collKeyVault.InsertOne(new BsonDocument
-            {
-                {"status" , 1 },
-                {"_id" , new BsonBinaryData(keyID.ToByteArray(), BsonBinarySubType.UuidStandard) },
-
-                { "masterKey" , new BsonDocument
-                {
-                    {        "key", "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0" },
-                    { "region", "us-east-1"},
-                    { "provider", "aws"},
-
-                }
-                },
-                { "keyMaterial" , new BsonBinaryData( secretKeyForMock, BsonBinarySubType.Binary) },
-            });
 
             return collKeyVault;
         }
@@ -348,7 +344,7 @@ namespace drivertest
 
                                 { "encrypt" , new BsonDocument
                                     {
-                                    { "keyId" , new BsonArray( new BsonValue[] { new BsonBinaryData(keyID.ToByteArray(), BsonBinarySubType.UuidStandard) } ) },
+                                    { "keyId" , new BsonArray( new BsonValue[] { keyID } ) },
                                     {  "bsonType" , "string"},
                                     { "algorithm" , "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic" },
                                     { "initializationVector" , new byte[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 } }
@@ -369,25 +365,48 @@ namespace drivertest
 
         }
 
+        static string GetEnvironmenVariabletOrValue(string env, string def)
+        {
+            string value = Environment.GetEnvironmentVariable(env);
+            if(value != null)
+            {
+                return value;
+            }
+            return def;
+        }
+
         static void Main(string[] args)
         {
             // The C# driver transmutes data unless you specify this stupid line!
             BsonDefaults.GuidRepresentation = GuidRepresentation.Standard;
 
             Console.WriteLine("Using url: " + args);
-            Uri kmsURL = new Uri("https://localhost:8000");
+            Uri kmsURL = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY") != null ? null :  new Uri("https://localhost:8000");
 
             var cryptDUrl = new MongoUrl("mongodb://localhost:1234");
             var client = new MongoClient("mongodb://localhost:27017");
 
-            var keyID = Guid.NewGuid();
-
-            IMongoCollection<BsonDocument> collKeyVault = SetupKeyStore(client, keyID);
-            IMongoCollection<BsonDocument> collection = SetupTestCollection(client, keyID);
-            var database = collection.Database;
-
+            IMongoCollection<BsonDocument> collKeyVault = SetupKeyStore(client);
 
             var controller = new MongoCryptDController(cryptDUrl, collKeyVault, kmsURL);
+
+            AwsKeyId awsKeyId = new AwsKeyId()
+            {
+                CustomerMasterKey = "arn:aws:kms:us-east-1:579766882180:key/0689eb07-d588-4bbf-a83e-42157a92576b",
+                Region = "us-east-1",
+            };
+
+            AwsKmsCredentials kmsCredentials = new AwsKmsCredentials()
+            {
+                AwsSecretAccessKey = GetEnvironmenVariabletOrValue("AWS_SECRET_ACCESS_KEY", "us-east-1"),
+                AwsAccessKeyId = GetEnvironmenVariabletOrValue("AWS_ACCESS_KEY_ID", "us-east-1"),
+            };
+
+
+            Guid keyID = controller.GenerateKey(kmsCredentials, awsKeyId);
+
+            IMongoCollection<BsonDocument> collection = SetupTestCollection(client, keyID);
+            var database = collection.Database;
 
             // Insert a document with SSN
             var insertDoc = new BsonDocument
@@ -401,7 +420,7 @@ namespace drivertest
                 { "documents", new BsonArray(new BsonValue[] { insertDoc }) }
             };
 
-            var insertEncryptedDoc = new BsonDocument(controller.EncryptCommand(collection, insertDocCmd));
+            var insertEncryptedDoc = new BsonDocument(controller.EncryptCommand(kmsCredentials, collection, insertDocCmd));
 
             Console.WriteLine("Insert Doc: " + insertEncryptedDoc);
 
@@ -415,7 +434,7 @@ namespace drivertest
         }");
 
 
-            var findCmd = new BsonDocumentCommand<BsonDocument>(controller.EncryptCommand(collection, findDoc));
+            var findCmd = new BsonDocumentCommand<BsonDocument>(controller.EncryptCommand(kmsCredentials, collection, findDoc));
 
             Console.WriteLine("Find CMD: " + findCmd.Document);
 
@@ -425,7 +444,7 @@ namespace drivertest
 
             Console.WriteLine("Find Result: " + commandResult);
 
-            var decryptedDocument = controller.DecryptCommand(database, commandResult);
+            var decryptedDocument = controller.DecryptCommand(kmsCredentials, database, commandResult);
 
             Console.WriteLine("Find Result (DECRYPTED): " + decryptedDocument);
 

@@ -46,15 +46,34 @@ namespace MongoDB.Crypt
         }
 
         /// <summary>
+        /// Gets the endpoint.
+        /// </summary>
+        /// <value>
+        /// The endpoint.
+        /// </value>
+        public string Endpoint
+        {
+            get
+            {
+                IntPtr stringPointer = IntPtr.Zero;
+                Check(Library.mongocrypt_kms_ctx_endpoint(_id, ref stringPointer));
+                return Marshal.PtrToStringAnsi(stringPointer);
+            }
+        }
+
+
+        /// <summary>
         /// Gets the message to send to KMS.
         /// </summary>
         /// <returns>The message</returns>
-        public Binary GetMessage()
+        public Binary Message
         {
+            get {
             Binary binary = new Binary();
 
             Check(Library.mongocrypt_kms_ctx_message(_id, binary.Handle));
             return binary;
+            }
         }
 
         /// <summary>

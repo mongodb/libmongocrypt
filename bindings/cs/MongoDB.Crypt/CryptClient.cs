@@ -48,6 +48,8 @@ namespace MongoDB.Crypt
             IInternalKmsKeyId key = (IInternalKmsKeyId)keyId;
             key.SetCredentials(handle, _status);
 
+            handle.Check(_status, Library.mongocrypt_ctx_datakey_init(handle));
+
             return new CryptContext(handle);
         }
 

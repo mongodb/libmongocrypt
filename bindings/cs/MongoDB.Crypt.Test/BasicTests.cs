@@ -206,7 +206,7 @@ namespace MongoDB.Crypt.Test
                             var requests = context.GetKmsMessageRequests();
                             foreach (var req in requests)
                             {
-                                var binary = req.GetMessage();
+                                var binary = req.Message;
                                 Console.WriteLine("Key Document: " + binary);
                                 var reply = ReadHttpTestFile("kms-decrypt-reply.txt");
                                 Console.WriteLine("Reply:" + reply);
