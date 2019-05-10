@@ -156,14 +156,13 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    ASSERT_EXCESS_BYTES_REMOVED ("int_key",
                                 "0B 00 00 00 10 00 63 C5 54 00 00",
                                 /** no prefix **/ "63 C5 54 00");
-   BSON_ASSERT ( /* _mongocrypt_buffer_to_bson_value fails on invalid type */
-   !_mongocrypt_buffer_to_bson_value (
-      &plaintext, 0x99 /* invalid type */, &out));
+   BSON_ASSERT (/* _mongocrypt_buffer_to_bson_value fails on invalid type */
+                !_mongocrypt_buffer_to_bson_value (
+                   &plaintext, 0x99 /* invalid type */, &out));
 
    bson_destroy (bson);
    CLEANUP;
 }
-
 void
 _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester)
 {
