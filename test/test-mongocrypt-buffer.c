@@ -38,7 +38,7 @@ assert_excess_bytes_removed (char *key,
 {
    bson_iter_t iter;
    _mongocrypt_marking_t marking = {0};
-   _mongocrypt_buffer_t *plaintext = malloc(sizeof (_mongocrypt_buffer_t));
+   _mongocrypt_buffer_t *plaintext = bson_malloc0(sizeof (_mongocrypt_buffer_t));
    bson_t wrapper = BSON_INITIALIZER;
    char actual[100] = {0};
 
