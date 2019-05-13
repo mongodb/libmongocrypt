@@ -70,7 +70,7 @@ key_docs = [
     },
     {
         "_id": nextUUID(),
-        "keyAltName": ["Todd Davis"],
+        "keyAltNames": [ "Sharlene", "Kasey" ],
         "keyMaterial": None, # to be filled.
         "creationDate": datetime.now(),
         "updatedDate": datetime.now(),
@@ -84,13 +84,23 @@ key_docs = [
         "updatedDate": datetime.now(),
         "status": 0,  # inactive
         "masterKey": master_key_doc
-    }
+    },
+    {
+        "_id": nextUUID(),
+        "keyAltNames": [ "Sharlene", "Kasey" ],
+        "keyMaterial": None, # to be filled.
+        "creationDate": datetime.now(),
+        "updatedDate": datetime.now(),
+        "status": 1, # active
+        "masterKey": master_key_doc
+    },
 ]
 
 data_keys = [
     b"a" * 64,
     b"b" * 64,
-    b"c" * 64
+    b"c" * 64,
+    b"d" * 64
 ]
 
 for (data_key, key_doc) in zip(data_keys, key_docs):
@@ -152,6 +162,23 @@ marked_reply = {
     "ok": 1
 }
 
+marked_reply_key_alt_name = {
+    "result": {
+        "find": "test",
+        "filter": {
+            "ssn": bson.binary.Binary(b"\00" + bson.BSON.encode({
+                "v": "457-55-5462",
+                "a": 1,
+                "iv": bson.binary.Binary(b"i" * 16),
+                "ka": "Sharlene"
+            }, codec_options=CodecOptions(uuid_representation=bson.binary.STANDARD)), subtype=6)
+        }
+    },
+    "hasEncryptedPlaceholders": True,
+    "schemaRequiresEncryption": True,
+    "ok": 1
+}
+
 invalid_marked_reply = {
     "result": {
         "find": "test",
@@ -203,6 +230,12 @@ opts = json_util.JSONOptions(json_mode=json_util.JSONMode.CANONICAL,
 with open("test/example/key-document.json", "w") as f:
     f.write(json_util.dumps(key_docs[0], indent=4, json_options=opts))
 
+with open("test/example/key-document-with-alt-name.json", "w") as f:
+    f.write(json_util.dumps(key_docs[1], indent=4, json_options=opts))
+
+with open("test/example/key-document-with-alt-name-duplicate-id.json", "w") as f:
+    f.write(json_util.dumps(key_docs[3], indent=4, json_options=opts))    
+
 with open("test/example/collection-info.json", "w") as f:
     f.write(json_util.dumps(collection_info, indent=4, json_options=opts))
 
@@ -211,6 +244,9 @@ with open("test/example/command.json", "w") as f:
 
 with open("test/example/mongocryptd-reply.json", "w") as f:
     f.write(json_util.dumps(marked_reply, indent=4, json_options=opts))
+
+with open("test/example/mongocryptd-reply-key-alt-name.json", "w") as f:
+    f.write(json_util.dumps(marked_reply_key_alt_name, indent=4, json_options=opts))
 
 with open("test/data/mongocryptd-reply-no-encryption-needed.json", "w") as f:
     f.write(json_util.dumps({

@@ -28,6 +28,8 @@ mongocrypt_status_new (void)
 const char *
 mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len)
 {
+   BSON_ASSERT (status);
+
    if (mongocrypt_status_ok (status)) {
       return NULL;
    }
@@ -41,6 +43,8 @@ mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len)
 uint32_t
 mongocrypt_status_code (mongocrypt_status_t *status)
 {
+   BSON_ASSERT (status);
+
    return status->code;
 }
 
@@ -48,6 +52,8 @@ mongocrypt_status_code (mongocrypt_status_t *status)
 mongocrypt_status_type_t
 mongocrypt_status_type (mongocrypt_status_t *status)
 {
+   BSON_ASSERT (status);
+
    return status->type;
 }
 
@@ -55,6 +61,8 @@ mongocrypt_status_type (mongocrypt_status_t *status)
 bool
 mongocrypt_status_ok (mongocrypt_status_t *status)
 {
+   BSON_ASSERT (status);
+
    return (status->type == MONGOCRYPT_STATUS_OK);
 }
 
@@ -78,6 +86,8 @@ _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
 void
 _mongocrypt_status_reset (mongocrypt_status_t *status)
 {
+   BSON_ASSERT (status);
+
    status->type = MONGOCRYPT_STATUS_OK;
    status->code = 0;
    status->len = 0;

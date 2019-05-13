@@ -26,7 +26,8 @@ typedef struct {
    _mongocrypt_buffer_t iv;
    /* one of the following is zeroed, and the other is set. */
    _mongocrypt_buffer_t key_id;
-   const bson_value_t *key_alt_name;
+   bson_value_t key_alt_name;
+   bool has_alt_name;
 } _mongocrypt_marking_t;
 
 

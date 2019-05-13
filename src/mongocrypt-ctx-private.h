@@ -40,6 +40,7 @@ typedef struct __mongocrypt_ctx_opts_t {
 
    /* For explicit encryption */
    _mongocrypt_buffer_t key_id;
+   _mongocrypt_buffer_t key_alt_name;
    _mongocrypt_buffer_t iv;
    mongocrypt_encryption_algorithm_t algorithm;
 } _mongocrypt_ctx_opts_t;

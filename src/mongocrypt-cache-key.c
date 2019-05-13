@@ -56,7 +56,7 @@ _copy_contents (void *value)
    _mongocrypt_cache_key_value_t *key_value;
 
    key_value = (_mongocrypt_cache_key_value_t *) value;
-   return _mongocrypt_cache_key_value_new (&key_value->key_doc,
+   return _mongocrypt_cache_key_value_new (key_value->key_doc,
                                            &key_value->decrypted_key_material);
 }
 
@@ -67,10 +67,16 @@ _mongocrypt_cache_key_value_new (_mongocrypt_key_doc_t *key_doc,
 {
    _mongocrypt_cache_key_value_t *key_value;
 
+   BSON_ASSERT (key_doc);
+   BSON_ASSERT (decrypted_key_material);
+
    key_value = bson_malloc0 (sizeof (*key_value));
    _mongocrypt_buffer_copy_to (decrypted_key_material,
                                &key_value->decrypted_key_material);
-   _mongocrypt_key_doc_copy_to (key_doc, &key_value->key_doc);
+
+   key_value->key_doc = _mongocrypt_key_new ();
+   _mongocrypt_key_doc_copy_to (key_doc, key_value->key_doc);
+
    return key_value;
 }
 
@@ -84,7 +90,7 @@ _mongocrypt_cache_key_value_destroy (void *value)
       return;
    }
    key_value = (_mongocrypt_cache_key_value_t *) value;
-   _mongocrypt_key_cleanup (&key_value->key_doc);
+   _mongocrypt_key_destroy (key_value->key_doc);
    _mongocrypt_buffer_cleanup (&key_value->decrypted_key_material);
    bson_free (key_value);
 }

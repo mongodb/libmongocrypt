@@ -124,8 +124,9 @@ _collect_key_from_marking (void *ctx,
                            _mongocrypt_buffer_t *in,
                            mongocrypt_status_t *status)
 {
-   _mongocrypt_marking_t marking = {0};
+   _mongocrypt_marking_t marking;
    _mongocrypt_key_broker_t *kb;
+   bool res;
 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
@@ -134,16 +135,19 @@ _collect_key_from_marking (void *ctx,
    }
 
    /* TODO: check if the key cache has the key. */
-   /* TODO: CDRIVER-3057 support keyAltName. */
-   if (marking.key_alt_name) {
-      CLIENT_ERR ("keyAltName not supported yet");
-      return false;
+   if (marking.has_alt_name) {
+      res = _mongocrypt_key_broker_add_name (kb, &marking.key_alt_name);
+   } else {
+      res = _mongocrypt_key_broker_add_id (kb, &marking.key_id);
    }
 
-   if (!_mongocrypt_key_broker_add_id (kb, &marking.key_id)) {
+   if (!res) {
       _mongocrypt_key_broker_status (kb, status);
       return false;
    }
+
+   _mongocrypt_marking_cleanup (&marking);
+
    return true;
 }
 
@@ -364,6 +368,8 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t as_bson;
    bson_iter_t iter;
+   bool has_id;
+   bool has_alt_name;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
@@ -378,14 +384,43 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "msg required for explicit encryption");
    }
 
-   if (_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
+   has_id = !_mongocrypt_buffer_empty (&ctx->opts.key_id);
+   has_alt_name = !_mongocrypt_buffer_empty (&ctx->opts.key_alt_name);
+
+   if (!has_id && !has_alt_name) {
       return _mongocrypt_ctx_fail_w_msg (
-         ctx, "key_id required for explicit encryption");
+         ctx, "either key_id or key_alt_name required for explicit encryption");
    }
 
-   /* Add their key id to the key broker. */
-   if (!_mongocrypt_key_broker_add_id (&ctx->kb, &ctx->opts.key_id)) {
-      return _mongocrypt_ctx_fail (ctx);
+   if (has_id && has_alt_name) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx,
+         "cannot have both key_id and key_alt_name for explicit encryption");
+   }
+
+   /* Add their key id or alt name to the key broker. */
+   if (has_id) {
+      if (!_mongocrypt_key_broker_add_id (&ctx->kb, &ctx->opts.key_id)) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   } else {
+      bson_iter_t iter;
+      bson_t as_bson;
+
+      if (!_mongocrypt_buffer_to_bson (&ctx->opts.key_alt_name, &as_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx,
+                                            "invalid keyAltName bson object");
+      }
+
+      if (!bson_iter_init_find (&iter, &as_bson, "keyAltName")) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "keyAltName must have field 'keyAltName'");
+      }
+
+      if (!_mongocrypt_key_broker_add_name (&ctx->kb,
+                                            bson_iter_value (&iter))) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
    }
 
    if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {

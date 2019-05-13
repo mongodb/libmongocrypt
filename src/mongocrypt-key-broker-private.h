@@ -90,7 +90,12 @@ bool
 _mongocrypt_key_broker_empty (_mongocrypt_key_broker_t *kb);
 
 
-/* Add an ID into the key broker. Key is added as KEY_EMPTY. */
+/* Add an ID or keyAltName into the key broker.
+   Key is added as KEY_EMPTY. */
+bool
+_mongocrypt_key_broker_add_name (_mongocrypt_key_broker_t *kb,
+                                 const bson_value_t *key_alt_name);
+
 bool
 _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
                                const _mongocrypt_buffer_t *key_id);
@@ -121,10 +126,14 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb);
 
 
 bool
-_mongocrypt_key_broker_decrypted_key_material_by_id (
-   _mongocrypt_key_broker_t *kb,
-   _mongocrypt_buffer_t *key_id,
-   _mongocrypt_buffer_t *out);
+_mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
+                                            const _mongocrypt_buffer_t *key_id,
+                                            _mongocrypt_buffer_t *out);
+
+bool
+_mongocrypt_key_broker_decrypted_key_by_name (_mongocrypt_key_broker_t *kb,
+                                              const bson_value_t *key_alt_name,
+                                              _mongocrypt_buffer_t *out);
 
 
 bool

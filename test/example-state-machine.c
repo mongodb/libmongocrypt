@@ -98,6 +98,8 @@ _print_binary_as_bson (mongocrypt_binary_t *binary)
    bson_t as_bson;
    char *str;
 
+   BSON_ASSERT (binary);
+
    bson_init_static (&as_bson,
                      mongocrypt_binary_data (binary),
                      mongocrypt_binary_len (binary));
@@ -124,13 +126,10 @@ _print_binary_as_text (mongocrypt_binary_t *binary)
    printf ("\n");
 }
 
-/* Requires there to be an object "ctx" in scope */
 #define CHECK(stmt) \
-   do {             \
-      if (!stmt) {  \
-         continue;  \
-      }             \
-   } while (0);
+   if (!stmt) {     \
+      continue;     \
+   }
 
 static mongocrypt_binary_t *
 _run_state_machine (mongocrypt_ctx_t *ctx)
@@ -177,6 +176,10 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
          mongocrypt_binary_destroy (input);
          bson_free (data);
          CHECK (mongocrypt_ctx_mongo_done (ctx));
+
+         mongocrypt_binary_destroy (output);
+         output = mongocrypt_binary_new ();
+
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
          CHECK (mongocrypt_ctx_mongo_op (ctx, output));
@@ -188,6 +191,10 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
          CHECK (mongocrypt_ctx_mongo_feed (ctx, input));
          mongocrypt_binary_destroy (input);
          bson_free (data);
+
+         mongocrypt_binary_destroy (output);
+         output = mongocrypt_binary_new ();
+
          CHECK (mongocrypt_ctx_mongo_done (ctx));
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
@@ -200,6 +207,10 @@ _run_state_machine (mongocrypt_ctx_t *ctx)
             _print_binary_as_text (input);
             CHECK (mongocrypt_kms_ctx_feed (kms, input));
             mongocrypt_binary_destroy (input);
+
+            mongocrypt_binary_destroy (output);
+            output = mongocrypt_binary_new ();
+
             bson_free (data);
             assert (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
          }
@@ -286,7 +297,6 @@ main ()
    input = _read_json ("./test/example/encrypted-document.json", &data);
    mongocrypt_ctx_decrypt_init (ctx, input);
    mongocrypt_binary_destroy (input);
-   bson_free (data);
    output = _run_state_machine (ctx);
    mongocrypt_binary_destroy (output);
 
@@ -323,6 +333,7 @@ main ()
 
    mongocrypt_ctx_destroy (ctx);
    bson_destroy (wrapped);
+   bson_free (data);
    mongocrypt_binary_destroy (key_id);
    mongocrypt_binary_destroy (output);
    mongocrypt_binary_destroy (encrypted_doc);

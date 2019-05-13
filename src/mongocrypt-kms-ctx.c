@@ -301,6 +301,12 @@ _mongocrypt_kms_ctx_result (mongocrypt_kms_ctx_t *kms,
    mongocrypt_status_t *status;
 
    status = kms->status;
+
+   /* If we have no status, we were never initialized */
+   if (!status) {
+      return false;
+   }
+
    if (!mongocrypt_status_ok (status)) {
       return false;
    }

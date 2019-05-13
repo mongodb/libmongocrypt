@@ -230,6 +230,10 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
       case MONGOCRYPT_CTX_NOTHING_TO_DO:
       case MONGOCRYPT_CTX_DONE:
       case MONGOCRYPT_CTX_ERROR:
+         mongocrypt_ctx_status (ctx, &status);
+         fprintf (stderr,
+                  "Got error: %s\n",
+                  mongocrypt_status_message (&status, NULL));
          BSON_ASSERT (state == stop_state);
          return;
       case MONGOCRYPT_CTX_WAITING:
@@ -428,7 +432,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_local_kms (&tester);
    _mongocrypt_tester_install_cache (&tester);
    _mongocrypt_tester_install_buffer (&tester);
-   
+
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {
       int j;

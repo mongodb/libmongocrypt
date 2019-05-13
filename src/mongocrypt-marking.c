@@ -56,7 +56,22 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
          goto cleanup;
       }
    } else if (bson_iter_init_find (&iter, &bson, "ka")) {
-      out->key_alt_name = bson_iter_value (&iter);
+      /* Some bson_value types are not allowed to be key alt names */
+      const bson_value_t *value;
+      bson_type_t type;
+
+      value = bson_iter_value (&iter);
+      type = value->value_type;
+
+      if (type != BSON_TYPE_UTF8) {
+         CLIENT_ERR ("unsupported key alt name type");
+         goto cleanup;
+      }
+
+      /* CDRIVER-3100 We must make a copy of this value;
+    the result of bson_iter_value is ephemeral. */
+      bson_value_copy (value, &out->key_alt_name);
+      out->has_alt_name = true;
    } else {
       CLIENT_ERR ("marking must include 'ki' or 'ka'");
       goto cleanup;
@@ -72,7 +87,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
          CLIENT_ERR ("iv must be 16 bytes");
          goto cleanup;
       }
-   } 
+   }
 
    if (!bson_iter_init_find (&iter, &bson, "v")) {
       CLIENT_ERR ("invalid marking, no 'v'");
@@ -127,6 +142,7 @@ _mongocrypt_marking_init (_mongocrypt_marking_t *marking)
 void
 _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 {
+   bson_value_destroy (&marking->key_alt_name);
    _mongocrypt_buffer_cleanup (&marking->iv);
    _mongocrypt_buffer_cleanup (&marking->key_id);
 }
@@ -143,6 +159,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    _mongocrypt_key_broker_t *kb;
    _mongocrypt_buffer_t key_material;
    bool ret = false;
+   bool key_found;
    uint32_t bytes_written;
 
    BSON_ASSERT (marking);
@@ -152,17 +169,22 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
-   if (marking->key_alt_name) {
-      CLIENT_ERR ("TODO looking up key by keyAltName not yet supported");
-      goto fail;
-   }
-
    _mongocrypt_ciphertext_init (ciphertext);
    ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
 
-   /* get the key for this marking. */
-   if (!_mongocrypt_key_broker_decrypted_key_material_by_id (
-          kb, &marking->key_id, &key_material)) {
+   /* Get the decrypted key for this marking. */
+   if (marking->has_alt_name) {
+      key_found = _mongocrypt_key_broker_decrypted_key_by_name (
+         kb, &marking->key_alt_name, &key_material);
+   } else if (!_mongocrypt_buffer_empty (&marking->key_id)) {
+      key_found = _mongocrypt_key_broker_decrypted_key_by_id (
+         kb, &marking->key_id, &key_material);
+   } else {
+      CLIENT_ERR ("marking must have either key_id or key_alt_name");
+      goto fail;
+   }
+
+   if (!key_found) {
       _mongocrypt_status_copy_to (kb->status, status);
       goto fail;
    }

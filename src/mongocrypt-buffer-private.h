@@ -83,7 +83,7 @@ bool
 _mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf, bson_t *bson);
 
 
-void
+bool
 _mongocrypt_buffer_append (const _mongocrypt_buffer_t *buf,
                            bson_t *bson,
                            const char *key,
@@ -123,7 +123,7 @@ _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buf);
 
 
 bool
-_mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf);
+_mongocrypt_buffer_empty (const _mongocrypt_buffer_t *buf);
 
 bool
 _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,

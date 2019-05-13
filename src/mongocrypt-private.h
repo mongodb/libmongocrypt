@@ -80,7 +80,6 @@ struct _mongocrypt_t {
    uint32_t ctx_counter;
 };
 
-
 typedef enum {
    MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE = 0,
    MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC = 1,

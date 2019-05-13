@@ -57,8 +57,7 @@ _parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
       return false;
    }
 
-   /* TODO: after merging CDRIVER-3003, use _mongocrypt_buffer_init. */
-   memset (&ciphertext->key_id, 0, sizeof (ciphertext->key_id));
+   _mongocrypt_buffer_init (&ciphertext->key_id);
    ciphertext->key_id.data = in->data + offset;
    ciphertext->key_id.len = 16;
    ciphertext->key_id.subtype = BSON_SUBTYPE_UUID;
@@ -99,7 +98,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
    }
 
    /* look up the key */
-   if (!_mongocrypt_key_broker_decrypted_key_material_by_id (
+   if (!_mongocrypt_key_broker_decrypted_key_by_id (
           kb, &ciphertext.key_id, &key_material)) {
       /* We allow partial decryption, so this is not an error. */
       /* TODO: either log here and pass a mongocrypt_ctx_t instead of a key
@@ -150,6 +149,14 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_iter_t iter;
    _mongocrypt_ctx_decrypt_t *dctx;
    bool res;
+
+   if (!ctx) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "null ctx");
+   }
+
+   if (!out) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "null out parameter");
+   }
 
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
 

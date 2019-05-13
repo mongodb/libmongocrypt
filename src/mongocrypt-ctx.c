@@ -44,24 +44,39 @@ _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
 }
 
 
+static bool
+_set_binary_opt (mongocrypt_ctx_t *ctx,
+                 mongocrypt_binary_t *binary,
+                 _mongocrypt_buffer_t *buf)
+{
+   BSON_ASSERT (ctx);
+
+   if (!binary) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "option must be non-NULL");
+   }
+
+   if (!_mongocrypt_buffer_empty (buf)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "option already set");
+   }
+
+   _mongocrypt_buffer_copy_from_binary (buf, binary);
+   buf->subtype = BSON_SUBTYPE_UUID;
+
+   return true;
+}
+
 bool
 mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
                               mongocrypt_binary_t *key_id)
 {
-   BSON_ASSERT (ctx);
+   return _set_binary_opt (ctx, key_id, &ctx->opts.key_id);
+}
 
-   if (!key_id) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "key_id must be non-NULL");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.key_id)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "key_id already set");
-   }
-
-   _mongocrypt_buffer_copy_from_binary (&ctx->opts.key_id, key_id);
-   ctx->opts.key_id.subtype = BSON_SUBTYPE_UUID;
-
-   return true;
+bool
+mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
+                                    mongocrypt_binary_t *key_alt_name)
+{
+   return _set_binary_opt (ctx, key_alt_name, &ctx->opts.key_alt_name);
 }
 
 
@@ -98,19 +113,7 @@ bool
 mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
                                              mongocrypt_binary_t *iv)
 {
-   BSON_ASSERT (ctx);
-
-   if (!iv) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "iv must be non-NULL");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "iv already set");
-   }
-
-   _mongocrypt_buffer_copy_from_binary (&ctx->opts.iv, iv);
-
-   return true;
+   return _set_binary_opt (ctx, iv, &ctx->opts.iv);
 }
 
 
@@ -345,6 +348,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
    bson_free (ctx->opts.masterkey_aws_cmk);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
+   _mongocrypt_buffer_cleanup (&ctx->opts.key_alt_name);
    _mongocrypt_buffer_cleanup (&ctx->opts.key_id);
    _mongocrypt_buffer_cleanup (&ctx->opts.iv);
    bson_free (ctx);

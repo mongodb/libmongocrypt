@@ -148,13 +148,14 @@ _mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf, bson_t *bson)
 }
 
 
-void
+bool
 _mongocrypt_buffer_append (const _mongocrypt_buffer_t *buf,
                            bson_t *bson,
                            const char *key,
                            uint32_t key_len)
 {
-   bson_append_binary (bson, key, key_len, buf->subtype, buf->data, buf->len);
+   return bson_append_binary (
+      bson, key, key_len, buf->subtype, buf->data, buf->len);
 }
 
 
@@ -200,8 +201,11 @@ _mongocrypt_buffer_copy_to (const _mongocrypt_buffer_t *src,
    if (src == dst) {
       return;
    }
+
    BSON_ASSERT (src);
    BSON_ASSERT (dst);
+
+   _mongocrypt_buffer_cleanup (dst);
    dst->data = bson_malloc ((size_t) src->len);
    memcpy (dst->data, src->data, src->len);
    dst->len = src->len;
@@ -242,14 +246,14 @@ _mongocrypt_buffer_cmp (const _mongocrypt_buffer_t *a,
 void
 _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buf)
 {
-   if (buf->owned) {
+   if (buf && buf->owned) {
       bson_free (buf->data);
    }
 }
 
 
 bool
-_mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf)
+_mongocrypt_buffer_empty (const _mongocrypt_buffer_t *buf)
 {
    return buf->data == NULL;
 }

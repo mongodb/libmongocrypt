@@ -358,6 +358,8 @@ typedef struct _mongocrypt_ctx_t mongocrypt_ctx_t;
 /**
  * Set the key id to use for explicit encryption.
  *
+ * It is an error to set both this and the key alt name.
+ *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] key_id The key_id to use.
  * @returns A boolean indicating success.
@@ -366,6 +368,24 @@ MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
                               mongocrypt_binary_t *key_id);
+
+/**
+ * Set the keyAltName to use for explicit encryption.
+ * keyAltName should be a binary encoding a bson document
+ * with the following format:
+ *
+ *   { "keyAltName" : <BSON UTF8 value> }
+ *
+ * It is an error to set both this and the key id.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] key_alt_name The name to use.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
+                                    mongocrypt_binary_t *key_alt_name);
 
 /**
  * Set the algorithm used for encryption to either

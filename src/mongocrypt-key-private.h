@@ -24,6 +24,8 @@
 
 typedef struct {
    _mongocrypt_buffer_t id;
+   bson_value_t key_alt_names;
+   bool has_alt_names;
    _mongocrypt_buffer_t key_material;
    _mongocrypt_kms_provider_t masterkey_provider;
    char *masterkey_region;
@@ -35,13 +37,19 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
                              _mongocrypt_key_doc_t *out,
                              mongocrypt_status_t *status);
 
+_mongocrypt_key_doc_t *
+_mongocrypt_key_new ();
+
+bool
+_mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
+                       const _mongocrypt_key_doc_t *b);
+
 void
 _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
                              _mongocrypt_key_doc_t *dst);
 
-
 void
-_mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key);
+_mongocrypt_key_destroy (_mongocrypt_key_doc_t *key);
 
 
 #endif /* MONGOCRYPT_KEY_PRIVATE_H */

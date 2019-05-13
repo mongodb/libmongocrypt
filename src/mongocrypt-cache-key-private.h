@@ -25,7 +25,7 @@
 #include "mongocrypt-status-private.h"
 
 typedef struct {
-   _mongocrypt_key_doc_t key_doc;
+   _mongocrypt_key_doc_t *key_doc;
    _mongocrypt_buffer_t decrypted_key_material;
 } _mongocrypt_cache_key_value_t;
 

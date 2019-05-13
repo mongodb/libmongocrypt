@@ -45,6 +45,13 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
       goto cleanup;
    }
 
+   /* keyAltName (optional) */
+   if (bson_iter_init_find (&iter, bson, "keyAltNames")) {
+      /* CDRIVER-3100 We must make a copy here */
+      bson_value_copy (bson_iter_value (&iter), &out->key_alt_names);
+      out->has_alt_names = true;
+   }
+
    /* keyMaterial */
    if (!bson_iter_init_find (&iter, bson, "keyMaterial")) {
       CLIENT_ERR ("invalid key, no 'keyMaterial'");
@@ -116,18 +123,85 @@ cleanup:
 }
 
 
-void
-_mongocrypt_key_cleanup (_mongocrypt_key_doc_t *key)
+_mongocrypt_key_doc_t *
+_mongocrypt_key_new ()
 {
+   _mongocrypt_key_doc_t *key_doc;
+
+   key_doc = (_mongocrypt_key_doc_t *) bson_malloc0 (sizeof *key_doc);
+
+   return key_doc;
+}
+
+
+bool
+_mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
+                       const _mongocrypt_key_doc_t *b)
+{
+   if (_mongocrypt_buffer_cmp (&a->id, &b->id) != 0) {
+      return false;
+   }
+
+   if (a->has_alt_names != b->has_alt_names) {
+      return false;
+   }
+
+   if (a->has_alt_names) {
+      BSON_ASSERT (a->key_alt_names.value_type == BSON_TYPE_UTF8);
+      BSON_ASSERT (b->key_alt_names.value_type == BSON_TYPE_UTF8);
+      if (0 != strcmp (a->key_alt_names.value.v_utf8.str,
+                       b->key_alt_names.value.v_utf8.str)) {
+         return false;
+      }
+   }
+
+   if (0 != _mongocrypt_buffer_cmp (&a->key_material, &b->key_material)) {
+      return false;
+   }
+
+   if (a->masterkey_provider != b->masterkey_provider) {
+      return false;
+   }
+
+   if (0 != strcmp (a->masterkey_region, b->masterkey_region)) {
+      return false;
+   }
+
+   if (a->masterkey_cmk && b->masterkey_cmk) {
+      if (0 != strcmp (a->masterkey_cmk, b->masterkey_cmk)) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
+void
+_mongocrypt_key_destroy (_mongocrypt_key_doc_t *key)
+{
+   if (!key) {
+      return;
+   }
+
    _mongocrypt_buffer_cleanup (&key->id);
+   if (key->has_alt_names) {
+      bson_value_destroy (&key->key_alt_names);
+   }
    _mongocrypt_buffer_cleanup (&key->key_material);
    bson_free (key->masterkey_region);
+   bson_free (key->masterkey_cmk);
+   bson_free (key);
 }
 
 
 void
 _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
-                             _mongocrypt_key_doc_t *dst) {
+                             _mongocrypt_key_doc_t *dst)
+{
+   BSON_ASSERT (src);
+   BSON_ASSERT (dst);
+
    _mongocrypt_buffer_copy_to (&src->id, &dst->id);
    _mongocrypt_buffer_copy_to (&src->key_material, &dst->key_material);
    dst->masterkey_provider = src->masterkey_provider;

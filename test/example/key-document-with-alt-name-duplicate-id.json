@@ -4,7 +4,7 @@
     }, 
     "_id": {
         "$binary": {
-            "base64": "AAAAAAAAAAAAAAAAAAAAAA==", 
+            "base64": "AwAAAAAAAAAAAAAAAAAAAA==", 
             "subType": "04"
         }
     }, 
@@ -13,6 +13,10 @@
         "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0", 
         "provider": "aws"
     }, 
+    "keyAltNames": [
+        "Sharlene", 
+        "Kasey"
+    ], 
     "updatedDate": {
         "$date": {
             "$numberLong": "1557827033449"
@@ -20,7 +24,7 @@
     }, 
     "keyMaterial": {
         "$binary": {
-            "base64": "AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gFTLHSPLWSYuoOFqjY9+VmJAAAAojCBnwYJKoZIhvcNAQcGoIGRMIGOAgEAMIGIBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDFOENs/+C3N0JY77OwIBEIBbQKuXVo/s0CDmDzQrbIilEySxbiQd6dDUijJx00RXiCQuEgZHpu5qEKM8S5b6ls5+tAZTea+QetsD9Vqy9nWICbSc4P4n6XOxwLuybYZL3fZg6EUALdEBgT9zmQ==", 
+            "base64": "AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gHMF9g1IqGKDAyaXKtM6d0oAAAAojCBnwYJKoZIhvcNAQcGoIGRMIGOAgEAMIGIBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDOAmS5XNZ9jzDE3DnAIBEIBbgsXmyOVfXoHWra0a+9H+0e2yH8Tu9AdaMdrwwWtZNwiYq+xQ/gmw2L6Bg7SzTSR+du4smjymGDgiaMXjZ7YONJn+th1CXFkDNAAW1gV+rRjakmGadd+vIMj1LA==", 
             "subType": "00"
         }
     }, 
