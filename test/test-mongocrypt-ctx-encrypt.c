@@ -693,6 +693,4 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_caches_keys);
    INSTALL_TEST (_test_encrypt_random);
    INSTALL_TEST (_test_ctx_id);
-   INSTALL_TEST (_test_set_plaintext);
-   INSTALL_TEST (_test_mongocrypt_buffer_from_iter);
 }
