@@ -63,7 +63,7 @@ public class MongoCryptTest {
         encryptor.completeMongoOperation();
         assertEquals(State.NEED_MONGO_KEYS, encryptor.getState());
 
-        testkeyBroker(encryptor);
+        testKeyDecryptor(encryptor);
 
         assertEquals(State.READY, encryptor.getState());
 
@@ -86,7 +86,7 @@ public class MongoCryptTest {
 
         assertEquals(State.NEED_MONGO_KEYS, decryptor.getState());
 
-        testkeyBroker(decryptor);
+        testKeyDecryptor(decryptor);
 
         assertEquals(State.READY, decryptor.getState());
 
@@ -99,7 +99,7 @@ public class MongoCryptTest {
         mongoCrypt.close();
     }
 
-    private void testkeyBroker(final MongoCryptContext context) throws URISyntaxException, IOException {
+    private void testKeyDecryptor(final MongoCryptContext context) throws URISyntaxException, IOException {
         BsonDocument keyFilter = context.getMongoOperation();
         assertEquals(getResourceAsDocument("key-filter.json"), keyFilter);
         context.addMongoOperationResult(getResourceAsDocument("key-document.json"));
@@ -107,8 +107,6 @@ public class MongoCryptTest {
         assertEquals(State.NEED_KMS, context.getState());
 
         MongoKeyDecryptor keyDecryptor = context.nextKeyDecryptor();
-
-        // TODO: get this working
         assertEquals("kms.us-east-1.amazonaws.com", keyDecryptor.getHostName());
 
         ByteBuffer keyDecryptorMessage = keyDecryptor.getMessage();
@@ -119,7 +117,7 @@ public class MongoCryptTest {
 
         keyDecryptor.feed(getHttpResourceAsByteBuffer("kms-reply.txt"));
         bytesNeeded = keyDecryptor.bytesNeeded();
-        assertEquals(0, bytesNeeded); // WHY IS THIS STILL EQUAL TO 1024?
+        assertEquals(0, bytesNeeded);
 
         assertNull(context.nextKeyDecryptor());
 
