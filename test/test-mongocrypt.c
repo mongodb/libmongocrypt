@@ -261,7 +261,7 @@ _mongocrypt_tester_plaintext (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (bin);
    BSON_ASSERT (bson_iter_init (&iter, &as_bson));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "result.filter.ssn", &iter));
-   _mongocrypt_buffer_from_iter (&buf, &iter);
+   _mongocrypt_buffer_from_binary_iter (&buf, &iter);
    status = mongocrypt_status_new ();
    ASSERT_OR_PRINT (_mongocrypt_marking_parse_unowned (&buf, &marking, status),
                     status);
@@ -427,7 +427,8 @@ main (int argc, char **argv)
       &tester, "_test_mongocrypt_bad_init", _test_mongocrypt_bad_init);
    _mongocrypt_tester_install_local_kms (&tester);
    _mongocrypt_tester_install_cache (&tester);
-
+   _mongocrypt_tester_install_buffer (&tester);
+   
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {
       int j;

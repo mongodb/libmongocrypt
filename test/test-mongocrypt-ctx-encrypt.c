@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-#include <mongocrypt.h>
-#include <mongocrypt-ciphertext-private.h>
-#include <mongocrypt-ctx-private.h>
-#include <mongocrypt-key-broker-private.h>
+#include <mongocrypt-marking-private.h>
 
 #include "test-mongocrypt.h"
 
@@ -449,7 +446,7 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
-   _mongocrypt_buffer_from_iter (&ciphertext_buf, &iter);
+   _mongocrypt_buffer_from_binary_iter (&ciphertext_buf, &iter);
    ret = _mongocrypt_ciphertext_parse_unowned (
       &ciphertext_buf, &ciphertext, status);
    ASSERT_OR_PRINT (ret, status);
@@ -542,7 +539,6 @@ _test_local_schema (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
-
 
 static void
 _test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)

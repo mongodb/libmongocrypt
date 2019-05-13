@@ -59,7 +59,7 @@ _recurse (_recurse_state_t *state)
       if (BSON_ITER_HOLDS_BINARY (&state->iter)) {
          _mongocrypt_buffer_t value;
 
-         _mongocrypt_buffer_from_iter (&value, &state->iter);
+         _mongocrypt_buffer_from_binary_iter (&value, &state->iter);
 
          if (value.subtype == 6 && value.len > 0 &&
              _check_first_byte (value.data[0], state->match)) {

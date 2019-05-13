@@ -50,7 +50,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       if (!BSON_ITER_HOLDS_BINARY (&iter)) {
          CLIENT_ERR ("key id must be a binary type");
       }
-      _mongocrypt_buffer_from_iter (&out->key_id, &iter);
+      _mongocrypt_buffer_from_binary_iter (&out->key_id, &iter);
       if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
@@ -67,7 +67,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
          CLIENT_ERR ("invalid marking, 'iv' is not binary");
          goto cleanup;
       }
-      _mongocrypt_buffer_from_iter (&out->iv, &iter);
+      _mongocrypt_buffer_from_binary_iter (&out->iv, &iter);
       if (out->iv.len != 16) {
          CLIENT_ERR ("iv must be 16 bytes");
          goto cleanup;
@@ -141,7 +141,6 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    _mongocrypt_buffer_t plaintext = {0};
    _mongocrypt_buffer_t iv = {0};
    _mongocrypt_key_broker_t *kb;
-   bson_t wrapper = BSON_INITIALIZER;
    _mongocrypt_buffer_t key_material;
    bool ret = false;
    uint32_t bytes_written;
@@ -168,13 +167,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       goto fail;
    }
 
-   /* TODO: for simplicity, we wrap the thing we encrypt in a BSON document
-    * with an empty key, i.e. { "": <thing to encrypt> }
-    * CDRIVER-3021 will remove this. */
-   bson_append_iter (&wrapper, "", 0, &marking->v_iter);
-   plaintext.data = (uint8_t *) bson_get_data (&wrapper);
-   plaintext.len = wrapper.len;
-
+   _mongocrypt_buffer_from_iter (&plaintext, &marking->v_iter);
    ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext->data.data = bson_malloc (ciphertext->data.len);
    ciphertext->data.owned = true;
@@ -224,6 +217,6 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
 
 fail:
    _mongocrypt_buffer_cleanup (&iv);
-   bson_destroy (&wrapper);
+   _mongocrypt_buffer_cleanup (&plaintext);
    return ret;
 }

@@ -18,6 +18,11 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
 
+#define INT32_LEN 4
+#define TYPE_LEN 1
+#define NULL_BYTE_LEN 1
+#define NULL_BYTE_VAL 0x00
+
 /* TODO CDRIVER-2990 have buffer operations require initialized buffer to
  * prevent leaky code. */
 void
@@ -77,7 +82,8 @@ _mongocrypt_buffer_copy_from_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
 
 
 void
-_mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
+_mongocrypt_buffer_from_binary_iter (_mongocrypt_buffer_t *buf,
+                                     bson_iter_t *iter)
 {
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (iter));
    _mongocrypt_buffer_init (buf);
@@ -246,4 +252,73 @@ bool
 _mongocrypt_buffer_empty (_mongocrypt_buffer_t *buf)
 {
    return buf->data == NULL;
+}
+
+bool
+_mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
+                                  uint8_t type,
+                                  bson_value_t *out)
+{
+   bool ret = false;
+   bson_iter_t iter;
+   bson_t wrapper;
+   uint32_t data_len;
+   uint32_t le_data_len;
+   uint8_t *data;
+   uint8_t data_prefix;
+
+   data_prefix = INT32_LEN        /* adds document size */
+                 + TYPE_LEN       /* element type */
+                 + NULL_BYTE_LEN; /* and doc's null byte terminator */
+
+   data_len = (plaintext->len + data_prefix + NULL_BYTE_LEN);
+   le_data_len = BSON_UINT32_TO_LE (data_len);
+
+   data = bson_malloc0 (data_len);
+   memcpy (data + data_prefix, plaintext->data, plaintext->len);
+   memcpy (data, &le_data_len, INT32_LEN);
+   memcpy (data + INT32_LEN, &type, TYPE_LEN);
+   data[data_len - 1] = NULL_BYTE_VAL;
+
+   if (!bson_init_static (&wrapper, data, data_len)) {
+      goto fail;
+   }
+
+   if (!bson_validate (&wrapper, 0, NULL)) {
+      goto fail;
+   }
+
+   bson_iter_init_find (&iter, &wrapper, "");
+   bson_value_copy (bson_iter_value (&iter), out);
+
+   ret = true;
+fail:
+   bson_free (data);
+   return ret;
+}
+
+void
+_mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
+                              bson_iter_t *iter)
+{
+   bson_t wrapper = BSON_INITIALIZER;
+   int32_t offset = INT32_LEN        /* skips document size */
+                    + TYPE_LEN       /* element type */
+                    + NULL_BYTE_LEN; /* and the key's null byte terminator */
+
+   uint8_t *wrapper_data;
+
+   /* It is not straightforward to transform a bson_value_t to a string of
+    * bytes. As a workaround, we wrap the value in a bson document with an empty
+    * key, then use the raw buffer from inside the new bson_t, skipping the
+    * length and type header information and the key name. */
+   bson_append_iter (&wrapper, "", 0, iter);
+   wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
+   plaintext->len =
+      wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
+   plaintext->data = bson_malloc (plaintext->len);
+   plaintext->owned = true;
+   memcpy (plaintext->data, wrapper_data + offset, plaintext->len);
+
+   bson_destroy (&wrapper);
 }

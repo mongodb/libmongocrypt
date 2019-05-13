@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongocrypt-private.h"
-#include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-ctx-private.h"
-
 
 /* From BSON Binary subtype 6 specification:
 struct fle_blob {
@@ -87,8 +85,6 @@ _replace_ciphertext_with_plaintext (void *ctx,
    _mongocrypt_ciphertext_t ciphertext;
    _mongocrypt_buffer_t plaintext = {0};
    _mongocrypt_buffer_t key_material;
-   bson_t wrapper;
-   bson_iter_t iter;
    uint32_t bytes_written;
    bool ret = false;
 
@@ -134,9 +130,11 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    plaintext.len = bytes_written;
 
-   bson_init_static (&wrapper, plaintext.data, plaintext.len);
-   bson_iter_init_find (&iter, &wrapper, "");
-   bson_value_copy (bson_iter_value (&iter), out);
+   if (!_mongocrypt_buffer_to_bson_value (
+          &plaintext, ciphertext.original_bson_type, out)) {
+      CLIENT_ERR ("malformed encrypted bson");
+      goto fail;
+   }
    ret = true;
 
 fail:
@@ -298,7 +296,7 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
 
-   _mongocrypt_buffer_from_iter (&dctx->unwrapped_doc, &iter);
+   _mongocrypt_buffer_from_binary_iter (&dctx->unwrapped_doc, &iter);
 
    /* Parse out our one key id */
    if (!_collect_key_from_ciphertext (

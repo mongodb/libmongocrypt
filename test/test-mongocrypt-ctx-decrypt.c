@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongocrypt.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt.h"
 #include "test-mongocrypt.h"
-
 
 static void
 _test_explicit_decrypt_init (_mongocrypt_tester_t *tester)

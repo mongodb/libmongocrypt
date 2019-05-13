@@ -1,7 +1,7 @@
 {
     "ssn": {
         "$binary": {
-            "base64": "AQAAAAAAAAAAAAAAAAAAAAACaWlpaWlpaWlpaWlpaWlpabxsgJndMBCMERBAi/fCAOAQu6/LKU2mu5X7FLmEJlhkHsRr7TxMoz/2akbqBBzCVn1FXiIe9esJCgNhan6EY8g=",
+            "base64": "AQAAAAAAAAAAAAAAAAAAAAACaWlpaWlpaWlpaWlpaWlpabfqziGLfQanzdB1yTEzR8Nl4+IuG7Yc6R41O6bzGedZj6JUuaRfevH1qnjIOhQ+99fG4Dzxc62EXjpGa4Yz9n0=",
             "subType": "06"
         }
     }
