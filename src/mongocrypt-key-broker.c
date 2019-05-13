@@ -524,12 +524,14 @@ _get_first_match_by_key_doc (_mongocrypt_key_broker_t *kb,
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
                              _mongocrypt_opts_t *opts,
-                             _mongocrypt_cache_t *cache_key)
+                             _mongocrypt_cache_t *cache_key,
+                             _mongocrypt_log_t *log)
 {
    memset (kb, 0, sizeof (*kb));
    kb->status = mongocrypt_status_new ();
    kb->crypt_opts = opts;
    kb->cache_key = cache_key;
+   kb->log = log;
 }
 
 

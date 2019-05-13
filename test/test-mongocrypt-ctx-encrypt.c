@@ -597,6 +597,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (bin);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
+   mongocrypt_binary_destroy (markings);
 }
 
 

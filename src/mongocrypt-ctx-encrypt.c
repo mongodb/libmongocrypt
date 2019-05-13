@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-#include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
-#include "mongocrypt-marking-private.h"
 #include "mongocrypt-key-broker-private.h"
+#include "mongocrypt-marking-private.h"
 
 /* Construct the list collections command to send. */
 static bool
@@ -425,7 +424,7 @@ _try_schema_from_cache (mongocrypt_ctx_t *ctx)
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    /* Otherwise, we need a remote schema. Check if we have a response to
-      * listCollections cached. */
+    * listCollections cached. */
    if (!_mongocrypt_cache_get (&ctx->crypt->cache_collinfo,
                                ectx->ns /* null terminated */,
                                (void **) &collinfo)) {
@@ -451,6 +450,7 @@ bool
 mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
 {
+   char *msg_val;
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t as_bson;
    bson_iter_t iter;

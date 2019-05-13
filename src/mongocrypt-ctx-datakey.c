@@ -245,8 +245,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       if (!_mongocrypt_kms_ctx_init_aws_encrypt (&dkctx->kms,
                                                  &ctx->crypt->opts,
                                                  &ctx->opts,
-                                                 &plaintext_key_material,
-                                                 NULL)) {
+                                                 &plaintext_key_material)) {
          mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
          _mongocrypt_ctx_fail (ctx);
          goto done;
