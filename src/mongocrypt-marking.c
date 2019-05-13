@@ -67,7 +67,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
          CLIENT_ERR ("invalid marking, 'iv' is not binary");
          goto cleanup;
       }
-      _mongocrypt_buffer_from_iter (&out->iv, &iter);
+      _mongocrypt_buffer_from_binary_iter (&out->iv, &iter);
       if (out->iv.len != 16) {
          CLIENT_ERR ("iv must be 16 bytes");
          goto cleanup;
