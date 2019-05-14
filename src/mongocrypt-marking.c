@@ -28,103 +28,138 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
 {
    bson_t bson;
    bson_iter_t iter;
-   bool ret = false;
-   int algorithm;
-
-   if (in->len < 5) {
-      CLIENT_ERR ("invalid marking, length < 5");
-      goto cleanup;
-   }
-
-   /* Confirm that this is indeed a marking */
-   if (in->data[0] != 0) {
-      CLIENT_ERR ("invalid marking, first byte must be 0");
-      goto cleanup;
-   }
+   bool has_ki = false, has_ka = false, has_iv = false, has_a = false,
+        has_v = false;
 
    _mongocrypt_marking_init (out);
 
-   bson_init_static (&bson, in->data + 1, in->len - 1);
-
-   if (bson_iter_init_find (&iter, &bson, "ki")) {
-      if (!_mongocrypt_buffer_from_uuid_iter (&out->key_id, &iter)) {
-         CLIENT_ERR ("key id must be a UUID");
-         goto cleanup;
-      }
-   } else if (bson_iter_init_find (&iter, &bson, "ka")) {
-      /* Some bson_value types are not allowed to be key alt names */
-      const bson_value_t *value;
-      bson_type_t type;
-
-      value = bson_iter_value (&iter);
-      type = value->value_type;
-
-      if (type != BSON_TYPE_UTF8) {
-         CLIENT_ERR ("unsupported key alt name type");
-         goto cleanup;
-      }
-
-      /* CDRIVER-3100 We must make a copy of this value;
-    the result of bson_iter_value is ephemeral. */
-      bson_value_copy (value, &out->key_alt_name);
-      out->has_alt_name = true;
-   } else {
-      CLIENT_ERR ("marking must include 'ki' or 'ka'");
-      goto cleanup;
+   if (in->len < 5) {
+      CLIENT_ERR ("invalid marking, length < 5");
+      return false;
    }
 
-   if (bson_iter_init_find (&iter, &bson, "iv")) {
-      if (!_mongocrypt_buffer_from_binary_iter (&out->iv, &iter)) {
-         CLIENT_ERR ("invalid marking, 'iv' is not binary");
-         goto cleanup;
+   if (in->data[0] != 0) {
+      CLIENT_ERR ("invalid marking, first byte must be 0");
+      return false;
+   }
+
+   if (!bson_init_static (&bson, in->data + 1, in->len - 1)) {
+      CLIENT_ERR ("invalid BSON");
+      return false;
+   }
+
+   if (!bson_validate (&bson, BSON_VALIDATE_NONE, NULL) ||
+       !bson_iter_init (&iter, &bson)) {
+      CLIENT_ERR ("invalid BSON");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      const char *field;
+
+      field = bson_iter_key (&iter);
+      if (0 == strcmp ("ki", field)) {
+         has_ki = true;
+         if (!_mongocrypt_buffer_from_uuid_iter (&out->key_id, &iter)) {
+            CLIENT_ERR ("key id must be a UUID");
+            return false;
+         }
+         continue;
       }
 
-      if (out->iv.len != 16) {
-         CLIENT_ERR ("iv must be 16 bytes");
-         goto cleanup;
+      if (0 == strcmp ("ka", field)) {
+         has_ka = true;
+         /* Some bson_value types are not allowed to be key alt names */
+         const bson_value_t *value;
+         bson_type_t type;
+
+         value = bson_iter_value (&iter);
+         type = value->value_type;
+
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            CLIENT_ERR ("key alt name must be a UTF8");
+            return false;
+         }
+         /* CDRIVER-3100 We must make a copy of this value; the result of bson_iter_value is ephemeral. */
+         bson_value_copy (value, &out->key_alt_name);
+         out->has_alt_name = true;
+         continue;
       }
-   }
 
-   if (!bson_iter_init_find (&iter, &bson, "v")) {
-      CLIENT_ERR ("invalid marking, no 'v'");
-      goto cleanup;
-   }
-   memcpy (&out->v_iter, &iter, sizeof (bson_iter_t));
-
-   if (!bson_iter_init_find (&iter, &bson, "a")) {
-      CLIENT_ERR ("invalid marking, no 'a'");
-      goto cleanup;
-   }
-
-   if (!BSON_ITER_HOLDS_INT32 (&iter)) {
-      CLIENT_ERR ("invalid marking, 'a' must be an integer");
-      goto cleanup;
-   }
-
-   algorithm = bson_iter_int32 (&iter);
-   switch (algorithm) {
-   case 1:
-      out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
-      if (_mongocrypt_buffer_empty (&out->iv)) {
-         CLIENT_ERR ("deterministic algorithm specified, but no iv present");
-         goto cleanup;
+      if (0 == strcmp ("iv", field)) {
+         has_iv = true;
+         if (!_mongocrypt_buffer_from_binary_iter (&out->iv, &iter)) {
+            CLIENT_ERR ("invalid marking, 'iv' is invalid binary");
+            return false;
+         }
+         if (out->iv.len != 16) {
+            CLIENT_ERR ("iv must be 16 bytes");
+            return false;
+         }
+         continue;
       }
-      break;
-   case 2:
-      out->algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
-      if (!_mongocrypt_buffer_empty (&out->iv)) {
-         CLIENT_ERR ("randomized algorithm specified, but iv present");
-         goto cleanup;
+
+      if (0 == strcmp ("v", field)) {
+         has_v = true;
+         memcpy (&out->v_iter, &iter, sizeof (bson_iter_t));
+         continue;
       }
-      break;
-   default:
-      CLIENT_ERR ("invalid algorithm value %d", algorithm);
-      goto cleanup;
+
+
+      if (0 == strcmp ("a", field)) {
+         int32_t algorithm;
+
+         has_a = true;
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+            CLIENT_ERR ("invalid marking, 'a' must be an int32");
+            return false;
+         }
+         algorithm = bson_iter_int32 (&iter);
+         if (algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
+             algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM) {
+            CLIENT_ERR ("invalid algorithm value: %d", algorithm);
+            return false;
+         }
+         out->algorithm = (mongocrypt_encryption_algorithm_t) algorithm;
+         continue;
+      }
+
+      CLIENT_ERR ("unrecognized field '%s'", field);
+      return false;
    }
 
-   ret = true;
-cleanup:
-   return ret;
+   if (!has_v) {
+      CLIENT_ERR ("no 'v' specified");
+      return false;
+   }
+
+   if (!has_ki && !has_ka) {
+      CLIENT_ERR ("neither 'ki' nor 'ka' specified");
+      return false;
+   }
+
+   if (has_ki && has_ka) {
+      CLIENT_ERR ("both 'ki' and 'ka' specified");
+      return false;
+   }
+
+   if (!has_a) {
+      CLIENT_ERR ("no 'a' specified");
+      return false;
+   }
+
+   if (out->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
+       !has_iv) {
+      CLIENT_ERR ("deterministic encryption but no 'iv' present");
+      return false;
+   }
+
+   if (out->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM && has_iv) {
+      CLIENT_ERR ("random encryption but 'iv' present");
+      return false;
+   }
+
+   return true;
 }
 
 

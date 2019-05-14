@@ -516,6 +516,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_buffer (&tester);
    _mongocrypt_tester_install_ctx_setopt (&tester);
    _mongocrypt_tester_install_key (&tester);
+   _mongocrypt_tester_install_marking (&tester);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

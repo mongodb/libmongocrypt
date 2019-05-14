@@ -212,6 +212,7 @@ _mongocrypt_tester_install_ctx_setopt (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_key (_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_marking (_mongocrypt_tester_t *tester);
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
