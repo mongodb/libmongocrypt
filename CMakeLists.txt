@@ -104,19 +104,22 @@ else ()
    )
 endif ()
 
+# kms-message
+add_subdirectory (kms-message)
 
 # Define mongocrypt library
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
-target_include_directories (mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
+target_include_directories (mongocrypt PRIVATE ${BSON_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (mongocrypt PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
 target_link_libraries (mongocrypt PRIVATE ${BSON_LIBRARIES})
 target_link_libraries (mongocrypt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries (mongocrypt PRIVATE kms_message_static)
 target_compile_definitions (mongocrypt PRIVATE "${BSON_DEFINITIONS}")
 
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
-add_library (mongocrypt-static STATIC ${MONGOCRYPT_SOURCES})
-target_include_directories (mongocrypt-static PRIVATE ${BSON_INCLUDE_DIRS})
+add_library (mongocrypt-static STATIC ${MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
+target_include_directories (mongocrypt-static PRIVATE ${BSON_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (mongocrypt-static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
 target_link_libraries (mongocrypt-static PRIVATE ${BSON_LIBRARIES})
 target_link_libraries (mongocrypt-static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
@@ -135,10 +138,6 @@ else ()
    target_link_libraries (mongocrypt-static PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif ()
 
-# kms-message
-find_package (kms_message REQUIRED)
-target_link_libraries (mongocrypt PRIVATE kms_message_static)
-target_link_libraries (mongocrypt-static PRIVATE kms_message_static)
 
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-buffer.c
@@ -155,12 +154,10 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt.c
 )
 # Define test-mongocrypt
-add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
+add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
 # Use the static version since it allows the test binary to use private symbols
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt-static)
-target_link_libraries (test-mongocrypt PRIVATE mongocrypt)
-target_link_libraries (test-mongocrypt PRIVATE kms_message_static)
-target_include_directories (test-mongocrypt PRIVATE ./src)
+target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_LIBRARIES})
 target_compile_definitions (test-mongocrypt PRIVATE "${BSON_DEFINITIONS}")
@@ -170,7 +167,7 @@ add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR
 # Define example-state-machine
 add_executable (example-state-machine test/example-state-machine.c)
 target_link_libraries (example-state-machine PRIVATE mongocrypt)
-target_include_directories (example-state-machine PRIVATE ./src)
+target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (example-state-machine PRIVATE ${BSON_INCLUDE_DIRS})
 target_link_libraries (example-state-machine PRIVATE ${BSON_LIBRARIES})
 target_compile_definitions (example-state-machine PRIVATE "${BSON_DEFINITIONS}")

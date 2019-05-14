@@ -47,22 +47,15 @@ echo "Installing libbson"
 $CMAKE --build . --target install
 cd $evergreen_root
 
-# Build and install kms-message.
-git clone --depth=1 git@github.com:10gen/kms-message.git
-cd kms-message
-mkdir cmake-build
-cd cmake-build
-$CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fPIC" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/kms-message" ../
-echo "Installing kms-message"
-$CMAKE --build . --target install
-cd $evergreen_root
-
 # Build and install libmongocrypt.
 cd libmongocrypt
 mkdir cmake-build
 cd cmake-build
-$CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CLFAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver;${INSTALL_PREFIX}/kms-message" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt" ../
+$CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CLFAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt" ../
 echo "Installing libmongocrypt"
 $CMAKE --build . --target install
 $CMAKE --build . --target test-mongocrypt
+$CMAKE --build ./kms-message --target test_kms_request
 cd $evergreen_root
+
+ls -lR

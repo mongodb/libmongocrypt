@@ -16,18 +16,8 @@ First build the following dependencies.
    make -j8 install
    ```
    This installs the library and includes into /path/to/bson-install. The prefix can be omitted if you prefer installing in /usr/local.
-2. [kms-message](https://github.com/10gen/kms-message), a small library for making encrypt and decrypt requests with AWS KMS.
-
-   ```
-   git clone git@github.com:10gen/kms-message.git
-   cd kms-message
-   mkdir cmake-build && cd cmake-build
-   cmake -DCMAKE_INSTALL_PREFIX="/path/to/kms-install" -DCMAKE_C_FLAGS="-fPIC" ../
-   make install
-   ```
-   This installs the library and includes into /path/to/kms-install. The prefix can be omitted if you prefer installing in /usr/local.
    
-3. Install OpenSSL (if on Linux).
+2. Install OpenSSL (if on Linux).
 
 Then build libmongocrypt.
 
@@ -35,11 +25,11 @@ Then build libmongocrypt.
 git clone git@github.com:10gen/libmongocrypt.git
 cd libmongocrypt
 mkdir cmake-build && cd cmake-build
-cmake -DCMAKE_PREFIX_PATH="/path/to/bson-install;/path/to/kms-install" ../
+cmake -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
 make
 ```
 
-This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the `CMAKE_PREFIX_PATH` must include the paths to the kms-message and BSON library installation directories if they were not the defaults.
+This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the `CMAKE_PREFIX_PATH` must include the path to the BSON library installation directory if it was not the defaults.
 
 ### Testing ###
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories.
