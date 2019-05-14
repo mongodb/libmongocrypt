@@ -23,6 +23,23 @@
 #define NULL_BYTE_LEN 1
 #define NULL_BYTE_VAL 0x00
 
+
+/* if a buffer is not owned, copy the data and make it owned. */
+static void
+_make_owned (_mongocrypt_buffer_t *buf)
+{
+   uint8_t *tmp;
+
+   BSON_ASSERT (buf);
+   if (buf->owned) {
+      return;
+   }
+   tmp = buf->data;
+   buf->data = bson_malloc (buf->len);
+   memcpy (buf->data, tmp, buf->len);
+   buf->owned = true;
+}
+
 /* TODO CDRIVER-2990 have buffer operations require initialized buffer to
  * prevent leaky code. */
 void
@@ -67,55 +84,57 @@ _mongocrypt_buffer_steal (_mongocrypt_buffer_t *buf, _mongocrypt_buffer_t *src)
    _mongocrypt_buffer_init (src);
 }
 
-void
-_mongocrypt_buffer_copy_from_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
-{
-   const uint8_t *tmp;
-
-   BSON_ASSERT (BSON_ITER_HOLDS_BINARY (iter));
-   _mongocrypt_buffer_init (buf);
-   bson_iter_binary (iter, &buf->subtype, &buf->len, &tmp);
-   buf->data = bson_malloc (buf->len);
-   memcpy (buf->data, tmp, buf->len);
-   buf->owned = true;
-}
-
-
-void
+bool
 _mongocrypt_buffer_from_binary_iter (_mongocrypt_buffer_t *buf,
                                      bson_iter_t *iter)
 {
-   BSON_ASSERT (BSON_ITER_HOLDS_BINARY (iter));
+   if (!BSON_ITER_HOLDS_BINARY (iter)) {
+      return false;
+   }
    _mongocrypt_buffer_init (buf);
    bson_iter_binary (
       iter, &buf->subtype, &buf->len, (const uint8_t **) &buf->data);
    buf->owned = false;
+   return true;
 }
 
 
-void
+bool
+_mongocrypt_buffer_copy_from_binary_iter (_mongocrypt_buffer_t *buf,
+                                          bson_iter_t *iter)
+{
+   if (!_mongocrypt_buffer_from_binary_iter (buf, iter)) {
+      return false;
+   }
+
+   _make_owned (buf);
+   return true;
+}
+
+
+bool
 _mongocrypt_buffer_from_document_iter (_mongocrypt_buffer_t *buf,
                                        bson_iter_t *iter)
 {
-   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (iter));
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      return false;
+   }
    _mongocrypt_buffer_init (buf);
    bson_iter_document (iter, &buf->len, (const uint8_t **) &buf->data);
    buf->owned = false;
+   return true;
 }
 
 
-void
+bool
 _mongocrypt_buffer_copy_from_document_iter (_mongocrypt_buffer_t *buf,
                                             bson_iter_t *iter)
 {
-   const uint8_t *tmp;
-
-   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (iter));
-   _mongocrypt_buffer_init (buf);
-   bson_iter_document (iter, &buf->len, &tmp);
-   buf->data = bson_malloc (buf->len);
-   memcpy (buf->data, tmp, buf->len);
-   buf->owned = true;
+   if (!_mongocrypt_buffer_from_document_iter (buf, iter)) {
+      return false;
+   }
+   _make_owned (buf);
+   return true;
 }
 
 
@@ -177,11 +196,8 @@ _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
    BSON_ASSERT (buf);
    BSON_ASSERT (binary);
 
-   _mongocrypt_buffer_init (buf);
-   buf->data = bson_malloc (binary->len);
-   buf->len = binary->len;
-   memcpy (buf->data, binary->data, buf->len);
-   buf->owned = true;
+   _mongocrypt_buffer_from_binary (buf, binary);
+   _make_owned (buf);
 }
 
 
@@ -325,4 +341,42 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
    memcpy (plaintext->data, wrapper_data + offset, plaintext->len);
 
    bson_destroy (&wrapper);
+}
+
+
+bool
+_mongocrypt_buffer_from_uuid_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
+{
+   const uint8_t *data;
+   bson_subtype_t subtype;
+   uint32_t len;
+
+   if (!BSON_ITER_HOLDS_BINARY (iter)) {
+      return false;
+   }
+   bson_iter_binary (iter, &subtype, &len, &data);
+   if (subtype != BSON_SUBTYPE_UUID) {
+      return false;
+   }
+   if (len != 16) {
+      return false;
+   }
+   _mongocrypt_buffer_init (buf);
+   buf->data = (uint8_t *) data;
+   buf->len = len;
+   buf->subtype = subtype;
+   buf->owned = false;
+   return true;
+}
+
+
+bool
+_mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
+                                        bson_iter_t *iter)
+{
+   if (!_mongocrypt_buffer_from_uuid_iter (buf, iter)) {
+      return false;
+   }
+   _make_owned (buf);
+   return true;
 }

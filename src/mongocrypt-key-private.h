@@ -30,6 +30,9 @@ typedef struct {
    _mongocrypt_kms_provider_t masterkey_provider;
    char *masterkey_region;
    char *masterkey_cmk;
+   char *endpoint;
+   uint64_t creation_date;
+   uint64_t update_date;
 } _mongocrypt_key_doc_t;
 
 bool

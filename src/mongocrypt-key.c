@@ -17,109 +17,243 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-key-private.h"
 
+static bool
+_parse_masterkey (bson_iter_t *iter,
+                  _mongocrypt_key_doc_t *out,
+                  mongocrypt_status_t *status)
+{
+   bson_iter_t subiter;
+   bool has_cmk = false, has_region = false, has_provider = false;
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      CLIENT_ERR ("invalid 'masterKey', expected document");
+      return false;
+   }
+
+   if (!bson_iter_recurse (iter, &subiter)) {
+      CLIENT_ERR ("invalid 'masterKey', malformed BSON");
+      return false;
+   }
+
+   while (bson_iter_next (&subiter)) {
+      const char *field;
+
+      field = bson_iter_key (&subiter);
+      if (0 == strcmp ("provider", field)) {
+         const char *provider;
+
+         has_provider = true;
+         if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
+            CLIENT_ERR ("invalid 'masterKey.provider', expected string");
+            return false;
+         }
+         provider = bson_iter_utf8 (&subiter, NULL);
+         if (0 == strcmp (provider, "aws")) {
+            out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
+         } else if (0 == strcmp (provider, "local")) {
+            out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+         } else {
+            CLIENT_ERR (
+               "invalid 'masterKey.provider', expected 'aws' or 'local'");
+            return false;
+         }
+         continue;
+      }
+
+      if (0 == strcmp ("region", field)) {
+         has_region = true;
+         if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
+            CLIENT_ERR ("invalid 'masterKey.region', expected string");
+            return false;
+         }
+         out->masterkey_region = bson_strdup (bson_iter_utf8 (&subiter, NULL));
+         continue;
+      }
+
+      if (0 == strcmp ("key", field)) {
+         /* Don't need the CMK. Check that it's present and ignore it. */
+         has_cmk = true;
+         continue;
+      }
+
+      if (0 == strcmp ("endpoint", field)) {
+         if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
+            CLIENT_ERR ("invalid 'masterKey.endpoint', expected string");
+            return false;
+         }
+         out->endpoint = bson_strdup (bson_iter_utf8 (&subiter, NULL));
+         continue;
+      }
+
+      CLIENT_ERR ("unrecognized provider field '%s'", field);
+      return false;
+   }
+
+   /* Check that required fields were set. */
+   if (!has_provider) {
+      CLIENT_ERR ("invalid 'masterKey', no 'provider'");
+      return false;
+   }
+
+   if (out->masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+      if (!has_region) {
+         CLIENT_ERR ("invalid 'masterKey', no 'region'");
+         return false;
+      }
+
+      if (!has_cmk) {
+         CLIENT_ERR ("invalid 'masterKey', no 'key'");
+         return false;
+      }
+   }
+   return true;
+}
+
 /* Takes ownership of all fields. */
 bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
                              _mongocrypt_key_doc_t *out,
                              mongocrypt_status_t *status)
 {
-   bson_iter_t iter, subiter;
-   bool ret = false;
+   bson_iter_t iter;
+   bool has_id = false, has_key_material = false, has_status = false,
+        has_creation_date = false, has_update_date = false,
+        has_master_key = false;
 
    memset (out, 0, sizeof (_mongocrypt_key_doc_t));
 
-   /* _id */
-   if (!bson_iter_init_find (&iter, bson, "_id")) {
-      CLIENT_ERR ("invalid key, no '_id'");
-      goto cleanup;
+   if (!bson_validate (bson, BSON_VALIDATE_NONE, NULL) ||
+       !bson_iter_init (&iter, bson)) {
+      CLIENT_ERR ("invalid BSON");
+      return false;
    }
 
-   if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-      CLIENT_ERR ("invalid key, 'k' is not binary");
-      goto cleanup;
-   }
+   while (bson_iter_next (&iter)) {
+      const char *field;
 
-   _mongocrypt_buffer_copy_from_iter (&out->id, &iter);
-   if (out->id.subtype != BSON_SUBTYPE_UUID) {
-      CLIENT_ERR ("key id must be a UUID");
-      goto cleanup;
-   }
-
-   /* keyAltName (optional) */
-   if (bson_iter_init_find (&iter, bson, "keyAltNames")) {
-      /* CDRIVER-3100 We must make a copy here */
-      bson_value_copy (bson_iter_value (&iter), &out->key_alt_names);
-      out->has_alt_names = true;
-   }
-
-   /* keyMaterial */
-   if (!bson_iter_init_find (&iter, bson, "keyMaterial")) {
-      CLIENT_ERR ("invalid key, no 'keyMaterial'");
-      goto cleanup;
-   }
-
-   if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-      CLIENT_ERR ("invalid key material is not binary");
-      goto cleanup;
-   }
-
-   _mongocrypt_buffer_copy_from_iter (&out->key_material, &iter);
-   if (out->key_material.subtype != BSON_SUBTYPE_BINARY) {
-      CLIENT_ERR ("key material must be a binary");
-      goto cleanup;
-   }
-
-   /* masterKey */
-   if (!bson_iter_init_find (&iter, bson, "masterKey")) {
-      CLIENT_ERR ("invalid key, no 'masterKey'");
-      goto cleanup;
-   }
-
-   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      CLIENT_ERR ("invalid 'masterKey', expected document");
-      goto cleanup;
-   }
-
-   if (!bson_iter_recurse (&iter, &subiter)) {
-      CLIENT_ERR ("invalid 'masterKey', malformed BSON");
-      goto cleanup;
-   }
-
-   if (!bson_iter_find (&subiter, "provider")) {
-      CLIENT_ERR ("invalid 'masterKey', expected 'provider'");
-      goto cleanup;
-   }
-
-   if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
-      CLIENT_ERR ("invalid 'masterKey.provider', expected string");
-      goto cleanup;
-   }
-
-   if (0 == strcmp (bson_iter_utf8 (&subiter, NULL), "aws")) {
-      out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
-   } else if (0 == strcmp (bson_iter_utf8 (&subiter, NULL), "local")) {
-      out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
-   } else {
-      CLIENT_ERR ("invalid 'masterKey.provider', expected 'aws' or 'local'");
-      goto cleanup;
-   }
-
-   if (!bson_iter_recurse (&iter, &subiter)) {
-      CLIENT_ERR ("invalid 'masterKey', malformed BSON");
-      goto cleanup;
-   }
-   if (bson_iter_find (&subiter, "region")) {
-      if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
-         CLIENT_ERR ("invalid 'masterKey.region', expected string");
-         goto cleanup;
+      field = bson_iter_key (&iter);
+      if (0 == strcmp ("_id", field)) {
+         has_id = true;
+         if (!_mongocrypt_buffer_copy_from_uuid_iter (&out->id, &iter)) {
+            CLIENT_ERR ("invalid key, '_id' is not a UUID");
+            return false;
+         }
+         continue;
       }
-      out->masterkey_region = bson_strdup (bson_iter_utf8 (&subiter, NULL));
+
+      /* keyAltName (optional) */
+      if (0 == strcmp ("keyAltNames", field)) {
+         /* CDRIVER-3100 We must make a copy here */
+         bson_value_copy (bson_iter_value (&iter), &out->key_alt_names);
+         out->has_alt_names = true;
+      }
+
+      if (0 == strcmp ("keyMaterial", field)) {
+         has_key_material = true;
+         if (!_mongocrypt_buffer_copy_from_binary_iter (&out->key_material,
+                                                        &iter)) {
+            CLIENT_ERR ("invalid 'keyMaterial', expected binary");
+            return false;
+         }
+         if (out->key_material.subtype != BSON_SUBTYPE_BINARY) {
+            CLIENT_ERR ("invalid 'keyMaterial', expected subtype 0");
+            return false;
+         }
+         continue;
+      }
+
+      if (0 == strcmp ("masterKey", field)) {
+         has_master_key = true;
+         if (!_parse_masterkey (&iter, out, status)) {
+            return false;
+         }
+         continue;
+      }
+
+      if (0 == strcmp ("version", field)) {
+         if (!BSON_ITER_HOLDS_INT (&iter)) {
+            CLIENT_ERR ("invalid 'version', expect int");
+            return false;
+         }
+         if (bson_iter_as_int64 (&iter) != 0) {
+            CLIENT_ERR (
+               "unsupported key document version, only supports version=0");
+            return false;
+         }
+         continue;
+      }
+
+      if (0 == strcmp ("status", field)) {
+         /* Don't need status. Check that it's present and ignore it. */
+         has_status = true;
+         continue;
+      }
+
+      if (0 == strcmp ("creationDate", field)) {
+         has_creation_date = true;
+
+         if (!BSON_ITER_HOLDS_DATE_TIME (&iter)) {
+            CLIENT_ERR ("invalid 'creationDate', expect datetime");
+            return false;
+         }
+
+         out->creation_date = bson_iter_date_time (&iter);
+         continue;
+      }
+
+      if (0 == strcmp ("updateDate", field)) {
+         has_update_date = true;
+
+         if (!BSON_ITER_HOLDS_DATE_TIME (&iter)) {
+            CLIENT_ERR ("invalid 'updateDate', expect datetime");
+            return false;
+         }
+
+         out->update_date = bson_iter_date_time (&iter);
+         continue;
+      }
+
+      if (0 == strcmp ("keyAltNames", field)) {
+         /* TODO: after rebasing on key alt name, add that parsing code here. */
+         continue;
+      }
+
+      CLIENT_ERR ("unrecognized field '%s'", field);
+      return false;
    }
 
+   /* Check that required fields were set. */
+   if (!has_id) {
+      CLIENT_ERR ("invalid key, no '_id'");
+      return false;
+   }
 
-   ret = true;
-cleanup:
-   return ret;
+   if (!has_master_key) {
+      CLIENT_ERR ("invalid key, no 'masterKey'");
+      return false;
+   }
+
+   if (!has_key_material) {
+      CLIENT_ERR ("invalid key, no 'keyMaterial'");
+      return false;
+   }
+
+   if (!has_status) {
+      CLIENT_ERR ("invalid key, no 'status'");
+      return false;
+   }
+
+   if (!has_creation_date) {
+      CLIENT_ERR ("invalid key, no 'creationDate'");
+      return false;
+   }
+
+   if (!has_update_date) {
+      CLIENT_ERR ("invalid key, no 'updateDate'");
+      return false;
+   }
+
+   return true;
 }
 
 
@@ -167,10 +301,39 @@ _mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
       return false;
    }
 
+
+   if ((a->masterkey_cmk && b->masterkey_cmk == NULL) ||
+       (a->masterkey_cmk == NULL && b->masterkey_cmk)) {
+      return false;
+   }
+
    if (a->masterkey_cmk && b->masterkey_cmk) {
       if (0 != strcmp (a->masterkey_cmk, b->masterkey_cmk)) {
          return false;
       }
+   }
+
+   if ((a->endpoint && b->endpoint == NULL) ||
+       (a->endpoint == NULL && b->endpoint)) {
+      return false;
+   }
+
+   if (a->endpoint && b->endpoint) {
+      if (0 != strcmp (a->endpoint, b->endpoint)) {
+         return false;
+      }
+   }
+
+   if (a->creation_date != b->creation_date) {
+      return false;
+   }
+
+   if (a->creation_date != b->creation_date) {
+      return false;
+   }
+
+   if (a->update_date != b->update_date) {
+      return false;
    }
 
    return true;
@@ -191,6 +354,7 @@ _mongocrypt_key_destroy (_mongocrypt_key_doc_t *key)
    _mongocrypt_buffer_cleanup (&key->key_material);
    bson_free (key->masterkey_region);
    bson_free (key->masterkey_cmk);
+   bson_free (key->endpoint);
    bson_free (key);
 }
 
@@ -204,6 +368,10 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
 
    _mongocrypt_buffer_copy_to (&src->id, &dst->id);
    _mongocrypt_buffer_copy_to (&src->key_material, &dst->key_material);
+   if (src->has_alt_names) {
+      bson_value_copy (&src->key_alt_names, &dst->key_alt_names);
+      dst->has_alt_names = true;
+   }
    dst->masterkey_provider = src->masterkey_provider;
    dst->masterkey_region = bson_strdup (src->masterkey_region);
    dst->masterkey_cmk = bson_strdup (src->masterkey_cmk);

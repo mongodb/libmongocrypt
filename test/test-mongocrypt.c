@@ -158,6 +158,37 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
 }
 
 
+bson_t *
+_mongocrypt_tester_bson_from_json (_mongocrypt_tester_t *tester,
+                                   const char *json,
+                                   ...)
+{
+   va_list ap;
+   char *full_json;
+   bson_t *bson;
+   bson_error_t error;
+   char *c;
+
+   va_start (ap, json);
+   full_json = bson_strdupv_printf (json, ap);
+   /* Replace ' with " */
+   for (c = full_json; *c; c++) {
+      if (*c == '\'') {
+         *c = '"';
+      }
+   }
+
+   va_end (ap);
+   bson = &tester->test_bson[tester->bson_count++];
+   if (!bson_init_from_json (bson, full_json, strlen (full_json), &error)) {
+      fprintf (stderr, "%s", error.message);
+      abort ();
+   }
+   bson_free (full_json);
+   return bson;
+}
+
+
 mongocrypt_binary_t *
 _mongocrypt_tester_bin_from_json (_mongocrypt_tester_t *tester,
                                   const char *json,
@@ -311,7 +342,7 @@ _mongocrypt_tester_plaintext (_mongocrypt_tester_t *tester)
    /* Underlying binary data lives on in tester */
    BSON_ASSERT (bson_iter_init (&iter, &as_bson));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "result.filter.ssn", &iter));
-   _mongocrypt_buffer_from_binary_iter (&buf, &iter);
+   BSON_ASSERT (_mongocrypt_buffer_from_binary_iter (&buf, &iter));
    status = mongocrypt_status_new ();
    ASSERT_OR_PRINT (_mongocrypt_marking_parse_unowned (&buf, &marking, status),
                     status);
@@ -479,6 +510,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_cache (&tester);
    _mongocrypt_tester_install_buffer (&tester);
    _mongocrypt_tester_install_ctx_setopt (&tester);
+   _mongocrypt_tester_install_key (&tester);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

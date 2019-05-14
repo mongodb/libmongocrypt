@@ -264,7 +264,10 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
 
-   _mongocrypt_buffer_from_binary_iter (&dctx->unwrapped_doc, &iter);
+   if (!_mongocrypt_buffer_from_binary_iter (&dctx->unwrapped_doc, &iter)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "invalid msg, 'v' must contain a binary");
+   }
 
    /* Parse out our one key id */
    if (!_collect_key_from_ciphertext (

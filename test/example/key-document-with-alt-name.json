@@ -17,7 +17,7 @@
         "Sharlene", 
         "Kasey"
     ], 
-    "updatedDate": {
+    "updateDate": {
         "$date": {
             "$numberLong": "1557827033449"
         }

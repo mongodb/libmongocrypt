@@ -46,25 +46,25 @@ _mongocrypt_buffer_steal (_mongocrypt_buffer_t *buf, _mongocrypt_buffer_t *src);
 
 
 /* @iter is iterated to a BSON binary value. */
-void
-_mongocrypt_buffer_copy_from_iter (_mongocrypt_buffer_t *buf,
-                                   bson_iter_t *iter);
+bool
+_mongocrypt_buffer_copy_from_binary_iter (_mongocrypt_buffer_t *buf,
+                                          bson_iter_t *iter);
 
 
 /* @iter is iterated to a BSON binary value. */
-void
+bool
 _mongocrypt_buffer_from_binary_iter (_mongocrypt_buffer_t *buf,
                                      bson_iter_t *iter);
 
 
 /* @iter is iterated to a BSON document value. */
-void
+bool
 _mongocrypt_buffer_from_document_iter (_mongocrypt_buffer_t *buf,
                                        bson_iter_t *iter);
 
 
 /* @iter is iterated to a BSON document value. */
-void
+bool
 _mongocrypt_buffer_copy_from_document_iter (_mongocrypt_buffer_t *buf,
                                             bson_iter_t *iter);
 
@@ -133,5 +133,15 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
 void
 _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
                               bson_iter_t *iter);
+
+
+bool
+_mongocrypt_buffer_from_uuid_iter (_mongocrypt_buffer_t *buf,
+                                   bson_iter_t *iter);
+
+
+bool
+_mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
+                                        bson_iter_t *iter);
 
 #endif /* MONGOCRYPT_BUFFER_H */

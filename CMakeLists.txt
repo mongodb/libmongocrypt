@@ -159,6 +159,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c
    test/test-mongocrypt-datakey.c
+   test/test-mongocrypt-key.c
    test/test-mongocrypt-key-broker.c
    test/test-mongocrypt-local-kms.c
    test/test-mongocrypt-log.c

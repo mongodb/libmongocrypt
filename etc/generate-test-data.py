@@ -64,7 +64,7 @@ key_docs = [
         "_id": nextUUID(),
         "keyMaterial": None, # to be filled
         "creationDate": datetime.now(),
-        "updatedDate": datetime.now(),
+        "updateDate": datetime.now(),
         "status": 1, # active
         "masterKey": master_key_doc
     },
@@ -73,7 +73,7 @@ key_docs = [
         "keyAltNames": [ "Sharlene", "Kasey" ],
         "keyMaterial": None, # to be filled.
         "creationDate": datetime.now(),
-        "updatedDate": datetime.now(),
+        "updateDate": datetime.now(),
         "status": 1, # active
         "masterKey": master_key_doc
     },
@@ -81,7 +81,7 @@ key_docs = [
         "_id": nextUUID(),
         "keyMaterial": None, # to be filled.
         "creationDate": datetime.now(),
-        "updatedDate": datetime.now(),
+        "updateDate": datetime.now(),
         "status": 0,  # inactive
         "masterKey": master_key_doc
     },

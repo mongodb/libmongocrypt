@@ -47,11 +47,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
    bson_init_static (&bson, in->data + 1, in->len - 1);
 
    if (bson_iter_init_find (&iter, &bson, "ki")) {
-      if (!BSON_ITER_HOLDS_BINARY (&iter)) {
-         CLIENT_ERR ("key id must be a binary type");
-      }
-      _mongocrypt_buffer_from_binary_iter (&out->key_id, &iter);
-      if (out->key_id.subtype != BSON_SUBTYPE_UUID) {
+      if (!_mongocrypt_buffer_from_uuid_iter (&out->key_id, &iter)) {
          CLIENT_ERR ("key id must be a UUID");
          goto cleanup;
       }
@@ -78,11 +74,11 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
    }
 
    if (bson_iter_init_find (&iter, &bson, "iv")) {
-      if (!BSON_ITER_HOLDS_BINARY (&iter)) {
+      if (!_mongocrypt_buffer_from_binary_iter (&out->iv, &iter)) {
          CLIENT_ERR ("invalid marking, 'iv' is not binary");
          goto cleanup;
       }
-      _mongocrypt_buffer_from_binary_iter (&out->iv, &iter);
+
       if (out->iv.len != 16) {
          CLIENT_ERR ("iv must be 16 bytes");
          goto cleanup;

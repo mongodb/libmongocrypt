@@ -331,7 +331,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_from_bson (&malformed_buf, malformed);
    ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&key_broker, &malformed_buf),
                  &key_broker,
-                 "invalid key");
+                 "unrecognized field");
    _mongocrypt_key_broker_cleanup (&key_broker);
    bson_destroy (malformed);
 

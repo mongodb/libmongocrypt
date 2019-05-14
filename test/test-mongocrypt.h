@@ -111,27 +111,27 @@ _mongocrypt_tester_mongocrypt (void);
 #define ASSERT_OR_PRINT(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, mongocrypt_status_message (_err, NULL))
 
-#define ASSERT_OK(_stmt, _obj)                                             \
-   do {                                                                    \
-      bool _retval = (_stmt);                                              \
-      bool _status_ok = mongocrypt_status_ok ((_obj)->status);             \
-      const char *_msg = mongocrypt_status_message ((_obj)->status, NULL); \
-      if (!_retval) {                                                      \
-         fprintf (stderr, "%s failed with msg: %s", #_stmt, _msg);         \
-      } else if (!_status_ok) {                                            \
-         fprintf (stderr,                                                  \
-                  "%s resulted in unexpected error status: %s\n",          \
-                  #_stmt,                                                  \
-                  _msg);                                                   \
-      }                                                                    \
-      BSON_ASSERT (_retval &&_status_ok);                                  \
+#define ASSERT_OK_STATUS(_stmt, _status)                            \
+   do {                                                             \
+      bool _retval = (_stmt);                                       \
+      bool _status_ok = mongocrypt_status_ok (_status);             \
+      const char *_msg = mongocrypt_status_message (_status, NULL); \
+      if (!_retval) {                                               \
+         fprintf (stderr, "%s failed with msg: %s", #_stmt, _msg);  \
+      } else if (!_status_ok) {                                     \
+         fprintf (stderr,                                           \
+                  "%s resulted in unexpected error status: %s\n",   \
+                  #_stmt,                                           \
+                  _msg);                                            \
+      }                                                             \
+      BSON_ASSERT (_retval &&_status_ok);                           \
    } while (0)
 
-#define ASSERT_FAILS(_stmt, _obj, _msg_pattern)                                \
+#define ASSERT_FAILS_STATUS(_stmt, _status, _msg_pattern)                      \
    do {                                                                        \
       bool _retval = (_stmt);                                                  \
-      bool _status_ok = mongocrypt_status_ok ((_obj)->status);                 \
-      const char *_msg = mongocrypt_status_message ((_obj)->status, NULL);     \
+      bool _status_ok = mongocrypt_status_ok (_status);                        \
+      const char *_msg = mongocrypt_status_message (_status, NULL);            \
       bool _found_msg = _msg && strstr (_msg, _msg_pattern) != NULL;           \
       if (_retval) {                                                           \
          fprintf (stderr,                                                      \
@@ -149,11 +149,16 @@ _mongocrypt_tester_mongocrypt (void);
       BSON_ASSERT (!_retval && !_status_ok && _found_msg);                     \
    } while (0)
 
+#define ASSERT_OK(_stmt, _obj) ASSERT_OK_STATUS (_stmt, (_obj)->status)
+
+#define ASSERT_FAILS(_stmt, _obj, _msg_pattern) \
+   ASSERT_FAILS_STATUS (_stmt, (_obj)->status, _msg_pattern)
+
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, _err.message)
 
-#define ASSERT_STATUS_CONTAINS(_str) \
-   BSON_ASSERT (strstr (status->message, _str))
+#define ASSERT_STATUS_CONTAINS(_msg_pattern) \
+   ASSERT_FAILS_STATUS (false, status, _msg_pattern)
 
 
 void
@@ -204,19 +209,32 @@ _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_ctx_setopt (_mongocrypt_tester_t *tester);
 
+void
+_mongocrypt_tester_install_key (_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
+
+/* Get a temporary bson_t from a JSON string. Do not free it. */
+bson_t *
+_mongocrypt_tester_bson_from_json (_mongocrypt_tester_t *tester,
+                                   const char *json,
+                                   ...);
+#define TMP_BSON(...) _mongocrypt_tester_bson_from_json (tester, __VA_ARGS__)
+
+/* Get a temporary binary from a JSON string. Do not free it. */
 mongocrypt_binary_t *
 _mongocrypt_tester_bin_from_json (_mongocrypt_tester_t *tester,
                                   const char *json,
                                   ...);
 #define TEST_BSON(...) _mongocrypt_tester_bin_from_json (tester, __VA_ARGS__)
 
-/* Return a binary blob with the repeating sequence of 123 */
+/* Return a binary blob with the repeating sequence of 123. Do not free it. */
 mongocrypt_binary_t *
 _mongocrypt_tester_bin (_mongocrypt_tester_t *tester, int size);
 #define TEST_BIN(size) _mongocrypt_tester_bin (tester, size)
 
-/* Return either a .json file as BSON or a .txt file as characters. */
+/* Return either a .json file as BSON or a .txt file as characters. Do not free
+ * it. */
 mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 #define TEST_FILE(path) _mongocrypt_tester_file (tester, path)

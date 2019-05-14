@@ -110,9 +110,13 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
 
-   /* construct the endpoint */
-   kms->endpoint =
-      bson_strdup_printf ("kms.%s.amazonaws.com", key->masterkey_region);
+   if (key->endpoint) {
+      kms->endpoint = bson_strdup (key->endpoint);
+   } else {
+      /* construct the endpoint from AWS region. */
+      kms->endpoint =
+         bson_strdup_printf ("kms.%s.amazonaws.com", key->masterkey_region);
+   }
    return true;
 }
 

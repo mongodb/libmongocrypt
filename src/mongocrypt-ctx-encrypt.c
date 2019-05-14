@@ -59,7 +59,9 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
 
    if (bson_iter_find_descendant (
           &iter, "options.validator.$jsonSchema", &iter)) {
-      _mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter);
+      if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed JSONSchema");
+      }
    }
 
    /* TODO CDRIVER-3096 check for validator siblings. */
@@ -180,7 +182,10 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
       return _mongocrypt_ctx_fail_w_msg (ctx, "malformed marking, no 'result'");
    }
 
-   _mongocrypt_buffer_copy_from_document_iter (&ectx->marked_cmd, &iter);
+   if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->marked_cmd, &iter)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "malformed marking, 'result' must be a document");
+   }
 
    bson_iter_recurse (&iter, &iter);
    if (!_mongocrypt_traverse_binary_in_bson (_collect_key_from_marking,

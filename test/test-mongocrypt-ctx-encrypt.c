@@ -489,7 +489,7 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
-   _mongocrypt_buffer_from_binary_iter (&ciphertext_buf, &iter);
+   BSON_ASSERT (_mongocrypt_buffer_from_binary_iter (&ciphertext_buf, &iter));
    ret = _mongocrypt_ciphertext_parse_unowned (
       &ciphertext_buf, &ciphertext, status);
    ASSERT_OR_PRINT (ret, status);
@@ -516,7 +516,7 @@ _test_key_missing_region (_mongocrypt_tester_t *tester)
    ASSERT_FAILS (mongocrypt_ctx_mongo_feed (
                     ctx, TEST_FILE ("./test/data/key-document-no-region.json")),
                  ctx,
-                 "no key region");
+                 "no 'region'");
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
 
    mongocrypt_ctx_destroy (ctx);
