@@ -40,6 +40,14 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
 
+  "build and test java":
+    - command: "shell.exec"
+      params:
+        script: |-
+          eval "${inject_env_from_evergreen}"
+          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/test.sh
+
 tasks:
 - name: build-and-test
   commands:
@@ -64,6 +72,11 @@ tasks:
       test_env: VALGRIND="valgrind --leak-check=full --error-exitcode=1"
 
   - func: "tar and upload libmongocrypt libraries"
+
+- name: build-and-test-java
+  commands:
+    - func: "fetch source"
+    - func: "build and test java"
 
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_path} expansion.
@@ -92,24 +105,28 @@ buildvariants:
   - build-and-test
   - build-and-test-asan
   - build-and-test-valgrind
+  - build-and-test-java
 - name: rhel76
   display_name: "RHEL 7.6"
   run_on: rhel76-test
   tasks:
   - build-and-test
   - build-and-test-asan
+  - build-and-test-java
 - name: macos
   display_name: "macOS 10.14"
   run_on: macos-1014
   tasks:
   - build-and-test
   - build-and-test-asan
+  - build-and-test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
   tasks:
   - build-and-test
   - build-and-test-asan
+  - build-and-test-java
 - name: windows-test
   display_name: "Windows 2016"
   run_on: windows-64-vs2017-test
