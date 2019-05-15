@@ -195,8 +195,8 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
       return false;
    }
 
-   if (mongocrypt_binary_len (key) != MONGOCRYPT_KEYMATERIAL_LEN) {
-      CLIENT_ERR ("local key must be %d bytes", MONGOCRYPT_KEYMATERIAL_LEN);
+   if (mongocrypt_binary_len (key) != MONGOCRYPT_KEY_LEN) {
+      CLIENT_ERR ("local key must be %d bytes", MONGOCRYPT_KEY_LEN);
       return false;
    }
 

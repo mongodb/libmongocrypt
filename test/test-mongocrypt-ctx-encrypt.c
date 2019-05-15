@@ -28,7 +28,6 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *name;
    mongocrypt_binary_t *msg;
    mongocrypt_binary_t *key_id;
-   mongocrypt_binary_t *iv;
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
    bson_t *bson_msg;
@@ -59,8 +58,6 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
       mongocrypt_binary_new_from_data (MONGOCRYPT_DATA_AND_LEN ("hello"));
    key_id = mongocrypt_binary_new_from_data (
       MONGOCRYPT_DATA_AND_LEN ("2395340598345034"));
-   iv = mongocrypt_binary_new_from_data (
-      MONGOCRYPT_DATA_AND_LEN ("7777777777777777"));
 
    crypt = _mongocrypt_tester_mongocrypt ();
 
@@ -107,22 +104,12 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
                  "invalid msg, must contain 'v'");
    mongocrypt_ctx_destroy (ctx);
 
-   /* Initting with RANDOM without an iv passes */
+   /* Initting with RANDOM passes */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
    ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
    ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, msg), ctx);
    BSON_ASSERT (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
-   BSON_ASSERT (_mongocrypt_buffer_empty (&ctx->opts.iv));
-   mongocrypt_ctx_destroy (ctx);
-
-   /* Initting with RANDOM with an iv fails */
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
-   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
-   ASSERT_FAILS (mongocrypt_ctx_setopt_initialization_vector (ctx, iv),
-                 ctx,
-                 "cannot set iv");
    mongocrypt_ctx_destroy (ctx);
 
    /* Test that bad algorithm input fails */
@@ -131,24 +118,6 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_setopt_algorithm (ctx, "nonexistent algorithm", -1),
       ctx,
       "unsupported algorithm");
-   mongocrypt_ctx_destroy (ctx);
-
-   /* Test that specifying DETERMINISTIC without an iv fails */
-   ctx = mongocrypt_ctx_new (crypt);
-   BSON_ASSERT (mongocrypt_ctx_setopt_key_id (ctx, key_id));
-   BSON_ASSERT (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1));
-   ASSERT_FAILS (
-      mongocrypt_ctx_explicit_encrypt_init (ctx, msg), ctx, "iv required");
-   mongocrypt_ctx_destroy (ctx);
-
-   /* Test that specifying DETERMINISTIC with an iv passes */
-   ctx = mongocrypt_ctx_new (crypt);
-   BSON_ASSERT (mongocrypt_ctx_setopt_key_id (ctx, key_id));
-   BSON_ASSERT (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1));
-   ASSERT_OK (mongocrypt_ctx_setopt_initialization_vector (ctx, iv), ctx);
-   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, msg), ctx);
-   BSON_ASSERT (!_mongocrypt_buffer_empty (&ctx->opts.iv));
-   BSON_ASSERT (memcmp (iv->data, ctx->opts.iv.data, iv->len) == 0);
    mongocrypt_ctx_destroy (ctx);
 
    /* Test with badly formatted key alt name */
@@ -160,10 +129,7 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    ctx = mongocrypt_ctx_new (crypt);
    BSON_ASSERT (mongocrypt_ctx_setopt_key_alt_name (ctx, name));
    BSON_ASSERT (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1));
-   BSON_ASSERT (mongocrypt_ctx_setopt_initialization_vector (ctx, iv));
    ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, msg), ctx);
-   BSON_ASSERT (!_mongocrypt_buffer_empty (&ctx->opts.iv));
-   BSON_ASSERT (memcmp (iv->data, ctx->opts.iv.data, iv->len) == 0);
 
    /* After initing, we should be at NEED_KEYS */
    BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
@@ -178,7 +144,6 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (string_msg);
    mongocrypt_binary_destroy (no_v_msg);
    mongocrypt_binary_destroy (key_id);
-   mongocrypt_binary_destroy (iv);
    bson_destroy (bson_bad_name);
    bson_destroy (bson_name);
    bson_destroy (bson_msg);
@@ -331,7 +296,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
       ctx);
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_FILE("./test/example/mongocryptd-reply-key-alt-name.json")), ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_FILE("./test/data/mongocryptd-reply-key-alt-name.json")), ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    mongocrypt_ctx_destroy (ctx);

@@ -44,5 +44,8 @@ void
 _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
                                   _mongocrypt_buffer_t *out);
 
+bool
+_mongocrypt_ciphertext_serialize_associated_data (_mongocrypt_ciphertext_t *ciphertext, _mongocrypt_buffer_t *out);
+
 
 #endif /* MONGOCRYPT_CIPHERTEXT_PRIVATE_H */

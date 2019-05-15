@@ -20,6 +20,7 @@
 #include <bson/bson.h>
 
 #include "mongocrypt.h"
+#include "mongocrypt-crypto-private.h"
 #include "mongocrypt-marking-private.h"
 #include "test-mongocrypt.h"
 
@@ -404,7 +405,7 @@ mongocrypt_t *
 _mongocrypt_tester_mongocrypt (void)
 {
    mongocrypt_t *crypt;
-   char localkey_data[64] = {0};
+   char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
    mongocrypt_binary_t *localkey;
 
    crypt = mongocrypt_new ();
@@ -466,7 +467,7 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
    local_key = mongocrypt_binary_new ();
    ASSERT_FAILS (mongocrypt_setopt_kms_provider_local (crypt, local_key),
                  crypt,
-                 "local key must be 64 bytes");
+                 "local key must be 96 bytes");
    mongocrypt_binary_destroy (local_key);
    mongocrypt_destroy (crypt);
 

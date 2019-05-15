@@ -105,7 +105,7 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
       kms = mongocrypt_ctx_next_kms_ctx (ctx);
       BSON_ASSERT (kms);
       ASSERT_OK (mongocrypt_kms_ctx_feed (
-                    kms, TEST_FILE ("./test/example/kms-encrypt-reply.txt")),
+                    kms, TEST_FILE ("./test/data/kms-encrypt-reply.txt")),
                  kms);
       BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms));
       ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
@@ -124,7 +124,7 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "keyMaterial"));
    BSON_ASSERT (_mongocrypt_buffer_from_binary_iter (&buf, &iter));
    BSON_ASSERT (buf.subtype == BSON_SUBTYPE_BINARY);
-   BSON_ASSERT (buf.len >= MONGOCRYPT_KEYMATERIAL_LEN);
+   BSON_ASSERT (buf.len >= MONGOCRYPT_KEY_LEN);
    /* creationDate and updatedDate exist and have the same value. */
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "creationDate"));
    BSON_ASSERT (BSON_ITER_HOLDS_DATE_TIME (&iter));

@@ -797,18 +797,25 @@ _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
                                      const _mongocrypt_buffer_t *key_id)
 {
    BSON_ASSERT (kb);
+   _mongocrypt_buffer_t key_material;
 
    if (!_mongocrypt_key_broker_add_id (kb, key_id)) {
       return false;
    }
 
+   _mongocrypt_buffer_init (&key_material);
+   _mongocrypt_buffer_resize (&key_material, MONGOCRYPT_KEY_LEN);
+   memset (key_material.data, 0, MONGOCRYPT_KEY_LEN);
+
    /* The first entry in the list should be our new one. Modify
-      it so that it is in a decrypted state for testing. Use the
-      key_id as the decrypted material, because it doesn't matter. */
+      it so that it is in a decrypted state for testing. Use a random 96
+      byte key as the decrypted material, because it doesn't matter. */
    BSON_ASSERT (kb->kb_entry);
    kb->kb_entry->state = KEY_DECRYPTED;
-   _mongocrypt_buffer_copy_to (&kb->kb_entry->key_id,
+   _mongocrypt_buffer_copy_to (&key_material,
                                &kb->kb_entry->decrypted_key_material);
+
+   _mongocrypt_buffer_cleanup (&key_material);
 
    return true;
 }
@@ -932,6 +939,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                                              &kbe->decrypted_key_material,
                                              &bytes_written,
                                              status);
+      kbe->decrypted_key_material.len = bytes_written;
 
       if (!crypt_ret) {
          goto done;

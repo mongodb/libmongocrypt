@@ -144,4 +144,8 @@ bool
 _mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
                                         bson_iter_t *iter);
 
+
+bool
+_mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf);
+
 #endif /* MONGOCRYPT_BUFFER_H */

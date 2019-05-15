@@ -28,8 +28,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
 {
    bson_t bson;
    bson_iter_t iter;
-   bool has_ki = false, has_ka = false, has_iv = false, has_a = false,
-        has_v = false;
+   bool has_ki = false, has_ka = false, has_a = false, has_v = false;
 
    _mongocrypt_marking_init (out);
 
@@ -71,10 +70,8 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
          has_ka = true;
          /* Some bson_value types are not allowed to be key alt names */
          const bson_value_t *value;
-         bson_type_t type;
 
          value = bson_iter_value (&iter);
-         type = value->value_type;
 
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             CLIENT_ERR ("key alt name must be a UTF8");
@@ -83,19 +80,6 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
          /* CDRIVER-3100 We must make a copy of this value; the result of bson_iter_value is ephemeral. */
          bson_value_copy (value, &out->key_alt_name);
          out->has_alt_name = true;
-         continue;
-      }
-
-      if (0 == strcmp ("iv", field)) {
-         has_iv = true;
-         if (!_mongocrypt_buffer_from_binary_iter (&out->iv, &iter)) {
-            CLIENT_ERR ("invalid marking, 'iv' is invalid binary");
-            return false;
-         }
-         if (out->iv.len != 16) {
-            CLIENT_ERR ("iv must be 16 bytes");
-            return false;
-         }
          continue;
       }
 
@@ -148,17 +132,6 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       return false;
    }
 
-   if (out->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
-       !has_iv) {
-      CLIENT_ERR ("deterministic encryption but no 'iv' present");
-      return false;
-   }
-
-   if (out->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM && has_iv) {
-      CLIENT_ERR ("random encryption but 'iv' present");
-      return false;
-   }
-
    return true;
 }
 
@@ -174,7 +147,6 @@ void
 _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 {
    bson_value_destroy (&marking->key_alt_name);
-   _mongocrypt_buffer_cleanup (&marking->iv);
    _mongocrypt_buffer_cleanup (&marking->key_id);
 }
 
@@ -185,9 +157,10 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
                                    _mongocrypt_ciphertext_t *ciphertext,
                                    mongocrypt_status_t *status)
 {
-   _mongocrypt_buffer_t plaintext = {0};
-   _mongocrypt_buffer_t iv = {0};
+   _mongocrypt_buffer_t plaintext;
+   _mongocrypt_buffer_t iv;
    _mongocrypt_key_broker_t *kb;
+   _mongocrypt_buffer_t associated_data;
    _mongocrypt_buffer_t key_material;
    bool ret = false;
    bool key_found;
@@ -198,10 +171,11 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    BSON_ASSERT (status);
    BSON_ASSERT (ctx);
 
-   kb = (_mongocrypt_key_broker_t *) ctx;
+   _mongocrypt_buffer_init (&plaintext);
+   _mongocrypt_buffer_init (&associated_data);
+   _mongocrypt_buffer_init (&iv);
 
-   _mongocrypt_ciphertext_init (ciphertext);
-   ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
+   kb = (_mongocrypt_key_broker_t *) ctx;
 
    /* Get the decrypted key for this marking. */
    if (marking->has_alt_name) {
@@ -220,6 +194,16 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       goto fail;
    }
 
+   _mongocrypt_ciphertext_init (ciphertext);
+   ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
+   ciphertext->blob_subtype = marking->algorithm;
+   _mongocrypt_buffer_copy_to (&marking->key_id, &ciphertext->key_id);
+   if (!_mongocrypt_ciphertext_serialize_associated_data (ciphertext,
+                                                          &associated_data)) {
+      CLIENT_ERR ("could not serialize associated data");
+      goto fail;
+   }
+
    _mongocrypt_buffer_from_iter (&plaintext, &marking->v_iter);
    ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext->data.data = bson_malloc (ciphertext->data.len);
@@ -227,10 +211,16 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
 
    switch (marking->algorithm) {
    case MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC:
-      /* Use deterministic encryption.
-       * In this case, we can use the iv parsed out of the marking. */
-      ret = _mongocrypt_do_encryption (&marking->iv,
-                                       NULL,
+      /* Use deterministic encryption. */
+      _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
+      ret = _mongocrypt_calculate_deterministic_iv (
+         &key_material, &plaintext, &associated_data, &iv, status);
+      if (!ret) {
+         goto fail;
+      }
+
+      ret = _mongocrypt_do_encryption (&iv,
+                                       &associated_data,
                                        &key_material,
                                        &plaintext,
                                        &ciphertext->data,
@@ -243,7 +233,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
       _mongocrypt_random (&iv, status, MONGOCRYPT_IV_LEN);
       ret = _mongocrypt_do_encryption (&iv,
-                                       NULL,
+                                       &associated_data,
                                        &key_material,
                                        &plaintext,
                                        &ciphertext->data,
@@ -260,16 +250,13 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       goto fail;
    }
 
-   ciphertext->blob_subtype = marking->algorithm;
-
    BSON_ASSERT (bytes_written == ciphertext->data.len);
-
-   _mongocrypt_buffer_copy_to (&marking->key_id, &ciphertext->key_id);
 
    ret = true;
 
 fail:
    _mongocrypt_buffer_cleanup (&iv);
    _mongocrypt_buffer_cleanup (&plaintext);
+   _mongocrypt_buffer_cleanup (&associated_data);
    return ret;
 }

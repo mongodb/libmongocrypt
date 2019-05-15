@@ -67,7 +67,7 @@ _kms_done (mongocrypt_ctx_t *ctx)
    }
 
    /* The encrypted key material must be at least as large as the plaintext. */
-   if (dkctx->encrypted_key_material.len < MONGOCRYPT_KEYMATERIAL_LEN) {
+   if (dkctx->encrypted_key_material.len < MONGOCRYPT_KEY_LEN) {
       return _mongocrypt_ctx_fail_w_msg (ctx,
                                          "key material not expected length");
    }
@@ -190,11 +190,11 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    ctx->vtable.cleanup = _cleanup;
 
    _mongocrypt_buffer_init (&plaintext_key_material);
-   plaintext_key_material.data = bson_malloc (MONGOCRYPT_KEYMATERIAL_LEN);
-   plaintext_key_material.len = MONGOCRYPT_KEYMATERIAL_LEN;
+   plaintext_key_material.data = bson_malloc (MONGOCRYPT_KEY_LEN);
+   plaintext_key_material.len = MONGOCRYPT_KEY_LEN;
    plaintext_key_material.owned = true;
    if (!_crypto_random (
-          &plaintext_key_material, ctx->status, MONGOCRYPT_KEYMATERIAL_LEN)) {
+          &plaintext_key_material, ctx->status, MONGOCRYPT_KEY_LEN)) {
       _mongocrypt_ctx_fail (ctx);
       goto done;
    }

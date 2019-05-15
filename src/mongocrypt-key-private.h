@@ -17,8 +17,6 @@
 #ifndef MONGOCRYPT_KEY_PRIVATE_H
 #define MONGOCRYPT_KEY_PRIVATE_H
 
-#define MONGOCRYPT_KEYMATERIAL_LEN 64
-
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-opts-private.h"
 

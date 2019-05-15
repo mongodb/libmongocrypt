@@ -380,3 +380,7 @@ _mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
    _make_owned (buf);
    return true;
 }
+
+bool _mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf) {
+   return buf->len == 16 && buf->subtype == BSON_SUBTYPE_UUID;
+}

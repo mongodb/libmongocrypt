@@ -105,6 +105,7 @@ _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
       }
    */
 
+   /* TODO CDRIVER-2988 return an error here instead of aborting. */
    BSON_ASSERT (ciphertext);
    BSON_ASSERT (out);
    BSON_ASSERT (ciphertext->key_id.len == 16);
@@ -126,4 +127,46 @@ _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
 
    memcpy (out->data + offset, ciphertext->data.data, ciphertext->data.len);
    offset += ciphertext->data.len;
+}
+
+
+/*
+From "FLE and AEAD" doc:
+A = Associated Data = fle_blob_subtype + key_uuid[16] + original_bson_type
+*/
+
+bool
+_mongocrypt_ciphertext_serialize_associated_data (
+   _mongocrypt_ciphertext_t *ciphertext, _mongocrypt_buffer_t *out)
+{
+   int32_t bytes_written;
+
+   BSON_ASSERT (out);
+   _mongocrypt_buffer_init (out);
+
+   if (!ciphertext->original_bson_type) {
+      return false;
+   }
+
+   if (!_mongocrypt_buffer_is_uuid (&ciphertext->key_id)) {
+      return false;
+   }
+
+   if (ciphertext->blob_subtype !=
+          MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
+       ciphertext->blob_subtype != MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM) {
+      return false;
+   }
+
+   out->len = 1 + ciphertext->key_id.len + 1;
+   out->data = bson_malloc (out->len);
+   out->owned = true;
+   memcpy (out->data, &ciphertext->blob_subtype, 1);
+   bytes_written = 1;
+   memcpy (out->data + bytes_written,
+           ciphertext->key_id.data,
+           ciphertext->key_id.len);
+   bytes_written += ciphertext->key_id.len;
+   memcpy (out->data + bytes_written, &ciphertext->original_bson_type, 1);
+   return true;
 }

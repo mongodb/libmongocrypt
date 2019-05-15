@@ -183,31 +183,14 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
    }
 
    if (calculated_len == ALGORITHM_RANDOM_LEN &&
-       strncmp (algorithm, ALGORITHM_RANDOM, ALGORITHM_RANDOM_LEN) == 0) {
+       strncmp (algorithm,
+                ALGORITHM_RANDOM,
+                ALGORITHM_RANDOM_LEN) == 0) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
-      if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "cannot set iv for randomized encryption");
-      }
       return true;
    }
 
    return _mongocrypt_ctx_fail_w_msg (ctx, "unsupported algorithm");
-}
-
-
-bool
-mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
-                                             mongocrypt_binary_t *iv)
-{
-   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "cannot set iv for randomized encryption");
-   }
-   if (iv && iv->len != 16) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "expected 16 byte binary");
-   }
-   return _set_binary_opt (ctx, iv, &ctx->opts.iv, BSON_SUBTYPE_BINARY);
 }
 
 
@@ -458,7 +441,6 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       bson_free (ctx->opts.key_alt_name);
    }
    _mongocrypt_buffer_cleanup (&ctx->opts.key_id);
-   _mongocrypt_buffer_cleanup (&ctx->opts.iv);
    _mongocrypt_buffer_cleanup (&ctx->opts.local_schema);
    bson_free (ctx);
    return;
@@ -640,30 +622,8 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "key id and alt name prohibited");
    }
 
-   if (opts_spec->iv == OPT_REQUIRED &&
-       _mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "iv required");
-   }
-
-   if (opts_spec->iv == OPT_PROHIBITED &&
-       !_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "iv prohibited");
-   }
-
-   if (opts_spec->algorithm == OPT_REQUIRED) {
-      if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm required");
-      } else if (ctx->opts.algorithm ==
-                    MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
-                 _mongocrypt_buffer_empty (&ctx->opts.iv)) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "iv required for deterministic encryption");
-      } else if (ctx->opts.algorithm ==
-                    MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM &&
-                 !_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "iv prohibited for random encryption");
-      }
+   if (opts_spec->algorithm == OPT_REQUIRED && ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm required");
    }
 
    if (opts_spec->algorithm == OPT_PROHIBITED &&

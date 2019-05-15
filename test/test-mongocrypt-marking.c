@@ -71,6 +71,7 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
    BSON_ASSERT (marking.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
    BSON_ASSERT (0 == strcmp ("abc", bson_iter_utf8 (&marking.v_iter, NULL)));
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* buffer < 5 bytes */
    marking_buf.data = (uint8_t*)"abc";
@@ -78,19 +79,23 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
    marking_buf.owned = false;
    _parse_fails (&marking_buf, "invalid marking, length < 5", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* bad first byte */
    marking_bson = TMP_BSON ("{'a': 2, 'v': 'abc', 'ka': 'alt'}");
    _make_marking (marking_bson, &marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
    marking_buf.data[0] = 1;
    _parse_fails (&marking_buf, "invalid marking", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* unrecognized fields. */
    marking_bson = TMP_BSON ("{'a': 2, 'v': 'abc', 'ka': 'alt', 'extra': 1}");
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "unrecognized field 'extra'", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* malformed BSON. */
    marking_bson = TMP_BSON ("{}");
@@ -98,28 +103,33 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "invalid BSON", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* a: missing */
    marking_bson = TMP_BSON ("{'v': 'abc', 'ka': 'alt'}");
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "no 'a' specified", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
    /* a: wrong type */
    marking_bson = TMP_BSON ("{'a': 'abc', 'v': 'abc', 'ka': 'alt'}");
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "invalid marking, 'a' must be an int32", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
    /* a: wrong integer */
    marking_bson = TMP_BSON ("{'a': -1, 'v': 'abc', 'ka': 'alt'}");
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "invalid algorithm value: -1", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
    
    /* v: missing */
    marking_bson = TMP_BSON ("{'a': 2, 'ka': 'alt'}");
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "no 'v' specified", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* Not testing IV per CDRIVER-3127. TODO: remove this comment. */
    
@@ -128,18 +138,21 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "neither 'ki' nor 'ka' specified", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
    /* ki+ka: both present */
    marking_bson = TMP_BSON ("{'a': 2, 'v': 'abc', 'ka': 'alt' }");
    BSON_APPEND_BINARY (marking_bson, "ki", BSON_SUBTYPE_UUID, (TEST_BIN(16))->data, 16);
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "both 'ki' and 'ka' specified", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* ki: wrong type */
    marking_bson = TMP_BSON ("{'a': 2, 'v': 'abc', 'ki': 'abc' }");
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "key id must be a UUID", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* ki: wrong subtype */
    marking_bson = TMP_BSON ("{'a': 2, 'v': 'abc' }");
@@ -147,12 +160,14 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "key id must be a UUID", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
    /* ka: wrong type */
    marking_bson = TMP_BSON ("{'v': 'abc', 'ka': 1}");
    _make_marking (marking_bson, &marking_buf);
    _parse_fails (&marking_buf, "key alt name must be a UTF8", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
+   _mongocrypt_marking_cleanup (&marking);
 
 }
 

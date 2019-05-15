@@ -19,6 +19,8 @@
 
 #include "mongocrypt-private.h"
 
+#define MONGOCRYPT_KEY_LEN 96
+#define MONGOCRYPT_IV_KEY_LEN 32
 #define MONGOCRYPT_MAC_KEY_LEN 32
 #define MONGOCRYPT_ENC_KEY_LEN 32
 #define MONGOCRYPT_IV_LEN 16
@@ -56,6 +58,14 @@ _mongocrypt_random (_mongocrypt_buffer_t *out,
 
 int
 _mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len);
+
+bool
+_mongocrypt_calculate_deterministic_iv (
+   const _mongocrypt_buffer_t *key,
+   const _mongocrypt_buffer_t *plaintext,
+   const _mongocrypt_buffer_t *associated_data,
+   _mongocrypt_buffer_t *out,
+   mongocrypt_status_t *status);
 
 /* Crypto implementations must implement these functions. */
 

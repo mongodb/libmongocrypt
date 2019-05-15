@@ -39,12 +39,12 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    decrypted.data = bson_malloc (decrypted.len);
    decrypted.owned = true;
 
-   key.data = (uint8_t *) _mongocrypt_repeat_char ('k', 64);
-   key.len = 64;
+   key.data = (uint8_t *) _mongocrypt_repeat_char ('k', MONGOCRYPT_KEY_LEN);
+   key.len = MONGOCRYPT_KEY_LEN;
    key.owned = true;
 
-   iv.data = (uint8_t *) _mongocrypt_repeat_char ('i', 16);
-   iv.len = 16;
+   iv.data = (uint8_t *) _mongocrypt_repeat_char ('i', MONGOCRYPT_IV_LEN);
+   iv.len = MONGOCRYPT_IV_LEN;
    iv.owned = true;
 
    status = mongocrypt_status_new ();
@@ -119,7 +119,7 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    _init_buffer (&key,
                  "000102030405060708090a0b0c0d0e0f101112131415161718191a1"
                  "b1c1d1e1f202122232425262728292a2b2c2d2e2f30313233343536"
-                 "3738393a3b3c3d3e3f");
+                 "3738393a3b3c3d3e3f"); /* TODO: add 32 bytes of 0's */
    _init_buffer (&iv, "1af38c2dc2b96ffdd86694092341bc04");
    _init_buffer (&plaintext,
                  "41206369706865722073797374656d206d757374206e6f742"

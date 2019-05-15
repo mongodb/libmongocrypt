@@ -1,7 +1,0 @@
-HTTP/1.1 200 OK
-x-amzn-RequestId: ec92cb83-a65b-4e11-99d5-52fc380f0d1a
-Content-Type: application/x-amz-json-1.1
-Content-Length: 403
-Connection: close
-
-{"CiphertextBlob":"AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gHAemhJeMg3UrjcOoOBbIkyAAAAojCBnwYJKoZIhvcNAQcGoIGRMIGOAgEAMIGIBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDAT0JMaDiee4jEkgKgIBEIBbqU2vFaZYeNOqSgK1tQ4IjEq5+uNo5ZWibSG1Z6e8RYBZA0Vdy1QymvvbAQI8LLeqwj0aADpdg4xkcu5hfCeOO66xT336NqB215REIS5gBXzgv2F4kYB1R6CbiA==","KeyId":"arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0"}

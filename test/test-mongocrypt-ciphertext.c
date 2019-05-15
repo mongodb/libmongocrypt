@@ -112,12 +112,22 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
    mongocrypt_status_t status;
    _mongocrypt_key_broker_t *kb;
-   _mongocrypt_buffer_t iv = {0};
-   _mongocrypt_ciphertext_t ciphertext = {{0}};
+   _mongocrypt_buffer_t zeros;
+   _mongocrypt_ciphertext_t type1_valueA, type1_valueA_again, type2_valueA,
+      type1_valueB;
    _mongocrypt_marking_t marking = {0};
-   bson_iter_t iter;
+   bson_iter_t a_iter, b_iter;
    bson_t *bson;
    bool res;
+
+   _mongocrypt_ciphertext_init (&type1_valueA);
+   _mongocrypt_ciphertext_init (&type1_valueA_again);
+   _mongocrypt_ciphertext_init (&type2_valueA);
+   _mongocrypt_ciphertext_init (&type1_valueB);
+
+   _mongocrypt_buffer_init (&zeros);
+   _mongocrypt_buffer_resize (&zeros, MONGOCRYPT_IV_LEN);
+   memset (zeros.data, 0, MONGOCRYPT_IV_LEN);
 
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
@@ -125,47 +135,116 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
       ctx);
 
-   _mongocrypt_buffer_resize (&marking.key_id, MONGOCRYPT_ENC_KEY_LEN);
-   BSON_ASSERT (
-      _crypto_random (&marking.key_id, &status, MONGOCRYPT_ENC_KEY_LEN));
-   kb = &ctx->kb;
+   _mongocrypt_buffer_from_binary (&marking.key_id, TEST_BIN (16));
    marking.key_id.subtype = BSON_SUBTYPE_UUID;
+   kb = &ctx->kb;
    BSON_ASSERT (_mongocrypt_key_broker_add_test_key (kb, &marking.key_id));
 
-   bson = BCON_NEW ("v", "hello");
-   bson_iter_init_find (&iter, bson, "v");
-   memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
+   bson = BCON_NEW ("v", "a", "v", "b");
+   bson_iter_init (&a_iter, bson);
+   bson_iter_next (&a_iter);
+   bson_iter_init (&b_iter, bson);
+   bson_iter_next (&b_iter);
+   bson_iter_next (&b_iter);
 
-   /* Seed the marking's iv with anything */
-   _mongocrypt_buffer_resize (&marking.iv, MONGOCRYPT_IV_LEN);
-   BSON_ASSERT (_crypto_random (&marking.iv, &status, MONGOCRYPT_IV_LEN));
-
-   /* Use a marking with type 1, make sure iv is our original iv */
+   /* Marking type = 1, plaintext = a */
    marking.algorithm = 1;
+   memcpy (&marking.v_iter, &a_iter, sizeof (bson_iter_t));
    res = _mongocrypt_marking_to_ciphertext (
-      (void *) kb, &marking, &ciphertext, &status);
+      (void *) kb, &marking, &type1_valueA, &status);
    ASSERT_OR_PRINT (res, &status);
-   BSON_ASSERT (res);
-   iv.data = ciphertext.data.data;
-   iv.len = MONGOCRYPT_IV_LEN;
-   BSON_ASSERT (_mongocrypt_buffer_cmp (&iv, &marking.iv) == 0);
-   _mongocrypt_ciphertext_cleanup (&ciphertext);
 
-   /* Use a marking with type 2, make sure iv is random */
-   marking.algorithm = 2;
+   /* Marking type = 1, plaintext = a */
+   marking.algorithm = 1;
+   memcpy (&marking.v_iter, &a_iter, sizeof (bson_iter_t));
    res = _mongocrypt_marking_to_ciphertext (
-      (void *) kb, &marking, &ciphertext, &status);
-   BSON_ASSERT (res);
-   iv.data = ciphertext.data.data;
-   iv.len = MONGOCRYPT_IV_LEN;
-   BSON_ASSERT (_mongocrypt_buffer_cmp (&iv, &marking.iv) != 0);
+      (void *) kb, &marking, &type1_valueA_again, &status);
+   ASSERT_OR_PRINT (res, &status);
 
+   /* Marking type = 2, plaintext = a */
+   marking.algorithm = 2;
+   memcpy (&marking.v_iter, &a_iter, sizeof (bson_iter_t));
+   res = _mongocrypt_marking_to_ciphertext (
+      (void *) kb, &marking, &type2_valueA, &status);
+   ASSERT_OR_PRINT (res, &status);
+
+   /* Marking type = 1, plaintext = b */
+   marking.algorithm = 1;
+   memcpy (&marking.v_iter, &b_iter, sizeof (bson_iter_t));
+   res = _mongocrypt_marking_to_ciphertext (
+      (void *) kb, &marking, &type1_valueB, &status);
+   ASSERT_OR_PRINT (res, &status);
+
+   /* Shorten all buffers to their IV length's */
+   type1_valueA.data.len = MONGOCRYPT_IV_LEN;
+   type1_valueA_again.data.len = MONGOCRYPT_IV_LEN;
+   type2_valueA.data.len = MONGOCRYPT_IV_LEN;
+   type1_valueB.data.len = MONGOCRYPT_IV_LEN;
+
+
+   BSON_ASSERT (0 != _mongocrypt_buffer_cmp (&type1_valueA.data, &zeros));
+   BSON_ASSERT (0 != _mongocrypt_buffer_cmp (&type1_valueA_again.data, &zeros));
+   BSON_ASSERT (0 != _mongocrypt_buffer_cmp (&type2_valueA.data, &zeros));
+   BSON_ASSERT (0 != _mongocrypt_buffer_cmp (&type1_valueB.data, &zeros));
+
+   /* Type 1 IV should be repeatable for same plaintext. */
+   BSON_ASSERT (0 == _mongocrypt_buffer_cmp (&type1_valueA.data,
+                                             &type1_valueA_again.data));
+   /* Type 1 IV should differ from type 2 random IV. */
+   BSON_ASSERT (
+      0 != _mongocrypt_buffer_cmp (&type1_valueA.data, &type2_valueA.data));
+   /* Type 1 IV should differ if plaintext differs. */
+   BSON_ASSERT (
+      0 != _mongocrypt_buffer_cmp (&type1_valueA.data, &type1_valueB.data));
+
+
+   _mongocrypt_ciphertext_cleanup (&type1_valueA);
+   _mongocrypt_ciphertext_cleanup (&type1_valueA_again);
+   _mongocrypt_ciphertext_cleanup (&type2_valueA);
+   _mongocrypt_ciphertext_cleanup (&type1_valueB);
+   _mongocrypt_buffer_cleanup (&zeros);
    _mongocrypt_marking_cleanup (&marking);
-   _mongocrypt_ciphertext_cleanup (&ciphertext);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
    bson_destroy (bson);
 }
+
+
+void
+_test_ciphertext_serialize_associated_data (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_ciphertext_t ciphertext;
+   _mongocrypt_buffer_t serialized;
+   /* Expected associated data is:
+    * One byte for blob subtype for deterministic encryption:
+    * \x01
+    * Followed by 16 byte UUID, a repeating 123 pattern:
+    * \x01\x02\x03\x01\x02\x03\x01\x02\x03\x01\x02\x03\x01\x02\x03\x01
+    * Followed by the BSON type for UTF8
+    * \x02
+    */
+   char *expected = "\x01\x01\x02\x03\x01\x02\x03\x01\x02\x03\x01\x02\x03\x01"
+                    "\x02\x03\x01\x02";
+
+   _mongocrypt_ciphertext_init (&ciphertext);
+   _mongocrypt_buffer_init (&serialized);
+
+   /* Create a UUID */
+   _mongocrypt_buffer_from_binary (&ciphertext.key_id, TEST_BIN (16));
+   ciphertext.key_id.subtype = BSON_SUBTYPE_UUID;
+
+   ciphertext.original_bson_type = BSON_TYPE_UTF8;
+   ciphertext.blob_subtype = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
+
+   BSON_ASSERT (_mongocrypt_ciphertext_serialize_associated_data (&ciphertext,
+                                                                  &serialized));
+   BSON_ASSERT (serialized.len == 18);
+   BSON_ASSERT (0 == memcmp (serialized.data, expected, strlen (expected)));
+
+   _mongocrypt_ciphertext_cleanup (&ciphertext);
+   _mongocrypt_buffer_cleanup (&serialized);
+}
+
 
 void
 _mongocrypt_tester_install_ciphertext (_mongocrypt_tester_t *tester)
@@ -173,4 +252,5 @@ _mongocrypt_tester_install_ciphertext (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_malformed_ciphertext);
    INSTALL_TEST (_test_ciphertext_serialization);
    INSTALL_TEST (_test_ciphertext_algorithm);
+   INSTALL_TEST (_test_ciphertext_serialize_associated_data);
 }

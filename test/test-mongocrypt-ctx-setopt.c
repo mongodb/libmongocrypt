@@ -61,12 +61,6 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
    ASSERT_FAILS (                            \
       mongocrypt_ctx_setopt_algorithm (ctx, algo, algo_len), ctx, msg);
 
-#define IV_OK(iv) \
-   ASSERT_OK (mongocrypt_ctx_setopt_initialization_vector (ctx, iv), ctx);
-#define IV_FAILS(iv, msg) \
-   ASSERT_FAILS (         \
-      mongocrypt_ctx_setopt_initialization_vector (ctx, iv), ctx, msg);
-
 #define DATAKEY_INIT_OK ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
 #define DATAKEY_INIT_FAILS(msg) \
    ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx), ctx, msg);
@@ -304,60 +298,9 @@ _test_setopt_algorithm (_mongocrypt_tester_t *tester)
    REFRESH;
    ALGORITHM_FAILS (NULL, 0, "passed null algorithm");
 
-   /* Check with iv */
-   REFRESH;
-   IV_OK (TEST_BIN (16));
-   ALGORITHM_OK (DET, -1);
-
-   REFRESH;
-   IV_OK (TEST_BIN (16));
-   ALGORITHM_FAILS (RAND, -1, "cannot set iv for randomized encryption");
-
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
    ALGORITHM_FAILS (RAND, -1, "test")
-
-   mongocrypt_ctx_destroy (ctx);
-   mongocrypt_destroy (crypt);
-}
-
-
-static void
-_test_setopt_iv (_mongocrypt_tester_t *tester)
-{
-   mongocrypt_t *crypt;
-   mongocrypt_ctx_t *ctx = NULL;
-
-   crypt = _mongocrypt_tester_mongocrypt ();
-
-   /* Test double setting. */
-   REFRESH;
-   IV_OK (TEST_BIN (16));
-   IV_FAILS (TEST_BIN (16), "option already set");
-
-   /* Test NULL/empty input */
-   REFRESH;
-   IV_FAILS (NULL, "option must be non-NULL");
-
-   REFRESH;
-   IV_FAILS (TEST_BIN (0), "expected 16 byte binary");
-
-   /* Test wrong length */
-   REFRESH;
-   IV_FAILS (TEST_BIN (5), "expected 16 byte binary");
-
-   /* Test setting with deterministic/randomized */
-   REFRESH;
-   ALGORITHM_OK (DET, -1);
-   IV_OK (TEST_BIN (16));
-
-   REFRESH;
-   ALGORITHM_OK (RAND, -1);
-   IV_FAILS (TEST_BIN (16), "cannot set iv for randomized encryption");
-
-   REFRESH;
-   _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   IV_FAILS (TEST_BIN (16), "test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -370,12 +313,11 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *schema, *uuid, *iv;
+   mongocrypt_binary_t *schema, *uuid;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    schema = TEST_FILE ("./test/data/schema.json");
    uuid = TEST_BIN (16);
-   iv = TEST_BIN (16);
 
    /* Test required and prohibited options. */
    REFRESH;
@@ -401,11 +343,6 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
    ALGORITHM_OK ("AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
    DATAKEY_INIT_FAILS ("algorithm prohibited");
 
-   REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   IV_OK (iv);
-   DATAKEY_INIT_FAILS ("iv prohibited");
-
    /* Test setting options after init. */
    REFRESH;
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
@@ -423,12 +360,11 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *schema, *uuid, *iv;
+   mongocrypt_binary_t *schema, *uuid;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    schema = TEST_FILE ("./test/data/schema.json");
    uuid = TEST_BIN (16);
-   iv = TEST_BIN (16);
 
    /* Test required and prohibited options. */
    REFRESH;
@@ -458,10 +394,6 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
    ALGORITHM_OK (DET, -1);
    ENCRYPT_INIT_FAILS ("a.b", -1, "algorithm prohibited");
 
-   REFRESH;
-   IV_OK (iv);
-   ENCRYPT_INIT_FAILS ("a.b", -1, "iv prohibited");
-
    /* Test setting options after init. */
    REFRESH;
    ENCRYPT_INIT_OK ("a.b", -1);
@@ -477,12 +409,11 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *bson, *schema, *uuid, *iv;
+   mongocrypt_binary_t *bson, *schema, *uuid;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    schema = TEST_FILE ("./test/data/schema.json");
    uuid = TEST_BIN (16);
-   iv = TEST_BIN (16);
    bson = TEST_BSON ("{'v': 'hello'}");
 
    /* Test required and prohibited options. */
@@ -533,7 +464,6 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    REFRESH;
    KEY_ID_OK (uuid);
    ALGORITHM_OK (DET, -1);
-   IV_OK (iv);
    EX_ENCRYPT_INIT_OK (bson);
 
    /* Just key alt name is ok */
@@ -543,22 +473,9 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
    EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
 
-   /* Deterministic requires an IV */
    REFRESH;
    KEY_ID_OK (uuid);
    ALGORITHM_OK (DET, -1);
-   EX_ENCRYPT_INIT_FAILS (bson, "iv required");
-
-   /* Random prohibits it, we can't even get to init. */
-   REFRESH;
-   KEY_ID_OK (uuid);
-   IV_OK (iv);
-   ALGORITHM_FAILS (RAND, -1, "cannot set iv");
-
-   REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (DET, -1);
-   IV_OK (iv);
    EX_ENCRYPT_INIT_OK (bson);
 
    /* Test setting options after init. */
@@ -566,7 +483,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    KEY_ID_OK (uuid);
    ALGORITHM_OK (RAND, -1);
    EX_ENCRYPT_INIT_OK (bson);
-   IV_FAILS (iv, "cannot set iv");
+   ALGORITHM_FAILS (RAND, -1, "cannot set options after init");
 
    /* Test that an option failure validated at the time of 'setopt' persists
     * upon init. */
@@ -585,12 +502,11 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *bson, *schema, *uuid, *iv;
+   mongocrypt_binary_t *bson, *schema, *uuid;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    schema = TEST_FILE ("./test/data/schema.json");
    uuid = TEST_BIN (16);
-   iv = TEST_BIN (16);
    bson = TEST_BSON ("{'a': 1}");
 
    /* Test required and prohibited options. */
@@ -621,10 +537,6 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
    ALGORITHM_OK (DET, -1);
    DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
 
-   REFRESH;
-   IV_OK (iv);
-   DECRYPT_INIT_FAILS (bson, "iv prohibited");
-
    /* Test setting options after init. */
    REFRESH;
    DECRYPT_INIT_OK (bson);
@@ -640,12 +552,11 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *bson, *schema, *uuid, *iv;
+   mongocrypt_binary_t *bson, *schema, *uuid;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    schema = TEST_FILE ("./test/data/schema.json");
    uuid = TEST_BIN (16);
-   iv = TEST_BIN (16);
    bson = TEST_FILE ("./test/data/explicit-decryption-input.json");
 
    /* Test required and prohibited options. */
@@ -676,10 +587,6 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    ALGORITHM_OK (DET, -1);
    EX_DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
 
-   REFRESH;
-   IV_OK (iv);
-   EX_DECRYPT_INIT_FAILS (bson, "iv prohibited");
-
    /* Test setting options after init. */
    REFRESH;
    EX_DECRYPT_INIT_OK (bson);
@@ -700,7 +607,6 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_schema (tester);
    _test_setopt_key_id (tester);
    _test_setopt_algorithm (tester);
-   _test_setopt_iv (tester);
    _test_setopt_key_alt_name (tester);
 
    /* Test options on different contexts */

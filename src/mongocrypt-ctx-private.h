@@ -43,7 +43,6 @@ typedef struct __mongocrypt_ctx_opts_t {
    _mongocrypt_buffer_t local_schema;
    _mongocrypt_buffer_t key_id;
    bson_value_t* key_alt_name;
-   _mongocrypt_buffer_t iv;
    mongocrypt_encryption_algorithm_t algorithm;
 } _mongocrypt_ctx_opts_t;
 
@@ -106,7 +105,6 @@ typedef struct {
    _mongocrypt_buffer_t marking_cmd;
    _mongocrypt_buffer_t marked_cmd;
    _mongocrypt_buffer_t encrypted_cmd;
-   _mongocrypt_buffer_t iv;
    _mongocrypt_buffer_t key_id;
 } _mongocrypt_ctx_encrypt_t;
 
@@ -139,7 +137,6 @@ typedef struct {
    _mongocrypt_ctx_opt_spec_t masterkey;
    _mongocrypt_ctx_opt_spec_t schema;
    _mongocrypt_ctx_opt_spec_t key_descriptor; /* a key_id or key_alt_name */
-   _mongocrypt_ctx_opt_spec_t iv;
    _mongocrypt_ctx_opt_spec_t algorithm;
 } _mongocrypt_ctx_opts_spec_t;
 

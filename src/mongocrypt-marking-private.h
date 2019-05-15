@@ -23,7 +23,6 @@
 typedef struct {
    mongocrypt_encryption_algorithm_t algorithm;
    bson_iter_t v_iter;
-   _mongocrypt_buffer_t iv;
    /* one of the following is zeroed, and the other is set. */
    _mongocrypt_buffer_t key_id;
    bson_value_t key_alt_name;

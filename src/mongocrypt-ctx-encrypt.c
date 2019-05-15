@@ -300,7 +300,6 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
       memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
       marking.algorithm = ctx->opts.algorithm;
-      _mongocrypt_buffer_set_to (&ctx->opts.iv, &marking.iv);
       _mongocrypt_buffer_set_to (&ctx->opts.key_id, &marking.key_id);
 
       bson_init (&converted);
@@ -442,7 +441,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 
    opts_spec.key_descriptor = OPT_REQUIRED;
    opts_spec.algorithm = OPT_REQUIRED;
-   opts_spec.iv = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
@@ -536,11 +534,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "algorithm must not be set for auto encryption");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.iv)) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "iv must not be set for auto encryption");
    }
 
    if (!_mongocrypt_validate_and_copy_string (ns, ns_len, &ectx->ns)) {

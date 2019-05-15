@@ -82,8 +82,9 @@ _replace_ciphertext_with_plaintext (void *ctx,
 {
    _mongocrypt_key_broker_t *kb;
    _mongocrypt_ciphertext_t ciphertext;
-   _mongocrypt_buffer_t plaintext = {0};
+   _mongocrypt_buffer_t plaintext;
    _mongocrypt_buffer_t key_material;
+   _mongocrypt_buffer_t associated_data;
    uint32_t bytes_written;
    bool ret = false;
 
@@ -91,6 +92,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
    BSON_ASSERT (in);
    BSON_ASSERT (out);
 
+   _mongocrypt_buffer_init (&plaintext);
+   _mongocrypt_buffer_init (&associated_data); 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
    if (!_parse_ciphertext_unowned (in, &ciphertext, status)) {
@@ -100,17 +103,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
    /* look up the key */
    if (!_mongocrypt_key_broker_decrypted_key_by_id (
           kb, &ciphertext.key_id, &key_material)) {
-      /* We allow partial decryption, so this is not an error. */
-      /* TODO: either log here and pass a mongocrypt_ctx_t instead of a key
-      broker
-       * or log inside the key broker (and add a pointer to mongocrypt_ctx_t
-      there)
-       *
-      _mongocrypt_log (&dctx->parent.crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_WARNING,
-                       "Missing key, skipping decryption for this ciphertext");
-       */
-      ret = true;
+      CLIENT_ERR ("key not found");
       goto fail;
    }
 
@@ -118,7 +111,12 @@ _replace_ciphertext_with_plaintext (void *ctx,
    plaintext.data = bson_malloc0 (plaintext.len);
    plaintext.owned = true;
 
-   if (!_mongocrypt_do_decryption (NULL,
+   if (!_mongocrypt_ciphertext_serialize_associated_data (&ciphertext, &associated_data)) {
+      CLIENT_ERR ("could not serialize associated data");
+      goto fail;
+   }
+
+   if (!_mongocrypt_do_decryption (&associated_data,
                                    &key_material,
                                    &ciphertext.data,
                                    &plaintext,
@@ -137,7 +135,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
    ret = true;
 
 fail:
-   bson_free (plaintext.data);
+   _mongocrypt_buffer_cleanup (&plaintext);
+   _mongocrypt_buffer_cleanup (&associated_data);
    return ret;
 }
 
