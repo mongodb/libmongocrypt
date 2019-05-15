@@ -154,6 +154,9 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt.c
 )
 # Define test-mongocrypt
+# TODO: test-mongocrypt should only need to link against mongocrypt-static,
+# which statically links kms_message. To work around linker errors in Windows,
+# test-mongocrypt is compiled with TARGET_OBJECTS of kms_message
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
 # Use the static version since it allows the test binary to use private symbols
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt-static)
