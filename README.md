@@ -1,8 +1,10 @@
 # libmongocrypt #
-The companion C library for field-level encryption in drivers.
+The companion C library for client side encryption in drivers.
+
+To integrate libmongocrypt with your driver, see the [Integrating libmongocrypt Guide](integrating.md).
 
 ## Building libmongocrypt ##
-These instructions have been tested on macOS 10.14.1 and Ubuntu 16.04. Windows support coming soon.
+These instructions have been tested on macOS 10.14.1 and Ubuntu 16.04.
 
 First build the following dependencies.
 
@@ -32,17 +34,21 @@ make
 This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the `CMAKE_PREFIX_PATH` must include the path to the BSON library installation directory if it was not the defaults.
 
 ### Testing ###
-`test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories.
+`test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
+
+```
+cd libmongocrypt
+./cmake-build/test-mongocrypt
+```
+
+libmongocrypt is [continuously built on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
 
 ### Troubleshooting ###
 If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt. 
 
-If there are errors with cmake configuration, send the set of steps you performed and their output to Kevin Albertson.
+If there are errors with cmake configuration, send the set of steps you performed to the maintainers of this project.
 
-If there are compilation or linker errors, run `make` again, setting `VERBOSE=1` in the environment or on the command line (which shows exact compile and link commands), and send the output to Kevin Albertson.
-
-### Integrating ###
-All public API is documented in mongocrypt.h.
+If there are compilation or linker errors, run `make` again, setting `VERBOSE=1` in the environment or on the command line (which shows exact compile and link commands), and send the output to the maintainers of this project.
 
 ### Design Principles ###
 The design of libmongocrypt adheres to these principles.

@@ -38,7 +38,9 @@ mongocrypt_version (uint32_t *len);
  * A non-owning view of a byte buffer.
  *
  * Functions returning a mongocrypt_binary_t* expect it to be destroyed with
- * mongocrypt_binary_destroy.
+ * @ref mongocrypt_binary_destroy. Calling @ref mongocrypt_binary_destroy
+ * does not destroy the underlying data. See individual function documentation
+ * for lifetime guarantees.
  */
 typedef struct _mongocrypt_binary_t mongocrypt_binary_t;
 
@@ -356,104 +358,6 @@ typedef struct _mongocrypt_ctx_t mongocrypt_ctx_t;
 
 
 /**
- * Set the key id to use for explicit encryption.
- *
- * It is an error to set both this and the key alt name.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] key_id The key_id to use.
- * @returns A boolean indicating success.
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
-                              mongocrypt_binary_t *key_id);
-
-/**
- * Set the keyAltName to use for explicit encryption.
- * keyAltName should be a binary encoding a bson document
- * with the following format:
- *
- *   { "keyAltName" : <BSON UTF8 value> }
- *
- * It is an error to set both this and the key id.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] key_alt_name The name to use.
- * @returns A boolean indicating success.
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
-                                    mongocrypt_binary_t *key_alt_name);
-
-/**
- * Set the algorithm used for encryption to either
- * deterministic or random encryption. This value
- * should only be set when using explicit encryption.
- *
- * If -1 is passed in for "len", then "algorithm" is
- * assumed to be a null-terminated string.
- *
- * Valid values for algorithm are:
- *   "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
- *   "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized"
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @p algorithm A string specifying the algorithm to
- * use for encryption.
- * @p len The length of the algorithm string.
- * @returns A boolean indicating success.
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
-                                 const char *algorithm,
-                                 int len);
-
-
-/**
- * Set an initialization vector to be used with explicit
- * encryption. This should not be set for auto encryption.
- *
- * If using randomized encryption, setting this option will
- * cause an error. If using deterministic encryption, failing
- * to set this option will cause an error.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] iv The initialization vector to use.
- * @returns A boolean indicating success.
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
-                                             mongocrypt_binary_t *iv);
-
-
-/**
- * Disable blocking waits on the shared key (or collinfo) cache.
- *
- * By default, if a @ref mongocrypt_ctx_t needs data currently
- * being fetched by another @ref mongocrypt_ctx_t, it will block until
- * the dependent context has fetched that data.
- *
- * For drivers that do not want libmongocrypt to block (e.g. async drivers)
- * setting this option puts the responsibility of waiting into the caller. When
- * a @ref mongocrypt_ctx_t is in the state MONGOCRYPT_CTX_WAITING, the caller
- * can then get a list of dependent contexts with
- * @ref mongocrypt_ctx_next_dependent_ctx_id and call @ref
- * mongocrypt_ctx_wait_done to attempt to make progress.
- *
- * @param[in] crypt The @ref mongocrypt_t object.
- * @returns A boolean indicating success.
- * @see @ref mongocrypt_ctx_id and @ref mongocrypt_ctx_next_dependent_ctx_id.
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_cache_noblock (mongocrypt_ctx_t *ctx);
-
-
-/**
  * Create a new uninitialized @ref mongocrypt_ctx_t.
  *
  * Initialize the context with functions like @ref mongocrypt_ctx_encrypt_init.
@@ -478,6 +382,109 @@ mongocrypt_ctx_new (mongocrypt_t *crypt);
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out);
+
+
+/**
+ * Set the key id to use for explicit encryption.
+ *
+ * It is an error to set both this and the key alt name.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] key_id The key_id to use.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
+                              mongocrypt_binary_t *key_id);
+
+/**
+ * Set the keyAltName to use for explicit encryption.
+ * keyAltName should be a binary encoding a bson document
+ * with the following format:
+ *
+ *   { "keyAltName" : <BSON UTF8 value> }
+ *
+ * It is an error to set both this and the key id.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] key_alt_name The name to use.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
+                                    mongocrypt_binary_t *key_alt_name);
+
+/**
+ * Set the algorithm used for encryption to either
+ * deterministic or random encryption. This value
+ * should only be set when using explicit encryption.
+ *
+ * If -1 is passed in for "len", then "algorithm" is
+ * assumed to be a null-terminated string.
+ *
+ * Valid values for algorithm are:
+ *   "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+ *   "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized"
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] algorithm A string specifying the algorithm to
+ * use for encryption.
+ * @param[in] len The length of the algorithm string.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
+                                 const char *algorithm,
+                                 int len);
+
+
+/**
+ * Set an initialization vector to be used with explicit
+ * encryption. This should not be set for auto encryption.
+ *
+ * If using randomized encryption, setting this option will
+ * cause an error. If using deterministic encryption, failing
+ * to set this option will cause an error.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] iv The initialization vector to use.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
+                                             mongocrypt_binary_t *iv);
+
+
+/**
+ * Disable blocking waits on the shared key (or collinfo) cache.
+ *
+ * By default, if a @ref mongocrypt_ctx_t needs data currently
+ * being fetched by another @ref mongocrypt_ctx_t, it will block until
+ * the dependent context has fetched that data.
+ *
+ * For drivers that do not want libmongocrypt to block (e.g. async drivers)
+ * setting this option puts the responsibility of waiting into the caller. When
+ * a @ref mongocrypt_ctx_t is in the state MONGOCRYPT_CTX_WAITING, the caller
+ * can then get a list of dependent contexts with
+ * @ref mongocrypt_ctx_next_dependent_ctx_id and call @ref
+ * mongocrypt_ctx_wait_done to attempt to make progress.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success.
+ * @see @ref mongocrypt_ctx_id and @ref mongocrypt_ctx_next_dependent_ctx_id.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_cache_noblock (mongocrypt_ctx_t *ctx);
 
 
 /**
@@ -506,6 +513,7 @@ mongocrypt_ctx_id (mongocrypt_ctx_t *ctx);
  * (CMK).
  * @param[in] cmk_len The string length of @p cmk_len. Pass -1 to determine the
  * string length with strlen (must be NULL terminated).
+ * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT
@@ -521,6 +529,7 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
  * Set the master key to "local" for creating a data key.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT
@@ -532,6 +541,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * Initialize a context to create a data key.
  *
  * Associated options:
+ * - @ref mongocrypt_ctx_setopt_cache_noblock
  * - @ref mongocrypt_ctx_setopt_masterkey_aws
  * - @ref mongocrypt_ctx_setopt_masterkey_local
  *
@@ -550,6 +560,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] schema A BSON local schema supplied by the user.
+ * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success.
  */
 MONGOCRYPT_EXPORT
@@ -561,7 +572,9 @@ mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
 /**
  * Initialize a context for encryption.
  *
- * Set options before using @ref mongocrypt_ctx_setopt_schema.
+ * Associated options:
+ * - @ref mongocrypt_ctx_setopt_cache_noblock
+ * - @ref mongocrypt_ctx_setopt_schema
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] ns The namespace of the collection the driver is operating on.
@@ -585,6 +598,13 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * This method expects the passed-in BSON to be of the form:
  * { "v" : BSON value to encrypt }
  *
+ * Associated options:
+ * - @ref mongocrypt_ctx_setopt_cache_noblock
+ * - @ref mongocrypt_ctx_setopt_key_id
+ * - @ref mongocrypt_ctx_setopt_key_alt_name
+ * - @ref mongocrypt_ctx_setopt_algorithm
+ * - @ref mongocrypt_ctx_setopt_initialization_vector
+ *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value.
  * @returns A boolean indicating success.
@@ -598,6 +618,9 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 /**
  * Initialize a context for decryption.
  *
+ * Associated options:
+ * - @ref mongocrypt_ctx_setopt_cache_noblock
+ *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] doc The document to be decrypted.
  * @returns A boolean indicating success.
@@ -609,6 +632,9 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
 
 /**
  * Explicit helper method to decrypt a single BSON object.
+ *
+ * Associated options:
+ * - @ref mongocrypt_ctx_setopt_cache_noblock
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the encrypted BSON.
@@ -651,6 +677,9 @@ mongocrypt_ctx_state (mongocrypt_ctx_t *ctx);
  * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a listCollections filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a find filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a JSON schema to append.
+ *
+ * The lifetime of @p op_bson is tied to the lifetime of @p ctx. It is valid
+ * until @ref mongocrypt_ctx_destroy is called.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[out] op_bson A BSON document for the MongoDB operation.
@@ -719,6 +748,9 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx);
 /**
  * Get the HTTP request message for a KMS handle.
  *
+ * The lifetime of @p msg is tied to the lifetime of @p kms. It is valid
+ * until @ref mongocrypt_ctx_kms_done is called.
+ *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
  * @param[out] msg The HTTP request to send to KMS.
  * @returns A boolean indicating success.
@@ -733,8 +765,7 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * Get the hostname from which to connect over TLS.
  *
  * The storage for @p endpoint is not owned by the caller, but
- * is valid until calling @ref mongocrypt_ctx_kms_done on the
- * parent @ref mongocrypt_ctx_t.
+ * is valid until calling @ref mongocrypt_ctx_kms_done.
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
  * @param[out] endpoint The output hostname as a NULL terminated string.
@@ -829,6 +860,9 @@ mongocrypt_ctx_wait_done (mongocrypt_ctx_t *ctx);
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[out] out The final BSON to send to the server.
+ *
+ * The lifetime of @p out is tied to the lifetime of @p ctx. It is valid
+ * until @ref mongocrypt_ctx_destroy is called.
  *
  * @returns a bool indicating success.
  */
