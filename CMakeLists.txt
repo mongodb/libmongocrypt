@@ -118,25 +118,36 @@ target_compile_definitions (mongocrypt PRIVATE "${BSON_DEFINITIONS}")
 
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
-add_library (mongocrypt-static STATIC ${MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
-target_include_directories (mongocrypt-static PRIVATE ${BSON_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_include_directories (mongocrypt-static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
-target_link_libraries (mongocrypt-static PRIVATE ${BSON_LIBRARIES})
-target_link_libraries (mongocrypt-static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-target_compile_definitions (mongocrypt-static PRIVATE "${BSON_DEFINITIONS}")
-target_compile_definitions (mongocrypt-static PUBLIC MONGOCRYPT_STATIC_DEFINE)
+add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
+target_include_directories (mongocrypt_static PRIVATE ${BSON_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
+target_include_directories (mongocrypt_static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
+target_link_libraries (mongocrypt_static PRIVATE ${BSON_LIBRARIES})
+target_link_libraries (mongocrypt_static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_compile_definitions (mongocrypt_static PRIVATE "${BSON_DEFINITIONS}")
+target_compile_definitions (mongocrypt_static PUBLIC MONGOCRYPT_STATIC_DEFINE)
 
 
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    target_link_libraries (mongocrypt PRIVATE "-framework CoreFoundation -framework Security")
-   target_link_libraries (mongocrypt-static PRIVATE "-framework CoreFoundation -framework Security")
+   target_link_libraries (mongocrypt_static PRIVATE "-framework CoreFoundation -framework Security")
 elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
    target_link_libraries (mongocrypt PRIVATE "bcrypt")
-   target_link_libraries (mongocrypt-static PRIVATE "bcrypt")
+   target_link_libraries (mongocrypt_static PRIVATE "bcrypt")
 else ()
    target_link_libraries (mongocrypt PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-   target_link_libraries (mongocrypt-static PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+   target_link_libraries (mongocrypt_static PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif ()
+
+
+set_target_properties (mongocrypt PROPERTIES
+   OUTPUT_NAME "mongocrypt"
+   PREFIX "lib"
+)
+
+set_target_properties (mongocrypt_static PROPERTIES
+   OUTPUT_NAME "mongocrypt-static"
+   PREFIX "lib"
+)
 
 
 set (TEST_MONGOCRYPT_SOURCES
@@ -154,12 +165,12 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt.c
 )
 # Define test-mongocrypt
-# TODO: test-mongocrypt should only need to link against mongocrypt-static,
+# TODO: test-mongocrypt should only need to link against mongocrypt_static,
 # which statically links kms_message. To work around linker errors in Windows,
 # test-mongocrypt is compiled with TARGET_OBJECTS of kms_message
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
 # Use the static version since it allows the test binary to use private symbols
-target_link_libraries (test-mongocrypt PRIVATE mongocrypt-static)
+target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_LIBRARIES})
@@ -176,8 +187,8 @@ target_link_libraries (example-state-machine PRIVATE ${BSON_LIBRARIES})
 target_compile_definitions (example-state-machine PRIVATE "${BSON_DEFINITIONS}")
 
 # Define example-state-machine-static
-add_executable (example-state-machine-static test/example-state-machine.c)
-target_link_libraries (example-state-machine-static PRIVATE mongocrypt-static)
+add_executable (example-state-machine-static test/example-state-machine.c $<TARGET_OBJECTS:kms_message_obj>)
+target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static)
 target_include_directories (example-state-machine-static PRIVATE ./src)
 target_include_directories (example-state-machine-static PRIVATE ${BSON_INCLUDE_DIRS})
 target_link_libraries (example-state-machine-static PRIVATE ${BSON_LIBRARIES})
@@ -185,19 +196,13 @@ target_compile_definitions (example-state-machine-static PRIVATE "${BSON_DEFINIT
 
 if (ENABLE_TRACE)
    target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
-   target_compile_definitions (mongocrypt-static PRIVATE "MONGOCRYPT_TRACE=1")
+   target_compile_definitions (mongocrypt_static PRIVATE "MONGOCRYPT_TRACE=1")
    target_compile_definitions (test-mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
    target_compile_definitions (example-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
 endif ()
 
-install (TARGETS mongocrypt
-   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-install (TARGETS mongocrypt-static
+install (TARGETS mongocrypt mongocrypt_static
+   EXPORT mongocrypt_targets
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -242,39 +247,33 @@ set (INCLUDE_INSTALL_DIRS "${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
 set (LIBRARY_INSTALL_DIRS ${CMAKE_INSTALL_LIBDIR})
 
 write_basic_package_version_file (
-   "${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config-version.cmake"
-   COMPATIBILITY AnyNewerVersion
-)
-write_basic_package_version_file (
-   "${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config-version.cmake"
+   "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config-version.cmake"
    COMPATIBILITY AnyNewerVersion
 )
 
-configure_package_config_file (
-   cmake/libmongocrypt-config.cmake.in
-   ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config.cmake
-   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt-config.cmake
-   PATH_VARS INCLUDE_INSTALL_DIRS LIBRARY_INSTALL_DIRS
+export (EXPORT mongocrypt_targets
+   NAMESPACE mongo::
+   FILE "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt_targets.cmake"
 )
-configure_package_config_file (
-   cmake/libmongocrypt-static-config.cmake.in
-   ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config.cmake
-   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt-static-config.cmake
-   PATH_VARS INCLUDE_INSTALL_DIRS LIBRARY_INSTALL_DIRS
+
+configure_file (cmake/mongocrypt-config.cmake
+   "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config.cmake"
+   COPYONLY
+)
+
+install (EXPORT mongocrypt_targets
+   NAMESPACE mongo::
+   FILE mongocrypt_targets.cmake
+   DESTINATION lib/cmake/mongocrypt
 )
 
 install (
    FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config.cmake
-      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-config-version.cmake
+      cmake/mongocrypt-config.cmake
+      "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config-version.cmake"
    DESTINATION
-      ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt
-)
-install (
-   FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config.cmake
-      ${CMAKE_CURRENT_BINARY_DIR}/cmake/libmongocrypt-static-config-version.cmake
-   DESTINATION
-      ${CMAKE_INSTALL_LIBDIR}/cmake/libmongocrypt-static
+      lib/cmake/mongocrypt
+   COMPONENT
+      Devel
 )
 
