@@ -146,6 +146,7 @@ write_basic_package_version_file (
 )
 
 export (EXPORT kms_message_targets
+   NAMESPACE mongo::
    FILE "${CMAKE_CURRENT_BINARY_DIR}/kms_message/kms_message_targets.cmake"
 )
 
@@ -156,6 +157,7 @@ configure_file (cmake/kms_message-config.cmake
 
 set (ConfigPackageLocation lib/cmake/kms_message)
 install (EXPORT kms_message_targets
+   NAMESPACE mongo::
    FILE kms_message_targets.cmake
    DESTINATION ${ConfigPackageLocation}
 )
