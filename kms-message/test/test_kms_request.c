@@ -666,6 +666,7 @@ connection_close_test (void)
    set_test_date (request);
 
    test_compare_sreq (request, "test/connection_close");
+   kms_request_opt_destroy (opt);
    kms_request_destroy (request);
 }
 
