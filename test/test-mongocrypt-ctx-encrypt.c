@@ -217,22 +217,6 @@ _test_encrypt_need_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
-   /* Coll info with no schema. */
-   crypt = _mongocrypt_tester_mongocrypt ();
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
-              ctx);
-   _mongocrypt_tester_run_ctx_to (
-      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
-   ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                 ctx, TEST_FILE ("./test/data/collection-info-no-schema.json")),
-              ctx);
-   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NOTHING_TO_DO);
-   mongocrypt_ctx_destroy (ctx);
-   mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
-
    /* Coll info with NULL schema. */
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);

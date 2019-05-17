@@ -103,11 +103,7 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (_mongocrypt_buffer_empty (&ectx->schema)) {
-      ectx->parent.state = MONGOCRYPT_CTX_NOTHING_TO_DO;
-   } else {
-      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-   }
+   ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    return true;
 }
 
