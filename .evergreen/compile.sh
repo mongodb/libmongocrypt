@@ -18,8 +18,6 @@ evergreen_root="$(pwd)"
 
 . ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
 
-. ${evergreen_root}/libmongocrypt/.evergreen/setup-venv.sh
-
 cd $evergreen_root
 
 # Build and install libbson.

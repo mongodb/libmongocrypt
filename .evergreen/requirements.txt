@@ -1,4 +1,1 @@
-GitPython
-boto3
-pymongo
 virtualenv
