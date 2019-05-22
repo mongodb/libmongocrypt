@@ -150,7 +150,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-asan
   - build-and-test-java
-# TODO: CDRIVER-3124
+# TODO: CDRIVER-3138
 #- name: rhel-62-64-bit
 #  display_name: "RHEL 6.2 64-bit"
 #  run_on: rhel62-small
