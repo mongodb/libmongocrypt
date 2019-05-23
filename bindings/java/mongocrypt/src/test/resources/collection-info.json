@@ -21,18 +21,12 @@
                         "encrypt": {
                             "keyId": {
                                 "$binary": {
-                                    "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                                    "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
                                     "subType": "04"
                                 }
                             },
                             "type": "string",
-                            "algorithm": "Deterministic",
-                            "iv": {
-                                "$binary": {
-                                    "base64": "aWlpaWlpaWlpaWlpaWlpaQ==",
-                                    "subType": "00"
-                                }
-                            }
+                            "algorithm": "AEAD_AES_CBC_HMAC_SHA512-Deterministic"
                         }
                     }
                 },

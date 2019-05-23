@@ -127,9 +127,8 @@ public class MongoCryptTest {
 
         BsonDocument documentToEncrypt = new BsonDocument("v", new BsonString("hello"));
         MongoExplicitEncryptOptions options = MongoExplicitEncryptOptions.builder()
-                .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("AAAAAAAAAAAAAAAAAAAAAA==")))
+                .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("YWFhYWFhYWFhYWFhYWFhYQ==")))
                 .algorithm("AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic")
-                .initializationVector(Base64.getDecoder().decode("aWlpaWlpaWlpaWlpaWlpaQ=="))
                 .build();
         MongoCryptContext encryptor = mongoCrypt.createExplicitEncryptionContext(documentToEncrypt, options);
         assertEquals(State.NEED_MONGO_KEYS, encryptor.getState());
@@ -166,7 +165,7 @@ public class MongoCryptTest {
         assertEquals("kms.us-east-1.amazonaws.com", keyDecryptor.getHostName());
 
         ByteBuffer keyDecryptorMessage = keyDecryptor.getMessage();
-        assertEquals(741, keyDecryptorMessage.remaining());
+        assertEquals(781, keyDecryptorMessage.remaining());
 
         int bytesNeeded = keyDecryptor.bytesNeeded();
         assertEquals(1024, bytesNeeded);
@@ -188,7 +187,7 @@ public class MongoCryptTest {
                         .secretAccessKey("example")
                         .build())
                 .localKmsProviderOptions(MongoLocalKmsProviderOptions.builder()
-                        .localMasterKey(ByteBuffer.wrap(new byte[64]))
+                        .localMasterKey(ByteBuffer.wrap(new byte[96]))
                         .build())
                 .build());
     }

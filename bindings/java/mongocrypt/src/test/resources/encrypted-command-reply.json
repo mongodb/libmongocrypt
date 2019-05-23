@@ -4,7 +4,7 @@
       {
         "_id": 1,
         "ssn": {
-          "$binary": "AQAAAAAAAAAAAAAAAAAAAAACaWlpaWlpaWlpaWlpaWlpabfqziGLfQanzdB1yTEzR8Nl4+IuG7Yc6R41O6bzGedZj6JUuaRfevH1qnjIOhQ+99fG4Dzxc62EXjpGa4Yz9n0=",
+          "$binary": "AWFhYWFhYWFhYWFhYWFhYWEC6f/1CgA+ncYs+mYa7q5ftmJVcJloVf+m8YBRGxZWo3qQkFSerlbOh71KRvffB7NH061iG8ctrYFv2BDRw+VQYEyJ1GrvJGaYr1Cuu7CW2KY=",
           "$type": "06"
         }
       }

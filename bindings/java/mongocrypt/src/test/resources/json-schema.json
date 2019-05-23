@@ -3,15 +3,11 @@
     "ssn": {
       "encrypt": {
         "keyId": {
-          "$binary": "AAAAAAAAAAAAAAAAAAAAAA==",
+          "$binary": "YWFhYWFhYWFhYWFhYWFhYQ==",
           "$type": "04"
         },
         "type": "string",
-        "algorithm": "Deterministic",
-        "iv": {
-          "$binary": "aWlpaWlpaWlpaWlpaWlpaQ==",
-          "$type": "00"
-        }
+        "algorithm": "AEAD_AES_CBC_HMAC_SHA512-Deterministic"
       }
     }
   },
