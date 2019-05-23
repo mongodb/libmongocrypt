@@ -183,7 +183,8 @@ mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len);
  *
  * @param[in] status The status to check.
  *
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -262,7 +263,8 @@ mongocrypt_new (void);
  * @param[in] log_ctx A context passed as an argument to the log callback every
  * invokation.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -286,7 +288,8 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
  * aws_secret_access_key. Pass -1 to determine the string length with strlen
  * (must be NULL terminated).
  * @pre @ref mongocrypt_init has not been called on @p crypt.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -304,7 +307,8 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
  * @param[in] key A 64 byte master key used to encrypt and decrypt key vault
  * keys.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -320,7 +324,9 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  *
- * @returns A boolean indicating success. Failure may occur if previously set
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status Failure may occur if previously
+ * set
  * options are invalid.
  */
 MONGOCRYPT_EXPORT
@@ -334,7 +340,8 @@ mongocrypt_init (mongocrypt_t *crypt);
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[out] status Receives the status.
  *
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -377,7 +384,8 @@ mongocrypt_ctx_new (mongocrypt_t *crypt);
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[out] status Receives the status.
  *
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -392,7 +400,8 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out);
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] key_id The key_id to use.
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -411,7 +420,8 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] key_alt_name The name to use.
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -435,7 +445,8 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
  * use for encryption.
  * @param[in] len The length of the algorithm string.
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -455,7 +466,8 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] iv The initialization vector to use.
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -479,7 +491,8 @@ mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  * @see @ref mongocrypt_ctx_id and @ref mongocrypt_ctx_next_dependent_ctx_id.
  */
 MONGOCRYPT_EXPORT
@@ -514,7 +527,8 @@ mongocrypt_ctx_id (mongocrypt_ctx_t *ctx);
  * @param[in] cmk_len The string length of @p cmk_len. Pass -1 to determine the
  * string length with strlen (must be NULL terminated).
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -530,7 +544,8 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -546,7 +561,8 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * - @ref mongocrypt_ctx_setopt_masterkey_local
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  * @pre A master key option has been set, and an associated KMS provider
  * has been set on the parent @ref mongocrypt_t.
  */
@@ -561,7 +577,8 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] schema A BSON local schema supplied by the user.
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -577,16 +594,20 @@ mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_schema
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] ns The namespace of the collection the driver is operating on.
- * @param[in] ns_len The strlen of @p ns. Pass -1 to determine the string length
- * with strlen (must be NULL terminated).
- * @returns A boolean indicating success.
+ * @param[in] db The database name.
+ * @param[in] db_len The byte length of @p db. Pass -1 to determine the string
+ * length with strlen (must
+ * be NULL terminated).
+ * @param[in] cmd The BSON command to be encrypted.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
-                             const char *ns,
-                             int32_t ns_len);
+                             const char *db,
+                             int32_t db_len,
+                             mongocrypt_binary_t *cmd);
 
 /**
  * Explicit helper method to encrypt a single BSON object. Contexts
@@ -607,7 +628,8 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -623,7 +645,8 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] doc The document to be decrypted.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -676,14 +699,16 @@ mongocrypt_ctx_state (mongocrypt_ctx_t *ctx);
  * @p op_bson is a BSON document to be used for the operation.
  * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a listCollections filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a find filter.
- * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a JSON schema to append.
+ * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a command to send to
+ * mongocryptd.
  *
  * The lifetime of @p op_bson is tied to the lifetime of @p ctx. It is valid
  * until @ref mongocrypt_ctx_destroy is called.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[out] op_bson A BSON document for the MongoDB operation.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -703,7 +728,8 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] reply A BSON document for the MongoDB operation.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -714,7 +740,8 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *reply);
  * Call when done feeding the reply (or replies) back to the context.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -753,7 +780,8 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx);
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
  * @param[out] msg The HTTP request to send to KMS.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -769,7 +797,8 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
  * @param[out] endpoint The output hostname as a NULL terminated string.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -795,7 +824,8 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms);
  *
  * @param[in] kms The @ref mongocrypt_kms_ctx_t.
  * @param[in] bytes The bytes to feed.
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -808,7 +838,8 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
  * @param[in] kms The @ref mongocrypt_kms_ctx_t object.
  * @param[out] status Receives the status.
  *
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -821,7 +852,8 @@ mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  *
- * @returns A boolean indicating success.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool

@@ -164,18 +164,10 @@ encrypted.
 
 **Driver needs to...**
 
-1.  Append two fields to the user command requiring encryption:
-
-    a.  jsonSchema: set to the BSON document returned by
-        > mongocrypt\_ctx\_mongo\_op
-
-    b.  isRemoteSchema: set this to true if the JSON schema was provided
-        > through the schema map option. Otherwise, set this to false.
-
-2.  Use db.runCommand to run the augmented command on the MongoClient
-    connected to mongocryptd.
-3.  Feed the reply back with mongocrypt\_ctx\_mongo\_feed.
-4.  Call mongocrypt\_ctx\_mongo\_done.
+1.  Use db.runCommand to run the command provided by mongocrypt\_ctx\_mongo\_op
+    on the MongoClient connected to mongocryptd.
+2.  Feed the reply back with mongocrypt\_ctx\_mongo\_feed.
+3.  Call mongocrypt\_ctx\_mongo\_done.
 
 **Applies to...**
 

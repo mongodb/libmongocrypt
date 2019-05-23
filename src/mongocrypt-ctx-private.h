@@ -42,7 +42,7 @@ typedef struct __mongocrypt_ctx_opts_t {
    uint32_t masterkey_aws_region_len;
    _mongocrypt_buffer_t local_schema;
    _mongocrypt_buffer_t key_id;
-   bson_value_t* key_alt_name;
+   bson_value_t *key_alt_name;
    mongocrypt_encryption_algorithm_t algorithm;
 } _mongocrypt_ctx_opts_t;
 
@@ -94,15 +94,28 @@ _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg);
 typedef struct {
    mongocrypt_ctx_t parent;
    bool explicit;
+   char *coll_name;
+   char *db_name;
    char *ns;
-   const char *coll_name; /* points inside ns */
    bool waiting_for_collinfo;
    _mongocrypt_cache_pair_state_t collinfo_state;
    uint32_t collinfo_owner;
    _mongocrypt_buffer_t list_collections_filter;
    _mongocrypt_buffer_t schema;
+   /* TODO CDRIVER-3150: audit + rename these buffers.
+    * original_cmd for explicit is {v: <BSON value>}, for auto is the command to
+    * be encrypted.
+    *
+    * mongocryptd_cmd is only applicable for auto encryption. It is the original
+    * command with JSONSchema appended.
+    *
+    * marked_cmd is the value of the 'result' field in mongocryptd response
+    *
+    * encrypted_cmd is the final output, the original command encrypted, or for
+    * explicit, the {v: <ciphertext>} doc.
+    */
    _mongocrypt_buffer_t original_cmd;
-   _mongocrypt_buffer_t marking_cmd;
+   _mongocrypt_buffer_t mongocryptd_cmd;
    _mongocrypt_buffer_t marked_cmd;
    _mongocrypt_buffer_t encrypted_cmd;
    _mongocrypt_buffer_t key_id;
@@ -112,6 +125,10 @@ typedef struct {
 typedef struct {
    mongocrypt_ctx_t parent;
    bool explicit;
+   /* TODO CDRIVER-3150: audit + rename these buffers.
+    * Unlike ctx_encrypt, unwrapped_doc holds the binary value of the {v:
+    * <ciphertext>} doc.
+    * */
    _mongocrypt_buffer_t original_doc;
    _mongocrypt_buffer_t unwrapped_doc; /* explicit only */
    _mongocrypt_buffer_t decrypted_doc;
@@ -144,17 +161,6 @@ typedef struct {
 bool
 _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
                       _mongocrypt_ctx_opts_spec_t *opt_spec);
-
-bool
-mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
-                             const char *ns,
-                             int32_t ns_len);
-
-bool
-mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
-
-bool
-mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
 
 /* Set the state of the context from the state of keys in the key broker. */
 bool

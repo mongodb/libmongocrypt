@@ -53,7 +53,8 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
 #define KEY_ALT_NAME_OK(key_alt_name) \
    ASSERT_OK (mongocrypt_ctx_setopt_key_alt_name (ctx, key_alt_name), ctx);
 #define KEY_ALT_NAME_FAILS(key_alt_name, msg) \
-   ASSERT_FAILS (mongocrypt_ctx_setopt_key_alt_name (ctx, key_alt_name), ctx, msg);
+   ASSERT_FAILS (                             \
+      mongocrypt_ctx_setopt_key_alt_name (ctx, key_alt_name), ctx, msg);
 
 #define ALGORITHM_OK(algo, algo_len) \
    ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, algo, algo_len), ctx);
@@ -65,10 +66,10 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
 #define DATAKEY_INIT_FAILS(msg) \
    ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx), ctx, msg);
 
-#define ENCRYPT_INIT_OK(ns, ns_len) \
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, ns, ns_len), ctx);
-#define ENCRYPT_INIT_FAILS(ns, ns_len, msg) \
-   ASSERT_FAILS (mongocrypt_ctx_encrypt_init (ctx, ns, ns_len), ctx, msg);
+#define ENCRYPT_INIT_OK(db, db_len, cmd) \
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, db, db_len, cmd), ctx);
+#define ENCRYPT_INIT_FAILS(db, db_len, cmd, msg) \
+   ASSERT_FAILS (mongocrypt_ctx_encrypt_init (ctx, db, db_len, cmd), ctx, msg);
 
 #define EX_ENCRYPT_INIT_OK(bin) \
    ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, bin), ctx);
@@ -232,7 +233,8 @@ _test_setopt_key_id (_mongocrypt_tester_t *tester)
 
 
 static void
-_test_setopt_key_alt_name (_mongocrypt_tester_t *tester) {
+_test_setopt_key_alt_name (_mongocrypt_tester_t *tester)
+{
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
@@ -241,7 +243,8 @@ _test_setopt_key_alt_name (_mongocrypt_tester_t *tester) {
    /* Test double setting. */
    REFRESH;
    KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc'}"), "option already set");
+   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc'}"),
+                       "option already set");
 
    /* Test NULL/empty input */
    REFRESH;
@@ -253,15 +256,18 @@ _test_setopt_key_alt_name (_mongocrypt_tester_t *tester) {
    /* Test wrong type */
    REFRESH;
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BSON("{'keyAltName': 1}"), "keyAltName expected to be UTF8");
+   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 1}"),
+                       "keyAltName expected to be UTF8");
 
    /* Test missing key */
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BSON("{'keyAltNames': 'abc'}"), "keyAltName must have field 'keyAltName'");
+   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltNames': 'abc'}"),
+                       "keyAltName must have field 'keyAltName'");
 
    /* Test extra key */
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BSON("{'keyAltName': 'abc', 'extra': 1}"), "unrecognized field");
+   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc', 'extra': 1}"),
+                       "unrecognized field");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -360,43 +366,47 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *schema, *uuid;
+   mongocrypt_binary_t *schema, *uuid, *cmd;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    schema = TEST_FILE ("./test/data/schema.json");
+   cmd = TEST_FILE ("./test/example/cmd.json");
    uuid = TEST_BIN (16);
 
    /* Test required and prohibited options. */
    REFRESH;
-   ENCRYPT_INIT_OK ("a.b", -1);
+   ENCRYPT_INIT_OK ("a", -1, cmd);
 
    REFRESH;
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   ENCRYPT_INIT_FAILS ("a.b", -1, "master key prohibited");
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "master key prohibited");
 
    REFRESH;
    MASTERKEY_LOCAL_OK;
-   ENCRYPT_INIT_FAILS ("a.b", -1, "master key prohibited");
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "master key prohibited");
 
    REFRESH;
    SCHEMA_OK (schema);
-   ENCRYPT_INIT_OK ("a.b", -1);
+   ENCRYPT_INIT_OK ("a", -1, cmd);
 
    REFRESH;
    KEY_ID_OK (uuid);
-   ENCRYPT_INIT_FAILS ("a.b", -1, "key id and alt name prohibited");
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON("{'keyAltName': 'abc'}"));
-   ENCRYPT_INIT_FAILS ("a.b", -1, "key id and alt name prohibited");
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "key id and alt name prohibited");
 
    REFRESH;
    ALGORITHM_OK (DET, -1);
-   ENCRYPT_INIT_FAILS ("a.b", -1, "algorithm prohibited");
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "algorithm prohibited");
+
+   REFRESH;
+   ENCRYPT_INIT_FAILS ("a", -1, NULL, "invalid command");
 
    /* Test setting options after init. */
    REFRESH;
-   ENCRYPT_INIT_OK ("a.b", -1);
+   ENCRYPT_INIT_OK ("a", -1, cmd);
    SCHEMA_FAILS (schema, "cannot set options after init");
 
    mongocrypt_ctx_destroy (ctx);
@@ -424,14 +434,14 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 
    /* Just keyAltName is ok */
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON("{'keyAltName': 'abc'}"));
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    ALGORITHM_OK (RAND, -1);
    EX_ENCRYPT_INIT_OK (bson);
 
    /* Both keyAltName and keyId is invalid */
    REFRESH;
    KEY_ID_OK (uuid);
-   KEY_ALT_NAME_OK (TEST_BSON("{'keyAltName': 'abc'}"));
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    ALGORITHM_OK (RAND, -1);
    EX_ENCRYPT_INIT_FAILS (bson, "cannot have both key id and key alt name");
 
@@ -468,7 +478,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 
    /* Just key alt name is ok */
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON("{'keyAltName': 'abc'}"));
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    ALGORITHM_OK (RAND, -1);
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
    EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
@@ -530,7 +540,7 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
    DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON("{'keyAltName': 'abc'}"));
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
@@ -580,7 +590,7 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    EX_DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON("{'keyAltName': 'abc'}"));
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;

@@ -132,7 +132,7 @@ _print_binary_as_text (mongocrypt_binary_t *binary)
    }
 
 void
-_run_state_machine (mongocrypt_ctx_t *ctx, bson_t* result)
+_run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
 {
    mongocrypt_binary_t *input, *output = NULL;
    bson_t tmp;
@@ -212,7 +212,9 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t* result)
          CHECK (mongocrypt_ctx_finalize (ctx, output));
          printf ("\nfinal bson is:\n");
          _print_binary_as_bson (output);
-         bson_init_static (&tmp, mongocrypt_binary_data(output), mongocrypt_binary_len(output));
+         bson_init_static (&tmp,
+                           mongocrypt_binary_data (output),
+                           mongocrypt_binary_len (output));
          bson_copy_to (&tmp, result);
          bson_destroy (&tmp);
          mongocrypt_binary_destroy (output);
@@ -227,7 +229,7 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t* result)
       case MONGOCRYPT_CTX_ERROR:
          mongocrypt_ctx_status (ctx, status);
          printf ("\ngot error: %s\n", mongocrypt_status_message (status, NULL));
-         abort();
+         abort ();
          break;
       case MONGOCRYPT_CTX_WAITING:
          printf ("\nunexpected waiting state\n");
@@ -264,6 +266,7 @@ main ()
    mongocrypt_binary_t *msg;
    mongocrypt_binary_t *key_id;
    mongocrypt_binary_t *input;
+   uint8_t *data;
 
    printf ("******* ENCRYPTION *******\n\n");
    crypt = mongocrypt_new ();
@@ -274,13 +277,17 @@ main ()
    }
 
    ctx = mongocrypt_ctx_new (crypt);
-   mongocrypt_ctx_encrypt_init (ctx, "test.test", -1);
+   msg = _read_json ("./test/example/cmd.json", &data);
+   mongocrypt_ctx_encrypt_init (ctx, "test", -1, msg);
+   mongocrypt_binary_destroy (msg);
+   bson_free (data);
    _run_state_machine (ctx, &result);
    mongocrypt_ctx_destroy (ctx);
 
    printf ("\n******* DECRYPTION *******\n\n");
    ctx = mongocrypt_ctx_new (crypt);
-   input = mongocrypt_binary_new_from_data ((uint8_t*)bson_get_data (&result), result.len);
+   input = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&result),
+                                            result.len);
    mongocrypt_ctx_decrypt_init (ctx, input);
    mongocrypt_binary_destroy (input);
    bson_destroy (&result);
@@ -312,7 +319,8 @@ main ()
    printf ("\n******* EXPLICIT DECRYPTION *******\n");
 
    ctx = mongocrypt_ctx_new (crypt);
-   input = mongocrypt_binary_new_from_data ((uint8_t*)bson_get_data (&result), result.len);
+   input = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&result),
+                                            result.len);
    mongocrypt_ctx_explicit_decrypt_init (ctx, input);
    mongocrypt_binary_destroy (input);
    bson_destroy (&result);

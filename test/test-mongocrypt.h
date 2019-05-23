@@ -160,7 +160,8 @@ _mongocrypt_tester_mongocrypt (void);
 #define ASSERT_STATUS_CONTAINS(_msg_pattern) \
    ASSERT_FAILS_STATUS (false, status, _msg_pattern)
 
-
+void
+_assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
 void
 _mongocrypt_tester_install (_mongocrypt_tester_t *tester,
                             char *name,
@@ -212,7 +213,8 @@ _mongocrypt_tester_install_ctx_setopt (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_key (_mongocrypt_tester_t *tester);
 
-void _mongocrypt_tester_install_marking (_mongocrypt_tester_t *tester);
+void
+_mongocrypt_tester_install_marking (_mongocrypt_tester_t *tester);
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */

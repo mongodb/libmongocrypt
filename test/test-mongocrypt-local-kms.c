@@ -30,9 +30,9 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
    /* Encrypt a document. */
-   ASSERT_OK (
-      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
-      ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/key-document-local.json")),

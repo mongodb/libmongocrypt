@@ -374,7 +374,9 @@ _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester)
    crypt = _mongocrypt_tester_mongocrypt ();
 
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test.test", 9), ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
 
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
    mongocrypt_ctx_finalize (ctx, bin);
@@ -490,6 +492,22 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
       crypt,
       "options cannot be set after initialization");
    mongocrypt_destroy (crypt);
+}
+
+
+void
+_assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b)
+{
+   bson_t bin_a_bson, bin_b_bson;
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin_a, &bin_a_bson));
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin_b, &bin_b_bson));
+   char *str_a = bson_as_canonical_extended_json (&bin_a_bson, NULL);
+   char *str_b = bson_as_canonical_extended_json (&bin_b_bson, NULL);
+   char *msg = bson_strdup_printf ("BSON unequal:%s\n!=\n%s\n", str_a, str_b);
+   bson_free (str_a);
+   bson_free (str_b);
+   ASSERT_OR_PRINT_MSG (bson_equal (&bin_a_bson, &bin_b_bson), msg);
+   bson_free (msg);
 }
 
 

@@ -130,10 +130,11 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    memset (zeros.data, 0, MONGOCRYPT_IV_LEN);
 
    crypt = _mongocrypt_tester_mongocrypt ();
+   /* use a mongocrypt_ctx_t to get a key broker */
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (
-      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
-      ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
 
    _mongocrypt_buffer_from_binary (&marking.key_id, TEST_BIN (16));
    marking.key_id.subtype = BSON_SUBTYPE_UUID;
