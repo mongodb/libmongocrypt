@@ -162,6 +162,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    _mongocrypt_key_broker_t *kb;
    _mongocrypt_buffer_t associated_data;
    _mongocrypt_buffer_t key_material;
+   _mongocrypt_buffer_t key_id;
    bool ret = false;
    bool key_found;
    uint32_t bytes_written;
@@ -174,16 +175,19 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_buffer_init (&associated_data);
    _mongocrypt_buffer_init (&iv);
+   _mongocrypt_buffer_init (&key_id);
+   _mongocrypt_buffer_init (&key_material);
 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
    /* Get the decrypted key for this marking. */
    if (marking->has_alt_name) {
       key_found = _mongocrypt_key_broker_decrypted_key_by_name (
-         kb, &marking->key_alt_name, &key_material);
+         kb, &marking->key_alt_name, &key_material, &key_id);
    } else if (!_mongocrypt_buffer_empty (&marking->key_id)) {
       key_found = _mongocrypt_key_broker_decrypted_key_by_id (
          kb, &marking->key_id, &key_material);
+      _mongocrypt_buffer_copy_to (&marking->key_id, &key_id);
    } else {
       CLIENT_ERR ("marking must have either key_id or key_alt_name");
       goto fail;
@@ -197,7 +201,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    _mongocrypt_ciphertext_init (ciphertext);
    ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
    ciphertext->blob_subtype = marking->algorithm;
-   _mongocrypt_buffer_copy_to (&marking->key_id, &ciphertext->key_id);
+   _mongocrypt_buffer_copy_to (&key_id, &ciphertext->key_id);
    if (!_mongocrypt_ciphertext_serialize_associated_data (ciphertext,
                                                           &associated_data)) {
       CLIENT_ERR ("could not serialize associated data");
@@ -256,7 +260,9 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
 
 fail:
    _mongocrypt_buffer_cleanup (&iv);
+   _mongocrypt_buffer_cleanup (&key_id);
    _mongocrypt_buffer_cleanup (&plaintext);
    _mongocrypt_buffer_cleanup (&associated_data);
+   _mongocrypt_buffer_cleanup (&key_material);
    return ret;
 }

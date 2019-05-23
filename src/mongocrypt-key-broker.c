@@ -1033,7 +1033,8 @@ static bool
 _get_decrypted_key (_mongocrypt_key_broker_t *kb,
                     const void *key_descriptor,
                     _mongocrypt_buffer_t *out,
-                    bool is_alt_name)
+                    bool is_alt_name,
+                    _mongocrypt_buffer_t *key_id_out)
 {
    mongocrypt_status_t *status;
    _mongocrypt_key_broker_entry_t *kbe;
@@ -1053,8 +1054,13 @@ _get_decrypted_key (_mongocrypt_key_broker_t *kb,
    }
 
    _mongocrypt_buffer_init (out);
-   out->data = kbe->decrypted_key_material.data;
-   out->len = kbe->decrypted_key_material.len;
+   _mongocrypt_buffer_copy_to (&kbe->decrypted_key_material, out);
+
+   if (key_id_out) {
+      /* looking up by keyAltName may want key_id too */
+      _mongocrypt_buffer_init (key_id_out);
+      _mongocrypt_buffer_copy_to (&kbe->key_returned->id, key_id_out);
+   }
 
    return true;
 }
@@ -1065,16 +1071,17 @@ _mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
                                             const _mongocrypt_buffer_t *key_id,
                                             _mongocrypt_buffer_t *out)
 {
-   return _get_decrypted_key (kb, (void *) key_id, out, false);
+   return _get_decrypted_key (kb, (void *) key_id, out, false, NULL);
 }
 
 
 bool
 _mongocrypt_key_broker_decrypted_key_by_name (_mongocrypt_key_broker_t *kb,
                                               const bson_value_t *key_alt_name,
-                                              _mongocrypt_buffer_t *out)
+                                              _mongocrypt_buffer_t *out,
+                                              _mongocrypt_buffer_t *key_id_out)
 {
-   return _get_decrypted_key (kb, key_alt_name, out, true);
+   return _get_decrypted_key (kb, key_alt_name, out, true, key_id_out);
 }
 
 
@@ -1152,7 +1159,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
                       "}",
                       "}",
                       "{",
-                      "keyAltName",
+                      "keyAltNames",
                       "{",
                       "$in",
                       BCON_ARRAY (&names),

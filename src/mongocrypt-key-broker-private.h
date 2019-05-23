@@ -156,7 +156,8 @@ _mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
 bool
 _mongocrypt_key_broker_decrypted_key_by_name (_mongocrypt_key_broker_t *kb,
                                               const bson_value_t *key_alt_name,
-                                              _mongocrypt_buffer_t *out);
+                                              _mongocrypt_buffer_t *out,
+                                              _mongocrypt_buffer_t *key_id_out);
 
 
 bool

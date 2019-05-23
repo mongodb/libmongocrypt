@@ -94,6 +94,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_buffer_init (&associated_data); 
+   _mongocrypt_buffer_init (&key_material);
    kb = (_mongocrypt_key_broker_t *) ctx;
 
    if (!_parse_ciphertext_unowned (in, &ciphertext, status)) {
@@ -137,6 +138,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
 fail:
    _mongocrypt_buffer_cleanup (&plaintext);
    _mongocrypt_buffer_cleanup (&associated_data);
+   _mongocrypt_buffer_cleanup (&key_material);
    return ret;
 }
 
