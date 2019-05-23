@@ -18,13 +18,7 @@ AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_REGION - e.g. "us-east-1"
 AWS_CMK_ID - customer master key. e.g: arn:aws:kms:us-east-1:524754917239:key/70b3825c-602f-4d65-aeeb-087e565c6abc
-
-TODO: only Python 2 supported currently. base64 returns bytes in Python 3. Not a string.
 """
-
-if sys.version_info >= (3, 0):
-    print("Sorry - only python 2 supported currently.")
-    sys.exit(1)
 
 try:
     cmk_id = os.environ["AWS_CMK_ID"]
@@ -43,7 +37,7 @@ kms_client = boto3.client("kms", aws_access_key_id=access_key_id, aws_secret_acc
 
 print ("A key document:")
 key_doc = {
-        "_id": bson.binary.UUID(bytes=bytes("a" * 16)),
+        "_id": bson.binary.UUID(bytes=bytes(b"a" * 16)),
         "keyMaterial": None, # to be filled
         "creationDate": datetime.now(),
         "updateDate": datetime.now(),
@@ -54,7 +48,7 @@ key_doc = {
             "region": region
         }
     }
-plaintext_key_material = "a" * 96
+plaintext_key_material = b"a" * 96
 # get real encrypted key material using AWS KMS.
 response = kms_client.encrypt(KeyId=cmk_id, Plaintext=plaintext_key_material)
 # replace the key material after encrypting.
@@ -65,7 +59,7 @@ print (json_util.dumps (key_doc, indent=4, json_options=json_options))
 print ("A KMS reply for encrypted key material")
 kms_encrypt_reply_json = json_util.dumps({
     "KeyId": cmk_id,
-    "CiphertextBlob": base64.b64encode(key_doc["keyMaterial"])
+    "CiphertextBlob": base64.b64encode(bytes(key_doc["keyMaterial"]))
 })
 kms_encrypt_reply = "HTTP/1.1 200 OK\n" + \
     "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\n" + \
@@ -79,7 +73,7 @@ print (kms_encrypt_reply)
 print ("\n\nA KMS reply for decrypting the key material")
 kms_decrypt_reply_json = json_util.dumps({
     "KeyId": cmk_id,
-    "Plaintext": base64.b64encode(plaintext_key_material)
+    "Plaintext": base64.b64encode(bytes(plaintext_key_material))
 })
 kms_reply = "HTTP/1.1 200 OK\n" + \
     "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\n" + \

@@ -948,6 +948,10 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
       kbe->state = KEY_DECRYPTED;
       _store_to_cache (kb, kbe);
 
+      if (kbe->decrypted_key_material.len != MONGOCRYPT_KEY_LEN) {
+         CLIENT_ERR ("decrypted key is incorrect length");
+         goto done;
+      }
    } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       if (!_mongocrypt_kms_ctx_init_aws_decrypt (
              &kbe->kms, kb->crypt_opts, kbe->key_returned, kbe)) {
@@ -1022,6 +1026,10 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
          }
          kbe->state = KEY_DECRYPTED;
          _store_to_cache (kb, kbe);
+         if (kbe->decrypted_key_material.len != MONGOCRYPT_KEY_LEN) {
+            CLIENT_ERR ("decrypted key is incorrect length");
+            return false;
+         }
          break;
       }
    }
