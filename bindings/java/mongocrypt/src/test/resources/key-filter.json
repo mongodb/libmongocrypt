@@ -4,7 +4,7 @@
       "_id": {
         "$in": [
           {
-            "$binary": "AAAAAAAAAAAAAAAAAAAAAA==",
+            "$binary": "YWFhYWFhYWFhYWFhYWFhYQ==",
             "$type": "04"
           }
         ]

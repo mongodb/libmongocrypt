@@ -27,7 +27,6 @@ import java.util.Arrays;
 public class MongoExplicitEncryptOptions {
     private final BsonBinary keyId;
     private final String algorithm;
-    private final byte[] initializationVector;
 
     /**
      * The builder for the options
@@ -35,7 +34,6 @@ public class MongoExplicitEncryptOptions {
     public static class Builder {
         private BsonBinary keyId;
         private String algorithm;
-        private byte[] initializationVector;
 
         private Builder() {
         }
@@ -59,16 +57,6 @@ public class MongoExplicitEncryptOptions {
          */
         public Builder algorithm(final String algorithm) {
             this.algorithm = algorithm;
-            return this;
-        }
-
-        /**
-         * Add the initialization vector
-         * @param initializationVector the initialization vector
-         * @return this
-         */
-        public Builder initializationVector(final byte[] initializationVector) {
-            this.initializationVector = initializationVector;
             return this;
         }
 
@@ -107,26 +95,15 @@ public class MongoExplicitEncryptOptions {
         return algorithm;
     }
 
-    /**
-     * Gets the initialization vector
-     * @return the initialization vector
-     */
-    public byte[] getInitializationVector() {
-        return initializationVector;
-    }
-
     private MongoExplicitEncryptOptions(Builder builder) {
         this.keyId = builder.keyId;
         this.algorithm = builder.algorithm;
-        this.initializationVector = builder.initializationVector;
     }
 
     @Override
     public String toString() {
         return "MongoExplicitEncryptOptions{" +
                 "keyId=" + keyId +
-                ", algorithm='" + algorithm + '\'' +
-                ", initializationVector=" + Arrays.toString(initializationVector) +
-                '}';
+                ", algorithm='" + algorithm + "'}";
     }
 }

@@ -40,7 +40,6 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_initialization_vector;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
@@ -204,18 +203,6 @@ class MongoCryptImpl implements MongoCrypt {
         success = mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1);
         if (!success) {
             MongoCryptContextImpl.throwExceptionFromStatus(context);
-        }
-
-        if (options.getInitializationVector() != null) {
-            mongocrypt_binary_t initializationVectorBinary = toBinary(ByteBuffer.wrap(options.getInitializationVector()));
-            try {
-                success = mongocrypt_ctx_setopt_initialization_vector(context, initializationVectorBinary);
-                if (!success) {
-                    MongoCryptContextImpl.throwExceptionFromStatus(context);
-                }
-            } finally {
-                mongocrypt_binary_destroy(initializationVectorBinary);
-            }
         }
 
         mongocrypt_binary_t documentBinary = toBinary(document);

@@ -376,22 +376,6 @@ public class CAPI {
 
 
     /**
-     * Set an initialization vector to be used with explicit
-     * encryption. This should not be set for auto encryption.
-     *
-     * If using randomized encryption, setting this option will
-     * cause an error. If using deterministic encryption, failing
-     * to set this option will cause an error.
-     *
-     * @param ctx The @ref mongocrypt_ctx_t object.
-     * @param iv The initialization vector to use.
-     * @return A boolean indicating success.
-     */
-    public static native boolean
-    mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t ctx,
-                                                 mongocrypt_binary_t iv);
-
-    /**
      * Create a new uninitialized @ref mongocrypt_ctx_t.
      * <p>
      * Initialize the context with functions like @ref mongocrypt_ctx_encrypt_init.
