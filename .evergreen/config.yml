@@ -55,6 +55,13 @@ tasks:
   - func: "build and test"
   - func: "tar and upload libmongocrypt libraries"
 
+- name: build-and-test-shared-bson
+  commands:
+  - func: "fetch source"
+  - func: "build and test"
+    vars:
+      compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DENABLE_SHARED_BSON=ON"
+
 - name: build-and-test-asan
   commands:
   - func: "fetch source"
@@ -106,6 +113,7 @@ buildvariants:
   run_on: ubuntu1604-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-valgrind
   - build-and-test-java
@@ -114,6 +122,7 @@ buildvariants:
   run_on: rhel76-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: macos
@@ -121,6 +130,7 @@ buildvariants:
   run_on: macos-1014
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: rhel72-zseries-test
@@ -128,6 +138,7 @@ buildvariants:
   run_on: rhel72-zseries-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: windows-test
@@ -135,11 +146,13 @@ buildvariants:
   run_on: windows-64-vs2017-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
 - name: linux-64-amazon-ami
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: amazon2
@@ -147,6 +160,7 @@ buildvariants:
   run_on: amazon2-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: debian92
@@ -154,6 +168,7 @@ buildvariants:
   run_on: debian92-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 # TODO: CDRIVER-3138
@@ -162,6 +177,7 @@ buildvariants:
 #  run_on: rhel62-small
 #  tasks:
 #  - build-and-test-and-upload
+#  - build-and-test-shared-bson
 #  - build-and-test-asan
 #  - build-and-test-java
 #- name: rhel-67-s390x
@@ -169,6 +185,7 @@ buildvariants:
 #  run_on: rhel67-zseries-test
 #  tasks:
 #  - build-and-test-and-upload
+#  - build-and-test-shared-bson
 #  - build-and-test-asan
 #  - build-and-test-java
 - name: rhel-70-64-bit
@@ -176,6 +193,7 @@ buildvariants:
   run_on: rhel70-small
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: rhel-71-ppc64el
@@ -183,6 +201,7 @@ buildvariants:
   run_on: rhel71-power8-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: suse12-64
@@ -190,6 +209,7 @@ buildvariants:
   run_on: suse12-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: suse15-64
@@ -197,6 +217,7 @@ buildvariants:
   run_on: suse15-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 #- name: suse12-s390x
@@ -204,6 +225,7 @@ buildvariants:
 #  run_on: suse12-zseries-test
 #  tasks:
 #  - build-and-test-and-upload
+#  - build-and-test-shared-bson
 #  - build-and-test-asan
 #  - build-and-test-java
 #- name: ubuntu1604-arm64
@@ -211,6 +233,7 @@ buildvariants:
 #  run_on: ubuntu1604-arm64-large
 #  tasks:
 #  - build-and-test-and-upload
+#  - build-and-test-shared-bson
 #  - build-and-test-asan
 #  - build-and-test-java
 - name: ubuntu1604-s390x
@@ -218,6 +241,7 @@ buildvariants:
   run_on: ubuntu1604-zseries-small
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: ubuntu1804-64
@@ -225,6 +249,7 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: ubuntu1804-arm64
@@ -232,6 +257,7 @@ buildvariants:
   run_on: ubuntu1804-arm64-build
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: ubuntu1804-ppc64el
@@ -239,6 +265,7 @@ buildvariants:
   run_on: ubuntu1804-power8-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
 - name: ubuntu1804-s390x
@@ -246,5 +273,6 @@ buildvariants:
   run_on: ubuntu1804-zseries-test
   tasks:
   - build-and-test-and-upload
+  - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java

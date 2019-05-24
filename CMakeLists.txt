@@ -10,7 +10,13 @@ endif()
 
 set (CMAKE_C_STANDARD 99)
 
-find_package (libbson-1.0 1.11 REQUIRED)
+option (ENABLE_SHARED_BSON "Dynamically link libbson (default is static)" OFF)
+
+if (ENABLE_SHARED_BSON)
+   find_package (libbson-1.0 1.11 REQUIRED)
+else ()
+   find_package (libbson-static-1.0 1.11 REQUIRED)
+endif ()
 find_package ( Threads REQUIRED )
 
 include(GenerateExportHeader)
@@ -26,9 +32,18 @@ set (MONGOCRYPT_PUBLIC_HEADERS
 )
 
 message ("Found libbson, configuring to add real libmongocrypt target")
-message ("--   bson found version \"${BSON_VERSION}\"")
-message ("--   bson include path \"${BSON_INCLUDE_DIRS}\"")
-message ("--   bson libraries \"${BSON_LIBRARIES}\"")
+if (ENABLE_SHARED_BSON)
+   message ("--   bson found version \"${BSON_VERSION}\"")
+   message ("--   bson include path \"${BSON_INCLUDE_DIRS}\"")
+   message ("--   bson libraries \"${BSON_LIBRARIES}\"")
+else ()
+   message ("--   bson found version \"${BSON_STATIC_VERSION}\"")
+   message ("--   bson include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
+   message ("--   bson libraries \"${BSON_STATIC_LIBRARIES}\"")
+   set (BSON_INCLUDE_DIRS "${BSON_STATIC_INCLUDE_DIRS}")
+   set (BSON_LIBRARIES "${BSON_STATIC_LIBRARIES}")
+   set (BSON_DEFINITIONS "${BSON_STATIC_DEFINITIONS}")
+endif ()
 
 set (MONGOCRYPT_SOURCES
    src/mongocrypt-binary.c
