@@ -67,8 +67,16 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
       test_env: ASAN_OPTIONS="detect_leaks=1" LSAN_OPTIONS="suppressions=.lsan-suppressions"
+
+- name: build-and-test-asan-mac
+  commands:
+  - func: "fetch source"
+  - func: "build and test"
+    vars:
+      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
 - name: build-and-test-valgrind
   commands:
@@ -123,7 +131,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
   - build-and-test-java
 - name: macos
   display_name: "macOS 10.14"
@@ -131,7 +138,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
+  - build-and-test-asan-mac
   - build-and-test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
@@ -139,7 +146,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
   - build-and-test-java
 - name: windows-test
   display_name: "Windows 2016"
@@ -153,7 +159,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
   - build-and-test-java
 - name: amazon2
   display_name: "Amazon Linux 2"
@@ -194,7 +199,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
   - build-and-test-java
 - name: rhel-71-ppc64el
   display_name: "RHEL 7.1 ppc64el"
@@ -202,7 +206,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
   - build-and-test-java
 - name: suse12-64
   display_name: "SLES 12 64-bit"
