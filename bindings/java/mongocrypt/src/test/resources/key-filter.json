@@ -11,7 +11,7 @@
       }
     },
     {
-      "keyAltName": {
+      "keyAltNames": {
         "$in": []
       }
     }
