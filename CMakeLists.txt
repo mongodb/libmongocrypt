@@ -141,12 +141,10 @@ endif ()
 
 set_target_properties (mongocrypt PROPERTIES
    OUTPUT_NAME "mongocrypt"
-   PREFIX "lib"
 )
 
 set_target_properties (mongocrypt_static PROPERTIES
    OUTPUT_NAME "mongocrypt-static"
-   PREFIX "lib"
 )
 
 
