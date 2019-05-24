@@ -28,6 +28,7 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *name;
    mongocrypt_binary_t *msg;
    mongocrypt_binary_t *key_id;
+   mongocrypt_binary_t *tmp;
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
    bson_t *bson_msg;
@@ -136,6 +137,201 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    /* After initing, we should be at NEED_KEYS */
    BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* double succeeds for random. */
+   tmp = TEST_BSON ("{'v': { '$double': '1.23'} }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* double fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for deterministic encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* decimal128 succeeds for random. */
+   tmp = TEST_BSON ("{'v': {'$numberDecimal': '1.23'} }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* decimal128 fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for deterministic encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* document succeeds for random. */
+   tmp = TEST_BSON ("{'v': { 'x': 1 } }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* document fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for deterministic encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* array succeeds for random. */
+   tmp = TEST_BSON ("{'v': [1,2,3] }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* document fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for deterministic encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* codewscope succeeds for random. */
+   tmp = TEST_BSON ("{'v': {'$code': 'var x = 1;', '$scope': {} } }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* codewscope fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for deterministic encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* bool succeeds for random. */
+   tmp = TEST_BSON ("{'v': true }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* bool fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for deterministic encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* null fails for deterministic. */
+   tmp = TEST_BSON ("{'v': null }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* null fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* minkey fails for deterministic. */
+   tmp = TEST_BSON ("{'v': { '$minKey': 1 } }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* minkey fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* maxkey fails for deterministic. */
+   tmp = TEST_BSON ("{'v': { '$maxKey': 1 } }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* maxkey fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* undefined fails for deterministic. */
+   tmp = TEST_BSON ("{'v': { '$undefined': true } }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* undefined fails for deterministic. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON type invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+
+   /* dbpointer succeeds for deterministic. */
+   tmp = TEST_BSON ("{'v': { '$dbPointer': {'$ref': 'ns', '$id': {'$oid': "
+                    "'AAAAAAAAAAAAAAAAAAAAAAAA'} } } }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* dbpointer succeeds for random. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
    mongocrypt_ctx_destroy (ctx);
 
    mongocrypt_destroy (crypt);

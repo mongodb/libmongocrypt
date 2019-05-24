@@ -511,6 +511,24 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
 
+   /* Check for prohibited types. */
+   if (BSON_ITER_HOLDS_NULL (&iter) || BSON_ITER_HOLDS_MINKEY (&iter) ||
+       BSON_ITER_HOLDS_MAXKEY (&iter) || BSON_ITER_HOLDS_UNDEFINED (&iter)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "BSON type invalid for encryption");
+   }
+   /* Check for prohibited deterministic types */
+   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter) || BSON_ITER_HOLDS_ARRAY (&iter) ||
+          BSON_ITER_HOLDS_CODEWSCOPE (&iter) ||
+          BSON_ITER_HOLDS_DOUBLE (&iter) ||
+          BSON_ITER_HOLDS_DECIMAL128 (&iter) || BSON_ITER_HOLDS_BOOL (&iter)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "BSON type invalid for deterministic encryption");
+      }
+   }
+
+
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
