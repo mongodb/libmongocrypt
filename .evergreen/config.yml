@@ -84,10 +84,16 @@ pre:
   - command: "shell.exec"
     params:
       script: |-
-        REMOTE_PATH="${project}/${build_variant}/latest/libmongocrypt.tar.gz"
+        tag_name=$(git describe --exact-match ${revision} 2>/dev/null)
+        # non-patch build with no tag associated with the commit
+        REMOTE_PATH="${project}/${build_variant}/${branch_name}/${revision}/libmongocrypt.tar.gz"
         if [ "${is_patch}" = "true" ]; then
-           REMOTE_PATH="${project}/${build_variant}/${revision}/${task_name}/${build_id}/libmongocrypt.tar.gz"
+           REMOTE_PATH="${project}/${build_variant}/${branch_name}/${revision}/${task_name}/${build_id}/libmongocrypt.tar.gz"
+        elif [ -n "${tag_name}" ]; then
+           # non-patch build that has a tag associated with the commit
+           REMOTE_PATH="${project}/${build_variant}/${branch_name}/${tag_name}/libmongocrypt.tar.gz"
         fi
+        unset tag_name
         echo "libmongocrypt_s3_path: $REMOTE_PATH"
         echo "libmongocrypt_s3_path: $REMOTE_PATH" > expansion.yml
   - command: expansions.update
