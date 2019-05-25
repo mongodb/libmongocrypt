@@ -57,12 +57,6 @@ _alt_names_equal (const bson_value_t *a, const bson_value_t *b)
    ========================================= */
 
 /* TODO CDRIVER-3112 consider changing the linked list impl. */
-
-typedef struct __key_alt_name_t {
-   struct __key_alt_name_t *next;
-   bson_value_t value;
-} _key_alt_name_t;
-
 struct __mongocrypt_key_broker_entry_t {
    mongocrypt_status_t *status;
    _mongocrypt_key_state_t state;
@@ -71,7 +65,7 @@ struct __mongocrypt_key_broker_entry_t {
    uint32_t owner_id;
    bool owns_cache_entry;
    _mongocrypt_buffer_t key_id;
-   _key_alt_name_t *key_alt_names;
+   _mongocrypt_key_alt_name_t *key_alt_names;
    _mongocrypt_key_doc_t *key_returned;
    mongocrypt_kms_ctx_t kms;
    _mongocrypt_buffer_t decrypted_key_material;
@@ -92,7 +86,7 @@ static int
 _kbe_has_name (_mongocrypt_key_broker_entry_t *kbe, const bson_value_t *value)
 {
    int res;
-   _key_alt_name_t *ptr;
+   _mongocrypt_key_alt_name_t *ptr;
 
    BSON_ASSERT (value);
 
@@ -113,8 +107,8 @@ _kbe_has_name (_mongocrypt_key_broker_entry_t *kbe, const bson_value_t *value)
 static bool
 _kbe_add_name (_mongocrypt_key_broker_entry_t *kbe, const bson_value_t *value)
 {
-   _key_alt_name_t *name;
    int res;
+   _mongocrypt_key_alt_name_t *name;
 
    BSON_ASSERT (value);
 
@@ -150,7 +144,7 @@ _kbe_set_id (_mongocrypt_key_broker_entry_t *kbe,
 static void
 _kbe_print (_mongocrypt_key_broker_entry_t *kbe)
 {
-   _key_alt_name_t *ptr;
+   _mongocrypt_key_alt_name_t *ptr;
 
    if (!_mongocrypt_buffer_empty (&kbe->key_id)) {
       const char *id;
@@ -195,16 +189,7 @@ _kbe_print (_mongocrypt_key_broker_entry_t *kbe)
 static void
 _kbe_destroy (_mongocrypt_key_broker_entry_t *kbe)
 {
-   _key_alt_name_t *ptr;
-   _key_alt_name_t *next;
-
-   ptr = kbe->key_alt_names;
-   while (ptr) {
-      next = ptr->next;
-      bson_value_destroy (&ptr->value);
-      bson_free (ptr);
-      ptr = next;
-   }
+   _mongocrypt_key_alt_name_destroy_all (kbe->key_alt_names);
 
    mongocrypt_status_destroy (kbe->status);
    _mongocrypt_buffer_cleanup (&kbe->key_id);
@@ -283,6 +268,11 @@ _print_entries (_mongocrypt_key_broker_t *kb)
    fprintf (stderr, "=======================================\n");
 }
 
+void
+_mongocrypt_key_broker_debug (_mongocrypt_key_broker_t *kb)
+{
+   _print_entries (kb);
+}
 
 typedef struct {
    _mongocrypt_key_broker_t *kb;
@@ -298,7 +288,7 @@ static bool
 _deduplicate_entries (_mongocrypt_key_broker_entry_t *kbe, void *ctx)
 {
    _deduplicate_ctx_t *dedup_ctx;
-   _key_alt_name_t *ptr;
+   _mongocrypt_key_alt_name_t *ptr;
 
    BSON_ASSERT (kbe);
    BSON_ASSERT (ctx);
@@ -428,8 +418,8 @@ _kbe_matches_key_doc (_mongocrypt_key_broker_entry_t *kbe, void *ctx)
    }
 
    if (name_match) {
-      /* If we have a name match and a returned key doc, then
-    the doc must also match our id or it is an error. */
+      /* If we have a name match and a returned key doc, then the doc must also
+       * match our id or it is an error. */
       /* TODO CDRIVER-3125 clean this up with the logic below */
       if (kbe->key_returned) {
          if (0 !=
@@ -587,37 +577,46 @@ static bool
 _try_retrieving_from_cache (_mongocrypt_key_broker_t *kb,
                             _mongocrypt_key_broker_entry_t *kbe)
 {
-   _mongocrypt_cache_key_value_t *value;
+   _mongocrypt_cache_key_attr_t *attr = NULL;
+   _mongocrypt_cache_key_value_t *value = NULL;
    _mongocrypt_cache_pair_state_t state;
    uint32_t pair_owner_id;
    mongocrypt_status_t *status;
+   bool ret = false;
 
    status = kb->status;
 
    if (kbe->state != KEY_EMPTY && kbe->state != KEY_WAITING_FOR_OTHER_CTX) {
       CLIENT_ERR ("trying to retrieve key from cache in invalid state");
-      return false;
+      goto cleanup;
    }
 
-   _mongocrypt_cache_get_or_create (kb->cache_key,
-                                    &kbe->key_id,
-                                    (void **) &value,
-                                    &state,
-                                    kb->owner_id,
-                                    &pair_owner_id);
+   attr = _mongocrypt_cache_key_attr_new (&kbe->key_id, kbe->key_alt_names);
+   if (!attr) {
+      CLIENT_ERR ("could not fetch from cache");
+      goto cleanup;
+   }
+   if (!_mongocrypt_cache_get_or_create (kb->cache_key,
+                                         attr,
+                                         (void **) &value,
+                                         &state,
+                                         kb->owner_id,
+                                         &pair_owner_id)) {
+      CLIENT_ERR ("error fetching from cache");
+      goto cleanup;
+   }
 
    switch (state) {
    case CACHE_PAIR_DONE:
       kbe->state = KEY_DECRYPTED;
       if (_mongocrypt_buffer_empty (&value->decrypted_key_material)) {
          CLIENT_ERR ("key in cache has no decrypted value");
-         return false;
+         goto cleanup;
       }
       kbe->key_returned = _mongocrypt_key_new ();
       _mongocrypt_key_doc_copy_to (value->key_doc, kbe->key_returned);
       _mongocrypt_buffer_copy_to (&value->decrypted_key_material,
                                   &kbe->decrypted_key_material);
-      _mongocrypt_cache_key_value_destroy (value);
       break;
    case CACHE_PAIR_PENDING:
       /* Either we're responsible for fetching it, or we're waiting on someone
@@ -630,9 +629,14 @@ _try_retrieving_from_cache (_mongocrypt_key_broker_t *kb,
          kbe->state = KEY_EMPTY;
          kbe->owner_id = kb->owner_id;
       }
+      break;
    }
 
-   return true;
+   ret = true;
+cleanup:
+   _mongocrypt_cache_key_value_destroy (value);
+   _mongocrypt_cache_key_attr_destroy (attr);
+   return ret;
 }
 
 
@@ -746,6 +750,7 @@ _store_to_cache (_mongocrypt_key_broker_t *kb,
                  _mongocrypt_key_broker_entry_t *kbe)
 {
    _mongocrypt_cache_key_value_t *value;
+   _mongocrypt_cache_key_attr_t *attr;
    bool ret;
 
    if (kbe->state != KEY_DECRYPTED) {
@@ -754,10 +759,20 @@ _store_to_cache (_mongocrypt_key_broker_t *kb,
       return false;
    }
 
+   attr = _mongocrypt_cache_key_attr_new (&kbe->key_id, kbe->key_alt_names);
+   if (!attr) {
+      mongocrypt_status_t *status;
+
+      status = kb->status;
+      CLIENT_ERR ("could not add to cache");
+      return false;
+   }
    value = _mongocrypt_cache_key_value_new (kbe->key_returned,
                                             &kbe->decrypted_key_material);
+   /* TODO CDRIVER-2951: deduplicate when adding back. */
    ret = _mongocrypt_cache_add_stolen (
-      kb->cache_key, &kbe->key_id, value, kb->owner_id, kb->status);
+      kb->cache_key, attr, value, kb->owner_id, kb->status);
+   _mongocrypt_cache_key_attr_destroy (attr);
    return ret;
 }
 
@@ -801,7 +816,6 @@ _mongocrypt_key_broker_add_name (_mongocrypt_key_broker_t *kb,
       return true;
    }
 
-   /* TODO CDRIVER-2951 check if we have this key cached. */
    kbe = _kbe_new ();
    if (!_kbe_add_name (kbe, key_alt_name)) {
       CLIENT_ERR ("key alt names must be UTF8");
@@ -809,6 +823,12 @@ _mongocrypt_key_broker_add_name (_mongocrypt_key_broker_t *kb,
    }
 
    _add_new_key_entry (kb, kbe);
+
+   /* If we have a cached decrypted key for this alt name, add
+      it to our local entry now. */
+   if (!_try_retrieving_from_cache (kb, kbe)) {
+      return false;
+   }
 
    return true;
 }
@@ -1176,7 +1196,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
                                mongocrypt_binary_t *out)
 {
    _mongocrypt_key_broker_entry_t *iter;
-   _key_alt_name_t *ptr;
+   _mongocrypt_key_alt_name_t *ptr;
    int name_index = 0;
    int id_index = 0;
    bson_t ids, names;

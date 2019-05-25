@@ -33,6 +33,20 @@ typedef struct {
    uint64_t update_date;
 } _mongocrypt_key_doc_t;
 
+/* A linked list of key alt names */
+typedef struct __mongocrypt_key_alt_name_t {
+   struct __mongocrypt_key_alt_name_t *next;
+   bson_value_t value;
+} _mongocrypt_key_alt_name_t;
+
+_mongocrypt_key_alt_name_t *
+_mongocrypt_key_alt_name_copy_all (_mongocrypt_key_alt_name_t *list);
+void
+_mongocrypt_key_alt_name_destroy_all (_mongocrypt_key_alt_name_t *list);
+bool
+_mongocrypt_key_alt_name_intersects (_mongocrypt_key_alt_name_t *list_a,
+                                     _mongocrypt_key_alt_name_t *list_b);
+
 bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
                              _mongocrypt_key_doc_t *out,

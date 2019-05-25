@@ -22,31 +22,55 @@
  */
 
 
-static int
-_cmp_attr (void *a, void *b)
+/* returns true on success. out is set to 0 if equal, non-zero otherwise. */
+static bool
+_cmp_attr (void *a, void *b, int *out)
 {
-   return _mongocrypt_buffer_cmp ((_mongocrypt_buffer_t *) a,
-                                  (_mongocrypt_buffer_t *) b);
+   _mongocrypt_cache_key_attr_t *attr_a, *attr_b;
+   bool id_mismatch = false;
+
+   *out = 1;
+   attr_a = (_mongocrypt_cache_key_attr_t *) a;
+   attr_b = (_mongocrypt_cache_key_attr_t *) b;
+
+   if (!_mongocrypt_buffer_empty (&attr_a->id)) {
+      if (0 == _mongocrypt_buffer_cmp (&attr_a->id, &attr_b->id)) {
+         *out = 0;
+         return true;
+      }
+      id_mismatch = true;
+   }
+
+   if (_mongocrypt_key_alt_name_intersects (attr_a->alt_names,
+                                            attr_b->alt_names)) {
+      if (id_mismatch) {
+         /* invalid, there is an _id mismatch but intersecting key alt names.
+          * _id or key alt name should uniquely identify a document. */
+         return false;
+      }
+      *out = 0;
+      return true;
+   }
+
+   return true;
 }
 
 
 static void *
 _copy_attr (void *attr)
 {
-   _mongocrypt_buffer_t *dst;
+   _mongocrypt_cache_key_attr_t *src;
 
-   dst = bson_malloc (sizeof (*dst));
-   _mongocrypt_buffer_init (dst);
-   _mongocrypt_buffer_copy_to ((_mongocrypt_buffer_t *) attr, dst);
-   return dst;
+   src = (_mongocrypt_cache_key_attr_t *) attr;
+
+   return _mongocrypt_cache_key_attr_new (&src->id, src->alt_names);
 }
 
 
 static void
 _destroy_attr (void *attr)
 {
-   _mongocrypt_buffer_cleanup ((_mongocrypt_buffer_t *) attr);
-   bson_free (attr);
+   _mongocrypt_cache_key_attr_destroy (attr);
 }
 
 
@@ -105,4 +129,35 @@ _mongocrypt_cache_key_init (_mongocrypt_cache_t *cache)
    cache->destroy_value = _mongocrypt_cache_key_value_destroy;
    _mongocrypt_mutex_init (&cache->mutex);
    cache->pair = NULL;
+}
+
+/* Since key cache may be looked up by either _id or keyAltName,
+ * "id" or "alt_names" may be NULL, but not both. Returns NULL on error. */
+_mongocrypt_cache_key_attr_t *
+_mongocrypt_cache_key_attr_new (_mongocrypt_buffer_t *id,
+                                _mongocrypt_key_alt_name_t *alt_names)
+{
+   _mongocrypt_cache_key_attr_t *attr;
+
+   if (NULL == id && NULL == alt_names) {
+      return NULL;
+   }
+
+   attr = bson_malloc0 (sizeof (*attr));
+   if (id) {
+      _mongocrypt_buffer_copy_to (id, &attr->id);
+   }
+   attr->alt_names = _mongocrypt_key_alt_name_copy_all (alt_names);
+   return attr;
+}
+
+void
+_mongocrypt_cache_key_attr_destroy (_mongocrypt_cache_key_attr_t *attr)
+{
+   if (!attr) {
+      return;
+   }
+   _mongocrypt_buffer_cleanup (&attr->id);
+   _mongocrypt_key_alt_name_destroy_all (attr->alt_names);
+   bson_free (attr);
 }

@@ -25,7 +25,7 @@
  * "attribute-value" pairs.
  * https://en.wikipedia.org/wiki/Attribute%E2%80%93value_pair
  */
-typedef int (*cache_compare_fn) (void *thing_a, void *thing_b);
+typedef bool (*cache_compare_fn) (void *thing_a, void *thing_b, int *out);
 typedef void (*cache_destroy_fn) (void *thing);
 typedef void *(*cache_copy_fn) (void *thing);
 
@@ -69,8 +69,9 @@ typedef struct {
  * @param[in] owner_in The owner id of the context attempting to get this item.
  * @param[out] owner_out Set to the owner of the entry. This may be set to
  * owner_in if ownership of the cache pair is transferred.
+ * Returns boolean indicating success.
  */
-void
+bool
 _mongocrypt_cache_get_or_create (_mongocrypt_cache_t *cache,
                                  void *attr,
                                  void **value,

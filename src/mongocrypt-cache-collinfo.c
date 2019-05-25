@@ -22,10 +22,11 @@
  */
 
 
-static int
-_cmp_attr (void *a, void *b)
+static bool
+_cmp_attr (void *a, void *b, int *out)
 {
-   return strcmp ((char *) a, (char *) b);
+   *out = strcmp ((char *) a, (char *) b);
+   return true;
 }
 
 

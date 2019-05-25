@@ -268,6 +268,8 @@ _mongocrypt_key_new ()
 }
 
 
+/* TODO CDRIVER-3154 instead of comparing all parsed fields, just compare
+ * the original BSON document. */
 bool
 _mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
                        const _mongocrypt_key_doc_t *b)
@@ -281,10 +283,20 @@ _mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
    }
 
    if (a->has_alt_names) {
-      BSON_ASSERT (a->key_alt_names.value_type == BSON_TYPE_UTF8);
-      BSON_ASSERT (b->key_alt_names.value_type == BSON_TYPE_UTF8);
-      if (0 != strcmp (a->key_alt_names.value.v_utf8.str,
-                       b->key_alt_names.value.v_utf8.str)) {
+      bson_t a_alt_names, b_alt_names;
+
+      BSON_ASSERT (a->key_alt_names.value_type == BSON_TYPE_ARRAY);
+      BSON_ASSERT (b->key_alt_names.value_type == BSON_TYPE_ARRAY);
+
+      bson_init_static (&a_alt_names,
+                        a->key_alt_names.value.v_doc.data,
+                        a->key_alt_names.value.v_doc.data_len);
+
+      bson_init_static (&b_alt_names,
+                        b->key_alt_names.value.v_doc.data,
+                        b->key_alt_names.value.v_doc.data_len);
+
+      if (!bson_equal (&a_alt_names, &b_alt_names)) {
          return false;
       }
    }
@@ -366,6 +378,7 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
    BSON_ASSERT (src);
    BSON_ASSERT (dst);
 
+   memset (dst, 0, sizeof (*dst));
    _mongocrypt_buffer_copy_to (&src->id, &dst->id);
    _mongocrypt_buffer_copy_to (&src->key_material, &dst->key_material);
    if (src->has_alt_names) {
@@ -375,4 +388,55 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
    dst->masterkey_provider = src->masterkey_provider;
    dst->masterkey_region = bson_strdup (src->masterkey_region);
    dst->masterkey_cmk = bson_strdup (src->masterkey_cmk);
+}
+
+_mongocrypt_key_alt_name_t *
+_mongocrypt_key_alt_name_copy_all (_mongocrypt_key_alt_name_t *ptr)
+{
+   _mongocrypt_key_alt_name_t *ptr_copy = NULL, *head = NULL;
+
+   while (ptr) {
+      _mongocrypt_key_alt_name_t *copied;
+      copied = bson_malloc0 (sizeof (*copied));
+      bson_value_copy (&ptr->value, &copied->value);
+
+      if (!ptr_copy) {
+         ptr_copy = copied;
+         head = ptr_copy;
+      } else {
+         ptr_copy->next = copied;
+         ptr_copy = ptr_copy->next;
+      }
+      ptr = ptr->next;
+   }
+   return head;
+}
+
+void
+_mongocrypt_key_alt_name_destroy_all (_mongocrypt_key_alt_name_t *ptr)
+{
+   _mongocrypt_key_alt_name_t *next;
+   while (ptr) {
+      next = ptr->next;
+      bson_value_destroy (&ptr->value);
+      bson_free (ptr);
+      ptr = next;
+   }
+}
+
+bool
+_mongocrypt_key_alt_name_intersects (_mongocrypt_key_alt_name_t *ptr_a,
+                                     _mongocrypt_key_alt_name_t *ptr_b)
+{
+   for (; ptr_a; ptr_a = ptr_a->next) {
+      for (; ptr_b; ptr_b = ptr_b->next) {
+         BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
+         BSON_ASSERT (ptr_b->value.value_type == BSON_TYPE_UTF8);
+         if (0 == strcmp (ptr_a->value.value.v_utf8.str,
+                          ptr_b->value.value.v_utf8.str)) {
+            return true;
+         }
+      }
+   }
+   return false;
 }

@@ -838,6 +838,75 @@ _test_encrypt_caches_keys (_mongocrypt_tester_t *tester)
 
 
 static void
+_test_encrypt_caches_keys_by_alt_name (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_FILE ("./test/data/mongocryptd-reply-key-alt-name.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_FILE ("./test/data/key-document-with-alt-name.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* The next context skips needing keys after being supplied mark documents.
+    */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_FILE ("./test/data/mongocryptd-reply-key-alt-name.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* But a context requesting a different key alt name does not get it from the
+    * cache. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_FILE ("./test/data/mongocryptd-reply-key-alt-name2.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_FILE ("./test/data/key-document-with-alt-name2.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   mongocrypt_ctx_destroy (ctx);
+
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
 _test_encrypt_random (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
@@ -912,10 +981,6 @@ _test_encrypt_waits_for_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
-
-/* TODO CDRIVER-2951: move this test to a generic test-mongocrypt-ctx.c
- * Tests edge cases.
- */
 /* Test that a context created on the same NS while another context is fetching
  * a keys waits on that context. */
 void
@@ -969,39 +1034,75 @@ _test_encrypt_waits_for_keys (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
-
-static void
-_test_ctx_id (_mongocrypt_tester_t *tester)
+/* Test that a context created on the same NS while another context is fetching
+ * a keys waits on that context (for keys fetched by alt name). */
+void
+_test_encrypt_waits_for_keys_by_altname (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
-   mongocrypt_ctx_t *ctx, *ctx2;
+   mongocrypt_ctx_t *ctx1, *ctx2;
+   mongocrypt_status_t *status;
 
    crypt = _mongocrypt_tester_mongocrypt ();
-
-   /* Two contexts should have different IDs */
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
-              ctx);
-   BSON_ASSERT (mongocrypt_ctx_id (ctx) == 1);
+   ctx1 = mongocrypt_ctx_new (crypt);
+   mongocrypt_ctx_setopt_cache_noblock (ctx1);
+   status = mongocrypt_status_new ();
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx1, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx1);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx1, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx1, TEST_FILE ("./test/data/mongocryptd-reply-key-alt-name.json")),
+      ctx1);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx1), ctx1);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx1) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   _mongocrypt_cache_dump (&crypt->cache_key);
 
    ctx2 = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                 ctx2, "test", -1, TEST_FILE ("./test/example/cmd.json")),
-              ctx);
-   BSON_ASSERT (mongocrypt_ctx_id (ctx2) == 2);
+   mongocrypt_ctx_setopt_cache_noblock (ctx2);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (ctx2, MONGOCRYPT_STR_AND_LEN ("test.test")),
+      ctx2);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx2, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx2, TEST_FILE ("./test/data/mongocryptd-reply-key-alt-name.json")),
+      ctx2);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx2), ctx2);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx2) == MONGOCRYPT_CTX_WAITING);
 
-   /* Recreating a context results in a new ID */
-   mongocrypt_ctx_destroy (ctx);
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
-              ctx);
-   BSON_ASSERT (mongocrypt_ctx_id (ctx) == 3);
+   /* ctx1 is "in progress" fetching the keys. ctx2 transitions to waiting. */
+   BSON_ASSERT (mongocrypt_ctx_next_dependent_ctx_id (ctx1) == 0);
+   BSON_ASSERT (mongocrypt_ctx_next_dependent_ctx_id (ctx2) == ctx1->id);
+   BSON_ASSERT (mongocrypt_ctx_next_dependent_ctx_id (ctx2) == 0);
 
-   mongocrypt_ctx_destroy (ctx);
+   /* calling "wait_done" does nothing, since ctx1 is still in progress */
+   ASSERT_OK (mongocrypt_ctx_wait_done (ctx2), ctx2);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx2) == MONGOCRYPT_CTX_WAITING);
+   BSON_ASSERT (mongocrypt_ctx_next_dependent_ctx_id (ctx2) == ctx1->id);
+   BSON_ASSERT (mongocrypt_ctx_next_dependent_ctx_id (ctx2) == 0);
+
+   /* satisfy ctx1 */
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx1, TEST_FILE ("./test/data/key-document-with-alt-name.json")),
+      ctx1);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx1), ctx1);
+   _mongocrypt_tester_run_ctx_to (tester, ctx1, MONGOCRYPT_CTX_READY);
+
+   _mongocrypt_cache_dump (&crypt->cache_key);
+
+   /* now, calling "wait_done" proceeds. */
+   ASSERT_OK (mongocrypt_ctx_wait_done (ctx2), ctx2);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx2) == MONGOCRYPT_CTX_READY);
+
+   mongocrypt_ctx_destroy (ctx1);
    mongocrypt_ctx_destroy (ctx2);
    mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
 }
 
 /* TODO CDRIVER-2951 test cache with blocking wait */
@@ -1182,8 +1283,8 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_local_schema);
    INSTALL_TEST (_test_encrypt_caches_collinfo);
    INSTALL_TEST (_test_encrypt_caches_keys);
+   INSTALL_TEST (_test_encrypt_caches_keys_by_alt_name);
    INSTALL_TEST (_test_encrypt_random);
-   INSTALL_TEST (_test_ctx_id);
    INSTALL_TEST (_test_encrypt_waits_for_collinfo);
    INSTALL_TEST (_test_encrypt_waits_for_keys);
    INSTALL_TEST (_test_encrypt_is_remote_schema);

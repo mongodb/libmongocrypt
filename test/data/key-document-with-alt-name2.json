@@ -1,0 +1,33 @@
+{
+    "status": {
+        "$numberInt": "1"
+    }, 
+    "_id": {
+        "$binary": {
+            "base64": "YWFhYWFhYWFhYWFhYWFhYQ==", 
+            "subType": "04"
+        }
+    }, 
+    "masterKey": {
+        "region": "us-east-1", 
+        "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0", 
+        "provider": "aws"
+    }, 
+    "updateDate": {
+        "$date": {
+            "$numberLong": "1559484564420"
+        }
+    }, 
+    "keyMaterial": {
+        "$binary": {
+            "base64": "AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gHieE3tE+Ffs3p59t8DJry+AAAAwjCBvwYJKoZIhvcNAQcGoIGxMIGuAgEAMIGoBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDLdTxgnVZ3y9KHzL4AIBEIB7y/deEPl8RcLwpyPxEktNKutiwZTYHNgBSuvZ5/RGjjvxSB+A6jf6/McvWwIDhIwZ3zY0ORT+PKqyWTu1ZmkQUpV7OJBc7omnlPDUCH//Q42ARbFpQucNsMcvN7hMqdwNJSXZBKvlwFDgi3nvpgah4lScmJaPkNUR0OwI", 
+            "subType": "00"
+        }
+    }, 
+    "creationDate": {
+        "$date": {
+            "$numberLong": "1559484564420"
+        }
+    },
+    "keyAltNames": ["Another alt name"]
+}

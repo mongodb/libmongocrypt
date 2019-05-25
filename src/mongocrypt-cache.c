@@ -26,22 +26,33 @@
 
 
 /* caller must hold lock. */
-static _mongocrypt_cache_pair_t *
-_find_pair (_mongocrypt_cache_t *cache, void *attr)
+static bool
+_find_pair (_mongocrypt_cache_t *cache,
+            void *attr,
+            _mongocrypt_cache_pair_t **out)
 {
    /* TODO: verify that this thread owns the cache mutex? */
    _mongocrypt_cache_pair_t *pair;
 
+   *out = NULL;
+
    pair = cache->pair;
    while (pair) {
+      int res;
       /* TODO: this is a naive O(n) lookup. Consider optimizing
          with a hash map (possibly vendor one). */
-      if (0 == cache->cmp_attr (pair->attr, attr)) {
-         return pair;
+      if (!cache->cmp_attr (pair->attr, attr, &res)) {
+         return false;
+      }
+
+      if (res == 0) {
+         *out = pair;
+         return true;
       }
       pair = pair->next;
    }
-   return NULL;
+   *out = NULL;
+   return true;
 }
 
 /* Clear value and state. Caller must hold lock. */
@@ -101,7 +112,7 @@ _cache_pair_destroy (_mongocrypt_cache_t *cache, _mongocrypt_cache_pair_t *pair)
 }
 
 
-void
+bool
 _mongocrypt_cache_get_or_create (_mongocrypt_cache_t *cache,
                                  void *attr,   /* attr of cache item */
                                  void **value, /* copied to. */
@@ -115,7 +126,11 @@ _mongocrypt_cache_get_or_create (_mongocrypt_cache_t *cache,
 
    _mongocrypt_mutex_lock (&cache->mutex);
 
-   match = _find_pair (cache, attr);
+   if (!_find_pair (cache, attr, &match)) {
+      /* TODO CDRIVER-2951 set status */
+      return false;
+   }
+
    if (!match) {
       /* create a new PENDING pair. */
       match = _pair_new (cache, attr, owner_in);
@@ -136,6 +151,7 @@ _mongocrypt_cache_get_or_create (_mongocrypt_cache_t *cache,
    *owner_out = match->owner_id;
 
    _mongocrypt_mutex_unlock (&cache->mutex);
+   return true;
 }
 
 
@@ -150,7 +166,10 @@ _cache_add (_mongocrypt_cache_t *cache,
    _mongocrypt_cache_pair_t *match;
 
    _mongocrypt_mutex_lock (&cache->mutex);
-   match = _find_pair (cache, attr);
+   if (!_find_pair (cache, attr, &match)) {
+      CLIENT_ERR ("error checking cache");
+      return false;
+   }
    if (!match) {
       match = _pair_new (cache, attr, owner_id);
    } else if (match->owner_id != owner_id) {

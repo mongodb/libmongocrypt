@@ -48,6 +48,9 @@ _load_json_as_bson (const char *path, bson_t *out)
    bool ret;
 
    reader = bson_json_reader_new_from_file (path, &error);
+   if (!reader) {
+      fprintf (stderr, "error reading: %s\n", path);
+   }
    ASSERT_OR_PRINT_BSON (reader, error);
    bson_init (out);
    ret = bson_json_reader_read (reader, out, &error);
@@ -524,6 +527,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_crypto (&tester);
    _mongocrypt_tester_install_log (&tester);
    _mongocrypt_tester_install_data_key (&tester);
+   _mongocrypt_tester_install_ctx (&tester);
    _mongocrypt_tester_install_ctx_encrypt (&tester);
    _mongocrypt_tester_install_ctx_decrypt (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);

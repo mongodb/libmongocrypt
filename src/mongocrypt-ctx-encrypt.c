@@ -400,12 +400,14 @@ _try_collinfo_from_cache (mongocrypt_ctx_t *ctx)
 
    /* Otherwise, we need a remote schema. Check if we have a response to
       * listCollections cached. */
-   _mongocrypt_cache_get_or_create (&ctx->crypt->cache_collinfo,
-                                    ectx->ns /* null terminated */,
-                                    (void **) &collinfo,
-                                    &ectx->collinfo_state,
-                                    ctx->id,
-                                    &ectx->collinfo_owner);
+   if (!_mongocrypt_cache_get_or_create (&ctx->crypt->cache_collinfo,
+                                         ectx->ns /* null terminated */,
+                                         (void **) &collinfo,
+                                         &ectx->collinfo_state,
+                                         ctx->id,
+                                         &ectx->collinfo_owner)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "error fetching from cache");
+   }
 
    if (ectx->collinfo_state == CACHE_PAIR_DONE) {
       if (!_set_schema_from_collinfo (ctx, collinfo)) {

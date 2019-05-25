@@ -434,11 +434,11 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    bson_t key_doc_names_bson = BSON_INITIALIZER;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
    _gen_uuid_and_key (tester, 1, &key_id1, &key_doc1);
    _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
 
    /* Success. With key ids. */
+   crypt = _mongocrypt_tester_mongocrypt ();
    _mongocrypt_key_broker_init (
       &key_broker, 1 /* owner id */, &crypt->opts, &crypt->cache_key);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
@@ -458,8 +458,10 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    BSON_ASSERT (!_mongocrypt_key_broker_next_kms (&key_broker));
    ASSERT_OK (_mongocrypt_key_broker_kms_done (&key_broker), &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
+   mongocrypt_destroy (crypt); /* destroy crypt to reset cache. */
 
    /* Success. With key alt names. */
+   crypt = _mongocrypt_tester_mongocrypt ();
    _mongocrypt_key_broker_init (
       &key_broker, 1, &crypt->opts, &crypt->cache_key);
    _key_broker_add_name (&key_broker, "Sharlene");
@@ -476,14 +478,12 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    BSON_ASSERT (!_mongocrypt_key_broker_next_kms (&key_broker));
    ASSERT_OK (_mongocrypt_key_broker_kms_done (&key_broker), &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
+   mongocrypt_destroy (crypt); /* destroy crypt to reset cache. */
 
    /* With both key ids and key alt names, some referring to the same key */
+   crypt = _mongocrypt_tester_mongocrypt ();
    _mongocrypt_key_broker_init (
       &key_broker, 1, &crypt->opts, &crypt->cache_key);
-   ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
-              &key_broker);
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc1),
-              &key_broker);
    BSON_ASSERT (
       _mongocrypt_buffer_to_bson (&key_doc_names, &key_doc_names_bson));
    BSON_ASSERT (bson_iter_init_find (&iter, &key_doc_names_bson, "_id"));
@@ -493,8 +493,10 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
               &key_broker);
    _key_broker_add_name (&key_broker, "Sharlene");
    _key_broker_add_name (&key_broker, "Kasey");
+   _mongocrypt_key_broker_debug (&key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc_names),
               &key_broker);
+   _mongocrypt_key_broker_debug (&key_broker);
    kms = _mongocrypt_key_broker_next_kms (&key_broker);
    BSON_ASSERT (kms);
    _mongocrypt_tester_satisfy_kms (tester, kms);

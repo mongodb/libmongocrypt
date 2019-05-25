@@ -185,6 +185,10 @@ _mongocrypt_tester_install_data_key (_mongocrypt_tester_t *tester);
 
 
 void
+_mongocrypt_tester_install_ctx (_mongocrypt_tester_t *tester);
+
+
+void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester);
 
 

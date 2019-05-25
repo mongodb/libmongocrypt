@@ -168,5 +168,7 @@ _mongocrypt_key_broker_status (_mongocrypt_key_broker_t *kb,
 void
 _mongocrypt_key_broker_cleanup (_mongocrypt_key_broker_t *kb);
 
+void
+_mongocrypt_key_broker_debug (_mongocrypt_key_broker_t *kb);
 
 #endif /* MONGOCRYPT_KEY_BROKER_PRIVATE_H */
