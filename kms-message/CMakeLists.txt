@@ -91,14 +91,14 @@ endif()
 
 set_target_properties (kms_message PROPERTIES
    SOVERSION 0
+   VERSION "0.0.0"
    OUTPUT_NAME "kms_message"
-   INTERFACE_kms_message_MAJOR_VERSION 0
 )
 
 set_target_properties (kms_message_static PROPERTIES
    SOVERSION 0
+   VERSION "0.0.0"
    OUTPUT_NAME "kms_message-static"
-   INTERFACE_kms_message_MAJOR_VERSION 0
 )
 
 target_compile_definitions (kms_message PRIVATE KMS_MSG_COMPILATION)

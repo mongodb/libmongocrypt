@@ -155,10 +155,14 @@ endif ()
 
 
 set_target_properties (mongocrypt PROPERTIES
+   SOVERSION 0
+   VERSION "0.0.0"
    OUTPUT_NAME "mongocrypt"
 )
 
 set_target_properties (mongocrypt_static PROPERTIES
+   SOVERSION 0
+   VERSION "0.0.0"
    OUTPUT_NAME "mongocrypt-static"
 )
 
