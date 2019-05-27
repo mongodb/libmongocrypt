@@ -60,10 +60,6 @@ _alt_names_equal (const bson_value_t *a, const bson_value_t *b)
 struct __mongocrypt_key_broker_entry_t {
    mongocrypt_status_t *status;
    _mongocrypt_key_state_t state;
-   /* owner_id differs from the key broker's owning context if and only if
-    * state == KEY_WAITING_FOR_OTHER_CTX. */
-   uint32_t owner_id;
-   bool owns_cache_entry;
    _mongocrypt_buffer_t key_id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    _mongocrypt_key_doc_t *key_returned;
@@ -175,9 +171,6 @@ _kbe_print (_mongocrypt_key_broker_entry_t *kbe)
       break;
    case KEY_DECRYPTED:
       fprintf (stderr, "KEY_DECRYPTED");
-      break;
-   case KEY_WAITING_FOR_OTHER_CTX:
-      fprintf (stderr, "KEY_WAITING_FOR_OTHER_CTX");
       break;
    }
 
@@ -530,7 +523,6 @@ _get_first_match_by_key_doc (_mongocrypt_key_broker_t *kb,
 
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
-                             uint32_t owner_id,
                              _mongocrypt_opts_t *opts,
                              _mongocrypt_cache_t *cache_key)
 {
@@ -538,7 +530,6 @@ _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
    kb->status = mongocrypt_status_new ();
    kb->crypt_opts = opts;
    kb->cache_key = cache_key;
-   kb->owner_id = owner_id;
 }
 
 
@@ -579,35 +570,23 @@ _try_retrieving_from_cache (_mongocrypt_key_broker_t *kb,
 {
    _mongocrypt_cache_key_attr_t *attr = NULL;
    _mongocrypt_cache_key_value_t *value = NULL;
-   _mongocrypt_cache_pair_state_t state;
-   uint32_t pair_owner_id;
    mongocrypt_status_t *status;
    bool ret = false;
 
    status = kb->status;
 
-   if (kbe->state != KEY_EMPTY && kbe->state != KEY_WAITING_FOR_OTHER_CTX) {
+   if (kbe->state != KEY_EMPTY) {
       CLIENT_ERR ("trying to retrieve key from cache in invalid state");
       goto cleanup;
    }
 
    attr = _mongocrypt_cache_key_attr_new (&kbe->key_id, kbe->key_alt_names);
-   if (!attr) {
-      CLIENT_ERR ("could not fetch from cache");
-      goto cleanup;
-   }
-   if (!_mongocrypt_cache_get_or_create (kb->cache_key,
-                                         attr,
-                                         (void **) &value,
-                                         &state,
-                                         kb->owner_id,
-                                         &pair_owner_id)) {
-      CLIENT_ERR ("error fetching from cache");
+   if (!_mongocrypt_cache_get (kb->cache_key, attr, (void **) &value)) {
+      CLIENT_ERR ("failed to fetch from cache");
       goto cleanup;
    }
 
-   switch (state) {
-   case CACHE_PAIR_DONE:
+   if (value) {
       kbe->state = KEY_DECRYPTED;
       if (_mongocrypt_buffer_empty (&value->decrypted_key_material)) {
          CLIENT_ERR ("key in cache has no decrypted value");
@@ -617,19 +596,8 @@ _try_retrieving_from_cache (_mongocrypt_key_broker_t *kb,
       _mongocrypt_key_doc_copy_to (value->key_doc, kbe->key_returned);
       _mongocrypt_buffer_copy_to (&value->decrypted_key_material,
                                   &kbe->decrypted_key_material);
-      break;
-   case CACHE_PAIR_PENDING:
-      /* Either we're responsible for fetching it, or we're waiting on someone
-       * else. */
-      if (pair_owner_id != kb->owner_id) {
-         kbe->state = KEY_WAITING_FOR_OTHER_CTX;
-         kbe->owner_id = pair_owner_id;
-      } else {
-         /* Otherwise, we own it and need to fetch it. */
-         kbe->state = KEY_EMPTY;
-         kbe->owner_id = kb->owner_id;
-      }
-      break;
+   } else {
+      /* Otherwise, we own it and need to fetch it. Keep in KEY_EMPTY state. */
    }
 
    ret = true;
@@ -637,111 +605,6 @@ cleanup:
    _mongocrypt_cache_key_value_destroy (value);
    _mongocrypt_cache_key_attr_destroy (attr);
    return ret;
-}
-
-
-/*
- * Call when you've satisfied all key requests owned, or if you've waited
- * and think other dependent cache entries may be fulfilled.
- *
- * If blocking_wait is true, this function will block until one of the
- * following:
- *    - a key is discovered to be in KEY_EMPTY state (we need to fetch it)
- *    - all keys are retrieved from cache
- *    - we expire the 10 second timeout
- */
-bool
-_mongocrypt_key_broker_check_cache_and_wait (_mongocrypt_key_broker_t *kb,
-                                             bool blocking_wait)
-{
-   _mongocrypt_key_broker_entry_t *kbe;
-   bool some_keys_waiting, some_keys_empty;
-   mongocrypt_status_t *status;
-
-   status = kb->status;
-
-   /* reset the ctx id iterator. */
-   kb->ctx_id_iter = kb->kb_entry;
-
-   while (true) {
-      /* reset. */
-      some_keys_waiting = false;
-      some_keys_empty = false;
-
-      for (kbe = kb->kb_entry; kbe != NULL; kbe = kbe->next) {
-         switch (kbe->state) {
-         case KEY_WAITING_FOR_OTHER_CTX:
-            some_keys_waiting = true;
-            _try_retrieving_from_cache (kb, kbe);
-            break;
-         case KEY_DECRYPTED:
-            /* Nothing to do. */
-            continue;
-         case KEY_EMPTY:
-            some_keys_empty = true;
-            break;
-         case KEY_ENCRYPTED:
-         case KEY_DECRYPTING:
-            CLIENT_ERR ("key in invalid state");
-            return false;
-         }
-      }
-
-      if (some_keys_empty) {
-         /* We've taken ownership of some keys. */
-         return true;
-      }
-
-      if (!some_keys_waiting) {
-         /* Nothing to wait for. */
-         return true;
-      }
-
-      if (blocking_wait) {
-         /* TODO CDRIVER-2951: Only retry for a maximum of 10 seconds. */
-         if (!_mongocrypt_cache_wait (kb->cache_key, kb->status)) {
-            return false;
-         }
-      } else {
-         return true;
-      }
-   }
-
-   return true;
-}
-
-
-void
-_mongocrypt_key_broker_reset_iterators (_mongocrypt_key_broker_t *kb)
-{
-   kb->ctx_id_iter = kb->kb_entry;
-   kb->decryptor_iter = kb->kb_entry;
-}
-
-
-/* Call to iterate over dependent context ids. Only applicable for non-blocking
- * contexts. The iteration is reset on calls to
- * _mongocrypt_key_broker_check_cache_and_wait. */
-uint32_t
-_mongocrypt_key_broker_next_ctx_id (_mongocrypt_key_broker_t *kb)
-{
-   _mongocrypt_key_broker_entry_t *kbe;
-
-   BSON_ASSERT (kb);
-
-   kbe = kb->ctx_id_iter;
-
-   while (kbe && kbe->state != KEY_WAITING_FOR_OTHER_CTX) {
-      kbe = kbe->next;
-   }
-
-   if (kbe) {
-      kb->ctx_id_iter = kbe->next;
-      return kbe->owner_id;
-   } else {
-      kb->ctx_id_iter = NULL;
-      return 0;
-   }
 }
 
 
@@ -770,8 +633,7 @@ _store_to_cache (_mongocrypt_key_broker_t *kb,
    value = _mongocrypt_cache_key_value_new (kbe->key_returned,
                                             &kbe->decrypted_key_material);
    /* TODO CDRIVER-2951: deduplicate when adding back. */
-   ret = _mongocrypt_cache_add_stolen (
-      kb->cache_key, attr, value, kb->owner_id, kb->status);
+   ret = _mongocrypt_cache_add_stolen (kb->cache_key, attr, value, kb->status);
    _mongocrypt_cache_key_attr_destroy (attr);
    return ret;
 }
@@ -789,7 +651,6 @@ _add_new_key_entry (_mongocrypt_key_broker_t *kb,
    kbe->prev = NULL;
    kb->kb_entry = kbe;
    kb->decryptor_iter = kbe;
-   kb->ctx_id_iter = kbe;
 }
 
 
@@ -1104,7 +965,6 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
    for (kbe = kb->kb_entry; kbe != NULL; kbe = kbe->next) {
       switch (kbe->state) {
       case KEY_DECRYPTED:
-      case KEY_WAITING_FOR_OTHER_CTX:
          /* Nothing to do. */
          continue;
       case KEY_EMPTY:
@@ -1316,4 +1176,11 @@ _mongocrypt_key_broker_cleanup (_mongocrypt_key_broker_t *kb)
 
    mongocrypt_status_destroy (kb->status);
    _mongocrypt_buffer_cleanup (&kb->filter);
+}
+
+
+void
+_mongocrypt_key_broker_reset_iterators (_mongocrypt_key_broker_t *kb)
+{
+   kb->decryptor_iter = kb->kb_entry;
 }

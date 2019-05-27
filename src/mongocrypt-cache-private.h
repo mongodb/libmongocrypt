@@ -29,22 +29,10 @@ typedef bool (*cache_compare_fn) (void *thing_a, void *thing_b, int *out);
 typedef void (*cache_destroy_fn) (void *thing);
 typedef void *(*cache_copy_fn) (void *thing);
 
-
-typedef enum {
-   CACHE_PAIR_PENDING,
-   CACHE_PAIR_DONE
-} _mongocrypt_cache_pair_state_t;
-
 typedef struct __mongocrypt_cache_pair_t {
    void *attr;
    void *value;
    struct __mongocrypt_cache_pair_t *next;
-   _mongocrypt_cache_pair_state_t state;
-   /* if state==PENDING, then owner_id refers to the context responsible for
-    * fulfilling this cache entry. if state==DONE, then owner_id is 0. */
-   uint32_t owner_id;
-   /* last_updated refers to the last time the state has changed in
-    * milliseconds. */
    int64_t last_updated;
 } _mongocrypt_cache_pair_t;
 
@@ -59,38 +47,16 @@ typedef struct {
 } _mongocrypt_cache_t;
 
 
-/* Attempt to get an entry. If it doesn't exist (or is expired and removed),
- * create one with PENDING state and owned by owner_in.
- * @param[in] attr The attribute to search for.
- * @param[out] value The output value. Set to NULL if not found or
- * state==PENDING.
- * @param[out] state The state of the cache item. If DONE, then value is set. If
- * PENDING, then owner_out indicates the context responsible for fetching.
- * @param[in] owner_in The owner id of the context attempting to get this item.
- * @param[out] owner_out Set to the owner of the entry. This may be set to
- * owner_in if ownership of the cache pair is transferred.
+/* Attempt to get an entry. 
  * Returns boolean indicating success.
  */
 bool
-_mongocrypt_cache_get_or_create (_mongocrypt_cache_t *cache,
-                                 void *attr,
-                                 void **value,
-                                 _mongocrypt_cache_pair_state_t *state,
-                                 uint32_t owner_in,
-                                 uint32_t *owner_out);
-
-
-/* Remove a PENDING cache entry with a matching owner id */
-void
-_mongocrypt_cache_remove_by_owner (_mongocrypt_cache_t *cache,
-                                   uint32_t owner_in);
-
+_mongocrypt_cache_get (_mongocrypt_cache_t *cache, void *attr, void **value);
 
 bool
 _mongocrypt_cache_add_copy (_mongocrypt_cache_t *cache,
                             void *attr,
                             void *value,
-                            uint32_t owner_id,
                             mongocrypt_status_t *status);
 
 
@@ -100,19 +66,11 @@ bool
 _mongocrypt_cache_add_stolen (_mongocrypt_cache_t *cache,
                               void *attr,
                               void *value,
-                              uint32_t owner_id,
                               mongocrypt_status_t *status);
 
 
 void
 _mongocrypt_cache_cleanup (_mongocrypt_cache_t *cache);
-
-
-/* Do a blocking wait on the cache. Blocks until an item in the cache changes
- * state. */
-bool
-_mongocrypt_cache_wait (_mongocrypt_cache_t *cache,
-                        mongocrypt_status_t *status);
 
 /* Evict expired entries. */
 bool

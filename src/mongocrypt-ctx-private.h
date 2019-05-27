@@ -60,8 +60,6 @@ typedef struct {
    bool (*mongo_done_keys) (mongocrypt_ctx_t *ctx);
    mongocrypt_kms_ctx_t *(*next_kms_ctx) (mongocrypt_ctx_t *ctx);
    bool (*kms_done) (mongocrypt_ctx_t *ctx);
-   bool (*wait_done) (mongocrypt_ctx_t *ctx);
-   uint32_t (*next_dependent_ctx_id) (mongocrypt_ctx_t *ctx);
    bool (*finalize) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
    void (*cleanup) (mongocrypt_ctx_t *ctx);
 } _mongocrypt_vtable_t;
@@ -75,9 +73,7 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_key_broker_t kb;
    _mongocrypt_vtable_t vtable;
    _mongocrypt_ctx_opts_t opts;
-   uint32_t id;
    bool initialized;
-   bool cache_noblock;
 };
 
 
@@ -97,9 +93,6 @@ typedef struct {
    char *coll_name;
    char *db_name;
    char *ns;
-   bool waiting_for_collinfo;
-   _mongocrypt_cache_pair_state_t collinfo_state;
-   uint32_t collinfo_owner;
    _mongocrypt_buffer_t list_collections_filter;
    _mongocrypt_buffer_t schema;
    /* TODO CDRIVER-3150: audit + rename these buffers.

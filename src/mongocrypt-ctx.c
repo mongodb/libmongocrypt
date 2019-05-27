@@ -123,7 +123,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid bson");
    }
 
-   if (0 != strcmp(bson_iter_key (&iter), "keyAltName")) {
+   if (0 != strcmp (bson_iter_key (&iter), "keyAltName")) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "keyAltName must have field 'keyAltName'");
    }
@@ -136,7 +136,8 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
    bson_value_copy (bson_iter_value (&iter), ctx->opts.key_alt_name);
 
    if (bson_iter_next (&iter)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "unrecognized field, only keyAltName expected");
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "unrecognized field, only keyAltName expected");
    }
 
    return true;
@@ -185,9 +186,7 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
    }
 
    if (calculated_len == ALGORITHM_RANDOM_LEN &&
-       strncmp (algorithm,
-                ALGORITHM_RANDOM,
-                ALGORITHM_RANDOM_LEN) == 0) {
+       strncmp (algorithm, ALGORITHM_RANDOM, ALGORITHM_RANDOM_LEN) == 0) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
       return true;
    }
@@ -427,9 +426,6 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       return;
    }
 
-   /* remove any pending items from cache. */
-   _mongocrypt_cache_remove_by_owner (&ctx->crypt->cache_key, ctx->id);
-
    if (ctx->vtable.cleanup) {
       ctx->vtable.cleanup (ctx);
    }
@@ -545,13 +541,6 @@ mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
 }
 
 
-uint32_t
-mongocrypt_ctx_id (mongocrypt_ctx_t *ctx)
-{
-   return ctx->id;
-}
-
-
 bool
 _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
                       _mongocrypt_ctx_opts_spec_t *opts_spec)
@@ -606,25 +595,24 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    has_alt_name = !!(ctx->opts.key_alt_name);
 
    if (opts_spec->key_descriptor == OPT_REQUIRED) {
-
       if (!has_id && !has_alt_name) {
          return _mongocrypt_ctx_fail_w_msg (
-            ctx,
-            "either key id or key alt name required");
+            ctx, "either key id or key alt name required");
       }
 
       if (has_id && has_alt_name) {
          return _mongocrypt_ctx_fail_w_msg (
-            ctx,
-            "cannot have both key id and key alt name");
+            ctx, "cannot have both key id and key alt name");
       }
    }
 
-   if (opts_spec->key_descriptor == OPT_PROHIBITED && (has_id || has_alt_name)) {
+   if (opts_spec->key_descriptor == OPT_PROHIBITED &&
+       (has_id || has_alt_name)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "key id and alt name prohibited");
    }
 
-   if (opts_spec->algorithm == OPT_REQUIRED && ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+   if (opts_spec->algorithm == OPT_REQUIRED &&
+       ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm required");
    }
 
@@ -633,31 +621,8 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm prohibited");
    }
 
-   _mongocrypt_mutex_lock (&ctx->crypt->mutex);
-   ctx->id = ctx->crypt->ctx_counter++;
-   _mongocrypt_mutex_unlock (&ctx->crypt->mutex);
    _mongocrypt_key_broker_init (
-      &ctx->kb, ctx->id, &ctx->crypt->opts, &ctx->crypt->cache_key);
-   return true;
-}
-
-uint32_t
-mongocrypt_ctx_next_dependent_ctx_id (mongocrypt_ctx_t *ctx)
-{
-   return ctx->vtable.next_dependent_ctx_id (ctx);
-}
-
-bool
-mongocrypt_ctx_wait_done (mongocrypt_ctx_t *ctx)
-{
-   return ctx->vtable.wait_done (ctx);
-}
-
-
-bool
-mongocrypt_ctx_setopt_cache_noblock (mongocrypt_ctx_t *ctx)
-{
-   ctx->cache_noblock = true;
+      &ctx->kb, &ctx->crypt->opts, &ctx->crypt->cache_key);
    return true;
 }
 
@@ -692,11 +657,6 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
               _mongocrypt_key_broker_any_state (kb, KEY_DECRYPTING)) {
       /* Encrypted keys need KMS. */
       new_state = MONGOCRYPT_CTX_NEED_KMS;
-      ret = true;
-   } else if (_mongocrypt_key_broker_any_state (kb,
-                                                KEY_WAITING_FOR_OTHER_CTX)) {
-      /* Keys in cache need waiting. */
-      new_state = MONGOCRYPT_CTX_WAITING;
       ret = true;
    } else if (!_mongocrypt_key_broker_all_state (kb, KEY_DECRYPTED)) {
       /* All keys must be decrypted. */

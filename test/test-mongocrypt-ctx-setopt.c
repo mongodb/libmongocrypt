@@ -605,7 +605,6 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
-/* TODO CDRIVER-2951 test mongocrypt_ctx_setopt_cache_noblock */
 
 
 static void

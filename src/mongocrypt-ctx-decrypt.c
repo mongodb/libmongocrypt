@@ -181,25 +181,6 @@ _cleanup (mongocrypt_ctx_t *ctx)
 }
 
 
-static bool
-_wait_done (mongocrypt_ctx_t *ctx)
-{
-   if (!_mongocrypt_key_broker_check_cache_and_wait (&ctx->kb,
-                                                     !ctx->cache_noblock)) {
-      BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
-      return _mongocrypt_ctx_fail (ctx);
-   }
-   return true;
-}
-
-
-static uint32_t
-_next_dependent_ctx_id (mongocrypt_ctx_t *ctx)
-{
-   return _mongocrypt_key_broker_next_ctx_id (&ctx->kb);
-}
-
-
 bool
 mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
@@ -223,8 +204,6 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
-   ctx->vtable.wait_done = _wait_done;
-   ctx->vtable.next_dependent_ctx_id = _next_dependent_ctx_id;
 
 
    /* We expect these to be round-tripped from explicit encrypt,
@@ -273,8 +252,6 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
    ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
-   ctx->vtable.wait_done = _wait_done;
-   ctx->vtable.next_dependent_ctx_id = _next_dependent_ctx_id;
 
    _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, doc);
    /* get keys. */
@@ -290,9 +267,6 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
                                              ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
-
-   ctx->state =
-      MONGOCRYPT_CTX_NOTHING_TO_DO; /* set default state TODO: remove. */
 
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }

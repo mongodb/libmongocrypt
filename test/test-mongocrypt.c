@@ -324,11 +324,6 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
                   mongocrypt_status_message (&status, NULL));
          BSON_ASSERT (state == stop_state);
          return;
-      case MONGOCRYPT_CTX_WAITING:
-         res = mongocrypt_ctx_wait_done (ctx);
-         mongocrypt_ctx_status (ctx, &status);
-         ASSERT_OR_PRINT (res, &status);
-         break;
       }
       state = mongocrypt_ctx_state (ctx);
    }
@@ -527,7 +522,6 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_crypto (&tester);
    _mongocrypt_tester_install_log (&tester);
    _mongocrypt_tester_install_data_key (&tester);
-   _mongocrypt_tester_install_ctx (&tester);
    _mongocrypt_tester_install_ctx_encrypt (&tester);
    _mongocrypt_tester_install_ctx_decrypt (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);

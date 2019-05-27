@@ -172,7 +172,6 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-cache.c
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
-   test/test-mongocrypt-ctx.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c
