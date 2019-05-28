@@ -18,62 +18,6 @@
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-ctx-private.h"
 
-/* From BSON Binary subtype 6 specification:
-struct fle_blob {
- uint8  fle_blob_subtype = (1 or 2);
- uint8  key_uuid[16];
- uint8  original_bson_type;
- uint8  ciphertext[ciphertext_length];
-}
-*/
-static bool
-_parse_ciphertext_unowned (_mongocrypt_buffer_t *in,
-                           _mongocrypt_ciphertext_t *ciphertext,
-                           mongocrypt_status_t *status)
-{
-   uint32_t offset;
-
-   BSON_ASSERT (in);
-   BSON_ASSERT (ciphertext);
-   BSON_ASSERT (status);
-
-   offset = 0;
-
-   /* At a minimum, a ciphertext must be 19 bytes:
-    * fle_blob_subtype (1) +
-    * key_uuid (16) +
-    * original_bson_type (1) +
-    * ciphertext (> 0)
-    */
-   if (in->len < 19) {
-      CLIENT_ERR ("malformed ciphertext, too small");
-      return false;
-   }
-   ciphertext->blob_subtype = in->data[0];
-   offset += 1;
-   /* TODO: merge new changes. */
-   if (ciphertext->blob_subtype != 1 && ciphertext->blob_subtype != 2) {
-      CLIENT_ERR ("malformed ciphertext, expected blob subtype of 1 or 2");
-      return false;
-   }
-
-   _mongocrypt_buffer_init (&ciphertext->key_id);
-   ciphertext->key_id.data = in->data + offset;
-   ciphertext->key_id.len = 16;
-   ciphertext->key_id.subtype = BSON_SUBTYPE_UUID;
-   offset += 16;
-
-   ciphertext->original_bson_type = in->data[offset];
-   offset += 1;
-
-   memset (&ciphertext->data, 0, sizeof (ciphertext->data));
-   ciphertext->data.data = in->data + offset;
-   ciphertext->data.len = in->len - offset;
-
-   return true;
-}
-
-
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,
                                     _mongocrypt_buffer_t *in,
@@ -93,11 +37,11 @@ _replace_ciphertext_with_plaintext (void *ctx,
    BSON_ASSERT (out);
 
    _mongocrypt_buffer_init (&plaintext);
-   _mongocrypt_buffer_init (&associated_data); 
+   _mongocrypt_buffer_init (&associated_data);
    _mongocrypt_buffer_init (&key_material);
    kb = (_mongocrypt_key_broker_t *) ctx;
 
-   if (!_parse_ciphertext_unowned (in, &ciphertext, status)) {
+   if (!_mongocrypt_ciphertext_parse_unowned (in, &ciphertext, status)) {
       goto fail;
    }
 
@@ -112,7 +56,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
    plaintext.data = bson_malloc0 (plaintext.len);
    plaintext.owned = true;
 
-   if (!_mongocrypt_ciphertext_serialize_associated_data (&ciphertext, &associated_data)) {
+   if (!_mongocrypt_ciphertext_serialize_associated_data (&ciphertext,
+                                                          &associated_data)) {
       CLIENT_ERR ("could not serialize associated data");
       goto fail;
    }
@@ -210,7 +155,7 @@ _collect_key_from_ciphertext (void *ctx,
 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
-   if (!_parse_ciphertext_unowned (in, &ciphertext, status)) {
+   if (!_mongocrypt_ciphertext_parse_unowned (in, &ciphertext, status)) {
       return false;
    }
 
