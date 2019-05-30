@@ -27,26 +27,26 @@ static BCRYPT_ALG_HANDLE _random;
 
 #define STATUS_SUCCESS 0
 
+bool _crypto_initialized = false;
+
 void
 _crypto_init ()
 {
    DWORD cbOutput;
    NTSTATUS nt_status;
 
-   nt_status =
-      BCryptOpenAlgorithmProvider (&_algo_sha512_hmac,
-                                   BCRYPT_SHA512_ALGORITHM,
-                                   MS_PRIMITIVE_PROVIDER,
-                                   BCRYPT_ALG_HANDLE_HMAC_FLAG);
+   nt_status = BCryptOpenAlgorithmProvider (&_algo_sha512_hmac,
+                                            BCRYPT_SHA512_ALGORITHM,
+                                            MS_PRIMITIVE_PROVIDER,
+                                            BCRYPT_ALG_HANDLE_HMAC_FLAG);
    if (nt_status != STATUS_SUCCESS) {
-      /* TODO (CDRIVER-2988) return an error status */
-      abort ();
+      return;
    }
 
    nt_status = BCryptOpenAlgorithmProvider (
       &_algo_aes256, BCRYPT_AES_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0);
    if (nt_status != STATUS_SUCCESS) {
-      abort ();
+      return;
    }
 
    nt_status = BCryptSetProperty (
@@ -56,7 +56,7 @@ _crypto_init ()
       (ULONG) (sizeof (wchar_t) * wcslen (BCRYPT_CHAIN_MODE_CBC)),
       0);
    if (nt_status != STATUS_SUCCESS) {
-      abort ();
+      return;
    }
 
    cbOutput = sizeof (_aes256_key_blob_length);
@@ -67,14 +67,16 @@ _crypto_init ()
                                   &cbOutput,
                                   0);
    if (nt_status != STATUS_SUCCESS) {
-      abort ();
+      return;
    }
 
    nt_status = BCryptOpenAlgorithmProvider (
       &_random, BCRYPT_RNG_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0);
    if (nt_status != STATUS_SUCCESS) {
-      abort ();
+      return;
    }
+
+   _crypto_initialized = true;
 }
 
 void

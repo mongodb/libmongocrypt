@@ -60,11 +60,12 @@ HMAC_CTX_free (HMAC_CTX *ctx)
 }
 #endif
 
+bool _crypto_initialized = false;
 
 void
 _crypto_init ()
 {
-
+   _crypto_initialized = true;
 }
 
 

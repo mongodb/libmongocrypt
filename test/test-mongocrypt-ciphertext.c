@@ -49,7 +49,7 @@ _test_ciphertext_serialization (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_fill_buffer (&original.data, 2);
    _mongocrypt_tester_fill_buffer (&original.key_id, 16);
 
-   _mongocrypt_serialize_ciphertext (&original, &serialized);
+   BSON_ASSERT (_mongocrypt_serialize_ciphertext (&original, &serialized));
    BSON_ASSERT (0 == memcmp (expected, serialized.data, serialized.len));
 
    /* Now parse it back, should get the same ciphertext. */

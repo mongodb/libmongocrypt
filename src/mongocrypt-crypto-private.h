@@ -69,8 +69,14 @@ _mongocrypt_calculate_deterministic_iv (
 
 /* Crypto implementations must implement these functions. */
 
+/* This variable must be defined in implementation
+   files, and must be set to true when _crypto_init
+   is successful. */
+extern bool _crypto_initialized;
+
 void
-_crypto_init();
+_crypto_init ();
+
 
 void *
 _crypto_encrypt_new (const _mongocrypt_buffer_t *key,

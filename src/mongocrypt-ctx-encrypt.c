@@ -257,7 +257,11 @@ _marking_to_bson_value (void *ctx,
       goto fail;
    }
 
-   _mongocrypt_serialize_ciphertext (&ciphertext, &serialized_ciphertext);
+   if (!_mongocrypt_serialize_ciphertext (&ciphertext,
+                                          &serialized_ciphertext)) {
+      CLIENT_ERR ("malformed ciphertext");
+      goto fail;
+   };
 
    /* ownership of serialized_ciphertext is transferred to caller. */
    out->value_type = BSON_TYPE_BINARY;
@@ -301,7 +305,10 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    if (!ectx->explicit) {
-      _mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson);
+      if (!_mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+      }
+
       bson_iter_init (&iter, &as_bson);
       bson_init (&converted);
       if (!_mongocrypt_transform_binary_in_bson (
@@ -320,7 +327,10 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
       _mongocrypt_marking_init (&marking);
 
-      _mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson);
+      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+      }
+
       if (!bson_iter_init_find (&iter, &as_bson, "v")) {
          return _mongocrypt_ctx_fail_w_msg (ctx,
                                             "invalid msg, must contain 'v'");

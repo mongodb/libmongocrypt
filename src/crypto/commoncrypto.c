@@ -21,11 +21,12 @@
 #include <CommonCrypto/CommonHMAC.h>
 #include <CommonCrypto/CommonRandom.h>
 
+bool _crypto_initialized = false;
 
 void
 _crypto_init ()
 {
-
+   _crypto_initialized = true;
 }
 
 
@@ -280,7 +281,7 @@ _crypto_random (_mongocrypt_buffer_t *out,
 {
    CCRNGStatus ret = CCRandomGenerateBytes (out->data, (size_t) count);
    if (ret != kCCSuccess) {
-      CLIENT_ERR ("failed to generate random iv: %d", (int)ret);
+      CLIENT_ERR ("failed to generate random iv: %d", (int) ret);
       return false;
    }
    return true;

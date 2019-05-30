@@ -150,7 +150,9 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 {
    size_t calculated_len;
 
-   BSON_ASSERT (ctx);
+   if (!ctx) {
+      return false;
+   }
 
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");

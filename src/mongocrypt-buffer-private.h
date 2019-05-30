@@ -76,9 +76,6 @@ _mongocrypt_buffer_steal_from_bson (_mongocrypt_buffer_t *buf, bson_t *bson);
 void
 _mongocrypt_buffer_from_bson (_mongocrypt_buffer_t *buf, const bson_t *bson);
 
-
-/* TODO CDRIVER-2988 audit places where we call this method,
-   determine if we should be checking this return value. */
 bool
 _mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf, bson_t *bson);
 

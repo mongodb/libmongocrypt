@@ -219,7 +219,7 @@ mongocrypt_init (mongocrypt_t *crypt)
 
    crypt->initialized = true;
 
-   if (0 != _mongocrypt_once (_mongocrypt_do_init)) {
+   if (0 != _mongocrypt_once (_mongocrypt_do_init) || !(_crypto_initialized)) {
       CLIENT_ERR ("failed to initialize");
       return false;
    }

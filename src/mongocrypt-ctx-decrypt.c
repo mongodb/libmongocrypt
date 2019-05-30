@@ -107,7 +107,10 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
 
    if (!dctx->explicit) {
-      _mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson);
+      if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+      }
+
       bson_iter_init (&iter, &as_bson);
       bson_init (&final_bson);
       res = _mongocrypt_transform_binary_in_bson (
@@ -227,7 +230,10 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    /* We expect these to be round-tripped from explicit encrypt,
       so they must be wrapped like { "v" : "encrypted thing" } */
    _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, msg);
-   _mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson);
+   if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+   }
+
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
@@ -270,10 +276,12 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
    ctx->vtable.wait_done = _wait_done;
    ctx->vtable.next_dependent_ctx_id = _next_dependent_ctx_id;
 
-
    _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, doc);
    /* get keys. */
-   _mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson);
+   if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+   }
+
    bson_iter_init (&iter, &as_bson);
    if (!_mongocrypt_traverse_binary_in_bson (_collect_key_from_ciphertext,
                                              &ctx->kb,

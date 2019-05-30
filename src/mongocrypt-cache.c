@@ -160,8 +160,7 @@ _cache_add (_mongocrypt_cache_t *cache,
    } else if (match->state == CACHE_PAIR_DONE) {
       /* This is considered an error. If the owner hasn't changed, there
        * should be no situation where the same context adds the same key
-       * twice. This would be a bug in our code, but don't abort per
-       * CDRIVER-2988*/
+       * twice. This would be a bug in our code, but don't abort. */
       CLIENT_ERR ("cache error - attempting to do an invalid overwrite");
       _mongocrypt_mutex_unlock (&cache->mutex);
       return false;
