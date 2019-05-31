@@ -103,11 +103,7 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (_mongocrypt_buffer_empty (&ectx->schema)) {
-      ectx->parent.state = MONGOCRYPT_CTX_NOTHING_TO_DO;
-   } else {
-      ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-   }
+   ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    return true;
 }
 
@@ -195,7 +191,7 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    if (bson_iter_init_find (&iter, &as_bson, "schemaRequiresEncryption") &&
        !bson_iter_as_bool (&iter)) {
       /* TODO: update cache: this schema does not require encryption. */
-      
+
       /* If using a local schema, warn if there are no encrypted fields. */
       if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
          _mongocrypt_log (
@@ -630,7 +626,7 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    } else if (0 == strcmp (cmd_name, "saslStart")) {
       *bypass = true;
       return true;
-   }  else if (0 == strcmp (cmd_name, "saslContinue")) {
+   } else if (0 == strcmp (cmd_name, "saslContinue")) {
       *bypass = true;
       return true;
    }
