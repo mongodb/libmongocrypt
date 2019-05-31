@@ -87,36 +87,6 @@ typedef enum {
 } mongocrypt_encryption_algorithm_t;
 
 
-typedef enum {
-   TRAVERSE_MATCH_CIPHERTEXT,
-   TRAVERSE_MATCH_MARKING
-} traversal_match_t;
-
-typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
-                                                 _mongocrypt_buffer_t *in,
-                                                 mongocrypt_status_t *status);
-
-
-typedef bool (*_mongocrypt_transform_callback_t) (void *ctx,
-                                                  _mongocrypt_buffer_t *in,
-                                                  bson_value_t *out,
-                                                  mongocrypt_status_t *status);
-
-bool
-_mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
-                                     void *ctx,
-                                     traversal_match_t match,
-                                     bson_iter_t *iter,
-                                     mongocrypt_status_t *status);
-
-bool
-_mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
-                                      void *ctx,
-                                      traversal_match_t match,
-                                      bson_iter_t *iter,
-                                      bson_t *out,
-                                      mongocrypt_status_t *status);
-
 bool
 _mongocrypt_validate_and_copy_string (const char *in,
                                       int32_t in_len,

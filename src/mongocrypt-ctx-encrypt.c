@@ -18,8 +18,9 @@
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
-#include "mongocrypt-marking-private.h"
 #include "mongocrypt-key-broker-private.h"
+#include "mongocrypt-marking-private.h"
+#include "mongocrypt-traverse-util-private.h"
 
 /* Construct the list collections command to send. */
 static bool

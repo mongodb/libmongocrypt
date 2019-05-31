@@ -17,6 +17,7 @@
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt-traverse-util-private.h"
 
 static bool
 _replace_ciphertext_with_plaintext (void *ctx,

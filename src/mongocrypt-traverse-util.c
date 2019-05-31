@@ -20,6 +20,7 @@
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
+#include "mongocrypt-traverse-util-private.h"
 
 typedef struct {
    void *ctx;
