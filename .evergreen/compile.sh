@@ -55,5 +55,3 @@ $CMAKE --build . --target install
 $CMAKE --build . --target test-mongocrypt
 $CMAKE --build ./kms-message --target test_kms_request
 cd $evergreen_root
-
-ls -lR
