@@ -78,6 +78,14 @@ tasks:
       compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
       test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
+- name: build-and-test-asan-s390x
+  commands:
+  - func: "fetch source"
+  - func: "build and test"
+    vars:
+      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
+
 - name: build-and-test-valgrind
   commands:
   - func: "fetch source"
@@ -176,23 +184,20 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
-# TODO: CDRIVER-3138
-#- name: rhel-62-64-bit
-#  display_name: "RHEL 6.2 64-bit"
-#  run_on: rhel62-small
-#  tasks:
-#  - build-and-test-and-upload
-#  - build-and-test-shared-bson
-#  - build-and-test-asan
-#  - build-and-test-java
-#- name: rhel-67-s390x
-#  display_name: "RHEL 6.7 s390x"
-#  run_on: rhel67-zseries-test
-#  tasks:
-#  - build-and-test-and-upload
-#  - build-and-test-shared-bson
-#  - build-and-test-asan
-#  - build-and-test-java
+- name: rhel-62-64-bit
+  display_name: "RHEL 6.2 64-bit"
+  run_on: rhel62-small
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-java
+- name: rhel-67-s390x
+  display_name: "RHEL 6.7 s390x"
+  run_on: rhel67-zseries-test
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-java
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
@@ -223,29 +228,26 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
-#- name: suse12-s390x
-#  display_name: "SLES 12 s390x"
-#  run_on: suse12-zseries-test
-#  tasks:
-#  - build-and-test-and-upload
-#  - build-and-test-shared-bson
-#  - build-and-test-asan
-#  - build-and-test-java
-#- name: ubuntu1604-arm64
-#  display_name: "Ubuntu 16.04 arm64"
-#  run_on: ubuntu1604-arm64-large
-#  tasks:
-#  - build-and-test-and-upload
-#  - build-and-test-shared-bson
-#  - build-and-test-asan
-#  - build-and-test-java
+  display_name: "SLES 12 s390x"
+  run_on: suse12-zseries-test
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-java
+- name: ubuntu1604-arm64
+  display_name: "Ubuntu 16.04 arm64"
+  run_on: ubuntu1604-arm64-large
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-java
 - name: ubuntu1604-s390x
   display_name: "Ubuntu 16.04 s390x"
   run_on: ubuntu1604-zseries-small
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
   - build-and-test-java
 - name: ubuntu1804-64
   display_name: "Ubuntu 18.04 64-bit"
@@ -277,5 +279,5 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-asan
+  - build-and-test-asan-s390x
   - build-and-test-java
