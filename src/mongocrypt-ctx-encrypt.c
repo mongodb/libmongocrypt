@@ -542,7 +542,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
-
 static bool
 _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
                              bool *bypass,
@@ -550,8 +549,9 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
                              mongocrypt_status_t *status)
 {
    bson_t as_bson;
-   bson_iter_t iter;
+   bson_iter_t iter, ns_iter;
    const char *cmd_name;
+   bool eligible = false;
 
    *bypass = false;
 
@@ -569,96 +569,106 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
 
    cmd_name = bson_iter_key (&iter);
 
-   if (BSON_ITER_HOLDS_UTF8 (&iter)) {
-      *collname = bson_strdup (bson_iter_utf8 (&iter, NULL));
+   /* get the collection name (or NULL if database/client command). */
+   if (0 == strcmp (cmd_name, "explain")) {
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         CLIENT_ERR ("explain value is not a document");
+         return false;
+      }
+      if (!bson_iter_recurse (&iter, &ns_iter)) {
+         CLIENT_ERR ("malformed BSON for encrypt command");
+         return false;
+      }
+      if (!bson_iter_next (&ns_iter)) {
+         CLIENT_ERR ("invalid empty BSON");
+         return false;
+      }
    } else {
-      *collname = bson_strdup ("");
+      memcpy (&ns_iter, &iter, sizeof (iter));
    }
 
-   /* aggregate ok only for collections, ie aggregate:"coll", not aggregate:1 */
-   if (0 == strcmp (cmd_name, "aggregate") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-      return true;
+   if (BSON_ITER_HOLDS_UTF8 (&ns_iter)) {
+      *collname = bson_strdup (bson_iter_utf8 (&ns_iter, NULL));
+   } else {
+      *collname = NULL;
+   }
+
+   /* check if command is eligible for auto encryption, bypassed, or ineligible.
+    */
+   if (0 == strcmp (cmd_name, "aggregate")) {
+      /* collection level aggregate ok, database/client is not. */
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "count")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "distinct")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "delete")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "find")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "findAndModify")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "getMore")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "insert")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "update")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "authenticate")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "getnonce")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "logout")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "isMaster")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "abortTransaction")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "commitTransaction")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "endSessions")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "startSession")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "create")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "createIndexes")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "drop")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "dropDatabase")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "dropIndexes")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "killCursors")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "listCollections")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "listDatabases")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "listIndexes")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "renameCollection")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "explain")) {
-      return true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "ping")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "saslStart")) {
       *bypass = true;
-      return true;
    } else if (0 == strcmp (cmd_name, "saslContinue")) {
       *bypass = true;
+   }
+
+   /* database/client commands are ineligible. */
+   if (eligible && !*collname) {
+      CLIENT_ERR (
+         "non-collection command not supported for auto encryption: %s",
+         cmd_name);
+      return false;
+   }
+
+   if (eligible || *bypass) {
       return true;
    }
 
@@ -712,6 +722,14 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (bypass) {
       ctx->state = MONGOCRYPT_CTX_NOTHING_TO_DO;
       return true;
+   }
+
+   /* if _check_cmd_for_auto_encrypt did not bypass or error, a collection name
+    * must have been set. */
+   if (!ectx->coll_name) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx,
+         "unexpected error: did not bypass or error but no collection name");
    }
 
    _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, cmd);

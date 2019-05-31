@@ -1053,6 +1053,121 @@ _test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_init_fails (_mongocrypt_tester_t *tester, const char *json, const char *msg)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_FAILS (
+      mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
+      ctx,
+      msg);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_init_ok (_mongocrypt_tester_t *tester, const char *json)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *filter;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
+              ctx);
+   /* verify the collection in the filter is 'coll' */
+   BSON_ASSERT (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO ==
+                mongocrypt_ctx_state (ctx));
+
+   filter = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+   _assert_bin_bson_equal (filter, TEST_BSON ("{'name': 'coll'}"));
+
+   mongocrypt_binary_destroy (filter);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_init_bypass (_mongocrypt_tester_t *tester, const char *json)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
+              ctx);
+   BSON_ASSERT (MONGOCRYPT_CTX_NOTHING_TO_DO == mongocrypt_ctx_state (ctx));
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_test_encrypt_init_each_cmd (_mongocrypt_tester_t *tester)
+{
+   /* collection aggregate is ok */
+   _init_ok (tester, "{'aggregate': 'coll'}");
+   /* db agg is not ok */
+   _init_fails (
+      tester,
+      "{'aggregate': 1}",
+      "non-collection command not supported for auto encryption: aggregate");
+   _init_ok (tester, "{'count': 'coll'}");
+   _init_ok (tester, "{'distinct': 'coll'}");
+   _init_ok (tester, "{'delete': 'coll'}");
+   _init_ok (tester, "{'find': 'coll'}");
+   _init_ok (tester, "{'findAndModify': 'coll'}");
+   _init_bypass (tester, "{'getMore': 'coll'}");
+   _init_ok (tester, "{'insert': 'coll'}");
+   _init_ok (tester, "{'update': 'coll'}");
+   _init_bypass (tester, "{'authenticate': 1}");
+   _init_bypass (tester, "{'getnonce': 1}");
+   _init_bypass (tester, "{'logout': 1}");
+   _init_bypass (tester, "{'isMaster': 1}");
+   _init_bypass (tester, "{'abortTransaction': 1}");
+   _init_bypass (tester, "{'commitTransaction': 1}");
+   _init_bypass (tester, "{'endSessions': 1}");
+   _init_bypass (tester, "{'startSession': 1}");
+   _init_bypass (tester, "{'create': 1}");
+   _init_bypass (tester, "{'createIndexes': 1}");
+   _init_bypass (tester, "{'drop': 1}");
+   _init_bypass (tester, "{'dropDatabase': 1}");
+   _init_bypass (tester, "{'killCursors': 1}");
+   _init_bypass (tester, "{'listCollections': 1}");
+   _init_bypass (tester, "{'listDatabases': 1}");
+   _init_bypass (tester, "{'listIndexes': 1}");
+   _init_bypass (tester, "{'renameCollection': 'coll'}");
+   _init_ok (tester, "{'explain': { 'find': 'coll' }}");
+   _init_fails (tester, "{'explain': { } }", "invalid empty BSON");
+   _init_fails (tester,
+                "{'explain': { 'aggregate': 1 }}",
+                "non-collection command not supported for auto encryption");
+   _init_bypass (tester, "{'ping': 1}");
+   _init_bypass (tester, "{'saslStart': 1}");
+   _init_bypass (tester, "{'saslContinue': 1}");
+   _init_fails (tester,
+                "{'fakecmd': 'coll'}",
+                "command not supported for auto encryption: fakecmd");
+   /* fails for eligible command with no collection name. */
+   _init_fails (
+      tester,
+      "{'insert': 1}",
+      "non-collection command not supported for auto encryption: insert");
+   _init_fails (tester, "{}", "invalid empty BSON");
+}
+
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -1072,4 +1187,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_waits_for_collinfo);
    INSTALL_TEST (_test_encrypt_waits_for_keys);
    INSTALL_TEST (_test_encrypt_is_remote_schema);
+   INSTALL_TEST (_test_encrypt_init_each_cmd);
 }
