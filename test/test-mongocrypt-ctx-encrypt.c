@@ -810,6 +810,52 @@ _test_ctx_id (_mongocrypt_tester_t *tester)
 
 /* TODO CDRIVER-2951 test cache with blocking wait */
 
+static void
+_test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *bin;
+   bson_t as_bson;
+   bson_iter_t iter;
+
+   bin = mongocrypt_binary_new ();
+
+   /* isRemoteSchema = true for a remote schema. */
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, bin), ctx);
+   _mongocrypt_binary_to_bson (bin, &as_bson);
+   BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "isRemoteSchema"));
+   BSON_ASSERT (bson_iter_bool (&iter) == true);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+
+   /* isRemoteSchema = false for a local schema. */
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_setopt_schema (ctx, TEST_FILE ("./test/data/schema.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, bin), ctx);
+   _mongocrypt_binary_to_bson (bin, &as_bson);
+   BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "isRemoteSchema"));
+   BSON_ASSERT (bson_iter_bool (&iter) == false);
+
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
 
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
@@ -829,4 +875,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_ctx_id);
    INSTALL_TEST (_test_encrypt_waits_for_collinfo);
    INSTALL_TEST (_test_encrypt_waits_for_keys);
+   INSTALL_TEST (_test_encrypt_is_remote_schema);
 }

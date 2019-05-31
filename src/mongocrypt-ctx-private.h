@@ -119,6 +119,7 @@ typedef struct {
    _mongocrypt_buffer_t marked_cmd;
    _mongocrypt_buffer_t encrypted_cmd;
    _mongocrypt_buffer_t key_id;
+   bool used_local_schema;
 } _mongocrypt_ctx_encrypt_t;
 
 

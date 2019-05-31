@@ -129,7 +129,10 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
       bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
       BSON_APPEND_DOCUMENT (&mongocryptd_cmd_bson, "jsonSchema", &schema_bson);
-      /* TODO: CDRIVER-3149 append isRemoteSchema. */
+
+      /* if a local schema was not set, set isRemoteSchema=true */
+      BSON_APPEND_BOOL (
+         &mongocryptd_cmd_bson, "isRemoteSchema", !ectx->used_local_schema);
       _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd,
                                           &mongocryptd_cmd_bson);
 
@@ -709,6 +712,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    /* Check if a local schema was provided. */
    if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
       _mongocrypt_buffer_steal (&ectx->schema, &ctx->opts.local_schema);
+      ectx->used_local_schema = true;
       ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    } else {
       return _try_collinfo_from_cache (ctx);
