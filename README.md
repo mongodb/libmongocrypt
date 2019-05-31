@@ -27,7 +27,7 @@ Then build libmongocrypt.
 git clone git@github.com:10gen/libmongocrypt.git
 cd libmongocrypt
 mkdir cmake-build && cd cmake-build
-cmake -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
+cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
 make
 ```
 
