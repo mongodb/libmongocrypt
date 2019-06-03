@@ -100,9 +100,6 @@ by how they are initialized:
 -   explicit decrypt (mongocrypt\_ctx\_explicit\_decrypt\_init)
 -   create data key (mongocrypt\_ctx\_datakey\_init)
 
-To pass a local schema, use mongocrypt\_ctx\_setopt\_schema where the
-value is a BSON document representing a JSON schema.
-
 ### State Machine ###
 
 Below is a list of the various states a mongocrypt ctx can be in. For

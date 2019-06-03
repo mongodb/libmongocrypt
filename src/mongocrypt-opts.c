@@ -33,6 +33,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
    bson_free (opts->kms_aws_secret_access_key);
    bson_free (opts->kms_aws_access_key_id);
    _mongocrypt_buffer_cleanup (&opts->kms_local_key);
+   _mongocrypt_buffer_cleanup (&opts->schema_map);
 }
 
 

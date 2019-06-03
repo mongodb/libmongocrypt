@@ -43,6 +43,7 @@ typedef struct {
    _mongocrypt_buffer_t kms_local_key; /* Set for local provider. */
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
+   _mongocrypt_buffer_t schema_map;
 } _mongocrypt_opts_t;
 
 

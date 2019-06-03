@@ -386,6 +386,22 @@ _test_encrypt_init (_mongocrypt_tester_t *tester)
                  "cannot double initialize");
    mongocrypt_ctx_destroy (ctx);
 
+   /* Empty db name is an error. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_FAILS (mongocrypt_ctx_encrypt_init (
+                    ctx, "", -1, TEST_FILE ("./test/example/cmd.json")),
+                 ctx,
+                 "invalid db");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* Empty coll name is an error. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_FAILS (
+      mongocrypt_ctx_encrypt_init (ctx, "", -1, TEST_BSON ("{'find': ''}")),
+      ctx,
+      "empty collection name on command");
+   mongocrypt_ctx_destroy (ctx);
+
    mongocrypt_destroy (crypt);
 }
 
@@ -713,45 +729,102 @@ _test_view (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Check that the schema identified in the schema_map by 'ns' matches the
+ * 'jsonSchema' of the mongocryptd command. */
+static void
+_assert_schema_compares (mongocrypt_binary_t *schema_map,
+                         const char *ns,
+                         mongocrypt_binary_t *mongocryptd_cmd)
+{
+   bson_t schema_map_bson, mongocryptd_cmd_bson, expected_schema, actual_schema;
+   uint32_t len;
+   const uint8_t *data;
+   bson_iter_t iter;
+
+   /* Get the schema from the map. */
+   BSON_ASSERT (_mongocrypt_binary_to_bson (schema_map, &schema_map_bson));
+   BSON_ASSERT (bson_iter_init_find (&iter, &schema_map_bson, ns));
+   bson_iter_document (&iter, &len, &data);
+   bson_init_static (&expected_schema, data, len);
+
+   /* Get the schema from the mongocryptd command. */
+   BSON_ASSERT (
+      _mongocrypt_binary_to_bson (mongocryptd_cmd, &mongocryptd_cmd_bson));
+   BSON_ASSERT (
+      bson_iter_init_find (&iter, &mongocryptd_cmd_bson, "jsonSchema"));
+   bson_iter_document (&iter, &len, &data);
+   BSON_ASSERT (bson_init_static (&actual_schema, data, len));
+
+
+   BSON_ASSERT (bson_equal (&expected_schema, &actual_schema));
+}
+
 
 static void
 _test_local_schema (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *schema, *bin;
-   bson_t expected_schema, actual_schema, mongocryptd_cmd;
-   uint32_t len;
-   const uint8_t *data;
-   bson_iter_t iter;
+   mongocrypt_binary_t *schema_map, *mongocryptd_cmd;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = mongocrypt_new ();
+   schema_map = TEST_FILE ("./test/data/schema-map.json");
+   ASSERT_OK (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
+   ASSERT_OK (mongocrypt_setopt_schema_map (crypt, schema_map), crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+   /* Schema map has test.test, we should jump right to NEED_MONGO_MARKINGS */
    ctx = mongocrypt_ctx_new (crypt);
-   schema = TEST_FILE ("./test/data/schema.json");
-   _mongocrypt_binary_to_bson (schema, &expected_schema);
-   ASSERT_OK (mongocrypt_ctx_setopt_schema (ctx, schema), ctx);
+   mongocryptd_cmd = mongocrypt_binary_new ();
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);
-   /* Since we supplied a schema, we should jump right to NEED_MONGO_MARKINGS */
    BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
                 MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-   bin = mongocrypt_binary_new ();
-   mongocrypt_ctx_mongo_op (ctx, bin);
-   _mongocrypt_binary_to_bson (bin, &mongocryptd_cmd);
-   BSON_ASSERT (bson_iter_init_find (&iter, &mongocryptd_cmd, "jsonSchema"));
-   bson_iter_document (&iter, &len, &data);
-   BSON_ASSERT (bson_init_static (&actual_schema, data, len));
+   ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, mongocryptd_cmd), ctx);
 
    /* We should get back the schema we gave. */
-   BSON_ASSERT (bson_equal (&expected_schema, &actual_schema));
+   _assert_schema_compares (schema_map, "test.test", mongocryptd_cmd);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
-
-   bson_destroy (&expected_schema);
-   bson_destroy (&actual_schema);
-   bson_destroy (&mongocryptd_cmd);
-   mongocrypt_binary_destroy (bin);
    mongocrypt_ctx_destroy (ctx);
+   mongocrypt_binary_destroy (mongocryptd_cmd);
+
+   /* Schema map has test.test2, we should jump right to NEED_MONGO_MARKINGS */
+   ctx = mongocrypt_ctx_new (crypt);
+   mongocryptd_cmd = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_BSON ("{'find': 'test2'}")),
+              ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
+                MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, mongocryptd_cmd), ctx);
+
+   /* We should get back the schema we gave. */
+   _assert_schema_compares (schema_map, "test.test2", mongocryptd_cmd);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_binary_destroy (mongocryptd_cmd);
+
+   /* Database that does not match should not get from the map. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "mismatch", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
+                MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* Collection that does not match should not get from the map. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_BSON ("{'find': 'mismatch'}")),
+              ctx);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
+                MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   mongocrypt_ctx_destroy (ctx);
+
    mongocrypt_destroy (crypt);
 }
 
@@ -950,11 +1023,15 @@ _test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 
    /* isRemoteSchema = false for a local schema. */
-   crypt = _mongocrypt_tester_mongocrypt ();
-   ctx = mongocrypt_ctx_new (crypt);
+   crypt = mongocrypt_new ();
    ASSERT_OK (
-      mongocrypt_ctx_setopt_schema (ctx, TEST_FILE ("./test/data/schema.json")),
-      ctx);
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
+   ASSERT_OK (mongocrypt_setopt_schema_map (
+                 crypt, TEST_FILE ("./test/data/schema-map.json")),
+              crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);

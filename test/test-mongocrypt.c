@@ -509,6 +509,43 @@ _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b)
 }
 
 
+static void
+_test_setopt_schema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+
+   /* Test double setting. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_schema_map (
+                 crypt, TEST_FILE ("./test/data/schema-map.json")),
+              crypt);
+   ASSERT_FAILS (mongocrypt_setopt_schema_map (
+                    crypt, TEST_FILE ("./test/data/schema-map.json")),
+                 crypt,
+                 "already set schema");
+
+   /* Test NULL/empty input */
+   mongocrypt_destroy (crypt);
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (
+      mongocrypt_setopt_schema_map (crypt, NULL), crypt, "passed null schema");
+
+   mongocrypt_destroy (crypt);
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_schema_map (crypt, TEST_BIN (0)),
+                 crypt,
+                 "passed null schema");
+
+   /* Test malformed BSON */
+   mongocrypt_destroy (crypt);
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_schema_map (crypt, TEST_BIN (10)),
+                 crypt,
+                 "invalid bson");
+   mongocrypt_destroy (crypt);
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -534,6 +571,8 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_ctx_setopt (&tester);
    _mongocrypt_tester_install_key (&tester);
    _mongocrypt_tester_install_marking (&tester);
+   _mongocrypt_tester_install (
+      &tester, "_test_setopt_schema", _test_setopt_schema);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

@@ -201,6 +201,13 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
    mongocrypt_ctx_t *ctx;
    int ctx_size;
 
+   if (!crypt->initialized) {
+      mongocrypt_status_t *status;
+
+      status = crypt->status;
+      CLIENT_ERR ("cannot create context from uninitialized crypt");
+      return NULL;
+   }
    ctx_size = sizeof (_mongocrypt_ctx_encrypt_t);
    if (sizeof (_mongocrypt_ctx_decrypt_t) > ctx_size) {
       ctx_size = sizeof (_mongocrypt_ctx_decrypt_t);
@@ -439,7 +446,6 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       bson_free (ctx->opts.key_alt_name);
    }
    _mongocrypt_buffer_cleanup (&ctx->opts.key_id);
-   _mongocrypt_buffer_cleanup (&ctx->opts.local_schema);
    bson_free (ctx);
    return;
 }
@@ -504,44 +510,6 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx)
 
 
 bool
-mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
-                              mongocrypt_binary_t *schema)
-{
-   bson_t tmp;
-   bson_error_t bson_err;
-
-   if (ctx->initialized) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
-   }
-
-   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
-      return false;
-   }
-
-   if (!schema || !mongocrypt_binary_data (schema)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "passed null schema");
-   }
-
-   if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "already set schema");
-   }
-
-   _mongocrypt_buffer_copy_from_binary (&ctx->opts.local_schema, schema);
-
-   /* validate bson */
-   if (!_mongocrypt_buffer_to_bson (&ctx->opts.local_schema, &tmp)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid bson");
-   }
-
-   if (!bson_validate_with_error (&tmp, BSON_VALIDATE_NONE, &bson_err)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, bson_err.message);
-   }
-
-   return true;
-}
-
-
-bool
 _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
                       _mongocrypt_ctx_opts_spec_t *opts_spec)
 {
@@ -579,16 +547,6 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    if (opts_spec->masterkey == OPT_PROHIBITED &&
        ctx->opts.masterkey_kms_provider) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "master key prohibited");
-   }
-
-   if (opts_spec->schema == OPT_REQUIRED &&
-       _mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "schema required");
-   }
-
-   if (opts_spec->schema == OPT_PROHIBITED &&
-       !_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "schema prohibited");
    }
 
    has_id = !_mongocrypt_buffer_empty (&ctx->opts.key_id);

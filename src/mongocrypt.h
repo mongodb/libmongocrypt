@@ -317,6 +317,21 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
 
 
 /**
+ * Set a local schema map for encryption.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] schema_map A BSON document representing the schema map supplied by
+ * the user. The keys are collection namespaces and values are JSON schemas.
+ * @pre @p crypt has not been initialized.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_setopt_schema_map (mongocrypt_t *crypt, mongocrypt_binary_t *schema);
+
+
+/**
  * Initialize new @ref mongocrypt_t object.
  *
  * Set options before using @ref mongocrypt_setopt_kms_provider_local, @ref
@@ -528,22 +543,6 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
-
-
-/**
- * Set a local schema for encryption.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] schema A BSON local schema supplied by the user.
- * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_schema (mongocrypt_ctx_t *ctx,
-                              mongocrypt_binary_t *schema);
-
 
 /**
  * Initialize a context for encryption.

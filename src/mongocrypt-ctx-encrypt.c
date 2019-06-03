@@ -193,7 +193,7 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
       /* TODO: update cache: this schema does not require encryption. */
 
       /* If using a local schema, warn if there are no encrypted fields. */
-      if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
+      if (!ectx->used_local_schema) {
          _mongocrypt_log (
             &ctx->crypt->log,
             MONGOCRYPT_LOG_LEVEL_WARNING,
@@ -379,7 +379,40 @@ _cleanup (mongocrypt_ctx_t *ctx)
 
 
 static bool
-_try_collinfo_from_cache (mongocrypt_ctx_t *ctx)
+_try_schema_from_schema_map (mongocrypt_ctx_t *ctx)
+{
+   mongocrypt_t *crypt;
+   _mongocrypt_ctx_encrypt_t *ectx;
+   bson_t schema_map;
+   bson_iter_t iter;
+
+   crypt = ctx->crypt;
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   if (_mongocrypt_buffer_empty (&crypt->opts.schema_map)) {
+      /* No schema map set. */
+      return true;
+   }
+
+   if (!_mongocrypt_buffer_to_bson (&crypt->opts.schema_map, &schema_map)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed schema map");
+   }
+
+   if (bson_iter_init_find (&iter, &schema_map, ectx->ns)) {
+      if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed schema map");
+      }
+      ectx->used_local_schema = true;
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+   }
+
+   /* No schema found in map. */
+   return true;
+}
+
+
+static bool
+_try_schema_from_cache (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t *collinfo = NULL;
@@ -598,11 +631,17 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    }
 
    /* database/client commands are ineligible. */
-   if (eligible && !*collname) {
-      CLIENT_ERR (
-         "non-collection command not supported for auto encryption: %s",
-         cmd_name);
-      return false;
+   if (eligible) {
+      if (!*collname) {
+         CLIENT_ERR (
+            "non-collection command not supported for auto encryption: %s",
+            cmd_name);
+         return false;
+      }
+      if (0 == strlen (*collname)) {
+         CLIENT_ERR ("empty collection name on command: %s", cmd_name);
+         return false;
+      }
    }
 
    if (eligible || *bypass) {
@@ -669,7 +708,8 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
 
    _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, cmd);
 
-   if (!_mongocrypt_validate_and_copy_string (db, db_len, &ectx->db_name)) {
+   if (!_mongocrypt_validate_and_copy_string (db, db_len, &ectx->db_name) ||
+       0 == strlen (ectx->db_name)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid db");
    }
 
@@ -690,13 +730,21 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "algorithm must not be set for auto encryption");
    }
 
-   /* Check if a local schema was provided. */
-   if (!_mongocrypt_buffer_empty (&ctx->opts.local_schema)) {
-      _mongocrypt_buffer_steal (&ectx->schema, &ctx->opts.local_schema);
-      ectx->used_local_schema = true;
-      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-   } else {
-      return _try_collinfo_from_cache (ctx);
+   /* Check if we have a local schema from schema_map */
+   if (!_try_schema_from_schema_map (ctx)) {
+      return false;
+   }
+
+   /* If we didn't have a local schema, try the cache. */
+   if (_mongocrypt_buffer_empty (&ectx->schema)) {
+      if (!_try_schema_from_cache (ctx)) {
+         return false;
+      }
+   }
+
+   /* Otherwise, we need the the driver to fetch the schema. */
+   if (_mongocrypt_buffer_empty (&ectx->schema)) {
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
    }
    return true;
 }

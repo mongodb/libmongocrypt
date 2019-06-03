@@ -175,6 +175,46 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
 
 
 bool
+mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
+                              mongocrypt_binary_t *schema_map)
+{
+   bson_t tmp;
+   bson_error_t bson_err;
+   mongocrypt_status_t *status = crypt->status;
+
+   if (crypt->initialized) {
+      CLIENT_ERR ("options cannot be set after initialization");
+      return false;
+   }
+
+   if (!schema_map || !mongocrypt_binary_data (schema_map)) {
+      CLIENT_ERR ("passed null schema map");
+      return false;
+   }
+
+   if (!_mongocrypt_buffer_empty (&crypt->opts.schema_map)) {
+      CLIENT_ERR ("already set schema map");
+      return false;
+   }
+
+   _mongocrypt_buffer_copy_from_binary (&crypt->opts.schema_map, schema_map);
+
+   /* validate bson */
+   if (!_mongocrypt_buffer_to_bson (&crypt->opts.schema_map, &tmp)) {
+      CLIENT_ERR ("invalid bson");
+      return false;
+   }
+
+   if (!bson_validate_with_error (&tmp, BSON_VALIDATE_NONE, &bson_err)) {
+      CLIENT_ERR (bson_err.message);
+      return false;
+   }
+
+   return true;
+}
+
+
+bool
 mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
                                       mongocrypt_binary_t *key)
 {
