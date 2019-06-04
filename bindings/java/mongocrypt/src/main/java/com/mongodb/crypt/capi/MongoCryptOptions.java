@@ -17,6 +17,10 @@
 
 package com.mongodb.crypt.capi;
 
+import org.bson.BsonDocument;
+
+import java.util.Map;
+
 import static org.bson.assertions.Assertions.isTrue;
 
 /**
@@ -26,6 +30,7 @@ public class MongoCryptOptions {
 
     private final MongoAwsKmsProviderOptions awsKmsProviderOptions;
     private final MongoLocalKmsProviderOptions localKmsProviderOptions;
+    private final Map<String, BsonDocument> localSchemaMap;
 
     /**
      * Construct a builder for the options
@@ -55,11 +60,21 @@ public class MongoCryptOptions {
     }
 
     /**
+     * Gets the local schema map.
+     *
+     * @return the local schema map
+     */
+    public Map<String, BsonDocument> getLocalSchemaMap() {
+        return localSchemaMap;
+    }
+
+    /**
      * The builder for the options
      */
     public static class Builder {
         private MongoAwsKmsProviderOptions awsKmsProviderOptions;
         private MongoLocalKmsProviderOptions localKmsProviderOptions;
+        private Map<String, BsonDocument> localSchemaMap = null;
 
         private Builder() {
         }
@@ -87,6 +102,17 @@ public class MongoCryptOptions {
         }
 
         /**
+         * Sets the local schema map.
+         *
+         * @param localSchemaMap local schema map
+         * @return this
+         */
+        public Builder localSchemaMap(final Map<String, BsonDocument> localSchemaMap) {
+            this.localSchemaMap = localSchemaMap;
+            return this;
+        }
+
+        /**
          * Build the options.
          *
          * @return the options
@@ -101,5 +127,6 @@ public class MongoCryptOptions {
                 builder.awsKmsProviderOptions != null || builder.localKmsProviderOptions != null);
         this.awsKmsProviderOptions = builder.awsKmsProviderOptions;
         this.localKmsProviderOptions = builder.localKmsProviderOptions;
+        this.localSchemaMap = builder.localSchemaMap;
     }
 }

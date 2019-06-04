@@ -311,6 +311,18 @@ public class CAPI {
                                          mongocrypt_binary_t key);
 
     /**
+     * Set a local schema map for encryption.
+     *
+     * @param crypt The @ref mongocrypt_t object.
+     * @param schema_map A BSON document representing the schema map supplied by
+     * the user. The keys are collection namespaces and values are JSON schemas.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_status
+     */
+    public static native boolean
+    mongocrypt_setopt_schema_map (mongocrypt_t crypt, mongocrypt_binary_t schema_map);
+    
+    /**
      * Initialize new @ref mongocrypt_t object.
      *
      * @param crypt The @ref mongocrypt_t object.
@@ -445,34 +457,26 @@ public class CAPI {
      */
     public static native boolean
     mongocrypt_ctx_datakey_init (mongocrypt_ctx_t ctx);
-
-
-    /**
-     * Set a local schema for encryption.
-     *
-     * @param ctx    The mongocrypt_ctx_t object.
-     * @param schema A BSON local schema supplied by the user.
-     * @return A boolean indicating success.
-     */
-    public static native boolean
-    mongocrypt_ctx_setopt_schema(mongocrypt_ctx_t ctx,
-                                 mongocrypt_binary_t schema);
-
-
+    
     /**
      * Initialize a context for encryption.
      *
-     * @param ctx    The @ref mongocrypt_ctx_t object.
-     * @param ns     The namespace of the collection the driver is operating on.
-     * @param ns_len The strlen of ns.
-     * @return A boolean indicating success.
+     * Associated options:
+     * - @ref mongocrypt_ctx_setopt_cache_noblock
+     * - @ref mongocrypt_ctx_setopt_schema
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param db The database name.
+     * @param db_len The byte length of @p db. Pass -1 to determine the string length with strlen (must be NULL terminated).
+     * @param cmd The BSON command to be encrypted.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
      */
-
     public static native boolean
     mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t ctx,
-                                cstring ns,
-                                int ns_len);
-
+                                cstring db,
+                                int db_len,
+                                mongocrypt_binary_t cmd);
 
     /**
      * Explicit helper method to encrypt a single BSON object. Contexts
@@ -516,13 +520,12 @@ public class CAPI {
 
 
     public static final int MONGOCRYPT_CTX_ERROR = 0;
-    public static final int MONGOCRYPT_CTX_NOTHING_TO_DO = 1;
-    public static final int MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 2; /* run on main MongoClient */
-    public static final int MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 3; /* run on mongocryptd. */
-    public static final int MONGOCRYPT_CTX_NEED_MONGO_KEYS = 4;     /* run on key vault */
-    public static final int MONGOCRYPT_CTX_NEED_KMS = 5;
-    public static final int MONGOCRYPT_CTX_READY = 6; /* ready for encryption/decryption */
-    public static final int MONGOCRYPT_CTX_DONE = 7;
+    public static final int MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1; /* run on main MongoClient */
+    public static final int MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2; /* run on mongocryptd. */
+    public static final int MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3;     /* run on key vault */
+    public static final int MONGOCRYPT_CTX_NEED_KMS = 4;
+    public static final int MONGOCRYPT_CTX_READY = 5; /* ready for encryption/decryption */
+    public static final int MONGOCRYPT_CTX_DONE = 6;
 
 
     /**

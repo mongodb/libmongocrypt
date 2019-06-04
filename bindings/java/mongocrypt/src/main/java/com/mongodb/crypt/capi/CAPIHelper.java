@@ -52,7 +52,7 @@ final class CAPIHelper {
         return mongocrypt_binary_new_from_data(pointer, buffer.getSize());
     }
 
-    static BsonDocument toDocument(final mongocrypt_binary_t binary) {
+    static RawBsonDocument toDocument(final mongocrypt_binary_t binary) {
         ByteBuffer byteBuffer = toByteBuffer(binary);
         byte[] bytes = new byte[byteBuffer.remaining()];
         byteBuffer.get(bytes);

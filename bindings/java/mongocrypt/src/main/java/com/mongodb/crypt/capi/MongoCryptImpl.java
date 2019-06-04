@@ -27,6 +27,7 @@ import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
@@ -43,18 +44,19 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_schema;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_log_handler;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_schema_map;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
 import static com.mongodb.crypt.capi.CAPIHelper.toBinary;
 import static org.bson.assertions.Assertions.isTrue;
+import static org.bson.assertions.Assertions.notNull;
 
 class MongoCryptImpl implements MongoCrypt {
     private static final Logger LOGGER = Loggers.getLogger();
@@ -96,6 +98,23 @@ class MongoCryptImpl implements MongoCrypt {
             }
         }
 
+        if (options.getLocalSchemaMap() != null) {
+            BsonDocument localSchemaMapDocument = new BsonDocument();
+            for (Map.Entry<String, BsonDocument> cur: options.getLocalSchemaMap().entrySet()) {
+                localSchemaMapDocument.put(cur.getKey(), cur.getValue());
+            }
+
+            mongocrypt_binary_t localSchemaMapBinary = toBinary(localSchemaMapDocument);
+            try {
+                success = mongocrypt_setopt_schema_map(wrapped, localSchemaMapBinary);
+                if (!success) {
+                    throwExceptionFromStatus();
+                }
+            } finally {
+                mongocrypt_binary_destroy(localSchemaMapBinary);
+            }
+        }
+        
         success = mongocrypt_init(wrapped);
         if (!success) {
             throwExceptionFromStatus();
@@ -103,30 +122,27 @@ class MongoCryptImpl implements MongoCrypt {
     }
 
     @Override
-    public MongoCryptContext createEncryptionContext(final String namespace, final BsonDocument localSchemaDocument) {
+    public MongoCryptContext createEncryptionContext(final String database, final BsonDocument commandDocument) {
         isTrue("open", !closed);
+        notNull("database", database);
+        notNull("commandDocument", commandDocument);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
             MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
 
-        if (localSchemaDocument != null) {
-            mongocrypt_binary_t binary = toBinary(localSchemaDocument);
+        mongocrypt_binary_t commandDocumentBinary = toBinary(commandDocument);
 
-            try {
-                if (!mongocrypt_ctx_setopt_schema(context, binary)) {
-                    MongoCryptContextImpl.throwExceptionFromStatus(context);
-                }
-            } finally {
-                mongocrypt_binary_destroy(binary);
+        try {
+            boolean success = mongocrypt_ctx_encrypt_init(context, new cstring(database), -1, commandDocumentBinary);
+
+            if (!success) {
+                MongoCryptContextImpl.throwExceptionFromStatus(context);
             }
+            return new MongoCryptContextImpl(context);
+        } finally {
+            mongocrypt_binary_destroy(commandDocumentBinary);
         }
-
-        boolean success = mongocrypt_ctx_encrypt_init(context, new cstring(namespace), namespace.length());
-        if (!success) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
-        }
-        return new MongoCryptContextImpl(context);
     }
 
     @Override
