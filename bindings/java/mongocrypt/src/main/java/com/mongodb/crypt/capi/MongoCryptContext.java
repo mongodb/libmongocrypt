@@ -18,6 +18,7 @@
 package com.mongodb.crypt.capi;
 
 import org.bson.BsonDocument;
+import org.bson.RawBsonDocument;
 
 import java.io.Closeable;
 
@@ -30,11 +31,6 @@ public interface MongoCryptContext extends Closeable {
      * The possible states.
      */
     enum State {
-        /**
-         *  Nothing to do
-         */
-        NOTHING_TO_DO(CAPI.MONGOCRYPT_CTX_NOTHING_TO_DO),
-
         /**
          *  Needs collection information from the cluster encrypting to
          */
@@ -92,7 +88,7 @@ public interface MongoCryptContext extends Closeable {
      *
      * @return the operation to execute
      */
-    BsonDocument getMongoOperation();
+    RawBsonDocument getMongoOperation();
 
     /**
      *

@@ -49,7 +49,7 @@ public class MongoCryptTest {
         MongoCrypt mongoCrypt = createMongoCrypt();
         assertNotNull(mongoCrypt);
 
-        MongoCryptContext encryptor = mongoCrypt.createEncryptionContext("test.test", null);
+        MongoCryptContext encryptor = mongoCrypt.createEncryptionContext("test", getResourceAsDocument("command.json"));
 
         assertEquals(State.NEED_MONGO_COLLINFO, encryptor.getState());
 
@@ -61,7 +61,7 @@ public class MongoCryptTest {
         assertEquals(State.NEED_MONGO_MARKINGS, encryptor.getState());
 
         BsonDocument jsonSchema = encryptor.getMongoOperation();
-        assertEquals(getResourceAsDocument("json-schema.json"), jsonSchema);
+        assertEquals(getResourceAsDocument("mongocryptd-command.json"), jsonSchema);
 
         encryptor.addMongoOperationResult(getResourceAsDocument("mongocryptd-reply.json"));
         encryptor.completeMongoOperation();

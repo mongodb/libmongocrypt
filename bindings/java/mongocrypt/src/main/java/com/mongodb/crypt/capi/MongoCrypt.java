@@ -30,11 +30,11 @@ public interface MongoCrypt extends Closeable {
     /**
      * Create a context to use for encryption
      *
-     * @param namespace           the namespace
-     * @param localSchemaDocument local schema document, which may be null
+     * @param database            the namespace
+     * @param command             the document representing the command to encrypt
      * @return the context
      */
-    MongoCryptContext createEncryptionContext(String namespace, BsonDocument localSchemaDocument);
+    MongoCryptContext createEncryptionContext(String database, final BsonDocument command);
 
     /**
      * Create a context to use for decryption
