@@ -219,7 +219,7 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
    ctx->crypt = crypt;
    ctx->status = mongocrypt_status_new ();
    ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
-   ctx->state = MONGOCRYPT_CTX_NOTHING_TO_DO;
+   ctx->state = MONGOCRYPT_CTX_DONE;
    return ctx;
 }
 
@@ -289,6 +289,10 @@ _kms_done (mongocrypt_ctx_t *ctx)
 bool
 mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
+   if (!ctx || !ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+   }
+
    if (!out) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL input");
    }
@@ -311,6 +315,10 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 bool
 mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 {
+   if (!ctx || !ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+   }
+
    if (!in) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL input");
    }
@@ -333,6 +341,10 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 bool
 mongocrypt_ctx_mongo_done (mongocrypt_ctx_t *ctx)
 {
+   if (!ctx || !ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+   }
+
    switch (ctx->state) {
    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
       CHECK_AND_CALL (mongo_done_collinfo, ctx);
@@ -351,6 +363,10 @@ mongocrypt_ctx_mongo_done (mongocrypt_ctx_t *ctx)
 mongocrypt_ctx_state_t
 mongocrypt_ctx_state (mongocrypt_ctx_t *ctx)
 {
+   if (!ctx || !ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+   }
+
    return ctx->state;
 }
 
@@ -358,6 +374,11 @@ mongocrypt_ctx_state (mongocrypt_ctx_t *ctx)
 mongocrypt_kms_ctx_t *
 mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
 {
+   if (!ctx || !ctx->initialized) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+      return NULL;
+   }
+
    if (!ctx->vtable.next_kms_ctx) {
       _mongocrypt_ctx_fail_w_msg (ctx, "not applicable to context");
       return NULL;
@@ -378,6 +399,10 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
 bool
 mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx)
 {
+   if (!ctx || !ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+   }
+
    if (!ctx->vtable.kms_done) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "not applicable to context");
    }
@@ -396,6 +421,10 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx)
 bool
 mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
+   if (!ctx || !ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+   }
+
    if (!out) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL input");
    }
@@ -417,6 +446,10 @@ mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 bool
 mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out)
 {
+   if (!ctx || !ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+   }
+
    if (!mongocrypt_status_ok (ctx->status)) {
       _mongocrypt_status_copy_to (ctx->status, out);
       return false;
@@ -516,7 +549,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    bool has_id = false, has_alt_name = false;
 
    if (ctx->initialized) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot double initialized");
+      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot double initialize");
    }
    ctx->initialized = true;
 
@@ -605,7 +638,8 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
       ret = false;
    } else if (kb->kb_entry == NULL) {
       /* No key entries were ever added. */
-      new_state = MONGOCRYPT_CTX_NOTHING_TO_DO;
+      new_state = MONGOCRYPT_CTX_READY;
+      ctx->nothing_to_do = true; /* nothing to encrypt/decrypt */
       ret = true;
    } else if (_mongocrypt_key_broker_any_state (kb, KEY_EMPTY)) {
       /* Empty keys require documents. */

@@ -73,6 +73,8 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_vtable_t vtable;
    _mongocrypt_ctx_opts_t opts;
    bool initialized;
+   bool
+      nothing_to_do; /* set to true if no encryption/decryption is required. */
 };
 
 

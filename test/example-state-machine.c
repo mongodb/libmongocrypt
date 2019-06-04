@@ -222,10 +222,6 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
       case MONGOCRYPT_CTX_DONE:
          done = true;
          break;
-      case MONGOCRYPT_CTX_NOTHING_TO_DO:
-         printf ("\nnothing to do\n");
-         done = true;
-         break;
       case MONGOCRYPT_CTX_ERROR:
          mongocrypt_ctx_status (ctx, status);
          printf ("\ngot error: %s\n", mongocrypt_status_message (status, NULL));

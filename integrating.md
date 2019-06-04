@@ -118,18 +118,6 @@ Throw an exception based on the status from mongocrypt\_ctx\_status.
 
 All contexts.
 
-#### State: MONGOCRYPT\_CTX\_NOTHING\_TO\_DO ####
-
-**Driver needs to...**
-
-Proceed with the original input. I.e. if this is for automatic
-encryption, there was nothing to encrypt. If this was for automatic
-decryption, there was nothing to decrypt.
-
-**Applies to...**
-
-auto encrypt, auto decrypt
-
 #### State: MONGOCRYPT\_CTX\_NEED\_MONGO\_COLLINFO ####
 
 **libmongocrypt needs**...

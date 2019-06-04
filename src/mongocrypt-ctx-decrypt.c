@@ -107,6 +107,12 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
 
    if (!dctx->explicit) {
+      if (ctx->nothing_to_do) {
+         _mongocrypt_buffer_to_binary (&dctx->original_doc, out);
+         ctx->state = MONGOCRYPT_CTX_DONE;
+         return true;
+      }
+
       if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
          return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
       }

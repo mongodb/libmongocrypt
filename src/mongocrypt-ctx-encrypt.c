@@ -302,6 +302,11 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    if (!ectx->explicit) {
+      if (ctx->nothing_to_do) {
+         _mongocrypt_buffer_to_binary (&ectx->original_cmd, out);
+         ctx->state = MONGOCRYPT_CTX_DONE;
+         return true;
+      }
       if (!_mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson)) {
          return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
       }
@@ -688,13 +693,16 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid command");
    }
 
+   _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, cmd);
+
    if (!_check_cmd_for_auto_encrypt (
           cmd, &bypass, &ectx->coll_name, ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
 
    if (bypass) {
-      ctx->state = MONGOCRYPT_CTX_NOTHING_TO_DO;
+      ctx->nothing_to_do = true;
+      ctx->state = MONGOCRYPT_CTX_READY;
       return true;
    }
 
@@ -705,8 +713,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx,
          "unexpected error: did not bypass or error but no collection name");
    }
-
-   _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, cmd);
 
    if (!_mongocrypt_validate_and_copy_string (db, db_len, &ectx->db_name) ||
        0 == strlen (ectx->db_name)) {

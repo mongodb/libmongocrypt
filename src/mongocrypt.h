@@ -628,13 +628,12 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
 
 typedef enum {
    MONGOCRYPT_CTX_ERROR = 0,
-   MONGOCRYPT_CTX_NOTHING_TO_DO = 1,
-   MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 2, /* run on main MongoClient */
-   MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 3, /* run on mongocryptd. */
-   MONGOCRYPT_CTX_NEED_MONGO_KEYS = 4,     /* run on key vault */
-   MONGOCRYPT_CTX_NEED_KMS = 5,
-   MONGOCRYPT_CTX_READY = 6, /* ready for encryption/decryption */
-   MONGOCRYPT_CTX_DONE = 7
+   MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1, /* run on main MongoClient */
+   MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2, /* run on mongocryptd. */
+   MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,     /* run on key vault */
+   MONGOCRYPT_CTX_NEED_KMS = 4,
+   MONGOCRYPT_CTX_READY = 5, /* ready for encryption/decryption */
+   MONGOCRYPT_CTX_DONE = 6
 } mongocrypt_ctx_state_t;
 
 

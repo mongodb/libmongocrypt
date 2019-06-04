@@ -530,7 +530,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
          ctx, TEST_FILE ("./test/data/mongocryptd-reply-no-markings.json")),
       ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NOTHING_TO_DO);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
@@ -548,7 +548,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
          TEST_FILE ("./test/data/mongocryptd-reply-no-encryption-needed.json")),
       ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NOTHING_TO_DO);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
@@ -911,9 +911,9 @@ _test_encrypt_caches_keys_by_alt_name (_mongocrypt_tester_t *tester)
 
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (
-      mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
-      ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    ASSERT_OK (
@@ -933,9 +933,9 @@ _test_encrypt_caches_keys_by_alt_name (_mongocrypt_tester_t *tester)
    /* The next context skips needing keys after being supplied mark documents.
     */
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (
-      mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
-      ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    ASSERT_OK (
@@ -949,9 +949,9 @@ _test_encrypt_caches_keys_by_alt_name (_mongocrypt_tester_t *tester)
    /* But a context requesting a different key alt name does not get it from the
     * cache. */
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (
-      mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
-      ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    ASSERT_OK (
@@ -1095,13 +1095,18 @@ _init_bypass (_mongocrypt_tester_t *tester, const char *json)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *bin;
 
+   bin = mongocrypt_binary_new ();
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
               ctx);
-   BSON_ASSERT (MONGOCRYPT_CTX_NOTHING_TO_DO == mongocrypt_ctx_state (ctx));
+   BSON_ASSERT (MONGOCRYPT_CTX_READY == mongocrypt_ctx_state (ctx));
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
+   _assert_bin_bson_equal (bin, TEST_BSON (json));
 
+   mongocrypt_binary_destroy (bin);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }

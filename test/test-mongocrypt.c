@@ -315,7 +315,6 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          ASSERT_OR_PRINT (res, &status);
          mongocrypt_binary_destroy (bin);
          break;
-      case MONGOCRYPT_CTX_NOTHING_TO_DO:
       case MONGOCRYPT_CTX_DONE:
       case MONGOCRYPT_CTX_ERROR:
          mongocrypt_ctx_status (ctx, &status);
