@@ -334,6 +334,26 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp), ctx);
    mongocrypt_ctx_destroy (ctx);
 
+   /* binary subtype 6 fails for deterministic. */
+   tmp = TEST_BSON (
+      "{'v': { '$binary': { 'base64': 'AAAA', 'subType': '06' } } }");
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON binary subtype 6 is invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
+   /* binary subtype 6 fails for random. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, random, -1), ctx);
+   ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, tmp),
+                 ctx,
+                 "BSON binary subtype 6 is invalid for encryption");
+   mongocrypt_ctx_destroy (ctx);
+
    mongocrypt_destroy (crypt);
 
    mongocrypt_binary_destroy (msg);
