@@ -41,6 +41,7 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
 {
    bson_iter_t iter;
    _mongocrypt_ctx_encrypt_t *ectx;
+   bool found_jsonschema = false;
 
    /* Parse out the schema. */
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
@@ -56,14 +57,28 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
       return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
    }
 
-   if (bson_iter_find_descendant (
-          &iter, "options.validator.$jsonSchema", &iter)) {
-      if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed JSONSchema");
+   if (bson_iter_find_descendant (&iter, "options.validator", &iter) &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (!bson_iter_recurse (&iter, &iter)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
+      }
+      while (bson_iter_next (&iter)) {
+         if (0 == strcmp ("$jsonSchema", bson_iter_key (&iter))) {
+            if (found_jsonschema) {
+               return _mongocrypt_ctx_fail_w_msg (ctx, "duplicate $jsonSchema fields found");
+            }
+            if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->schema,
+                                                             &iter)) {
+               return _mongocrypt_ctx_fail_w_msg (ctx, "malformed $jsonSchema");
+            }
+            found_jsonschema = true;
+         } else {
+            ectx->collinfo_has_siblings = true;
+         }
       }
    }
 
-   /* TODO CDRIVER-3096 check for validator siblings. */
+
    return true;
 }
 
@@ -199,6 +214,15 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
             "local schema used but does not have encryption specifiers");
       }
       return true;
+   } else {
+      /* if the schema requires encryption, but has sibling validators, error.
+       */
+      if (ectx->collinfo_has_siblings) {
+         return _mongocrypt_ctx_fail_w_msg (ctx,
+                                            "schema requires encryption, "
+                                            "but collection JSON schema "
+                                            "validator has siblings");
+      }
    }
 
    if (bson_iter_init_find (&iter, &as_bson, "hasEncryptedPlaceholders") &&

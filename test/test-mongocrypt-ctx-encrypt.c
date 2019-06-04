@@ -1188,6 +1188,63 @@ _test_encrypt_init_each_cmd (_mongocrypt_tester_t *tester)
 }
 
 
+static void
+_test_encrypt_invalid_siblings (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+
+   BSON_ASSERT (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO ==
+                mongocrypt_ctx_state (ctx));
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx, TEST_FILE ("./test/data/collinfo-siblings.json")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+
+   BSON_ASSERT (MONGOCRYPT_CTX_NEED_MONGO_MARKINGS ==
+                mongocrypt_ctx_state (ctx));
+   ASSERT_FAILS (mongocrypt_ctx_mongo_feed (
+                    ctx, TEST_FILE ("./test/example/mongocryptd-reply.json")),
+                 ctx,
+                 "JSON schema validator has siblings");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_test_encrypt_dupe_jsonschema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+
+   BSON_ASSERT (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO ==
+                mongocrypt_ctx_state (ctx));
+   ASSERT_FAILS (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_BSON ("{'options': {'validator': { '$jsonSchema': {}, "
+                         "'$jsonSchema': {} } } }")),
+      ctx,
+      "duplicate $jsonSchema");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -1206,4 +1263,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_random);
    INSTALL_TEST (_test_encrypt_is_remote_schema);
    INSTALL_TEST (_test_encrypt_init_each_cmd);
+   INSTALL_TEST (_test_encrypt_invalid_siblings);
+   INSTALL_TEST (_test_encrypt_dupe_jsonschema);
 }

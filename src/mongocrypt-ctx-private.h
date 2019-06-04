@@ -114,6 +114,9 @@ typedef struct {
    _mongocrypt_buffer_t encrypted_cmd;
    _mongocrypt_buffer_t key_id;
    bool used_local_schema;
+   /* collinfo_has_siblings is true if the schema came from a remote JSON
+    * schema, and there were siblings. */
+   bool collinfo_has_siblings;
 } _mongocrypt_ctx_encrypt_t;
 
 
