@@ -15,4 +15,4 @@ fi
 
 ./gradlew -version
 
-./gradlew -Djna.library.path="../../../cmake-build" clean check
+./gradlew clean check
