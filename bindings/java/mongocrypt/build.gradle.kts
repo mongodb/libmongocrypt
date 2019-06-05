@@ -140,7 +140,7 @@ tasks.register("publishSnapshots") {
     group = "publishing"
     description = "Publishes snapshots to Sonatype"
     if (version.toString().endsWith("-SNAPSHOT")) {
-        dependsOn(tasks.withType<PublishToMavenLocal>()) // TODO revert to PublishToMavenRepository
+        dependsOn(tasks.withType<PublishToMavenRepository>())
     }
 }
 
@@ -183,7 +183,7 @@ tasks.register("publishArchives") {
     }
 
     if (gitVersion == version) {
-        dependsOn(tasks.withType<PublishToMavenLocal>()) // TODO revert to PublishToMavenRepository
+        dependsOn(tasks.withType<PublishToMavenRepository>())
     }
 }
 
