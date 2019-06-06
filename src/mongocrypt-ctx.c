@@ -173,14 +173,6 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       return false;
    }
 
-   _mongocrypt_log (&ctx->crypt->log,
-                    MONGOCRYPT_LOG_LEVEL_INFO,
-                    "%s (%s=\"%.*s\")",
-                    BSON_FUNC,
-                    "algorithm",
-                    (int) calculated_len,
-                    algorithm);
-
    if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "already set algorithm");
    }
@@ -194,6 +186,13 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
    }
 
    calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
+   _mongocrypt_log (&ctx->crypt->log,
+                    MONGOCRYPT_LOG_LEVEL_INFO,
+                    "%s (%s=\"%.*s\")",
+                    BSON_FUNC,
+                    "algorithm",
+                    (int) calculated_len,
+                    algorithm);
 
    if (calculated_len == ALGORITHM_DETERMINISTIC_LEN &&
        strncmp (algorithm,
