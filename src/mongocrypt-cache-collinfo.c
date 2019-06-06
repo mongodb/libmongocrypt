@@ -68,4 +68,5 @@ _mongocrypt_cache_collinfo_init (_mongocrypt_cache_t *cache)
    cache->destroy_value = _destroy_value;
    _mongocrypt_mutex_init (&cache->mutex);
    cache->pair = NULL;
+   cache->expiration = CACHE_EXPIRATION_MS;
 }

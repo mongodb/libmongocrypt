@@ -129,6 +129,7 @@ _mongocrypt_cache_key_init (_mongocrypt_cache_t *cache)
    cache->destroy_value = _mongocrypt_cache_key_value_destroy;
    _mongocrypt_mutex_init (&cache->mutex);
    cache->pair = NULL;
+   cache->expiration = CACHE_EXPIRATION_MS;
 }
 
 /* Since key cache may be looked up by either _id or keyAltName,

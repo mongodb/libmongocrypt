@@ -47,6 +47,12 @@ bool
 _mongocrypt_key_alt_name_intersects (_mongocrypt_key_alt_name_t *list_a,
                                      _mongocrypt_key_alt_name_t *list_b);
 
+/* For testing, construct a list of key alt names from variadic args */
+_mongocrypt_key_alt_name_t *
+_mongocrypt_key_alt_name_create (const char *name, ...);
+#define _MONGOCRYPT_KEY_ALT_NAME_CREATE(...) \
+   _mongocrypt_key_alt_name_create (__VA_ARGS__, NULL)
+
 bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
                              _mongocrypt_key_doc_t *out,

@@ -18,8 +18,92 @@
 
 #include "mongocrypt-private.h"
 
-/* TODO: CDRIVER-2951 test expiration. */
-#define CACHE_EXPIRATION_MS 60000
+
+/* Did the cache pair expire? Caller must hold lock. */
+static bool
+_pair_expired (_mongocrypt_cache_t *cache, _mongocrypt_cache_pair_t *pair)
+{
+   int64_t current;
+
+   current = bson_get_monotonic_time () / 1000;
+   return (current - pair->last_updated) > (int64_t) cache->expiration;
+}
+
+
+/* Return the pair after the one being destroyed. */
+static _mongocrypt_cache_pair_t *
+_destroy_pair (_mongocrypt_cache_t *cache,
+               _mongocrypt_cache_pair_t *prev,
+               _mongocrypt_cache_pair_t *pair)
+{
+   _mongocrypt_cache_pair_t *tmp;
+   tmp = pair->next;
+
+   /* Unlink */
+   if (!prev) {
+      cache->pair = cache->pair->next;
+   } else {
+      prev->next = pair->next;
+   }
+
+   /* Destroy pair */
+   cache->destroy_attr (pair->attr);
+   cache->destroy_value (pair->value);
+   bson_free (pair);
+
+   return tmp;
+}
+
+/* Caller must hold mutex. */
+void
+_mongocrypt_cache_evict (_mongocrypt_cache_t *cache)
+{
+   _mongocrypt_cache_pair_t *pair, *prev;
+
+   prev = NULL;
+   pair = cache->pair;
+   while (pair) {
+      if (_pair_expired (cache, pair)) {
+         pair = _destroy_pair (cache, prev, pair);
+         continue;
+      }
+      prev = pair;
+      pair = pair->next;
+   }
+}
+
+/* Caller must hold mutex. */
+static bool
+_mongocrypt_remove_matches (_mongocrypt_cache_t *cache, void *attr)
+{
+   _mongocrypt_cache_pair_t *pair, *prev;
+
+   prev = NULL;
+   pair = cache->pair;
+   while (pair) {
+      int res;
+
+      if (!cache->cmp_attr (pair->attr, attr, &res)) {
+         return false;
+      }
+
+      if (0 == res) {
+         pair = _destroy_pair (cache, prev, pair);
+         continue;
+      }
+      prev = pair;
+      pair = pair->next;
+   }
+
+   return true;
+}
+
+
+void
+_mongocrypt_cache_set_expiration (_mongocrypt_cache_t *cache, uint64_t milli)
+{
+   cache->expiration = milli;
+}
 
 
 /* caller must hold lock. */
@@ -47,7 +131,6 @@ _find_pair (_mongocrypt_cache_t *cache,
       }
       pair = pair->next;
    }
-   *out = NULL;
    return true;
 }
 
@@ -65,17 +148,6 @@ _pair_new (_mongocrypt_cache_t *cache, void *attr)
    pair->last_updated = bson_get_monotonic_time () / 1000;
    cache->pair = pair;
    return pair;
-}
-
-
-/* Did the cache pair expire? Caller must hold lock. */
-static bool
-_pair_expired (_mongocrypt_cache_pair_t *pair)
-{
-   int64_t current;
-
-   current = bson_get_monotonic_time () / 1000;
-   return current - pair->last_updated > CACHE_EXPIRATION_MS;
 }
 
 
@@ -99,7 +171,9 @@ _mongocrypt_cache_get (_mongocrypt_cache_t *cache,
    *value = NULL;
 
    _mongocrypt_mutex_lock (&cache->mutex);
-
+   /* TODO CDRIVER-3120: optimize the eviction algorithm to avoid unnecessary
+    * O(n) traversal */
+   _mongocrypt_cache_evict (cache);
    if (!_find_pair (cache, attr, &match)) {
       return false;
    }
@@ -119,26 +193,21 @@ _cache_add (_mongocrypt_cache_t *cache,
             mongocrypt_status_t *status,
             bool steal_value)
 {
-   _mongocrypt_cache_pair_t *match;
+   _mongocrypt_cache_pair_t *pair;
 
    _mongocrypt_mutex_lock (&cache->mutex);
-   /* TODO CDRIVER-2951, since keys have multiple identifiers, remove all
-    * matches first. */
-   if (!_find_pair (cache, attr, &match)) {
-      CLIENT_ERR ("error checking cache");
+   _mongocrypt_cache_evict (cache);
+   if (!_mongocrypt_remove_matches (cache, attr)) {
+      CLIENT_ERR ("error removing from cache");
       return false;
    }
-   if (!match) {
-      match = _pair_new (cache, attr);
-   } else {
-      /* delete the existing value. */
-      cache->destroy_value (match->value);
-   }
+
+   pair = _pair_new (cache, attr);
 
    if (steal_value) {
-      match->value = value;
+      pair->value = value;
    } else {
-      match->value = cache->copy_value (value);
+      pair->value = cache->copy_value (value);
    }
    _mongocrypt_mutex_unlock (&cache->mutex);
    return true;
@@ -185,7 +254,7 @@ _mongocrypt_cache_dump (_mongocrypt_cache_t *cache)
    int count;
 
    _mongocrypt_mutex_lock (&cache->mutex);
-   count = 1;
+   count = 0;
    for (pair = cache->pair; pair != NULL; pair = pair->next) {
       printf ("entry:%d\n\tlast_updated:%d\n", count, (int) pair->last_updated);
       count++;
@@ -195,9 +264,18 @@ _mongocrypt_cache_dump (_mongocrypt_cache_t *cache)
 }
 
 
-bool
-_mongocrypt_cache_evict (_mongocrypt_cache_t *cache)
+uint32_t
+_mongocrypt_cache_num_entries (_mongocrypt_cache_t *cache)
 {
-   /* TODO CDRIVER-2951 */
-   return false;
+   _mongocrypt_cache_pair_t *pair;
+   uint32_t count;
+
+   _mongocrypt_mutex_lock (&cache->mutex);
+   count = 0;
+   for (pair = cache->pair; pair != NULL; pair = pair->next) {
+      count++;
+   }
+
+   _mongocrypt_mutex_unlock (&cache->mutex);
+   return count;
 }

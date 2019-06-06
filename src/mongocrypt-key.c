@@ -428,8 +428,9 @@ bool
 _mongocrypt_key_alt_name_intersects (_mongocrypt_key_alt_name_t *ptr_a,
                                      _mongocrypt_key_alt_name_t *ptr_b)
 {
+   _mongocrypt_key_alt_name_t *orig_ptr_b = ptr_b;
    for (; ptr_a; ptr_a = ptr_a->next) {
-      for (; ptr_b; ptr_b = ptr_b->next) {
+      for (ptr_b = orig_ptr_b; ptr_b; ptr_b = ptr_b->next) {
          BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
          BSON_ASSERT (ptr_b->value.value_type == BSON_TYPE_UTF8);
          if (0 == strcmp (ptr_a->value.value.v_utf8.str,
@@ -439,4 +440,36 @@ _mongocrypt_key_alt_name_intersects (_mongocrypt_key_alt_name_t *ptr_a,
       }
    }
    return false;
+}
+
+
+_mongocrypt_key_alt_name_t *
+_mongocrypt_key_alt_name_create (const char *name, ...)
+{
+   va_list args;
+   const char *arg_ptr;
+   _mongocrypt_key_alt_name_t *head, *prev;
+
+   head = NULL;
+   prev = NULL;
+   va_start (args, name);
+   arg_ptr = name;
+   while (arg_ptr) {
+      _mongocrypt_key_alt_name_t *curr;
+
+      curr = bson_malloc0 (sizeof (*curr));
+      curr->value.value_type = BSON_TYPE_UTF8;
+      curr->value.value.v_utf8.str = bson_strdup (arg_ptr);
+      curr->value.value.v_utf8.len = strlen (arg_ptr);
+      if (!prev) {
+         head = curr;
+      } else {
+         prev->next = curr;
+      }
+
+      arg_ptr = va_arg (args, const char *);
+      prev = curr;
+   }
+
+   return head;
 }

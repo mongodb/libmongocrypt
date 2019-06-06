@@ -1014,7 +1014,6 @@ _test_encrypt_random (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-/* TODO CDRIVER-2951 test cache with blocking wait */
 
 static void
 _test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)

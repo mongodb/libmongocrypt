@@ -20,6 +20,8 @@
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-status-private.h"
 
+#define CACHE_EXPIRATION_MS 60000
+
 /* A generic simple cache.
  * To avoid overusing the names "key" or "id", the cache contains
  * "attribute-value" pairs.
@@ -44,10 +46,11 @@ typedef struct {
    cache_destroy_fn destroy_value;
    _mongocrypt_cache_pair_t *pair;
    mongocrypt_mutex_t mutex; /* global lock of cache. */
+   uint64_t expiration;
 } _mongocrypt_cache_t;
 
 
-/* Attempt to get an entry. 
+/* Attempt to get an entry.
  * Returns boolean indicating success.
  */
 bool
@@ -72,13 +75,16 @@ _mongocrypt_cache_add_stolen (_mongocrypt_cache_t *cache,
 void
 _mongocrypt_cache_cleanup (_mongocrypt_cache_t *cache);
 
-/* Evict expired entries. */
-bool
-_mongocrypt_cache_evict (_mongocrypt_cache_t *cache);
-
 /* A helper debug function to dump the state of the cache. */
 void
 _mongocrypt_cache_dump (_mongocrypt_cache_t *cache);
+
+/* Tests may override the default expiration */
+void
+_mongocrypt_cache_set_expiration (_mongocrypt_cache_t *cache, uint64_t milli);
+
+uint32_t
+_mongocrypt_cache_num_entries (_mongocrypt_cache_t *cache);
 
 
 #endif /* MONGOCRYPT_CACHE_PRIVATE */

@@ -4,9 +4,8 @@ The companion C library for client side encryption in drivers.
 To integrate libmongocrypt with your driver, see the [Integrating libmongocrypt Guide](integrating.md).
 
 ## Building libmongocrypt ##
-These instructions have been tested on macOS 10.14.1 and Ubuntu 16.04.
 
-First build the following dependencies.
+First build the following dependencies:
 
 1. [The BSON library (part of the C driver)](https://github.com/mongodb/mongo-c-driver), consisting of libbson. Build it from source.
    ```
@@ -19,9 +18,9 @@ First build the following dependencies.
    ```
    This installs the library and includes into /path/to/bson-install. The prefix can be omitted if you prefer installing in /usr/local.
    
-2. Install OpenSSL (if on Linux).
+2. OpenSSL (if on Linux).
 
-Then build libmongocrypt.
+Then build libmongocrypt:
 
 ```
 git clone git@github.com:10gen/libmongocrypt.git
