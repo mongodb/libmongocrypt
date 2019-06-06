@@ -122,4 +122,10 @@ _mongocrypt_validate_and_copy_string (const char *in,
                                       int32_t in_len,
                                       char **out);
 
+char *
+_mongocrypt_new_string_from_bytes (const void *in, int len);
+
+char *
+_mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary);
+
 #endif /* MONGOCRYPT_PRIVATE_H */
