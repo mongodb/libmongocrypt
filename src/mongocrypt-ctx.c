@@ -654,7 +654,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    }
 
    _mongocrypt_key_broker_init (
-      &ctx->kb, &ctx->crypt->opts, &ctx->crypt->cache_key);
+      &ctx->kb, &ctx->crypt->opts, &ctx->crypt->cache_key, &ctx->crypt->log);
    return true;
 }
 
