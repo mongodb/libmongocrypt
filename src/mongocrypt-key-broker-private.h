@@ -69,9 +69,8 @@ typedef struct {
    _mongocrypt_buffer_t filter;
    _mongocrypt_opts_t *crypt_opts;
    _mongocrypt_cache_t *cache_key;
-   _mongocrypt_key_broker_t;
    _mongocrypt_log_t *log;
-};
+} _mongocrypt_key_broker_t;
 
 
 void
