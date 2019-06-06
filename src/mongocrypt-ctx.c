@@ -89,15 +89,18 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
    char *key_id_val;
    BSON_ASSERT (ctx);
 
-   key_id_val = _mongocrypt_new_string_from_bytes (key_id->data, key_id->len);
-   _mongocrypt_log (&ctx->crypt->log,
-                    MONGOCRYPT_LOG_LEVEL_INFO,
-                    "%s (%s=\"%s\")",
-                    BSON_FUNC,
-                    "key_id",
-                    key_id_val);
+   if (key_id && key_id->data) {
+      key_id_val =
+         _mongocrypt_new_string_from_bytes (key_id->data, key_id->len);
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_INFO,
+                       "%s (%s=\"%s\")",
+                       BSON_FUNC,
+                       "key_id",
+                       key_id_val);
+      bson_free (key_id_val);
+   }
 
-   bson_free (key_id_val);
    return _set_binary_opt (ctx, key_id, &ctx->opts.key_id, BSON_SUBTYPE_UUID);
 }
 
@@ -603,7 +606,8 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    ctx->vtable.next_kms_ctx = _next_kms_ctx;
    ctx->vtable.kms_done = _kms_done;
 
-   /* Check that required options are included and prohibited options are not.
+   /* Check that required options are included and prohibited options are
+    * not.
     */
 
    if (opts_spec->masterkey == OPT_REQUIRED) {
