@@ -911,7 +911,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
       }
    } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       if (!_mongocrypt_kms_ctx_init_aws_decrypt (
-             &kbe->kms, kb->crypt_opts, kbe->key_returned, kbe)) {
+             &kbe->kms, kb->crypt_opts, kbe->key_returned, kb->log)) {
          mongocrypt_kms_ctx_status (&kbe->kms, status);
          goto done;
       }
