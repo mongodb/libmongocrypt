@@ -175,7 +175,8 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Both key ids and keyAltName */
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
    _key_broker_add_name (&key_broker, "Miriam");
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
@@ -211,7 +212,8 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (filter);
 
    /* Keys with only keyAltName */
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
    _key_broker_add_name (&key_broker, "Sharlene");
    _key_broker_add_name (&key_broker, "Emily");
    filter = mongocrypt_binary_new ();
@@ -246,7 +248,8 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    mongocrypt_binary_destroy (filter);
 
    /* Duplicate alt names */
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
    _key_broker_add_name (&key_broker, "Jackie");
    _key_broker_add_name (&key_broker, "Jackie");
    _key_broker_add_name (&key_broker, "Jackie");
@@ -319,7 +322,8 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Valid document with a key name. */
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
    _key_broker_add_name (&key_broker, "Kasey");
    _mongocrypt_buffer_from_binary (
       &key_doc_names,
@@ -366,7 +370,8 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
       add a document with name X and id Z (succeeds) and
       afterwards add a doc with name X and id Y (fails). */
    key_x = _mongocrypt_key_new ();
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
 
    _mongocrypt_buffer_from_binary (
       &key_buf_x, TEST_FILE ("./test/data/key-document-with-alt-name.json"));
@@ -434,7 +439,8 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
 
    /* Success. With key ids. */
    crypt = _mongocrypt_tester_mongocrypt ();
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id2),
@@ -456,7 +462,8 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
 
    /* Success. With key alt names. */
    crypt = _mongocrypt_tester_mongocrypt ();
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
    _key_broker_add_name (&key_broker, "Sharlene");
 
    _mongocrypt_buffer_from_binary (
@@ -475,7 +482,8 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
 
    /* With both key ids and key alt names, some referring to the same key */
    crypt = _mongocrypt_tester_mongocrypt ();
-   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+   _mongocrypt_key_broker_init (
+      &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log);
    BSON_ASSERT (
       _mongocrypt_buffer_to_bson (&key_doc_names, &key_doc_names_bson));
    BSON_ASSERT (bson_iter_init_find (&iter, &key_doc_names_bson, "_id"));
