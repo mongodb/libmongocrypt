@@ -492,6 +492,15 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "msg must be bson");
    }
 
+   msg_val = _mongocrypt_new_json_string_from_binary (msg);
+   _mongocrypt_log (&ctx->crypt->log,
+                    MONGOCRYPT_LOG_LEVEL_INFO,
+                    "%s (%s=\"%s\")",
+                    BSON_FUNC,
+                    "msg",
+                    msg_val);
+   bson_free (msg_val);
+
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
