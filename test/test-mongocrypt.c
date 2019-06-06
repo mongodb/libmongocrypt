@@ -253,9 +253,7 @@ _mongocrypt_tester_satisfy_kms (_mongocrypt_tester_t *tester,
                                 mongocrypt_kms_ctx_t *kms)
 {
    const char *endpoint;
-   mongocrypt_t *crypt;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
    BSON_ASSERT (mongocrypt_kms_ctx_endpoint (kms, &endpoint));
    BSON_ASSERT (endpoint == strstr (endpoint, "kms.") &&
                 strstr (endpoint, ".amazonaws.com"));
