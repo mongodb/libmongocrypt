@@ -90,7 +90,10 @@ _recurse (_recurse_state_t *state)
          bool ret;
 
          memcpy (&child_state, state, sizeof (_recurse_state_t));
-         bson_iter_recurse (&state->iter, &child_state.iter);
+         if (!bson_iter_recurse (&state->iter, &child_state.iter)) {
+            CLIENT_ERR ("error recursing into array");
+            return false;
+         }
 
          if (state->copy) {
             bson_append_array_begin (state->copy,
@@ -113,7 +116,7 @@ _recurse (_recurse_state_t *state)
 
          memcpy (&child_state, state, sizeof (_recurse_state_t));
          if (!bson_iter_recurse (&state->iter, &child_state.iter)) {
-            CLIENT_ERR ("error recursing into array");
+            CLIENT_ERR ("error recursing into document");
             return false;
          }
          /* TODO: check for errors everywhere. */
