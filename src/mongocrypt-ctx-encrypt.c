@@ -614,7 +614,9 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "logout")) {
       *bypass = true;
-   } else if (0 == strcmp (cmd_name, "isMaster")) {
+   } else if (0 == bson_strcasecmp (cmd_name, "isMaster")) {
+      /* use case insensitive compare for ismaster, since some drivers send
+       * "ismaster" and others send "isMaster" */
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "abortTransaction")) {
       *bypass = true;
