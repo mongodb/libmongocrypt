@@ -264,6 +264,7 @@ val checkMissing by tasks.register<DefaultTask>("checkMissing") {
                     | Missing Libraries
                     | =================
                     |
+                    | Git revision: $revision
                     | Missing Libraries for: ${missingLibraries.joinToString(", ")}
                     |
                     | Continue? [y/N]
