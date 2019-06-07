@@ -150,7 +150,7 @@ val gitVersion: String by lazy {
         commandLine = listOf("git", "describe", "--tags", "--always", "--dirty")
         standardOutput = describeStdOut
     }
-    describeStdOut.toString().substring(1).trim()
+    describeStdOut.toString().trim()
 }
 
 val gitHash: String by lazy {
@@ -159,7 +159,7 @@ val gitHash: String by lazy {
         commandLine = listOf("git", "rev-parse", "HEAD")
         standardOutput = describeStdOut
     }
-    describeStdOut.toString().substring(1).trim()
+    describeStdOut.toString().trim()
 }
 
 tasks.register("publishArchives") {
