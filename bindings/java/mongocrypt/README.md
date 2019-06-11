@@ -9,6 +9,8 @@ Note: libmongocrypt and the java library are [continuously built on evergreen](h
 
 ### Publishing ####
 
+First check the build artifacts locally (~/.m2/repository/org/mongodb/mongocrypt): `./gradlew clean downloadJnaLibs publishToMavenLocal`
+
 **Snapshots**
 
 `./gradlew publishSnapshots` 
@@ -22,8 +24,6 @@ Note: Has to be run on a git tagged version / hash.
 
 ### Custom gradle flags ###
 
-* `jnaLibsNoCheck`: Disable JNA library checking, asks for user input to confirm the packages.<br>
-  Usage: `./gradlew publishToMavenLocal -DjnaLibsNoCheck`
 * `jnaLibsPath`: Custom local JNA library path for inclusion into the build (rather than downloading from s3)<br>
   Usage: `./gradlew publishSnapshots -DjnaLibsPath=./build/jnaLibs/`
 * `gitRevision`: Sets the Git Revision to download the built resources for from s3.<br>

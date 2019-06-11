@@ -86,7 +86,6 @@ val gitHash: String by lazy {
  * Jna copy or download resources
  */
 val jnaLibsPath: String = System.getProperty("jnaLibsPath", "")
-val jnaLibsCheck: Boolean = !System.getProperties().containsKey("jnaLibsNoCheck")
 val jnaResources: String = System.getProperty("jna.libary.path", jnaLibsPath)
 val jnaDownloadsDir = "$buildDir/jnaLibsDownloads/"
 val jnaResourcesBuildDir = "$buildDir/jnaLibs/"
@@ -132,37 +131,6 @@ val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
 )
 val defaultClassifers = listOf("rhel70", "win64", "osx")  // Included in the default jar
 
-val checkMissing by tasks.register<DefaultTask>("checkMissing") {
-    if (jnaLibsCheck) {
-        doFirst {
-            val missingLibraries = mutableListOf()
-            jnaMappingList.forEach {
-                val connection = URL(it.downloadUrl()).openConnection() as HttpURLConnection
-                connection.requestMethod = "HEAD"
-                if (connection.responseCode != 200) {
-                    missingLibraries += it.classifier
-                }
-            }
-
-            if (missingLibraries.isNotEmpty()) {
-                println("""
-                    | Missing Libraries
-                    | =================
-                    |
-                    | Git revision: $revision
-                    | Missing Libraries for: ${missingLibraries.joinToString(", ")}
-                    |
-                    | Continue? [y/N]
-                    |""".trimMargin())
-                if (readLine()!!.trim().toLowerCase() != "y") {
-                    throw GradleException("Cancelling...")
-                }
-            }
-        }
-    }
-}
-downloadJnaLibs.dependsOn(checkMissing)
-
 jnaMappingList.forEach {
     tasks {
         val download by register<Download>("download-${it.classifier}") {
@@ -205,25 +173,9 @@ tasks.withType<AbstractPublishToMaven> {
         | System properties:
         | =================
         |
-        | jnaLibsNoCheck : Disable JNA library checking: Asks for user input to confirm the packages.
         | jnaLibsPath    : Custom local JNA library path for inclusion into the build (rather than downloading from s3)
         | gitRevision    : Optional Git Revision to download the built resources for from s3.
     """.trimMargin()
-
-    if (jnaLibsCheck) {
-        doFirst {
-            val jnaLibsLocation = if (jnaResources.isNotEmpty()) jnaResources else jnaResourcesBuildDir
-            println("\n\nPlease confirm the jnaLibs resources layout:\n")
-            println("$jnaLibsLocation: ")
-            File(jnaLibsLocation).walkTopDown().map { it.toString().removePrefix(jnaLibsLocation) }
-                    .forEach { if (it.isNotEmpty()) println(" - ${it}") }
-            println("--------------------------------------------")
-            println("Is the above the expected layout? [y/n?]\n\n")
-            if (readLine()!!.trim().toLowerCase() != "y") {
-                throw GradleException("Cancelling...")
-            }
-        }
-    }
 }
 
 val classifiers = mutableListOf()
