@@ -52,7 +52,7 @@ java {
 
 
 dependencies {
-    api("org.mongodb:bson:3.10.1")   // TODO: what version to depend on?
+    api("org.mongodb:bson:[3.10,4.1)")
     api("net.java.dev.jna:jna:4.5.2")
     implementation("org.slf4j:slf4j-api:1.7.6")
 
@@ -62,11 +62,194 @@ dependencies {
 }
 
 /*
+ * Git version information
+ */
+val gitVersion: String by lazy {
+    val describeStdOut = ByteArrayOutputStream()
+    exec {
+        commandLine = listOf("git", "describe", "--tags", "--always", "--dirty")
+        standardOutput = describeStdOut
+    }
+    describeStdOut.toString().trim()
+}
+
+val gitHash: String by lazy {
+    val describeStdOut = ByteArrayOutputStream()
+    exec {
+        commandLine = listOf("git", "rev-parse", "HEAD")
+        standardOutput = describeStdOut
+    }
+    describeStdOut.toString().trim()
+}
+
+/*
+ * Jna copy or download resources
+ */
+val jnaLibsPath: String = System.getProperty("jnaLibsPath", "")
+val jnaLibsCheck: Boolean = !System.getProperties().containsKey("jnaLibsNoCheck")
+val jnaResources: String = System.getProperty("jna.libary.path", jnaLibsPath)
+val jnaDownloadsDir = "$buildDir/jnaLibsDownloads/"
+val jnaResourcesBuildDir = "$buildDir/jnaLibs/"
+
+// Copy resources to jnaResourcesBuildDir
+val copyResources by tasks.register<Copy>("copyResources") {
+    val cmakeBuildPath = "../../../cmake-build"
+    destinationDir = file(jnaResourcesBuildDir)
+    if (jnaResources.isNotEmpty()) {
+        from(jnaResources)
+        include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
+    } else if (file(cmakeBuildPath).exists()){
+        val jnaMapping = mapOf(
+                "libmongocrypt.so" to "linux-x86-64",
+                "mongocrypt.dll" to "win32-x86-64",
+                "libmongocrypt.dylib" to "darwin")
+
+        val copySpecs = jnaMapping.mapTo(mutableListOf(), { copySpec {
+            from(cmakeBuildPath)
+            include(it.key)
+            into(it.value)
+        }}).toTypedArray()
+        with(*copySpecs)
+    }
+}
+
+// Download jnaLibs that match the git to jnaResourcesBuildDir
+val downloadJnaLibs by tasks.register<DefaultTask>("downloadJnaLibs")
+val revision: String = System.getProperty("gitRevision", if (gitVersion == version) gitVersion else gitHash)
+
+data class LibMongoCryptS3Data(val evergreenName: String, val classifier: String, val osArch: String) {
+    fun downloadUrl(): String {
+        return "https://s3.amazonaws.com/mciuploads/libmongocrypt/$evergreenName/master/$revision/libmongocrypt.tar.gz"
+    }
+}
+
+// TODO - Any more libraries?
+val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
+        LibMongoCryptS3Data("ubuntu1604", "linux64-ubuntu1604", "linux-x86-64"),
+        LibMongoCryptS3Data("rhel-70-64-bit", "linux64-rhel70", "linux-x86-64"),
+        LibMongoCryptS3Data("windows-test", "win64", "win32-x86-64"),
+        LibMongoCryptS3Data("macos", "osx", "darwin")
+)
+val defaultClassifers = listOf("rhel70", "win64", "osx")  // Included in the default jar
+
+val checkMissing by tasks.register<DefaultTask>("checkMissing") {
+    if (jnaLibsCheck) {
+        doFirst {
+            val missingLibraries = mutableListOf()
+            jnaMappingList.forEach {
+                val connection = URL(it.downloadUrl()).openConnection() as HttpURLConnection
+                connection.requestMethod = "HEAD"
+                if (connection.responseCode != 200) {
+                    missingLibraries += it.classifier
+                }
+            }
+
+            if (missingLibraries.isNotEmpty()) {
+                println("""
+                    | Missing Libraries
+                    | =================
+                    |
+                    | Git revision: $revision
+                    | Missing Libraries for: ${missingLibraries.joinToString(", ")}
+                    |
+                    | Continue? [y/N]
+                    |""".trimMargin())
+                if (readLine()!!.trim().toLowerCase() != "y") {
+                    throw GradleException("Cancelling...")
+                }
+            }
+        }
+    }
+}
+downloadJnaLibs.dependsOn(checkMissing)
+
+jnaMappingList.forEach {
+    tasks {
+        val download by register<Download>("download-${it.classifier}") {
+            src(it.downloadUrl())
+            dest("${jnaDownloadsDir}zips/${it.classifier}.tgz")
+            overwrite(false)
+        }
+
+        val unzip by register<Copy>("unzip-${it.classifier}") {
+            from(tarTree(resources.gzip("${jnaDownloadsDir}zips/${it.classifier}.tgz")))
+            include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
+            eachFile {
+                path = name
+            }
+            into("$jnaDownloadsDir${it.classifier}/${it.osArch}")
+        }
+        unzip.dependsOn(download)
+
+        if (defaultClassifers.contains(it.classifier)) {
+            val addDefaultLibToMainPackage by register<Copy>("default-${it.classifier}") {
+                from("$jnaDownloadsDir${it.classifier}/")
+                into(jnaResourcesBuildDir)
+            }
+            addDefaultLibToMainPackage.dependsOn(unzip)
+            downloadJnaLibs.dependsOn(addDefaultLibToMainPackage)
+        } else {
+            downloadJnaLibs.dependsOn(unzip)
+        }
+
+        register<Jar>("${it.classifier}ClassifierJar") {
+            description = "Create an ${it.classifier} jar"
+            from(sourceSets.main.get().output.classesDirs.plus(file("$jnaDownloadsDir${it.classifier}/")))
+            archiveClassifier.set(it.classifier)
+        }
+    }
+}
+
+tasks.withType<AbstractPublishToMaven> {
+    description = """$description
+        | System properties:
+        | =================
+        |
+        | jnaLibsNoCheck : Disable JNA library checking: Asks for user input to confirm the packages.
+        | jnaLibsPath    : Custom local JNA library path for inclusion into the build (rather than downloading from s3)
+        | gitRevision    : Optional Git Revision to download the built resources for from s3.
+    """.trimMargin()
+
+    if (jnaLibsCheck) {
+        doFirst {
+            val jnaLibsLocation = if (jnaResources.isNotEmpty()) jnaResources else jnaResourcesBuildDir
+            println("\n\nPlease confirm the jnaLibs resources layout:\n")
+            println("$jnaLibsLocation: ")
+            File(jnaLibsLocation).walkTopDown().map { it.toString().removePrefix(jnaLibsLocation) }
+                    .forEach { if (it.isNotEmpty()) println(" - ${it}") }
+            println("--------------------------------------------")
+            println("Is the above the expected layout? [y/n?]\n\n")
+            if (readLine()!!.trim().toLowerCase() != "y") {
+                throw GradleException("Cancelling...")
+            }
+        }
+    }
+}
+
+tasks.withType<PublishToMavenRepository> {
+    dependsOn(downloadJnaLibs)
+    sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
+}
+
+tasks.withType<PublishToMavenLocal> {
+    dependsOn(copyResources)
+    sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
+}
+
+tasks.withType<Test> {
+    @Suppress("UNCHECKED_CAST")
+    systemProperties((System.getProperties().toMap() as Map<String, Any>).filter { it.key.startsWith("jna.") })
+
+    dependsOn(copyResources)
+    sourceSets["test"].resources.srcDirs("resources", jnaResourcesBuildDir)
+}
+
+/*
  * Publishing
  */
 tasks.register<Jar>("sourcesJar") {
     description = "Create the sources jar"
-    from(sourceSets.main.get().allSource)
+    from(sourceSets.main.get().allJava)
     archiveClassifier.set("sources")
 }
 
@@ -81,8 +264,13 @@ publishing {
         create<MavenPublication>("mavenJava") {
             artifactId = "mongocrypt"
             from(components["java"])
+
             artifact(tasks["sourcesJar"])
             artifact(tasks["javadocJar"])
+            // Add special classifier jars
+            tasks.filter { it.name.endsWith("ClassifierJar") }.forEach {
+                artifact(it)
+            }
             versionMapping {
                 usage("java-api") {
                     fromResolutionOf("runtimeClasspath")
@@ -144,24 +332,6 @@ tasks.register("publishSnapshots") {
     }
 }
 
-val gitVersion: String by lazy {
-    val describeStdOut = ByteArrayOutputStream()
-    exec {
-        commandLine = listOf("git", "describe", "--tags", "--always", "--dirty")
-        standardOutput = describeStdOut
-    }
-    describeStdOut.toString().trim()
-}
-
-val gitHash: String by lazy {
-    val describeStdOut = ByteArrayOutputStream()
-    exec {
-        commandLine = listOf("git", "rev-parse", "HEAD")
-        standardOutput = describeStdOut
-    }
-    describeStdOut.toString().trim()
-}
-
 tasks.register("publishArchives") {
     group = "publishing"
     description = "Publishes a release and uploads to Sonatype / Maven Central"
@@ -205,140 +375,4 @@ gradle.taskGraph.whenReady {
             signing_password?.let { extra["signing.password"] = it }
         }
     }
-}
-
-/*
- * Jna copy or download resources
- */
-val jnaLibsPath: String = System.getProperty("jnaLibsPath", "")
-val jnaLibsCheck: Boolean = !System.getProperties().containsKey("jnaLibsNoCheck")
-val jnaResources: String = System.getProperty("jna.libary.path", jnaLibsPath)
-val jnaResourcesBuildDir = "$buildDir/jnaLibs/"
-
-// Copy resources to jnaResourcesBuildDir
-val copyResources by tasks.register<Copy>("copyResources") {
-    val cmakeBuildPath = "../../../cmake-build"
-    destinationDir = file(jnaResourcesBuildDir)
-    if (jnaResources.isNotEmpty()) {
-        from(jnaResources)
-        include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
-    } else if (file(cmakeBuildPath).exists()){
-        val jnaMapping = mapOf(
-                "libmongocrypt.so" to "linux-x86-64",
-                "mongocrypt.dll" to "win32-x86-64",
-                "libmongocrypt.dylib" to "darwin")
-
-        val copySpecs = jnaMapping.mapTo(mutableListOf(), { copySpec {
-            from(cmakeBuildPath)
-            include(it.key)
-            into(it.value)
-        }}).toTypedArray()
-        with(*copySpecs)
-    }
-}
-
-// Download jnaLibs that match the git to jnaResourcesBuildDir
-val downloadJnaLibs by tasks.register<DefaultTask>("downloadJnaLibs")
-val revision: String = System.getProperty("gitRevision", if (gitVersion == version) gitVersion else gitHash)
-
-// TODO - Any more libraries? Check the `{OS}-{ARCH}` is correct
-val jnaMapping: Map<String, String> = mapOf(
-    "https://s3.amazonaws.com/mciuploads/libmongocrypt/rhel-70-64-bit/master/$revision/libmongocrypt.tar.gz" to "linux-x86-64",
-    "https://s3.amazonaws.com/mciuploads/libmongocrypt/windows-test/master/$revision/libmongocrypt.tar.gz" to "win32-x86-64",
-    "https://s3.amazonaws.com/mciuploads/libmongocrypt/macos/master/$revision/libmongocrypt.tar.gz" to "darwin")
-
-val checkMissing by tasks.register<DefaultTask>("checkMissing") {
-    if (jnaLibsCheck) {
-        doFirst {
-            val missingLibraries = mutableListOf()
-            jnaMapping.forEach { k, v ->
-                val connection = URL(k).openConnection() as HttpURLConnection
-                connection.requestMethod = "HEAD"
-                if (connection.responseCode != 200) {
-                    missingLibraries += v
-                }
-            }
-
-            if (missingLibraries.isNotEmpty()) {
-                println("""
-                    | Missing Libraries
-                    | =================
-                    |
-                    | Git revision: $revision
-                    | Missing Libraries for: ${missingLibraries.joinToString(", ")}
-                    |
-                    | Continue? [y/N]
-                    |""".trimMargin())
-                if (readLine()!!.trim().toLowerCase() != "y") {
-                    throw GradleException("Cancelling...")
-                }
-            }
-        }
-    }
-}
-downloadJnaLibs.dependsOn(checkMissing)
-
-jnaMapping.forEach { k, v ->
-    tasks {
-        val download by register<Download>("download-$v") {
-            src(k)
-            dest("$buildDir/jnaLibsDownloads/$v.tgz")
-            overwrite(false)
-        }
-
-        val unzip by register<Copy>("unzip-$v") {
-            from(tarTree(resources.gzip("$buildDir/jnaLibsDownloads/$v.tgz")))
-            include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
-            eachFile {
-                path = name
-            }
-            into("$jnaResourcesBuildDir/$v/")
-        }
-        unzip.dependsOn(download)
-        downloadJnaLibs.dependsOn(unzip)
-    }
-}
-
-tasks.withType<AbstractPublishToMaven> {
-    description = """$description
-        | System properties:
-        | =================
-        |
-        | jnaLibsNoCheck : Disable JNA library checking: Asks for user input to confirm the packages.
-        | jnaLibsPath    : Custom local JNA library path for inclusion into the build (rather than downloading from s3)
-        | gitRevision    : Optional Git Revision to download the built resources for from s3.
-    """.trimMargin()
-
-    if (jnaLibsCheck) {
-        doFirst {
-            val jnaLibsLocation = if (jnaResources.isNotEmpty()) jnaResources else jnaResourcesBuildDir
-            println("\n\nPlease confirm the jnaLibs resources layout:\n")
-            println("$jnaLibsLocation: ")
-            File(jnaLibsLocation).walkTopDown().map { it.toString().removePrefix(jnaLibsLocation) }
-                    .forEach { if (it.isNotEmpty()) println(" - ${it}") }
-            println("--------------------------------------------")
-            println("Is the above the expected layout? [y/n?]\n\n")
-            if (readLine()!!.trim().toLowerCase() != "y") {
-                throw GradleException("Cancelling...")
-            }
-        }
-    }
-}
-
-tasks.withType<PublishToMavenRepository> {
-    dependsOn(downloadJnaLibs)
-    sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
-}
-
-tasks.withType<PublishToMavenLocal> {
-    dependsOn(copyResources)
-    sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
-}
-
-tasks.withType<Test> {
-    @Suppress("UNCHECKED_CAST")
-    systemProperties((System.getProperties().toMap() as Map<String, Any>).filter { it.key.startsWith("jna.") })
-
-    dependsOn(copyResources)
-    sourceSets["test"].resources.srcDirs("resources", jnaResourcesBuildDir)
 }
