@@ -222,7 +222,7 @@ tasks.register<Jar>("javadocJar") {
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
-            artifactId = "mongocrypt"
+            artifactId = "mongodb-crypt"
             from(components["java"])
 
             artifact(tasks["sourcesJar"])
