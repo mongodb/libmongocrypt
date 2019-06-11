@@ -226,8 +226,18 @@ tasks.withType<AbstractPublishToMaven> {
     }
 }
 
+val classifiers = mutableListOf()
+val checkClassifiers by tasks.register<DefaultTask>("checkClassifiers") {
+    jnaMappingList.forEach {
+        if (file("$jnaDownloadsDir${it.classifier}/").exists()) {
+            classifiers.add(it.classifier)
+        }
+    }
+}
+checkClassifiers.dependsOn(downloadJnaLibs)
+
 tasks.withType<PublishToMavenRepository> {
-    dependsOn(downloadJnaLibs)
+    dependsOn(checkClassifiers)
     sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
 }
 
@@ -269,7 +279,9 @@ publishing {
             artifact(tasks["javadocJar"])
             // Add special classifier jars
             tasks.filter { it.name.endsWith("ClassifierJar") }.forEach {
-                artifact(it)
+                if (classifiers.contains(it.name.removeSuffix("ClassifierJar"))) {
+                    artifact(it)
+                }
             }
             versionMapping {
                 usage("java-api") {
