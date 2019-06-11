@@ -17,9 +17,7 @@
 
 import de.undercouch.gradle.tasks.download.Download
 import java.io.ByteArrayOutputStream
-import java.net.HttpURLConnection
 import java.net.URI
-import java.net.URL
 
 
 buildscript {
@@ -52,7 +50,7 @@ java {
 
 
 dependencies {
-    api("org.mongodb:bson:[3.10,4.1)")
+    api("org.mongodb:bson:[3.10,5.0)")
     api("net.java.dev.jna:jna:4.5.2")
     implementation("org.slf4j:slf4j-api:1.7.6")
 
