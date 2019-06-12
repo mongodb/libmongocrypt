@@ -48,6 +48,14 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/test.sh
 
+  "publish snapshot":
+    - command: shell.exec
+      params:
+        silent: true
+        script: |-
+          eval "${inject_env_from_evergreen}"
+          cd ./libmongocrypt/bindings/java/mongocrypt && PROJECT_DIRECTORY=${project_directory} NEXUS_USERNAME=${nexus_username} NEXUS_PASSWORD=${nexus_password} SIGNING_PASSWORD=${signing_password} SIGNING_KEY_ID=${signing_keyId} RING_FILE_GPG_BASE64=${ring_file_gpg_base64} ./.evergreen/publish.sh
+
 tasks:
 - name: build-and-test-and-upload
   commands:
@@ -98,6 +106,20 @@ tasks:
     - func: "fetch source"
     - func: "build and test java"
 
+- name: publish-snapshot
+  depends_on:
+    - variant: ubuntu1604
+      name: build-and-test-java
+    - variant: rhel-70-64-bit
+      name: build-and-test-java
+    - variant: macos
+      name: build-and-test-java
+    - variant: windows-test
+      name: build-and-test-and-upload # Todo update once java build passing on windows
+  commands:
+    - func: "fetch source"
+    - func: "publish snapshot"
+
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_path} expansion.
   # If this is a patch build, we want a URL specific to the patch, like:
@@ -117,8 +139,14 @@ pre:
            REMOTE_PATH="${project}/${build_variant}/${branch_name}/${tag_name}/libmongocrypt.tar.gz"
         fi
         unset tag_name
+        PROJECT_DIRECTORY="$(pwd)"
         echo "libmongocrypt_s3_path: $REMOTE_PATH"
-        echo "libmongocrypt_s3_path: $REMOTE_PATH" > expansion.yml
+        echo "project_directory: $PROJECT_DIRECTORY"
+
+        cat <<EOT > expansion.yml
+        libmongocrypt_s3_path: "$REMOTE_PATH"
+        project_directory: "$PROJECT_DIRECTORY"
+        EOT
   - command: expansions.update
     params:
       file: expansion.yml
@@ -161,6 +189,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - build-and-test-java
 - name: linux-64-amazon-ami
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test
@@ -228,6 +257,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
+- name: suse12-s390x  
   display_name: "SLES 12 s390x"
   run_on: suse12-zseries-test
   tasks:
@@ -281,3 +311,8 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan-s390x
   - build-and-test-java
+- name: publish-snapshot
+  display_name: "Publish Snapshot"
+  run_on: ubuntu1804-test
+  tasks:
+    - name: "publish-snapshot"

@@ -15,4 +15,4 @@ fi
 
 ./gradlew -version
 
-./gradlew clean check
+./gradlew clean check -Djna.debug_load=true

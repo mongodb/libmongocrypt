@@ -120,7 +120,7 @@ data class LibMongoCryptS3Data(val evergreenName: String, val classifier: String
     }
 }
 
-// TODO - Any more libraries?
+// If updating this list remember to also update the Publish Snapshots `depends_on` in the main evergreen config.yml
 val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
         LibMongoCryptS3Data("ubuntu1604", "linux64-ubuntu1604", "linux-x86-64"),
         LibMongoCryptS3Data("rhel-70-64-bit", "linux64-rhel70", "linux-x86-64"),
@@ -290,6 +290,7 @@ tasks.register("publishSnapshots") {
     group = "publishing"
     description = "Publishes snapshots to Sonatype"
     if (version.toString().endsWith("-SNAPSHOT")) {
+        dependsOn(downloadJnaLibs)
         dependsOn(tasks.withType<PublishToMavenRepository>())
     }
 }
