@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+#include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
-#include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-marking-private.h"
+#include "mongocrypt-key-broker-private.h"
 
 /* Construct the list collections command to send. */
 static bool
@@ -448,7 +449,7 @@ _try_schema_from_cache (mongocrypt_ctx_t *ctx)
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    /* Otherwise, we need a remote schema. Check if we have a response to
-    * listCollections cached. */
+      * listCollections cached. */
    if (!_mongocrypt_cache_get (&ctx->crypt->cache_collinfo,
                                ectx->ns /* null terminated */,
                                (void **) &collinfo)) {
@@ -474,7 +475,6 @@ bool
 mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
 {
-   char *msg_val;
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t as_bson;
    bson_iter_t iter;
@@ -515,15 +515,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "msg must be bson");
    }
-
-   msg_val = _mongocrypt_new_json_string_from_binary (msg);
-   _mongocrypt_log (&ctx->crypt->log,
-                    MONGOCRYPT_LOG_LEVEL_INFO,
-                    "%s (%s=\"%s\")",
-                    BSON_FUNC,
-                    "msg",
-                    msg_val);
-   bson_free (msg_val);
 
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");

@@ -36,13 +36,13 @@ bool
 _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
                                       _mongocrypt_opts_t *crypt_opts,
                                       _mongocrypt_key_doc_t *key,
-                                      _mongocrypt_log_t *log)
+                                      void *ctx)
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
 
    kms->parser = kms_response_parser_new ();
-   kms->log = log;
+   kms->ctx = ctx;
    kms->status = mongocrypt_status_new ();
    status = kms->status;
    kms->req_type = MONGOCRYPT_KMS_DECRYPT;
@@ -81,7 +81,7 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    /* create the KMS request. */
    opt = kms_request_opt_new ();
    /* TODO: we might want to let drivers control whether or not we send
-    * Connection: close header. Unsure right now. */
+      * Connection: close header. Unsure right now. */
    kms_request_opt_set_connection_close (opt, true);
 
    kms->req = kms_decrypt_request_new (
@@ -126,12 +126,14 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    mongocrypt_kms_ctx_t *kms,
    _mongocrypt_opts_t *crypt_opts,
    _mongocrypt_ctx_opts_t *ctx_opts,
-   _mongocrypt_buffer_t *plaintext_key_material)
+   _mongocrypt_buffer_t *plaintext_key_material,
+   void *ctx)
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
 
    kms->parser = kms_response_parser_new ();
+   kms->ctx = ctx;
    kms->status = mongocrypt_status_new ();
    status = kms->status;
    kms->req_type = MONGOCRYPT_KMS_ENCRYPT;
@@ -170,7 +172,7 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    /* create the KMS request. */
    opt = kms_request_opt_new ();
    /* TODO: we might want to let drivers control whether or not we send
-    * Connection: close header. Unsure right now. */
+      * Connection: close header. Unsure right now. */
    kms_request_opt_set_connection_close (opt, true);
 
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
@@ -236,13 +238,6 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
       CLIENT_ERR ("KMS response fed too much data");
       return false;
    }
-   _mongocrypt_log (kms->log,
-                    MONGOCRYPT_LOG_LEVEL_INFO,
-                    "%s (%s=\"%.*s\")",
-                    BSON_FUNC,
-                    "bytes",
-                    mongocrypt_binary_len (bytes),
-                    mongocrypt_binary_data (bytes));
 
    /* TODO: KMS error handling in CDRIVER-3000? */
    kms_response_parser_feed (kms->parser, bytes->data, bytes->len);

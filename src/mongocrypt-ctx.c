@@ -16,7 +16,9 @@
 
 #include <bson/bson.h>
 
+#include "mongocrypt.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt-key-broker-private.h"
 
 #define ALGORITHM_DETERMINISTIC "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
@@ -86,21 +88,6 @@ bool
 mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
                               mongocrypt_binary_t *key_id)
 {
-   char *key_id_val;
-   BSON_ASSERT (ctx);
-
-   if (key_id && key_id->data) {
-      key_id_val =
-         _mongocrypt_new_string_from_bytes (key_id->data, key_id->len);
-      _mongocrypt_log (&ctx->crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_INFO,
-                       "%s (%s=\"%s\")",
-                       BSON_FUNC,
-                       "key_id",
-                       key_id_val);
-      bson_free (key_id_val);
-   }
-
    return _set_binary_opt (ctx, key_id, &ctx->opts.key_id, BSON_SUBTYPE_UUID);
 }
 
@@ -189,13 +176,6 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
    }
 
    calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
-   _mongocrypt_log (&ctx->crypt->log,
-                    MONGOCRYPT_LOG_LEVEL_INFO,
-                    "%s (%s=\"%.*s\")",
-                    BSON_FUNC,
-                    "algorithm",
-                    (int) calculated_len,
-                    algorithm);
 
    if (calculated_len == ALGORITHM_DETERMINISTIC_LEN &&
        strncmp (algorithm,
@@ -335,7 +315,6 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 bool
 mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 {
-   char *in_val;
    if (!ctx || !ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
@@ -343,15 +322,6 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    if (!in) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL input");
    }
-
-   in_val = _mongocrypt_new_string_from_bytes (in->data, in->len);
-   _mongocrypt_log (&ctx->crypt->log,
-                    MONGOCRYPT_LOG_LEVEL_INFO,
-                    "%s (%s=\"%s\")",
-                    BSON_FUNC,
-                    "in",
-                    in_val);
-   bson_free (in_val);
 
    switch (ctx->state) {
    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
@@ -545,19 +515,6 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid cmk passed");
    }
 
-   _mongocrypt_log (&ctx->crypt->log,
-                    MONGOCRYPT_LOG_LEVEL_INFO,
-                    "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
-                    BSON_FUNC,
-                    "region",
-                    ctx->opts.masterkey_aws_region,
-                    "region_len",
-                    region_len,
-                    "cmk",
-                    ctx->opts.masterkey_aws_cmk,
-                    "cmk_len",
-                    cmk_len);
-
    ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
    ctx->opts.masterkey_aws_region_len = region_len;
    ctx->opts.masterkey_aws_cmk_len = cmk_len;
@@ -606,8 +563,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    ctx->vtable.next_kms_ctx = _next_kms_ctx;
    ctx->vtable.kms_done = _kms_done;
 
-   /* Check that required options are included and prohibited options are
-    * not.
+   /* Check that required options are included and prohibited options are not.
     */
 
    if (opts_spec->masterkey == OPT_REQUIRED) {
@@ -657,7 +613,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    }
 
    _mongocrypt_key_broker_init (
-      &ctx->kb, &ctx->crypt->opts, &ctx->crypt->cache_key, &ctx->crypt->log);
+      &ctx->kb, &ctx->crypt->opts, &ctx->crypt->cache_key);
    return true;
 }
 

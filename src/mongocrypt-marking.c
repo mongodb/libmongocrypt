@@ -77,8 +77,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
             CLIENT_ERR ("key alt name must be a UTF8");
             return false;
          }
-         /* CDRIVER-3100 We must make a copy of this value; the result of
-          * bson_iter_value is ephemeral. */
+         /* CDRIVER-3100 We must make a copy of this value; the result of bson_iter_value is ephemeral. */
          bson_value_copy (value, &out->key_alt_name);
          out->has_alt_name = true;
          continue;

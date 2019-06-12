@@ -21,9 +21,9 @@
 #include "test-mongocrypt.h"
 
 typedef struct {
-   char *message;
    mongocrypt_log_level_t expected_level;
 } log_test_ctx_t;
+
 
 static void
 _test_log_fn (mongocrypt_log_level_t level,
@@ -33,8 +33,9 @@ _test_log_fn (mongocrypt_log_level_t level,
 {
    log_test_ctx_t *ctx = (log_test_ctx_t *) ctx_void;
    BSON_ASSERT (level == ctx->expected_level);
-   BSON_ASSERT (0 == strcmp (message, ctx->message));
+   BSON_ASSERT (0 == strcmp (message, "test"));
 }
+
 
 /* Test a custom log handler on all log levels except for trace. */
 static void
@@ -53,7 +54,6 @@ _test_log (_mongocrypt_tester_t *tester)
    crypt = _mongocrypt_tester_mongocrypt ();
    /* Test logging with a custom handler messages. */
    _mongocrypt_log_set_fn (&crypt->log, _test_log_fn, &log_ctx);
-   log_ctx.message = "test";
    for (i = 0; i < sizeof (levels) / sizeof (*levels); i++) {
       log_ctx.expected_level = levels[i];
       _mongocrypt_log (&crypt->log, levels[i], "test");
@@ -63,38 +63,9 @@ _test_log (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-static void
-_test_info_log (_mongocrypt_tester_t *tester)
-{
-   log_test_ctx_t log_ctx = {0};
-   mongocrypt_t *crypt;
-   mongocrypt_status_t *status;
-   uint32_t expected_int = -1;
-   const char *expected_string = "_test_info_log_test_str";
-
-   status = mongocrypt_status_new ();
-   crypt = mongocrypt_new ();
-
-   _mongocrypt_log_set_fn (&crypt->log, _test_log_fn, &log_ctx);
-   log_ctx.expected_level = MONGOCRYPT_LOG_LEVEL_INFO;
-
-   log_ctx.message = "mongocrypt_setopt_kms_provider_aws "
-                     "(aws_access_key_id=\"_test\", "
-                     "aws_access_key_id_len=5, "
-                     "aws_secret_access_key=\"_test_info_log_test_str\", "
-                     "aws_secret_access_key_len=-1)";
-
-   /* 'expected_string' is truncated to test for non-null terminated strings */
-   mongocrypt_setopt_kms_provider_aws (
-      crypt, expected_string, 5, expected_string, expected_int);
-
-   mongocrypt_status_destroy (status);
-   mongocrypt_destroy (crypt);
-}
 
 void
 _mongocrypt_tester_install_log (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_log);
-   INSTALL_TEST (_test_info_log);
 }

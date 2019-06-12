@@ -103,7 +103,6 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    if (provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
       kms = mongocrypt_ctx_next_kms_ctx (ctx);
-      kms->log = &crypt->log;
       BSON_ASSERT (kms);
       ASSERT_OK (mongocrypt_kms_ctx_feed (
                     kms, TEST_FILE ("./test/data/kms-encrypt-reply.txt")),
