@@ -1,0 +1,36 @@
+{
+  "name": "mongodb-client-encryption",
+  "version": "0.1.0",
+  "description": "Official client encryption module for the MongoDB Node.js driver",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "format-cxx": "git-clang-format",
+    "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
+    "lint": "eslint lib test",
+    "test": "mocha test"
+  },
+  "author": "Matt Broadstone <mbroadst@mongodb.com>",
+  "license": "Apache-2.0",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "bson": "^1.0.5",
+    "nan": "^2.14.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-subset": "^1.6.0",
+    "eslint": "^4.5.0",
+    "eslint-plugin-prettier": "^2.2.0",
+    "mocha": "^6.1.4",
+    "mongodb": "^3.2.7",
+    "mongodb-extjson": "^3.0.3",
+    "prettier": "~1.18.2",
+    "segfault-handler": "^1.2.0",
+    "sinon": "^4.3.0"
+  }
+}
