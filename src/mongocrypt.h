@@ -530,7 +530,6 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * Initialize a context to create a data key.
  *
  * Associated options:
- * - @ref mongocrypt_ctx_setopt_cache_noblock
  * - @ref mongocrypt_ctx_setopt_masterkey_aws
  * - @ref mongocrypt_ctx_setopt_masterkey_local
  *
@@ -548,7 +547,6 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
  * Initialize a context for encryption.
  *
  * Associated options:
- * - @ref mongocrypt_ctx_setopt_cache_noblock
  * - @ref mongocrypt_ctx_setopt_schema
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
@@ -578,7 +576,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * { "v" : BSON value to encrypt }
  *
  * Associated options:
- * - @ref mongocrypt_ctx_setopt_cache_noblock
  * - @ref mongocrypt_ctx_setopt_key_id
  * - @ref mongocrypt_ctx_setopt_key_alt_name
  * - @ref mongocrypt_ctx_setopt_algorithm
@@ -598,9 +595,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 /**
  * Initialize a context for decryption.
  *
- * Associated options:
- * - @ref mongocrypt_ctx_setopt_cache_noblock
- *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] doc The document to be decrypted.
  * @returns A boolean indicating success. If false, an error status is set.
@@ -614,8 +608,6 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
 /**
  * Explicit helper method to decrypt a single BSON object.
  *
- * Associated options:
- * - @ref mongocrypt_ctx_setopt_cache_noblock
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the encrypted BSON.

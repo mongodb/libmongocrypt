@@ -200,6 +200,10 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
+   if (!kms->msg.data) {
+      CLIENT_ERR ("failed to create KMS message");
+      return false;
+   }
    kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
 

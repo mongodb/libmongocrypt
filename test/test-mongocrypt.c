@@ -544,6 +544,32 @@ _test_setopt_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_status_t *status;
+
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_provider_aws (crypt, "", 0, "", 0), crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_masterkey_aws (ctx, "region", -1, "cmk", 3),
+              ctx);
+   mongocrypt_ctx_datakey_init (ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_ERROR);
+
+   status = mongocrypt_status_new ();
+   BSON_ASSERT (!mongocrypt_ctx_status (ctx, status));
+   ASSERT_STATUS_CONTAINS (status, "failed to create KMS message");
+
+   mongocrypt_status_destroy (status);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 
 int
 main (int argc, char **argv)
@@ -572,6 +598,9 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_marking (&tester);
    _mongocrypt_tester_install (
       &tester, "_test_setopt_schema", _test_setopt_schema);
+   _mongocrypt_tester_install (&tester,
+                               "_test_setopt_invalid_kms_providers",
+                               _test_setopt_invalid_kms_providers);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

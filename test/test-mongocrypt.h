@@ -157,7 +157,7 @@ _mongocrypt_tester_mongocrypt (void);
 #define ASSERT_OR_PRINT_BSON(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, _err.message)
 
-#define ASSERT_STATUS_CONTAINS(_msg_pattern) \
+#define ASSERT_STATUS_CONTAINS(status, _msg_pattern) \
    ASSERT_FAILS_STATUS (false, status, _msg_pattern)
 
 void
