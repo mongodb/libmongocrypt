@@ -25,9 +25,45 @@ class MongoCryptError extends Error {
   }
 }
 
+function promiseOrCallback(callback, fn) {
+  if (typeof callback === 'function') {
+    fn(function(err) {
+      if (err != null) {
+        try {
+          callback(err);
+        } catch (error) {
+          return process.nextTick(() => {
+            throw error;
+          });
+        }
+        return;
+      }
+
+      callback.apply(this, arguments);
+    });
+
+    return;
+  }
+
+  return new Promise((resolve, reject) => {
+    fn(function(err, res) {
+      if (err != null) {
+        return reject(err);
+      }
+
+      if (arguments.length > 2) {
+        return resolve(Array.prototype.slice.call(arguments, 1));
+      }
+
+      resolve(res);
+    });
+  });
+}
+
 module.exports = {
   debug,
   databaseNamespace,
   collectionNamespace,
-  MongoCryptError
+  MongoCryptError,
+  promiseOrCallback
 };

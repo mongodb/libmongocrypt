@@ -3,6 +3,7 @@ const mc = require('bindings')('mongocrypt');
 const common = require('./common');
 const databaseNamespace = common.databaseNamespace;
 const collectionNamespace = common.collectionNamespace;
+const promiseOrCallback = common.promiseOrCallback;
 const StateMachine = require('./stateMachine').StateMachine;
 
 /**
@@ -41,25 +42,29 @@ class ClientEncryption {
 
     const context = this._mongoCrypt.makeDataKeyContext(provider, options);
     const stateMachine = new StateMachine();
-    stateMachine.execute(this, context, (err, dataKey) => {
-      if (err) {
-        callback(err, null);
-        return;
-      }
 
-      const dbName = databaseNamespace(this._keyVaultNamespace);
-      const collectionName = collectionNamespace(this._keyVaultNamespace);
-      this._client
-        .db(dbName)
-        .collection(collectionName)
-        .insertOne(dataKey, (err, result) => {
-          if (err) {
-            callback(err, null);
-            return;
-          }
+    return promiseOrCallback(callback, cb => {
+      stateMachine.execute(this, context, (err, dataKey) => {
+        if (err) {
+          cb(err, null);
+          return;
+        }
 
-          callback(null, result.insertedId);
-        });
+        const dbName = databaseNamespace(this._keyVaultNamespace);
+        const collectionName = collectionNamespace(this._keyVaultNamespace);
+
+        this._client
+          .db(dbName)
+          .collection(collectionName)
+          .insertOne(dataKey, (err, result) => {
+            if (err) {
+              cb(err, null);
+              return;
+            }
+
+            cb(null, result.insertedId);
+          });
+      });
     });
   }
 
@@ -80,13 +85,16 @@ class ClientEncryption {
 
     const stateMachine = new StateMachine();
     const context = this._mongoCrypt.makeExplicitEncryptionContext(valueBuffer, contextOptions);
-    stateMachine.execute(this, context, (err, result) => {
-      if (err) {
-        callback(err, null);
-        return;
-      }
 
-      callback(null, result.v);
+    return promiseOrCallback(callback, cb => {
+      stateMachine.execute(this, context, (err, result) => {
+        if (err) {
+          cb(err, null);
+          return;
+        }
+
+        cb(null, result.v);
+      });
     });
   }
 
@@ -102,13 +110,16 @@ class ClientEncryption {
     const context = this._mongoCrypt.makeExplicitDecryptionContext(valueBuffer);
 
     const stateMachine = new StateMachine();
-    stateMachine.execute(this, context, (err, result) => {
-      if (err) {
-        callback(err, null);
-        return;
-      }
 
-      callback(null, result.v);
+    return promiseOrCallback(callback, cb => {
+      stateMachine.execute(this, context, (err, result) => {
+        if (err) {
+          cb(err, null);
+          return;
+        }
+
+        cb(null, result.v);
+      });
     });
   }
 }

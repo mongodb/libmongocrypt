@@ -102,6 +102,33 @@ describe('ClientEncryption', function() {
     });
   });
 
+  it('should explicitly encrypt and decrypt with the "local" KMS provider (promise)', function() {
+    const encryption = new ClientEncryption(client, {
+      keyVaultNamespace: 'client.encryption',
+      kmsProviders: { local: { key: Buffer.alloc(96) } }
+    });
+
+    return encryption
+      .createDataKey('local')
+      .then(dataKey => {
+        const encryptOptions = {
+          keyId: dataKey,
+          algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'
+        };
+
+        return encryption.encrypt('hello', encryptOptions);
+      })
+      .then(encrypted => {
+        expect(encrypted._bsontype).to.equal('Binary');
+        expect(encrypted.sub_type).to.equal(6);
+
+        return encryption.decrypt(encrypted);
+      })
+      .then(decrypted => {
+        expect(decrypted).to.equal('hello');
+      });
+  });
+
   it.skip('should explicitly encrypt and decrypt with the "aws" KMS provider', function(done) {
     const encryption = new ClientEncryption(client, {
       keyVaultNamespace: 'client.encryption',
