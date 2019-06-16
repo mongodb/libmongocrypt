@@ -2,6 +2,7 @@
 #define NODE_MONGOCRYPT_H
 
 #include <nan.h>
+#include <memory>
 
 extern "C" {
 #include <mongocrypt/mongocrypt.h>
