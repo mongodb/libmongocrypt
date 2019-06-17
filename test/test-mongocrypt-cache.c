@@ -117,8 +117,8 @@ _test_cache_expiration (_mongocrypt_tester_t *tester)
    BSON_ASSERT (bson_equal (entry, tmp));
    bson_destroy (tmp);
 
-   /* Sleep for 5 milliseconds */
-   _usleep (1000 * 5);
+   /* Sleep for 100 milliseconds */
+   _usleep (1000 * 100);
 
    _mongocrypt_cache_get (&cache, "1", (void **) &tmp);
    BSON_ASSERT (!tmp);
