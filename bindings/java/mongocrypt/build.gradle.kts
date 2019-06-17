@@ -18,6 +18,8 @@
 import de.undercouch.gradle.tasks.download.Download
 import java.io.ByteArrayOutputStream
 import java.net.URI
+import groovy.util.Node
+import groovy.util.NodeList
 
 
 buildscript {
@@ -48,9 +50,9 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-
+val bsonRangeVersion = "[3.10,5.0)"
 dependencies {
-    api("org.mongodb:bson:[3.10,5.0)")
+    api("org.mongodb:bson:$bsonRangeVersion")
     api("net.java.dev.jna:jna:4.5.2")
     implementation("org.slf4j:slf4j-api:1.7.6")
 
@@ -255,6 +257,20 @@ publishing {
                     developer {
                         id.set("Various")
                         organization.set("MongoDB")
+                    }
+                }
+                withXml {
+                    val pom = asNode()
+                    fun Any?.asNode() = this as Node
+                    fun Any?.asNodeList() = this as NodeList
+
+                    pom["dependencies"].asNodeList().forEach {
+                        it.asNode().value().asNodeList().forEach { dep ->
+                            val dependency = dep.asNode().value().asNodeList()
+                            if (dependency.get(1).asNode().text() == "bson") {
+                                dependency.get(2).asNode().setValue(bsonRangeVersion)
+                            }
+                        }
                     }
                 }
             }
