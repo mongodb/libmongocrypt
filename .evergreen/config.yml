@@ -1,8 +1,7 @@
 # Welcome. Evergreen configuration can be time consuming to modify and test.
 # So each script has a header comment describing how to run it locally.
 #
-# Some environment variables are hidden by ${inject_env_from_evergreen}.
-# This is set in the evergreen project.
+# Some environment variables are hidden in the evergreen project config.
 # View this in Evergreen => Projects => libmongocrypt.
 #
 functions:
