@@ -259,6 +259,11 @@ publishing {
                         organization.set("MongoDB")
                     }
                 }
+                scm {
+                    url.set("https://github.com/mongodb/libmongocrypt")
+                    connection.set("scm:https://github.com/mongodb/libmongocrypt")
+                    developerConnection.set("scm:git@github.com:mongodb/libmongocrypt")
+                }
                 withXml {
                     val pom = asNode()
                     fun Any?.asNode() = this as Node
