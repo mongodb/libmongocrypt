@@ -7,6 +7,7 @@ import uuid
 from bson.codec_options import CodecOptions
 from datetime import datetime
 from bson import json_util
+import json
 import base64
 
 instructions = """
@@ -48,18 +49,20 @@ key_doc = {
             "region": region
         }
     }
-plaintext_key_material = b"a" * 96
+
+plaintext_key_material = base64.b64decode("TqhXy3tKckECjy4/ZNykMWG8amBF46isVPzeOgeusKrwheBmYaU8TMG5AHR/NeUDKukqo8hBGgogiQOVpLPkqBQHD8YkLsNbDmHoGOill5QAHnniF/Lz405bGucB5TfR")
 # get real encrypted key material using AWS KMS.
 response = kms_client.encrypt(KeyId=cmk_id, Plaintext=plaintext_key_material)
+print(len(response["CiphertextBlob"]))
 # replace the key material after encrypting.
 key_doc["keyMaterial"] = bson.binary.Binary(response["CiphertextBlob"])
 print (json_util.dumps (key_doc, indent=4, json_options=json_options))
 
 
 print ("A KMS reply for encrypted key material")
-kms_encrypt_reply_json = json_util.dumps({
+kms_encrypt_reply_json = json.dumps({
     "KeyId": cmk_id,
-    "CiphertextBlob": base64.b64encode(bytes(key_doc["keyMaterial"]))
+    "CiphertextBlob": base64.b64encode(key_doc["keyMaterial"]).decode("utf-8")
 })
 kms_encrypt_reply = "HTTP/1.1 200 OK\n" + \
     "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\n" + \
@@ -71,16 +74,16 @@ print (kms_encrypt_reply)
 
 
 print ("\n\nA KMS reply for decrypting the key material")
-kms_decrypt_reply_json = json_util.dumps({
+kms_decrypt_reply_json = json.dumps({
     "KeyId": cmk_id,
-    "Plaintext": base64.b64encode(bytes(plaintext_key_material))
+    "Plaintext": base64.b64encode(bytes(plaintext_key_material)).decode("utf-8")
 })
 kms_reply = "HTTP/1.1 200 OK\n" + \
     "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\n" + \
     "Content-Type: application/x-amz-json-1.1\n" + \
     "Content-Length: %d\n\n" % len(kms_decrypt_reply_json) + \
     kms_decrypt_reply_json
-print (kms_decrypt_reply_json)
+print (kms_reply)
 
 
 print ("\n\nA marking indicating a value to be encrypted:")

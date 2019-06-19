@@ -370,7 +370,7 @@ _mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
     * order." */
    mac_key.data = (uint8_t *) key->data;
    mac_key.len = MONGOCRYPT_MAC_KEY_LEN;
-   enc_key.data = (uint8_t *) key->data + (key->len - MONGOCRYPT_ENC_KEY_LEN);
+   enc_key.data = (uint8_t *) key->data + MONGOCRYPT_MAC_KEY_LEN;
    enc_key.len = MONGOCRYPT_ENC_KEY_LEN;
 
    /* Prepend the IV. */
@@ -553,7 +553,7 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
 
    mac_key.data = (uint8_t *) key->data;
    mac_key.len = MONGOCRYPT_MAC_KEY_LEN;
-   enc_key.data = (uint8_t *) key->data + (key->len - MONGOCRYPT_ENC_KEY_LEN);
+   enc_key.data = (uint8_t *) key->data + MONGOCRYPT_MAC_KEY_LEN;
    enc_key.len = MONGOCRYPT_ENC_KEY_LEN;
 
    iv.data = ciphertext->data;

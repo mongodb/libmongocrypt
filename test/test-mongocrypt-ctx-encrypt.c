@@ -694,9 +694,12 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    ret = _mongocrypt_ciphertext_parse_unowned (
       &ciphertext_buf, &ciphertext, status);
    ASSERT_OR_PRINT (ret, status);
-   mongocrypt_binary_destroy (encrypted_cmd);
-   mongocrypt_ctx_destroy (ctx);
 
+   /* check that encrypted command matches. */
+   _assert_bin_bson_equal (encrypted_cmd, TEST_FILE ("./test/data/encrypted-cmd.json"));
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_binary_destroy (encrypted_cmd);
    mongocrypt_status_destroy (status);
    mongocrypt_destroy (crypt);
 }
