@@ -23,8 +23,6 @@ include (GNUInstallDirs)
 
 enable_testing()
 
-option (ENABLE_TRACE "Enable verbose trace logs. Requires MONGOCRYPT_TRACE environment variable at runtime" OFF)
-
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt.h
    src/mongocrypt-compat.h
@@ -213,12 +211,6 @@ target_include_directories (example-state-machine-static PRIVATE ${BSON_INCLUDE_
 target_link_libraries (example-state-machine-static PRIVATE ${BSON_LIBRARIES})
 target_compile_definitions (example-state-machine-static PRIVATE "${BSON_DEFINITIONS}")
 
-if (ENABLE_TRACE)
-   target_compile_definitions (mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
-   target_compile_definitions (mongocrypt_static PRIVATE "MONGOCRYPT_TRACE=1")
-   target_compile_definitions (test-mongocrypt PRIVATE "MONGOCRYPT_TRACE=1")
-   target_compile_definitions (example-state-machine PRIVATE "MONGOCRYPT_TRACE=1")
-endif ()
 
 install (TARGETS mongocrypt mongocrypt_static
    EXPORT mongocrypt_targets

@@ -17,13 +17,13 @@
 #include <kms_message/kms_message.h>
 #include <bson/bson.h>
 
-#include "mongocrypt-crypto-private.h"
+#include "mongocrypt-binary-private.h"
 #include "mongocrypt-cache-collinfo-private.h"
 #include "mongocrypt-cache-key-private.h"
+#include "mongocrypt-crypto-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-os-private.h"
-#include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 
 
@@ -134,7 +134,6 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
    return true;
 }
 
-
 bool
 mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_access_key_id,
@@ -169,10 +168,56 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
       CLIENT_ERR ("invalid aws secret access key");
       return false;
    }
+
+   if (crypt->log.trace_enabled) {
+      _mongocrypt_log (&crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
+                       BSON_FUNC,
+                       "aws_access_key_id",
+                       crypt->opts.kms_aws_access_key_id,
+                       "aws_access_key_id_len",
+                       aws_access_key_id_len,
+                       "aws_secret_access_key",
+                       crypt->opts.kms_aws_secret_access_key,
+                       "aws_secret_access_key_len",
+                       aws_secret_access_key_len);
+   }
    crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
    return true;
 }
 
+char *
+_mongocrypt_new_string_from_bytes (const void *in, int len)
+{
+   const int max_bytes = 100;
+   const int chars_per_byte = 2;
+   int out_size = max_bytes * chars_per_byte;
+   const unsigned char *src = in;
+   char *out;
+   char *ret;
+
+   out_size += len > max_bytes ? sizeof ("...") : 1 /* for null */;
+   out = bson_malloc0 (out_size);
+   ret = out;
+
+   for (int i = 0; i < len && i < max_bytes; i++, out += chars_per_byte) {
+      sprintf (out, "%02X", src[i]);
+   }
+
+   sprintf (out, (len > max_bytes) ? "..." : "");
+   return ret;
+}
+
+char *
+_mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary)
+{
+   bson_t bson;
+   uint32_t len;
+
+   _mongocrypt_binary_to_bson (binary, &bson);
+   return bson_as_json (&bson, (size_t *) &len);
+}
 
 bool
 mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
@@ -238,6 +283,19 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
    if (mongocrypt_binary_len (key) != MONGOCRYPT_KEY_LEN) {
       CLIENT_ERR ("local key must be %d bytes", MONGOCRYPT_KEY_LEN);
       return false;
+   }
+
+   if (crypt->log.trace_enabled) {
+      char *key_val;
+      key_val = _mongocrypt_new_string_from_bytes (key->data, key->len);
+
+      _mongocrypt_log (&crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "%s (%s=\"%s\")",
+                       BSON_FUNC,
+                       "key",
+                       key_val);
+      bson_free (key_val);
    }
 
    _mongocrypt_buffer_copy_from_binary (&crypt->opts.kms_local_key, key);

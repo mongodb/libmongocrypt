@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
@@ -455,7 +454,7 @@ _try_schema_from_cache (mongocrypt_ctx_t *ctx)
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    /* Otherwise, we need a remote schema. Check if we have a response to
-      * listCollections cached. */
+    * listCollections cached. */
    if (!_mongocrypt_cache_get (&ctx->crypt->cache_collinfo,
                                ectx->ns /* null terminated */,
                                (void **) &collinfo)) {
@@ -520,6 +519,18 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, msg);
    if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "msg must be bson");
+   }
+
+   if (ctx->crypt->log.trace_enabled) {
+      char *cmd_val;
+      cmd_val = _mongocrypt_new_json_string_from_binary (msg);
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "%s (%s=\"%s\")",
+                       BSON_FUNC,
+                       "msg",
+                       cmd_val);
+      bson_free (cmd_val);
    }
 
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
@@ -776,6 +787,22 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "algorithm must not be set for auto encryption");
+   }
+
+   if (ctx->crypt->log.trace_enabled) {
+      char *cmd_val;
+      cmd_val = _mongocrypt_new_json_string_from_binary (cmd);
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "%s (%s=\"%s\", %s=%d, %s=\"%s\")",
+                       BSON_FUNC,
+                       "db",
+                       ectx->db_name,
+                       "db_len",
+                       db_len,
+                       "cmd",
+                       cmd_val);
+      bson_free (cmd_val);
    }
 
    /* Check if we have a local schema from schema_map */

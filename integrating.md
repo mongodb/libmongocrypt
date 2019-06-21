@@ -54,6 +54,8 @@ executable included with libmongocrypt. It uses mock responses from
 mongod, mongocryptd, and AWS KMS. Reimplement the state machine loop
 (\_run\_state\_machine) in example-state-machine with your binding.
 
+Set the environment variable `MONGOCRYPT_TRACE=ON` to log the arguments to mongocrypt functions.
+
 Seek help in the slack channel \#drivers-fle.
 
 ## Part 2: Integrate into Driver ##
