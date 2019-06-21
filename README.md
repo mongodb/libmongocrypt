@@ -40,7 +40,8 @@ cd libmongocrypt
 ./cmake-build/test-mongocrypt
 ```
 
-libmongocrypt is [continuously built on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
+libmongocrypt is [continuously built and published on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
+The latest tarball containing libmongocrypt built on all supported variants is (published here)[https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz].
 
 ### Troubleshooting ###
 If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt. 

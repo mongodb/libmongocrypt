@@ -25,7 +25,16 @@ functions:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${libmongocrypt_s3_path}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt.tar.gz'
@@ -51,6 +60,15 @@ functions:
         silent: true
         script: |-
           cd ./libmongocrypt/bindings/java/mongocrypt && PROJECT_DIRECTORY=${project_directory} NEXUS_USERNAME=${nexus_username} NEXUS_PASSWORD=${nexus_password} SIGNING_PASSWORD=${signing_password} SIGNING_KEY_ID=${signing_keyId} RING_FILE_GPG_BASE64=${ring_file_gpg_base64} ./.evergreen/publish.sh
+
+  "download tarball":
+    - command: s3.get
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${variant_name}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        bucket: mciuploads
+        extract_to: all/${variant_name}
 
 tasks:
 - name: build-and-test-and-upload
@@ -116,37 +134,147 @@ tasks:
     - func: "fetch source"
     - func: "publish snapshot"
 
+- name: upload-all
+  depends_on:
+    - variant: ubuntu1604
+      name: build-and-test-and-upload
+    - variant: rhel76
+      name: build-and-test-and-upload
+    - variant: macos
+      name: build-and-test-and-upload
+    - variant: rhel72-zseries-test
+      name: build-and-test-and-upload
+    - variant: windows-test
+      name: build-and-test-and-upload
+    - variant: linux-64-amazon-ami
+      name: build-and-test-and-upload
+    - variant: amazon2
+      name: build-and-test-and-upload
+    - variant: debian92
+      name: build-and-test-and-upload
+    - variant: rhel-62-64-bit
+      name: build-and-test-and-upload
+    - variant: rhel-67-s390x
+      name: build-and-test-and-upload
+    - variant: rhel-70-64-bit
+      name: build-and-test-and-upload
+    - variant: rhel-71-ppc64el
+      name: build-and-test-and-upload
+    - variant: suse12-64
+      name: build-and-test-and-upload
+    - variant: suse15-64
+      name: build-and-test-and-upload
+    - variant: suse12-s390x  
+      name: build-and-test-and-upload
+    - variant: ubuntu1604-arm64
+      name: build-and-test-and-upload
+    - variant: ubuntu1604-s390x
+      name: build-and-test-and-upload
+    - variant: ubuntu1804-64
+      name: build-and-test-and-upload
+    - variant: ubuntu1804-arm64
+      name: build-and-test-and-upload
+    # - variant: ubuntu1804-ppc64el
+    #   name: build-and-test-and-upload
+    # - variant: ubuntu1804-s390x
+    #   name: build-and-test-and-upload
+  commands:
+    - command: shell.exec
+      params:
+        script: mkdir all
+    - func: "download tarball"
+      vars: { variant_name: ubuntu1604 }
+    - func: "download tarball"
+      vars: { variant_name: rhel76 }
+    - func: "download tarball"
+      vars: { variant_name: "macos" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel72-zseries-test" }
+    - func: "download tarball"
+      vars: { variant_name: "windows-test" }
+    - func: "download tarball"
+      vars: { variant_name: "linux-64-amazon-ami" }
+    - func: "download tarball"
+      vars: { variant_name: "amazon2" }
+    - func: "download tarball"
+      vars: { variant_name: "debian92" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-62-64-bit" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-67-s390x" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-70-64-bit" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-71-ppc64el" }
+    - func: "download tarball"
+      vars: { variant_name: "suse12-64" }
+    - func: "download tarball"
+      vars: { variant_name: "suse15-64" }
+    - func: "download tarball"
+      vars: { variant_name: "suse12-s390x" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu1604-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu1604-s390x" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu1804-64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu1804-arm64" }
+    # TODO: ubuntu1804 is not getting scheduled, so omit.
+    # - func: "download tarball"
+    #   vars: { variant_name: "ubuntu1804-ppc64el" }
+    # - func: "download tarball"
+    #   vars: { variant_name: "ubuntu1804-s390x" }
+    - command: archive.targz_pack
+      params:
+        target: libmongocrypt-all.tar.gz
+        source_dir: all
+        include: [./**]
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt-all.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+
 pre:
-  # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_path} expansion.
-  # If this is a patch build, we want a URL specific to the patch, like:
-  # /mciuploads/libmongocrypt/ubuntu1604/24411/build-and-test/libmongocrypt_ubuntu1604_24411/libmongocrypt.tar.gz
-  # If this is a waterfall build, we want a fixed "latest" URL, like:
-  # /mciuploads/libmongocrypt/ubuntu1604/latest/libmongocrypt.tar.gz
+  # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
   - command: "shell.exec"
     params:
+      # Uploads are prefixed with ${project}/${build_variant}/${branch_name|all}
       script: |-
-        tag_name=$(git describe --exact-match ${revision} 2>/dev/null)
-        # non-patch build with no tag associated with the commit
-        REMOTE_PATH="${project}/${build_variant}/${branch_name}/${revision}/libmongocrypt.tar.gz"
         if [ "${is_patch}" = "true" ]; then
-           REMOTE_PATH="${project}/${build_variant}/${branch_name}/${revision}/${task_name}/${build_id}/libmongocrypt.tar.gz"
-        elif [ -n "${tag_name}" ]; then
-           # non-patch build that has a tag associated with the commit
-           REMOTE_PATH="${project}/${build_variant}/${branch_name}/${tag_name}/libmongocrypt.tar.gz"
+          # patch build.
+          REMOTE_SUFFIX="${revision}/${version_id}"
+          REMOTE_SUFFIX_COPY="latest/${version_id}"
+        elif [ -z "${tag_name}" ]; then
+          # waterfall build, no tag.
+          REMOTE_SUFFIX="${revision}"
+          REMOTE_SUFFIX_COPY="latest"
+        else
+          # waterfall build, with tag.
+          REMOTE_SUFFIX="${revision}"
+          REMOTE_SUFFIX_COPY="${tag_name}"
         fi
         unset tag_name
         PROJECT_DIRECTORY="$(pwd)"
-        echo "libmongocrypt_s3_path: $REMOTE_PATH"
+        echo "libmongocrypt_s3_suffix: $REMOTE_SUFFIX"
+        echo "libmongocrypt_s3_suffix_copy: $REMOTE_SUFFIX_COPY"
         echo "project_directory: $PROJECT_DIRECTORY"
 
         cat <<EOT > expansion.yml
-        libmongocrypt_s3_path: "$REMOTE_PATH"
+        libmongocrypt_s3_suffix: "$REMOTE_SUFFIX"
+        libmongocrypt_s3_suffix_copy: "$REMOTE_SUFFIX_COPY"
         project_directory: "$PROJECT_DIRECTORY"
         EOT
   - command: expansions.update
     params:
       file: expansion.yml
 
+# NOTE: When adding a new variant, update the "upload-all" task.
 buildvariants:
 - name: ubuntu1604
   display_name: "Ubuntu 16.04 64-bit"
@@ -307,7 +435,8 @@ buildvariants:
   - build-and-test-asan-s390x
   - build-and-test-java
 - name: publish-snapshot
-  display_name: "Publish Snapshot"
+  display_name: "Publish"
   run_on: ubuntu1804-test
   tasks:
     - name: "publish-snapshot"
+    - name: "upload-all"
