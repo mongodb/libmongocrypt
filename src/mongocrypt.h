@@ -471,25 +471,6 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 
 
 /**
- * Set an initialization vector to be used with explicit
- * encryption. This should not be set for auto encryption.
- *
- * If using randomized encryption, setting this option will
- * cause an error. If using deterministic encryption, failing
- * to set this option will cause an error.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] iv The initialization vector to use.
- * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_initialization_vector (mongocrypt_ctx_t *ctx,
-                                             mongocrypt_binary_t *iv);
-
-/**
  * Identify the AWS KMS master key to use for creating a data key.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
