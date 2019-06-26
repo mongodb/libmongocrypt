@@ -2,6 +2,7 @@ doc/html
 doc/latex
 test/schema.json
 
+.vscode
 # Default build directory
 cmake-build
 

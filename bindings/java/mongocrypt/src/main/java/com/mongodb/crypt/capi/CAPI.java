@@ -364,6 +364,22 @@ public class CAPI {
                                   mongocrypt_binary_t key_id);
 
     /**
+     * Set the keyAltName to use for explicit encryption.
+     * keyAltName should be a binary encoding a bson document
+     * with the following format: <code>{ "keyAltName" : <BSON UTF8 value> }</code>
+     *
+     * <p>It is an error to set both this and the key id.</p>
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param key_alt_name The name to use.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t ctx,
+                                        mongocrypt_binary_t key_alt_name);
+
+    /**
      * Set the algorithm used for encryption to either
      * deterministic or random encryption. This value
      * should only be set when using explicit encryption.

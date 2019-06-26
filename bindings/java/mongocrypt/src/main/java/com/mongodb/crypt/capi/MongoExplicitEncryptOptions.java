@@ -19,13 +19,12 @@ package com.mongodb.crypt.capi;
 
 import org.bson.BsonBinary;
 
-import java.util.Arrays;
-
 /**
  * Options for explicit encryption.
  */
 public class MongoExplicitEncryptOptions {
     private final BsonBinary keyId;
+    private final String keyAltName;
     private final String algorithm;
 
     /**
@@ -33,6 +32,7 @@ public class MongoExplicitEncryptOptions {
      */
     public static class Builder {
         private BsonBinary keyId;
+        private String keyAltName;
         private String algorithm;
 
         private Builder() {
@@ -46,6 +46,17 @@ public class MongoExplicitEncryptOptions {
          */
         public Builder keyId(final BsonBinary keyId) {
             this.keyId = keyId;
+            return this;
+        }
+
+        /**
+         * Add the key alternative name.
+         *
+         * @param keyAltName the key alternative name
+         * @return this
+         */
+        public Builder keyAltName(final String keyAltName) {
+            this.keyAltName = keyAltName;
             return this;
         }
 
@@ -88,6 +99,14 @@ public class MongoExplicitEncryptOptions {
     }
 
     /**
+     * Gets the key alternative name
+     * @return the key alternative name
+     */
+    public String getKeyAltName() {
+        return keyAltName;
+    }
+
+    /**
      * Gets the encryption algorithm
      * @return the encryption algorithm
      */
@@ -97,6 +116,7 @@ public class MongoExplicitEncryptOptions {
 
     private MongoExplicitEncryptOptions(Builder builder) {
         this.keyId = builder.keyId;
+        this.keyAltName = builder.keyAltName;
         this.algorithm = builder.algorithm;
     }
 
@@ -104,6 +124,7 @@ public class MongoExplicitEncryptOptions {
     public String toString() {
         return "MongoExplicitEncryptOptions{" +
                 "keyId=" + keyId +
+                ", keyAltName=" + keyAltName +
                 ", algorithm='" + algorithm + "'}";
     }
 }
