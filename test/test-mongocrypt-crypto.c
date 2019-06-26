@@ -69,7 +69,7 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    BSON_ASSERT (0 == strcmp ((char *) decrypted.data, (char *) plaintext.data));
 
    /* Modify a bit in the ciphertext hash to ensure HMAC integrity check. */
-   ciphertext.data[ciphertext.len - 1] &= 1;
+   ciphertext.data[ciphertext.len - 1] ^= 1;
 
    _mongocrypt_buffer_cleanup (&decrypted);
    decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
@@ -80,6 +80,28 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
       &associated_data, &key, &ciphertext, &decrypted, &bytes_written, status);
    BSON_ASSERT (!ret);
    BSON_ASSERT (0 == strcmp (status->message, "HMAC validation failure"));
+   /* undo the change (flip the bit again). Double check that decryption works again. */
+   ciphertext.data[ciphertext.len - 1] ^= 1;
+   _mongocrypt_status_reset (status);
+   ret = _mongocrypt_do_decryption (&associated_data, &key, &ciphertext, &decrypted, &bytes_written, status);
+   BSON_ASSERT (ret);
+
+   /* Modify parts of the key. */
+   key.data[0] ^= 1; /* part of the mac key */
+   ret = _mongocrypt_do_decryption (
+      &associated_data, &key, &ciphertext, &decrypted, &bytes_written, status);
+   BSON_ASSERT (!ret);
+   BSON_ASSERT (0 == strcmp (status->message, "HMAC validation failure"));
+   /* undo */
+   key.data[0] ^= 1;
+   _mongocrypt_status_reset (status);
+
+   /* Modify the portion of the key responsible for encryption/decryption */
+   key.data[MONGOCRYPT_MAC_KEY_LEN + 1] ^= 1; /* part of the encryption key */
+   ret = _mongocrypt_do_decryption (
+      &associated_data, &key, &ciphertext, &decrypted, &bytes_written, status);
+   BSON_ASSERT (!ret);
+   BSON_ASSERT (0 == strcmp (status->message, "error, ciphertext malformed padding"));
 
    mongocrypt_status_destroy (status);
    _mongocrypt_buffer_cleanup (&decrypted);
@@ -119,7 +141,9 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    _init_buffer (&key,
                  "000102030405060708090a0b0c0d0e0f101112131415161718191a1"
                  "b1c1d1e1f202122232425262728292a2b2c2d2e2f30313233343536"
-                 "3738393a3b3c3d3e3f"); /* TODO: add 32 bytes of 0's */
+                 "3738393a3b3c3d3e3f"
+                 /* includes our additional 32 byte IV key */
+                 "0000000000000000000000000000000000000000000000000000000000000000");
    _init_buffer (&iv, "1af38c2dc2b96ffdd86694092341bc04");
    _init_buffer (&plaintext,
                  "41206369706865722073797374656d206d757374206e6f742"
@@ -169,7 +193,6 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
    mongocrypt_destroy (crypt);
 }
-
 
 void
 _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)

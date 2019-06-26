@@ -362,6 +362,16 @@ _mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
                 _mongocrypt_calculate_ciphertext_len (plaintext->len));
 
    *bytes_written = 0;
+
+   if (iv->len != MONGOCRYPT_IV_LEN) {
+      CLIENT_ERR ("invalid iv len");
+      return false;
+   }
+   if (key->len != MONGOCRYPT_KEY_LEN) {
+      CLIENT_ERR ("invalid key len");
+      return false;
+   }
+
    intermediate.len = ciphertext->len;
    intermediate.data = ciphertext->data;
 
@@ -454,6 +464,7 @@ _aes256_cbc_decrypt (const _mongocrypt_buffer_t *iv,
    bool ret = false;
    uint32_t intermediate_bytes_written;
    _mongocrypt_buffer_t intermediate;
+   uint8_t padding_byte;
 
    BSON_ASSERT (bytes_written);
    *bytes_written = 0;
@@ -486,7 +497,13 @@ _aes256_cbc_decrypt (const _mongocrypt_buffer_t *iv,
    *bytes_written += intermediate_bytes_written;
 
    /* Subtract the padding. */
-   *bytes_written -= plaintext->data[*bytes_written - 1];
+   plaintext->len = *bytes_written;
+   padding_byte = plaintext->data[*bytes_written - 1];
+   if (padding_byte > 16) {
+      CLIENT_ERR ("error, ciphertext malformed padding");
+      goto done;
+   }
+   *bytes_written -= padding_byte;
    ret = true;
 done:
    _crypto_decrypt_destroy (ctx);
@@ -542,6 +559,11 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
    BSON_ASSERT (status);
    BSON_ASSERT (plaintext->len >=
                 _mongocrypt_calculate_plaintext_len (ciphertext->len));
+
+   if (key->len != MONGOCRYPT_KEY_LEN) {
+      CLIENT_ERR ("invalid key len");
+      return false;
+   }
 
    if (ciphertext->len <
        MONGOCRYPT_HMAC_LEN + MONGOCRYPT_IV_LEN + MONGOCRYPT_BLOCK_SIZE) {
