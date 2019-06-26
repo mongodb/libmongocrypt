@@ -84,8 +84,12 @@ _recurse (_recurse_state_t *state)
             if (!ret) {
                return false;
             }
+            continue;
          }
-      } else if (BSON_ITER_HOLDS_ARRAY (&state->iter)) {
+         /* fall through and copy */
+      }
+
+      if (BSON_ITER_HOLDS_ARRAY (&state->iter)) {
          _recurse_state_t child_state;
          bool ret;
 
@@ -110,7 +114,10 @@ _recurse (_recurse_state_t *state)
          if (!ret) {
             return false;
          }
-      } else if (BSON_ITER_HOLDS_DOCUMENT (&state->iter)) {
+         continue;
+      }
+
+      if (BSON_ITER_HOLDS_DOCUMENT (&state->iter)) {
          _recurse_state_t child_state;
          bool ret;
 
@@ -137,13 +144,14 @@ _recurse (_recurse_state_t *state)
          if (!ret) {
             return false;
          }
-      } else {
-         if (state->copy) {
-            bson_append_value (state->copy,
-                               bson_iter_key (&state->iter),
-                               bson_iter_key_len (&state->iter),
-                               bson_iter_value (&state->iter));
-         }
+         continue;
+      }
+
+      if (state->copy) {
+         bson_append_value (state->copy,
+                            bson_iter_key (&state->iter),
+                            bson_iter_key_len (&state->iter),
+                            bson_iter_value (&state->iter));
       }
    }
    return true;

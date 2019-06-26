@@ -1,0 +1,24 @@
+{
+    "schemaRequiresEncryption": true, 
+    "ok": {
+        "$numberInt": "1"
+    }, 
+    "result": {
+        "filter": {
+            "ssn": {
+                "$binary": {
+                    "base64": "ADgAAAAQYQABAAAABWtpABAAAAAEYWFhYWFhYWFhYWFhYWFhYQJ2AAwAAAA0NTctNTUtNTQ2MgAA", 
+                    "subType": "06"
+                }
+            },
+            "existing_ciphertext": {
+                "$binary": {
+                    "base64": "AgFkgAAAAAAAAAAAAAAAAAABm5MUrpGaLc8+PUdwNPpanCc3Jk1Ql+URqTAZV0IPhLTiw0JkZTN8gcNjA0PGjUwGzR08ZIeDhreuVLvKnX+jZw==",
+                    "subType": "06"
+                }
+            }
+        }, 
+        "find": "test"
+    }, 
+    "hasEncryptedPlaceholders": true
+}

@@ -696,7 +696,8 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    ASSERT_OR_PRINT (ret, status);
 
    /* check that encrypted command matches. */
-   _assert_bin_bson_equal (encrypted_cmd, TEST_FILE ("./test/data/encrypted-cmd.json"));
+   _assert_bin_bson_equal (encrypted_cmd,
+                           TEST_FILE ("./test/data/encrypted-cmd.json"));
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_binary_destroy (encrypted_cmd);
@@ -1236,17 +1237,54 @@ _test_encrypt_dupe_jsonschema (_mongocrypt_tester_t *tester)
 
    BSON_ASSERT (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO ==
                 mongocrypt_ctx_state (ctx));
-   ASSERT_FAILS (
-      mongocrypt_ctx_mongo_feed (
-         ctx, TEST_BSON ("{'options': {'validator': { '$jsonSchema': {}, "
-                         "'$jsonSchema': {} } } }")),
-      ctx,
-      "duplicate $jsonSchema");
+   ASSERT_FAILS (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_BSON ("{'options': {'validator': { '$jsonSchema': {}, "
+                               "'$jsonSchema': {} } } }")),
+                 ctx,
+                 "duplicate $jsonSchema");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
 
+
+static void
+_test_encrypting_with_explicit_encryption (_mongocrypt_tester_t *tester)
+{
+   /* Test that we do not strip existing ciphertexts when automatically
+    * encrypting a document. */
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *bin;
+   bson_iter_t iter;
+   bson_t tmp;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx,
+         TEST_FILE ("./test/data/mongocryptd-reply-existing-ciphertext.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   bin = mongocrypt_binary_new ();
+   mongocrypt_ctx_finalize (ctx, bin);
+   _mongocrypt_binary_to_bson (bin, &tmp);
+   BSON_ASSERT (bson_iter_init (&iter, &tmp));
+   BSON_ASSERT (
+      bson_iter_find_descendant (&iter, "filter.existing_ciphertext", &iter));
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
 
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
@@ -1268,4 +1306,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_init_each_cmd);
    INSTALL_TEST (_test_encrypt_invalid_siblings);
    INSTALL_TEST (_test_encrypt_dupe_jsonschema);
+   INSTALL_TEST (_test_encrypting_with_explicit_encryption);
 }
