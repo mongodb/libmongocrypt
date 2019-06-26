@@ -150,7 +150,7 @@ class MongoCryptImpl implements MongoCrypt {
         isTrue("open", !closed);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
+            throwExceptionFromStatus();
         }
         mongocrypt_binary_t documentBinary = toBinary(document);
         try {
@@ -169,7 +169,7 @@ class MongoCryptImpl implements MongoCrypt {
         isTrue("open", !closed);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
+            throwExceptionFromStatus();
         }
 
         boolean success;
@@ -201,7 +201,7 @@ class MongoCryptImpl implements MongoCrypt {
         isTrue("open", !closed);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
+            throwExceptionFromStatus();
         }
 
         boolean success;
@@ -239,7 +239,7 @@ class MongoCryptImpl implements MongoCrypt {
         isTrue("open", !closed);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
+            throwExceptionFromStatus();
         }
         boolean success = CAPI.mongocrypt_ctx_explicit_decrypt_init(context, toBinary(document));
         if (!success) {
