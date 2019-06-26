@@ -154,9 +154,50 @@ public class MongoCryptTest {
         mongoCrypt.close();
     }
 
+    @Test
+    public void testExplicitEncryptionDecryptionKeyAltName() throws IOException, URISyntaxException {
+        MongoCrypt mongoCrypt = createMongoCrypt();
+        assertNotNull(mongoCrypt);
+
+        BsonDocument documentToEncrypt = new BsonDocument("v", new BsonString("hello"));
+        MongoExplicitEncryptOptions options = MongoExplicitEncryptOptions.builder()
+                .keyAltName("altKeyName")
+                .algorithm("AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic")
+                .build();
+        MongoCryptContext encryptor = mongoCrypt.createExplicitEncryptionContext(documentToEncrypt, options);
+
+        assertEquals(State.NEED_MONGO_KEYS, encryptor.getState());
+        testKeyDecryptor(encryptor, true);
+
+        assertEquals(State.READY, encryptor.getState());
+
+        BsonDocument encryptedDocument = encryptor.finish();
+        assertEquals(State.DONE, encryptor.getState());
+        assertEquals(getResourceAsDocument("encrypted-value.json"), encryptedDocument);
+
+        MongoCryptContext decryptor = mongoCrypt.createExplicitDecryptionContext(encryptedDocument);
+
+        assertEquals(State.NEED_MONGO_KEYS, decryptor.getState());
+        testKeyDecryptor(decryptor);
+        assertEquals(State.READY, decryptor.getState());
+
+        BsonDocument decryptedDocument = decryptor.finish();
+        assertEquals(State.DONE, decryptor.getState());
+        assertEquals(documentToEncrypt, decryptedDocument);
+
+        encryptor.close();
+
+        mongoCrypt.close();
+    }
+
     private void testKeyDecryptor(final MongoCryptContext context) throws URISyntaxException, IOException {
+        testKeyDecryptor(context, false);
+    }
+
+    private void testKeyDecryptor(final MongoCryptContext context, final boolean keyAltName) throws URISyntaxException, IOException {
         BsonDocument keyFilter = context.getMongoOperation();
-        assertEquals(getResourceAsDocument("key-filter.json"), keyFilter);
+        String keyFilterJson = keyAltName ? "key-filter-keyAltName.json" : "key-filter.json";
+        assertEquals(getResourceAsDocument(keyFilterJson), keyFilter);
         context.addMongoOperationResult(getResourceAsDocument("key-document.json"));
         context.completeMongoOperation();
         assertEquals(State.NEED_KMS, context.getState());
