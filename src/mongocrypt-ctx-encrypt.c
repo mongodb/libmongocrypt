@@ -66,7 +66,8 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
       while (bson_iter_next (&iter)) {
          if (0 == strcmp ("$jsonSchema", bson_iter_key (&iter))) {
             if (found_jsonschema) {
-               return _mongocrypt_ctx_fail_w_msg (ctx, "duplicate $jsonSchema fields found");
+               return _mongocrypt_ctx_fail_w_msg (
+                  ctx, "duplicate $jsonSchema fields found");
             }
             if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->schema,
                                                              &iter)) {
@@ -366,6 +367,10 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
       marking.algorithm = ctx->opts.algorithm;
       _mongocrypt_buffer_set_to (&ctx->opts.key_id, &marking.key_id);
+      if (ctx->opts.key_alt_name) {
+         bson_value_copy (ctx->opts.key_alt_name, &marking.key_alt_name);
+         marking.has_alt_name = true;
+      }
 
       bson_init (&converted);
       res = _marking_to_bson_value (&ctx->kb, &marking, &value, ctx->status);

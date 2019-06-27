@@ -28,5 +28,6 @@
         "$date": {
             "$numberLong": "1557827033449"
         }
-    }
+    },
+    "keyAltNames": [ "keyDocumentName" ]
 }

@@ -1286,6 +1286,63 @@ _test_encrypting_with_explicit_encryption (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_explicit_encryption (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   _mongocrypt_buffer_t from_key_id, from_key_altname;
+   mongocrypt_binary_t *bin, *key_id;
+   char *deterministic = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic";
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+
+   ctx = mongocrypt_ctx_new (crypt);
+   key_id = mongocrypt_binary_new_from_data (
+      MONGOCRYPT_DATA_AND_LEN ("aaaaaaaaaaaaaaaa"));
+
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_explicit_encrypt_init (ctx, TEST_BSON ("{'v': 123}")),
+      ctx);
+
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   bin = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
+   _mongocrypt_buffer_copy_from_binary (&from_key_id, bin);
+   mongocrypt_binary_destroy (bin);
+
+   mongocrypt_binary_destroy (key_id);
+   mongocrypt_ctx_destroy (ctx);
+
+
+   ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_alt_name (
+                 ctx, TEST_BSON ("{'keyAltName': 'keyDocumentName'}")),
+              ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_explicit_encrypt_init (ctx, TEST_BSON ("{'v': 123}")),
+      ctx);
+
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   bin = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
+   _mongocrypt_buffer_copy_from_binary (&from_key_altname, bin);
+   mongocrypt_binary_destroy (bin);
+
+   mongocrypt_ctx_destroy (ctx);
+
+   BSON_ASSERT (0 == _mongocrypt_buffer_cmp (&from_key_id, &from_key_altname));
+
+   _mongocrypt_buffer_cleanup (&from_key_id);
+   _mongocrypt_buffer_cleanup (&from_key_altname);
+
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -1307,4 +1364,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_invalid_siblings);
    INSTALL_TEST (_test_encrypt_dupe_jsonschema);
    INSTALL_TEST (_test_encrypting_with_explicit_encryption);
+   INSTALL_TEST (_test_explicit_encryption);
 }
