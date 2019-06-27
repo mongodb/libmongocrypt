@@ -16,15 +16,13 @@
 
 import sys
 
-import unittest
-
 sys.path[0:0] = [""]
 
 import pymongocrypt
 
 from pymongocrypt.binding import lib, ffi
 
-from test import enable_faulthandler
+from test import enable_faulthandler, unittest
 
 
 enable_faulthandler()

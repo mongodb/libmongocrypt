@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+import unittest
 
 sys.path[0:0] = [""]
 
@@ -29,3 +30,8 @@ if PY3:
 else:
     def enable_faulthandler():
         pass
+
+# Use assertRaisesRegex if available, otherwise use Python 2.7's
+# deprecated assertRaisesRegexp, with a 'p'.
+if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
+    unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
