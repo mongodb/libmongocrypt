@@ -853,6 +853,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
       /* Then, add the mega entry back into the key broker. */
       kbe = dedup_ctx.mega_entry;
       kbe->next = kb->kb_entry;
+      kb->kb_entry->prev = kbe;
       kbe->prev = NULL;
       kb->kb_entry = kbe;
       kb->decryptor_iter = kbe;
