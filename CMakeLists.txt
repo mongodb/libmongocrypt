@@ -180,6 +180,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-local-kms.c
    test/test-mongocrypt-log.c
    test/test-mongocrypt-marking.c
+   test/test-mongocrypt-traverse-util.c
    test/test-mongocrypt.c
 )
 # Define test-mongocrypt

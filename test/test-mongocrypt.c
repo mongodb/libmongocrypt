@@ -596,6 +596,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_ctx_setopt (&tester);
    _mongocrypt_tester_install_key (&tester);
    _mongocrypt_tester_install_marking (&tester);
+   _mongocrypt_tester_install_traverse_util (&tester);
    _mongocrypt_tester_install (
       &tester, "_test_setopt_schema", _test_setopt_schema);
    _mongocrypt_tester_install (&tester,
