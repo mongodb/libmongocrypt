@@ -52,6 +52,9 @@ cd cmake-build
 $CMAKE -DCMAKE_BUILD_TYPE=Debug "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt" ../
 echo "Installing libmongocrypt"
 $CMAKE --build . --target install
+# CDRIVER-3187, ensure the final distributed tarball contains the libbson static
+# library to support consumers that static link to libmongocrypt
+find ${INSTALL_PREFIX}/mongo-c-driver -name libbson-static-1.0.a -execdir cp {} $(dirname $(find ${INSTALL_PREFIX}/libmongocrypt -name libmongocrypt-static.a)) \;
 $CMAKE --build . --target test-mongocrypt
 $CMAKE --build ./kms-message --target test_kms_request
 cd $evergreen_root
