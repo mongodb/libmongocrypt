@@ -1189,7 +1189,8 @@ _mongocrypt_key_broker_reset_iterators (_mongocrypt_key_broker_t *kb)
 }
 
 int
-_mongocrypt_key_broker_num_entries (_mongocrypt_key_broker_t *kb) {
+_mongocrypt_key_broker_num_entries (_mongocrypt_key_broker_t *kb)
+{
    _mongocrypt_key_broker_entry_t *kbe;
    int count = 0;
 
