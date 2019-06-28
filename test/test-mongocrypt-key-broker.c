@@ -56,7 +56,8 @@ _gen_uuid (uint8_t first_byte, _mongocrypt_buffer_t *out)
 /* Create an example 16 byte UUID and a corresponding key document with the same
  * _id as the UUID. */
 static void
-_gen_uuid_and_key (_mongocrypt_tester_t *tester,
+_gen_uuid_and_key_and_altname (_mongocrypt_tester_t *tester,
+                   char* altname,
                    uint8_t first_byte,
                    _mongocrypt_buffer_t *id,
                    _mongocrypt_buffer_t *doc)
@@ -67,10 +68,26 @@ _gen_uuid_and_key (_mongocrypt_tester_t *tester,
    _mongocrypt_binary_to_bson (TEST_FILE ("./test/example/key-document.json"),
                                &as_bson);
    bson_init (&copied);
-   bson_copy_to_excluding_noinit (&as_bson, &copied, "_id", NULL);
+   bson_copy_to_excluding_noinit (&as_bson, &copied, "_id", "keyAltNames", NULL);
    _mongocrypt_buffer_append (id, &copied, "_id", 3);
+   if (altname) {
+      bson_t child;
+      bson_append_array_begin(&copied, "keyAltNames", -1, &child);
+      bson_append_utf8(&child, "0", -1, altname, -1);
+      bson_append_array_end(&copied, &child);
+   }
    _mongocrypt_buffer_steal_from_bson (doc, &copied);
 }
+
+static void
+_gen_uuid_and_key (_mongocrypt_tester_t *tester,
+                   uint8_t first_byte,
+                   _mongocrypt_buffer_t *id,
+                   _mongocrypt_buffer_t *doc)
+{
+   _gen_uuid_and_key_and_altname (tester, NULL, first_byte, id, doc);
+}
+
 
 
 static void
@@ -547,6 +564,46 @@ _check_filter_contains_only (mongocrypt_binary_t *filter,
    }
 }
 
+static void
+_test_key_broker_deduplication (_mongocrypt_tester_t* tester) {
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+   _mongocrypt_key_broker_t key_broker;
+   status = mongocrypt_status_new ();
+   _mongocrypt_buffer_t key_id1, key_id2, key_doc1, key_doc2;
+
+   _gen_uuid_and_key_and_altname (tester, "alt1", 1, &key_id1, &key_doc1);
+   _gen_uuid_and_key_and_altname (tester, "alt2", 2, &key_id2, &key_doc2);
+   
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   _mongocrypt_key_broker_init (&key_broker, &crypt->opts, &crypt->cache_key);
+
+   /* Add two ids and two alt names */
+   _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
+   _key_broker_add_name (&key_broker, "alt1");
+   _mongocrypt_key_broker_add_id (&key_broker, &key_id2);
+   _key_broker_add_name (&key_broker, "alt2");
+
+   /* Should be four entries */
+   BSON_ASSERT (4 == _mongocrypt_key_broker_num_entries (&key_broker));
+
+   /* Add one doc, should deduplicate one. */
+   _mongocrypt_key_broker_add_doc(&key_broker, &key_doc1);
+   BSON_ASSERT (3 == _mongocrypt_key_broker_num_entries (&key_broker));
+
+   /* Add other doc, should deduplicate one. */
+   _mongocrypt_key_broker_add_doc(&key_broker, &key_doc2);
+   BSON_ASSERT (2 == _mongocrypt_key_broker_num_entries (&key_broker));
+
+   _mongocrypt_buffer_cleanup (&key_id1);
+   _mongocrypt_buffer_cleanup (&key_doc1);
+   _mongocrypt_buffer_cleanup (&key_id2);
+   _mongocrypt_buffer_cleanup (&key_doc2);
+   _mongocrypt_key_broker_cleanup (&key_broker);
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
 
 void
 _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
@@ -555,4 +612,5 @@ _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_key_broker_add_key);
    INSTALL_TEST (_test_key_broker_add_decrypted_key);
    INSTALL_TEST (_test_key_broker_wrong_subtype);
+   INSTALL_TEST (_test_key_broker_deduplication);
 }

@@ -155,4 +155,7 @@ _mongocrypt_key_broker_debug (_mongocrypt_key_broker_t *kb);
 void
 _mongocrypt_key_broker_reset_iterators (_mongocrypt_key_broker_t *kb);
 
+int
+_mongocrypt_key_broker_num_entries (_mongocrypt_key_broker_t *kb);
+
 #endif /* MONGOCRYPT_KEY_BROKER_PRIVATE_H */
