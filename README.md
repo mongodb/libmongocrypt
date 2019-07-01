@@ -1,7 +1,11 @@
 # libmongocrypt #
 The companion C library for client side encryption in drivers.
 
-To integrate libmongocrypt with your driver, see the [Integrating libmongocrypt Guide](integrating.md).
+## Documentation ##
+See [The Integration Guide](integrating.md) to integrate with your driver.
+
+See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
+The documentation can be rendered into HTML with doxygen. Run `doxygen ./doc/Doxygen`, then open `./doc/html/index.html`.
 
 ## Building libmongocrypt ##
 
@@ -61,3 +65,6 @@ We decided against the "have libmongocrypt do everything" approach because it co
 
 #### Narrowly scoped ####
 The first version of FLE is to get signal. If FLE becomes popular, further improvements will be made (removing mongocryptd process, support for more queries, better performance). libmongocrypt takes the same approach. Making it blazing fast and completely future-proof is not a high priority.
+
+### Releasing ###
+To release create a new git tag, and update `MONGOCRYPT_VERSION` in mongocrypt.h.
