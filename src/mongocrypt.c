@@ -17,6 +17,7 @@
 #include <kms_message/kms_message.h>
 #include <bson/bson.h>
 
+#include "mongocrypt-private.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-cache-collinfo-private.h"
 #include "mongocrypt-cache-key-private.h"
@@ -98,7 +99,7 @@ void
 _mongocrypt_do_init (void)
 {
    kms_message_init ();
-   _crypto_init ();
+   _native_crypto_init ();
 }
 
 
@@ -317,7 +318,8 @@ mongocrypt_init (mongocrypt_t *crypt)
 
    crypt->initialized = true;
 
-   if (0 != _mongocrypt_once (_mongocrypt_do_init) || !(_crypto_initialized)) {
+   if (0 != _mongocrypt_once (_mongocrypt_do_init) ||
+       !(_native_crypto_initialized)) {
       CLIENT_ERR ("failed to initialize");
       return false;
    }
@@ -329,6 +331,11 @@ mongocrypt_init (mongocrypt_t *crypt)
    if (crypt->opts.log_fn) {
       _mongocrypt_log_set_fn (
          &crypt->log, crypt->opts.log_fn, crypt->opts.log_ctx);
+   }
+
+   if (!crypt->crypto) {
+      /* set default hooks. */
+      crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
    }
    return true;
 }
@@ -358,6 +365,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    _mongocrypt_mutex_cleanup (&crypt->mutex);
    _mongocrypt_log_cleanup (&crypt->log);
    mongocrypt_status_destroy (crypt->status);
+   bson_free (crypt->crypto);
    bson_free (crypt);
 }
 
@@ -383,5 +391,71 @@ _mongocrypt_validate_and_copy_string (const char *in,
       return false;
    }
    *out = bson_strndup (in, in_len);
+   return true;
+}
+
+
+bool
+mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
+                                mongocrypt_crypto_fn aes_256_cbc_encrypt,
+                                mongocrypt_crypto_fn aes_256_cbc_decrypt,
+                                mongocrypt_random_fn random,
+                                mongocrypt_hmac_fn hmac_sha_512,
+                                mongocrypt_hmac_fn hmac_sha_256,
+                                mongocrypt_hash_fn sha_256,
+                                void *ctx)
+{
+   mongocrypt_status_t *status = crypt->status;
+
+   if (crypt->initialized) {
+      CLIENT_ERR ("options cannot be set after initialization");
+      return false;
+   }
+
+   if (crypt->crypto) {
+      CLIENT_ERR ("crypto_hooks already set");
+      return false;
+   }
+
+   crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+   crypt->crypto->hooks_enabled = true;
+   crypt->crypto->ctx = ctx;
+
+   if (!aes_256_cbc_encrypt) {
+      CLIENT_ERR ("aes_256_cbc_encrypt not set");
+      return false;
+   }
+   crypt->crypto->aes_256_cbc_encrypt = aes_256_cbc_encrypt;
+
+   if (!aes_256_cbc_decrypt) {
+      CLIENT_ERR ("aes_256_cbc_decrypt not set");
+      return false;
+   }
+   crypt->crypto->aes_256_cbc_decrypt = aes_256_cbc_decrypt;
+
+   if (!random) {
+      CLIENT_ERR ("random not set");
+      return false;
+   }
+   crypt->crypto->random = random;
+
+   if (!hmac_sha_512) {
+      CLIENT_ERR ("hmac_sha_512 not set");
+      return false;
+   }
+   crypt->crypto->hmac_sha_512 = hmac_sha_512;
+
+   if (!hmac_sha_256) {
+      CLIENT_ERR ("hmac_sha_256 not set");
+      return false;
+   }
+   crypt->crypto->hmac_sha_256 = hmac_sha_256;
+
+   if (!sha_256) {
+      CLIENT_ERR ("sha_256 not set");
+      return false;
+   }
+   crypt->crypto->sha_256 = sha_256;
+
    return true;
 }

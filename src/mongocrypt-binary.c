@@ -50,7 +50,7 @@ _mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out)
 }
 
 
-const uint8_t *
+uint8_t *
 mongocrypt_binary_data (const mongocrypt_binary_t *binary)
 {
    return binary->data;

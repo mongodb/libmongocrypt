@@ -31,11 +31,14 @@ _init_buffer_with_count (_mongocrypt_buffer_t *out, uint32_t count)
 static void
 _test_random_generator (_mongocrypt_tester_t *tester)
 {
+   mongocrypt_t *crypt;
    _mongocrypt_buffer_t out;
    mongocrypt_status_t *status;
 #define TEST_COUNT 32
    int mid = TEST_COUNT / 2;
    char zero[TEST_COUNT];
+
+   crypt = _mongocrypt_tester_mongocrypt ();
 
    /* _mongocrypt_random handles the case where the count size is greater
     * than the buffer by throwing an error. Because of that, no additional tests
@@ -45,7 +48,7 @@ _test_random_generator (_mongocrypt_tester_t *tester)
    status = mongocrypt_status_new ();
    _init_buffer_with_count (&out, TEST_COUNT);
 
-   BSON_ASSERT (_mongocrypt_random (&out, status, TEST_COUNT));
+   BSON_ASSERT (_mongocrypt_random (crypt->crypto, &out, TEST_COUNT, status));
    BSON_ASSERT (0 != memcmp (zero, out.data, TEST_COUNT)); /* initialized */
 
    mongocrypt_status_destroy (status);
@@ -54,12 +57,14 @@ _test_random_generator (_mongocrypt_tester_t *tester)
    status = mongocrypt_status_new ();
    _init_buffer_with_count (&out, TEST_COUNT);
 
-   BSON_ASSERT (_mongocrypt_random (&out, status, mid));
-   BSON_ASSERT (0 != memcmp (zero, out.data, mid));       /* initialized */
-   BSON_ASSERT (0 == memcmp (zero, out.data + mid, mid)); /* uninitialized */
+   ASSERT_FAILS_STATUS (_mongocrypt_random (crypt->crypto, &out, mid, status),
+                        status,
+                        "out should have length 16");
+
 
    mongocrypt_status_destroy (status);
    _mongocrypt_buffer_cleanup (&out);
+   mongocrypt_destroy (crypt);
 }
 
 

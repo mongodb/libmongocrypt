@@ -202,7 +202,7 @@ _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
 
 
 void
-_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf,
+_mongocrypt_buffer_to_binary (const _mongocrypt_buffer_t *buf,
                               mongocrypt_binary_t *binary)
 {
    binary->data = buf->data;
@@ -381,6 +381,69 @@ _mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
    return true;
 }
 
-bool _mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf) {
+bool
+_mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf)
+{
    return buf->len == 16 && buf->subtype == BSON_SUBTYPE_UUID;
+}
+
+void
+_mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex)
+{
+   uint32_t i;
+
+   buf->len = (uint32_t) strlen (hex) / 2;
+   buf->data = bson_malloc (buf->len);
+   buf->owned = true;
+   for (i = 0; i < buf->len; i++) {
+      int tmp;
+      BSON_ASSERT (sscanf (hex + (2 * i), "%02x", &tmp));
+      *(buf->data + i) = (uint8_t) tmp;
+   }
+}
+
+int
+_mongocrypt_buffer_cmp_hex (_mongocrypt_buffer_t *buf, const char *hex)
+{
+   _mongocrypt_buffer_t tmp;
+   int res;
+
+   _mongocrypt_buffer_copy_from_hex (&tmp, hex);
+   res = _mongocrypt_buffer_cmp (buf, &tmp);
+   _mongocrypt_buffer_cleanup (&tmp);
+   return res;
+}
+
+char *
+_mongocrypt_buffer_to_hex (_mongocrypt_buffer_t *buf)
+{
+   char *hex = bson_malloc0 (buf->len * 2 + 1);
+   char *out = hex;
+
+   for (uint32_t i = 0; i < buf->len; i++, out += 2) {
+      sprintf (out, "%02X", buf->data[i]);
+   }
+   return hex;
+}
+
+void
+_mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
+                           const _mongocrypt_buffer_t *srcs,
+                           uint32_t num_srcs)
+{
+   uint32_t total = 0;
+   uint32_t offset;
+   uint32_t i;
+
+   for (i = 0; i < num_srcs; i++) {
+      total += srcs[i].len;
+   }
+
+   _mongocrypt_buffer_init (dst);
+   _mongocrypt_buffer_resize (dst, total);
+   offset = 0;
+   for (i = 0; i < num_srcs; i++) {
+      memcpy (dst->data + offset, srcs[i].data, srcs[i].len);
+      offset += srcs[i].len;
+   }
 }

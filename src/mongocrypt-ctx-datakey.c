@@ -79,7 +79,7 @@ _kms_done (mongocrypt_ctx_t *ctx)
 
 /* Append a UUID _id. Confer with libmongoc's `_mongoc_server_session_uuid`. */
 static bool
-_append_id (bson_t *bson, mongocrypt_status_t *status)
+_append_id (mongocrypt_t *crypt, bson_t *bson, mongocrypt_status_t *status)
 {
    _mongocrypt_buffer_t uuid;
 #define UUID_LEN 16
@@ -90,7 +90,7 @@ _append_id (bson_t *bson, mongocrypt_status_t *status)
    uuid.subtype = BSON_SUBTYPE_UUID;
    uuid.owned = true;
 
-   if (!_crypto_random (&uuid, status, UUID_LEN)) {
+   if (!_mongocrypt_random (crypt->crypto, &uuid, UUID_LEN, status)) {
       return false;
    }
 
@@ -118,7 +118,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
 
    bson_init (&key_doc);
-   if (!_append_id (&key_doc, ctx->status)) {
+   if (!_append_id (ctx->crypt, &key_doc, ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
 
@@ -205,8 +205,10 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    plaintext_key_material.data = bson_malloc (MONGOCRYPT_KEY_LEN);
    plaintext_key_material.len = MONGOCRYPT_KEY_LEN;
    plaintext_key_material.owned = true;
-   if (!_crypto_random (
-          &plaintext_key_material, ctx->status, MONGOCRYPT_KEY_LEN)) {
+   if (!_mongocrypt_random (ctx->crypt->crypto,
+                            &plaintext_key_material,
+                            MONGOCRYPT_KEY_LEN,
+                            ctx->status)) {
       _mongocrypt_ctx_fail (ctx);
       goto done;
    }
@@ -230,12 +232,14 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       iv.data = bson_malloc0 (MONGOCRYPT_IV_LEN);
       iv.len = MONGOCRYPT_IV_LEN;
       iv.owned = true;
-      if (!_crypto_random (&iv, ctx->status, MONGOCRYPT_IV_LEN)) {
+      if (!_mongocrypt_random (
+             ctx->crypt->crypto, &iv, MONGOCRYPT_IV_LEN, ctx->status)) {
          _mongocrypt_ctx_fail (ctx);
          goto done;
       }
 
-      crypt_ret = _mongocrypt_do_encryption (&iv,
+      crypt_ret = _mongocrypt_do_encryption (ctx->crypt->crypto,
+                                             &iv,
                                              NULL /* associated data. */,
                                              &ctx->crypt->opts.kms_local_key,
                                              &plaintext_key_material,
@@ -258,7 +262,8 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
                                                  &ctx->crypt->opts,
                                                  &ctx->opts,
                                                  &plaintext_key_material,
-                                                 &ctx->crypt->log)) {
+                                                 &ctx->crypt->log,
+                                                 ctx->crypt->crypto)) {
          mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
          _mongocrypt_ctx_fail (ctx);
          goto done;

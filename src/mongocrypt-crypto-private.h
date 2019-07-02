@@ -17,7 +17,8 @@
 #ifndef MONGOCRYPT_CRYPTO_PRIVATE_H
 #define MONGOCRYPT_CRYPTO_PRIVATE_H
 
-#include "mongocrypt-private.h"
+#include "mongocrypt.h"
+#include "mongocrypt-buffer-private.h"
 
 #define MONGOCRYPT_KEY_LEN 96
 #define MONGOCRYPT_IV_KEY_LEN 32
@@ -28,6 +29,17 @@
 #define MONGOCRYPT_HMAC_LEN 32
 #define MONGOCRYPT_BLOCK_SIZE 16
 
+typedef struct {
+   int hooks_enabled;
+   mongocrypt_crypto_fn aes_256_cbc_encrypt;
+   mongocrypt_crypto_fn aes_256_cbc_decrypt;
+   mongocrypt_random_fn random;
+   mongocrypt_hmac_fn hmac_sha_512;
+   mongocrypt_hmac_fn hmac_sha_256;
+   mongocrypt_hash_fn sha_256;
+   void *ctx;
+} _mongocrypt_crypto_t;
+
 uint32_t
 _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len);
 
@@ -35,7 +47,8 @@ uint32_t
 _mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len);
 
 bool
-_mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
+_mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
+                           const _mongocrypt_buffer_t *iv,
                            const _mongocrypt_buffer_t *associated_data,
                            const _mongocrypt_buffer_t *key,
                            const _mongocrypt_buffer_t *plaintext,
@@ -44,7 +57,8 @@ _mongocrypt_do_encryption (const _mongocrypt_buffer_t *iv,
                            mongocrypt_status_t *status);
 
 bool
-_mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
+_mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
+                           const _mongocrypt_buffer_t *associated_data,
                            const _mongocrypt_buffer_t *key,
                            const _mongocrypt_buffer_t *ciphertext,
                            _mongocrypt_buffer_t *plaintext,
@@ -52,15 +66,17 @@ _mongocrypt_do_decryption (const _mongocrypt_buffer_t *associated_data,
                            mongocrypt_status_t *status);
 
 bool
-_mongocrypt_random (_mongocrypt_buffer_t *out,
-                    mongocrypt_status_t *status,
-                    uint32_t count);
+_mongocrypt_random (_mongocrypt_crypto_t *crypto,
+                    _mongocrypt_buffer_t *out,
+                    uint32_t count,
+                    mongocrypt_status_t *status);
 
 int
 _mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len);
 
 bool
 _mongocrypt_calculate_deterministic_iv (
+   _mongocrypt_crypto_t *crypto,
    const _mongocrypt_buffer_t *key,
    const _mongocrypt_buffer_t *plaintext,
    const _mongocrypt_buffer_t *associated_data,
@@ -72,74 +88,37 @@ _mongocrypt_calculate_deterministic_iv (
 /* This variable must be defined in implementation
    files, and must be set to true when _crypto_init
    is successful. */
-extern bool _crypto_initialized;
+extern bool _native_crypto_initialized;
 
 void
-_crypto_init ();
+_native_crypto_init ();
 
-
-void *
-_crypto_encrypt_new (const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     mongocrypt_status_t *status);
 
 bool
-_crypto_encrypt_update (void *ctx,
-                        const _mongocrypt_buffer_t *in,
-                        _mongocrypt_buffer_t *out,
-                        uint32_t *bytes_written,
-                        mongocrypt_status_t *status);
+_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status);
 
 bool
-_crypto_encrypt_finalize (void *ctx,
-                          _mongocrypt_buffer_t *out,
-                          uint32_t *bytes_written,
-                          mongocrypt_status_t *status);
-
-void
-_crypto_encrypt_destroy (void *ctx);
-
-void *
-_crypto_decrypt_new (const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     mongocrypt_status_t *status);
+_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status);
 
 bool
-_crypto_decrypt_update (void *ctx,
-                        const _mongocrypt_buffer_t *in,
-                        _mongocrypt_buffer_t *out,
-                        uint32_t *bytes_written,
-                        mongocrypt_status_t *status);
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status);
 
 bool
-_crypto_decrypt_finalize (void *ctx,
-                          _mongocrypt_buffer_t *out,
-                          uint32_t *bytes_written,
-                          mongocrypt_status_t *status);
-
-void
-_crypto_decrypt_destroy (void *ctx);
-
-void *
-_crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status);
-
-bool
-_crypto_hmac_update (void *ctx,
-                     const _mongocrypt_buffer_t *in,
-                     mongocrypt_status_t *status);
-
-bool
-_crypto_hmac_finalize (void *ctx,
-                       _mongocrypt_buffer_t *out,
-                       uint32_t *bytes_written,
+_native_crypto_random (_mongocrypt_buffer_t *out,
+                       uint32_t count,
                        mongocrypt_status_t *status);
-
-void
-_crypto_hmac_destroy (void *ctx);
-
-bool
-_crypto_random (_mongocrypt_buffer_t *out,
-                mongocrypt_status_t *status,
-                uint32_t count);
 
 #endif /* MONGOCRYPT_CRYPTO_PRIVATE_H */

@@ -218,13 +218,18 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    case MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC:
       /* Use deterministic encryption. */
       _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
-      ret = _mongocrypt_calculate_deterministic_iv (
-         &key_material, &plaintext, &associated_data, &iv, status);
+      ret = _mongocrypt_calculate_deterministic_iv (kb->crypt->crypto,
+                                                    &key_material,
+                                                    &plaintext,
+                                                    &associated_data,
+                                                    &iv,
+                                                    status);
       if (!ret) {
          goto fail;
       }
 
-      ret = _mongocrypt_do_encryption (&iv,
+      ret = _mongocrypt_do_encryption (kb->crypt->crypto,
+                                       &iv,
                                        &associated_data,
                                        &key_material,
                                        &plaintext,
@@ -236,8 +241,9 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       /* Use randomized encryption.
        * In this case, we must generate a new, random iv. */
       _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
-      _mongocrypt_random (&iv, status, MONGOCRYPT_IV_LEN);
-      ret = _mongocrypt_do_encryption (&iv,
+      _mongocrypt_random (kb->crypt->crypto, &iv, MONGOCRYPT_IV_LEN, status);
+      ret = _mongocrypt_do_encryption (kb->crypt->crypto,
+                                       &iv,
                                        &associated_data,
                                        &key_material,
                                        &plaintext,

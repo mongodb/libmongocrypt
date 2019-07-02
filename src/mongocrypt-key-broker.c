@@ -524,13 +524,15 @@ void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
                              _mongocrypt_opts_t *opts,
                              _mongocrypt_cache_t *cache_key,
-                             _mongocrypt_log_t *log)
+                             _mongocrypt_log_t *log,
+                             mongocrypt_t *crypt)
 {
    memset (kb, 0, sizeof (*kb));
    kb->status = mongocrypt_status_new ();
    kb->crypt_opts = opts;
    kb->cache_key = cache_key;
    kb->log = log;
+   kb->crypt = crypt;
 }
 
 
@@ -892,7 +894,8 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          bson_malloc (kbe->decrypted_key_material.len);
       kbe->decrypted_key_material.owned = true;
 
-      crypt_ret = _mongocrypt_do_decryption (NULL /* associated data. */,
+      crypt_ret = _mongocrypt_do_decryption (kb->crypt->crypto,
+                                             NULL /* associated data. */,
                                              &kb->crypt_opts->kms_local_key,
                                              &kbe->key_returned->key_material,
                                              &kbe->decrypted_key_material,
@@ -912,8 +915,11 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          goto done;
       }
    } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
-      if (!_mongocrypt_kms_ctx_init_aws_decrypt (
-             &kbe->kms, kb->crypt_opts, kbe->key_returned, kb->log)) {
+      if (!_mongocrypt_kms_ctx_init_aws_decrypt (&kbe->kms,
+                                                 kb->crypt_opts,
+                                                 kbe->key_returned,
+                                                 kb->log,
+                                                 kb->crypt->crypto)) {
          mongocrypt_kms_ctx_status (&kbe->kms, status);
          goto done;
       }

@@ -14,18 +14,37 @@
  * limitations under the License.
  */
 
-#ifndef KMS_REQUEST_OPT_PRIVATE_H
-#define KMS_REQUEST_OPT_PRIVATE_H
-
-#include "kms_message/kms_message_defines.h"
-#include "kms_message/kms_request_opt.h"
 #include "kms_crypto.h"
 
-#include <stdbool.h>
+int
+kms_crypto_init ()
+{
+   return 0;
+}
 
-struct _kms_request_opt_t {
-   bool connection_close;
-   _kms_crypto_t crypto;
-};
+void
+kms_crypto_cleanup ()
+{
+}
 
-#endif /* KMS_REQUEST_OPT_PRIVATE_H */
+bool
+kms_sha256 (void *unused_ctx,
+            const char *input,
+            size_t len,
+            unsigned char *hash_out)
+{
+   /* only gets called if hooks were mistakenly not set */
+   return false;
+}
+
+bool
+kms_sha256_hmac (void *unused_ctx,
+                 const char *key_input,
+                 size_t key_len,
+                 const char *input,
+                 size_t len,
+                 unsigned char *hash_out)
+{
+   /* only gets called if hooks were mistakenly not set */
+   return false;
+}

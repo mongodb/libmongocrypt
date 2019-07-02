@@ -96,6 +96,11 @@ elseif (WIN32)
    set (MONGOCRYPT_CRYPTO CNG)
 endif ()
 
+# Otherwise, override with crypto hooks.
+if (DISABLE_NATIVE_CRYPTO)
+   set (MONGOCRYPT_CRYPTO none)
+endif ()
+
 
 set (MONGOCRYPT_ENABLE_CRYPTO 0)
 set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 0)
@@ -116,7 +121,7 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
    list(APPEND MONGOCRYPT_SOURCES
       src/crypto/cng.c
    )
-else ()
+elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    message ("Building with OpenSSL")
    include (FindOpenSSL)
    message ("Found OpenSSL version ${OPENSSL_VERSION}")
@@ -125,6 +130,13 @@ else ()
    list(APPEND MONGOCRYPT_SOURCES
       src/crypto/openssl.c
    )
+elseif (MONGOCRYPT_CRYPTO STREQUAL none)
+   message ("Building with no native crypto, hooks MUST be supplied with mongocrypt_setopt_crypto_hooks")
+   list(APPEND MONGOCRYPT_SOURCES
+      src/crypto/none.c
+   )
+else ()
+   message (FATAL "Unknown crypto provider ${MONGOCRYPT_CRYPTO}")
 endif ()
 
 configure_file (
@@ -161,7 +173,7 @@ if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
 elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
    target_link_libraries (mongocrypt PRIVATE "bcrypt")
    target_link_libraries (mongocrypt_static PRIVATE "bcrypt")
-else ()
+elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    target_link_libraries (mongocrypt PRIVATE OpenSSL::SSL OpenSSL::Crypto)
    target_link_libraries (mongocrypt_static PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif ()
@@ -185,6 +197,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-cache.c
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
+   test/test-mongocrypt-crypto-hooks.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c
@@ -197,36 +210,39 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-traverse-util.c
    test/test-mongocrypt.c
 )
-# Define test-mongocrypt
-# TODO: test-mongocrypt should only need to link against mongocrypt_static,
-# which statically links kms_message. To work around linker errors in Windows,
-# test-mongocrypt is compiled with TARGET_OBJECTS of kms_message
-add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
-# Use the static version since it allows the test binary to use private symbols
-target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
-target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
-target_link_libraries (test-mongocrypt PRIVATE ${BSON_LIBRARIES})
-target_compile_definitions (test-mongocrypt PRIVATE "${BSON_DEFINITIONS}")
 
-add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+# Exclude test-mongocrypt and example-state-machine as they require crypto.
+if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
+   # Define test-mongocrypt
+   # TODO: test-mongocrypt should only need to link against mongocrypt_static,
+   # which statically links kms_message. To work around linker errors in Windows,
+   # test-mongocrypt is compiled with TARGET_OBJECTS of kms_message
+   add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
+   # Use the static version since it allows the test binary to use private symbols
+   target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
+   target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
+   target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDE_DIRS})
+   target_link_libraries (test-mongocrypt PRIVATE ${BSON_LIBRARIES})
+   target_compile_definitions (test-mongocrypt PRIVATE "${BSON_DEFINITIONS}")
 
-# Define example-state-machine
-add_executable (example-state-machine test/example-state-machine.c)
-target_link_libraries (example-state-machine PRIVATE mongocrypt)
-target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_include_directories (example-state-machine PRIVATE ${BSON_INCLUDE_DIRS})
-target_link_libraries (example-state-machine PRIVATE ${BSON_LIBRARIES})
-target_compile_definitions (example-state-machine PRIVATE "${BSON_DEFINITIONS}")
+   add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Define example-state-machine-static
-add_executable (example-state-machine-static test/example-state-machine.c $<TARGET_OBJECTS:kms_message_obj>)
-target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static)
-target_include_directories (example-state-machine-static PRIVATE ./src)
-target_include_directories (example-state-machine-static PRIVATE ${BSON_INCLUDE_DIRS})
-target_link_libraries (example-state-machine-static PRIVATE ${BSON_LIBRARIES})
-target_compile_definitions (example-state-machine-static PRIVATE "${BSON_DEFINITIONS}")
+   # Define example-state-machine
+   add_executable (example-state-machine test/example-state-machine.c)
+   target_link_libraries (example-state-machine PRIVATE mongocrypt)
+   target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
+   target_include_directories (example-state-machine PRIVATE ${BSON_INCLUDE_DIRS})
+   target_link_libraries (example-state-machine PRIVATE ${BSON_LIBRARIES})
+   target_compile_definitions (example-state-machine PRIVATE "${BSON_DEFINITIONS}")
 
+   # Define example-state-machine-static
+   add_executable (example-state-machine-static test/example-state-machine.c $<TARGET_OBJECTS:kms_message_obj>)
+   target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static)
+   target_include_directories (example-state-machine-static PRIVATE ./src)
+   target_include_directories (example-state-machine-static PRIVATE ${BSON_INCLUDE_DIRS})
+   target_link_libraries (example-state-machine-static PRIVATE ${BSON_LIBRARIES})
+   target_compile_definitions (example-state-machine-static PRIVATE "${BSON_DEFINITIONS}")
+endif ()
 
 install (TARGETS mongocrypt mongocrypt_static
    EXPORT mongocrypt_targets

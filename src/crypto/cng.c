@@ -27,14 +27,17 @@ static BCRYPT_ALG_HANDLE _random;
 
 #define STATUS_SUCCESS 0
 
-bool _crypto_initialized = false;
+bool _native_crypto_initialized = false;
 
 void
-_crypto_init ()
+_native_crypto_init ()
 {
    DWORD cbOutput;
    NTSTATUS nt_status;
 
+   /* Note, there is no mechanism for libmongocrypt to close these providers,
+    * If we ever add such a mechanism, call BCryptCloseAlgorithmProvider.
+    */
    nt_status = BCryptOpenAlgorithmProvider (&_algo_sha512_hmac,
                                             BCRYPT_SHA512_ALGORITHM,
                                             MS_PRIMITIVE_PROVIDER,
@@ -76,15 +79,7 @@ _crypto_init ()
       return;
    }
 
-   _crypto_initialized = true;
-}
-
-void
-_crypto_destroy ()
-{
-   (void) BCryptCloseAlgorithmProvider (_algo_sha512_hmac, 0);
-   (void) BCryptCloseAlgorithmProvider (_algo_aes256, 0);
-   (void) BCryptCloseAlgorithmProvider (_random, 0);
+   _native_crypto_initialized = true;
 }
 
 typedef struct {
@@ -97,6 +92,8 @@ typedef struct {
    uint32_t iv_len;
 } cng_encrypt_state;
 
+static void
+_crypto_state_destroy (cng_encrypt_state *state);
 
 static cng_encrypt_state *
 _crypto_state_init (const _mongocrypt_buffer_t *key,
@@ -152,7 +149,7 @@ _crypto_state_init (const _mongocrypt_buffer_t *key,
 
    return state;
 fail:
-   _crypto_encrypt_destroy (state);
+   _crypto_state_destroy (state);
    bson_free (keyBlob);
 
    return NULL;
@@ -174,26 +171,20 @@ _crypto_state_destroy (cng_encrypt_state *state)
    }
 }
 
-void *
-_crypto_encrypt_new (const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     mongocrypt_status_t *status)
-{
-   return _crypto_state_init (key, iv, status);
-}
-
 
 bool
-_crypto_encrypt_update (void *ctx,
-                        const _mongocrypt_buffer_t *in,
-                        _mongocrypt_buffer_t *out,
-                        uint32_t *bytes_written,
-                        mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
 {
-   cng_encrypt_state *state;
+   bool ret = false;
+   cng_encrypt_state *state = _crypto_state_init (key, iv, status);
+
    NTSTATUS nt_status;
 
-   state = (cng_encrypt_state *) ctx;
    nt_status = BCryptEncrypt (state->key_handle,
                               (PUCHAR) (in->data),
                               in->len,
@@ -207,54 +198,28 @@ _crypto_encrypt_update (void *ctx,
 
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing cipher: 0x%x", (int) nt_status);
-      return false;
+      goto done;
    }
 
-   return true;
+   ret = true;
+done:
+   _crypto_state_destroy (state);
+   return ret;
 }
 
 
 bool
-_crypto_encrypt_finalize (void *ctx,
-                          _mongocrypt_buffer_t *out,
-                          uint32_t *bytes_written,
-                          mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
 {
-   /* No finalize needed */
-   *bytes_written = 0;
-   return true;
-}
+   bool ret = false;
+   cng_encrypt_state *state = _crypto_state_init (key, iv, status);
 
-
-void
-_crypto_encrypt_destroy (void *ctx)
-{
-   if (ctx) {
-      _crypto_state_destroy ((cng_encrypt_state *) ctx);
-   }
-}
-
-
-void *
-_crypto_decrypt_new (const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     mongocrypt_status_t *status)
-{
-   return _crypto_state_init (key, iv, status);
-}
-
-
-bool
-_crypto_decrypt_update (void *ctx,
-                        const _mongocrypt_buffer_t *in,
-                        _mongocrypt_buffer_t *out,
-                        uint32_t *bytes_written,
-                        mongocrypt_status_t *status)
-{
-   cng_encrypt_state *state;
    NTSTATUS nt_status;
-
-   state = (cng_encrypt_state *) ctx;
 
    nt_status = BCryptDecrypt (state->key_handle,
                               (PUCHAR) (in->data),
@@ -267,40 +232,33 @@ _crypto_decrypt_update (void *ctx,
                               bytes_written,
                               0);
 
+
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing cipher: 0x%x", (int) nt_status);
-      return false;
+      goto done;
    }
 
-   return true;
+   ret = true;
+done:
+   _crypto_state_destroy (state);
+   return ret;
 }
 
 
 bool
-_crypto_decrypt_finalize (void *ctx,
-                          _mongocrypt_buffer_t *out,
-                          uint32_t *bytes_written,
-                          mongocrypt_status_t *status)
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
 {
-   /* No finalize needed */
-   *bytes_written = 0;
-   return true;
-}
-
-
-void
-_crypto_decrypt_destroy (void *ctx)
-{
-   if (ctx) {
-      _crypto_state_destroy ((cng_encrypt_state *) ctx);
-   }
-}
-
-void *
-_crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status)
-{
+   bool ret = false;
    BCRYPT_HASH_HANDLE hHash;
    NTSTATUS nt_status;
+
+   if (out->len != 64) {
+      CLIENT_ERR ("out does not contain 64 bytes");
+      return false;
+   }
 
    nt_status = BCryptCreateHash (_algo_sha512_hmac,
                                  &hHash,
@@ -311,73 +269,32 @@ _crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status)
                                  0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
-      return NULL;
+      goto done;
    }
-
-   return hHash;
-}
-
-
-bool
-_crypto_hmac_update (void *ctx,
-                     const _mongocrypt_buffer_t *in,
-                     mongocrypt_status_t *status)
-{
-   BCRYPT_HASH_HANDLE hHash;
-   NTSTATUS nt_status;
-
-   hHash = (BCRYPT_HASH_HANDLE) ctx;
 
    nt_status = BCryptHashData (hHash, (PUCHAR) in->data, (ULONG) in->len, 0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error hashing data: 0x%x", (int) nt_status);
-      return false;
+      goto done;
    }
-
-   return true;
-}
-
-
-bool
-_crypto_hmac_finalize (void *ctx,
-                       _mongocrypt_buffer_t *out,
-                       uint32_t *bytes_written,
-                       mongocrypt_status_t *status)
-{
-   BCRYPT_HASH_HANDLE hHash;
-   NTSTATUS nt_status;
-
-   hHash = (BCRYPT_HASH_HANDLE) ctx;
-
-   BSON_ASSERT (out->len >= 64);
 
    nt_status = BCryptFinishHash (hHash, out->data, out->len, 0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error finishing hmac: 0x%x", (int) nt_status);
-      return false;
+      goto done;
    }
 
-   *bytes_written = 64; /* have faith! */
-   return true;
-}
-
-
-void
-_crypto_hmac_destroy (void *ctx)
-{
-   BCRYPT_HASH_HANDLE hHash;
-
-   if (ctx) {
-      hHash = (BCRYPT_HASH_HANDLE) ctx;
-      (void) BCryptDestroyHash (hHash);
-   }
+   ret = true;
+done:
+   (void) BCryptDestroyHash (hHash);
+   return ret;
 }
 
 
 bool
-_crypto_random (_mongocrypt_buffer_t *out,
-                mongocrypt_status_t *status,
-                uint32_t count)
+_native_crypto_random (_mongocrypt_buffer_t *out,
+                       uint32_t count,
+                       mongocrypt_status_t *status)
 {
    NTSTATUS nt_status = BCryptGenRandom (_random, out->data, count, 0);
    if (nt_status != STATUS_SUCCESS) {

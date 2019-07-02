@@ -65,11 +65,12 @@ typedef struct {
    _mongocrypt_key_broker_entry_t *kb_entry; /* head of a linked-list. */
    _mongocrypt_key_broker_entry_t *decryptor_iter;
 
-   mongocrypt_status_t *status; /* TODO: remove this. */
+   mongocrypt_status_t *status;
    _mongocrypt_buffer_t filter;
    _mongocrypt_opts_t *crypt_opts;
    _mongocrypt_cache_t *cache_key;
    _mongocrypt_log_t *log;
+   mongocrypt_t *crypt;
 } _mongocrypt_key_broker_t;
 
 
@@ -77,7 +78,8 @@ void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
                              _mongocrypt_opts_t *opts,
                              _mongocrypt_cache_t *cache_key,
-                             _mongocrypt_log_t *log);
+                             _mongocrypt_log_t *log,
+                             mongocrypt_t *crypt);
 
 
 /* Add an ID into the key broker. */

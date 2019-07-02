@@ -23,6 +23,7 @@
 #include "mongocrypt-cache-key-private.h"
 #include "mongocrypt-opts-private.h"
 #include "kms_message/kms_message.h"
+#include "mongocrypt-crypto-private.h"
 
 struct __mongocrypt_ctx_opts_t;
 
@@ -47,7 +48,8 @@ bool
 _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
                                       _mongocrypt_opts_t *crypt_opts,
                                       _mongocrypt_key_doc_t *key,
-                                      _mongocrypt_log_t *log);
+                                      _mongocrypt_log_t *log,
+                                      _mongocrypt_crypto_t *crypto);
 
 
 bool
@@ -56,7 +58,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _mongocrypt_opts_t *crypt_opts,
    struct __mongocrypt_ctx_opts_t *ctx_opts,
    _mongocrypt_buffer_t *decrypted_key_material,
-   _mongocrypt_log_t *log);
+   _mongocrypt_log_t *log,
+   _mongocrypt_crypto_t *crypto);
 
 
 bool

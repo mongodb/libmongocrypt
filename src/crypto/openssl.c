@@ -60,23 +60,26 @@ HMAC_CTX_free (HMAC_CTX *ctx)
 }
 #endif
 
-bool _crypto_initialized = false;
+bool _native_crypto_initialized = false;
 
 void
-_crypto_init ()
+_native_crypto_init ()
 {
-   _crypto_initialized = true;
+   _native_crypto_initialized = true;
 }
 
-
-void *
-_crypto_encrypt_new (const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     mongocrypt_status_t *status)
+bool
+_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
 {
    const EVP_CIPHER *cipher;
    EVP_CIPHER_CTX *ctx;
    bool ret = false;
+   int intermediate_bytes_written;
 
    ctx = EVP_CIPHER_CTX_new ();
    cipher = EVP_aes_256_cbc ();
@@ -97,75 +100,43 @@ _crypto_encrypt_new (const _mongocrypt_buffer_t *key,
    /* Disable the default OpenSSL padding. */
    EVP_CIPHER_CTX_set_padding (ctx, 0);
 
-   ret = true;
-done:
-   if (!ret) {
-      _crypto_encrypt_destroy (ctx);
-      return NULL;
-   }
-   return ctx;
-}
-
-
-bool
-_crypto_encrypt_update (void *ctx,
-                        const _mongocrypt_buffer_t *in,
-                        _mongocrypt_buffer_t *out,
-                        uint32_t *bytes_written,
-                        mongocrypt_status_t *status)
-{
-   bool ret = false;
-
+   *bytes_written = 0;
    if (!EVP_EncryptUpdate (
-          ctx, out->data, (int *) bytes_written, in->data, in->len)) {
+          ctx, out->data, &intermediate_bytes_written, in->data, in->len)) {
       CLIENT_ERR ("error encrypting: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
-   ret = true;
-done:
-   return ret;
-}
+   *bytes_written = (uint32_t) intermediate_bytes_written;
 
-
-bool
-_crypto_encrypt_finalize (void *ctx,
-                          _mongocrypt_buffer_t *out,
-                          uint32_t *bytes_written,
-                          mongocrypt_status_t *status)
-{
-   bool ret = false;
-
-   if (!EVP_EncryptFinal_ex (ctx, out->data, (int *) bytes_written)) {
+   if (!EVP_EncryptFinal_ex (ctx, out->data, &intermediate_bytes_written)) {
       CLIENT_ERR ("error finalizing: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
+   *bytes_written += (uint32_t) intermediate_bytes_written;
+
    ret = true;
 done:
+   EVP_CIPHER_CTX_free (ctx);
    return ret;
 }
 
 
-void
-_crypto_encrypt_destroy (void *ctx)
-{
-   if (ctx) {
-      EVP_CIPHER_CTX_free (ctx);
-   }
-}
-
-
-void *
-_crypto_decrypt_new (const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     mongocrypt_status_t *status)
+bool
+_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
 {
    const EVP_CIPHER *cipher;
    EVP_CIPHER_CTX *ctx;
    bool ret = false;
+   int intermediate_bytes_written;
 
    ctx = EVP_CIPHER_CTX_new ();
    cipher = EVP_aes_256_cbc ();
@@ -184,67 +155,37 @@ _crypto_decrypt_new (const _mongocrypt_buffer_t *key,
    /* Disable padding. */
    EVP_CIPHER_CTX_set_padding (ctx, 0);
 
-   ret = true;
-done:
-   if (!ret) {
-      _crypto_decrypt_destroy (ctx);
-      return NULL;
-   }
-   return ctx;
-}
-
-
-bool
-_crypto_decrypt_update (void *ctx,
-                        const _mongocrypt_buffer_t *in,
-                        _mongocrypt_buffer_t *out,
-                        uint32_t *bytes_written,
-                        mongocrypt_status_t *status)
-{
-   bool ret = false;
+   *bytes_written = 0;
 
    if (!EVP_DecryptUpdate (
-          ctx, out->data, (int *) bytes_written, in->data, in->len)) {
+          ctx, out->data, &intermediate_bytes_written, in->data, in->len)) {
       CLIENT_ERR ("error decrypting: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
+   *bytes_written = intermediate_bytes_written;
+
+   if (!EVP_DecryptFinal_ex (ctx, out->data, &intermediate_bytes_written)) {
+      CLIENT_ERR ("error decrypting: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      goto done;
+   }
+
+   *bytes_written += intermediate_bytes_written;
+
    ret = true;
 done:
+   EVP_CIPHER_CTX_free (ctx);
    return ret;
 }
 
 
 bool
-_crypto_decrypt_finalize (void *ctx,
-                          _mongocrypt_buffer_t *out,
-                          uint32_t *bytes_written,
-                          mongocrypt_status_t *status)
-{
-   bool ret = false;
-
-   if (!EVP_DecryptFinal_ex (ctx, out->data, (int *) bytes_written)) {
-      CLIENT_ERR ("error decrypting: %s",
-                  ERR_error_string (ERR_get_error (), NULL));
-      goto done;
-   }
-
-   ret = true;
-done:
-   return ret;
-}
-
-
-void
-_crypto_decrypt_destroy (void *ctx)
-{
-   EVP_CIPHER_CTX_free (ctx);
-}
-
-
-void *
-_crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status)
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
 {
    const EVP_MD *algo;
    HMAC_CTX *ctx;
@@ -253,7 +194,12 @@ _crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status)
    ctx = HMAC_CTX_new ();
    algo = EVP_sha512 ();
    BSON_ASSERT (EVP_MD_block_size (algo) == 128);
-   BSON_ASSERT (EVP_MD_size (algo) == 64);
+   BSON_ASSERT (EVP_MD_size (algo) == MONGOCRYPT_HMAC_SHA512_LEN);
+
+   if (out->len != MONGOCRYPT_HMAC_SHA512_LEN) {
+      CLIENT_ERR ("out does not contain %d bytes", MONGOCRYPT_HMAC_SHA512_LEN);
+      return false;
+   }
 
    if (!HMAC_Init_ex (ctx, key->data, key->len, algo, NULL /* engine */)) {
       CLIENT_ERR ("error initializing HMAC: %s",
@@ -261,45 +207,13 @@ _crypto_hmac_new (const _mongocrypt_buffer_t *key, mongocrypt_status_t *status)
       goto done;
    }
 
-   ret = true;
-done:
-   if (!ret) {
-      _crypto_hmac_destroy (ctx);
-      return NULL;
-   }
-   return ctx;
-}
-
-
-bool
-_crypto_hmac_update (void *ctx,
-                     const _mongocrypt_buffer_t *in,
-                     mongocrypt_status_t *status)
-{
-   bool ret = false;
-
    if (!HMAC_Update (ctx, in->data, in->len)) {
       CLIENT_ERR ("error updating HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
-   ret = true;
-done:
-   return ret;
-}
-
-
-bool
-_crypto_hmac_finalize (void *ctx,
-                       _mongocrypt_buffer_t *out,
-                       uint32_t *bytes_written,
-                       mongocrypt_status_t *status)
-{
-   bool ret = false;
-
-   BSON_ASSERT (out->len >= 64);
-   if (!HMAC_Final (ctx, out->data, bytes_written)) {
+   if (!HMAC_Final (ctx, out->data, NULL /* unused out len */)) {
       CLIENT_ERR ("error finalizing: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -307,23 +221,15 @@ _crypto_hmac_finalize (void *ctx,
 
    ret = true;
 done:
+   HMAC_CTX_free (ctx);
    return ret;
 }
 
 
-void
-_crypto_hmac_destroy (void *ctx)
-{
-   if (ctx) {
-      HMAC_CTX_free (ctx);
-   }
-}
-
-
 bool
-_crypto_random (_mongocrypt_buffer_t *out,
-                mongocrypt_status_t *status,
-                uint32_t count)
+_native_crypto_random (_mongocrypt_buffer_t *out,
+                       uint32_t count,
+                       mongocrypt_status_t *status)
 {
    int ret = RAND_bytes (out->data, count);
    /* From man page: "RAND_bytes() and RAND_priv_bytes() return 1 on success, -1

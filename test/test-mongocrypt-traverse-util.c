@@ -168,7 +168,7 @@ _assemble_bson (int num_markings,
                 _util_tester_t *tester)
 {
    char name[24];
-   bson_t *parent;
+   bson_t *parent = NULL;
    bson_t bson;
    int i;
 
@@ -499,7 +499,7 @@ test_mongocrypt_transform_util_nesting (_util_tester_t *tester)
 static void
 test_mongocrypt_transform_util (_mongocrypt_tester_t *tester)
 {
-   _util_tester_t ctx;
+   _util_tester_t ctx = {0};
 
    ctx.tester = tester;
 

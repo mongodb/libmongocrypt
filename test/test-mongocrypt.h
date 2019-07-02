@@ -160,6 +160,18 @@ _mongocrypt_tester_mongocrypt (void);
 #define ASSERT_STATUS_CONTAINS(status, _msg_pattern) \
    ASSERT_FAILS_STATUS (false, status, _msg_pattern)
 
+#define ASSERT_STREQUAL(_expr_a, _expr_b)                                 \
+   do {                                                                   \
+      const char *_str_a = (_expr_a);                                     \
+      const char *_str_b = (_expr_b);                                     \
+      int _ret = strcmp (_str_a, _str_b);                                 \
+      if (_ret != 0) {                                                    \
+         fprintf (                                                        \
+            stderr, "strings not equal:\n%s\nvs.\n%s\n", _str_a, _str_b); \
+      }                                                                   \
+      BSON_ASSERT (0 == _ret);                                            \
+   } while (0);
+
 void
 _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
 void
@@ -222,6 +234,9 @@ _mongocrypt_tester_install_marking (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_traverse_util (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester);
 
 /* Conveniences for getting test data. */
 

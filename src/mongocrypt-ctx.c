@@ -673,8 +673,11 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm prohibited");
    }
 
-   _mongocrypt_key_broker_init (
-      &ctx->kb, &ctx->crypt->opts, &ctx->crypt->cache_key, &ctx->crypt->log);
+   _mongocrypt_key_broker_init (&ctx->kb,
+                                &ctx->crypt->opts,
+                                &ctx->crypt->cache_key,
+                                &ctx->crypt->log,
+                                ctx->crypt);
    return true;
 }
 

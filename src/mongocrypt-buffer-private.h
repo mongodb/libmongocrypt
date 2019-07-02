@@ -97,7 +97,7 @@ _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
 
 
 void
-_mongocrypt_buffer_to_binary (_mongocrypt_buffer_t *buf,
+_mongocrypt_buffer_to_binary (const _mongocrypt_buffer_t *buf,
                               struct _mongocrypt_binary_t *binary);
 
 
@@ -141,8 +141,22 @@ bool
 _mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
                                         bson_iter_t *iter);
 
-
 bool
 _mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf);
+
+
+void
+_mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex);
+
+int
+_mongocrypt_buffer_cmp_hex (_mongocrypt_buffer_t *buf, const char *hex);
+
+char *
+_mongocrypt_buffer_to_hex (_mongocrypt_buffer_t *buf);
+
+void
+_mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
+                           const _mongocrypt_buffer_t *srcs,
+                           uint32_t num_srcs);
 
 #endif /* MONGOCRYPT_BUFFER_H */

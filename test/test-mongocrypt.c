@@ -602,6 +602,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install (&tester,
                                "_test_setopt_invalid_kms_providers",
                                _test_setopt_invalid_kms_providers);
+   _mongocrypt_tester_install_crypto_hooks (&tester);
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

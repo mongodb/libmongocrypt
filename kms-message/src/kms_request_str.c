@@ -368,13 +368,14 @@ kms_request_str_append_stripped (kms_request_str_t *str,
 }
 
 bool
-kms_request_str_append_hashed (kms_request_str_t *str,
+kms_request_str_append_hashed (_kms_crypto_t *crypto,
+                               kms_request_str_t *str,
                                kms_request_str_t *appended)
 {
    uint8_t hash[32];
    char *hex_chars;
 
-   if (!kms_sha256 (appended->str, appended->len, hash)) {
+   if (!crypto->sha256 (crypto->ctx, appended->str, appended->len, hash)) {
       return false;
    }
 

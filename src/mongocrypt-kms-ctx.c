@@ -30,13 +30,78 @@
  * in kms_ctx_bytes_needed until we are fed the Content-Length.
  */
 #define DEFAULT_MAX_KMS_BYTE_REQUEST 1024
+#define SHA256_LEN 32
+
+static bool
+_sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
+{
+   bool ret;
+   mongocrypt_status_t *status;
+   _mongocrypt_crypto_t *crypto = (_mongocrypt_crypto_t *) ctx;
+   mongocrypt_binary_t *plaintext, *out;
+
+   status = mongocrypt_status_new ();
+   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, len);
+   out = mongocrypt_binary_new ();
+
+   out->data = hash_out;
+   out->len = SHA256_LEN;
+
+   ret = crypto->sha_256 (crypto->ctx, plaintext, out, status);
+
+   mongocrypt_status_destroy (status);
+   mongocrypt_binary_destroy (plaintext);
+   mongocrypt_binary_destroy (out);
+   return ret;
+}
+
+static bool
+_sha256_hmac (void *ctx,
+              const char *key_input,
+              size_t key_len,
+              const char *input,
+              size_t len,
+              unsigned char *hash_out)
+{
+   mongocrypt_status_t *status;
+   _mongocrypt_crypto_t *crypto = (_mongocrypt_crypto_t *) ctx;
+   mongocrypt_binary_t *key, *plaintext, *out;
+   bool ret;
+
+   (void) crypto;
+
+   status = mongocrypt_status_new ();
+   key = mongocrypt_binary_new_from_data ((uint8_t *) key_input, key_len);
+   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, len);
+   out = mongocrypt_binary_new ();
+
+   out->data = hash_out;
+   out->len = SHA256_LEN;
+
+   ret = crypto->hmac_sha_256 (crypto->ctx, key, plaintext, out, status);
+
+   mongocrypt_status_destroy (status);
+   mongocrypt_binary_destroy (key);
+   mongocrypt_binary_destroy (plaintext);
+   mongocrypt_binary_destroy (out);
+   return ret;
+}
+
+static void
+_set_kms_crypto_hooks (_mongocrypt_crypto_t *crypto, kms_request_opt_t *opts)
+{
+   if (crypto->hooks_enabled) {
+      kms_request_opt_set_crypto_hooks (opts, _sha256, _sha256_hmac, crypto);
+   }
+}
 
 
 bool
 _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
                                       _mongocrypt_opts_t *crypt_opts,
                                       _mongocrypt_key_doc_t *key,
-                                      _mongocrypt_log_t *log)
+                                      _mongocrypt_log_t *log,
+                                      _mongocrypt_crypto_t *crypto)
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
@@ -80,6 +145,8 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
 
    /* create the KMS request. */
    opt = kms_request_opt_new ();
+
+   _set_kms_crypto_hooks (crypto, opt);
    /* TODO: we might want to let drivers control whether or not we send
     * Connection: close header. Unsure right now. */
    kms_request_opt_set_connection_close (opt, true);
@@ -127,7 +194,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _mongocrypt_opts_t *crypt_opts,
    _mongocrypt_ctx_opts_t *ctx_opts,
    _mongocrypt_buffer_t *plaintext_key_material,
-   _mongocrypt_log_t *log)
+   _mongocrypt_log_t *log,
+   _mongocrypt_crypto_t *crypto)
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
@@ -171,6 +239,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    /* create the KMS request. */
    opt = kms_request_opt_new ();
+
+   _set_kms_crypto_hooks (crypto, opt);
    /* TODO: we might want to let drivers control whether or not we send
     * Connection: close header. Unsure right now. */
    kms_request_opt_set_connection_close (opt, true);

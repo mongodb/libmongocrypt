@@ -100,6 +100,13 @@ kms_request_new (const char *method,
       kms_request_add_header_field (request, "Connection", "close");
    }
 
+   if (opt && opt->crypto.sha256) {
+      memcpy (&request->crypto, &opt->crypto, sizeof (opt->crypto));
+   } else {
+      request->crypto.sha256 = kms_sha256;
+      request->crypto.sha256_hmac = kms_sha256_hmac;
+   }
+
    return request;
 }
 
@@ -448,7 +455,8 @@ kms_request_get_canonical (kms_request_t *request)
    kms_request_str_append_newline (canonical);
    append_signed_headers (lst, canonical);
    kms_request_str_append_newline (canonical);
-   kms_request_str_append_hashed (canonical, request->payload);
+   kms_request_str_append_hashed (
+      &request->crypto, canonical, request->payload);
 
    kms_request_str_destroy (normalized);
    kms_kv_list_destroy (lst);
@@ -485,7 +493,7 @@ kms_request_get_string_to_sign (kms_request_t *request)
    kms_request_str_append_chars (sts, "/aws4_request\n", -1);
 
    creq = kms_request_str_wrap (kms_request_get_canonical (request), -1);
-   if (!kms_request_str_append_hashed (sts, creq)) {
+   if (!kms_request_str_append_hashed (&request->crypto, sts, creq)) {
       goto done;
    }
 
@@ -501,19 +509,23 @@ done:
 }
 
 static bool
-kms_request_hmac (unsigned char *out,
+kms_request_hmac (_kms_crypto_t *crypto,
+                  unsigned char *out,
                   kms_request_str_t *key,
                   kms_request_str_t *data)
 {
-   return kms_sha256_hmac (key->str, (int) key->len, data->str, data->len, out);
+   return crypto->sha256_hmac (
+      crypto->ctx, key->str, (int) key->len, data->str, data->len, out);
 }
 
 static bool
-kms_request_hmac_again (unsigned char *out,
+kms_request_hmac_again (_kms_crypto_t *crypto,
+                        unsigned char *out,
                         unsigned char *in,
                         kms_request_str_t *data)
 {
-   return kms_sha256_hmac ((const char *) in, 32, data->str, data->len, out);
+   return crypto->sha256_hmac (
+      crypto->ctx, (const char *) in, 32, data->str, data->len, out);
 }
 
 bool
@@ -544,10 +556,14 @@ kms_request_get_signing_key (kms_request_t *request, unsigned char *key)
 
    aws4_request = kms_request_str_new_from_chars ("aws4_request", -1);
 
-   if (!(kms_request_hmac (k_date, aws4_plus_secret, request->date) &&
-         kms_request_hmac_again (k_region, k_date, request->region) &&
-         kms_request_hmac_again (k_service, k_region, request->service) &&
-         kms_request_hmac_again (key, k_service, aws4_request))) {
+   if (!(kms_request_hmac (
+            &request->crypto, k_date, aws4_plus_secret, request->date) &&
+         kms_request_hmac_again (
+            &request->crypto, k_region, k_date, request->region) &&
+         kms_request_hmac_again (
+            &request->crypto, k_service, k_region, request->service) &&
+         kms_request_hmac_again (
+            &request->crypto, key, k_service, aws4_request))) {
       goto done;
    }
 
@@ -592,7 +608,8 @@ kms_request_get_signature (kms_request_t *request)
    append_signed_headers (lst, sig);
    kms_request_str_append_chars (sig, ", Signature=", -1);
    if (!(kms_request_get_signing_key (request, signing_key) &&
-         kms_request_hmac_again (signature, signing_key, sts))) {
+         kms_request_hmac_again (
+            &request->crypto, signature, signing_key, sts))) {
       goto done;
    }
 
@@ -611,7 +628,7 @@ done:
 }
 
 void
-kms_request_validate (kms_request_t *request) 
+kms_request_validate (kms_request_t *request)
 {
    if (0 == request->region->len) {
       KMS_ERROR (request, "Region not set");
@@ -702,6 +719,7 @@ done:
 }
 
 void
-kms_request_free_string (char* ptr) {
-   free(ptr);
+kms_request_free_string (char *ptr)
+{
+   free (ptr);
 }
