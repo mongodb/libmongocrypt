@@ -97,13 +97,22 @@ elseif (WIN32)
 endif ()
 
 
+set (MONGOCRYPT_ENABLE_CRYPTO 0)
+set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 0)
+set (MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO 0)
+set (MONGOCRPYT_ENABLE_CRYPTO_CNG 0)
+
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    message ("Building with common crypto")
+   set (MONGOCRYPT_ENABLE_CRYPTO 1)
+   set (MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO 1)
    list(APPEND MONGOCRYPT_SOURCES
       src/crypto/commoncrypto.c
    )
 elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
    message ("Building with CNG")
+   set (MONGOCRYPT_ENABLE_CRYPTO 1)
+   set (MONGOCRPYT_ENABLE_CRYPTO_CNG 1)
    list(APPEND MONGOCRYPT_SOURCES
       src/crypto/cng.c
    )
@@ -111,10 +120,17 @@ else ()
    message ("Building with OpenSSL")
    include (FindOpenSSL)
    message ("Found OpenSSL version ${OPENSSL_VERSION}")
+   set (MONGOCRYPT_ENABLE_CRYPTO 1)
+   set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 1)
    list(APPEND MONGOCRYPT_SOURCES
       src/crypto/openssl.c
    )
 endif ()
+
+configure_file (
+   "${PROJECT_SOURCE_DIR}/src/mongocrypt-config.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongocrypt-config.h"
+)
 
 # kms-message
 add_subdirectory (kms-message)
