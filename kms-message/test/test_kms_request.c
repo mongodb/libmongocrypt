@@ -704,8 +704,9 @@ decrypt_request_test (void)
 void
 encrypt_request_test (void)
 {
-   char* plaintext = "foobar";
-   kms_request_t *request = kms_encrypt_request_new ((uint8_t*) plaintext, strlen(plaintext), "alias/1", NULL);
+   char *plaintext = "foobar";
+   kms_request_t *request = kms_encrypt_request_new (
+      (uint8_t *) plaintext, strlen (plaintext), "alias/1", NULL);
 
    set_test_date (request);
    kms_request_set_region (request, "us-east-1");
@@ -797,24 +798,91 @@ kms_response_parser_test (void)
    kms_response_destroy (response);
 
    /* the parser resets after returning a response. */
-   kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 201 CREATED\r\n", 22);
-   kms_response_parser_feed (parser, (uint8_t *) "Content-Length: 15\r\n", 20);
-   kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2);
-   kms_response_parser_feed (parser, (uint8_t *) "This is a test.", 15);
+   ASSERT (kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_feed (
+      parser, (uint8_t *) "Content-Length: 15\r\n", 20));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
+   ASSERT (
+      kms_response_parser_feed (parser, (uint8_t *) "This is a test.", 15));
    ASSERT (0 == kms_response_parser_wants_bytes (parser, 123));
    response = kms_response_parser_get_response (parser);
-   ASSERT (response->status == 201)
+   ASSERT (response->status == 200)
    ASSERT_CMPSTR (response->body->str, "This is a test.");
 
    kms_response_destroy (response);
    kms_response_parser_destroy (parser);
+
+   /* We fail to parse invalid HTTP */
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "To Whom it May Concern\r\n", 24));
+   kms_response_parser_destroy (parser);
+
+   /* We fail on HTTP other than 1.1 */
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/6.1 200 OK\r\n", 17));
+   kms_response_parser_destroy (parser);
+
+   /* We fail if there is no status */
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 CREATED\r\n", 18));
+   kms_response_parser_destroy (parser);
+
+   /* We fail on non-200 status codes */
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 100 CONTINUE\r\n", 23));
+   kms_response_parser_destroy (parser);
+
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 201 CREATED\r\n", 21));
+   kms_response_parser_destroy (parser);
+
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 301 MOVED PERMANENTLY\r\n", 32));
+   kms_response_parser_destroy (parser);
+
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 400 BAD REQUEST\r\n", 26));
+   kms_response_parser_destroy (parser);
+
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 404 NOT FOUND\r\n", 24));
+   kms_response_parser_destroy (parser);
+
+   parser = kms_response_parser_new ();
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 500 INTERNAL SERVER ERROR\r\n", 36));
+   kms_response_parser_destroy (parser);
+
+   /* We fail if the header doesn't have a colon in it */
+   parser = kms_response_parser_new ();
+   ASSERT (kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (!kms_response_parser_feed (
+      parser, (uint8_t *) "Content-Length= 15\r\n", 20));
+   kms_response_parser_destroy (parser);
+
+   /* We fail if we are missing a content length */
+   parser = kms_response_parser_new ();
+   ASSERT (kms_response_parser_feed (
+      parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (
+      !kms_response_parser_feed (parser, (uint8_t *) "Anything else\r\n", 15));
+   kms_response_parser_destroy (parser);
 }
 
-#define CLEAR(_field) \
-   do { \
-      kms_request_str_destroy(_field); \
-      _field = kms_request_str_new(); \
+#define CLEAR(_field)                   \
+   do {                                 \
+      kms_request_str_destroy (_field); \
+      _field = kms_request_str_new ();  \
    } while (0)
 
 void
@@ -822,51 +890,51 @@ kms_request_validate_test (void)
 {
    kms_request_t *request = NULL;
 
-   request = make_test_request();
+   request = make_test_request ();
    CLEAR (request->region);
-   ASSERT ( NULL == kms_request_get_signed (request));
+   ASSERT (NULL == kms_request_get_signed (request));
    ASSERT_CMPSTR ("Region not set", kms_request_get_error (request));
-   
+
    kms_request_destroy (request);
 
-   request = make_test_request();
+   request = make_test_request ();
    CLEAR (request->service);
-   ASSERT ( NULL == kms_request_get_signed (request));
+   ASSERT (NULL == kms_request_get_signed (request));
    ASSERT_CMPSTR ("Service not set", kms_request_get_error (request));
 
    kms_request_destroy (request);
 
-   request = make_test_request();
+   request = make_test_request ();
    CLEAR (request->access_key_id);
-   ASSERT ( NULL == kms_request_get_signed (request));
+   ASSERT (NULL == kms_request_get_signed (request));
    ASSERT_CMPSTR ("Access key ID not set", kms_request_get_error (request));
 
    kms_request_destroy (request);
 
-   request = make_test_request();
+   request = make_test_request ();
    CLEAR (request->method);
-   ASSERT ( NULL == kms_request_get_signed (request));
+   ASSERT (NULL == kms_request_get_signed (request));
    ASSERT_CMPSTR ("Method not set", kms_request_get_error (request));
 
    kms_request_destroy (request);
 
-   request = make_test_request();
+   request = make_test_request ();
    CLEAR (request->path);
-   ASSERT ( NULL == kms_request_get_signed (request));
+   ASSERT (NULL == kms_request_get_signed (request));
    ASSERT_CMPSTR ("Path not set", kms_request_get_error (request));
 
    kms_request_destroy (request);
 
-   request = make_test_request();
+   request = make_test_request ();
    CLEAR (request->date);
-   ASSERT ( NULL == kms_request_get_signed (request));
+   ASSERT (NULL == kms_request_get_signed (request));
    ASSERT_CMPSTR ("Date not set", kms_request_get_error (request));
 
    kms_request_destroy (request);
-   
-   request = make_test_request();
+
+   request = make_test_request ();
    CLEAR (request->secret_key);
-   ASSERT ( NULL == kms_request_get_signed (request));
+   ASSERT (NULL == kms_request_get_signed (request));
    ASSERT_CMPSTR ("Secret key not set", kms_request_get_error (request));
 
    kms_request_destroy (request);

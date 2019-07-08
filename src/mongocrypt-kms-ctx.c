@@ -253,8 +253,12 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
                        mongocrypt_binary_data (bytes));
    }
 
-   /* TODO: KMS error handling in CDRIVER-3000? */
-   kms_response_parser_feed (kms->parser, bytes->data, bytes->len);
+   if (!kms_response_parser_feed (kms->parser, bytes->data, bytes->len)) {
+      CLIENT_ERR ("KMS response parser error with status %d, error: %s",
+                  kms_response_parser_status (kms->parser),
+		  kms_response_parser_error (kms->parser));
+      return false;
+   }
 
    if (0 == mongocrypt_kms_ctx_bytes_needed (kms)) {
       kms_response_t *response = NULL;

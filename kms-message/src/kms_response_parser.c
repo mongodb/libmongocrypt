@@ -119,6 +119,13 @@ _parse_line (kms_response_parser_t *parser, int end)
       }
 
       response->status = status;
+
+      /* Error for non-ok statuses. */
+      if (response->status != 200) {
+         KMS_ERROR (parser, "Parsed a non-ok Status-Code.");
+         return PARSING_DONE;
+      }
+
       /* ignore the Reason-Phrase. */
       return PARSING_HEADER;
    } else if (parser->state == PARSING_HEADER) {
@@ -211,8 +218,12 @@ kms_response_parser_feed (kms_response_parser_t *parser,
          break;
       case PARSING_BODY:
          body_read = (int) raw->len - parser->start;
-         assert (parser->content_length != -1);
-         assert (body_read <= parser->content_length);
+
+         if (parser->content_length == -1 ||
+             body_read > parser->content_length) {
+            KMS_ERROR (parser, "Could not parse content length.");
+            return false;
+         }
 
          /* check if we have the entire body. */
          if (body_read == parser->content_length) {
@@ -224,7 +235,10 @@ kms_response_parser_feed (kms_response_parser_t *parser,
          curr = (int) raw->len;
          break;
       case PARSING_DONE:
-         /* return false if error. */
+         if (parser->failed) {
+            return false;
+         }
+
          return true;
       }
    }
@@ -243,6 +257,26 @@ kms_response_parser_get_response (kms_response_parser_t *parser)
    _parser_destroy (parser);
    _parser_init (parser);
    return response;
+}
+
+int
+kms_response_parser_status (kms_response_parser_t *parser)
+{
+   if (!parser || !(parser->response)) {
+      return 0;
+   }
+
+   return parser->response->status;
+}
+
+const char *
+kms_response_parser_error (kms_response_parser_t *parser)
+{
+   if (!parser) {
+      return NULL;
+   }
+
+   return parser->error;
 }
 
 void
