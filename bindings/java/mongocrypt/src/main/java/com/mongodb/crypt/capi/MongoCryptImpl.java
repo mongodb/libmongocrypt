@@ -65,6 +65,11 @@ class MongoCryptImpl implements MongoCrypt {
     private static final Logger LOGGER = Loggers.getLogger();
 
     private final mongocrypt_t wrapped;
+
+    // Keep a strong reference to the callback so that it doesn't get garbage collected
+    @SuppressWarnings("FieldCanBeLocal")
+    private final LogCallback logCallback;
+
     private volatile boolean closed;
 
     MongoCryptImpl(final MongoCryptOptions options) {
@@ -75,7 +80,9 @@ class MongoCryptImpl implements MongoCrypt {
 
         boolean success;
 
-        success = mongocrypt_setopt_log_handler(wrapped, new LogCallback(), null);
+        logCallback = new LogCallback();
+
+        success = mongocrypt_setopt_log_handler(wrapped, logCallback, null);
         if (!success) {
             throwExceptionFromStatus();
         }
