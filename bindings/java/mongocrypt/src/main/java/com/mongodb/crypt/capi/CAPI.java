@@ -366,7 +366,7 @@ public class CAPI {
     /**
      * Set the keyAltName to use for explicit encryption.
      * keyAltName should be a binary encoding a bson document
-     * with the following format: <code>{ "keyAltName" : <BSON UTF8 value> }</code>
+     * with the following format: <code>{ "keyAltName" : &gt;BSON UTF8 value&lt; }</code>
      *
      * <p>It is an error to set both this and the key id.</p>
      *
