@@ -122,7 +122,7 @@ describe('AutoEncrypter', function() {
               ssn: {
                 $binary: {
                   base64:
-                    'AWFhYWFhYWFhYWFhYWFhYWEC6f/1CgA+ncYs+mYa7q5ftmJVcJloVf+m8YBRGxZWo3qQkFSerlbOh71KRvffB7NH061iG8ctrYFv2BDRw+VQYEyJ1GrvJGaYr1Cuu7CW2KY=',
+                    'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=',
                   subType: '6'
                 }
               }
