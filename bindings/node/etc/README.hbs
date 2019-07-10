@@ -1,7 +1,7 @@
 MongoDB Client Encryption
 =========================
 
-The node.js wrapper for the Client Side Encryption library
+The node.js wrapper for [`libmongocrypt`](../../README.md)
 
 ### Requirements
 
