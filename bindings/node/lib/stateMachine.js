@@ -147,12 +147,10 @@ class StateMachine {
         reject(err);
       });
 
-      let bytesReceived = 0;
       socket.on('data', buffer => {
-        bytesReceived += buffer.length;
         request.addResponse(buffer);
 
-        if (bytesReceived >= request.bytesNeeded) {
+        if (request.bytesNeeded <= 0) {
           socket.end(resolve);
         }
       });
