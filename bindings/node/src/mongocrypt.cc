@@ -159,8 +159,6 @@ std::pair<bool, std::string> setEncryptionOptions(mongocrypt_ctx_t* context,
     Nan::HandleScope scope;
     v8::Local<v8::String> KEY_ID_KEY = Nan::New("keyId").ToLocalChecked();
     v8::Local<v8::String> ALGORITHM_KEY = Nan::New("algorithm").ToLocalChecked();
-    v8::Local<v8::String> INITIALIZATION_VECTOR_KEY =
-        Nan::New("initializationVector").ToLocalChecked();
 
     if (Nan::Has(options, KEY_ID_KEY).FromMaybe(false)) {
         if (!Nan::Get(options, KEY_ID_KEY).ToLocalChecked()->IsObject()) {
@@ -183,24 +181,6 @@ std::pair<bool, std::string> setEncryptionOptions(mongocrypt_ctx_t* context,
         std::string algorithm = StringOptionValue(options, "algorithm");
         if (!mongocrypt_ctx_setopt_algorithm(
                 context, const_cast<char*>(algorithm.c_str()), algorithm.size())) {
-            return std::make_pair(false, errorStringFromStatus(context));
-        }
-    }
-
-    if (Nan::Has(options, INITIALIZATION_VECTOR_KEY).FromMaybe(false)) {
-        if (!Nan::Get(options, INITIALIZATION_VECTOR_KEY).ToLocalChecked()->IsObject()) {
-            return std::make_pair(false, "`initializationVector` must be a Buffer");
-        }
-
-        v8::Local<v8::Object> initializationVector =
-            Nan::To<v8::Object>(Nan::Get(options, INITIALIZATION_VECTOR_KEY).ToLocalChecked())
-                .ToLocalChecked();
-        if (!node::Buffer::HasInstance(initializationVector)) {
-            return std::make_pair(false, "`initializationVector` must be a Buffer");
-        }
-
-        mongocrypt_binary_t* binary = BufferToBinary(initializationVector);
-        if (!mongocrypt_ctx_setopt_initialization_vector(context, binary)) {
             return std::make_pair(false, errorStringFromStatus(context));
         }
     }
