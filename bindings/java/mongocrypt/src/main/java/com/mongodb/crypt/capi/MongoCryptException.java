@@ -39,6 +39,15 @@ public class MongoCryptException extends RuntimeException {
     }
 
     /**
+     * @param msg   the message
+     * @param cause the cause
+     */
+    public MongoCryptException(final String msg, Throwable cause) {
+        super(msg, cause);
+        this.code = -1;
+    }
+
+    /**
      * Construct an instance from a {@code mongocrypt_status_t}.
      *
      * @param status the status

@@ -18,7 +18,6 @@
 package com.mongodb.crypt.capi;
 
 import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
-import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import org.bson.BsonBinaryWriter;
 import org.bson.BsonDocument;
@@ -35,6 +34,7 @@ import java.nio.ByteBuffer;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_data;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_len;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_new_from_data;
+import static java.lang.String.format;
 
 final class CAPIHelper {
 
@@ -73,6 +73,22 @@ final class CAPIHelper {
         Pointer pointer = mongocrypt_binary_data(binary);
         int length = mongocrypt_binary_len(binary);
         return pointer.getByteBuffer(0, length);
+    }
+
+    static byte[] toByteArray(final mongocrypt_binary_t binary) {
+        ByteBuffer byteBuffer = toByteBuffer(binary);
+        byte[] byteArray = new byte[byteBuffer.remaining()];
+        byteBuffer.get(byteArray);
+        return byteArray;
+    }
+
+    static void writeByteArrayToBinary(final mongocrypt_binary_t binary, byte[] bytes) {
+        if (mongocrypt_binary_len(binary) < bytes.length) {
+            throw new IllegalArgumentException(format("mongocrypt binary of length %d is not large enough to hold %d bytes",
+                    mongocrypt_binary_len(binary), bytes.length));
+        }
+        Pointer outPointer = mongocrypt_binary_data(binary);
+        outPointer.write(0, bytes, 0, bytes.length);
     }
 
     private CAPIHelper() {
