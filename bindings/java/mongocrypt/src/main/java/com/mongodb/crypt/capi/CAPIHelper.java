@@ -75,6 +75,18 @@ final class CAPIHelper {
         return pointer.getByteBuffer(0, length);
     }
 
+    static byte[] toByteArray(final mongocrypt_binary_t binary) {
+        ByteBuffer byteBuffer = toByteBuffer(binary);
+        byte[] byteArray = new byte[byteBuffer.remaining()];
+        byteBuffer.get(byteArray);
+        return byteArray;
+    }
+
+    static void writeByteArrayToBinary(final mongocrypt_binary_t binary, byte[] bytes) {
+        Pointer outPointer = mongocrypt_binary_data(binary);
+        outPointer.write(0, bytes, 0, bytes.length);
+    }
+
     private CAPIHelper() {
     }
 }

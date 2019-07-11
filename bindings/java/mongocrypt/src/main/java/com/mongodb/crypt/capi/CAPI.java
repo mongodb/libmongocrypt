@@ -184,6 +184,23 @@ public class CAPI {
     public static native mongocrypt_status_t
     mongocrypt_status_new();
 
+    /**
+     * Set a status object with message, type, and code.
+     * <p>
+     * Use this to set the mongocrypt_status_t given in the crypto hooks.
+     *
+     * @param status      The status.
+     * @param type        The status type.
+     * @param code        The status code.
+     * @param message     The message.
+     * @param message_len The length of @p message. Pass -1 to determine the * string length with strlen (must * be NULL terminated).
+     */
+    public static native void
+    mongocrypt_status_set(mongocrypt_status_t status,
+                          int type,
+                          int code,
+                          cstring message,
+                          int message_len);
 
     /**
      * Indicates success or the type of error.
@@ -250,6 +267,24 @@ public class CAPI {
         void log(int level, cstring message, int message_len, Pointer ctx);
     }
 
+    public interface mongocrypt_crypto_fn extends Callback {
+        boolean crypt(Pointer ctx, mongocrypt_binary_t key, mongocrypt_binary_t iv, mongocrypt_binary_t in,
+                      mongocrypt_binary_t out, Pointer bytesWritten, mongocrypt_status_t status);
+    }
+
+    public interface mongocrypt_hmac_fn extends Callback {
+        boolean hmac(Pointer ctx, mongocrypt_binary_t key, mongocrypt_binary_t in, mongocrypt_binary_t out,
+                     mongocrypt_status_t status);
+    }
+
+    public interface mongocrypt_hash_fn extends Callback {
+        boolean hash(Pointer ctx, mongocrypt_binary_t in, mongocrypt_binary_t out, mongocrypt_status_t status);
+    }
+
+    public interface mongocrypt_random_fn extends Callback {
+        boolean random(Pointer ctx, mongocrypt_binary_t out, int count, mongocrypt_status_t status);
+    }
+
     /**
      * Allocate a new @ref mongocrypt_t object.
      * <p>
@@ -275,6 +310,16 @@ public class CAPI {
                                   mongocrypt_log_fn_t log_fn,
                                   Pointer log_ctx);
 
+
+    public static native boolean
+    mongocrypt_setopt_crypto_hooks(mongocrypt_t crypt,
+                                   mongocrypt_crypto_fn aes_256_cbc_encrypt,
+                                   mongocrypt_crypto_fn aes_256_cbc_decrypt,
+                                   mongocrypt_random_fn random,
+                                   mongocrypt_hmac_fn hmac_sha_512,
+                                   mongocrypt_hmac_fn hmac_sha_256,
+                                   mongocrypt_hash_fn sha_256,
+                                   Pointer ctx);
 
     /**
      * Set a handler to get called on every log message.
@@ -321,7 +366,7 @@ public class CAPI {
      */
     public static native boolean
     mongocrypt_setopt_schema_map (mongocrypt_t crypt, mongocrypt_binary_t schema_map);
-    
+
     /**
      * Initialize new @ref mongocrypt_t object.
      *
@@ -473,7 +518,7 @@ public class CAPI {
      */
     public static native boolean
     mongocrypt_ctx_datakey_init (mongocrypt_ctx_t ctx);
-    
+
     /**
      * Initialize a context for encryption.
      *

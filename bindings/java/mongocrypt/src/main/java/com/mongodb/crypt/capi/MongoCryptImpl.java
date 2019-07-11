@@ -26,7 +26,9 @@ import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 
+import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.Map;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
@@ -49,6 +51,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_new;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hooks;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_log_handler;
@@ -65,9 +68,22 @@ class MongoCryptImpl implements MongoCrypt {
 
     private final mongocrypt_t wrapped;
 
-    // Keep a strong reference to the callback so that it doesn't get garbage collected
+    // Keep a strong reference to all the callbacks so that they don't get garbage collected
     @SuppressWarnings("FieldCanBeLocal")
     private final LogCallback logCallback;
+
+    @SuppressWarnings("FieldCanBeLocal")
+    private final CipherCallback aesCBC256EncryptCallback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final CipherCallback aesCBC256DecryptCallback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final MacCallback hmacSha512Callback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final MacCallback hmacSha256Callback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final MessageDigestCallback sha256Callback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final SecureRandomCallback secureRandomCallback;
 
     private volatile boolean closed;
 
@@ -82,6 +98,21 @@ class MongoCryptImpl implements MongoCrypt {
         logCallback = new LogCallback();
 
         success = mongocrypt_setopt_log_handler(wrapped, logCallback, null);
+        if (!success) {
+            throwExceptionFromStatus();
+        }
+
+        aesCBC256EncryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding",
+                Cipher.ENCRYPT_MODE);
+        aesCBC256DecryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding",
+                Cipher.DECRYPT_MODE);
+        hmacSha512Callback = new MacCallback("HmacSHA512");
+        hmacSha256Callback = new MacCallback("HmacSHA256");
+        sha256Callback = new MessageDigestCallback("SHA-256");
+        secureRandomCallback = new SecureRandomCallback(new SecureRandom());
+
+        success = mongocrypt_setopt_crypto_hooks(wrapped, aesCBC256EncryptCallback, aesCBC256DecryptCallback, secureRandomCallback,
+                hmacSha512Callback, hmacSha256Callback, sha256Callback, null);
         if (!success) {
             throwExceptionFromStatus();
         }
@@ -117,7 +148,7 @@ class MongoCryptImpl implements MongoCrypt {
                 }
             }
         }
-        
+
         success = mongocrypt_init(wrapped);
         if (!success) {
             throwExceptionFromStatus();
