@@ -11,6 +11,7 @@
     "format-cxx": "git-clang-format",
     "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
     "lint": "eslint lib test",
+    "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/**/*.js > README.md",
     "test": "mocha test"
   },
   "author": "Matt Broadstone <mbroadst@mongodb.com>",
@@ -24,8 +25,10 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-subset": "^1.6.0",
+    "dmd-clear": "^0.1.2",
     "eslint": "^4.5.0",
     "eslint-plugin-prettier": "^2.2.0",
+    "jsdoc-to-markdown": "^5.0.0",
     "mocha": "^6.1.4",
     "mongodb": "^3.2.7",
     "mongodb-extjson": "^3.0.3",
