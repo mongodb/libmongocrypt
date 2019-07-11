@@ -21,6 +21,7 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-broker-private.h"
+#include "mongocrypt-key-private.h"
 
 typedef enum {
    _MONGOCRYPT_TYPE_NONE,
@@ -41,7 +42,7 @@ typedef struct __mongocrypt_ctx_opts_t {
    char *masterkey_aws_region;
    uint32_t masterkey_aws_region_len;
    _mongocrypt_buffer_t key_id;
-   bson_value_t *key_alt_name;
+   _mongocrypt_key_alt_name_t *key_alt_names;
    mongocrypt_encryption_algorithm_t algorithm;
 } _mongocrypt_ctx_opts_t;
 
@@ -152,6 +153,7 @@ typedef struct {
    _mongocrypt_ctx_opt_spec_t masterkey;
    _mongocrypt_ctx_opt_spec_t schema;
    _mongocrypt_ctx_opt_spec_t key_descriptor; /* a key_id or key_alt_name */
+   _mongocrypt_ctx_opt_spec_t key_alt_names;
    _mongocrypt_ctx_opt_spec_t algorithm;
 } _mongocrypt_ctx_opts_spec_t;
 

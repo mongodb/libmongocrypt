@@ -202,11 +202,11 @@ _test_setopt_key_alt_name (_mongocrypt_tester_t *tester)
 
    crypt = _mongocrypt_tester_mongocrypt ();
 
-   /* Test double setting. */
+   /* Test double setting - actually succeeds since multiple key alt names
+    * allowed for data keys. */
    REFRESH;
    KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc'}"),
-                       "option already set");
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
 
    /* Test NULL/empty input */
    REFRESH;
@@ -292,6 +292,19 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
 
    REFRESH;
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   DATAKEY_INIT_OK;
+
+   /* Test optional key alt names. */
+   REFRESH;
+   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   DATAKEY_INIT_OK;
+
+   /* Multiple key alt names are okay. */
+   REFRESH;
+   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    DATAKEY_INIT_OK;
 
    /* Test each prohibited option. */
@@ -387,6 +400,14 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    ALGORITHM_OK (RAND, -1);
    EX_ENCRYPT_INIT_OK (bson);
+
+   /* Two keyAltNames is invalid */
+   REFRESH;
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ALGORITHM_OK (RAND, -1);
+   EX_ENCRYPT_INIT_FAILS (
+      bson, "must not specify multiple key alt names");
 
    /* Both keyAltName and keyId is invalid */
    REFRESH;

@@ -40,6 +40,9 @@ typedef struct __mongocrypt_key_alt_name_t {
 } _mongocrypt_key_alt_name_t;
 
 _mongocrypt_key_alt_name_t *
+_mongocrypt_key_alt_name_new (const bson_value_t *value);
+
+_mongocrypt_key_alt_name_t *
 _mongocrypt_key_alt_name_copy_all (_mongocrypt_key_alt_name_t *list);
 void
 _mongocrypt_key_alt_name_destroy_all (_mongocrypt_key_alt_name_t *list);

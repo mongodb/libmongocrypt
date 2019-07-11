@@ -118,8 +118,7 @@ _kbe_add_name (_mongocrypt_key_broker_entry_t *kbe, const bson_value_t *value)
       return false;
    }
 
-   name = bson_malloc0 (sizeof (*name));
-   bson_value_copy (value, &name->value);
+   name = _mongocrypt_key_alt_name_new (value);
    name->next = kbe->key_alt_names;
    kbe->key_alt_names = name;
 

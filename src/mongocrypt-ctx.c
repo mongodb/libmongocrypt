@@ -111,6 +111,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
 {
    bson_t as_bson;
    bson_iter_t iter;
+   _mongocrypt_key_alt_name_t *new_key_alt_name;
 
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
@@ -122,10 +123,6 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
 
    if (!key_alt_name || !key_alt_name->data) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "option must be non-NULL");
-   }
-
-   if (ctx->opts.key_alt_name) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "option already set");
    }
 
    if (!_mongocrypt_binary_to_bson (key_alt_name, &as_bson)) {
@@ -145,8 +142,9 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "keyAltName expected to be UTF8");
    }
 
-   ctx->opts.key_alt_name = bson_malloc0 (sizeof (bson_value_t));
-   bson_value_copy (bson_iter_value (&iter), ctx->opts.key_alt_name);
+   new_key_alt_name = _mongocrypt_key_alt_name_new (bson_iter_value (&iter));
+   new_key_alt_name->next = ctx->opts.key_alt_names;
+   ctx->opts.key_alt_names = new_key_alt_name;
 
    if (bson_iter_next (&iter)) {
       return _mongocrypt_ctx_fail_w_msg (
@@ -508,10 +506,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
    bson_free (ctx->opts.masterkey_aws_cmk);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
-   if (ctx->opts.key_alt_name) {
-      bson_value_destroy (ctx->opts.key_alt_name);
-      bson_free (ctx->opts.key_alt_name);
-   }
+   _mongocrypt_key_alt_name_destroy_all (ctx->opts.key_alt_names);
    _mongocrypt_buffer_cleanup (&ctx->opts.key_id);
    bson_free (ctx);
    return;
@@ -595,7 +590,7 @@ bool
 _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
                       _mongocrypt_ctx_opts_spec_t *opts_spec)
 {
-   bool has_id = false, has_alt_name = false;
+   bool has_id = false, has_alt_name = false, has_multiple_alt_names = false;
 
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot double initialize");
@@ -632,8 +627,14 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "master key prohibited");
    }
 
+   /* Special case. key_descriptor applies to explicit encryption. It must be
+    * either a key id or *one* key alt name, but not both.
+    * key_alt_names applies to creating a data key. It may be one or multiple key
+    * alt names.
+    */
    has_id = !_mongocrypt_buffer_empty (&ctx->opts.key_id);
-   has_alt_name = !!(ctx->opts.key_alt_name);
+   has_alt_name = !!(ctx->opts.key_alt_names);
+   has_multiple_alt_names = has_alt_name && !!(ctx->opts.key_alt_names->next);
 
    if (opts_spec->key_descriptor == OPT_REQUIRED) {
       if (!has_id && !has_alt_name) {
@@ -645,11 +646,21 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "cannot have both key id and key alt name");
       }
+
+      if (has_multiple_alt_names) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "must not specify multiple key alt names"
+         );
+      }
    }
 
-   if (opts_spec->key_descriptor == OPT_PROHIBITED &&
-       (has_id || has_alt_name)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "key id and alt name prohibited");
+   if (opts_spec->key_descriptor == OPT_PROHIBITED) {
+      /* still okay if key_alt_names are allowed and only alt names were specified. */
+      if ((opts_spec->key_alt_names == OPT_PROHIBITED && has_alt_name) ||
+          has_id) {
+         return _mongocrypt_ctx_fail_w_msg (ctx,
+                                            "key id and alt name prohibited");
+      }
    }
 
    if (opts_spec->algorithm == OPT_REQUIRED &&

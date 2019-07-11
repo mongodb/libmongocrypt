@@ -78,7 +78,8 @@ _print_binary_as_text (mongocrypt_binary_t *binary)
 
 static void
 _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
-                                     _mongocrypt_kms_provider_t provider)
+                                     _mongocrypt_kms_provider_t provider,
+                                     bool with_alt_name)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
@@ -97,6 +98,15 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
          ctx);
    } else {
       ASSERT_OK (mongocrypt_ctx_setopt_masterkey_local (ctx), ctx);
+   }
+
+   if (with_alt_name) {
+      ASSERT_OK (mongocrypt_ctx_setopt_key_alt_name (
+                    ctx, TEST_BSON ("{'keyAltName': 'b'}")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_key_alt_name (
+                    ctx, TEST_BSON ("{'keyAltName': 'a'}")),
+                 ctx);
    }
 
    ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
@@ -132,6 +142,19 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "updateDate"));
    BSON_ASSERT (BSON_ITER_HOLDS_DATE_TIME (&iter));
    BSON_ASSERT (created_date == bson_iter_date_time (&iter));
+   if (with_alt_name) {
+      BSON_ASSERT (bson_iter_init (&iter, &as_bson));
+      BSON_ASSERT (bson_iter_find_descendant (&iter, "keyAltNames.0", &iter));
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&iter, NULL), "a"));
+      BSON_ASSERT (bson_iter_init (&iter, &as_bson));
+      BSON_ASSERT (bson_iter_find_descendant (&iter, "keyAltNames.1", &iter));
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&iter, NULL), "b"));
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+   } else {
+      BSON_ASSERT (!bson_iter_init_find (&iter, &as_bson, "keyAltNames"));
+   }
 
    /* masterKey matches set options. */
    BSON_ASSERT (bson_iter_init (&iter, &as_bson));
@@ -159,9 +182,16 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
 static void
 _test_create_data_key (_mongocrypt_tester_t *tester)
 {
-   _test_create_data_key_with_provider (tester, MONGOCRYPT_KMS_PROVIDER_AWS);
-   _test_create_data_key_with_provider (tester, MONGOCRYPT_KMS_PROVIDER_LOCAL);
+   _test_create_data_key_with_provider (
+      tester, MONGOCRYPT_KMS_PROVIDER_AWS, false /* with_alt_name */);
+   _test_create_data_key_with_provider (
+      tester, MONGOCRYPT_KMS_PROVIDER_LOCAL, false /* with_alt_name */);
+   _test_create_data_key_with_provider (
+      tester, MONGOCRYPT_KMS_PROVIDER_AWS, true /* with_alt_name */);
+   _test_create_data_key_with_provider (
+      tester, MONGOCRYPT_KMS_PROVIDER_LOCAL, true /* with_alt_name */);
 }
+
 
 void
 _mongocrypt_tester_install_data_key (_mongocrypt_tester_t *tester)

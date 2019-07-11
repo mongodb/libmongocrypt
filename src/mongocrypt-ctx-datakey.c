@@ -121,9 +121,20 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    if (!_append_id (&key_doc, ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
-   /* TODO: CDRIVER-3057 support key alt names. Do not add an empty array if
-    * there are no keyAltNames since we do not want to prohibit a unique index.
-    */
+
+   if (ctx->opts.key_alt_names) {
+      _mongocrypt_key_alt_name_t *alt_name = ctx->opts.key_alt_names;
+      int i;
+
+      bson_append_array_begin (&key_doc, "keyAltNames", -1, &child);
+      for (i = 0; alt_name; i++) {
+         char *key = bson_strdup_printf ("%d", i);
+         bson_append_value (&child, key, -1, &alt_name->value);
+         bson_free (key);
+         alt_name = alt_name->next;
+      }
+      bson_append_array_end (&key_doc, &child);
+   }
    _mongocrypt_buffer_append (&dkctx->encrypted_key_material,
                               &key_doc,
                               MONGOCRYPT_STR_AND_LEN ("keyMaterial"));
@@ -174,6 +185,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
 
    ret = false;
    opts_spec.masterkey = OPT_REQUIRED;
+   opts_spec.key_alt_names = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;

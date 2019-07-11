@@ -473,3 +473,11 @@ _mongocrypt_key_alt_name_create (const char *name, ...)
 
    return head;
 }
+
+_mongocrypt_key_alt_name_t *
+_mongocrypt_key_alt_name_new (const bson_value_t *value)
+{
+   _mongocrypt_key_alt_name_t *name = bson_malloc0 (sizeof (*name));
+   bson_value_copy (value, &name->value);
+   return name;
+}

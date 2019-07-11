@@ -367,8 +367,9 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       memcpy (&marking.v_iter, &iter, sizeof (bson_iter_t));
       marking.algorithm = ctx->opts.algorithm;
       _mongocrypt_buffer_set_to (&ctx->opts.key_id, &marking.key_id);
-      if (ctx->opts.key_alt_name) {
-         bson_value_copy (ctx->opts.key_alt_name, &marking.key_alt_name);
+      if (ctx->opts.key_alt_names) {
+         bson_value_copy (&ctx->opts.key_alt_names->value,
+                          &marking.key_alt_name);
          marking.has_alt_name = true;
       }
 
@@ -504,8 +505,9 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "msg required for explicit encryption");
    }
 
-   if (ctx->opts.key_alt_name) {
-      if (!_mongocrypt_key_broker_add_name (&ctx->kb, ctx->opts.key_alt_name)) {
+   if (ctx->opts.key_alt_names) {
+      if (!_mongocrypt_key_broker_add_name (&ctx->kb,
+                                            &ctx->opts.key_alt_names->value)) {
          return _mongocrypt_ctx_fail (ctx);
       }
    } else {
