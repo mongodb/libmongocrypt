@@ -36,7 +36,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -108,14 +110,18 @@ public class MongoCryptTest {
         MongoCrypt mongoCrypt = createMongoCrypt();
         assertNotNull(mongoCrypt);
 
+        List<String> keyAltNames = Arrays.asList("first", "second");
         MongoCryptContext dataKeyContext = mongoCrypt.createDataKeyContext("local",
-                MongoDataKeyOptions.builder().masterKey(new BsonDocument()).build());
+                MongoDataKeyOptions.builder().masterKey(new BsonDocument())
+                        .keyAltNames(keyAltNames)
+                        .build());                               
         assertEquals(State.READY, dataKeyContext.getState());
 
         BsonDocument dataKeyDocument = dataKeyContext.finish();
         assertEquals(State.DONE, dataKeyContext.getState());
         assertNotNull(dataKeyDocument);
 
+        dataKeyDocument.getArray("keyAltNames").containsAll(keyAltNames);
         dataKeyContext.close();
         mongoCrypt.close();
     }

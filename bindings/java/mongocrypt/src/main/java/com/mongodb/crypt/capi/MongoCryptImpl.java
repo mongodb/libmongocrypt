@@ -34,6 +34,7 @@ import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_INFO;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_TRACE;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_WARNING;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
@@ -182,6 +183,17 @@ class MongoCryptImpl implements MongoCrypt {
 
         if (!success) {
             MongoCryptContextImpl.throwExceptionFromStatus(context);
+        }
+
+        if (options.getKeyAltNames() != null) {
+            for (String cur : options.getKeyAltNames()) {
+                try (BinaryHolder keyAltNameBinaryHolder = toBinary(new BsonDocument("keyAltName", new BsonString(cur)))) {
+                    success = mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary());
+                    if (!success) {
+                        MongoCryptContextImpl.throwExceptionFromStatus(context);
+                    }
+                }
+            }
         }
 
         success = mongocrypt_ctx_datakey_init(context);
