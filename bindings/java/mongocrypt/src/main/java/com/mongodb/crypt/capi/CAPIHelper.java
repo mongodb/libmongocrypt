@@ -41,15 +41,15 @@ final class CAPIHelper {
     private static final CodecRegistry CODEC_REGISTRY = CodecRegistries.fromProviders(new BsonValueCodecProvider());
 
     @SuppressWarnings("unchecked")
-    static mongocrypt_binary_t toBinary(final BsonDocument document) {
+    static BinaryHolder toBinary(final BsonDocument document) {
         BasicOutputBuffer buffer = new BasicOutputBuffer();
         BsonBinaryWriter writer = new BsonBinaryWriter(buffer);
         ((Codec<BsonDocument>) CODEC_REGISTRY.get(document.getClass())).encode(writer, document, EncoderContext.builder().build());
 
-        Pointer pointer = new Memory(buffer.size());
-        pointer.write(0, buffer.getInternalBuffer(), 0, buffer.size());
+        DisposableMemory memory = new DisposableMemory(buffer.size());
+        memory.write(0, buffer.getInternalBuffer(), 0, buffer.size());
 
-        return mongocrypt_binary_new_from_data(pointer, buffer.getSize());
+        return new BinaryHolder(memory, mongocrypt_binary_new_from_data(memory, buffer.getSize()));
     }
 
     static RawBsonDocument toDocument(final mongocrypt_binary_t binary) {
@@ -59,14 +59,14 @@ final class CAPIHelper {
         return new RawBsonDocument(bytes);
     }
 
-    static mongocrypt_binary_t toBinary(final ByteBuffer buffer) {
+    static BinaryHolder toBinary(final ByteBuffer buffer) {
         byte[] message = new byte[buffer.remaining()];
         buffer.get(message, 0, buffer.remaining());
 
-        Pointer pointer = new Memory(message.length);
-        pointer.write(0, message, 0, message.length);
+        DisposableMemory memory = new DisposableMemory(message.length);
+        memory.write(0, message, 0, message.length);
 
-        return mongocrypt_binary_new_from_data(pointer, message.length);
+        return new BinaryHolder(memory, mongocrypt_binary_new_from_data(memory, message.length));
     }
 
     static ByteBuffer toByteBuffer(final mongocrypt_binary_t binary) {
