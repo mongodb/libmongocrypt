@@ -54,7 +54,7 @@ executable included with libmongocrypt. It uses mock responses from
 mongod, mongocryptd, and AWS KMS. Reimplement the state machine loop
 (\_run\_state\_machine) in example-state-machine with your binding.
 
-Set the environment variable `MONGOCRYPT_TRACE=ON` to log the arguments to mongocrypt functions.
+To debug, configure with the cmake option `-DENABLE_TRACE=ON`, and set the environment variable `MONGOCRYPT_TRACE=ON` to log the arguments to mongocrypt functions. Note, this is insecure and should only be used for debugging.
 
 Seek help in the slack channel \#drivers-fle.
 

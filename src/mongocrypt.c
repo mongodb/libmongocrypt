@@ -216,8 +216,17 @@ _mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary)
    bson_t bson;
    uint32_t len;
 
-   _mongocrypt_binary_to_bson (binary, &bson);
-   return bson_as_json (&bson, (size_t *) &len);
+   if (!_mongocrypt_binary_to_bson (binary, &bson) ||
+       !bson_validate (&bson, 0, NULL)) {
+      char *hex;
+      char *full_str;
+
+      hex = _mongocrypt_new_string_from_bytes (binary->data, binary->len);
+      full_str = bson_strdup_printf ("(malformed) %s", hex);
+      bson_free (hex);
+      return full_str;
+   }
+   return bson_as_canonical_extended_json (&bson, (size_t *) &len);
 }
 
 bool

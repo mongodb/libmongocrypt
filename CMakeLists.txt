@@ -105,7 +105,7 @@ endif ()
 set (MONGOCRYPT_ENABLE_CRYPTO 0)
 set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 0)
 set (MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO 0)
-set (MONGOCRPYT_ENABLE_CRYPTO_CNG 0)
+set (MONGOCRYPT_ENABLE_CRYPTO_CNG 0)
 
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    message ("Building with common crypto")
@@ -138,6 +138,12 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL none)
 else ()
    message (FATAL "Unknown crypto provider ${MONGOCRYPT_CRYPTO}")
 endif ()
+
+set (MONGOCRYPT_ENABLE_TRACE 0)
+if (ENABLE_TRACE)
+   message (WARNING "Building with trace logging. This is highly insecure. Do not use in a production environment")
+   set (MONGOCRYPT_ENABLE_TRACE 1)
+endif()
 
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongocrypt-config.h.in"

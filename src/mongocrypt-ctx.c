@@ -345,7 +345,8 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 
    if (ctx->crypt->log.trace_enabled) {
       char *in_val;
-      in_val = _mongocrypt_new_string_from_bytes (in->data, in->len);
+
+      in_val = _mongocrypt_new_json_string_from_binary (in);
       _mongocrypt_log (&ctx->crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
                        "%s (%s=\"%s\")",

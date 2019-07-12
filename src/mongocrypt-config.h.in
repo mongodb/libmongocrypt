@@ -61,4 +61,14 @@
 #endif
 
 
+/*
+ * MONGOCRYPT_ENABLE_TRACE is set from configure to determine if we are
+ * compiled with tracing support.
+ */
+#define MONGOCRYPT_ENABLE_TRACE @MONGOCRYPT_ENABLE_TRACE@
+
+#if MONGOCRYPT_ENABLE_TRACE != 1
+#  undef MONGOCRYPT_ENABLE_TRACE
+#endif
+
 #endif /* MONGOCRYPT_CONFIG_H */

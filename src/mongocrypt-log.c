@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongocrypt-config.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 
@@ -24,7 +25,9 @@ _mongocrypt_log_init (_mongocrypt_log_t *log)
 {
    _mongocrypt_mutex_init (&log->mutex);
    _mongocrypt_log_set_fn (log, _mongocrypt_default_log_fn, NULL);
+#ifdef MONGOCRYPT_ENABLE_TRACE
    log->trace_enabled = (getenv ("MONGOCRYPT_TRACE") != NULL);
+#endif
 }
 
 
