@@ -77,17 +77,12 @@ class MongoCryptContextImpl implements MongoCryptContext {
     public void addMongoOperationResult(final BsonDocument document) {
         isTrue("open", !closed);
 
-        mongocrypt_binary_t binary = toBinary(document);
-
-        try {
-            boolean success = mongocrypt_ctx_mongo_feed(wrapped, binary);
+        try (BinaryHolder binaryHolder = toBinary(document)) {
+            boolean success = mongocrypt_ctx_mongo_feed(wrapped, binaryHolder.getBinary());
             if (!success) {
                 throwExceptionFromStatus();
             }
-        } finally {
-            mongocrypt_binary_destroy(binary);
         }
-
     }
 
     @Override

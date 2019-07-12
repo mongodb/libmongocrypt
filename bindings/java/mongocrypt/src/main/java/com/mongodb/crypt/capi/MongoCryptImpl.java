@@ -18,7 +18,6 @@
 package com.mongodb.crypt.capi;
 
 import com.mongodb.crypt.capi.CAPI.cstring;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_log_fn_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
@@ -35,7 +34,6 @@ import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_INFO;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_TRACE;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_WARNING;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
@@ -88,14 +86,11 @@ class MongoCryptImpl implements MongoCrypt {
         }
 
         if (options.getLocalKmsProviderOptions() != null) {
-            mongocrypt_binary_t localMasterKeyBinary = toBinary(options.getLocalKmsProviderOptions().getLocalMasterKey());
-            try {
-                success = mongocrypt_setopt_kms_provider_local(wrapped, localMasterKeyBinary);
+            try (BinaryHolder localMasterKeyBinaryHolder = toBinary(options.getLocalKmsProviderOptions().getLocalMasterKey())) {
+                success = mongocrypt_setopt_kms_provider_local(wrapped, localMasterKeyBinaryHolder.getBinary());
                 if (!success) {
                     throwExceptionFromStatus();
                 }
-            } finally {
-                mongocrypt_binary_destroy(localMasterKeyBinary);
             }
         }
 
@@ -114,14 +109,11 @@ class MongoCryptImpl implements MongoCrypt {
                 localSchemaMapDocument.put(cur.getKey(), cur.getValue());
             }
 
-            mongocrypt_binary_t localSchemaMapBinary = toBinary(localSchemaMapDocument);
-            try {
-                success = mongocrypt_setopt_schema_map(wrapped, localSchemaMapBinary);
+            try (BinaryHolder localSchemaMapBinaryHolder = toBinary(localSchemaMapDocument)) {
+                success = mongocrypt_setopt_schema_map(wrapped, localSchemaMapBinaryHolder.getBinary());
                 if (!success) {
                     throwExceptionFromStatus();
                 }
-            } finally {
-                mongocrypt_binary_destroy(localSchemaMapBinary);
             }
         }
         
@@ -141,17 +133,14 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
 
-        mongocrypt_binary_t commandDocumentBinary = toBinary(commandDocument);
-
-        try {
-            boolean success = mongocrypt_ctx_encrypt_init(context, new cstring(database), -1, commandDocumentBinary);
+        try (BinaryHolder commandDocumentBinaryHolder = toBinary(commandDocument)) {
+            boolean success = mongocrypt_ctx_encrypt_init(context, new cstring(database), -1,
+                    commandDocumentBinaryHolder.getBinary());
 
             if (!success) {
                 MongoCryptContextImpl.throwExceptionFromStatus(context);
             }
             return new MongoCryptContextImpl(context);
-        } finally {
-            mongocrypt_binary_destroy(commandDocumentBinary);
         }
     }
 
@@ -162,14 +151,11 @@ class MongoCryptImpl implements MongoCrypt {
         if (context == null) {
             throwExceptionFromStatus();
         }
-        mongocrypt_binary_t documentBinary = toBinary(document);
-        try {
-            boolean success = mongocrypt_ctx_decrypt_init(context, documentBinary);
+        try (BinaryHolder documentBinaryHolder = toBinary(document)){
+            boolean success = mongocrypt_ctx_decrypt_init(context, documentBinaryHolder.getBinary());
             if (!success) {
                 MongoCryptContextImpl.throwExceptionFromStatus(context);
             }
-        } finally {
-            mongocrypt_binary_destroy(documentBinary);
         }
         return new MongoCryptContextImpl(context);
     }
@@ -217,24 +203,18 @@ class MongoCryptImpl implements MongoCrypt {
         boolean success;
 
         if (options.getKeyId() != null) {
-            mongocrypt_binary_t keyIdBinary = toBinary(ByteBuffer.wrap(options.getKeyId().getData()));
-            try {
-                success = mongocrypt_ctx_setopt_key_id(context, keyIdBinary);
+            try (BinaryHolder keyIdBinaryHolder = toBinary(ByteBuffer.wrap(options.getKeyId().getData()))) {
+                success = mongocrypt_ctx_setopt_key_id(context, keyIdBinaryHolder.getBinary());
                 if (!success) {
                     MongoCryptContextImpl.throwExceptionFromStatus(context);
                 }
-            } finally {
-                mongocrypt_binary_destroy(keyIdBinary);
             }
         } else if (options.getKeyAltName() != null) {
-            mongocrypt_binary_t keyAltNameBinary = toBinary(new BsonDocument("keyAltName", new BsonString(options.getKeyAltName())));
-            try {
-                success = mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinary);
+            try (BinaryHolder keyAltNameBinaryHolder = toBinary(new BsonDocument("keyAltName", new BsonString(options.getKeyAltName())))) {
+                success = mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary());
                 if (!success) {
                     MongoCryptContextImpl.throwExceptionFromStatus(context);
                 }
-            } finally {
-                mongocrypt_binary_destroy(keyAltNameBinary);
             }
         }
 
@@ -243,14 +223,11 @@ class MongoCryptImpl implements MongoCrypt {
             MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
 
-        mongocrypt_binary_t documentBinary = toBinary(document);
-        try {
-            success = mongocrypt_ctx_explicit_encrypt_init(context, documentBinary);
+        try (BinaryHolder documentBinaryHolder = toBinary(document)) {
+            success = mongocrypt_ctx_explicit_encrypt_init(context, documentBinaryHolder.getBinary());
             if (!success) {
                 MongoCryptContextImpl.throwExceptionFromStatus(context);
             }
-        } finally {
-            mongocrypt_binary_destroy(documentBinary);
         }
 
         return new MongoCryptContextImpl(context);
@@ -263,9 +240,11 @@ class MongoCryptImpl implements MongoCrypt {
         if (context == null) {
             throwExceptionFromStatus();
         }
-        boolean success = mongocrypt_ctx_explicit_decrypt_init(context, toBinary(document));
-        if (!success) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        try (BinaryHolder binaryHolder = toBinary(document)) {
+            boolean success = mongocrypt_ctx_explicit_decrypt_init(context, binaryHolder.getBinary());
+            if (!success) {
+                MongoCryptContextImpl.throwExceptionFromStatus(context);
+            }
         }
         return new MongoCryptContextImpl(context);
     }

@@ -80,14 +80,11 @@ class MongoKeyDecryptorImpl implements MongoKeyDecryptor {
 
     @Override
     public void feed(final ByteBuffer bytes) {
-        mongocrypt_binary_t binary = toBinary(bytes);
-        try {
-            boolean success = mongocrypt_kms_ctx_feed(wrapped, binary);
+        try (BinaryHolder binaryHolder = toBinary(bytes)) {
+            boolean success = mongocrypt_kms_ctx_feed(wrapped, binaryHolder.getBinary());
             if (!success) {
                 throwExceptionFromStatus();
             }
-        } finally {
-            mongocrypt_binary_destroy(binary);
         }
     }
 
