@@ -85,7 +85,7 @@ if ( MSVC )
    # TODO: add support for clang-cl which is detected as MSVC
 else()
    # GNU, Clang, AppleClang
-   set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Werror -Wno-missing-braces -Wno-unused-function")
+   set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Werror -Wno-missing-braces")
 endif()
 
 # Choose a Crypto provider

@@ -561,27 +561,6 @@ _test_key_broker_wrong_subtype (_mongocrypt_tester_t *tester)
 
 
 static void
-_check_filter_contains_only (mongocrypt_binary_t *filter,
-                             _mongocrypt_buffer_t *uuid)
-{
-   bson_t as_bson;
-   bson_iter_t iter;
-
-   _mongocrypt_binary_to_bson (filter, &as_bson);
-   bson_iter_init (&iter, &as_bson);
-   BSON_ASSERT (bson_iter_find_descendant (&iter, "$or.0._id.$in", &iter));
-   bson_iter_recurse (&iter, &iter);
-
-   while (bson_iter_next (&iter)) {
-      _mongocrypt_buffer_t buf;
-      _mongocrypt_buffer_from_uuid_iter (&buf, &iter);
-      ASSERT_OR_PRINT_MSG (0 == _mongocrypt_buffer_cmp (uuid, &buf),
-                           "filter includes unexpected UUID");
-      _mongocrypt_buffer_cleanup (&buf);
-   }
-}
-
-static void
 _test_key_broker_deduplication (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;

@@ -46,36 +46,6 @@ tables_init ()
    kms_initialized = true;
 }
 
-static char *
-kms_strdupv_printf (const char *format, va_list args)
-{
-   va_list my_args;
-   char *buf;
-   ssize_t len = 32;
-   ssize_t n;
-
-   assert (format);
-
-   buf = malloc ((size_t) len);
-
-   while (true) {
-      va_copy (my_args, args);
-      n = vsnprintf (buf, len, format, my_args);
-      va_end (my_args);
-
-      if (n > -1 && n < len) {
-         return buf;
-      }
-
-      if (n > -1) {
-         len = n + 1;
-      } else {
-         len *= 2;
-      }
-
-      buf = realloc (buf, (size_t) len);
-   }
-}
 
 kms_request_str_t *
 kms_request_str_new (void)

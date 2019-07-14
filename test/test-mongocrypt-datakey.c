@@ -69,19 +69,6 @@ _test_random_generator (_mongocrypt_tester_t *tester)
 
 
 static void
-_print_binary_as_text (mongocrypt_binary_t *binary)
-{
-   uint32_t i;
-   uint8_t *ptr;
-
-   ptr = (uint8_t *) mongocrypt_binary_data (binary);
-   for (i = 0; i < mongocrypt_binary_len (binary); i++) {
-      printf ("%c", (char) ptr[i]);
-   }
-   printf ("\n");
-}
-
-static void
 _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
                                      _mongocrypt_kms_provider_t provider,
                                      bool with_alt_name)

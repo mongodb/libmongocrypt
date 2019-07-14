@@ -630,8 +630,8 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
 
    /* Special case. key_descriptor applies to explicit encryption. It must be
     * either a key id or *one* key alt name, but not both.
-    * key_alt_names applies to creating a data key. It may be one or multiple key
-    * alt names.
+    * key_alt_names applies to creating a data key. It may be one or multiple
+    * key alt names.
     */
    has_id = !_mongocrypt_buffer_empty (&ctx->opts.key_id);
    has_alt_name = !!(ctx->opts.key_alt_names);
@@ -650,13 +650,13 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
 
       if (has_multiple_alt_names) {
          return _mongocrypt_ctx_fail_w_msg (
-            ctx, "must not specify multiple key alt names"
-         );
+            ctx, "must not specify multiple key alt names");
       }
    }
 
    if (opts_spec->key_descriptor == OPT_PROHIBITED) {
-      /* still okay if key_alt_names are allowed and only alt names were specified. */
+      /* still okay if key_alt_names are allowed and only alt names were
+       * specified. */
       if ((opts_spec->key_alt_names == OPT_PROHIBITED && has_alt_name) ||
           has_id) {
          return _mongocrypt_ctx_fail_w_msg (ctx,

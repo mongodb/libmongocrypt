@@ -480,14 +480,14 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
 /**
  * Set the keyAltName to use for explicit encryption or
  * data key creation.
- * 
+ *
  * Pass the binary encoding a BSON document like the following:
  *
  *   { "keyAltName" : (BSON UTF8 value) }
- * 
+ *
  * For explicit encryption, it is an error to set both the keyAltName
  * and the key id.
- * 
+ *
  * For creating data keys, call this function repeatedly to set
  * multiple keyAltNames.
  *
@@ -636,6 +636,9 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 
 /**
  * Initialize a context for decryption.
+ *
+ * This method expects the passed-in BSON to be of the form:
+ * { "v" : BSON value to encrypt }
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] doc The document to be decrypted. The viewed data is copied. It is

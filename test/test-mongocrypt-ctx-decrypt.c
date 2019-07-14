@@ -23,26 +23,27 @@ _test_explicit_decrypt_init (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *encrypted;
-
+   mongocrypt_binary_t *msg;
    crypt = _mongocrypt_tester_mongocrypt ();
 
-   encrypted = _mongocrypt_tester_encrypted_doc (tester);
+   msg = TEST_BSON ("{ 'v': { '$binary': { 'subType': '06', 'base64': "
+                    "'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs"
+                    "9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/"
+                    "iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=' } } }");
 
    /* NULL document. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_FAILS (
-      mongocrypt_ctx_explicit_decrypt_init (ctx, NULL), ctx, "invalid doc");
+      mongocrypt_ctx_explicit_decrypt_init (ctx, NULL), ctx, "invalid msg");
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
 
    /* Success. */
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (ctx, encrypted), ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (ctx, msg), ctx);
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    mongocrypt_ctx_destroy (ctx);
 
-   mongocrypt_binary_destroy (encrypted);
    mongocrypt_destroy (crypt);
 }
 
@@ -138,6 +139,7 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
+   INSTALL_TEST (_test_explicit_decrypt_init);
    INSTALL_TEST (_test_decrypt_init);
    INSTALL_TEST (_test_decrypt_need_keys);
    INSTALL_TEST (_test_decrypt_ready);
