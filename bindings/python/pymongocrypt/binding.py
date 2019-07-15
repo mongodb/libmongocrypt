@@ -739,10 +739,16 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
 
 lib = ffi.dlopen("mongocrypt")
 
+if PY3:
+    def _to_string(cdata):
+        """Decode a cdata c-string to a Python str."""
+        return ffi.string(cdata).decode()
+else:
+    def _to_string(cdata):
+        """Decode a cdata c-string to a Python str."""
+        return ffi.string(cdata)
+
 
 def libmongocrypt_version():
     """Returns the version of libmongocrypt."""
-    version = ffi.string(lib.mongocrypt_version(ffi.NULL))
-    if PY3:
-        version = version.decode()
-    return version
+    return _to_string(lib.mongocrypt_version(ffi.NULL))
