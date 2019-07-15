@@ -14,7 +14,7 @@
 
 """Generate a CFFI.cdef() string from a C header file
 
-Usage: python strip_header.py ../../src/mongocrypt.h | pbcopy
+Usage (on macOS):: python strip_header.py ../../src/mongocrypt.h | pbcopy
 """
 
 import re

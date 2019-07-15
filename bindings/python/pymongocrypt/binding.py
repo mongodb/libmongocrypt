@@ -18,9 +18,8 @@ from pymongocrypt.compat import PY3
 
 
 ffi = cffi.FFI()
-# Generated with:
-# python strip_header.py mongocrypt.h | pbcopy
 
+# Generated with strip_header.py
 ffi.cdef("""
 /*
  * Copyright 2019-present MongoDB, Inc.
