@@ -23,7 +23,6 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_hash_fn;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 
-import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
@@ -48,7 +47,7 @@ class MessageDigestCallback implements mongocrypt_hash_fn {
             byte[] digest = messageDigest.digest();
             writeByteArrayToBinary(out, digest);
             return true;
-        } catch (GeneralSecurityException e) {
+        } catch (Exception e) {
             mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
             return false;
         }

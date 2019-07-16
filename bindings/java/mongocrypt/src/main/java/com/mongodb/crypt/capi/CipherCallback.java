@@ -26,7 +26,6 @@ import com.sun.jna.Pointer;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.GeneralSecurityException;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_set;
@@ -59,7 +58,7 @@ class CipherCallback implements mongocrypt_crypto_fn {
             bytesWritten.setInt(0, result.length);
 
             return true;
-        } catch (GeneralSecurityException e) {
+        } catch (Exception e) {
             mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
             return false;
         }

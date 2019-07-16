@@ -25,7 +25,6 @@ import com.sun.jna.Pointer;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.GeneralSecurityException;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_set;
@@ -53,7 +52,7 @@ class MacCallback implements mongocrypt_hmac_fn {
             writeByteArrayToBinary(out, result);
 
             return true;
-        } catch (GeneralSecurityException e) {
+        } catch (Exception e) {
             mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
             return false;
         }

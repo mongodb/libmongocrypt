@@ -17,6 +17,7 @@
 
 package com.mongodb.crypt.capi;
 
+import com.mongodb.crypt.capi.CAPI.cstring;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_random_fn;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
@@ -24,6 +25,8 @@ import com.sun.jna.Pointer;
 
 import java.security.SecureRandom;
 
+import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_set;
 import static com.mongodb.crypt.capi.CAPIHelper.writeByteArrayToBinary;
 
 class SecureRandomCallback implements mongocrypt_random_fn {
@@ -35,9 +38,14 @@ class SecureRandomCallback implements mongocrypt_random_fn {
 
     @Override
     public boolean random(final Pointer ctx, final mongocrypt_binary_t out, final int count, final mongocrypt_status_t status) {
-        byte[] randomBytes = new byte[count];
-        secureRandom.nextBytes(randomBytes);
-        writeByteArrayToBinary(out, randomBytes);
-        return true;
+        try {
+            byte[] randomBytes = new byte[count];
+            secureRandom.nextBytes(randomBytes);
+            writeByteArrayToBinary(out, randomBytes);
+            return true;
+        } catch (Exception e) {
+            mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
+            return false;
+        }
     }
 }
