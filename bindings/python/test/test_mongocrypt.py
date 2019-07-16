@@ -183,9 +183,23 @@ class TestMongoCrypt(unittest.TestCase):
     def test_decrypt(self):
         mc = self.create_mongocrypt()
         self.addCleanup(mc.close)
+        with mc.decryption_context(
+                bson_data('encrypted-command-reply.json')) as ctx:
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
+
+            self._test_kms_context(ctx)
+
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_READY)
+
+            encrypted = ctx.finish()
+            self.assertEqual(
+                BSON(encrypted).decode(), json_data('command-reply.json'))
+            self.assertEqual(encrypted, bson_data('command-reply.json'))
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
 
 
 def read(filename, **kwargs):
+    print(filename)
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:
         return fp.read()
 
