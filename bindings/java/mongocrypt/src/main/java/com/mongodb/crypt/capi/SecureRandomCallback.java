@@ -17,7 +17,9 @@
 
 package com.mongodb.crypt.capi;
 
+import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_random_fn;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 
 import java.security.SecureRandom;
@@ -32,7 +34,7 @@ class SecureRandomCallback implements mongocrypt_random_fn {
     }
 
     @Override
-    public boolean random(final Pointer ctx, final CAPI.mongocrypt_binary_t out, final int count, final CAPI.mongocrypt_status_t status) {
+    public boolean random(final Pointer ctx, final mongocrypt_binary_t out, final int count, final mongocrypt_status_t status) {
         byte[] randomBytes = new byte[count];
         secureRandom.nextBytes(randomBytes);
         writeByteArrayToBinary(out, randomBytes);

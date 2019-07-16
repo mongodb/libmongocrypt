@@ -17,7 +17,10 @@
 
 package com.mongodb.crypt.capi;
 
+import com.mongodb.crypt.capi.CAPI.cstring;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_hash_fn;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 
 import java.security.GeneralSecurityException;
@@ -37,8 +40,8 @@ class MessageDigestCallback implements mongocrypt_hash_fn {
     }
 
     @Override
-    public boolean hash(final Pointer ctx, final CAPI.mongocrypt_binary_t in, final CAPI.mongocrypt_binary_t out,
-                        final CAPI.mongocrypt_status_t status) {
+    public boolean hash(final Pointer ctx, final mongocrypt_binary_t in, final mongocrypt_binary_t out,
+                        final mongocrypt_status_t status) {
         try {
             MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
             messageDigest.update(toByteArray(in));
@@ -46,7 +49,7 @@ class MessageDigestCallback implements mongocrypt_hash_fn {
             writeByteArrayToBinary(out, digest);
             return true;
         } catch (GeneralSecurityException e) {
-            mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new CAPI.cstring(e.toString()), -1);
+            mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
             return false;
         }
     }

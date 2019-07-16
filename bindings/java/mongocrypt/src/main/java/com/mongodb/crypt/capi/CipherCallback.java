@@ -17,7 +17,10 @@
 
 package com.mongodb.crypt.capi;
 
+import com.mongodb.crypt.capi.CAPI.cstring;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_crypto_fn;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 
 import javax.crypto.Cipher;
@@ -42,9 +45,9 @@ class CipherCallback implements mongocrypt_crypto_fn {
     }
 
     @Override
-    public boolean crypt(final Pointer ctx, final CAPI.mongocrypt_binary_t key, final CAPI.mongocrypt_binary_t iv,
-                         final CAPI.mongocrypt_binary_t in, final CAPI.mongocrypt_binary_t out,
-                         final Pointer bytesWritten, final CAPI.mongocrypt_status_t status) {
+    public boolean crypt(final Pointer ctx, final mongocrypt_binary_t key, final mongocrypt_binary_t iv,
+                         final mongocrypt_binary_t in, final mongocrypt_binary_t out,
+                         final Pointer bytesWritten, final mongocrypt_status_t status) {
         try {
             IvParameterSpec ivParameterSpec = new IvParameterSpec(toByteArray(iv));
             SecretKeySpec secretKeySpec = new SecretKeySpec(toByteArray(key), algorithm);
@@ -57,7 +60,7 @@ class CipherCallback implements mongocrypt_crypto_fn {
 
             return true;
         } catch (GeneralSecurityException e) {
-            mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new CAPI.cstring(e.toString()), -1);
+            mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
             return false;
         }
     }

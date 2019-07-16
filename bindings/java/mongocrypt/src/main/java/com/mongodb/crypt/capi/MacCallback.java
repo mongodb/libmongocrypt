@@ -17,7 +17,10 @@
 
 package com.mongodb.crypt.capi;
 
+import com.mongodb.crypt.capi.CAPI.cstring;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_hmac_fn;
+import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 
 import javax.crypto.Mac;
@@ -37,8 +40,8 @@ class MacCallback implements mongocrypt_hmac_fn {
     }
 
     @Override
-    public boolean hmac(final Pointer ctx, final CAPI.mongocrypt_binary_t key, final CAPI.mongocrypt_binary_t in,
-                        final CAPI.mongocrypt_binary_t out, final CAPI.mongocrypt_status_t status) {
+    public boolean hmac(final Pointer ctx, final mongocrypt_binary_t key, final mongocrypt_binary_t in,
+                        final mongocrypt_binary_t out, final mongocrypt_status_t status) {
         try {
             Mac mac = Mac.getInstance(algorithm);
             SecretKeySpec keySpec = new SecretKeySpec(toByteArray(key), algorithm);
@@ -51,7 +54,7 @@ class MacCallback implements mongocrypt_hmac_fn {
 
             return true;
         } catch (GeneralSecurityException e) {
-            mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new CAPI.cstring(e.toString()), -1);
+            mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
             return false;
         }
     }
