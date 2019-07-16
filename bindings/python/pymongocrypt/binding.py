@@ -40,10 +40,20 @@ ffi.cdef("""
 /** @file mongocrypt.h The top-level handle to libmongocrypt. */
 
 /**
- * Returns the version string x.y.z for libmongocrypt.
+ * @mainpage libmongocrypt
+ * See all public API documentation in: @ref mongocrypt.h
+ */
+
+/**
+ * @def MONGOCRYPT_VERSION
+ * The version string x.y.z or x.y.z-pre for libmongocrypt
+ */
+
+/**
+ * Returns the version string for libmongocrypt.
  *
- * @param[out] len, an optional length of the returned string. May be NULL.
- * @returns a NULL terminated version string x.y.z for libmongocrypt.
+ * @param[out] len  An optional length of the returned string. May be NULL.
+ * @returns a NULL terminated version string for libmongocrypt.
  */
 const char *
 mongocrypt_version (uint32_t *len);
@@ -51,10 +61,24 @@ mongocrypt_version (uint32_t *len);
 /**
  * A non-owning view of a byte buffer.
  *
- * Functions returning a mongocrypt_binary_t* expect it to be destroyed with
- * @ref mongocrypt_binary_destroy. Calling @ref mongocrypt_binary_destroy
- * does not destroy the underlying data. See individual function documentation
- * for lifetime guarantees.
+ * When constructing a mongocrypt_binary_t it is the responsibility of the
+ * caller to maintain the lifetime of the viewed data. However, all public
+ * functions that take a mongocrypt_binary_t as an argument will make a copy of
+ * the viewed data. For example, the following is valid:
+ *
+ * @code{.c}
+ * mongocrypt_binary_t bin = mongocrypt_binary_new_from_data(mydata, mylen);
+ * assert (mongocrypt_setopt_kms_provider_local (crypt), bin);
+ * // The viewed data of bin has been copied. Ok to free the view and the data.
+ * mongocrypt_binary_destroy (bin);
+ * my_free_fn (mydata);
+ * @endcode
+ *
+ * Functions with a mongocrypt_binary_t* out guarantee the lifetime of the
+ * viewed data to live as long as the parent object. For example, @ref
+ * mongocrypt_ctx_mongo_op guarantees that the viewed data of
+ * mongocrypt_binary_t is valid until the parent ctx is destroyed with @ref
+ * mongocrypt_ctx_destroy.
  */
 typedef struct _mongocrypt_binary_t mongocrypt_binary_t;
 
@@ -71,8 +95,8 @@ mongocrypt_binary_new (void);
 /**
  * Create a new non-owning view of a buffer (data + length).
  *
- * @param[in] data A pointer to an array of bytes. This is not copied. @p data
- * must outlive the binary object.
+ * @param[in] data A pointer to an array of bytes. This data is not copied. @p
+ * data must outlive the binary object.
  * @param[in] len The length of the @p data byte array.
  *
  * @returns A new @ref mongocrypt_binary_t.
@@ -81,21 +105,21 @@ mongocrypt_binary_t *
 mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len);
 
 /**
- * Get a pointer to the referenced data.
+ * Get a pointer to the viewed data.
  *
  * @param[in] binary The @ref mongocrypt_binary_t.
  *
- * @returns A pointer to the referenced data.
+ * @returns A pointer to the viewed data.
  */
 const uint8_t *
 mongocrypt_binary_data (const mongocrypt_binary_t *binary);
 
 /**
- * Get the length of the referenced data.
+ * Get the length of the viewed data.
  *
  * @param[in] binary The @ref mongocrypt_binary_t.
  *
- * @returns The length of the referenced data.
+ * @returns The length of the viewed data.
  */
 uint32_t
 mongocrypt_binary_len (const mongocrypt_binary_t *binary);
@@ -103,9 +127,7 @@ mongocrypt_binary_len (const mongocrypt_binary_t *binary);
 /**
  * Free the @ref mongocrypt_binary_t.
  *
- * This does not free the referenced data. Refer to individual function
- * documentation to determine the lifetime guarantees of the underlying
- * data.
+ * This does not free the viewed data.
  *
  * @param[in] binary The mongocrypt_binary_t destroy.
  */
@@ -118,10 +140,13 @@ mongocrypt_binary_destroy (mongocrypt_binary_t *binary);
  * Functions like @ref mongocrypt_ctx_encrypt_init follow a pattern to expose a
  * status. A boolean is returned. True indicates success, and false indicates
  * failure. On failure a status on the handle is set, and is accessible with a
- * corresponding <handle>_status function. E.g. @ref mongocrypt_ctx_status.
+ * corresponding (handle)_status function. E.g. @ref mongocrypt_ctx_status.
  */
 typedef struct _mongocrypt_status_t mongocrypt_status_t;
 
+/**
+ * Indicates the type of error.
+ */
 typedef enum {
    MONGOCRYPT_STATUS_OK = 0,
    MONGOCRYPT_STATUS_ERROR_CLIENT = 1,
@@ -164,7 +189,7 @@ mongocrypt_status_code (mongocrypt_status_t *status);
  * Get the error message associated with a status or NULL.
  *
  * @param[in] status The status object.
- * @param[out] len, an optional length of the returned string. May be NULL.
+ * @param[out] len An optional length of the returned string. May be NULL.
  *
  * @returns A NULL terminated error message or NULL.
  */
@@ -190,6 +215,9 @@ mongocrypt_status_ok (mongocrypt_status_t *status);
 void
 mongocrypt_status_destroy (mongocrypt_status_t *status);
 
+/**
+ * Indicates the type of log message.
+ */
 typedef enum {
    MONGOCRYPT_LOG_LEVEL_FATAL = 0,
    MONGOCRYPT_LOG_LEVEL_ERROR = 1,
@@ -285,7 +313,8 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] key A 64 byte master key used to encrypt and decrypt key vault
- * keys.
+ * keys. The viewed data is copied. It is valid to destroy @p key with @ref
+ * mongocrypt_binary_destroy immediately after.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -299,13 +328,16 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] schema_map A BSON document representing the schema map supplied by
- * the user. The keys are collection namespaces and values are JSON schemas.
+ * the user. The keys are collection namespaces and values are JSON schemas. The
+ * viewed data copied. It is valid to destroy @p schema_map with @ref
+ * mongocrypt_binary_destroy immediately after.
  * @pre @p crypt has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
  */
 bool
-mongocrypt_setopt_schema_map (mongocrypt_t *crypt, mongocrypt_binary_t *schema);
+mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
+                              mongocrypt_binary_t *schema_map);
 
 /**
  * Initialize new @ref mongocrypt_t object.
@@ -366,11 +398,13 @@ mongocrypt_ctx_new (mongocrypt_t *crypt);
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[out] status Receives the status.
  *
- * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * @returns True if the output is an ok status, false if it is an error
+ * status.
+ *
+ * @see mongocrypt_status_ok
  */
 bool
-mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out);
+mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
 
 /**
  * Set the key id to use for explicit encryption.
@@ -378,7 +412,8 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out);
  * It is an error to set both this and the key alt name.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] key_id The key_id to use.
+ * @param[in] key_id The key_id to use. The viewed data is copied. It is valid
+ * to destroy @p key_id with @ref mongocrypt_binary_destroy immediately after.
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -388,16 +423,23 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
                               mongocrypt_binary_t *key_id);
 
 /**
- * Set the keyAltName to use for explicit encryption.
- * keyAltName should be a binary encoding a bson document
- * with the following format:
+ * Set the keyAltName to use for explicit encryption or
+ * data key creation.
+ * 
+ * Pass the binary encoding a BSON document like the following:
  *
- *   { "keyAltName" : <BSON UTF8 value> }
- *
- * It is an error to set both this and the key id.
+ *   { "keyAltName" : (BSON UTF8 value) }
+ * 
+ * For explicit encryption, it is an error to set both the keyAltName
+ * and the key id.
+ * 
+ * For creating data keys, call this function repeatedly to set
+ * multiple keyAltNames.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] key_alt_name The name to use.
+ * @param[in] key_alt_name The name to use. The viewed data is copied. It is
+ * valid to destroy @p key_alt_name with @ref mongocrypt_binary_destroy
+ * immediately after.
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -483,15 +525,14 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
 /**
  * Initialize a context for encryption.
  *
- * Associated options:
- * - @ref mongocrypt_ctx_setopt_schema
- *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] db The database name.
  * @param[in] db_len The byte length of @p db. Pass -1 to determine the string
  * length with strlen (must
  * be NULL terminated).
- * @param[in] cmd The BSON command to be encrypted.
+ * @param[in] cmd The BSON command to be encrypted. The viewed data is copied.
+ * It is valid to destroy @p cmd with @ref mongocrypt_binary_destroy immediately
+ * after.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -515,10 +556,11 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_key_id
  * - @ref mongocrypt_ctx_setopt_key_alt_name
  * - @ref mongocrypt_ctx_setopt_algorithm
- * - @ref mongocrypt_ctx_setopt_initialization_vector
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
- * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value.
+ * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value. The
+ * viewed data is copied. It is valid to destroy @p msg with @ref
+ * mongocrypt_binary_destroy immediately after.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -530,7 +572,9 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
  * Initialize a context for decryption.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] doc The document to be decrypted.
+ * @param[in] doc The document to be decrypted. The viewed data is copied. It is
+ * valid to destroy @p doc with @ref mongocrypt_binary_destroy immediately
+ * after.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -542,12 +586,19 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
  *
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
- * @param[in] msg A @ref mongocrypt_binary_t the encrypted BSON.
+ * @param[in] msg A @ref mongocrypt_binary_t the encrypted BSON. The viewed data
+ * is copied. It is valid to destroy @p msg with @ref mongocrypt_binary_destroy
+ * immediately after.
  */
 bool
 mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg);
 
+/**
+ * Indicates the state of the @ref mongocrypt_ctx_t. Each state requires
+ * different handling. See [the integration guide](https://github.com/mongodb/libmongocrypt/blob/master/integrating.md#state-machine)
+ * for information on what to do for each state.
+ */
 typedef enum {
    MONGOCRYPT_CTX_ERROR = 0,
    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1, /* run on main MongoClient */
@@ -581,7 +632,9 @@ mongocrypt_ctx_state (mongocrypt_ctx_t *ctx);
  * until @ref mongocrypt_ctx_destroy is called.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[out] op_bson A BSON document for the MongoDB operation.
+ * @param[out] op_bson A BSON document for the MongoDB operation. The data
+ * viewed by @p op_bson is guaranteed to be valid until @p ctx is destroyed with
+ * @ref mongocrypt_ctx_destroy.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -600,7 +653,9 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a reply from mongocryptd.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] reply A BSON document for the MongoDB operation.
+ * @param[in] reply A BSON document for the MongoDB operation. The viewed data
+ * is copied. It is valid to destroy @p reply with @ref
+ * mongocrypt_binary_destroy immediately after.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -645,7 +700,9 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx);
  * until @ref mongocrypt_ctx_kms_done is called.
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
- * @param[out] msg The HTTP request to send to KMS.
+ * @param[out] msg The HTTP request to send to KMS. The data viewed by @p msg is
+ * guaranteed to be valid until the call of @ref mongocrypt_ctx_kms_done of the
+ * parent @ref mongocrypt_ctx_t.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -683,7 +740,8 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms);
  * mongocrypt_kms_ctx_bytes_needed is an error.
  *
  * @param[in] kms The @ref mongocrypt_kms_ctx_t.
- * @param[in] bytes The bytes to feed.
+ * @param[in] bytes The bytes to feed. The viewed data is copied. It is valid to
+ * destroy @p bytes with @ref mongocrypt_binary_destroy immediately after.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -718,10 +776,9 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * Perform the final encryption or decryption.
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
- * @param[out] out The final BSON to send to the server.
- *
- * The lifetime of @p out is tied to the lifetime of @p ctx. It is valid
- * until @ref mongocrypt_ctx_destroy is called.
+ * @param[out] out The final BSON to send to the server. The data viewed by @p
+ * out is guaranteed to be valid until @p ctx is destroyed with @ref
+ * mongocrypt_ctx_destroy.
  *
  * @returns a bool indicating success.
  */
