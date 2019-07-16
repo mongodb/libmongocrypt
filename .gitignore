@@ -24,3 +24,6 @@ Testing/
 
 # Generated header
 src/mongocrypt-export.h
+
+# IDEs
+.idea/

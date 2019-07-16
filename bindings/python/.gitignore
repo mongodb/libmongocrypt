@@ -1,0 +1,16 @@
+*~
+*#*
+.DS*
+*.cm
+*.class
+*.pyc
+*.pyd
+build/
+doc/_build/
+dist/
+*.so
+*.egg
+.tox
+.eggs/
+.idea/
+*.egg-info/
