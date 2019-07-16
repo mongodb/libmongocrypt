@@ -28,6 +28,7 @@ sys.path[0:0] = [""]
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
 from pymongocrypt.errors import MongoCryptError
+from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryIn,
                                      MongoCryptBinaryOut,
@@ -221,7 +222,7 @@ class MockCallback(MongoCryptCallback):
         return self.key_docs
 
     def insert_data_key(self, data_key):
-        raise NotImplementedError
+        return BSON(data_key).decode()['_id']
 
     def close(self):
         pass
@@ -259,6 +260,34 @@ class TestMongoCryptCallback(unittest.TestCase):
         self.assertEqual(
             BSON(decrypted).decode(), json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+
+class TestExplicitEncryption(unittest.TestCase):
+
+    @staticmethod
+    def mongo_crypt_opts():
+        return MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00'*96}})
+
+    def test_encrypt_decrypt(self):
+        encrypter = ExplicitEncrypter(MockCallback(
+            key_docs=[bson_data('key-document.json')],
+            kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        key_id = json_data('key-document.json')['_id']
+        val = {'v': 'hello'}
+        encoded_val = BSON.encode(val)
+        algo = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+        encrypted = encrypter.encrypt(encoded_val, algo, key_id=key_id.bytes)
+        self.assertEqual(
+            BSON(encrypted).decode(), json_data('encrypted-value.json'))
+        self.assertEqual(encrypted, bson_data('encrypted-value.json'))
+
+        decrypted = encrypter.decrypt(encrypted)
+        self.assertEqual(BSON(decrypted).decode(), val)
+        self.assertEqual(encoded_val, decrypted)
 
 
 def read(filename, **kwargs):
