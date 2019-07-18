@@ -124,8 +124,6 @@ tasks:
   depends_on:
     - variant: ubuntu1604
       name: build-and-test-java
-    - variant: rhel-70-64-bit
-      name: build-and-test-java
     - variant: macos
       name: build-and-test-java
     - variant: windows-test
