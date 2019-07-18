@@ -16,10 +16,10 @@
  */
 
 import de.undercouch.gradle.tasks.download.Download
-import java.io.ByteArrayOutputStream
-import java.net.URI
 import groovy.util.Node
 import groovy.util.NodeList
+import java.io.ByteArrayOutputStream
+import java.net.URI
 
 
 buildscript {
@@ -92,7 +92,7 @@ val jnaResourcesBuildDir = "$buildDir/jnaLibs/"
 
 // Copy resources to jnaResourcesBuildDir
 val copyResources by tasks.register<Copy>("copyResources") {
-    val cmakeBuildPath = "../../../cmake-build"
+    val cmakeBuildPath = "../../../cmake-build-nocrypto"
     destinationDir = file(jnaResourcesBuildDir)
     if (jnaResources.isNotEmpty()) {
         from(jnaResources)
@@ -124,24 +124,22 @@ data class LibMongoCryptS3Data(val evergreenName: String, val classifier: String
 
 // If updating this list remember to also update the Publish Snapshots `depends_on` in the main evergreen config.yml
 val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
-        LibMongoCryptS3Data("ubuntu1604", "linux64-ubuntu1604", "linux-x86-64"),
-        LibMongoCryptS3Data("rhel-70-64-bit", "linux64-rhel70", "linux-x86-64"),
+        LibMongoCryptS3Data("ubuntu1604", "linux64", "linux-x86-64"),
         LibMongoCryptS3Data("windows-test", "win64", "win32-x86-64"),
         LibMongoCryptS3Data("macos", "osx", "darwin")
 )
-val defaultClassifers = listOf("linux64-rhel70", "win64", "osx")  // Included in the default jar
 
 jnaMappingList.forEach {
     tasks {
         val download by register<Download>("download-${it.classifier}") {
             src(it.downloadUrl())
             dest("${jnaDownloadsDir}zips/${it.classifier}.tgz")
-            overwrite(false)
+            overwrite(true)
         }
 
         val unzip by register<Copy>("unzip-${it.classifier}") {
             from(tarTree(resources.gzip("${jnaDownloadsDir}zips/${it.classifier}.tgz")))
-            include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
+            include("nocrypto/**/libmongocrypt.so", "nocrypto/**/libmongocrypt.dylib", "nocrypto/**/mongocrypt.dll")
             eachFile {
                 path = name
             }
@@ -149,22 +147,12 @@ jnaMappingList.forEach {
         }
         unzip.dependsOn(download)
 
-        if (defaultClassifers.contains(it.classifier)) {
-            val addDefaultLibToMainPackage by register<Copy>("default-${it.classifier}") {
-                from("$jnaDownloadsDir${it.classifier}/")
-                into(jnaResourcesBuildDir)
-            }
-            addDefaultLibToMainPackage.dependsOn(unzip)
-            downloadJnaLibs.dependsOn(addDefaultLibToMainPackage)
-        } else {
-            downloadJnaLibs.dependsOn(unzip)
+        val addDefaultLibToMainPackage by register<Copy>("default-${it.classifier}") {
+            from("$jnaDownloadsDir${it.classifier}/")
+            into(jnaResourcesBuildDir)
         }
-
-        register<Jar>("${it.classifier}ClassifierJar") {
-            description = "Create an ${it.classifier} jar"
-            from(sourceSets.main.get().output.classesDirs.plus(file("$jnaDownloadsDir${it.classifier}/")))
-            archiveClassifier.set(it.classifier)
-        }
+        addDefaultLibToMainPackage.dependsOn(unzip)
+        downloadJnaLibs.dependsOn(addDefaultLibToMainPackage)
     }
 }
 
@@ -178,7 +166,7 @@ tasks.withType<AbstractPublishToMaven> {
     """.trimMargin()
 }
 
-val classifiers = mutableListOf()
+val classifiers = mutableListOf<String>()
 val checkClassifiers by tasks.register<DefaultTask>("checkClassifiers") {
     jnaMappingList.forEach {
         if (file("$jnaDownloadsDir${it.classifier}/").exists()) {
@@ -229,12 +217,6 @@ publishing {
 
             artifact(tasks["sourcesJar"])
             artifact(tasks["javadocJar"])
-            // Add special classifier jars
-            tasks.filter { it.name.endsWith("ClassifierJar") }.forEach {
-                if (classifiers.contains(it.name.removeSuffix("ClassifierJar"))) {
-                    artifact(it)
-                }
-            }
             versionMapping {
                 usage("java-api") {
                     fromResolutionOf("runtimeClasspath")
