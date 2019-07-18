@@ -124,7 +124,7 @@ data class LibMongoCryptS3Data(val evergreenName: String, val classifier: String
 
 // If updating this list remember to also update the Publish Snapshots `depends_on` in the main evergreen config.yml
 val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
-        LibMongoCryptS3Data("ubuntu1604", "linux64", "linux-x86-64"),
+        LibMongoCryptS3Data("rhel-62-64-bit", "linux64", "linux-x86-64"),
         LibMongoCryptS3Data("windows-test", "win64", "win32-x86-64"),
         LibMongoCryptS3Data("macos", "osx", "darwin")
 )
