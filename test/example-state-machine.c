@@ -144,6 +144,7 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
 
    done = false;
    status = mongocrypt_status_new ();
+   bson_init (result);
 
    while (!done) {
       state = mongocrypt_ctx_state (ctx);
@@ -215,6 +216,7 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
          bson_init_static (&tmp,
                            mongocrypt_binary_data (output),
                            mongocrypt_binary_len (output));
+         bson_destroy (result);
          bson_copy_to (&tmp, result);
          bson_destroy (&tmp);
          mongocrypt_binary_destroy (output);

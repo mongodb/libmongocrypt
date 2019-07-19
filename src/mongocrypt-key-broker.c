@@ -703,7 +703,7 @@ _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
                                const _mongocrypt_buffer_t *key_id)
 {
    _mongocrypt_key_broker_entry_t *kbe = NULL;
-   mongocrypt_status_t *status = kb->status;
+   mongocrypt_status_t *status;
 
    status = kb->status;
    if (key_id->subtype != BSON_SUBTYPE_UUID) {

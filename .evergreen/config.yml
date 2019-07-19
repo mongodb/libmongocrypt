@@ -47,6 +47,13 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
 
+  "run clang-tidy":
+    - command: "shell.exec"
+      params:
+        script: |-
+          ${compile_env|} CONFIGURE_ONLY=ON ./libmongocrypt/.evergreen/compile.sh
+          ./libmongocrypt/.evergreen/clang-tidy.sh
+
   "build and test java":
     - command: "shell.exec"
       params:
@@ -76,6 +83,11 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
   - func: "tar and upload libmongocrypt libraries"
+
+- name: clang-tidy
+  commands:
+  - func: "fetch source"
+  - func: "run clang-tidy"
 
 - name: build-and-test-shared-bson
   commands:
@@ -278,6 +290,7 @@ buildvariants:
   display_name: "Ubuntu 16.04 64-bit"
   run_on: ubuntu1604-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -287,6 +300,7 @@ buildvariants:
   display_name: "RHEL 7.6"
   run_on: rhel76-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -302,6 +316,7 @@ buildvariants:
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -315,6 +330,7 @@ buildvariants:
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -322,6 +338,7 @@ buildvariants:
   display_name: "Amazon Linux 2"
   run_on: amazon2-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -330,6 +347,7 @@ buildvariants:
   display_name: "Debian 9.2"
   run_on: debian92-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -338,6 +356,7 @@ buildvariants:
   display_name: "RHEL 6.2 64-bit"
   run_on: rhel62-small
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -352,6 +371,7 @@ buildvariants:
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -359,6 +379,7 @@ buildvariants:
   display_name: "RHEL 7.1 ppc64el"
   run_on: rhel71-power8-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -366,6 +387,7 @@ buildvariants:
   display_name: "SLES 12 64-bit"
   run_on: suse12-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -374,6 +396,7 @@ buildvariants:
   display_name: "SLES 15 64-bit"
   run_on: suse15-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -382,6 +405,7 @@ buildvariants:
   display_name: "SLES 12 s390x"
   run_on: suse12-zseries-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -389,6 +413,7 @@ buildvariants:
   display_name: "Ubuntu 16.04 arm64"
   run_on: ubuntu1604-arm64-large
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -397,6 +422,7 @@ buildvariants:
   display_name: "Ubuntu 16.04 s390x"
   run_on: ubuntu1604-zseries-small
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -404,6 +430,7 @@ buildvariants:
   display_name: "Ubuntu 18.04 64-bit"
   run_on: ubuntu1804-test
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -412,6 +439,7 @@ buildvariants:
   display_name: "Ubuntu 18.04 arm64"
   run_on: ubuntu1804-arm64-build
   tasks:
+  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan

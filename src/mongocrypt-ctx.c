@@ -86,7 +86,9 @@ bool
 mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
                               mongocrypt_binary_t *key_id)
 {
-   BSON_ASSERT (ctx);
+   if (!ctx) {
+      return false;
+   }
 
    if (ctx->crypt->log.trace_enabled && key_id && key_id->data) {
       char *key_id_val;
@@ -112,6 +114,10 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
    bson_t as_bson;
    bson_iter_t iter;
    _mongocrypt_key_alt_name_t *new_key_alt_name;
+
+   if (!ctx) {
+      return false;
+   }
 
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
@@ -309,7 +315,10 @@ _kms_done (mongocrypt_ctx_t *ctx)
 bool
 mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+   if (!ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
 
@@ -335,7 +344,10 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 bool
 mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+   if (!ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
 
@@ -374,7 +386,10 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 bool
 mongocrypt_ctx_mongo_done (mongocrypt_ctx_t *ctx)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+   if (!ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
 
@@ -396,7 +411,10 @@ mongocrypt_ctx_mongo_done (mongocrypt_ctx_t *ctx)
 mongocrypt_ctx_state_t
 mongocrypt_ctx_state (mongocrypt_ctx_t *ctx)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+   if (!ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
 
@@ -407,7 +425,10 @@ mongocrypt_ctx_state (mongocrypt_ctx_t *ctx)
 mongocrypt_kms_ctx_t *
 mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+   if (!ctx->initialized) {
       _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
       return NULL;
    }
@@ -432,7 +453,10 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
 bool
 mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+   if (!ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
 
@@ -454,7 +478,10 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx)
 bool
 mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+   if (!ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
 
@@ -479,7 +506,11 @@ mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 bool
 mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out)
 {
-   if (!ctx || !ctx->initialized) {
+   if (!ctx) {
+      return false;
+   }
+
+   if (!ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
    }
 
@@ -521,6 +552,9 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
                                      const char *cmk,
                                      int32_t cmk_len)
 {
+   if (!ctx) {
+      return false;
+   }
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
    }
@@ -570,6 +604,9 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
 bool
 mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx)
 {
+   if (!ctx) {
+      return false;
+   }
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
    }

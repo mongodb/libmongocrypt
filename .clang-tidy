@@ -1,0 +1,5 @@
+# Older clang-tidy gives a warning for an uninitialized va_args,
+# even on the test case that they assert should not produce that warning:
+# https://github.com/llvm-mirror/clang/blob/59207d134acb8a1c6cb9974c32c1c04bd31f8f7b/test/Analysis/valist-uninitialized.c#L30
+Checks: "-clang-analyzer-valist.Uninitialized"
+WarningsAsErrors: "*"

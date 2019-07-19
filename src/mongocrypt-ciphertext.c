@@ -141,7 +141,6 @@ _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
    offset += 1;
 
    memcpy (out->data + offset, ciphertext->data.data, ciphertext->data.len);
-   offset += ciphertext->data.len;
 
    return true;
 }

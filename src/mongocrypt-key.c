@@ -470,6 +470,7 @@ _mongocrypt_key_alt_name_create (const char *name, ...)
       arg_ptr = va_arg (args, const char *);
       prev = curr;
    }
+   va_end (args);
 
    return head;
 }

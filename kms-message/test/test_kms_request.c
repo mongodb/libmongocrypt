@@ -162,7 +162,7 @@ test_getline (char **lineptr, size_t *n, FILE *stream)
          return -1;
       }
       // If the buffer is full, grow the buffer
-      if ((*n - count) == 1) {
+      if ((*n - count) <= 1) {
          realloc_buffer (lineptr, n, *n + 128);
       }
 
@@ -798,8 +798,8 @@ kms_response_parser_test (void)
    kms_response_destroy (response);
 
    /* the parser resets after returning a response. */
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (
+      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (kms_response_parser_feed (
       parser, (uint8_t *) "Content-Length: 15\r\n", 20));
    ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
@@ -864,16 +864,16 @@ kms_response_parser_test (void)
 
    /* We fail if the header doesn't have a colon in it */
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (
+      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (!kms_response_parser_feed (
       parser, (uint8_t *) "Content-Length= 15\r\n", 20));
    kms_response_parser_destroy (parser);
 
    /* We fail if we are missing a content length */
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (
+      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (
       !kms_response_parser_feed (parser, (uint8_t *) "Anything else\r\n", 15));
    kms_response_parser_destroy (parser);
