@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongocrypt-config.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-crypto-private.h"
 
@@ -448,12 +449,25 @@ _test_kms_request (_mongocrypt_tester_t *tester)
 }
 
 
+static void
+_test_crypto_hooks_unset (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1);
+   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "crypto hooks required");
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
 {
-   INSTALL_TEST (_test_crypto_hooks_encryption);
-   INSTALL_TEST (_test_crypto_hooks_decryption);
-   INSTALL_TEST (_test_crypto_hooks_iv_gen);
-   INSTALL_TEST (_test_crypto_hooks_random);
-   INSTALL_TEST (_test_kms_request);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_encryption, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_decryption, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_iv_gen, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_random, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_kms_request, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_unset, CRYPTO_PROHIBITED);
 }

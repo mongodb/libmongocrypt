@@ -21,6 +21,7 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-cache-collinfo-private.h"
 #include "mongocrypt-cache-key-private.h"
+#include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
@@ -343,8 +344,14 @@ mongocrypt_init (mongocrypt_t *crypt)
    }
 
    if (!crypt->crypto) {
+#ifndef MONGOCRYPT_ENABLE_CRYPTO
+      CLIENT_ERR ("libmongocrypt built with native crypto disabled. crypto "
+                  "hooks required");
+      return false;
+#else
       /* set default hooks. */
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+#endif
    }
    return true;
 }

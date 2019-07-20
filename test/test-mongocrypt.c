@@ -20,6 +20,7 @@
 #include <bson/bson.h>
 
 #include "mongocrypt.h"
+#include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-marking-private.h"
 #include "test-mongocrypt.h"
@@ -125,8 +126,27 @@ _load_http (_mongocrypt_tester_t *tester, const char *path)
 void
 _mongocrypt_tester_install (_mongocrypt_tester_t *tester,
                             char *name,
-                            _mongocrypt_test_fn fn)
+                            _mongocrypt_test_fn fn,
+                            _mongocrypt_tester_crypto_spec_t crypto_spec)
 {
+   bool crypto_enabled;
+
+#ifdef MONGOCRYPT_ENABLE_CRYPTO
+   crypto_enabled = true;
+#else
+   crypto_enabled = false;
+#endif
+
+   if (crypto_spec == CRYPTO_REQUIRED && !crypto_enabled) {
+      printf ("Skipping test: %s – requires crypto to be enabled\n", name);
+      return;
+   }
+
+   if (crypto_spec == CRYPTO_PROHIBITED && crypto_enabled) {
+      printf ("Skipping test: %s – requires crypto to be disabled\n", name);
+      return;
+   }
+
    tester->test_fns[tester->test_count] = fn;
    tester->test_names[tester->test_count] = bson_strdup (name);
    tester->test_count++;
@@ -589,7 +609,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_ciphertext (&tester);
    _mongocrypt_tester_install_key_broker (&tester);
    _mongocrypt_tester_install (
-      &tester, "_test_mongocrypt_bad_init", _test_mongocrypt_bad_init);
+      &tester, "_test_mongocrypt_bad_init", _test_mongocrypt_bad_init, CRYPTO_REQUIRED);
    _mongocrypt_tester_install_local_kms (&tester);
    _mongocrypt_tester_install_cache (&tester);
    _mongocrypt_tester_install_buffer (&tester);
@@ -598,11 +618,13 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_marking (&tester);
    _mongocrypt_tester_install_traverse_util (&tester);
    _mongocrypt_tester_install (
-      &tester, "_test_setopt_schema", _test_setopt_schema);
+      &tester, "_test_setopt_schema", _test_setopt_schema, CRYPTO_REQUIRED);
    _mongocrypt_tester_install (&tester,
                                "_test_setopt_invalid_kms_providers",
-                               _test_setopt_invalid_kms_providers);
+                               _test_setopt_invalid_kms_providers,
+                               CRYPTO_REQUIRED);
    _mongocrypt_tester_install_crypto_hooks (&tester);
+
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {

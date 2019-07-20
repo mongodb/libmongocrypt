@@ -18,9 +18,11 @@ evergreen_root="$(pwd)"
 
 BIN_DIR=./cmake-build
 KMS_BIN_DIR=./cmake-build/kms-message
+NOCRYPTO_BIN_DIR=./cmake-build-nocrypto
 if [ "Windows_NT" == "$OS" ]; then
     BIN_DIR=./cmake-build/Debug
     KMS_BIN_DIR=./cmake-build/kms-message/Debug
+    NOCRYPTO_BIN_DIR=./cmake-build-nocrypto/Debug
     # Make sure libbson dll is in the path
     export PATH=${INSTALL_PREFIX}/mongo-c-driver/bin:$PATH
 fi
@@ -37,4 +39,6 @@ echo "Running example state machine."
 $VALGRIND ${BIN_DIR}/example-state-machine
 echo "Running example state machine (statically linked)."
 $VALGRIND ${BIN_DIR}/example-state-machine-static
+echo "Running libmongocrypt tests with no native crypto"
+MONGOCRYPT_TRACE=ON $VALGRIND ${NOCRYPTO_BIN_DIR}/test-mongocrypt
 cd ..

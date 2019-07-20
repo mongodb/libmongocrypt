@@ -174,10 +174,15 @@ _mongocrypt_tester_mongocrypt (void);
 
 void
 _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
+
+typedef enum {
+   CRYPTO_REQUIRED, CRYPTO_OPTIONAL, CRYPTO_PROHIBITED
+} _mongocrypt_tester_crypto_spec_t;
+
 void
 _mongocrypt_tester_install (_mongocrypt_tester_t *tester,
                             char *name,
-                            _mongocrypt_test_fn fn);
+                            _mongocrypt_test_fn fn, _mongocrypt_tester_crypto_spec_t crypto_spec);
 
 
 const char *
@@ -265,6 +270,7 @@ mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 #define TEST_FILE(path) _mongocrypt_tester_file (tester, path)
 
-#define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn)
+#define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn, CRYPTO_REQUIRED)
+#define INSTALL_TEST_CRYPTO(fn, crypto) _mongocrypt_tester_install (tester, #fn, fn, crypto)
 
 #endif

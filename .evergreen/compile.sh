@@ -71,3 +71,5 @@ cd cmake-build-nocrypto
 $CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=Debug "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt/nocrypto" ../
 echo "Installing libmongocrypt with no crypto"
 $CMAKE --build . --target install
+echo "Building test-mongocrypt with no crypto"
+$CMAKE --build . --target test-mongocrypt
