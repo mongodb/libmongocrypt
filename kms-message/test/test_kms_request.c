@@ -363,6 +363,7 @@ compare_strs (const char *test_name, const char *expect, const char *actual)
 #define ASSERT(stmt)                                    \
    if (!(stmt)) {                                       \
       fprintf (stderr, "statement failed %s\n", #stmt); \
+      abort ();                                         \
    }
 
 void
@@ -839,7 +840,7 @@ kms_response_parser_test (void)
 
    parser = kms_response_parser_new ();
    ASSERT (!kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 201 CREATED\r\n", 21));
+      parser, (uint8_t *) "HTTP/1.1 201 CREATED\r\n", 22));
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();

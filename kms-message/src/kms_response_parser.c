@@ -243,6 +243,9 @@ kms_response_parser_feed (kms_response_parser_t *parser,
       }
    }
 
+   if (parser->failed) {
+      return false;
+   }
    return true;
 }
 
