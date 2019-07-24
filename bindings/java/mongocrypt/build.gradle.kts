@@ -42,7 +42,7 @@ repositories {
 }
 
 group = "org.mongodb"
-version = "1.0.0-beta4"
+version = "1.0.0-SNAPSHOT"
 description = "MongoDB client-side crypto support"
 
 java {
