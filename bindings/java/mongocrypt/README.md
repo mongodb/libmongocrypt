@@ -27,7 +27,7 @@ Note: Has to be run on a git tagged version / hash.
 * `jnaLibsPath`: Custom local JNA library path for inclusion into the build (rather than downloading from s3)<br>
   Usage: `./gradlew publishSnapshots -DjnaLibsPath=./build/jnaLibs/`
 * `gitRevision`: Sets the Git Revision to download the built resources for from s3.<br>
-  Usage: `./gradlew publishSnapshots -gitRevision=<fullGitHash>`
+  Usage: `./gradlew publishSnapshots -DgitRevision=<fullGitHash>`
 
 These flags can be combined with the `downloadJnaLibs` task:
  
