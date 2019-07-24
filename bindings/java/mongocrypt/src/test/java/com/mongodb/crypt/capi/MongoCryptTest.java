@@ -22,6 +22,7 @@ import org.bson.BsonBinary;
 import org.bson.BsonBinarySubType;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
+import org.bson.RawBsonDocument;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.DecoderContext;
 import org.bson.json.JsonReader;
@@ -73,7 +74,7 @@ public class MongoCryptTest {
 
         assertEquals(State.READY, encryptor.getState());
 
-        BsonDocument encryptedDocument = encryptor.finish();
+        RawBsonDocument encryptedDocument = encryptor.finish();
         assertEquals(State.DONE, encryptor.getState());
         assertEquals(getResourceAsDocument("encrypted-command.json"), encryptedDocument);
 
@@ -96,7 +97,7 @@ public class MongoCryptTest {
 
         assertEquals(State.READY, decryptor.getState());
 
-        BsonDocument decryptedDocument = decryptor.finish();
+        RawBsonDocument decryptedDocument = decryptor.finish();
         assertEquals(State.DONE, decryptor.getState());
         assertEquals(getResourceAsDocument("command-reply.json"), decryptedDocument);
 
@@ -117,7 +118,7 @@ public class MongoCryptTest {
                         .build());                               
         assertEquals(State.READY, dataKeyContext.getState());
 
-        BsonDocument dataKeyDocument = dataKeyContext.finish();
+        RawBsonDocument dataKeyDocument = dataKeyContext.finish();
         assertEquals(State.DONE, dataKeyContext.getState());
         assertNotNull(dataKeyDocument);
 
@@ -143,7 +144,7 @@ public class MongoCryptTest {
 
         assertEquals(State.READY, encryptor.getState());
 
-        BsonDocument encryptedDocument = encryptor.finish();
+        RawBsonDocument encryptedDocument = encryptor.finish();
         assertEquals(State.DONE, encryptor.getState());
         assertEquals(getResourceAsDocument("encrypted-value.json"), encryptedDocument);
 
@@ -151,7 +152,7 @@ public class MongoCryptTest {
 
         assertEquals(State.READY, decryptor.getState());
 
-        BsonDocument decryptedDocument = decryptor.finish();
+        RawBsonDocument decryptedDocument = decryptor.finish();
         assertEquals(State.DONE, decryptor.getState());
         assertEquals(documentToEncrypt, decryptedDocument);
 
@@ -177,7 +178,7 @@ public class MongoCryptTest {
 
         assertEquals(State.READY, encryptor.getState());
 
-        BsonDocument encryptedDocument = encryptor.finish();
+        RawBsonDocument encryptedDocument = encryptor.finish();
         assertEquals(State.DONE, encryptor.getState());
         assertEquals(getResourceAsDocument("encrypted-value.json"), encryptedDocument);
 
@@ -187,7 +188,7 @@ public class MongoCryptTest {
         testKeyDecryptor(decryptor);
         assertEquals(State.READY, decryptor.getState());
 
-        BsonDocument decryptedDocument = decryptor.finish();
+        RawBsonDocument decryptedDocument = decryptor.finish();
         assertEquals(State.DONE, decryptor.getState());
         assertEquals(documentToEncrypt, decryptedDocument);
 

@@ -116,7 +116,7 @@ public interface MongoCryptContext extends Closeable {
      *
      * @return the encrypted or decrypted document
      */
-    BsonDocument finish();
+    RawBsonDocument finish();
 
     @Override
     void close();

@@ -117,7 +117,7 @@ class MongoCryptContextImpl implements MongoCryptContext {
     }
 
     @Override
-    public BsonDocument finish() {
+    public RawBsonDocument finish() {
         isTrue("open", !closed);
 
         mongocrypt_binary_t binary = mongocrypt_binary_new();
