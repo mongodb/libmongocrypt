@@ -1,0 +1,9 @@
+# C# binary directories
+bin/
+obj/
+
+# Rider settings
+.idea/
+
+# VS settings
+.vs/

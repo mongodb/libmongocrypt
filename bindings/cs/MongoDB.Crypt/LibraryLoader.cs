@@ -75,7 +75,7 @@ namespace MongoDB.Crypt
             {
                 string[] suffixPaths = new[]
                 {
-                    @"..\..\native\windows\",
+                    @"..\..\x64\native\windows\",
                     string.Empty
                 };
                 string path = FindLibrary(candidatePaths, suffixPaths, "mongocrypt.dll");

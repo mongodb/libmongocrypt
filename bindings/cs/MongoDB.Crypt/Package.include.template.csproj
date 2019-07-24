@@ -12,19 +12,19 @@
   <ItemGroup>
     <Content Include="@mongocrypt_BINARY_DIR@/libmongocrypt.so" Condition="Exists('@mongocrypt_BINARY_DIR@/libmongocrypt.so')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackagePath>native/linux/libmongocrypt.so</PackagePath>
+      <PackagePath>x64/native/linux/libmongocrypt.so</PackagePath>
       <Pack>true</Pack>
     </Content>
 
     <Content Include="@mongocrypt_BINARY_DIR@/libmongocrypt.dylib" Condition="Exists('@mongocrypt_BINARY_DIR@/libmongocrypt.dylib')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackagePath>native/osx/libmongocrypt.dylib</PackagePath>
+      <PackagePath>x64/native/osx/libmongocrypt.dylib</PackagePath>
       <Pack>true</Pack>
     </Content>
 
     <Content Include="@mongocrypt_BINARY_DIR@/$(Configuration)/mongocrypt.dll" Condition="Exists('@mongocrypt_BINARY_DIR@/$(Configuration)/mongocrypt.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackagePath>native/windows/mongocrypt.dll</PackagePath>
+      <PackagePath>x64/native/windows/mongocrypt.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
