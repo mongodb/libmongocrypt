@@ -213,15 +213,7 @@ class MongoCrypt(object):
         :Returns:
           A :class:`MongoCryptContext`.
         """
-        ctx = self._create_context()
-        wrapped = MongoCryptContext(ctx, database)
-        with MongoCryptBinaryIn(command) as binary:
-            if PY3:
-                database = database.encode()
-            if not lib.mongocrypt_ctx_encrypt_init(
-                    ctx, database, len(database), binary.bin):
-                wrapped._raise_from_status()
-        return wrapped
+        return EncryptionContext(self._create_context(), database, command)
 
     def decryption_context(self, command):
         """Creates a context to use for decryption.
@@ -232,18 +224,13 @@ class MongoCrypt(object):
         :Returns:
           A :class:`MongoCryptContext`.
         """
-        ctx = self._create_context()
-        wrapped = MongoCryptContext(ctx)
-        with MongoCryptBinaryIn(command) as binary:
-            if not lib.mongocrypt_ctx_decrypt_init(ctx, binary.bin):
-                wrapped._raise_from_status()
-        return wrapped
+        return DecryptionContext(self._create_context(), command)
 
 
 class MongoCryptContext(object):
-    __slots__ = ("__ctx", "database")
+    __slots__ = ("__ctx",)
 
-    def __init__(self, ctx, database=None):
+    def __init__(self, ctx):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
@@ -252,7 +239,31 @@ class MongoCryptContext(object):
           - `database`: Optional, the name of the database.
         """
         self.__ctx = ctx
-        self.database = database
+
+    def _encrypt_init(self, database, command):
+        """Init this context for encryption."""
+        try:
+            with MongoCryptBinaryIn(command) as binary:
+                if PY3:
+                    database = database.encode()
+                if not lib.mongocrypt_ctx_encrypt_init(
+                       self.__ctx, database, len(database), binary.bin):
+                    self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
+
+    def _decrypt_init(self, command):
+        """Init this context for decryption."""
+        try:
+            with MongoCryptBinaryIn(command) as binary:
+                if not lib.mongocrypt_ctx_decrypt_init(self.__ctx, binary.bin):
+                    self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
 
     def _close(self):
         """Cleanup resources."""
@@ -321,6 +332,38 @@ class MongoCryptContext(object):
             if not lib.mongocrypt_ctx_finalize(self.__ctx, binary.bin):
                 self._raise_from_status()
             return binary.to_bytes()
+
+
+class EncryptionContext(MongoCryptContext):
+    __slots__ = ("database",)
+
+    def __init__(self, ctx, database, command):
+        """Abstracts libmongocrypt's mongocrypt_ctx_t type.
+
+        :Parameters:
+          - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
+            of the underlying mongocrypt_ctx_t.
+          - `database`: Optional, the name of the database.
+          - `command`: The BSON command to encrypt.
+        """
+        super(EncryptionContext, self).__init__(ctx)
+        self.database = database
+        self._encrypt_init(database, command)
+
+
+class DecryptionContext(MongoCryptContext):
+    __slots__ = ()
+
+    def __init__(self, ctx, command):
+        """Abstracts libmongocrypt's mongocrypt_ctx_t type.
+
+        :Parameters:
+          - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
+            of the underlying mongocrypt_ctx_t.
+          - `command`: The encoded BSON command to decrypt.
+        """
+        super(DecryptionContext, self).__init__(ctx)
+        self._decrypt_init(command)
 
 
 class MongoCryptKmsContext(object):

@@ -198,7 +198,6 @@ class TestMongoCrypt(unittest.TestCase):
 
 
 def read(filename, **kwargs):
-    print(filename)
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:
         return fp.read()
 
