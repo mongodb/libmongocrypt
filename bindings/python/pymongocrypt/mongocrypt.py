@@ -125,7 +125,7 @@ class MongoCryptOptions(object):
                                 "bytes (or str in Python 2)")
 
         if schema_map is not None and not isinstance(schema_map, bytes):
-            raise ValueError("schema_map must be bytes or None")
+            raise TypeError("schema_map must be bytes or None")
 
         self.kms_providers = kms_providers
         self.schema_map = schema_map

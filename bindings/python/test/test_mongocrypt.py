@@ -63,8 +63,9 @@ class TestMongoCryptBinary(unittest.TestCase):
 class TestMongoCryptOptions(unittest.TestCase):
 
     def test_mongocrypt_options(self):
+        schema_map = bson_data('schema-map.json')
         valid = [
-            ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, None),
+            ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'local': {'key': b'1'*96}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'},
@@ -91,6 +92,11 @@ class TestMongoCryptOptions(unittest.TestCase):
                 TypeError, "kms_providers\['local'\]\['key'\] must be a "
                            "bytes \(or str in Python 2\)"):
             MongoCryptOptions({'local': {'key': None}})
+
+        valid_kms = {'aws': {'accessKeyId': '', 'secretAccessKey': ''}}
+        with self.assertRaisesRegex(
+                TypeError, "schema_map must be bytes or None"):
+            MongoCryptOptions(valid_kms, schema_map={})
 
 
 class TestMongoCrypt(unittest.TestCase):
