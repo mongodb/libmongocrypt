@@ -19,13 +19,9 @@ import sys
 sys.path[0:0] = [""]
 
 import pymongocrypt
+from pymongocrypt.binding import ffi, lib
 
-from pymongocrypt.binding import lib, ffi
-
-from test import enable_faulthandler, unittest
-
-
-enable_faulthandler()
+from test import unittest
 
 
 class TestBinding(unittest.TestCase):

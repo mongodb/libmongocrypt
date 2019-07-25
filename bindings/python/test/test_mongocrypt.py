@@ -30,11 +30,7 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryOut,
                                      MongoCryptOptions)
 
-from test import enable_faulthandler, unittest
-
-
-enable_faulthandler()
-
+from test import unittest
 
 # Data for testing libbmongocrypt binding.
 DATA_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data'))

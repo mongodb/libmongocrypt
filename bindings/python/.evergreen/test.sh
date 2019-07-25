@@ -9,9 +9,10 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #   PYTHON_BINARY           The Python version to use.
 PYTHON_BINARY=${PYTHON_BINARY:-"/opt/python/3.6/bin/python3"}
 
-evergreen_root="$(pwd)"/../../..
-INSTALL_PREFIX=${evergreen_root}/install/libmongocrypt/lib64
+# This library is built by libmongocrypt/.evergreen/compile.sh
+evergreen_root="$(cd ../../../; pwd)"
+export MONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/lib64/libmongocrypt.so
 
 $PYTHON_BINARY -c 'import sys; print(sys.version)'
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_PREFIX $PYTHON_BINARY setup.py test
+$PYTHON_BINARY setup.py test

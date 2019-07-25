@@ -794,7 +794,31 @@ void
 mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
 """)
 
-lib = ffi.dlopen("mongocrypt")
+lib = None
+_mongocrypt_lib = None
+
+
+def init(mongocrypt_lib='mongocrypt'):
+    """Initialize the mongocrypt library.
+
+    Use this function to load a custom libmongocrypt build without relying on
+    platform specific library path environment variables, like
+    LD_LIBRARY_PATH::
+
+      >>> init('/path/to/libmongocrypt.so')
+
+    :Parameters:
+      - `mongocrypt_lib`: The name of or path to the mongocrypt library.
+        Defaults to 'mongocrypt'.
+    """
+    global lib, _mongocrypt_lib
+    if lib is None:
+        _mongocrypt_lib = mongocrypt_lib
+        lib = ffi.dlopen(mongocrypt_lib)
+    elif _mongocrypt_lib != mongocrypt_lib:
+        raise Exception("init already called with %r, cannot call again "
+                        "with: %r" % (_mongocrypt_lib, mongocrypt_lib))
+
 
 if PY3:
     def _to_string(cdata):
@@ -808,4 +832,6 @@ else:
 
 def libmongocrypt_version():
     """Returns the version of libmongocrypt."""
+    if lib is None:
+        init()
     return _to_string(lib.mongocrypt_version(ffi.NULL))
