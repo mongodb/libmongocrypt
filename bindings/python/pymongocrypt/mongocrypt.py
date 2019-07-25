@@ -24,21 +24,18 @@ class _MongoCryptBinary(object):
         """Wraps a mongocrypt_binary_t."""
         self.bin = binary
 
-    def close(self):
+    def _close(self):
         """Cleanup resources."""
         if self.bin is None:
             return
         lib.mongocrypt_binary_destroy(self.bin)
         self.bin = None
 
-    def __del__(self):
-        self.close()
-
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self._close()
 
     def to_bytes(self):
         """Returns this mongocrypt_binary_t as bytes."""
@@ -68,9 +65,9 @@ class MongoCryptBinaryIn(_MongoCryptBinary):
         super(MongoCryptBinaryIn, self).__init__(
             lib.mongocrypt_binary_new_from_data(self.__copy, len(data)))
 
-    def close(self):
+    def _close(self):
         """Cleanup resources."""
-        super(MongoCryptBinaryIn, self).close()
+        super(MongoCryptBinaryIn, self)._close()
         if self.__copy is None:
             return
         ffi.release(self.__copy)
@@ -257,21 +254,18 @@ class MongoCryptContext(object):
         self.__ctx = ctx
         self.database = database
 
-    def close(self):
+    def _close(self):
         """Cleanup resources."""
         if self.__ctx is None:
             return
         lib.mongocrypt_ctx_destroy(self.__ctx)
         self.__ctx = None
 
-    def __del__(self):
-        self.close()
-
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self._close()
 
     @property
     def state(self):
@@ -340,15 +334,15 @@ class MongoCryptKmsContext(object):
         """
         self.__ctx = ctx
 
-    def close(self):
-        """Cleanup resources."""
+    def _close(self):
+        """Clear the mongocrypt_kms_ctx_t."""
         self.__ctx = None
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self._close()
 
     @property
     def endpoint(self):

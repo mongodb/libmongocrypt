@@ -44,26 +44,19 @@ class TestMongoCryptBinary(unittest.TestCase):
 
     def test_mongocrypt_binary_in(self):
         with MongoCryptBinaryIn(b'1\x0023') as binary:
+            self.assertIsNotNone(binary.bin)
             self.assertEqual(binary.to_bytes(), b'1\x0023')
         self.assertIsNone(binary.bin)
 
         with MongoCryptBinaryIn(b'') as binary:
+            self.assertIsNotNone(binary.bin)
             self.assertEqual(binary.to_bytes(), b'')
         self.assertIsNone(binary.bin)
-
-        binary = MongoCryptBinaryIn(b'123')
-        binary.close()
-        binary.close()
 
     def test_mongocrypt_binary_out(self):
         with MongoCryptBinaryOut() as binary:
+            self.assertIsNotNone(binary.bin)
             self.assertEqual(binary.to_bytes(), b'')
-        self.assertIsNone(binary.bin)
-
-        binary = MongoCryptBinaryOut()
-        self.assertEqual(binary.to_bytes(), b'')
-        binary.close()
-        binary.close()
         self.assertIsNone(binary.bin)
 
 
