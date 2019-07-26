@@ -2,6 +2,7 @@
 
 module.exports = function(modules) {
   const tls = require('tls');
+  const MongoTimeoutError = modules.mongodb.MongoTimeoutError;
   const common = modules.common;
   const debug = common.debug;
   const databaseNamespace = common.databaseNamespace;
@@ -35,6 +36,7 @@ module.exports = function(modules) {
       const client = autoEncrypter._client;
       const keyVaultNamespace = autoEncrypter._keyVaultNamespace;
       const mongocryptdClient = autoEncrypter._mongocryptdClient;
+      const mongocryptdManager = autoEncrypter._mongocryptdManager;
 
       debug(`[context#${context.id}] ${stateToString(context.state)}`);
       switch (context.state) {
@@ -59,7 +61,28 @@ module.exports = function(modules) {
         case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: {
           const command = context.nextMongoOperation();
           this.markCommand(mongocryptdClient, context.ns, command, (err, markedCommand) => {
-            if (err) return callback(err, null);
+            if (err) {
+              // If we are not bypassing spawning, then we should retry once on a MongoTimeoutError (server selection error)
+              if (
+                err instanceof MongoTimeoutError &&
+                mongocryptdManager &&
+                !mongocryptdManager.bypassSpawn
+              ) {
+                mongocryptdManager.spawn(() => {
+                  // TODO: should we be shadowing the variables here?
+                  this.markCommand(mongocryptdClient, context.ns, command, (err, markedCommand) => {
+                    if (err) return callback(err, null);
+
+                    context.addMongoOperationResponse(markedCommand);
+                    context.finishMongoOperation();
+
+                    this.execute(autoEncrypter, context, callback);
+                  });
+                });
+                return;
+              }
+              return callback(err, null);
+            }
             context.addMongoOperationResponse(markedCommand);
             context.finishMongoOperation();
 
