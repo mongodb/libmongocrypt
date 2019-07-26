@@ -49,9 +49,6 @@ module.exports = function() {
     }
 
     checkPidFile((err, state) => {
-      console.log(
-        `[waitForPidFile](${up ? 'up' : 'down'}, ${tries}): ${state && state.toString()}`
-      );
       if ((state === STATE.VALID_PID_FILE) === up) {
         return callback();
       }
@@ -75,6 +72,8 @@ module.exports = function() {
         this.uri = 'mongodb://%2Ftmp%2Fmongocryptd.sock/?serverSelectionTimeoutMS=1000';
       }
 
+      this.bypassSpawn = !!extraOptions.mongocryptdBypassSpawn;
+
       this.spawPath = extraOptions.mongocryptdSpawnPath || '';
       this.spawnArgs = [];
       if (Array.isArray(extraOptions.mongocryptdSpawnArgs)) {
@@ -86,6 +85,10 @@ module.exports = function() {
     }
 
     kill(callback) {
+      if (this.bypassSpawn) {
+        process.nextTick(callback);
+        return;
+      }
       if (this._child) {
         this._child.kill();
         this._child.removeAllListeners('error');
@@ -98,6 +101,10 @@ module.exports = function() {
     }
 
     spawn(callback) {
+      if (this.bypassSpawn) {
+        process.nextTick(callback);
+        return;
+      }
       this.kill(() => {
         const cmdName = this.spawnPath || 'mongocryptd';
 
