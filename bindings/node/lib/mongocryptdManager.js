@@ -89,6 +89,10 @@ module.exports = function() {
         process.nextTick(callback);
         return;
       }
+      this._kill(callback);
+    }
+
+    _kill(callback) {
       if (this._child) {
         this._child.kill();
         this._child.removeAllListeners('error');
@@ -105,6 +109,10 @@ module.exports = function() {
         process.nextTick(callback);
         return;
       }
+      this._spawn(callback);
+    }
+
+    _spawn(callback) {
       this.kill(() => {
         const cmdName = this.spawnPath || 'mongocryptd';
 
