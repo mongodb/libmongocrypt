@@ -18,17 +18,17 @@ import unittest
 
 sys.path[0:0] = [""]
 
-from pymongocrypt.compat import PY3
-
 from pymongocrypt.binding import init
 
 
-if PY3:
+try:
     # Enable the fault handler to dump the traceback of each running thread
     # after a segfault.
     import faulthandler
-
     faulthandler.enable()
+except ImportError:
+    pass
+
 
 # Load the mongocrypt library.
 init(os.environ.get('MONGOCRYPT_LIB', 'mongocrypt'))
