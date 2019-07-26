@@ -5,6 +5,8 @@ module.exports = function(modules) {
   const common = modules.common;
   const databaseNamespace = common.databaseNamespace;
   const StateMachine = modules.stateMachine.StateMachine;
+  const MongocryptdManager = modules.mongocryptdManager.MongocryptdManager;
+  const MongoClient = modules.mongodb.MongoClient;
 
   /**
    * An internal class to be used by the driver for auto encryption
@@ -16,16 +18,20 @@ module.exports = function(modules) {
      *
      * @param {object} options Optional settings
      * @param {MongoClient} options.client The parent client auto encryption is enabled on
-     * @param {MongoClient} options.mongocryptdClient The client used for communication with `mongocryptd`
      * @param {string} options.keyVaultNamespace The namespace of the key vault, used to store encryption keys
      * @param {object} options.schemaMap
      * @param {object} options.kmsProviders
      * @param {function} options.logger
+     * @param {AutoEncryptionExtraOptions} [options.extraOptions] Extra options related to mongocryptd
      */
     constructor(client, options) {
       this._client = client;
       this._bson = client.topology.bson;
-      this._mongocryptdClient = options.mongocryptdClient;
+      this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
+      this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      });
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
 
       const mongoCryptOptions = {};
@@ -45,6 +51,14 @@ module.exports = function(modules) {
 
       this._mongocrypt = new mc.MongoCrypt(mongoCryptOptions);
       this._contextCounter = 0;
+    }
+
+    init(callback) {
+      this._mongocryptdClient.connect(callback);
+    }
+
+    teardown(force, callback) {
+      this._mongocryptdClient.close(force, callback);
     }
 
     /**

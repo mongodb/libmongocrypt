@@ -4,6 +4,7 @@ module.exports = function(mongodb) {
   const modules = { mongodb };
 
   modules.common = require('./lib/common')();
+  modules.mongocryptdManager = require('./lib/mongocryptdManager')(modules);
   modules.stateMachine = require('./lib/stateMachine')(modules);
   modules.autoEncrypter = require('./lib/autoEncrypter')(modules);
   modules.clientEncryption = require('./lib/clientEncryption')(modules);

@@ -8,6 +8,7 @@ const mongodb = require('mongodb');
 const common = require('../lib/common')({ mongodb });
 const stateMachine = require('../lib/stateMachine')({ mongodb, common });
 const StateMachine = stateMachine.StateMachine;
+const mongocryptdManager = require('../lib/mongocryptdManager')({});
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -43,8 +44,12 @@ class MockClient {
   }
 }
 
-const AutoEncrypter = require('../lib/autoEncrypter')({ mongodb, common, stateMachine })
-  .AutoEncrypter;
+const AutoEncrypter = require('../lib/autoEncrypter')({
+  mongodb,
+  common,
+  stateMachine,
+  mongocryptdManager
+}).AutoEncrypter;
 describe('AutoEncrypter', function() {
   let ENABLE_LOG_TEST = false;
   let sandbox = sinon.createSandbox();
