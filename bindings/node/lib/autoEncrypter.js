@@ -54,11 +54,17 @@ module.exports = function(modules) {
     }
 
     init(callback) {
-      this._mongocryptdClient.connect(callback);
+      this._mongocryptdManager.spawn(() => {
+        this._mongocryptdClient.connect(callback);
+      });
     }
 
     teardown(force, callback) {
-      this._mongocryptdClient.close(force, callback);
+      this._mongocryptdClient.close(force, err => {
+        this._mongocryptdManager.kill(() => {
+          callback(err);
+        });
+      });
     }
 
     /**

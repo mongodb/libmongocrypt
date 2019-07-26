@@ -1,5 +1,7 @@
 'use strict';
 
+const spawn = require('child_process').spawn;
+
 /**
  * @typedef AutoEncryptionExtraOptions
  * @prop {string} [mongocryptdURI] overrides the uri used to connect to mongocryptd
@@ -33,6 +35,32 @@ module.exports = function() {
       if (this.spawnArgs.indexOf('idleShutdownTimeoutSecs') < 0) {
         this.spawnArgs.concat(['--idleShutdownTimeoutSecs', '60']);
       }
+    }
+
+    kill(callback) {
+      if (this._child) {
+        this._child.kill();
+        this._child.removeAllListeners('error');
+        this._child.removeAllListeners('exit');
+        this._child = undefined;
+      }
+      if (callback) {
+        setTimeout(callback, 100);
+      }
+    }
+
+    spawn(callback) {
+      this.kill(() => {
+        const cmdName = this.spawnPath || 'mongocryptd';
+
+        this._child = spawn(cmdName, this.spawnArgs, {
+          stdio: ['ignore', 'ignore', 'ignore']
+        })
+          .once('error', () => this.kill())
+          .once('exit', () => this.kill());
+
+        setTimeout(callback, 100);
+      });
     }
   }
 
