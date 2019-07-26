@@ -13,7 +13,7 @@ PYTHONS=("/opt/python/2.7/bin/python" \
          "/opt/python/3.4/bin/python3" \
          "/opt/python/3.5/bin/python3" \
          "/opt/python/3.6/bin/python3" \
-         "/opt/python/pypy/bin/pypy" \
+#         "/opt/python/pypy/bin/pypy" \  # TODO: PyPy segfaults on RHEL 6.2
          "/opt/python/pypy3.6/bin/pypy3")
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
