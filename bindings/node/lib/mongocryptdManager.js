@@ -1,6 +1,7 @@
 'use strict';
 
 const spawn = require('child_process').spawn;
+const readFile = require('fs').readFile;
 
 /**
  * @typedef AutoEncryptionExtraOptions
@@ -12,6 +13,53 @@ const spawn = require('child_process').spawn;
 
 module.exports = function() {
   const platform = require('os').platform;
+
+  const MONGOCRYPTD_PID_FILE = 'mongocryptd.pid';
+  const STATE = {
+    NO_PID_FILE: Symbol('NO_PID_FILE'),
+    EMPTY_PID_FILE: Symbol('EMPTY_PID_FILE'),
+    VALID_PID_FILE: Symbol('VALID_PID_FILE')
+  };
+
+  const checkIntervalMS = 100;
+
+  function checkPidFile(callback) {
+    readFile(MONGOCRYPTD_PID_FILE, 'utf8', (err, data) => {
+      if (err) {
+        return callback(undefined, STATE.NO_PID_FILE);
+      }
+
+      if (!data || !data.length) {
+        return callback(undefined, STATE.EMPTY_PID_FILE);
+      }
+
+      try {
+        JSON.parse(data);
+      } catch (e) {
+        return callback(e);
+      }
+
+      callback(undefined, STATE.VALID_PID_FILE);
+    });
+  }
+
+  function waitForPidFile(up, tries, callback) {
+    if (tries <= 0) {
+      return callback();
+    }
+
+    checkPidFile((err, state) => {
+      console.log(
+        `[waitForPidFile](${up ? 'up' : 'down'}, ${tries}): ${state && state.toString()}`
+      );
+      if ((state === STATE.VALID_PID_FILE) === up) {
+        return callback();
+      }
+
+      tries -= 1;
+      setTimeout(() => waitForPidFile(up, tries, callback), checkIntervalMS);
+    });
+  }
 
   class MongocryptdManager {
     constructor(extraOptions) {
@@ -45,7 +93,7 @@ module.exports = function() {
         this._child = undefined;
       }
       if (callback) {
-        setTimeout(callback, 100);
+        waitForPidFile(false, 3, callback);
       }
     }
 
@@ -59,7 +107,7 @@ module.exports = function() {
           .once('error', () => this.kill())
           .once('exit', () => this.kill());
 
-        setTimeout(callback, 100);
+        waitForPidFile(true, 3, callback);
       });
     }
   }
