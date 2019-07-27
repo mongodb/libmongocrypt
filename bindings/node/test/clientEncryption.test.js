@@ -1,9 +1,11 @@
 'use strict';
-const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs');
 const expect = require('chai').expect;
 const sinon = require('sinon');
-const StateMachine = require('../lib/stateMachine').StateMachine;
+const mongodb = require('mongodb');
+const MongoClient = mongodb.MongoClient;
+const stateMachine = require('../lib/stateMachine')({ mongodb });
+const StateMachine = stateMachine.StateMachine;
 const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
 
@@ -13,7 +15,8 @@ function readHttpResponse(path) {
   return Buffer.from(data, 'utf8');
 }
 
-const ClientEncryption = require('..').ClientEncryption;
+const ClientEncryption = require('../lib/clientEncryption')({ mongodb, stateMachine })
+  .ClientEncryption;
 describe('ClientEncryption', function() {
   let client;
   let sandbox = sinon.createSandbox();
