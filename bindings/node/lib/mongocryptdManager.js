@@ -9,7 +9,7 @@ const platform = require('os').platform;
  * @prop {string} [mongocryptdURI] overrides the uri used to connect to mongocryptd
  * @prop {boolean} [mongocryptdBypassSpawn=false] if true, autoEncryption will not spawn a mongocryptd
  * @prop {string} [mongocryptdSpawnPath] the path to the mongocryptd executable
- * @prop {string[]} [mongocryptdURI] command line arguments to pass to the mongocryptd executable
+ * @prop {string[]} [mongocryptdSpawnArgs] command line arguments to pass to the mongocryptd executable
  */
 
 const mongocryptdPidFileName = 'mongocryptd.pid';

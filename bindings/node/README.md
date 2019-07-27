@@ -173,5 +173,5 @@ Explicitly decrypt a provided encrypted value
 | [mongocryptdURI] | <code>string</code> |  | overrides the uri used to connect to mongocryptd |
 | [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | if true, autoEncryption will not spawn a mongocryptd |
 | [mongocryptdSpawnPath] | <code>string</code> |  | the path to the mongocryptd executable |
-| [mongocryptdURI] | <code>Array.&lt;string&gt;</code> |  | command line arguments to pass to the mongocryptd executable |
+| [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | command line arguments to pass to the mongocryptd executable |
 
