@@ -82,26 +82,6 @@ class MongocryptdManager {
     }
   }
 
-  kill(callback) {
-    if (this.bypassSpawn) {
-      process.nextTick(callback);
-      return;
-    }
-    this._kill(callback);
-  }
-
-  _kill(callback) {
-    if (this._child) {
-      this._child.kill();
-      this._child.removeAllListeners('error');
-      this._child.removeAllListeners('exit');
-      this._child = undefined;
-    }
-    if (callback) {
-      waitForPidFile(false, 20, callback);
-    }
-  }
-
   spawn(callback) {
     if (this.bypassSpawn) {
       process.nextTick(callback);
@@ -111,14 +91,17 @@ class MongocryptdManager {
   }
 
   _spawn(callback) {
-    this.kill(() => {
+    checkPidFile((err, result) => {
+      if (!err && result === pidFileStates.validPidFile) {
+        process.nextTick(callback);
+        return;
+      }
+
       const cmdName = this.spawnPath || 'mongocryptd';
 
       this._child = spawn(cmdName, this.spawnArgs, {
         stdio: ['ignore', 'ignore', 'ignore']
-      })
-        .once('error', () => this.kill())
-        .once('exit', () => this.kill());
+      });
 
       waitForPidFile(true, 20, callback);
     });
