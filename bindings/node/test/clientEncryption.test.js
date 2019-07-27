@@ -33,7 +33,12 @@ describe('ClientEncryption', function() {
 
   beforeEach(() => {
     client = new MongoClient('mongodb://localhost:27017/test', { useNewUrlParser: true });
-    return client.connect();
+    return client.connect().then(() =>
+      client
+        .db('client')
+        .collection('encryption')
+        .drop()
+    );
   });
 
   afterEach(() => {
