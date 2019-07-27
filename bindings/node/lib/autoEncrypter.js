@@ -54,6 +54,10 @@ module.exports = function(modules) {
     }
 
     init(callback) {
+      if (this._mongocryptdManager.bypassSpawn) {
+        return this._mongocryptdClient.connect(callback);
+      }
+
       this._mongocryptdManager.spawn(() => {
         this._mongocryptdClient.connect(callback);
       });

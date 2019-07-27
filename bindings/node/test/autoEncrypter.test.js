@@ -206,11 +206,11 @@ describe('AutoEncrypter', function() {
       });
 
       const localMcdm = this.mc._mongocryptdManager;
-      sandbox.spy(localMcdm, '_spawn');
+      sandbox.spy(localMcdm, 'spawn');
 
       this.mc.init(err => {
         if (err) return done(err);
-        expect(localMcdm._spawn).to.have.been.calledOnce;
+        expect(localMcdm.spawn).to.have.been.calledOnce;
         done();
       });
     });
@@ -241,10 +241,10 @@ describe('AutoEncrypter', function() {
       this.mc.init(err => {
         if (err) return done(err);
 
-        sandbox.spy(localMcdm, '_spawn');
+        sandbox.spy(localMcdm, 'spawn');
 
         this.mc.encrypt('test.test', TEST_COMMAND, err => {
-          expect(localMcdm._spawn).to.not.have.been.called;
+          expect(localMcdm.spawn).to.not.have.been.called;
           expect(err).to.be.an.instanceOf(Error);
           done();
         });
@@ -277,10 +277,10 @@ describe('AutoEncrypter', function() {
       this.mc.init(err => {
         if (err) return done(err);
 
-        sandbox.spy(localMcdm, '_spawn');
+        sandbox.spy(localMcdm, 'spawn');
 
         this.mc.encrypt('test.test', TEST_COMMAND, err => {
-          expect(localMcdm._spawn).to.have.been.calledOnce;
+          expect(localMcdm.spawn).to.have.been.calledOnce;
           expect(err).to.not.exist;
           done();
         });
@@ -313,10 +313,10 @@ describe('AutoEncrypter', function() {
       this.mc.init(err => {
         if (err) return done(err);
 
-        sandbox.spy(localMcdm, '_spawn');
+        sandbox.spy(localMcdm, 'spawn');
 
         this.mc.encrypt('test.test', TEST_COMMAND, err => {
-          expect(localMcdm._spawn).to.have.been.calledOnce;
+          expect(localMcdm.spawn).to.have.been.calledOnce;
           expect(err).to.be.an.instanceof(MongoTimeoutError);
           done();
         });
@@ -357,11 +357,11 @@ describe('AutoEncrypter', function() {
       });
 
       const localMcdm = this.mc._mongocryptdManager;
-      sandbox.spy(localMcdm, '_spawn');
+      sandbox.spy(localMcdm, 'spawn');
 
       this.mc.init(err => {
         expect(err).to.not.exist;
-        expect(localMcdm._spawn).to.have.a.callCount(0);
+        expect(localMcdm.spawn).to.have.a.callCount(0);
         done();
       });
     });
@@ -393,12 +393,11 @@ describe('AutoEncrypter', function() {
       });
 
       const localMcdm = this.mc._mongocryptdManager;
-      sandbox.spy(localMcdm, '_spawn');
+      sandbox.spy(localMcdm, 'spawn');
 
       this.mc.init(err => {
         expect(err).to.not.exist;
-        expect(localMcdm._spawn).to.have.a.callCount(0);
-        sandbox.spy(localMcdm, 'spawn');
+        expect(localMcdm.spawn).to.not.have.been.called;
 
         this.mc.encrypt('test.test', TEST_COMMAND, (err, response) => {
           expect(localMcdm.spawn).to.not.have.been.called;

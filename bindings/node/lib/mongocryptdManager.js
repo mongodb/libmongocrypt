@@ -77,14 +77,6 @@ class MongocryptdManager {
   }
 
   spawn(callback) {
-    if (this.bypassSpawn) {
-      process.nextTick(callback);
-      return;
-    }
-    this._spawn(callback);
-  }
-
-  _spawn(callback) {
     checkIsUp((err, isUp) => {
       if (!err && isUp) {
         process.nextTick(callback);
