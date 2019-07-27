@@ -7,6 +7,7 @@ module.exports = function(modules) {
   const StateMachine = modules.stateMachine.StateMachine;
   const MongocryptdManager = require('./mongocryptdManager').MongocryptdManager;
   const MongoClient = modules.mongodb.MongoClient;
+  const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
    * An internal class to be used by the driver for auto encryption
@@ -49,6 +50,7 @@ module.exports = function(modules) {
         mongoCryptOptions.logger = options.logger;
       }
 
+      Object.assign(mongoCryptOptions, { cryptoCallbacks });
       this._mongocrypt = new mc.MongoCrypt(mongoCryptOptions);
       this._contextCounter = 0;
     }

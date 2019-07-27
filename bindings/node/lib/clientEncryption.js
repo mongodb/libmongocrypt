@@ -7,6 +7,7 @@ module.exports = function(modules) {
   const collectionNamespace = common.collectionNamespace;
   const promiseOrCallback = common.promiseOrCallback;
   const StateMachine = modules.stateMachine.StateMachine;
+  const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
    * The public interface for explicit client side encryption
@@ -27,6 +28,7 @@ module.exports = function(modules) {
         throw new TypeError('Missing required option `keyVaultNamespace`');
       }
 
+      Object.assign(options, { cryptoCallbacks });
       this._keyVaultNamespace = options.keyVaultNamespace;
       this._mongoCrypt = new mc.MongoCrypt(options);
     }
