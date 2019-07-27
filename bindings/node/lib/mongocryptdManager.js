@@ -13,46 +13,40 @@ const platform = require('os').platform;
  */
 
 const mongocryptdPidFileName = 'mongocryptd.pid';
-const pidFileStates = {
-  noPidFile: Symbol('noPidFile'),
-  emptyPidFile: Symbol('emptyPidFile'),
-  validPidFile: Symbol('validPidFile')
-};
-
 const checkIntervalMS = 50;
 
-function checkPidFile(callback) {
+function checkIsUp(callback) {
   readFile(mongocryptdPidFileName, 'utf8', (err, data) => {
     if (err) {
-      return callback(undefined, pidFileStates.noPidFile);
+      return callback(undefined, false);
     }
 
     if (!data || !data.length) {
-      return callback(undefined, pidFileStates.emptyPidFile);
+      return callback(undefined, false);
     }
 
     try {
       JSON.parse(data);
     } catch (e) {
-      return callback(e);
+      return callback(e, false);
     }
 
-    callback(undefined, pidFileStates.validPidFile);
+    callback(undefined, true);
   });
 }
 
-function waitForPidFile(up, tries, callback) {
+function waitForUp(tries, callback) {
   if (tries <= 0) {
     return callback();
   }
 
-  checkPidFile((err, state) => {
-    if ((state === pidFileStates.validPidFile) === up) {
+  checkIsUp((err, isUp) => {
+    if (isUp) {
       return callback();
     }
 
     tries -= 1;
-    setTimeout(() => waitForPidFile(up, tries, callback), checkIntervalMS);
+    setTimeout(() => waitForUp(tries, callback), checkIntervalMS);
   });
 }
 
@@ -91,8 +85,8 @@ class MongocryptdManager {
   }
 
   _spawn(callback) {
-    checkPidFile((err, result) => {
-      if (!err && result === pidFileStates.validPidFile) {
+    checkIsUp((err, isUp) => {
+      if (!err && isUp) {
         process.nextTick(callback);
         return;
       }
@@ -103,7 +97,7 @@ class MongocryptdManager {
         stdio: ['ignore', 'ignore', 'ignore']
       });
 
-      waitForPidFile(true, 20, callback);
+      waitForUp(20, callback);
     });
   }
 }
