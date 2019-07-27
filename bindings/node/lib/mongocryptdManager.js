@@ -85,9 +85,15 @@ class MongocryptdManager {
 
       const cmdName = this.spawnPath || 'mongocryptd';
 
+      // Spawned with stdio: ignore and detatched:true
+      // to ensure child can outlive parent.
       this._child = spawn(cmdName, this.spawnArgs, {
-        stdio: ['ignore', 'ignore', 'ignore']
+        stdio: 'ignore',
+        detached: true
       });
+
+      // unref child to remove handle from event loop
+      this._child.unref();
 
       waitForUp(20, callback);
     });
