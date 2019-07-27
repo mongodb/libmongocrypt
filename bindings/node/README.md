@@ -37,6 +37,13 @@ npm test
 </dd>
 </dl>
 
+## Typedefs
+
+<dl>
+<dt><a href="#AutoEncryptionExtraOptions">AutoEncryptionExtraOptions</a></dt>
+<dd></dd>
+</dl>
+
 <a name="AutoEncrypter"></a>
 
 ## AutoEncrypter
@@ -61,11 +68,11 @@ An internal class to be used by the driver for auto encryption
 | --- | --- | --- |
 | options | <code>object</code> | Optional settings |
 | options.client | <code>MongoClient</code> | The parent client auto encryption is enabled on |
-| options.mongocryptdClient | <code>MongoClient</code> | The client used for communication with `mongocryptd` |
 | options.keyVaultNamespace | <code>string</code> | The namespace of the key vault, used to store encryption keys |
 | options.schemaMap | <code>object</code> |  |
 | options.kmsProviders | <code>object</code> |  |
 | options.logger | <code>function</code> |  |
+| [options.extraOptions] | [<code>AutoEncryptionExtraOptions</code>](#AutoEncryptionExtraOptions) | Extra options related to mongocryptd |
 
 Create an AutoEncrypter
 
@@ -155,4 +162,16 @@ Explicitly encrypt a provided value
 | callback | <code>\*</code> | 
 
 Explicitly decrypt a provided encrypted value
+
+<a name="AutoEncryptionExtraOptions"></a>
+
+## AutoEncryptionExtraOptions
+**Properties**
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| [mongocryptdURI] | <code>string</code> |  | overrides the uri used to connect to mongocryptd |
+| [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | if true, autoEncryption will not spawn a mongocryptd |
+| [mongocryptdSpawnPath] | <code>string</code> |  | the path to the mongocryptd executable |
+| [mongocryptdURI] | <code>Array.&lt;string&gt;</code> |  | command line arguments to pass to the mongocryptd executable |
 
