@@ -2,10 +2,10 @@
 
 module.exports = function(modules) {
   const mc = require('bindings')('mongocrypt');
-  const common = modules.common;
+  const common = require('./common');
   const databaseNamespace = common.databaseNamespace;
   const StateMachine = modules.stateMachine.StateMachine;
-  const MongocryptdManager = modules.mongocryptdManager.MongocryptdManager;
+  const MongocryptdManager = require('./mongocryptdManager').MongocryptdManager;
   const MongoClient = modules.mongodb.MongoClient;
 
   /**
@@ -60,11 +60,7 @@ module.exports = function(modules) {
     }
 
     teardown(force, callback) {
-      this._mongocryptdClient.close(force, err => {
-        this._mongocryptdManager.kill(() => {
-          callback(err);
-        });
-      });
+      this._mongocryptdClient.close(force, callback);
     }
 
     /**

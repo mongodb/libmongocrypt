@@ -9,10 +9,9 @@ const mongodb = Object.assign({}, require('mongodb'), {
   MongoTimeoutError: class MongoTimeoutError {}
 });
 const MongoTimeoutError = mongodb.MongoTimeoutError;
-const common = require('../lib/common')({ mongodb });
-const stateMachine = require('../lib/stateMachine')({ mongodb, common });
+const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
-const mongocryptdManager = require('../lib/mongocryptdManager')({});
+const MongocryptdManager = require('../lib/mongocryptdManager').MongocryptdManager;
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -49,12 +48,7 @@ class MockClient {
   }
 }
 
-const AutoEncrypter = require('../lib/autoEncrypter')({
-  mongodb,
-  common,
-  stateMachine,
-  mongocryptdManager
-}).AutoEncrypter;
+const AutoEncrypter = require('../lib/autoEncrypter')({ mongodb, stateMachine }).AutoEncrypter;
 describe('AutoEncrypter', function() {
   let ENABLE_LOG_TEST = false;
   let sandbox = sinon.createSandbox();
@@ -350,7 +344,7 @@ describe('AutoEncrypter', function() {
 
   describe('noAutoSpawn', function() {
     beforeEach(function(done) {
-      this.mcdm = new mongocryptdManager.MongocryptdManager({});
+      this.mcdm = new MongocryptdManager({});
 
       this.mcdm.spawn(done);
     });

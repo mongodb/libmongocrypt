@@ -5,8 +5,7 @@ const tls = require('tls');
 const expect = require('chai').expect;
 const sinon = require('sinon');
 const mongodb = require('mongodb');
-const common = require('../lib/common')({ mongodb });
-const StateMachine = require('../lib/stateMachine')({ mongodb, common }).StateMachine;
+const StateMachine = require('../lib/stateMachine')({ mongodb }).StateMachine;
 
 describe('StateMachine', function() {
   describe('kmsRequest', function() {

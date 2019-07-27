@@ -2,7 +2,7 @@
 
 module.exports = function(modules) {
   const mc = require('bindings')('mongocrypt');
-  const common = modules.common;
+  const common = require('./common');
   const databaseNamespace = common.databaseNamespace;
   const collectionNamespace = common.collectionNamespace;
   const promiseOrCallback = common.promiseOrCallback;

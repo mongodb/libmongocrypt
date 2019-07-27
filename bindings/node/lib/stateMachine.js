@@ -3,7 +3,7 @@
 module.exports = function(modules) {
   const tls = require('tls');
   const MongoTimeoutError = modules.mongodb.MongoTimeoutError;
-  const common = modules.common;
+  const common = require('./common');
   const debug = common.debug;
   const databaseNamespace = common.databaseNamespace;
   const collectionNamespace = common.collectionNamespace;

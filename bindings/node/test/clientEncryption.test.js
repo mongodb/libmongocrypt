@@ -4,8 +4,7 @@ const expect = require('chai').expect;
 const sinon = require('sinon');
 const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
-const common = require('../lib/common')({ mongodb });
-const stateMachine = require('../lib/stateMachine')({ mongodb, common });
+const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
 const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
@@ -16,7 +15,7 @@ function readHttpResponse(path) {
   return Buffer.from(data, 'utf8');
 }
 
-const ClientEncryption = require('../lib/clientEncryption')({ mongodb, common, stateMachine })
+const ClientEncryption = require('../lib/clientEncryption')({ mongodb, stateMachine })
   .ClientEncryption;
 describe('ClientEncryption', function() {
   let client;
