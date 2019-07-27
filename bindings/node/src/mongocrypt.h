@@ -43,8 +43,19 @@ class MongoCrypt : public Nan::ObjectWrap {
     static NAN_GETTER(Status);
 
    private:
+    struct CryptoHooks {
+        std::unique_ptr<Nan::Callback> aes256CbcEncryptHook;
+        std::unique_ptr<Nan::Callback> aes256CbcDecryptHook;
+        std::unique_ptr<Nan::Callback> randomHook;
+        std::unique_ptr<Nan::Callback> hmacSha512Hook;
+        std::unique_ptr<Nan::Callback> hmacSha256Hook;
+        std::unique_ptr<Nan::Callback> sha256Hook;
+    };
+
     friend class MongoCryptContext;
-    explicit MongoCrypt(mongocrypt_t* mongo_crypt, Nan::Callback* logger);
+    explicit MongoCrypt(mongocrypt_t* mongo_crypt, Nan::Callback* logger, CryptoHooks* hooks);
+    static bool setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoHooks);
+
     static void logHandler(mongocrypt_log_level_t level,
                            const char* message,
                            uint32_t message_len,
@@ -52,6 +63,7 @@ class MongoCrypt : public Nan::ObjectWrap {
 
     std::unique_ptr<mongocrypt_t, MongoCryptDeleter> _mongo_crypt;
     std::unique_ptr<Nan::Callback> _logger;
+    std::unique_ptr<CryptoHooks> _cryptoHooks;
 };
 
 class MongoCryptContext : public Nan::ObjectWrap {

@@ -48,11 +48,19 @@ v8::Local<v8::Object> BufferFromBinary(mongocrypt_binary_t* binary) {
     Nan::EscapableHandleScope scope;
     const uint8_t* data = mongocrypt_binary_data(binary);
     size_t len = mongocrypt_binary_len(binary);
+    v8::Local<v8::Object> buffer = Nan::CopyBuffer((char*)data, len).ToLocalChecked();
+    return scope.Escape(buffer);
+}
 
-    uint8_t* data_copy = new uint8_t[len];
-    memcpy(data_copy, data, len);
+static void NoopFreeCallback(char* data, void* message) {
+   // in a no-copy scenario we want to let libmongoc clean up the memory
+}
 
-    v8::Local<v8::Object> buffer = Nan::NewBuffer((char*)data_copy, len).ToLocalChecked();
+v8::Local<v8::Object> BufferFromBinaryNoCopy(mongocrypt_binary_t* binary) {
+    Nan::EscapableHandleScope scope;
+    const uint8_t* data = mongocrypt_binary_data(binary);
+    size_t len = mongocrypt_binary_len(binary);
+    v8::Local<v8::Object> buffer = Nan::NewBuffer((char*)data, len, NoopFreeCallback, nullptr).ToLocalChecked();
     return scope.Escape(buffer);
 }
 
@@ -230,8 +238,129 @@ void MongoCrypt::logHandler(mongocrypt_log_level_t level,
     Nan::Call(*mongoCrypt->_logger.get(), Nan::GetCurrentContext()->Global(), 2, argv);
 }
 
-MongoCrypt::MongoCrypt(mongocrypt_t* mongo_crypt, Nan::Callback* logger)
-    : _mongo_crypt(mongo_crypt), _logger(logger) {}
+MongoCrypt::MongoCrypt(mongocrypt_t* mongo_crypt, Nan::Callback* logger, CryptoHooks* hooks)
+    : _mongo_crypt(mongo_crypt), _logger(logger), _cryptoHooks(hooks) {}
+
+bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoHooks) {
+    auto aes_256_cbc_encrypt =
+        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
+            Nan::HandleScope scope;
+            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
+            Nan::Callback* hook = cryptoHooks->aes256CbcEncryptHook.get();
+
+            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
+            v8::Local<v8::Object> ivBuffer = BufferFromBinary(iv);
+            v8::Local<v8::Object> inBuffer = BufferFromBinary(in);
+            v8::Local<v8::Object> outBuffer = BufferFromBinaryNoCopy(out);
+
+            v8::Local<v8::Value> argv[] = {keyBuffer, ivBuffer, inBuffer, outBuffer};
+            v8::Local<v8::Value> defaultValue = Nan::False();
+            v8::Local<v8::Value> result =
+                Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 4, argv).FromMaybe(defaultValue);
+
+            if (!result->IsNumber()) {
+                // TODO: error checking, use status
+                return false;
+            }
+
+            *bytes_written = result->Uint32Value();
+            return true;
+        };
+
+    auto aes_256_cbc_decrypt =
+        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
+            Nan::HandleScope scope;
+            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
+            Nan::Callback* hook = cryptoHooks->aes256CbcDecryptHook.get();
+
+            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
+            v8::Local<v8::Object> ivBuffer = BufferFromBinary(iv);
+            v8::Local<v8::Object> inBuffer = BufferFromBinary(in);
+            v8::Local<v8::Object> outBuffer = BufferFromBinaryNoCopy(out);
+
+            v8::Local<v8::Value> argv[] = {keyBuffer, ivBuffer, inBuffer, outBuffer};
+            v8::Local<v8::Value> defaultValue = Nan::False();
+            v8::Local<v8::Value> result =
+                Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 4, argv).FromMaybe(defaultValue);
+
+            if (!result->IsNumber()) {
+                // TODO: error checking, use status
+                return false;
+            }
+
+            *bytes_written = result->Uint32Value();
+            return true;
+        };
+
+    auto random =
+        [](void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) -> bool{
+            Nan::HandleScope scope;
+            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
+            Nan::Callback* hook = cryptoHooks->randomHook.get();
+
+            v8::Local<v8::Object> outBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Value> argv[] = {outBuffer, Nan::New(count)};
+            Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 2, argv);
+            return true;
+        };
+
+    auto hmac_sha_512 =
+        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
+            Nan::HandleScope scope;
+            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
+            Nan::Callback* hook = cryptoHooks->hmacSha512Hook.get();
+
+            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
+            v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
+            v8::Local<v8::Object> outputBuffer = BufferFromBinaryNoCopy(out);
+
+            // TODO: error checking, use status if passed back value is not undefined
+            v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
+            Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 3, argv);
+            return true;
+        };
+
+    auto hmac_sha_256 =
+        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
+            Nan::HandleScope scope;
+            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
+            Nan::Callback* hook = cryptoHooks->hmacSha256Hook.get();
+
+            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
+            v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
+            v8::Local<v8::Object> outputBuffer = BufferFromBinaryNoCopy(out);
+
+            // TODO: error checking, use status if passed back value is not undefined
+            v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
+            Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 3, argv);
+            return true;
+        };
+
+    auto sha_256 =
+        [](void *ctx, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
+            Nan::HandleScope scope;
+            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
+            Nan::Callback* hook = cryptoHooks->sha256Hook.get();
+
+            v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
+            v8::Local<v8::Object> outputBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Value> argv[] = {inputBuffer, outputBuffer};
+
+            // TODO: error checking, use status if passed back value is not undefined
+            Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 2, argv);
+            return true;
+        };
+
+    return mongocrypt_setopt_crypto_hooks(mongoCrypt,
+        aes_256_cbc_encrypt,
+        aes_256_cbc_decrypt,
+        random,
+        hmac_sha_512,
+        hmac_sha_256,
+        sha_256,
+        cryptoHooks
+    );
+}
 
 NAN_METHOD(MongoCrypt::New) {
     Nan::HandleScope scope;
@@ -242,7 +371,8 @@ NAN_METHOD(MongoCrypt::New) {
             return;
         }
 
-        Nan::Callback* logger = 0;
+        Nan::Callback* logger = nullptr;
+        CryptoHooks *cryptoHooks = nullptr;
         std::unique_ptr<mongocrypt_t, MongoCryptDeleter> crypt(mongocrypt_new());
 
         if (info.Length() >= 1) {
@@ -250,6 +380,14 @@ NAN_METHOD(MongoCrypt::New) {
             v8::Local<v8::String> KMS_PROVIDERS_KEY = Nan::New("kmsProviders").ToLocalChecked();
             v8::Local<v8::String> SCHEMA_MAP_KEY = Nan::New("schemaMap").ToLocalChecked();
             v8::Local<v8::String> LOGGER_KEY = Nan::New("logger").ToLocalChecked();
+            v8::Local<v8::String> CRYPTO_CALLBACKS_KEY = Nan::New("cryptoCallbacks").ToLocalChecked();
+
+            v8::Local<v8::String> AES256_ENCRYPT_HOOK_KEY = Nan::New("aes256CbcEncryptHook").ToLocalChecked();
+            v8::Local<v8::String> AES256_DECRYPT_HOOK_KEY = Nan::New("aes256CbcDecryptHook").ToLocalChecked();
+            v8::Local<v8::String> RANDOM_HOOK_KEY = Nan::New("randomHook").ToLocalChecked();
+            v8::Local<v8::String> HMAC_SHA512_HOOK_KEY = Nan::New("hmacSha512Hook").ToLocalChecked();
+            v8::Local<v8::String> HMAC_SHA256_HOOK_KEY = Nan::New("hmacSha256Hook").ToLocalChecked();
+            v8::Local<v8::String> SHA256_HOOK_KEY = Nan::New("sha256Hook").ToLocalChecked();
 
             if (Nan::Has(options, KMS_PROVIDERS_KEY).FromMaybe(false)) {
                 v8::Local<v8::Object> kmsProvidersOptions =
@@ -284,13 +422,51 @@ NAN_METHOD(MongoCrypt::New) {
                     Nan::To<v8::Function>(Nan::Get(options, LOGGER_KEY).ToLocalChecked())
                         .ToLocalChecked());
             }
+
+            if (Nan::Has(options, CRYPTO_CALLBACKS_KEY).FromMaybe(false)) {
+                v8::Local<v8::Object> cryptoCallbacks =
+                    Nan::To<v8::Object>(Nan::Get(options, CRYPTO_CALLBACKS_KEY).ToLocalChecked())
+                        .ToLocalChecked();
+
+                cryptoHooks = new CryptoHooks();
+                cryptoHooks->aes256CbcEncryptHook.reset(new Nan::Callback(
+                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, AES256_ENCRYPT_HOOK_KEY).ToLocalChecked())
+                        .ToLocalChecked()));
+
+                cryptoHooks->aes256CbcDecryptHook.reset(new Nan::Callback(
+                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, AES256_DECRYPT_HOOK_KEY).ToLocalChecked())
+                        .ToLocalChecked()));
+
+                cryptoHooks->randomHook.reset(new Nan::Callback(
+                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, RANDOM_HOOK_KEY).ToLocalChecked())
+                        .ToLocalChecked()));
+
+                cryptoHooks->hmacSha512Hook.reset(new Nan::Callback(
+                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, HMAC_SHA512_HOOK_KEY).ToLocalChecked())
+                        .ToLocalChecked()));
+
+                cryptoHooks->hmacSha256Hook.reset(new Nan::Callback(
+                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, HMAC_SHA256_HOOK_KEY).ToLocalChecked())
+                        .ToLocalChecked()));
+
+                cryptoHooks->sha256Hook.reset(new Nan::Callback(
+                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, SHA256_HOOK_KEY).ToLocalChecked())
+                        .ToLocalChecked()));
+            }
         }
 
-        MongoCrypt* class_instance = new MongoCrypt(crypt.release(), logger);
+        MongoCrypt* class_instance = new MongoCrypt(crypt.release(), logger, cryptoHooks);
         if (logger) {
             if (!mongocrypt_setopt_log_handler(
                     class_instance->_mongo_crypt.get(), MongoCrypt::logHandler, class_instance)) {
                 Nan::ThrowTypeError(errorStringFromStatus(class_instance->_mongo_crypt.get()));
+                return;
+            }
+        }
+
+        if (cryptoHooks) {
+            if (!setupCryptoHooks(class_instance->_mongo_crypt.get(), cryptoHooks)) {
+                Nan::ThrowError("unable to configure crypto hooks");
                 return;
             }
         }
