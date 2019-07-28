@@ -92,6 +92,8 @@ class MongocryptdManager {
         detached: true
       });
 
+      this._child.on('error', () => {});
+
       // unref child to remove handle from event loop
       this._child.unref();
 
