@@ -32,6 +32,7 @@
     "mocha": "^6.1.4",
     "mongodb": "^3.2.7",
     "mongodb-extjson": "^3.0.3",
+    "node-gyp": "^5.0.3",
     "prettier": "~1.18.2",
     "segfault-handler": "^1.2.0",
     "sinon": "^4.3.0",
