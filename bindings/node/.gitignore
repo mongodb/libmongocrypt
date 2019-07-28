@@ -17,4 +17,5 @@ build
 npm-debug.log
 package-lock.json
 .vscode
+deps
 
