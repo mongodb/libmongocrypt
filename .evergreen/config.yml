@@ -146,7 +146,11 @@ tasks:
 
 - name: publish-snapshot
   depends_on:
-    - variant: ubuntu1604
+    - variant: rhel-62-64-bit
+      name: build-and-test-java
+    - variant: rhel-67-s390x
+      name: build-and-test-java
+    - variant: ubuntu1604-arm64
       name: build-and-test-java
     - variant: macos
       name: build-and-test-java
