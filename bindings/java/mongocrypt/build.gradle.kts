@@ -27,6 +27,9 @@ buildscript {
         jcenter()
         mavenCentral()
     }
+    dependencies {
+        "classpath"(group = "net.java.dev.jna", name = "jna", version = "4.5.2")
+    }
 }
 
 plugins {
@@ -99,8 +102,8 @@ val copyResources by tasks.register<Copy>("copyResources") {
         include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
     } else if (file(cmakeBuildPath).exists()){
         val jnaMapping = mapOf(
-                "libmongocrypt.so" to "linux-x86-64",
-                "mongocrypt.dll" to "win32-x86-64",
+                "libmongocrypt.so" to "linux-" + com.sun.jna.Platform.ARCH,
+                "mongocrypt.dll" to "win32-" + com.sun.jna.Platform.ARCH,
                 "libmongocrypt.dylib" to "darwin")
 
         val copySpecs = jnaMapping.mapTo(mutableListOf(), { copySpec {
@@ -116,7 +119,7 @@ val copyResources by tasks.register<Copy>("copyResources") {
 val downloadJnaLibs by tasks.register<DefaultTask>("downloadJnaLibs")
 val revision: String = System.getProperty("gitRevision", if (gitVersion == version) gitVersion else gitHash)
 
-data class LibMongoCryptS3Data(val evergreenName: String, val classifier: String, val osArch: String) {
+data class LibMongoCryptS3Data(val evergreenName: String, val osArch: String) {
     fun downloadUrl(): String {
         return "https://s3.amazonaws.com/mciuploads/libmongocrypt/$evergreenName/master/$revision/libmongocrypt.tar.gz"
     }
@@ -124,31 +127,33 @@ data class LibMongoCryptS3Data(val evergreenName: String, val classifier: String
 
 // If updating this list remember to also update the Publish Snapshots `depends_on` in the main evergreen config.yml
 val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
-        LibMongoCryptS3Data("rhel-62-64-bit", "linux64", "linux-x86-64"),
-        LibMongoCryptS3Data("windows-test", "win64", "win32-x86-64"),
-        LibMongoCryptS3Data("macos", "osx", "darwin")
+        LibMongoCryptS3Data("rhel-62-64-bit", "linux-x86-64"),
+        LibMongoCryptS3Data("rhel-67-s390x", "linux-s390x"),
+        LibMongoCryptS3Data("ubuntu1604-arm64", "linux-aarch64"),
+        LibMongoCryptS3Data("windows-test", "win32-x86-64"),
+        LibMongoCryptS3Data("macos", "darwin")
 )
 
 jnaMappingList.forEach {
     tasks {
-        val download by register<Download>("download-${it.classifier}") {
+        val download by register<Download>("download-${it.osArch}") {
             src(it.downloadUrl())
-            dest("${jnaDownloadsDir}zips/${it.classifier}.tgz")
+            dest("${jnaDownloadsDir}zips/${it.osArch}.tgz")
             overwrite(true)
         }
 
-        val unzip by register<Copy>("unzip-${it.classifier}") {
-            from(tarTree(resources.gzip("${jnaDownloadsDir}zips/${it.classifier}.tgz")))
+        val unzip by register<Copy>("unzip-${it.osArch}") {
+            from(tarTree(resources.gzip("${jnaDownloadsDir}zips/${it.osArch}.tgz")))
             include("nocrypto/**/libmongocrypt.so", "nocrypto/**/libmongocrypt.dylib", "nocrypto/**/mongocrypt.dll")
             eachFile {
                 path = name
             }
-            into("$jnaDownloadsDir${it.classifier}/${it.osArch}")
+            into("$jnaDownloadsDir${it.evergreenName}/${it.osArch}")
         }
         unzip.dependsOn(download)
 
-        val addDefaultLibToMainPackage by register<Copy>("default-${it.classifier}") {
-            from("$jnaDownloadsDir${it.classifier}/")
+        val addDefaultLibToMainPackage by register<Copy>("default-${it.osArch}") {
+            from("$jnaDownloadsDir${it.evergreenName}/")
             into(jnaResourcesBuildDir)
         }
         addDefaultLibToMainPackage.dependsOn(unzip)
@@ -166,18 +171,7 @@ tasks.withType<AbstractPublishToMaven> {
     """.trimMargin()
 }
 
-val classifiers = mutableListOf<String>()
-val checkClassifiers by tasks.register<DefaultTask>("checkClassifiers") {
-    jnaMappingList.forEach {
-        if (file("$jnaDownloadsDir${it.classifier}/").exists()) {
-            classifiers.add(it.classifier)
-        }
-    }
-}
-checkClassifiers.dependsOn(downloadJnaLibs)
-
 tasks.withType<PublishToMavenRepository> {
-    dependsOn(checkClassifiers)
     sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
 }
 
