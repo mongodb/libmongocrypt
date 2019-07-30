@@ -20,6 +20,8 @@ import sys
 from bson import json_util, BSON
 from bson.binary import STANDARD
 from bson.codec_options import CodecOptions
+from bson.json_util import JSONOptions
+from bson.son import SON
 
 sys.path[0:0] = [""]
 
@@ -30,11 +32,7 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryOut,
                                      MongoCryptOptions)
 
-from test import enable_faulthandler, unittest
-
-
-enable_faulthandler()
-
+from test import unittest
 
 # Data for testing libbmongocrypt binding.
 DATA_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data'))
@@ -204,9 +202,12 @@ def read(filename, **kwargs):
 
 OPTS = CodecOptions(uuid_representation=STANDARD)
 
+# Use SON to preserve the order of fields while parsing json.
+JSON_OPTS = JSONOptions(document_class=SON, uuid_representation=STANDARD)
+
 
 def json_data(filename):
-    return json_util.loads(read(filename))
+    return json_util.loads(read(filename), json_options=JSON_OPTS)
 
 
 def bson_data(filename):

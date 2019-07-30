@@ -3,8 +3,8 @@ import os
 from setuptools import setup, find_packages
 
 
-with open('README.rst') as f:
-    LONG_DESCRIPTION = f.read()
+with open('README.rst', 'rb') as f:
+    LONG_DESCRIPTION = f.read().decode('utf8')
 
 # Single source the version.
 version_file = os.path.realpath(os.path.join(

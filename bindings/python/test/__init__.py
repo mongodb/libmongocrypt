@@ -12,24 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import sys
 import unittest
 
 sys.path[0:0] = [""]
 
-from pymongocrypt.compat import PY3
+from pymongocrypt.binding import init
 
 
-if PY3:
+try:
     # Enable the fault handler to dump the traceback of each running thread
     # after a segfault.
     import faulthandler
+    faulthandler.enable()
+except ImportError:
+    pass
 
-    def enable_faulthandler():
-        faulthandler.enable()
-else:
-    def enable_faulthandler():
-        pass
+
+# Load the mongocrypt library.
+init(os.environ.get('MONGOCRYPT_LIB', 'mongocrypt'))
 
 # Use assertRaisesRegex if available, otherwise use Python 2.7's
 # deprecated assertRaisesRegexp, with a 'p'.

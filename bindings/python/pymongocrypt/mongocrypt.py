@@ -23,6 +23,9 @@ class _MongoCryptBinary(object):
     def __init__(self, binary):
         """Wraps a mongocrypt_binary_t."""
         self.bin = binary
+        if binary == ffi.NULL:
+            raise MongoCryptError(
+                "unable to create new mongocrypt_binary object")
 
     def _close(self):
         """Cleanup resources."""
