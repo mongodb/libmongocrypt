@@ -130,7 +130,7 @@ A result from a listCollections cursor.
 
 1.  Run listCollections on the encrypted MongoClient with the filter
     provided by mongocrypt\_ctx\_mongo\_op
-2.  eturn the result (if any) with mongocrypt\_ctx\_mongo\_feed
+2.  Return the first result (if any) with mongocrypt\_ctx\_mongo\_feed or proceed to the next step if nothing was returned.
 3.  Call mongocrypt\_ctx\_mongo\_done
 
 **Applies to...**
@@ -166,7 +166,7 @@ Documents from the key vault collection.
 1.  Use MongoCollection.find on the MongoClient connected to the key
     vault client (which may be the same as the encrypted client). Use
     the filter provided by mongocrypt\_ctx\_mongo\_op.
-2.  Feed all resulting documents back with repeated calls to
+2.  Feed all resulting documents back (if any) with repeated calls to
     mongocrypt\_ctx\_mongo\_feed.
 3.  Call mongocrypt\_ctx\_mongo\_done.
 

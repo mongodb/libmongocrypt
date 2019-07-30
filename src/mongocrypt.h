@@ -721,14 +721,16 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
 
 
 /**
- * Feed a BSON reply or result when when mongocrypt_ctx_t is in
+ * Feed a BSON reply or result when mongocrypt_ctx_t is in
  * MONGOCRYPT_CTX_NEED_MONGO_* states. This may be called multiple times
  * depending on the operation.
  *
- * op_bson is a BSON document to be used for the operation.
+ * reply is a BSON document result being fed back for this operation.
  * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a doc from a listCollections
- * cursor.
+ * cursor. (Note, if listCollections returned no result, do not call this function.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a doc from a find cursor.
+ *   (Note, if find returned no results, do not call this function. reply must not
+ *   be NULL.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a reply from mongocryptd.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
