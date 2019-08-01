@@ -136,6 +136,33 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
 }
 
 
+/* Test with empty AWS credentials. */
+void
+_test_decrypt_empty_aws (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_provider_aws (crypt, "", -1, "", -1),
+              crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_decrypt_init (
+                 ctx, TEST_FILE ("./test/data/encrypted-cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_FAILS (mongocrypt_ctx_mongo_feed (
+                    ctx, TEST_FILE ("./test/example/key-document.json")),
+                 ctx,
+                 "failed to create KMS message");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
@@ -143,4 +170,5 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_decrypt_init);
    INSTALL_TEST (_test_decrypt_need_keys);
    INSTALL_TEST (_test_decrypt_ready);
+   INSTALL_TEST (_test_decrypt_empty_aws);
 }

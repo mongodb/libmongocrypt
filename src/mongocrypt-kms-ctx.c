@@ -174,6 +174,10 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
 
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
+   if (!kms->msg.data) {
+      CLIENT_ERR ("failed to create KMS message");
+      return false;
+   }
    kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
 
@@ -326,7 +330,7 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
    if (!kms_response_parser_feed (kms->parser, bytes->data, bytes->len)) {
       CLIENT_ERR ("KMS response parser error with status %d, error: %s",
                   kms_response_parser_status (kms->parser),
-		  kms_response_parser_error (kms->parser));
+                  kms_response_parser_error (kms->parser));
       return false;
    }
 
