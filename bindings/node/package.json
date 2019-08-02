@@ -7,12 +7,14 @@
     "lib": "lib"
   },
   "scripts": {
-    "install": "node-gyp rebuild",
+    "install": "prebuild-install || node-gyp rebuild",
     "format-cxx": "git-clang-format",
     "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
     "lint": "eslint lib test",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/**/*.js > README.md",
-    "test": "mocha test"
+    "test": "mocha test",
+    "rebuild": "prebuild --compile",
+    "prebuild": "prebuild  --strip --verbose --tag-prefix node-v -t 10.16.0 -t 8.16.0 -t 6.17.1 -t 4.9.1"
   },
   "author": "Matt Broadstone <mbroadst@mongodb.com>",
   "license": "Apache-2.0",
@@ -20,7 +22,8 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "bson": "^1.0.5",
-    "nan": "^2.14.0"
+    "nan": "^2.14.0",
+    "prebuild-install": "^5.3.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
@@ -33,9 +36,13 @@
     "mongodb": "^3.2.7",
     "mongodb-extjson": "^3.0.3",
     "node-gyp": "^5.0.3",
+    "prebuild": "^9.0.1",
     "prettier": "~1.18.2",
     "segfault-handler": "^1.2.0",
     "sinon": "^4.3.0",
     "sinon-chai": "^3.3.0"
+  },
+  "repository": {
+    "url": "https://github.com/mongodb/libmongocrypt"
   }
 }
