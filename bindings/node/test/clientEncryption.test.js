@@ -38,6 +38,13 @@ describe('ClientEncryption', function() {
         .db('client')
         .collection('encryption')
         .drop()
+        .catch(err => {
+          if (err.message.match(/ns not found/)) {
+            return;
+          }
+
+          throw err;
+        })
     );
   });
 
