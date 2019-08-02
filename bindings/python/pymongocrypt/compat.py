@@ -17,3 +17,9 @@
 import sys
 
 PY3 = sys.version_info[0] == 3
+
+if PY3:
+    from abc import ABC
+else:
+    from abc import ABCMeta as _ABCMeta
+    ABC = _ABCMeta('ABC', (object,), {})

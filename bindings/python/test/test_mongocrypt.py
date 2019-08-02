@@ -25,12 +25,14 @@ from bson.son import SON
 
 sys.path[0:0] = [""]
 
+from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryIn,
                                      MongoCryptBinaryOut,
                                      MongoCryptOptions)
+from pymongocrypt.state_machine import MongoCryptCallback
 
 from test import unittest
 
@@ -193,6 +195,70 @@ class TestMongoCrypt(unittest.TestCase):
                 BSON(encrypted).decode(), json_data('command-reply.json'))
             self.assertEqual(encrypted, bson_data('command-reply.json'))
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
+
+
+class MockCallback(MongoCryptCallback):
+    def __init__(self,
+                 list_colls_result=None,
+                 mongocryptd_reply=None,
+                 key_docs=None,
+                 kms_reply=None):
+        self.list_colls_result = list_colls_result
+        self.mongocryptd_reply = mongocryptd_reply
+        self.key_docs = key_docs
+        self.kms_reply = kms_reply
+
+    def kms_request(self, kms_context):
+        kms_context.feed(self.kms_reply)
+
+    def collection_info(self, ns, filter):
+        return self.list_colls_result
+
+    def mark_command(self, ns, cmd):
+        return self.mongocryptd_reply
+
+    def fetch_keys(self, filter):
+        return self.key_docs
+
+    def insert_data_key(self, data_key):
+        raise NotImplementedError
+
+    def close(self):
+        pass
+
+
+class TestMongoCryptCallback(unittest.TestCase):
+
+    @staticmethod
+    def mongo_crypt_opts():
+        return MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00'*96}})
+
+    def test_encrypt(self):
+        encrypter = AutoEncrypter(MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document.json')],
+            kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+        encrypted = encrypter.encrypt('text', bson_data('command.json'))
+        self.assertEqual(
+            BSON(encrypted).decode(), json_data('encrypted-command.json'))
+        self.assertEqual(encrypted, bson_data('encrypted-command.json'))
+
+    def test_decrypt(self):
+        encrypter = AutoEncrypter(MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document.json')],
+            kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+        decrypted = encrypter.decrypt(
+            bson_data('encrypted-command-reply.json'))
+        self.assertEqual(
+            BSON(decrypted).decode(), json_data('command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
 
 
 def read(filename, **kwargs):
