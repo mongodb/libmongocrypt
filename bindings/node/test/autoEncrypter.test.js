@@ -53,6 +53,7 @@ describe('AutoEncrypter', function() {
   let ENABLE_LOG_TEST = false;
   let sandbox = sinon.createSandbox();
   beforeEach(() => {
+    sandbox.restore();
     sandbox.stub(StateMachine.prototype, 'kmsRequest').callsFake(request => {
       request.addResponse(MOCK_KMS_DECRYPT_REPLY);
       return Promise.resolve();
@@ -183,6 +184,13 @@ describe('AutoEncrypter', function() {
   });
 
   describe('autoSpawn', function() {
+    beforeEach(function() {
+      if (process.env.NODE_SKIP_LIVE_TESTS) {
+        this.test.skip();
+        sandbox.restore();
+        return;
+      }
+    });
     afterEach(function(done) {
       if (this.mc) {
         this.mc.teardown(false, err => {
@@ -326,6 +334,11 @@ describe('AutoEncrypter', function() {
 
   describe('noAutoSpawn', function() {
     beforeEach(function(done) {
+      if (process.env.NODE_SKIP_LIVE_TESTS) {
+        this.test.skip();
+        sandbox.restore();
+        return;
+      }
       this.mcdm = new MongocryptdManager({});
 
       this.mcdm.spawn(done);

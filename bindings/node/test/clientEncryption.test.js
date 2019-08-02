@@ -31,7 +31,11 @@ describe('ClientEncryption', function() {
     });
   });
 
-  beforeEach(() => {
+  beforeEach(function() {
+    if (process.env.NODE_SKIP_LIVE_TESTS) {
+      this.test.skip();
+      return;
+    }
     client = new MongoClient('mongodb://localhost:27017/test', { useNewUrlParser: true });
     return client.connect().then(() =>
       client
@@ -49,6 +53,9 @@ describe('ClientEncryption', function() {
   });
 
   afterEach(() => {
+    if (process.env.NODE_SKIP_LIVE_TESTS) {
+      return;
+    }
     return client.close();
   });
 
