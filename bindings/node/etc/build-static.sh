@@ -56,13 +56,13 @@ curl -L -o mongo-c-driver-1.14.0.tar.gz $MONGOC_URL
 tar xzf mongo-c-driver-1.14.0.tar.gz
 
 pushd bson-build #./deps/tmp/bson-build
-$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=$DEPS_PREFIX ../mongo-c-driver-1.14.0
+$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=$DEPS_PREFIX -DCMAKE_INSTALL_LIBDIR=lib ../mongo-c-driver-1.14.0
 make -j8 install
 popd #./deps/tmp
 
 # build and install libmongocrypt
 pushd libmongocrypt-build #./deps/tmp/libmongocrypt-build
-$CMAKE -DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH=$DEPS_PREFIX -DCMAKE_INSTALL_PREFIX=$DEPS_PREFIX $LIBMONGOCRYPT_DIR
+$CMAKE -DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH=$DEPS_PREFIX -DCMAKE_INSTALL_PREFIX=$DEPS_PREFIX  -DCMAKE_INSTALL_LIBDIR=lib $LIBMONGOCRYPT_DIR
   make -j8 install
 popd #./deps/tmp
 
@@ -71,10 +71,10 @@ popd #./deps
 # We need all built files to exist in lib.
 # Sometimes on linux systems they get installed to lib64 instead,
 # so we need to copy them over
-if [ -d lib64 ]
-then
-  cp -R lib64/* lib/
-fi
+# if [ -d lib64 ]
+# then
+#   cp -R lib64/* lib/
+# fi
 
 # build the `mongodb-client-encryption` addon
 # note the --unsafe-perm parameter to make the build work
