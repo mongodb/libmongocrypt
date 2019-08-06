@@ -107,7 +107,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    _mongocrypt_ctx_datakey_t *dkctx;
    bson_t key_doc, child;
-   int64_t current_time_ms;
+   struct timeval tp;
 
 #define BSON_CHECK(_stmt)                                                      \
    if (!(_stmt)) {                                                             \
@@ -138,11 +138,11 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    _mongocrypt_buffer_append (&dkctx->encrypted_key_material,
                               &key_doc,
                               MONGOCRYPT_STR_AND_LEN ("keyMaterial"));
-   current_time_ms = bson_get_monotonic_time () * 1000;
-   BSON_CHECK (bson_append_date_time (
-      &key_doc, MONGOCRYPT_STR_AND_LEN ("creationDate"), current_time_ms));
-   BSON_CHECK (bson_append_date_time (
-      &key_doc, MONGOCRYPT_STR_AND_LEN ("updateDate"), current_time_ms));
+   bson_gettimeofday (&tp);
+   BSON_CHECK (bson_append_timeval (
+      &key_doc, MONGOCRYPT_STR_AND_LEN ("creationDate"), &tp));
+   BSON_CHECK (bson_append_timeval (
+      &key_doc, MONGOCRYPT_STR_AND_LEN ("updateDate"), &tp));
    BSON_CHECK (bson_append_int32 (
       &key_doc, MONGOCRYPT_STR_AND_LEN ("status"), 0)); /* 0 = enabled. */
    BSON_CHECK (bson_append_document_begin (

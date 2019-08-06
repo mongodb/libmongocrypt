@@ -81,6 +81,8 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    bson_iter_t iter;
    _mongocrypt_buffer_t buf;
    int64_t created_date;
+   const int64_t current_epoch_time_ms = 1565097975532ll; /* the time this code was written */
+   const int64_t one_hundred_years_ms = (int64_t) 1000ll * 60ll * 60ll * 24ll * 365ll * 100ll;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
@@ -131,6 +133,8 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "creationDate"));
    BSON_ASSERT (BSON_ITER_HOLDS_DATE_TIME (&iter));
    created_date = bson_iter_date_time (&iter);
+   BSON_ASSERT (created_date > current_epoch_time_ms &&
+                created_date < current_epoch_time_ms + one_hundred_years_ms);
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "updateDate"));
    BSON_ASSERT (BSON_ITER_HOLDS_DATE_TIME (&iter));
    BSON_ASSERT (created_date == bson_iter_date_time (&iter));
