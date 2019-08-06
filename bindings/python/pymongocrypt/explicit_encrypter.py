@@ -110,12 +110,13 @@ class ExplicitEncrypter(object):
         provided.
 
         :Parameters:
-          - `value`: The BSON value to encrypt.
+          - `value` (bytes): The BSON value to encrypt.
           - `algorithm` (string): The encryption algorithm to use. See
             :class:`Algorithm` for some valid options.
-          - `key_id`: Identifies a data key by ``_id`` which must be a UUID
-            or a :class:`~bson.binary.Binary` with subtype 4.
-          - `key_alt_name`: Identifies a key vault document by 'keyAltName'.
+          - `key_id` (bytes): The bytes of the binary subtype 4 ``_id`` data
+            key. For example, ``uuid.bytes`` or ``bytes(bson_binary)``.
+          - `key_alt_name` (string): Identifies a key vault document by
+            'keyAltName'.
 
         :Returns:
           The encrypted BSON value.
@@ -128,7 +129,8 @@ class ExplicitEncrypter(object):
         """Decrypts a BSON value.
 
         :Parameters:
-          - `value`: The BSON value to encrypt in the form {'v': value}.
+          - `value`: The encoded document to decrypt, which must be in the
+            form { "v" : encrypted BSON value }}.
 
         :Returns:
           The decrypted BSON value.

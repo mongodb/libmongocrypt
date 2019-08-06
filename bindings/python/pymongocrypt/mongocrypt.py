@@ -235,7 +235,7 @@ class MongoCrypt(object):
         :Parameters:
           - `value`: The encoded document to encrypt, which must be in the
             form { "v" : BSON value to encrypt }}.
-          - `opts`: A ExplicitEncryptOpts.
+          - `opts`: A :class:`ExplicitEncryptOpts`.
 
         :Returns:
           A :class:`ExplicitEncryptionContext`.
@@ -246,7 +246,7 @@ class MongoCrypt(object):
         """Creates a context to use for explicit decryption.
 
         :Parameters:
-          - `document`: The encoded document to decrypt, which must be in the
+          - `value`: The encoded document to decrypt, which must be in the
             form { "v" : encrypted BSON value }}.
 
         :Returns:
@@ -407,8 +407,9 @@ class ExplicitEncryptionContext(MongoCryptContext):
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
-          - `database`: Optional, the name of the database.
-          - `command`: The BSON command to encrypt.
+          - `value`:  The encoded document to encrypt, which must be in the
+            form { "v" : BSON value to encrypt }}.
+          - `opts`: A :class:`ExplicitEncryptOpts`.
         """
         super(ExplicitEncryptionContext, self).__init__(ctx)
         try:
@@ -497,6 +498,16 @@ class DataKeyContext(MongoCryptContext):
                     self._raise_from_status()
             else:
                 raise ValueError('unknown kms_provider')
+
+            if opts.key_alt_names:
+                for key_alt_name in opts.key_alt_names:
+                    with MongoCryptBinaryIn(key_alt_name) as binary:
+                        if not lib.mongocrypt_ctx_setopt_key_alt_name(
+                                ctx, binary.bin):
+                            self._raise_from_status()
+
+            if not lib.mongocrypt_ctx_datakey_init(ctx):
+                self._raise_from_status()
         except Exception:
             # Destroy the context on error.
             self._close()
