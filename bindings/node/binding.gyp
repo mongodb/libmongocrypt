@@ -21,6 +21,13 @@
       'sources': [
         'src/mongocrypt.cc'
       ],
+      'xcode_settings': {
+        'OTHER_CFLAGS': [
+          "-std=c++11",
+          "-stdlib=libc++",
+          "-mmacosx-version-min=10.12"
+        ],
+      },
       'conditions': [
         ['build_type=="dynamic"', {
           'link_settings': {
