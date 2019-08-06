@@ -1,15 +1,18 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 # set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-echo "PROJECT_DIRECTORY=${PROJECT_DIRECTORY}"
 NODE_LTS_NAME=${NODE_LTS_NAME:-dubnium}
-echo "NODE_LTS_NAME=${NODE_LTS_NAME}"
 NODE_BINDINGS_PATH="${PROJECT_DIRECTORY}/bindings/node"
 NODE_ARTIFACTS_PATH="${NODE_BINDINGS_PATH}/node-artifacts"
 NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
 NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
 BUILD_STATIC_SCRIPT="${NODE_BINDINGS_PATH}/etc/build_static.sh"
+
+
+# Add mongodb toolchain to path
+export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
 
 # create node artifacts path if needed
 mkdir -p ${NODE_ARTIFACTS_PATH}
@@ -35,14 +38,11 @@ cache=${NPM_CACHE_DIR}
 tmp=${NPM_TMP_DIR}
 EOT
 
-# Add mongodb toolchain to path
-export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
-
 # if no mongocryptd installed, install mongocryptd and add it to path
 if ! [ -x "$(command -v mongocryptd)" ]
 then
   echo "Installing mongocryptd"
-  wget -O mongocryptd.tgz https://s3.amazonaws.com/mciuploads/mongodb-mongo-v4.2/enterprise-ubuntu1604-64/f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a/binaries/mongo-cryptd-mongodb_mongo_v4.2_enterprise_ubuntu1604_64_f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a_19_06_13_17_31_40.tgz
+  curl -o mongocryptd.tgz https://s3.amazonaws.com/mciuploads/mongodb-mongo-v4.2/enterprise-ubuntu1604-64/f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a/binaries/mongo-cryptd-mongodb_mongo_v4.2_enterprise_ubuntu1604_64_f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a_19_06_13_17_31_40.tgz
   mkdir -p mongocryptd && tar xzf mongocryptd.tgz -C mongocryptd --strip-components 1
   export PATH="$PATH:$(pwd)/mongocryptd/bin"
 fi
