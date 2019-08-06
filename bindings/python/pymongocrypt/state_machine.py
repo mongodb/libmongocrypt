@@ -88,6 +88,20 @@ class MongoCryptCallback(ABC):
         pass
 
     @abstractmethod
+    def bson_encode(self, doc):
+        """Encode a document to BSON.
+
+        A document can be any mapping type (like :class:`dict`).
+
+        :Parameters:
+          - `doc`: mapping type representing a document
+
+        :Returns:
+          The encoded BSON bytes.
+        """
+        pass
+
+    @abstractmethod
     def close(self):
         """Release resources."""
         pass

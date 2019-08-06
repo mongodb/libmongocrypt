@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pymongocrypt.binding import ffi, lib, _to_string
-from pymongocrypt.compat import PY3
+from pymongocrypt.compat import str_to_bytes
 from pymongocrypt.errors import MongoCryptError
 
 
@@ -153,11 +153,9 @@ class MongoCrypt(object):
 
         kms_providers = self.__opts.kms_providers
         if 'aws' in kms_providers:
-            access_key_id = kms_providers['aws']['accessKeyId']
-            secret_access_key = kms_providers['aws']['secretAccessKey']
-            if PY3:
-                access_key_id = access_key_id.encode()
-                secret_access_key = secret_access_key.encode()
+            access_key_id = str_to_bytes(kms_providers['aws']['accessKeyId'])
+            secret_access_key = str_to_bytes(
+                kms_providers['aws']['secretAccessKey'])
             if not lib.mongocrypt_setopt_kms_provider_aws(
                     self.__crypt,
                     access_key_id, len(access_key_id),
@@ -214,7 +212,7 @@ class MongoCrypt(object):
           - `command`: The encoded BSON command to encrypt.
 
         :Returns:
-          A :class:`MongoCryptContext`.
+          A :class:`EncryptionContext`.
         """
         return EncryptionContext(self._create_context(), database, command)
 
@@ -225,9 +223,46 @@ class MongoCrypt(object):
           - `command`: The encoded BSON command to decrypt.
 
         :Returns:
-          A :class:`MongoCryptContext`.
+          A :class:`DecryptionContext`.
         """
         return DecryptionContext(self._create_context(), command)
+
+    def explicit_encryption_context(self, value, opts):
+        """Creates a context to use for explicit encryption.
+
+        :Parameters:
+          - `value`: The encoded document to encrypt, which must be in the
+            form { "v" : BSON value to encrypt }}.
+          - `opts`: A :class:`ExplicitEncryptOpts`.
+
+        :Returns:
+          A :class:`ExplicitEncryptionContext`.
+        """
+        return ExplicitEncryptionContext(self._create_context(), value, opts)
+
+    def explicit_decryption_context(self, value):
+        """Creates a context to use for explicit decryption.
+
+        :Parameters:
+          - `value`: The encoded document to decrypt, which must be in the
+            form { "v" : encrypted BSON value }}.
+
+        :Returns:
+          A :class:`ExplicitDecryptionContext`.
+        """
+        return ExplicitDecryptionContext(self._create_context(), value)
+
+    def data_key_context(self, kms_provider, opts=None):
+        """Creates a context to use for key generation.
+
+        :Parameters:
+          - `kms_provider`: The KMS provider.
+          - `opts`: An optional class:`DataKeyOpts`.
+
+        :Returns:
+          A :class:`DataKeyContext`.
+        """
+        return DataKeyContext(self._create_context(), kms_provider, opts)
 
 
 class MongoCryptContext(object):
@@ -242,31 +277,6 @@ class MongoCryptContext(object):
           - `database`: Optional, the name of the database.
         """
         self.__ctx = ctx
-
-    def _encrypt_init(self, database, command):
-        """Init this context for encryption."""
-        try:
-            with MongoCryptBinaryIn(command) as binary:
-                if PY3:
-                    database = database.encode()
-                if not lib.mongocrypt_ctx_encrypt_init(
-                       self.__ctx, database, len(database), binary.bin):
-                    self._raise_from_status()
-        except Exception:
-            # Destroy the context on error.
-            self._close()
-            raise
-
-    def _decrypt_init(self, command):
-        """Init this context for decryption."""
-        try:
-            with MongoCryptBinaryIn(command) as binary:
-                if not lib.mongocrypt_ctx_decrypt_init(self.__ctx, binary.bin):
-                    self._raise_from_status()
-        except Exception:
-            # Destroy the context on error.
-            self._close()
-            raise
 
     def _close(self):
         """Cleanup resources."""
@@ -351,7 +361,16 @@ class EncryptionContext(MongoCryptContext):
         """
         super(EncryptionContext, self).__init__(ctx)
         self.database = database
-        self._encrypt_init(database, command)
+        try:
+            with MongoCryptBinaryIn(command) as binary:
+                database = str_to_bytes(database)
+                if not lib.mongocrypt_ctx_encrypt_init(
+                       ctx, database, len(database), binary.bin):
+                    self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
 
 
 class DecryptionContext(MongoCryptContext):
@@ -366,7 +385,127 @@ class DecryptionContext(MongoCryptContext):
           - `command`: The encoded BSON command to decrypt.
         """
         super(DecryptionContext, self).__init__(ctx)
-        self._decrypt_init(command)
+        try:
+            with MongoCryptBinaryIn(command) as binary:
+                if not lib.mongocrypt_ctx_decrypt_init(ctx, binary.bin):
+                    self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
+
+
+class ExplicitEncryptionContext(MongoCryptContext):
+    __slots__ = ()
+
+    def __init__(self, ctx, value, opts):
+        """Abstracts libmongocrypt's mongocrypt_ctx_t type.
+
+        :Parameters:
+          - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
+            of the underlying mongocrypt_ctx_t.
+          - `value`:  The encoded document to encrypt, which must be in the
+            form { "v" : BSON value to encrypt }}.
+          - `opts`: A :class:`ExplicitEncryptOpts`.
+        """
+        super(ExplicitEncryptionContext, self).__init__(ctx)
+        try:
+            algorithm = str_to_bytes(opts.algorithm)
+            if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
+                self._raise_from_status()
+
+            if opts.key_id is not None:
+                with MongoCryptBinaryIn(opts.key_id) as binary:
+                    if not lib.mongocrypt_ctx_setopt_key_id(ctx, binary.bin):
+                        self._raise_from_status()
+
+            if opts.key_alt_name is not None:
+                with MongoCryptBinaryIn(opts.key_alt_name) as binary:
+                    if not lib.mongocrypt_ctx_setopt_key_alt_name(ctx,
+                                                                  binary.bin):
+                        self._raise_from_status()
+
+            with MongoCryptBinaryIn(value) as binary:
+                if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx,
+                                                                binary.bin):
+                    self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
+
+
+class ExplicitDecryptionContext(MongoCryptContext):
+    __slots__ = ()
+
+    def __init__(self, ctx, value):
+        """Abstracts libmongocrypt's mongocrypt_ctx_t type.
+
+        :Parameters:
+          - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
+            of the underlying mongocrypt_ctx_t.
+          - `value`: The encoded BSON value to decrypt.
+        """
+        super(ExplicitDecryptionContext, self).__init__(ctx)
+
+        try:
+            with MongoCryptBinaryIn(value) as binary:
+                if not lib.mongocrypt_ctx_explicit_decrypt_init(ctx,
+                                                                binary.bin):
+                    self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
+
+
+class DataKeyContext(MongoCryptContext):
+    __slots__ = ()
+
+    def __init__(self, ctx, kms_provider, opts):
+        """Abstracts libmongocrypt's mongocrypt_ctx_t type.
+
+        :Parameters:
+          - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
+            of the underlying mongocrypt_ctx_t.
+          - `kms_provider`: The KMS provider.
+          - `opts`: An optional class:`DataKeyOpts`.
+        """
+        super(DataKeyContext, self).__init__(ctx)
+        try:
+            if kms_provider == 'aws':
+                if opts is None or opts.master_key is None:
+                    raise ValueError(
+                        'master_key is required for kms_provider: "aws"')
+                if ('region' not in opts.master_key or
+                        'key' not in opts.master_key):
+                    raise ValueError(
+                        'master_key must include "region" and "key" for '
+                        'kms_provider: "aws"')
+                region = str_to_bytes(opts.master_key['region'])
+                key = str_to_bytes(opts.master_key['key'])
+                if not lib.mongocrypt_ctx_setopt_masterkey_aws(
+                        ctx, region, len(region), key, len(key)):
+                    self._raise_from_status()
+            elif kms_provider == 'local':
+                if not lib.mongocrypt_ctx_setopt_masterkey_local(ctx):
+                    self._raise_from_status()
+            else:
+                raise ValueError('unknown kms_provider: %s' % (kms_provider,))
+
+            if opts.key_alt_names:
+                for key_alt_name in opts.key_alt_names:
+                    with MongoCryptBinaryIn(key_alt_name) as binary:
+                        if not lib.mongocrypt_ctx_setopt_key_alt_name(
+                                ctx, binary.bin):
+                            self._raise_from_status()
+
+            if not lib.mongocrypt_ctx_datakey_init(ctx):
+                self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
 
 
 class MongoCryptKmsContext(object):
