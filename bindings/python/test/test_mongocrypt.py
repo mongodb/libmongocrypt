@@ -16,9 +16,10 @@
 
 import os
 import sys
+import uuid
 
 from bson import json_util, BSON
-from bson.binary import STANDARD
+from bson.binary import Binary, STANDARD
 from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
@@ -222,7 +223,10 @@ class MockCallback(MongoCryptCallback):
         return self.key_docs
 
     def insert_data_key(self, data_key):
-        return BSON(data_key).decode()['_id']
+        raise NotImplementedError
+
+    def bson_encode(self, doc):
+        return BSON.encode(doc)
 
     def close(self):
         pass
@@ -262,6 +266,19 @@ class TestMongoCryptCallback(unittest.TestCase):
         self.assertEqual(decrypted, bson_data('command-reply.json'))
 
 
+class KeyVaultCallback(MockCallback):
+    def __init__(self, kms_reply=None):
+        super(KeyVaultCallback, self).__init__(kms_reply=kms_reply)
+        self.data_key = None
+
+    def fetch_keys(self, filter):
+        return self.data_key
+
+    def insert_data_key(self, data_key):
+        self.data_key = data_key
+        return BSON(data_key).decode()['_id']
+
+
 class TestExplicitEncryption(unittest.TestCase):
 
     @staticmethod
@@ -270,17 +287,17 @@ class TestExplicitEncryption(unittest.TestCase):
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
             'local': {'key': b'\x00'*96}})
 
-    def test_encrypt_decrypt(self):
+    def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
         encrypter = ExplicitEncrypter(MockCallback(
             key_docs=[bson_data('key-document.json')],
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
-        key_id = json_data('key-document.json')['_id']
         val = {'v': 'hello'}
         encoded_val = BSON.encode(val)
         algo = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-        encrypted = encrypter.encrypt(encoded_val, algo, key_id=key_id.bytes)
+        encrypted = encrypter.encrypt(
+            encoded_val, algo, key_id=key_id, key_alt_name=key_alt_name)
         self.assertEqual(
             BSON(encrypted).decode(), json_data('encrypted-value.json'))
         self.assertEqual(encrypted, bson_data('encrypted-value.json'))
@@ -288,6 +305,28 @@ class TestExplicitEncryption(unittest.TestCase):
         decrypted = encrypter.decrypt(encrypted)
         self.assertEqual(BSON(decrypted).decode(), val)
         self.assertEqual(encoded_val, decrypted)
+
+    def test_encrypt_decrypt(self):
+        key_id = json_data('key-document.json')['_id']
+        self._test_encrypt_decrypt(key_id=key_id.bytes)
+
+    def test_encrypt_decrypt_key_alt_name(self):
+        key_alt_name = json_data('key-document.json')['keyAltNames'][0]
+        self._test_encrypt_decrypt(key_alt_name=key_alt_name)
+
+    def test_data_key_creation(self):
+        mock_key_vault = KeyVaultCallback(kms_reply=http_data('kms-reply.txt'))
+        encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        key_alt_names = ["first", "second"]
+        key_id = encrypter.create_data_key('local',
+                                           key_alt_names=key_alt_names)
+        self.assertIsInstance(key_id, uuid.UUID)
+        data_key = BSON(mock_key_vault.data_key).decode()
+        # CDRIVER-3277 The order of key_alt_names is not maintained.
+        for name in key_alt_names:
+            self.assertIn(name, data_key['keyAltNames'])
 
 
 def read(filename, **kwargs):

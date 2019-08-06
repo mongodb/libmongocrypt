@@ -24,15 +24,15 @@ class ExplicitEncryptOpts(object):
         :Parameters:
           - `algorithm`: The algorithm to use.
           - `key_id`: The data key _id.
-          - `key_alt_name`: Identifies a key vault document by 'keyAltName'.
+          - `key_alt_name` (bytes): Identifies a key vault document by
+            'keyAltName'. Must be BSON encoded document in the form:
+            { "keyAltName" : (BSON UTF8 value) }
         """
         self.algorithm = algorithm
         self.key_id = key_id
         self.key_alt_name = key_alt_name
         if PY3:
             self.algorithm = algorithm.encode()
-            if key_alt_name is not None:
-                self.key_alt_name = key_alt_name.encode()
 
 
 class DataKeyOpts(object):
@@ -49,10 +49,9 @@ class DataKeyOpts(object):
                            // customer master key (CMK).
             }
             If the kmsProvider is "local" the masterKey is not applicable.
-          - `key_alt_name`: An optional list of string alternate names used to
-            reference a key. If a key is created with alternate names, then
-            encryption may refer to the key by the unique alternate name
-            instead of by _id
+          - `key_alt_name`: An optional list of bytes suitable to be passed to
+            mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON
+            encoded document in the form: { "keyAltName" : (BSON UTF8 value) }
         """
         self.master_key = master_key
         self.key_alt_names = key_alt_names
@@ -78,7 +77,6 @@ class ExplicitEncrypter(object):
                         key_alt_names=None):
         """Creates a data key used for explicit encryption.
 
-
         :Parameters:
           - `kms_provider`: The KMS provider to use. Supported values are
             "aws" and "local".
@@ -93,12 +91,22 @@ class ExplicitEncrypter(object):
                 customer master key (CMK).
 
           - `key_alt_names` (optional): An optional list of string alternate
-            names used to reference a key.
+            names used to reference a key. If a key is created with alternate
+            names, then encryption may refer to the key by the unique
+            alternate name instead of by ``_id``.
 
         :Returns:
           The _id of the created data key document.
         """
-        opts = DataKeyOpts(master_key, key_alt_names)
+        # CDRIVER-3275 each key_alt_name needs to be wrapped in a bson
+        # document.
+        encoded_names = []
+        if key_alt_names is not None:
+            for name in key_alt_names:
+                encoded_names.append(
+                    self.callback.bson_encode({'keyAltName': name}))
+
+        opts = DataKeyOpts(master_key, encoded_names)
         with self.mongocrypt.data_key_context(kms_provider, opts) as ctx:
             key = run_state_machine(ctx, self.callback)
         return self.callback.insert_data_key(key)
@@ -121,6 +129,10 @@ class ExplicitEncrypter(object):
         :Returns:
           The encrypted BSON value.
         """
+        # CDRIVER-3275 key_alt_name needs to be wrapped in a bson document.
+        if key_alt_name is not None:
+            key_alt_name = self.callback.bson_encode(
+                {'keyAltName': key_alt_name})
         opts = ExplicitEncryptOpts(algorithm, key_id, key_alt_name)
         with self.mongocrypt.explicit_encryption_context(value, opts) as ctx:
             return run_state_machine(ctx, self.callback)
