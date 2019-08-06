@@ -23,3 +23,10 @@ if PY3:
 else:
     from abc import ABCMeta as _ABCMeta
     ABC = _ABCMeta('ABC', (object,), {})
+
+
+def str_to_bytes(string):
+    """Convert a str (or unicode) to bytes."""
+    if isinstance(string, bytes):
+        return string
+    return string.encode('utf-8')

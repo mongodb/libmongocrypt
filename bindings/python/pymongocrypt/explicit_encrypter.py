@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.compat import PY3
 from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.state_machine import run_state_machine
 
@@ -31,8 +30,6 @@ class ExplicitEncryptOpts(object):
         self.algorithm = algorithm
         self.key_id = key_id
         self.key_alt_name = key_alt_name
-        if PY3:
-            self.algorithm = algorithm.encode()
 
 
 class DataKeyOpts(object):
@@ -61,7 +58,7 @@ class ExplicitEncrypter(object):
     def __init__(self, callback, mongo_crypt_opts):
         """Encrypts and decrypts BSON values.
 
-        This class is used by a driver to support for explicit encryption and
+        This class is used by a driver to support explicit encryption and
         decryption of individual fields in a BSON document.
 
         :Parameters:

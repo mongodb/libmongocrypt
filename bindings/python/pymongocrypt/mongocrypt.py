@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pymongocrypt.binding import ffi, lib, _to_string
-from pymongocrypt.compat import PY3
+from pymongocrypt.compat import str_to_bytes
 from pymongocrypt.errors import MongoCryptError
 
 
@@ -153,11 +153,9 @@ class MongoCrypt(object):
 
         kms_providers = self.__opts.kms_providers
         if 'aws' in kms_providers:
-            access_key_id = kms_providers['aws']['accessKeyId']
-            secret_access_key = kms_providers['aws']['secretAccessKey']
-            if PY3:
-                access_key_id = access_key_id.encode()
-                secret_access_key = secret_access_key.encode()
+            access_key_id = str_to_bytes(kms_providers['aws']['accessKeyId'])
+            secret_access_key = str_to_bytes(
+                kms_providers['aws']['secretAccessKey'])
             if not lib.mongocrypt_setopt_kms_provider_aws(
                     self.__crypt,
                     access_key_id, len(access_key_id),
@@ -365,8 +363,7 @@ class EncryptionContext(MongoCryptContext):
         self.database = database
         try:
             with MongoCryptBinaryIn(command) as binary:
-                if PY3:
-                    database = database.encode()
+                database = str_to_bytes(database)
                 if not lib.mongocrypt_ctx_encrypt_init(
                        ctx, database, len(database), binary.bin):
                     self._raise_from_status()
@@ -413,8 +410,8 @@ class ExplicitEncryptionContext(MongoCryptContext):
         """
         super(ExplicitEncryptionContext, self).__init__(ctx)
         try:
-            if not lib.mongocrypt_ctx_setopt_algorithm(
-                    ctx, opts.algorithm, -1):
+            algorithm = str_to_bytes(opts.algorithm)
+            if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
                 self._raise_from_status()
 
             if opts.key_id is not None:
@@ -478,18 +475,15 @@ class DataKeyContext(MongoCryptContext):
         try:
             if kms_provider == 'aws':
                 if opts is None or opts.master_key is None:
-                    raise ValueError('opts.master_key is required for '
-                                     'kms_provider: "aws"')
-                if 'region' not in opts.master_key or 'key' not in \
-                        opts.master_key:
                     raise ValueError(
-                        'opts.master_key must include "region" and '
-                        '"key" for kms_provider: "aws"')
-                region = opts.master_key['region']
-                key = opts.master_key['key']
-                if PY3:
-                    region = region.encode()
-                    key = key.encode()
+                        'master_key is required for kms_provider: "aws"')
+                if ('region' not in opts.master_key or
+                        'key' not in opts.master_key):
+                    raise ValueError(
+                        'master_key must include "region" and "key" for '
+                        'kms_provider: "aws"')
+                region = str_to_bytes(opts.master_key['region'])
+                key = str_to_bytes(opts.master_key['key'])
                 if not lib.mongocrypt_ctx_setopt_masterkey_aws(
                         ctx, region, len(region), key, len(key)):
                     self._raise_from_status()
@@ -497,7 +491,7 @@ class DataKeyContext(MongoCryptContext):
                 if not lib.mongocrypt_ctx_setopt_masterkey_local(ctx):
                     self._raise_from_status()
             else:
-                raise ValueError('unknown kms_provider')
+                raise ValueError('unknown kms_provider: %s' % (kms_provider,))
 
             if opts.key_alt_names:
                 for key_alt_name in opts.key_alt_names:

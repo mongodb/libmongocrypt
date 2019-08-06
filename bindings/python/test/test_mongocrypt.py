@@ -315,18 +315,26 @@ class TestExplicitEncryption(unittest.TestCase):
         self._test_encrypt_decrypt(key_alt_name=key_alt_name)
 
     def test_data_key_creation(self):
-        mock_key_vault = KeyVaultCallback(kms_reply=http_data('kms-reply.txt'))
+        mock_key_vault = KeyVaultCallback(
+            kms_reply=http_data('kms-encrypt-reply.txt'))
         encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
-        key_alt_names = ["first", "second"]
-        key_id = encrypter.create_data_key('local',
-                                           key_alt_names=key_alt_names)
-        self.assertIsInstance(key_id, uuid.UUID)
-        data_key = BSON(mock_key_vault.data_key).decode()
-        # CDRIVER-3277 The order of key_alt_names is not maintained.
-        for name in key_alt_names:
-            self.assertIn(name, data_key['keyAltNames'])
+        valid_args = [
+            ('local', None, ['first', 'second']),
+            ('aws', {'region': 'region', 'key': 'cmk'}, ['third', 'forth']),
+            # Unicode region and key
+            ('aws', {'region': u'region-unicode', 'key': u'cmk-unicode'}, []),
+        ]
+        for kms_provider, master_key, key_alt_names in valid_args:
+            key_id = encrypter.create_data_key(
+                kms_provider, master_key=master_key,
+                key_alt_names=key_alt_names)
+            self.assertIsInstance(key_id, uuid.UUID)
+            data_key = BSON(mock_key_vault.data_key).decode()
+            # CDRIVER-3277 The order of key_alt_names is not maintained.
+            for name in key_alt_names:
+                self.assertIn(name, data_key['keyAltNames'])
 
 
 def read(filename, **kwargs):
