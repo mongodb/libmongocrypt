@@ -547,6 +547,43 @@ _test_crypto_hooks_unset (_mongocrypt_tester_t *tester)
 }
 
 
+/* test a bug fix, that an error on explicit encryption in the crypto hooks sets
+ * the context state */
+static void
+_test_crypto_hooks_explicit_err (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *bin, *key_id;
+   char *deterministic = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic";
+
+   call_history = bson_string_new (NULL);
+
+   /* error on something during encryption. */
+   crypt = _create_mongocrypt ("error_on:hmac_sha512");
+
+   ctx = mongocrypt_ctx_new (crypt);
+   key_id = mongocrypt_binary_new_from_data (
+      MONGOCRYPT_DATA_AND_LEN ("aaaaaaaaaaaaaaaa"));
+
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, deterministic, -1), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_explicit_encrypt_init (ctx, TEST_BSON ("{'v': 123}")),
+      ctx);
+
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   bin = mongocrypt_binary_new ();
+   ASSERT_FAILS (mongocrypt_ctx_finalize (ctx, bin), ctx, "error message");
+   BSON_ASSERT (MONGOCRYPT_CTX_ERROR == mongocrypt_ctx_state (ctx));
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_binary_destroy (key_id);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+   bson_string_free (call_history, true);
+}
+
+
 void
 _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
 {
@@ -556,4 +593,5 @@ _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
    INSTALL_TEST_CRYPTO (_test_crypto_hooks_random, CRYPTO_OPTIONAL);
    INSTALL_TEST_CRYPTO (_test_kms_request, CRYPTO_OPTIONAL);
    INSTALL_TEST_CRYPTO (_test_crypto_hooks_unset, CRYPTO_PROHIBITED);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_explicit_err, CRYPTO_OPTIONAL);
 }

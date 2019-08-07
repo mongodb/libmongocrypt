@@ -350,7 +350,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    } else {
       /* For explicit encryption, we have no marking, but we can fake one */
       _mongocrypt_marking_t marking;
-      bson_value_t value;
+      bson_value_t value = {0};
 
       _mongocrypt_marking_init (&marking);
 
@@ -383,7 +383,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       _mongocrypt_marking_cleanup (&marking);
 
       if (!res) {
-         return false;
+         return _mongocrypt_ctx_fail (ctx);
       }
    }
 
