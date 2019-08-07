@@ -69,7 +69,7 @@ _aes_256_cbc_encrypt (void *ctx,
                       uint32_t *bytes_written,
                       mongocrypt_status_t *status)
 {
-   BSON_ASSERT (0 == strcmp ("context", (char *) ctx));
+   BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
    _append_bin ("key", key);
    _append_bin ("iv", iv);
@@ -78,6 +78,11 @@ _aes_256_cbc_encrypt (void *ctx,
    memcpy (out->data + *bytes_written, in->data, in->len);
    *bytes_written += in->len;
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
+   if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_encrypt")) {
+      mongocrypt_status_set (
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, "error message", -1);
+      return false;
+   }
    return true;
 }
 
@@ -90,7 +95,7 @@ _aes_256_cbc_decrypt (void *ctx,
                       uint32_t *bytes_written,
                       mongocrypt_status_t *status)
 {
-   BSON_ASSERT (0 == strcmp ("context", (char *) ctx));
+   BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
    _append_bin ("key", key);
    _append_bin ("iv", iv);
@@ -99,6 +104,11 @@ _aes_256_cbc_decrypt (void *ctx,
    memcpy (out->data + *bytes_written, in->data, in->len);
    *bytes_written += in->len;
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
+   if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_decrypt")) {
+      mongocrypt_status_set (
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, "error message", -1);
+      return false;
+   }
    return true;
 }
 
@@ -111,7 +121,7 @@ _hmac_sha_512 (void *ctx,
 {
    _mongocrypt_buffer_t tmp;
 
-   BSON_ASSERT (0 == strcmp ("context", (char *) ctx));
+   BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
    _append_bin ("key", key);
    _append_bin ("in", in);
@@ -121,6 +131,11 @@ _hmac_sha_512 (void *ctx,
    _mongocrypt_buffer_copy_from_hex (&tmp, HMAC_HEX);
    memcpy (out->data, tmp.data, tmp.len);
    _mongocrypt_buffer_cleanup (&tmp);
+   if (0 == strcmp ((char *) ctx, "error_on:hmac_sha512")) {
+      mongocrypt_status_set (
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, "error message", -1);
+      return false;
+   }
    return true;
 }
 
@@ -133,7 +148,7 @@ _hmac_sha_256 (void *ctx,
 {
    _mongocrypt_buffer_t tmp;
 
-   BSON_ASSERT (0 == strcmp ("context", (char *) ctx));
+   BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
    _append_bin ("key", key);
    _append_bin ("in", in);
@@ -143,6 +158,11 @@ _hmac_sha_256 (void *ctx,
    _mongocrypt_buffer_copy_from_hex (&tmp, HASH_HEX);
    memcpy (out->data, tmp.data, tmp.len);
    _mongocrypt_buffer_cleanup (&tmp);
+   if (0 == strcmp ((char *) ctx, "error_on:hmac_sha256")) {
+      mongocrypt_status_set (
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, "error message", -1);
+      return false;
+   }
    return true;
 }
 
@@ -154,7 +174,7 @@ _sha_256 (void *ctx,
 {
    _mongocrypt_buffer_t tmp;
 
-   BSON_ASSERT (0 == strcmp ("context", (char *) ctx));
+   BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
    _append_bin ("in", in);
 
@@ -163,6 +183,11 @@ _sha_256 (void *ctx,
    _mongocrypt_buffer_copy_from_hex (&tmp, HASH_HEX);
    memcpy (out->data, tmp.data, tmp.len);
    _mongocrypt_buffer_cleanup (&tmp);
+   if (0 == strcmp ((char *) ctx, "error_on:sha256")) {
+      mongocrypt_status_set (
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, "error message", -1);
+      return false;
+   }
    return true;
 }
 
@@ -175,6 +200,7 @@ _random (void *ctx,
    /* only have 32 bytes of random test data. */
    BSON_ASSERT (count <= 96);
 
+   BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
    bson_string_append_printf (call_history, "count:%d\n", (int) count);
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
@@ -183,12 +209,17 @@ _random (void *ctx,
    _mongocrypt_buffer_copy_from_hex (&tmp, RANDOM_HEX);
    memcpy (out->data, tmp.data, count);
    _mongocrypt_buffer_cleanup (&tmp);
+   if (0 == strcmp ((char *) ctx, "error_on:random")) {
+      mongocrypt_status_set (
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, "error message", -1);
+      return false;
+   }
    return true;
 }
 
 
 static mongocrypt_t *
-_create_mongocrypt (void)
+_create_mongocrypt (const char *error_on)
 {
    bool ret;
 
@@ -203,7 +234,7 @@ _create_mongocrypt (void)
                                          _hmac_sha_512,
                                          _hmac_sha_256,
                                          _sha_256,
-                                         "context");
+                                         (void *) error_on);
    ASSERT_OK (ret, crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    return crypt;
@@ -211,7 +242,8 @@ _create_mongocrypt (void)
 
 
 static void
-_test_crypto_hooks_encryption (_mongocrypt_tester_t *tester)
+_test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
+                                      const char *error_on)
 {
    mongocrypt_t *crypt;
    bool ret;
@@ -230,7 +262,7 @@ _test_crypto_hooks_encryption (_mongocrypt_tester_t *tester)
       "ret:_hmac_sha_512\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt ();
+   crypt = _create_mongocrypt (error_on);
 
    _mongocrypt_buffer_copy_from_hex (&iv, IV_HEX);
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
@@ -251,21 +283,27 @@ _test_crypto_hooks_encryption (_mongocrypt_tester_t *tester)
                                     &ciphertext,
                                     &bytes_written,
                                     status);
-   ASSERT_OK_STATUS (ret, status);
-   ciphertext.len = bytes_written;
 
-   /* Check the full trace. */
-   ASSERT_STREQUAL (call_history->str, expected_call_history);
+   if (0 == strcmp (error_on, "error_on:none")) {
+      ASSERT_OK_STATUS (ret, status);
+      ciphertext.len = bytes_written;
 
-   /* Check the structure of the ciphertext */
-   BSON_ASSERT (0 == _mongocrypt_buffer_cmp_hex (
-                        &ciphertext,
-                        IV_HEX
-                        "BBBB0E0E0E0E0E0E0E0E0E0E0E0E0E0E" /* the "encrypted"
-                                                              block which is
-                                                              really plaintext.
-                                                              BBBB + padding. */
-                        HMAC_HEX_TAG));
+      /* Check the full trace. */
+      ASSERT_STREQUAL (call_history->str, expected_call_history);
+
+      /* Check the structure of the ciphertext */
+      BSON_ASSERT (
+         0 == _mongocrypt_buffer_cmp_hex (
+                 &ciphertext,
+                 IV_HEX "BBBB0E0E0E0E0E0E0E0E0E0E0E0E0E0E" /* the "encrypted"
+                                                            block which is
+                                                            really plaintext.
+                                                            BBBB + padding. */
+                 HMAC_HEX_TAG));
+   } else {
+      ASSERT_FAILS_STATUS (ret, status, "error message");
+   }
+
 
    _mongocrypt_buffer_cleanup (&key);
    _mongocrypt_buffer_cleanup (&iv);
@@ -279,7 +317,18 @@ _test_crypto_hooks_encryption (_mongocrypt_tester_t *tester)
 
 
 static void
-_test_crypto_hooks_decryption (_mongocrypt_tester_t *tester)
+_test_crypto_hooks_encryption (_mongocrypt_tester_t *tester)
+{
+   _test_crypto_hooks_encryption_helper (tester, "error_on:none");
+   _test_crypto_hooks_encryption_helper (tester,
+                                         "error_on:aes_256_cbc_encrypt");
+   _test_crypto_hooks_encryption_helper (tester, "error_on:hmac_sha512");
+}
+
+
+static void
+_test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
+                                      const char *error_on)
 {
    mongocrypt_t *crypt;
    bool ret;
@@ -298,7 +347,7 @@ _test_crypto_hooks_decryption (_mongocrypt_tester_t *tester)
       "ret:_aes_256_cbc_decrypt\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt ();
+   crypt = _create_mongocrypt (error_on);
 
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
    _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
@@ -318,14 +367,19 @@ _test_crypto_hooks_decryption (_mongocrypt_tester_t *tester)
                                     &plaintext,
                                     &bytes_written,
                                     status);
-   ASSERT_OK_STATUS (ret, status);
-   plaintext.len = bytes_written;
 
-   /* Check the full trace. */
-   ASSERT_STREQUAL (call_history->str, expected_call_history);
+   if (0 == strcmp (error_on, "error_on:none")) {
+      ASSERT_OK_STATUS (ret, status);
+      plaintext.len = bytes_written;
 
-   /* Check the resulting plaintext */
-   BSON_ASSERT (0 == _mongocrypt_buffer_cmp_hex (&plaintext, "BBBB"));
+      /* Check the full trace. */
+      ASSERT_STREQUAL (call_history->str, expected_call_history);
+
+      /* Check the resulting plaintext */
+      BSON_ASSERT (0 == _mongocrypt_buffer_cmp_hex (&plaintext, "BBBB"));
+   } else {
+      ASSERT_FAILS_STATUS (ret, status, "error message");
+   }
 
    _mongocrypt_buffer_cleanup (&key);
    _mongocrypt_buffer_cleanup (&associated_data);
@@ -336,9 +390,17 @@ _test_crypto_hooks_decryption (_mongocrypt_tester_t *tester)
    bson_string_free (call_history, true);
 }
 
+static void
+_test_crypto_hooks_decryption (_mongocrypt_tester_t *tester)
+{
+   _test_crypto_hooks_decryption_helper (tester, "error_on:none");
+   _test_crypto_hooks_decryption_helper (tester,
+                                         "error_on:aes_256_cbc_decrypt");
+   _test_crypto_hooks_decryption_helper (tester, "error_on:hmac_sha512");
+}
 
 static void
-_test_crypto_hooks_iv_gen (_mongocrypt_tester_t *tester)
+_test_crypto_hooks_iv_gen_helper (_mongocrypt_tester_t *tester, char *error_on)
 {
    mongocrypt_t *crypt;
    bool ret;
@@ -352,7 +414,7 @@ _test_crypto_hooks_iv_gen (_mongocrypt_tester_t *tester)
                                        "ret:_hmac_sha_512\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt ();
+   crypt = _create_mongocrypt (error_on);
 
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
    _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
@@ -365,13 +427,18 @@ _test_crypto_hooks_iv_gen (_mongocrypt_tester_t *tester)
 
    ret = _mongocrypt_calculate_deterministic_iv (
       crypt->crypto, &key, &plaintext, &associated_data, &iv, status);
-   ASSERT_OK_STATUS (ret, status);
 
-   /* Check the full trace. */
-   ASSERT_STREQUAL (call_history->str, expected_call_history);
+   if (0 == strcmp (error_on, "error_on:none")) {
+      ASSERT_OK_STATUS (ret, status);
 
-   /* Check the resulting iv */
-   BSON_ASSERT (0 == _mongocrypt_buffer_cmp_hex (&iv, expected_iv));
+      /* Check the full trace. */
+      ASSERT_STREQUAL (call_history->str, expected_call_history);
+
+      /* Check the resulting iv */
+      BSON_ASSERT (0 == _mongocrypt_buffer_cmp_hex (&iv, expected_iv));
+   } else {
+      ASSERT_FAILS_STATUS (ret, status, "error message");
+   }
 
    bson_free (expected_iv);
    _mongocrypt_buffer_cleanup (&key);
@@ -383,9 +450,17 @@ _test_crypto_hooks_iv_gen (_mongocrypt_tester_t *tester)
    bson_string_free (call_history, true);
 }
 
+static void
+_test_crypto_hooks_iv_gen (_mongocrypt_tester_t *tester)
+{
+   _test_crypto_hooks_iv_gen_helper (tester, "error_on:none");
+   _test_crypto_hooks_iv_gen_helper (tester, "error_on:hmac_sha512");
+}
+
 
 static void
-_test_crypto_hooks_random (_mongocrypt_tester_t *tester)
+_test_crypto_hooks_random_helper (_mongocrypt_tester_t *tester,
+                                  const char *error_on)
 {
    mongocrypt_t *crypt;
    bool ret;
@@ -396,7 +471,7 @@ _test_crypto_hooks_random (_mongocrypt_tester_t *tester)
                                        "ret:_random\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt ();
+   crypt = _create_mongocrypt (error_on);
 
    _mongocrypt_buffer_init (&random);
    _mongocrypt_buffer_resize (&random, 96);
@@ -404,13 +479,18 @@ _test_crypto_hooks_random (_mongocrypt_tester_t *tester)
    call_history = bson_string_new (NULL);
 
    ret = _mongocrypt_random (crypt->crypto, &random, random.len, status);
-   ASSERT_OK_STATUS (ret, status);
 
-   /* Check the full trace. */
-   ASSERT_STREQUAL (call_history->str, expected_call_history);
+   if (0 == strcmp (error_on, "error_on:none")) {
+      ASSERT_OK_STATUS (ret, status);
 
-   /* Check the resulting iv */
-   BSON_ASSERT (0 == _mongocrypt_buffer_cmp_hex (&random, RANDOM_HEX));
+      /* Check the full trace. */
+      ASSERT_STREQUAL (call_history->str, expected_call_history);
+
+      /* Check the resulting iv */
+      BSON_ASSERT (0 == _mongocrypt_buffer_cmp_hex (&random, RANDOM_HEX));
+   } else {
+      ASSERT_FAILS_STATUS (ret, status, "error message");
+   }
 
    _mongocrypt_buffer_cleanup (&random);
    mongocrypt_status_destroy (status);
@@ -418,6 +498,12 @@ _test_crypto_hooks_random (_mongocrypt_tester_t *tester)
    bson_string_free (call_history, true);
 }
 
+static void
+_test_crypto_hooks_random (_mongocrypt_tester_t *tester)
+{
+   _test_crypto_hooks_random_helper (tester, "error_on:none");
+   _test_crypto_hooks_random_helper (tester, "error_on:random");
+}
 
 static void
 _test_kms_request (_mongocrypt_tester_t *tester)
@@ -427,7 +513,7 @@ _test_kms_request (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt ();
+   crypt = _create_mongocrypt ("error_on:none");
    ctx = mongocrypt_ctx_new (crypt);
 
    call_history = bson_string_new (NULL);

@@ -79,7 +79,13 @@ kms_request_str_new_from_chars (const char *chars, ssize_t len)
 kms_request_str_t *
 kms_request_str_wrap (char *chars, ssize_t len)
 {
-   kms_request_str_t *s = malloc (sizeof (kms_request_str_t));
+   kms_request_str_t *s;
+
+   if (!chars) {
+      return NULL;
+   }
+
+   s = malloc (sizeof (kms_request_str_t));
 
    s->str = chars;
    s->len = len < 0 ? strlen (chars) : (size_t) len;
@@ -102,6 +108,9 @@ kms_request_str_destroy (kms_request_str_t *str)
 char *
 kms_request_str_detach (kms_request_str_t *str)
 {
+   if (!str) {
+      return NULL;
+   }
    char *r = str->str;
    free (str);
    return r;
