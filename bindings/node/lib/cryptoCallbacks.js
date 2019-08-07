@@ -10,6 +10,7 @@ function aes256CbcEncryptHook(key, iv, input, output) {
     result = cipher.update(input);
   } catch (e) {
     console.dir({ e });
+    return e;
   }
 
   result.copy(output);
@@ -24,6 +25,7 @@ function aes256CbcDecryptHook(key, iv, input, output) {
     result = cipher.update(input);
   } catch (e) {
     console.dir({ e });
+    return e;
   }
 
   result.copy(output);
@@ -43,9 +45,11 @@ function sha256Hook(input, output) {
       .digest();
   } catch (e) {
     console.dir({ e });
+    return e;
   }
 
   result.copy(output);
+  return result.length;
 }
 
 function makeHmacHook(algorithm) {
@@ -58,9 +62,11 @@ function makeHmacHook(algorithm) {
         .digest();
     } catch (e) {
       console.dir({ e });
+      return e;
     }
 
     result.copy(output);
+    return result.length;
   };
 }
 
