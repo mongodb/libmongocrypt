@@ -95,17 +95,26 @@ like this:
   >>> import pymongocrypt
   Traceback (most recent call last):
     File "<stdin>", line 1, in <module>
-    File "/Users/shane/git/libmongocrypt/bindings/python/pymongocrypt/__init__.py", line 15, in <module>
-      from pymongocrypt.binding import mongocrypt_version, lib
-    File "/Users/shane/git/libmongocrypt/bindings/python/pymongocrypt/binding.py", line 741, in <module>
-      lib = ffi.dlopen("mongocrypt")
-    File "/Users/shane/venv/libmongocrypt/py3.7/lib/python3.7/site-packages/cffi/api.py", line 146, in dlopen
+    File "pymongocrypt/__init__.py", line 15, in <module>
+      from pymongocrypt.binding import libmongocrypt_version, lib
+    File "pymongocrypt/binding.py", line 803, in <module>
+      lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', 'mongocrypt'))
+    File "/.../lib/python3.7/site-packages/cffi/api.py", line 146, in dlopen
       lib, function_cache = _make_ffi_library(self, name, flags)
-    File "/Users/shane/venv/libmongocrypt/py3.7/lib/python3.7/site-packages/cffi/api.py", line 828, in _make_ffi_library
+    File "/.../lib/python3.7/site-packages/cffi/api.py", line 828, in _make_ffi_library
       backendlib = _load_backend_lib(backend, libname, flags)
-    File "/Users/shane/venv/libmongocrypt/py3.7/lib/python3.7/site-packages/cffi/api.py", line 823, in _load_backend_lib
+    File "/.../lib/python3.7/site-packages/cffi/api.py", line 823, in _load_backend_lib
       raise OSError(msg)
   OSError: ctypes.util.find_library() did not manage to locate a library called 'mongocrypt'
+
+
+Use the ``PYMONGOCRYPT_LIB`` environment variable to load a locally installed
+libmongocrypt build without relying on platform specific library path environment
+variables, like ``LD_LIBRARY_PATH``. For example::
+
+  $ export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
+  $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+
 
 Documentation
 =============
