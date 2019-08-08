@@ -250,7 +250,6 @@ void MaybeSetCryptoHookErrorStatus(v8::Local<v8::Value> result, mongocrypt_statu
     }
     v8::Local<v8::Value> emptyString = Nan::New("").ToLocalChecked();
     auto errorMessageValue = Nan::Get(hookError, kErrorMessageKey).FromMaybe(emptyString);
-    // auto errmsg = *Nan::Utf8String(errorMessageValue->ToString());
     std::string errorMessage(*Nan::Utf8String(errorMessageValue->ToString()));
     mongocrypt_status_set(
         status,
