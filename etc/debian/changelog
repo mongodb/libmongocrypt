@@ -1,0 +1,5 @@
+libmongocrypt (1.0.0~) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 06 Aug 2019 01:01:00 +0000

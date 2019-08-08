@@ -1,0 +1,30 @@
+Source: libmongocrypt
+Priority: optional
+Maintainer: Roberto C. Sanchez <roberto@connexer.com>
+Build-Depends:
+Standards-Version: 4.1.3
+Section: libs
+Homepage: https://github.com/mongodb/libmongocrypt
+
+Package: libmongocrypt-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libmongocrypt0 (= ${binary:Version}), ${misc:Depends}
+Description: library to perform field-level encryption - dev files
+ libmongocrypt facilitates the encryption and decryption, at the field
+ level, of data stored in MongoDB.
+ .
+ This package contains the libmongocrypt and libkms_message development
+ headers and libraries.
+
+Package: libmongocrypt0
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: library to perform field-level encryption - runtime files
+ libmongocrypt facilitates the encryption and decryption, at the field
+ level, of data stored in MongoDB.
+ .
+ This package contains the libmongocrypt and libkms_message runtime
+ libraries.
