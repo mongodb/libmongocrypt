@@ -33,7 +33,7 @@ mongocrypt_status_set (mongocrypt_status_t *status,
                        int32_t message_len)
 {
    if (message_len < 0) {
-      message_len = strlen (message) + 1;
+      message_len = (int32_t) strlen (message) + 1;
    }
    if (MONGOCRYPT_STATUS_MSG_LEN < message_len - 1) {
       message_len = MONGOCRYPT_STATUS_MSG_LEN;

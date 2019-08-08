@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net452;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != 'true'">net452;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
+
+    <Platforms>x64</Platforms>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../MongoDB.Crypt/MongoDB.Crypt.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" Version="2.8.1" />
+  </ItemGroup>
+
+  <Import Project="Package.csproj.include" Condition="Exists('Package.csproj.include')" />
+
+</Project>

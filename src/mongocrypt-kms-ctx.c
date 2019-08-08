@@ -41,7 +41,7 @@ _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
    mongocrypt_binary_t *plaintext, *out;
 
    status = mongocrypt_status_new ();
-   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, len);
+   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
 
    out->data = hash_out;
@@ -71,8 +71,8 @@ _sha256_hmac (void *ctx,
    (void) crypto;
 
    status = mongocrypt_status_new ();
-   key = mongocrypt_binary_new_from_data ((uint8_t *) key_input, key_len);
-   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, len);
+   key = mongocrypt_binary_new_from_data ((uint8_t *) key_input, (uint32_t) key_len);
+   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
 
    out->data = hash_out;

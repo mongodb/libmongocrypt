@@ -460,7 +460,7 @@ _mongocrypt_key_alt_name_create (const char *name, ...)
       curr = bson_malloc0 (sizeof (*curr));
       curr->value.value_type = BSON_TYPE_UTF8;
       curr->value.value.v_utf8.str = bson_strdup (arg_ptr);
-      curr->value.value.v_utf8.len = strlen (arg_ptr);
+      curr->value.value.v_utf8.len = (uint32_t) strlen (arg_ptr);
       if (!prev) {
          head = curr;
       } else {

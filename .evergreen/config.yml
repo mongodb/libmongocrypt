@@ -84,6 +84,14 @@ functions:
         bucket: mciuploads
         extract_to: all/${variant_name}
 
+  "build csharp and test":
+    - command: "shell.exec"
+      params:
+        script: |-
+          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          ${test_env|} ./libmongocrypt/.evergreen/test.sh
+          ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
+
 tasks:
 - name: build-and-test-and-upload
   commands:
@@ -138,12 +146,16 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test java"
-
+    
 - name: build-and-test-python
   commands:
     - func: "fetch source"
     - func: "build and test python"
 
+- name: build-csharp-and-test
+  commands:
+  - func: "fetch source"
+  - func: "build csharp and test"
 - name: publish-snapshot
   depends_on:
     - variant: rhel-62-64-bit
@@ -320,6 +332,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
+  - build-csharp-and-test
 - name: macos
   display_name: "macOS 10.14"
   run_on: macos-1014
@@ -342,6 +355,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - build-csharp-and-test
 - name: linux-64-amazon-ami
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test

@@ -55,7 +55,7 @@ _append_ciphertext_with_subtype (bson_t *bson,
    int key_id_len = 16;
 
    utf8 = "Mary";
-   data_len = 1 + key_id_len + 1 + strlen (utf8);
+   data_len = (int) (1 + key_id_len + 1 + strlen (utf8));
 
    data = bson_malloc0 (data_len);
    data[0] = first_byte;
