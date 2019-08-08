@@ -13,7 +13,7 @@ in drivers. PyMongoCrypt uses `cffi <https://pypi.org/project/cffi/>`_.
 **Support for client side encryption is in beta. Backwards-breaking changes
 may be made before the final release.**
 
-PyMongoCrypt supports Python 2.7 and 3.4+.
+PyMongoCrypt supports Python 2.7, 3.4+, and PyPy3.5+.
 
 Support / Feedback
 ==================
