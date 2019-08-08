@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import cffi
 
 from pymongocrypt.compat import PY3
@@ -794,30 +796,11 @@ void
 mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
 """)
 
-lib = None
-_mongocrypt_lib = None
-
-
-def init(mongocrypt_lib='mongocrypt'):
-    """Initialize the mongocrypt library.
-
-    Use this function to load a custom libmongocrypt build without relying on
-    platform specific library path environment variables, like
-    LD_LIBRARY_PATH::
-
-      >>> init('/path/to/libmongocrypt.so')
-
-    :Parameters:
-      - `mongocrypt_lib`: The name of or path to the mongocrypt library.
-        Defaults to 'mongocrypt'.
-    """
-    global lib, _mongocrypt_lib
-    if lib is None:
-        _mongocrypt_lib = mongocrypt_lib
-        lib = ffi.dlopen(mongocrypt_lib)
-    elif _mongocrypt_lib != mongocrypt_lib:
-        raise Exception("init already called with %r, cannot call again "
-                        "with: %r" % (_mongocrypt_lib, mongocrypt_lib))
+# Use the PYMONGOCRYPT_LIB environment variable to load a custom libmongocrypt
+# build without relying on platform specific library path environment
+# variables, like LD_LIBRARY_PATH. For example:
+# export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
+lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', 'mongocrypt'))
 
 
 if PY3:
@@ -832,6 +815,4 @@ else:
 
 def libmongocrypt_version():
     """Returns the version of libmongocrypt."""
-    if lib is None:
-        init()
     return _to_string(lib.mongocrypt_version(ffi.NULL))

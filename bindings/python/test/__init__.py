@@ -12,14 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import sys
 import unittest
 
 sys.path[0:0] = [""]
-
-from pymongocrypt.binding import init
-
 
 try:
     # Enable the fault handler to dump the traceback of each running thread
@@ -28,10 +24,6 @@ try:
     faulthandler.enable()
 except ImportError:
     pass
-
-
-# Load the mongocrypt library.
-init(os.environ.get('MONGOCRYPT_LIB', 'mongocrypt'))
 
 # Use assertRaisesRegex if available, otherwise use Python 2.7's
 # deprecated assertRaisesRegexp, with a 'p'.

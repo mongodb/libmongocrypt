@@ -7,7 +7,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 # This library is built by libmongocrypt/.evergreen/compile.sh
 evergreen_root="$(cd ../../../; pwd)"
-export MONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/lib64/libmongocrypt.so
+export PYMONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/lib64/libmongocrypt.so
 
 PYTHONS=("/opt/python/2.7/bin/python" \
          "/opt/python/3.4/bin/python3" \
