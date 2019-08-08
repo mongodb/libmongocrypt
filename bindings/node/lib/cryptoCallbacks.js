@@ -33,7 +33,7 @@ function aes256CbcDecryptHook(key, iv, input, output) {
 }
 
 function randomHook(buffer, count) {
-  crypto.randomFillSync(buffer, count);
+  crypto.randomFillSync(buffer, 0, count);
 }
 
 function sha256Hook(input, output) {
