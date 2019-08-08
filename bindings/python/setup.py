@@ -19,7 +19,7 @@ setup(
     description="Python bindings for libmongocrypt",
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    install_requires=["cffi>=1.12.0,<2"],
+    install_requires=["cffi>=1.12.0,<2", "cryptography>=2.7,<3"],
     author="Shane Harvey",
     author_email="mongodb-user@googlegroups.com",
     url="github.com/mongodb/libmongocrypt",
