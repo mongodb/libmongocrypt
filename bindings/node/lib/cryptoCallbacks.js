@@ -9,7 +9,6 @@ function aes256CbcEncryptHook(key, iv, input, output) {
     cipher.setAutoPadding(false);
     result = cipher.update(input);
   } catch (e) {
-    console.dir({ e });
     return e;
   }
 
@@ -24,7 +23,6 @@ function aes256CbcDecryptHook(key, iv, input, output) {
     cipher.setAutoPadding(false);
     result = cipher.update(input);
   } catch (e) {
-    console.dir({ e });
     return e;
   }
 
@@ -44,7 +42,6 @@ function sha256Hook(input, output) {
       .update(input)
       .digest();
   } catch (e) {
-    console.dir({ e });
     return e;
   }
 
@@ -61,7 +58,6 @@ function makeHmacHook(algorithm) {
         .update(input)
         .digest();
     } catch (e) {
-      console.dir({ e });
       return e;
     }
 
