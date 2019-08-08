@@ -185,9 +185,8 @@ describe('AutoEncrypter', function() {
 
   describe('autoSpawn', function() {
     beforeEach(function() {
-      if (process.env.NODE_SKIP_LIVE_TESTS) {
+      if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
         this.test.skip();
-        sandbox.restore();
         return;
       }
     });
@@ -334,9 +333,8 @@ describe('AutoEncrypter', function() {
 
   describe('noAutoSpawn', function() {
     beforeEach(function(done) {
-      if (process.env.NODE_SKIP_LIVE_TESTS) {
+      if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
         this.test.skip();
-        sandbox.restore();
         return;
       }
       this.mcdm = new MongocryptdManager({});

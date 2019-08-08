@@ -8,16 +8,20 @@ NODE_BINDINGS_PATH="${PROJECT_DIRECTORY}/bindings/node"
 NODE_ARTIFACTS_PATH="${NODE_BINDINGS_PATH}/node-artifacts"
 NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
 NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
-BUILD_STATIC_SCRIPT="${NODE_BINDINGS_PATH}/etc/build_static.sh"
-
-
-# Add mongodb toolchain to path
-export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
+BIN_DIR="$(pwd)/bin"
+MONGOCRYPTD_PATH="https://s3.amazonaws.com/mciuploads/mongodb-mongo-v4.2/enterprise-ubuntu1604-64/f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a/binaries/mongo-cryptd-mongodb_mongo_v4.2_enterprise_ubuntu1604_64_f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a_19_06_13_17_31_40.tgz"
 
 # create node artifacts path if needed
 mkdir -p ${NODE_ARTIFACTS_PATH}
 mkdir -p ${NPM_CACHE_DIR}
 mkdir -p "${NPM_TMP_DIR}"
+mkdir -p ${BIN_DIR}
+
+# Add mongodb toolchain to path
+export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
+
+# locate cmake
+. ./.evergreen/find_cmake.sh
 
 # this needs to be explicitly exported for the nvm install below
 export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
@@ -42,7 +46,7 @@ EOT
 if ! [ -x "$(command -v mongocryptd)" ]
 then
   echo "Installing mongocryptd"
-  curl -o mongocryptd.tgz https://s3.amazonaws.com/mciuploads/mongodb-mongo-v4.2/enterprise-ubuntu1604-64/f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a/binaries/mongo-cryptd-mongodb_mongo_v4.2_enterprise_ubuntu1604_64_f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a_19_06_13_17_31_40.tgz
+  curl -o mongocryptd.tgz $MONGOCRYPTD_PATH
   mkdir -p mongocryptd && tar xzf mongocryptd.tgz -C mongocryptd --strip-components 1
-  export PATH="$PATH:$(pwd)/mongocryptd/bin"
+  mv mongocryptd/bin/mongocryptd "$BIN_DIR/mongocryptd"
 fi

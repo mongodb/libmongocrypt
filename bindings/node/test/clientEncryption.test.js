@@ -32,7 +32,7 @@ describe('ClientEncryption', function() {
   });
 
   beforeEach(function() {
-    if (process.env.NODE_SKIP_LIVE_TESTS) {
+    if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
       this.test.skip();
       return;
     }
@@ -53,7 +53,7 @@ describe('ClientEncryption', function() {
   });
 
   afterEach(() => {
-    if (process.env.NODE_SKIP_LIVE_TESTS) {
+    if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
       return;
     }
     return client.close();
