@@ -48,6 +48,7 @@ def _callback_error_handler(exception, exc_value, tb):
     "     mongocrypt_status_t *)",
     onerror=_callback_error_handler)
 def aes_256_cbc_encrypt(ctx, key, iv, input, output, bytes_written, status):
+    # Note that libmongocrypt pads the input before calling this method.
     cipher = Cipher(algorithms.AES(_to_bytes(key)), modes.CBC(_to_bytes(iv)),
                     backend=default_backend())
     encryptor = cipher.encryptor()
@@ -63,6 +64,7 @@ def aes_256_cbc_encrypt(ctx, key, iv, input, output, bytes_written, status):
     "     mongocrypt_status_t *)",
     onerror=_callback_error_handler)
 def aes_256_cbc_decrypt(ctx, key, iv, input, output, bytes_written, status):
+    # Note that libmongocrypt pads the input before calling this method.
     cipher = Cipher(algorithms.AES(_to_bytes(key)), modes.CBC(_to_bytes(iv)),
                     backend=default_backend())
     decryptor = cipher.decryptor()
