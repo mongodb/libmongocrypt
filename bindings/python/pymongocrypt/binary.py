@@ -41,17 +41,16 @@ class _MongoCryptBinary(object):
 
     def __init__(self, binary):
         """Wraps a mongocrypt_binary_t."""
-        self.bin = binary
         if binary == ffi.NULL:
             raise MongoCryptError(
                 "unable to create new mongocrypt_binary object")
+        self.bin = binary
 
     def _close(self):
         """Cleanup resources."""
-        if self.bin is None:
-            return
-        lib.mongocrypt_binary_destroy(self.bin)
-        self.bin = None
+        if self.bin:
+            lib.mongocrypt_binary_destroy(self.bin)
+            self.bin = None
 
     def __enter__(self):
         return self
@@ -91,6 +90,5 @@ class MongoCryptBinaryIn(_MongoCryptBinary):
         """Cleanup resources."""
         super(MongoCryptBinaryIn, self)._close()
         if self.__copy is None:
-            return
-        ffi.release(self.__copy)
-        self.__copy = None
+            ffi.release(self.__copy)
+            self.__copy = None

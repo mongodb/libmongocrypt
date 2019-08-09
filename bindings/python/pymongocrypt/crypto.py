@@ -32,15 +32,12 @@ def _callback_error_handler(exception, exc_value, tb):
     # From cffi docs: "First check if traceback is not None (it is None e.g.
     # if the whole function ran successfully but there was an error converting
     # the value returned: this occurs after the call)."
-    if tb is None:
-        return
-
-    status = tb.tb_frame.f_locals['status']
-    msg = str_to_bytes(''.join(traceback.format_exception(
-        exception, exc_value, tb)))
-    # TODO: the +1 in len(msg)+1 is a libmongocrypt bug.
-    lib.mongocrypt_status_set(
-        status, lib.MONGOCRYPT_STATUS_ERROR_CLIENT, 1, msg, len(msg)+1)
+    if tb is not None:
+        status = tb.tb_frame.f_locals['status']
+        msg = str_to_bytes(''.join(traceback.format_exception(
+            exception, exc_value, tb)))
+        lib.mongocrypt_status_set(
+            status, lib.MONGOCRYPT_STATUS_ERROR_CLIENT, 1, msg, -1)
 
     return False
 
@@ -51,8 +48,6 @@ def _callback_error_handler(exception, exc_value, tb):
     "     mongocrypt_status_t *)",
     onerror=_callback_error_handler)
 def aes_256_cbc_encrypt(ctx, key, iv, input, output, bytes_written, status):
-    # TODO: Java uses noPadding but CBC says padding is required:
-    # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/#cryptography.hazmat.primitives.ciphers.modes.CBC
     cipher = Cipher(algorithms.AES(_to_bytes(key)), modes.CBC(_to_bytes(iv)),
                     backend=default_backend())
     encryptor = cipher.encryptor()
