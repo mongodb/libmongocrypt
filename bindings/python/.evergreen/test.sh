@@ -11,15 +11,18 @@ evergreen_root="$(cd ../../../; pwd)"
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/bin/mongocrypt.dll
     export PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
-
-    PYTHONS=("python")
+    PYTHONS=("python" \
+             "/cygdrive/c/python/Python27/python" \
+             "/cygdrive/c/python/Python34/python" \
+             "/cygdrive/c/python/Python35/python" \
+             "/cygdrive/c/python/Python34/python" \
+             "/cygdrive/c/python/Python36/python" \
+             "/cygdrive/c/python/Python37/python")
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/lib/libmongocrypt.dylib
-
     PYTHONS=("python")
 else
     export PYMONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/lib64/libmongocrypt.so
-
     PYTHONS=("/opt/python/2.7/bin/python" \
              "/opt/python/3.4/bin/python3" \
              "/opt/python/3.5/bin/python3" \
