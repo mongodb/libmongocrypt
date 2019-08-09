@@ -28,7 +28,7 @@ def _to_bytes(mongocrypt_binary):
 
 
 def _write_bytes(mongocrypt_binary, data):
-    """Returns this mongocrypt_binary_t as bytes."""
+    """Writes the given data to a mongocrypt_binary_t."""
     buf = lib.mongocrypt_binary_data(mongocrypt_binary)
     if buf == ffi.NULL:
         raise MongoCryptError('mongocrypt_binary_data returned NULL')
