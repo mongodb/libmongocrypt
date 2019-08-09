@@ -113,7 +113,7 @@ mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len);
  *
  * @returns A pointer to the viewed data.
  */
-const uint8_t *
+uint8_t *
 mongocrypt_binary_data (const mongocrypt_binary_t *binary);
 
 /**
@@ -166,6 +166,26 @@ typedef enum {
  */
 mongocrypt_status_t *
 mongocrypt_status_new (void);
+
+/**
+ * Set a status object with message, type, and code.
+ *
+ * Use this to set the @ref mongocrypt_status_t given in the crypto hooks.
+ *
+ * @param[in] type The status type.
+ * @param[in] code The status code.
+ * @param[in] message The message.
+ * @param[in] message_len The length of @p message. Pass -1 to determine the
+ * string length with strlen (must
+ * be NULL terminated).
+ *
+ */
+void
+mongocrypt_status_set (mongocrypt_status_t *status,
+                       mongocrypt_status_type_t type,
+                       uint32_t code,
+                       const char *message,
+                       int32_t message_len);
 
 /**
  * Indicates success or the type of error.
@@ -314,7 +334,7 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
  * Configure a local KMS provider on the @ref mongocrypt_t object.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
- * @param[in] key A 64 byte master key used to encrypt and decrypt key vault
+ * @param[in] key A 96 byte master key used to encrypt and decrypt key vault
  * keys. The viewed data is copied. It is valid to destroy @p key with @ref
  * mongocrypt_binary_destroy immediately after.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
@@ -427,14 +447,14 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
 /**
  * Set the keyAltName to use for explicit encryption or
  * data key creation.
- * 
+ *
  * Pass the binary encoding a BSON document like the following:
  *
  *   { "keyAltName" : (BSON UTF8 value) }
- * 
+ *
  * For explicit encryption, it is an error to set both the keyAltName
  * and the key id.
- * 
+ *
  * For creating data keys, call this function repeatedly to set
  * multiple keyAltNames.
  *
@@ -573,6 +593,9 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 /**
  * Initialize a context for decryption.
  *
+ * This method expects the passed-in BSON to be of the form:
+ * { "v" : BSON value to encrypt }
+ *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] doc The document to be decrypted. The viewed data is copied. It is
  * valid to destroy @p doc with @ref mongocrypt_binary_destroy immediately
@@ -598,7 +621,8 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
 
 /**
  * Indicates the state of the @ref mongocrypt_ctx_t. Each state requires
- * different handling. See [the integration guide](https://github.com/mongodb/libmongocrypt/blob/master/integrating.md#state-machine)
+ * different handling. See [the integration
+ * guide](https://github.com/mongodb/libmongocrypt/blob/master/integrating.md#state-machine)
  * for information on what to do for each state.
  */
 typedef enum {
@@ -782,7 +806,8 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * out is guaranteed to be valid until @p ctx is destroyed with @ref
  * mongocrypt_ctx_destroy.
  *
- * @returns a bool indicating success.
+ * @returns a bool indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
  */
 bool
 mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
@@ -794,6 +819,97 @@ mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
  */
 void
 mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
+
+/**
+ * An crypto AES-256-CBC encrypt or decrypt function.
+ *
+ * Note, @p in is already padded. Encrypt with padding disabled.
+ * @param[in] ctx An optional context object that may have been set when hooks
+ * were enabled.
+ * @param[in] key An encryption key (32 bytes for AES_256).
+ * @param[in] iv An initialization vector (16 bytes for AES_256);
+ * @param[in] in The input.
+ * @param[out] out A preallocated byte array for the output. See @ref
+ * mongocrypt_binary_data.
+ * @param[out] bytes_written Set this to the number of bytes written to @p out.
+ * @param[out] status An optional status to pass error messages. See @ref
+ * mongocrypt_status_set.
+ * @returns A boolean indicating success. If returning false, set @p status
+ * with a message indiciating the error using @ref mongocrypt_status_ste.
+ */
+typedef bool (*mongocrypt_crypto_fn) (void *ctx,
+                                      mongocrypt_binary_t *key,
+                                      mongocrypt_binary_t *iv,
+                                      mongocrypt_binary_t *in,
+                                      mongocrypt_binary_t *out,
+                                      uint32_t *bytes_written,
+                                      mongocrypt_status_t *status);
+
+/**
+ * A crypto HMAC SHA-512 or SHA-256 function.
+ *
+ * @param[in] ctx An optional context object that may have been set when hooks
+ * were enabled.
+ * @param[in] key An encryption key (32 bytes for HMAC_SHA512).
+ * @param[in] in The input.
+ * @param[out] out A preallocated byte array for the output. See @ref
+ * mongocrypt_binary_data.
+ * @param[out] status An optional status to pass error messages. See @ref
+ * mongocrypt_status_set.
+ * @returns A boolean indicating success. If returning false, set @p status
+ * with a message indiciating the error using @ref mongocrypt_status_ste.
+ */
+typedef bool (*mongocrypt_hmac_fn) (void *ctx,
+                                    mongocrypt_binary_t *key,
+                                    mongocrypt_binary_t *in,
+                                    mongocrypt_binary_t *out,
+                                    mongocrypt_status_t *status);
+
+/**
+ * A crypto hash (SHA-256) function.
+ *
+ * @param[in] ctx An optional context object that may have been set when hooks
+ * were enabled.
+ * @param[in] in The input.
+ * @param[out] out A preallocated byte array for the output. See @ref
+ * mongocrypt_binary_data.
+ * @param[out] status An optional status to pass error messages. See @ref
+ * mongocrypt_status_set.
+ * @returns A boolean indicating success. If returning false, set @p status
+ * with a message indiciating the error using @ref mongocrypt_status_ste.
+ */
+typedef bool (*mongocrypt_hash_fn) (void *ctx,
+                                    mongocrypt_binary_t *in,
+                                    mongocrypt_binary_t *out,
+                                    mongocrypt_status_t *status);
+
+/**
+ * A crypto secure random function.
+ *
+ * @param[in] ctx An optional context object that may have been set when hooks
+ * were enabled.
+ * @param[out] out A preallocated byte array for the output. See @ref
+ * mongocrypt_binary_data.
+ * @param[in] count The number of random bytes requested.
+ * @param[out] status An optional status to pass error messages. See @ref
+ * mongocrypt_status_set.
+ * @returns A boolean indicating success. If returning false, set @p status
+ * with a message indiciating the error using @ref mongocrypt_status_ste.
+ */
+typedef bool (*mongocrypt_random_fn) (void *ctx,
+                                      mongocrypt_binary_t *out,
+                                      uint32_t count,
+                                      mongocrypt_status_t *status);
+
+bool
+mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
+                                mongocrypt_crypto_fn aes_256_cbc_encrypt,
+                                mongocrypt_crypto_fn aes_256_cbc_decrypt,
+                                mongocrypt_random_fn random,
+                                mongocrypt_hmac_fn hmac_sha_512,
+                                mongocrypt_hmac_fn hmac_sha_256,
+                                mongocrypt_hash_fn sha_256,
+                                void *ctx);
 """)
 
 # Use the PYMONGOCRYPT_LIB environment variable to load a custom libmongocrypt

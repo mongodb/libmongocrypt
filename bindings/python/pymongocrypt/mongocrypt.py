@@ -12,69 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pymongocrypt.binary import (MongoCryptBinaryIn,
+                                 MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
 from pymongocrypt.compat import str_to_bytes
 from pymongocrypt.errors import MongoCryptError
 
-
-class _MongoCryptBinary(object):
-    __slots__ = ("bin",)
-
-    def __init__(self, binary):
-        """Wraps a mongocrypt_binary_t."""
-        self.bin = binary
-        if binary == ffi.NULL:
-            raise MongoCryptError(
-                "unable to create new mongocrypt_binary object")
-
-    def _close(self):
-        """Cleanup resources."""
-        if self.bin is None:
-            return
-        lib.mongocrypt_binary_destroy(self.bin)
-        self.bin = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._close()
-
-    def to_bytes(self):
-        """Returns this mongocrypt_binary_t as bytes."""
-        data = lib.mongocrypt_binary_data(self.bin)
-        if data == ffi.NULL:
-            return b''
-        data_len = lib.mongocrypt_binary_len(self.bin)
-        return ffi.unpack(ffi.cast("char*", data), data_len)
-
-
-class MongoCryptBinaryOut(_MongoCryptBinary):
-    __slots__ = ()
-
-    def __init__(self):
-        """Wraps a mongocrypt_binary_t."""
-        super(MongoCryptBinaryOut, self).__init__(lib.mongocrypt_binary_new())
-
-
-class MongoCryptBinaryIn(_MongoCryptBinary):
-    __slots__ = ("__copy",)
-
-    def __init__(self, data):
-        """Creates a mongocrypt_binary_t from binary data."""
-        # mongocrypt_binary_t does not own the data it is passed so we need to
-        # create a copy to keep the data alive.
-        self.__copy = ffi.new("uint8_t[]", data)
-        super(MongoCryptBinaryIn, self).__init__(
-            lib.mongocrypt_binary_new_from_data(self.__copy, len(data)))
-
-    def _close(self):
-        """Cleanup resources."""
-        super(MongoCryptBinaryIn, self)._close()
-        if self.__copy is None:
-            return
-        ffi.release(self.__copy)
-        self.__copy = None
+from pymongocrypt.crypto import (aes_256_cbc_encrypt,
+                                 aes_256_cbc_decrypt,
+                                 hmac_sha_256,
+                                 hmac_sha_512,
+                                 sha_256,
+                                 secure_random)
 
 
 class MongoCryptOptions(object):
@@ -151,6 +100,15 @@ class MongoCrypt(object):
         if self.__crypt == ffi.NULL:
             raise MongoCryptError("unable to create new mongocrypt object")
 
+        try:
+            self.__init()
+        except Exception:
+            # Destroy the mongocrypt object on error.
+            self.close()
+            raise
+
+    def __init(self):
+        """Internal init helper."""
         kms_providers = self.__opts.kms_providers
         if 'aws' in kms_providers:
             access_key_id = str_to_bytes(kms_providers['aws']['accessKeyId'])
@@ -174,6 +132,11 @@ class MongoCrypt(object):
                 if not lib.mongocrypt_setopt_schema_map(
                         self.__crypt, binary_schema_map.bin):
                     self.__raise_from_status()
+
+        if not lib.mongocrypt_setopt_crypto_hooks(
+                self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
+                secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
+            self.__raise_from_status()
 
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()

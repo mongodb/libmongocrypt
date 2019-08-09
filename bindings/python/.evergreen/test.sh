@@ -17,6 +17,8 @@ PYTHONS=("/opt/python/2.7/bin/python" \
          "/opt/python/pypy3.6/bin/pypy3")
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
+    # Clear cached eggs for different python versions.
+    rm -rf .eggs
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
 
     $PYTHON_BINARY setup.py test
