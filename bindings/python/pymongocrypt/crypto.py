@@ -51,11 +51,10 @@ def _callback_error_handler(exception, exc_value, tb):
     "     mongocrypt_status_t *)",
     onerror=_callback_error_handler)
 def aes_256_cbc_encrypt(ctx, key, iv, input, output, bytes_written, status):
-    backend = default_backend()
     # TODO: Java uses noPadding but CBC says padding is required:
     # https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/#cryptography.hazmat.primitives.ciphers.modes.CBC
     cipher = Cipher(algorithms.AES(_to_bytes(key)), modes.CBC(_to_bytes(iv)),
-                    backend=backend)
+                    backend=default_backend())
     encryptor = cipher.encryptor()
     data = encryptor.update(_to_bytes(input)) + encryptor.finalize()
     _write_bytes(output, data)
@@ -69,14 +68,14 @@ def aes_256_cbc_encrypt(ctx, key, iv, input, output, bytes_written, status):
     "     mongocrypt_status_t *)",
     onerror=_callback_error_handler)
 def aes_256_cbc_decrypt(ctx, key, iv, input, output, bytes_written, status):
-    backend = default_backend()
     cipher = Cipher(algorithms.AES(_to_bytes(key)), modes.CBC(_to_bytes(iv)),
-                    backend=backend)
+                    backend=default_backend())
     decryptor = cipher.decryptor()
     data = decryptor.update(_to_bytes(input)) + decryptor.finalize()
     _write_bytes(output, data)
     bytes_written[0] = len(data)
     return True
+
 
 @ffi.callback(
     "bool(void *, mongocrypt_binary_t *, mongocrypt_binary_t *, "
