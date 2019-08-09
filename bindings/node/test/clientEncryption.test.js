@@ -17,6 +17,9 @@ function readHttpResponse(path) {
 
 const ClientEncryption = require('../lib/clientEncryption')({ mongodb, stateMachine })
   .ClientEncryption;
+
+const requirements = require('./requirements.helper');
+
 describe('ClientEncryption', function() {
   let client;
   let sandbox = sinon.createSandbox();
@@ -32,7 +35,7 @@ describe('ClientEncryption', function() {
   });
 
   beforeEach(function() {
-    if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
+    if (requirements.SKIP_LIVE_TESTS) {
       this.test.skip();
       return;
     }
@@ -53,7 +56,7 @@ describe('ClientEncryption', function() {
   });
 
   afterEach(() => {
-    if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
+    if (requirements.SKIP_LIVE_TESTS) {
       return;
     }
     return client.close();
@@ -185,4 +188,144 @@ describe('ClientEncryption', function() {
   });
 
   it('should be able to auto decrypt explicit encryption');
+});
+
+describe('ClientEncryptionKeyAltNames', function() {
+  const kmsProviders = requirements.awsKmsProviders;
+  const dataKeyOptions = requirements.awsDataKeyOptions;
+  beforeEach(function() {
+    if (requirements.SKIP_AWS_TESTS) {
+      this.skip();
+      return;
+    }
+    this.client = new MongoClient('mongodb://localhost:27017/test', { useNewUrlParser: true });
+    return this.client.connect().then(() => {
+      this.collection = this.client.db('test').collection('encryption');
+      return this.collection
+        .drop()
+        .catch(err => {
+          if (err.message.match(/ns not found/)) {
+            return;
+          }
+
+          throw err;
+        })
+        .then(() => {
+          this.encryption = new ClientEncryption(this.client, {
+            keyVaultNamespace: 'test.encryption',
+            kmsProviders
+          });
+        });
+    });
+  });
+
+  afterEach(function() {
+    this.encryption = undefined;
+    this.collection = undefined;
+    if (!requirements.SKIP_AWS_TESTS && this.client) {
+      const client = this.client;
+      this.client = undefined;
+      return client.close();
+    }
+  });
+
+  function makeOptions(keyAltNames) {
+    return Object.assign({}, dataKeyOptions, { keyAltNames });
+  }
+
+  describe('errors', function() {
+    [42, 'hello', { keyAltNames: 'foobar' }, /foobar/].forEach(val => {
+      it(`should fail if typeof keyAltNames = ${typeof val}`, function(done) {
+        try {
+          this.encryption.createDataKey('aws', makeOptions(val), () => {
+            done(new Error('expected test to fail'));
+          });
+        } catch (e) {
+          try {
+            expect(e).to.be.an.instanceof(TypeError);
+            done();
+          } catch (_e) {
+            done(_e);
+          }
+        }
+      });
+    });
+
+    [undefined, null, 42, { keyAltNames: 'foobar' }, ['foobar'], /foobar/].forEach(val => {
+      it(`should fail if typeof keyAltNames[x] = ${typeof val}`, function(done) {
+        try {
+          this.encryption.createDataKey('aws', makeOptions([val]), () => {
+            done(new Error('expected test to fail'));
+          });
+        } catch (e) {
+          try {
+            expect(e).to.be.an.instanceof(TypeError);
+            done();
+          } catch (_e) {
+            done(_e);
+          }
+        }
+      });
+    });
+  });
+
+  it('should create a key with keyAltNames', function() {
+    let dataKey;
+    return this.encryption
+      .createDataKey('aws', makeOptions(['foobar']))
+      .then(_dataKey => (dataKey = _dataKey))
+      .then(() => this.collection.findOne({ keyAltNames: 'foobar' }))
+      .then(document => {
+        expect(document)
+          .to.have.property('keyAltNames')
+          .that.includes.members(['foobar']);
+        expect(document).to.have.nested.property('_id.buffer');
+        expect(Buffer.compare(document._id.buffer, dataKey.buffer)).to.equal(0);
+      });
+  });
+
+  it('should create a key with multiple keyAltNames', function() {
+    let dataKey;
+    let doc1;
+    let doc2;
+    return this.encryption
+      .createDataKey('aws', makeOptions(['foobar', 'fizzbuzz']))
+      .then(_dataKey => (dataKey = _dataKey))
+      .then(() => this.collection.findOne({ keyAltNames: 'foobar' }))
+      .then(document => (doc1 = document))
+      .then(() => this.collection.findOne({ keyAltNames: 'fizzbuzz' }))
+      .then(document => (doc2 = document))
+      .then(() => {
+        expect(doc1)
+          .to.have.property('keyAltNames')
+          .that.includes.members(['foobar', 'fizzbuzz']);
+        expect(doc1).to.have.nested.property('_id.buffer');
+        expect(Buffer.compare(doc1._id.buffer, dataKey.buffer)).to.equal(0);
+        expect(doc2)
+          .to.have.property('keyAltNames')
+          .that.includes.members(['foobar', 'fizzbuzz']);
+        expect(doc2).to.have.nested.property('_id.buffer');
+        expect(Buffer.compare(doc2._id.buffer, dataKey.buffer)).to.equal(0);
+      });
+  });
+
+  it('should be able to reference a key with `keyAltName` during encryption', function() {
+    let keyId;
+    const keyAltName = 'mySpecialKey';
+    const algorithm = 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic';
+
+    const valueToEncrypt = 'foobar';
+
+    return this.encryption
+      .createDataKey('aws', makeOptions([keyAltName]))
+      .then(_dataKey => (keyId = _dataKey))
+      .then(() => this.encryption.encrypt(valueToEncrypt, { keyId, algorithm }))
+      .then(encryptedValue => {
+        return this.encryption
+          .encrypt(valueToEncrypt, { keyAltName, algorithm })
+          .then(encryptedValue2 => {
+            expect(encryptedValue).to.deep.equal(encryptedValue2);
+          });
+      });
+  });
 });
