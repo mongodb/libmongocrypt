@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace MongoDB.Crypt
 {
     /// <summary>Contains all the information needed to describe a Local KMS CMK.</summary>
@@ -25,13 +28,38 @@ namespace MongoDB.Crypt
         /// <param name="key">The key.</param>
         public LocalKeyId()
         {
+            AlternateKeyNameBsonDocuments = new List<byte[]>().AsReadOnly();
         }
 
+        /// <summary>
+        /// Creates an <see cref="LocalKeyId"/> class.
+        /// </summary>
+        /// <param name="alternateKeyNameBsonDocuments">The alternate key names.
+        /// Each byte array describes an alternative key name via a BsonDocument in the following format:
+        ///  { "keyAltName" : [BSON UTF8 value] }
+        /// </param>
+        public LocalKeyId(IEnumerable<byte[]> alternateKeyNameBsonDocuments)
+        {
+            AlternateKeyNameBsonDocuments = alternateKeyNameBsonDocuments.ToList().AsReadOnly();
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<byte[]> AlternateKeyNameBsonDocuments { get; }
+
+        /// <inheritdoc />
         public KmsType KeyType => KmsType.Local;
 
-        void IInternalKmsKeyId.SetCredentials(ContextSafeHandle handle, Status status)
+        /// <inheritdoc />
+        void IInternalKmsKeyId.SetCredentials(ContextSafeHandle context, Status status)
         {
-            handle.Check(status, Library.mongocrypt_ctx_setopt_masterkey_local(handle));
+            context.Check(status, Library.mongocrypt_ctx_setopt_masterkey_local(context));
+            ((IInternalKmsKeyId) this).SetAlternateKeyNames(context, status);
+        }
+
+        /// <inheritdoc />
+        void IInternalKmsKeyId.SetAlternateKeyNames(ContextSafeHandle context, Status status)
+        {
+            this.SetAlternateKeyNames(context, status);
         }
     }
 }

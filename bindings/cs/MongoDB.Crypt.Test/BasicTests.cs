@@ -262,6 +262,104 @@ namespace MongoDB.Crypt.Test
         }
 
         [Fact]
+        public void TestAwsKeyCreationWithkeyAltNames()
+        {
+            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
+            var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
+            var keyId = new AwsKeyId( customerMasterKey: "cmk", region: "us-east-1", alternateKeyNamesBsonDocuments: keyAltNameBuffers);
+            var key = new AwsKmsCredentials(awsSecretAccessKey: "us-east-1", awsAccessKeyId: "us-east-1");
+
+            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(key)))
+            using (var context =
+                cryptClient.StartCreateDataKeyContext(keyId))
+            {
+                var (_, dataKeyDocument) = ProcessContextToCompletion(context, isKmsDecrypt: false);
+                dataKeyDocument.Should().NotBeNull();
+                var actualKeyAltNames = dataKeyDocument["keyAltNames"].AsBsonArray.Select(x => x.AsString);
+                var expectedKeyAltNames = keyAltNames.Reverse(); // https://jira.mongodb.org/browse/CDRIVER-3277?
+                actualKeyAltNames.Should().BeEquivalentTo(expectedKeyAltNames);
+            }
+        }
+
+        [Fact]
+        public void TestAwsKeyCreationWithkeyAltNamesStepwise()
+        {
+            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
+            var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
+            var keyId = new AwsKeyId( customerMasterKey: "cmk", region: "us-east-1", alternateKeyNamesBsonDocuments: keyAltNameBuffers);
+            var key = new AwsKmsCredentials(awsSecretAccessKey: "us-east-1", awsAccessKeyId: "us-east-1");
+
+            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(key)))
+            using (var context =
+                cryptClient.StartCreateDataKeyContext(keyId))
+            {
+                BsonDocument dataKeyDocument;
+                var (state, _, _) = ProcessState(context, isKmsDecrypt: false);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_NEED_KMS);
+
+                (state, _, dataKeyDocument) = ProcessState(context, isKmsDecrypt: false);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_READY);
+                dataKeyDocument.Should().NotBeNull();
+                var actualKeyAltNames = dataKeyDocument["keyAltNames"].AsBsonArray.Select(x => x.AsString);
+                var expectedKeyAltNames = keyAltNames.Reverse(); // https://jira.mongodb.org/browse/CDRIVER-3277?
+                actualKeyAltNames.Should().BeEquivalentTo(expectedKeyAltNames);
+
+                (state, _, _) = ProcessState(context, isKmsDecrypt: false);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_DONE);
+            }
+        }
+
+        [Fact]
+        public void TestLocalKeyCreationWithkeyAltNames()
+        {
+            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
+            var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
+            var key = new LocalKmsCredentials(new byte[96]);
+            var keyId = new LocalKeyId(keyAltNameBuffers);
+            var cryptOptions = new CryptOptions(key);
+
+            using (var cryptClient = CryptClientFactory.Create(cryptOptions))
+            using (var context =
+                cryptClient.StartCreateDataKeyContext(keyId))
+            {
+                var (_, dataKeyDocument) = ProcessContextToCompletion(context);
+                dataKeyDocument.Should().NotBeNull();
+                var actualKeyAltNames = dataKeyDocument["keyAltNames"].AsBsonArray.Select(x => x.AsString);
+                var expectedKeyAltNames = keyAltNames.Reverse(); // https://jira.mongodb.org/browse/CDRIVER-3277?
+                actualKeyAltNames.Should().BeEquivalentTo(expectedKeyAltNames);
+            }
+        }
+
+        [Fact]
+        public void TestLocalKeyCreationWithkeyAltNamesStepwise()
+        {
+            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
+            var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
+            var key = new LocalKmsCredentials(new byte[96]);
+            var keyId = new LocalKeyId(keyAltNameBuffers);
+            var cryptOptions = new CryptOptions(key);
+
+            using (var cryptClient = CryptClientFactory.Create(cryptOptions))
+            using (var context =
+                cryptClient.StartCreateDataKeyContext(keyId))
+            {
+                var (state, _, dataKeyDocument) = ProcessState(context);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_READY);
+                dataKeyDocument.Should().NotBeNull();
+                var actualKeyAltNames = dataKeyDocument["keyAltNames"].AsBsonArray.Select(x => x.AsString);
+                var expectedKeyAltNames = keyAltNames.Reverse(); // https://jira.mongodb.org/browse/CDRIVER-3277?
+                actualKeyAltNames.Should().BeEquivalentTo(expectedKeyAltNames);
+
+                (state, _, _) = ProcessState(context);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_DONE);
+            }
+        }
+
+        [Fact]
         public void TestLocalKeyCreation()
         {
 
@@ -300,14 +398,14 @@ namespace MongoDB.Crypt.Test
             }
         }
 
-        private (Binary binarySent, BsonDocument document) ProcessContextToCompletion(CryptContext context)
+        private (Binary binarySent, BsonDocument document) ProcessContextToCompletion(CryptContext context, bool isKmsDecrypt = true)
         {
             BsonDocument document = null;
             Binary binary = null;
 
             while (!context.IsDone)
             {
-                (_, binary, document) = ProcessState(context);
+                (_, binary, document) = ProcessState(context, isKmsDecrypt);
             }
 
             return (binary, document);
@@ -318,9 +416,10 @@ namespace MongoDB.Crypt.Test
         /// Returns (stateProcessed, binaryOperationProduced, bsonOperationProduced)
         /// </summary>
         /// <param name="context"></param>
+        /// <param name="isKmsDecrypt"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        private (CryptContext.StateCode stateProcessed, Binary binaryProduced, BsonDocument bsonOperationProduced) ProcessState(CryptContext context)
+        private (CryptContext.StateCode stateProcessed, Binary binaryProduced, BsonDocument bsonOperationProduced) ProcessState(CryptContext context, bool isKmsDecrypt = true)
         {
             _output.WriteLine("\n----------------------------------\nState:" + context.State);
             switch (context.State)
@@ -371,7 +470,7 @@ namespace MongoDB.Crypt.Test
                         var postRequest = binary.ToString();
                         postRequest.Should().Contain("Host:kms.us-east-1.amazonaws.com");
 
-                        var reply = ReadHttpTestFile("kms-decrypt-reply.txt");
+                        var reply = ReadHttpTestFile(isKmsDecrypt ? "kms-decrypt-reply.txt" : "kms-encrypt-reply.txt");
                         _output.WriteLine("Reply: " + reply);
                         req.Feed(Encoding.UTF8.GetBytes(reply));
                         req.BytesNeeded.Should().Be(0);
@@ -408,14 +507,15 @@ namespace MongoDB.Crypt.Test
 
         static IEnumerable<string> FindTestDirectories()
         {
-            string searchPath = Path.Combine("..", "test", "example");
+            string[] searchPaths = new [] { Path.Combine("..", "test", "example"), Path.Combine("..", "test", "data") };
             var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string cwd = Directory.GetCurrentDirectory(); // Assume we are child directory of the repo
+            string cwd = Directory.GetCurrentDirectory(); // Assume we are in a child directory of the repo
             var searchDirectory = assemblyLocation ?? cwd;
             var testDirs = Enumerable.Range(1, 10)
                 .Select(i => Enumerable.Repeat("..", i))
                 .Select(dotsSeq => dotsSeq.Aggregate(Path.Combine))
-                .Select(previousDirectories => Path.Combine(searchDirectory, previousDirectories, searchPath))
+                .SelectMany(previousDirectories =>
+                    searchPaths.Select(searchPath => Path.Combine(searchDirectory, previousDirectories, searchPath)))
                 .Where(Directory.Exists)
                 .ToArray();
 

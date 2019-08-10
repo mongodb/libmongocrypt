@@ -3,8 +3,9 @@ doc/latex
 test/schema.json
 
 .vscode
-# Default build directory
+# Default build directories
 cmake-build
+cmake-build-nocrypto
 
 # CMake generated files
 *.sln

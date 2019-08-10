@@ -15,6 +15,9 @@
  */
 
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace MongoDB.Crypt
@@ -22,7 +25,6 @@ namespace MongoDB.Crypt
     /// <summary>Contains all the information needed to find a AWS KMS CMK.</summary>
     public class AwsKeyId : IKmsKeyId, IInternalKmsKeyId
     {
-        public KmsType KeyType => KmsType.Aws;
 
         /// <summary>
         /// Creates an <see cref="AwsKeyId"/> class.
@@ -33,11 +35,26 @@ namespace MongoDB.Crypt
         {
             Region = region;
             CustomerMasterKey = customerMasterKey;
+            AlternateKeyNameBsonDocuments = new List<byte[]>().AsReadOnly();
         }
 
-        /// <summary>Gets the region.</summary>
-        /// <value>The region.</value>
-        public string Region { get; }
+        /// <summary>
+        /// Creates an <see cref="AwsKeyId"/> class.
+        /// </summary>
+        /// <param name="customerMasterKey">The customerMasterKey.</param>
+        /// <param name="region">The region.</param>
+        /// <param name="alternateKeyNamesBsonDocuments">The alternate key names.
+        /// Each byte array describes an alternative key name via a BsonDocument in the following format:
+        ///  { "keyAltName" : [BSON UTF8 value] }</param>
+        public AwsKeyId(string customerMasterKey, string region, IEnumerable<byte[]> alternateKeyNamesBsonDocuments)
+        {
+            Region = region;
+            CustomerMasterKey = customerMasterKey;
+            AlternateKeyNameBsonDocuments = alternateKeyNamesBsonDocuments.ToList().AsReadOnly();
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<byte[]> AlternateKeyNameBsonDocuments { get; }
 
         /// <summary>
         /// Gets the Amazon Resource Name (ARN) of the customer master key.
@@ -47,18 +64,28 @@ namespace MongoDB.Crypt
         /// </value>
         public string CustomerMasterKey { get; }
 
-        void IInternalKmsKeyId.SetCredentials(ContextSafeHandle handle, Status status)
+        /// <inheritdoc />
+        public KmsType KeyType => KmsType.Aws;
+
+        /// <summary>Gets the region.</summary>
+        /// <value>The region.</value>
+        public string Region { get; }
+
+        /// <inheritdoc />
+        void IInternalKmsKeyId.SetCredentials(ContextSafeHandle context, Status status)
         {
-            IntPtr stringPointer = (IntPtr)Marshal.StringToHGlobalAnsi(Region);
+            IntPtr regionPointer = (IntPtr)Marshal.StringToHGlobalAnsi(Region);
 
             try
             {
                 IntPtr keyPointer = (IntPtr)Marshal.StringToHGlobalAnsi(CustomerMasterKey);
-
                 try
                 {
                     // Let mongocrypt run strlen
-                    handle.Check(status, Library.mongocrypt_ctx_setopt_masterkey_aws(handle, stringPointer, -1, keyPointer, -1));
+                    context.Check(
+                        status,
+                        Library.mongocrypt_ctx_setopt_masterkey_aws(context, regionPointer, -1, keyPointer, -1));
+                    ((IInternalKmsKeyId) this).SetAlternateKeyNames(context, status);
                 }
                 finally
                 {
@@ -67,8 +94,14 @@ namespace MongoDB.Crypt
             }
             finally
             {
-                Marshal.FreeHGlobal(stringPointer);
+                Marshal.FreeHGlobal(regionPointer);
             }
+        }
+
+        /// <inheritdoc />
+        void IInternalKmsKeyId.SetAlternateKeyNames(ContextSafeHandle context, Status status)
+        {
+            this.SetAlternateKeyNames(context, status);
         }
     }
 }
