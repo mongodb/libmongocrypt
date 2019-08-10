@@ -977,6 +977,7 @@ typedef bool (*mongocrypt_random_fn) (void *ctx,
                                       uint32_t count,
                                       mongocrypt_status_t *status);
 
+MONGOCRYPT_EXPORT
 bool
 mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_crypto_fn aes_256_cbc_encrypt,
