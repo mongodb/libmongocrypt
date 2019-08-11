@@ -152,8 +152,8 @@ std::pair<bool, std::string> setKmsProviderOptions(mongocrypt_t* crypt,
                 return std::make_pair(false, "Local key must be a Buffer");
             }
 
-            mongocrypt_binary_t* binary = BufferToBinary(key);
-            if (!mongocrypt_setopt_kms_provider_local(crypt, binary)) {
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(key));
+            if (!mongocrypt_setopt_kms_provider_local(crypt, binary.get())) {
                 return std::make_pair(false, errorStringFromStatus(crypt));
             }
         }
@@ -554,8 +554,8 @@ NAN_METHOD(MongoCrypt::MakeExplicitEncryptionContext) {
                 return;
             }
 
-            mongocrypt_binary_t* binary = BufferToBinary(keyId);
-            if (!mongocrypt_ctx_setopt_key_id(context.get(), binary)) {
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(keyId));
+            if (!mongocrypt_ctx_setopt_key_id(context.get(), binary.get())) {
                 Nan::ThrowTypeError(errorStringFromStatus(context.get()));
                 return;
             }
