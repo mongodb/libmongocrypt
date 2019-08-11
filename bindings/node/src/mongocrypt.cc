@@ -559,7 +559,9 @@ NAN_METHOD(MongoCrypt::MakeExplicitEncryptionContext) {
                 Nan::ThrowTypeError(errorStringFromStatus(context.get()));
                 return;
             }
-        } else if (Nan::Has(options, KEY_ALT_NAME_KEY).FromMaybe(false)) {
+        }
+
+        if (Nan::Has(options, KEY_ALT_NAME_KEY).FromMaybe(false)) {
             v8::Local<v8::Value> keyAltName = Nan::Get(options, KEY_ALT_NAME_KEY).ToLocalChecked();
             if (!keyAltName->IsObject()) {
                 Nan::ThrowTypeError("`keyAltName` must be a Buffer");
