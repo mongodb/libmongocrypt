@@ -6,7 +6,7 @@
     <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != 'true'">net452;netcoreapp2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
 
-    <Platforms>x64</Platforms>
+    <Platforms>AnyCPU</Platforms>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

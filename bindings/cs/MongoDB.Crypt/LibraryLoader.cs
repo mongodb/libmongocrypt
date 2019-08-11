@@ -31,6 +31,18 @@ namespace MongoDB.Crypt
 
         public LibraryLoader()
         {
+
+#if NET452 || NETSTANDARD2_0
+            var is64Bit = Environment.Is64BitProcess;
+#else
+            var is64Bit = IntPtr.Size == 8;
+#endif
+            if (!is64Bit)
+            {
+                throw new PlatformNotSupportedException(
+                    $"{this.GetType().Namespace} needs to be run in a 64-bit process.");
+            }
+
             // Windows:
             // https://stackoverflow.com/questions/2864673/specify-the-search-path-for-dllimport-in-net
             //
