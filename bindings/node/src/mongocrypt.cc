@@ -512,8 +512,10 @@ NAN_METHOD(MongoCrypt::MakeEncryptionContext) {
         return;
     }
 
+
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(BufferToBinary(commandBuffer));
     if (!mongocrypt_ctx_encrypt_init(
-            context.get(), ns.c_str(), ns.size(), BufferToBinary(commandBuffer))) {
+            context.get(), ns.c_str(), ns.size(), binaryCommand.get())) {
         Nan::ThrowTypeError(errorStringFromStatus(context.get()));
         return;
     }
@@ -592,7 +594,8 @@ NAN_METHOD(MongoCrypt::MakeExplicitEncryptionContext) {
         }
     }
 
-    if (!mongocrypt_ctx_explicit_encrypt_init(context.get(), BufferToBinary(valueBuffer))) {
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(BufferToBinary(valueBuffer));
+    if (!mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get())) {
         Nan::ThrowTypeError(errorStringFromStatus(context.get()));
         return;
     }
