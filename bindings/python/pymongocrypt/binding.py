@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import os.path
 
 import cffi
 
@@ -916,7 +917,9 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
 # build without relying on platform specific library path environment
 # variables, like LD_LIBRARY_PATH. For example:
 # export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
-lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', 'mongocrypt'))
+_path = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'mongocrypt')
+lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', _path))
 
 
 if PY3:
