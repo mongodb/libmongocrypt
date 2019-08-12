@@ -9,6 +9,43 @@ module.exports = function(modules) {
   const StateMachine = modules.stateMachine.StateMachine;
   const cryptoCallbacks = require('./cryptoCallbacks');
 
+  function sanitizeDataKeyOptions(bson, options) {
+    options = Object.assign({}, options);
+
+    // To avoid using libbson inside the bindings, we pre-serialize
+    // any keyAltNames here.
+    if (options.keyAltNames) {
+      if (!Array.isArray(options.keyAltNames)) {
+        throw new TypeError(
+          `Option "keyAltNames" must be an array of string, but was of type ${typeof options.keyAltNames}.`
+        );
+      }
+      const serializedKeyAltNames = [];
+      for (let i = 0; i < options.keyAltNames.length; i += 1) {
+        const item = options.keyAltNames[i];
+        const itemType = typeof item;
+        if (itemType !== 'string') {
+          throw new TypeError(
+            `Option "keyAltNames" must be an array of string, but item at index ${i} was of type ${itemType} `
+          );
+        }
+
+        serializedKeyAltNames.push(bson.serialize({ keyAltName: item }));
+      }
+
+      options.keyAltNames = serializedKeyAltNames;
+    } else if (options.keyAltNAmes == null) {
+      // If keyAltNames is null or undefined, we can assume the intent of
+      // the user is to not pass in the value. B/c Nan::Has will still
+      // register a value of null or undefined as present as long
+      // as the key is present, we delete it off of the options
+      // object here.
+      delete options.keyAltNames;
+    }
+
+    return options;
+  }
+
   /**
    * The public interface for explicit client side encryption
    */
@@ -42,7 +79,7 @@ module.exports = function(modules) {
      */
     createDataKey(provider, options, callback) {
       if (typeof options === 'function') (callback = options), (options = {});
-      options = options || {};
+      options = sanitizeDataKeyOptions(this._bson, options);
 
       const context = this._mongoCrypt.makeDataKeyContext(provider, options);
       const stateMachine = new StateMachine();
@@ -85,6 +122,20 @@ module.exports = function(modules) {
       const contextOptions = Object.assign({}, options);
       if (options.keyId) {
         contextOptions.keyId = options.keyId.buffer;
+      }
+      if (options.keyAltName) {
+        const keyAltName = options.keyAltName;
+        if (options.keyId) {
+          throw new TypeError(`"options" cannot contain both "keyId" and "keyAltName"`);
+        }
+        const keyAltNameType = typeof keyAltName;
+        if (keyAltNameType !== 'string') {
+          throw new TypeError(
+            `"options.keyAltName" must be of type string, but was of type ${keyAltNameType}`
+          );
+        }
+
+        contextOptions.keyAltName = bson.serialize({ keyAltName });
       }
 
       const stateMachine = new StateMachine();

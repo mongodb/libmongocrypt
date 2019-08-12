@@ -13,22 +13,15 @@ const ClientEncryption = require('../lib/clientEncryption')({ mongodb, stateMach
 const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
 
-// Data Key Stuff
-const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const AWS_REGION = process.env.AWS_REGION;
-const AWS_CMK_ID = process.env.AWS_CMK_ID;
-const kmsProviders = {
-  aws: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY }
-};
-const dataKeyOptions = { masterKey: { key: AWS_CMK_ID, region: AWS_REGION } };
+const requirements = require('./requirements.helper');
 
-const willRunTheseTests =
-  AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && AWS_CMK_ID && !process.env.NODE_SKIP_LIVE_TESTS;
+// Data Key Stuff
+const kmsProviders = Object.assign({}, requirements.awsKmsProviders);
+const dataKeyOptions = Object.assign({}, requirements.awsDataKeyOptions);
 
 describe('cryptoCallbacks', function() {
   before(function() {
-    if (!willRunTheseTests) {
+    if (requirements.SKIP_AWS_TESTS) {
       console.log('Skipping crypto callback tests');
       return;
     }
@@ -36,7 +29,7 @@ describe('cryptoCallbacks', function() {
   });
 
   beforeEach(function() {
-    if (!willRunTheseTests) {
+    if (requirements.SKIP_AWS_TESTS) {
       this.test.skip();
       return;
     }
@@ -50,7 +43,7 @@ describe('cryptoCallbacks', function() {
   });
 
   afterEach(function() {
-    if (!willRunTheseTests) {
+    if (requirements.SKIP_AWS_TESTS) {
       return;
     }
     this.sinon.restore();
