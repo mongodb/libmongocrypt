@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -o error
+set -o errexit
 
 get_version_at_git_rev () {
   local REV=$1
