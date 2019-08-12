@@ -2,7 +2,6 @@
 
 const spawn = require('child_process').spawn;
 const readFile = require('fs').readFile;
-const platform = require('os').platform;
 
 /**
  * @typedef AutoEncryptionExtraOptions
@@ -58,10 +57,10 @@ class MongocryptdManager {
     // with the spec or get rid of this
     if (extraOptions.mongocryptdURI) {
       this.uri = extraOptions.mongocryptdURI;
-    } else if (platform() === 'win32') {
-      this.uri = 'mongodb://localhost:27020/?serverSelectionTimeoutMS=1000';
     } else {
-      this.uri = 'mongodb://%2Ftmp%2Fmongocryptd.sock/?serverSelectionTimeoutMS=1000';
+      // TODO: eventually support connecting on Linux Socket for non-windows,
+      // blocked by SERVER-41029
+      this.uri = 'mongodb://localhost:27020/?serverSelectionTimeoutMS=1000';
     }
 
     this.bypassSpawn = !!extraOptions.mongocryptdBypassSpawn;
