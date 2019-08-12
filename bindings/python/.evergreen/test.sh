@@ -23,17 +23,22 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYTHON36="$(pwd)/venv36/Scripts/python"
     $PYTHON36 -m pip install . pymongo
 
+    # The packaging tools included in the 3.4 and 3.5 installs
+    # are too old to install cffi and cryptography from
+    # wheels, so use get-pip.py to get the latest tools.
+    curl -O https://bootstrap.pypa.io/get-pip.py
+
     # 3.4 supports '-m venv', not '-m virtualenv'.
-#    /cygdrive/c/python/Python34/python -m venv venv34
-#    PYTHON34="$(pwd)/venv34/Scripts/python"
-#    $PYTHON34 -m pip install --upgrade pip
-#    $PYTHON34 -m pip install . pymongo
+    /cygdrive/c/python/Python34/python -m venv --without-pip venv34
+    PYTHON34="$(pwd)/venv34/Scripts/python"
+    $PYTHON34 get-pip.py
+    $PYTHON34 -m pip install . pymongo
 
     # 3.5 supports '-m venv', not '-m virtualenv'.
-#    /cygdrive/c/python/Python35/python -m venv venv35
-#    PYTHON35="$(pwd)/venv35/Scripts/python"
-#    $PYTHON35 -m pip install --upgrade pip
-#    $PYTHON35 -m pip install . pymongo
+    /cygdrive/c/python/Python35/python -m venv --without-pip venv35
+    PYTHON35="$(pwd)/venv35/Scripts/python"
+    $PYTHON35 get-pip.py
+    $PYTHON35 -m pip install . pymongo
 
     # 3.7 supports '-m venv', not '-m virtualenv'.
     /cygdrive/c/python/Python37/python -m venv venv37
@@ -43,8 +48,8 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
 
     PYTHONS=("python" \
              "$PYTHON27" \
-#             "$PYTHON34" \
-#             "$PYTHON35" \
+             "$PYTHON34" \
+             "$PYTHON35" \
              "$PYTHON36" \
              "$PYTHON37")
 elif [ "Darwin" = "$(uname -s)" ]; then
