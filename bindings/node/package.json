@@ -7,7 +7,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "install": "prebuild-install || node-gyp rebuild",
+    "install": "prebuild-install --tag-prefix node-v || node-gyp rebuild",
     "format-cxx": "git-clang-format",
     "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
     "lint": "eslint lib test",
