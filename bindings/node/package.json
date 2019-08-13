@@ -14,7 +14,7 @@
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/**/*.js > README.md",
     "test": "mocha test",
     "rebuild": "prebuild --compile",
-    "prebuild": "prebuild  --strip --verbose --tag-prefix node-v -t 10.16.0 -t 8.16.0 -t 6.17.1 -t 4.9.1"
+    "prebuild": "prebuild  --strip --verbose --tag-prefix node-v --all"
   },
   "author": "Matt Broadstone <mbroadst@mongodb.com>",
   "license": "Apache-2.0",
