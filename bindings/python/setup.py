@@ -40,7 +40,7 @@ setup(
     install_requires=["cffi>=1.12.0,<2", "cryptography>=2.0,<3"],
     author="Shane Harvey",
     author_email="mongodb-user@googlegroups.com",
-    url="github.com/mongodb/libmongocrypt",
+    url="https://github.com/mongodb/libmongocrypt/tree/master/bindings/python",
     keywords=["mongo", "mongodb", "pymongocrypt", "pymongo", "mongocrypt",
               "bson"],
     test_suite="test",
