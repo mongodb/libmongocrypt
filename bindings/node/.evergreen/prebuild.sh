@@ -16,6 +16,7 @@ run_prebuild() {
   else
     echo "Github token detected. Running prebuild."
     npm run prebuild -- -u $NODE_GITHUB_TOKEN
+    echo "Prebuild's successfully submitted"
   fi
 }
 
@@ -32,5 +33,7 @@ elif [[ $VERSION_AT_HEAD != $VERSION_AT_HEAD_1 ]]; then
   run_prebuild
 else
   echo "No difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
-  echo "No prebuild required"
+  echo "Will prebuild without submit"
+  npm run prebuild
+  echo "Local prebuild successful."
 fi
