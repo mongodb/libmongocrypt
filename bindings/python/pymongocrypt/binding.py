@@ -14,6 +14,7 @@
 
 import os
 import os.path
+import sys
 
 import cffi
 
@@ -917,10 +918,24 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
 # build without relying on platform specific library path environment
 # variables, like LD_LIBRARY_PATH. For example:
 # export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
-_path = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'mongocrypt')
+if sys.platform == 'win32':
+    # On windows the dll is named mongocrypt.dll
+    _path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), 'mongocrypt')
+else:
+    # On *nix the so is named libmongocrypt.so or libmongocrypt.dylib
+    _path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), 'libmongocrypt')
+_PYMONGOCRYPT_LIB = os.environ.get('PYMONGOCRYPT_LIB')
 try:
-    lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', _path))
+    if _PYMONGOCRYPT_LIB:
+        lib = ffi.dlopen(_PYMONGOCRYPT_LIB)
+    else:
+        try:
+            lib = ffi.dlopen(_path)
+        except OSError as exc:
+            # Fallback to libmongocrypt installed on the system.
+            lib = ffi.dlopen('mongocrypt')
 except OSError as exc:
     # dlopen raises OSError when the library cannot be found.
     # Delay the error until the library is actually used.
