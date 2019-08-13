@@ -30,7 +30,52 @@ module.exports = function(modules) {
     if (state === MONGOCRYPT_CTX_DONE) return 'MONGOCRYPT_CTX_DONE';
   }
 
+  /**
+   * @ignore
+   * @callback StateMachine~executeCallback
+   * @param {Error} [err] If present, indicates that the execute call failed with a given error
+   * @param {object} [result] If present, is the result of executing the state machine.
+   * @returns {void}
+   */
+
+  /**
+   * @ignore
+   * @callback StateMachine~fetchCollectionInfoCallback
+   * @param {Error} [err] If present, indicates that fetching the collection info failed with a given error
+   * @param {object} [result] If present, is the fetched collection info for the first collection to match the given filter
+   * @returns {void}
+   */
+
+  /**
+   * @ignore
+   * @callback StateMachine~markCommandCallback
+   * @param {Error} [err] If present, indicates that marking the command failed with a given error
+   * @param {Buffer} [result] If present, is the marked command serialized into bson
+   * @returns {void}
+   */
+
+  /**
+   * @ignore
+   * @callback StateMachine~fetchKeysCallback
+   * @param {Error} [err] If present, indicates that fetching the keys failed with a given error
+   * @param {object[]} [result] If present, is all the keys from the keyVault colleciton that matched the given filter
+   */
+
+  /**
+   * @ignore
+   * An internal class that executes across a MongoCryptContext until either
+   * a finishing state or an error is reached. Do not instantiate directly.
+   * @class StateMachine
+   */
   class StateMachine {
+    /**
+     * @ignore
+     * Executes the state machine according to the specification
+     * @param {AutoEncrypter|ClientEncryption} autoEncrypter The JS encryption object
+     * @param {object} context The C++ context object returned from the bindings
+     * @param {StateMachine~executeCallback} callback Invoked with the result/error of executing the state machine
+     * @returns {void}
+     */
     execute(autoEncrypter, context, callback) {
       const bson = autoEncrypter._bson;
       const client = autoEncrypter._client;
@@ -157,8 +202,10 @@ module.exports = function(modules) {
     }
 
     /**
-     *
-     * @param {*} kmsContext
+     * @ignore
+     * Handles the request to the kms service. Exposed for testing purposes. Do not directly invoke.
+     * @param {*} kmsContext A C++ KMS context returned from the bindings
+     * @returns {Promise<void>} A promise that resolves when the kms reply has be fully parsed
      */
     kmsRequest(request) {
       const options = { host: request.endpoint, port: HTTPS_PORT };
@@ -192,15 +239,16 @@ module.exports = function(modules) {
     }
 
     /**
+     * @ignore
      * Fetches collection info for a provided namespace, when libmongocrypt
      * enters the `MONGOCRYPT_CTX_NEED_MONGO_COLLINFO` state. The result is
      * used to inform libmongocrypt of the schema associated with this
-     * namespace.
+     * namespace. Exposed for testing purposes. Do not directly invoke.
      *
-     * @param {MongoClient} client The shared
+     * @param {MongoClient} client A MongoClient connected to the topology
      * @param {string} ns The namespace to list collections from
-     * @param {object} filter A filter used to select a particular
-     * @param {function} callback
+     * @param {object} filter A filter for the listCollections command
+     * @param {StateMachine~fetchCollectionInfoCallback} callback Invoked with the info of the requested collection, or with an error
      */
     fetchCollectionInfo(client, ns, filter, callback) {
       const bson = client.topology.bson;
@@ -221,7 +269,14 @@ module.exports = function(modules) {
     }
 
     /**
-     *
+     * @ignore
+     * Calls to the mongocryptd to provide markings for a command.
+     * Exposed for testing purposes. Do not directly invoke.
+     * @param {MongoClient} client A MongoClient connected to a mongocryptd
+     * @param {string} ns The namespace (database.collection) the command is being executed on
+     * @param {object} command The command to execute.
+     * @param {StateMachine~markCommandCallback} callback Invoked with the serialized and marked bson command, or with an error
+     * @returns {void}
      */
     markCommand(client, ns, command, callback) {
       const bson = client.topology.bson;
@@ -239,7 +294,14 @@ module.exports = function(modules) {
     }
 
     /**
-     *
+     * @ignore
+     * Requests keys from the keyVault collection on the topology.
+     * Exposed for testing purposes. Do not directly invoke.
+     * @param {MongoClient} client A MongoClient connected to the topology
+     * @param {string} keyVaultNamespace The namespace (database.collection) of the keyVault Collection
+     * @param {object} filter The filter for the find query against the keyVault Collection
+     * @param {StateMachine~fetchKeysCallback} callback Invoked with the found keys, or with an error
+     * @returns {void}
      */
     fetchKeys(client, keyVaultNamespace, filter, callback) {
       const bson = client.topology.bson;

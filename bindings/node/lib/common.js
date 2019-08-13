@@ -1,15 +1,31 @@
 'use strict';
 
+/**
+ * @ignore
+ * Helper function for logging. Enabled by setting the environment flag MONGODB_CRYPT_DEBUG.
+ * @param {*} msg Anything you want to be logged.
+ */
 function debug(msg) {
   if (process.env.MONGODB_CRYPT_DEBUG) {
     console.log(msg);
   }
 }
 
+/**
+ * @ignore
+ * Gets the database portion of a namespace string
+ * @param {string} ns A string in the format of a namespace (database.collection)
+ * @returns {string} The database portion of the namespace
+ */
 function databaseNamespace(ns) {
   return ns.split('.')[0];
 }
-
+/**
+ * @ignore
+ * Gets the colleciton portion of a namespace string
+ * @param {string} ns A string in the format of a namespace (database.collection)
+ * @returns {string} The collection portion of the namespace
+ */
 function collectionNamespace(ns) {
   return ns
     .split('.')
@@ -17,6 +33,10 @@ function collectionNamespace(ns) {
     .join('.');
 }
 
+/**
+ * @class
+ * An error indicating that something went wrong specifically with MongoDB Client Encryption
+ */
 class MongoCryptError extends Error {
   constructor(message) {
     super(message);
@@ -25,6 +45,16 @@ class MongoCryptError extends Error {
   }
 }
 
+/**
+ * @ignore
+ * A helper function. Invokes a function that takes a callback as the final
+ * parameter. If a callback is supplied, then it is passed to the function.
+ * If not, a Promise is returned that resolves/rejects with the result of the
+ * callback
+ * @param {Function} [callback] an optional callback.
+ * @param {Function} fn A function that takes a callback
+ * @returns {Promise|void} Returns nothing if a callback is supplied, else returns a Promise.
+ */
 function promiseOrCallback(callback, fn) {
   if (typeof callback === 'function') {
     fn(function(err) {
