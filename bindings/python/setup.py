@@ -21,7 +21,7 @@ setup(
     packages=find_packages(exclude=['test']),
     package_data={'pymongocrypt': ['*.dll', '*.so', '*.dylib']},
     zip_safe=False,
-    install_requires=["cffi>=1.12.0,<2", "cryptography>=2.7,<3"],
+    install_requires=["cffi>=1.12.0,<2", "cryptography>=2.0,<3"],
     author="Shane Harvey",
     author_email="mongodb-user@googlegroups.com",
     url="github.com/mongodb/libmongocrypt",
