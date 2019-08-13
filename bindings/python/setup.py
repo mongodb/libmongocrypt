@@ -2,6 +2,22 @@ import os
 
 from setuptools import setup, find_packages
 
+# Our wheels are platform specific because we embed libmongocrypt.
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+    class bdist_wheel(_bdist_wheel):
+
+        def finalize_options(self):
+            _bdist_wheel.finalize_options(self)
+            self.root_is_pure = False
+
+        def get_tag(self):
+            python, abi, plat = _bdist_wheel.get_tag(self)
+            # Our python source is py2/3 compatible.
+            python, abi = 'py2.py3', 'none'
+            return python, abi, plat
+except ImportError:
+    bdist_wheel = None
 
 with open('README.rst', 'rb') as f:
     LONG_DESCRIPTION = f.read().decode('utf8')
@@ -48,4 +64,5 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Database"],
+    cmdclass={'bdist_wheel': bdist_wheel},
 )

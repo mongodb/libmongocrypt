@@ -82,6 +82,25 @@ You can also download the project source and do::
   $ python -m pip install .
 
 
+Installing libmongocrypt
+------------------------
+
+PyMongoCrypt ships wheels for macOS and Windows that include an embedded
+libmongocrypt build. For Linux users libmongocrypt needs to be installed
+manually.
+
+libmongocrypt is [continuously built and published on evergreen]
+(https://evergreen.mongodb.com/waterfall/libmongocrypt).
+The latest tarball containing libmongocrypt built on all supported variants is
+(published here)[https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz].
+
+Download and extract ``libmongocrypt-all.tar.gz`` and set
+``PYMONGOCRYPT_LIB`` to the path to your operating system's libmongocrypt.so file.
+For example::
+
+  $ export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
+  $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+
 Dependencies
 ============
 
