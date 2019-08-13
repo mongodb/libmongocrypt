@@ -47,7 +47,17 @@ module.exports = function(modules) {
   }
 
   /**
-   * The public interface for explicit client side encryption
+   * @typedef KMSProviders
+   * @description Configuration options that are used by specific kms providers during key generation, encryption, and decryption.
+   * @prop {object} [aws] Configuration options for using 'aws' as your kms provider
+   * @prop {string} [aws.accessKeyId] An AWS Access Key
+   * @prop {string} [aws.secretAccessKey] An AWS Secret Key
+   * @prop {object} [local] Configuration options for using 'local' as your kms provider
+   * @prop {Buffer} [local.key] A 96-byte long Buffer used for local encryption
+   */
+
+  /**
+   * @classdesc The public interface for explicit client side encryption
    */
   class ClientEncryption {
     /**
@@ -56,6 +66,28 @@ module.exports = function(modules) {
      * @param {MongoClient} client The client used for encryption
      * @param {object} options Optional settings
      * @param {string} options.keyVaultNamespace The namespace of the key vault, used to store encryption keys
+     * @param {KMSProviders} [options.kmsProviders] options for specific kms providers to use
+     *
+     * @example
+     * new ClientEncryption(mongoClient, {
+     *   keyVaultNamespace: 'client.encryption',
+     *   kmsProviders: {
+     *     local: {
+     *       key: masterKey // The master key used for encryption/decryption. A 96-byte long Buffer
+     *     }
+     *   }
+     * });
+     *
+     * @example
+     * new ClientEncryption(mongoClient, {
+     *   keyVaultNamespace: 'client.encryption',
+     *   kmsProviders: {
+     *     aws: {
+     *       accessKeyId: AWS_ACCESS_KEY,
+     *       secretAccessKey: AWS_SECRET_KEY
+     *     }
+     *   }
+     * });
      */
     constructor(client, options) {
       this._client = client;
@@ -71,11 +103,59 @@ module.exports = function(modules) {
     }
 
     /**
+     * @typedef ClientEncryption~dataKey
+     * @description A key used for manual encryption / decryption. Is a BSON Binary object.
+     */
+
+    /**
+     * @callback ClientEncryption~createDataKeyCallback
+     * @param {Error} [error] If present, indicates an error that occurred in the creation of the data key
+     * @param {ClientEncryption~dataKey} [dataKey] If present, returns the new data key
+     */
+
+    /**
      * Creates a data key used for explicit encryption
      *
-     * @param {string} provider The KMS provider used for this data key
-     * @param {*} options
-     * @param {function} callback
+     * @param {string} provider The KMS provider used for this data key. Must be `'aws'` or `'local'`
+     * @param {object} [options] Options for creating the data key
+     * @param {object} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key. If the kmsProvider is "aws" it is required.
+     * @param {string} [options.masterKey.region] The AWS region of the KMS
+     * @param {string} [options.masterKey.key] The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
+     * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
+     * @param {ClientEncryption~createDataKeyCallback} [callback] Optional callback to invoke when key is created
+     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the created data key, or rejects with an error. If a callback is provided, returns nothing.
+     * @example
+     * // Using callbacks to create a local key
+     * clientEncrypion.createDataKey('local', (err, dataKey) => {
+     *   if (err) {
+     *     // This means creating the key failed.
+     *   } else {
+     *     // key creation succeeded
+     *   }
+     * });
+     *
+     * @example
+     * // Using async/await to create a local key
+     * const dataKey = await clientEncryption.createDataKey('local');
+     *
+     * @example
+     * // Using async/await to create an aws key
+     * const dataKey = await clientEncryption.createDataKey('aws', {
+     *   masterKey: {
+     *     region: 'us-east-1',
+     *     key: 'xxxxxxxxxxxxxx' // CMK ARN here
+     *   }
+     * });
+     *
+     * @example
+     * // Using async/await to create an aws key with a keyAltName
+     * const dataKey = await clientEncryption.createDataKey('aws', {
+     *   masterKey: {
+     *     region: 'us-east-1',
+     *     key: 'xxxxxxxxxxxxxx' // CMK ARN here
+     *   },
+     *   keyAltNames: [ 'mySpecialKey' ]
+     * });
      */
     createDataKey(provider, options, callback) {
       if (typeof options === 'function') (callback = options), (options = {});
@@ -110,11 +190,47 @@ module.exports = function(modules) {
     }
 
     /**
-     * Explicitly encrypt a provided value
+     * @callback ClientEncryption~encryptCallback
+     * @param {Error} [err] If present, indicates an error that occurred in the process of encryption
+     * @param {Buffer} [result] If present, is the encrypted result
+     */
+
+    /**
+     * Explicitly encrypt a provided value. Note that either `options.dataKey` or `options.keyAltName` must
+     * be specified. Specifying both `options.dataKey` and `options.keyAltName` is considered an error.
      *
-     * @param {*} value
-     * @param {*} options
-     * @param {*} callback
+     * @param {*} value The value that you wish to serialize. Must be of a type that can be serialized into BSON
+     * @param {object} options
+     * @param {ClientEncryption~dataKey} [options.dataKey] The Binary dataKey to use for encryption
+     * @param {string} [options.keyAltName] A unique string name corresponding to an already existing {{@link ClientEncryption~dataKey dataKey}}
+     * @param {} options.algorithm The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'` or `AEAD_AES_256_CBC_HMAC_SHA_512-Random'`
+     * @param {ClientEncryption~encryptCallback} [callback] Optional callback to invoke when value is encrypted
+     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.
+     *
+     * @example
+     * // Encryption with callback API
+     * function encryptMyData(value, callback) {
+     *   clientEncryption.createDataKey('local', (err, dataKey) => {
+     *     if (err) {
+     *       return callback(err);
+     *     }
+     *     clientEncryption.encrypt(value, { dataKey, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' }, callback);
+     *   });
+     * }
+     *
+     * @example
+     * // Encryption with async/await api
+     * async function encryptMyData(value) {
+     *   const dataKey = await clientEncryption.createDataKey('local');
+     *   return clientEncryption.encrypt(value, { dataKey, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
+     * }
+     *
+     * @example
+     * // Encryption using a keyAltName
+     * async function encryptMyData(value) {
+     *   await clientEncryption.createDataKey('local', { keyAltNames: 'mySpecialKey' });
+     *   return clientEncryption.encrypt(value, { keyAltName: 'mySpecialKey', algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
+     * }
      */
     encrypt(value, options, callback) {
       const bson = this._bson;
@@ -154,10 +270,29 @@ module.exports = function(modules) {
     }
 
     /**
+     * @callback ClientEncryption~decryptCallback
+     * @param {Error} [err] If present, indicates an error that occurred in the process of decryption
+     * @param {object} [result] If present, is the decrypted result
+     */
+
+    /**
      * Explicitly decrypt a provided encrypted value
      *
-     * @param {*} value
-     * @param {*} callback
+     * @param {Buffer} value An encrypted value
+     * @param {ClientEncryption~decryptCallback} callback Optional callback to invoke when value is decrypted
+     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.
+     *
+     * @example
+     * // Decrypting value with callback API
+     * function decryptMyValue(value, callback) {
+     *   clientEncryption.decrypt(value, callback);
+     * }
+     *
+     * @example
+     * // Decrypting value with async/await API
+     * async function decryptMyValue(value) {
+     *   return clientEncryption.decrypt(value);
+     * }
      */
     decrypt(value, callback) {
       const bson = this._bson;

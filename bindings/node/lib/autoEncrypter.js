@@ -10,6 +10,15 @@ module.exports = function(modules) {
   const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
+   * @typedef AutoEncrypter~AutoEncryptionExtraOptions
+   * @prop {string} [mongocryptdURI] overrides the uri used to connect to mongocryptd
+   * @prop {boolean} [mongocryptdBypassSpawn=false] if true, autoEncryption will not spawn a mongocryptd
+   * @prop {string} [mongocryptdSpawnPath] the path to the mongocryptd executable
+   * @prop {string[]} [mongocryptdSpawnArgs] command line arguments to pass to the mongocryptd executable
+   */
+
+  /**
+   * @classdesc
    * An internal class to be used by the driver for auto encryption
    * **NOTE**: Not meant to be instantiated directly, this is for internal use only.
    */
@@ -17,13 +26,37 @@ module.exports = function(modules) {
     /**
      * Create an AutoEncrypter
      *
-     * @param {object} options Optional settings
-     * @param {MongoClient} options.client The parent client auto encryption is enabled on
-     * @param {string} options.keyVaultNamespace The namespace of the key vault, used to store encryption keys
-     * @param {object} options.schemaMap
-     * @param {object} options.kmsProviders
-     * @param {function} options.logger
-     * @param {AutoEncryptionExtraOptions} [options.extraOptions] Extra options related to mongocryptd
+     * **Note: Do not instantiate this class directly. Rather, supply the relevant options to a MongoClient**
+     *
+     * **Note: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.**
+     * **It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.**
+     * **Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.**
+     * **Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.**
+     *
+     * @param {MongoClient} client The client autoEncryption is enabled on
+     * @param {object} [options] Optional settings
+     * @param {string} [options.keyVaultNamespace='admin.dataKeys'] The namespace of the key vault, used to store encryption keys
+     * @param {object} [options.schemaMap] A local specification of a JSON schema used for encryption
+     * @param {KMSProviders} [options.kmsProviders] options for specific kms providers to use
+     * @param {function} [options.logger] An optional hook to catch logging messages from the underlying encryption engine
+     * @param {AutoEncrypter~AutoEncryptionExtraOptions} [options.extraOptions] Extra options related to mongocryptd
+     *
+     * @example
+     * // Enabling autoEncryption via a MongoClient
+     * const { MongoClient } = require('mongodb');
+     * const client = new MongoClient(URL, {
+     *   autoEncryption: {
+     *     kmsProviders: {
+     *       aws: {
+     *         accessKeyId: AWS_ACCESS_KEY,
+     *         secretAccessKey: AWS_SECRET_KEY
+     *       }
+     *     }
+     *   }
+     * });
+     *
+     * await client.connect();
+     * // From here on, the client will be encrypting / decrypting automatically
      */
     constructor(client, options) {
       this._client = client;
@@ -55,6 +88,10 @@ module.exports = function(modules) {
       this._contextCounter = 0;
     }
 
+    /**
+     * @ignore
+     * @param {*} callback Invoked when the mongocryptd client either successfully connects or errors
+     */
     init(callback) {
       if (this._mongocryptdManager.bypassSpawn) {
         return this._mongocryptdClient.connect(callback);
@@ -65,12 +102,17 @@ module.exports = function(modules) {
       });
     }
 
+    /**
+     * @ignore
+     * @param {*} callback Invoked when the mongocryptd client either successfully disconnects or errors
+     */
     teardown(force, callback) {
       this._mongocryptdClient.close(force, callback);
     }
 
     /**
-     * Encrypt a command for a given namespace
+     * @ignore
+     * Encrypt a command for a given namespace.
      *
      * @param {string} ns The namespace for this encryption context
      * @param {object} cmd The command to encrypt
@@ -106,6 +148,7 @@ module.exports = function(modules) {
     }
 
     /**
+     * @ignore
      * Decrypt a command response
      *
      * @param {*} buffer

@@ -3,17 +3,16 @@
 const spawn = require('child_process').spawn;
 const readFile = require('fs').readFile;
 
-/**
- * @typedef AutoEncryptionExtraOptions
- * @prop {string} [mongocryptdURI] overrides the uri used to connect to mongocryptd
- * @prop {boolean} [mongocryptdBypassSpawn=false] if true, autoEncryption will not spawn a mongocryptd
- * @prop {string} [mongocryptdSpawnPath] the path to the mongocryptd executable
- * @prop {string[]} [mongocryptdSpawnArgs] command line arguments to pass to the mongocryptd executable
- */
-
 const mongocryptdPidFileName = 'mongocryptd.pid';
 const checkIntervalMS = 50;
 
+/**
+ * @ignore
+ * A heuristic check to see if a mongocryptd is running. Checks for a mongocryptd.pid
+ * file that contains valid JSON. If the pid file exists, the mongocryptd is likely
+ * running.
+ * @param {} callback Invoked with true if a valid pid file is found, false otherwise
+ */
 function checkIsUp(callback) {
   readFile(mongocryptdPidFileName, 'utf8', (err, data) => {
     if (err) {
@@ -34,6 +33,14 @@ function checkIsUp(callback) {
   });
 }
 
+/**
+ * @ignore
+ * Attempts to wait for a mongocryptd to be up. Will check with checkIsUp
+ * in 50ms intervals up to tries times.
+ * @param {number} tries The number of times to check for a mongocryptd
+ * @param {Function} callback Is called when either the number of tries have been
+ * attempted, or when we think a mongocryptd is up
+ */
 function waitForUp(tries, callback) {
   if (tries <= 0) {
     return callback();
@@ -49,7 +56,16 @@ function waitForUp(tries, callback) {
   });
 }
 
+/**
+ * @ignore
+ * An internal class that handles spawning a mongocryptd.
+ */
 class MongocryptdManager {
+  /**
+   * @ignore
+   * Creates a new Mongocryptd Manager
+   * @param {AutoEncrypter~AutoEncryptionExtraOptions} [extraOptions] extra options that determine how/when to spawn a mongocryptd
+   */
   constructor(extraOptions) {
     extraOptions = extraOptions || {};
 
@@ -75,6 +91,12 @@ class MongocryptdManager {
     }
   }
 
+  /**
+   * @ignore
+   * Will check to see if a mongocryptd is up. If it is not up, it will attempt
+   * to spawn a mongocryptd in a detached process, and then wait for it to be up.
+   * @param {Function} callback Invoked when we think a mongocryptd is up
+   */
   spawn(callback) {
     checkIsUp((err, isUp) => {
       if (!err && isUp) {
