@@ -919,7 +919,19 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
 # export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
 _path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'mongocrypt')
-lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', _path))
+try:
+    lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', _path))
+except OSError as exc:
+    # dlopen raises OSError when the library cannot be found.
+    # Delay the error until the library is actually used.
+    class _Library(object):
+        def __init__(self, error):
+            self._error = error
+
+        def __getattr__(self, name):
+            raise self._error
+
+    lib = _Library(exc)
 
 
 if PY3:
