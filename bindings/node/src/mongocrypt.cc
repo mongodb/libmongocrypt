@@ -195,7 +195,7 @@ void MongoCrypt::logHandler(mongocrypt_log_level_t level,
     }
 
     if (!mongoCrypt->_logger) {
-        fprintf(stderr, "No logger set, but long handler registered\n");
+        fprintf(stderr, "No logger set, but log handler registered\n");
         return;
     }
 

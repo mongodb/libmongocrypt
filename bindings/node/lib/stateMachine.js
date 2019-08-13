@@ -20,15 +20,15 @@ module.exports = function(modules) {
 
   const HTTPS_PORT = 443;
 
-  function stateToString(state) {
-    if (state === MONGOCRYPT_CTX_ERROR) return 'MONGOCRYPT_CTX_ERROR';
-    if (state === MONGOCRYPT_CTX_NEED_MONGO_COLLINFO) return 'MONGOCRYPT_CTX_NEED_MONGO_COLLINFO';
-    if (state === MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) return 'MONGOCRYPT_CTX_NEED_MONGO_MARKINGS';
-    if (state === MONGOCRYPT_CTX_NEED_MONGO_KEYS) return 'MONGOCRYPT_CTX_NEED_MONGO_KEYS';
-    if (state === MONGOCRYPT_CTX_NEED_KMS) return 'MONGOCRYPT_CTX_NEED_KMS';
-    if (state === MONGOCRYPT_CTX_READY) return 'MONGOCRYPT_CTX_READY';
-    if (state === MONGOCRYPT_CTX_DONE) return 'MONGOCRYPT_CTX_DONE';
-  }
+  const stateToString = new Map([
+    [MONGOCRYPT_CTX_ERROR, 'MONGOCRYPT_CTX_ERROR'],
+    [MONGOCRYPT_CTX_NEED_MONGO_COLLINFO, 'MONGOCRYPT_CTX_NEED_MONGO_COLLINFO'],
+    [MONGOCRYPT_CTX_NEED_MONGO_MARKINGS, 'MONGOCRYPT_CTX_NEED_MONGO_MARKINGS'],
+    [MONGOCRYPT_CTX_NEED_MONGO_KEYS, 'MONGOCRYPT_CTX_NEED_MONGO_KEYS'],
+    [MONGOCRYPT_CTX_NEED_KMS, 'MONGOCRYPT_CTX_NEED_KMS'],
+    [MONGOCRYPT_CTX_READY, 'MONGOCRYPT_CTX_READY'],
+    [MONGOCRYPT_CTX_DONE, 'MONGOCRYPT_CTX_DONE']
+  ]);
 
   class StateMachine {
     execute(autoEncrypter, context, callback) {
@@ -38,7 +38,7 @@ module.exports = function(modules) {
       const mongocryptdClient = autoEncrypter._mongocryptdClient;
       const mongocryptdManager = autoEncrypter._mongocryptdManager;
 
-      debug(`[context#${context.id}] ${stateToString(context.state)}`);
+      debug(`[context#${context.id}] ${stateToString.get(context.state) || context.state}`);
       switch (context.state) {
         case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: {
           const filter = bson.deserialize(context.nextMongoOperation());
