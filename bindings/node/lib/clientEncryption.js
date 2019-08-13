@@ -34,7 +34,7 @@ module.exports = function(modules) {
       }
 
       options.keyAltNames = serializedKeyAltNames;
-    } else if (options.keyAltNAmes == null) {
+    } else if (options.keyAltNames == null) {
       // If keyAltNames is null or undefined, we can assume the intent of
       // the user is to not pass in the value. B/c Nan::Has will still
       // register a value of null or undefined as present as long
