@@ -33,7 +33,7 @@ module.exports = function(modules) {
   /**
    * @ignore
    * @callback StateMachine~executeCallback
-   * @param {Error} [err] If present, indicates that the execute call failed with a given error
+   * @param {Error} [err] If present, indicates that the execute call failed with the given error
    * @param {object} [result] If present, is the result of executing the state machine.
    * @returns {void}
    */
@@ -41,7 +41,7 @@ module.exports = function(modules) {
   /**
    * @ignore
    * @callback StateMachine~fetchCollectionInfoCallback
-   * @param {Error} [err] If present, indicates that fetching the collection info failed with a given error
+   * @param {Error} [err] If present, indicates that fetching the collection info failed with the given error
    * @param {object} [result] If present, is the fetched collection info for the first collection to match the given filter
    * @returns {void}
    */
@@ -49,7 +49,7 @@ module.exports = function(modules) {
   /**
    * @ignore
    * @callback StateMachine~markCommandCallback
-   * @param {Error} [err] If present, indicates that marking the command failed with a given error
+   * @param {Error} [err] If present, indicates that marking the command failed with the given error
    * @param {Buffer} [result] If present, is the marked command serialized into bson
    * @returns {void}
    */
@@ -57,7 +57,7 @@ module.exports = function(modules) {
   /**
    * @ignore
    * @callback StateMachine~fetchKeysCallback
-   * @param {Error} [err] If present, indicates that fetching the keys failed with a given error
+   * @param {Error} [err] If present, indicates that fetching the keys failed with the given error
    * @param {object[]} [result] If present, is all the keys from the keyVault colleciton that matched the given filter
    */
 
@@ -203,9 +203,9 @@ module.exports = function(modules) {
 
     /**
      * @ignore
-     * Handles the request to the kms service. Exposed for testing purposes. Do not directly invoke.
+     * Handles the request to the KMS service. Exposed for testing purposes. Do not directly invoke.
      * @param {*} kmsContext A C++ KMS context returned from the bindings
-     * @returns {Promise<void>} A promise that resolves when the kms reply has be fully parsed
+     * @returns {Promise<void>} A promise that resolves when the KMS reply has be fully parsed
      */
     kmsRequest(request) {
       const options = { host: request.endpoint, port: HTTPS_PORT };
