@@ -177,7 +177,7 @@ describe('cryptoCallbacks', function() {
     // These ones will fail with an error, but that error will get overridden
     // with "failed to create KMS message" in mongocrypt-kms-ctx.c
     ['hmacSha256Hook', 'sha256Hook'].forEach(hookName => {
-      it(`should error with a specific kms erro when ${hookName} fails`, function(done) {
+      it(`should error with a specific kms error when ${hookName} fails`, function(done) {
         const error = new Error('some random error text');
         this.sinon.stub(cryptoCallbacks, hookName).returns(error);
 
@@ -199,6 +199,29 @@ describe('cryptoCallbacks', function() {
           }
         }
       });
+    });
+
+    it('shoudl error sychronously with error when randomHook fails', function(done) {
+      const error = new Error('some random error text');
+      this.sinon.stub(cryptoCallbacks, 'randomHook').returns(error);
+
+      const encryption = new ClientEncryption(this.client, {
+        keyVaultNamespace: 'test.encryption',
+        kmsProviders
+      });
+
+      try {
+        encryption.createDataKey('aws', dataKeyOptions, () => {
+          done(new Error('We should not be here'));
+        });
+      } catch (err) {
+        try {
+          expect(err).to.have.property('message', 'some random error text');
+          done();
+        } catch (e) {
+          done(e);
+        }
+      }
     });
   });
 });
