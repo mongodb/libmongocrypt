@@ -31,7 +31,24 @@ function aes256CbcDecryptHook(key, iv, input, output) {
 }
 
 function randomHook(buffer, count) {
-  crypto.randomFillSync(buffer, 0, count);
+  try {
+    crypto.randomFillSync(buffer, 0, count);
+  } catch (e) {
+    return e;
+  }
+  return count;
+}
+
+function randomHookNode4(buffer, count) {
+  let result;
+  try {
+    result = crypto.randomBytes(count);
+  } catch (e) {
+    return e;
+  }
+
+  result.copy(buffer);
+  return count;
 }
 
 function sha256Hook(input, output) {
@@ -69,7 +86,7 @@ function makeHmacHook(algorithm) {
 module.exports = {
   aes256CbcEncryptHook,
   aes256CbcDecryptHook,
-  randomHook,
+  randomHook: typeof crypto.randomFillSync === 'function' ? randomHook : randomHookNode4,
   hmacSha512Hook: makeHmacHook('sha512'),
   hmacSha256Hook: makeHmacHook('sha256'),
   sha256Hook
