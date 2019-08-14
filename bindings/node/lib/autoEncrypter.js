@@ -18,26 +18,47 @@ module.exports = function(modules) {
    */
 
   /**
-   * @classdesc
    * An internal class to be used by the driver for auto encryption
    * **NOTE**: Not meant to be instantiated directly, this is for internal use only.
    */
   class AutoEncrypter {
     /**
+     * @name AutoEncrypter~logLevel
+     * @kind enum
+     * @description
+     * The level of severity of the log message
+     *
+     * | Value | Level |
+     * |-------|-------|
+     * | 0 | Fatal Error |
+     * | 1 | Error |
+     * | 2 | Warning |
+     * | 3 | Info |
+     * | 4 | Trace |
+     */
+    /**
+     * @callback AutoEncrypter~logger
+     * @descritpion A callback that is invoked with logging information from
+     * the underlying C++ Bindings.
+     * @param {AutoEncrypter~logLevel} level The level of logging. Valid values are 0 (Fatal Error), 1 (Error), 2 (Warning), 3 (Info), 4 (Trace)
+     * @param {string} message The message to log
+     */
+
+    /**
      * Create an AutoEncrypter
      *
-     * **Note: Do not instantiate this class directly. Rather, supply the relevant options to a MongoClient**
+     * **Note**: Do not instantiate this class directly. Rather, supply the relevant options to a MongoClient
      *
-     * **Note: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.**
-     * **It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.**
-     * **Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.**
-     * **Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.**
+     * **Note**: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.
+     * It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
+     * Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.
+     * Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
      *
      * @param {MongoClient} client The client autoEncryption is enabled on
      * @param {object} [options] Optional settings
      * @param {string} [options.keyVaultNamespace='admin.dataKeys'] The namespace of the key vault, used to store encryption keys
      * @param {object} [options.schemaMap] A local specification of a JSON schema used for encryption
-     * @param {KMSProviders} [options.kmsProviders] options for specific kms providers to use
+     * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
      * @param {function} [options.logger] An optional hook to catch logging messages from the underlying encryption engine
      * @param {AutoEncrypter~AutoEncryptionExtraOptions} [options.extraOptions] Extra options related to mongocryptd
      *
@@ -90,7 +111,7 @@ module.exports = function(modules) {
 
     /**
      * @ignore
-     * @param {*} callback Invoked when the mongocryptd client either successfully connects or errors
+     * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
       if (this._mongocryptdManager.bypassSpawn) {
@@ -104,7 +125,7 @@ module.exports = function(modules) {
 
     /**
      * @ignore
-     * @param {*} callback Invoked when the mongocryptd client either successfully disconnects or errors
+     * @param {Function} callback Invoked when the mongocryptd client either successfully disconnects or errors
      */
     teardown(force, callback) {
       this._mongocryptdClient.close(force, callback);
@@ -116,7 +137,7 @@ module.exports = function(modules) {
      *
      * @param {string} ns The namespace for this encryption context
      * @param {object} cmd The command to encrypt
-     * @param {function} callback
+     * @param {Function} callback
      */
     encrypt(ns, cmd, callback) {
       if (typeof ns !== 'string') {
@@ -151,8 +172,8 @@ module.exports = function(modules) {
      * @ignore
      * Decrypt a command response
      *
-     * @param {*} buffer
-     * @param {*} callback
+     * @param {Buffer} buffer
+     * @param {Function} callback
      */
     decrypt(response, callback) {
       const bson = this._bson;

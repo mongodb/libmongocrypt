@@ -44,7 +44,7 @@ npm test
 
 <dl>
 <dt><a href="#KMSProviders">KMSProviders</a></dt>
-<dd><p>Configuration options that are used by specific kms providers during key generation, encryption, and decryption.</p>
+<dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
 </dd>
 </dl>
 
@@ -59,7 +59,11 @@ An internal class to be used by the driver for auto encryption
 
     * [new AutoEncrypter(client, [options])](#new_AutoEncrypter_new)
 
+    * [~logLevel](#AutoEncrypter..logLevel)
+
     * [~AutoEncryptionExtraOptions](#AutoEncrypter..AutoEncryptionExtraOptions)
+
+    * [~logger](#AutoEncrypter..logger)
 
 
 <a name="new_AutoEncrypter_new"></a>
@@ -72,18 +76,18 @@ An internal class to be used by the driver for auto encryption
 | [options] | <code>object</code> |  | Optional settings |
 | [options.keyVaultNamespace] | <code>string</code> | <code>&quot;&#x27;admin.dataKeys&#x27;&quot;</code> | The namespace of the key vault, used to store encryption keys |
 | [options.schemaMap] | <code>object</code> |  | A local specification of a JSON schema used for encryption |
-| [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) |  | options for specific kms providers to use |
+| [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) |  | options for specific KMS providers to use |
 | [options.logger] | <code>function</code> |  | An optional hook to catch logging messages from the underlying encryption engine |
 | [options.extraOptions] | [<code>AutoEncryptionExtraOptions</code>](#AutoEncrypter..AutoEncryptionExtraOptions) |  | Extra options related to mongocryptd |
 
 Create an AutoEncrypter
 
-**Note: Do not instantiate this class directly. Rather, supply the relevant options to a MongoClient**
+**Note**: Do not instantiate this class directly. Rather, supply the relevant options to a MongoClient
 
-**Note: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.**
-**It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.**
-**Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.**
-**Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.**
+**Note**: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.
+It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
+Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.
+Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
 **Example**  
 ```js
@@ -103,6 +107,19 @@ const client = new MongoClient(URL, {
 await client.connect();
 // From here on, the client will be encrypting / decrypting automatically
 ```
+<a name="AutoEncrypter..logLevel"></a>
+
+### *AutoEncrypter*~logLevel
+The level of severity of the log message
+
+| Value | Level |
+|-------|-------|
+| 0 | Fatal Error |
+| 1 | Error |
+| 2 | Warning |
+| 3 | Info |
+| 4 | Trace |
+
 <a name="AutoEncrypter..AutoEncryptionExtraOptions"></a>
 
 ### *AutoEncrypter*~AutoEncryptionExtraOptions
@@ -114,6 +131,17 @@ await client.connect();
 | [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | if true, autoEncryption will not spawn a mongocryptd |
 | [mongocryptdSpawnPath] | <code>string</code> |  | the path to the mongocryptd executable |
 | [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | command line arguments to pass to the mongocryptd executable |
+
+<a name="AutoEncrypter..logger"></a>
+
+### *AutoEncrypter*~logger
+**Descritpion**: A callback that is invoked with logging information from
+the underlying C++ Bindings.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| level | [<code>logLevel</code>](#AutoEncrypter..logLevel) | The level of logging. Valid values are 0 (Fatal Error), 1 (Error), 2 (Warning), 3 (Info), 4 (Trace) |
+| message | <code>string</code> | The message to log |
 
 <a name="ClientEncryption"></a>
 
@@ -151,7 +179,7 @@ The public interface for explicit client side encryption
 | client | <code>MongoClient</code> | The client used for encryption |
 | options | <code>object</code> | Optional settings |
 | options.keyVaultNamespace | <code>string</code> | The namespace of the key vault, used to store encryption keys |
-| [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) | options for specific kms providers to use |
+| [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) | options for specific KMS providers to use |
 
 Create a new encryption instance
 
@@ -347,11 +375,11 @@ An error indicating that something went wrong specifically with MongoDB Client E
 
 | Name | Type | Description |
 | --- | --- | --- |
-| [aws] | <code>object</code> | Configuration options for using 'aws' as your kms provider |
+| [aws] | <code>object</code> | Configuration options for using 'aws' as your KMS provider |
 | [aws.accessKeyId] | <code>string</code> | An AWS Access Key |
 | [aws.secretAccessKey] | <code>string</code> | An AWS Secret Key |
-| [local] | <code>object</code> | Configuration options for using 'local' as your kms provider |
+| [local] | <code>object</code> | Configuration options for using 'local' as your KMS provider |
 | [local.key] | <code>Buffer</code> | A 96-byte long Buffer used for local encryption |
 
-Configuration options that are used by specific kms providers during key generation, encryption, and decryption.
+Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
 

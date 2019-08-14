@@ -48,16 +48,16 @@ module.exports = function(modules) {
 
   /**
    * @typedef KMSProviders
-   * @description Configuration options that are used by specific kms providers during key generation, encryption, and decryption.
-   * @prop {object} [aws] Configuration options for using 'aws' as your kms provider
+   * @description Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
+   * @prop {object} [aws] Configuration options for using 'aws' as your KMS provider
    * @prop {string} [aws.accessKeyId] An AWS Access Key
    * @prop {string} [aws.secretAccessKey] An AWS Secret Key
-   * @prop {object} [local] Configuration options for using 'local' as your kms provider
+   * @prop {object} [local] Configuration options for using 'local' as your KMS provider
    * @prop {Buffer} [local.key] A 96-byte long Buffer used for local encryption
    */
 
   /**
-   * @classdesc The public interface for explicit client side encryption
+   * The public interface for explicit client side encryption
    */
   class ClientEncryption {
     /**
@@ -66,7 +66,7 @@ module.exports = function(modules) {
      * @param {MongoClient} client The client used for encryption
      * @param {object} options Optional settings
      * @param {string} options.keyVaultNamespace The namespace of the key vault, used to store encryption keys
-     * @param {KMSProviders} [options.kmsProviders] options for specific kms providers to use
+     * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
      *
      * @example
      * new ClientEncryption(mongoClient, {
