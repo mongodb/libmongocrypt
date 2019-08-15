@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
@@ -21,11 +21,11 @@ using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Crypt;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 namespace drivertest
 {
@@ -101,7 +101,11 @@ namespace drivertest
 
         public Guid GenerateKey(IKmsCredentials credentials, IKmsKeyId kmsKeyId)
         {
-            CryptOptions options = new CryptOptions(credentials);
+            var options = new CryptOptions(
+                new Dictionary<KmsType, IKmsCredentials>()
+                {
+                    { credentials.KmsType, credentials }
+                });
 
             BsonDocument key = null;
 
@@ -112,16 +116,20 @@ namespace drivertest
             }
 
             _keyVault.InsertOne(key);
-            Guid g =  key["_id"].AsGuid;
+            Guid g = key["_id"].AsGuid;
             return g;
         }
 
         public BsonDocument EncryptCommand(IKmsCredentials credentials, IMongoCollection<BsonDocument> coll, BsonDocument cmd)
         {
-            CryptOptions options = new CryptOptions(credentials);
+            var options = new CryptOptions(
+                new Dictionary<KmsType, IKmsCredentials>()
+                {
+                    { credentials.KmsType, credentials }
+                });
 
             using (var cryptClient = CryptClientFactory.Create(options))
-            using (var context = cryptClient.StartEncryptionContext(coll.Database.DatabaseNamespace.DatabaseName,  command: BsonUtil.ToBytes(cmd)))
+            using (var context = cryptClient.StartEncryptionContext(coll.Database.DatabaseNamespace.DatabaseName, command: BsonUtil.ToBytes(cmd)))
             {
                 return ProcessState(context, coll.Database, cmd);
 
@@ -130,7 +138,11 @@ namespace drivertest
 
         public BsonDocument DecryptCommand(IKmsCredentials credentials, IMongoDatabase db, BsonDocument doc)
         {
-            CryptOptions options = new CryptOptions(credentials);
+            CryptOptions options = new CryptOptions(
+                new Dictionary<KmsType, IKmsCredentials>()
+                {
+                    { credentials.KmsType, credentials }
+                });
 
             using (var cryptClient = CryptClientFactory.Create(options))
             using (var context = cryptClient.StartDecryptionContext(BsonUtil.ToBytes(doc)))
@@ -165,7 +177,8 @@ namespace drivertest
             if (_kmsEndpoint != null)
             {
                 tcpClient.Connect(_kmsEndpoint.DnsSafeHost, _kmsEndpoint.Port);
-            } else
+            }
+            else
             {
                 tcpClient.Connect(request.Endpoint, 443);
             }
@@ -353,7 +366,7 @@ namespace drivertest
         static string GetEnvironmenVariabletOrValue(string env, string def)
         {
             string value = Environment.GetEnvironmentVariable(env);
-            if(value != null)
+            if (value != null)
             {
                 return value;
             }
@@ -367,7 +380,7 @@ namespace drivertest
 
             Console.WriteLine("Using url: " + args);
             // or change me to use the mock
-            Uri kmsURL = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY") != null ? null :  new Uri("https://localhost:8000");
+            Uri kmsURL = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY") != null ? null : new Uri("https://localhost:8000");
 
             var cryptDUrl = new MongoUrl("mongodb://localhost:1234");
             var client = new MongoClient("mongodb://localhost:27017");

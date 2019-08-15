@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace MongoDB.Crypt
 {
     /// <summary>
-    /// Options to configure mongocrypt with
+    /// Options to configure mongocrypt with.
     /// </summary>
     public class CryptOptions
     {
-        public IKmsCredentials KmsCredentials { get; }
+        public IReadOnlyDictionary<KmsType, IKmsCredentials> KmsCredentialsMap { get; }
         public byte[] Schema { get; }
 
-        public CryptOptions(IKmsCredentials kmsCredentials)
+        public CryptOptions(IDictionary<KmsType, IKmsCredentials> map) : this(map, null)
         {
-            KmsCredentials = kmsCredentials;
         }
 
-        public CryptOptions(IKmsCredentials kmsCredentials, byte[] schema)
+        public CryptOptions(
+            IDictionary<KmsType, IKmsCredentials> map,
+            byte[] schema)
         {
-            KmsCredentials = kmsCredentials;
+            KmsCredentialsMap = new ReadOnlyDictionary<KmsType, IKmsCredentials>(map);
             Schema = schema;
         }
 
