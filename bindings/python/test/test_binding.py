@@ -28,8 +28,8 @@ class TestBinding(unittest.TestCase):
 
     def assertVersionLike(self, version):
         self.assertTrue(isinstance(version, str), msg=version)
-        # Prefer "0.1.0" over "0.1" for consistency.
-        self.assertGreaterEqual(len(version.split('.')), 3, msg=version)
+        # There should be at least one dot: "1.0" or "1.0.0" not "1".
+        self.assertGreaterEqual(len(version.split('.')), 2, msg=version)
 
     def test_pymongocrypt_version(self):
         self.assertVersionLike(pymongocrypt.__version__)
