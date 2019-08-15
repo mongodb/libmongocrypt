@@ -16,14 +16,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using Xunit;
-using System.Text;
 using FluentAssertions;
-using Xunit.Abstractions;
 
 namespace MongoDB.Crypt.Test32
 {
@@ -32,9 +26,15 @@ namespace MongoDB.Crypt.Test32
         CryptOptions CreateOptions()
         {
             return new CryptOptions(
-                new AwsKmsCredentials(
-                    awsSecretAccessKey: "us-east-1",
-                    awsAccessKeyId: "us-east-1")
+                new Dictionary<KmsType, IKmsCredentials>()
+                {
+                    {
+                        KmsType.Aws,
+                        new AwsKmsCredentials(
+                            awsSecretAccessKey: "us-east-1",
+                            awsAccessKeyId: "us-east-1")
+                    }
+                }
             );
         }
 

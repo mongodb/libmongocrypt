@@ -32,8 +32,10 @@ namespace MongoDB.Crypt
 
             Status status = new Status();
 
-            IInternalKmsCredentials kmsCredentials = (IInternalKmsCredentials)options.KmsCredentials;
-            kmsCredentials.SetCredentials(handle,status);
+            foreach (var kmsCredentials in options.KmsCredentialsMap)
+            {
+                ((IInternalKmsCredentials)kmsCredentials.Value).SetCredentials(handle,status);
+            }
 
             if (options.Schema != null)
             {

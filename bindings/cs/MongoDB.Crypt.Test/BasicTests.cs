@@ -17,7 +17,6 @@
 using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -36,19 +35,20 @@ namespace MongoDB.Crypt.Test
         {
             _output = output;
         }
-        
+
         CryptOptions CreateOptions()
         {
             return new CryptOptions(
-                new AwsKmsCredentials(
-                    awsSecretAccessKey: "us-east-1",
-                    awsAccessKeyId: "us-east-1")
-            );
+                CreateCredentialsMap(
+                    new AwsKmsCredentials(
+                        awsSecretAccessKey: "us-east-1",
+                        awsAccessKeyId: "us-east-1"),
+                    new LocalKmsCredentials(new byte[96])));
         }
 
         AwsKeyId CreateKey()
         {
-            return new AwsKeyId( customerMasterKey: "cmk", region: "us-east-1");
+            return new AwsKeyId(customerMasterKey: "cmk", region: "us-east-1");
         }
 
         [Fact]
@@ -97,16 +97,16 @@ namespace MongoDB.Crypt.Test
             var listCollectionsReply = ReadJsonTestFile("collection-info.json");
             var schema = new BsonDocument("test.test", listCollectionsReply["options"]["validator"]["$jsonSchema"]);
 
-            var options =  new CryptOptions(
-                new AwsKmsCredentials(
+            var options = new CryptOptions(
+                CreateCredentialsMap(new AwsKmsCredentials(
                     awsSecretAccessKey: "us-east-1",
-                    awsAccessKeyId: "us-east-1"),
-                BsonUtil.ToBytes(schema)
-            );
+                    awsAccessKeyId: "us-east-1")),
+                BsonUtil.ToBytes(schema));
+
             using (var cryptClient = CryptClientFactory.Create(options))
             using (var context =
                 cryptClient.StartEncryptionContext(
-                    db:"test",
+                    db: "test",
                     command: BsonUtil.ToBytes(ReadJsonTestFile("cmd.json"))))
             {
 
@@ -172,7 +172,7 @@ namespace MongoDB.Crypt.Test
             using (var cryptClient = CryptClientFactory.Create(CreateOptions()))
             {
                 Func<CryptContext> startEncryptionContext = () =>
-                    cryptClient.StartEncryptionContext("test",  command: new byte[] {0x1, 0x2, 0x3});
+                    cryptClient.StartEncryptionContext("test", command: new byte[] { 0x1, 0x2, 0x3 });
 
                 // Ensure if we encrypt non-sense, it throws an exception demonstrating our exception code is good
                 var exception = Record.Exception(startEncryptionContext);
@@ -264,13 +264,13 @@ namespace MongoDB.Crypt.Test
         [Fact]
         public void TestAwsKeyCreationWithkeyAltNames()
         {
-            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
-            var keyId = new AwsKeyId( customerMasterKey: "cmk", region: "us-east-1", alternateKeyNamesBsonDocuments: keyAltNameBuffers);
+            var keyId = new AwsKeyId(customerMasterKey: "cmk", region: "us-east-1", alternateKeyNamesBsonDocuments: keyAltNameBuffers);
             var key = new AwsKmsCredentials(awsSecretAccessKey: "us-east-1", awsAccessKeyId: "us-east-1");
 
-            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(key)))
+            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(CreateCredentialsMap(key))))
             using (var context =
                 cryptClient.StartCreateDataKeyContext(keyId))
             {
@@ -285,13 +285,13 @@ namespace MongoDB.Crypt.Test
         [Fact]
         public void TestAwsKeyCreationWithkeyAltNamesStepwise()
         {
-            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
-            var keyId = new AwsKeyId( customerMasterKey: "cmk", region: "us-east-1", alternateKeyNamesBsonDocuments: keyAltNameBuffers);
+            var keyId = new AwsKeyId(customerMasterKey: "cmk", region: "us-east-1", alternateKeyNamesBsonDocuments: keyAltNameBuffers);
             var key = new AwsKmsCredentials(awsSecretAccessKey: "us-east-1", awsAccessKeyId: "us-east-1");
 
-            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(key)))
+            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(CreateCredentialsMap(key))))
             using (var context =
                 cryptClient.StartCreateDataKeyContext(keyId))
             {
@@ -314,12 +314,12 @@ namespace MongoDB.Crypt.Test
         [Fact]
         public void TestLocalKeyCreationWithkeyAltNames()
         {
-            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
             var key = new LocalKmsCredentials(new byte[96]);
             var keyId = new LocalKeyId(keyAltNameBuffers);
-            var cryptOptions = new CryptOptions(key);
+            var cryptOptions = new CryptOptions(CreateCredentialsMap(key));
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
             using (var context =
@@ -336,12 +336,12 @@ namespace MongoDB.Crypt.Test
         [Fact]
         public void TestLocalKeyCreationWithkeyAltNamesStepwise()
         {
-            var keyAltNames = new[] {"KeyMaker", "Architect"};
+            var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
             var key = new LocalKmsCredentials(new byte[96]);
             var keyId = new LocalKeyId(keyAltNameBuffers);
-            var cryptOptions = new CryptOptions(key);
+            var cryptOptions = new CryptOptions(CreateCredentialsMap(key));
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
             using (var context =
@@ -365,7 +365,7 @@ namespace MongoDB.Crypt.Test
 
             var key = new LocalKmsCredentials(new byte[96]);
             var keyId = new LocalKeyId();
-            var cryptOptions = new CryptOptions(key);
+            var cryptOptions = new CryptOptions(CreateCredentialsMap(key));
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
             using (var context =
@@ -380,10 +380,9 @@ namespace MongoDB.Crypt.Test
         [Fact]
         public void TestLocalKeyCreationStepwise()
         {
-
             var key = new LocalKmsCredentials(new byte[96]);
             var keyId = new LocalKeyId();
-            var cryptOptions = new CryptOptions(key);
+            var cryptOptions = new CryptOptions(CreateCredentialsMap(key));
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
             using (var context =
@@ -396,6 +395,16 @@ namespace MongoDB.Crypt.Test
                 (state, _, _) = ProcessState(context);
                 state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_DONE);
             }
+        }
+
+        private Dictionary<KmsType, IKmsCredentials> CreateCredentialsMap(params IKmsCredentials[] map)
+        {
+            var dictionary = new Dictionary<KmsType, IKmsCredentials>();
+            foreach (var item in map)
+            {
+                dictionary.Add(item.KmsType, item);
+            }
+            return dictionary;
         }
 
         private (Binary binarySent, BsonDocument document) ProcessContextToCompletion(CryptContext context, bool isKmsDecrypt = true)
@@ -425,81 +434,81 @@ namespace MongoDB.Crypt.Test
             switch (context.State)
             {
                 case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
-                {
-                    var binary = context.GetOperation();
-                    var doc = BsonUtil.ToDocument(binary);
-                    _output.WriteLine("ListCollections: " + doc);
-                    var reply = ReadJsonTestFile("collection-info.json");
-                    _output.WriteLine("Reply:" + reply);
-                    context.Feed(BsonUtil.ToBytes(reply));
-                    context.MarkDone();
-                    return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO, binary, doc);
-                }
-
-                case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
-                {
-                    var binary = context.GetOperation();
-                    var doc = BsonUtil.ToDocument(binary);
-                    _output.WriteLine("Markings: " + doc);
-                    var reply = ReadJsonTestFile("mongocryptd-reply.json");
-                    _output.WriteLine("Reply:" + reply);
-                    context.Feed(BsonUtil.ToBytes(reply));
-                    context.MarkDone();
-                    return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS, binary, doc);
-                }
-
-                case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_KEYS:
-                {
-                    var binary = context.GetOperation();
-                    var doc = BsonUtil.ToDocument(binary);
-                    _output.WriteLine("Key Document: " + doc);
-                    var reply = ReadJsonTestFile("key-document.json");
-                    _output.WriteLine("Reply:" + reply);
-                    context.Feed(BsonUtil.ToBytes(reply));
-                    context.MarkDone();
-                    return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_KEYS, binary, doc);
-                }
-
-                case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_KMS:
-                {
-                    var requests = context.GetKmsMessageRequests();
-                    foreach (var req in requests)
                     {
-                        var binary = req.Message;
-                        _output.WriteLine("Key Document: " + binary);
-                        var postRequest = binary.ToString();
-                        postRequest.Should().Contain("Host:kms.us-east-1.amazonaws.com");
-
-                        var reply = ReadHttpTestFile(isKmsDecrypt ? "kms-decrypt-reply.txt" : "kms-encrypt-reply.txt");
-                        _output.WriteLine("Reply: " + reply);
-                        req.Feed(Encoding.UTF8.GetBytes(reply));
-                        req.BytesNeeded.Should().Be(0);
+                        var binary = context.GetOperation();
+                        var doc = BsonUtil.ToDocument(binary);
+                        _output.WriteLine("ListCollections: " + doc);
+                        var reply = ReadJsonTestFile("collection-info.json");
+                        _output.WriteLine("Reply:" + reply);
+                        context.Feed(BsonUtil.ToBytes(reply));
+                        context.MarkDone();
+                        return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO, binary, doc);
                     }
 
-                    requests.MarkDone();
-                    return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_KMS, null, null);
-                }
+                case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+                    {
+                        var binary = context.GetOperation();
+                        var doc = BsonUtil.ToDocument(binary);
+                        _output.WriteLine("Markings: " + doc);
+                        var reply = ReadJsonTestFile("mongocryptd-reply.json");
+                        _output.WriteLine("Reply:" + reply);
+                        context.Feed(BsonUtil.ToBytes(reply));
+                        context.MarkDone();
+                        return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS, binary, doc);
+                    }
+
+                case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+                    {
+                        var binary = context.GetOperation();
+                        var doc = BsonUtil.ToDocument(binary);
+                        _output.WriteLine("Key Document: " + doc);
+                        var reply = ReadJsonTestFile("key-document.json");
+                        _output.WriteLine("Reply:" + reply);
+                        context.Feed(BsonUtil.ToBytes(reply));
+                        context.MarkDone();
+                        return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_KEYS, binary, doc);
+                    }
+
+                case CryptContext.StateCode.MONGOCRYPT_CTX_NEED_KMS:
+                    {
+                        var requests = context.GetKmsMessageRequests();
+                        foreach (var req in requests)
+                        {
+                            var binary = req.Message;
+                            _output.WriteLine("Key Document: " + binary);
+                            var postRequest = binary.ToString();
+                            postRequest.Should().Contain("Host:kms.us-east-1.amazonaws.com");
+
+                            var reply = ReadHttpTestFile(isKmsDecrypt ? "kms-decrypt-reply.txt" : "kms-encrypt-reply.txt");
+                            _output.WriteLine("Reply: " + reply);
+                            req.Feed(Encoding.UTF8.GetBytes(reply));
+                            req.BytesNeeded.Should().Be(0);
+                        }
+
+                        requests.MarkDone();
+                        return (CryptContext.StateCode.MONGOCRYPT_CTX_NEED_KMS, null, null);
+                    }
 
                 case CryptContext.StateCode.MONGOCRYPT_CTX_READY:
-                {
-                    Binary binary = context.FinalizeForEncryption();
-                    _output.WriteLine("Buffer:" + binary.ToArray());
-                    var document = BsonUtil.ToDocument(binary);
-                    _output.WriteLine("Document:" + document);
-                    return (CryptContext.StateCode.MONGOCRYPT_CTX_READY, binary, document);
-                }
+                    {
+                        Binary binary = context.FinalizeForEncryption();
+                        _output.WriteLine("Buffer:" + binary.ToArray());
+                        var document = BsonUtil.ToDocument(binary);
+                        _output.WriteLine("Document:" + document);
+                        return (CryptContext.StateCode.MONGOCRYPT_CTX_READY, binary, document);
+                    }
 
                 case CryptContext.StateCode.MONGOCRYPT_CTX_DONE:
-                {
-                    _output.WriteLine("DONE!!");
-                    return (CryptContext.StateCode.MONGOCRYPT_CTX_DONE, null, null);
-                }
+                    {
+                        _output.WriteLine("DONE!!");
+                        return (CryptContext.StateCode.MONGOCRYPT_CTX_DONE, null, null);
+                    }
 
                 case CryptContext.StateCode.MONGOCRYPT_CTX_ERROR:
-                {
-                    // We expect exceptions are thrown before we get to this state
-                    throw new NotImplementedException();
-                }
+                    {
+                        // We expect exceptions are thrown before we get to this state
+                        throw new NotImplementedException();
+                    }
             }
 
             throw new NotImplementedException();
@@ -507,7 +516,7 @@ namespace MongoDB.Crypt.Test
 
         static IEnumerable<string> FindTestDirectories()
         {
-            string[] searchPaths = new [] { Path.Combine("..", "test", "example"), Path.Combine("..", "test", "data") };
+            string[] searchPaths = new[] { Path.Combine("..", "test", "example"), Path.Combine("..", "test", "data") };
             var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string cwd = Directory.GetCurrentDirectory(); // Assume we are in a child directory of the repo
             var searchDirectory = assemblyLocation ?? cwd;
@@ -536,8 +545,9 @@ namespace MongoDB.Crypt.Test
             var text = ReadTestFile(file);
 
             StringBuilder builder = new StringBuilder(text.Length);
-            for(int i = 0; i < text.Length; i++) {
-                if(text[i] == '\n' && text[i - 1] != '\r' )
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '\n' && text[i - 1] != '\r')
                     builder.Append('\r');
                 builder.Append(text[i]);
             }
