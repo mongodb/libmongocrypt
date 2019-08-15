@@ -18,7 +18,6 @@ REVISION=latest
 # Build the manylinux2010 wheel
 rm -rf ./libmongocrypt
 curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/rhel-62-64-bit/master/${REVISION}/libmongocrypt.tar.gz
-curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/rhel-62-64-bit/master/latest/libmongocrypt.tar.gz
 mkdir libmongocrypt
 tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
 NOCRYPTO_SO=libmongocrypt/nocrypto/lib64/libmongocrypt.so

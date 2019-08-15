@@ -10,10 +10,10 @@ from setuptools import setup, find_packages
 # library/libraries in purelib folder:
 # 	libmongocrypt.so
 # The wheel has to be platlib compliant in order to be repaired by auditwheel.
-try:
-    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-
-    if sys.platform in ('win32', 'darwin'):
+cmdclass = {}
+if sys.platform in ('win32', 'darwin'):
+    try:
+        from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
         class bdist_wheel(_bdist_wheel):
 
             def finalize_options(self):
@@ -25,10 +25,11 @@ try:
                 # Our python source is py2/3 compatible.
                 python, abi = 'py2.py3', 'none'
                 return python, abi, plat
-    else:
-        bdist_wheel = _bdist_wheel
-except ImportError:
-    bdist_wheel = None
+
+        cmdclass['bdist_wheel'] = bdist_wheel
+    except ImportError:
+        # Version of wheel is too old, use None to fail a bdist_wheel attempt.
+        cmdclass['bdist_wheel'] = None
 
 with open('README.rst', 'rb') as f:
     LONG_DESCRIPTION = f.read().decode('utf8')
@@ -75,5 +76,5 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Database"],
-    cmdclass={'bdist_wheel': bdist_wheel},
+    cmdclass=cmdclass,
 )
