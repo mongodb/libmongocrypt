@@ -1,21 +1,32 @@
 import os
+import sys
 
 from setuptools import setup, find_packages
 
-# Our wheels are platform specific because we embed libmongocrypt.
+# Make our Windows and macOS wheels platform specific because we embed
+# libmongocrypt. On Linux we ship manylinux2010 wheels which cannot do this or
+# else auditwheel raises the following error:
+# RuntimeError: Invalid binary wheel, found the following shared
+# library/libraries in purelib folder:
+# 	libmongocrypt.so
+# The wheel has to be platlib compliant in order to be repaired by auditwheel.
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-    class bdist_wheel(_bdist_wheel):
 
-        def finalize_options(self):
-            _bdist_wheel.finalize_options(self)
-            self.root_is_pure = False
+    if sys.platform in ('win32', 'darwin'):
+        class bdist_wheel(_bdist_wheel):
 
-        def get_tag(self):
-            python, abi, plat = _bdist_wheel.get_tag(self)
-            # Our python source is py2/3 compatible.
-            python, abi = 'py2.py3', 'none'
-            return python, abi, plat
+            def finalize_options(self):
+                _bdist_wheel.finalize_options(self)
+                self.root_is_pure = False
+
+            def get_tag(self):
+                python, abi, plat = _bdist_wheel.get_tag(self)
+                # Our python source is py2/3 compatible.
+                python, abi = 'py2.py3', 'none'
+                return python, abi, plat
+    else:
+        bdist_wheel = _bdist_wheel
 except ImportError:
     bdist_wheel = None
 
