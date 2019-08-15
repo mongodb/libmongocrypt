@@ -81,8 +81,10 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    bson_iter_t iter;
    _mongocrypt_buffer_t buf;
    int64_t created_date;
-   const int64_t current_epoch_time_ms = 1565097975532ll; /* the time this code was written */
-   const int64_t one_hundred_years_ms = (int64_t) 1000ll * 60ll * 60ll * 24ll * 365ll * 100ll;
+   const int64_t current_epoch_time_ms =
+      1565097975532ll; /* the time this code was written */
+   const int64_t one_hundred_years_ms =
+      (int64_t) 1000ll * 60ll * 60ll * 24ll * 365ll * 100ll;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    ctx = mongocrypt_ctx_new (crypt);
@@ -118,7 +120,7 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    bin = mongocrypt_binary_new ();
    ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
    /* Check the BSON document created. */
-   _mongocrypt_binary_to_bson (bin, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &as_bson));
    CRYPT_TRACEF (&crypt->log, "created data key: %s\n", tmp_json (&as_bson));
    /* _id is a UUID */
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "_id"));

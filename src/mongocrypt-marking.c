@@ -241,7 +241,10 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
       /* Use randomized encryption.
        * In this case, we must generate a new, random iv. */
       _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
-      _mongocrypt_random (kb->crypt->crypto, &iv, MONGOCRYPT_IV_LEN, status);
+      if (!_mongocrypt_random (
+             kb->crypt->crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
+         goto fail;
+      }
       ret = _mongocrypt_do_encryption (kb->crypt->crypto,
                                        &iv,
                                        &associated_data,

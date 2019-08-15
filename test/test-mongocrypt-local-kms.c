@@ -43,7 +43,7 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
    ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
 
-   _mongocrypt_binary_to_bson (bin, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &as_bson));
    /* Keep a copy to decrypt later. */
    _mongocrypt_buffer_copy_from_binary (&encrypted_cmd, bin);
    CRYPT_TRACEF (&crypt->log, "encrypted doc: %s", tmp_json (&as_bson));
@@ -68,7 +68,7 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
    ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
 
-   _mongocrypt_binary_to_bson (bin, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &as_bson));
    CRYPT_TRACEF (&crypt->log, "decrypted doc: %s", tmp_json (&as_bson));
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);

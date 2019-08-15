@@ -92,7 +92,7 @@ typedef enum {
 bool
 _mongocrypt_validate_and_copy_string (const char *in,
                                       int32_t in_len,
-                                      char **out);
+                                      char **out) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 char *
 _mongocrypt_new_string_from_bytes (const void *in, int len);

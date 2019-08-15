@@ -35,4 +35,10 @@ typedef signed char bool;
 #define __bool_true_false_are_defined 1
 #endif
 
+#ifdef __GNUC__
+#define MONGOCRYPT_WARN_UNUSED_RESULT __attribute__ ((warn_unused_result))
+#else
+#define MONGOCRYPT_WARN_UNUSED_RESULT
+#endif
+
 #endif /* MONGOCRYPT_COMPAT_H */

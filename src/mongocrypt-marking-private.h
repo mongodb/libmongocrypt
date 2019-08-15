@@ -39,13 +39,15 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking);
 bool
 _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    _mongocrypt_marking_t *out,
-                                   mongocrypt_status_t *status);
+                                   mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_marking_to_ciphertext (void *ctx,
                                    _mongocrypt_marking_t *marking,
                                    _mongocrypt_ciphertext_t *ciphertext,
-                                   mongocrypt_status_t *status);
+                                   mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 #endif /* MONGOCRYPT_MARKING_PRIVATE_H */

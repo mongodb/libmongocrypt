@@ -57,7 +57,8 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts);
 
 bool
 _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
-                           mongocrypt_status_t *status);
+                           mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 #endif /* MONGOCRYPT_OPTS_PRIVATE_H */

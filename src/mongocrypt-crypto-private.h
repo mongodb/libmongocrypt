@@ -54,7 +54,8 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
                            const _mongocrypt_buffer_t *plaintext,
                            _mongocrypt_buffer_t *ciphertext,
                            uint32_t *bytes_written,
-                           mongocrypt_status_t *status);
+                           mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
@@ -63,13 +64,14 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
                            const _mongocrypt_buffer_t *ciphertext,
                            _mongocrypt_buffer_t *plaintext,
                            uint32_t *bytes_written,
-                           mongocrypt_status_t *status);
+                           mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_random (_mongocrypt_crypto_t *crypto,
                     _mongocrypt_buffer_t *out,
                     uint32_t count,
-                    mongocrypt_status_t *status);
+                    mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 int
 _mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len);
@@ -81,7 +83,7 @@ _mongocrypt_calculate_deterministic_iv (
    const _mongocrypt_buffer_t *plaintext,
    const _mongocrypt_buffer_t *associated_data,
    _mongocrypt_buffer_t *out,
-   mongocrypt_status_t *status);
+   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 /* Crypto implementations must implement these functions. */
 
@@ -100,7 +102,8 @@ _native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
                                     const _mongocrypt_buffer_t *in,
                                     _mongocrypt_buffer_t *out,
                                     uint32_t *bytes_written,
-                                    mongocrypt_status_t *status);
+                                    mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
@@ -108,17 +111,20 @@ _native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
                                     const _mongocrypt_buffer_t *in,
                                     _mongocrypt_buffer_t *out,
                                     uint32_t *bytes_written,
-                                    mongocrypt_status_t *status);
+                                    mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
                              const _mongocrypt_buffer_t *in,
                              _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status);
+                             mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _native_crypto_random (_mongocrypt_buffer_t *out,
                        uint32_t count,
-                       mongocrypt_status_t *status);
+                       mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_CRYPTO_PRIVATE_H */

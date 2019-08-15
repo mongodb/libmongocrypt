@@ -91,13 +91,19 @@ _append_id (mongocrypt_t *crypt, bson_t *bson, mongocrypt_status_t *status)
    uuid.owned = true;
 
    if (!_mongocrypt_random (crypt->crypto, &uuid, UUID_LEN, status)) {
+      _mongocrypt_buffer_cleanup (&uuid);
       return false;
    }
 
    uuid.data[6] = (uint8_t) (0x40 | (uuid.data[6] & 0xf));
    uuid.data[8] = (uint8_t) (0x80 | (uuid.data[8] & 0x3f));
-   _mongocrypt_buffer_append (&uuid, bson, "_id", 3);
+   if (!_mongocrypt_buffer_append (&uuid, bson, "_id", 3)) {
+      _mongocrypt_buffer_cleanup (&uuid);
+      return false;
+   }
+
    _mongocrypt_buffer_cleanup (&uuid);
+
    return true;
 }
 
@@ -135,9 +141,12 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
       bson_append_array_end (&key_doc, &child);
    }
-   _mongocrypt_buffer_append (&dkctx->encrypted_key_material,
-                              &key_doc,
-                              MONGOCRYPT_STR_AND_LEN ("keyMaterial"));
+   if (!_mongocrypt_buffer_append (&dkctx->encrypted_key_material,
+                                   &key_doc,
+                                   MONGOCRYPT_STR_AND_LEN ("keyMaterial"))) {
+      bson_destroy (&key_doc);
+      return _mongocrypt_ctx_fail_w_msg (ctx, "could not append keyMaterial");
+   }
    bson_gettimeofday (&tp);
    BSON_CHECK (bson_append_timeval (
       &key_doc, MONGOCRYPT_STR_AND_LEN ("creationDate"), &tp));

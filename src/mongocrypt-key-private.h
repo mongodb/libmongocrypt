@@ -59,14 +59,16 @@ _mongocrypt_key_alt_name_create (const char *name, ...);
 bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
                              _mongocrypt_key_doc_t *out,
-                             mongocrypt_status_t *status);
+                             mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 _mongocrypt_key_doc_t *
 _mongocrypt_key_new ();
 
 bool
 _mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
-                       const _mongocrypt_key_doc_t *b);
+                       const _mongocrypt_key_doc_t *b)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 void
 _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,

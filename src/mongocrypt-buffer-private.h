@@ -18,6 +18,7 @@
 #define MONGOCRYPT_BUFFER_H
 
 #include <bson/bson.h>
+#include "mongocrypt-compat.h"
 
 struct _mongocrypt_binary_t;
 
@@ -47,26 +48,26 @@ _mongocrypt_buffer_steal (_mongocrypt_buffer_t *buf, _mongocrypt_buffer_t *src);
 
 /* @iter is iterated to a BSON binary value. */
 bool
-_mongocrypt_buffer_copy_from_binary_iter (_mongocrypt_buffer_t *buf,
-                                          bson_iter_t *iter);
+_mongocrypt_buffer_copy_from_binary_iter (
+   _mongocrypt_buffer_t *buf, bson_iter_t *iter) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* @iter is iterated to a BSON binary value. */
 bool
-_mongocrypt_buffer_from_binary_iter (_mongocrypt_buffer_t *buf,
-                                     bson_iter_t *iter);
+_mongocrypt_buffer_from_binary_iter (
+   _mongocrypt_buffer_t *buf, bson_iter_t *iter) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* @iter is iterated to a BSON document value. */
 bool
-_mongocrypt_buffer_from_document_iter (_mongocrypt_buffer_t *buf,
-                                       bson_iter_t *iter);
+_mongocrypt_buffer_from_document_iter (
+   _mongocrypt_buffer_t *buf, bson_iter_t *iter) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* @iter is iterated to a BSON document value. */
 bool
-_mongocrypt_buffer_copy_from_document_iter (_mongocrypt_buffer_t *buf,
-                                            bson_iter_t *iter);
+_mongocrypt_buffer_copy_from_document_iter (
+   _mongocrypt_buffer_t *buf, bson_iter_t *iter) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 void
@@ -77,14 +78,15 @@ void
 _mongocrypt_buffer_from_bson (_mongocrypt_buffer_t *buf, const bson_t *bson);
 
 bool
-_mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf, bson_t *bson);
+_mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf,
+                            bson_t *bson) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 bool
 _mongocrypt_buffer_append (const _mongocrypt_buffer_t *buf,
                            bson_t *bson,
                            const char *key,
-                           uint32_t key_len);
+                           uint32_t key_len) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 void
@@ -125,7 +127,8 @@ _mongocrypt_buffer_empty (const _mongocrypt_buffer_t *buf);
 bool
 _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
                                   uint8_t type,
-                                  bson_value_t *out);
+                                  bson_value_t *out)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 void
 _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
@@ -133,16 +136,17 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
 
 
 bool
-_mongocrypt_buffer_from_uuid_iter (_mongocrypt_buffer_t *buf,
-                                   bson_iter_t *iter);
+_mongocrypt_buffer_from_uuid_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 bool
-_mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
-                                        bson_iter_t *iter);
+_mongocrypt_buffer_copy_from_uuid_iter (
+   _mongocrypt_buffer_t *buf, bson_iter_t *iter) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
-_mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf);
+_mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 void
@@ -152,7 +156,8 @@ int
 _mongocrypt_buffer_cmp_hex (_mongocrypt_buffer_t *buf, const char *hex);
 
 char *
-_mongocrypt_buffer_to_hex (_mongocrypt_buffer_t *buf);
+_mongocrypt_buffer_to_hex (_mongocrypt_buffer_t *buf)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 void
 _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,

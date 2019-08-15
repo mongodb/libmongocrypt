@@ -160,10 +160,12 @@ typedef struct {
 /* Common initialization. */
 bool
 _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
-                      _mongocrypt_ctx_opts_spec_t *opt_spec);
+                      _mongocrypt_ctx_opts_spec_t *opt_spec)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 /* Set the state of the context from the state of keys in the key broker. */
 bool
-_mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx);
+_mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */

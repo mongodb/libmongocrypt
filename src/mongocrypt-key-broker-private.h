@@ -85,64 +85,75 @@ _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
 /* Add an ID into the key broker. */
 bool
 _mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
-                               const _mongocrypt_buffer_t *key_id);
+                               const _mongocrypt_buffer_t *key_id)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* For testing only, add a decrypted key */
 bool
 _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
-                                     const _mongocrypt_buffer_t *key_id);
+                                     const _mongocrypt_buffer_t *key_id)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Get the find command filter. */
 bool
 _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
-                               mongocrypt_binary_t *out);
+                               mongocrypt_binary_t *out)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Add keyAltName into the key broker.
    Key is added as KEY_EMPTY. */
 bool
 _mongocrypt_key_broker_add_name (_mongocrypt_key_broker_t *kb,
-                                 const bson_value_t *key_alt_name);
+                                 const bson_value_t *key_alt_name)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_key_broker_all_state (_mongocrypt_key_broker_t *kb,
-                                  _mongocrypt_key_state_t state);
+                                  _mongocrypt_key_state_t state)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 bool
 _mongocrypt_key_broker_any_state (_mongocrypt_key_broker_t *kb,
-                                  _mongocrypt_key_state_t state);
+                                  _mongocrypt_key_state_t state)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Add a key document. */
 bool
 _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
-                                const _mongocrypt_buffer_t *doc);
+                                const _mongocrypt_buffer_t *doc)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Iterate the keys needing KMS decryption. */
 mongocrypt_kms_ctx_t *
-_mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb);
+_mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Indicate that all KMS requests are complete. */
 bool
-_mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb);
+_mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Get the final decrypted key material from a key. */
 bool
 _mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
                                             const _mongocrypt_buffer_t *key_id,
-                                            _mongocrypt_buffer_t *out);
+                                            _mongocrypt_buffer_t *out)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_key_broker_decrypted_key_by_name (_mongocrypt_key_broker_t *kb,
                                               const bson_value_t *key_alt_name,
                                               _mongocrypt_buffer_t *out,
-                                              _mongocrypt_buffer_t *key_id_out);
+                                              _mongocrypt_buffer_t *key_id_out)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 bool

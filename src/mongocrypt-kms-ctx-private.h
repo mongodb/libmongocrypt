@@ -49,7 +49,8 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
                                       _mongocrypt_opts_t *crypt_opts,
                                       _mongocrypt_key_doc_t *key,
                                       _mongocrypt_log_t *log,
-                                      _mongocrypt_crypto_t *crypto);
+                                      _mongocrypt_crypto_t *crypto)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 bool
@@ -59,12 +60,13 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    struct __mongocrypt_ctx_opts_t *ctx_opts,
    _mongocrypt_buffer_t *decrypted_key_material,
    _mongocrypt_log_t *log,
-   _mongocrypt_crypto_t *crypto);
+   _mongocrypt_crypto_t *crypto) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 bool
 _mongocrypt_kms_ctx_result (mongocrypt_kms_ctx_t *kms,
-                            _mongocrypt_buffer_t *out);
+                            _mongocrypt_buffer_t *out)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 void
 _mongocrypt_kms_ctx_cleanup (mongocrypt_kms_ctx_t *kms);

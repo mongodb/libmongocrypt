@@ -54,13 +54,16 @@ typedef struct {
  * Returns boolean indicating success.
  */
 bool
-_mongocrypt_cache_get (_mongocrypt_cache_t *cache, void *attr, void **value);
+_mongocrypt_cache_get (_mongocrypt_cache_t *cache,
+                       void *attr,
+                       void **value) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_cache_add_copy (_mongocrypt_cache_t *cache,
                             void *attr,
                             void *value,
-                            mongocrypt_status_t *status);
+                            mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Steals the value instead of copying. Caller relinquishes value when calling.
@@ -69,7 +72,8 @@ bool
 _mongocrypt_cache_add_stolen (_mongocrypt_cache_t *cache,
                               void *attr,
                               void *value,
-                              mongocrypt_status_t *status);
+                              mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 void

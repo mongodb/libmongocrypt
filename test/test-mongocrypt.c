@@ -360,8 +360,8 @@ _mongocrypt_tester_plaintext (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t buf;
    mongocrypt_status_t *status;
 
-   _mongocrypt_binary_to_bson (
-      TEST_FILE ("./test/example/mongocryptd-reply.json"), &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (
+      TEST_FILE ("./test/example/mongocryptd-reply.json"), &as_bson));
    /* Underlying binary data lives on in tester */
    BSON_ASSERT (bson_iter_init (&iter, &as_bson));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "result.filter.ssn", &iter));
@@ -608,8 +608,10 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_ctx_decrypt (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);
    _mongocrypt_tester_install_key_broker (&tester);
-   _mongocrypt_tester_install (
-      &tester, "_test_mongocrypt_bad_init", _test_mongocrypt_bad_init, CRYPTO_REQUIRED);
+   _mongocrypt_tester_install (&tester,
+                               "_test_mongocrypt_bad_init",
+                               _test_mongocrypt_bad_init,
+                               CRYPTO_REQUIRED);
    _mongocrypt_tester_install_local_kms (&tester);
    _mongocrypt_tester_install_cache (&tester);
    _mongocrypt_tester_install_buffer (&tester);

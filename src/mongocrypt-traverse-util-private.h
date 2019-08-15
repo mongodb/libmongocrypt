@@ -41,7 +41,8 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                      void *ctx,
                                      traversal_match_t match,
                                      bson_iter_t *iter,
-                                     mongocrypt_status_t *status);
+                                     mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 bool
@@ -50,7 +51,8 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       traversal_match_t match,
                                       bson_iter_t *iter,
                                       bson_t *out,
-                                      mongocrypt_status_t *status);
+                                      mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 #endif /* MONGOCRYPT_TRAVERSE_UTIL_H */

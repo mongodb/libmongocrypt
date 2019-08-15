@@ -39,15 +39,18 @@ _mongocrypt_ciphertext_cleanup (_mongocrypt_ciphertext_t *ciphertext);
 bool
 _mongocrypt_ciphertext_parse_unowned (_mongocrypt_buffer_t *in,
                                       _mongocrypt_ciphertext_t *ciphertext,
-                                      mongocrypt_status_t *status);
+                                      mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
-                                  _mongocrypt_buffer_t *out);
+                                  _mongocrypt_buffer_t *out)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_ciphertext_serialize_associated_data (
-   _mongocrypt_ciphertext_t *ciphertext, _mongocrypt_buffer_t *out);
+   _mongocrypt_ciphertext_t *ciphertext,
+   _mongocrypt_buffer_t *out) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 #endif /* MONGOCRYPT_CIPHERTEXT_PRIVATE_H */

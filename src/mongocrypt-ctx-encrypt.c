@@ -543,7 +543,10 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    if (BSON_ITER_HOLDS_BINARY (&iter)) {
       _mongocrypt_buffer_t tmp;
 
-      _mongocrypt_buffer_from_binary_iter (&tmp, &iter);
+      if (!_mongocrypt_buffer_from_binary_iter (&tmp, &iter)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx,
+                                            "Could not read value to encrypt");
+      }
       if (tmp.subtype == 6) {
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "BSON binary subtype 6 is invalid for encryption");

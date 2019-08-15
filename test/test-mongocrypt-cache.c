@@ -31,28 +31,28 @@ _test_cache (_mongocrypt_tester_t *tester)
    _mongocrypt_cache_collinfo_init (&cache);
 
    /* Test get on an empty cache. */
-   _mongocrypt_cache_get (&cache, "1", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "1", (void **) &tmp));
    BSON_ASSERT (!tmp);
 
 
    /* Test set + get */
    ASSERT_OR_PRINT (_mongocrypt_cache_add_copy (&cache, "1", entry, status),
                     status);
-   _mongocrypt_cache_get (&cache, "1", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "1", (void **) &tmp));
    /* Assert we get a copy back. */
    BSON_ASSERT (entry != tmp);
    BSON_ASSERT (bson_equal (entry, tmp));
    bson_destroy (tmp);
 
    /* Test missing find. */
-   _mongocrypt_cache_get (&cache, "2", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "2", (void **) &tmp));
    BSON_ASSERT (!tmp);
 
 
    /* Test attempting to overwrite an entry. */
    ASSERT_OR_PRINT (_mongocrypt_cache_add_copy (&cache, "1", entry2, status),
                     status);
-   _mongocrypt_cache_get (&cache, "1", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "1", (void **) &tmp));
    /* Overwrite is ignored. */
    BSON_ASSERT (bson_equal (entry2, tmp));
    bson_destroy (tmp);
@@ -60,14 +60,14 @@ _test_cache (_mongocrypt_tester_t *tester)
    /* Test with two entries in the cache. */
    ASSERT_OR_PRINT (_mongocrypt_cache_add_copy (&cache, "2", entry2, status),
                     status);
-   _mongocrypt_cache_get (&cache, "2", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "2", (void **) &tmp));
    BSON_ASSERT (bson_equal (entry2, tmp));
    bson_destroy (tmp);
 
    /* Test stealing an entry. */
    ASSERT_OR_PRINT (_mongocrypt_cache_add_stolen (&cache, "3", entry, status),
                     status);
-   _mongocrypt_cache_get (&cache, "3", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "3", (void **) &tmp));
    BSON_ASSERT (bson_equal (entry, tmp));
    bson_destroy (tmp);
 
@@ -111,7 +111,7 @@ _test_cache_expiration (_mongocrypt_tester_t *tester)
    /* Test set + get */
    ASSERT_OR_PRINT (_mongocrypt_cache_add_copy (&cache, "1", entry, status),
                     status);
-   _mongocrypt_cache_get (&cache, "1", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "1", (void **) &tmp));
    /* Assert we get a copy back. */
    BSON_ASSERT (entry != tmp);
    BSON_ASSERT (bson_equal (entry, tmp));
@@ -120,7 +120,7 @@ _test_cache_expiration (_mongocrypt_tester_t *tester)
    /* Sleep for 100 milliseconds */
    _usleep (1000 * 100);
 
-   _mongocrypt_cache_get (&cache, "1", (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, "1", (void **) &tmp));
    BSON_ASSERT (!tmp);
 
    _mongocrypt_cache_cleanup (&cache);
@@ -188,17 +188,17 @@ _test_cache_duplicates (_mongocrypt_tester_t *tester)
    BSON_ASSERT (_mongocrypt_cache_num_entries (&cache) == 3);
 
    /* all three should be in the cache */
-   _mongocrypt_cache_get (&cache, attr1, (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, attr1, (void **) &tmp));
    BSON_ASSERT (tmp);
    BSON_ASSERT (tmp->decrypted_key_material.data[0] == 1);
    _mongocrypt_cache_key_value_destroy (tmp);
 
-   _mongocrypt_cache_get (&cache, attr2, (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, attr2, (void **) &tmp));
    BSON_ASSERT (tmp);
    BSON_ASSERT (tmp->decrypted_key_material.data[0] == 2);
    _mongocrypt_cache_key_value_destroy (tmp);
 
-   _mongocrypt_cache_get (&cache, attr3, (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, attr3, (void **) &tmp));
    BSON_ASSERT (tmp);
    BSON_ASSERT (tmp->decrypted_key_material.data[0] == 3);
    _mongocrypt_cache_key_value_destroy (tmp);
@@ -210,22 +210,22 @@ _test_cache_duplicates (_mongocrypt_tester_t *tester)
    BSON_ASSERT (_mongocrypt_cache_num_entries (&cache) == 2);
 
    /* attr1 and attr2 match the overwriting entry */
-   _mongocrypt_cache_get (&cache, attr1, (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, attr1, (void **) &tmp));
    BSON_ASSERT (tmp);
    BSON_ASSERT (tmp->decrypted_key_material.data[0] == 4);
    _mongocrypt_cache_key_value_destroy (tmp);
 
-   _mongocrypt_cache_get (&cache, attr2, (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, attr2, (void **) &tmp));
    BSON_ASSERT (tmp);
    BSON_ASSERT (tmp->decrypted_key_material.data[0] == 4);
    _mongocrypt_cache_key_value_destroy (tmp);
 
-   _mongocrypt_cache_get (&cache, attr3, (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, attr3, (void **) &tmp));
    BSON_ASSERT (tmp);
    BSON_ASSERT (tmp->decrypted_key_material.data[0] == 3);
    _mongocrypt_cache_key_value_destroy (tmp);
 
-   _mongocrypt_cache_get (&cache, attr4, (void **) &tmp);
+   BSON_ASSERT (_mongocrypt_cache_get (&cache, attr4, (void **) &tmp));
    BSON_ASSERT (tmp);
    BSON_ASSERT (tmp->decrypted_key_material.data[0] == 4);
    _mongocrypt_cache_key_value_destroy (tmp);

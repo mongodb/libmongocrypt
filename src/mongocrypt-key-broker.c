@@ -1099,8 +1099,14 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
          char *key_str;
 
          key_str = bson_strdup_printf ("%d", id_index++);
-         _mongocrypt_buffer_append (
-            &iter->key_id, &ids, key_str, (uint32_t) strlen (key_str));
+         if (!_mongocrypt_buffer_append (
+                &iter->key_id, &ids, key_str, (uint32_t) strlen (key_str))) {
+            CLIENT_ERR ("could not construct id list");
+            bson_destroy (&ids);
+            bson_destroy (&names);
+            bson_free (key_str);
+            return false;
+         }
 
          bson_free (key_str);
       }
@@ -1111,8 +1117,14 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
          char *key_str;
 
          key_str = bson_strdup_printf ("%d", name_index++);
-         bson_append_value (
-            &names, key_str, (uint32_t) strlen (key_str), &ptr->value);
+         if (!bson_append_value (
+                &names, key_str, (uint32_t) strlen (key_str), &ptr->value)) {
+            CLIENT_ERR ("could not construct keyAltName list");
+            bson_destroy (&ids);
+            bson_destroy (&names);
+            bson_free (key_str);
+            return false;
+         }
 
          bson_free (key_str);
          ptr = ptr->next;

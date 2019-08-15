@@ -25,8 +25,8 @@ _recreate_excluding (_mongocrypt_tester_t *tester, bson_t *out, va_list args)
 {
    bson_t tmp;
 
-   _mongocrypt_binary_to_bson (TEST_FILE ("./test/data/key-document-full.json"),
-                               &tmp);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (
+      TEST_FILE ("./test/data/key-document-full.json"), &tmp));
 
    /* copy to out */
    bson_destroy (out);

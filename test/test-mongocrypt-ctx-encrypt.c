@@ -685,7 +685,7 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_DONE);
 
    /* check that the encrypted command has a valid ciphertext. */
-   _mongocrypt_binary_to_bson (encrypted_cmd, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (encrypted_cmd, &as_bson));
    CRYPT_TRACEF (&crypt->log, "encrypted doc: %s", tmp_json (&as_bson));
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
@@ -875,8 +875,8 @@ _test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
                 MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    /* The next ctx has the schema cached. */
-   _mongocrypt_cache_get (
-      &crypt->cache_collinfo, "test.test", (void **) &cached_collinfo);
+   BSON_ASSERT (_mongocrypt_cache_get (
+      &crypt->cache_collinfo, "test.test", (void **) &cached_collinfo));
    BSON_ASSERT (cached_collinfo != NULL);
    bson_destroy (cached_collinfo);
    mongocrypt_ctx_destroy (ctx);
@@ -1039,7 +1039,7 @@ _test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, bin), ctx);
-   _mongocrypt_binary_to_bson (bin, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &as_bson));
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "isRemoteSchema"));
    BSON_ASSERT (bson_iter_bool (&iter) == true);
    mongocrypt_ctx_destroy (ctx);
@@ -1061,7 +1061,7 @@ _test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, bin), ctx);
-   _mongocrypt_binary_to_bson (bin, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &as_bson));
    BSON_ASSERT (bson_iter_init_find (&iter, &as_bson, "isRemoteSchema"));
    BSON_ASSERT (bson_iter_bool (&iter) == false);
 
@@ -1277,7 +1277,7 @@ _test_encrypting_with_explicit_encryption (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
    bin = mongocrypt_binary_new ();
    mongocrypt_ctx_finalize (ctx, bin);
-   _mongocrypt_binary_to_bson (bin, &tmp);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &tmp));
    BSON_ASSERT (bson_iter_init (&iter, &tmp));
    BSON_ASSERT (
       bson_iter_find_descendant (&iter, "filter.existing_ciphertext", &iter));

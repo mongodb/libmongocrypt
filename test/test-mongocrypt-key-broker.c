@@ -65,12 +65,12 @@ _gen_uuid_and_key_and_altname (_mongocrypt_tester_t *tester,
    bson_t as_bson, copied;
 
    _gen_uuid (first_byte, id);
-   _mongocrypt_binary_to_bson (TEST_FILE ("./test/example/key-document.json"),
-                               &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (
+      TEST_FILE ("./test/example/key-document.json"), &as_bson));
    bson_init (&copied);
    bson_copy_to_excluding_noinit (
       &as_bson, &copied, "_id", "keyAltNames", NULL);
-   _mongocrypt_buffer_append (id, &copied, "_id", 3);
+   BSON_ASSERT (_mongocrypt_buffer_append (id, &copied, "_id", 3));
    if (altname) {
       bson_t child;
       bson_append_array_begin (&copied, "keyAltNames", -1, &child);
@@ -115,7 +115,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
               &key_broker);
    filter = mongocrypt_binary_new ();
    ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
-   _mongocrypt_binary_to_bson (filter, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (filter, &as_bson));
 
    expected = BCON_NEW ("$or",
                         "[",
@@ -153,7 +153,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
               &key_broker);
    filter = mongocrypt_binary_new ();
    ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
-   _mongocrypt_binary_to_bson (filter, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (filter, &as_bson));
 
    expected = BCON_NEW ("$or",
                         "[",
@@ -235,7 +235,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    _key_broker_add_name (&key_broker, "Emily");
    filter = mongocrypt_binary_new ();
    ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
-   _mongocrypt_binary_to_bson (filter, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (filter, &as_bson));
 
    expected = BCON_NEW ("$or",
                         "[",
@@ -272,7 +272,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    _key_broker_add_name (&key_broker, "Jackie");
    filter = mongocrypt_binary_new ();
    ASSERT_OK (_mongocrypt_key_broker_filter (&key_broker, filter), &key_broker);
-   _mongocrypt_binary_to_bson (filter, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (filter, &as_bson));
 
    expected = BCON_NEW ("$or",
                         "[",
@@ -365,7 +365,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    /* NULL key document. */
    _mongocrypt_key_broker_init (
       &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log, crypt);
-   _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
+   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
    ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&key_broker, NULL),
                  &key_broker,
                  "invalid key");
@@ -396,7 +396,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
       &key_buf_y,
       TEST_FILE ("./test/data/key-document-with-alt-name-duplicate-id.json"));
 
-   _mongocrypt_buffer_to_bson (&key_buf_x, &key_bson_x);
+   BSON_ASSERT (_mongocrypt_buffer_to_bson (&key_buf_x, &key_bson_x));
    ASSERT_OR_PRINT (_mongocrypt_key_parse_owned (&key_bson_x, key_x, status),
                     status);
    id_x = &key_x->id;
@@ -504,7 +504,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    BSON_ASSERT (
       _mongocrypt_buffer_to_bson (&key_doc_names, &key_doc_names_bson));
    BSON_ASSERT (bson_iter_init_find (&iter, &key_doc_names_bson, "_id"));
-   _mongocrypt_buffer_from_binary_iter (&key_id_names, &iter);
+   BSON_ASSERT (_mongocrypt_buffer_from_binary_iter (&key_id_names, &iter));
    BSON_ASSERT (key_id_names.subtype == BSON_SUBTYPE_UUID);
    ASSERT_OK (_mongocrypt_key_broker_add_id (&key_broker, &key_id_names),
               &key_broker);
@@ -578,20 +578,20 @@ _test_key_broker_deduplication (_mongocrypt_tester_t *tester)
       &key_broker, &crypt->opts, &crypt->cache_key, &crypt->log, crypt);
 
    /* Add two ids and two alt names */
-   _mongocrypt_key_broker_add_id (&key_broker, &key_id1);
+   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id1));
    _key_broker_add_name (&key_broker, "alt1");
-   _mongocrypt_key_broker_add_id (&key_broker, &key_id2);
+   BSON_ASSERT (_mongocrypt_key_broker_add_id (&key_broker, &key_id2));
    _key_broker_add_name (&key_broker, "alt2");
 
    /* Should be four entries */
    BSON_ASSERT (4 == _mongocrypt_key_broker_num_entries (&key_broker));
 
    /* Add one doc, should deduplicate one. */
-   _mongocrypt_key_broker_add_doc (&key_broker, &key_doc1);
+   BSON_ASSERT (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc1));
    BSON_ASSERT (3 == _mongocrypt_key_broker_num_entries (&key_broker));
 
    /* Add other doc, should deduplicate one. */
-   _mongocrypt_key_broker_add_doc (&key_broker, &key_doc2);
+   BSON_ASSERT (_mongocrypt_key_broker_add_doc (&key_broker, &key_doc2));
    BSON_ASSERT (2 == _mongocrypt_key_broker_num_entries (&key_broker));
 
    _mongocrypt_buffer_cleanup (&key_id1);

@@ -123,7 +123,7 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, encrypted), ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
    ASSERT_OK (mongocrypt_ctx_finalize (ctx, decrypted), ctx);
-   _mongocrypt_binary_to_bson (decrypted, &as_bson);
+   BSON_ASSERT (_mongocrypt_binary_to_bson (decrypted, &as_bson));
    bson_iter_init (&iter, &as_bson);
    bson_iter_find_descendant (&iter, "filter.ssn", &iter);
    BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
