@@ -79,30 +79,63 @@ Installation
 PyMongoCrypt can be installed with `pip <http://pypi.python.org/pypi/pip>`_::
 
   $ python -m pip install pymongocrypt
-
-You can also download the project source and do::
-
-  $ python -m pip install .
+  $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+  1.0.0-beta4
 
 
-Installing libmongocrypt
-------------------------
+PyMongoCrypt ships wheels for macOS, Windows, and manylinux2010 that include
+an embedded libmongocrypt build.
 
-PyMongoCrypt ships wheels for macOS and Windows that include an embedded
-libmongocrypt build. For Linux users libmongocrypt needs to be installed
-manually.
+Installing from source
+----------------------
+
+Installing from source (or the pymongocrypt-X.Y.tar.gz source distribution)
+requires an extra step of installing libmongocrypt. First, install
+PyMongoCrypt from source::
+
+  $ git clone git@github.com:mongodb/libmongocrypt.git
+  $ python -m pip install ./libmongocrypt/bindings/python
+
+Next, install libmongocrypt.
 
 libmongocrypt is [continuously built and published on evergreen]
 (https://evergreen.mongodb.com/waterfall/libmongocrypt).
 The latest tarball containing libmongocrypt built on all supported variants is
 (published here)[https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz].
-
 Download and extract ``libmongocrypt-all.tar.gz`` and set
 ``PYMONGOCRYPT_LIB`` to the path to your operating system's libmongocrypt.so file.
 For example::
 
-  $ export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
+  $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz
+  $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
+  $ ls libmongocrypt-all
+  amazon2             rhel-67-s390x       suse12-64           ubuntu1604-s390x
+  debian92            rhel-70-64-bit      suse12-s390x        ubuntu1804-64
+  linux-64-amazon-ami rhel-71-ppc64el     suse15-64           ubuntu1804-arm64
+  macos               rhel72-zseries-test ubuntu1604          windows-test
+  rhel-62-64-bit      rhel76              ubuntu1604-arm64
+
+macOS::
+
+  $ # Set PYMONGOCRYPT_LIB for macOS:
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/nocrypto/lib/libmongocrypt.dylib
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+  1.0.0-beta4
+
+Windows::
+
+  $ # Set PYMONGOCRYPT_LIB for Windows:
+  $ chmod +x $(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
+  $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+  1.0.0-beta4
+
+Linux::
+
+  $ # Set PYMONGOCRYPT_LIB for RHEL 6.2 x86_64:
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
+  $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+  1.0.0-beta4
 
 Dependencies
 ============
