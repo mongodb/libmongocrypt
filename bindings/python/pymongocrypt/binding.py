@@ -918,14 +918,16 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
 # build without relying on platform specific library path environment
 # variables, like LD_LIBRARY_PATH. For example:
 # export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
+# If the PYMONGOCRYPT_LIB is not set then load the embedded library and
+# fallback to the relying on a system installed library.
+_base = os.path.dirname(os.path.realpath(__file__))
 if sys.platform == 'win32':
-    # On windows the dll is named mongocrypt.dll
-    _path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), 'mongocrypt')
+    _path = os.path.join(_base, 'mongocrypt.dll')
+elif sys.platform == 'darwin':
+    _path = os.path.join(_base, 'libmongocrypt.dylib')
 else:
-    # On *nix the so is named libmongocrypt.so or libmongocrypt.dylib
-    _path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), 'libmongocrypt')
+    _path = os.path.join(_base, 'libmongocrypt.so')
+
 _PYMONGOCRYPT_LIB = os.environ.get('PYMONGOCRYPT_LIB')
 try:
     if _PYMONGOCRYPT_LIB:
