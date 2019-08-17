@@ -175,6 +175,7 @@ _mongocrypt_cache_get (_mongocrypt_cache_t *cache,
     * O(n) traversal */
    _mongocrypt_cache_evict (cache);
    if (!_find_pair (cache, attr, &match)) {
+      _mongocrypt_mutex_unlock (&cache->mutex);
       return false;
    }
 
@@ -199,6 +200,7 @@ _cache_add (_mongocrypt_cache_t *cache,
    _mongocrypt_cache_evict (cache);
    if (!_mongocrypt_remove_matches (cache, attr)) {
       CLIENT_ERR ("error removing from cache");
+      _mongocrypt_mutex_unlock (&cache->mutex);
       return false;
    }
 
@@ -256,7 +258,11 @@ _mongocrypt_cache_dump (_mongocrypt_cache_t *cache)
    _mongocrypt_mutex_lock (&cache->mutex);
    count = 0;
    for (pair = cache->pair; pair != NULL; pair = pair->next) {
-      printf ("entry:%d\n\tlast_updated:%d\n", count, (int) pair->last_updated);
+      printf ("entry:%d last_updated:%d\n", count, (int) pair->last_updated);
+      if (cache->dump_attr) {
+         printf ("- attr:");
+         cache->dump_attr (pair->attr);
+      }
       count++;
    }
 

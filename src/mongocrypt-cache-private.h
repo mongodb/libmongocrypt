@@ -30,6 +30,7 @@
 typedef bool (*cache_compare_fn) (void *thing_a, void *thing_b, int *out);
 typedef void (*cache_destroy_fn) (void *thing);
 typedef void *(*cache_copy_fn) (void *thing);
+typedef void (*cache_dump_fn) (void *thing);
 
 typedef struct __mongocrypt_cache_pair_t {
    void *attr;
@@ -39,6 +40,7 @@ typedef struct __mongocrypt_cache_pair_t {
 } _mongocrypt_cache_pair_t;
 
 typedef struct {
+   cache_dump_fn dump_attr;
    cache_compare_fn cmp_attr;
    cache_copy_fn copy_attr;
    cache_destroy_fn destroy_attr;

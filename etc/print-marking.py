@@ -26,7 +26,7 @@ json_options = json_util.JSONOptions(json_mode=json_util.JSONMode.CANONICAL, uui
 if marking[0] != 0:
     print("Invalid first byte: {}".format(marking[0]))
 
-marking_bson = BSON.decode(marking[1:], codec_options=codec_options)
+marking_bson = BSON(marking[1:]).decode(codec_options=codec_options)
 print(json_util.dumps(marking_bson, indent=4, json_options=json_options))
 
 if "a" in marking_bson:

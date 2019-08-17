@@ -18,6 +18,7 @@
 #define MONGOCRYPT_BUFFER_H
 
 #include <bson/bson.h>
+#include "mongocrypt-binary-private.h"
 #include "mongocrypt-compat.h"
 
 struct _mongocrypt_binary_t;
@@ -32,6 +33,7 @@ typedef struct __mongocrypt_buffer_t {
    uint32_t len;
    bool owned;
    bson_subtype_t subtype;
+   mongocrypt_binary_t bin;
 } _mongocrypt_buffer_t;
 
 
@@ -163,5 +165,8 @@ void
 _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
                            const _mongocrypt_buffer_t *srcs,
                            uint32_t num_srcs);
+
+struct _mongocrypt_binary_t *
+_mongocrypt_buffer_as_binary (_mongocrypt_buffer_t *buf);
 
 #endif /* MONGOCRYPT_BUFFER_H */

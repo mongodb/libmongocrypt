@@ -200,9 +200,72 @@ test_mongocrypt_key_parsing (_mongocrypt_tester_t *tester)
    bson_destroy (&key_bson);
 }
 
+static void
+test_mongocrypt_key_alt_name_from_iter (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_status_t *status;
+   bson_iter_t iter;
+   bson_t *test;
+   _mongocrypt_key_alt_name_t *key_alt_names;
+
+   status = mongocrypt_status_new ();
+
+   /* Empty alt names */
+   test = TMP_BSON ("{'test': []}");
+   bson_iter_init_find (&iter, test, "test");
+   ASSERT_OK_STATUS (
+      _mongocrypt_key_alt_name_from_iter (&iter, &key_alt_names, status),
+      status);
+   BSON_ASSERT (NULL == key_alt_names);
+
+   /* One alt name */
+   test = TMP_BSON ("{'test': ['a']}");
+   bson_iter_init_find (&iter, test, "test");
+   ASSERT_OK_STATUS (
+      _mongocrypt_key_alt_name_from_iter (&iter, &key_alt_names, status),
+      status);
+   BSON_ASSERT (
+      0 == strcmp ("a", _mongocrypt_key_alt_name_get_string (key_alt_names)));
+   BSON_ASSERT (NULL == key_alt_names->next);
+   _mongocrypt_key_alt_name_destroy_all (key_alt_names);
+
+   /* Two alt names */
+   test = TMP_BSON ("{'test': ['a', 'b']}");
+   bson_iter_init_find (&iter, test, "test");
+   ASSERT_OK_STATUS (
+      _mongocrypt_key_alt_name_from_iter (&iter, &key_alt_names, status),
+      status);
+   BSON_ASSERT (
+      0 == strcmp ("b", _mongocrypt_key_alt_name_get_string (key_alt_names)));
+   BSON_ASSERT (
+      0 ==
+      strcmp ("a", _mongocrypt_key_alt_name_get_string (key_alt_names->next)));
+   BSON_ASSERT (NULL == key_alt_names->next->next);
+   _mongocrypt_key_alt_name_destroy_all (key_alt_names);
+
+   /* Invalid alt names */
+   test = TMP_BSON ("{'test': ['a', 1]}");
+   bson_iter_init_find (&iter, test, "test");
+   ASSERT_FAILS_STATUS (
+      _mongocrypt_key_alt_name_from_iter (&iter, &key_alt_names, status),
+      status,
+      "unexpected non-UTF8");
+
+   /* Duplicate alt names */
+   test = TMP_BSON ("{'test': ['b', 'a', 'c', 'a']}");
+   bson_iter_init_find (&iter, test, "test");
+   ASSERT_FAILS_STATUS (
+      _mongocrypt_key_alt_name_from_iter (&iter, &key_alt_names, status),
+      status,
+      "duplicate");
+
+   mongocrypt_status_destroy (status);
+}
+
 
 void
 _mongocrypt_tester_install_key (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (test_mongocrypt_key_parsing);
+   INSTALL_TEST (test_mongocrypt_key_alt_name_from_iter);
 }

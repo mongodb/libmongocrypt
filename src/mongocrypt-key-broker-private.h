@@ -32,93 +32,98 @@
  * the key cache.
  * Each encrypt/decrypt request has one key broker. Key brokers are not shared.
  * It is responsible for:
- * - copying/taking leases on keys in the cache needed for the request
+ * - keeping track of requested keys (either by id or keyAltName)
+ * - copying keys from the cache to satisfy those requests
  * - generating find cmd filters to fetch keys that aren't cached or are expired
  * - generating KMS decrypt requests on newly fetched keys
  * - adding newly fetched keys back to the cache
+ *
+ * Notes:
+ * - any key request that is satisfied stays satisfied.
+ * - keys returned from the driver are validated to not have intersecting key
+ * alt names (or duplicate ids).
+ * - keys fetched from the cache are not validated, because the cache is shared
+ * and locking only occurs on a single fetch (so it is possible to have two keys
+ * fetched from the cache that have intersecting keyAltNames but a different
+ * _id, and that is not an error)
  */
 
-/* The state of a key item in the broker. */
+/* The state of the key broker. Transitions are only forward. */
 typedef enum {
-   /* has an id/keyAltName, but nothing else. */
-   KEY_EMPTY,
-   /* has the key document from the key vault, with encrypted keyMaterial */
-   KEY_ENCRYPTED,
-   /* caller has iterated the kms context, but not fed everything yet. */
-   KEY_DECRYPTING,
-   /* has decrypted keyMaterial. */
-   KEY_DECRYPTED
-} _mongocrypt_key_state_t;
+   /* Starting state. Accept requests for keys to be added (either by id or
+      name) */
+   KB_REQUESTING,
+   /* Accept key documents fetched from the key vault collection. */
+   KB_ADDING_DOCS,
+   /* Accept KMS replies to decrypt key material in each key document. */
+   KB_DECRYPTING_KEY_MATERIAL,
+   KB_DONE,
+   KB_ERROR
+} key_broker_state_t;
 
-/*
- * Valid transitions are:
- * KEY_EMPTY => KEY_WAITING_FOR_OTHER_CTX
- * KEY_EMPTY => KEY_ENCRYPTED
- * KEY_WAITING_FOR_OTHER_CTX => KEY_EMPTY
- * KEY_WAITING_FOR_OTHER_CTX => KEY_DECRYPTED
- * KEY_ENCRYPTED => KEY_DECRYPTING
- * KEY_DECRYPTING => KEY_DECRYPTED
- */
-typedef struct __mongocrypt_key_broker_entry_t _mongocrypt_key_broker_entry_t;
+/* Represents a single request for a key, as indicated from a response
+ * from mongocryptd. */
+typedef struct _key_request_t {
+   /* only one of id or alt_name are set. */
+   _mongocrypt_buffer_t id;
+   _mongocrypt_key_alt_name_t *alt_name;
+   bool satisfied; /* true if satisfied by a cache entry or a key returned. */
+   struct _key_request_t *next;
+} key_request_t;
+
+/* Represents a single key supplied from the driver or cache. */
+typedef struct _key_returned_t {
+   _mongocrypt_key_doc_t *doc;
+   _mongocrypt_buffer_t decrypted_key_material;
+
+   mongocrypt_kms_ctx_t kms;
+   bool decrypted;
+
+   struct _key_returned_t *next;
+} key_returned_t;
 
 typedef struct {
-   _mongocrypt_key_broker_entry_t *kb_entry; /* head of a linked-list. */
-   _mongocrypt_key_broker_entry_t *decryptor_iter;
-
+   key_broker_state_t state;
    mongocrypt_status_t *status;
+   key_request_t *key_requests;
+   /* Keep keys returned from driver separate from keys returned from cache.
+    * Keys returned from driver MUST not have conflicts (e.g. intersecting key
+    * alt names)
+    * But keys from cache MAY have conflicts since the cache is only locked for
+    * a single get operation.
+    */
+   key_returned_t *keys_returned;
+   key_returned_t *keys_cached;
    _mongocrypt_buffer_t filter;
-   _mongocrypt_opts_t *crypt_opts;
-   _mongocrypt_cache_t *cache_key;
-   _mongocrypt_log_t *log;
    mongocrypt_t *crypt;
+
+   key_returned_t *decryptor_iter;
 } _mongocrypt_key_broker_t;
 
-
 void
-_mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb,
-                             _mongocrypt_opts_t *opts,
-                             _mongocrypt_cache_t *cache_key,
-                             _mongocrypt_log_t *log,
-                             mongocrypt_t *crypt);
+_mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb, mongocrypt_t *crypt);
 
-
-/* Add an ID into the key broker. */
+/* Add a request for a key by UUID. */
 bool
-_mongocrypt_key_broker_add_id (_mongocrypt_key_broker_t *kb,
-                               const _mongocrypt_buffer_t *key_id)
-   MONGOCRYPT_WARN_UNUSED_RESULT;
-
-
-/* For testing only, add a decrypted key */
-bool
-_mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
-                                     const _mongocrypt_buffer_t *key_id)
-   MONGOCRYPT_WARN_UNUSED_RESULT;
-
-
-/* Get the find command filter. */
-bool
-_mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
-                               mongocrypt_binary_t *out)
+_mongocrypt_key_broker_request_id (_mongocrypt_key_broker_t *kb,
+                                   const _mongocrypt_buffer_t *key_id)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
 /* Add keyAltName into the key broker.
    Key is added as KEY_EMPTY. */
 bool
-_mongocrypt_key_broker_add_name (_mongocrypt_key_broker_t *kb,
-                                 const bson_value_t *key_alt_name)
+_mongocrypt_key_broker_request_name (_mongocrypt_key_broker_t *kb,
+                                     const bson_value_t *key_alt_name)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
-_mongocrypt_key_broker_all_state (_mongocrypt_key_broker_t *kb,
-                                  _mongocrypt_key_state_t state)
-   MONGOCRYPT_WARN_UNUSED_RESULT;
+_mongocrypt_key_broker_requests_done (_mongocrypt_key_broker_t *kb);
 
-
+/* Get the find command filter. */
 bool
-_mongocrypt_key_broker_any_state (_mongocrypt_key_broker_t *kb,
-                                  _mongocrypt_key_state_t state)
+_mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
+                               mongocrypt_binary_t *out)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 
@@ -128,6 +133,8 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                                 const _mongocrypt_buffer_t *doc)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
+bool
+_mongocrypt_key_broker_docs_done (_mongocrypt_key_broker_t *kb);
 
 /* Iterate the keys needing KMS decryption. */
 mongocrypt_kms_ctx_t *
@@ -137,17 +144,20 @@ _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
 
 /* Indicate that all KMS requests are complete. */
 bool
-_mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
-   MONGOCRYPT_WARN_UNUSED_RESULT;
+_mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb);
 
 
-/* Get the final decrypted key material from a key. */
+/* Get the final decrypted key material from a key by looking up with a key_id.
+ * @out is always initialized, even on error. */
 bool
 _mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
                                             const _mongocrypt_buffer_t *key_id,
                                             _mongocrypt_buffer_t *out)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
+/* Get the final decrypted key material from a key, and optionally its key_id.
+ * @key_id_out may be NULL. @out and @key_id_out (if not NULL) are always
+ * initialized, even on error. */
 bool
 _mongocrypt_key_broker_decrypted_key_by_name (_mongocrypt_key_broker_t *kb,
                                               const bson_value_t *key_alt_name,
@@ -164,13 +174,9 @@ _mongocrypt_key_broker_status (_mongocrypt_key_broker_t *kb,
 void
 _mongocrypt_key_broker_cleanup (_mongocrypt_key_broker_t *kb);
 
+/* For testing only, add a decrypted key */
 void
-_mongocrypt_key_broker_debug (_mongocrypt_key_broker_t *kb);
-
-void
-_mongocrypt_key_broker_reset_iterators (_mongocrypt_key_broker_t *kb);
-
-int
-_mongocrypt_key_broker_num_entries (_mongocrypt_key_broker_t *kb);
+_mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
+                                     const _mongocrypt_buffer_t *key_id);
 
 #endif /* MONGOCRYPT_KEY_BROKER_PRIVATE_H */

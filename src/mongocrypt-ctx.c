@@ -24,17 +24,6 @@
 #define ALGORITHM_RANDOM "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
 #define ALGORITHM_RANDOM_LEN 36
 
-
-/* A failure status has already been set. */
-bool
-_mongocrypt_ctx_fail (mongocrypt_ctx_t *ctx)
-{
-   BSON_ASSERT (!mongocrypt_status_ok (ctx->status));
-   ctx->state = MONGOCRYPT_CTX_ERROR;
-   return false;
-}
-
-
 bool
 _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
 {
@@ -44,6 +33,18 @@ _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
                           "%s",
                           msg);
    return _mongocrypt_ctx_fail (ctx);
+}
+
+/* A failure status has already been set. */
+bool
+_mongocrypt_ctx_fail (mongocrypt_ctx_t *ctx)
+{
+   if (mongocrypt_status_ok (ctx->status)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "unexpected, failing but no error status set");
+   }
+   ctx->state = MONGOCRYPT_CTX_ERROR;
+   return false;
 }
 
 
@@ -287,9 +288,7 @@ _mongo_feed_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 static bool
 _mongo_done_keys (mongocrypt_ctx_t *ctx)
 {
-   if (_mongocrypt_key_broker_any_state (&ctx->kb, KEY_EMPTY)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "did not provide all keys");
-   }
+   _mongocrypt_key_broker_docs_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
@@ -711,11 +710,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm prohibited");
    }
 
-   _mongocrypt_key_broker_init (&ctx->kb,
-                                &ctx->crypt->opts,
-                                &ctx->crypt->cache_key,
-                                &ctx->crypt->log,
-                                ctx->crypt);
+   _mongocrypt_key_broker_init (&ctx->kb, ctx->crypt);
    return true;
 }
 
@@ -734,37 +729,41 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
       return false;
    }
 
-   if (!mongocrypt_status_ok (kb->status)) {
+
+   switch (kb->state) {
+   case KB_ERROR:
       _mongocrypt_status_copy_to (kb->status, status);
       new_state = MONGOCRYPT_CTX_ERROR;
       ret = false;
-   } else if (kb->kb_entry == NULL) {
-      /* No key entries were ever added. */
-      new_state = MONGOCRYPT_CTX_READY;
-      ctx->nothing_to_do = true; /* nothing to encrypt/decrypt */
-      ret = true;
-   } else if (_mongocrypt_key_broker_any_state (kb, KEY_EMPTY)) {
-      /* Empty keys require documents. */
+      break;
+   case KB_ADDING_DOCS:
+      /* Require key documents from driver. */
       new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
       ret = true;
-   } else if (_mongocrypt_key_broker_any_state (kb, KEY_ENCRYPTED) ||
-              _mongocrypt_key_broker_any_state (kb, KEY_DECRYPTING)) {
+      break;
+   case KB_DECRYPTING_KEY_MATERIAL:
       /* Encrypted keys need KMS. */
       new_state = MONGOCRYPT_CTX_NEED_KMS;
       ret = true;
-   } else if (!_mongocrypt_key_broker_all_state (kb, KEY_DECRYPTED)) {
-      /* All keys must be decrypted. */
-      CLIENT_ERR ("key broker in invalid state");
+      break;
+   case KB_DONE:
+      new_state = MONGOCRYPT_CTX_READY;
+      if (kb->key_requests == NULL) {
+         /* No key requests were ever added. */
+         ctx->nothing_to_do = true; /* nothing to encrypt/decrypt */
+      }
+      ret = true;
+      break;
+   /* As currently implemented, we do not expect to ever be in KB_REQUESTING
+    * state when calling this function. */
+   case KB_REQUESTING:
+      CLIENT_ERR ("key broker in unexpected state");
       new_state = MONGOCRYPT_CTX_ERROR;
       ret = false;
-   } else {
-      new_state = MONGOCRYPT_CTX_READY;
-      ret = true;
+      break;
    }
 
    if (new_state != ctx->state) {
-      /* reset the ctx_id and kms iterators on state change. */
-      _mongocrypt_key_broker_reset_iterators (kb);
       ctx->state = new_state;
    }
 

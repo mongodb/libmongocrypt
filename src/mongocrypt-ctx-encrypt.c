@@ -170,18 +170,19 @@ _collect_key_from_marking (void *ctx,
    kb = (_mongocrypt_key_broker_t *) ctx;
 
    if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
+      _mongocrypt_marking_cleanup (&marking);
       return false;
    }
 
-   /* TODO: check if the key cache has the key. */
    if (marking.has_alt_name) {
-      res = _mongocrypt_key_broker_add_name (kb, &marking.key_alt_name);
+      res = _mongocrypt_key_broker_request_name (kb, &marking.key_alt_name);
    } else {
-      res = _mongocrypt_key_broker_add_id (kb, &marking.key_id);
+      res = _mongocrypt_key_broker_request_id (kb, &marking.key_id);
    }
 
    if (!res) {
       _mongocrypt_key_broker_status (kb, status);
+      _mongocrypt_marking_cleanup (&marking);
       return false;
    }
 
@@ -257,6 +258,7 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 static bool
 _mongo_done_markings (mongocrypt_ctx_t *ctx)
 {
+   _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
@@ -306,14 +308,18 @@ _replace_marking_with_ciphertext (void *ctx,
                                   mongocrypt_status_t *status)
 {
    _mongocrypt_marking_t marking = {0};
+   bool ret;
 
    BSON_ASSERT (in);
 
    if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
+      _mongocrypt_marking_cleanup (&marking);
       return false;
    }
 
-   return _marking_to_bson_value (ctx, &marking, out, status);
+   ret = _marking_to_bson_value (ctx, &marking, out, status);
+   _mongocrypt_marking_cleanup (&marking);
+   return ret;
 }
 
 static bool
@@ -506,12 +512,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    if (ctx->opts.key_alt_names) {
-      if (!_mongocrypt_key_broker_add_name (&ctx->kb,
-                                            &ctx->opts.key_alt_names->value)) {
+      if (!_mongocrypt_key_broker_request_name (
+             &ctx->kb, &ctx->opts.key_alt_names->value)) {
          return _mongocrypt_ctx_fail (ctx);
       }
    } else {
-      if (!_mongocrypt_key_broker_add_id (&ctx->kb, &ctx->opts.key_id)) {
+      if (!_mongocrypt_key_broker_request_id (&ctx->kb, &ctx->opts.key_id)) {
          return _mongocrypt_ctx_fail (ctx);
       }
    }
@@ -569,7 +575,7 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       }
    }
 
-
+   _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 

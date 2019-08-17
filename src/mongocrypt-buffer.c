@@ -15,7 +15,6 @@
  */
 
 #include <bson/bson.h>
-#include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
 
 #define INT32_LEN 4
@@ -446,4 +445,12 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
       memcpy (dst->data + offset, srcs[i].data, srcs[i].len);
       offset += srcs[i].len;
    }
+}
+
+struct _mongocrypt_binary_t *
+_mongocrypt_buffer_as_binary (_mongocrypt_buffer_t *buf)
+{
+   buf->bin.data = buf->data;
+   buf->bin.len = buf->len;
+   return &buf->bin;
 }

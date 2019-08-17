@@ -201,6 +201,7 @@ set_target_properties (mongocrypt_static PROPERTIES
 
 
 set (TEST_MONGOCRYPT_SOURCES
+   test/test-conveniences.c
    test/test-mongocrypt-buffer.c
    test/test-mongocrypt-cache.c
    test/test-mongocrypt-ciphertext.c
@@ -212,6 +213,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-datakey.c
    test/test-mongocrypt-key.c
    test/test-mongocrypt-key-broker.c
+   test/test-mongocrypt-key-cache.c
    test/test-mongocrypt-local-kms.c
    test/test-mongocrypt-log.c
    test/test-mongocrypt-marking.c

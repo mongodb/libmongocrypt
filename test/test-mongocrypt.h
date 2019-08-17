@@ -176,13 +176,16 @@ void
 _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
 
 typedef enum {
-   CRYPTO_REQUIRED, CRYPTO_OPTIONAL, CRYPTO_PROHIBITED
+   CRYPTO_REQUIRED,
+   CRYPTO_OPTIONAL,
+   CRYPTO_PROHIBITED
 } _mongocrypt_tester_crypto_spec_t;
 
 void
 _mongocrypt_tester_install (_mongocrypt_tester_t *tester,
                             char *name,
-                            _mongocrypt_test_fn fn, _mongocrypt_tester_crypto_spec_t crypto_spec);
+                            _mongocrypt_test_fn fn,
+                            _mongocrypt_tester_crypto_spec_t crypto_spec);
 
 
 const char *
@@ -243,6 +246,9 @@ _mongocrypt_tester_install_traverse_util (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester);
 
+void
+_mongocrypt_tester_install_key_cache (_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
@@ -270,7 +276,12 @@ mongocrypt_binary_t *
 _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 #define TEST_FILE(path) _mongocrypt_tester_file (tester, path)
 
-#define INSTALL_TEST(fn) _mongocrypt_tester_install (tester, #fn, fn, CRYPTO_REQUIRED)
-#define INSTALL_TEST_CRYPTO(fn, crypto) _mongocrypt_tester_install (tester, #fn, fn, crypto)
+#define INSTALL_TEST(fn) \
+   _mongocrypt_tester_install (tester, #fn, fn, CRYPTO_REQUIRED)
+#define INSTALL_TEST_CRYPTO(fn, crypto) \
+   _mongocrypt_tester_install (tester, #fn, fn, crypto)
+
+void
+_load_json_as_bson (const char *path, bson_t *out);
 
 #endif

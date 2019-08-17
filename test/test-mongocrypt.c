@@ -322,8 +322,10 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          kms = mongocrypt_ctx_next_kms_ctx (ctx);
-         _mongocrypt_tester_satisfy_kms (tester, kms);
-         BSON_ASSERT (!mongocrypt_ctx_next_kms_ctx (ctx));
+         while (kms) {
+            _mongocrypt_tester_satisfy_kms (tester, kms);
+            kms = mongocrypt_ctx_next_kms_ctx (ctx);
+         }
          res = mongocrypt_ctx_kms_done (ctx);
          mongocrypt_ctx_status (ctx, &status);
          ASSERT_OR_PRINT (res, &status);
@@ -335,12 +337,14 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          ASSERT_OR_PRINT (res, &status);
          mongocrypt_binary_destroy (bin);
          break;
-      case MONGOCRYPT_CTX_DONE:
       case MONGOCRYPT_CTX_ERROR:
          mongocrypt_ctx_status (ctx, &status);
          fprintf (stderr,
                   "Got error: %s\n",
                   mongocrypt_status_message (&status, NULL));
+         BSON_ASSERT (state == stop_state);
+         return;
+      case MONGOCRYPT_CTX_DONE:
          BSON_ASSERT (state == stop_state);
          return;
       }
@@ -626,6 +630,7 @@ main (int argc, char **argv)
                                _test_setopt_invalid_kms_providers,
                                CRYPTO_REQUIRED);
    _mongocrypt_tester_install_crypto_hooks (&tester);
+   _mongocrypt_tester_install_key_cache (&tester);
 
 
    printf ("Running tests...\n");

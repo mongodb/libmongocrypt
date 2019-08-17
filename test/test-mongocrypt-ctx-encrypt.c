@@ -648,8 +648,9 @@ _test_encrypt_need_keys (_mongocrypt_tester_t *tester)
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-   ASSERT_FAILS (
-      mongocrypt_ctx_mongo_done (ctx), ctx, "did not provide all keys");
+   ASSERT_FAILS (mongocrypt_ctx_mongo_done (ctx),
+                 ctx,
+                 "not all keys requested were satisfied");
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */

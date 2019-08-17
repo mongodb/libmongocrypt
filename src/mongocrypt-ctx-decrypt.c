@@ -170,7 +170,7 @@ _collect_key_from_ciphertext (void *ctx,
       return false;
    }
 
-   if (!_mongocrypt_key_broker_add_id (kb, &ciphertext.key_id)) {
+   if (!_mongocrypt_key_broker_request_id (kb, &ciphertext.key_id)) {
       return _mongocrypt_key_broker_status (kb, status);
    }
 
@@ -248,6 +248,7 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail (ctx);
    }
 
+   _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
@@ -299,5 +300,6 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
       return _mongocrypt_ctx_fail (ctx);
    }
 
+   _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }

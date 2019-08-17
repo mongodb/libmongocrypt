@@ -139,7 +139,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_from_binary (&marking.key_id, TEST_BIN (16));
    marking.key_id.subtype = BSON_SUBTYPE_UUID;
    kb = &ctx->kb;
-   BSON_ASSERT (_mongocrypt_key_broker_add_test_key (kb, &marking.key_id));
+   _mongocrypt_key_broker_add_test_key (kb, &marking.key_id);
 
    bson = BCON_NEW ("v", "a", "v", "b");
    bson_iter_init (&a_iter, bson);

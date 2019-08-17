@@ -27,31 +27,24 @@ static bool
 _cmp_attr (void *a, void *b, int *out)
 {
    _mongocrypt_cache_key_attr_t *attr_a, *attr_b;
-   bool id_mismatch = false;
 
    *out = 1;
    attr_a = (_mongocrypt_cache_key_attr_t *) a;
    attr_b = (_mongocrypt_cache_key_attr_t *) b;
 
-   if (!_mongocrypt_buffer_empty (&attr_a->id)) {
+   if (!_mongocrypt_buffer_empty (&attr_a->id) &&
+       !_mongocrypt_buffer_empty (&attr_b->id)) {
       if (0 == _mongocrypt_buffer_cmp (&attr_a->id, &attr_b->id)) {
          *out = 0;
-         return true;
       }
-      id_mismatch = true;
    }
 
    if (_mongocrypt_key_alt_name_intersects (attr_a->alt_names,
                                             attr_b->alt_names)) {
-      if (id_mismatch) {
-         /* invalid, there is an _id mismatch but intersecting key alt names.
-          * _id or key alt name should uniquely identify a document. */
-         return false;
-      }
       *out = 0;
-      return true;
    }
 
+   /* No error. */
    return true;
 }
 
@@ -82,6 +75,22 @@ _copy_contents (void *value)
    key_value = (_mongocrypt_cache_key_value_t *) value;
    return _mongocrypt_cache_key_value_new (key_value->key_doc,
                                            &key_value->decrypted_key_material);
+}
+
+static void
+_dump_attr (void *attr_in)
+{
+   _mongocrypt_cache_key_attr_t *attr;
+   _mongocrypt_key_alt_name_t *altname;
+   char *hex;
+
+   attr = (_mongocrypt_cache_key_attr_t *) attr_in;
+   hex = _mongocrypt_buffer_to_hex (&attr->id);
+   printf ("_id=%s,", hex);
+   printf ("keyAltNames=");
+   for (altname = attr->alt_names; NULL != altname; altname = altname->next) {
+      printf ("%s\n", _mongocrypt_key_alt_name_get_string (altname));
+   }
 }
 
 
@@ -127,6 +136,7 @@ _mongocrypt_cache_key_init (_mongocrypt_cache_t *cache)
    cache->destroy_attr = _destroy_attr;
    cache->copy_value = _copy_contents;
    cache->destroy_value = _mongocrypt_cache_key_value_destroy;
+   cache->dump_attr = _dump_attr;
    _mongocrypt_mutex_init (&cache->mutex);
    cache->pair = NULL;
    cache->expiration = CACHE_EXPIRATION_MS;

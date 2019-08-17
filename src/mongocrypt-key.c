@@ -17,6 +17,53 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-key-private.h"
 
+
+/* Check if two single entries are equal (i.e. ignore the 'next' pointer). */
+static bool
+_one_key_alt_name_equal (_mongocrypt_key_alt_name_t *ptr_a,
+                         _mongocrypt_key_alt_name_t *ptr_b)
+{
+   BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
+   BSON_ASSERT (ptr_b->value.value_type == BSON_TYPE_UTF8);
+   return 0 == strcmp (_mongocrypt_key_alt_name_get_string (ptr_a),
+                       _mongocrypt_key_alt_name_get_string (ptr_b));
+}
+
+static bool
+_find (_mongocrypt_key_alt_name_t *list, _mongocrypt_key_alt_name_t *entry)
+{
+   for (; NULL != list; list = list->next) {
+      if (_one_key_alt_name_equal (list, entry)) {
+         return true;
+      }
+   }
+   return false;
+}
+
+static uint32_t
+_list_len (_mongocrypt_key_alt_name_t *list)
+{
+   uint32_t count = 0;
+
+   while (NULL != list) {
+      count++;
+      list = list->next;
+   }
+   return count;
+}
+
+static bool
+_check_unique (_mongocrypt_key_alt_name_t *list)
+{
+   for (; NULL != list; list = list->next) {
+      /* Check if we can find the current entry in the remaining. */
+      if (_find (list->next, list)) {
+         return false;
+      }
+   }
+   return true;
+}
+
 static bool
 _parse_masterkey (bson_iter_t *iter,
                   _mongocrypt_key_doc_t *out,
@@ -109,6 +156,53 @@ _parse_masterkey (bson_iter_t *iter,
    return true;
 }
 
+
+bool
+_mongocrypt_key_alt_name_from_iter (const bson_iter_t *iter_in,
+                                    _mongocrypt_key_alt_name_t **out,
+                                    mongocrypt_status_t *status)
+{
+   _mongocrypt_key_alt_name_t *key_alt_names = NULL, *tmp;
+   bson_iter_t iter;
+
+
+   memcpy (&iter, iter_in, sizeof (iter));
+   *out = NULL;
+
+   /* A key parsed with no keyAltNames will have a zero'ed out bson value. Not
+    * an error. */
+   if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+      CLIENT_ERR ("malformed keyAltNames, expected array");
+      return false;
+   }
+
+   if (!bson_iter_recurse (&iter, &iter)) {
+      CLIENT_ERR ("malformed keyAltNames, could not recurse into array");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         _mongocrypt_key_alt_name_destroy_all (key_alt_names);
+         CLIENT_ERR ("unexpected non-UTF8 keyAltName");
+         return false;
+      }
+
+      tmp = _mongocrypt_key_alt_name_new (bson_iter_value (&iter));
+      tmp->next = key_alt_names;
+      key_alt_names = tmp;
+   }
+
+   if (!_check_unique (key_alt_names)) {
+      _mongocrypt_key_alt_name_destroy_all (key_alt_names);
+      CLIENT_ERR ("unexpected duplicate keyAltNames");
+      return false;
+   }
+
+   *out = key_alt_names;
+   return true;
+}
+
 /* Takes ownership of all fields. */
 bool
 _mongocrypt_key_parse_owned (const bson_t *bson,
@@ -121,12 +215,16 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
         has_master_key = false;
 
    memset (out, 0, sizeof (_mongocrypt_key_doc_t));
+   bson_init (&out->bson);
 
    if (!bson_validate (bson, BSON_VALIDATE_NONE, NULL) ||
        !bson_iter_init (&iter, bson)) {
       CLIENT_ERR ("invalid BSON");
       return false;
    }
+
+   bson_destroy (&out->bson);
+   bson_copy_to (bson, &out->bson);
 
    while (bson_iter_next (&iter)) {
       const char *field;
@@ -141,11 +239,13 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
          continue;
       }
 
-      /* keyAltName (optional) */
+      /* keyAltNames (optional) */
       if (0 == strcmp ("keyAltNames", field)) {
-         /* CDRIVER-3100 We must make a copy here */
-         bson_value_copy (bson_iter_value (&iter), &out->key_alt_names);
-         out->has_alt_names = true;
+         if (!_mongocrypt_key_alt_name_from_iter (
+                &iter, &out->key_alt_names, status)) {
+            return false;
+         }
+         continue;
       }
 
       if (0 == strcmp ("keyMaterial", field)) {
@@ -213,11 +313,6 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
          continue;
       }
 
-      if (0 == strcmp ("keyAltNames", field)) {
-         /* TODO: after rebasing on key alt name, add that parsing code here. */
-         continue;
-      }
-
       CLIENT_ERR ("unrecognized field '%s'", field);
       return false;
    }
@@ -263,92 +358,17 @@ _mongocrypt_key_new ()
    _mongocrypt_key_doc_t *key_doc;
 
    key_doc = (_mongocrypt_key_doc_t *) bson_malloc0 (sizeof *key_doc);
+   bson_init (&key_doc->bson);
 
    return key_doc;
 }
 
 
-/* TODO CDRIVER-3154 instead of comparing all parsed fields, just compare
- * the original BSON document. */
 bool
 _mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
                        const _mongocrypt_key_doc_t *b)
 {
-   if (_mongocrypt_buffer_cmp (&a->id, &b->id) != 0) {
-      return false;
-   }
-
-   if (a->has_alt_names != b->has_alt_names) {
-      return false;
-   }
-
-   if (a->has_alt_names) {
-      bson_t a_alt_names, b_alt_names;
-
-      BSON_ASSERT (a->key_alt_names.value_type == BSON_TYPE_ARRAY);
-      BSON_ASSERT (b->key_alt_names.value_type == BSON_TYPE_ARRAY);
-
-      bson_init_static (&a_alt_names,
-                        a->key_alt_names.value.v_doc.data,
-                        a->key_alt_names.value.v_doc.data_len);
-
-      bson_init_static (&b_alt_names,
-                        b->key_alt_names.value.v_doc.data,
-                        b->key_alt_names.value.v_doc.data_len);
-
-      if (!bson_equal (&a_alt_names, &b_alt_names)) {
-         return false;
-      }
-   }
-
-   if (0 != _mongocrypt_buffer_cmp (&a->key_material, &b->key_material)) {
-      return false;
-   }
-
-   if (a->masterkey_provider != b->masterkey_provider) {
-      return false;
-   }
-
-   if (0 != strcmp (a->masterkey_region, b->masterkey_region)) {
-      return false;
-   }
-
-
-   if ((a->masterkey_cmk && b->masterkey_cmk == NULL) ||
-       (a->masterkey_cmk == NULL && b->masterkey_cmk)) {
-      return false;
-   }
-
-   if (a->masterkey_cmk && b->masterkey_cmk) {
-      if (0 != strcmp (a->masterkey_cmk, b->masterkey_cmk)) {
-         return false;
-      }
-   }
-
-   if ((a->endpoint && b->endpoint == NULL) ||
-       (a->endpoint == NULL && b->endpoint)) {
-      return false;
-   }
-
-   if (a->endpoint && b->endpoint) {
-      if (0 != strcmp (a->endpoint, b->endpoint)) {
-         return false;
-      }
-   }
-
-   if (a->creation_date != b->creation_date) {
-      return false;
-   }
-
-   if (a->creation_date != b->creation_date) {
-      return false;
-   }
-
-   if (a->update_date != b->update_date) {
-      return false;
-   }
-
-   return true;
+   return bson_equal (&a->bson, &b->bson);
 }
 
 
@@ -360,13 +380,12 @@ _mongocrypt_key_destroy (_mongocrypt_key_doc_t *key)
    }
 
    _mongocrypt_buffer_cleanup (&key->id);
-   if (key->has_alt_names) {
-      bson_value_destroy (&key->key_alt_names);
-   }
+   _mongocrypt_key_alt_name_destroy_all (key->key_alt_names);
    _mongocrypt_buffer_cleanup (&key->key_material);
    bson_free (key->masterkey_region);
    bson_free (key->masterkey_cmk);
    bson_free (key->endpoint);
+   bson_destroy (&key->bson);
    bson_free (key);
 }
 
@@ -381,10 +400,8 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
    memset (dst, 0, sizeof (*dst));
    _mongocrypt_buffer_copy_to (&src->id, &dst->id);
    _mongocrypt_buffer_copy_to (&src->key_material, &dst->key_material);
-   if (src->has_alt_names) {
-      bson_value_copy (&src->key_alt_names, &dst->key_alt_names);
-      dst->has_alt_names = true;
-   }
+   dst->key_alt_names = _mongocrypt_key_alt_name_copy_all (src->key_alt_names);
+   bson_copy_to (&src->bson, &dst->bson);
    dst->masterkey_provider = src->masterkey_provider;
    dst->masterkey_region = bson_strdup (src->masterkey_region);
    dst->masterkey_cmk = bson_strdup (src->masterkey_cmk);
@@ -431,10 +448,7 @@ _mongocrypt_key_alt_name_intersects (_mongocrypt_key_alt_name_t *ptr_a,
    _mongocrypt_key_alt_name_t *orig_ptr_b = ptr_b;
    for (; ptr_a; ptr_a = ptr_a->next) {
       for (ptr_b = orig_ptr_b; ptr_b; ptr_b = ptr_b->next) {
-         BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
-         BSON_ASSERT (ptr_b->value.value_type == BSON_TYPE_UTF8);
-         if (0 == strcmp (ptr_a->value.value.v_utf8.str,
-                          ptr_b->value.value.v_utf8.str)) {
+         if (_one_key_alt_name_equal (ptr_a, ptr_b)) {
             return true;
          }
       }
@@ -481,4 +495,29 @@ _mongocrypt_key_alt_name_new (const bson_value_t *value)
    _mongocrypt_key_alt_name_t *name = bson_malloc0 (sizeof (*name));
    bson_value_copy (value, &name->value);
    return name;
+}
+
+bool
+_mongocrypt_key_alt_name_unique_list_equal (_mongocrypt_key_alt_name_t *list_a,
+                                            _mongocrypt_key_alt_name_t *list_b)
+{
+   _mongocrypt_key_alt_name_t *ptr;
+
+   BSON_ASSERT (_check_unique (list_a));
+   BSON_ASSERT (_check_unique (list_b));
+   if (_list_len (list_a) != _list_len (list_b)) {
+      return false;
+   }
+   for (ptr = list_a; NULL != ptr; ptr = ptr->next) {
+      if (!_find (list_b, ptr)) {
+         return false;
+      }
+   }
+   return true;
+}
+
+const char *
+_mongocrypt_key_alt_name_get_string (_mongocrypt_key_alt_name_t *key_alt_name)
+{
+   return key_alt_name->value.value.v_utf8.str;
 }

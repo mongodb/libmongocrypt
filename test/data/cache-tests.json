@@ -1,0 +1,188 @@
+[
+  {
+    "description": "basic test, no overwriting",
+    "cached": [{ "_id": 0, "keyAltNames": ["alt0", "alt2"] }],
+    "requests": [
+      { "_id": 0 },
+      { "keyAltName": "alt2" },
+      { "keyAltName": "alt1" }
+    ],
+    "replies": [{ "_id": 1, "keyAltNames": ["alt1"] }],
+    "expect": {
+      "cached": [
+        { "_id": 0, "keyAltNames": ["alt0", "alt2"] },
+        { "_id": 1, "keyAltNames": ["alt1"] }
+      ]
+    }
+  },
+  {
+    "description": "single key overwritten",
+    "cached": [{ "_id": 0, "keyAltNames": [] }],
+    "requests": [{ "keyAltName": "alt0" }],
+    "replies": [{ "_id": 0, "keyAltNames": ["alt0"] }],
+    "expect": {
+      "cached": [{ "_id": 0, "keyAltNames": ["alt0"] }]
+    }
+  },
+  {
+    "description": "empty cache",
+    "cached": [],
+    "requests": [{ "keyAltName": "alt0" }],
+    "replies": [{ "_id": 0, "keyAltNames": ["alt0"] }],
+    "expect": {
+      "cached": [{ "_id": 0, "keyAltNames": ["alt0"] }]
+    }
+  },
+  {
+    "description": "multiple keys overwritten",
+    "cached": [{ "_id": 0 }, { "_id": 1 }],
+    "requests": [{ "keyAltName": "alt0" }, { "keyAltName": "alt1" }],
+    "replies": [
+      { "_id": 0, "keyAltNames": ["alt0"] },
+      { "_id": 1, "keyAltNames": ["alt1"] }
+    ],
+    "expect": {
+      "cached": [
+        { "_id": 0, "keyAltNames": ["alt0"] },
+        { "_id": 1, "keyAltNames": ["alt1"] }
+      ]
+    }
+  },
+  {
+    "description": "multiple keys overwritten by one",
+    "cached": [
+      { "_id": 0, "keyAltNames": ["alt0"] },
+      { "_id": 1, "keyAltNames": ["alt1"] }
+    ],
+    "requests": [{ "keyAltName": "alt2" }],
+    "replies": [{ "_id": 2, "keyAltNames": ["alt0", "alt1", "alt2"] }],
+    "expect": {
+      "cached": [{ "_id": 2, "keyAltNames": ["alt0", "alt1", "alt2"] }]
+    }
+  },
+  {
+    "description": "multiple keys with the same id returned",
+    "cached": [],
+    "requests": [{ "keyAltName": "alt2" }, { "_id": 2 }],
+    "replies": [
+        { "_id": 2, "keyAltNames": ["alt2"] },
+        { "_id": 2 }
+    ],
+    "expect": {
+      "errmsg": "keys returned have duplicate keyAltNames or _id"
+    }
+  },
+  {
+    "description": "multiple keys with the same alt name returned",
+    "cached": [],
+    "requests": [{ "keyAltName": "alt2" }],
+    "replies": [
+        { "_id": 0, "keyAltNames": ["alt2"] },
+        { "_id": 1, "keyAltNames": ["alt2"] }
+    ],
+    "expect": {
+      "errmsg": "keys returned have duplicate keyAltNames or _id"
+    }
+  },
+  {
+    "description": "key returned does not match request",
+    "cached": [],
+    "requests": [{ "keyAltName": "alt0" }],
+    "replies": [
+        { "_id": 0, "keyAltNames": ["alt1"] }
+    ],
+    "expect": {
+      "errmsg": "unexpected key returned"
+    }
+  },
+  {
+    "description": "not all keys are supplied",
+    "cached": [],
+    "requests": [
+      { "keyAltName": "alt2" },
+      { "keyAltName": "alt1" }
+    ],
+    "replies": [
+        { "_id": 0, "keyAltNames": ["alt1"] }
+    ],
+    "expect": {
+      "errmsg": "not all keys requested were satisfied"
+    }
+  },
+  {
+    "description": "one key matches multiple requests",
+    "cached": [],
+    "requests": [
+      { "keyAltName": "alt2" },
+      { "keyAltName": "alt1" },
+      { "keyAltName": "alt0" },
+      { "_id": 0 }
+    ],
+    "replies": [
+        { "_id": 0, "keyAltNames": ["alt0", "alt1", "alt2"] }
+    ],
+    "expect": {
+      "cached": [{ "_id": 0, "keyAltNames": ["alt0", "alt1", "alt2"] }]
+    }
+  },
+  {
+    "description": "extra keys are supplied",
+    "cached": [],
+    "requests": [{ "keyAltName": "alt0" }],
+    "replies": [
+        { "_id": 0, "keyAltNames": ["alt0"] },
+        { "_id": 1 }
+    ],
+    "expect": {
+      "errmsg": "unexpected key returned"
+    }
+  },
+  {
+    "description": "update cache with a conflicting key",
+    "cached": [ { "_id": 0, "keyAltNames": ["alt0"] } ],
+    "requests": [{ "keyAltName": "alt1" }],
+    "replies": [
+        { "_id": 1, "keyAltNames": ["alt0", "alt1"] }
+    ],
+    "expect": {
+      "cached": [ { "_id": 1, "keyAltNames": ["alt0", "alt1"] } ]
+    }
+  },
+  {
+    "description": "return duplicate key alt names",
+    "cached": [],
+    "requests": [{ "keyAltName": "alt1" }],
+    "replies": [
+        { "_id": 1, "keyAltNames": ["alt0", "alt0", "alt1"] }
+    ],
+    "expect": {
+      "errmsg": "unexpected duplicate keyAltNames"
+    }
+  },
+  {
+    "description": "everything satisfied by cache",
+    "cached": [{ "_id": 0 }, { "_id": 1, "keyAltNames": ["alt0"] }],
+    "requests": [{"_id": 0}, {"_id": 1}, { "keyAltName": "alt0" }],
+    "expect": {
+      "cached": [{ "_id": 0 }, { "_id": 1, "keyAltNames": ["alt0"] }]
+    }
+  },
+  {
+    "description": "duplicate requests for _id's",
+    "cached": [],
+    "requests": [{"_id": 0}, {"_id": 0}],
+    "replies": [{"_id": 0, "keyAltNames": ["alt0"]}],
+    "expect": {
+      "cached": [{ "_id": 0, "keyAltNames": ["alt0"] }]
+    }
+  },
+  {
+    "description": "duplicate requests for keyAltName's",
+    "cached": [],
+    "requests": [{"keyAltName": "alt0"}, {"keyAltName": "alt0"}],
+    "replies": [{"_id": 0, "keyAltNames": ["alt0"]}],
+    "expect": {
+      "cached": [{ "_id": 0, "keyAltNames": ["alt0"] }]
+    }
+  }
+]
