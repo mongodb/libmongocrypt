@@ -184,5 +184,14 @@
     "expect": {
       "cached": [{ "_id": 0, "keyAltNames": ["alt0"] }]
     }
+  },
+  {
+    "description": "test with both local and non-local keys",
+    "cached": [],
+    "requests": [{"keyAltName": "alt0"}, {"keyAltName": "alt1"}],
+    "replies": [{"_id": 0, "keyAltNames": ["alt0"]}, {"_id": 1, "keyAltNames": ["alt1"], "local": true}],
+    "expect": {
+      "cached": [{ "_id": 0, "keyAltNames": ["alt0"] }, { "_id": 1, "keyAltNames": ["alt1"], "local": true }]
+    }
   }
 ]

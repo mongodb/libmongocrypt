@@ -55,22 +55,38 @@ gen_key (_mongocrypt_tester_t *tester,
    bson_iter_t iter;
    _mongocrypt_buffer_t key_material;
    _mongocrypt_buffer_t key_id;
-   bson_t *key =
-      TMP_BSON ("{'status': 1, 'masterKey': { 'region': 'us-east-1', 'key': "
-                "'arn:aws:kms:us-east-1:579766882180:key/"
-                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'provider': 'aws'}, "
-                "'updateDate': { '$date': 1557827033 }, 'creationDate': { "
-                "'$date': 1557827033 }}");
+   bson_t key, masterkey;
+   bool local_kms;
+
+   bson_init (&key);
+   BSON_APPEND_INT32 (&key, "status", 1);
+   BSON_APPEND_DATE_TIME (&key, "updateDate", 1234567890);
+   BSON_APPEND_DATE_TIME (&key, "creationDate", 1234567890);
+   BSON_APPEND_DOCUMENT_BEGIN (&key, "masterKey", &masterkey);
+
+   local_kms = bson_iter_init_find (&iter, key_description, "local") &&
+               bson_iter_as_bool (&iter);
+
+   if (local_kms) {
+      BSON_APPEND_UTF8 (&masterkey, "provider", "local");
+   } else {
+      BSON_APPEND_UTF8 (&masterkey, "provider", "aws");
+      BSON_APPEND_UTF8 (&masterkey, "region", "us-east-1");
+      BSON_APPEND_UTF8 (
+         &masterkey, "key", "arn:aws:kms:us-east-1:579766882180:key/"
+                            "89fcc2c4-08b0-4bd9-9f25-e30687b580d0");
+   }
+   bson_append_document_end (&key, &masterkey);
 
    BSON_ASSERT (bson_iter_init_find (&iter, key_description, "_id"));
    lookup_key_id (bson_iter_int32 (&iter), &key_id);
-   BSON_ASSERT (_mongocrypt_buffer_append (&key_id, key, "_id", 3));
+   BSON_ASSERT (_mongocrypt_buffer_append (&key_id, &key, "_id", 3));
 
    if (bson_iter_init_find (&iter, key_description, "keyAltNames")) {
       bson_t key_alt_name_bson;
       int counter = 0;
 
-      BSON_APPEND_ARRAY_BEGIN (key, "keyAltNames", &key_alt_name_bson);
+      BSON_APPEND_ARRAY_BEGIN (&key, "keyAltNames", &key_alt_name_bson);
       for (bson_iter_recurse (&iter, &iter); bson_iter_next (&iter);) {
          char *field;
 
@@ -80,28 +96,36 @@ gen_key (_mongocrypt_tester_t *tester,
          counter++;
          bson_free (field);
       }
-      bson_append_array_end (key, &key_alt_name_bson);
+      bson_append_array_end (&key, &key_alt_name_bson);
    }
 
-   _mongocrypt_buffer_init (&key_material);
-   _mongocrypt_buffer_resize (&key_material, MONGOCRYPT_KEY_LEN);
-   memset (key_material.data, 0, MONGOCRYPT_KEY_LEN);
+   /* Append a keyMaterial that is decryptable by the local KMS masterkey. For
+    * AWS it gets ignored since it is dictated by KMS response. */
+   _mongocrypt_buffer_copy_from_hex (
+      &key_material, "75bdbbaec862a8ae09aa16f6c67c0ae117dd15bf49b8a7947bac6de5a"
+                     "610178a3adad4bbe5bec1e30c55378f7d80d0fd5152d46e954aa32528"
+                     "69901e03cf7938434fdf7e5bf27f0ec1c85c4c5a92e38b7e3f7ce686d"
+                     "7985102c85905da220a27ee01202de25b6831e64974baffb35b7c30c5"
+                     "941dfb37b04fff6871d7208e4cde8d1bff0cd69a70dcb613dc27cfe84"
+                     "7d7544b6d0d8b4f6c9a5b6fb9c1565c43ef");
+   key_material.subtype = BSON_SUBTYPE_BINARY;
    BSON_ASSERT (
-      _mongocrypt_buffer_append (&key_material, key, "keyMaterial", -1));
+      _mongocrypt_buffer_append (&key_material, &key, "keyMaterial", -1));
 
    if (key_out) {
-      bson_copy_to (key, key_out);
+      bson_copy_to (&key, key_out);
    }
 
    if (key_doc_out) {
       mongocrypt_status_t *status;
 
       status = mongocrypt_status_new ();
-      ASSERT_OK_STATUS (_mongocrypt_key_parse_owned (key, key_doc_out, status),
+      ASSERT_OK_STATUS (_mongocrypt_key_parse_owned (&key, key_doc_out, status),
                         status);
       mongocrypt_status_destroy (status);
    }
 
+   bson_destroy (&key);
    _mongocrypt_buffer_cleanup (&key_id);
    _mongocrypt_buffer_cleanup (&key_material);
 }

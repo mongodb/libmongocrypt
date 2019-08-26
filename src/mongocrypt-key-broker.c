@@ -612,23 +612,27 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
 
    for (key_returned = kb->keys_returned; NULL != key_returned;
         key_returned = key_returned->next) {
-      if (key_returned->decrypted) {
-         return _key_broker_fail_w_msg (
-            kb,
-            "unexpected, returned keys should not be "
-            "decrypted before KMS completion");
-      }
+      /* Local keys were already decrypted. */
+      if (key_returned->doc->masterkey_provider ==
+          MONGOCRYPT_KMS_PROVIDER_AWS) {
+         if (key_returned->decrypted) {
+            return _key_broker_fail_w_msg (
+               kb,
+               "unexpected, returned keys should not be "
+               "decrypted before KMS completion");
+         }
 
-      if (!key_returned->kms.req) {
-         return _key_broker_fail_w_msg (
-            kb, "unexpected, KMS not set on key returned");
-      }
+         if (!key_returned->kms.req) {
+            return _key_broker_fail_w_msg (
+               kb, "unexpected, KMS not set on key returned");
+         }
 
-      if (!_mongocrypt_kms_ctx_result (&key_returned->kms,
-                                       &key_returned->decrypted_key_material)) {
-         /* Always fatal. Key attempted to decrypt but failed. */
-         mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
-         return _key_broker_fail (kb);
+         if (!_mongocrypt_kms_ctx_result (
+                &key_returned->kms, &key_returned->decrypted_key_material)) {
+            /* Always fatal. Key attempted to decrypt but failed. */
+            mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
+            return _key_broker_fail (kb);
+         }
       }
 
       if (key_returned->decrypted_key_material.len != MONGOCRYPT_KEY_LEN) {
