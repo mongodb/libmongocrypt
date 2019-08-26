@@ -40,8 +40,8 @@ To build libmongocrypt on Windows. This example assumes kms-message and the c dr
 If you see `Windows Error: 126` during tests, like the example below, it means that `libbson-1.0.dll` is not in your path.
 
 ```
- System.TypeInitializationException : The type initializer for 'MongoDB.Crypt.Library' threw an exception.
----- System.IO.FileNotFoundException : D:\repo\libmongocrypt\build\bindings\cs\MongoDB.Crypt.Test\bin\x64\Debug\netcoreapp2.1\mongocrypt.dll, Windows Error: 126
+ System.TypeInitializationException : The type initializer for 'MongoDB.Libmongocrypt.Library' threw an exception.
+---- System.IO.FileNotFoundException : D:\repo\libmongocrypt\build\bindings\cs\MongoDB.Libmongocrypt.Test\bin\x64\Debug\netcoreapp2.1\mongocrypt.dll, Windows Error: 126
 ```
 
 

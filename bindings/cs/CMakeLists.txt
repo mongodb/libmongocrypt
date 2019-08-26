@@ -1,16 +1,16 @@
 
 configure_file(cs.sln cs.sln COPYONLY)
 
-configure_file(MongoDB.Crypt/MongoDB.Crypt.csproj MongoDB.Crypt/MongoDB.Crypt.csproj COPYONLY)
-configure_file(MongoDB.Crypt/Package.include.template.csproj MongoDB.Crypt/Package.csproj.include)
+configure_file(MongoDB.Libmongocrypt/MongoDB.Libmongocrypt.csproj MongoDB.Libmongocrypt/MongoDB.Libmongocrypt.csproj COPYONLY)
+configure_file(MongoDB.Libmongocrypt/Package.include.template.csproj MongoDB.Libmongocrypt/Package.csproj.include)
 
-configure_file(MongoDB.Crypt.Test/MongoDB.Crypt.Test.csproj MongoDB.Crypt.Test/MongoDB.Crypt.Test.csproj COPYONLY)
-configure_file(MongoDB.Crypt.Test/Package.include.template.csproj MongoDB.Crypt.Test/Package.csproj.include)
+configure_file(MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj COPYONLY)
+configure_file(MongoDB.Libmongocrypt.Test/Package.include.template.csproj MongoDB.Libmongocrypt.Test/Package.csproj.include)
 
-configure_file(MongoDB.Crypt.Test/MongoDB.Crypt.Test.csproj MongoDB.Crypt.Test32/MongoDB.Crypt.Test32.csproj COPYONLY)
-configure_file(MongoDB.Crypt.Test/Package.include.template.csproj MongoDB.Crypt.Test32/Package.csproj.include)
+configure_file(MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj MongoDB.Libmongocrypt.Test32/MongoDB.Libmongocrypt.Test32.csproj COPYONLY)
+configure_file(MongoDB.Libmongocrypt.Test/Package.include.template.csproj MongoDB.Libmongocrypt.Test32/Package.csproj.include)
 
-configure_file(MongoDB.Crypt.Example/MongoDB.Crypt.Example.csproj MongoDB.Crypt.Example/MongoDB.Crypt.Example.csproj COPYONLY)
-configure_file(MongoDB.Crypt.Example/Package.include.template.csproj MongoDB.Crypt.Example/Package.csproj.include)
+configure_file(MongoDB.Libmongocrypt.Example/MongoDB.Libmongocrypt.Example.csproj MongoDB.Libmongocrypt.Example/MongoDB.Libmongocrypt.Example.csproj COPYONLY)
+configure_file(MongoDB.Libmongocrypt.Example/Package.include.template.csproj MongoDB.Libmongocrypt.Example/Package.csproj.include)
 
 

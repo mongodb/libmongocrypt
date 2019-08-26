@@ -30,4 +30,4 @@ fi
 
 "$dotnet_tool" build libmongocrypt/cmake-build/bindings/cs/cs.sln
 
-"$dotnet_tool" test libmongocrypt/cmake-build/bindings/cs/MongoDB.Crypt.Test/MongoDB.Crypt.Test.csproj -- RunConfiguration.TargetPlatform=x64
+"$dotnet_tool" test libmongocrypt/cmake-build/bindings/cs/MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj -- RunConfiguration.TargetPlatform=x64
