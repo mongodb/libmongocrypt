@@ -310,6 +310,15 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    bson_iter_init_find (&iter, &wrapper, "");
    bson_value_copy (bson_iter_value (&iter), out);
 
+   /* Due to an open libbson bug (CDRIVER-3340), give an empty
+      * binary payload a real address. TODO: remove this after
+      * CDRIVER-3340 is fixed. */
+   if (out->value_type == BSON_TYPE_BINARY &&
+       0 == out->value.v_binary.data_len) {
+      out->value.v_binary.data =
+         bson_malloc (1); /* Freed in bson_value_destroy */
+   }
+
    ret = true;
 fail:
    bson_free (data);
