@@ -230,7 +230,7 @@ namespace MongoDB.Libmongocrypt.Test
                 using (var context = cryptClient.StartExplicitEncryptionContext(
                     key: key,
                     encryptionAlgorithm: EncryptionAlgorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
-                    command: testData))
+                    message: testData))
                 {
                     var (state, binaryProduced, operationProduced) = ProcessState(context);
                     state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_NEED_MONGO_KEYS);

@@ -93,9 +93,9 @@ namespace MongoDB.Libmongocrypt
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
-        /// <param name="command">The BSON command.</param>
+        /// <param name="message">The BSON message.</param>
         /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContext(Guid key, EncryptionAlgorithm encryptionAlgorithm, byte[] command)
+        public CryptContext StartExplicitEncryptionContext(Guid key, EncryptionAlgorithm encryptionAlgorithm, byte[] message)
         {
             ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
             
@@ -116,10 +116,10 @@ namespace MongoDB.Libmongocrypt
 
             unsafe
             {
-                fixed (byte* p = command)
+                fixed (byte* p = message)
                 {
                     IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)command.Length))
+                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)message.Length))
                     {
                         handle.Check(_status, Library.mongocrypt_ctx_explicit_encrypt_init(handle, pinned.Handle));
                     }
@@ -134,9 +134,9 @@ namespace MongoDB.Libmongocrypt
         /// </summary>
         /// <param name="keyAltName">The alternative key name.</param>
         /// <param name="encryptionAlgorithm">The algorithm.</param>
-        /// <param name="command">The BSON command.</param>
+        /// <param name="message">The BSON message.</param>
         /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContext(byte[] keyAltName, EncryptionAlgorithm encryptionAlgorithm, byte[] command)
+        public CryptContext StartExplicitEncryptionContext(byte[] keyAltName, EncryptionAlgorithm encryptionAlgorithm, byte[] message)
         {
             ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
             unsafe
@@ -155,10 +155,10 @@ namespace MongoDB.Libmongocrypt
 
             unsafe
             {
-                fixed (byte* p = command)
+                fixed (byte* p = message)
                 {
                     IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)command.Length))
+                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)message.Length))
                     {
                         handle.Check(_status, Library.mongocrypt_ctx_explicit_encrypt_init(handle, pinned.Handle));
                     }
