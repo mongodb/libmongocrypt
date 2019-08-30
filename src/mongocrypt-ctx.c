@@ -719,8 +719,8 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_key_broker_t *kb;
    mongocrypt_status_t *status;
-   mongocrypt_ctx_state_t new_state;
-   bool ret;
+   mongocrypt_ctx_state_t new_state = MONGOCRYPT_CTX_ERROR;
+   bool ret = false;
 
    status = ctx->status;
    kb = &ctx->kb;

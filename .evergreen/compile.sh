@@ -40,7 +40,7 @@ python ./build/calc_release_version.py -p > VERSION_RELEASED
 mkdir cmake-build
 cd cmake-build
 # To statically link when using a shared library, compile shared library with -fPIC: https://stackoverflow.com/a/8810996/774658
-$CMAKE -DENABLE_MONGOC=OFF $ADDITIONAL_CMAKE_FLAGS -DCMAKE_BUILD_TYPE=Debug -DENABLE_EXTRA_ALIGNMENT=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/mongo-c-driver ../
+$CMAKE -DENABLE_MONGOC=OFF $ADDITIONAL_CMAKE_FLAGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_EXTRA_ALIGNMENT=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/mongo-c-driver ../
 echo "Installing libbson"
 # TODO - Upgrade to cmake 3.12 and use "-j" to increase parallelism
 $CMAKE --build . --target install
@@ -50,7 +50,7 @@ cd $evergreen_root
 cd libmongocrypt
 mkdir cmake-build
 cd cmake-build
-$CMAKE -DCMAKE_BUILD_TYPE=Debug $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
+$CMAKE -DCMAKE_BUILD_TYPE=v $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
 
 if [ "$CONFIGURE_ONLY" ]; then
     echo "Only running cmake";
@@ -69,7 +69,7 @@ cd $evergreen_root
 cd libmongocrypt
 mkdir cmake-build-nocrypto
 cd cmake-build-nocrypto
-$CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=Debug $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt/nocrypto" ../
+$CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt/nocrypto" ../
 echo "Installing libmongocrypt with no crypto"
 $CMAKE --build . --target install
 echo "Building test-mongocrypt with no crypto"
