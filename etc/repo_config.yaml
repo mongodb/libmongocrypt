@@ -1,0 +1,205 @@
+services:
+  notary_url: "http://notary-service.build.10gen.cc:5000"
+
+templates:
+  deb:
+    org: |
+      Origin: libmongocrypt
+      Label: libmongocrypt
+      Suite: {{ .CodeName }}
+      Codename: {{ .CodeName }}/libmongocrypt
+      Architectures: {{ .Architectures }}
+      Components: {{ .Component }}
+      Description: libmongocrypt packages
+  index_page: |
+    <!DOCTYPE html>
+    <html>
+     <head>
+       <title>{{ .Title }}</title>
+     </head>
+
+     <body>
+       <table>
+        <tr><td>
+          <h1>{{ .Title }}</h1>
+        </td></tr>
+
+        <tr><td>
+          <hr>
+        </td></tr>
+
+        <tr><td>
+          <a href='..'>Parent Directory</a>
+        </td></tr>
+
+        {{ range $fn := .Files }}
+        <tr><td>
+          <a href='{{ $fn }}'>{{ $fn }}</a>
+        </td></tr>
+        {{ end }}
+
+        <tr><td>
+          <hr>
+        </td></tr>
+
+        <tr><td>
+          <address>{{ .RepoName }}</address>
+        </td></tr>
+      </table>
+     </body>
+    </html>
+
+
+repos:
+
+  - name: rhel62
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/redhat/6/libmongocrypt
+      - yum/redhat/6Server/libmongocrypt
+
+  - name: rhel67
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/redhat/6/libmongocrypt
+      - yum/redhat/6Server/libmongocrypt
+
+  - name: rhel70
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/redhat/7/libmongocrypt
+      - yum/redhat/7Server/libmongocrypt
+
+  - name: rhel71
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/redhat/7/libmongocrypt
+      - yum/redhat/7Server/libmongocrypt
+
+  - name: rhel72
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/redhat/7/libmongocrypt
+      - yum/redhat/7Server/libmongocrypt
+
+  - name: rhel80
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/redhat/8/libmongocrypt
+      - yum/redhat/8Server/libmongocrypt
+
+  - name: amazon
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/amazon/2013.03/libmongocrypt
+
+  - name: amazon2
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - yum/amazon/2/libmongocrypt
+
+  - name: suse12
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - zypper/suse/12/libmongocrypt
+
+  - name: suse15
+    type: rpm
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    repos:
+      - zypper/suse/15/libmongocrypt
+
+  - name: debian81
+    type: deb
+    code_name: "jessie"
+    bucket: libmongocrypt-test
+    region: us-east-2
+    edition: org
+    component: main
+    architectures:
+      - amd64
+      - i386
+    repos:
+      - apt/debian/dists/jessie/libmongocrypt
+
+  - name: debian92
+    type: deb
+    code_name: "stretch"
+    bucket: libmongocrypt-test
+    region: us-east-2
+    edition: org
+    component: main
+    architectures:
+      - amd64
+    repos:
+      - apt/debian/dists/stretch/libmongocrypt
+
+  - name: ubuntu1404
+    type: deb
+    code_name: "trusty"
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    component: universe
+    architectures:
+      - amd64
+      - i386
+    repos:
+      - apt/ubuntu/dists/trusty/libmongocrypt
+
+  - name: ubuntu1604
+    type: deb
+    code_name: "xenial"
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    component: universe
+    architectures:
+      - amd64
+      - arm64
+      - i386
+    repos:
+      - apt/ubuntu/dists/xenial/libmongocrypt
+
+  - name: ubuntu1804
+    type: deb
+    code_name: "bionic"
+    edition: org
+    bucket: libmongocrypt-test
+    region: us-east-2
+    component: universe
+    architectures:
+      - amd64
+      - i386
+      - arm64
+    repos:
+      - apt/ubuntu/dists/bionic/libmongocrypt

@@ -5,6 +5,15 @@
 # View this in Evergreen => Projects => libmongocrypt.
 #
 functions:
+  "cleanup environment":
+    - command: shell.exec
+      params:
+        script: |
+          set -o verbose
+
+          rm -rf ~/.aws ~/.notary_env.sh
+          exit 0
+
   "fetch source":
     - command: git.get_project
       params: {directory: libmongocrypt}
@@ -150,6 +159,47 @@ functions:
         bucket: mciuploads
         extract_to: all/${variant_name}
 
+  "download distro package tarball":
+    - command: s3.get
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
+        bucket: mciuploads
+        extract_to: libmongocrypt/repo
+
+  "setup packaging credentials":
+    - command: shell.exec
+      params:
+        silent: true
+        script: |
+          set -o errexit
+          if [ "${is_patch}" = "true" ]; then
+            exit 0
+          fi
+
+          # set AWS credentials
+          rm -rf ~/.aws
+          mkdir -p ~/.aws
+
+          cat <<EOF >> ~/.aws/config
+          [default]
+          region = us-east-2
+          EOF
+
+          cat <<EOF >> ~/.aws/credentials
+          [default]
+          aws_access_key_id = ${repo_aws_key}
+          aws_secret_access_key = ${repo_aws_secret}
+          EOF
+
+          # set notary credentials
+          rm -f ~/.notary_env.sh
+          cat <<EOF > ~/.notary_env.sh
+          export NOTARY_TOKEN=${repo_notary_secret}
+          export NOTARY_KEY_NAME=${repo_notary_name}
+          EOF
+
   "build csharp and test":
     - command: "shell.exec"
       params:
@@ -286,16 +336,10 @@ tasks:
       name: build-and-test-and-upload
     - variant: ubuntu1604-arm64
       name: build-and-test-and-upload
-    - variant: ubuntu1604-s390x
-      name: build-and-test-and-upload
     - variant: ubuntu1804-64
       name: build-and-test-and-upload
     - variant: ubuntu1804-arm64
       name: build-and-test-and-upload
-    # - variant: ubuntu1804-ppc64el
-    #   name: build-and-test-and-upload
-    # - variant: ubuntu1804-s390x
-    #   name: build-and-test-and-upload
   commands:
     - command: shell.exec
       params:
@@ -365,6 +409,42 @@ tasks:
         local_file: 'libmongocrypt-all.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
+- name: publish-packages
+  depends_on: build-and-test-and-upload
+  commands:
+    - func: "fetch source"
+    - func: "download distro package tarball"
+    - command: expansions.update
+      params:
+        updates:
+        - key: version
+          value: $(sed -nE 's/^#define MONGOCRYPT_VERSION "([^"]+)".*/\1/p' src/mongocrypt.h)
+    - func: "setup packaging credentials"
+    - command: shell.exec
+      params:
+        working_dir: libmongocrypt
+        script: |-
+          [ -f ~/.notary_env.sh ] && . ~/.notary_env.sh
+          set -o xtrace
+          set -o errexit
+          set -o verbose
+
+          if [ "${is_patch}" = "true" ]; then
+            echo "patch build, skipping packaging publication"
+            exit 0
+          fi
+
+          if [ "${has_packages|}" != "true" ] ; then
+            echo "'has_packages' is not 'true', skipping package publication"
+            exit 0
+          fi
+
+          pkg_version=${version}
+          CURATOR_RELEASE=${curator_release|"latest"}
+          curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
+          tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
+          ./curator repo --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --packages repo
+
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
   - command: "shell.exec"
@@ -398,6 +478,10 @@ pre:
   - command: expansions.update
     params:
       file: expansion.yml
+  - func: "cleanup environment"
+
+post:
+  - func: "cleanup environment"
 
 # NOTE: When adding a new variant, update the "upload-all" task.
 buildvariants:
@@ -416,6 +500,9 @@ buildvariants:
   - build-and-test-valgrind
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - ubuntu1804-test
 - name: macos
   display_name: "macOS 10.14"
   run_on: macos-1014
@@ -438,6 +525,9 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: windows-test
   display_name: "Windows 2016"
   run_on: windows-64-vs2017-test
@@ -459,6 +549,9 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: amazon2
   display_name: "Amazon Linux 2"
   run_on: amazon2-test
@@ -473,6 +566,9 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: debian92
   display_name: "Debian 9.2"
   run_on: debian92-test
@@ -487,6 +583,9 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - ubuntu1804-test
 - name: rhel-62-64-bit
   display_name: "RHEL 6.2 64-bit"
   run_on: rhel62-small
@@ -501,6 +600,9 @@ buildvariants:
   - build-and-test-java
   - build-and-test-python
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: rhel-67-s390x
   display_name: "RHEL 6.7 s390x"
   run_on: rhel67-zseries-test
@@ -511,6 +613,9 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
@@ -524,6 +629,9 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: rhel-71-ppc64el
   display_name: "RHEL 7.1 ppc64el"
   run_on: rhel71-power8-test
@@ -536,6 +644,9 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: suse12-64
   display_name: "SLES 12 64-bit"
   run_on: suse12-test
@@ -550,6 +661,9 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: suse15-64
   display_name: "SLES 15 64-bit"
   run_on: suse15-test
@@ -564,6 +678,9 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: suse12-s390x  
   display_name: "SLES 12 s390x"
   run_on: suse12-zseries-test
@@ -577,6 +694,9 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
 - name: ubuntu1604-arm64
   display_name: "Ubuntu 16.04 arm64"
   run_on: ubuntu1604-arm64-large
@@ -591,19 +711,9 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
-- name: ubuntu1604-s390x
-  display_name: "Ubuntu 16.04 s390x"
-  run_on: ubuntu1604-zseries-small
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu1604
-    packager_arch: s390x
-  tasks:
-  - clang-tidy
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-java
-  - build-and-test-node
+  - name: publish-packages
+    distros:
+    - ubuntu1804-test
 - name: ubuntu1804-64
   display_name: "Ubuntu 18.04 64-bit"
   run_on: ubuntu1804-test
@@ -618,6 +728,9 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
+  - name: publish-packages
+    distros:
+    - ubuntu1804-test
 - name: ubuntu1804-arm64
   display_name: "Ubuntu 18.04 arm64"
   run_on: ubuntu1804-arm64-build
@@ -632,35 +745,9 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
-- name: ubuntu1804-ppc64el
-  display_name: "Ubuntu 18.04 ppc64el"
-  run_on: ubuntu1804-power8-test
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu1804
-    packager_arch: ppc64le
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-java
-  # commenting out node b/c there seems to be scheduling
-  # problems with this variant
-  # - build-and-test-node
-  # - build-and-test-node-force-publish
-- name: ubuntu1804-s390x
-  display_name: "Ubuntu 18.04 s390x"
-  run_on: ubuntu1804-zseries-test
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu1804
-    packager_arch: s390x
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan-s390x
-  - build-and-test-java
-  - build-and-test-node
+  - name: publish-packages
+    distros:
+    - ubuntu1804-test
 - name: publish-snapshot
   display_name: "Publish"
   run_on: ubuntu1804-test
