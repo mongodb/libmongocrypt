@@ -1,7 +1,7 @@
 #!/usr/bin/env bash -x
 
 DEPS_PREFIX="$(pwd)/deps"
-MONGOC_URL="https://github.com/mongodb/mongo-c-driver/releases/download/1.14.0/mongo-c-driver-1.14.0.tar.gz"
+MONGOC_URL="https://github.com/mongodb/mongo-c-driver/archive/6fa33f0b1f1c219e6e943061a21e391422f56d48.tar.gz"
 BUILD_DIR=$DEPS_PREFIX/tmp
 LIBMONGOCRYPT_DIR="$(pwd)/../../"
 
@@ -19,8 +19,8 @@ pushd $DEPS_PREFIX #./deps
 pushd $BUILD_DIR #./deps/tmp
 
 # build and install bson
-curl -L -o mongo-c-driver-1.14.0.tar.gz $MONGOC_URL
-tar xzf mongo-c-driver-1.14.0.tar.gz
+curl -L -o mongo-c-driver-1.16.0-pre.tar.gz $MONGOC_URL
+tar xzf mongo-c-driver-1.16.0-pre.tar.gz
 
 # NOTE: we are setting -DCMAKE_INSTALL_LIBDIR=lib to ensure that the built 
 # files are always installed to lib instead of alternate directories like
@@ -30,7 +30,7 @@ tar xzf mongo-c-driver-1.14.0.tar.gz
 # of the versions that can be built
 
 pushd bson-build #./deps/tmp/bson-build
-$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=$DEPS_PREFIX -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_OSX_DEPLOYMENT_TARGET="10.12" ../mongo-c-driver-1.14.0
+$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=$DEPS_PREFIX -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_OSX_DEPLOYMENT_TARGET="10.12" -DBUILD_VERSION=1.16.0-pre ../mongo-c-driver-6fa33f0b1f1c219e6e943061a21e391422f56d48
 make -j8 install
 popd #./deps/tmp
 
