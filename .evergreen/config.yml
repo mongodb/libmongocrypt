@@ -318,6 +318,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: amazon2
       name: build-and-test-and-upload
+    - variant: debian10
+      name: build-and-test-and-upload
     - variant: debian92
       name: build-and-test-and-upload
     - variant: rhel-62-64-bit
@@ -356,6 +358,8 @@ tasks:
       vars: { variant_name: "linux-64-amazon-ami" }
     - func: "download tarball"
       vars: { variant_name: "amazon2" }
+    - func: "download tarball"
+      vars: { variant_name: "debian10" }
     - func: "download tarball"
       vars: { variant_name: "debian92" }
     - func: "download tarball"
@@ -558,6 +562,23 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: amazon2
+    packager_arch: x86_64
+  tasks:
+  - clang-tidy
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-java
+  - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
+- name: debian10
+  display_name: "Debian 10.0"
+  run_on: debian10-test
+  expansions:
+    has_packages: true
+    packager_distro: debian10
     packager_arch: x86_64
   tasks:
   - clang-tidy
