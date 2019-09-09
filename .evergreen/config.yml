@@ -330,6 +330,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: rhel-71-ppc64el
       name: build-and-test-and-upload
+    - variant: rhel-80-64-bit
+      name: build-and-test-and-upload
     - variant: suse12-64
       name: build-and-test-and-upload
     - variant: suse15-64
@@ -370,6 +372,8 @@ tasks:
       vars: { variant_name: "rhel-70-64-bit" }
     - func: "download tarball"
       vars: { variant_name: "rhel-71-ppc64el" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-80-64-bit" }
     - func: "download tarball"
       vars: { variant_name: "suse12-64" }
     - func: "download tarball"
@@ -665,6 +669,22 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
+  - name: publish-packages
+    distros:
+    - rhel70-small
+- name: rhel-80-64-bit
+  display_name: "RHEL 8.0 64-bit"
+  run_on: rhel80-test
+  expansions:
+    has_packages: true
+    packager_distro: rhel80
+    packager_arch: x86_64
+  tasks:
+  - clang-tidy
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-java
+  - build-and-test-node
   - name: publish-packages
     distros:
     - rhel70-small
