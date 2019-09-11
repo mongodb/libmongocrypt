@@ -14,11 +14,11 @@
     <Product>MongoDB.Libmongocrypt</Product>
     <Company>MongoDB Inc.</Company>
     <Copyright>Copyright © 2019–present MongoDB Inc.</Copyright>
-    <Description>Official MongoDB supported libmongocrypt support library for the MongoDB .NET driver.</Description>
-    <Authors>markbenvenuto, vincentkam</Authors>
+    <Description>Libmongocrypt wrapper for the .NET driver.</Description>
+    <Authors>markbenvenuto;vincentkam;dmitry_lukyanov;rstam</Authors>
     <PackageIconUrl>http://jobs.mongodb.org/files/logos/889002/889002.png</PackageIconUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageDescription>Official .NET libmongocrypt support library for the MongoDB .NET driver.</PackageDescription>
+    <PackageDescription>Libmongocrypt wrapper for the .NET driver.</PackageDescription>
     <PackageProjectUrl>http://www.mongodb.org/display/DOCS/CSharp+Language+Center</PackageProjectUrl>
     <PackageLicenseFile>License.txt</PackageLicenseFile>
     <PackageTags>mongodb;mongo;nosql</PackageTags>
