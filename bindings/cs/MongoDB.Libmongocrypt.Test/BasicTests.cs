@@ -23,7 +23,6 @@ using System.Reflection;
 using Xunit;
 using System.Text;
 using FluentAssertions;
-using MongoDB.Libmongocrypt;
 using Xunit.Abstractions;
 
 namespace MongoDB.Libmongocrypt.Test
@@ -186,7 +185,7 @@ namespace MongoDB.Libmongocrypt.Test
         public void EncryptExplicit()
         {
             var keyDoc = ReadJsonTestFile("key-document.json");
-            Guid key = keyDoc["_id"].AsGuid;
+            var keyId = keyDoc["_id"].AsBsonBinaryData.Bytes;
 
 
             BsonDocument doc = new BsonDocument()
@@ -198,7 +197,7 @@ namespace MongoDB.Libmongocrypt.Test
 
             byte[] encryptedBytes;
             using (var cryptClient = CryptClientFactory.Create(CreateOptions()))
-            using (var context = cryptClient.StartExplicitEncryptionContext(key, EncryptionAlgorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Random, testData))
+            using (var context = cryptClient.StartExplicitEncryptionContextWithKeyId(keyId, EncryptionAlgorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Random, testData))
             {
                 var (encryptedBinary, encryptedDocument) = ProcessContextToCompletion(context);
                 encryptedBytes = encryptedBinary.ToArray(); // need to copy bytes out before the context gets destroyed
@@ -217,18 +216,17 @@ namespace MongoDB.Libmongocrypt.Test
         public void EncryptExplicitStepwise()
         {
             var keyDoc = ReadJsonTestFile("key-document.json");
-            var key = keyDoc["_id"].AsGuid;
+            var keyId = keyDoc["_id"].AsBsonBinaryData.Bytes;
 
             var doc = new BsonDocument("v", "hello");
-
 
             var testData = BsonUtil.ToBytes(doc);
 
             using (var cryptClient = CryptClientFactory.Create(CreateOptions()))
             {
                 byte[] encryptedResult;
-                using (var context = cryptClient.StartExplicitEncryptionContext(
-                    key: key,
+                using (var context = cryptClient.StartExplicitEncryptionContextWithKeyId(
+                    keyId: keyId,
                     encryptionAlgorithm: EncryptionAlgorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
                     message: testData))
                 {

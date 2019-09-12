@@ -19,7 +19,6 @@ using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using System.IO;
-using MongoDB.Libmongocrypt;
 
 namespace MongoDB.Libmongocrypt.Test
 {
@@ -72,12 +71,12 @@ namespace MongoDB.Libmongocrypt.Test
 
         public static BsonDocument FromJSON(string str)
         {
-            using (var jsonReader = new JsonReader(str))
+            var jsonReaderSettings = new JsonReaderSettings { GuidRepresentation = GuidRepresentation.Unspecified };
+            using (var jsonReader = new JsonReader(str, jsonReaderSettings))
             {
                 var context = BsonDeserializationContext.CreateRoot(jsonReader);
                 return BsonDocumentSerializer.Instance.Deserialize(context);
             }
         }
     }
-
 }

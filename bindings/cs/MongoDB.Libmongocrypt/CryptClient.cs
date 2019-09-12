@@ -91,21 +91,20 @@ namespace MongoDB.Libmongocrypt
         /// <summary>
         /// Starts an explicit encryption context.
         /// </summary>
-        /// <param name="key">The key.</param>
+        /// <param name="key">The key id.</param>
         /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
         /// <param name="message">The BSON message.</param>
         /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContext(Guid key, EncryptionAlgorithm encryptionAlgorithm, byte[] message)
+        public CryptContext StartExplicitEncryptionContextWithKeyId(byte[] keyId, EncryptionAlgorithm encryptionAlgorithm, byte[] message)
         {
             ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
-            
-            byte[] keyBuffer = key.ToByteArray();
+
             unsafe
             {
-                fixed (byte* p = keyBuffer)
+                fixed (byte* p = keyId)
                 {
                     IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)keyBuffer.Length))
+                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)keyId.Length))
                     {
                         handle.Check(_status, Library.mongocrypt_ctx_setopt_key_id(handle, pinned.Handle));
                     }
@@ -136,7 +135,7 @@ namespace MongoDB.Libmongocrypt
         /// <param name="encryptionAlgorithm">The algorithm.</param>
         /// <param name="message">The BSON message.</param>
         /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContext(byte[] keyAltName, EncryptionAlgorithm encryptionAlgorithm, byte[] message)
+        public CryptContext StartExplicitEncryptionContextWithKeyAltName(byte[] keyAltName, EncryptionAlgorithm encryptionAlgorithm, byte[] message)
         {
             ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
             unsafe
