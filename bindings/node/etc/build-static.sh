@@ -1,9 +1,9 @@
 #!/usr/bin/env bash -x
 
 DEPS_PREFIX="$(pwd)/deps"
-MONGOC_URL="https://github.com/mongodb/mongo-c-driver/archive/6fa33f0b1f1c219e6e943061a21e391422f56d48.tar.gz"
 BUILD_DIR=$DEPS_PREFIX/tmp
 LIBMONGOCRYPT_DIR="$(pwd)/../../"
+TOP_DIR="$(pwd)/../../../"
 
 if [[ -z $CMAKE ]]; then
   CMAKE=`which cmake`
@@ -12,15 +12,16 @@ fi
 # create relevant folders
 mkdir -p $DEPS_PREFIX
 mkdir -p $BUILD_DIR
-mkdir -p $BUILD_DIR/bson-build
 mkdir -p $BUILD_DIR/libmongocrypt-build
+
+export BSON_INSTALL_PREFIX=$DEPS_PREFIX
+export MONGOCRYPT_INSTALL_PREFIX=$DEPS_PREFIX
 
 pushd $DEPS_PREFIX #./deps
 pushd $BUILD_DIR #./deps/tmp
 
+pushd $TOP_DIR
 # build and install bson
-curl -L -o mongo-c-driver-1.16.0-pre.tar.gz $MONGOC_URL
-tar xzf mongo-c-driver-1.16.0-pre.tar.gz
 
 # NOTE: we are setting -DCMAKE_INSTALL_LIBDIR=lib to ensure that the built 
 # files are always installed to lib instead of alternate directories like
@@ -28,10 +29,10 @@ tar xzf mongo-c-driver-1.16.0-pre.tar.gz
 # NOTE: On OSX, -DCMAKE_OSX_DEPLOYMENT_TARGET can be set to an OSX version
 # to suppress build warnings. However, doing that tends to break some
 # of the versions that can be built
+export BSON_EXTRA_CMAKE_FLAGS="-DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_OSX_DEPLOYMENT_TARGET=\"10.12\""
 
-pushd bson-build #./deps/tmp/bson-build
-$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=$DEPS_PREFIX -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_OSX_DEPLOYMENT_TARGET="10.12" -DBUILD_VERSION=1.16.0-pre ../mongo-c-driver-6fa33f0b1f1c219e6e943061a21e391422f56d48
-make -j8 install
+. ${TOP_DIR}/libmongocrypt/.evergreen/build_install_bson.sh
+
 popd #./deps/tmp
 
 # build and install libmongocrypt

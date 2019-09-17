@@ -23,6 +23,13 @@ functions:
           set -o errexit
           chmod u+x libmongocrypt/.evergreen/*.sh
           ./libmongocrypt/.evergreen/print-env-info.sh
+    - command: s3.get
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${branch_name}/${libmongocrypt_s3_suffix}/mongo-c-driver-src.tar.gz'
+        bucket: mciuploads
+        extract_to: mongo-c-driver
 
   "tar and upload libmongocrypt libraries":
     - command: archive.targz_pack
@@ -209,7 +216,45 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
 tasks:
+- name: prep-c-driver-source
+  # clone C driver source and calculate build version on a platform with a
+  # recent version of 'git'; the resultant prepared tarball will be used by
+  # build tasks that must build the C driver
+  commands:
+  - command: "shell.exec"
+    params:
+      script: |-
+        set -o xtrace
+        set -o errexit
+
+        # This commit implements the new CMake packages (CDRIVER-3047, MONGOCRYPT-87)
+        MONOGO_C_DRIVER_REF=6fa33f0b1f1c219e6e943061a21e391422f56d48
+
+        # Force checkout with lf endings since .sh must have lf, not crlf on Windows
+        git clone git@github.com:mongodb/mongo-c-driver.git --config core.eol=lf --config core.autocrlf=false
+        cd mongo-c-driver
+        git checkout $MONOGO_C_DRIVER_REF || (echo "Could not checkout to specified ref (${MONOGO_C_DRIVER_REF})...aborting!"; exit 1)
+
+        python ./build/calc_release_version.py > VERSION_CURRENT
+  - command: archive.targz_pack
+    params:
+      target: mongo-c-driver-src.tar.gz
+      source_dir: mongo-c-driver
+      include: [./**]
+  - command: s3.put
+    params:
+      aws_key: '${aws_key}'
+      aws_secret: '${aws_secret}'
+      remote_file: '${project}/${branch_name}/${libmongocrypt_s3_suffix}/mongo-c-driver-src.tar.gz'
+      bucket: mciuploads
+      permissions: public-read
+      local_file: 'mongo-c-driver-src.tar.gz'
+      content_type: '${content_type|application/x-gzip}'
+
 - name: build-and-test-and-upload
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
@@ -217,11 +262,17 @@ tasks:
   - func: "create packages and repos"
 
 - name: clang-tidy
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "run clang-tidy"
 
 - name: build-and-test-shared-bson
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
@@ -229,6 +280,9 @@ tasks:
       compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DENABLE_SHARED_BSON=ON"
 
 - name: build-and-test-asan
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
@@ -237,6 +291,9 @@ tasks:
       test_env: ASAN_OPTIONS="detect_leaks=1" LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
 - name: build-and-test-asan-mac
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
@@ -245,6 +302,9 @@ tasks:
       test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
 - name: build-and-test-asan-s390x
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
@@ -253,6 +313,9 @@ tasks:
       test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
 - name: build-and-test-valgrind
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
@@ -260,21 +323,33 @@ tasks:
       test_env: VALGRIND="valgrind --leak-check=full --error-exitcode=1"
 
 - name: build-and-test-java
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
     - func: "fetch source"
     - func: "build and test java"
     
 - name: build-and-test-python
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
     - func: "fetch source"
     - func: "build and test python"
 
 - name: build-csharp-and-test
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build csharp and test"
 
 - name: build-and-test-node
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
   commands:
     - func: "fetch source"
     - func: "build and test node"
@@ -282,6 +357,9 @@ tasks:
         test_env: PROJECT_DIRECTORY=${project_directory} NODE_GITHUB_TOKEN=${node_github_token}
 # Note: keep this disabled unless you want master to force-push
 - name: build-and-test-node-force-publish
+  depends_on:
+    - variant: ubuntu1804-64
+      name: prep-c-driver-source
   commands:
     - func: "fetch source"
     - func: "build and test node"
@@ -290,6 +368,8 @@ tasks:
 
 - name: publish-snapshot
   depends_on:
+    - variant: ubuntu1804-64
+      name: prep-c-driver-source
     - variant: rhel-62-64-bit
       name: build-and-test-java
     - variant: rhel-67-s390x
@@ -764,6 +844,7 @@ buildvariants:
     packager_arch: x86_64
   tasks:
   - clang-tidy
+  - prep-c-driver-source
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan

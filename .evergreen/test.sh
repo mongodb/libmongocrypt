@@ -24,7 +24,7 @@ if [ "Windows_NT" == "$OS" ]; then
     KMS_BIN_DIR=./cmake-build/kms-message/Debug
     NOCRYPTO_BIN_DIR=./cmake-build-nocrypto/Debug
     # Make sure libbson dll is in the path
-    export PATH=${INSTALL_PREFIX}/mongo-c-driver/bin:$PATH
+    export PATH=${BSON_INSTALL_PREFIX}/bin:$PATH
 fi
 
 echo "Running kms-message tests."

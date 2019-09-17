@@ -17,40 +17,18 @@ echo "Begin compile process"
 evergreen_root="$(pwd)"
 
 . ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
+. ${evergreen_root}/libmongocrypt/.evergreen/build_install_bson.sh
 
 cd $evergreen_root
 
-# Build and install libbson.
-# Force checkout of with lf endings since .sh must have lf, not crlf on Windows
-git clone git@github.com:mongodb/mongo-c-driver.git --config core.eol=lf --config core.autocrlf=false
-cd mongo-c-driver
-
-# Use C driver helper script to find cmake binary, stored in $CMAKE.
-if [ "$OS" == "Windows_NT" ]; then
-    CMAKE=/cygdrive/c/cmake/bin/cmake
-    ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
-else
-    chmod u+x ./.evergreen/find-cmake.sh
-    . ./.evergreen/find-cmake.sh
-fi
-
-$CMAKE --version
-python ./build/calc_release_version.py > VERSION_CURRENT
-python ./build/calc_release_version.py -p > VERSION_RELEASED
-mkdir cmake-build
-cd cmake-build
-# To statically link when using a shared library, compile shared library with -fPIC: https://stackoverflow.com/a/8810996/774658
-$CMAKE -DENABLE_MONGOC=OFF $ADDITIONAL_CMAKE_FLAGS -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_EXTRA_ALIGNMENT=OFF -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/mongo-c-driver ../
-echo "Installing libbson"
-# TODO - Upgrade to cmake 3.12 and use "-j" to increase parallelism
-$CMAKE --build . --target install
-cd $evergreen_root
+# CMAKE should be set in build_install_bson.sh; this error should not occur
+command -v $CMAKE || (echo "CMake could not be found...aborting!"; exit 1)
 
 # Build and install libmongocrypt.
 cd libmongocrypt
 mkdir cmake-build
 cd cmake-build
-$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
+$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${BSON_INSTALL_PREFIX}" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
 
 if [ "$CONFIGURE_ONLY" ]; then
     echo "Only running cmake";
@@ -60,7 +38,7 @@ echo "Installing libmongocrypt"
 $CMAKE --build . --target install
 # CDRIVER-3187, ensure the final distributed tarball contains the libbson static
 # library to support consumers that static link to libmongocrypt
-find ${INSTALL_PREFIX}/mongo-c-driver \( -name libbson-static-1.0.a -o -name bson-1.0.lib \) -execdir cp {} $(dirname $(find ${INSTALL_PREFIX}/libmongocrypt -name libmongocrypt-static.a -o -name mongocrypt-static.lib)) \;
+find ${BSON_INSTALL_PREFIX} \( -name libbson-static-1.0.a -o -name bson-1.0.lib \) -execdir cp {} $(dirname $(find ${MONGOCRYPT_INSTALL_PREFIX} -name libmongocrypt-static.a -o -name mongocrypt-static.lib)) \;
 $CMAKE --build . --target test-mongocrypt
 $CMAKE --build ./kms-message --target test_kms_request
 cd $evergreen_root
@@ -69,7 +47,7 @@ cd $evergreen_root
 cd libmongocrypt
 mkdir cmake-build-nocrypto
 cd cmake-build-nocrypto
-$CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${INSTALL_PREFIX}/mongo-c-driver" "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}/libmongocrypt/nocrypto" ../
+$CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${BSON_INSTALL_PREFIX}" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/nocrypto" ../
 echo "Installing libmongocrypt with no crypto"
 $CMAKE --build . --target install
 echo "Building test-mongocrypt with no crypto"
