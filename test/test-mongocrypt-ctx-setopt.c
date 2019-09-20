@@ -406,8 +406,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    ALGORITHM_OK (RAND, -1);
-   EX_ENCRYPT_INIT_FAILS (
-      bson, "must not specify multiple key alt names");
+   EX_ENCRYPT_INIT_FAILS (bson, "must not specify multiple key alt names");
 
    /* Both keyAltName and keyId is invalid */
    REFRESH;
@@ -558,6 +557,31 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
 
 
 static void
+_test_setopt_failure_uninitialized (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx = NULL;
+   mongocrypt_status_t *status;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   status = mongocrypt_status_new ();
+
+   REFRESH;
+   KEY_ALT_NAME_FAILS (TEST_BSON ("{'fake': 'abc'}"),
+                       "keyAltName must have field 'keyAltName'");
+   /* Though mongocrypt_ctx_t is uninitialized, we should still get failure
+    * status. */
+   ASSERT_FAILS_STATUS (mongocrypt_ctx_status (ctx, status),
+                        status,
+                        "keyAltName must have field 'keyAltName'");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
+
+static void
 _test_options (_mongocrypt_tester_t *tester)
 {
    /* Test individual options */
@@ -573,6 +597,10 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_for_explicit_encrypt (tester);
    _test_setopt_for_decrypt (tester);
    _test_setopt_for_explicit_decrypt (tester);
+
+   /* Test that failure to set an option on an uninitialized context is returned
+    * through mongocrypt_ctx_status */
+   _test_setopt_failure_uninitialized (tester);
 }
 
 

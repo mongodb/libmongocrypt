@@ -509,10 +509,6 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out)
       return false;
    }
 
-   if (!ctx->initialized) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
-   }
-
    if (!mongocrypt_status_ok (ctx->status)) {
       _mongocrypt_status_copy_to (ctx->status, out);
       return false;
