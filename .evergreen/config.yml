@@ -60,7 +60,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
 
   "create packages and repos":
@@ -127,21 +127,21 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          ${compile_env|} CONFIGURE_ONLY=ON ./libmongocrypt/.evergreen/compile.sh
+          ${compile_env|} CONFIGURE_ONLY=ON ./libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
 
   "build and test java":
     - command: "shell.exec"
       params:
         script: |-
-          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/test.sh
 
   "build and test python":
     - command: "shell.exec"
       params:
         script: |-
-          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
   
   "build and test node":
@@ -211,7 +211,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          ${compile_env|} ./libmongocrypt/.evergreen/compile.sh
+          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
@@ -224,18 +224,7 @@ tasks:
   - command: "shell.exec"
     params:
       script: |-
-        set -o xtrace
-        set -o errexit
-
-        # This commit implements the new CMake packages (CDRIVER-3047, MONGOCRYPT-87)
-        MONOGO_C_DRIVER_REF=6fa33f0b1f1c219e6e943061a21e391422f56d48
-
-        # Force checkout with lf endings since .sh must have lf, not crlf on Windows
-        git clone git@github.com:mongodb/mongo-c-driver.git --config core.eol=lf --config core.autocrlf=false
-        cd mongo-c-driver
-        git checkout $MONOGO_C_DRIVER_REF || (echo "Could not checkout to specified ref (${MONOGO_C_DRIVER_REF})...aborting!"; exit 1)
-
-        python ./build/calc_release_version.py > VERSION_CURRENT
+        ${compile_env|} ./libmongocrypt/.evergreen/prep_c_driver_source.sh
   - command: archive.targz_pack
     params:
       target: mongo-c-driver-src.tar.gz
