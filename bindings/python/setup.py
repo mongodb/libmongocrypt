@@ -41,6 +41,38 @@ version = {}
 with open(version_file) as fp:
     exec(fp.read(), version)
 
+# Print a warning if the embedded libmongocrypt binary is not found.
+linux = False
+_base = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'pymongocrypt')
+if sys.platform == 'win32':
+    _path = os.path.join(_base, 'mongocrypt.dll')
+elif sys.platform == 'darwin':
+    _path = os.path.join(_base, 'libmongocrypt.dylib')
+else:
+    _path = os.path.join(_base, 'libmongocrypt.so')
+    linux = True
+
+_PYMONGOCRYPT_LIB = os.environ.get('PYMONGOCRYPT_LIB')
+
+message = """
+*****************************************************\n
+The embedded libmongocrypt binary is not present (%r)\n%s
+You may need to install libmongocrypt manually and set
+the PYMONGOCRYPT_LIB environment variable.\n
+*****************************************************\n
+"""
+
+if linux:
+    pip_message = ('Please upgrade to pip>=19 to support manylinux2010 wheels'
+                   'and try again.')
+else:
+    pip_message = ''
+
+if not os.path.isfile(_path) and not (
+        _PYMONGOCRYPT_LIB and os.path.isfile(_PYMONGOCRYPT_LIB)):
+    sys.stdout.write(message % (_path, pip_message))
+
 setup(
     name="pymongocrypt",
     version=version['__version__'],
