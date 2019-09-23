@@ -221,6 +221,8 @@ tasks:
   # recent version of 'git'; the resultant prepared tarball will be used by
   # build tasks that must build the C driver
   commands:
+  - command: git.get_project
+    params: {directory: libmongocrypt}
   - command: "shell.exec"
     params:
       script: |-
