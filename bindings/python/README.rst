@@ -86,11 +86,12 @@ PyMongoCrypt can be installed with `pip <http://pypi.python.org/pypi/pip>`_::
 PyMongoCrypt ships wheels for macOS, Windows, and manylinux2010 that include
 an embedded libmongocrypt build.
 
-To install on Linux, pip version 19 or later is highly recommended. Earlier
-versions of pip, which do not support manylinux2010 wheels, will install the
-pymongocrypt-X.Y.tar.gz source distribution and requires an extra step of
-downloading and installing libmongocrypt as described below. Upgrade to pip 19
-to simplify PyMongoCrypt installation::
+Installing from wheels on Linux requires pip 19 or later because it adds
+`support for manylinux2010 wheels <https://pip.pypa.io/en/stable/news/#id108>`_.
+Older versions of pip will attempt installation using the
+pymongocrypt-X.Y.tar.gz source distribution which requires the extra step of
+downloading and installing libmongocrypt as described below.
+Users can upgrade to pip 19 by running::
 
   $ python -m pip install --upgrade 'pip>=19'
 
