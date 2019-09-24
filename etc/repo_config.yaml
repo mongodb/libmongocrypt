@@ -163,6 +163,18 @@ repos:
     repos:
       - apt/debian/dists/stretch/libmongocrypt
 
+  - name: debian10
+    type: deb
+    code_name: "buster"
+    bucket: libmongocrypt-test
+    region: us-east-2
+    edition: org
+    component: main
+    architectures:
+      - amd64
+    repos:
+      - apt/debian/dists/buster/libmongocrypt
+
   - name: ubuntu1404
     type: deb
     code_name: "trusty"
