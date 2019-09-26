@@ -17,6 +17,8 @@
 #ifndef KMS_MESSAGE_PRIVATE_H
 #define KMS_MESSAGE_PRIVATE_H
 
+#include <stdio.h>
+
 #include "kms_message/kms_message.h"
 #include "kms_request_str.h"
 #include "kms_kv_list.h"
@@ -81,5 +83,11 @@ set_error (char *error, size_t size, const char *fmt, ...);
       obj->failed = true;                                       \
       set_error (obj->error, sizeof (obj->error), __VA_ARGS__); \
    } while (0)
+
+#define KMS_ASSERT(stmt) \
+if (!(stmt)) { \
+    fprintf (stderr, "%s failed\n", #stmt); \
+    abort (); \
+}
 
 #endif /* KMS_MESSAGE_PRIVATE_H */

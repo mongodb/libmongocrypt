@@ -17,10 +17,10 @@
 #include "hexlify.h"
 #include "kms_crypto.h"
 #include "kms_message/kms_message.h"
+#include "kms_message_private.h"
 #include "kms_request_str.h"
 #include "kms_port.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -247,7 +247,7 @@ kms_request_str_appendf (kms_request_str_t *str, const char *format, ...)
    size_t remaining;
    int n;
 
-   assert (format);
+   KMS_ASSERT (format);
 
    while (true) {
       remaining = str->size - str->len;

@@ -21,8 +21,6 @@
 #include "kms_request_opt_private.h"
 #include "kms_port.h"
 
-#include <assert.h>
-
 static kms_kv_list_t *
 parse_query_params (kms_request_str_t *q)
 {
@@ -420,7 +418,7 @@ canonical_headers (const kms_request_t *request)
 {
    kms_kv_list_t *lst;
 
-   assert (request->finalized);
+   KMS_ASSERT (request->finalized);
    lst = kms_kv_list_dup (request->header_fields);
    kms_kv_list_sort (lst, cmp_header_field_names);
    kms_kv_list_del (lst, "Connection");

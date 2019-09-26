@@ -1,7 +1,7 @@
 #include "kms_message/kms_response_parser.h"
 #include "kms_message_private.h"
 
-#include <assert.h>
+#include "kms_message_private.h"
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +48,7 @@ kms_response_parser_wants_bytes (kms_response_parser_t *parser, int32_t max)
    case PARSING_HEADER:
       return max;
    case PARSING_BODY:
-      assert (parser->content_length != -1);
+      KMS_ASSERT (parser->content_length != -1);
       return parser->content_length -
              ((int) parser->raw_response->len - parser->start);
    }

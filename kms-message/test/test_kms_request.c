@@ -20,7 +20,6 @@
 #include "src/kms_message/kms_message.h"
 #include "src/kms_message_private.h"
 
-#include <assert.h>
 #ifndef _WIN32
 #include <dirent.h>
 #else
@@ -154,16 +153,20 @@ test_getline (char **lineptr, size_t *n, FILE *stream)
    while (true) {
       // Read a character
       int c = fgetc (stream);
+
+      // If the buffer is full, grow the buffer
+      if ((*n - count) <= 1) {
+         realloc_buffer (lineptr, n, *n + 128);
+      }
+
       if (c == EOF) {
+         *(*lineptr + count) = '\0';
+
          if (count > 0) {
             return count;
          }
 
          return -1;
-      }
-      // If the buffer is full, grow the buffer
-      if ((*n - count) <= 1) {
-         realloc_buffer (lineptr, n, *n + 128);
       }
 
       *(*lineptr + count) = c;
@@ -239,7 +242,7 @@ set_test_date (kms_request_t *request)
    tm.tm_min = 36;
    tm.tm_sec = 0;
 
-   assert (kms_request_set_date (request, &tm));
+   KMS_ASSERT (kms_request_set_date (request, &tm));
 }
 
 kms_request_t *
@@ -282,11 +285,11 @@ read_req (const char *path)
       if (strchr (line, ':')) {
          /* new header field like Host:example.com */
          field_name = strtok (line, ": ");
-         assert (field_name);
+         KMS_ASSERT (field_name);
          field_value = strtok (NULL, "\n");
-         assert (field_value);
+         KMS_ASSERT (field_value);
          r = kms_request_add_header_field (request, field_name, field_value);
-         assert (r);
+         KMS_ASSERT (r);
       } else if (0 == strcmp (line, "\n")) {
          /* end of header */
          break;
@@ -487,12 +490,13 @@ example_signature_test (void)
 
    request = kms_request_new ("GET", "uri", NULL);
    set_test_date (request);
+
    kms_request_set_region (request, "us-east-1");
    kms_request_set_service (request, "iam");
    kms_request_set_secret_key (request,
                                "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
 
-   assert (kms_request_get_signing_key (request, signing));
+   KMS_ASSERT (kms_request_get_signing_key (request, signing));
    sig = hexlify (signing, 32);
    compare_strs (__FUNCTION__, expect, sig);
    free (sig);
@@ -598,8 +602,8 @@ void
 append_header_field_value_test (void)
 {
    kms_request_t *request = kms_request_new ("GET", "/", NULL);
-   assert (kms_request_add_header_field (request, "a", "b"));
-   assert (kms_request_append_header_field_value (request, "asdf", 4));
+   KMS_ASSERT (kms_request_add_header_field (request, "a", "b"));
+   KMS_ASSERT (kms_request_append_header_field_value (request, "asdf", 4));
    /* header field 0 is "X-Amz-Date", field 1 is "a" */
    ASSERT_CMPSTR (request->header_fields->kvs[1].value->str, "basdf");
    kms_request_destroy (request);
@@ -615,7 +619,7 @@ set_date_test (void)
    kms_request_t *request = kms_request_new ("GET", "/", NULL);
 
    tm.tm_sec = 9999; /* invalid, shouldn't be > 60 */
-   assert (!kms_request_set_date (request, &tm));
+   KMS_ASSERT (!kms_request_set_date (request, &tm));
    ASSERT_CONTAINS (kms_request_get_error (request), "Invalid tm struct");
    kms_request_destroy (request);
 #endif
@@ -630,15 +634,15 @@ multibyte_test (void)
    kms_request_t *request = kms_request_new ("GET", "/" EU "/?euro=" EU, NULL);
 
    set_test_date (request);
-   assert (kms_request_set_region (request, EU));
-   assert (kms_request_set_service (request, EU));
+   KMS_ASSERT (kms_request_set_region (request, EU));
+   KMS_ASSERT (kms_request_set_service (request, EU));
    kms_request_set_access_key_id (request, "AKIDEXAMPLE");
    kms_request_set_secret_key (request,
                                "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
 
-   assert (kms_request_add_header_field (request, EU, EU));
-   assert (kms_request_append_header_field_value (request, "asdf" EU, 7));
-   assert (kms_request_append_payload (request, EU, sizeof (EU)));
+   KMS_ASSERT (kms_request_add_header_field (request, EU, EU));
+   KMS_ASSERT (kms_request_append_header_field_value (request, "asdf" EU, 7));
+   KMS_ASSERT (kms_request_append_payload (request, EU, sizeof (EU)));
    /* header field 0 is "X-Amz-Date" */
    ASSERT_CMPSTR (request->header_fields->kvs[1].value->str, EU "asdf" EU);
 
@@ -737,9 +741,9 @@ kv_list_del_test (void)
    kms_kv_list_add (lst, k, v);
    kms_request_str_set_chars (k, "four", -1);
    kms_kv_list_add (lst, k, v);
-   assert (lst->len == 5);
+   KMS_ASSERT (lst->len == 5);
    kms_kv_list_del (lst, "two"); /* delete both "two" keys */
-   assert (lst->len == 3);
+   KMS_ASSERT (lst->len == 3);
    ASSERT_CMPSTR (lst->kvs[0].key->str, "one");
    ASSERT_CMPSTR (lst->kvs[1].key->str, "three");
    ASSERT_CMPSTR (lst->kvs[2].key->str, "four");
@@ -758,11 +762,11 @@ b64_test (void)
    uint8_t data[5];
 
    r = kms_message_b64_ntop (expected, 4, encoded, 9);
-   assert (r == 8);
+   KMS_ASSERT (r == 8);
    ASSERT_CMPSTR (encoded, "AQIDBA==");
    r = kms_message_b64_pton (encoded, data, 5); /* +1 for terminator */
-   assert (r == 4);
-   assert (0 == memcmp (expected, data, 4));
+   KMS_ASSERT (r == 4);
+   KMS_ASSERT (0 == memcmp (expected, data, 4));
 }
 
 void
@@ -992,7 +996,7 @@ main (int argc, char *argv[])
    RUN_TEST (kms_request_validate_test);
 
    if (!ran_tests) {
-      assert (argc == 2);
+      KMS_ASSERT (argc == 2);
       fprintf (stderr, "No such test: \"%s\"\n", argv[1]);
       abort ();
    }
