@@ -184,8 +184,6 @@ public class MongoCryptTest {
 
         MongoCryptContext decryptor = mongoCrypt.createExplicitDecryptionContext(encryptedDocument);
 
-        assertEquals(State.NEED_MONGO_KEYS, decryptor.getState());
-        testKeyDecryptor(decryptor);
         assertEquals(State.READY, decryptor.getState());
 
         RawBsonDocument decryptedDocument = decryptor.finish();
