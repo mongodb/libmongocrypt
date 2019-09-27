@@ -102,10 +102,13 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
 
+        // We specify NoPadding here because the underlying C library is responsible for padding prior
+        // to executing the callback
         aesCBC256EncryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding",
                 Cipher.ENCRYPT_MODE);
         aesCBC256DecryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding",
                 Cipher.DECRYPT_MODE);
+
         hmacSha512Callback = new MacCallback("HmacSHA512");
         hmacSha256Callback = new MacCallback("HmacSHA256");
         sha256Callback = new MessageDigestCallback("SHA-256");
