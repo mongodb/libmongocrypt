@@ -30,7 +30,7 @@
  * @def MONGOCRYPT_VERSION
  * The version string x.y.z or x.y.z-pre for libmongocrypt
  */
-#define MONGOCRYPT_VERSION "1.0.0-beta4"
+#define MONGOCRYPT_VERSION "1.0.0-beta5"
 
 /**
  * Returns the version string for libmongocrypt.
