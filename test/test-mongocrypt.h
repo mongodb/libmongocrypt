@@ -30,29 +30,25 @@
 struct __mongocrypt_tester_t;
 typedef void (*_mongocrypt_test_fn) (struct __mongocrypt_tester_t *tester);
 
-
+/* Arbitrary max of 1024 instances of temporary test data. Increase as needed. */
+#define TEST_DATA_COUNT 1024
 typedef struct __mongocrypt_tester_t {
    int test_count;
-   /* Arbitrary max of 512 tests. Increase as needed. */
-   char *test_names[512];
-   _mongocrypt_test_fn test_fns[512];
+   char *test_names[TEST_DATA_COUNT];
+   _mongocrypt_test_fn test_fns[TEST_DATA_COUNT];
 
    int file_count;
-   /* Arbitrary max of 512 files. Increase as needed. */
-   char *file_paths[512];
-   _mongocrypt_buffer_t file_bufs[512];
+   char *file_paths[TEST_DATA_COUNT];
+   _mongocrypt_buffer_t file_bufs[TEST_DATA_COUNT];
 
-   /* Arbitrary max of 512 files. Increase as needed. */
    int bson_count;
-   bson_t test_bson[512];
+   bson_t test_bson[TEST_DATA_COUNT];
 
-   /* Arbitrary max of 512 files. Increase as needed. */
    int bin_count;
-   mongocrypt_binary_t *test_bin[512];
+   mongocrypt_binary_t *test_bin[TEST_DATA_COUNT];
 
-   /* Arbitrary max of 512 files. Increase as needed. */
    int blob_count;
-   uint8_t *test_blob[512];
+   uint8_t *test_blob[TEST_DATA_COUNT];
 
    /* Example encrypted doc. */
    _mongocrypt_buffer_t encrypted_doc;

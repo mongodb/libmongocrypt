@@ -150,6 +150,13 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
    }
 
    new_key_alt_name = _mongocrypt_key_alt_name_new (bson_iter_value (&iter));
+
+   if (ctx->opts.key_alt_names &&
+       _mongocrypt_key_alt_name_intersects (ctx->opts.key_alt_names,
+                                            new_key_alt_name)) {
+      _mongocrypt_key_alt_name_destroy_all (new_key_alt_name);
+      return _mongocrypt_ctx_fail_w_msg (ctx, "duplicate keyAltNames found");
+   }
    new_key_alt_name->next = ctx->opts.key_alt_names;
    ctx->opts.key_alt_names = new_key_alt_name;
 
