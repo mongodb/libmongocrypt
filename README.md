@@ -69,8 +69,7 @@ The first version of FLE is to get signal. If FLE becomes popular, further impro
 ### Releasing ###
 Do the following when releasing:
 - Update `MONGOCRYPT_VERSION` in mongocrypt.h.
-- Create a new git tag, like `1.0.0-beta123`.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-beta123"`.
-- Commit and push.
+- Commit, create a new git tag, like `1.0.0-beta123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-beta123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
 - Commit and push.
