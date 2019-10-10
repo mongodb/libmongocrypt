@@ -836,51 +836,94 @@ kms_response_parser_test (void)
       parser, (uint8_t *) "HTTP/1.1 CREATED\r\n", 18));
    kms_response_parser_destroy (parser);
 
-   /* We fail on non-200 status codes */
+   /* We do not fail when parsing a non-200 status code,
+    * as the content may provide a useful error message. */
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
+   ASSERT (kms_response_parser_feed (
       parser, (uint8_t *) "HTTP/1.1 100 CONTINUE\r\n", 23));
+   ASSERT (kms_response_parser_status (parser) == 100);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
+   ASSERT (kms_response_parser_feed (
       parser, (uint8_t *) "HTTP/1.1 201 CREATED\r\n", 22));
+   ASSERT (kms_response_parser_status (parser) == 201);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
+   ASSERT (kms_response_parser_feed (
       parser, (uint8_t *) "HTTP/1.1 301 MOVED PERMANENTLY\r\n", 32));
+   ASSERT (kms_response_parser_status (parser) == 301);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
+   ASSERT (kms_response_parser_feed (
       parser, (uint8_t *) "HTTP/1.1 400 BAD REQUEST\r\n", 26));
+   ASSERT (kms_response_parser_status (parser) == 400);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
+   ASSERT (kms_response_parser_feed (
       parser, (uint8_t *) "HTTP/1.1 404 NOT FOUND\r\n", 24));
+   ASSERT (kms_response_parser_status (parser) == 404);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
+   ASSERT (kms_response_parser_feed (
       parser, (uint8_t *) "HTTP/1.1 500 INTERNAL SERVER ERROR\r\n", 36));
+   ASSERT (kms_response_parser_status (parser) == 500);
    kms_response_parser_destroy (parser);
 
    /* We fail if the header doesn't have a colon in it */
    parser = kms_response_parser_new ();
    ASSERT (
       kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_status (parser) == 200);
    ASSERT (!kms_response_parser_feed (
       parser, (uint8_t *) "Content-Length= 15\r\n", 20));
+   ASSERT (strstr (kms_response_parser_error (parser),
+                   "Could not parse header, no colon found."));
    kms_response_parser_destroy (parser);
 
-   /* We fail if we are missing a content length */
    parser = kms_response_parser_new ();
    ASSERT (
       kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_status (parser) == 200);
    ASSERT (
       !kms_response_parser_feed (parser, (uint8_t *) "Anything else\r\n", 15));
+   ASSERT (strstr (kms_response_parser_error (parser),
+                   "Could not parse header, no colon found."));
+   kms_response_parser_destroy (parser);
+
+   /* An empty body is ok. */
+   parser = kms_response_parser_new ();
+   ASSERT (
+      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_status (parser) == 200);
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
+   kms_response_parser_destroy (parser);
+
+   /* Extra content is not ok. */
+   parser = kms_response_parser_new ();
+   ASSERT (
+      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_status (parser) == 200);
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
+   ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
+   ASSERT (strstr (kms_response_parser_error (parser),
+                   "Unexpected extra HTTP content"));
+   kms_response_parser_destroy (parser);
+
+   parser = kms_response_parser_new ();
+   ASSERT (
+      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_status (parser) == 200);
+   ASSERT (kms_response_parser_feed (
+      parser, (uint8_t *) "Content-Length: 5\r\n", 19));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
+   ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "abcdefghi", 9));
+   ASSERT (strstr (kms_response_parser_error (parser),
+                   "Unexpected: exceeded content length"));
    kms_response_parser_destroy (parser);
 }
 

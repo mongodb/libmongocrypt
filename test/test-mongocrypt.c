@@ -631,6 +631,7 @@ main (int argc, char **argv)
                                CRYPTO_REQUIRED);
    _mongocrypt_tester_install_crypto_hooks (&tester);
    _mongocrypt_tester_install_key_cache (&tester);
+   _mongocrypt_tester_install_kms_responses (&tester);
 
 
    printf ("Running tests...\n");

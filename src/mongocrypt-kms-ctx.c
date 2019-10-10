@@ -41,7 +41,8 @@ _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
    mongocrypt_binary_t *plaintext, *out;
 
    status = mongocrypt_status_new ();
-   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
+   plaintext =
+      mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
 
    out->data = hash_out;
@@ -71,8 +72,10 @@ _sha256_hmac (void *ctx,
    (void) crypto;
 
    status = mongocrypt_status_new ();
-   key = mongocrypt_binary_new_from_data ((uint8_t *) key_input, (uint32_t) key_len);
-   plaintext = mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
+   key = mongocrypt_binary_new_from_data ((uint8_t *) key_input,
+                                          (uint32_t) key_len);
+   plaintext =
+      mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
 
    out->data = hash_out;
@@ -341,7 +344,7 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
    }
 
    if (!kms_response_parser_feed (kms->parser, bytes->data, bytes->len)) {
-      CLIENT_ERR ("KMS response parser error with status %d, error: %s",
+      CLIENT_ERR ("KMS response parser error with status %d, error: '%s'",
                   kms_response_parser_status (kms->parser),
                   kms_response_parser_error (kms->parser));
       return false;
@@ -351,30 +354,58 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
       kms_response_t *response = NULL;
       const char *body;
       bson_t body_bson = BSON_INITIALIZER;
-      bson_json_reader_t *reader;
       bool ret;
-      int reader_ret;
       const char *key;
       bson_error_t bson_error;
       bson_iter_t iter;
       uint32_t b64_strlen;
       char *b64_str;
+      int http_status;
+      size_t body_len;
 
       ret = false;
       /* Parse out the {en|de}crypted result. */
+      http_status = kms_response_parser_status (kms->parser);
       response = kms_response_parser_get_response (kms->parser);
-      body = kms_response_get_body (response);
-      reader = bson_json_data_reader_new (false, 1024);
-      /* TODO: extra strlen can be avoided by exposing length in kms-message. */
-      bson_json_data_reader_ingest (
-         reader, (const uint8_t *) body, strlen (body));
+      body = kms_response_get_body (response, &body_len);
 
-      reader_ret = bson_json_reader_read (reader, &body_bson, &bson_error);
-      if (reader_ret == -1) {
-         CLIENT_ERR ("Error reading KMS response: %s", bson_error.message);
+      if (http_status != 200) {
+         /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only support
+          * handling 200 response. */
+         if (http_status < 400) {
+            CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d", http_status);
+            goto fail;
+         }
+
+         /* Either empty body or body containing JSON with error message. */
+         if (body_len == 0) {
+            CLIENT_ERR ("Error in KMS response. HTTP status=%d", http_status);
+            goto fail;
+         }
+         /* AWS error responses include a JSON message, like { "message":
+          * "error" } */
+         if (bson_init_from_json (&body_bson, body, body_len, &bson_error) &&
+             bson_iter_init_find (&iter, &body_bson, "message") &&
+             BSON_ITER_HOLDS_UTF8 (&iter)) {
+            CLIENT_ERR ("Error in KMS response '%s'. "
+                        "HTTP status=%d",
+                        bson_iter_utf8 (&iter, NULL),
+                        http_status);
+            goto fail;
+         }
+
+         /* If we couldn't parse JSON, return the body unchanged as an error. */
+         CLIENT_ERR (
+            "Error parsing JSON in KMS response '%s'. HTTP status=%d", body, http_status);
          goto fail;
-      } else if (reader_ret == 0) {
-         CLIENT_ERR ("Could not read JSON document from response");
+      }
+
+      /* If HTTP response succeeded (status 200) then body should contain JSON. */ 
+      if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
+         CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                     "HTTP status=%d",
+                     bson_error.message,
+                     http_status);
          goto fail;
       }
 
@@ -383,7 +414,10 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
 
       if (!bson_iter_init_find (&iter, &body_bson, key) ||
           !BSON_ITER_HOLDS_UTF8 (&iter)) {
-         CLIENT_ERR ("KMS JSON response does not include string %s", key);
+         CLIENT_ERR (
+            "KMS JSON response does not include string '%s'. HTTP status=%d",
+            key,
+            http_status);
          goto fail;
       }
 
@@ -396,7 +430,6 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
    fail:
       bson_destroy (&body_bson);
       kms_response_destroy (response);
-      bson_json_reader_destroy (reader);
       return ret;
    }
    return true;

@@ -245,6 +245,9 @@ _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_key_cache (_mongocrypt_tester_t *tester);
 
+void
+_mongocrypt_tester_install_kms_responses (_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */

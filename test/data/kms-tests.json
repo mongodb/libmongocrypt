@@ -1,0 +1,91 @@
+[
+  {
+    "description": "Successful encryption response",
+    "ctx": ["datakey"],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\r\n",
+      "Content-Type: application/x-amz-json-1.1\r\n",
+      "Content-Length: 446\r\n",
+      "Connection: close\r\n",
+      "\r\n",
+      "{\"KeyId\": \"arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0\", \"CiphertextBlob\": \"AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gHCPOT4UQIpMTvAVABLqnXlAAAAwjCBvwYJKoZIhvcNAQcGoIGxMIGuAgEAMIGoBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDLxAm0nO3rccdoWA6AIBEIB7HUe6+aPvgNu/4sLEXBQVDIJVBueI3q7zdOMBSkRKkgZWqEuQgA6iDuEZbhHhOVCUXPBaLX6QWRwyMmjvIy/2Bg5q+TmwnfRo6QKdw2vee1W32/FdPWIoQy1yKOoIhNy6XMWldS3JuWK8ffQOYkssEqx0V4LW6PKuFv7D\"}"
+    ],
+    "expect": "ok"
+  },
+  {
+    "description": "Successful decryption response",
+    "ctx": ["decrypt"],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\r\n",
+      "Content-Type: application/x-amz-json-1.1\r\n",
+      "Content-Length: 233\r\n",
+      "\r\n",
+      "{\"KeyId\": \"arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0\", \"Plaintext\": \"TqhXy3tKckECjy4/ZNykMWG8amBF46isVPzeOgeusKrwheBmYaU8TMG5AHR/NeUDKukqo8hBGgogiQOVpLPkqBQHD8YkLsNbDmHoGOill5QAHnniF/Lz405bGucB5TfR\"}"
+    ],
+    "expect": "ok"
+  },
+  {
+    "description": "Error message included in body",
+    "ctx": ["datakey", "decrypt"],
+    "http_reply": [
+      "HTTP/1.1 400 Bad Request\r\n",
+      "x-amzn-RequestId: b0e91dc8-3807-11e2-83c6-5912bf8ad066\r\n",
+      "x-amzn-ErrorType: ValidationException\r\n",
+      "Content-Type: application/json\r\n",
+      "Content-Length: 128\r\n",
+      "Date: Mon, 26 Nov 2012 20:27:25 GMT\r\n",
+      "\r\n",
+      "{\"message\":\"1 validation error detected: Value null at 'InstallS3Bucket' failed to satisfy constraint: Member must not be null\"}"
+    ],
+    "expect": "validation error"
+  },
+  {
+    "ctx": ["datakey", "decrypt"],
+    "description": "Empty body",
+    "http_reply": ["HTTP/1.1 500 Internal error\r\n", "\r\n"],
+    "expect": "Error in KMS response. HTTP status=500"
+  },
+  {
+    "ctx": ["datakey", "decrypt"],
+    "description": "Content-Length too large",
+    "http_reply": [
+      "HTTP/1.1 200 Don't worry about it. Everything is ok\r\n",
+      "Content-Length: 1234\r\n",
+      "\r\n",
+      "abc"
+    ],
+    "expect": "KMS response unfinished"
+  },
+  {
+    "ctx": ["datakey", "decrypt"],
+    "description": "Content-Length too small",
+    "http_reply": [
+      "HTTP/1.1 200 Don't worry about it. Everything is ok\r\n",
+      "Content-Length: 1\r\n",
+      "\r\n",
+      "abcasdfasdf"
+    ],
+    "expect": "KMS response fed too much data"
+  },
+  {
+    "ctx": ["datakey", "decrypt"],
+    "description": "Content-Length explicitly 0",
+    "http_reply": [
+      "HTTP/1.1 500 Internal error\r\n",
+      "Content-Length: 0\r\n",
+      "\r\n"
+    ],
+    "expect": "Error in KMS response. HTTP status=500"
+  },
+  {
+    "description": "Non-error non-200 HTTP status",
+    "ctx": ["datakey", "decrypt"],
+    "http_reply": [
+      "HTTP/1.1 100 Continue\r\n",
+      "\r\n"
+    ],
+    "expect": "Unsupported HTTP code in KMS response"
+  }
+]

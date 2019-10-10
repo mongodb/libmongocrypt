@@ -202,6 +202,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-key.c
    test/test-mongocrypt-key-broker.c
    test/test-mongocrypt-key-cache.c
+   test/test-mongocrypt-kms-responses.c
    test/test-mongocrypt-local-kms.c
    test/test-mongocrypt-log.c
    test/test-mongocrypt-marking.c

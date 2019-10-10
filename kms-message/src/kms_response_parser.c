@@ -120,12 +120,6 @@ _parse_line (kms_response_parser_t *parser, int end)
 
       response->status = status;
 
-      /* Error for non-ok statuses. */
-      if (response->status != 200) {
-         KMS_ERROR (parser, "Parsed a non-ok Status-Code.");
-         return PARSING_DONE;
-      }
-
       /* ignore the Reason-Phrase. */
       return PARSING_HEADER;
    } else if (parser->state == PARSING_HEADER) {
@@ -215,13 +209,19 @@ kms_response_parser_feed (kms_response_parser_t *parser,
             parser->start = curr + 1;
          }
          curr++;
+
+         if (parser->state == PARSING_BODY && parser->content_length <= 0) {
+            /* Ok, no Content-Length header, or explicitly 0, so empty body */
+            parser->response->body = kms_request_str_new ();
+            parser->state = PARSING_DONE;
+         }
          break;
       case PARSING_BODY:
          body_read = (int) raw->len - parser->start;
 
          if (parser->content_length == -1 ||
              body_read > parser->content_length) {
-            KMS_ERROR (parser, "Could not parse content length.");
+            KMS_ERROR (parser, "Unexpected: exceeded content length");
             return false;
          }
 
@@ -235,11 +235,8 @@ kms_response_parser_feed (kms_response_parser_t *parser,
          curr = (int) raw->len;
          break;
       case PARSING_DONE:
-         if (parser->failed) {
-            return false;
-         }
-
-         return true;
+         KMS_ERROR (parser, "Unexpected extra HTTP content");
+         return false;
       }
    }
 
