@@ -45,7 +45,7 @@ cd libmongocrypt
 ```
 
 libmongocrypt is [continuously built and published on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
-The latest tarball containing libmongocrypt built on all supported variants is (published here)[https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz].
+The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
 
 ### Troubleshooting ###
 If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt. 
@@ -67,4 +67,9 @@ We decided against the "have libmongocrypt do everything" approach because it co
 The first version of FLE is to get signal. If FLE becomes popular, further improvements will be made (removing mongocryptd process, support for more queries, better performance). libmongocrypt takes the same approach. Making it blazing fast and completely future-proof is not a high priority.
 
 ### Releasing ###
-To release create a new git tag, and update `MONGOCRYPT_VERSION` in mongocrypt.h.
+Do the following when releasing:
+- Update `MONGOCRYPT_VERSION` in mongocrypt.h.
+- In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-beta123"`.
+- Commit, create a new git tag, like `1.0.0-beta123`, and push.
+- In the Java binding build.gradle.kts, replace `version = "1.0.0-beta123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
+- Commit and push.
