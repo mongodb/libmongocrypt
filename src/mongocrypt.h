@@ -903,9 +903,27 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * Perform the final encryption or decryption.
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
- * @param[out] out The final BSON to send to the server. The data viewed by @p
- * out is guaranteed to be valid until @p ctx is destroyed with @ref
- * mongocrypt_ctx_destroy.
+ * @param[out] out The final BSON. The data viewed by @p out is guaranteed
+ * to be valid until @p ctx is destroyed with @ref mongocrypt_ctx_destroy.
+ * The meaning of this BSON depends on the type of @p ctx.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_encrypt_init, then
+ * this BSON is the (possibly) encrypted command to send to the server.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_decrypt_init, then
+ * this BSON is the decrypted result to return to the user.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_explicit_encrypt_init,
+ * then this BSON has the form { "v": (BSON binary) } where the BSON binary
+ * is the resulting encrypted value.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_explicit_decrypt_init,
+ * then this BSON has the form { "v": (BSON value) } where the BSON value
+ * is the resulting decrypted value.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_datakey_init, then
+ * this BSON is the document containing the new data key to be inserted into
+ * the key vault collection.
  *
  * @returns a bool indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
