@@ -466,8 +466,10 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
  * It is an error to set both this and the key alt name.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] key_id The key_id to use. The viewed data is copied. It is valid
- * to destroy @p key_id with @ref mongocrypt_binary_destroy immediately after.
+ * @param[in] key_id The binary corresponding to the _id (a UUID) of the data
+ * key to use from the key vault collection. Note, the UUID must be encoded with
+ * RFC-4122 byte order. The viewed data is copied. It is valid to destroy
+ * @p key_id with @ref mongocrypt_binary_destroy immediately after.
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
