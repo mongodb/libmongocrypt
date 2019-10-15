@@ -697,6 +697,14 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "saslContinue")) {
       *bypass = true;
+   } else if (0 == strcmp (cmd_name, "killAllSessions")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "killSessions")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "killAllSessionsByPattern")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "refreshSessions")) {
+      *bypass = true;
    }
 
    /* database/client commands are ineligible. */
