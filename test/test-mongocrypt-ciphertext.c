@@ -81,8 +81,8 @@ _test_malformed_ciphertext (_mongocrypt_tester_t *tester)
 
    BSON_ASSERT (
       !_mongocrypt_ciphertext_parse_unowned (&serialized, &returned, status));
-   BSON_ASSERT (0 ==
-                strcmp (status->message, "malformed ciphertext, too small"));
+   BSON_ASSERT (0 == strcmp (mongocrypt_status_message (status, NULL),
+                             "malformed ciphertext, too small"));
    _mongocrypt_buffer_cleanup (&serialized);
 
    _mongocrypt_tester_fill_buffer (&serialized, 19);
@@ -96,7 +96,7 @@ _test_malformed_ciphertext (_mongocrypt_tester_t *tester)
    BSON_ASSERT (
       !_mongocrypt_ciphertext_parse_unowned (&serialized, &returned, status));
    BSON_ASSERT (
-      0 == strcmp (status->message,
+      0 == strcmp (mongocrypt_status_message (status, NULL),
                    "malformed ciphertext, expected blob subtype of 1 or 2"));
 
    _mongocrypt_ciphertext_cleanup (&returned);
@@ -110,7 +110,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_status_t status;
+   mongocrypt_status_t *status;
    _mongocrypt_key_broker_t *kb;
    _mongocrypt_buffer_t zeros;
    _mongocrypt_ciphertext_t type1_valueA, type1_valueA_again, type2_valueA,
@@ -120,6 +120,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    bson_t *bson;
    bool res;
 
+   status = mongocrypt_status_new ();
    _mongocrypt_ciphertext_init (&type1_valueA);
    _mongocrypt_ciphertext_init (&type1_valueA_again);
    _mongocrypt_ciphertext_init (&type2_valueA);
@@ -152,29 +153,29 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    marking.algorithm = 1;
    memcpy (&marking.v_iter, &a_iter, sizeof (bson_iter_t));
    res = _mongocrypt_marking_to_ciphertext (
-      (void *) kb, &marking, &type1_valueA, &status);
-   ASSERT_OR_PRINT (res, &status);
+      (void *) kb, &marking, &type1_valueA, status);
+   ASSERT_OR_PRINT (res, status);
 
    /* Marking type = 1, plaintext = a */
    marking.algorithm = 1;
    memcpy (&marking.v_iter, &a_iter, sizeof (bson_iter_t));
    res = _mongocrypt_marking_to_ciphertext (
-      (void *) kb, &marking, &type1_valueA_again, &status);
-   ASSERT_OR_PRINT (res, &status);
+      (void *) kb, &marking, &type1_valueA_again, status);
+   ASSERT_OR_PRINT (res, status);
 
    /* Marking type = 2, plaintext = a */
    marking.algorithm = 2;
    memcpy (&marking.v_iter, &a_iter, sizeof (bson_iter_t));
    res = _mongocrypt_marking_to_ciphertext (
-      (void *) kb, &marking, &type2_valueA, &status);
-   ASSERT_OR_PRINT (res, &status);
+      (void *) kb, &marking, &type2_valueA, status);
+   ASSERT_OR_PRINT (res, status);
 
    /* Marking type = 1, plaintext = b */
    marking.algorithm = 1;
    memcpy (&marking.v_iter, &b_iter, sizeof (bson_iter_t));
    res = _mongocrypt_marking_to_ciphertext (
-      (void *) kb, &marking, &type1_valueB, &status);
-   ASSERT_OR_PRINT (res, &status);
+      (void *) kb, &marking, &type1_valueB, status);
+   ASSERT_OR_PRINT (res, status);
 
    /* Shorten all buffers to their IV length's */
    type1_valueA.data.len = MONGOCRYPT_IV_LEN;
@@ -208,6 +209,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
    bson_destroy (bson);
+   mongocrypt_status_destroy (status);
 }
 
 

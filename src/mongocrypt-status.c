@@ -18,6 +18,14 @@
 
 #include "mongocrypt-status-private.h"
 
+
+struct _mongocrypt_status_t {
+   mongocrypt_status_type_t type;
+   uint32_t code;
+   char *message;
+   uint32_t len;
+};
+
 mongocrypt_status_t *
 mongocrypt_status_new (void)
 {
@@ -34,11 +42,17 @@ mongocrypt_status_set (mongocrypt_status_t *status,
 {
    if (message_len < 0) {
       message_len = (int32_t) strlen (message) + 1;
+   } else if (message_len == 0) {
+      /* This is really an error, since message_len should be one more than the
+       * string length. But interpret as the empty string */
+      message_len = 1;
    }
-   if (MONGOCRYPT_STATUS_MSG_LEN < message_len - 1) {
-      message_len = MONGOCRYPT_STATUS_MSG_LEN;
-   }
-   bson_strncpy (status->message, message, message_len);
+
+   bson_free (status->message);
+   status->message = bson_malloc (message_len);
+   status->message[message_len - 1] = '\0';
+   memcpy (status->message, message, message_len - 1);
+   status->len = message_len - 1;
    status->type = type;
    status->code = code;
 }
@@ -97,8 +111,14 @@ _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
    dst->type = src->type;
    dst->code = src->code;
    dst->len = src->len;
-   bson_strncpy (
-      dst->message, src->message, (size_t) MONGOCRYPT_STATUS_MSG_LEN - 1);
+   if (dst->message) {
+      bson_free (dst->message);
+      dst->message = NULL;
+   }
+
+   if (src->message) {
+      dst->message = bson_strdup (src->message);
+   }
 }
 
 void
@@ -109,7 +129,8 @@ _mongocrypt_status_reset (mongocrypt_status_t *status)
    status->type = MONGOCRYPT_STATUS_OK;
    status->code = 0;
    status->len = 0;
-   memset (status->message, 0, MONGOCRYPT_STATUS_MSG_LEN);
+   bson_free (status->message);
+   status->message = NULL;
 }
 
 void
@@ -119,5 +140,6 @@ mongocrypt_status_destroy (mongocrypt_status_t *status)
       return;
    }
 
+   bson_free (status->message);
    bson_free (status);
 }

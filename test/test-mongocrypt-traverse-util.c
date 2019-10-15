@@ -281,11 +281,12 @@ test_traverse (int num_markings,
                _util_tester_t *tester,
                int num_matches)
 {
-   mongocrypt_status_t status;
+   mongocrypt_status_t *status;
    bson_iter_t iter;
    bson_t *bson;
    int matched = 0;
 
+   status = mongocrypt_status_new ();
    /* First, assemble the requested bson document */
    bson = _assemble_bson (num_markings,
                           num_deterministic,
@@ -297,12 +298,13 @@ test_traverse (int num_markings,
    /* Traverse */
    BSON_ASSERT (bson_iter_init (&iter, bson));
    BSON_ASSERT (_mongocrypt_traverse_binary_in_bson (
-      test_traverse_cb, &matched, match, &iter, &status));
+      test_traverse_cb, &matched, match, &iter, status));
 
    /* Count matches */
    BSON_ASSERT (matched == num_matches);
 
    bson_destroy (bson);
+   mongocrypt_status_destroy (status);
 }
 
 static void
@@ -402,12 +404,13 @@ test_transform (int num_markings,
                 _util_tester_t *tester,
                 int num_matches)
 {
-   mongocrypt_status_t status;
+   mongocrypt_status_t *status;
    bson_iter_t iter;
    bson_t *bson;
    bson_t out = BSON_INITIALIZER;
    int matches = 0;
 
+   status = mongocrypt_status_new ();
    /* First, assemble the requested bson document */
    bson = _assemble_bson (num_markings,
                           num_deterministic,
@@ -419,7 +422,7 @@ test_transform (int num_markings,
    /* Perform a transformation, count matches */
    BSON_ASSERT (bson_iter_init (&iter, bson));
    BSON_ASSERT (_mongocrypt_transform_binary_in_bson (
-      test_transform_cb, &matches, match, &iter, &out, &status));
+      test_transform_cb, &matches, match, &iter, &out, status));
 
    /* Make sure we had the correct number of matches */
    BSON_ASSERT (matches == num_matches);
@@ -429,7 +432,7 @@ test_transform (int num_markings,
    matches = 0;
    BSON_ASSERT (bson_iter_init (&iter, &out));
    BSON_ASSERT (_mongocrypt_traverse_binary_in_bson (
-      post_transform_traverse_check, &matches, match, &iter, &status));
+      post_transform_traverse_check, &matches, match, &iter, status));
 
    /* Also, make sure we have the correct number of
       non-matching fields */
@@ -446,6 +449,7 @@ test_transform (int num_markings,
 
    bson_destroy (bson);
    bson_destroy (&out);
+   mongocrypt_status_destroy (status);
 }
 
 static void

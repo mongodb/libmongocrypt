@@ -30,7 +30,8 @@
 struct __mongocrypt_tester_t;
 typedef void (*_mongocrypt_test_fn) (struct __mongocrypt_tester_t *tester);
 
-/* Arbitrary max of 1024 instances of temporary test data. Increase as needed. */
+/* Arbitrary max of 1024 instances of temporary test data. Increase as needed.
+ */
 #define TEST_DATA_COUNT 1024
 typedef struct __mongocrypt_tester_t {
    int test_count;
@@ -247,6 +248,9 @@ _mongocrypt_tester_install_key_cache (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_kms_responses (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_status (_mongocrypt_tester_t *tester);
 
 /* Conveniences for getting test data. */
 

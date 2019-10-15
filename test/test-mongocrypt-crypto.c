@@ -92,7 +92,8 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
                                     &bytes_written,
                                     status);
    BSON_ASSERT (!ret);
-   BSON_ASSERT (0 == strcmp (status->message, "HMAC validation failure"));
+   BSON_ASSERT (0 == strcmp (mongocrypt_status_message (status, NULL),
+                             "HMAC validation failure"));
    /* undo the change (flip the bit again). Double check that decryption works
     * again. */
    ciphertext.data[ciphertext.len - 1] ^= 1;
@@ -116,7 +117,8 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
                                     &bytes_written,
                                     status);
    BSON_ASSERT (!ret);
-   BSON_ASSERT (0 == strcmp (status->message, "HMAC validation failure"));
+   BSON_ASSERT (0 == strcmp (mongocrypt_status_message (status, NULL),
+                             "HMAC validation failure"));
    /* undo */
    key.data[0] ^= 1;
    _mongocrypt_status_reset (status);
@@ -131,8 +133,8 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
                                     &bytes_written,
                                     status);
    BSON_ASSERT (!ret);
-   BSON_ASSERT (
-      0 == strcmp (status->message, "error, ciphertext malformed padding"));
+   BSON_ASSERT (0 == strcmp (mongocrypt_status_message (status, NULL),
+                             "error, ciphertext malformed padding"));
 
    mongocrypt_status_destroy (status);
    _mongocrypt_buffer_cleanup (&decrypted);

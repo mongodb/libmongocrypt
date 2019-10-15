@@ -292,10 +292,11 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
 {
    mongocrypt_ctx_state_t state;
    mongocrypt_kms_ctx_t *kms;
-   mongocrypt_status_t status;
+   mongocrypt_status_t *status;
    mongocrypt_binary_t *bin;
    bool res;
 
+   status = mongocrypt_status_new ();
    state = mongocrypt_ctx_state (ctx);
    while (state != stop_state) {
       switch (state) {
@@ -309,15 +310,15 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
          res = mongocrypt_ctx_mongo_feed (
             ctx, TEST_FILE ("./test/example/mongocryptd-reply.json"));
-         mongocrypt_ctx_status (ctx, &status);
-         ASSERT_OR_PRINT (res, &status);
+         mongocrypt_ctx_status (ctx, status);
+         ASSERT_OR_PRINT (res, status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
          res = mongocrypt_ctx_mongo_feed (
             ctx, TEST_FILE ("./test/example/key-document.json"));
-         mongocrypt_ctx_status (ctx, &status);
-         ASSERT_OR_PRINT (res, &status);
+         mongocrypt_ctx_status (ctx, status);
+         ASSERT_OR_PRINT (res, status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
@@ -327,30 +328,33 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
             kms = mongocrypt_ctx_next_kms_ctx (ctx);
          }
          res = mongocrypt_ctx_kms_done (ctx);
-         mongocrypt_ctx_status (ctx, &status);
-         ASSERT_OR_PRINT (res, &status);
+         mongocrypt_ctx_status (ctx, status);
+         ASSERT_OR_PRINT (res, status);
          break;
       case MONGOCRYPT_CTX_READY:
          bin = mongocrypt_binary_new ();
          res = mongocrypt_ctx_finalize (ctx, bin);
-         mongocrypt_ctx_status (ctx, &status);
-         ASSERT_OR_PRINT (res, &status);
+         mongocrypt_ctx_status (ctx, status);
+         ASSERT_OR_PRINT (res, status);
          mongocrypt_binary_destroy (bin);
          break;
       case MONGOCRYPT_CTX_ERROR:
-         mongocrypt_ctx_status (ctx, &status);
+         mongocrypt_ctx_status (ctx, status);
          fprintf (stderr,
                   "Got error: %s\n",
-                  mongocrypt_status_message (&status, NULL));
+                  mongocrypt_status_message (status, NULL));
          BSON_ASSERT (state == stop_state);
+         mongocrypt_status_destroy (status);
          return;
       case MONGOCRYPT_CTX_DONE:
          BSON_ASSERT (state == stop_state);
+         mongocrypt_status_destroy (status);
          return;
       }
       state = mongocrypt_ctx_state (ctx);
    }
    BSON_ASSERT (state == stop_state);
+   mongocrypt_status_destroy (status);
 }
 
 
@@ -632,6 +636,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_crypto_hooks (&tester);
    _mongocrypt_tester_install_key_cache (&tester);
    _mongocrypt_tester_install_kms_responses (&tester);
+   _mongocrypt_tester_install_status (&tester);
 
 
    printf ("Running tests...\n");

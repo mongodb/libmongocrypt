@@ -172,9 +172,12 @@ mongocrypt_status_new (void);
  * @param[in] type The status type.
  * @param[in] code The status code.
  * @param[in] message The message.
- * @param[in] message_len The length of @p message. Pass -1 to determine the
- * string length with strlen (must
- * be NULL terminated).
+ * @param[in] message_len Due to historical behavior, pass 1 + the string length
+ * of @p message (which differs from other functions accepting string
+ * arguments).
+ * Alternatively, if message is NULL terminated this may be -1 to tell
+ * mongocrypt
+ * to determine the string's length with strlen.
  *
  */
 MONGOCRYPT_EXPORT
@@ -214,7 +217,8 @@ mongocrypt_status_code (mongocrypt_status_t *status);
  * Get the error message associated with a status or NULL.
  *
  * @param[in] status The status object.
- * @param[out] len An optional length of the returned string. May be NULL.
+ * @param[out] len An optional length of the returned string (excluding the
+ * trailing NULL byte). May be NULL.
  *
  * @returns A NULL terminated error message or NULL.
  */

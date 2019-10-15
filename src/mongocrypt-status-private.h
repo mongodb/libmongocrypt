@@ -19,16 +19,6 @@
 
 #include "mongocrypt.h"
 
-#define MONGOCRYPT_STATUS_MSG_LEN 1024
-
-struct _mongocrypt_status_t {
-   mongocrypt_status_type_t type;
-   uint32_t code;
-   char message[MONGOCRYPT_STATUS_MSG_LEN];
-   uint32_t len;
-};
-
-
 void
 _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst);
 

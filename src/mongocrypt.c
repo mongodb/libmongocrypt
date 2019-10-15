@@ -29,7 +29,7 @@
 #include "mongocrypt-status-private.h"
 
 /* Assert size for interop with wrapper purposes */
-BSON_STATIC_ASSERT(sizeof(mongocrypt_log_level_t) == 4);
+BSON_STATIC_ASSERT (sizeof (mongocrypt_log_level_t) == 4);
 
 
 const char *
@@ -50,17 +50,14 @@ _mongocrypt_set_error (mongocrypt_status_t *status,
                        ...)
 {
    va_list args;
+   char *prepared_message;
 
    if (status) {
-      status->type = type;
-      status->code = code;
-
       va_start (args, format);
-      status->len = (uint32_t) bson_vsnprintf (
-         status->message, sizeof status->message, format, args);
+      prepared_message = bson_strdupv_printf (format, args);
+      mongocrypt_status_set (status, type, code, prepared_message, -1);
+      bson_free (prepared_message);
       va_end (args);
-
-      status->message[sizeof status->message - 1] = '\0';
    }
 }
 
