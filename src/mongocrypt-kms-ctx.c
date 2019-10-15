@@ -156,6 +156,10 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
 
    kms_request_opt_destroy (opt);
    kms_request_set_service (kms->req, "kms");
+   /* If an endpoint was set, override the default Host header. */
+   if (key->endpoint) {
+      kms_request_add_header_field (kms->req, "Host", key->endpoint);
+   }
 
    if (!kms_request_set_region (kms->req, key->masterkey_region)) {
       CLIENT_ERR ("failed to set region");
@@ -256,6 +260,11 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    kms_request_opt_destroy (opt);
    kms_request_set_service (kms->req, "kms");
+   /* If an endpoint was set, override the default Host header. */
+   if (ctx_opts->masterkey_aws_endpoint) {
+      kms_request_add_header_field (
+         kms->req, "Host", ctx_opts->masterkey_aws_endpoint);
+   }
 
    if (!kms_request_set_region (kms->req, ctx_opts->masterkey_aws_region)) {
       CLIENT_ERR ("failed to set region");
@@ -282,8 +291,12 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    kms->msg.owned = true;
 
    /* construct the endpoint */
-   kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
-                                       ctx_opts->masterkey_aws_region);
+   if (ctx_opts->masterkey_aws_endpoint) {
+      kms->endpoint = bson_strdup (ctx_opts->masterkey_aws_endpoint);
+   } else {
+      kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
+                                          ctx_opts->masterkey_aws_region);
+   }
    return true;
 }
 

@@ -57,6 +57,16 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
    ASSERT_FAILS (                            \
       mongocrypt_ctx_setopt_algorithm (ctx, algo, algo_len), ctx, msg);
 
+#define ENDPOINT_OK(endpoint, endpoint_len)                  \
+   ASSERT_OK (mongocrypt_ctx_setopt_masterkey_aws_endpoint ( \
+                 ctx, endpoint, endpoint_len),               \
+              ctx);
+#define ENDPOINT_FAILS(endpoint, endpoint_len, msg)             \
+   ASSERT_FAILS (mongocrypt_ctx_setopt_masterkey_aws_endpoint ( \
+                    ctx, endpoint, endpoint_len),               \
+                 ctx,                                           \
+                 msg);
+
 #define DATAKEY_INIT_OK ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
 #define DATAKEY_INIT_FAILS(msg) \
    ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx), ctx, msg);
@@ -332,6 +342,16 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
    MASTERKEY_AWS_FAILS (
       "region", -1, "cmk", -1, "cannot set options after init");
 
+   REFRESH;
+   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ENDPOINT_OK ("example.com:80", -1);
+   DATAKEY_INIT_OK;
+
+   REFRESH;
+   MASTERKEY_LOCAL_OK;
+   ENDPOINT_OK ("example.com:80", -1);
+   DATAKEY_INIT_FAILS ("endpoint not supported for local masterkey");
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
@@ -378,7 +398,11 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
    /* Test setting options after init. */
    REFRESH;
    ENCRYPT_INIT_OK ("a", -1, cmd);
-   MASTERKEY_LOCAL_FAILS ("cannot set options after init")
+   MASTERKEY_LOCAL_FAILS ("cannot set options after init");
+
+   REFRESH;
+   ENDPOINT_OK ("example.com:80", -1);
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "endpoint prohibited");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -473,6 +497,12 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    ALGORITHM_FAILS ("bad-algo", -1, "unsupported algorithm");
    EX_ENCRYPT_INIT_FAILS (bson, "unsupported algorithm");
 
+   REFRESH;
+   KEY_ID_OK (uuid);
+   ALGORITHM_OK (RAND, -1);
+   ENDPOINT_OK ("example.com:80", -1);
+   EX_ENCRYPT_INIT_FAILS (bson, "endpoint prohibited");
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
@@ -518,6 +548,10 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
    DECRYPT_INIT_OK (bson);
    MASTERKEY_LOCAL_FAILS ("cannot set options after init");
 
+   REFRESH;
+   ENDPOINT_OK ("example.com:80", -1);
+   DECRYPT_INIT_FAILS (bson, "endpoint prohibited");
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
@@ -558,6 +592,10 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    ALGORITHM_OK (DET, -1);
    EX_DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
 
+   REFRESH;
+   ENDPOINT_OK ("example.com:80", -1);
+   EX_DECRYPT_INIT_FAILS (bson, "endpoint prohibited");
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
@@ -589,6 +627,45 @@ _test_setopt_failure_uninitialized (_mongocrypt_tester_t *tester)
 
 
 static void
+_test_setopt_endpoint (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx = NULL;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+
+   REFRESH;
+   ENDPOINT_FAILS ("example.com", -2, "invalid masterkey endpoint");
+
+   REFRESH;
+   ENDPOINT_OK ("example.com", -1);
+   BSON_ASSERT (0 == strcmp (ctx->opts.masterkey_aws_endpoint, "example.com"));
+
+   /* Including a port is ok. */
+   REFRESH;
+   ENDPOINT_OK ("example.com:80", -1);
+   BSON_ASSERT (0 ==
+                strcmp (ctx->opts.masterkey_aws_endpoint, "example.com:80"));
+
+   /* Test double setting. */
+   REFRESH;
+   ENDPOINT_OK ("example.com", -1);
+   ENDPOINT_FAILS ("example.com", -1, "already set masterkey endpoint");
+
+   /* Test NULL input */
+   REFRESH;
+   ENDPOINT_FAILS (NULL, 0, "invalid masterkey endpoint");
+
+   REFRESH;
+   _mongocrypt_ctx_fail_w_msg (ctx, "test");
+   ENDPOINT_FAILS (RAND, -1, "test")
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
 _test_options (_mongocrypt_tester_t *tester)
 {
    /* Test individual options */
@@ -597,6 +674,7 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_key_id (tester);
    _test_setopt_algorithm (tester);
    _test_setopt_key_alt_name (tester);
+   _test_setopt_endpoint (tester);
 
    /* Test options on different contexts */
    _test_setopt_for_datakey (tester);

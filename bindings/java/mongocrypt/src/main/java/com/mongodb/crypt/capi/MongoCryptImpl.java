@@ -47,6 +47,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws_endpoint;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
@@ -209,6 +210,10 @@ class MongoCryptImpl implements MongoCrypt {
             success = mongocrypt_ctx_setopt_masterkey_aws(context,
                     new cstring(options.getMasterKey().getString("region").getValue()), -1,
                     new cstring(options.getMasterKey().getString("key").getValue()), -1);
+            if (success && options.getMasterKey().containsKey("endpoint")) {
+                success = mongocrypt_ctx_setopt_masterkey_aws_endpoint(context,
+                        new cstring(options.getMasterKey().getString("endpoint").getValue()), -1);
+            }
         } else if (kmsProvider.equals("local")) {
             success = mongocrypt_ctx_setopt_masterkey_local(context);
         } else {

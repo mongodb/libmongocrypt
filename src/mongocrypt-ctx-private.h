@@ -41,6 +41,8 @@ typedef struct __mongocrypt_ctx_opts_t {
    uint32_t masterkey_aws_cmk_len;
    char *masterkey_aws_region;
    uint32_t masterkey_aws_region_len;
+   char *masterkey_aws_endpoint;
+   uint32_t masterkey_aws_endpoint_len;
    _mongocrypt_buffer_t key_id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    mongocrypt_encryption_algorithm_t algorithm;
@@ -155,6 +157,7 @@ typedef struct {
    _mongocrypt_ctx_opt_spec_t key_descriptor; /* a key_id or key_alt_name */
    _mongocrypt_ctx_opt_spec_t key_alt_names;
    _mongocrypt_ctx_opt_spec_t algorithm;
+   _mongocrypt_ctx_opt_spec_t endpoint;
 } _mongocrypt_ctx_opts_spec_t;
 
 /* Common initialization. */

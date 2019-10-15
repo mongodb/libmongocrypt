@@ -556,6 +556,26 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
 
 
 /**
+ * Identify a custom AWS endpoint when creating a data key.
+ * This is used internally to construct the correct HTTP request
+ * (with the Host header set to this endpoint). This endpoint
+ * is persisted in the new data key, and will be returned via
+ * @ref mongocrypt_kms_ctx_endpoint.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] endpoint The endpoint.
+ * @param[in] endpoint_len The string length of @p endpoint. Pass -1 to
+ * determine the string length with strlen (must be NULL terminated).
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
+                                              const char *endpoint,
+                                              int32_t endpoint_len);
+
+/**
  * Set the master key to "local" for creating a data key.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
@@ -573,6 +593,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  *
  * Associated options:
  * - @ref mongocrypt_ctx_setopt_masterkey_aws
+ * - @ref mongocrypt_ctx_setopt_masterkey_aws_endpoint
  * - @ref mongocrypt_ctx_setopt_masterkey_local
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
@@ -727,9 +748,11 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
  *
  * reply is a BSON document result being fed back for this operation.
  * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a doc from a listCollections
- * cursor. (Note, if listCollections returned no result, do not call this function.)
+ * cursor. (Note, if listCollections returned no result, do not call this
+ * function.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a doc from a find cursor.
- *   (Note, if find returned no results, do not call this function. reply must not
+ *   (Note, if find returned no results, do not call this function. reply must
+ * not
  *   be NULL.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a reply from mongocryptd.
  *
@@ -807,7 +830,9 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * is valid until calling @ref mongocrypt_ctx_kms_done.
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
- * @param[out] endpoint The output hostname as a NULL terminated string.
+ * @param[out] endpoint The output hostname as a NULL terminated string. This
+ * may include a port (e.g. "example.com:123"). If it does not, default to port
+ * 443.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */

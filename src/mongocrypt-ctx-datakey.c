@@ -195,6 +195,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    ret = false;
    opts_spec.masterkey = OPT_REQUIRED;
    opts_spec.key_alt_names = OPT_OPTIONAL;
+   opts_spec.endpoint = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
@@ -226,6 +227,11 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       bool crypt_ret;
       uint32_t bytes_written;
       _mongocrypt_buffer_t iv;
+
+      if (ctx->opts.masterkey_aws_endpoint) {
+         _mongocrypt_ctx_fail_w_msg (ctx, "endpoint not supported for local masterkey");
+         goto done;
+      }
 
       /* For a local KMS provider, the customer master key is supplied by the
        * user in mongocrypt_setopt_kms_provider_local. We use it to

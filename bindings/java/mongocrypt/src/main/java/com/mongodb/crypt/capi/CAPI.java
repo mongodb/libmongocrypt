@@ -493,6 +493,25 @@ public class CAPI {
                                          cstring cmk,
                                          int cmk_len);
 
+    /**
+     * Identify a custom AWS endpoint when creating a data key.
+     * This is used internally to construct the correct HTTP request
+     * (with the Host header set to this endpoint). This endpoint
+     * is persisted in the new data key, and will be returned via
+     * mongocrypt_kms_ctx_endpoint.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param endpoint The endpoint.
+     * @param endpoint_len The string length of @p endpoint. Pass -1 to
+     * determine the string length with strlen (must be NULL terminated).
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t ctx,
+                                                  cstring endpoint,
+                                                  int endpoint_len);
+
 
     /**
      * Set the master key to "local" for creating a data key.

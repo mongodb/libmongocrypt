@@ -538,6 +538,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
 
    bson_free (ctx->opts.masterkey_aws_region);
    bson_free (ctx->opts.masterkey_aws_cmk);
+   bson_free (ctx->opts.masterkey_aws_endpoint);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
    _mongocrypt_key_alt_name_destroy_all (ctx->opts.key_alt_names);
@@ -713,6 +714,16 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm prohibited");
    }
 
+   if (opts_spec->endpoint == OPT_REQUIRED &&
+       !ctx->opts.masterkey_aws_endpoint) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "endpoint required");
+   }
+
+   if (opts_spec->endpoint == OPT_PROHIBITED &&
+       ctx->opts.masterkey_aws_endpoint) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "endpoint prohibited");
+   }
+
    _mongocrypt_key_broker_init (&ctx->kb, ctx->crypt);
    return true;
 }
@@ -771,4 +782,34 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
    }
 
    return ret;
+}
+
+
+bool
+mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
+                                              const char *endpoint,
+                                              int32_t endpoint_len)
+{
+   if (!ctx) {
+      return false;
+   }
+
+   if (ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
+   }
+
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+
+   if (ctx->opts.masterkey_aws_endpoint) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "already set masterkey endpoint");
+   }
+
+   if (!_mongocrypt_validate_and_copy_string (
+          endpoint, endpoint_len, &ctx->opts.masterkey_aws_endpoint)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid masterkey endpoint");
+   }
+   ctx->opts.masterkey_aws_endpoint_len = endpoint_len;
+   return true;
 }

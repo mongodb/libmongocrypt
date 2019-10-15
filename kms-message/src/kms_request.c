@@ -376,6 +376,8 @@ finalize (kms_request_t *request)
 
    lst = request->header_fields;
 
+   /* By default, if no explicit Host was set, it is derived from region +
+    * service */
    if (!kms_kv_list_find (lst, "Host")) {
       /* like "kms.us-east-1.amazonaws.com" */
       k = kms_request_str_new_from_chars ("Host", -1);
