@@ -24,7 +24,8 @@ void
 _mongocrypt_log_init (_mongocrypt_log_t *log)
 {
    _mongocrypt_mutex_init (&log->mutex);
-   _mongocrypt_log_set_fn (log, _mongocrypt_default_log_fn, NULL);
+   /* Initially, no log function is set. */
+   _mongocrypt_log_set_fn (log, NULL, NULL);
 #ifdef MONGOCRYPT_ENABLE_TRACE
    log->trace_enabled = (getenv ("MONGOCRYPT_TRACE") != NULL);
 #endif
@@ -39,10 +40,10 @@ _mongocrypt_log_cleanup (_mongocrypt_log_t *log)
 }
 
 void
-_mongocrypt_default_log_fn (mongocrypt_log_level_t level,
-                            const char *message,
-                            uint32_t message_len,
-                            void *ctx)
+_mongocrypt_stdout_log_fn (mongocrypt_log_level_t level,
+                           const char *message,
+                           uint32_t message_len,
+                           void *ctx)
 {
    switch (level) {
    case MONGOCRYPT_LOG_LEVEL_FATAL:
@@ -97,7 +98,9 @@ _mongocrypt_log (_mongocrypt_log_t *log,
    va_end (args);
 
    _mongocrypt_mutex_lock (&log->mutex);
-   log->fn (level, message, (uint32_t) strlen (message), log->ctx);
+   if (log->fn) {
+      log->fn (level, message, (uint32_t) strlen (message), log->ctx);
+   }
    _mongocrypt_mutex_unlock (&log->mutex);
    bson_free (message);
 }

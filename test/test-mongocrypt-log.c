@@ -96,9 +96,42 @@ _test_trace_log (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+#ifndef _WIN32
+static void
+_test_no_log (_mongocrypt_tester_t *tester)
+{
+   const int buffer_size = 1024;
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+   char captured_logs[buffer_size];
+   int saved_stdout = dup (1);
+
+   /* Redirect stdout to /dev/null and capture output in a buffer
+    * so we can check if anything was logged to stdout.
+    */
+   memset (captured_logs, 0, buffer_size);
+   stdout = freopen ("/dev/null", "a", stdout);
+   setbuf (stdout, captured_logs);
+
+   status = mongocrypt_status_new ();
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   _mongocrypt_log (
+      &crypt->log, MONGOCRYPT_LOG_LEVEL_FATAL, "Please don't log");
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
+   BSON_ASSERT (strlen(captured_logs) == 0);
+   stdout = fdopen (saved_stdout, "w");
+}
+#endif
+
 void
 _mongocrypt_tester_install_log (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_log);
    INSTALL_TEST (_test_trace_log);
+#ifndef _WIN32
+   INSTALL_TEST (_test_no_log);
+#endif
 }

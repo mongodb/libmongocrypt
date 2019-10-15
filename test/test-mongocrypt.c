@@ -436,6 +436,7 @@ _mongocrypt_tester_mongocrypt (void)
    mongocrypt_binary_t *localkey;
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_log_handler (crypt, _mongocrypt_stdout_log_fn, NULL);
    mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1);
    localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
                                                sizeof localkey_data);
