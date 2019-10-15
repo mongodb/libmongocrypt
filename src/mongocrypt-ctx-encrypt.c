@@ -210,7 +210,7 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
       /* TODO: update cache: this schema does not require encryption. */
 
       /* If using a local schema, warn if there are no encrypted fields. */
-      if (!ectx->used_local_schema) {
+      if (ectx->used_local_schema) {
          _mongocrypt_log (
             &ctx->crypt->log,
             MONGOCRYPT_LOG_LEVEL_WARNING,
