@@ -4,7 +4,7 @@ The companion C library for client side encryption in drivers.
 ## Documentation ##
 See [The Integration Guide](integrating.md) to integrate with your driver.
 
-See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
+See [mongocrypt.h.in](src/mongocrypt.h.in) for the public API reference.
 The documentation can be rendered into HTML with doxygen. Run `doxygen ./doc/Doxygen`, then open `./doc/html/index.html`.
 
 ## Building libmongocrypt ##
@@ -67,7 +67,6 @@ The first version of FLE is to get signal. If FLE becomes popular, further impro
 
 ### Releasing ###
 Do the following when releasing:
-- Update `MONGOCRYPT_VERSION` in mongocrypt.h.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-beta123"`.
 - Commit, create a new git tag, like `1.0.0-beta123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-beta123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.

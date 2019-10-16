@@ -64,16 +64,23 @@ functions:
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
 
   "create packages and repos":
-    - command: expansions.update
-      params:
-        updates:
-        - key: mongocrypt_version_finder_sh
-          value: $(sed -nE 's/^#define MONGOCRYPT_VERSION "([^"]+)".*/\1/p' libmongocrypt/src/mongocrypt.h)
     - command: "shell.exec"
       params:
         script: |-
           set -o xtrace
           set -o errexit
+
+          # Find cmake.
+          if [ "$OS" == "Windows_NT" ]; then
+             CMAKE=/cygdrive/c/cmake/bin/cmake
+          else
+             chmod u+x ./mongo-c-driver/.evergreen/find-cmake.sh
+             . ./mongo-c-driver/.evergreen/find-cmake.sh
+          fi
+          # Get current version of libmongocrypt.
+          cd libmongocrypt
+          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          cd ..
 
           if [ "${has_packages|}" != "true" ] ; then
             echo "'has_packages' is not 'true', skipping package build"
@@ -102,8 +109,8 @@ functions:
             export PYTHONPATH="$PYTHONPATH:${workdir}/src"
           fi
 
-          pkg_version=${mongocrypt_version_finder_sh}
-          tar -zcv -C install --transform="s+^libmongocrypt/+libmongocrypt-$pkg_version/+" --exclude=nocrypto -f libmongocrypt-$pkg_version.tar.gz libmongocrypt
+          pkg_version=$mongocrypt_version
+          tar -zcv -C install --transform="s|^libmongocrypt/|libmongocrypt-$pkg_version/|" --exclude=nocrypto -f libmongocrypt-$pkg_version.tar.gz libmongocrypt
           cd libmongocrypt/etc/
           $python ./packager.py --prefix `pwd`/.. --distros ${packager_distro} --tarball `pwd`/../../libmongocrypt-$pkg_version.tar.gz --library-version $pkg_version --metadata-gitspec HEAD --arches ${packager_arch}
           cd ../..
@@ -493,11 +500,6 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "download distro package tarball"
-    - command: expansions.update
-      params:
-        updates:
-        - key: mongocrypt_version_finder_sh
-          value: $(sed -nE 's/^#define MONGOCRYPT_VERSION "([^"]+)".*/\1/p' src/mongocrypt.h)
     - func: "setup packaging credentials"
     - command: shell.exec
       params:
@@ -507,6 +509,16 @@ tasks:
           set -o xtrace
           set -o errexit
           set -o verbose
+
+          # Find cmake.
+          if [ "$OS" == "Windows_NT" ]; then
+            CMAKE=/cygdrive/c/cmake/bin/cmake
+          else
+            chmod u+x ../mongo-c-driver/.evergreen/find-cmake.sh
+            . ../mongo-c-driver/.evergreen/find-cmake.sh
+          fi
+          # Get the current version of libmongocrypt.
+          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
 
           if [ "${is_patch}" = "true" ]; then
             echo "patch build, skipping packaging publication"
@@ -518,7 +530,7 @@ tasks:
             exit 0
           fi
 
-          pkg_version=${mongocrypt_version_finder_sh}
+          pkg_version=$mongocrypt_version
           CURATOR_RELEASE=${curator_release|"latest"}
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz

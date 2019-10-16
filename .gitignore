@@ -28,3 +28,5 @@ src/mongocrypt-export.h
 
 # IDEs
 .idea/
+
+VERSION_CURRENT

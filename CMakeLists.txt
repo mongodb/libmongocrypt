@@ -11,6 +11,8 @@ set (CMAKE_C_STANDARD 99)
 
 option (ENABLE_SHARED_BSON "Dynamically link libbson (default is static)" OFF)
 
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+
 find_package (bson-1.0 1.11 REQUIRED)
 find_package ( Threads REQUIRED )
 
@@ -22,7 +24,6 @@ include (GNUInstallDirs)
 enable_testing()
 
 set (MONGOCRYPT_PUBLIC_HEADERS
-   src/mongocrypt.h
    src/mongocrypt-compat.h
 )
 
@@ -149,6 +150,7 @@ add_subdirectory (kms-message)
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
 target_include_directories (mongocrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (mongocrypt PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
+target_include_directories (mongocrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries (mongocrypt PRIVATE ${BSON_TARGET})
 target_link_libraries (mongocrypt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (mongocrypt PRIVATE kms_message_static)
@@ -158,6 +160,7 @@ generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_
 add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
 target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (mongocrypt_static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
+target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries (mongocrypt_static PRIVATE ${BSON_TARGET})
 target_link_libraries (mongocrypt_static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_compile_definitions (mongocrypt_static PUBLIC MONGOCRYPT_STATIC_DEFINE)
@@ -247,14 +250,33 @@ install (TARGETS mongocrypt mongocrypt_static
 install (
    FILES
       ${MONGOCRYPT_PUBLIC_HEADERS}
+      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt.h
       ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-export.h
    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt
    COMPONENT Devel
 )
 
-file (READ "${CMAKE_CURRENT_SOURCE_DIR}/src/mongocrypt.h" MONGOCRYPT_H)
-string (REGEX REPLACE ".*#define MONGOCRYPT_VERSION \"([^\"]+)\".*" \\1 MONGOCRYPT_VERSION ${MONGOCRYPT_H})
-set (PROJECT_VERSION "${MONGOCRYPT_VERSION}")
+set (BUILD_VERSION "0.0.0" CACHE STRING "Library version")
+
+if (BUILD_VERSION STREQUAL "0.0.0")
+   if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
+      file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
+      message ("file VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
+   else ()
+      include (GetVersion)
+      GetVersion (BUILD_VERSION)
+      message ("storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
+      file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
+   endif ()
+else ()
+   message ("storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
+   file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
+endif ()
+
+message ("Configuring libmongocrypt version ${BUILD_VERSION}")
+configure_file (src/mongocrypt.h.in src/mongocrypt.h)
+
+set (PROJECT_VERSION "${BUILD_VERSION}")
 set (PKG_CONFIG_REQUIRES_PRIVATE "libbson-1.0")
 set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
