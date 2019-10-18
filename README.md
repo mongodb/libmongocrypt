@@ -13,9 +13,8 @@ First build the following dependencies:
 
 1. [The BSON library (part of the C driver)](https://github.com/mongodb/mongo-c-driver), consisting of libbson. Build it from source.
    ```
-   wget https://github.com/mongodb/mongo-c-driver/releases/download/1.14.0/mongo-c-driver-1.14.0.tar.gz
-   tar xzf mongo-c-driver-1.14.0.tar.gz
-   cd mongo-c-driver-1.14.0
+   git clone git@github.com:mongodb/mongo-c-driver.git
+   cd mongo-c-driver
    mkdir cmake-build && cd cmake-build
    cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PATH="/path/to/bson-install" -DCMAKE_C_FLAGS="-fPIC" ../
    make -j8 install
