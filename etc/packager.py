@@ -77,11 +77,11 @@ class Spec(object):
 
     def is_rc(self):
         """Return True if rc."""
-        return bool(re.search(r"-rc\d+$", self.version()))
+        return bool(re.search(r"-rc\d+(\+[0-9]{8}git[0-9a-f]+)?$", self.version()))
 
     def is_beta(self):
         """Return True if beta."""
-        return bool(re.search(r"-beta\d+$", self.version()))
+        return bool(re.search(r"-beta\d+(\+[0-9]{8}git[0-9a-f]+)?$", self.version()))
 
     def is_pre_release(self):
         """Return True if pre-release."""
