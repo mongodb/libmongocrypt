@@ -169,6 +169,12 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                     MONGOCRYPT_STR_AND_LEN ("key"),
                                     ctx->opts.masterkey_aws_cmk,
                                     ctx->opts.masterkey_aws_cmk_len));
+      if (ctx->opts.masterkey_aws_endpoint) {
+         BSON_CHECK (bson_append_utf8 (&child,
+                                       MONGOCRYPT_STR_AND_LEN ("endpoint"),
+                                       ctx->opts.masterkey_aws_endpoint,
+                                       ctx->opts.masterkey_aws_endpoint_len))
+      }
    }
 
    if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
@@ -229,7 +235,8 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       _mongocrypt_buffer_t iv;
 
       if (ctx->opts.masterkey_aws_endpoint) {
-         _mongocrypt_ctx_fail_w_msg (ctx, "endpoint not supported for local masterkey");
+         _mongocrypt_ctx_fail_w_msg (
+            ctx, "endpoint not supported for local masterkey");
          goto done;
       }
 

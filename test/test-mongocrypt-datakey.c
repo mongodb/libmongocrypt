@@ -185,6 +185,8 @@ _test_datakey_custom_endpoint (_mongocrypt_tester_t *tester)
    mongocrypt_kms_ctx_t *kms_ctx;
    mongocrypt_binary_t *bin;
    const char *endpoint;
+   bson_t key_bson;
+   bson_iter_t iter;
 
    /* Success. */
    crypt = _mongocrypt_tester_mongocrypt ();
@@ -203,6 +205,19 @@ _test_datakey_custom_endpoint (_mongocrypt_tester_t *tester)
    bin = mongocrypt_binary_new ();
    ASSERT_OK (mongocrypt_kms_ctx_message (kms_ctx, bin), ctx);
    BSON_ASSERT (NULL != strstr ((char *) bin->data, "Host:example.com"));
+   ASSERT_OK (mongocrypt_kms_ctx_feed (
+                 kms_ctx, TEST_FILE ("./test/data/kms-encrypt-reply.txt")),
+              kms_ctx);
+   BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms_ctx));
+   ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
+
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
+   /* Check the BSON document created. */
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &key_bson));
+   BSON_ASSERT (bson_iter_init (&iter, &key_bson));
+   BSON_ASSERT (bson_iter_find_descendant (&iter, "masterKey.endpoint", &iter));
+   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&iter, NULL), "example.com"));
 
    mongocrypt_binary_destroy (bin);
    mongocrypt_ctx_destroy (ctx);
