@@ -52,7 +52,7 @@ function (GetVersion OUTVAR)
 
     string (TIMESTAMP SUFFIX_DATE "%Y%m%d")
 
-    set (${OUTVAR} "${VERSION}+${SUFFIX_DATE}+git${SUFFIX_SHA}" PARENT_SCOPE)
+    set (${OUTVAR} "${VERSION}+${SUFFIX_DATE}git${SUFFIX_SHA}" PARENT_SCOPE)
 
 endfunction (GetVersion)
 
