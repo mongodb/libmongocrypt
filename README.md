@@ -110,3 +110,118 @@ Do the following when releasing:
 - Commit, create a new git tag, like `1.0.0-rc123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
 - Commit and push.
+
+## Installing libmongocrypt From Distribution Packages ##
+Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.
+
+### .deb Packages (Debian and Ubuntu) ###
+
+First, import the public key used to sign the package repositories:
+
+```
+sudo sh -c 'curl -s https://www.mongodb.org/static/pgp/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
+```
+
+Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial` or `bionic`, as appropriate to your system):
+
+```
+echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.0 universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
+```
+
+For Debian systems (be sure to change `<release>` to `stretch` or `buster`, as appropriate to your system):
+
+```
+echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/1.0 main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
+```
+
+Third, update the package cache:
+
+```
+sudo apt-get update
+```
+
+Finally, install the libmongocrypt packages:
+
+```
+sudo apt-get install -y libmongocrypt-dev
+```
+
+### .rpm Packages (RedHat, Suse, and Amazon) ###
+
+
+#### RedHat Enterprise Linux ####
+
+Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
+
+```
+[libmongocrypt]
+name=libmongocrypt repository
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.0/x86_64
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+```
+
+Then install the libmongocrypt packages:
+
+```
+sudo yum install -y libmongocrypt
+```
+
+#### Amazon Linux 2 ####
+
+Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
+
+```
+[libmongocrypt]
+name=libmongocrypt repository
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.0/x86_64
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+```
+
+Then install the libmongocrypt packages:
+
+```
+sudo yum install -y libmongocrypt
+```
+
+#### Amazon Linux ####
+
+Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
+
+```
+[libmongocrypt]
+name=libmongocrypt repository
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.0/x86_64
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+```
+
+Then install the libmongocrypt packages:
+
+```
+sudo yum install -y libmongocrypt
+```
+
+#### Suse ####
+
+First, import the public key used to sign the package repositories:
+
+```
+sudo rpm --import https://www.mongodb.org/static/pgp/libmongocrypt.asc
+```
+
+Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):
+
+```
+sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/1.0/x86_64" libmongocrypt
+```
+
+Finally, install the libmongocrypt packages:
+
+```
+sudo zypper -n install libmongocrypt
+```
