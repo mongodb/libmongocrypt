@@ -85,6 +85,9 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_ctx_setopt_masterkey_aws = new Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_aws>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_masterkey_aws>(
                     ("mongocrypt_ctx_setopt_masterkey_aws")), true);
+            _mongocrypt_ctx_setopt_masterkey_aws_endpoint = new Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_aws_endpoint>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_masterkey_aws_endpoint>(
+                    ("mongocrypt_ctx_setopt_masterkey_aws_endpoint")), true);
             _mongocrypt_ctx_setopt_masterkey_local = new Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_local>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_masterkey_local>(
                     ("mongocrypt_ctx_setopt_masterkey_local")), true);
@@ -169,7 +172,7 @@ namespace MongoDB.Libmongocrypt
         }
 
         internal static Delegates.mongocrypt_version mongocrypt_version => _mongocrypt_version.Value;
-        
+
         internal static Delegates.mongocrypt_new mongocrypt_new => _mongocrypt_new.Value;
         internal static Delegates.mongocrypt_setopt_log_handler mongocrypt_setopt_log_handler => _mongocrypt_setopt_log_handler.Value;
         internal static Delegates.mongocrypt_setopt_kms_provider_aws mongocrypt_setopt_kms_provider_aws => _mongocrypt_setopt_kms_provider_aws.Value;
@@ -197,6 +200,7 @@ namespace MongoDB.Libmongocrypt
 
         internal static Delegates.mongocrypt_ctx_new mongocrypt_ctx_new => _mongocrypt_ctx_new.Value;
         internal static Delegates.mongocrypt_ctx_setopt_masterkey_aws mongocrypt_ctx_setopt_masterkey_aws => _mongocrypt_ctx_setopt_masterkey_aws.Value;
+        internal static Delegates.mongocrypt_ctx_setopt_masterkey_aws_endpoint mongocrypt_ctx_setopt_masterkey_aws_endpoint => _mongocrypt_ctx_setopt_masterkey_aws_endpoint.Value;
         internal static Delegates.mongocrypt_ctx_status mongocrypt_ctx_status => _mongocrypt_ctx_status.Value;
         internal static Delegates.mongocrypt_ctx_encrypt_init mongocrypt_ctx_encrypt_init => _mongocrypt_ctx_encrypt_init.Value;
         internal static Delegates.mongocrypt_ctx_decrypt_init mongocrypt_ctx_decrypt_init => _mongocrypt_ctx_decrypt_init.Value;
@@ -222,7 +226,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_ctx_kms_done mongocrypt_ctx_kms_done => _mongocrypt_ctx_kms_done.Value;
         internal static Delegates.mongocrypt_ctx_finalize mongocrypt_ctx_finalize => _mongocrypt_ctx_finalize.Value;
         internal static Delegates.mongocrypt_ctx_destroy mongocrypt_ctx_destroy => _mongocrypt_ctx_destroy.Value;
-        
+
         private static readonly Lazy<LibraryLoader> __loader = new Lazy<LibraryLoader>(
             () => new LibraryLoader(), true);
         private static readonly Lazy<Delegates.mongocrypt_version> _mongocrypt_version;
@@ -256,6 +260,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_new> _mongocrypt_ctx_new;
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_aws> _mongocrypt_ctx_setopt_masterkey_aws;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_aws_endpoint> _mongocrypt_ctx_setopt_masterkey_aws_endpoint;
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_status> _mongocrypt_ctx_status;
         private static readonly Lazy<Delegates.mongocrypt_ctx_encrypt_init> _mongocrypt_ctx_encrypt_init;
@@ -358,6 +363,11 @@ namespace MongoDB.Libmongocrypt
             [return: MarshalAs(UnmanagedType.I1),]
             public delegate bool mongocrypt_ctx_setopt_masterkey_aws(ContextSafeHandle handle, IntPtr region,
                 int region_len, IntPtr cmk, int cmk_len);
+            [return: MarshalAs(UnmanagedType.I1),]
+            public delegate bool mongocrypt_ctx_setopt_masterkey_aws_endpoint(
+                ContextSafeHandle handle,
+                IntPtr endpoint,
+                int endpoint_len);
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_status(ContextSafeHandle handle, StatusSafeHandle status);

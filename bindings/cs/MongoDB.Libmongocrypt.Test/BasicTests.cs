@@ -261,6 +261,50 @@ namespace MongoDB.Libmongocrypt.Test
         }
 
         [Fact]
+        public void TestAwsKeyCreationWithEndPoint()
+        {
+            var endpoint = "kms.us-east-1.amazonaws.com";
+            var keyId = new AwsKeyId(
+                customerMasterKey: "cmk",
+                region: "us-east-1",
+                endpoint: endpoint);
+            var key = new AwsKmsCredentials(awsSecretAccessKey: "us-east-1", awsAccessKeyId: "us-east-1");
+
+            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(CreateCredentialsMap(key))))
+            using (var context = cryptClient.StartCreateDataKeyContext(keyId))
+            {
+                var (_, dataKeyDocument) = ProcessContextToCompletion(context, isKmsDecrypt: false);
+                dataKeyDocument["masterKey"]["endpoint"].Should().Be(endpoint);
+            }
+        }
+
+        [Fact]
+        public void TestAwsKeyCreationWithEndpointStepwise()
+        {
+            var endpoint = "kms.us-east-1.amazonaws.com";
+            var keyId = new AwsKeyId(
+                customerMasterKey: "cmk",
+                region: "us-east-1",
+                endpoint: endpoint);
+            var key = new AwsKmsCredentials(awsSecretAccessKey: "us-east-1", awsAccessKeyId: "us-east-1");
+
+            using (var cryptClient = CryptClientFactory.Create(new CryptOptions(CreateCredentialsMap(key))))
+            using (var context = cryptClient.StartCreateDataKeyContext(keyId))
+            {
+                BsonDocument dataKeyDocument;
+                var (state, _, _) = ProcessState(context, isKmsDecrypt: false);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_NEED_KMS);
+
+                (state, _, dataKeyDocument) = ProcessState(context, isKmsDecrypt: false);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_READY);
+                dataKeyDocument["masterKey"]["endpoint"].Should().Be(endpoint);
+
+                (state, _, _) = ProcessState(context, isKmsDecrypt: false);
+                state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_DONE);
+            }
+        }
+
+        [Fact]
         public void TestAwsKeyCreationWithkeyAltNames()
         {
             var keyAltNames = new[] { "KeyMaker", "Architect" };

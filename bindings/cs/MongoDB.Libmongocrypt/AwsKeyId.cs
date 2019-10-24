@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -25,19 +24,6 @@ namespace MongoDB.Libmongocrypt
     /// <summary>Contains all the information needed to find a AWS KMS CMK.</summary>
     public class AwsKeyId : IKmsKeyId, IInternalKmsKeyId
     {
-
-        /// <summary>
-        /// Creates an <see cref="AwsKeyId"/> class.
-        /// </summary>
-        /// <param name="customerMasterKey">The Amazon Resource Name (ARN) of the customer master key.</param>
-        /// <param name="region">The region.</param>
-        public AwsKeyId(string customerMasterKey, string region)
-        {
-            Region = region;
-            CustomerMasterKey = customerMasterKey;
-            AlternateKeyNameBsonDocuments = new List<byte[]>().AsReadOnly();
-        }
-
         /// <summary>
         /// Creates an <see cref="AwsKeyId"/> class.
         /// </summary>
@@ -46,11 +32,17 @@ namespace MongoDB.Libmongocrypt
         /// <param name="alternateKeyNamesBsonDocuments">The alternate key names.
         /// Each byte array describes an alternative key name via a BsonDocument in the following format:
         ///  { "keyAltName" : [BSON UTF8 value] }</param>
-        public AwsKeyId(string customerMasterKey, string region, IEnumerable<byte[]> alternateKeyNamesBsonDocuments)
+        /// <param name="endpoint">The endpoint.</param>
+        public AwsKeyId(
+            string customerMasterKey,
+            string region,
+            IEnumerable<byte[]> alternateKeyNamesBsonDocuments = null,
+            string endpoint = null)
         {
-            Region = region;
             CustomerMasterKey = customerMasterKey;
-            AlternateKeyNameBsonDocuments = alternateKeyNamesBsonDocuments.ToList().AsReadOnly();
+            Region = region;
+            AlternateKeyNameBsonDocuments = (alternateKeyNamesBsonDocuments ?? Enumerable.Empty<byte[]>()).ToList().AsReadOnly();
+            Endpoint = endpoint;
         }
 
         /// <inheritdoc />
@@ -63,6 +55,14 @@ namespace MongoDB.Libmongocrypt
         /// The Amazon Resource Name (ARN) of the customer master key.
         /// </value>
         public string CustomerMasterKey { get; }
+
+        /// <summary>
+        /// Gets the alternate host to send KMS requests to. May include port number.
+        /// </summary>
+        /// <value>
+        /// The alternate host to send KMS requests to. May include port number.
+        /// </value>
+        public string Endpoint { get; }
 
         /// <inheritdoc />
         public KmsType KeyType => KmsType.Aws;
@@ -78,24 +78,41 @@ namespace MongoDB.Libmongocrypt
 
             try
             {
-                IntPtr keyPointer = (IntPtr)Marshal.StringToHGlobalAnsi(CustomerMasterKey);
+                IntPtr customerMasterKeyPointer = (IntPtr)Marshal.StringToHGlobalAnsi(CustomerMasterKey);
                 try
                 {
                     // Let mongocrypt run strlen
                     context.Check(
                         status,
-                        Library.mongocrypt_ctx_setopt_masterkey_aws(context, regionPointer, -1, keyPointer, -1));
-                    ((IInternalKmsKeyId) this).SetAlternateKeyNames(context, status);
+                        Library.mongocrypt_ctx_setopt_masterkey_aws(context, regionPointer, -1, customerMasterKeyPointer, -1));
                 }
                 finally
                 {
-                    Marshal.FreeHGlobal(keyPointer);
+                    Marshal.FreeHGlobal(customerMasterKeyPointer);
                 }
             }
             finally
             {
                 Marshal.FreeHGlobal(regionPointer);
             }
+
+            if (Endpoint != null)
+            {
+                IntPtr endPointKeyPointer = (IntPtr)Marshal.StringToHGlobalAnsi(Endpoint);
+                try
+                {
+                    // Let mongocrypt run strlen
+                    context.Check(
+                        status,
+                        Library.mongocrypt_ctx_setopt_masterkey_aws_endpoint(context, endPointKeyPointer, -1));
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(endPointKeyPointer);
+                }
+            }
+
+            ((IInternalKmsKeyId)this).SetAlternateKeyNames(context, status);
         }
 
         /// <inheritdoc />
