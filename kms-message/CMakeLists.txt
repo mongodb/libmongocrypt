@@ -16,11 +16,13 @@ set (KMS_MESSAGE_SOURCES
    src/hexlify.c
    src/hexlify.h
    src/kms_crypto.h
+   src/kms_caller_identity_request.c
    src/kms_decrypt_request.c
    src/kms_encrypt_request.c
    src/kms_kv_list.c
    src/kms_kv_list.h
    src/kms_message.c
+   src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
    src/kms_message/kms_message.h

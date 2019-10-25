@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2019-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef KMS_MESSAGE_H
-#define KMS_MESSAGE_H
+#ifndef KMS_CALLER_IDENTITY_REQUEST_H
+#define KMS_CALLER_IDENTITY_REQUEST_H
 
-#include "kms_message_defines.h"
-#include "kms_request_opt.h"
-#include "kms_request.h"
-#include "kms_response.h"
-#include "kms_response_parser.h"
-#include "kms_caller_identity_request.h"
-#include "kms_decrypt_request.h"
-#include "kms_encrypt_request.h"
+#include "kms_message.h"
 
-#endif /* KMS_MESSAGE_H */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+KMS_MSG_EXPORT (kms_request_t *)
+kms_caller_identity_request_new (const kms_request_opt_t *opt);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+
+#endif /* KMS_CALLER_IDENTITY_REQUEST_H */
