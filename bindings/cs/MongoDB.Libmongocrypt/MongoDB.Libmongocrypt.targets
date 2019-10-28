@@ -6,9 +6,5 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>mongocrypt.dll</Link>
         </Content>
-        <Content Include="$(MSBuildThisFileDirectory)../x64/native/windows/mongocrypt.pdb">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>mongocrypt.pdb</Link>
-        </Content>
     </ItemGroup>
 </Project>

@@ -69,13 +69,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="$(LibMongoCryptBinaries)/mongocrypt.pdb">
-      <Pack>true</Pack>
-      <PackagePath>x64/native/windows</PackagePath>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="License.txt">
       <Pack>true</Pack>
       <PackagePath>$(PackageLicenseFile)</PackagePath>
