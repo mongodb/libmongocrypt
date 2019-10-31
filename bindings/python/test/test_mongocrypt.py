@@ -209,8 +209,10 @@ class MockCallback(MongoCryptCallback):
         self.mongocryptd_reply = mongocryptd_reply
         self.key_docs = key_docs
         self.kms_reply = kms_reply
+        self.kms_endpoint = None
 
     def kms_request(self, kms_context):
+        self.kms_endpoint = kms_context.endpoint
         kms_context.feed(self.kms_reply)
 
     def collection_info(self, ns, filter):
@@ -338,6 +340,15 @@ class TestExplicitEncryption(unittest.TestCase):
             # CDRIVER-3277 The order of key_alt_names is not maintained.
             for name in key_alt_names:
                 self.assertIn(name, data_key['keyAltNames'])
+
+        # Assert that q custom endpoint is passed to libmongocrypt correctly.
+        master_key = {
+            "region": "region",
+            "key": "key",
+            "endpoint": "example.com"
+        }
+        encrypter.create_data_key("aws", master_key=master_key)
+        self.assertEqual("example.com", mock_key_vault.kms_endpoint)
 
 
 def read(filename, **kwargs):
