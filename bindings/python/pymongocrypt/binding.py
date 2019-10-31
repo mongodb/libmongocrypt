@@ -50,7 +50,8 @@ ffi.cdef("""
 
 /**
  * @def MONGOCRYPT_VERSION
- * The version string x.y.z or x.y.z-pre for libmongocrypt
+ * The version string describing libmongocrypt.
+ * Has the form x.y.z-<pre>+<date>+git<sha>.
  */
 
 /**
@@ -177,9 +178,12 @@ mongocrypt_status_new (void);
  * @param[in] type The status type.
  * @param[in] code The status code.
  * @param[in] message The message.
- * @param[in] message_len The length of @p message. Pass -1 to determine the
- * string length with strlen (must
- * be NULL terminated).
+ * @param[in] message_len Due to historical behavior, pass 1 + the string length
+ * of @p message (which differs from other functions accepting string
+ * arguments).
+ * Alternatively, if message is NULL terminated this may be -1 to tell
+ * mongocrypt
+ * to determine the string's length with strlen.
  *
  */
 void
@@ -213,7 +217,8 @@ mongocrypt_status_code (mongocrypt_status_t *status);
  * Get the error message associated with a status or NULL.
  *
  * @param[in] status The status object.
- * @param[out] len An optional length of the returned string. May be NULL.
+ * @param[out] len An optional length of the returned string (excluding the
+ * trailing NULL byte). May be NULL.
  *
  * @returns A NULL terminated error message or NULL.
  */
@@ -436,8 +441,10 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
  * It is an error to set both this and the key alt name.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] key_id The key_id to use. The viewed data is copied. It is valid
- * to destroy @p key_id with @ref mongocrypt_binary_destroy immediately after.
+ * @param[in] key_id The binary corresponding to the _id (a UUID) of the data
+ * key to use from the key vault collection. Note, the UUID must be encoded with
+ * RFC-4122 byte order. The viewed data is copied. It is valid to destroy
+ * @p key_id with @ref mongocrypt_binary_destroy immediately after.
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -520,6 +527,25 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
                                      int32_t cmk_len);
 
 /**
+ * Identify a custom AWS endpoint when creating a data key.
+ * This is used internally to construct the correct HTTP request
+ * (with the Host header set to this endpoint). This endpoint
+ * is persisted in the new data key, and will be returned via
+ * @ref mongocrypt_kms_ctx_endpoint.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] endpoint The endpoint.
+ * @param[in] endpoint_len The string length of @p endpoint. Pass -1 to
+ * determine the string length with strlen (must be NULL terminated).
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+bool
+mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
+                                              const char *endpoint,
+                                              int32_t endpoint_len);
+
+/**
  * Set the master key to "local" for creating a data key.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
@@ -535,6 +561,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  *
  * Associated options:
  * - @ref mongocrypt_ctx_setopt_masterkey_aws
+ * - @ref mongocrypt_ctx_setopt_masterkey_aws_endpoint
  * - @ref mongocrypt_ctx_setopt_masterkey_local
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
@@ -670,14 +697,18 @@ bool
 mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
 
 /**
- * Feed a BSON reply or result when when mongocrypt_ctx_t is in
+ * Feed a BSON reply or result when mongocrypt_ctx_t is in
  * MONGOCRYPT_CTX_NEED_MONGO_* states. This may be called multiple times
  * depending on the operation.
  *
- * op_bson is a BSON document to be used for the operation.
+ * reply is a BSON document result being fed back for this operation.
  * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a doc from a listCollections
- * cursor.
+ * cursor. (Note, if listCollections returned no result, do not call this
+ * function.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a doc from a find cursor.
+ *   (Note, if find returned no results, do not call this function. reply must
+ * not
+ *   be NULL.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a reply from mongocryptd.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
@@ -745,7 +776,9 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * is valid until calling @ref mongocrypt_ctx_kms_done.
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
- * @param[out] endpoint The output hostname as a NULL terminated string.
+ * @param[out] endpoint The output hostname as a NULL terminated string. This
+ * may include a port (e.g. "example.com:123"). If it does not, default to port
+ * 443.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -804,9 +837,27 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * Perform the final encryption or decryption.
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
- * @param[out] out The final BSON to send to the server. The data viewed by @p
- * out is guaranteed to be valid until @p ctx is destroyed with @ref
- * mongocrypt_ctx_destroy.
+ * @param[out] out The final BSON. The data viewed by @p out is guaranteed
+ * to be valid until @p ctx is destroyed with @ref mongocrypt_ctx_destroy.
+ * The meaning of this BSON depends on the type of @p ctx.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_encrypt_init, then
+ * this BSON is the (possibly) encrypted command to send to the server.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_decrypt_init, then
+ * this BSON is the decrypted result to return to the user.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_explicit_encrypt_init,
+ * then this BSON has the form { "v": (BSON binary) } where the BSON binary
+ * is the resulting encrypted value.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_explicit_decrypt_init,
+ * then this BSON has the form { "v": (BSON value) } where the BSON value
+ * is the resulting decrypted value.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_datakey_init, then
+ * this BSON is the document containing the new data key to be inserted into
+ * the key vault collection.
  *
  * @returns a bool indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status

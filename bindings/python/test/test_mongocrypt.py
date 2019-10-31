@@ -325,6 +325,9 @@ class TestExplicitEncryption(unittest.TestCase):
             ('aws', {'region': 'region', 'key': 'cmk'}, ['third', 'forth']),
             # Unicode region and key
             ('aws', {'region': u'region-unicode', 'key': u'cmk-unicode'}, []),
+            # Endpoint
+            ('aws', {'region': 'region', 'key': 'cmk',
+                     'endpoint': 'kms.us-east-1.amazonaws.com:443'}, []),
         ]
         for kms_provider, master_key, key_alt_names in valid_args:
             key_id = encrypter.create_data_key(
