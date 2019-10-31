@@ -69,8 +69,7 @@ module.exports = function(modules) {
    */
   class StateMachine {
     constructor(options) {
-      options = options || {};
-      this.userBsonOptions = options.userBsonOptions || undefined;
+      this.options = options || {};
     }
 
     /**
@@ -188,7 +187,7 @@ module.exports = function(modules) {
             callback(new MongoCryptError(message));
             return;
           }
-          callback(null, bson.deserialize(finalizedContext, this.userBsonOptions));
+          callback(null, bson.deserialize(finalizedContext, this.options));
           return;
         }
         case MONGOCRYPT_CTX_ERROR: {
@@ -294,7 +293,7 @@ module.exports = function(modules) {
           return;
         }
 
-        callback(err, bson.serialize(response, this.userBsonOptions));
+        callback(err, bson.serialize(response, this.options));
       });
     }
 

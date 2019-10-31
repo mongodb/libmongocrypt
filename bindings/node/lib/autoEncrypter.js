@@ -169,7 +169,7 @@ module.exports = function(modules) {
       context.ns = ns;
       context.document = cmd;
 
-      const stateMachine = new StateMachine({ userBsonOptions: options });
+      const stateMachine = new StateMachine(options);
       stateMachine.execute(this, context, callback);
     }
 
@@ -200,7 +200,7 @@ module.exports = function(modules) {
       // TODO: should this be an accessor from the addon?
       context.id = this._contextCounter++;
 
-      const stateMachine = new StateMachine({ userBsonOptions: options });
+      const stateMachine = new StateMachine(options);
       stateMachine.execute(this, context, callback);
     }
   }
