@@ -212,7 +212,9 @@ module.exports = function(modules) {
      * @returns {Promise<void>} A promise that resolves when the KMS reply has be fully parsed
      */
     kmsRequest(request) {
-      const options = { host: request.endpoint, port: HTTPS_PORT };
+      const parsedUrl = request.endpoint.split(':');
+      const port = parsedUrl[1] != null ? Number.parseInt(parsedUrl[1], 10) : HTTPS_PORT;
+      const options = { host: parsedUrl[0], port };
       const message = request.message;
 
       return new Promise((resolve, reject) => {
@@ -229,7 +231,9 @@ module.exports = function(modules) {
         socket.once('error', err => {
           socket.removeAllListeners();
           socket.destroy();
-          reject(err);
+          const mcError = new MongoCryptError('KMS request failed');
+          mcError.originalError = err;
+          reject(mcError);
         });
 
         socket.on('data', buffer => {

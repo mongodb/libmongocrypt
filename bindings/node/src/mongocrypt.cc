@@ -682,6 +682,16 @@ NAN_METHOD(MongoCrypt::MakeDataKeyContext) {
             Nan::ThrowTypeError(errorStringFromStatus(context.get()));
             return;
         }
+
+        v8::Local<v8::String> ENDPOINT_KEY = Nan::New("endpoint").ToLocalChecked();
+        if (Nan::Has(masterKey, ENDPOINT_KEY).FromMaybe(false)) {
+            std::string endpoint = StringOptionValue(masterKey, "endpoint");
+            if (!mongocrypt_ctx_setopt_masterkey_aws_endpoint(context.get(), endpoint.c_str(), endpoint.size())) {
+                Nan::ThrowTypeError(errorStringFromStatus(context.get()));
+                return;
+            }
+        }
+
     } else if (kmsProvider == "local") {
         mongocrypt_ctx_setopt_masterkey_local(context.get());
     } else {

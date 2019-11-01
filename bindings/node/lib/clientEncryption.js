@@ -121,6 +121,7 @@ module.exports = function(modules) {
      * @param {object} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key. If the kmsProvider is "aws" it is required.
      * @param {string} [options.masterKey.region] The AWS region of the KMS
      * @param {string} [options.masterKey.key] The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
+     * @param {string} [options.masterKey.endpoint] An alternate host to send KMS requests to. May include port number.
      * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
      * @param {ClientEncryption~createDataKeyCallback} [callback] Optional callback to invoke when key is created
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the created data key, or rejects with an error. If a callback is provided, returns nothing.
