@@ -177,7 +177,7 @@ module.exports = function(modules) {
           this._client
             .db(dbName)
             .collection(collectionName)
-            .insertOne(dataKey, (err, result) => {
+            .insertOne(dataKey, { w: 'majority' }, (err, result) => {
               if (err) {
                 cb(err, null);
                 return;
