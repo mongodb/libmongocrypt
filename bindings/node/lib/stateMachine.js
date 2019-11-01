@@ -68,6 +68,10 @@ module.exports = function(modules) {
    * @class StateMachine
    */
   class StateMachine {
+    constructor(options) {
+      this.options = options || {};
+    }
+
     /**
      * @ignore
      * Executes the state machine according to the specification
@@ -183,7 +187,7 @@ module.exports = function(modules) {
             callback(new MongoCryptError(message));
             return;
           }
-          callback(null, bson.deserialize(finalizedContext));
+          callback(null, bson.deserialize(finalizedContext, this.options));
           return;
         }
         case MONGOCRYPT_CTX_ERROR: {
@@ -281,7 +285,7 @@ module.exports = function(modules) {
     markCommand(client, ns, command, callback) {
       const bson = client.topology.bson;
       const dbName = databaseNamespace(ns);
-      const rawCommand = bson.deserialize(command);
+      const rawCommand = bson.deserialize(command, { promoteLongs: false, promoteValues: false });
 
       client.db(dbName).command(rawCommand, (err, response) => {
         if (err) {
@@ -289,7 +293,7 @@ module.exports = function(modules) {
           return;
         }
 
-        callback(err, bson.serialize(response));
+        callback(err, bson.serialize(response, this.options));
       });
     }
 

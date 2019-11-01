@@ -139,7 +139,7 @@ module.exports = function(modules) {
      * @param {object} cmd The command to encrypt
      * @param {Function} callback
      */
-    encrypt(ns, cmd, callback) {
+    encrypt(ns, cmd, options, callback) {
       if (typeof ns !== 'string') {
         throw new TypeError('Parameter `ns` must be a string');
       }
@@ -148,8 +148,13 @@ module.exports = function(modules) {
         throw new TypeError('Parameter `cmd` must be an object');
       }
 
+      if (typeof options === 'function' && callback == null) {
+        callback = options;
+        options = {};
+      }
+
       const bson = this._bson;
-      const commandBuffer = Buffer.isBuffer(cmd) ? cmd : bson.serialize(cmd);
+      const commandBuffer = Buffer.isBuffer(cmd) ? cmd : bson.serialize(cmd, options);
 
       let context;
       try {
@@ -164,7 +169,7 @@ module.exports = function(modules) {
       context.ns = ns;
       context.document = cmd;
 
-      const stateMachine = new StateMachine();
+      const stateMachine = new StateMachine(options);
       stateMachine.execute(this, context, callback);
     }
 
@@ -175,9 +180,14 @@ module.exports = function(modules) {
      * @param {Buffer} buffer
      * @param {Function} callback
      */
-    decrypt(response, callback) {
+    decrypt(response, options, callback) {
+      if (typeof options === 'function' && callback == null) {
+        callback = options;
+        options = {};
+      }
+
       const bson = this._bson;
-      const buffer = Buffer.isBuffer(response) ? response : bson.serialize(response);
+      const buffer = Buffer.isBuffer(response) ? response : bson.serialize(response, options);
 
       let context;
       try {
@@ -190,7 +200,7 @@ module.exports = function(modules) {
       // TODO: should this be an accessor from the addon?
       context.id = this._contextCounter++;
 
-      const stateMachine = new StateMachine();
+      const stateMachine = new StateMachine(options);
       stateMachine.execute(this, context, callback);
     }
   }
