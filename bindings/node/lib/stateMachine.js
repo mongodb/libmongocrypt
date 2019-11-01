@@ -315,7 +315,7 @@ module.exports = function(modules) {
 
       client
         .db(dbName)
-        .collection(collectionName)
+        .collection(collectionName, { readConcern: { level: 'majority' } })
         .find(filter)
         .toArray((err, keys) => {
           if (err) {
