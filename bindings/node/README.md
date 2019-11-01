@@ -217,6 +217,7 @@ new ClientEncryption(mongoClient, {
 | [options.masterKey] | <code>object</code> | Idenfities a new KMS-specific key used to encrypt the new data key. If the kmsProvider is "aws" it is required. |
 | [options.masterKey.region] | <code>string</code> | The AWS region of the KMS |
 | [options.masterKey.key] | <code>string</code> | The Amazon Resource Name (ARN) to the AWS customer master key (CMK) |
+| [options.masterKey.endpoint] | <code>string</code> | An alternate host to send KMS requests to. May include port number. |
 | [options.keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id. |
 | [callback] | [<code>createDataKeyCallback</code>](#ClientEncryption..createDataKeyCallback) | Optional callback to invoke when key is created |
 
