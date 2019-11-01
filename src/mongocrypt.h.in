@@ -521,7 +521,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
  *
  * Valid values for algorithm are:
  *   "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
- *   "AEAD_AES_256_CBC_HMAC_SHA_512-Randomized"
+ *   "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] algorithm A string specifying the algorithm to
