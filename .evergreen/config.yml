@@ -461,16 +461,9 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "ubuntu1604-arm64" }
     - func: "download tarball"
-      vars: { variant_name: "ubuntu1604-s390x" }
-    - func: "download tarball"
       vars: { variant_name: "ubuntu1804-64" }
     - func: "download tarball"
       vars: { variant_name: "ubuntu1804-arm64" }
-    # TODO: ubuntu1804 is not getting scheduled, so omit.
-    # - func: "download tarball"
-    #   vars: { variant_name: "ubuntu1804-ppc64el" }
-    # - func: "download tarball"
-    #   vars: { variant_name: "ubuntu1804-s390x" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-all.tar.gz
@@ -536,6 +529,70 @@ tasks:
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           ./curator repo --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --packages repo
 
+- name: windows-upload-check
+  depends_on: build-and-test-and-upload
+  commands:
+    - func: "fetch source"
+    - command: shell.exec
+      params:
+        working_dir: libmongocrypt
+        script: |-
+          set -o xtrace
+          set -o errexit
+
+          CMAKE=/cygdrive/c/cmake/bin/cmake
+          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          case "$mongocrypt_version" in 
+            *+*)
+              # Not a tagged release.
+              echo "{}" > ./.evergreen/windows-upload.json
+              ;;
+            *)
+              # It is a tagged release.
+              cp ./.evergreen/windows-upload-doit.json ./.evergreen/windows-upload.json
+              ;;
+          esac
+    - command: generate.tasks
+      params:
+        files:
+          - libmongocrypt/.evergreen/windows-upload.json
+
+- name: windows-upload
+  commands:
+    - command: s3.get
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/windows-test/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        bucket: mciuploads
+        extract_to: libmongocrypt_download
+    - command: shell.exec
+      params:
+        script: |-
+          set -o xtrace
+          set -o errexit
+
+          # Move just the mongocrypt files needed into the final upload
+          mkdir libmongocrypt_upload
+          mkdir libmongocrypt_upload/bin
+          mkdir libmongocrypt_upload/include
+          mv libmongocrypt_download/bin/mongocrypt.dll libmongocrypt_upload/bin/mongocrypt.dll
+          mv libmongocrypt_download/include/mongocrypt libmongocrypt_upload/include
+    - command: archive.targz_pack
+      params:
+        target: libmongocrypt_upload.tar.gz
+        source_dir: libmongocrypt_upload
+        include: [./**]
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/windows/latest_release/libmongocrypt.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt_upload.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
   - command: "shell.exec"
@@ -546,16 +603,12 @@ pre:
           # patch build.
           REMOTE_SUFFIX="${revision}/${version_id}"
           REMOTE_SUFFIX_COPY="latest/${version_id}"
-        elif [ -z "${tag_name}" ]; then
+        else
           # waterfall build, no tag.
           REMOTE_SUFFIX="${revision}"
           REMOTE_SUFFIX_COPY="latest"
-        else
-          # waterfall build, with tag.
-          REMOTE_SUFFIX="${revision}"
-          REMOTE_SUFFIX_COPY="${tag_name}"
         fi
-        unset tag_name
+
         PROJECT_DIRECTORY="$(pwd)"
         echo "libmongocrypt_s3_suffix: $REMOTE_SUFFIX"
         echo "libmongocrypt_s3_suffix_copy: $REMOTE_SUFFIX_COPY"
@@ -627,6 +680,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-csharp-and-test
   - build-and-test-python
+  - windows-upload-check
 - name: linux-64-amazon-ami
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test
