@@ -48,7 +48,7 @@ xcode-select --install
 
 Then clone and build libmongocrypt:
 ```
-git clone git@github.com:mongodb/libmongocrypt.git
+git clone https://github.com/mongodb/libmongocrypt.git
 cd libmongocrypt
 cmake -DENABLE_SHARED_BSON=ON .
 cmake --build . --target install
