@@ -13,7 +13,7 @@ describe('StateMachine', function() {
       constructor(message, bytesNeeded) {
         this._bytesNeeded = typeof bytesNeeded === 'number' ? bytesNeeded : 1024;
         this._message = message;
-        this.endPoint = 'some.fake.host.com';
+        this.endpoint = 'some.fake.host.com';
       }
       get message() {
         return this._message;
