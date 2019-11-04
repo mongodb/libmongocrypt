@@ -27,6 +27,12 @@
       <PackagePath>x64/native/windows/mongocrypt.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
+
+    <Content Include="@mongocrypt_BINARY_DIR@/RelWithDebInfo/mongocrypt.dll" Condition="Exists('@mongocrypt_BINARY_DIR@/RelWithDebInfo/mongocrypt.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>x64/native/windows/mongocrypt.dll</PackagePath>
+      <Pack>true</Pack>
+    </Content>
   </ItemGroup>
 
 </Project>
