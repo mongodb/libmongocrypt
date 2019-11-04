@@ -341,7 +341,7 @@ class TestExplicitEncryption(unittest.TestCase):
             for name in key_alt_names:
                 self.assertIn(name, data_key['keyAltNames'])
 
-        # Assert that q custom endpoint is passed to libmongocrypt correctly.
+        # Assert that the custom endpoint is passed to libmongocrypt.
         master_key = {
             "region": "region",
             "key": "key",
