@@ -84,6 +84,7 @@ module.exports = function(modules) {
       const bson = autoEncrypter._bson;
       const client = autoEncrypter._client;
       const keyVaultNamespace = autoEncrypter._keyVaultNamespace;
+      const keyVaultClient = autoEncrypter._keyVaultClient;
       const mongocryptdClient = autoEncrypter._mongocryptdClient;
       const mongocryptdManager = autoEncrypter._mongocryptdManager;
 
@@ -143,7 +144,7 @@ module.exports = function(modules) {
 
         case MONGOCRYPT_CTX_NEED_MONGO_KEYS: {
           const filter = context.nextMongoOperation();
-          this.fetchKeys(client, keyVaultNamespace, filter, (err, keys) => {
+          this.fetchKeys(keyVaultClient, keyVaultNamespace, filter, (err, keys) => {
             if (err) return callback(err, null);
             keys.forEach(key => {
               context.addMongoOperationResponse(bson.serialize(key));

@@ -56,6 +56,7 @@ module.exports = function(modules) {
      *
      * @param {MongoClient} client The client autoEncryption is enabled on
      * @param {object} [options] Optional settings
+     * @param {MongoClient} [options.keyVaultClient] A `MongoClient` used to fetch keys from a key vault. Defaults to `client`
      * @param {string} [options.keyVaultNamespace='admin.dataKeys'] The namespace of the key vault, used to store encryption keys
      * @param {object} [options.schemaMap] A local specification of a JSON schema used for encryption
      * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
@@ -88,6 +89,7 @@ module.exports = function(modules) {
         useUnifiedTopology: true
       });
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
+      this._keyVaultClient = options.keyVaultClient || client;
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {

@@ -66,6 +66,7 @@ module.exports = function(modules) {
      * @param {MongoClient} client The client used for encryption
      * @param {object} options Optional settings
      * @param {string} options.keyVaultNamespace The namespace of the key vault, used to store encryption keys
+     * @param {MongoClient} [options.keyVaultClient] A `MongoClient` used to fetch keys from a key vault. Defaults to `client`
      * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
      *
      * @example
@@ -99,6 +100,7 @@ module.exports = function(modules) {
 
       Object.assign(options, { cryptoCallbacks });
       this._keyVaultNamespace = options.keyVaultNamespace;
+      this._keyVaultClient = options.keyVaultClient || client;
       this._mongoCrypt = new mc.MongoCrypt(options);
     }
 
@@ -175,7 +177,7 @@ module.exports = function(modules) {
           const dbName = databaseNamespace(this._keyVaultNamespace);
           const collectionName = collectionNamespace(this._keyVaultNamespace);
 
-          this._client
+          this._keyVaultClient
             .db(dbName)
             .collection(collectionName)
             .insertOne(dataKey, { w: 'majority' }, (err, result) => {
