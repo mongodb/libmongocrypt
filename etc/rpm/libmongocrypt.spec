@@ -44,6 +44,7 @@ Group: Development/Libraries
 mkdir -p $RPM_BUILD_ROOT/usr
 cp -rv lib* $RPM_BUILD_ROOT/usr
 cp -rv include $RPM_BUILD_ROOT/usr
+find $RPM_BUILD_ROOT/usr -name '*.pc' -exec sed -i -e 's|^prefix=.*|prefix=/usr|' {} \;
 
 
 %clean

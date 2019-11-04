@@ -31,5 +31,8 @@ override_dh_auto_install:
 	cp -v $(CURDIR)/lib/*.a $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)
 	cp -rv $(CURDIR)/lib/cmake $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)
 	cp -rv $(CURDIR)/lib/pkgconfig $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)
+	sed -i -e 's|{prefix}/lib|{prefix}/lib/$(DEB_HOST_MULTIARCH)|g' \
+		-e 's|^prefix=.*|prefix=/usr|' \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig/*.pc
 	cp -rv $(CURDIR)/include/* $(CURDIR)/debian/tmp/usr/include
 
