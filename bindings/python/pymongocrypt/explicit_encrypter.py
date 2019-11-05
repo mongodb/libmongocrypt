@@ -38,15 +38,18 @@ class DataKeyOpts(object):
 
         :Parameters:
           - `master_key`: Identifies a KMS-specific key used to encrypt the
-            new data key. If the kmsProvider is "aws" it is required and must
-            have the following fields:
-            {
-               region: String,
-               key: String // The Amazon Resource Name (ARN) to the AWS
-                           // customer master key (CMK).
-            }
-            If the kmsProvider is "local" the masterKey is not applicable.
-          - `key_alt_name`: An optional list of bytes suitable to be passed to
+            new data key. If the kmsProvider is "local" the `master_key` is
+            not applicable and may be omitted. If the `kms_provider` is "aws"
+            it is required and has the following fields::
+
+              - `region` (string): Required. The AWS region, e.g. "us-east-1".
+              - `key` (string): Required. The Amazon Resource Name (ARN) to
+                 the AWS customer.
+              - `endpoint` (string): Optional. An alternate host to send KMS
+                requests to. May include port number, e.g.
+                "kms.us-east-1.amazonaws.com:443".
+
+          - `key_alt_names`: An optional list of bytes suitable to be passed to
             mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON
             encoded document in the form: { "keyAltName" : (BSON UTF8 value) }
         """
@@ -77,15 +80,17 @@ class ExplicitEncrypter(object):
         :Parameters:
           - `kms_provider`: The KMS provider to use. Supported values are
             "aws" and "local".
-          - `master_key`: The `master_key` identifies a KMS-specific key used
-            to encrypt the new data key. If the kmsProvider is "local" the
-            `master_key` is not applicable and may be omitted.
-            If the `kms_provider` is "aws", `master_key` is required and must
-            have the following fields:
+          - `master_key`: Identifies a KMS-specific key used to encrypt the
+            new data key. If the kmsProvider is "local" the `master_key` is
+            not applicable and may be omitted. If the `kms_provider` is "aws"
+            it is required and has the following fields::
 
-              - `region` (string): The AWS region as a string.
-              - `key` (string): The Amazon Resource Name (ARN) to the AWS
-                customer master key (CMK).
+              - `region` (string): Required. The AWS region, e.g. "us-east-1".
+              - `key` (string): Required. The Amazon Resource Name (ARN) to
+                 the AWS customer.
+              - `endpoint` (string): Optional. An alternate host to send KMS
+                requests to. May include port number, e.g.
+                "kms.us-east-1.amazonaws.com:443".
 
           - `key_alt_names` (optional): An optional list of string alternate
             names used to reference a key. If a key is created with alternate

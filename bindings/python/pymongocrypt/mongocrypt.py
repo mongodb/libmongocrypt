@@ -450,6 +450,11 @@ class DataKeyContext(MongoCryptContext):
                 if not lib.mongocrypt_ctx_setopt_masterkey_aws(
                         ctx, region, len(region), key, len(key)):
                     self._raise_from_status()
+                if 'endpoint' in opts.master_key:
+                    endpoint = str_to_bytes(opts.master_key['endpoint'])
+                    if not lib.mongocrypt_ctx_setopt_masterkey_aws_endpoint(
+                            ctx, endpoint, len(endpoint)):
+                        self._raise_from_status()
             elif kms_provider == 'local':
                 if not lib.mongocrypt_ctx_setopt_masterkey_local(ctx):
                     self._raise_from_status()
