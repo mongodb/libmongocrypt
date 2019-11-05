@@ -110,7 +110,7 @@ functions:
           fi
 
           pkg_version=$mongocrypt_version
-          tar -zcv -C install --transform="s|^libmongocrypt/|libmongocrypt-$pkg_version/|" --exclude=nocrypto -f libmongocrypt-$pkg_version.tar.gz libmongocrypt
+          tar -zcv -C install --transform="s|^libmongocrypt/|libmongocrypt-$pkg_version/|" --exclude=nocrypto --exclude=sharedbson -f libmongocrypt-$pkg_version.tar.gz libmongocrypt
           cd libmongocrypt/etc/
           $python ./packager.py --prefix `pwd`/.. --distros ${packager_distro} --tarball `pwd`/../../libmongocrypt-$pkg_version.tar.gz --library-version $pkg_version --metadata-gitspec HEAD --arches ${packager_arch}
           cd ../..
