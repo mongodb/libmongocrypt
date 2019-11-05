@@ -43,7 +43,7 @@ npm test
 ## Typedefs
 
 <dl>
-<dt><a href="#KMSProviders">KMSProviders</a></dt>
+<dt><a href="#KMSProviders">KMSProviders</a> : <code>object</code></dt>
 <dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
 </dd>
 </dl>
@@ -61,6 +61,8 @@ An internal class to be used by the driver for auto encryption
 
     * [~logLevel](#AutoEncrypter..logLevel)
 
+    * [~AutoEncryptionOptions](#AutoEncrypter..AutoEncryptionOptions)
+
     * [~AutoEncryptionExtraOptions](#AutoEncrypter..AutoEncryptionExtraOptions)
 
     * [~logger](#AutoEncrypter..logger)
@@ -70,15 +72,10 @@ An internal class to be used by the driver for auto encryption
 
 ### new AutoEncrypter(client, [options])
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| client | <code>MongoClient</code> |  | The client autoEncryption is enabled on |
-| [options] | <code>object</code> |  | Optional settings |
-| [options.keyVaultNamespace] | <code>string</code> | <code>&quot;&#x27;admin.dataKeys&#x27;&quot;</code> | The namespace of the key vault, used to store encryption keys |
-| [options.schemaMap] | <code>object</code> |  | A local specification of a JSON schema used for encryption |
-| [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) |  | options for specific KMS providers to use |
-| [options.logger] | <code>function</code> |  | An optional hook to catch logging messages from the underlying encryption engine |
-| [options.extraOptions] | [<code>AutoEncryptionExtraOptions</code>](#AutoEncrypter..AutoEncryptionExtraOptions) |  | Extra options related to mongocryptd |
+| Param | Type | Description |
+| --- | --- | --- |
+| client | <code>MongoClient</code> | The client autoEncryption is enabled on |
+| [options] | [<code>AutoEncryptionOptions</code>](#AutoEncrypter..AutoEncryptionOptions) | Optional settings |
 
 Create an AutoEncrypter
 
@@ -120,6 +117,25 @@ The level of severity of the log message
 | 3 | Info |
 | 4 | Trace |
 
+<a name="AutoEncrypter..AutoEncryptionOptions"></a>
+
+### *AutoEncrypter*~AutoEncryptionOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [keyVaultClient] | <code>MongoClient</code> | A `MongoClient` used to fetch keys from a key vault |
+| [keyVaultNamespace] | <code>string</code> | The namespace where keys are stored in the key vault |
+| [kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) | Configuration options that are used by specific KMS providers during key generation, encryption, and decryption. |
+| [schemaMap] | <code>object</code> | A map of namespaces to a local JSON schema for encryption |
+| [bypassAutoEncryption] | <code>boolean</code> | Allows the user to bypass auto encryption, maintaining implicit decryption |
+| [options.logger] | [<code>logger</code>](#AutoEncrypter..logger) | An optional hook to catch logging messages from the underlying encryption engine |
+| [extraOptions] | [<code>AutoEncryptionExtraOptions</code>](#AutoEncrypter..AutoEncryptionExtraOptions) | Extra options related to the mongocryptd process |
+
+Configuration options for a automatic client encryption.
+
+**NOTE**: Support for client side encryption is in beta. Backwards-breaking changes may be made before the final release.
+
 <a name="AutoEncrypter..AutoEncryptionExtraOptions"></a>
 
 ### *AutoEncrypter*~AutoEncryptionExtraOptions
@@ -127,21 +143,24 @@ The level of severity of the log message
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| [mongocryptdURI] | <code>string</code> |  | overrides the uri used to connect to mongocryptd |
-| [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | if true, autoEncryption will not spawn a mongocryptd |
-| [mongocryptdSpawnPath] | <code>string</code> |  | the path to the mongocryptd executable |
-| [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | command line arguments to pass to the mongocryptd executable |
+| [mongocryptURI] | <code>string</code> |  | A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise |
+| [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | If true, autoEncryption will not attempt to spawn a mongocryptd before connecting |
+| [mongocryptdSpawnPath] | <code>string</code> |  | The path to the mongocryptd executable on the system |
+| [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
+
+Extra options related to the mongocryptd process
 
 <a name="AutoEncrypter..logger"></a>
 
 ### *AutoEncrypter*~logger
-**Descritpion**: A callback that is invoked with logging information from
-the underlying C++ Bindings.  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | level | [<code>logLevel</code>](#AutoEncrypter..logLevel) | The level of logging. Valid values are 0 (Fatal Error), 1 (Error), 2 (Warning), 3 (Info), 4 (Trace) |
 | message | <code>string</code> | The message to log |
+
+A callback that is invoked with logging information from
+the underlying C++ Bindings.
 
 <a name="ClientEncryption"></a>
 
@@ -269,24 +288,24 @@ const dataKey = await clientEncryption.createDataKey('aws', {
 | --- | --- | --- |
 | value | <code>\*</code> | The value that you wish to serialize. Must be of a type that can be serialized into BSON |
 | options | <code>object</code> |  |
-| [options.dataKey] | [<code>dataKey</code>](#ClientEncryption..dataKey) | The Binary dataKey to use for encryption |
+| [options.keyId] | [<code>dataKey</code>](#ClientEncryption..dataKey) | The Binary dataKey to use for encryption |
 | [options.keyAltName] | <code>string</code> | A unique string name corresponding to an already existing {[dataKey](#ClientEncryption..dataKey)} |
 | options.algorithm |  | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'` or `AEAD_AES_256_CBC_HMAC_SHA_512-Random'` |
 | [callback] | [<code>encryptCallback</code>](#ClientEncryption..encryptCallback) | Optional callback to invoke when value is encrypted |
 
-Explicitly encrypt a provided value. Note that either `options.dataKey` or `options.keyAltName` must
-be specified. Specifying both `options.dataKey` and `options.keyAltName` is considered an error.
+Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
+be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
 
 **Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.  
 **Example**  
 ```js
 // Encryption with callback API
 function encryptMyData(value, callback) {
-  clientEncryption.createDataKey('local', (err, dataKey) => {
+  clientEncryption.createDataKey('local', (err, keyId) => {
     if (err) {
       return callback(err);
     }
-    clientEncryption.encrypt(value, { dataKey, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' }, callback);
+    clientEncryption.encrypt(value, { keyId, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' }, callback);
   });
 }
 ```
@@ -294,8 +313,8 @@ function encryptMyData(value, callback) {
 ```js
 // Encryption with async/await api
 async function encryptMyData(value) {
-  const dataKey = await clientEncryption.createDataKey('local');
-  return clientEncryption.encrypt(value, { dataKey, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
+  const keyId = await clientEncryption.createDataKey('local');
+  return clientEncryption.encrypt(value, { keyId, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
 }
 ```
 **Example**  
@@ -377,10 +396,10 @@ An error indicating that something went wrong specifically with MongoDB Client E
 | Name | Type | Description |
 | --- | --- | --- |
 | [aws] | <code>object</code> | Configuration options for using 'aws' as your KMS provider |
-| [aws.accessKeyId] | <code>string</code> | An AWS Access Key |
-| [aws.secretAccessKey] | <code>string</code> | An AWS Secret Key |
+| [aws.accessKeyId] | <code>string</code> | The access key used for the AWS KMS provider |
+| [aws.secretAccessKey] | <code>string</code> | The secret access key used for the AWS KMS provider |
 | [local] | <code>object</code> | Configuration options for using 'local' as your KMS provider |
-| [local.key] | <code>Buffer</code> | A 96-byte long Buffer used for local encryption |
+| [local.key] | <code>Buffer</code> | The master key used to encrypt/decrypt data keys. A 96-byte long Buffer. |
 
 Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
 

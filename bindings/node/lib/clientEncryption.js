@@ -47,13 +47,13 @@ module.exports = function(modules) {
   }
 
   /**
-   * @typedef KMSProviders
+   * @typedef {object} KMSProviders
    * @description Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
    * @prop {object} [aws] Configuration options for using 'aws' as your KMS provider
-   * @prop {string} [aws.accessKeyId] An AWS Access Key
-   * @prop {string} [aws.secretAccessKey] An AWS Secret Key
+   * @prop {string} [aws.accessKeyId] The access key used for the AWS KMS provider
+   * @prop {string} [aws.secretAccessKey] The secret access key used for the AWS KMS provider
    * @prop {object} [local] Configuration options for using 'local' as your KMS provider
-   * @prop {Buffer} [local.key] A 96-byte long Buffer used for local encryption
+   * @prop {Buffer} [local.key] The master key used to encrypt/decrypt data keys. A 96-byte long Buffer.
    */
 
   /**
@@ -105,7 +105,7 @@ module.exports = function(modules) {
     }
 
     /**
-     * @typedef ClientEncryption~dataKey
+     * @typedef {Binary} ClientEncryption~dataKey
      * @description A key used for manual encryption / decryption. Is a BSON Binary object.
      */
 
@@ -199,12 +199,12 @@ module.exports = function(modules) {
      */
 
     /**
-     * Explicitly encrypt a provided value. Note that either `options.dataKey` or `options.keyAltName` must
-     * be specified. Specifying both `options.dataKey` and `options.keyAltName` is considered an error.
+     * Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
+     * be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
      *
      * @param {*} value The value that you wish to serialize. Must be of a type that can be serialized into BSON
      * @param {object} options
-     * @param {ClientEncryption~dataKey} [options.dataKey] The Binary dataKey to use for encryption
+     * @param {ClientEncryption~dataKey} [options.keyId] The Binary dataKey to use for encryption
      * @param {string} [options.keyAltName] A unique string name corresponding to an already existing {{@link ClientEncryption~dataKey dataKey}}
      * @param {} options.algorithm The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'` or `AEAD_AES_256_CBC_HMAC_SHA_512-Random'`
      * @param {ClientEncryption~encryptCallback} [callback] Optional callback to invoke when value is encrypted
@@ -213,19 +213,19 @@ module.exports = function(modules) {
      * @example
      * // Encryption with callback API
      * function encryptMyData(value, callback) {
-     *   clientEncryption.createDataKey('local', (err, dataKey) => {
+     *   clientEncryption.createDataKey('local', (err, keyId) => {
      *     if (err) {
      *       return callback(err);
      *     }
-     *     clientEncryption.encrypt(value, { dataKey, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' }, callback);
+     *     clientEncryption.encrypt(value, { keyId, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' }, callback);
      *   });
      * }
      *
      * @example
      * // Encryption with async/await api
      * async function encryptMyData(value) {
-     *   const dataKey = await clientEncryption.createDataKey('local');
-     *   return clientEncryption.encrypt(value, { dataKey, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
+     *   const keyId = await clientEncryption.createDataKey('local');
+     *   return clientEncryption.encrypt(value, { keyId, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
      * }
      *
      * @example
