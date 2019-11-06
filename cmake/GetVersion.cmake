@@ -47,7 +47,7 @@ function (GetVersion OUTVAR)
     )
 
     if (NOT GIT_STATUS STREQUAL 0)
-        message (FATAL_ERROR "Unable to determine version: 'git describe' failed: '${GIT_ERROR}'")
+        message (FATAL_ERROR "Unable to determine version: 'git rev-parse' failed: '${GIT_ERROR}'")
     endif ()
 
     string (TIMESTAMP SUFFIX_DATE "%Y%m%d")
