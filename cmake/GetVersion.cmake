@@ -39,7 +39,7 @@ function (GetVersion OUTVAR)
 
     # Otherwise, append our custom suffix -<date>-git<short hash>
     execute_process (
-        COMMAND git rev-parse --revs-only --short=10 HEAD^{commit}
+        COMMAND git rev-parse --revs-only --short=10 HEAD
         OUTPUT_VARIABLE SUFFIX_SHA
         RESULT_VARIABLE GIT_STATUS
         ERROR_VARIABLE GIT_ERROR
