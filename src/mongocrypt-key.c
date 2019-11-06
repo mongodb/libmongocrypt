@@ -214,9 +214,6 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
         has_creation_date = false, has_update_date = false,
         has_master_key = false;
 
-   memset (out, 0, sizeof (_mongocrypt_key_doc_t));
-   bson_init (&out->bson);
-
    if (!bson_validate (bson, BSON_VALIDATE_NONE, NULL) ||
        !bson_iter_init (&iter, bson)) {
       CLIENT_ERR ("invalid BSON");
@@ -397,10 +394,10 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
    BSON_ASSERT (src);
    BSON_ASSERT (dst);
 
-   memset (dst, 0, sizeof (*dst));
    _mongocrypt_buffer_copy_to (&src->id, &dst->id);
    _mongocrypt_buffer_copy_to (&src->key_material, &dst->key_material);
    dst->key_alt_names = _mongocrypt_key_alt_name_copy_all (src->key_alt_names);
+   bson_destroy (&dst->bson);
    bson_copy_to (&src->bson, &dst->bson);
    dst->masterkey_provider = src->masterkey_provider;
    dst->masterkey_region = bson_strdup (src->masterkey_region);

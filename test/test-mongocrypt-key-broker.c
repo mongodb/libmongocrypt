@@ -463,7 +463,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_t key_broker;
    mongocrypt_kms_ctx_t *kms;
    bson_iter_t iter;
-   bson_t key_doc_names_bson = BSON_INITIALIZER;
+   bson_t key_doc_names_bson;
 
    status = mongocrypt_status_new ();
    _gen_uuid_and_key (tester, 1, &key_id1, &key_doc1);

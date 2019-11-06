@@ -389,6 +389,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       _mongocrypt_marking_cleanup (&marking);
 
       if (!res) {
+         bson_destroy (&converted);
          return _mongocrypt_ctx_fail (ctx);
       }
    }

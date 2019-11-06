@@ -396,6 +396,8 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_buffer_steal_from_bson (&kb->filter, filter);
    _mongocrypt_buffer_to_binary (&kb->filter, out);
+   bson_destroy (&ids);
+   bson_destroy (&names);
 
    return true;
 }
