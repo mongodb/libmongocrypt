@@ -37,7 +37,7 @@ function (GetVersion OUTVAR)
         return ()
     endif ()
 
-    # Otherwise, append our custom suffix -<date>-git<short hash>
+    # Otherwise, append our custom suffix +<date>git<short hash>
     execute_process (
         COMMAND git rev-parse --revs-only --short=10 HEAD
         OUTPUT_VARIABLE SUFFIX_SHA
