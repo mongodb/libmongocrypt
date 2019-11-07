@@ -160,8 +160,17 @@ functions:
   "publish snapshot":
     - command: shell.exec
       params:
+        script: |-
+          if [ "${is_patch}" = "true" ]; then
+            echo "Patch build detected, skipping"
+          fi
+    - command: shell.exec
+      params:
         silent: true
         script: |-
+          if [ "${is_patch}" = "true" ]; then
+            exit 0
+          fi
           cd ./libmongocrypt/bindings/java/mongocrypt && PROJECT_DIRECTORY=${project_directory} NEXUS_USERNAME=${nexus_username} NEXUS_PASSWORD=${nexus_password} SIGNING_PASSWORD=${signing_password} SIGNING_KEY_ID=${signing_keyId} RING_FILE_GPG_BASE64=${ring_file_gpg_base64} ./.evergreen/publish.sh
 
   "download tarball":
