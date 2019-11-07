@@ -134,8 +134,6 @@ The level of severity of the log message
 
 Configuration options for a automatic client encryption.
 
-**NOTE**: Support for client side encryption is in beta. Backwards-breaking changes may be made before the final release.
-
 <a name="AutoEncrypter..AutoEncryptionExtraOptions"></a>
 
 ### *AutoEncrypter*~AutoEncryptionExtraOptions
@@ -156,7 +154,7 @@ Extra options related to the mongocryptd process
 
 | Param | Type | Description |
 | --- | --- | --- |
-| level | [<code>logLevel</code>](#AutoEncrypter..logLevel) | The level of logging. Valid values are 0 (Fatal Error), 1 (Error), 2 (Warning), 3 (Info), 4 (Trace) |
+| level | [<code>logLevel</code>](#AutoEncrypter..logLevel) | The level of logging. |
 | message | <code>string</code> | The message to log |
 
 A callback that is invoked with logging information from
@@ -180,7 +178,7 @@ The public interface for explicit client side encryption
         * [.decrypt(value, callback)](#ClientEncryption+decrypt)
 
     * _inner_
-        * [~dataKey](#ClientEncryption..dataKey)
+        * [~dataKeyId](#ClientEncryption..dataKeyId)
 
         * [~createDataKeyCallback](#ClientEncryption..createDataKeyCallback)
 
@@ -240,9 +238,9 @@ new ClientEncryption(mongoClient, {
 | [options.keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id. |
 | [callback] | [<code>createDataKeyCallback</code>](#ClientEncryption..createDataKeyCallback) | Optional callback to invoke when key is created |
 
-Creates a data key used for explicit encryption
+Creates a data key used for explicit encryption and inserts it into the key vault namespace
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the created data key, or rejects with an error. If a callback is provided, returns nothing.  
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with [the id of the created data key](#ClientEncryption..dataKeyId), or rejects with an error. If a callback is provided, returns nothing.  
 **Example**  
 ```js
 // Using callbacks to create a local key
@@ -257,12 +255,12 @@ clientEncrypion.createDataKey('local', (err, dataKey) => {
 **Example**  
 ```js
 // Using async/await to create a local key
-const dataKey = await clientEncryption.createDataKey('local');
+const dataKeyId = await clientEncryption.createDataKey('local');
 ```
 **Example**  
 ```js
 // Using async/await to create an aws key
-const dataKey = await clientEncryption.createDataKey('aws', {
+const dataKeyId = await clientEncryption.createDataKey('aws', {
   masterKey: {
     region: 'us-east-1',
     key: 'xxxxxxxxxxxxxx' // CMK ARN here
@@ -272,7 +270,7 @@ const dataKey = await clientEncryption.createDataKey('aws', {
 **Example**  
 ```js
 // Using async/await to create an aws key with a keyAltName
-const dataKey = await clientEncryption.createDataKey('aws', {
+const dataKeyId = await clientEncryption.createDataKey('aws', {
   masterKey: {
     region: 'us-east-1',
     key: 'xxxxxxxxxxxxxx' // CMK ARN here
@@ -288,8 +286,8 @@ const dataKey = await clientEncryption.createDataKey('aws', {
 | --- | --- | --- |
 | value | <code>\*</code> | The value that you wish to serialize. Must be of a type that can be serialized into BSON |
 | options | <code>object</code> |  |
-| [options.keyId] | [<code>dataKey</code>](#ClientEncryption..dataKey) | The Binary dataKey to use for encryption |
-| [options.keyAltName] | <code>string</code> | A unique string name corresponding to an already existing {[dataKey](#ClientEncryption..dataKey)} |
+| [options.keyId] | [<code>dataKeyId</code>](#ClientEncryption..dataKeyId) | The id of the Binary dataKey to use for encryption |
+| [options.keyAltName] | <code>string</code> | A unique string name corresponding to an already existing dataKey. |
 | options.algorithm |  | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'` or `AEAD_AES_256_CBC_HMAC_SHA_512-Random'` |
 | [callback] | [<code>encryptCallback</code>](#ClientEncryption..encryptCallback) | Optional callback to invoke when value is encrypted |
 
@@ -351,10 +349,12 @@ async function decryptMyValue(value) {
   return clientEncryption.decrypt(value);
 }
 ```
-<a name="ClientEncryption..dataKey"></a>
+<a name="ClientEncryption..dataKeyId"></a>
 
-### *ClientEncryption*~dataKey
-A key used for manual encryption / decryption. Is a BSON Binary object.
+### *ClientEncryption*~dataKeyId
+The id of an existing dataKey. Is a bson Binary value.
+Can be used for [ClientEncryption.encrypt](ClientEncryption.encrypt), and can be used to directly
+query for the data key itself against the key vault namespace.
 
 <a name="ClientEncryption..createDataKeyCallback"></a>
 
@@ -363,7 +363,7 @@ A key used for manual encryption / decryption. Is a BSON Binary object.
 | Param | Type | Description |
 | --- | --- | --- |
 | [error] | <code>Error</code> | If present, indicates an error that occurred in the creation of the data key |
-| [dataKey] | [<code>dataKey</code>](#ClientEncryption..dataKey) | If present, returns the new data key |
+| [dataKeyId] | [<code>dataKeyId</code>](#ClientEncryption..dataKeyId) | If present, returns the id of the created data key |
 
 <a name="ClientEncryption..encryptCallback"></a>
 

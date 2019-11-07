@@ -105,18 +105,20 @@ module.exports = function(modules) {
     }
 
     /**
-     * @typedef {Binary} ClientEncryption~dataKey
-     * @description A key used for manual encryption / decryption. Is a BSON Binary object.
+     * @typedef {Binary} ClientEncryption~dataKeyId
+     * @description The id of an existing dataKey. Is a bson Binary value.
+     * Can be used for {@link ClientEncryption.encrypt}, and can be used to directly
+     * query for the data key itself against the key vault namespace.
      */
 
     /**
      * @callback ClientEncryption~createDataKeyCallback
      * @param {Error} [error] If present, indicates an error that occurred in the creation of the data key
-     * @param {ClientEncryption~dataKey} [dataKey] If present, returns the new data key
+     * @param {ClientEncryption~dataKeyId} [dataKeyId] If present, returns the id of the created data key
      */
 
     /**
-     * Creates a data key used for explicit encryption
+     * Creates a data key used for explicit encryption and inserts it into the key vault namespace
      *
      * @param {string} provider The KMS provider used for this data key. Must be `'aws'` or `'local'`
      * @param {object} [options] Options for creating the data key
@@ -126,7 +128,7 @@ module.exports = function(modules) {
      * @param {string} [options.masterKey.endpoint] An alternate host to send KMS requests to. May include port number.
      * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
      * @param {ClientEncryption~createDataKeyCallback} [callback] Optional callback to invoke when key is created
-     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the created data key, or rejects with an error. If a callback is provided, returns nothing.
+     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with {@link ClientEncryption~dataKeyId the id of the created data key}, or rejects with an error. If a callback is provided, returns nothing.
      * @example
      * // Using callbacks to create a local key
      * clientEncrypion.createDataKey('local', (err, dataKey) => {
@@ -139,11 +141,11 @@ module.exports = function(modules) {
      *
      * @example
      * // Using async/await to create a local key
-     * const dataKey = await clientEncryption.createDataKey('local');
+     * const dataKeyId = await clientEncryption.createDataKey('local');
      *
      * @example
      * // Using async/await to create an aws key
-     * const dataKey = await clientEncryption.createDataKey('aws', {
+     * const dataKeyId = await clientEncryption.createDataKey('aws', {
      *   masterKey: {
      *     region: 'us-east-1',
      *     key: 'xxxxxxxxxxxxxx' // CMK ARN here
@@ -152,7 +154,7 @@ module.exports = function(modules) {
      *
      * @example
      * // Using async/await to create an aws key with a keyAltName
-     * const dataKey = await clientEncryption.createDataKey('aws', {
+     * const dataKeyId = await clientEncryption.createDataKey('aws', {
      *   masterKey: {
      *     region: 'us-east-1',
      *     key: 'xxxxxxxxxxxxxx' // CMK ARN here
@@ -204,8 +206,8 @@ module.exports = function(modules) {
      *
      * @param {*} value The value that you wish to serialize. Must be of a type that can be serialized into BSON
      * @param {object} options
-     * @param {ClientEncryption~dataKey} [options.keyId] The Binary dataKey to use for encryption
-     * @param {string} [options.keyAltName] A unique string name corresponding to an already existing {{@link ClientEncryption~dataKey dataKey}}
+     * @param {ClientEncryption~dataKeyId} [options.keyId] The id of the Binary dataKey to use for encryption
+     * @param {string} [options.keyAltName] A unique string name corresponding to an already existing dataKey.
      * @param {} options.algorithm The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'` or `AEAD_AES_256_CBC_HMAC_SHA_512-Random'`
      * @param {ClientEncryption~encryptCallback} [callback] Optional callback to invoke when value is encrypted
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.

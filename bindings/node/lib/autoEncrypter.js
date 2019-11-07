@@ -12,8 +12,6 @@ module.exports = function(modules) {
   /**
    * Configuration options for a automatic client encryption.
    *
-   * **NOTE**: Support for client side encryption is in beta. Backwards-breaking changes may be made before the final release.
-   *
    * @typedef {Object} AutoEncrypter~AutoEncryptionOptions
    * @property {MongoClient} [keyVaultClient] A `MongoClient` used to fetch keys from a key vault
    * @property {string} [keyVaultNamespace] The namespace where keys are stored in the key vault
@@ -37,7 +35,7 @@ module.exports = function(modules) {
    * @callback AutoEncrypter~logger
    * @description A callback that is invoked with logging information from
    * the underlying C++ Bindings.
-   * @param {AutoEncrypter~logLevel} level The level of logging. Valid values are 0 (Fatal Error), 1 (Error), 2 (Warning), 3 (Info), 4 (Trace)
+   * @param {AutoEncrypter~logLevel} level The level of logging.
    * @param {string} message The message to log
    */
 
