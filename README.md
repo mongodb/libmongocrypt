@@ -100,8 +100,13 @@ We decided against the "have libmongocrypt do everything" approach because it co
 The first version of FLE is to get signal. If FLE becomes popular, further improvements will be made (removing mongocryptd process, support for more queries, better performance). libmongocrypt takes the same approach. Making it blazing fast and completely future-proof is not a high priority.
 
 ### Releasing ###
+
+#### Version number scheme ####
+Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releases and 1.[0-9].[0-9]-rc[0-9] for release candidates.  This ensures that Linux distribution packages built from each commit are published to the correct location.
+
+#### Steps to release ####
 Do the following when releasing:
-- In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-beta123"`.
-- Commit, create a new git tag, like `1.0.0-beta123`, and push.
-- In the Java binding build.gradle.kts, replace `version = "1.0.0-beta123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
+- In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"`.
+- Commit, create a new git tag, like `1.0.0-rc123`, and push.
+- In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
 - Commit and push.
