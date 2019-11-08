@@ -94,7 +94,8 @@ module.exports = function(modules) {
       this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
       this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 1000
       });
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
       this._keyVaultClient = options.keyVaultClient || client;
