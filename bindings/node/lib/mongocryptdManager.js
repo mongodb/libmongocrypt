@@ -30,10 +30,10 @@ class MongocryptdManager {
     this.spawPath = extraOptions.mongocryptdSpawnPath || '';
     this.spawnArgs = [];
     if (Array.isArray(extraOptions.mongocryptdSpawnArgs)) {
-      this.spawnArgs.concat(extraOptions.mongocryptdSpawnArgs);
+      this.spawnArgs = this.spawnArgs.concat(extraOptions.mongocryptdSpawnArgs);
     }
-    if (this.spawnArgs.indexOf('idleShutdownTimeoutSecs') < 0) {
-      this.spawnArgs.concat(['--idleShutdownTimeoutSecs', '60']);
+    if (this.spawnArgs.indexOf('--idleShutdownTimeoutSecs') < 0) {
+      this.spawnArgs.push('--idleShutdownTimeoutSecs', 60);
     }
   }
 
