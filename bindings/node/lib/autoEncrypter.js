@@ -10,40 +10,55 @@ module.exports = function(modules) {
   const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
-   * @typedef AutoEncrypter~AutoEncryptionExtraOptions
-   * @prop {string} [mongocryptdURI] overrides the uri used to connect to mongocryptd
-   * @prop {boolean} [mongocryptdBypassSpawn=false] if true, autoEncryption will not spawn a mongocryptd
-   * @prop {string} [mongocryptdSpawnPath] the path to the mongocryptd executable
-   * @prop {string[]} [mongocryptdSpawnArgs] command line arguments to pass to the mongocryptd executable
+   * Configuration options for a automatic client encryption.
+   *
+   * @typedef {Object} AutoEncrypter~AutoEncryptionOptions
+   * @property {MongoClient} [keyVaultClient] A `MongoClient` used to fetch keys from a key vault
+   * @property {string} [keyVaultNamespace] The namespace where keys are stored in the key vault
+   * @property {KMSProviders} [kmsProviders] Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
+   * @property {object} [schemaMap] A map of namespaces to a local JSON schema for encryption
+   * @property {boolean} [bypassAutoEncryption] Allows the user to bypass auto encryption, maintaining implicit decryption
+   * @property {AutoEncrypter~logger} [options.logger] An optional hook to catch logging messages from the underlying encryption engine
+   * @property {AutoEncrypter~AutoEncryptionExtraOptions} [extraOptions] Extra options related to the mongocryptd process
    */
 
   /**
-   * An internal class to be used by the driver for auto encryption
+   * Extra options related to the mongocryptd process
+   * @typedef {object} AutoEncrypter~AutoEncryptionExtraOptions
+   * @property {string} [mongocryptURI] A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise
+   * @property {boolean} [mongocryptdBypassSpawn=false] If true, autoEncryption will not attempt to spawn a mongocryptd before connecting
+   * @property {string} [mongocryptdSpawnPath] The path to the mongocryptd executable on the system
+   * @property {string[]} [mongocryptdSpawnArgs] Command line arguments to use when auto-spawning a mongocryptd
+   */
+
+  /**
+   * @callback AutoEncrypter~logger
+   * @description A callback that is invoked with logging information from
+   * the underlying C++ Bindings.
+   * @param {AutoEncrypter~logLevel} level The level of logging.
+   * @param {string} message The message to log
+   */
+
+  /**
+   * @name AutoEncrypter~logLevel
+   * @enum {number}
+   * @description
+   * The level of severity of the log message
+   *
+   * | Value | Level |
+   * |-------|-------|
+   * | 0 | Fatal Error |
+   * | 1 | Error |
+   * | 2 | Warning |
+   * | 3 | Info |
+   * | 4 | Trace |
+   */
+
+  /**
+   * @classdesc An internal class to be used by the driver for auto encryption
    * **NOTE**: Not meant to be instantiated directly, this is for internal use only.
    */
   class AutoEncrypter {
-    /**
-     * @name AutoEncrypter~logLevel
-     * @kind enum
-     * @description
-     * The level of severity of the log message
-     *
-     * | Value | Level |
-     * |-------|-------|
-     * | 0 | Fatal Error |
-     * | 1 | Error |
-     * | 2 | Warning |
-     * | 3 | Info |
-     * | 4 | Trace |
-     */
-    /**
-     * @callback AutoEncrypter~logger
-     * @descritpion A callback that is invoked with logging information from
-     * the underlying C++ Bindings.
-     * @param {AutoEncrypter~logLevel} level The level of logging. Valid values are 0 (Fatal Error), 1 (Error), 2 (Warning), 3 (Info), 4 (Trace)
-     * @param {string} message The message to log
-     */
-
     /**
      * Create an AutoEncrypter
      *
@@ -53,15 +68,8 @@ module.exports = function(modules) {
      * It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
      * Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.
      * Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
-     *
      * @param {MongoClient} client The client autoEncryption is enabled on
-     * @param {object} [options] Optional settings
-     * @param {MongoClient} [options.keyVaultClient] A `MongoClient` used to fetch keys from a key vault. Defaults to `client`
-     * @param {string} [options.keyVaultNamespace='admin.dataKeys'] The namespace of the key vault, used to store encryption keys
-     * @param {object} [options.schemaMap] A local specification of a JSON schema used for encryption
-     * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
-     * @param {function} [options.logger] An optional hook to catch logging messages from the underlying encryption engine
-     * @param {AutoEncrypter~AutoEncryptionExtraOptions} [options.extraOptions] Extra options related to mongocryptd
+     * @param {AutoEncrypter~AutoEncryptionOptions} [options] Optional settings
      *
      * @example
      * // Enabling autoEncryption via a MongoClient
