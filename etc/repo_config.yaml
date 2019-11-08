@@ -55,8 +55,8 @@ repos:
   - name: rhel62
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/redhat/6/libmongocrypt
       - yum/redhat/6Server/libmongocrypt
@@ -64,8 +64,8 @@ repos:
   - name: rhel67
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/redhat/6/libmongocrypt
       - yum/redhat/6Server/libmongocrypt
@@ -73,8 +73,8 @@ repos:
   - name: rhel70
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/redhat/7/libmongocrypt
       - yum/redhat/7Server/libmongocrypt
@@ -82,8 +82,8 @@ repos:
   - name: rhel71
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/redhat/7/libmongocrypt
       - yum/redhat/7Server/libmongocrypt
@@ -91,8 +91,8 @@ repos:
   - name: rhel72
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/redhat/7/libmongocrypt
       - yum/redhat/7Server/libmongocrypt
@@ -100,8 +100,8 @@ repos:
   - name: rhel80
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/redhat/8/libmongocrypt
       - yum/redhat/8Server/libmongocrypt
@@ -109,40 +109,40 @@ repos:
   - name: amazon
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/amazon/2013.03/libmongocrypt
 
   - name: amazon2
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - yum/amazon/2/libmongocrypt
 
   - name: suse12
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - zypper/suse/12/libmongocrypt
 
   - name: suse15
     type: rpm
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     repos:
       - zypper/suse/15/libmongocrypt
 
   - name: debian81
     type: deb
     code_name: "jessie"
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     edition: org
     component: main
     architectures:
@@ -154,8 +154,8 @@ repos:
   - name: debian92
     type: deb
     code_name: "stretch"
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     edition: org
     component: main
     architectures:
@@ -166,8 +166,8 @@ repos:
   - name: debian10
     type: deb
     code_name: "buster"
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     edition: org
     component: main
     architectures:
@@ -179,8 +179,8 @@ repos:
     type: deb
     code_name: "trusty"
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     component: universe
     architectures:
       - amd64
@@ -192,8 +192,8 @@ repos:
     type: deb
     code_name: "xenial"
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     component: universe
     architectures:
       - amd64
@@ -206,8 +206,8 @@ repos:
     type: deb
     code_name: "bionic"
     edition: org
-    bucket: libmongocrypt-test
-    region: us-east-2
+    bucket: libmongocrypt
+    region: us-east-1
     component: universe
     architectures:
       - amd64
