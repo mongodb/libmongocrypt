@@ -25,7 +25,7 @@ module.exports = function(modules) {
   /**
    * Extra options related to the mongocryptd process
    * @typedef {object} AutoEncrypter~AutoEncryptionExtraOptions
-   * @property {string} [mongocryptURI] A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise
+   * @property {string} [mongocryptdURI] A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise
    * @property {boolean} [mongocryptdBypassSpawn=false] If true, autoEncryption will not attempt to spawn a mongocryptd before connecting
    * @property {string} [mongocryptdSpawnPath] The path to the mongocryptd executable on the system
    * @property {string[]} [mongocryptdSpawnArgs] Command line arguments to use when auto-spawning a mongocryptd
