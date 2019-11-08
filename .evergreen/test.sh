@@ -20,9 +20,9 @@ BIN_DIR=./cmake-build
 KMS_BIN_DIR=./cmake-build/kms-message
 NOCRYPTO_BIN_DIR=./cmake-build-nocrypto
 if [ "Windows_NT" == "$OS" ]; then
-    BIN_DIR=./cmake-build/Debug
-    KMS_BIN_DIR=./cmake-build/kms-message/Debug
-    NOCRYPTO_BIN_DIR=./cmake-build-nocrypto/Debug
+    BIN_DIR=./cmake-build/RelWithDebInfo
+    KMS_BIN_DIR=./cmake-build/kms-message/RelWithDebInfo
+    NOCRYPTO_BIN_DIR=./cmake-build-nocrypto/RelWithDebInfo
     # Make sure libbson dll is in the path
     export PATH=${BSON_INSTALL_PREFIX}/bin:$PATH
 fi

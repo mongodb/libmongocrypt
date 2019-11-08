@@ -35,12 +35,12 @@ if [ "$CONFIGURE_ONLY" ]; then
     exit 0;
 fi
 echo "Installing libmongocrypt"
-$CMAKE --build . --target install
+$CMAKE --build . --target install --config RelWithDebInfo
 # CDRIVER-3187, ensure the final distributed tarball contains the libbson static
 # library to support consumers that static link to libmongocrypt
 find ${BSON_INSTALL_PREFIX} \( -name libbson-static-1.0.a -o -name bson-1.0.lib \) -execdir cp {} $(dirname $(find ${MONGOCRYPT_INSTALL_PREFIX} -name libmongocrypt-static.a -o -name mongocrypt-static.lib)) \;
-$CMAKE --build . --target test-mongocrypt
-$CMAKE --build ./kms-message --target test_kms_request
+$CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
+$CMAKE --build ./kms-message --target test_kms_request --config RelWithDebInfo
 cd $evergreen_root
 
 # Build and install libmongocrypt with no native crypto.
@@ -49,9 +49,9 @@ mkdir cmake-build-nocrypto
 cd cmake-build-nocrypto
 $CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${BSON_INSTALL_PREFIX}" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/nocrypto" ../
 echo "Installing libmongocrypt with no crypto"
-$CMAKE --build . --target install
+$CMAKE --build . --target install --config RelWithDebInfo
 echo "Building test-mongocrypt with no crypto"
-$CMAKE --build . --target test-mongocrypt
+$CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
 cd $evergreen_root
 
 # Build and install libmongocrypt without statically linking libbson
@@ -60,4 +60,4 @@ mkdir cmake-build-sharedbson
 cd cmake-build-sharedbson
 $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="-fPIC ${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${BSON_INSTALL_PREFIX}" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/sharedbson" ../
 echo "Installing libmongocrypt with shared libbson"
-$CMAKE --build . --target install
+$CMAKE --build . --target install  --config RelWithDebInfo

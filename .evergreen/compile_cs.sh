@@ -28,6 +28,6 @@ if [ "$OS" == "Windows_NT" ]; then
     export DOTNET_CLI_HOME=$(cygpath -w "${evergreen_root}/dotnet_home")
 fi
 
-"$dotnet_tool" build libmongocrypt/cmake-build/bindings/cs/cs.sln
+"$dotnet_tool" build -c Release libmongocrypt/cmake-build/bindings/cs/cs.sln
 
-"$dotnet_tool" test libmongocrypt/cmake-build/bindings/cs/MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj -- RunConfiguration.TargetPlatform=x64
+"$dotnet_tool" test -c Release libmongocrypt/cmake-build/bindings/cs/MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj -- RunConfiguration.TargetPlatform=x64

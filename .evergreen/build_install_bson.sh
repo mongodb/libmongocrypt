@@ -31,7 +31,7 @@ pushd cmake-build
 $CMAKE -DENABLE_MONGOC=OFF ${ADDITIONAL_CMAKE_FLAGS} ${BSON_EXTRA_CMAKE_FLAGS} -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_EXTRA_ALIGNMENT=OFF -DCMAKE_C_FLAGS="-fPIC ${BSON_EXTRA_CFLAGS}" -DCMAKE_INSTALL_PREFIX="${BSON_INSTALL_PREFIX}" ../
 echo "Installing libbson"
 # TODO - Upgrade to cmake 3.12 and use "-j" to increase parallelism
-$CMAKE --build . --target install
+$CMAKE --build . --target install --config RelWithDebInfo
 
 popd
 popd
