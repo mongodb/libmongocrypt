@@ -142,6 +142,8 @@ _pair_new (_mongocrypt_cache_t *cache, void *attr)
    _mongocrypt_cache_pair_t *pair;
 
    pair = bson_malloc0 (sizeof (_mongocrypt_cache_pair_t));
+   BSON_ASSERT (pair);
+
    pair->attr = cache->copy_attr (attr);
    /* add rest of values. */
    pair->next = cache->pair;

@@ -81,6 +81,8 @@ _read_http (const char *path, uint8_t **data)
 
    /* Copy and fix newlines: \n becomes \r\n. */
    *data = bson_malloc0 (filesize * 2);
+   BSON_ASSERT (*data);
+
    for (i = 0; i < filesize; i++) {
       if (contents[i] == '\n' && contents[i - 1] != '\r') {
          (*data)[len++] = '\r';

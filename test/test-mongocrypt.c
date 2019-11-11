@@ -34,6 +34,8 @@ _mongocrypt_repeat_char (char c, uint32_t times)
    uint32_t i;
 
    result = bson_malloc (times);
+   BSON_ASSERT (result);
+
    for (i = 0; i < times; i++) {
       result[i] = c;
    }
@@ -108,6 +110,8 @@ _load_http (_mongocrypt_tester_t *tester, const char *path)
    _mongocrypt_buffer_init (buf);
    /* allocate twice the size since \n may become \r\n */
    buf->data = bson_malloc0 (filesize * 2);
+   BSON_ASSERT (buf->data);
+
    buf->len = 0;
    buf->owned = true;
    for (i = 0; i < filesize; i++) {
@@ -256,7 +260,12 @@ _mongocrypt_tester_bin (_mongocrypt_tester_t *tester, int size)
    uint8_t *blob;
    int i;
 
+   if (size == 0) {
+      return NULL;
+   }
    blob = bson_malloc (size);
+   BSON_ASSERT (blob);
+
    for (i = 0; i < size; i++) {
       blob[i] = (i % 3) + 1; /* 1, 2, 3, 1, 2, 3, ... */
    }
@@ -420,6 +429,8 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n)
 
    memset (buf, 0, sizeof (*buf));
    buf->data = bson_malloc (n);
+   BSON_ASSERT (buf->data);
+
    for (i = 0; i < n; i++) {
       buf->data[i] = i;
    }

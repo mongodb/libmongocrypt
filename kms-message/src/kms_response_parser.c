@@ -34,6 +34,8 @@ kms_response_parser_t *
 kms_response_parser_new (void)
 {
    kms_response_parser_t *parser = malloc (sizeof (kms_response_parser_t));
+   KMS_ASSERT (parser);
+
    _parser_init (parser);
    return parser;
 }
@@ -72,6 +74,8 @@ static bool
 _parse_int_from_view (const char *str, int start, int end, int *result)
 {
    char *num_str = malloc (end - start + 1);
+   KMS_ASSERT (num_str);
+
    bool ret;
 
    strncpy (num_str, str + start, end - start);

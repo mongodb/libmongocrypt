@@ -242,7 +242,10 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
          ctx, "malformed marking, 'result' must be a document");
    }
 
-   bson_iter_recurse (&iter, &iter);
+   if (!bson_iter_recurse (&iter, &iter)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "malformed marking, could not recurse into 'result'");
+   }
    if (!_mongocrypt_traverse_binary_in_bson (_collect_key_from_marking,
                                              (void *) &ctx->kb,
                                              TRAVERSE_MATCH_MARKING,
@@ -258,7 +261,7 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 static bool
 _mongo_done_markings (mongocrypt_ctx_t *ctx)
 {
-   _mongocrypt_key_broker_requests_done (&ctx->kb);
+   (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
@@ -291,7 +294,7 @@ _marking_to_bson_value (void *ctx,
    out->value_type = BSON_TYPE_BINARY;
    out->value.v_binary.data = serialized_ciphertext.data;
    out->value.v_binary.data_len = serialized_ciphertext.len;
-   out->value.v_binary.subtype = 6;
+   out->value.v_binary.subtype = (bson_subtype_t) 6;
 
    ret = true;
 
@@ -307,10 +310,12 @@ _replace_marking_with_ciphertext (void *ctx,
                                   bson_value_t *out,
                                   mongocrypt_status_t *status)
 {
-   _mongocrypt_marking_t marking = {0};
+   _mongocrypt_marking_t marking;
    bool ret;
 
    BSON_ASSERT (in);
+
+   memset (&marking, 0, sizeof (marking));
 
    if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
       _mongocrypt_marking_cleanup (&marking);
@@ -328,7 +333,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t as_bson, converted;
    bson_iter_t iter;
    _mongocrypt_ctx_encrypt_t *ectx;
-   bool res = true;
+   bool res;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
@@ -356,7 +361,9 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    } else {
       /* For explicit encryption, we have no marking, but we can fake one */
       _mongocrypt_marking_t marking;
-      bson_value_t value = {0};
+      bson_value_t value;
+
+      memset (&value, 0, sizeof (value));
 
       _mongocrypt_marking_init (&marking);
 
@@ -492,8 +499,9 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    bson_t as_bson;
    bson_iter_t iter;
 
-   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
+   _mongocrypt_ctx_opts_spec_t opts_spec;
 
+   memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.key_descriptor = OPT_REQUIRED;
    opts_spec.algorithm = OPT_REQUIRED;
 
@@ -576,7 +584,7 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       }
    }
 
-   _mongocrypt_key_broker_requests_done (&ctx->kb);
+   (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 

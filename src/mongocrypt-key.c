@@ -412,6 +412,8 @@ _mongocrypt_key_alt_name_copy_all (_mongocrypt_key_alt_name_t *ptr)
    while (ptr) {
       _mongocrypt_key_alt_name_t *copied;
       copied = bson_malloc0 (sizeof (*copied));
+      BSON_ASSERT (copied);
+
       bson_value_copy (&ptr->value, &copied->value);
 
       if (!ptr_copy) {
@@ -469,6 +471,8 @@ _mongocrypt_key_alt_name_create (const char *name, ...)
       _mongocrypt_key_alt_name_t *curr;
 
       curr = bson_malloc0 (sizeof (*curr));
+      BSON_ASSERT (curr);
+
       curr->value.value_type = BSON_TYPE_UTF8;
       curr->value.value.v_utf8.str = bson_strdup (arg_ptr);
       curr->value.value.v_utf8.len = (uint32_t) strlen (arg_ptr);
@@ -490,6 +494,8 @@ _mongocrypt_key_alt_name_t *
 _mongocrypt_key_alt_name_new (const bson_value_t *value)
 {
    _mongocrypt_key_alt_name_t *name = bson_malloc0 (sizeof (*name));
+   BSON_ASSERT (name);
+
    bson_value_copy (value, &name->value);
    return name;
 }

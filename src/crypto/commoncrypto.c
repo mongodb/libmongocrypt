@@ -155,6 +155,8 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
    }
 
    ctx = bson_malloc0 (sizeof (*ctx));
+   BSON_ASSERT (ctx);
+
 
    CCHmacInit (ctx, kCCHmacAlgSHA512, key->data, key->len);
    CCHmacUpdate (ctx, in->data, in->len);

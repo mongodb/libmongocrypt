@@ -42,6 +42,8 @@ _key_returned_prepend (_mongocrypt_key_broker_t *kb,
    BSON_ASSERT (key_doc);
 
    key_returned = bson_malloc0 (sizeof (*key_returned));
+   BSON_ASSERT (key_returned);
+
    key_returned->doc = _mongocrypt_key_new ();
    _mongocrypt_key_doc_copy_to (key_doc, key_returned->doc);
 
@@ -241,6 +243,8 @@ _mongocrypt_key_broker_request_id (_mongocrypt_key_broker_t *kb,
    }
 
    req = bson_malloc0 (sizeof *req);
+   BSON_ASSERT (req);
+
    _mongocrypt_buffer_copy_to (key_id, &req->id);
    req->next = kb->key_requests;
    kb->key_requests = req;
@@ -272,6 +276,8 @@ _mongocrypt_key_broker_request_name (_mongocrypt_key_broker_t *kb,
    }
 
    req = bson_malloc0 (sizeof *req);
+   BSON_ASSERT (req);
+
    req->alt_name = key_alt_name /* takes ownership */;
    req->next = kb->key_requests;
    kb->key_requests = req;
@@ -414,6 +420,8 @@ _decrypt_with_local_kms (_mongocrypt_key_broker_t *kb,
    decrypted_key_material->len =
       _mongocrypt_calculate_plaintext_len (key_material->len);
    decrypted_key_material->data = bson_malloc (decrypted_key_material->len);
+   BSON_ASSERT (decrypted_key_material->data);
+
    decrypted_key_material->owned = true;
 
    crypt_ret = _mongocrypt_do_decryption (kb->crypt->crypto,

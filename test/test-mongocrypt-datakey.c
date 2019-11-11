@@ -25,6 +25,8 @@ _init_buffer_with_count (_mongocrypt_buffer_t *out, uint32_t count)
 {
    out->len = count;
    out->data = bson_malloc0 (out->len);
+   BSON_ASSERT (out->data);
+
    out->owned = true;
 }
 

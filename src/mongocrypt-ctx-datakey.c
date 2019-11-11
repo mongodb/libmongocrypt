@@ -86,6 +86,8 @@ _append_id (mongocrypt_t *crypt, bson_t *bson, mongocrypt_status_t *status)
 
    _mongocrypt_buffer_init (&uuid);
    uuid.data = bson_malloc (UUID_LEN);
+   BSON_ASSERT (uuid.data);
+
    uuid.len = UUID_LEN;
    uuid.subtype = BSON_SUBTYPE_UUID;
    uuid.owned = true;
@@ -195,10 +197,11 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_datakey_t *dkctx;
    _mongocrypt_buffer_t plaintext_key_material;
-   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
+   _mongocrypt_ctx_opts_spec_t opts_spec;
    bool ret;
 
    ret = false;
+   memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.masterkey = OPT_REQUIRED;
    opts_spec.key_alt_names = OPT_OPTIONAL;
    opts_spec.endpoint = OPT_OPTIONAL;
@@ -219,6 +222,8 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
 
    _mongocrypt_buffer_init (&plaintext_key_material);
    plaintext_key_material.data = bson_malloc (MONGOCRYPT_KEY_LEN);
+   BSON_ASSERT (plaintext_key_material.data);
+
    plaintext_key_material.len = MONGOCRYPT_KEY_LEN;
    plaintext_key_material.owned = true;
    if (!_mongocrypt_random (ctx->crypt->crypto,
@@ -252,6 +257,8 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       /* use a random IV. */
       _mongocrypt_buffer_init (&iv);
       iv.data = bson_malloc0 (MONGOCRYPT_IV_LEN);
+      BSON_ASSERT (iv.data);
+
       iv.len = MONGOCRYPT_IV_LEN;
       iv.owned = true;
       if (!_mongocrypt_random (

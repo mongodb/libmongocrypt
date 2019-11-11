@@ -35,10 +35,14 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
 
    ciphertext.len = _mongocrypt_calculate_ciphertext_len (5);
    ciphertext.data = bson_malloc (ciphertext.len);
+   BSON_ASSERT (ciphertext.data);
+
    ciphertext.owned = true;
 
    decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
    decrypted.data = bson_malloc (decrypted.len);
+   BSON_ASSERT (decrypted.data);
+
    decrypted.owned = true;
 
    key.data = (uint8_t *) _mongocrypt_repeat_char ('k', MONGOCRYPT_KEY_LEN);
@@ -82,6 +86,8 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&decrypted);
    decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
    decrypted.data = bson_malloc (decrypted.len);
+   BSON_ASSERT (decrypted.data);
+
    decrypted.owned = true;
 
    ret = _mongocrypt_do_decryption (crypt->crypto,
@@ -188,6 +194,8 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
 
    ciphertext_actual.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext_actual.data = bson_malloc (ciphertext_actual.len);
+   BSON_ASSERT (ciphertext_actual.data);
+
    ciphertext_actual.owned = true;
 
    /* Force the crypto stack to initialize with mongocrypt_new */

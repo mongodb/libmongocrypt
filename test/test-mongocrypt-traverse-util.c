@@ -32,6 +32,8 @@ _append_marking (bson_t *bson, const char *key, int key_len)
                             BCON_UTF8 ("Nancy"));
 
    data = bson_malloc0 (marking_bson->len + 1);
+   BSON_ASSERT (data);
+
    data[0] = 0;
    memcpy (data + 1, marking_bson, marking_bson->len);
 
@@ -58,6 +60,8 @@ _append_ciphertext_with_subtype (bson_t *bson,
    data_len = (int) (1 + key_id_len + 1 + strlen (utf8));
 
    data = bson_malloc0 (data_len);
+   BSON_ASSERT (data);
+
    data[0] = first_byte;
    memcpy (data + 1, (TEST_BIN (16))->data, key_id_len);
    data[1 + key_id_len] = 0x02; /* BSON type UTF8 */
@@ -387,6 +391,8 @@ test_transform_cb (void *ctx,
    out->value_type = BSON_TYPE_BINARY;
    out->value.v_binary.subtype = 6;
    out->value.v_binary.data = bson_malloc0 (14);
+   BSON_ASSERT (out->value.v_binary.data);
+
    out->value.v_binary.data[0] = in->data[0];
    memcpy (out->value.v_binary.data + 1, "secretmessage", 13);
    out->value.v_binary.data_len = 14;

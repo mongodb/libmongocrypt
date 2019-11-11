@@ -50,6 +50,7 @@ mongocrypt_status_set (mongocrypt_status_t *status,
 
    bson_free (status->message);
    status->message = bson_malloc (message_len);
+   BSON_ASSERT (status->message);
    status->message[message_len - 1] = '\0';
    memcpy (status->message, message, message_len - 1);
    status->len = message_len - 1;

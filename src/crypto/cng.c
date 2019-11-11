@@ -109,15 +109,21 @@ _crypto_state_init (const _mongocrypt_buffer_t *key,
    keyBlob = NULL;
 
    state = bson_malloc0 (sizeof (*state));
+   BSON_ASSERT (state);
+
    state->key_handle = INVALID_HANDLE_VALUE;
 
    /* Initialize key storage buffer */
    state->key_object = bson_malloc0 (_aes256_key_blob_length);
+   BSON_ASSERT (state->key_object);
+
    state->key_object_length = _aes256_key_blob_length;
 
    /* Allocate temporary buffer for key import */
    keyBlobLength = sizeof (BCRYPT_KEY_DATA_BLOB_HEADER) + key->len;
    keyBlob = bson_malloc0 (keyBlobLength);
+   BSON_ASSERT (keyBlob);
+
 
    blobHeader.dwMagic = BCRYPT_KEY_DATA_BLOB_MAGIC;
    blobHeader.dwVersion = BCRYPT_KEY_DATA_BLOB_VERSION1;
@@ -144,6 +150,8 @@ _crypto_state_init (const _mongocrypt_buffer_t *key,
    bson_free (keyBlob);
 
    state->iv = bson_malloc0 (iv->len);
+   BSON_ASSERT (state->iv);
+
    state->iv_len = iv->len;
    memcpy (state->iv, iv->data, iv->len);
 

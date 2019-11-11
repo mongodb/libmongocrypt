@@ -104,6 +104,8 @@ _mongocrypt_cache_key_value_new (_mongocrypt_key_doc_t *key_doc,
    BSON_ASSERT (decrypted_key_material);
 
    key_value = bson_malloc0 (sizeof (*key_value));
+   BSON_ASSERT (key_value);
+
    _mongocrypt_buffer_copy_to (decrypted_key_material,
                                &key_value->decrypted_key_material);
 
@@ -155,6 +157,8 @@ _mongocrypt_cache_key_attr_new (_mongocrypt_buffer_t *id,
    }
 
    attr = bson_malloc0 (sizeof (*attr));
+   BSON_ASSERT (attr);
+
    if (id) {
       _mongocrypt_buffer_copy_to (id, &attr->id);
    }

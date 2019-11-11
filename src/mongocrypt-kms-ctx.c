@@ -159,9 +159,20 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
 
    kms_request_opt_destroy (opt);
    kms_request_set_service (kms->req, "kms");
+
+   if (kms_request_get_error (kms->req)) {
+      CLIENT_ERR ("error constructing KMS message: %s",
+                  kms_request_get_error (kms->req));
+      return false;
+   }
+
    /* If an endpoint was set, override the default Host header. */
    if (key->endpoint) {
-      kms_request_add_header_field (kms->req, "Host", key->endpoint);
+      if (!kms_request_add_header_field (kms->req, "Host", key->endpoint)) {
+         CLIENT_ERR ("error constructing KMS message: %s",
+                     kms_request_get_error (kms->req));
+         return false;
+      }
    }
 
    if (!kms_request_set_region (kms->req, key->masterkey_region)) {
@@ -263,10 +274,20 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    kms_request_opt_destroy (opt);
    kms_request_set_service (kms->req, "kms");
+
+   if (kms_request_get_error (kms->req)) {
+      CLIENT_ERR ("error constructing KMS message: %s",
+                  kms_request_get_error (kms->req));
+      return false;
+   }
+
    /* If an endpoint was set, override the default Host header. */
    if (ctx_opts->masterkey_aws_endpoint) {
-      kms_request_add_header_field (
-         kms->req, "Host", ctx_opts->masterkey_aws_endpoint);
+      if (!kms_request_add_header_field (
+             kms->req, "Host", ctx_opts->masterkey_aws_endpoint)) {
+         CLIENT_ERR ("error constructing KMS message: %s",
+                     kms_request_get_error (kms->req));
+      }
    }
 
    if (!kms_request_set_region (kms->req, ctx_opts->masterkey_aws_region)) {
@@ -370,10 +391,11 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
       body = kms_response_get_body (response, &body_len);
 
       if (http_status != 200) {
-         /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only support
-          * handling 200 response. */
+         /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
+          * support handling 200 response. */
          if (http_status < 400) {
-            CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d", http_status);
+            CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d",
+                        http_status);
             goto fail;
          }
 
@@ -396,12 +418,14 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
          }
 
          /* If we couldn't parse JSON, return the body unchanged as an error. */
-         CLIENT_ERR (
-            "Error parsing JSON in KMS response '%s'. HTTP status=%d", body, http_status);
+         CLIENT_ERR ("Error parsing JSON in KMS response '%s'. HTTP status=%d",
+                     body,
+                     http_status);
          goto fail;
       }
 
-      /* If HTTP response succeeded (status 200) then body should contain JSON. */ 
+      /* If HTTP response succeeded (status 200) then body should contain JSON.
+       */
       bson_destroy (&body_bson);
       if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
          CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
@@ -425,6 +449,8 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
 
       b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
       kms->result.data = bson_malloc (b64_strlen + 1);
+      BSON_ASSERT (kms->result.data);
+
       kms->result.len =
          kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
       kms->result.owned = true;

@@ -55,6 +55,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    plaintext.len = _mongocrypt_calculate_plaintext_len (ciphertext.data.len);
    plaintext.data = bson_malloc0 (plaintext.len);
+   BSON_ASSERT (plaintext.data);
+
    plaintext.owned = true;
 
    if (!_mongocrypt_ciphertext_serialize_associated_data (&ciphertext,
@@ -197,7 +199,9 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    bson_iter_t iter;
    bson_t as_bson;
 
-   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
+   _mongocrypt_ctx_opts_spec_t opts_spec;
+
+   memset (&opts_spec, 0, sizeof (opts_spec));
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
    }
@@ -248,7 +252,7 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   _mongocrypt_key_broker_requests_done (&ctx->kb);
+   (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
@@ -300,6 +304,6 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   _mongocrypt_key_broker_requests_done (&ctx->kb);
+   (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }

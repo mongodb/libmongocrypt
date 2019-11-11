@@ -139,7 +139,10 @@ _recurse (_recurse_state_t *state)
          ret = _recurse (&child_state);
 
          if (state->copy) {
-            bson_append_document_end (state->copy, &state->child);
+            if (!bson_append_document_end (state->copy, &state->child)) {
+               CLIENT_ERR ("error appending document");
+               return false;
+            }
          }
 
          if (!ret) {

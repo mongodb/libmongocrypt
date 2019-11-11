@@ -55,8 +55,12 @@ _mongocrypt_set_error (mongocrypt_status_t *status,
    if (status) {
       va_start (args, format);
       prepared_message = bson_strdupv_printf (format, args);
-      mongocrypt_status_set (status, type, code, prepared_message, -1);
-      bson_free (prepared_message);
+      if (!prepared_message) {
+         mongocrypt_status_set (status, type, code, "Out of memory", -1);
+      } else {
+         mongocrypt_status_set (status, type, code, prepared_message, -1);
+         bson_free (prepared_message);
+      }
       va_end (args);
    }
 }
@@ -99,7 +103,7 @@ tmp_buf (const _mongocrypt_buffer_t *buf)
 void
 _mongocrypt_do_init (void)
 {
-   kms_message_init ();
+   (void) kms_message_init ();
    _native_crypto_init ();
 }
 
@@ -110,6 +114,8 @@ mongocrypt_new (void)
    mongocrypt_t *crypt;
 
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
+   BSON_ASSERT (crypt);
+
    _mongocrypt_mutex_init (&crypt->mutex);
    _mongocrypt_cache_collinfo_init (&crypt->cache_collinfo);
    _mongocrypt_cache_key_init (&crypt->cache_key);
@@ -201,6 +207,8 @@ _mongocrypt_new_string_from_bytes (const void *in, int len)
 
    out_size += len > max_bytes ? sizeof ("...") : 1 /* for null */;
    out = bson_malloc0 (out_size);
+   BSON_ASSERT (out);
+
    ret = out;
 
    for (int i = 0; i < len && i < max_bytes; i++, out += chars_per_byte) {
@@ -218,7 +226,7 @@ _mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary)
    uint32_t len;
 
    if (!_mongocrypt_binary_to_bson (binary, &bson) ||
-       !bson_validate (&bson, 0, NULL)) {
+       !bson_validate (&bson, BSON_VALIDATE_NONE, NULL)) {
       char *hex;
       char *full_str;
 
@@ -351,6 +359,8 @@ mongocrypt_init (mongocrypt_t *crypt)
 #else
       /* set default hooks. */
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+      BSON_ASSERT (crypt->crypto);
+
 #endif
    }
    return true;
@@ -434,6 +444,8 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
    }
 
    crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+   BSON_ASSERT (crypt->crypto);
+
    crypt->crypto->hooks_enabled = true;
    crypt->crypto->ctx = ctx;
 

@@ -129,6 +129,8 @@ _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
    offset = 0;
    out->len = 1 + ciphertext->key_id.len + 1 + ciphertext->data.len;
    out->data = bson_malloc0 (out->len);
+   BSON_ASSERT (out->data);
+
    out->owned = true;
 
    out->data[offset] = ciphertext->blob_subtype;
@@ -179,6 +181,8 @@ _mongocrypt_ciphertext_serialize_associated_data (
 
    out->len = 1 + ciphertext->key_id.len + 1;
    out->data = bson_malloc (out->len);
+   BSON_ASSERT (out->data);
+
    out->owned = true;
    memcpy (out->data, &ciphertext->blob_subtype, 1);
    bytes_written = 1;

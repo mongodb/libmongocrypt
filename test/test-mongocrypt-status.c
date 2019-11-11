@@ -51,6 +51,8 @@ _test_status_len (_mongocrypt_tester_t *tester)
 
    /* Test setting a large string. */
    largestring = bson_malloc (4096);
+   BSON_ASSERT (largestring);
+
    memset (largestring, 'a', 4096);
    mongocrypt_status_set (
       status, MONGOCRYPT_STATUS_ERROR_CLIENT, errcode, largestring, 4097);

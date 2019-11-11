@@ -35,6 +35,8 @@ _make_owned (_mongocrypt_buffer_t *buf)
    }
    tmp = buf->data;
    buf->data = bson_malloc (buf->len);
+   BSON_ASSERT (buf->data);
+
    memcpy (buf->data, tmp, buf->len);
    buf->owned = true;
 }
@@ -57,12 +59,14 @@ _mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len)
       but a fancier implementation could copy over up to 'len'
       bytes from the old buffer to the new one. */
    if (buf->owned) {
-      bson_realloc (buf->data, len);
+      buf->data = bson_realloc (buf->data, len);
       buf->len = len;
       return;
    }
 
    buf->data = bson_malloc (len);
+   BSON_ASSERT (buf->data);
+
    buf->len = len;
    buf->owned = true;
 }
@@ -221,7 +225,13 @@ _mongocrypt_buffer_copy_to (const _mongocrypt_buffer_t *src,
    BSON_ASSERT (dst);
 
    _mongocrypt_buffer_cleanup (dst);
+   if (src->len == 0) {
+      return;
+   }
+
    dst->data = bson_malloc ((size_t) src->len);
+   BSON_ASSERT (dst->data);
+
    memcpy (dst->data, src->data, src->len);
    dst->len = src->len;
    dst->subtype = src->subtype;
@@ -294,6 +304,8 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    le_data_len = BSON_UINT32_TO_LE (data_len);
 
    data = bson_malloc0 (data_len);
+   BSON_ASSERT (data);
+
    memcpy (data + data_prefix, plaintext->data, plaintext->len);
    memcpy (data, &le_data_len, INT32_LEN);
    memcpy (data + INT32_LEN, &type, TYPE_LEN);
@@ -303,11 +315,13 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
       goto fail;
    }
 
-   if (!bson_validate (&wrapper, 0, NULL)) {
+   if (!bson_validate (&wrapper, BSON_VALIDATE_NONE, NULL)) {
       goto fail;
    }
 
-   bson_iter_init_find (&iter, &wrapper, "");
+   if (!bson_iter_init_find (&iter, &wrapper, "")) {
+      goto fail;
+   }
    bson_value_copy (bson_iter_value (&iter), out);
 
    /* Due to an open libbson bug (CDRIVER-3340), give an empty
@@ -345,6 +359,8 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
    plaintext->len =
       wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
    plaintext->data = bson_malloc (plaintext->len);
+   BSON_ASSERT (plaintext->data);
+
    plaintext->owned = true;
    memcpy (plaintext->data, wrapper_data + offset, plaintext->len);
 
@@ -402,6 +418,8 @@ _mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex)
 
    buf->len = (uint32_t) strlen (hex) / 2;
    buf->data = bson_malloc (buf->len);
+   BSON_ASSERT (buf->data);
+
    buf->owned = true;
    for (i = 0; i < buf->len; i++) {
       int tmp;
@@ -426,6 +444,8 @@ char *
 _mongocrypt_buffer_to_hex (_mongocrypt_buffer_t *buf)
 {
    char *hex = bson_malloc0 (buf->len * 2 + 1);
+   BSON_ASSERT (hex);
+
    char *out = hex;
 
    for (uint32_t i = 0; i < buf->len; i++, out += 2) {

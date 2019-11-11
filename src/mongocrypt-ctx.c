@@ -250,6 +250,8 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
       ctx_size = sizeof (_mongocrypt_ctx_datakey_t);
    }
    ctx = bson_malloc0 (ctx_size);
+   BSON_ASSERT (ctx);
+
    ctx->crypt = crypt;
    ctx->status = mongocrypt_status_new ();
    ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
@@ -295,7 +297,7 @@ _mongo_feed_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 static bool
 _mongo_done_keys (mongocrypt_ctx_t *ctx)
 {
-   _mongocrypt_key_broker_docs_done (&ctx->kb);
+   (void) _mongocrypt_key_broker_docs_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
@@ -418,10 +420,11 @@ mongocrypt_ctx_state_t
 mongocrypt_ctx_state (mongocrypt_ctx_t *ctx)
 {
    if (!ctx) {
-      return false;
+      return MONGOCRYPT_CTX_ERROR;
    }
    if (!ctx->initialized) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+      _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+      return MONGOCRYPT_CTX_ERROR;
    }
 
    return ctx->state;

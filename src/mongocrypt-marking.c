@@ -212,6 +212,8 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    _mongocrypt_buffer_from_iter (&plaintext, &marking->v_iter);
    ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
    ciphertext->data.data = bson_malloc (ciphertext->data.len);
+   BSON_ASSERT (ciphertext->data.data);
+
    ciphertext->data.owned = true;
 
    switch (marking->algorithm) {

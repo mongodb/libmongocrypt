@@ -129,6 +129,8 @@ realloc_buffer (char **buffer, size_t *n, size_t len)
 {
    if (*buffer == NULL) {
       *buffer = malloc (len);
+      KMS_ASSERT (*buffer);
+
    } else {
       *buffer = realloc (*buffer, len);
    }
@@ -203,6 +205,8 @@ read_test (const char *path, const char *suffix)
 
    f_size = (size_t) file_stat.st_size;
    str = malloc (f_size + 1);
+   KMS_ASSERT (str);
+
    memset (str, 0, f_size + 1);
 
 // Windows will convert crlf to lf

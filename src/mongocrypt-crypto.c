@@ -425,7 +425,7 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
    intermediates[1].data = ciphertext->data;
    intermediates[1].len = ciphertext->len;
    /* Add associated data length in bits. */
-   associated_data_len_be = 8 * associated_data->len;
+   associated_data_len_be = 8 * (uint64_t) associated_data->len;
    associated_data_len_be = BSON_UINT64_TO_BE (associated_data_len_be);
    intermediates[2].data = (uint8_t *) &associated_data_len_be;
    intermediates[2].len = sizeof (uint64_t);
@@ -878,7 +878,7 @@ _mongocrypt_calculate_deterministic_iv (
    intermediates[0].data = associated_data->data;
    intermediates[0].len = associated_data->len;
    /* Add associated data length in bits. */
-   associated_data_len_be = 8 * associated_data->len;
+   associated_data_len_be = 8 * (uint64_t) associated_data->len;
    associated_data_len_be = BSON_UINT64_TO_BE (associated_data_len_be);
    intermediates[1].data = (uint8_t *) &associated_data_len_be;
    intermediates[1].len = sizeof (uint64_t);
