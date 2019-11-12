@@ -646,7 +646,6 @@ buildvariants:
     packager_distro: ubuntu1604
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -674,7 +673,6 @@ buildvariants:
     packager_distro: rhel72
     packager_arch: s390x
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -698,7 +696,6 @@ buildvariants:
     packager_distro: amazon
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -714,7 +711,6 @@ buildvariants:
     packager_distro: amazon2
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -731,7 +727,6 @@ buildvariants:
     packager_distro: debian10
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -748,7 +743,6 @@ buildvariants:
     packager_distro: debian92
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -765,7 +759,6 @@ buildvariants:
     packager_distro: rhel62
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -795,7 +788,6 @@ buildvariants:
     packager_distro: rhel70
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -811,7 +803,6 @@ buildvariants:
     packager_distro: rhel71
     packager_arch: ppc64le
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -826,7 +817,6 @@ buildvariants:
     packager_distro: rhel80
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -842,7 +832,6 @@ buildvariants:
     packager_distro: suse12
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -859,7 +848,6 @@ buildvariants:
     packager_distro: suse15
     packager_arch: x86_64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -876,7 +864,6 @@ buildvariants:
     packager_distro: suse12
     packager_arch: s390x
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
@@ -892,7 +879,6 @@ buildvariants:
     packager_distro: ubuntu1604
     packager_arch: arm64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -927,7 +913,6 @@ buildvariants:
     packager_distro: ubuntu1804
     packager_arch: arm64
   tasks:
-  - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
