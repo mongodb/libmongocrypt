@@ -207,7 +207,7 @@ functions:
 
           cat <<EOF >> ~/.aws/config
           [default]
-          region = us-east-2
+          region = us-east-1
           EOF
 
           cat <<EOF >> ~/.aws/credentials
