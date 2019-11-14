@@ -306,7 +306,10 @@ message ("Configuring libmongocrypt version ${BUILD_VERSION}")
 configure_file (src/mongocrypt.h.in src/mongocrypt.h)
 
 set (PROJECT_VERSION "${BUILD_VERSION}")
-set (PKG_CONFIG_REQUIRES_PRIVATE "libbson-1.0")
+# If libbson is statically linked, don't require a dependency.
+if (ENABLE_SHARED_BSON)
+   set (PKG_CONFIG_REQUIRES_PRIVATE "libbson-1.0")
+endif ()
 set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
 set (PKG_CONFIG_LIBS "-L\${libdir} -lmongocrypt")
