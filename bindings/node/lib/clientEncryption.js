@@ -57,11 +57,30 @@ module.exports = function(modules) {
    */
 
   /**
+   * @classdesc
    * The public interface for explicit client side encryption
+   *
+   * **NOTE:** This class must be instantiated directly from `mongodb-client-encryption`.
+   * To do this, you must "inject" the `mongodb` package into `mongodb-client-encryption`:
+   *
+   * ```js
+   * // Simply importing mongodb-client-encryption returns
+   * // a function.
+   * const pkg = require('mongodb-client-encryption');
+   * console.log(typeof pkg); // 'function'
+   *
+   * // To get the members of the package, you must inject mongodb
+   * // into the returned function
+   * const mongodb = require('mongodb');
+   * const mongodbClientEncryption = pkg(mongodb);
+   * console.log(typeof mongodbClientEncryption); // object;
+   *
+   * const ClientEncryption = mongodbClientEncryption.ClientEncryption;
+   * ```
    */
   class ClientEncryption {
     /**
-     * Create a new encryption instance
+     * Create a new encryption instance.
      *
      * @param {MongoClient} client The client used for encryption
      * @param {object} options Optional settings
@@ -70,6 +89,7 @@ module.exports = function(modules) {
      * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
      *
      * @example
+     * // Creating a new ClientEncryption with a local master key
      * new ClientEncryption(mongoClient, {
      *   keyVaultNamespace: 'client.encryption',
      *   kmsProviders: {
@@ -80,6 +100,7 @@ module.exports = function(modules) {
      * });
      *
      * @example
+     * // Creating a new ClientEncryption with aws kms
      * new ClientEncryption(mongoClient, {
      *   keyVaultNamespace: 'client.encryption',
      *   kmsProviders: {

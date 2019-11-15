@@ -34,10 +34,33 @@ function collectionNamespace(ns) {
 }
 
 /**
- * @class
+ * @classdesc
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
+ *
+ * **NOTE:** This class must be instantiated directly from `mongodb-client-encryption`.
+ * To do this, you must "inject" the `mongodb` package into `mongodb-client-encryption`:
+ *
+ * ```js
+ *
+ * // Simply importing mongodb-client-encryption returns
+ * // a function.
+ * const pkg = require('mongodb-client-encryption');
+ * console.log(typeof pkg); // 'function'
+ *
+ * // To get the members of the package, you must inject mongodb
+ * // into the returned function
+ * const mongodb = require('mongodb');
+ * const mongodbClientEncryption = pkg(mongodb);
+ * console.log(typeof mongodbClientEncryption); // object;
+ *
+ * const MongoCryptError = mongodbClientEncryption.MongoCryptError;
+ * ```
  */
 class MongoCryptError extends Error {
+  /**
+   * An error indicating that something went wrong specifically with MongoDB Client Encryption
+   * @param {string} message The error message
+   */
   constructor(message) {
     super(message);
     this.name = 'MongoCryptError';

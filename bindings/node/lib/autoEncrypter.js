@@ -55,7 +55,9 @@ module.exports = function(modules) {
    */
 
   /**
-   * @classdesc An internal class to be used by the driver for auto encryption
+   * @classdesc
+   * An internal class to be used by the driver for auto encryption
+   *
    * **NOTE**: Not meant to be instantiated directly, this is for internal use only.
    */
   class AutoEncrypter {

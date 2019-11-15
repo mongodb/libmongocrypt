@@ -29,14 +29,43 @@ npm test
 
 <dl>
 <dt><a href="#AutoEncrypter">AutoEncrypter</a></dt>
-<dd><p>An internal class to be used by the driver for auto encryption
-<strong>NOTE</strong>: Not meant to be instantiated directly, this is for internal use only.</p>
+<dd><p>An internal class to be used by the driver for auto encryption</p>
+<p><strong>NOTE</strong>: Not meant to be instantiated directly, this is for internal use only.</p>
 </dd>
 <dt><a href="#ClientEncryption">ClientEncryption</a></dt>
 <dd><p>The public interface for explicit client side encryption</p>
+<p><strong>NOTE:</strong> This class must be instantiated directly from <code>mongodb-client-encryption</code>.
+To do this, you must &quot;inject&quot; the <code>mongodb</code> package into <code>mongodb-client-encryption</code>:</p>
+<pre><code class="language-js">// Simply importing mongodb-client-encryption returns
+// a function.
+const pkg = require(&#39;mongodb-client-encryption&#39;);
+console.log(typeof pkg); // &#39;function&#39;
+
+// To get the members of the package, you must inject mongodb
+// into the returned function
+const mongodb = require(&#39;mongodb&#39;);
+const mongodbClientEncryption = pkg(mongodb);
+console.log(typeof mongodbClientEncryption); // object;
+
+const ClientEncryption = mongodbClientEncryption.ClientEncryption;</code></pre>
 </dd>
 <dt><a href="#MongoCryptError">MongoCryptError</a></dt>
 <dd><p>An error indicating that something went wrong specifically with MongoDB Client Encryption</p>
+<p><strong>NOTE:</strong> This class must be instantiated directly from <code>mongodb-client-encryption</code>.
+To do this, you must &quot;inject&quot; the <code>mongodb</code> package into <code>mongodb-client-encryption</code>:</p>
+<pre><code class="language-js">
+// Simply importing mongodb-client-encryption returns
+// a function.
+const pkg = require(&#39;mongodb-client-encryption&#39;);
+console.log(typeof pkg); // &#39;function&#39;
+
+// To get the members of the package, you must inject mongodb
+// into the returned function
+const mongodb = require(&#39;mongodb&#39;);
+const mongodbClientEncryption = pkg(mongodb);
+console.log(typeof mongodbClientEncryption); // object;
+
+const MongoCryptError = mongodbClientEncryption.MongoCryptError;</code></pre>
 </dd>
 </dl>
 
@@ -52,6 +81,7 @@ npm test
 
 ## AutoEncrypter
 An internal class to be used by the driver for auto encryption
+
 **NOTE**: Not meant to be instantiated directly, this is for internal use only.
 
 
@@ -141,7 +171,7 @@ Configuration options for a automatic client encryption.
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| [mongocryptURI] | <code>string</code> |  | A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise |
+| [mongocryptdURI] | <code>string</code> |  | A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise |
 | [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | If true, autoEncryption will not attempt to spawn a mongocryptd before connecting |
 | [mongocryptdSpawnPath] | <code>string</code> |  | The path to the mongocryptd executable on the system |
 | [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
@@ -164,6 +194,24 @@ the underlying C++ Bindings.
 
 ## ClientEncryption
 The public interface for explicit client side encryption
+
+**NOTE:** This class must be instantiated directly from `mongodb-client-encryption`.
+To do this, you must "inject" the `mongodb` package into `mongodb-client-encryption`:
+
+```js
+// Simply importing mongodb-client-encryption returns
+// a function.
+const pkg = require('mongodb-client-encryption');
+console.log(typeof pkg); // 'function'
+
+// To get the members of the package, you must inject mongodb
+// into the returned function
+const mongodb = require('mongodb');
+const mongodbClientEncryption = pkg(mongodb);
+console.log(typeof mongodbClientEncryption); // object;
+
+const ClientEncryption = mongodbClientEncryption.ClientEncryption;
+```
 
 
 * [ClientEncryption](#ClientEncryption)
@@ -196,12 +244,14 @@ The public interface for explicit client side encryption
 | client | <code>MongoClient</code> | The client used for encryption |
 | options | <code>object</code> | Optional settings |
 | options.keyVaultNamespace | <code>string</code> | The namespace of the key vault, used to store encryption keys |
+| [options.keyVaultClient] | <code>MongoClient</code> | A `MongoClient` used to fetch keys from a key vault. Defaults to `client` |
 | [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) | options for specific KMS providers to use |
 
-Create a new encryption instance
+Create a new encryption instance.
 
 **Example**  
 ```js
+// Creating a new ClientEncryption with a local master key
 new ClientEncryption(mongoClient, {
   keyVaultNamespace: 'client.encryption',
   kmsProviders: {
@@ -213,6 +263,7 @@ new ClientEncryption(mongoClient, {
 ```
 **Example**  
 ```js
+// Creating a new ClientEncryption with aws kms
 new ClientEncryption(mongoClient, {
   keyVaultNamespace: 'client.encryption',
   kmsProviders: {
@@ -386,6 +437,35 @@ query for the data key itself against the key vault namespace.
 <a name="MongoCryptError"></a>
 
 ## MongoCryptError
+An error indicating that something went wrong specifically with MongoDB Client Encryption
+
+**NOTE:** This class must be instantiated directly from `mongodb-client-encryption`.
+To do this, you must "inject" the `mongodb` package into `mongodb-client-encryption`:
+
+```js
+
+// Simply importing mongodb-client-encryption returns
+// a function.
+const pkg = require('mongodb-client-encryption');
+console.log(typeof pkg); // 'function'
+
+// To get the members of the package, you must inject mongodb
+// into the returned function
+const mongodb = require('mongodb');
+const mongodbClientEncryption = pkg(mongodb);
+console.log(typeof mongodbClientEncryption); // object;
+
+const MongoCryptError = mongodbClientEncryption.MongoCryptError;
+```
+
+<a name="new_MongoCryptError_new"></a>
+
+### new MongoCryptError(message)
+
+| Param | Type | Description |
+| --- | --- | --- |
+| message | <code>string</code> | The error message |
+
 An error indicating that something went wrong specifically with MongoDB Client Encryption
 
 <a name="KMSProviders"></a>
