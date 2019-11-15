@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# set -o xtrace   # Write all commands first to stderr
+set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 NODE_LTS_NAME=${NODE_LTS_NAME:-dubnium}
@@ -10,6 +10,8 @@ NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
 NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
 BIN_DIR="$(pwd)/bin"
 MONGOCRYPTD_PATH="https://s3.amazonaws.com/mciuploads/mongodb-mongo-v4.2/enterprise-ubuntu1604-64/f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a/binaries/mongo-cryptd-mongodb_mongo_v4.2_enterprise_ubuntu1604_64_f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a_19_06_13_17_31_40.tgz"
+NVM_WINDOWS_URL="https://github.com/coreybutler/nvm-windows/releases/download/1.1.7/nvm-noinstall.zip"
+NVM_URL="https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh"
 
 # create node artifacts path if needed
 mkdir -p ${NODE_ARTIFACTS_PATH}
@@ -21,18 +23,48 @@ mkdir -p ${BIN_DIR}
 export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
 
 # locate cmake
-. ./.evergreen/find_cmake.sh
+if [ "$OS" == "Windows_NT" ]; then
+  CMAKE=/cygdrive/c/cmake/bin/cmake
+  ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
+else
+  chmod u+x ./.evergreen/find-cmake.sh
+  . ./.evergreen/find-cmake.sh
+fi
 
 # this needs to be explicitly exported for the nvm install below
 export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
 mkdir -p ${NVM_DIR}
 
 # install Node.js
-echo "Installing NVM"
-curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
-[ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
 echo "Installing Node ${NODE_LTS_NAME}"
-nvm install --lts=${NODE_LTS_NAME}
+if [ "$OS" == "Windows_NT" ]; then
+  # nvm-windows doesn't support lts names, so this will convert them to the latest releases for us
+  NODE_VERSION=$(curl -s -L https://nodejs.org/dist/latest-${NODE_LTS_NAME}/SHASUMS256.txt | grep -oP 'node-v\K\w+.\w+.\w+' | head -1)
+
+  export NVM_HOME=`cygpath -w "$NVM_DIR"`
+  export NVM_SYMLINK=`cygpath -w "$NODE_ARTIFACTS_PATH/bin"`
+  export PATH=`cygpath $NVM_SYMLINK`:`cygpath $NVM_HOME`:$PATH
+
+  # download and install nvm
+  curl -L $NVM_WINDOWS_URL -o nvm.zip
+  unzip -d $NVM_DIR nvm.zip
+  rm nvm.zip
+
+  chmod 777 $NVM_DIR
+  chmod -R a+rx $NVM_DIR
+
+  cat <<EOT > $NVM_DIR/settings.txt
+root: $NVM_HOME
+path: $NVM_SYMLINK
+EOT
+
+  nvm install $NODE_VERSION
+  nvm use $NODE_VERSION
+else
+  curl -o- $NVM_URL | bash
+  [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
+  nvm install --lts=${NODE_LTS_NAME}
+fi
 
 # setup npm cache in a local directory
 cat <<EOT > .npmrc
