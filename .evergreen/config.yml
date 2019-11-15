@@ -150,7 +150,7 @@ functions:
         script: |-
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
-  
+
   "build and test node":
     - command: "shell.exec"
       params:
@@ -336,7 +336,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test java"
-    
+
 - name: build-and-test-python
   depends_on:
   - variant: ubuntu1804-64
@@ -423,7 +423,7 @@ tasks:
       name: build-and-test-and-upload
     - variant: suse15-64
       name: build-and-test-and-upload
-    - variant: suse12-s390x  
+    - variant: suse12-s390x
       name: build-and-test-and-upload
     - variant: ubuntu1604-arm64
       name: build-and-test-and-upload
@@ -551,7 +551,7 @@ tasks:
 
           CMAKE=/cygdrive/c/cmake/bin/cmake
           mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
-          case "$mongocrypt_version" in 
+          case "$mongocrypt_version" in
             *+*)
               # Not a tagged release.
               echo "{}" > ./.evergreen/windows-upload.json
@@ -687,6 +687,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-csharp-and-test
   - build-and-test-python
+  - build-and-test-node
   - windows-upload-check
 - name: linux-64-amazon-ami
   display_name: "Amazon Linux"
@@ -856,7 +857,7 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
-- name: suse12-s390x  
+- name: suse12-s390x
   display_name: "SLES 12 s390x"
   run_on: suse12-zseries-test
   expansions:
