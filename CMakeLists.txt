@@ -187,6 +187,10 @@ target_compile_definitions (mongocrypt_static PRIVATE ${BSON_DEFINITIONS})
 target_link_libraries (mongocrypt_static PRIVATE ${BSON_TARGET})
 target_link_libraries (mongocrypt_static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_compile_definitions (mongocrypt_static PUBLIC MONGOCRYPT_STATIC_DEFINE)
+if (ENABLE_WINDOWS_STATIC_RUNTIME)
+   target_compile_options (mongocrypt_static PUBLIC /MT)
+   target_compile_options (kms_message_static PUBLIC /MT)
+endif ()
 
 
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
