@@ -178,7 +178,7 @@ target_link_libraries (mongocrypt PRIVATE kms_message_static)
 
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
-add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
+add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
 target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (mongocrypt_static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
 target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -186,7 +186,8 @@ target_include_directories (mongocrypt_static PRIVATE ${BSON_INCLUDES})
 target_compile_definitions (mongocrypt_static PRIVATE ${BSON_DEFINITIONS})
 target_link_libraries (mongocrypt_static PRIVATE ${BSON_TARGET})
 target_link_libraries (mongocrypt_static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-target_compile_definitions (mongocrypt_static PUBLIC MONGOCRYPT_STATIC_DEFINE)
+target_link_libraries (mongocrypt_static PRIVATE kms_message_static)
+target_compile_definitions (mongocrypt_static PUBLIC MONGOCRYPT_STATIC_DEFINE KMS_MSG_STATIC)
 
 
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
@@ -238,10 +239,7 @@ set (TEST_MONGOCRYPT_SOURCES
 )
 
 # Define test-mongocrypt
-# TODO: test-mongocrypt should only need to link against mongocrypt_static,
-# which statically links kms_message. To work around linker errors in Windows,
-# test-mongocrypt is compiled with TARGET_OBJECTS of kms_message
-add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES} $<TARGET_OBJECTS:kms_message_obj>)
+add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
@@ -261,7 +259,7 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 
    # Define example-state-machine-static
-   add_executable (example-state-machine-static test/example-state-machine.c $<TARGET_OBJECTS:kms_message_obj>)
+   add_executable (example-state-machine-static test/example-state-machine.c)
    target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static ${BSON_TARGET})
    target_include_directories (example-state-machine-static PRIVATE ${BSON_INCLUDES})
    target_compile_definitions (example-state-machine-static PRIVATE ${BSON_DEFINITIONS})

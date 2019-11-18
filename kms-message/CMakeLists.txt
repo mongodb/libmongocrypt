@@ -68,11 +68,6 @@ add_library (
    ${KMS_MESSAGE_SOURCES}
 )
 
-add_library (
-   kms_message_obj OBJECT
-   ${KMS_MESSAGE_SOURCES}
-)
-
 if (NOT DISABLE_NATIVE_CRYPTO)
    if (WIN32)
       target_link_libraries(kms_message "bcrypt")
