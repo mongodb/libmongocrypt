@@ -1,7 +1,15 @@
 'use strict';
 
-const MongoCryptError = require('./lib/common').MongoCryptError;
+let defaultModule;
+function loadDefaultModule() {
+  if (!defaultModule) {
+    defaultModule = extension(require('mongodb'));
+  }
 
+  return defaultModule;
+}
+
+const MongoCryptError = require('./lib/common').MongoCryptError;
 function extension(mongodb) {
   const modules = { mongodb };
 
@@ -15,27 +23,20 @@ function extension(mongodb) {
     MongoCryptError
   };
 }
-let _module;
-function loadModule() {
-  if (!_module) {
-    _module = extension(require('mongodb'));
+
+module.exports = {
+  extension,
+  MongoCryptError,
+  get AutoEncrypter() {
+    const m = loadDefaultModule();
+    delete module.exports.AutoEncrypter;
+    module.exports.AutoEncrypter = m.AutoEncrypter;
+    return m.AutoEncrypter;
+  },
+  get ClientEncryption() {
+    const m = loadDefaultModule();
+    delete module.exports.ClientEncryption;
+    module.exports.ClientEncryption = m.ClientEncryption;
+    return m.ClientEncryption;
   }
-
-  return _module;
-}
-
-function memo(fn) {
-  let value;
-  return () => value || (value = fn());
-}
-
-exports.extension = extension;
-exports.MongoCryptError = MongoCryptError;
-Object.defineProperty(exports, 'AutoEncrypter', {
-  enumerable: true,
-  get: memo(() => loadModule().AutoEncrypter)
-});
-Object.defineProperty(exports, 'ClientEncryption', {
-  enumerable: true,
-  get: memo(() => loadModule().ClientEncryption)
-});
+};
