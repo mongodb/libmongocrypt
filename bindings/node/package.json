@@ -42,6 +42,9 @@
     "sinon": "^4.3.0",
     "sinon-chai": "^3.3.0"
   },
+  "peerDependencies": {
+    "mongodb": "~3.4.0"
+  },
   "repository": {
     "url": "https://github.com/mongodb/libmongocrypt"
   }
