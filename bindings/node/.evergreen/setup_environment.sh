@@ -27,8 +27,8 @@ if [ "$OS" == "Windows_NT" ]; then
   CMAKE=/cygdrive/c/cmake/bin/cmake
   ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 else
-  chmod u+x ./.evergreen/find-cmake.sh
-  . ./.evergreen/find-cmake.sh
+  chmod u+x ./.evergreen/find_cmake.sh
+  . ./.evergreen/find_cmake.sh
 fi
 
 # this needs to be explicitly exported for the nvm install below
