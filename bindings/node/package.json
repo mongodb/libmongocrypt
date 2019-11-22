@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "0.3.1",
+  "version": "1.0.0-rc0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "index.js",
   "directories": {
