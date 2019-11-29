@@ -583,6 +583,31 @@ _test_crypto_hooks_explicit_err (_mongocrypt_tester_t *tester)
    bson_string_free (call_history, true);
 }
 
+/* validate that sha256 errors are handled correctly */
+static void
+_test_crypto_hooks_explicit_sha256_err (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+   mongocrypt_ctx_t *ctx;
+
+   status = mongocrypt_status_new ();
+   crypt = _create_mongocrypt ("error_on:sha256");
+   ctx = mongocrypt_ctx_new (crypt);
+
+   call_history = bson_string_new (NULL);
+
+   ASSERT_OK (
+      mongocrypt_ctx_setopt_masterkey_aws (ctx, "us-east-1", -1, "cmk", -1),
+      ctx);
+   ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx), ctx, "failed to create KMS message");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
+   bson_string_free (call_history, true);
+}
+
 
 void
 _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
@@ -594,4 +619,5 @@ _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
    INSTALL_TEST_CRYPTO (_test_kms_request, CRYPTO_OPTIONAL);
    INSTALL_TEST_CRYPTO (_test_crypto_hooks_unset, CRYPTO_PROHIBITED);
    INSTALL_TEST_CRYPTO (_test_crypto_hooks_explicit_err, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_explicit_sha256_err, CRYPTO_OPTIONAL);
 }

@@ -523,6 +523,10 @@ kms_request_get_string_to_sign (kms_request_t *request)
    kms_request_str_append_chars (sts, "/aws4_request\n", -1);
 
    creq = kms_request_str_wrap (kms_request_get_canonical (request), -1);
+   if (!creq) {
+      goto done;
+   }
+
    if (!kms_request_str_append_hashed (&request->crypto, sts, creq)) {
       goto done;
    }
