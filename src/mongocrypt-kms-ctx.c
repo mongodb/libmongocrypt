@@ -407,8 +407,9 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
          /* AWS error responses include a JSON message, like { "message":
           * "error" } */
          bson_destroy (&body_bson);
-         if (bson_init_from_json (&body_bson, body, body_len, &bson_error) &&
-             bson_iter_init_find (&iter, &body_bson, "message") &&
+         if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
+            bson_init (&body_bson);
+         } else if (bson_iter_init_find (&iter, &body_bson, "message") &&
              BSON_ITER_HOLDS_UTF8 (&iter)) {
             CLIENT_ERR ("Error in KMS response '%s'. "
                         "HTTP status=%d",
@@ -432,6 +433,7 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
                      "HTTP status=%d",
                      bson_error.message,
                      http_status);
+         bson_init (&body_bson);
          goto fail;
       }
 

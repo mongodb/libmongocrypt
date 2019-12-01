@@ -87,5 +87,18 @@
       "\r\n"
     ],
     "expect": "Unsupported HTTP code in KMS response"
+  },
+  {
+    "description": "Bad JSON in response",
+    "ctx": ["decrypt"],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\r\n",
+      "Content-Type: application/x-amz-json-1.1\r\n",
+      "Content-Length: 233\r\n",
+      "\r\n",
+      "BADJSON\": \"arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0\", \"Plaintext\": \"TqhXy3tKckECjy4/ZNykMWG8amBF46isVPzeOgeusKrwheBmYaU8TMG5AHR/NeUDKukqo8hBGgogiQOVpLPkqBQHD8YkLsNbDmHoGOill5QAHnniF/Lz405bGucB5TfR\"}"
+    ],
+    "expect": "Error parsing JSON in KMS response"
   }
 ]
