@@ -42,6 +42,21 @@
     "expect": "validation error"
   },
   {
+    "description": "Incorrect message included in body",
+    "ctx": ["datakey", "decrypt"],
+    "http_reply": [
+      "HTTP/1.1 400 Bad Request\r\n",
+      "x-amzn-RequestId: b0e91dc8-3807-11e2-83c6-5912bf8ad066\r\n",
+      "x-amzn-ErrorType: ValidationException\r\n",
+      "Content-Type: application/json\r\n",
+      "Content-Length: 128\r\n",
+      "Date: Mon, 26 Nov 2012 20:27:25 GMT\r\n",
+      "\r\n",
+      "{\"Message\":\"1 validation error detected: Value null at 'InstallS3Bucket' failed to satisfy constraint: Member must not be null\"}"
+    ],
+    "expect": "validation error"
+  },
+  {
     "ctx": ["datakey", "decrypt"],
     "description": "Empty body",
     "http_reply": ["HTTP/1.1 500 Internal error\r\n", "\r\n"],

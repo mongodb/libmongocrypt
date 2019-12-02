@@ -20,7 +20,7 @@
 #include <bson/bson.h>
 #include <stdint.h>
 
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-buffer-private.h"

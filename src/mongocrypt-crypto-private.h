@@ -17,7 +17,7 @@
 #ifndef MONGOCRYPT_CRYPTO_PRIVATE_H
 #define MONGOCRYPT_CRYPTO_PRIVATE_H
 
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
 
 #define MONGOCRYPT_KEY_LEN 96

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-key-private.h"
 #include "test-mongocrypt.h"

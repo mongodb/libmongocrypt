@@ -18,7 +18,7 @@
 #define MONGOCRYPT_CIPHERTEXT_PRIVATE_H
 
 #include "mongocrypt-buffer-private.h"
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 
 typedef struct {
    _mongocrypt_buffer_t key_id;

@@ -19,7 +19,7 @@
 
 #include <bson/bson.h>
 
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 
 struct _mongocrypt_binary_t {
    uint8_t *data;

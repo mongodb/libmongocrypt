@@ -17,7 +17,7 @@
 #ifndef MONGOCRYPT_CTX_PRIVATE_H
 #define MONGOCRYPT_CTX_PRIVATE_H
 
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-broker-private.h"

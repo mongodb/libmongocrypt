@@ -17,7 +17,7 @@
 #ifndef MONGOCRYPT_OPTS_PRIVATE_H
 #define MONGOCRYPT_OPTS_PRIVATE_H
 
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-log-private.h"
 

@@ -20,7 +20,7 @@
 #include <bson/bson.h>
 
 #include "kms_message/kms_message.h"
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "mongocrypt-cache-private.h"
 #include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-cache-key-private.h"

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "test-mongocrypt.h"
 
 static void

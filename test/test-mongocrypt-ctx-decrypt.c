@@ -15,7 +15,7 @@
  */
 
 #include "mongocrypt-ctx-private.h"
-#include "mongocrypt.h"
+#include "mongocrypt/mongocrypt.h"
 #include "test-mongocrypt.h"
 
 static void
