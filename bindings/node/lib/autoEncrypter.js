@@ -7,6 +7,7 @@ module.exports = function(modules) {
   const StateMachine = modules.stateMachine.StateMachine;
   const MongocryptdManager = require('./mongocryptdManager').MongocryptdManager;
   const MongoClient = modules.mongodb.MongoClient;
+  const MongoError = modules.mongodb.MongoError;
   const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
@@ -125,13 +126,24 @@ module.exports = function(modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
+      const _callback = (err, res) => {
+        if (err && err.message && err.message.match(/timed out after/)) {
+          callback(
+            new MongoError(
+              'Unable to connect to `mongocryptd`, please make sure it is running or in your PATH for auto-spawn'
+            )
+          );
+          return;
+        }
+
+        callback(err, res);
+      };
+
       if (this._mongocryptdManager.bypassSpawn) {
-        return this._mongocryptdClient.connect(callback);
+        return this._mongocryptdClient.connect(_callback);
       }
 
-      this._mongocryptdManager.spawn(() => {
-        this._mongocryptdClient.connect(callback);
-      });
+      this._mongocryptdManager.spawn(() => this._mongocryptdClient.connect(_callback));
     }
 
     /**

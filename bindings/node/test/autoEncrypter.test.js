@@ -329,6 +329,31 @@ describe('AutoEncrypter', function() {
         });
       });
     });
+
+    it('should return a useful message if mongocryptd fails to autospawn', function(done) {
+      const client = new MockClient();
+      this.mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        },
+        extraOptions: {
+          mongocryptdURI: 'mongodb://something.invalid:27020/'
+        }
+      });
+
+      sandbox.stub(MongocryptdManager.prototype, 'spawn').callsFake(callback => {
+        callback();
+      });
+
+      this.mc.init(err => {
+        expect(err).to.exist;
+        expect(err).to.match(/Unable to connect to `mongocryptd`/);
+        done();
+      });
+    });
   });
 
   describe('noAutoSpawn', function() {
