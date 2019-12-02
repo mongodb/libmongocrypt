@@ -23,11 +23,12 @@ const requirements = require('./requirements.helper');
 describe('ClientEncryption', function() {
   let client;
 
-  beforeEach(function() {
+  function setup() {
     if (requirements.SKIP_LIVE_TESTS) {
       this.test.skip();
       return;
     }
+
     client = new MongoClient('mongodb://localhost:27017/test', { useNewUrlParser: true });
     return client.connect().then(() =>
       client
@@ -42,14 +43,15 @@ describe('ClientEncryption', function() {
           throw err;
         })
     );
-  });
+  }
 
-  afterEach(() => {
+  function teardown() {
     if (requirements.SKIP_LIVE_TESTS) {
       return;
     }
+
     return client.close();
-  });
+  }
 
   describe('stubbed stateMachine', function() {
     let sandbox = sinon.createSandbox();
@@ -62,6 +64,14 @@ describe('ClientEncryption', function() {
         request.addResponse(MOCK_KMS_ENCRYPT_REPLY);
         return Promise.resolve();
       });
+    });
+
+    beforeEach(function() {
+      return setup();
+    });
+
+    afterEach(function() {
+      return teardown();
     });
 
     [
@@ -200,18 +210,23 @@ describe('ClientEncryption', function() {
         this.skip();
         return;
       }
-      this.client = client;
-      this.collection = client.db('client').collection('encryption');
-      this.encryption = new ClientEncryption(this.client, {
-        keyVaultNamespace: 'client.encryption',
-        kmsProviders
+
+      return setup().then(() => {
+        this.client = client;
+        this.collection = client.db('client').collection('encryption');
+        this.encryption = new ClientEncryption(this.client, {
+          keyVaultNamespace: 'client.encryption',
+          kmsProviders
+        });
       });
     });
 
     afterEach(function() {
-      this.encryption = undefined;
-      this.collection = undefined;
-      this.client = undefined;
+      return teardown().then(() => {
+        this.encryption = undefined;
+        this.collection = undefined;
+        this.client = undefined;
+      });
     });
 
     function makeOptions(keyAltNames) {
