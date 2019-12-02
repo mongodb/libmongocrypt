@@ -32,7 +32,11 @@ class MongocryptdManager {
     if (Array.isArray(extraOptions.mongocryptdSpawnArgs)) {
       this.spawnArgs = this.spawnArgs.concat(extraOptions.mongocryptdSpawnArgs);
     }
-    if (this.spawnArgs.indexOf('--idleShutdownTimeoutSecs') < 0) {
+    if (
+      this.spawnArgs
+        .filter(arg => typeof arg === 'string')
+        .every(arg => arg.indexOf('--idleShutdownTimeoutSecs') < 0)
+    ) {
       this.spawnArgs.push('--idleShutdownTimeoutSecs', 60);
     }
   }

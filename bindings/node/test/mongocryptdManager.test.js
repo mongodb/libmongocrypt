@@ -16,11 +16,19 @@ describe('MongocryptdManager', function() {
     expect(mcdm.spawnArgs).to.deep.equal(['foo', 12, '--idleShutdownTimeoutSecs', 60]);
   });
 
-  it('should not override --idleShutdownTimeoutSecs=60 if the user sets it', function() {
+  it('should not override `idleShutdownTimeoutSecs` if the user sets it using `key value` form', function() {
     const mcdm = new MongocryptdManager({
       mongocryptdSpawnArgs: ['--idleShutdownTimeoutSecs', 12]
     });
 
     expect(mcdm.spawnArgs).to.deep.equal(['--idleShutdownTimeoutSecs', 12]);
+  });
+
+  it('should not override `idleShutdownTimeoutSecs` if the user sets it using `key=value` form', function() {
+    const mcdm = new MongocryptdManager({
+      mongocryptdSpawnArgs: ['--idleShutdownTimeoutSecs=12']
+    });
+
+    expect(mcdm.spawnArgs).to.deep.equal(['--idleShutdownTimeoutSecs=12']);
   });
 });
