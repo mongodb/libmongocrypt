@@ -24,11 +24,6 @@ describe('ClientEncryption', function() {
   let client;
 
   function setup() {
-    if (requirements.SKIP_LIVE_TESTS) {
-      this.test.skip();
-      return;
-    }
-
     client = new MongoClient('mongodb://localhost:27017/test', { useNewUrlParser: true });
     return client.connect().then(() =>
       client
@@ -67,6 +62,11 @@ describe('ClientEncryption', function() {
     });
 
     beforeEach(function() {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.test.skip();
+        return;
+      }
+
       return setup();
     });
 
