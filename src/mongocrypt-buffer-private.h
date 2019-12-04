@@ -19,7 +19,7 @@
 
 #include <bson/bson.h>
 #include "mongocrypt-binary-private.h"
-#include "mongocrypt/mongocrypt-compat.h"
+#include "mongocrypt-compat.h"
 
 struct _mongocrypt_binary_t;
 

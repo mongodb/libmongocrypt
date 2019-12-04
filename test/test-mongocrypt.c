@@ -19,8 +19,8 @@
 
 #include <bson/bson.h>
 
-#include "mongocrypt/mongocrypt.h"
-#include "mongocrypt/mongocrypt-config.h"
+#include "mongocrypt.h"
+#include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-marking-private.h"
 #include "test-mongocrypt.h"

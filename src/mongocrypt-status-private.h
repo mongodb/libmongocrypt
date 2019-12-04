@@ -17,7 +17,7 @@
 #ifndef MONGOCRYPT_STATUS_PRIVATE_H
 #define MONGOCRYPT_STATUS_PRIVATE_H
 
-#include "mongocrypt/mongocrypt.h"
+#include "mongocrypt.h"
 
 void
 _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst);

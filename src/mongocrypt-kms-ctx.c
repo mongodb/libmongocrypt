@@ -23,7 +23,7 @@
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-status-private.h"
 #include <kms_message/kms_b64.h>
-#include "mongocrypt/mongocrypt.h"
+#include "mongocrypt.h"
 
 /* Before we've read the Content-Length header in an HTTP response,
  * we don't know how many bytes we'll need. So return this value

@@ -19,7 +19,7 @@
 #include <assert.h>
 
 #include <bson/bson.h>
-#include <mongocrypt/mongocrypt.h>
+#include <mongocrypt.h>
 
 static void
 _load_json_as_bson (const char *path, bson_t *as_bson)

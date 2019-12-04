@@ -51,7 +51,7 @@ include (GNUInstallDirs)
 enable_testing()
 
 set (MONGOCRYPT_PUBLIC_HEADERS
-   src/mongocrypt/mongocrypt-compat.h
+   src/mongocrypt-compat.h
 )
 
 set (MONGOCRYPT_SOURCES
@@ -158,8 +158,8 @@ if (ENABLE_TRACE)
 endif()
 
 configure_file (
-   "${PROJECT_SOURCE_DIR}/src/mongocrypt/mongocrypt-config.h.in"
-   "${PROJECT_BINARY_DIR}/src/mongocrypt/mongocrypt-config.h"
+   "${PROJECT_SOURCE_DIR}/src/mongocrypt-config.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongocrypt-config.h"
 )
 
 # kms-message
@@ -176,7 +176,7 @@ target_link_libraries (mongocrypt PRIVATE ${BSON_TARGET})
 target_link_libraries (mongocrypt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (mongocrypt PRIVATE kms_message_static)
 
-generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt/mongocrypt-export.h BASE_NAME mongocrypt )
+generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
 target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
@@ -281,8 +281,8 @@ install (TARGETS mongocrypt mongocrypt_static
 install (
    FILES
       ${MONGOCRYPT_PUBLIC_HEADERS}
-      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt/mongocrypt.h
-      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt/mongocrypt-export.h
+      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt.h
+      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-export.h
    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt
    COMPONENT Devel
 )
@@ -305,7 +305,7 @@ else ()
 endif ()
 
 message ("Configuring libmongocrypt version ${BUILD_VERSION}")
-configure_file (src/mongocrypt/mongocrypt.h.in src/mongocrypt/mongocrypt.h)
+configure_file (src/mongocrypt.h.in src/mongocrypt.h)
 
 set (PROJECT_VERSION "${BUILD_VERSION}")
 # If libbson is statically linked, don't require a dependency.

@@ -23,8 +23,8 @@
  * See all public API documentation in: @ref mongocrypt.h
  */
 
-#include "mongocrypt/mongocrypt-export.h"
-#include "mongocrypt/mongocrypt-compat.h"
+#include "mongocrypt-export.h"
+#include "mongocrypt-compat.h"
 
 /**
  * @def MONGOCRYPT_VERSION

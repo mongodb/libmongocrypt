@@ -21,7 +21,7 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-cache-collinfo-private.h"
 #include "mongocrypt-cache-key-private.h"
-#include "mongocrypt/mongocrypt-config.h"
+#include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
