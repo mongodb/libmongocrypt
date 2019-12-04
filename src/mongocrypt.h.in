@@ -822,7 +822,7 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx);
  * guaranteed to be valid until the call of @ref mongocrypt_ctx_kms_done of the
  * parent @ref mongocrypt_ctx_t.
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -841,7 +841,7 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * may include a port (e.g. "example.com:123"). If it does not, default to port
  * 443.
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -869,7 +869,7 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms);
  * @param[in] bytes The bytes to feed. The viewed data is copied. It is valid to
  * destroy @p bytes with @ref mongocrypt_binary_destroy immediately after.
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
@@ -883,7 +883,6 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
  * @param[out] status Receives the status.
  *
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
