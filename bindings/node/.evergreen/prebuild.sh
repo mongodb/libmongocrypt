@@ -4,8 +4,7 @@ set -o errexit
 
 get_version_at_git_rev () {
   local REV=$1
-  local GIT_OUTPUT=$(git show $REV:./package.json)
-  local VERSION=$(echo $GIT_OUTPUT | node -r fs -e 'console.log(JSON.parse(fs.readFileSync("/dev/stdin", "utf-8")).version);')
+  local VERSION=$(node -r child_process -e "console.log(JSON.parse(child_process.execSync('git show $REV:./package.json', { encoding: 'utf8' })).version);")
   echo $VERSION
 }
 
