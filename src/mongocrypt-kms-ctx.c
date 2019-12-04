@@ -148,6 +148,7 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
 
    /* create the KMS request. */
    opt = kms_request_opt_new ();
+   BSON_ASSERT (opt);
 
    _set_kms_crypto_hooks (crypto, opt);
    /* TODO: we might want to let drivers control whether or not we send
@@ -261,6 +262,7 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    /* create the KMS request. */
    opt = kms_request_opt_new ();
+   BSON_ASSERT (opt);
 
    _set_kms_crypto_hooks (crypto, opt);
    /* TODO: we might want to let drivers control whether or not we send
@@ -450,6 +452,7 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
       }
 
       b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
+      BSON_ASSERT (b64_str);
       kms->result.data = bson_malloc (b64_strlen + 1);
       BSON_ASSERT (kms->result.data);
 

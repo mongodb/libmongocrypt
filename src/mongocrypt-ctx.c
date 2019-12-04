@@ -115,6 +115,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
    bson_t as_bson;
    bson_iter_t iter;
    _mongocrypt_key_alt_name_t *new_key_alt_name;
+   const char* key;
 
    if (!ctx) {
       return false;
@@ -140,7 +141,9 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid bson");
    }
 
-   if (0 != strcmp (bson_iter_key (&iter), "keyAltName")) {
+   key = bson_iter_key (&iter);
+   BSON_ASSERT (key);
+   if (0 != strcmp (key, "keyAltName")) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "keyAltName must have field 'keyAltName'");
    }

@@ -101,7 +101,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bool res;
 
    if (!ctx) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "null ctx");
+      return false;
    }
 
    if (!out) {

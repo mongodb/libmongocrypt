@@ -253,6 +253,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       dkctx->encrypted_key_material.data =
          bson_malloc (dkctx->encrypted_key_material.len);
       dkctx->encrypted_key_material.owned = true;
+      BSON_ASSERT (dkctx->encrypted_key_material.data);
 
       /* use a random IV. */
       _mongocrypt_buffer_init (&iv);

@@ -86,6 +86,7 @@ _parse_masterkey (bson_iter_t *iter,
       const char *field;
 
       field = bson_iter_key (&subiter);
+      BSON_ASSERT (field);
       if (0 == strcmp ("provider", field)) {
          const char *provider;
 
@@ -95,6 +96,7 @@ _parse_masterkey (bson_iter_t *iter,
             return false;
          }
          provider = bson_iter_utf8 (&subiter, NULL);
+         BSON_ASSERT (provider);
          if (0 == strcmp (provider, "aws")) {
             out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
          } else if (0 == strcmp (provider, "local")) {

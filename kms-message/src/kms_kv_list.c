@@ -76,6 +76,7 @@ kms_kv_list_add (kms_kv_list_t *lst,
    if (lst->len == lst->size) {
       lst->size *= 2;
       lst->kvs = realloc (lst->kvs, lst->size * sizeof (kms_kv_t));
+      KMS_ASSERT (lst->kvs);
    }
 
    kv_init (&lst->kvs[lst->len], key, value);

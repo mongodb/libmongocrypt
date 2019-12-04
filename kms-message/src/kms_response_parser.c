@@ -24,6 +24,7 @@ _parser_init (kms_response_parser_t *parser)
    parser->raw_response = kms_request_str_new ();
    parser->content_length = -1;
    parser->response = calloc (1, sizeof (kms_response_t));
+   KMS_ASSERT (parser->response);
    parser->response->headers = kms_kv_list_new ();
    parser->state = PARSING_STATUS_LINE;
    parser->start = 0;

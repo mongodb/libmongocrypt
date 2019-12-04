@@ -49,7 +49,7 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
 
    /* Disallow views. */
    if (bson_iter_init_find (&iter, collinfo, "type") &&
-       BSON_ITER_HOLDS_UTF8 (&iter) &&
+       BSON_ITER_HOLDS_UTF8 (&iter) && bson_iter_utf8 (&iter, NULL) &&
        0 == strcmp ("view", bson_iter_utf8 (&iter, NULL))) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot auto encrypt a view");
    }
@@ -64,7 +64,11 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
          return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
       }
       while (bson_iter_next (&iter)) {
-         if (0 == strcmp ("$jsonSchema", bson_iter_key (&iter))) {
+         const char* key;
+
+         key = bson_iter_key (&iter);
+         BSON_ASSERT (key);
+         if (0 == strcmp ("$jsonSchema", key)) {
             if (found_jsonschema) {
                return _mongocrypt_ctx_fail_w_msg (
                   ctx, "duplicate $jsonSchema fields found");
@@ -614,6 +618,7 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    }
 
    cmd_name = bson_iter_key (&iter);
+   BSON_ASSERT (cmd_name);
 
    /* get the collection name (or NULL if database/client command). */
    if (0 == strcmp (cmd_name, "explain")) {
@@ -745,9 +750,10 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              mongocrypt_binary_t *cmd)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
-   _mongocrypt_ctx_opts_spec_t opts_spec = {0};
+   _mongocrypt_ctx_opts_spec_t opts_spec;
    bool bypass;
 
+   memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.schema = OPT_OPTIONAL;
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;

@@ -362,6 +362,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
          char *key_str;
 
          key_str = bson_strdup_printf ("%d", name_index++);
+         BSON_ASSERT (key_str);
          if (!bson_append_value (&names,
                                  key_str,
                                  (uint32_t) strlen (key_str),

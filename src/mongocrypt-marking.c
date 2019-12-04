@@ -57,6 +57,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
       const char *field;
 
       field = bson_iter_key (&iter);
+      BSON_ASSERT (field);
       if (0 == strcmp ("ki", field)) {
          has_ki = true;
          if (!_mongocrypt_buffer_from_uuid_iter (&out->key_id, &iter)) {

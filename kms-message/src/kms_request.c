@@ -61,6 +61,7 @@ kms_request_new (const char *method,
    kms_request_t *request = calloc (1, sizeof (kms_request_t));
    const char *question_mark;
 
+   KMS_ASSERT (request);
    /* parsing may set failed to true */
    request->failed = false;
 

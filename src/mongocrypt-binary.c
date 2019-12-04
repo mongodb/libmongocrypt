@@ -36,6 +36,7 @@ mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len)
    mongocrypt_binary_t *binary;
 
    binary = (mongocrypt_binary_t *) bson_malloc0 (sizeof *binary);
+   BSON_ASSERT (binary);
    binary->data = data;
    binary->len = len;
 

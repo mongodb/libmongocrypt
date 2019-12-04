@@ -97,6 +97,8 @@ _mongocrypt_log (_mongocrypt_log_t *log,
    message = bson_strdupv_printf (format, args);
    va_end (args);
 
+   BSON_ASSERT (message);
+
    _mongocrypt_mutex_lock (&log->mutex);
    if (log->fn) {
       log->fn (level, message, (uint32_t) strlen (message), log->ctx);
