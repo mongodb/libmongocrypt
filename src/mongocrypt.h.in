@@ -883,7 +883,6 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
  * @param[out] status Receives the status.
  *
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
  */
 MONGOCRYPT_EXPORT
 bool
