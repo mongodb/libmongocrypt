@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "1.0.0-rc0",
+  "version": "1.0.0-rc1.0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "index.js",
   "directories": {
@@ -14,7 +14,7 @@
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/**/*.js > README.md",
     "test": "mocha test",
     "rebuild": "prebuild --compile",
-    "release": "standard-version -i HISTORY.md",
+    "release": "standard-version --tag-prefix node-v --path bindings/node",
     "prebuild": "prebuild  --strip --verbose --tag-prefix node-v --all"
   },
   "author": "Matt Broadstone <mbroadst@mongodb.com>",
@@ -42,7 +42,7 @@
     "segfault-handler": "^1.2.0",
     "sinon": "^4.3.0",
     "sinon-chai": "^3.3.0",
-    "standard-version": "^4.4.0"
+    "standard-version": "^5.0.0"
   },
   "peerDependencies": {
     "mongodb": "~3.4.0"
