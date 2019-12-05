@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.0.0
+------------------------
+
+- The first stable version.
+- Bundle libmongocrypt 1.0.0 in release wheels.
+
 Changes in Version 0.1b3
 ------------------------
 
