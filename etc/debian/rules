@@ -34,5 +34,8 @@ override_dh_auto_install:
 	sed -i -e 's|{prefix}/lib|{prefix}/lib/$(DEB_HOST_MULTIARCH)|g' \
 		-e 's|^prefix=.*|prefix=/usr|' \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig/*.pc
+	sed -i -r -e 's/get_filename_component\(_IMPORT_PREFIX "\$$\{CMAKE_CURRENT_LIST_FILE\}" PATH\)/&\nget_filename_component\(_IMPORT_PREFIX "\$$\{_IMPORT_PREFIX\}" PATH\)/' \
+		-e "s+lib/lib(mongocrypt|kms_message)+lib/$(DEB_HOST_MULTIARCH)/lib\1+" \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/cmake/*/*.cmake
 	cp -rv $(CURDIR)/include/* $(CURDIR)/debian/tmp/usr/include
 
