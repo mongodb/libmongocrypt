@@ -131,7 +131,7 @@ module.exports = function(modules) {
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with {@link ClientEncryption~dataKeyId the id of the created data key}, or rejects with an error. If a callback is provided, returns nothing.
      * @example
      * // Using callbacks to create a local key
-     * clientEncrypion.createDataKey('local', (err, dataKey) => {
+     * clientEncryption.createDataKey('local', (err, dataKey) => {
      *   if (err) {
      *     // This means creating the key failed.
      *   } else {
