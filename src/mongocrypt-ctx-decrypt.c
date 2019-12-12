@@ -198,9 +198,11 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    _mongocrypt_ctx_decrypt_t *dctx;
    bson_iter_t iter;
    bson_t as_bson;
-
    _mongocrypt_ctx_opts_spec_t opts_spec;
 
+   if (!ctx) {
+      return false;
+   }
    memset (&opts_spec, 0, sizeof (opts_spec));
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
@@ -264,6 +266,10 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc)
    bson_t as_bson;
    bson_iter_t iter;
    _mongocrypt_ctx_opts_spec_t opts_spec = {0};
+
+   if (!ctx) {
+      return false;
+   }
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;

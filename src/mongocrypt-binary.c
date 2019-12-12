@@ -54,6 +54,9 @@ _mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out)
 uint8_t *
 mongocrypt_binary_data (const mongocrypt_binary_t *binary)
 {
+   if (!binary) {
+      return NULL;
+   }
    return binary->data;
 }
 
@@ -61,6 +64,9 @@ mongocrypt_binary_data (const mongocrypt_binary_t *binary)
 uint32_t
 mongocrypt_binary_len (const mongocrypt_binary_t *binary)
 {
+   if (!binary) {
+      return 0;
+   }
    return binary->len;
 }
 

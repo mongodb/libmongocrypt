@@ -132,6 +132,10 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
                                mongocrypt_log_fn_t log_fn,
                                void *log_ctx)
 {
+   if (!crypt) {
+      return false;
+   }
+
    if (crypt->initialized) {
       mongocrypt_status_t *status = crypt->status;
       CLIENT_ERR ("options cannot be set after initialization");
@@ -149,7 +153,12 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_secret_access_key,
                                     int32_t aws_secret_access_key_len)
 {
-   mongocrypt_status_t *status = crypt->status;
+   mongocrypt_status_t *status;
+
+   if (!crypt) {
+      return false;
+   }
+   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -244,7 +253,12 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
 {
    bson_t tmp;
    bson_error_t bson_err;
-   mongocrypt_status_t *status = crypt->status;
+   mongocrypt_status_t *status;
+
+   if (!crypt) {
+      return false;
+   }
+   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -282,7 +296,12 @@ bool
 mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
                                       mongocrypt_binary_t *key)
 {
-   mongocrypt_status_t *status = crypt->status;
+   mongocrypt_status_t *status;
+
+   if (!crypt) {
+      return false;
+   }
+   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -328,6 +347,9 @@ mongocrypt_init (mongocrypt_t *crypt)
 {
    mongocrypt_status_t *status;
 
+   if (!crypt) {
+      return false;
+   }
    status = crypt->status;
    if (crypt->initialized) {
       CLIENT_ERR ("already initialized");
@@ -370,6 +392,16 @@ mongocrypt_init (mongocrypt_t *crypt)
 bool
 mongocrypt_status (mongocrypt_t *crypt, mongocrypt_status_t *out)
 {
+   if (!crypt) {
+      return false;
+   }
+
+   if (!out) {
+      mongocrypt_status_t *status = crypt->status;
+      CLIENT_ERR ("argument 'out' is required");
+      return false;
+   }
+
    if (!mongocrypt_status_ok (crypt->status)) {
       _mongocrypt_status_copy_to (crypt->status, out);
       return false;
@@ -431,7 +463,13 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx)
 {
-   mongocrypt_status_t *status = crypt->status;
+   mongocrypt_status_t *status;
+
+   if (!crypt) {
+      return false;
+   }
+
+   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");

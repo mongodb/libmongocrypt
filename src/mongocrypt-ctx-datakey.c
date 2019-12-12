@@ -200,6 +200,9 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_opts_spec_t opts_spec;
    bool ret;
 
+   if (!ctx) {
+      return false;
+   }
    ret = false;
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.masterkey = OPT_REQUIRED;

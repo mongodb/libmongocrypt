@@ -64,7 +64,7 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
          return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
       }
       while (bson_iter_next (&iter)) {
-         const char* key;
+         const char *key;
 
          key = bson_iter_key (&iter);
          BSON_ASSERT (key);
@@ -502,9 +502,11 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t as_bson;
    bson_iter_t iter;
-
    _mongocrypt_ctx_opts_spec_t opts_spec;
 
+   if (!ctx) {
+      return false;
+   }
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.key_descriptor = OPT_REQUIRED;
    opts_spec.algorithm = OPT_REQUIRED;
@@ -753,6 +755,9 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    _mongocrypt_ctx_opts_spec_t opts_spec;
    bool bypass;
 
+   if (!ctx) {
+      return false;
+   }
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.schema = OPT_OPTIONAL;
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {

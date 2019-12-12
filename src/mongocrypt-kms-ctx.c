@@ -330,6 +330,9 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 uint32_t
 mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms)
 {
+   if (!kms) {
+      return 0;
+   }
    /* TODO: an oddity of kms-message. After retrieving the JSON result, it
     * resets the parser. */
    if (!mongocrypt_status_ok (kms->status) ||
@@ -346,8 +349,17 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
 {
    mongocrypt_status_t *status;
 
+   if (!kms) {
+      return false;
+   }
+
    status = kms->status;
    if (!mongocrypt_status_ok (status)) {
+      return false;
+   }
+
+   if (!bytes) {
+      CLIENT_ERR ("argument 'bytes' is required");
       return false;
    }
 
@@ -412,7 +424,7 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
          if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
             bson_init (&body_bson);
          } else if (bson_iter_init_find (&iter, &body_bson, "message") &&
-             BSON_ITER_HOLDS_UTF8 (&iter)) {
+                    BSON_ITER_HOLDS_UTF8 (&iter)) {
             CLIENT_ERR ("Error in KMS response '%s'. "
                         "HTTP status=%d",
                         bson_iter_utf8 (&iter, NULL),
@@ -500,10 +512,19 @@ _mongocrypt_kms_ctx_result (mongocrypt_kms_ctx_t *kms,
 
 bool
 mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
-                           mongocrypt_status_t *status)
+                           mongocrypt_status_t *status_out)
 {
-   _mongocrypt_status_copy_to (kms->status, status);
-   return mongocrypt_status_ok (status);
+   if (!kms) {
+      return false;
+   }
+
+   if (!status_out) {
+      mongocrypt_status_t *status = kms->status;
+      CLIENT_ERR ("argument 'status' is required");
+      return false;
+   }
+   _mongocrypt_status_copy_to (kms->status, status_out);
+   return mongocrypt_status_ok (status_out);
 }
 
 
@@ -529,6 +550,15 @@ _mongocrypt_kms_ctx_cleanup (mongocrypt_kms_ctx_t *kms)
 bool
 mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *msg)
 {
+   if (!kms) {
+      return false;
+   }
+
+   if (!msg) {
+      mongocrypt_status_t *status = kms->status;
+      CLIENT_ERR ("argument 'msg' is required");
+      return false;
+   }
    msg->data = kms->msg.data;
    msg->len = kms->msg.len;
    return true;
@@ -538,6 +568,14 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *msg)
 bool
 mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms, const char **endpoint)
 {
+   if (!kms) {
+      return false;
+   }
+   if (!endpoint) {
+      mongocrypt_status_t *status = kms->status;
+      CLIENT_ERR ("argument 'endpoint' is required");
+      return false;
+   }
    *endpoint = kms->endpoint;
    return true;
 }

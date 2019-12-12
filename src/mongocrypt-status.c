@@ -40,6 +40,10 @@ mongocrypt_status_set (mongocrypt_status_t *status,
                        const char *message,
                        int32_t message_len)
 {
+   if (!status) {
+      return;
+   }
+
    if (message_len < 0) {
       message_len = (int32_t) strlen (message) + 1;
    } else if (message_len == 0) {

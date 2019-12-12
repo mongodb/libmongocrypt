@@ -115,7 +115,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
    bson_t as_bson;
    bson_iter_t iter;
    _mongocrypt_key_alt_name_t *new_key_alt_name;
-   const char* key;
+   const char *key;
 
    if (!ctx) {
       return false;
@@ -238,6 +238,9 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
    mongocrypt_ctx_t *ctx;
    int ctx_size;
 
+   if (!crypt) {
+      return NULL;
+   }
    if (!crypt->initialized) {
       mongocrypt_status_t *status;
 
@@ -438,7 +441,7 @@ mongocrypt_kms_ctx_t *
 mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
 {
    if (!ctx) {
-      return false;
+      return NULL;
    }
    if (!ctx->initialized) {
       _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
@@ -454,7 +457,7 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
    case MONGOCRYPT_CTX_NEED_KMS:
       return ctx->vtable.next_kms_ctx (ctx);
    case MONGOCRYPT_CTX_ERROR:
-      return false;
+      return NULL;
    default:
       _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
       return NULL;
