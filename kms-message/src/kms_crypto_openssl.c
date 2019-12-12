@@ -16,6 +16,8 @@
 
 #include "kms_crypto.h"
 
+#ifdef KMS_MESSAGE_ENABLE_CRYPTO_OPENSSL
+
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
@@ -88,3 +90,5 @@ kms_sha256_hmac (void *unused_ctx,
                 hash_out,
                 NULL) != NULL;
 }
+
+#endif /* KMS_MESSAGE_ENABLE_CRYPTO_OPENSSL */

@@ -17,6 +17,8 @@
 #include "../mongocrypt-crypto-private.h"
 #include "../mongocrypt-private.h"
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+
 #include <CommonCrypto/CommonCryptor.h>
 #include <CommonCrypto/CommonHMAC.h>
 #include <CommonCrypto/CommonRandom.h>
@@ -178,3 +180,5 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
    }
    return true;
 }
+
+#endif /* MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO */

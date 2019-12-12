@@ -55,6 +55,10 @@ set (MONGOCRYPT_PUBLIC_HEADERS
 )
 
 set (MONGOCRYPT_SOURCES
+   src/crypto/cng.c
+   src/crypto/commoncrypto.c
+   src/crypto/openssl.c
+   src/crypto/none.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
    src/mongocrypt-cache.c
@@ -75,20 +79,11 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-status.c
    src/mongocrypt-traverse-util.c
    src/mongocrypt.c
+   src/os_win/os_mutex.c
+   src/os_win/os_once.c
+   src/os_posix/os_mutex.c
+   src/os_posix/os_once.c
    )
-
-if (WIN32)
-   list(APPEND MONGOCRYPT_SOURCES
-      src/os_win/os_mutex.c
-      src/os_win/os_once.c
-   )
-else()
-   list(APPEND MONGOCRYPT_SOURCES
-      src/os_posix/os_mutex.c
-      src/os_posix/os_once.c
-   )
-endif()
-
 
 if ( MSVC )
    # W4996 - POSIX name for this item is deprecated
@@ -113,7 +108,6 @@ if (DISABLE_NATIVE_CRYPTO)
    set (MONGOCRYPT_CRYPTO none)
 endif ()
 
-
 set (MONGOCRYPT_ENABLE_CRYPTO 0)
 set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 0)
 set (MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO 0)
@@ -123,30 +117,18 @@ if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    message ("Building with common crypto")
    set (MONGOCRYPT_ENABLE_CRYPTO 1)
    set (MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO 1)
-   list(APPEND MONGOCRYPT_SOURCES
-      src/crypto/commoncrypto.c
-   )
 elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
    message ("Building with CNG")
    set (MONGOCRYPT_ENABLE_CRYPTO 1)
-   set (MONGOCRPYT_ENABLE_CRYPTO_CNG 1)
-   list(APPEND MONGOCRYPT_SOURCES
-      src/crypto/cng.c
-   )
+   set (MONGOCRYPT_ENABLE_CRYPTO_CNG 1)
 elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    message ("Building with OpenSSL")
    include (FindOpenSSL)
    message ("Found OpenSSL version ${OPENSSL_VERSION}")
    set (MONGOCRYPT_ENABLE_CRYPTO 1)
    set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 1)
-   list(APPEND MONGOCRYPT_SOURCES
-      src/crypto/openssl.c
-   )
 elseif (MONGOCRYPT_CRYPTO STREQUAL none)
    message ("Building with no native crypto, hooks MUST be supplied with mongocrypt_setopt_crypto_hooks")
-   list(APPEND MONGOCRYPT_SOURCES
-      src/crypto/none.c
-   )
 else ()
    message (FATAL "Unknown crypto provider ${MONGOCRYPT_CRYPTO}")
 endif ()

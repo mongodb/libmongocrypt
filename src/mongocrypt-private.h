@@ -18,6 +18,7 @@
 #define MONGOCRYPT_PRIVATE_H
 
 #include "mongocrypt.h"
+#include "mongocrypt-config.h"
 #include "bson/bson.h"
 
 #include "mongocrypt-log-private.h"

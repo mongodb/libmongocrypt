@@ -16,6 +16,10 @@ set (KMS_MESSAGE_SOURCES
    src/hexlify.c
    src/hexlify.h
    src/kms_crypto.h
+   src/kms_crypto_none.c
+   src/kms_crypto_windows.c
+   src/kms_crypto_apple.c
+   src/kms_crypto_openssl.c
    src/kms_caller_identity_request.c
    src/kms_decrypt_request.c
    src/kms_encrypt_request.c
@@ -41,21 +45,21 @@ set (KMS_MESSAGE_SOURCES
    )
 
 if (DISABLE_NATIVE_CRYPTO)
-   set (KMS_MESSAGE_SOURCES ${KMS_MESSAGE_SOURCES}
-      src/kms_crypto_none.c
-   )
+   # Nothing
 elseif (WIN32)
-   set (KMS_MESSAGE_SOURCES ${KMS_MESSAGE_SOURCES}
-      src/kms_crypto_windows.c
-   )
+   set (KMS_MESSAGE_DEFINITIONS
+         ${KMS_MESSAGE_DEFINITIONS}
+         "KMS_MESSAGE_ENABLE_CRYPTO"
+         "KMS_MESSAGE_ENABLE_CRYPTO_CNG")
 elseif (APPLE)
-   set (KMS_MESSAGE_SOURCES ${KMS_MESSAGE_SOURCES}
-      src/kms_crypto_apple.c
-   )
+   set (KMS_MESSAGE_DEFINITIONS ${KMS_MESSAGE_DEFINITIONS}
+         "KMS_MESSAGE_ENABLE_CRYPTO"
+         "KMS_MESSAGE_ENABLE_CRYPTO_COMMON_CRYPTO")
 else()
-   set (KMS_MESSAGE_SOURCES ${KMS_MESSAGE_SOURCES}
-      src/kms_crypto_openssl.c
-   )
+   set (KMS_MESSAGE_DEFINITIONS
+         ${KMS_MESSAGE_DEFINITIONS}
+         "KMS_MESSAGE_ENABLE_CRYPTO"
+         "KMS_MESSAGE_ENABLE_CRYPTO_OPENSSL")
 endif()
 
 add_library (
@@ -105,11 +109,13 @@ set_target_properties (kms_message_static PROPERTIES
 )
 
 target_compile_definitions (kms_message PRIVATE KMS_MSG_COMPILATION)
+target_compile_definitions (kms_message PRIVATE ${KMS_MESSAGE_DEFINITIONS})
 set_property (TARGET kms_message APPEND PROPERTY
    COMPATIBLE_INTERFACE_STRING kms_message_MAJOR_VERSION
 )
 
 target_compile_definitions (kms_message_static PRIVATE KMS_MSG_COMPILATION)
+target_compile_definitions (kms_message_static PRIVATE ${KMS_MESSAGE_DEFINITIONS})
 target_compile_definitions (kms_message_static PUBLIC KMS_MSG_STATIC)
 set_property (TARGET kms_message_static APPEND PROPERTY
    COMPATIBLE_INTERFACE_STRING kms_message_MAJOR_VERSION
@@ -194,6 +200,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       test/test_kms_request.c
    )
    target_include_directories(test_kms_request PRIVATE  ${PROJECT_SOURCE_DIR})
+   target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})
 
    if (WIN32)
       target_link_libraries(test_kms_request "bcrypt")

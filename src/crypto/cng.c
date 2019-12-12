@@ -17,6 +17,8 @@
 #include "../mongocrypt-crypto-private.h"
 #include "../mongocrypt-private.h"
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+
 #include <bcrypt.h>
 
 static BCRYPT_ALG_HANDLE _algo_sha512_hmac = 0;
@@ -312,3 +314,5 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
 
    return true;
 }
+
+#endif /* MONGOCRYPT_ENABLE_CRYPTO_CNG */

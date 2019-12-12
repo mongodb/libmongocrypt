@@ -16,6 +16,8 @@
 
 #include "../mongocrypt-mutex-private.h"
 
+#ifdef _WIN32
+
 void
 _mongocrypt_mutex_init (mongocrypt_mutex_t *mutex)
 {
@@ -39,3 +41,5 @@ _mongocrypt_mutex_unlock (mongocrypt_mutex_t *mutex)
 {
    LeaveCriticalSection (mutex);
 }
+
+#endif /* _WIN32 */

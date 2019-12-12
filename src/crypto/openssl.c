@@ -23,6 +23,8 @@
 #include "../mongocrypt-private.h"
 #include "../mongocrypt-log-private.h"
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_OPENSSL
+
 #include <bson/bson.h>
 
 #include <openssl/crypto.h>
@@ -246,3 +248,5 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
    }
    return true;
 }
+
+#endif /* MONGOCRYPT_ENABLE_CRYPTO_OPENSSL */

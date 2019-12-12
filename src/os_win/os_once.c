@@ -18,6 +18,8 @@
 
 #include "../mongocrypt-os-private.h"
 
+#ifdef _WIN32
+
 static INIT_ONCE once_control = INIT_ONCE_STATIC_INIT;
 
 static BOOL WINAPI
@@ -40,3 +42,5 @@ _mongocrypt_once (void (*init_routine) (void))
    return !InitOnceExecuteOnce (
       &once_control, &_mongocrypt_init_once_callback, init_routine, lpContext);
 }
+
+#endif /* _WIN32 */

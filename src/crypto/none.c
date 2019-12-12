@@ -19,6 +19,8 @@
 #include "../mongocrypt-crypto-private.h"
 #include "../mongocrypt-private.h"
 
+#ifndef MONGOCRYPT_ENABLE_CRYPTO
+
 bool _native_crypto_initialized = false;
 
 void
@@ -73,3 +75,5 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
    CLIENT_ERR ("hook not set for random");
    return false;
 }
+
+#endif /* MONGOCRYPT_ENABLE_CRYPTO */

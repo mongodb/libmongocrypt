@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-#include <pthread.h>
 
 #include "../mongocrypt-os-private.h"
+
+#ifndef _WIN32
+
+#include <pthread.h>
 
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 
@@ -25,3 +28,5 @@ _mongocrypt_once (void (*init_routine) (void))
 {
    return (pthread_once (&once_control, init_routine));
 }
+
+#endif /* _WIN32 */
