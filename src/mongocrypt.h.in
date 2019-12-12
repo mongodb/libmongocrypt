@@ -31,7 +31,7 @@
  * The version string describing libmongocrypt.
  * Has the form x.y.z-<pre>+<date>+git<sha>.
  */
-#define MONGOCRYPT_VERSION "@BUILD_VERSION@"
+#define MONGOCRYPT_VERSION "@MONGOCRYPT_BUILD_VERSION@"
 
 /**
  * Returns the version string for libmongocrypt.

@@ -305,6 +305,7 @@ else ()
 endif ()
 
 message ("Configuring libmongocrypt version ${BUILD_VERSION}")
+set (MONGOCRYPT_BUILD_VERSION ${BUILD_VERSION})
 configure_file (src/mongocrypt.h.in src/mongocrypt.h)
 
 set (PROJECT_VERSION "${BUILD_VERSION}")
