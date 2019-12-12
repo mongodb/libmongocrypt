@@ -19,7 +19,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_crypto_none.c
    src/kms_crypto_windows.c
    src/kms_crypto_apple.c
-   src/kms_crypto_openssl.c
+   src/kms_crypto_libcrypto.c
    src/kms_caller_identity_request.c
    src/kms_decrypt_request.c
    src/kms_encrypt_request.c
@@ -59,7 +59,7 @@ else()
    set (KMS_MESSAGE_DEFINITIONS
          ${KMS_MESSAGE_DEFINITIONS}
          "KMS_MESSAGE_ENABLE_CRYPTO"
-         "KMS_MESSAGE_ENABLE_CRYPTO_OPENSSL")
+         "KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO")
 endif()
 
 add_library (

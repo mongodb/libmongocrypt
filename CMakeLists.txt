@@ -57,7 +57,7 @@ set (MONGOCRYPT_PUBLIC_HEADERS
 set (MONGOCRYPT_SOURCES
    src/crypto/cng.c
    src/crypto/commoncrypto.c
-   src/crypto/openssl.c
+   src/crypto/libcrypto.c
    src/crypto/none.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
@@ -109,7 +109,7 @@ if (DISABLE_NATIVE_CRYPTO)
 endif ()
 
 set (MONGOCRYPT_ENABLE_CRYPTO 0)
-set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 0)
+set (MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO 0)
 set (MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO 0)
 set (MONGOCRYPT_ENABLE_CRYPTO_CNG 0)
 
@@ -126,7 +126,7 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    include (FindOpenSSL)
    message ("Found OpenSSL version ${OPENSSL_VERSION}")
    set (MONGOCRYPT_ENABLE_CRYPTO 1)
-   set (MONGOCRYPT_ENABLE_CRYPTO_OPENSSL 1)
+   set (MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO 1)
 elseif (MONGOCRYPT_CRYPTO STREQUAL none)
    message ("Building with no native crypto, hooks MUST be supplied with mongocrypt_setopt_crypto_hooks")
 else ()
