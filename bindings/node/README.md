@@ -244,7 +244,7 @@ Creates a data key used for explicit encryption and inserts it into the key vaul
 **Example**  
 ```js
 // Using callbacks to create a local key
-clientEncrypion.createDataKey('local', (err, dataKey) => {
+clientEncryption.createDataKey('local', (err, dataKey) => {
   if (err) {
     // This means creating the key failed.
   } else {
