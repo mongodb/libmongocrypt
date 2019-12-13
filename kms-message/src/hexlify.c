@@ -37,24 +37,3 @@ hexlify (const uint8_t *buf, size_t len)
 
    return hex_chars;
 }
-
-uint8_t *
-unhexlify (const char *hex_chars, size_t *len)
-{
-   uint8_t *buf;
-   uint8_t *pos;
-
-   *len = strlen (hex_chars) / 2;
-   buf = malloc (*len);
-   KMS_ASSERT (buf);
-
-   pos = buf;
-
-   while (*hex_chars) {
-      KMS_ASSERT (1 == sscanf (hex_chars, "%2hhx", pos));
-      pos++;
-      hex_chars += 2;
-   }
-
-   return buf;
-}
