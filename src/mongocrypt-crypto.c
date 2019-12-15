@@ -324,7 +324,10 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
       memset (intermediates[1].data, padding_byte, padding_byte);
    }
 
-   _mongocrypt_buffer_concat (&to_encrypt, intermediates, 2);
+   if (!_mongocrypt_buffer_concat (&to_encrypt, intermediates, 2)) {
+      CLIENT_ERR ("failed to allocate buffer");
+      goto done;
+   }
 
    if (!_crypto_aes_256_cbc_encrypt (crypto,
                                      enc_key,
@@ -433,7 +436,10 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
    tag.len = sizeof (tag_storage);
 
 
-   _mongocrypt_buffer_concat (&to_hmac, intermediates, 3);
+   if (!_mongocrypt_buffer_concat (&to_hmac, intermediates, 3)) {
+      CLIENT_ERR ("failed to allocate buffer");
+      goto done;
+   }
    if (!_crypto_hmac_sha_512 (crypto, mac_key, &to_hmac, &tag, status)) {
       goto done;
    }
@@ -889,7 +895,10 @@ _mongocrypt_calculate_deterministic_iv (
    tag.data = tag_storage;
    tag.len = sizeof (tag_storage);
 
-   _mongocrypt_buffer_concat (&to_hmac, intermediates, 3);
+   if (!_mongocrypt_buffer_concat (&to_hmac, intermediates, 3)) {
+      CLIENT_ERR ("failed to allocate buffer");
+      goto done;
+   }
 
    if (!_crypto_hmac_sha_512 (crypto, &iv_key, &to_hmac, &tag, status)) {
       goto done;

@@ -454,7 +454,7 @@ _mongocrypt_buffer_to_hex (_mongocrypt_buffer_t *buf)
    return hex;
 }
 
-void
+bool
 _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
                            const _mongocrypt_buffer_t *srcs,
                            uint32_t num_srcs)
@@ -464,7 +464,12 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
    uint32_t i;
 
    for (i = 0; i < num_srcs; i++) {
+      uint32_t old_total = total;
+
       total += srcs[i].len;
+      if (total < old_total) {
+         return false;
+      }
    }
 
    _mongocrypt_buffer_init (dst);
@@ -474,6 +479,7 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
       memcpy (dst->data + offset, srcs[i].data, srcs[i].len);
       offset += srcs[i].len;
    }
+   return true;
 }
 
 struct _mongocrypt_binary_t *
