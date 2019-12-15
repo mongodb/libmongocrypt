@@ -167,7 +167,7 @@ _crypto_random (_mongocrypt_crypto_t *crypto,
  * Secure memcmp copied from the C driver.
  */
 int
-_mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len)
+_mongocrypt_memequal (const void *const b1, const void *const b2, size_t len)
 {
    const unsigned char *p1 = b1, *p2 = b2;
    int ret = 0;
@@ -176,7 +176,7 @@ _mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len)
       ret |= *p1++ ^ *p2++;
    }
 
-   return ret ? 1 : 0;
+   return ret;
 }
 
 /* ----------------------------------------------------------------------------
@@ -747,10 +747,10 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
    }
 
    /* [MCGREW] "using a comparison routine that takes constant time". */
-   if (0 != _mongocrypt_memcmp (hmac_tag.data,
-                                ciphertext->data +
-                                   (ciphertext->len - MONGOCRYPT_HMAC_LEN),
-                                MONGOCRYPT_HMAC_LEN)) {
+   if (0 != _mongocrypt_memequal (hmac_tag.data,
+                                  ciphertext->data +
+                                     (ciphertext->len - MONGOCRYPT_HMAC_LEN),
+                                  MONGOCRYPT_HMAC_LEN)) {
       CLIENT_ERR ("HMAC validation failure");
       goto done;
    }

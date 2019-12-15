@@ -73,8 +73,9 @@ _mongocrypt_random (_mongocrypt_crypto_t *crypto,
                     uint32_t count,
                     mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
+/* Returns 0 if equal, non-zero otherwise */
 int
-_mongocrypt_memcmp (const void *const b1, const void *const b2, size_t len);
+_mongocrypt_memequal (const void *const b1, const void *const b2, size_t len);
 
 bool
 _mongocrypt_calculate_deterministic_iv (
