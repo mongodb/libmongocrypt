@@ -1,7 +1,7 @@
 #include "kms_message/kms_response_parser.h"
 #include "kms_message_private.h"
 
-#include "kms_message_private.h"
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,11 +62,26 @@ static bool
 _parse_int (const char *str, int *result)
 {
    char *endptr = NULL;
+   int64_t long_result;
 
-   *result = (int) strtol (str, &endptr, 10);
-   if (*endptr) {
+   errno = 0;
+   long_result = strtol (str, &endptr, 10);
+   if (endptr == str) {
+      /* No digits were parsed. Consider this an error */
       return false;
    }
+   if (endptr != NULL && *endptr != '\0') {
+      /* endptr points to the first invalid character. */
+      return false;
+   }
+   if (errno == EINVAL || errno == ERANGE) {
+      return false;
+   }
+   if (long_result > INT32_MAX || long_result < INT32_MIN) {
+      return false;
+   }
+   *result = (int) long_result;
+
    return true;
 }
 
