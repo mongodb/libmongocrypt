@@ -494,6 +494,63 @@ _try_schema_from_cache (mongocrypt_ctx_t *ctx)
    return true;
 }
 
+static bool
+_permitted_for_encryption (bson_iter_t *iter,
+                           mongocrypt_encryption_algorithm_t algo,
+                           mongocrypt_status_t *status)
+{
+   bson_type_t bson_type;
+   const bson_value_t *bson_value = bson_iter_value (iter);
+   bool ret = false;
+
+   bson_type = bson_value->value_type;
+   switch (bson_type) {
+   case BSON_TYPE_NULL:
+   case BSON_TYPE_MINKEY:
+   case BSON_TYPE_MAXKEY:
+   case BSON_TYPE_UNDEFINED:
+      CLIENT_ERR ("BSON type invalid for encryption");
+      goto fail;
+   case BSON_TYPE_BINARY:
+      if (bson_value->value.v_binary.subtype == 6) {
+         CLIENT_ERR ("BSON binary subtype 6 is invalid for encryption");
+         goto fail;
+      }
+      /* ok */
+      break;
+   case BSON_TYPE_DOUBLE:
+   case BSON_TYPE_DOCUMENT:
+   case BSON_TYPE_ARRAY:
+   case BSON_TYPE_CODEWSCOPE:
+   case BSON_TYPE_BOOL:
+   case BSON_TYPE_DECIMAL128:
+      if (algo == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
+         CLIENT_ERR ("BSON type invalid for deterministic encryption");
+         goto fail;
+      }
+      break;
+   case BSON_TYPE_UTF8:
+   case BSON_TYPE_OID:
+   case BSON_TYPE_DATE_TIME:
+   case BSON_TYPE_REGEX:
+   case BSON_TYPE_DBPOINTER:
+   case BSON_TYPE_CODE:
+   case BSON_TYPE_SYMBOL:
+   case BSON_TYPE_INT32:
+   case BSON_TYPE_TIMESTAMP:
+   case BSON_TYPE_INT64:
+      /* ok */
+      break;
+   case BSON_TYPE_EOD:
+   default:
+      CLIENT_ERR ("invalid BSON value type 00");
+      goto fail;
+   }
+
+   ret = true;
+fail:
+   return ret;
+}
 
 bool
 mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
@@ -560,34 +617,8 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
 
-   /* Check for prohibited types. */
-   if (BSON_ITER_HOLDS_BINARY (&iter)) {
-      _mongocrypt_buffer_t tmp;
-
-      if (!_mongocrypt_buffer_from_binary_iter (&tmp, &iter)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx,
-                                            "Could not read value to encrypt");
-      }
-      if (tmp.subtype == 6) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "BSON binary subtype 6 is invalid for encryption");
-      }
-   }
-
-   if (BSON_ITER_HOLDS_NULL (&iter) || BSON_ITER_HOLDS_MINKEY (&iter) ||
-       BSON_ITER_HOLDS_MAXKEY (&iter) || BSON_ITER_HOLDS_UNDEFINED (&iter)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx,
-                                         "BSON type invalid for encryption");
-   }
-   /* Check for prohibited deterministic types */
-   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
-      if (BSON_ITER_HOLDS_DOCUMENT (&iter) || BSON_ITER_HOLDS_ARRAY (&iter) ||
-          BSON_ITER_HOLDS_CODEWSCOPE (&iter) ||
-          BSON_ITER_HOLDS_DOUBLE (&iter) ||
-          BSON_ITER_HOLDS_DECIMAL128 (&iter) || BSON_ITER_HOLDS_BOOL (&iter)) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "BSON type invalid for deterministic encryption");
-      }
+   if (!_permitted_for_encryption (&iter, ctx->opts.algorithm, ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
