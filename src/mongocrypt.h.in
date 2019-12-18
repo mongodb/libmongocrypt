@@ -25,6 +25,7 @@
 
 #include "mongocrypt-export.h"
 #include "mongocrypt-compat.h"
+#include "mongocrypt-config.h"
 
 /**
  * @def MONGOCRYPT_VERSION

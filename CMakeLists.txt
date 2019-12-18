@@ -264,6 +264,7 @@ install (
    FILES
       ${MONGOCRYPT_PUBLIC_HEADERS}
       ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt.h
+      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-config.h
       ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-export.h
    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt
    COMPONENT Devel
