@@ -62,6 +62,9 @@ functions:
         script: |-
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
+          cd libmongocrypt
+          ./.evergreen/linker-tests.sh
+
 
   "create packages and repos":
     - command: "shell.exec"

@@ -158,6 +158,16 @@ target_link_libraries (mongocrypt PRIVATE ${BSON_TARGET})
 target_link_libraries (mongocrypt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (mongocrypt PRIVATE kms_message_static)
 
+if (NOT ENABLE_SHARED_BSON)
+   if (APPLE)
+      message ("compiling with unexported symbols list to hide bson symbols")
+      set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.txt")
+   elseif (UNIX)
+      message ("compiling with version map to version and hide bson symbols")
+      set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.map")
+   endif ()
+endif ()
+
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
