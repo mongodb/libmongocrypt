@@ -503,6 +503,10 @@ _permitted_for_encryption (bson_iter_t *iter,
    const bson_value_t *bson_value = bson_iter_value (iter);
    bool ret = false;
 
+   if (!bson_value) {
+      CLIENT_ERR ("Unknown BSON type");
+      goto fail;
+   }
    bson_type = bson_value->value_type;
    switch (bson_type) {
    case BSON_TYPE_NULL:

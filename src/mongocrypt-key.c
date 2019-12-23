@@ -229,6 +229,10 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
       const char *field;
 
       field = bson_iter_key (&iter);
+      if (!field) {
+         CLIENT_ERR ("invalid BSON, could not retrieve field name");
+         return false;
+      }
       if (0 == strcmp ("_id", field)) {
          has_id = true;
          if (!_mongocrypt_buffer_copy_from_uuid_iter (&out->id, &iter)) {
