@@ -100,6 +100,8 @@ module.exports = function(modules) {
       });
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
       this._keyVaultClient = options.keyVaultClient || client;
+      this._bypassEncryption =
+        typeof options.bypassAutoEncryption === 'boolean' ? options.bypassAutoEncryption : false;
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
@@ -174,6 +176,12 @@ module.exports = function(modules) {
       if (typeof options === 'function' && callback == null) {
         callback = options;
         options = {};
+      }
+
+      // If `bypassAutoEncryption` has been specified, don't encrypt
+      if (this._bypassEncryption) {
+        callback(undefined, cmd);
+        return;
       }
 
       const bson = this._bson;

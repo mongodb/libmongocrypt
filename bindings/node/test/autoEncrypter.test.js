@@ -91,6 +91,25 @@ describe('AutoEncrypter', function() {
     sandbox.restore();
   });
 
+  it('should support `bypassAutoEncryption`', function(done) {
+    const client = new MockClient();
+    const autoEncrypter = new AutoEncrypter(client, {
+      bypassAutoEncryption: true,
+      keyVaultNamespace: 'admin.datakeys',
+      logger: () => {},
+      kmsProviders: {
+        aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+        local: { key: Buffer.alloc(96) }
+      }
+    });
+
+    autoEncrypter.encrypt('test.test', { test: 'command' }, (err, encrypted) => {
+      expect(err).to.not.exist;
+      expect(encrypted).to.eql({ test: 'command' });
+      done();
+    });
+  });
+
   describe('state machine', function() {
     it('should decrypt mock data', function(done) {
       const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
