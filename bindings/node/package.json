@@ -45,9 +45,11 @@
     "standard-version": "^5.0.0"
   },
   "peerDependencies": {
-    "mongodb": "~3.4.0"
+    "mongodb": "^3.4.0"
   },
   "repository": {
-    "url": "https://github.com/mongodb/libmongocrypt"
+    "type": "git",
+    "url": "https://github.com/mongodb/libmongocrypt",
+    "directory": "bindings/node"
   }
 }
