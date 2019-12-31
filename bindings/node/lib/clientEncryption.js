@@ -92,7 +92,7 @@ module.exports = function(modules) {
      */
     constructor(client, options) {
       this._client = client;
-      this._bson = client.topology.bson;
+      this._bson = options.bson || client.topology.bson;
 
       if (options.keyVaultNamespace == null) {
         throw new TypeError('Missing required option `keyVaultNamespace`');
@@ -164,10 +164,11 @@ module.exports = function(modules) {
      */
     createDataKey(provider, options, callback) {
       if (typeof options === 'function') (callback = options), (options = {});
-      options = sanitizeDataKeyOptions(this._bson, options);
 
+      const bson = this._bson;
+      options = sanitizeDataKeyOptions(bson, options);
       const context = this._mongoCrypt.makeDataKeyContext(provider, options);
-      const stateMachine = new StateMachine();
+      const stateMachine = new StateMachine({ bson });
 
       return promiseOrCallback(callback, cb => {
         stateMachine.execute(this, context, (err, dataKey) => {
@@ -259,7 +260,7 @@ module.exports = function(modules) {
         contextOptions.keyAltName = bson.serialize({ keyAltName });
       }
 
-      const stateMachine = new StateMachine();
+      const stateMachine = new StateMachine({ bson });
       const context = this._mongoCrypt.makeExplicitEncryptionContext(valueBuffer, contextOptions);
 
       return promiseOrCallback(callback, cb => {
@@ -304,7 +305,7 @@ module.exports = function(modules) {
       const valueBuffer = bson.serialize({ v: value });
       const context = this._mongoCrypt.makeExplicitDecryptionContext(valueBuffer);
 
-      const stateMachine = new StateMachine();
+      const stateMachine = new StateMachine({ bson });
 
       return promiseOrCallback(callback, cb => {
         stateMachine.execute(this, context, (err, result) => {

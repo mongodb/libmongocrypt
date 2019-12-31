@@ -91,7 +91,7 @@ module.exports = function(modules) {
      */
     constructor(client, options) {
       this._client = client;
-      this._bson = client.topology.bson;
+      this._bson = options.bson || client.topology.bson;
       this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
       this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
         useNewUrlParser: true,
@@ -192,7 +192,7 @@ module.exports = function(modules) {
       context.ns = ns;
       context.document = cmd;
 
-      const stateMachine = new StateMachine(options);
+      const stateMachine = new StateMachine(Object.assign({ bson }, options));
       stateMachine.execute(this, context, callback);
     }
 
@@ -223,7 +223,7 @@ module.exports = function(modules) {
       // TODO: should this be an accessor from the addon?
       context.id = this._contextCounter++;
 
-      const stateMachine = new StateMachine(options);
+      const stateMachine = new StateMachine(Object.assign({ bson }, options));
       stateMachine.execute(this, context, callback);
     }
   }

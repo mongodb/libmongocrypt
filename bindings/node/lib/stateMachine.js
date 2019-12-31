@@ -70,6 +70,7 @@ module.exports = function(modules) {
   class StateMachine {
     constructor(options) {
       this.options = options || {};
+      this.bson = options.bson;
     }
 
     /**
@@ -81,7 +82,7 @@ module.exports = function(modules) {
      * @returns {void}
      */
     execute(autoEncrypter, context, callback) {
-      const bson = autoEncrypter._bson;
+      const bson = this.bson;
       const client = autoEncrypter._client;
       const keyVaultNamespace = autoEncrypter._keyVaultNamespace;
       const keyVaultClient = autoEncrypter._keyVaultClient;
@@ -260,7 +261,7 @@ module.exports = function(modules) {
      * @param {StateMachine~fetchCollectionInfoCallback} callback Invoked with the info of the requested collection, or with an error
      */
     fetchCollectionInfo(client, ns, filter, callback) {
-      const bson = client.topology.bson;
+      const bson = this.bson;
       const dbName = databaseNamespace(ns);
 
       client
@@ -288,7 +289,7 @@ module.exports = function(modules) {
      * @returns {void}
      */
     markCommand(client, ns, command, callback) {
-      const bson = client.topology.bson;
+      const bson = this.bson;
       const dbName = databaseNamespace(ns);
       const rawCommand = bson.deserialize(command, { promoteLongs: false, promoteValues: false });
 
@@ -313,7 +314,7 @@ module.exports = function(modules) {
      * @returns {void}
      */
     fetchKeys(client, keyVaultNamespace, filter, callback) {
-      const bson = client.topology.bson;
+      const bson = this.bson;
       const dbName = databaseNamespace(keyVaultNamespace);
       const collectionName = collectionNamespace(keyVaultNamespace);
       filter = bson.deserialize(filter);

@@ -1,5 +1,6 @@
 'use strict';
 
+const BSON = require('bson');
 const EventEmitter = require('events').EventEmitter;
 const tls = require('tls');
 const expect = require('chai').expect;
@@ -53,12 +54,15 @@ describe('StateMachine', function() {
     });
 
     it('should only resolve once bytesNeeded drops to zero', function(done) {
-      const stateMachine = new StateMachine();
+      const stateMachine = new StateMachine({ bson: new BSON() });
       const request = new MockRequest(Buffer.from('foobar'), 500);
       let status = 'pending';
       stateMachine
         .kmsRequest(request)
-        .then(() => (status = 'resolved'), () => (status = 'rejected'))
+        .then(
+          () => (status = 'resolved'),
+          () => (status = 'rejected')
+        )
         .catch(() => {});
 
       this.fakeSocket.emit('connect');
