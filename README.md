@@ -16,7 +16,7 @@ First build the following dependencies:
    git clone git@github.com:mongodb/mongo-c-driver.git
    cd mongo-c-driver
    mkdir cmake-build && cd cmake-build
-   cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PATH="/path/to/bson-install" -DCMAKE_C_FLAGS="-fPIC" ../
+   cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PREFIX="/path/to/bson-install" -DCMAKE_C_FLAGS="-fPIC" ../
    make -j8 install
    ```
    This installs the library and includes into /path/to/bson-install. The prefix can be omitted if you prefer installing in /usr/local.
