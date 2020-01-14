@@ -37,6 +37,7 @@ plugins {
     `maven-publish`
     signing
     id("de.undercouch.download").version("3.4.3")
+    id("biz.aQute.bnd.builder").version("4.3.1")
 }
 
 repositories {
@@ -203,6 +204,21 @@ tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
 }
 
+tasks.jar {
+    manifest {
+        attributes(
+                "-exportcontents" to "com.mongodb.crypt.capi.*;-noimport:=true",
+                "Automatic-Module-Name" to "com.mongodb.crypt.capi",
+                "Import-Package" to """org.bson.*;version="$bsonRangeVersion"""",
+                "Build-Version" to gitVersion,
+                "Bundle-Version" to gitVersion,
+                "Bundle-Name" to "MongoCrypt",
+                "Bundle-SymbolicName" to "com.mongodb.crypt.capi",
+                "Private-Package" to ""
+        )
+    }
+}
+
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
@@ -211,14 +227,7 @@ publishing {
 
             artifact(tasks["sourcesJar"])
             artifact(tasks["javadocJar"])
-            versionMapping {
-                usage("java-api") {
-                    fromResolutionOf("runtimeClasspath")
-                }
-                usage("java-runtime") {
-                    fromResolutionResult()
-                }
-            }
+
             pom {
                 name.set("MongoCrypt")
                 description.set(project.description)
@@ -239,20 +248,6 @@ publishing {
                     url.set("https://github.com/mongodb/libmongocrypt")
                     connection.set("scm:https://github.com/mongodb/libmongocrypt")
                     developerConnection.set("scm:git@github.com:mongodb/libmongocrypt")
-                }
-                withXml {
-                    val pom = asNode()
-                    fun Any?.asNode() = this as Node
-                    fun Any?.asNodeList() = this as NodeList
-
-                    pom["dependencies"].asNodeList().forEach {
-                        it.asNode().value().asNodeList().forEach { dep ->
-                            val dependency = dep.asNode().value().asNodeList()
-                            if (dependency.get(1).asNode().text() == "bson") {
-                                dependency.get(2).asNode().setValue(bsonRangeVersion)
-                            }
-                        }
-                    }
                 }
             }
         }
