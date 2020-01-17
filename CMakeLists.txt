@@ -10,6 +10,7 @@ endif()
 set (CMAKE_C_STANDARD 99)
 
 option (ENABLE_SHARED_BSON "Dynamically link libbson (default is static)" OFF)
+option (ENABLE_STATIC "Install static libraries" ON)
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -262,7 +263,13 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    target_include_directories (example-state-machine-static PRIVATE ./src)
 endif ()
 
-install (TARGETS mongocrypt mongocrypt_static
+if (ENABLE_STATIC)
+   set (TARGETS_TO_INSTALL mongocrypt mongocrypt_static)
+else ()
+   set (TARGETS_TO_INSTALL mongocrypt)
+endif ()
+install (
+   TARGETS ${TARGETS_TO_INSTALL}
    EXPORT mongocrypt_targets
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -324,10 +331,12 @@ install (
    FILES "${CMAKE_BINARY_DIR}/libmongocrypt.pc"
    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
-install (
-   FILES "${CMAKE_BINARY_DIR}/libmongocrypt-static.pc"
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
+if (ENABLE_STATIC)
+   install (
+      FILES "${CMAKE_BINARY_DIR}/libmongocrypt-static.pc"
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+   )
+endif ()
 
 include (CMakePackageConfigHelpers)
 set (INCLUDE_INSTALL_DIRS "${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")

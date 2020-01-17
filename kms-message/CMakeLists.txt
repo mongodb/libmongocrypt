@@ -122,7 +122,13 @@ set_property (TARGET kms_message_static APPEND PROPERTY
    )
 
 include (CMakePackageConfigHelpers)
-install (TARGETS kms_message kms_message_static
+if (ENABLE_STATIC)
+   set (TARGETS_TO_INSTALL kms_message kms_message_static)
+else ()
+   set (TARGETS_TO_INSTALL kms_message)
+endif ()
+install (
+   TARGETS ${TARGETS_TO_INSTALL}
    EXPORT kms_message_targets
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
