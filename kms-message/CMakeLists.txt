@@ -124,10 +124,10 @@ set_property (TARGET kms_message_static APPEND PROPERTY
 include (CMakePackageConfigHelpers)
 install (TARGETS kms_message kms_message_static
    EXPORT kms_message_targets
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-   RUNTIME DESTINATION bin
-   INCLUDES DESTINATION include
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install (
@@ -141,7 +141,7 @@ install (
    src/kms_message/kms_request_opt.h
    src/kms_message/kms_response.h
    src/kms_message/kms_response_parser.h
-   DESTINATION include/kms_message
+   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/kms_message
    COMPONENT Devel
 )
 
@@ -162,7 +162,7 @@ configure_file (cmake/kms_message-config.cmake
    COPYONLY
 )
 
-set (ConfigPackageLocation lib/cmake/kms_message)
+set (ConfigPackageLocation ${CMAKE_INSTALL_LIBDIR}/cmake/kms_message)
 install (EXPORT kms_message_targets
    NAMESPACE mongo::
    FILE kms_message_targets.cmake
@@ -178,8 +178,8 @@ install (
 )
 
 # pkg-config.
-set (PKG_CONFIG_LIBDIR "\${prefix}/lib")
-set (PKG_CONFIG_INCLUDEDIR "\${prefix}/include")
+set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
+set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
 set (PKG_CONFIG_LIBS "-L\${libdir} -lkms_message")
 set (PKG_CONFIG_CFLAGS "-I\${includedir}")
 configure_file (
@@ -189,7 +189,7 @@ configure_file (
 
 install (
    FILES "${CMAKE_CURRENT_BINARY_DIR}/libkms_message.pc"
-   DESTINATION lib/pkgconfig
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 
 # cannot run tests without crypto
