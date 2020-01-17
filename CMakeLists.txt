@@ -351,7 +351,7 @@ configure_file (cmake/mongocrypt-config.cmake
 install (EXPORT mongocrypt_targets
    NAMESPACE mongo::
    FILE mongocrypt_targets.cmake
-   DESTINATION lib/cmake/mongocrypt
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mongocrypt
 )
 
 install (
@@ -359,7 +359,7 @@ install (
       cmake/mongocrypt-config.cmake
       "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config-version.cmake"
    DESTINATION
-      lib/cmake/mongocrypt
+      ${CMAKE_INSTALL_LIBDIR}/cmake/mongocrypt
    COMPONENT
       Devel
 )
