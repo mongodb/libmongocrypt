@@ -13,7 +13,7 @@ First build the following dependencies:
 
 1. [The BSON library (part of the C driver)](https://github.com/mongodb/mongo-c-driver), consisting of libbson. Build it from source.
    ```
-   git clone git@github.com:mongodb/mongo-c-driver.git
+   git clone https://github.com/mongodb/mongo-c-driver
    cd mongo-c-driver
    mkdir cmake-build && cd cmake-build
    cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PREFIX="/path/to/bson-install" -DCMAKE_C_FLAGS="-fPIC" ../
@@ -26,7 +26,7 @@ First build the following dependencies:
 Then build libmongocrypt:
 
 ```
-git clone git@github.com:10gen/libmongocrypt.git
+git clone https://github.com/mongodb/libmongocrypt
 cd libmongocrypt
 mkdir cmake-build && cd cmake-build
 cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
