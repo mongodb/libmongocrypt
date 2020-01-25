@@ -54,17 +54,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %{_includedir}/*
-%{_prefix}/lib64/*.a
-%{_prefix}/lib64/lib*.so
-%{_prefix}/lib64/pkgconfig/*
-%{_prefix}/lib/*.a
-%{_prefix}/lib/lib*.so
-%{_prefix}/lib/cmake/*
-%{_prefix}/lib/pkgconfig/*
+%{_prefix}/lib*/*.a
+%{_prefix}/lib*/lib*.so
+%{_prefix}/lib*/pkgconfig/*
+%{_prefix}/lib*/cmake/*
 
 %files libs
-%{_prefix}/lib64/lib*.so.*
-%{_prefix}/lib/lib*.so.*
+%{_prefix}/lib*/lib*.so.*
 
 %changelog
 * Tue Aug 06 2019 Roberto C. Sanchez <roberto@connexer.com>  
