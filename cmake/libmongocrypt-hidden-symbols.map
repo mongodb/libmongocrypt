@@ -1,4 +1,7 @@
 mongocrypt {
     local:
         bson*;
+        bcon*;
+        jsonsl*;
+        _*;
 };
