@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
 
 #if defined(_WIN32)
 #include <basetsd.h>
