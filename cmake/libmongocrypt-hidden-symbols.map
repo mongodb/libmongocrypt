@@ -4,4 +4,5 @@ mongocrypt {
         bcon*;
         jsonsl*;
         _*;
+        kms*;
 };
