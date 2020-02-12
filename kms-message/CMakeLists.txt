@@ -139,6 +139,7 @@ install (
 install (
    FILES
    src/kms_message/kms_b64.h
+   src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
    src/kms_message/kms_message.h
