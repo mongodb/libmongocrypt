@@ -25,7 +25,7 @@ system_path () {
 # --bson1
 # --bson2
 # --libmongocrypt
-#   
+#
 
 if [ ! -e ./.evergreen ]; then
     echo "Error: run from libmongocrypt root"
