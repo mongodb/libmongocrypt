@@ -5,58 +5,66 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-# libmongocrypt is built by libmongocrypt/.evergreen/compile.sh
-evergreen_root="$(cd ../../../; pwd)"
+# MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
+MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
-    PYMONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/bin/mongocrypt.dll
+    PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
     export PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
     # We need to create virtualenvs to install pymongocrypt's
     # cffi, cryptography, and pymongo dependencies correctly from
     # wheels. Otherwise, setup.py attempts and fails to install
     # from the source distributions (.tar.gz).
-    /cygdrive/c/python/Python27/python -m virtualenv venv27
+    VIRTUALENV="/cygdrive/c/python/Python27/python -m virtualenv"
+    $VIRTUALENV -p C:/python/Python27/python.exe venv27
     PYTHON27="$(pwd)/venv27/Scripts/python"
+    # Upgrade pip to install the cryptography wheel and not the tar.
+    # <20.1 because 20.0.2 says a future release may drop support for 2.7.
+    $PYTHON27 -m pip install --upgrade 'pip<20.1'
+    # Upgrade setuptools because cryptography requires 18.5+.
+    # <45 because 45.0 dropped support for 2.7.
+    $PYTHON27 -m pip install --upgrade 'setuptools<45'
     $PYTHON27 -m pip install . pymongo
 
-    /cygdrive/c/python/Python36/python -m virtualenv venv36
-    PYTHON36="$(pwd)/venv36/Scripts/python"
-    $PYTHON36 -m pip install . pymongo
-
-    # The packaging tools included in the 3.4 and 3.5 installs
-    # are too old to install cffi and cryptography from
-    # wheels, so use get-pip.py to get the latest tools.
-    curl -O https://bootstrap.pypa.io/get-pip.py
-
-    # 3.4 supports '-m venv', not '-m virtualenv'.
-    /cygdrive/c/python/Python34/python -m venv --without-pip venv34
+    $VIRTUALENV -p C:/python/Python34/python.exe venv34
     PYTHON34="$(pwd)/venv34/Scripts/python"
-    $PYTHON34 get-pip.py
+    # Upgrade pip to install the cryptography wheel and not the tar.
+    # <19.2 because 19.2 dropped support for 3.4.
+    $PYTHON34 -m pip install --upgrade 'pip<19.2'
     $PYTHON34 -m pip install . pymongo
 
-    # 3.5 supports '-m venv', not '-m virtualenv'.
-    /cygdrive/c/python/Python35/python -m venv --without-pip venv35
+    $VIRTUALENV -p C:/python/Python35/python.exe venv35
     PYTHON35="$(pwd)/venv35/Scripts/python"
-    $PYTHON35 get-pip.py
+    $PYTHON35 -m pip install --upgrade pip
     $PYTHON35 -m pip install . pymongo
 
-    # 3.7 supports '-m venv', not '-m virtualenv'.
-    /cygdrive/c/python/Python37/python -m venv venv37
+    $VIRTUALENV -p C:/python/Python36/python.exe venv36
+    PYTHON36="$(pwd)/venv36/Scripts/python"
+    $PYTHON36 -m pip install --upgrade pip
+    $PYTHON36 -m pip install . pymongo
+
+    $VIRTUALENV -p C:/python/Python37/python.exe venv37
     PYTHON37="$(pwd)/venv37/Scripts/python"
     $PYTHON37 -m pip install --upgrade pip
     $PYTHON37 -m pip install . pymongo
+
+    $VIRTUALENV -p C:/python/Python38/python.exe venv38
+    PYTHON38="$(pwd)/venv38/Scripts/python"
+    $PYTHON38 -m pip install --upgrade pip
+    $PYTHON38 -m pip install . pymongo
 
     PYTHONS=("python" \
              "$PYTHON27" \
              "$PYTHON34" \
              "$PYTHON35" \
              "$PYTHON36" \
-             "$PYTHON37")
+             "$PYTHON37" \
+             "$PYTHON38")
 elif [ "Darwin" = "$(uname -s)" ]; then
-    export PYMONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/lib/libmongocrypt.dylib
+    export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     PYTHONS=("python")
 else
-    export PYMONGOCRYPT_LIB=${evergreen_root}/install/libmongocrypt/lib64/libmongocrypt.so
+    export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
     PYTHONS=("/opt/python/2.7/bin/python" \
              "/opt/python/3.4/bin/python3" \
              "/opt/python/3.5/bin/python3" \
