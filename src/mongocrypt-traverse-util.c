@@ -177,7 +177,7 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
                                       cb,
                                       status,
                                       match,
-                                      0};
+                                      {0}};
 
    return _recurse (&starting_state);
 }
@@ -210,7 +210,7 @@ _mongocrypt_traverse_binary_in_bson (_mongocrypt_traverse_callback_t cb,
                                       NULL /* transform callback */,
                                       status,
                                       match,
-                                      0};
+                                      {0}};
 
    return _recurse (&starting_state);
 }
