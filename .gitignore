@@ -35,6 +35,7 @@ install_manifest.txt
 *.gcda
 *.gcno
 *.gz
+*.lo
 *.o
 *.pc
 *.so
