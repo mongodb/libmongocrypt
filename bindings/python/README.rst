@@ -77,7 +77,7 @@ PyMongoCrypt can be installed with `pip <http://pypi.python.org/pypi/pip>`_::
 
   $ python -m pip install pymongocrypt
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.0
+  1.0.4
 
 
 PyMongoCrypt ships wheels for macOS, Windows, and manylinux2010 that include
@@ -115,18 +115,18 @@ For example::
   $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz
   $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
   $ ls libmongocrypt-all
-  amazon2             rhel-67-s390x       suse12-64           ubuntu1604-s390x
-  debian92            rhel-70-64-bit      suse12-s390x        ubuntu1804-64
-  linux-64-amazon-ami rhel-71-ppc64el     suse15-64           ubuntu1804-arm64
-  macos               rhel72-zseries-test ubuntu1604          windows-test
-  rhel-62-64-bit      rhel76              ubuntu1604-arm64
+  amazon2             rhel-62-64-bit      rhel72-zseries-test ubuntu1604-arm64
+  debian10            rhel-67-s390x       suse12-64           ubuntu1804-64
+  debian92            rhel-70-64-bit      suse12-s390x        ubuntu1804-arm64
+  linux-64-amazon-ami rhel-71-ppc64el     suse15-64           windows-test
+  macos               rhel-80-64-bit      ubuntu1604
 
 macOS::
 
   $ # Set PYMONGOCRYPT_LIB for macOS:
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/nocrypto/lib/libmongocrypt.dylib
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.0
+  1.0.4
 
 Windows::
 
@@ -134,14 +134,14 @@ Windows::
   $ chmod +x $(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.0
+  1.0.4
 
 Linux::
 
   $ # Set PYMONGOCRYPT_LIB for RHEL 6.2 x86_64:
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.0
+  1.0.4
 
 Dependencies
 ============
@@ -179,6 +179,7 @@ variables, like ``LD_LIBRARY_PATH``. For example::
 
   $ export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+  1.0.4
 
 Testing
 =======
