@@ -27,7 +27,7 @@ class MongocryptdManager {
 
     this.bypassSpawn = !!extraOptions.mongocryptdBypassSpawn;
 
-    this.spawPath = extraOptions.mongocryptdSpawnPath || '';
+    this.spawnPath = extraOptions.mongocryptdSpawnPath || '';
     this.spawnArgs = [];
     if (Array.isArray(extraOptions.mongocryptdSpawnArgs)) {
       this.spawnArgs = this.spawnArgs.concat(extraOptions.mongocryptdSpawnArgs);
