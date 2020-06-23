@@ -3,7 +3,7 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-NODE_LTS_NAME=${NODE_LTS_NAME:-erbium}
+NODE_VERSION=14
 NODE_BINDINGS_PATH="${PROJECT_DIRECTORY}/bindings/node"
 NODE_ARTIFACTS_PATH="${NODE_BINDINGS_PATH}/node-artifacts"
 NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
@@ -37,9 +37,6 @@ mkdir -p ${NVM_DIR}
 # install Node.js
 echo "Installing Node ${NODE_LTS_NAME}"
 if [ "$OS" == "Windows_NT" ]; then
-  # nvm-windows doesn't support lts names, so this will convert them to the latest releases for us
-  NODE_VERSION=$(curl -s -L https://nodejs.org/dist/latest-${NODE_LTS_NAME}/SHASUMS256.txt | grep -oP 'node-v\K\w+.\w+.\w+' | head -1)
-
   export NVM_HOME=`cygpath -w "$NVM_DIR"`
   export NVM_SYMLINK=`cygpath -w "$NODE_ARTIFACTS_PATH/bin"`
   export PATH=`cygpath $NVM_SYMLINK`:`cygpath $NVM_HOME`:$PATH
@@ -62,7 +59,9 @@ EOT
 else
   curl -o- $NVM_URL | bash
   [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
-  nvm install --lts=${NODE_LTS_NAME}
+
+  nvm install $NODE_VERSION
+  nvm use $NODE_VERSION
 fi
 
 # setup npm cache in a local directory
