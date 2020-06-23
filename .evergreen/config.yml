@@ -789,7 +789,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-java
   - test-python
-  - build-and-test-node
   - name: publish-packages
     distros:
     - rhel70-small
