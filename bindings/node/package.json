@@ -22,11 +22,11 @@
   "gypfile": true,
   "dependencies": {
     "bindings": "^1.5.0",
-    "bson": "^1.0.5",
     "nan": "^2.14.0",
     "prebuild-install": "5.3.0"
   },
   "devDependencies": {
+    "bson": "^4.0.4",
     "chai": "^4.2.0",
     "chai-subset": "^1.6.0",
     "dmd-clear": "^0.1.2",
@@ -34,8 +34,7 @@
     "eslint-plugin-prettier": "^2.2.0",
     "jsdoc-to-markdown": "^5.0.0",
     "mocha": "^4.0.0",
-    "mongodb": "^3.3.4-rc0",
-    "mongodb-extjson": "^3.0.3",
+    "mongodb": "^3.5.9",
     "node-gyp": "^5.0.3",
     "prebuild": "^9.0.1",
     "prettier": "^1.19.1",

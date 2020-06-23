@@ -1,8 +1,8 @@
 'use strict';
 
 const fs = require('fs');
-const BSON = new (require('bson'))(); // TODO: upgrade to 4.x bson
-const EJSON = require('mongodb-extjson');
+const BSON = require('bson');
+const EJSON = require('bson').EJSON;
 const sinon = require('sinon');
 const mongodb = Object.assign({}, require('mongodb'), {
   // TODO: once this is actually defined, use the real one

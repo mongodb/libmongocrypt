@@ -54,7 +54,7 @@ describe('StateMachine', function() {
     });
 
     it('should only resolve once bytesNeeded drops to zero', function(done) {
-      const stateMachine = new StateMachine({ bson: new BSON() });
+      const stateMachine = new StateMachine({ bson: BSON });
       const request = new MockRequest(Buffer.from('foobar'), 500);
       let status = 'pending';
       stateMachine
