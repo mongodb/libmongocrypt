@@ -9,7 +9,6 @@ NODE_ARTIFACTS_PATH="${NODE_BINDINGS_PATH}/node-artifacts"
 NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
 NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
 BIN_DIR="$(pwd)/bin"
-MONGOCRYPTD_PATH="https://s3.amazonaws.com/mciuploads/mongodb-mongo-v4.2/enterprise-ubuntu1604-64/f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a/binaries/mongo-cryptd-mongodb_mongo_v4.2_enterprise_ubuntu1604_64_f92115cad9d2a4c2ddcf3c2c65092dda2fd7147a_19_06_13_17_31_40.tgz"
 NVM_WINDOWS_URL="https://github.com/coreybutler/nvm-windows/releases/download/1.1.7/nvm-noinstall.zip"
 NVM_URL="https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh"
 
@@ -74,11 +73,3 @@ cache=${NPM_CACHE_DIR}
 tmp=${NPM_TMP_DIR}
 EOT
 
-# if no mongocryptd installed, install mongocryptd and add it to path
-if ! [ -x "$(command -v mongocryptd)" ]
-then
-  echo "Installing mongocryptd"
-  curl -o mongocryptd.tgz $MONGOCRYPTD_PATH
-  mkdir -p mongocryptd && tar xzf mongocryptd.tgz -C mongocryptd --strip-components 1
-  mv mongocryptd/bin/mongocryptd "$BIN_DIR/mongocryptd"
-fi
