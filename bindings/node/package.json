@@ -15,7 +15,8 @@
     "test": "mocha test",
     "rebuild": "prebuild --compile",
     "release": "standard-version --tag-prefix node-v --path bindings/node",
-    "prebuild": "prebuild  --strip --verbose --tag-prefix node-v --all"
+    "prebuild": "prebuild  --strip --verbose --tag-prefix node-v --all",
+    "prebuild-legacy": "prebuild  --strip --verbose --tag-prefix node-v --runtime node --target 4.0.0"
   },
   "author": "Matt Broadstone <mbroadst@mongodb.com>",
   "license": "Apache-2.0",
