@@ -3,7 +3,7 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-NODE_LTS_NAME=${NODE_LTS_NAME:-dubnium}
+NODE_LTS_NAME=${NODE_LTS_NAME:-erbium}
 NODE_BINDINGS_PATH="${PROJECT_DIRECTORY}/bindings/node"
 NODE_ARTIFACTS_PATH="${NODE_BINDINGS_PATH}/node-artifacts"
 NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
