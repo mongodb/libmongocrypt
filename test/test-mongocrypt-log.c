@@ -96,7 +96,7 @@ _test_trace_log (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-#ifndef _WIN32
+#if defined(__GLIBC__) || defined(__APPLE__)
 static void
 _test_no_log (_mongocrypt_tester_t *tester)
 {
@@ -131,7 +131,7 @@ _mongocrypt_tester_install_log (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_log);
    INSTALL_TEST (_test_trace_log);
-#ifndef _WIN32
+#if defined(__GLIBC__) || defined(__APPLE__)
    INSTALL_TEST (_test_no_log);
 #endif
 }
