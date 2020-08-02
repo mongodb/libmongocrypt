@@ -28,8 +28,19 @@ extern "C" {
 
 typedef struct _kms_request_opt_t kms_request_opt_t;
 
+typedef size_t kms_request_provider_t;
+
+#define KMS_REQUEST_PROVIDER_AWS 0
+#define KMS_REQUEST_PROVIDER_AZURE 1
+
 KMS_MSG_EXPORT (kms_request_opt_t *)
 kms_request_opt_new (void);
+
+/* The default provider is AWS. This will automatically set extra headers.
+ * Returns false if provider is invalid. */
+KMS_MSG_EXPORT (bool)
+kms_request_opt_set_provider (kms_request_opt_t *opt,
+                              kms_request_provider_t provider);
 KMS_MSG_EXPORT (void)
 kms_request_opt_destroy (kms_request_opt_t *request);
 KMS_MSG_EXPORT (void)

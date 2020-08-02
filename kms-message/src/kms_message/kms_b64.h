@@ -38,6 +38,18 @@ kms_message_b64_ntop (uint8_t const *src,
 KMS_MSG_EXPORT (int)
 kms_message_b64_pton (char const *src, uint8_t *target, size_t targsize);
 
+/* src and target may be the same string. Assumes no whitespace in src. */
+KMS_MSG_EXPORT (int)
+kms_message_b64_to_b64url (const char *src,
+                           size_t srclength,
+                           char *target,
+                           size_t targsize);
+KMS_MSG_EXPORT (int)
+kms_message_b64url_to_b64 (const char *src,
+                           size_t srclength,
+                           char *target,
+                           size_t targsize);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

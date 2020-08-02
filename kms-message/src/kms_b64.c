@@ -505,3 +505,79 @@ kms_message_b64_pton (char const *src, uint8_t *target, size_t targsize)
    else
       return b64_pton_len (src);
 }
+
+int
+kms_message_b64_to_b64url (const char *src,
+                           size_t srclength,
+                           char *target,
+                           size_t targsize)
+{
+   int i;
+
+   for (i = 0; i < srclength; i++) {
+      if (src[i] == '=') {
+         break;
+      }
+
+      if (i >= targsize) {
+         return -1;
+      }
+
+      target[i] = src[i];
+      if (target[i] == '+') {
+         target[i] = '-';
+      } else if (target[i] == '/') {
+         target[i] = '_';
+      }
+   }
+
+   /* NULL terminate if room. */
+   if (i < targsize) {
+      target[i] = '\0';
+   }
+
+   return i;
+}
+
+int
+kms_message_b64url_to_b64 (const char *src,
+                           size_t srclength,
+                           char *target,
+                           size_t targsize)
+{
+   int i;
+   int boundary;
+
+   for (i = 0; i < srclength; i++) {
+      if (src[i] == '=') {
+         break;
+      }
+
+      if (i >= targsize) {
+         return -1;
+      }
+
+      target[i] = src[i];
+      if (target[i] == '-') {
+         target[i] = '+';
+      } else if (target[i] == '_') {
+         target[i] = '/';
+      }
+   }
+
+   /* Pad to four byte boundary. */
+   boundary = 4 * ((i + 3) / 4);
+   for (; i < boundary; i++) {
+      if (i >= targsize) {
+         return -1;
+      }
+      target[i] = '=';
+   }
+
+   /* NULL terminate if room. */
+   if (i < targsize) {
+      target[i] = '\0';
+   }
+
+   return i;
+}

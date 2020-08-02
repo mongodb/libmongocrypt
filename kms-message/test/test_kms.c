@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2020-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef KMS_ENCRYPT_REQUEST_H
-#define KMS_ENCRYPT_REQUEST_H
+#include "test_kms.h"
 
-#include "kms_message_defines.h"
-#include "kms_request.h"
-#include "kms_request_opt.h"
+void
+_test_error (const char *format, ...)
+{
+   va_list ap;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-KMS_MSG_EXPORT (kms_request_t *)
-kms_encrypt_request_new (const uint8_t *plaintext,
-                         size_t plaintext_length,
-                         const char *key_id,
-                         const kms_request_opt_t *opt);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-
-#endif /* KMS_ENCRYPT_REQUEST_H */
+   va_start (ap, format);
+   vfprintf (stderr, format, ap);
+   fprintf (stderr, "\n");
+   fflush (stderr);
+   va_end (ap);
+   abort ();
+}

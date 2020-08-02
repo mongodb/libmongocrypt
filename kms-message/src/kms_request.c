@@ -62,6 +62,11 @@ kms_request_new (const char *method,
    const char *question_mark;
 
    KMS_ASSERT (request);
+   if (opt && opt->provider) {
+      request->provider = opt->provider;
+   } else {
+      request->provider = KMS_REQUEST_PROVIDER_AWS;
+   }
    /* parsing may set failed to true */
    request->failed = false;
 
@@ -93,7 +98,9 @@ kms_request_new (const char *method,
    request->header_fields = kms_kv_list_new ();
    request->auto_content_length = true;
 
-   if (!kms_request_set_date (request, NULL)) {
+   /* For AWS KMS requests, add a X-Amz-Date header. */
+   if (request->provider == KMS_REQUEST_PROVIDER_AWS &&
+       !kms_request_set_date (request, NULL)) {
       return request;
    }
 
@@ -385,10 +392,13 @@ finalize (kms_request_t *request)
 
    lst = request->header_fields;
 
-   /* By default, if no explicit Host was set, it is derived from region +
-    * service */
    if (!kms_kv_list_find (lst, "Host")) {
-      /* like "kms.us-east-1.amazonaws.com" */
+      if (request->provider != KMS_REQUEST_PROVIDER_AWS) {
+         KMS_ERROR (request, "Required Host header not set");
+         return false;
+      }
+      /* For AWS requests, derive a default Host header from region + service.
+       * E.g. "kms.us-east-1.amazonaws.com" */
       k = kms_request_str_new_from_chars ("Host", -1);
       v = kms_request_str_dup (request->service);
       kms_request_str_append_char (v, '.');
@@ -746,6 +756,57 @@ kms_request_get_signed (kms_request_t *request)
    success = true;
 done:
    free (signature);
+   kms_kv_list_destroy (lst);
+
+   if (!success) {
+      kms_request_str_destroy (sreq);
+      sreq = NULL;
+   }
+
+   return kms_request_str_detach (sreq);
+}
+
+char *
+kms_request_to_string (kms_request_t *request)
+{
+   bool success = false;
+   kms_kv_list_t *lst = NULL;
+   kms_request_str_t *sreq = NULL;
+   size_t i;
+
+   finalize (request);
+
+   sreq = kms_request_str_new ();
+   /* like "POST / HTTP/1.1" */
+   kms_request_str_append (sreq, request->method);
+   kms_request_str_append_char (sreq, ' ');
+   kms_request_str_append (sreq, request->path);
+   if (request->query->len) {
+      kms_request_str_append_char (sreq, '?');
+      kms_request_str_append (sreq, request->query);
+   }
+
+   kms_request_str_append_chars (sreq, " HTTP/1.1", -1);
+   kms_request_str_append_newline (sreq);
+
+   /* headers */
+   lst = kms_kv_list_dup (request->header_fields);
+   kms_kv_list_sort (lst, cmp_header_field_names);
+   for (i = 0; i < lst->len; i++) {
+      kms_request_str_append (sreq, lst->kvs[i].key);
+      kms_request_str_append_char (sreq, ':');
+      kms_request_str_append (sreq, lst->kvs[i].value);
+      kms_request_str_append_newline (sreq);
+   }
+
+   kms_request_str_append_newline (sreq);
+
+   /* body */
+   if (request->payload->len) {
+      kms_request_str_append (sreq, request->payload);
+   }
+
+   success = true;
    kms_kv_list_destroy (lst);
 
    if (!success) {

@@ -57,3 +57,15 @@ kms_request_opt_set_crypto_hooks (kms_request_opt_t *opt,
    opt->crypto.sha256_hmac = sha256_hmac;
    opt->crypto.ctx = ctx;
 }
+
+bool
+kms_request_opt_set_provider (kms_request_opt_t *opt,
+                              kms_request_provider_t provider)
+{
+   if (provider != KMS_REQUEST_PROVIDER_AWS &&
+       provider != KMS_REQUEST_PROVIDER_AZURE) {
+      return false;
+   }
+   opt->provider = provider;
+   return true;
+}

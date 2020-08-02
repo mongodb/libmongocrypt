@@ -775,6 +775,38 @@ b64_test (void)
 }
 
 void
+b64_b64url_test (void)
+{
+   char base64_data[64];
+   char base64url_data[64];
+   int ret;
+
+   memset (base64_data, 0, sizeof (base64_data));
+   memset (base64url_data, 0, sizeof (base64url_data));
+   strcpy (base64_data, "PDw/Pz8+Pg==");
+   ret = kms_message_b64_to_b64url (base64_data,
+                                    strlen (base64_data),
+                                    base64url_data,
+                                    sizeof (base64url_data));
+   ASSERT (ret == 10);
+   ASSERT_CMPSTR (base64url_data, "PDw_Pz8-Pg");
+
+   memset (base64_data, 0, sizeof (base64_data));
+   ret = kms_message_b64url_to_b64 (base64url_data,
+                                    strlen (base64url_data),
+                                    base64_data,
+                                    sizeof (base64_data));
+   ASSERT (ret == 12);
+   ASSERT_CMPSTR (base64_data, "PDw/Pz8+Pg==");
+
+   /* Convert to base64url in-place. */
+   ret = kms_message_b64_to_b64url (
+      base64_data, strlen (base64_data), base64_data, sizeof (base64_data));
+   ASSERT (ret == 10);
+   ASSERT_CMPSTR (base64_data, "PDw_Pz8-Pg");
+}
+
+void
 kms_response_parser_test (void)
 {
    FILE *response_file;
@@ -1037,6 +1069,7 @@ main (int argc, char *argv[])
    RUN_TEST (encrypt_request_test);
    RUN_TEST (kv_list_del_test);
    RUN_TEST (b64_test);
+   RUN_TEST (b64_b64url_test);
 
    ran_tests |= all_aws_sig_v4_tests (aws_test_suite_dir, selector);
 
