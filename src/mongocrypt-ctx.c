@@ -236,7 +236,7 @@ mongocrypt_ctx_t *
 mongocrypt_ctx_new (mongocrypt_t *crypt)
 {
    mongocrypt_ctx_t *ctx;
-   int ctx_size;
+   size_t ctx_size;
 
    if (!crypt) {
       return NULL;

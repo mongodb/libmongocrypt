@@ -155,7 +155,7 @@ send_kms_request (kms_request_t *req, const char *host)
 
    write_ret = mongoc_stream_write (
       tls_stream, req_str, strlen (req_str), socket_timeout_ms);
-   TEST_ASSERT (write_ret == strlen (req_str));
+   TEST_ASSERT (write_ret == (ssize_t) strlen (req_str));
 
    response_parser = kms_response_parser_new ();
    while ((bytes_to_read =

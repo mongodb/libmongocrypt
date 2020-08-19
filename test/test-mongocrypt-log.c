@@ -45,7 +45,7 @@ _test_log (_mongocrypt_tester_t *tester)
                                       MONGOCRYPT_LOG_LEVEL_ERROR,
                                       MONGOCRYPT_LOG_LEVEL_WARNING,
                                       MONGOCRYPT_LOG_LEVEL_INFO};
-   int i;
+   size_t i;
    mongocrypt_t *crypt;
    mongocrypt_status_t *status;
 

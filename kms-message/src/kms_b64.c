@@ -512,7 +512,7 @@ kms_message_b64_to_b64url (const char *src,
                            char *target,
                            size_t targsize)
 {
-   int i;
+   size_t i;
 
    for (i = 0; i < srclength; i++) {
       if (src[i] == '=') {
@@ -536,7 +536,7 @@ kms_message_b64_to_b64url (const char *src,
       target[i] = '\0';
    }
 
-   return i;
+   return (int) i;
 }
 
 int
@@ -545,8 +545,8 @@ kms_message_b64url_to_b64 (const char *src,
                            char *target,
                            size_t targsize)
 {
-   int i;
-   int boundary;
+   size_t i;
+   size_t boundary;
 
    for (i = 0; i < srclength; i++) {
       if (src[i] == '=') {
@@ -579,5 +579,5 @@ kms_message_b64url_to_b64 (const char *src,
       target[i] = '\0';
    }
 
-   return i;
+   return (int) i;
 }
