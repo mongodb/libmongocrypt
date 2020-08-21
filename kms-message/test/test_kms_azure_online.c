@@ -356,4 +356,5 @@ int
 main (int argc, char **argv)
 {
    RUN_TEST (test_azure_wrapkey);
+   return 0;
 }
