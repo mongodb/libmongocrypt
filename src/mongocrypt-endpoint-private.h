@@ -17,8 +17,6 @@
 #ifndef MONGOCRYPT_ENDPOINT_PRIVATE_H
 #define MONGOCRYPT_ENDPOINT_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include "mongocrypt-status-private.h"
 
 typedef struct {
@@ -31,15 +29,15 @@ typedef struct {
    char *subdomain; /* e.g. kevin */
    char *path;      /* e.g. path/path */
    char *query;     /* e.g. query=value */
-   /* normalized is the form that should be returned to drivers. */
-   char *normalized; /* e.g. kevin.keyvault.azure.net:443 */
+   /* host_and_port is the form that should be returned to drivers. */
+   char *host_and_port; /* e.g. kevin.keyvault.azure.net:443 */
 } _mongocrypt_endpoint_t;
 
 void
 _mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint);
 
 _mongocrypt_endpoint_t *
-_mongocrypt_endpoint_new (const char *original,
+_mongocrypt_endpoint_new (const char *endpoint_raw,
                           int32_t len,
                           mongocrypt_status_t *status);
 

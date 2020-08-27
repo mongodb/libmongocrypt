@@ -32,12 +32,12 @@ _mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint)
    bson_free (endpoint->subdomain);
    bson_free (endpoint->path);
    bson_free (endpoint->query);
-   bson_free (endpoint->normalized);
+   bson_free (endpoint->host_and_port);
    bson_free (endpoint);
 }
 
 _mongocrypt_endpoint_t *
-_mongocrypt_endpoint_new (const char *original,
+_mongocrypt_endpoint_new (const char *endpoint_raw,
                           int32_t len,
                           mongocrypt_status_t *status)
 {
@@ -53,7 +53,7 @@ _mongocrypt_endpoint_new (const char *original,
 
    endpoint = bson_malloc0 (sizeof (_mongocrypt_endpoint_t));
    if (!_mongocrypt_validate_and_copy_string (
-          original, len, &endpoint->original)) {
+          endpoint_raw, len, &endpoint->original)) {
       CLIENT_ERR ("Invalid endpoint");
       goto fail;
    }
@@ -141,10 +141,10 @@ _mongocrypt_endpoint_new (const char *original,
    }
 
    if (endpoint->port) {
-      endpoint->normalized =
+      endpoint->host_and_port =
          bson_strdup_printf ("%s:%s", endpoint->host, endpoint->port);
    } else {
-      endpoint->normalized = bson_strdup (endpoint->host);
+      endpoint->host_and_port = bson_strdup (endpoint->host);
    }
 
    ok = true;
