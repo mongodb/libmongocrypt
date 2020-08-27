@@ -609,7 +609,7 @@ bool
 mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 
 /**
- * Set masterkey document for creating a data key.
+ * Set key encryption key document for creating a data key.
  * Currently only applies to Azure.
  * 
  * @param[in] ctx The @ref mongocrypt_ctx_t object.

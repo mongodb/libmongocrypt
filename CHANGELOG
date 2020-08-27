@@ -1,6 +1,5 @@
-Next
-====
-
+# ChangeLog
+## Added
 Introduces two new functions to the libmongocrypt API.
 - mongocrypt_setopt_kms_providers
     To set the KMS providers.
