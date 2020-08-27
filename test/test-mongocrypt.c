@@ -445,6 +445,8 @@ _mongocrypt_tester_mongocrypt (void)
    mongocrypt_t *crypt;
    char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
    mongocrypt_binary_t *localkey;
+   bson_t *kms_providers;
+   mongocrypt_binary_t *bin;
 
    crypt = mongocrypt_new ();
    mongocrypt_setopt_log_handler (crypt, _mongocrypt_stdout_log_fn, NULL);
@@ -453,6 +455,13 @@ _mongocrypt_tester_mongocrypt (void)
                                                sizeof localkey_data);
    mongocrypt_setopt_kms_provider_local (crypt, localkey);
    mongocrypt_binary_destroy (localkey);
+   kms_providers = BCON_NEW (
+      "azure", "{", "tenantId", "", "clientId", "", "clientSecret", "", "}");
+   bin = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);
+   bson_destroy (kms_providers);
+   mongocrypt_binary_destroy (bin);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    return crypt;
 }
@@ -610,6 +619,48 @@ _test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+typedef struct {
+   char *value;
+   char *errmsg;
+} setopt_kms_providers_testcase_t;
+
+static void
+_test_setopt_kms_providers (_mongocrypt_tester_t *tester)
+{
+   setopt_kms_providers_testcase_t *test;
+   size_t i;
+   setopt_kms_providers_testcase_t tests[] = {
+      {"{'azure': {'tenantId': '', 'clientId': '', 'clientSecret': '', "
+       "'identityPlatformEndpoint': 'example.com' }}",
+       NULL},
+      {"{'azure': {'tenantId': '', 'clientId': '', 'clientSecret': '' }}",
+       NULL},
+      {"{'azure': {'tenantId': '', 'clientId': '', 'clientSecret': '', "
+       "'identityPlatformEndpoint': 'example' }}",
+       "Invalid endpoint"},
+      {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
+      {"{'aws': {}}", "unsupported KMS provider"},
+      {"{'local': {}}", "unsupported KMS provider"}};
+
+   for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      mongocrypt_t *crypt;
+
+      test = tests + i;
+      crypt = mongocrypt_new ();
+      if (!test->errmsg) {
+         ASSERT_OK (
+            mongocrypt_setopt_kms_providers (crypt, TEST_BSON (test->value)),
+            crypt);
+      } else {
+         ASSERT_FAILS (
+            mongocrypt_setopt_kms_providers (crypt, TEST_BSON (test->value)),
+            crypt,
+            test->errmsg);
+      }
+      mongocrypt_destroy (crypt);
+   }
+}
+
 
 int
 main (int argc, char **argv)
@@ -649,6 +700,11 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_key_cache (&tester);
    _mongocrypt_tester_install_kms_responses (&tester);
    _mongocrypt_tester_install_status (&tester);
+   _mongocrypt_tester_install_endpoint (&tester);
+   _mongocrypt_tester_install (&tester,
+                               "_test_setopt_kms_providers",
+                               _test_setopt_kms_providers,
+                               CRYPTO_OPTIONAL);
 
 
    printf ("Running tests...\n");

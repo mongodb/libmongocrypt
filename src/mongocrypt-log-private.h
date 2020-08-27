@@ -51,7 +51,7 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
                         void *ctx);
 
 
-#ifdef MONGOCRYPT_TRACE
+#ifdef MONGOCRYPT_ENABLE_TRACE
 
 #define CRYPT_TRACEF(log, fmt, ...)             \
    _mongocrypt_log (log,                        \
@@ -106,6 +106,6 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
 #define CRYPT_RETURN(log, x) return (x);
 #define CRYPT_GOTO(log, x) goto x;
 
-#endif /* MONGOCRYPT_TRACE */
+#endif /* MONGOCRYPT_ENABLE_TRACE */
 
 #endif /* MONGOCRYPT_LOG_PRIVATE_H */

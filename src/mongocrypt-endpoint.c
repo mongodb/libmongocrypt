@@ -1,0 +1,157 @@
+/*
+ * Copyright 2020-present MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "mongocrypt-endpoint-private.h"
+
+#include "mongocrypt-private.h"
+
+void
+_mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint)
+{
+   if (!endpoint) {
+      return;
+   }
+   bson_free (endpoint->original);
+   bson_free (endpoint->protocol);
+   bson_free (endpoint->host);
+   bson_free (endpoint->port);
+   bson_free (endpoint->domain);
+   bson_free (endpoint->subdomain);
+   bson_free (endpoint->path);
+   bson_free (endpoint->query);
+   bson_free (endpoint->normalized);
+   bson_free (endpoint);
+}
+
+_mongocrypt_endpoint_t *
+_mongocrypt_endpoint_new (const char *original,
+                          int32_t len,
+                          mongocrypt_status_t *status)
+{
+   _mongocrypt_endpoint_t *endpoint;
+   bool ok = false;
+   char *pos;
+   char *prev;
+   char *colon;
+   char *qmark;
+   char *slash;
+   char *host_start;
+   char *host_end;
+
+   endpoint = bson_malloc0 (sizeof (_mongocrypt_endpoint_t));
+   if (!_mongocrypt_validate_and_copy_string (
+          original, len, &endpoint->original)) {
+      CLIENT_ERR ("Invalid endpoint");
+      goto fail;
+   }
+
+   /* Parse possible protocol. */
+   pos = strstr (endpoint->original, "://");
+   if (pos) {
+      endpoint->protocol =
+         bson_strndup (endpoint->original, pos - endpoint->original);
+      pos += 3;
+   } else {
+      pos = endpoint->original;
+   }
+   host_start = pos;
+
+   /* Parse subdomain. */
+   prev = pos;
+   pos = strstr (pos, ".");
+   if (!pos) {
+      CLIENT_ERR ("Invalid endpoint, expected .: %s", endpoint->original);
+      goto fail;
+   }
+   endpoint->subdomain = bson_strndup (prev, pos - prev);
+   pos += 1;
+
+   /* Parse domain. */
+   prev = pos;
+   colon = strstr (pos, ":");
+   qmark = strstr (pos, "?");
+   slash = strstr (pos, "/");
+   if (colon) {
+      host_end = colon;
+   } else if (slash) {
+      host_end = slash;
+   } else if (qmark) {
+      host_end = qmark;
+   } else {
+      host_end = NULL;
+   }
+
+   if (host_end) {
+      endpoint->domain = bson_strndup (prev, host_end - prev);
+      endpoint->host = bson_strndup (host_start, host_end - host_start);
+   } else {
+      endpoint->domain = bson_strdup (prev);
+      endpoint->host = bson_strdup (host_start);
+   }
+
+   /* Parse possible port */
+   if (colon) {
+      prev = colon + 1;
+      qmark = strstr (pos, "?");
+      slash = strstr (pos, "/");
+      if (slash) {
+         endpoint->port = bson_strndup (prev, slash - prev);
+      } else if (qmark) {
+         endpoint->port = bson_strndup (prev, qmark - prev);
+      } else {
+         endpoint->port = bson_strdup (prev);
+      }
+   }
+
+   /* Parse possible path */
+   if (slash) {
+      size_t len;
+
+      prev = slash + 1;
+      qmark = strstr (prev, "?");
+      if (qmark) {
+         endpoint->path = bson_strndup (prev, qmark - prev);
+      } else {
+         endpoint->path = bson_strdup (prev);
+      }
+
+      len = strlen (endpoint->path);
+      /* Clear a trailing slash if it exists. */
+      if (len > 0 && endpoint->path[len - 1] == '/') {
+         endpoint->path[len - 1] = '\0';
+      }
+   }
+
+   /* Parse possible query */
+   if (qmark) {
+      endpoint->query = bson_strdup (qmark + 1);
+   }
+
+   if (endpoint->port) {
+      endpoint->normalized =
+         bson_strdup_printf ("%s:%s", endpoint->host, endpoint->port);
+   } else {
+      endpoint->normalized = bson_strdup (endpoint->host);
+   }
+
+   ok = true;
+fail:
+   if (!ok) {
+      _mongocrypt_endpoint_destroy (endpoint);
+      return NULL;
+   }
+   return endpoint;
+}

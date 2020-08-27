@@ -34,6 +34,11 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
    bson_free (opts->kms_aws_access_key_id);
    _mongocrypt_buffer_cleanup (&opts->kms_local_key);
    _mongocrypt_buffer_cleanup (&opts->schema_map);
+   bson_free (opts->kms_provider_azure.client_id);
+   bson_free (opts->kms_provider_azure.client_secret);
+   bson_free (opts->kms_provider_azure.tenant_id);
+   _mongocrypt_endpoint_destroy (
+      opts->kms_provider_azure.identity_platform_endpoint);
 }
 
 

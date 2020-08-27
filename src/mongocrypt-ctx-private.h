@@ -22,6 +22,7 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-key-private.h"
+#include "mongocrypt-endpoint-private.h"
 
 typedef enum {
    _MONGOCRYPT_TYPE_NONE,
@@ -30,6 +31,12 @@ typedef enum {
    _MONGOCRYPT_TYPE_CREATE_DATA_KEY,
 } _mongocrypt_ctx_type_t;
 
+/* Key encryption key (aka masterkey) options for Azure. */
+typedef struct {
+   _mongocrypt_endpoint_t *key_vault_endpoint;
+   char *key_name;
+   char *key_version;
+} _mongocrypt_ctx_opts_azure_kek_t;
 
 /* Option values are validated when set.
  * Different contexts accept/require different options,
@@ -46,6 +53,7 @@ typedef struct __mongocrypt_ctx_opts_t {
    _mongocrypt_buffer_t key_id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    mongocrypt_encryption_algorithm_t algorithm;
+   _mongocrypt_ctx_opts_azure_kek_t azure_kek;
 } _mongocrypt_ctx_opts_t;
 
 

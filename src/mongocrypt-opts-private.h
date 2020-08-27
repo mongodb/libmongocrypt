@@ -20,6 +20,7 @@
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-log-private.h"
+#include "mongocrypt-endpoint-private.h"
 
 /* KMS providers are used in a bit set.
  *
@@ -32,9 +33,16 @@
 typedef enum {
    MONGOCRYPT_KMS_PROVIDER_NONE = 0,
    MONGOCRYPT_KMS_PROVIDER_AWS = 1 << 0,
-   MONGOCRYPT_KMS_PROVIDER_LOCAL = 1 << 1
+   MONGOCRYPT_KMS_PROVIDER_LOCAL = 1 << 1,
+   MONGOCRYPT_KMS_PROVIDER_AZURE = 1 << 2
 } _mongocrypt_kms_provider_t;
 
+typedef struct {
+   char *tenant_id;
+   char *client_id;
+   char *client_secret;
+   _mongocrypt_endpoint_t *identity_platform_endpoint;
+} _mongocrypt_opts_kms_provider_t;
 
 typedef struct {
    int kms_providers; /* A bit set of _mongocrypt_kms_provider_t */
@@ -44,6 +52,7 @@ typedef struct {
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
    _mongocrypt_buffer_t schema_map;
+   _mongocrypt_opts_kms_provider_t kms_provider_azure;
 } _mongocrypt_opts_t;
 
 
