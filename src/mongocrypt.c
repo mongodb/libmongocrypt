@@ -552,7 +552,6 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
 
    /* TODO: just Azure for now. GCP, AWS, and local later. */
    while (bson_iter_next (&iter)) {
-      bson_iter_t subiter;
       const char *field_name;
 
       field_name = bson_iter_key (&iter);
@@ -563,54 +562,38 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
             return false;
          }
 
-         if (!bson_iter_recurse (&iter, &subiter)) {
-            CLIENT_ERR ("invalid BSON");
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "azure.tenantId",
+                &crypt->opts.kms_provider_azure.tenant_id,
+                crypt->status)) {
             return false;
          }
 
-         if (!bson_iter_find (&subiter, "tenantId") ||
-             !BSON_ITER_HOLDS_UTF8 (&subiter)) {
-            CLIENT_ERR ("expected UTF-8 tenantId");
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "azure.clientId",
+                &crypt->opts.kms_provider_azure.client_id,
+                crypt->status)) {
             return false;
          }
-         crypt->opts.kms_provider_azure.tenant_id =
-            bson_strdup (bson_iter_utf8 (&subiter, NULL));
 
-         bson_iter_recurse (&iter, &subiter);
-         if (!bson_iter_find (&subiter, "clientId") ||
-             !BSON_ITER_HOLDS_UTF8 (&subiter)) {
-            CLIENT_ERR ("expected UTF-8 clientId");
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "azure.clientSecret",
+                &crypt->opts.kms_provider_azure.client_secret,
+                crypt->status)) {
             return false;
          }
-         crypt->opts.kms_provider_azure.client_id =
-            bson_strdup (bson_iter_utf8 (&subiter, NULL));
 
-         bson_iter_recurse (&iter, &subiter);
-         if (!bson_iter_find (&subiter, "clientSecret") ||
-             !BSON_ITER_HOLDS_UTF8 (&subiter)) {
-            CLIENT_ERR ("expected UTF-8 clientSecret");
+         if (!_mongocrypt_parse_optional_endpoint (
+                &as_bson,
+                "azure.identityPlatformEndpoint",
+                &crypt->opts.kms_provider_azure.identity_platform_endpoint,
+                crypt->status)) {
             return false;
          }
-         crypt->opts.kms_provider_azure.client_secret =
-            bson_strdup (bson_iter_utf8 (&subiter, NULL));
 
-         bson_iter_recurse (&iter, &subiter);
-         if (bson_iter_find (&subiter, "identityPlatformEndpoint")) {
-            const char *endpoint_raw;
-            uint32_t len;
-
-            if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
-               CLIENT_ERR ("expected UTF-8 identityPlatformEndpoint");
-               return false;
-            }
-
-            endpoint_raw = bson_iter_utf8 (&subiter, &len);
-            crypt->opts.kms_provider_azure.identity_platform_endpoint =
-               _mongocrypt_endpoint_new (endpoint_raw, len, status);
-            if (!crypt->opts.kms_provider_azure.identity_platform_endpoint) {
-               return false;
-            }
-         }
 
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
       } else {

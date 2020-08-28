@@ -832,8 +832,6 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
 {
    bson_t as_bson;
    bson_iter_t iter;
-   const char *value;
-   uint32_t len;
 
    if (!ctx) {
       return false;
@@ -865,39 +863,24 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "expected 'azure' for provider");
    }
 
-   if (!bson_iter_init_find (&iter, &as_bson, "keyVaultEndpoint") ||
-       !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx,
-                                         "expected UTF-8 keyVaultEndpoint");
+   if (!_mongocrypt_parse_required_endpoint (
+          &as_bson,
+          "keyVaultEndpoint",
+          &ctx->opts.azure_kek.key_vault_endpoint,
+          ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
    }
 
-   value = bson_iter_utf8 (&iter, &len);
-   ctx->opts.azure_kek.key_vault_endpoint =
-      _mongocrypt_endpoint_new (value, len, ctx->status);
-   if (!ctx->opts.azure_kek.key_vault_endpoint) {
-      return false;
+   if (!_mongocrypt_parse_required_utf8 (
+          &as_bson, "keyName", &ctx->opts.azure_kek.key_name, ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
    }
 
-   if (!bson_iter_init_find (&iter, &as_bson, "keyName") ||
-       !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "expected UTF-8 keyName");
-   }
-
-   value = bson_iter_utf8 (&iter, &len);
-   if (!_mongocrypt_validate_and_copy_string (
-          value, len, &ctx->opts.azure_kek.key_name)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid keyName");
-   }
-
-   if (bson_iter_init_find (&iter, &as_bson, "keyVersion")) {
-      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "expected UTF-8 keyName");
-      }
-      value = bson_iter_utf8 (&iter, &len);
-      if (!_mongocrypt_validate_and_copy_string (
-             value, len, &ctx->opts.azure_kek.key_version)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid keyVersion");
-      }
+   if (!_mongocrypt_parse_optional_utf8 (&as_bson,
+                                         "keyVersion",
+                                         &ctx->opts.azure_kek.key_version,
+                                         ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_AZURE;
