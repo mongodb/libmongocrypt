@@ -87,6 +87,7 @@ _mongocrypt_parse_optional_utf8 (bson_t *bson,
 
    if (!bson_iter_init (&iter, bson)) {
       CLIENT_ERR ("invalid BSON");
+      return false;
    }
    if (!bson_iter_find_descendant (&iter, dotkey, &child)) {
       /* Not found. Not an error. */

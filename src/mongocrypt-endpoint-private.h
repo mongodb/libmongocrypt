@@ -36,6 +36,9 @@ typedef struct {
 void
 _mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint);
 
+/* Parses a subset of URIs of the form:
+ * [protocol://][host[:port]][path][?query]
+ */
 _mongocrypt_endpoint_t *
 _mongocrypt_endpoint_new (const char *endpoint_raw,
                           int32_t len,

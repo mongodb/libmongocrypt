@@ -36,6 +36,9 @@ _mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint)
    bson_free (endpoint);
 }
 
+/* Parses a subset of URIs of the form:
+ * [protocol://][host[:port]][path][?query]
+ */
 _mongocrypt_endpoint_t *
 _mongocrypt_endpoint_new (const char *endpoint_raw,
                           int32_t len,
@@ -58,7 +61,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
       goto fail;
    }
 
-   /* Parse possible protocol. */
+   /* Parse optional protocol. */
    pos = strstr (endpoint->original, "://");
    if (pos) {
       endpoint->protocol =
@@ -102,7 +105,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
       endpoint->host = bson_strdup (host_start);
    }
 
-   /* Parse possible port */
+   /* Parse optional port */
    if (colon) {
       prev = colon + 1;
       qmark = strstr (pos, "?");
@@ -116,7 +119,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
       }
    }
 
-   /* Parse possible path */
+   /* Parse optional path */
    if (slash) {
       size_t len;
 
@@ -135,7 +138,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
       }
    }
 
-   /* Parse possible query */
+   /* Parse optional query */
    if (qmark) {
       endpoint->query = bson_strdup (qmark + 1);
    }
