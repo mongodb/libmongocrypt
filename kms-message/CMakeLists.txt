@@ -15,6 +15,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_message/kms_b64.h
    src/hexlify.c
    src/hexlify.h
+   src/kms_azure_request.c
    src/kms_crypto.h
    src/kms_crypto_none.c
    src/kms_crypto_windows.c
@@ -27,6 +28,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_kv_list.h
    src/kms_message.c
    src/kms_port.c
+   src/kms_message/kms_azure_request.h
    src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
@@ -144,6 +146,7 @@ install (
 
 install (
    FILES
+   src/kms_message/kms_azure_request.h
    src/kms_message/kms_b64.h
    src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
