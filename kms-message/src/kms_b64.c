@@ -41,8 +41,11 @@
  */
 
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include "kms_message/kms_message.h"
 #include "kms_message/kms_b64.h"
+#include <stdio.h>
 
 #define Assert(Cond) \
    if (!(Cond))      \
@@ -580,4 +583,76 @@ kms_message_b64url_to_b64 (const char *src,
    }
 
    return (int) i;
+}
+
+char *
+kms_message_raw_to_b64 (const uint8_t *raw, size_t raw_len)
+{
+   char *b64;
+   size_t b64_len;
+
+   b64_len = (raw_len / 3 + 1) * 4 + 1;
+   b64 = malloc (b64_len);
+   memset (b64, 0, b64_len);
+   if (-1 == kms_message_b64_ntop (raw, raw_len, b64, b64_len)) {
+      free (b64);
+      return NULL;
+   }
+   return b64;
+}
+
+uint8_t *
+kms_message_b64_to_raw (const char *b64, size_t *out)
+{
+   uint8_t *raw;
+   int ret;
+
+   raw = (uint8_t *) malloc (strlen (b64) + 1);
+   memset (raw, 0, strlen(b64) + 1);
+   ret = kms_message_b64_pton (b64, raw, strlen (b64));
+   if (ret > 0) {
+      *out = (size_t) ret;
+      return raw;
+   }
+   free (raw);
+   return NULL;
+}
+
+char *
+kms_message_raw_to_b64url (const uint8_t *raw, size_t raw_len)
+{
+   char *b64;
+
+   b64 = kms_message_raw_to_b64 (raw, raw_len);
+   if (!b64) {
+      return NULL;
+   }
+
+   if (-1 == kms_message_b64_to_b64url (b64, strlen (b64), b64, strlen (b64))) {
+      free (b64);
+      return NULL;
+   }
+
+   return b64;
+}
+
+uint8_t *
+kms_message_b64url_to_raw (const char *b64url, size_t *out)
+{
+   char *b64;
+   size_t capacity;
+   uint8_t *raw;
+
+   /* Add four for padding '=' characters. */
+   capacity = strlen (b64url) + 4;
+   b64 = malloc (capacity);
+   memset (b64, 0, capacity);
+   if (-1 ==
+       kms_message_b64url_to_b64 (b64url, strlen (b64url), b64, capacity)) {
+      free (b64);
+      return NULL;
+   }
+   raw = kms_message_b64_to_raw (b64, out);
+   free (b64);
+   return raw;
 }
