@@ -71,6 +71,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-ctx-decrypt.c
    src/mongocrypt-ctx-encrypt.c
    src/mongocrypt-ctx.c
+   src/mongocrypt-endpoint.c
    src/mongocrypt-key.c
    src/mongocrypt-key-broker.c
    src/mongocrypt-kms-ctx.c
@@ -223,6 +224,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c
    test/test-mongocrypt-datakey.c
+   test/test-mongocrypt-endpoint.c
    test/test-mongocrypt-key.c
    test/test-mongocrypt-key-broker.c
    test/test-mongocrypt-key-cache.c

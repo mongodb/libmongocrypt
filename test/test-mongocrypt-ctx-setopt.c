@@ -40,6 +40,11 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
 #define MASTERKEY_LOCAL_FAILS(msg) \
    ASSERT_FAILS (mongocrypt_ctx_setopt_masterkey_local (ctx), ctx, msg);
 
+#define KEY_ENCRYPTION_KEY_OK(bin) \
+   ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (ctx, bin), ctx);
+#define KEY_ENCRYPTION_KEY_FAILS(bin, msg) \
+   ASSERT_FAILS (mongocrypt_ctx_setopt_key_encryption_key (ctx, bin), ctx, msg);
+
 #define KEY_ID_OK(key_id) \
    ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
 #define KEY_ID_FAILS(key_id, msg) \
@@ -165,6 +170,39 @@ _test_setopt_masterkey_local (_mongocrypt_tester_t *tester)
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
    MASTERKEY_LOCAL_FAILS ("test");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_setopt_key_encryption_key_azure (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx = NULL;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+
+   /* Test double setting. */
+   REFRESH;
+   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                     "'keyVaultEndpoint': 'example.com' }"));
+   KEY_ENCRYPTION_KEY_FAILS (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                        "'keyVaultEndpoint': 'example.com' }"),
+                             "key encryption key already set");
+
+   /* Cannot be set when another masterkey is set. */
+   REFRESH;
+   MASTERKEY_LOCAL_OK;
+   KEY_ENCRYPTION_KEY_FAILS (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                        "'keyVaultEndpoint': 'example.com' }"),
+                             "key encryption key already set");
+
+   REFRESH;
+   _mongocrypt_ctx_fail_w_msg (ctx, "test");
+   KEY_ENCRYPTION_KEY_FAILS (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                        "'keyVaultEndpoint': 'example.com' }"),
+                             "test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -304,6 +342,11 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
    DATAKEY_INIT_OK;
 
+   REFRESH;
+   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                     "'keyVaultEndpoint': 'example.com' }"));
+   DATAKEY_INIT_OK;
+
    /* Test optional key alt names. */
    REFRESH;
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
@@ -378,6 +421,11 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
 
    REFRESH;
    MASTERKEY_LOCAL_OK;
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "master key prohibited");
+
+   REFRESH;
+   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                     "'keyVaultEndpoint': 'example.com' }"));
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "master key prohibited");
 
    REFRESH;
@@ -460,6 +508,13 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 
    REFRESH;
    KEY_ID_OK (uuid);
+   ALGORITHM_OK (RAND, -1);
+   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                     "'keyVaultEndpoint': 'example.com' }"));
+   EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
+
+   REFRESH;
+   KEY_ID_OK (uuid);
    EX_ENCRYPT_INIT_FAILS (bson, "algorithm required");
 
    REFRESH;
@@ -532,6 +587,11 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
    DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
+   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                     "'keyVaultEndpoint': 'example.com' }"));
+   DECRYPT_INIT_FAILS (bson, "master key prohibited");
+
+   REFRESH;
    KEY_ID_OK (uuid);
    DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
@@ -578,6 +638,11 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
 
    REFRESH;
    MASTERKEY_LOCAL_OK;
+   EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
+
+   REFRESH;
+   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                                     "'keyVaultEndpoint': 'example.com' }"));
    EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
@@ -675,6 +740,7 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_algorithm (tester);
    _test_setopt_key_alt_name (tester);
    _test_setopt_endpoint (tester);
+   _test_setopt_key_encryption_key_azure (tester);
 
    /* Test options on different contexts */
    _test_setopt_for_datakey (tester);

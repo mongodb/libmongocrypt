@@ -525,3 +525,93 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
 
    return true;
 }
+
+bool
+mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
+                                 mongocrypt_binary_t *kms_providers)
+{
+   mongocrypt_status_t *status;
+   bson_t as_bson;
+   bson_iter_t iter;
+
+   if (!crypt) {
+      return false;
+   }
+   status = crypt->status;
+
+   if (crypt->initialized) {
+      CLIENT_ERR ("options cannot be set after initialization");
+      return false;
+   }
+
+   if (!_mongocrypt_binary_to_bson (kms_providers, &as_bson) ||
+       !bson_iter_init (&iter, &as_bson)) {
+      CLIENT_ERR ("invalid BSON");
+      return false;
+   }
+
+   /* TODO: just Azure for now. GCP, AWS, and local later. */
+   while (bson_iter_next (&iter)) {
+      const char *field_name;
+
+      field_name = bson_iter_key (&iter);
+
+      if (0 == strcmp (field_name, "azure")) {
+         if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_AZURE)) {
+            CLIENT_ERR ("azure KMS provider already set");
+            return false;
+         }
+
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "azure.tenantId",
+                &crypt->opts.kms_provider_azure.tenant_id,
+                crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "azure.clientId",
+                &crypt->opts.kms_provider_azure.client_id,
+                crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "azure.clientSecret",
+                &crypt->opts.kms_provider_azure.client_secret,
+                crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_parse_optional_endpoint (
+                &as_bson,
+                "azure.identityPlatformEndpoint",
+                &crypt->opts.kms_provider_azure.identity_platform_endpoint,
+                crypt->status)) {
+            return false;
+         }
+
+
+         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+      } else {
+         CLIENT_ERR ("unsupported KMS provider: %s", field_name);
+         return false;
+      }
+   }
+
+   if (crypt->log.trace_enabled) {
+      char *as_str = bson_as_json (&as_bson, NULL);
+      _mongocrypt_log (&crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "%s (%s=\"%s\")",
+                       BSON_FUNC,
+                       "kms_providers",
+                       as_str);
+      bson_free (as_str);
+   }
+
+   return true;
+}

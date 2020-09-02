@@ -548,6 +548,9 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
    bson_free (ctx->opts.masterkey_aws_region);
    bson_free (ctx->opts.masterkey_aws_cmk);
    bson_free (ctx->opts.masterkey_aws_endpoint);
+   _mongocrypt_endpoint_destroy (ctx->opts.azure_kek.key_vault_endpoint);
+   bson_free (ctx->opts.azure_kek.key_name);
+   bson_free (ctx->opts.azure_kek.key_version);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
    _mongocrypt_key_alt_name_destroy_all (ctx->opts.key_alt_names);
@@ -820,5 +823,83 @@ mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid masterkey endpoint");
    }
    ctx->opts.masterkey_aws_endpoint_len = endpoint_len;
+   return true;
+}
+
+bool
+mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
+                                          mongocrypt_binary_t *bin)
+{
+   bson_t as_bson;
+   bson_iter_t iter;
+
+   if (!ctx) {
+      return false;
+   }
+
+   if (ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
+   }
+
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+
+   if (ctx->opts.masterkey_kms_provider) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "key encryption key already set");
+   }
+
+   if (!_mongocrypt_binary_to_bson (bin, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON");
+   }
+
+   if (!bson_iter_init_find (&iter, &as_bson, "provider") ||
+       !BSON_ITER_HOLDS_UTF8 (&iter)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "expected UTF-8 provider");
+   }
+
+   if (0 != strcmp (bson_iter_utf8 (&iter, NULL), "azure")) {
+      /* TODO: support GCP, Azure, and Local through this API */
+      return _mongocrypt_ctx_fail_w_msg (ctx, "expected 'azure' for provider");
+   }
+
+   if (!_mongocrypt_parse_required_endpoint (
+          &as_bson,
+          "keyVaultEndpoint",
+          &ctx->opts.azure_kek.key_vault_endpoint,
+          ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   if (!_mongocrypt_parse_required_utf8 (
+          &as_bson, "keyName", &ctx->opts.azure_kek.key_name, ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   if (!_mongocrypt_parse_optional_utf8 (&as_bson,
+                                         "keyVersion",
+                                         &ctx->opts.azure_kek.key_version,
+                                         ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_AZURE;
+
+   CRYPT_TRACEF (&ctx->crypt->log,
+                 "key_vault_endpoint=%s",
+                 ctx->opts.azure_kek.key_vault_endpoint->original);
+
+   if (ctx->crypt->log.trace_enabled) {
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "%s (%s=\"%s\", %s=\"%s\", %s=\"%s\")",
+                       BSON_FUNC,
+                       "keyVaultEndpoint",
+                       ctx->opts.azure_kek.key_vault_endpoint->original,
+                       "keyName",
+                       ctx->opts.azure_kek.key_name,
+                       "keyVersion",
+                       ctx->opts.azure_kek.key_version);
+   }
    return true;
 }

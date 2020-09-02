@@ -774,7 +774,9 @@ kms_request_to_string (kms_request_t *request)
    kms_request_str_t *sreq = NULL;
    size_t i;
 
-   finalize (request);
+   if (!finalize (request)) {
+      return false;
+   }
 
    sreq = kms_request_str_new ();
    /* like "POST / HTTP/1.1" */
