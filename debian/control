@@ -5,6 +5,11 @@ Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
            Clyde Bazile <clyde.bazile@mongodb.com>,
            Samantha Ritter <samantha.ritter@mongodb.com>,
            Roberto C. Sanchez <roberto@connexer.com>
+Build-Depends: debhelper (>= 10),
+               cmake,
+               libssl-dev,
+               pkg-config,
+               libbson-dev
 Standards-Version: 4.5.0
 Section: libs
 Homepage: https://github.com/mongodb/libmongocrypt
