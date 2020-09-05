@@ -28,6 +28,7 @@
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-cache-oauth-private.h"
 
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
@@ -81,6 +82,7 @@ struct _mongocrypt_t {
    _mongocrypt_crypto_t *crypto;
    /* A counter, protected by mutex, for generating unique context ids */
    uint32_t ctx_counter;
+   _mongocrypt_cache_oauth_t *cache_oauth_azure;
 };
 
 typedef enum {

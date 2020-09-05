@@ -149,6 +149,7 @@ typedef struct {
    mongocrypt_kms_ctx_t kms;
    bool kms_returned;
    _mongocrypt_buffer_t key_doc;
+   _mongocrypt_buffer_t plaintext_key_material;
    _mongocrypt_buffer_t encrypted_key_material;
 } _mongocrypt_ctx_datakey_t;
 

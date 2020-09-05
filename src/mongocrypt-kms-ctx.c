@@ -23,6 +23,7 @@
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-status-private.h"
 #include <kms_message/kms_b64.h>
+#include <kms_message/kms_azure_request.h>
 #include "mongocrypt.h"
 
 /* Before we've read the Content-Length header in an HTTP response,
@@ -98,6 +99,17 @@ _set_kms_crypto_hooks (_mongocrypt_crypto_t *crypto, kms_request_opt_t *opts)
    }
 }
 
+static void
+_init_common (mongocrypt_kms_ctx_t *kms,
+              _mongocrypt_log_t *log,
+              _kms_request_type_t kms_type)
+{
+   kms->parser = kms_response_parser_new ();
+   kms->log = log;
+   kms->status = mongocrypt_status_new ();
+   kms->req_type = kms_type;
+   _mongocrypt_buffer_init (&kms->result);
+}
 
 bool
 _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
@@ -109,12 +121,8 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
 
-   kms->parser = kms_response_parser_new ();
-   kms->log = log;
-   kms->status = mongocrypt_status_new ();
+   _init_common (kms, log, MONGOCRYPT_KMS_AWS_DECRYPT);
    status = kms->status;
-   kms->req_type = MONGOCRYPT_KMS_DECRYPT;
-   _mongocrypt_buffer_init (&kms->result);
 
    if (!key->masterkey_provider) {
       CLIENT_ERR ("no kms provider specified on key");
@@ -151,8 +159,6 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    BSON_ASSERT (opt);
 
    _set_kms_crypto_hooks (crypto, opt);
-   /* TODO: we might want to let drivers control whether or not we send
-    * Connection: close header. Unsure right now. */
    kms_request_opt_set_connection_close (opt, true);
 
    kms->req = kms_decrypt_request_new (
@@ -223,12 +229,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
 
-   kms->parser = kms_response_parser_new ();
-   kms->status = mongocrypt_status_new ();
+   _init_common (kms, log, MONGOCRYPT_KMS_AWS_ENCRYPT);
    status = kms->status;
-   kms->req_type = MONGOCRYPT_KMS_ENCRYPT;
-   _mongocrypt_buffer_init (&kms->result);
-   kms->log = log;
 
    if (MONGOCRYPT_KMS_PROVIDER_AWS != ctx_opts->masterkey_kms_provider) {
       CLIENT_ERR ("expected aws kms provider");
@@ -265,8 +267,6 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    BSON_ASSERT (opt);
 
    _set_kms_crypto_hooks (crypto, opt);
-   /* TODO: we might want to let drivers control whether or not we send
-    * Connection: close header. Unsure right now. */
    kms_request_opt_set_connection_close (opt, true);
 
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
@@ -343,6 +343,258 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms)
                                            DEFAULT_MAX_KMS_BYTE_REQUEST);
 }
 
+/* An AWS KMS context has received full response. Parse out the result or error.
+ */
+static bool
+_ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
+{
+   kms_response_t *response = NULL;
+   const char *body;
+   bson_t body_bson = BSON_INITIALIZER;
+   bool ret;
+   bson_error_t bson_error;
+   bson_iter_t iter;
+   uint32_t b64_strlen;
+   char *b64_str;
+   int http_status;
+   size_t body_len;
+   mongocrypt_status_t *status;
+
+   status = kms->status;
+   ret = false;
+   /* Parse out the {en|de}crypted result. */
+   http_status = kms_response_parser_status (kms->parser);
+   response = kms_response_parser_get_response (kms->parser);
+   body = kms_response_get_body (response, &body_len);
+
+   if (http_status != 200) {
+      /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
+         * support handling 200 response. */
+      if (http_status < 400) {
+         CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d",
+                     http_status);
+         goto fail;
+      }
+
+      /* Either empty body or body containing JSON with error message. */
+      if (body_len == 0) {
+         CLIENT_ERR ("Error in KMS response. HTTP status=%d", http_status);
+         goto fail;
+      }
+      /* AWS error responses include a JSON message, like { "message":
+         * "error" } */
+      bson_destroy (&body_bson);
+      if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
+         bson_init (&body_bson);
+      } else if (bson_iter_init_find (&iter, &body_bson, "message") &&
+                 BSON_ITER_HOLDS_UTF8 (&iter)) {
+         CLIENT_ERR ("Error in KMS response '%s'. "
+                     "HTTP status=%d",
+                     bson_iter_utf8 (&iter, NULL),
+                     http_status);
+         goto fail;
+      }
+
+      /* If we couldn't parse JSON, return the body unchanged as an error. */
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. HTTP status=%d",
+                  body,
+                  http_status);
+      goto fail;
+   }
+
+   /* If HTTP response succeeded (status 200) then body should contain JSON.
+      */
+   bson_destroy (&body_bson);
+   if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                  "HTTP status=%d",
+                  bson_error.message,
+                  http_status);
+      bson_init (&body_bson);
+      goto fail;
+   }
+
+   if (!bson_iter_init_find (&iter, &body_bson, json_field) ||
+       !BSON_ITER_HOLDS_UTF8 (&iter)) {
+      CLIENT_ERR (
+         "KMS JSON response does not include string '%s'. HTTP status=%d",
+         json_field,
+         http_status);
+      goto fail;
+   }
+
+   b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
+   BSON_ASSERT (b64_str);
+   kms->result.data = bson_malloc (b64_strlen + 1);
+   BSON_ASSERT (kms->result.data);
+
+   kms->result.len =
+      kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
+   kms->result.owned = true;
+   ret = true;
+fail:
+   bson_destroy (&body_bson);
+   kms_response_destroy (response);
+   return ret;
+}
+
+/* An Azure oauth KMS context has received full response. Parse out the bearer
+ * token or error. */
+static bool
+_ctx_done_azure_oauth (mongocrypt_kms_ctx_t *kms)
+{
+   kms_response_t *response = NULL;
+   const char *body;
+   bson_t *bson_body = NULL;
+   bool ret;
+   bson_error_t bson_error;
+   bson_iter_t iter;
+   int http_status;
+   size_t body_len;
+   mongocrypt_status_t *status;
+
+   status = kms->status;
+   ret = false;
+   /* Parse out the oauth token result (or error). */
+   http_status = kms_response_parser_status (kms->parser);
+   response = kms_response_parser_get_response (kms->parser);
+   body = kms_response_get_body (response, &body_len);
+
+   if (body_len == 0) {
+      CLIENT_ERR ("Empty KMS response. HTTP status=%d", http_status);
+      goto fail;
+   }
+
+   bson_body =
+      bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
+   if (!bson_body) {
+      CLIENT_ERR ("Invalid JSON in KMS response. HTTP status=%d", http_status);
+      goto fail;
+   }
+
+   if (http_status != 200) {
+      const char *error = "";
+      const char *error_description = "";
+      /* Check for oauth errors.
+       * https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-aadsts-error-codes#handling-error-codes-in-your-application.
+       * 'error' provides a short error classification
+       * 'error_description' is a long error description
+       */
+      if (bson_iter_init_find (&iter, bson_body, "error") &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         error = bson_iter_utf8 (&iter, NULL);
+      }
+      if (bson_iter_init_find (&iter, bson_body, "error_description") &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         error_description = bson_iter_utf8 (&iter, NULL);
+      }
+      CLIENT_ERR ("Error in KMS response: '%s', '%s'. HTTP status=%d",
+                  error,
+                  error_description,
+                  http_status);
+      goto fail;
+   }
+
+   if (!bson_iter_init_find (&iter, bson_body, "access_token") ||
+       !BSON_ITER_HOLDS_UTF8 (&iter)) {
+      CLIENT_ERR (
+         "Invalid KMS response, no access_token returned. HTTP status=%d",
+         http_status);
+      goto fail;
+   }
+
+   /* Store the full response, to include the expiration time. */
+   _mongocrypt_buffer_steal_from_bson (&kms->result, bson_body);
+   bson_body = NULL;
+
+   ret = true;
+fail:
+   bson_destroy (bson_body);
+   kms_response_destroy (response);
+   return ret;
+}
+
+/* An Azure oauth KMS context has received full response. Parse out the bearer
+ * token or error. */
+static bool
+_ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
+{
+   kms_response_t *response = NULL;
+   const char *body;
+   bson_t *bson_body = NULL;
+   bool ret;
+   bson_error_t bson_error;
+   bson_iter_t iter;
+   int http_status;
+   size_t body_len;
+   mongocrypt_status_t *status;
+   const char *b64url_data = NULL;
+   uint32_t b64url_len;
+   char *b64_data = NULL;
+   uint32_t b64_len;
+
+   status = kms->status;
+   ret = false;
+   /* Parse out the oauth token result (or error). */
+   http_status = kms_response_parser_status (kms->parser);
+   response = kms_response_parser_get_response (kms->parser);
+   body = kms_response_get_body (response, &body_len);
+
+   if (body_len == 0) {
+      CLIENT_ERR ("Empty KMS response. HTTP status=%d", http_status);
+      goto fail;
+   }
+
+   bson_body =
+      bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
+   if (!bson_body) {
+      CLIENT_ERR ("Invalid JSON in KMS response. HTTP status=%d", http_status);
+      goto fail;
+   }
+
+   if (http_status != 200) {
+      const char *message = "";
+      /* Check for errors.
+       * https://docs.microsoft.com/en-us/rest/api/keyvault/wrapkey/wrapkey#error
+       */
+      if (bson_iter_init (&iter, bson_body) &&
+          bson_iter_find_descendant (&iter, "error.message", &iter) &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         message = bson_iter_utf8 (&iter, NULL);
+      }
+      CLIENT_ERR (
+         "Error in KMS response: '%s'. HTTP status=%d", message, http_status);
+      goto fail;
+   }
+
+   if (!bson_iter_init_find (&iter, bson_body, "value") ||
+       !BSON_ITER_HOLDS_UTF8 (&iter)) {
+      CLIENT_ERR ("Invalid KMS response, no value returned. HTTP status=%d",
+                  http_status);
+      goto fail;
+   }
+
+   b64url_data = bson_iter_utf8 (&iter, &b64url_len);
+   /* add four for padding. */
+   b64_len = b64url_len + 4;
+   b64_data = bson_malloc0 (b64_len);
+   if (kms_message_b64url_to_b64 (b64url_data, b64url_len, b64_data, b64_len) ==
+       -1) {
+      CLIENT_ERR ("Error converting base64url to base64");
+      goto fail;
+   }
+   kms->result.data = bson_malloc0 (b64_len);
+   kms->result.len = kms_message_b64_pton (b64_data, kms->result.data, b64_len);
+   kms->result.owned = true;
+   bson_body = NULL;
+
+   ret = true;
+fail:
+   bson_destroy (bson_body);
+   kms_response_destroy (response);
+   bson_free (b64_data);
+   return ret;
+}
 
 bool
 mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
@@ -386,96 +638,18 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
    }
 
    if (0 == mongocrypt_kms_ctx_bytes_needed (kms)) {
-      kms_response_t *response = NULL;
-      const char *body;
-      bson_t body_bson = BSON_INITIALIZER;
-      bool ret;
-      const char *key;
-      bson_error_t bson_error;
-      bson_iter_t iter;
-      uint32_t b64_strlen;
-      char *b64_str;
-      int http_status;
-      size_t body_len;
-
-      ret = false;
-      /* Parse out the {en|de}crypted result. */
-      http_status = kms_response_parser_status (kms->parser);
-      response = kms_response_parser_get_response (kms->parser);
-      body = kms_response_get_body (response, &body_len);
-
-      if (http_status != 200) {
-         /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
-          * support handling 200 response. */
-         if (http_status < 400) {
-            CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d",
-                        http_status);
-            goto fail;
-         }
-
-         /* Either empty body or body containing JSON with error message. */
-         if (body_len == 0) {
-            CLIENT_ERR ("Error in KMS response. HTTP status=%d", http_status);
-            goto fail;
-         }
-         /* AWS error responses include a JSON message, like { "message":
-          * "error" } */
-         bson_destroy (&body_bson);
-         if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
-            bson_init (&body_bson);
-         } else if (bson_iter_init_find (&iter, &body_bson, "message") &&
-                    BSON_ITER_HOLDS_UTF8 (&iter)) {
-            CLIENT_ERR ("Error in KMS response '%s'. "
-                        "HTTP status=%d",
-                        bson_iter_utf8 (&iter, NULL),
-                        http_status);
-            goto fail;
-         }
-
-         /* If we couldn't parse JSON, return the body unchanged as an error. */
-         CLIENT_ERR ("Error parsing JSON in KMS response '%s'. HTTP status=%d",
-                     body,
-                     http_status);
-         goto fail;
+      if (kms->req_type == MONGOCRYPT_KMS_AWS_ENCRYPT) {
+         return _ctx_done_aws (kms, "CiphertextBlob");
+      } else if (kms->req_type == MONGOCRYPT_KMS_AWS_DECRYPT) {
+         return _ctx_done_aws (kms, "Plaintext");
+      } else if (kms->req_type == MONGOCRYPT_KMS_AZURE_OAUTH) {
+         return _ctx_done_azure_oauth (kms);
+      } else if (kms->req_type == MONGOCRYPT_KMS_AZURE_WRAPKEY) {
+         return _ctx_done_azure_wrapkey_unwrapkey (kms);
+      } else {
+         CLIENT_ERR ("Unknown request type");
+         return false;
       }
-
-      /* If HTTP response succeeded (status 200) then body should contain JSON.
-       */
-      bson_destroy (&body_bson);
-      if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
-         CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
-                     "HTTP status=%d",
-                     bson_error.message,
-                     http_status);
-         bson_init (&body_bson);
-         goto fail;
-      }
-
-      key = (kms->req_type == MONGOCRYPT_KMS_DECRYPT) ? "Plaintext"
-                                                      : "CiphertextBlob";
-
-      if (!bson_iter_init_find (&iter, &body_bson, key) ||
-          !BSON_ITER_HOLDS_UTF8 (&iter)) {
-         CLIENT_ERR (
-            "KMS JSON response does not include string '%s'. HTTP status=%d",
-            key,
-            http_status);
-         goto fail;
-      }
-
-      b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
-      BSON_ASSERT (b64_str);
-      kms->result.data = bson_malloc (b64_strlen + 1);
-      BSON_ASSERT (kms->result.data);
-
-      kms->result.len =
-         kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
-      kms->result.owned = true;
-      ret = true;
-   fail:
-      bson_destroy (&body_bson);
-      kms_response_destroy (response);
-      return ret;
    }
    return true;
 }
@@ -578,4 +752,140 @@ mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms, const char **endpoint)
    }
    *endpoint = kms->endpoint;
    return true;
+}
+
+bool
+_mongocrypt_kms_ctx_init_azure_auth (mongocrypt_kms_ctx_t *kms,
+                                     _mongocrypt_log_t *log,
+                                     _mongocrypt_opts_t *crypt_opts,
+                                     _mongocrypt_endpoint_t *key_vault_endpoint)
+{
+   kms_request_opt_t *opt = NULL;
+   mongocrypt_status_t *status;
+   _mongocrypt_endpoint_t *identity_platform_endpoint;
+   char *scope = NULL;
+   const char *host;
+   char *request_string;
+   bool ret = false;
+
+   _init_common (kms, log, MONGOCRYPT_KMS_AZURE_OAUTH);
+   status = kms->status;
+   identity_platform_endpoint =
+      crypt_opts->kms_provider_azure.identity_platform_endpoint;
+
+   if (identity_platform_endpoint) {
+      kms->endpoint = bson_strdup (identity_platform_endpoint->host_and_port);
+      host = identity_platform_endpoint->host;
+   } else {
+      kms->endpoint = bson_strdup ("login.microsoftonline.com");
+      host = kms->endpoint;
+   }
+
+   if (key_vault_endpoint) {
+      /* Request a custom scope. It is URL encoded, like
+       * https%3A%2F%2Fvault.azure.net%2F.default */
+      scope = bson_strdup_printf (
+         "%s%s%s", "https%3A%2F%2F", key_vault_endpoint->domain, "%2F.default");
+   } else {
+      /* Default to commercial Azure endpoint. */
+      scope = bson_strdup ("https%3A%2F%2Fvault.azure.net%2F.default");
+   }
+
+   opt = kms_request_opt_new ();
+   BSON_ASSERT (opt);
+   kms_request_opt_set_connection_close (opt, true);
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
+   kms->req =
+      kms_azure_request_oauth_new (host,
+                                   scope,
+                                   crypt_opts->kms_provider_azure.tenant_id,
+                                   crypt_opts->kms_provider_azure.client_id,
+                                   crypt_opts->kms_provider_azure.client_secret,
+                                   opt);
+   if (kms_request_get_error (kms->req)) {
+      CLIENT_ERR ("error constructing KMS message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+
+   request_string = kms_request_to_string (kms->req);
+   if (!request_string) {
+      CLIENT_ERR ("error getting Azure OAuth KMS message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+   _mongocrypt_buffer_init (&kms->msg);
+   kms->msg.data = (uint8_t *) request_string;
+   kms->msg.len = (uint32_t) strlen (request_string);
+   kms->msg.owned = true;
+
+   ret = true;
+fail:
+   bson_free (scope);
+   kms_request_opt_destroy (opt);
+   return ret;
+}
+
+bool
+_mongocrypt_kms_ctx_init_azure_wrapkey (
+   mongocrypt_kms_ctx_t *kms,
+   _mongocrypt_log_t *log,
+   _mongocrypt_opts_t *crypt_opts,
+   struct __mongocrypt_ctx_opts_t *ctx_opts,
+   const char *access_token,
+   _mongocrypt_buffer_t *plaintext_key_material)
+{
+   kms_request_opt_t *opt = NULL;
+   mongocrypt_status_t *status;
+   char *path_and_query = NULL;
+   char *payload = NULL;
+   const char *host;
+   char *request_string;
+   bool ret = false;
+   char *bearer_token_value = NULL;
+
+   _init_common (kms, log, MONGOCRYPT_KMS_AZURE_WRAPKEY);
+   status = kms->status;
+
+   kms->endpoint =
+      bson_strdup (ctx_opts->azure_kek.key_vault_endpoint->host_and_port);
+   host = ctx_opts->azure_kek.key_vault_endpoint->host;
+
+   opt = kms_request_opt_new ();
+   BSON_ASSERT (opt);
+   kms_request_opt_set_connection_close (opt, true);
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
+   kms->req = kms_azure_request_wrapkey_new (
+      host,
+      access_token,
+      ctx_opts->azure_kek.key_name,
+      ctx_opts->azure_kek.key_version,
+      plaintext_key_material->data,
+      plaintext_key_material->len,
+      opt);
+
+   if (kms_request_get_error (kms->req)) {
+      CLIENT_ERR ("error constructing KMS wrapkey message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+
+   request_string = kms_request_to_string (kms->req);
+   if (!request_string) {
+      CLIENT_ERR ("error getting Azure wrapkey KMS message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+   _mongocrypt_buffer_init (&kms->msg);
+   kms->msg.data = (uint8_t *) request_string;
+   kms->msg.len = (uint32_t) strlen (request_string);
+   kms->msg.owned = true;
+
+   ret = true;
+fail:
+   kms_request_opt_destroy (opt);
+   bson_free (path_and_query);
+   bson_free (payload);
+   bson_free (bearer_token_value);
+   return ret;
 }
