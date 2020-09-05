@@ -48,3 +48,5 @@ src/mongocrypt-export.h
 .idea/
 
 VERSION_CURRENT
+
+.csfle
