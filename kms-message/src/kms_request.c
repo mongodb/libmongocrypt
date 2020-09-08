@@ -769,7 +769,6 @@ done:
 char *
 kms_request_to_string (kms_request_t *request)
 {
-   bool success = false;
    kms_kv_list_t *lst = NULL;
    kms_request_str_t *sreq = NULL;
    size_t i;
@@ -808,14 +807,7 @@ kms_request_to_string (kms_request_t *request)
       kms_request_str_append (sreq, request->payload);
    }
 
-   success = true;
    kms_kv_list_destroy (lst);
-
-   if (!success) {
-      kms_request_str_destroy (sreq);
-      sreq = NULL;
-   }
-
    return kms_request_str_detach (sreq);
 }
 

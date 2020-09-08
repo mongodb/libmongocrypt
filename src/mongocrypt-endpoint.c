@@ -55,6 +55,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    char *host_end;
 
    endpoint = bson_malloc0 (sizeof (_mongocrypt_endpoint_t));
+   BSON_ASSERT (endpoint);
    if (!_mongocrypt_validate_and_copy_string (
           endpoint_raw, len, &endpoint->original)) {
       CLIENT_ERR ("Invalid endpoint");
@@ -121,7 +122,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
 
    /* Parse optional path */
    if (slash) {
-      size_t len;
+      size_t path_len;
 
       prev = slash + 1;
       qmark = strstr (prev, "?");
@@ -131,10 +132,10 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
          endpoint->path = bson_strdup (prev);
       }
 
-      len = strlen (endpoint->path);
+      path_len = strlen (endpoint->path);
       /* Clear a trailing slash if it exists. */
-      if (len > 0 && endpoint->path[len - 1] == '/') {
-         endpoint->path[len - 1] = '\0';
+      if (path_len > 0 && endpoint->path[path_len - 1] == '/') {
+         endpoint->path[path_len - 1] = '\0';
       }
    }
 
