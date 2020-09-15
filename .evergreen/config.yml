@@ -115,6 +115,11 @@ functions:
           pkg_version=$mongocrypt_version
           tar -zcv -C install --transform="s|^libmongocrypt/|libmongocrypt-$pkg_version/|" --exclude=nocrypto --exclude=sharedbson -f libmongocrypt-$pkg_version.tar.gz libmongocrypt
           cd libmongocrypt/etc/
+          # The files from libmongocrypt/debian/ are the official maintainer scripts,
+          # but libmongocrypt/etc/debian/ contains a few custom scripts that are
+          # meant to support the packager.py workflow.  This step "fills in" around
+          # those custom scripts.
+          cp -nr ../debian/* debian/
           $python ./packager.py --prefix `pwd`/.. --distros ${packager_distro} --tarball `pwd`/../../libmongocrypt-$pkg_version.tar.gz --library-version $pkg_version --metadata-gitspec HEAD --arches ${packager_arch}
           cd ../..
     - command: archive.targz_pack
@@ -623,6 +628,33 @@ tasks:
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
+- name: debian-package-build
+  depends_on:
+  - variant: ubuntu1804-64
+    name: prep-c-driver-source
+  commands:
+    - func: "fetch source"
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "libmongocrypt"
+        shell: bash
+        script: |-
+          set -o errexit
+          set -o xtrace
+          export IS_PATCH="${is_patch}"
+          sh .evergreen/debian_package_build.sh
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: deb.tar.gz
+        remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/x-gzip}
+        display_name: "deb.tar.gz"
+
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
   - command: "shell.exec"
@@ -953,3 +985,8 @@ buildvariants:
   tasks:
     - name: "publish-snapshot"
     - name: "upload-all"
+- name: packaging
+  display_name: "Linux Distro Packaging"
+  run_on: ubuntu2004-small
+  tasks:
+  - name: debian-package-build

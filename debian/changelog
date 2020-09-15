@@ -1,0 +1,5 @@
+libmongocrypt (1.0.4-1) unstable; urgency=medium
+
+  * Initial release (Closes: #968995).
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 25 Aug 2020 11:07:58 -0400
