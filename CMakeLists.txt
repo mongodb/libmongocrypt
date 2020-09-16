@@ -65,6 +65,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-cache.c
    src/mongocrypt-cache-collinfo.c
    src/mongocrypt-cache-key.c
+   src/mongocrypt-cache-oauth.c
    src/mongocrypt-ciphertext.c
    src/mongocrypt-crypto.c
    src/mongocrypt-ctx-datakey.c

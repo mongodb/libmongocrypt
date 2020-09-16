@@ -21,6 +21,7 @@
 #include "mongocrypt-compat.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-cache-key-private.h"
+#include "mongocrypt-endpoint-private.h"
 #include "mongocrypt-opts-private.h"
 #include "kms_message/kms_message.h"
 #include "mongocrypt-crypto-private.h"
@@ -28,8 +29,10 @@
 struct __mongocrypt_ctx_opts_t;
 
 typedef enum {
-   MONGOCRYPT_KMS_ENCRYPT,
-   MONGOCRYPT_KMS_DECRYPT
+   MONGOCRYPT_KMS_AWS_ENCRYPT,
+   MONGOCRYPT_KMS_AWS_DECRYPT,
+   MONGOCRYPT_KMS_AZURE_OAUTH,
+   MONGOCRYPT_KMS_AZURE_WRAPKEY
 } _kms_request_type_t;
 
 struct _mongocrypt_kms_ctx_t {
@@ -62,7 +65,6 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _mongocrypt_log_t *log,
    _mongocrypt_crypto_t *crypto) MONGOCRYPT_WARN_UNUSED_RESULT;
 
-
 bool
 _mongocrypt_kms_ctx_result (mongocrypt_kms_ctx_t *kms,
                             _mongocrypt_buffer_t *out)
@@ -70,5 +72,21 @@ _mongocrypt_kms_ctx_result (mongocrypt_kms_ctx_t *kms,
 
 void
 _mongocrypt_kms_ctx_cleanup (mongocrypt_kms_ctx_t *kms);
+
+bool
+_mongocrypt_kms_ctx_init_azure_auth (mongocrypt_kms_ctx_t *kms,
+                                     _mongocrypt_log_t *log,
+                                     _mongocrypt_opts_t *crypt_opts,
+                                     _mongocrypt_endpoint_t *key_vault_endpoint)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_mongocrypt_kms_ctx_init_azure_wrapkey (
+   mongocrypt_kms_ctx_t *kms,
+   _mongocrypt_log_t *log,
+   _mongocrypt_opts_t *crypt_opts,
+   struct __mongocrypt_ctx_opts_t *ctx_opts,
+   const char *access_token,
+   _mongocrypt_buffer_t *plaintext_key_material) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_KMX_CTX_PRIVATE_H */

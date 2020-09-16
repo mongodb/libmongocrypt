@@ -123,6 +123,7 @@ mongocrypt_new (void)
    _mongocrypt_opts_init (&crypt->opts);
    _mongocrypt_log_init (&crypt->log);
    crypt->ctx_counter = 1;
+   crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new ();
    return crypt;
 }
 
@@ -424,6 +425,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    _mongocrypt_log_cleanup (&crypt->log);
    mongocrypt_status_destroy (crypt->status);
    bson_free (crypt->crypto);
+   _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_azure);
    bson_free (crypt);
 }
 
