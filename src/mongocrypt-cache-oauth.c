@@ -22,7 +22,7 @@
  * This is intended to prevent use of an oauth token too close to the expiration
  * time.
  */
-#define MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US 5000 * 5000
+#define MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US 5000 * 1000
 
 _mongocrypt_cache_oauth_t *
 _mongocrypt_cache_oauth_new (void)
@@ -39,6 +39,7 @@ _mongocrypt_cache_oauth_destroy (_mongocrypt_cache_oauth_t *cache)
 {
    _mongocrypt_mutex_cleanup (&cache->mutex);
    bson_destroy (cache->entry);
+   bson_free (cache->access_token);
    bson_free (cache);
 }
 
@@ -71,8 +72,10 @@ _mongocrypt_cache_oauth_add (_mongocrypt_cache_oauth_t *cache,
 
    _mongocrypt_mutex_lock (&cache->mutex);
    if (expiration_time_us > cache->expiration_time_us) {
+      bson_destroy (cache->entry);
       cache->entry = bson_copy (oauth_response);
       cache->expiration_time_us = expiration_time_us;
+      bson_free (cache->access_token);
       cache->access_token = bson_strdup (access_token);
    }
    _mongocrypt_mutex_unlock (&cache->mutex);

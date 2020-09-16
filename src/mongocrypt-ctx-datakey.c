@@ -54,6 +54,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
 {
    bool ret = false;
    _mongocrypt_ctx_datakey_t *dkctx;
+   char *access_token = NULL;
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
 
@@ -129,7 +130,6 @@ _kms_start (mongocrypt_ctx_t *ctx)
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else if (ctx->opts.masterkey_kms_provider ==
               MONGOCRYPT_KMS_PROVIDER_AZURE) {
-      char *access_token;
 
       access_token =
          _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_azure);
@@ -161,6 +161,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
 
    ret = true;
 done:
+   bson_free (access_token);
    return ret;
 }
 

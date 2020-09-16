@@ -468,7 +468,7 @@ _ctx_done_azure_oauth (mongocrypt_kms_ctx_t *kms)
    bson_body =
       bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
    if (!bson_body) {
-      CLIENT_ERR ("Invalid JSON in KMS response. HTTP status=%d", http_status);
+      CLIENT_ERR ("Invalid JSON in KMS response. HTTP status=%d. Error: %s", http_status, bson_error.message);
       goto fail;
    }
 
@@ -586,7 +586,6 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
    kms->result.data = bson_malloc0 (b64_len);
    kms->result.len = kms_message_b64_pton (b64_data, kms->result.data, b64_len);
    kms->result.owned = true;
-   bson_body = NULL;
 
    ret = true;
 fail:

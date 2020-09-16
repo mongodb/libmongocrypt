@@ -22,7 +22,7 @@
 
 typedef struct {
    bson_t *entry;
-   const char *access_token;
+   char *access_token;
    int64_t expiration_time_us;
    mongocrypt_mutex_t mutex; /* global lock of cache. */
 } _mongocrypt_cache_oauth_t;
