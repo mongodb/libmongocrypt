@@ -33,6 +33,9 @@ typedef struct {
    char *host_and_port; /* e.g. kevin.keyvault.azure.net:443 */
 } _mongocrypt_endpoint_t;
 
+_mongocrypt_endpoint_t *
+_mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src);
+
 void
 _mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint);
 

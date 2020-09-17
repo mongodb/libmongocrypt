@@ -321,8 +321,7 @@ _kms_done (mongocrypt_ctx_t *ctx)
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
       return _mongocrypt_ctx_fail (ctx);
    }
-   ctx->state = MONGOCRYPT_CTX_READY;
-   return true;
+   return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
 
@@ -767,6 +766,7 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
       new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
       ret = true;
       break;
+   case KB_AUTHENTICATING:
    case KB_DECRYPTING_KEY_MATERIAL:
       /* Encrypted keys need KMS. */
       new_state = MONGOCRYPT_CTX_NEED_KMS;

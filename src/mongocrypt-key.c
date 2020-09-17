@@ -71,6 +71,9 @@ _parse_masterkey (bson_iter_t *iter,
 {
    bson_iter_t subiter;
    bool has_cmk = false, has_region = false, has_provider = false;
+   const uint8_t *data;
+   uint32_t len;
+   bson_t kek_doc;
 
    if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
       CLIENT_ERR ("invalid 'masterKey', expected document");
@@ -101,9 +104,11 @@ _parse_masterkey (bson_iter_t *iter,
             out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
          } else if (0 == strcmp (provider, "local")) {
             out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+         } else if (0 == strcmp (provider, "azure")) {
+            out->masterkey_provider = MONGOCRYPT_KMS_PROVIDER_AZURE;
          } else {
             CLIENT_ERR (
-               "invalid 'masterKey.provider', expected 'aws' or 'local'");
+               "invalid 'masterKey.provider', expected 'aws' or 'local' or 'azure' or 'gcp'");
             return false;
          }
          continue;
@@ -134,6 +139,12 @@ _parse_masterkey (bson_iter_t *iter,
          continue;
       }
 
+      if (0 == strcmp ("keyVaultEndpoint", field) ||
+          0 == strcmp ("keyName", field) || 0 == strcmp ("keyVersion", field)) {
+         /* These are parsed after the loop. */
+         continue;
+      }
+
       CLIENT_ERR ("unrecognized provider field '%s'", field);
       return false;
    }
@@ -152,6 +163,27 @@ _parse_masterkey (bson_iter_t *iter,
 
       if (!has_cmk) {
          CLIENT_ERR ("invalid 'masterKey', no 'key'");
+         return false;
+      }
+   }
+
+   if (out->masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
+      bson_iter_document (iter, &len, &data);
+      bson_init_static (&kek_doc, data, len);
+
+      if (!_mongocrypt_parse_required_endpoint (
+             &kek_doc,
+             "keyVaultEndpoint",
+             &out->azure_kek.key_vault_endpoint,
+             status)) {
+         return false;
+      }
+      if (!_mongocrypt_parse_required_utf8 (
+             &kek_doc, "keyName", &out->azure_kek.key_name, status)) {
+         return false;
+      }
+      if (!_mongocrypt_parse_optional_utf8 (
+             &kek_doc, "keyVersion", &out->azure_kek.key_version, status)) {
          return false;
       }
    }
@@ -388,6 +420,9 @@ _mongocrypt_key_destroy (_mongocrypt_key_doc_t *key)
    bson_free (key->masterkey_region);
    bson_free (key->masterkey_cmk);
    bson_free (key->endpoint);
+   _mongocrypt_endpoint_destroy (key->azure_kek.key_vault_endpoint);
+   bson_free (key->azure_kek.key_name);
+   bson_free (key->azure_kek.key_version);
    bson_destroy (&key->bson);
    bson_free (key);
 }
@@ -408,6 +443,9 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
    dst->masterkey_provider = src->masterkey_provider;
    dst->masterkey_region = bson_strdup (src->masterkey_region);
    dst->masterkey_cmk = bson_strdup (src->masterkey_cmk);
+   dst->azure_kek.key_name = bson_strdup (src->azure_kek.key_name);
+   dst->azure_kek.key_version = bson_strdup (src->azure_kek.key_version);
+   dst->azure_kek.key_vault_endpoint = _mongocrypt_endpoint_copy (src->azure_kek.key_vault_endpoint);
 }
 
 _mongocrypt_key_alt_name_t *
