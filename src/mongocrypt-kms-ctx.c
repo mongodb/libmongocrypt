@@ -369,7 +369,7 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
 
    if (http_status != 200) {
       /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
-         * support handling 200 response. */
+       * support handling 200 response. */
       if (http_status < 400) {
          CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d",
                      http_status);
@@ -382,7 +382,7 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
          goto fail;
       }
       /* AWS error responses include a JSON message, like { "message":
-         * "error" } */
+       * "error" } */
       bson_destroy (&body_bson);
       if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
          bson_init (&body_bson);
@@ -403,7 +403,7 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    }
 
    /* If HTTP response succeeded (status 200) then body should contain JSON.
-      */
+    */
    bson_destroy (&body_bson);
    if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
@@ -645,6 +645,8 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
          return _ctx_done_azure_oauth (kms);
       } else if (kms->req_type == MONGOCRYPT_KMS_AZURE_WRAPKEY) {
          return _ctx_done_azure_wrapkey_unwrapkey (kms);
+      } else if (kms->req_type == MONGOCRYPT_KMS_AZURE_UNWRAPKEY) {
+         return _ctx_done_azure_wrapkey_unwrapkey (kms);
       } else {
          CLIENT_ERR ("Unknown request type");
          return false;
@@ -854,14 +856,13 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    BSON_ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
-   kms->req = kms_azure_request_wrapkey_new (
-      host,
-      access_token,
-      ctx_opts->azure_kek.key_name,
-      ctx_opts->azure_kek.key_version,
-      plaintext_key_material->data,
-      plaintext_key_material->len,
-      opt);
+   kms->req = kms_azure_request_wrapkey_new (host,
+                                             access_token,
+                                             ctx_opts->azure_kek.key_name,
+                                             ctx_opts->azure_kek.key_version,
+                                             plaintext_key_material->data,
+                                             plaintext_key_material->len,
+                                             opt);
 
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS wrapkey message: %s",
@@ -872,6 +873,67 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    request_string = kms_request_to_string (kms->req);
    if (!request_string) {
       CLIENT_ERR ("error getting Azure wrapkey KMS message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+   _mongocrypt_buffer_init (&kms->msg);
+   kms->msg.data = (uint8_t *) request_string;
+   kms->msg.len = (uint32_t) strlen (request_string);
+   kms->msg.owned = true;
+
+   ret = true;
+fail:
+   kms_request_opt_destroy (opt);
+   bson_free (path_and_query);
+   bson_free (payload);
+   bson_free (bearer_token_value);
+   return ret;
+}
+
+bool
+_mongocrypt_kms_ctx_init_azure_unwrapkey (mongocrypt_kms_ctx_t *kms,
+                                          _mongocrypt_opts_t *crypt_opts,
+                                          const char *access_token,
+                                          _mongocrypt_key_doc_t *key,
+                                          _mongocrypt_log_t *log)
+{
+   kms_request_opt_t *opt = NULL;
+   mongocrypt_status_t *status;
+   char *path_and_query = NULL;
+   char *payload = NULL;
+   const char *host;
+   char *request_string;
+   bool ret = false;
+   char *bearer_token_value = NULL;
+
+   _init_common (kms, log, MONGOCRYPT_KMS_AZURE_UNWRAPKEY);
+   status = kms->status;
+
+   kms->endpoint =
+      bson_strdup (key->azure_kek.key_vault_endpoint->host_and_port);
+   host = key->azure_kek.key_vault_endpoint->host;
+
+   opt = kms_request_opt_new ();
+   BSON_ASSERT (opt);
+   kms_request_opt_set_connection_close (opt, true);
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
+   kms->req = kms_azure_request_unwrapkey_new (host,
+                                               access_token,
+                                               key->azure_kek.key_name,
+                                               key->azure_kek.key_version,
+                                               key->key_material.data,
+                                               key->key_material.len,
+                                               opt);
+
+   if (kms_request_get_error (kms->req)) {
+      CLIENT_ERR ("error constructing KMS unwrapkey message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+
+   request_string = kms_request_to_string (kms->req);
+   if (!request_string) {
+      CLIENT_ERR ("error getting Azure unwrapkey KMS message: %s",
                   kms_request_get_error (kms->req));
       goto fail;
    }

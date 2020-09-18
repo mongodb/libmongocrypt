@@ -55,6 +55,8 @@ typedef enum {
    KB_REQUESTING,
    /* Accept key documents fetched from the key vault collection. */
    KB_ADDING_DOCS,
+   /* Getting oauth token(s) from KMS providers. */
+   KB_AUTHENTICATING,
    /* Accept KMS replies to decrypt key material in each key document. */
    KB_DECRYPTING_KEY_MATERIAL,
    KB_DONE,
@@ -79,8 +81,16 @@ typedef struct _key_returned_t {
    mongocrypt_kms_ctx_t kms;
    bool decrypted;
 
+   bool needs_auth;
+
    struct _key_returned_t *next;
 } key_returned_t;
+
+typedef struct _auth_request_t {
+   mongocrypt_kms_ctx_t kms;
+   bool returned;
+   bool initialized;
+} auth_request_t;
 
 typedef struct {
    key_broker_state_t state;
@@ -98,6 +108,8 @@ typedef struct {
    mongocrypt_t *crypt;
 
    key_returned_t *decryptor_iter;
+   /* TODO: for GCP, make this a list or array of two. */
+   auth_request_t auth_request;
 } _mongocrypt_key_broker_t;
 
 void

@@ -149,7 +149,8 @@ test_mongocrypt_key_parsing (_mongocrypt_tester_t *tester)
    bson_concat (&key_bson, TMP_BSON ("{'masterKey': { 'provider': 'bad' }}"));
    _parse_fails (&key_bson,
                  status,
-                 "invalid 'masterKey.provider', expected 'aws' or 'local'");
+                 "invalid 'masterKey.provider', expected 'aws' or 'local' or "
+                 "'azure' or 'gcp'");
    /* masterKey: provider=aws, missing key */
    _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
    bson_concat (
@@ -195,6 +196,15 @@ test_mongocrypt_key_parsing (_mongocrypt_tester_t *tester)
    /* status: missing */
    _recreate_and_reset (tester, &key_bson, status, "status", NULL);
    _parse_fails (&key_bson, status, "invalid key, no 'status'");
+
+   /* masterKey: unrecognized field */
+   _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
+   bson_concat (
+      &key_bson,
+      TMP_BSON (
+         "{'masterKey': { 'provider': 'azure', 'keyVaultEndpoint': "
+         "'abc.example.com', 'keyName': 'test', 'keyVersion': 'abc' }}"));
+   _parse_ok (&key_bson, status);
 
    mongocrypt_status_destroy (status);
    bson_destroy (&key_bson);

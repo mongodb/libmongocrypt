@@ -526,6 +526,37 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          _key_broker_fail (kb);
          goto done;
       }
+   } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
+      char *access_token;
+
+      access_token = _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
+      if (!access_token) {
+         key_returned->needs_auth = true;
+         /* Create an oauth request if one does not exist. */
+         if (!kb->auth_request.initialized) {
+            if (!_mongocrypt_kms_ctx_init_azure_auth (
+                   &kb->auth_request.kms,
+                   &kb->crypt->log,
+                   &kb->crypt->opts,
+                   /* The key vault endpoint is used to determine the scope. */
+                   key_doc->azure_kek.key_vault_endpoint)) {
+               mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
+               _key_broker_fail (kb);
+               goto done;
+            }
+            kb->auth_request.initialized = true;
+         }
+      } else {
+         if (!_mongocrypt_kms_ctx_init_azure_unwrapkey (&key_returned->kms,
+                                                        &kb->crypt->opts,
+                                                        access_token,
+                                                        key_doc,
+                                                        &kb->crypt->log)) {
+            mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
+            _key_broker_fail (kb);
+            goto done;
+         }
+      }
    } else {
       _key_broker_fail_w_msg (kb, "unrecognized kms provider");
       goto done;
@@ -554,6 +585,7 @@ _mongocrypt_key_broker_docs_done (_mongocrypt_key_broker_t *kb)
 {
    key_returned_t *key_returned;
    bool needs_decryption;
+   bool needs_auth;
 
    if (kb->state != KB_ADDING_DOCS) {
       return _key_broker_fail_w_msg (
@@ -566,18 +598,30 @@ _mongocrypt_key_broker_docs_done (_mongocrypt_key_broker_t *kb)
                                      "not all keys requested were satisfied");
    }
 
-   /* If we're using a local key provider, or every key was retrieved from the
-    * cache, skip the decrypting state. */
+   /* Transition to the next state.
+    *  - If there are any Azure or GCP backed keys, and no oauth token is
+    * cached, transition to KB_AUTHENTICATING.
+    *  - Otherwise, if there are keys that need to be decrypted, transition to
+    * KB_DECRYPTING_KEY_MATERIAL.
+    *  - Otherwise, all keys were retrieved from the cache or decrypted locally,
+    * skip the decrypting state and go right to KB_DONE.
+    */
    needs_decryption = false;
+   needs_auth = false;
    for (key_returned = kb->keys_returned; NULL != key_returned;
         key_returned = key_returned->next) {
+      if (key_returned->needs_auth) {
+         needs_auth = true;
+         break;
+      }
       if (!key_returned->decrypted) {
          needs_decryption = true;
-         break;
       }
    }
 
-   if (needs_decryption) {
+   if (needs_auth) {
+      kb->state = KB_AUTHENTICATING;
+   } else if (needs_decryption) {
       kb->state = KB_DECRYPTING_KEY_MATERIAL;
    } else {
       kb->state = KB_DONE;
@@ -588,13 +632,28 @@ _mongocrypt_key_broker_docs_done (_mongocrypt_key_broker_t *kb)
 mongocrypt_kms_ctx_t *
 _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
 {
-   if (kb->state != KB_DECRYPTING_KEY_MATERIAL) {
+   if (kb->state != KB_DECRYPTING_KEY_MATERIAL &&
+       kb->state != KB_AUTHENTICATING) {
       _key_broker_fail_w_msg (
          kb, "attempting to get KMS request, but in wrong state");
       /* TODO (CDRIVER-3327) this breaks other expectations. If the caller only
        * checks the return value they may mistake this NULL as indicating all
        * KMS requests have been iterated. */
       return NULL;
+   }
+
+   if (kb->state == KB_AUTHENTICATING) {
+      if (!kb->auth_request.initialized) {
+         _key_broker_fail_w_msg (kb,
+                                 "unexpected, attempting to authenticate but "
+                                 "KMS request not initialized");
+         return NULL;
+      }
+      if (kb->auth_request.returned) {
+         return NULL;
+      }
+      kb->auth_request.returned = true;
+      return &kb->auth_request.kms;
    }
 
    while (kb->decryptor_iter) {
@@ -617,16 +676,72 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
 {
    key_returned_t *key_returned;
 
-   if (kb->state != KB_DECRYPTING_KEY_MATERIAL) {
+   if (kb->state != KB_DECRYPTING_KEY_MATERIAL &&
+       kb->state != KB_AUTHENTICATING) {
       return _key_broker_fail_w_msg (
          kb, "attempting to complete KMS requests, but in wrong state");
+   }
+
+   if (kb->state == KB_AUTHENTICATING) {
+      bson_t oauth_response;
+      _mongocrypt_buffer_t oauth_response_buf;
+
+      if (!_mongocrypt_kms_ctx_result (&kb->auth_request.kms, &oauth_response_buf)) {
+         mongocrypt_kms_ctx_status (&kb->auth_request.kms, kb->status);
+         return _key_broker_fail (kb);
+      }
+
+      /* Cache returned tokens. */
+      BSON_ASSERT (_mongocrypt_buffer_to_bson (&oauth_response_buf,
+                                               &oauth_response));
+      if (!_mongocrypt_cache_oauth_add (
+             kb->crypt->cache_oauth_azure, &oauth_response, kb->status)) {
+         return false;
+      }
+
+      /* Auth should be finished, create any remaining KMS requests. */
+      for (key_returned = kb->keys_returned; NULL != key_returned;
+           key_returned = key_returned->next) {
+         char *access_token;
+
+         if (!key_returned->needs_auth) {
+            continue;
+         }
+
+         access_token =
+            _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
+
+         if (!access_token) {
+            return _key_broker_fail_w_msg (
+               kb, "authentication failed, no oauth token");
+         }
+
+         if (!_mongocrypt_kms_ctx_init_azure_unwrapkey (&key_returned->kms,
+                                                        &kb->crypt->opts,
+                                                        access_token,
+                                                        key_returned->doc,
+                                                        &kb->crypt->log)) {
+            mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
+            bson_free (access_token);
+            return _key_broker_fail (kb);
+         }
+
+         key_returned->needs_auth = false;
+
+         bson_free (access_token);
+      }
+
+      kb->state = KB_DECRYPTING_KEY_MATERIAL;
+      return true;
    }
 
    for (key_returned = kb->keys_returned; NULL != key_returned;
         key_returned = key_returned->next) {
       /* Local keys were already decrypted. */
       if (key_returned->doc->masterkey_provider ==
-          MONGOCRYPT_KMS_PROVIDER_AWS) {
+             MONGOCRYPT_KMS_PROVIDER_AWS ||
+          key_returned->doc->masterkey_provider ==
+             MONGOCRYPT_KMS_PROVIDER_AZURE) {
          if (key_returned->decrypted) {
             return _key_broker_fail_w_msg (
                kb,
@@ -795,6 +910,7 @@ _mongocrypt_key_broker_cleanup (_mongocrypt_key_broker_t *kb)
    _destroy_keys_returned (kb->keys_returned);
    _destroy_keys_returned (kb->keys_cached);
    _destroy_key_requests (kb->key_requests);
+   _mongocrypt_kms_ctx_cleanup (&kb->auth_request.kms);
 }
 
 void

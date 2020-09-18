@@ -159,3 +159,23 @@ fail:
    }
    return endpoint;
 }
+
+_mongocrypt_endpoint_t *
+_mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src) {
+   _mongocrypt_endpoint_t *endpoint;
+
+   if (!src) {
+      return NULL;
+   }
+   endpoint = bson_malloc0 (sizeof (_mongocrypt_endpoint_t));
+   endpoint->original = bson_strdup (src->original);
+   endpoint->protocol = bson_strdup (src->protocol);
+   endpoint->host = bson_strdup (src->host);
+   endpoint->port = bson_strdup (src->port);
+   endpoint->domain = bson_strdup (src->domain);
+   endpoint->subdomain = bson_strdup (src->subdomain);
+   endpoint->path = bson_strdup (src->path);
+   endpoint->query = bson_strdup (src->query);
+   endpoint->host_and_port = bson_strdup (src->host_and_port);
+   return endpoint;
+}

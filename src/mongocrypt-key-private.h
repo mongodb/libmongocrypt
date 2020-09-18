@@ -27,6 +27,12 @@ typedef struct __mongocrypt_key_alt_name_t {
 } _mongocrypt_key_alt_name_t;
 
 typedef struct {
+   _mongocrypt_endpoint_t *key_vault_endpoint;
+   char *key_name;
+   char *key_version;
+} _mongocrypt_azure_kek_t;
+
+typedef struct {
    bson_t bson; /* original BSON for this key. */
    _mongocrypt_buffer_t id;
    _mongocrypt_key_alt_name_t *key_alt_names;
@@ -37,6 +43,7 @@ typedef struct {
    char *endpoint;
    uint64_t creation_date;
    uint64_t update_date;
+   _mongocrypt_azure_kek_t azure_kek;
 } _mongocrypt_key_doc_t;
 
 _mongocrypt_key_alt_name_t *

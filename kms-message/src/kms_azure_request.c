@@ -204,8 +204,8 @@ kms_azure_request_unwrapkey_new (const char *host,
                                  const char *access_token,
                                  const char *key_name,
                                  const char *key_version,
-                                 const uint8_t *plaintext,
-                                 size_t plaintext_len,
+                                 const uint8_t *ciphertext,
+                                 size_t ciphertext_len,
                                  const kms_request_opt_t *opt)
 {
    return _wrap_unwrap_common ("unwrapkey",
@@ -213,7 +213,7 @@ kms_azure_request_unwrapkey_new (const char *host,
                                access_token,
                                key_name,
                                key_version,
-                               plaintext,
-                               plaintext_len,
+                               ciphertext,
+                               ciphertext_len,
                                opt);
 }
