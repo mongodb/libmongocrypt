@@ -1100,13 +1100,14 @@ kms_signature_test (void)
       abort ();
    }
 
+   /* Test with an invalid key. */
+   ret = kms_sign_rsaes_pkcs1_v1_5 (
+      NULL, "blah", 4, data_to_sign, strlen (data_to_sign), signature_raw);
+
    free (private_key_raw);
    free (signature_raw);
    free (signature_b64);
 
-   /* Test with an invalid key. */
-   ret = kms_sign_rsaes_pkcs1_v1_5 (
-      NULL, "blah", 4, data_to_sign, strlen (data_to_sign), signature_raw);
    KMS_ASSERT (!ret);
 }
 
