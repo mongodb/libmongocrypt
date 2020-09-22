@@ -133,4 +133,15 @@ cleanup:
    return status == STATUS_SUCCESS ? 1 : 0;
 }
 
+bool
+kms_sign_rsaes_pkcs1_v1_5 (void *unused_ctx,
+                           const char *private_key,
+                           size_t private_key_len,
+                           const char *input,
+                           size_t input_len,
+                           unsigned char *signature_out) {
+   /* TODO */
+   return false;
+}
+
 #endif /* KMS_MESSAGE_ENABLE_CRYPTO_CNG */
