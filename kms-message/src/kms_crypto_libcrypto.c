@@ -102,7 +102,7 @@ kms_sign_rsaes_pkcs1_v1_5 (void *unused_ctx,
    EVP_MD_CTX *ctx;
    EVP_PKEY *pkey = NULL;
    bool ret = false;
-   size_t signature_out_len;
+   size_t signature_out_len = 256;
 
    ctx = EVP_MD_CTX_new ();
    pkey = d2i_PrivateKey (EVP_PKEY_RSA,
