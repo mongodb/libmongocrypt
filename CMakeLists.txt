@@ -179,9 +179,12 @@ target_include_directories (mongocrypt_static PUBLIC $<BUILD_INTERFACE:${CMAKE_C
 target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_include_directories (mongocrypt_static PRIVATE ${BSON_INCLUDES})
 target_compile_definitions (mongocrypt_static PRIVATE ${BSON_DEFINITIONS})
+set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
 target_link_libraries (mongocrypt_static PRIVATE ${BSON_TARGET})
 target_link_libraries (mongocrypt_static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${CMAKE_THREAD_LIBS_INIT}")
 target_link_libraries (mongocrypt_static PRIVATE kms_message_static)
+set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libkms_message-static.a")
 target_compile_definitions (mongocrypt_static PUBLIC MONGOCRYPT_STATIC_DEFINE KMS_MSG_STATIC)
 if (ENABLE_WINDOWS_STATIC_RUNTIME)
    target_compile_options (mongocrypt_static PUBLIC /MT)
@@ -192,12 +195,15 @@ endif ()
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
    target_link_libraries (mongocrypt PRIVATE "-framework CoreFoundation -framework Security")
    target_link_libraries (mongocrypt_static PRIVATE "-framework CoreFoundation -framework Security")
+   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -framework CoreFoundation -framework Security")
 elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
    target_link_libraries (mongocrypt PRIVATE "bcrypt")
    target_link_libraries (mongocrypt_static PRIVATE "bcrypt")
+   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lbcrypt")
 elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    target_link_libraries (mongocrypt PRIVATE OpenSSL::SSL OpenSSL::Crypto)
    target_link_libraries (mongocrypt_static PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lssl -lcrypto")
 endif ()
 
 
@@ -323,19 +329,22 @@ set (MONGOCRYPT_BUILD_VERSION ${BUILD_VERSION})
 configure_file (src/mongocrypt.h.in src/mongocrypt.h)
 
 set (PROJECT_VERSION "${BUILD_VERSION}")
-# If libbson is statically linked, don't require a dependency.
+set (PROJECT_DESCRIPTION "The libmongocrypt client-side field level encryption library.")
+set (PKG_CONFIG_REQUIRES "libbson-static-1.0")
+set (PKG_CONFIG_STATIC_REQUIRES "libbson-static-1.0")
 if (ENABLE_SHARED_BSON)
-   set (PKG_CONFIG_REQUIRES_PRIVATE "libbson-1.0")
+   set (PKG_CONFIG_REQUIRES "libbson-1.0")
+   set (PKG_CONFIG_STATIC_REQUIRES "libbson-1.0")
 endif ()
 set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
 set (PKG_CONFIG_LIBS "-L\${libdir} -lmongocrypt")
 set (PKG_CONFIG_CFLAGS "-I\${includedir}")
+set (PKG_CONFIG_STATIC_CFLAGS "${PKG_CONFIG_CFLAGS} -DMONGOCRYPT_STATIC_DEFINE -DKMS_MSG_STATIC")
 configure_file (
    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt.pc.in"
    "${CMAKE_CURRENT_BINARY_DIR}/libmongocrypt.pc"
 )
-set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
 configure_file (
    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-static.pc.in"
    "${CMAKE_CURRENT_BINARY_DIR}/libmongocrypt-static.pc"
