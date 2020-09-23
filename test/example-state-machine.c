@@ -327,4 +327,6 @@ main ()
    bson_destroy (wrapped);
    mongocrypt_binary_destroy (key_id);
    mongocrypt_destroy (crypt);
+
+   return 0;
 }

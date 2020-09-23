@@ -66,6 +66,7 @@ functions:
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
           cd libmongocrypt
           ./.evergreen/linker-tests.sh
+          ./.evergreen/pkgconfig-tests.sh
 
 
   "create packages and repos":
