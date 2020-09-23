@@ -222,7 +222,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
    if (WIN32)
       target_link_libraries(test_kms_request "bcrypt")
    elseif (APPLE)
-      # Nothing
+      target_link_libraries (test_kms_request "-framework Security -framework CoreFoundation")
    else()
       include (FindOpenSSL)
       target_link_libraries(test_kms_request "${OPENSSL_LIBRARIES}")

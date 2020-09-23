@@ -95,12 +95,18 @@ kms_sign_rsaes_pkcs1_v1_5 (void *unused_ctx,
    key_data_ref = CFDataCreate (NULL /* default allocator */,
                                 (const uint8_t *) private_key,
                                 (CFIndex) private_key_len);
+   if (!key_data_ref) {
+      goto cleanup;
+   }
    memset (&import_params, 0, sizeof (SecItemImportExportKeyParameters));
    import_params.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
 
    /* Give an empty password. SecItemImport returns an error expecting a
     * password. */
    pass_ref = CFDataCreate (NULL, NULL, 0);
+   if (!pass_ref) {
+      goto cleanup;
+   }
    import_params.passphrase = (CFTypeRef) pass_ref;
 
    status = SecItemImport (key_data_ref,
@@ -120,12 +126,18 @@ kms_sign_rsaes_pkcs1_v1_5 (void *unused_ctx,
 
    key_ref = (SecKeyRef) CFArrayGetValueAtIndex (out_ref, 0);
    data_to_sign_ref = CFDataCreate (NULL, (const uint8_t *) input, input_len);
+   if (!data_to_sign_ref) {
+      goto cleanup;
+   }
    error_ref = NULL;
    signature_ref =
       SecKeyCreateSignature (key_ref,
                              kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA256,
                              data_to_sign_ref,
                              &error_ref);
+   if (!signature_ref) {
+      goto cleanup;
+   }
    memcpy (signature_out,
            CFDataGetBytePtr (signature_ref),
            CFDataGetLength (signature_ref));
