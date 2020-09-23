@@ -60,6 +60,8 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
+          set -o errexit
+          set -o xtrace
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
           cd libmongocrypt
