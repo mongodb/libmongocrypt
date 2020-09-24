@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <kms_message/kms_azure_request.h>
+#include <kms_message/kms_gcp_request.h>
 #include <kms_message/kms_b64.h>
 #include <kms_message/kms_request.h>
 #include <kms_message/kms_response.h>
@@ -29,8 +29,6 @@
 
 #include "test_kms_online_util.h"
 
-#define SCOPE "https%3A%2F%2Fvault.azure.net%2F.default"
-
 /* Define TEST_TRACING_INSECURE in compiler flags to enable
  * log output with sensitive information (for debugging). */
 #ifdef TEST_TRACING_INSECURE
@@ -40,15 +38,17 @@
 #endif
 
 typedef struct {
-   char *tenant_id;
-   char *client_id;
-   char *client_secret;
-   char *key_url;
-   char *key_vault_url;
-   char *key_path;
-   char *key_host;
-   char *key_name;
-   char *key_version;
+   const char *email;
+   const char *audience;
+   const char *scope;
+   const char *auth_host;
+   const char *private_key_b64;
+   const char *kms_host;
+   const char *project_id;
+   const char *location;
+   const char *key_ring_name;
+   const char *key_name;
+   const char *key_version;
 } test_env_t;
 
 static char *
@@ -65,47 +65,21 @@ test_getenv (const char *key)
 static void
 test_env_init (test_env_t *test_env)
 {
-   char *azure_domain = "vault.azure.net";
-   char *loc;
-
-   test_env->tenant_id = test_getenv ("AZURE_TENANT_ID");
-   test_env->client_id = test_getenv ("AZURE_CLIENT_ID");
-   test_env->client_secret = test_getenv ("AZURE_CLIENT_SECRET");
-   test_env->key_url = test_getenv ("AZURE_KEY_URL");
-   test_env->key_name = test_getenv ("AZURE_KEY_NAME");
-   test_env->key_version = test_getenv ("AZURE_KEY_VERSION");
-
-   loc = strstr (test_env->key_url, azure_domain);
-   TEST_ASSERT (loc);
-   test_env->key_vault_url = bson_strndup (
-      test_env->key_url, strlen (azure_domain) + loc - test_env->key_url);
-   test_env->key_path = bson_strdup (loc + strlen (azure_domain));
-   loc = strstr (test_env->key_vault_url, "//");
-   test_env->key_host = bson_strdup (loc + 2);
+   test_env->email = test_getenv ("GCP_EMAIL");
+   test_env->audience = test_getenv ("GCP_AUDIENCE");
+   test_env->scope = test_getenv ("GCP_SCOPE");
+   test_env->auth_host = test_getenv ("GCP_AUTH_HOST");
+   test_env->private_key_b64 = test_getenv ("GCP_PRIVATE_KEY_B64");
+   test_env->kms_host = test_getenv ("GCP_KMS_HOST");
+   test_env->project_id = test_getenv ("GCP_PROJECT_ID");
+   test_env->location = test_getenv ("GCP_LOCATION");
+   test_env->key_ring_name = test_getenv ("GCP_KEY_RING_NAME");
+   test_env->key_name = test_getenv ("GCP_KEY_NAME");
+   test_env->key_version = test_getenv ("GCP_KEY_VERSION");
 }
 
-static void
-test_env_cleanup (test_env_t *test_env)
-{
-   bson_free (test_env->key_vault_url);
-   bson_free (test_env->key_path);
-   bson_free (test_env->key_host);
-}
-
-/*
-Authenticate to Azure by sending an oauth request with client_id and
-client_secret (set in environment variables).
-Returns the base64url encoded bearer token that must be freed with bson_free.
-
-Subsequent requests to Azure can use the returned token by setting the header
-Authorization: Bearer <token>.
-
-References:
-[1]
-https://docs.microsoft.com/en-us/azure/key-vault/general/authentication-requests-and-responses
-*/
 static char *
-azure_authenticate (void)
+gcp_authenticate (void)
 {
    kms_request_t *req;
    kms_request_opt_t *opt;
@@ -114,6 +88,8 @@ azure_authenticate (void)
    bson_t *res_bson;
    bson_iter_t iter;
    char *bearer_token;
+   char *private_key_data;
+   size_t private_key_len;
 
    kms_response_t *res;
    test_env_t test_env;
@@ -121,18 +97,25 @@ azure_authenticate (void)
 
    opt = kms_request_opt_new ();
    kms_request_opt_set_connection_close (opt, true);
-   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
 
-   req = kms_azure_request_oauth_new ("login.microsoftonline.com",
-                                      SCOPE,
-                                      test_env.tenant_id,
-                                      test_env.client_id,
-                                      test_env.client_secret,
-                                      opt);
+   private_key_data = (char *) kms_message_b64_to_raw (test_env.private_key_b64,
+                                                       &private_key_len);
+   if (!private_key_data) {
+      TEST_ERROR ("unable to base64 decode private key");
+   }
+
+   req = kms_gcp_request_oauth_new (test_env.auth_host,
+                                    test_env.email,
+                                    test_env.audience,
+                                    test_env.scope,
+                                    private_key_data,
+                                    private_key_len,
+                                    opt);
    req_str = kms_request_to_string (req);
    TEST_TRACE ("--> HTTP request:\n%s\n", req_str);
 
-   res = send_kms_request (req, "login.microsoftonline.com");
+   res = send_kms_request (req, "oauth2.googleapis.com");
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s\n", res_str);
    TEST_ASSERT (kms_response_get_status (res) == 200);
@@ -150,15 +133,13 @@ azure_authenticate (void)
    kms_response_destroy (res);
    kms_request_destroy (req);
    bson_destroy (res_bson);
-   test_env_cleanup (&test_env);
    kms_request_opt_destroy (opt);
+   bson_free (private_key_data);
    return bearer_token;
 }
 
-/* Test wrapping a 96 byte payload (the size of a data key) and unwrapping it
- * back. */
 static void
-test_azure_wrapkey (void)
+test_gcp (void)
 {
    test_env_t test_env;
    kms_request_opt_t *opt;
@@ -182,33 +163,41 @@ test_azure_wrapkey (void)
    for (i = 0; i < KEYLEN; i++) {
       key_data[i] = i;
    }
-   key_data_b64url = kms_message_raw_to_b64url (key_data, KEYLEN);
+   key_data_b64url = kms_message_raw_to_b64 (key_data, KEYLEN);
 
    test_env_init (&test_env);
-   bearer_token = azure_authenticate ();
+   bearer_token = gcp_authenticate ();
 
    opt = kms_request_opt_new ();
    kms_request_opt_set_connection_close (opt, true);
-   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
-   req = kms_azure_request_wrapkey_new (test_env.key_host,
-                                        bearer_token,
-                                        test_env.key_name,
-                                        test_env.key_version,
-                                        key_data,
-                                        KEYLEN,
-                                        opt);
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
+   req = kms_gcp_request_encrypt_new (test_env.kms_host,
+                                      bearer_token,
+                                      test_env.project_id,
+                                      test_env.location,
+                                      test_env.key_ring_name,
+                                      test_env.key_name,
+                                      test_env.key_version,
+                                      key_data,
+                                      KEYLEN,
+                                      opt);
+   TEST_ASSERT (req);
+   if (kms_request_get_error (req)) {
+      printf ("error: %s\n", kms_request_get_error (req));
+      TEST_ASSERT (false);
+   }
    req_str = kms_request_to_string (req);
    TEST_TRACE ("--> HTTP request:\n%s\n", req_str);
-   res = send_kms_request (req, test_env.key_host);
+   res = send_kms_request (req, test_env.kms_host);
 
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
    TEST_ASSERT (res_bson);
-   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "value"));
-   encrypted_raw = kms_message_b64url_to_raw (bson_iter_utf8 (&iter, NULL),
-                                              &encrypted_raw_len);
+   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "ciphertext"));
+   encrypted_raw =
+      kms_message_b64_to_raw (bson_iter_utf8 (&iter, NULL), &encrypted_raw_len);
    TEST_ASSERT (encrypted_raw);
 
    bson_destroy (res_bson);
@@ -216,23 +205,25 @@ test_azure_wrapkey (void)
    kms_request_destroy (req);
    kms_response_destroy (res);
 
-   /* Send a request to unwrap the encrypted key. */
-   req = kms_azure_request_unwrapkey_new (test_env.key_host,
-                                          bearer_token,
-                                          test_env.key_name,
-                                          test_env.key_version,
-                                          encrypted_raw,
-                                          encrypted_raw_len,
-                                          opt);
+   /* Send a request to decrypt the encrypted key. */
+   req = kms_gcp_request_decrypt_new (test_env.kms_host,
+                                      bearer_token,
+                                      test_env.project_id,
+                                      test_env.location,
+                                      test_env.key_ring_name,
+                                      test_env.key_name,
+                                      encrypted_raw,
+                                      encrypted_raw_len,
+                                      opt);
    req_str = kms_request_to_string (req);
    TEST_TRACE ("--> HTTP request:\n%s\n", req_str);
-   res = send_kms_request (req, test_env.key_host);
+   res = send_kms_request (req, test_env.kms_host);
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
    TEST_ASSERT (res_bson);
-   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "value"));
+   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "plaintext"));
    decrypted = bson_strdup (bson_iter_utf8 (&iter, NULL));
    TEST_ASSERT_STREQUAL (decrypted, key_data_b64url);
 
@@ -240,7 +231,6 @@ test_azure_wrapkey (void)
    kms_response_destroy (res);
    bson_free (req_str);
    bson_free (bearer_token);
-   test_env_cleanup (&test_env);
    kms_request_destroy (req);
    bson_free (encrypted_raw);
    bson_free (key_data_b64url);
@@ -253,6 +243,6 @@ int
 main (int argc, char **argv)
 {
    kms_message_init ();
-   RUN_TEST (test_azure_wrapkey);
+   RUN_TEST (test_gcp);
    return 0;
 }

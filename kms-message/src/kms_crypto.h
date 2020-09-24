@@ -31,6 +31,12 @@ typedef struct {
                         const char *input,
                         size_t len,
                         unsigned char *hash_out);
+   bool (*sign_rsaes_pkcs1_v1_5) (void *ctx,
+                                  const char *private_key,
+                                  size_t private_key_len,
+                                  const char *input,
+                                  size_t input_len,
+                                  unsigned char *signature_out);
    void *ctx;
 } _kms_crypto_t;
 

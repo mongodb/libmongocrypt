@@ -32,6 +32,7 @@ typedef size_t kms_request_provider_t;
 
 #define KMS_REQUEST_PROVIDER_AWS 0
 #define KMS_REQUEST_PROVIDER_AZURE 1
+#define KMS_REQUEST_PROVIDER_GCP 2
 
 KMS_MSG_EXPORT (kms_request_opt_t *)
 kms_request_opt_new (void);
@@ -46,6 +47,7 @@ kms_request_opt_destroy (kms_request_opt_t *request);
 KMS_MSG_EXPORT (void)
 kms_request_opt_set_connection_close (kms_request_opt_t *opt,
                                       bool connection_close);
+
 KMS_MSG_EXPORT (void)
 kms_request_opt_set_crypto_hooks (kms_request_opt_t *opt,
                                   bool (*sha256) (void *ctx,
@@ -60,6 +62,16 @@ kms_request_opt_set_crypto_hooks (kms_request_opt_t *opt,
                                                        unsigned char *hash_out),
                                   void *ctx);
 
+KMS_MSG_EXPORT (void)
+kms_request_opt_set_crypto_hook_sign_rsaes_pkcs1_v1_5 (
+   kms_request_opt_t *opt,
+   bool (*sign_rsaes_pkcs1_v1_5) (void *ctx,
+                                  const char *private_key,
+                                  size_t private_key_len,
+                                  const char *input,
+                                  size_t input_len,
+                                  unsigned char *signature_out),
+   void *ctx);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
