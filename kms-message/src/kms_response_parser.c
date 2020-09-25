@@ -31,6 +31,8 @@ _parser_init (kms_response_parser_t *parser)
    parser->state = PARSING_STATUS_LINE;
    parser->start = 0;
    parser->failed = false;
+   parser->chunk_size = 0;
+   parser->transfer_encoding_chunked = false;
 }
 
 kms_response_parser_t *
