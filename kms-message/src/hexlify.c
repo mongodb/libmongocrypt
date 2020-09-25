@@ -20,6 +20,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+#define SSCANF sscanf_s
+#else
+#define SSCANF sscanf
+#endif
+
 char *
 hexlify (const uint8_t *buf, size_t len)
 {
@@ -36,4 +42,32 @@ hexlify (const uint8_t *buf, size_t len)
    *p = '\0';
 
    return hex_chars;
+}
+
+/* Returns -1 on error. */
+int
+unhexlify (const char *in, size_t len)
+{
+   int i;
+   int byte;
+   int total = 0;
+   int multiplier = 1;
+
+   for (i = (int) len - 1; i >= 0; i--) {
+      char c = *(in + i);
+
+      if (c >= '0' && c <= '9') {
+         byte = c - 48;
+      } else if (c >= 'a' && c <= 'f') {
+         byte = c - 97 + 10;
+      } else if (c >= 'A' && c <= 'F') {
+         byte = c - 65 + 10;
+      } else {
+         return -1;
+      }
+
+      total += byte * multiplier;
+      multiplier *= 16;
+   }
+   return total;
 }
