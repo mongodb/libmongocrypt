@@ -20,12 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _MSC_VER
-#define SSCANF sscanf_s
-#else
-#define SSCANF sscanf
-#endif
-
 char *
 hexlify (const uint8_t *buf, size_t len)
 {

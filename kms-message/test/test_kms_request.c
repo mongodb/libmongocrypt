@@ -953,13 +953,12 @@ parser_testcase_run (parser_testcase_t *testcase)
    kms_response_t *response;
    uint8_t buf[512] = {0};
    int bytes_to_read;
-   int i;
 
    response_file = fopen (testcase->filepath, "rb");
    ASSERT (response_file);
 
    parser = kms_response_parser_new ();
-   i = 0;
+
    while ((bytes_to_read = kms_response_parser_wants_bytes (
               parser, testcase->max_to_read)) > 0) {
       if (bytes_to_read > testcase->max_to_read) {
@@ -967,14 +966,10 @@ parser_testcase_run (parser_testcase_t *testcase)
       }
       size_t ret = fread (buf, 1, (size_t) bytes_to_read, response_file);
 
-      // printf ("bytes_to_read=%d\n", bytes_to_read);
       if (!kms_response_parser_feed (parser, buf, (int) ret)) {
          printf ("feed error: %s\n", parser->error);
          ASSERT (false);
       }
-      i++;
-      if (i > 1000)
-         break;
    }
 
    fclose (response_file);

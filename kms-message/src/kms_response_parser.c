@@ -57,6 +57,7 @@ kms_response_parser_wants_bytes (kms_response_parser_t *parser, int32_t max)
    case PARSING_CHUNK_LENGTH:
       return max;
    case PARSING_CHUNK:
+      /* add 2 for trailing \r\n */
       return (parser->chunk_size + 2) -
              ((int) parser->raw_response->len - parser->start);
    case PARSING_BODY:
