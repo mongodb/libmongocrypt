@@ -112,9 +112,9 @@ _parse_int_from_view (const char *str, int start, int end, int *result)
 }
 
 static bool
-_parse_hex_from_view (const char *str, int start, int end, int *result)
+_parse_hex_from_view (const char *str, int len, int *result)
 {
-   *result = unhexlify (str, end - start);
+   *result = unhexlify (str, len);
    if (*result < 0) {
       return false;
    }
@@ -241,7 +241,7 @@ _parse_line (kms_response_parser_t *parser, int end)
    } else if (parser->state == PARSING_CHUNK_LENGTH) {
       int result = 0;
 
-      if (!_parse_hex_from_view (raw + i, i, end, &result)) {
+      if (!_parse_hex_from_view (raw + i, end - i, &result)) {
          KMS_ERROR (parser, "Failed to parse hex chunk length.");
          return PARSING_DONE;
       }
@@ -311,7 +311,6 @@ kms_response_parser_feed (kms_response_parser_t *parser,
             curr = parser->start + parser->chunk_size + 2;
             parser->start = curr;
             if (parser->chunk_size == 0) {
-               printf ("done\n");
                /* last chunk. */
                parser->state = PARSING_DONE;
             } else {
