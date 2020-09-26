@@ -20,6 +20,8 @@
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-private.h"
 
+#include <kms_message/kms_b64.h>
+
 void
 _mongocrypt_opts_init (_mongocrypt_opts_t *opts)
 {
@@ -37,6 +39,15 @@ _mongocrypt_opts_kms_provider_azure_cleanup (
       kms_provider_azure->identity_platform_endpoint);
 }
 
+static void
+_mongocrypt_opts_kms_provider_gcp_cleanup (
+   _mongocrypt_opts_kms_provider_gcp_t *kms_provider_gcp)
+{
+   bson_free (kms_provider_gcp->email);
+   _mongocrypt_endpoint_destroy (kms_provider_gcp->endpoint);
+   _mongocrypt_buffer_cleanup (&kms_provider_gcp->private_key);
+}
+
 void
 _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
@@ -45,6 +56,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
    _mongocrypt_buffer_cleanup (&opts->kms_local_key);
    _mongocrypt_buffer_cleanup (&opts->schema_map);
    _mongocrypt_opts_kms_provider_azure_cleanup (&opts->kms_provider_azure);
+   _mongocrypt_opts_kms_provider_gcp_cleanup (&opts->kms_provider_gcp);
 }
 
 
@@ -145,13 +157,6 @@ _mongocrypt_parse_optional_endpoint (bson_t *bson,
    return (*out) != NULL;
 }
 
-/*
- * Parse a required endpoint from BSON.
- * @dotkey may be a dot separated key like: "a.b.c".
- * @*out is set to a copy of the string if found, NULL otherwise. Caller must
- * clean up with bson_free (*out).
- * Returns true if no error occured.
-*/
 bool
 _mongocrypt_parse_required_endpoint (bson_t *bson,
                                      const char *dotkey,
@@ -164,6 +169,69 @@ _mongocrypt_parse_required_endpoint (bson_t *bson,
 
    if (!*out) {
       CLIENT_ERR ("expected endpoint %s", dotkey);
+      return false;
+   }
+
+   return true;
+}
+
+
+bool
+_mongocrypt_parse_optional_binary (bson_t *bson,
+                                   const char *dotkey,
+                                   _mongocrypt_buffer_t *out,
+                                   mongocrypt_status_t *status)
+{
+   bson_iter_t iter;
+   bson_iter_t child;
+
+   _mongocrypt_buffer_init (out);
+
+   if (!bson_iter_init (&iter, bson)) {
+      CLIENT_ERR ("invalid BSON");
+      return false;
+   }
+   if (!bson_iter_find_descendant (&iter, dotkey, &child)) {
+      /* Not found. Not an error. */
+      return true;
+   }
+   if (BSON_ITER_HOLDS_UTF8 (&child)) {
+      size_t out_len;
+      /* Attempt to base64 decode. */
+      out->data =
+         kms_message_b64_to_raw (bson_iter_utf8 (&child, NULL), &out_len);
+      if (!out->data) {
+         CLIENT_ERR ("unable to parse base64 from UTF-8 field %s", dotkey);
+         return false;
+      }
+      out->len = (uint32_t) out_len;
+      out->owned = true;
+   } else if (BSON_ITER_HOLDS_BINARY (&child)) {
+      if (!_mongocrypt_buffer_copy_from_binary_iter (out, &child)) {
+         CLIENT_ERR ("unable to parse binary from field %s", dotkey);
+         return false;
+      }
+   } else {
+      CLIENT_ERR ("expected UTF-8 or binary %s", dotkey);
+      return false;
+   }
+
+
+   return true;
+}
+
+bool
+_mongocrypt_parse_required_binary (bson_t *bson,
+                                   const char *dotkey,
+                                   _mongocrypt_buffer_t *out,
+                                   mongocrypt_status_t *status)
+{
+   if (!_mongocrypt_parse_optional_binary (bson, dotkey, out, status)) {
+      return false;
+   }
+
+   if (out->len == 0) {
+      CLIENT_ERR ("expected UTF-8 or binary %s", dotkey);
       return false;
    }
 

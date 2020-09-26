@@ -124,6 +124,17 @@ mongocrypt_new (void)
    _mongocrypt_log_init (&crypt->log);
    crypt->ctx_counter = 1;
    crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new ();
+   crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new ();
+
+   if (0 != _mongocrypt_once (_mongocrypt_do_init) ||
+       !(_native_crypto_initialized)) {
+      mongocrypt_status_t *status = crypt->status;
+
+      CLIENT_ERR ("failed to initialize");
+      /* Return crypt with failure status so caller can obtain error when
+       * calling mongocrypt_init */
+   }
+
    return crypt;
 }
 
@@ -359,9 +370,7 @@ mongocrypt_init (mongocrypt_t *crypt)
 
    crypt->initialized = true;
 
-   if (0 != _mongocrypt_once (_mongocrypt_do_init) ||
-       !(_native_crypto_initialized)) {
-      CLIENT_ERR ("failed to initialize");
+   if (!mongocrypt_status_ok (crypt->status)) {
       return false;
    }
 
@@ -426,6 +435,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    mongocrypt_status_destroy (crypt->status);
    bson_free (crypt->crypto);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_azure);
+   _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_gcp);
    bson_free (crypt);
 }
 
@@ -529,6 +539,35 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
 }
 
 bool
+mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
+   mongocrypt_t *crypt,
+   mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
+   void *sign_ctx)
+{
+   mongocrypt_status_t *status;
+
+   if (!crypt) {
+      return false;
+   }
+
+   status = crypt->status;
+
+   if (crypt->initialized) {
+      CLIENT_ERR ("options cannot be set after initialization");
+      return false;
+   }
+
+   if (crypt->opts.sign_rsaes_pkcs1_v1_5) {
+      CLIENT_ERR ("signature hook already set");
+      return false;
+   }
+
+   crypt->opts.sign_rsaes_pkcs1_v1_5 = sign_rsaes_pkcs1_v1_5;
+   crypt->opts.sign_ctx = sign_ctx;
+   return true;
+}
+
+bool
 mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                                  mongocrypt_binary_t *kms_providers)
 {
@@ -552,7 +591,7 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
       return false;
    }
 
-   /* TODO: just Azure for now. GCP, AWS, and local later. */
+   /* TODO: just Azure and GCP for now. AWS, and local later. */
    while (bson_iter_next (&iter)) {
       const char *field_name;
 
@@ -598,6 +637,37 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
 
 
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+      } else if (0 == strcmp (field_name, "gcp")) {
+         if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_GCP)) {
+            CLIENT_ERR ("gcp KMS provider already set");
+            return false;
+         }
+
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "gcp.email",
+                &crypt->opts.kms_provider_gcp.email,
+                crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_parse_required_binary (
+                &as_bson,
+                "gcp.privateKey",
+                &crypt->opts.kms_provider_gcp.private_key,
+                crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_parse_optional_endpoint (
+                &as_bson,
+                "gcp.endpoint",
+                &crypt->opts.kms_provider_gcp.endpoint,
+                crypt->status)) {
+            return false;
+         }
+
+         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
       } else {
          CLIENT_ERR ("unsupported KMS provider: %s", field_name);
          return false;

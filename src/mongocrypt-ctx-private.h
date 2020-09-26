@@ -38,6 +38,15 @@ typedef struct {
    char *key_version;
 } _mongocrypt_ctx_opts_azure_kek_t;
 
+typedef struct {
+   _mongocrypt_endpoint_t *endpoint;
+   char *project_id;
+   char *location;
+   char *key_ring;
+   char *key_name;
+   char *key_version;
+} _mongocrypt_ctx_opts_gcp_kek_t;
+
 /* Option values are validated when set.
  * Different contexts accept/require different options,
  * validated when a context is initialized.
@@ -54,6 +63,7 @@ typedef struct __mongocrypt_ctx_opts_t {
    _mongocrypt_key_alt_name_t *key_alt_names;
    mongocrypt_encryption_algorithm_t algorithm;
    _mongocrypt_ctx_opts_azure_kek_t azure_kek;
+   _mongocrypt_ctx_opts_gcp_kek_t gcp_kek;
 } _mongocrypt_ctx_opts_t;
 
 

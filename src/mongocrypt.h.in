@@ -372,7 +372,7 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
 /**
  * Configure KMS providers with a BSON document.
  * Currently only applies to Azure.
- * 
+ *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] kms_providers A BSON document mapping the KMS provider names
  * to credentials.
@@ -613,7 +613,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 /**
  * Set key encryption key document for creating a data key.
  * Currently only applies to Azure.
- * 
+ *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] bin BSON representing the key encryption key document.
  * @pre @p ctx has not been initialized.
@@ -622,7 +622,8 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *bin);
+mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
+                                          mongocrypt_binary_t *bin);
 
 
 /**
@@ -1002,7 +1003,10 @@ typedef bool (*mongocrypt_crypto_fn) (void *ctx,
                                       mongocrypt_status_t *status);
 
 /**
- * A crypto HMAC SHA-512 or SHA-256 function.
+ * A crypto signature or HMAC function.
+ *
+ * Currently used in callbacks for HMAC SHA-512, HMAC SHA-256, and RSA SHA-256
+ * signature.
  *
  * @param[in] ctx An optional context object that may have been set when hooks
  * were enabled.
@@ -1069,5 +1073,11 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx);
 
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
+   mongocrypt_t *crypt,
+   mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
+   void *sign_ctx);
 
 #endif /* MONGOCRYPT_H */

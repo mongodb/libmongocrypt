@@ -36,6 +36,14 @@ csfle create_datakey
     --azure_kek_keyname <string>
     --azure_kek_keyversion <string> (optional)
 
+    GCP options.
+    --gcp_kek_endpoint <string>
+    --gcp_kek_projectid <string>
+    --gcp_kek_location <string>
+    --gcp_kek_keyring <string>
+    --gcp_kek_keyname <string>
+    --gcp_kek_keyversion <string> (optional)
+
 csfle auto_encrypt
     --command <JSON string> or --command_file <string>
     --db <string>
