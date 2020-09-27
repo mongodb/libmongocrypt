@@ -655,11 +655,11 @@ _test_crypto_hook_sign_rsaes_pkcs1_v1_5 (_mongocrypt_tester_t *tester)
 
    ctx = mongocrypt_ctx_new (crypt);
    mongocrypt_ctx_setopt_key_encryption_key (
-      ctx, TEST_BSON ("{'provider': 'gcp', 'projectId': 'test', 'location': "
-                      "'global', 'keyRing': 'ring', 'keyName': 'key'}"));
+      ctx,
+      TEST_BSON ("{'provider': 'gcp', 'projectId': 'test', 'location': "
+                 "'global', 'keyRing': 'ring', 'keyName': 'key'}"));
    ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
 
-   /* _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_KMS); */
    BSON_ASSERT (strstr (call_history->str, "call:_sign_rsaes_pkcs1_v1_5"));
    BSON_ASSERT (strstr (call_history->str, "key:000000"));
 

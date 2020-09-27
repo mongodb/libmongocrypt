@@ -609,7 +609,7 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    bool ret;
    bson_error_t bson_error;
    bson_iter_t iter;
-   uint32_t b64_strlen;
+   size_t outlen;
    char *b64_str;
    int http_status;
    size_t body_len;
@@ -691,13 +691,11 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
       goto fail;
    }
 
-   b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
-   BSON_ASSERT (b64_str);
-   kms->result.data = bson_malloc (b64_strlen + 1);
-   BSON_ASSERT (kms->result.data);
 
-   kms->result.len =
-      kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
+   b64_str = (char *) bson_iter_utf8 (&iter, NULL);
+   BSON_ASSERT (b64_str);
+   kms->result.data = kms_message_b64_to_raw (b64_str, &outlen);
+   kms->result.len = (uint32_t) outlen;
    kms->result.owned = true;
    ret = true;
 fail:
@@ -762,6 +760,8 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
          return _ctx_done_oauth (kms);
       } else if (kms->req_type == MONGOCRYPT_KMS_GCP_ENCRYPT) {
          return _ctx_done_gcp (kms, "ciphertext");
+      } else if (kms->req_type == MONGOCRYPT_KMS_GCP_DECRYPT) {
+         return _ctx_done_gcp (kms, "plaintext");
       } else {
          CLIENT_ERR ("Unknown request type");
          return false;
@@ -1231,6 +1231,73 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    request_string = kms_request_to_string (kms->req);
    if (!request_string) {
       CLIENT_ERR ("error getting GCP KMS encrypt KMS message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+   _mongocrypt_buffer_init (&kms->msg);
+   kms->msg.data = (uint8_t *) request_string;
+   kms->msg.len = (uint32_t) strlen (request_string);
+   kms->msg.owned = true;
+
+   ret = true;
+fail:
+   kms_request_opt_destroy (opt);
+   bson_free (path_and_query);
+   bson_free (payload);
+   bson_free (bearer_token_value);
+   return ret;
+}
+
+bool
+_mongocrypt_kms_ctx_init_gcp_decrypt (mongocrypt_kms_ctx_t *kms,
+                                      _mongocrypt_opts_t *crypt_opts,
+                                      const char *access_token,
+                                      _mongocrypt_key_doc_t *key,
+                                      _mongocrypt_log_t *log)
+{
+   kms_request_opt_t *opt = NULL;
+   mongocrypt_status_t *status;
+   char *path_and_query = NULL;
+   char *payload = NULL;
+   const char *host;
+   char *request_string;
+   bool ret = false;
+   char *bearer_token_value = NULL;
+
+   _init_common (kms, log, MONGOCRYPT_KMS_GCP_DECRYPT);
+   status = kms->status;
+
+   if (key->kek.gcp.endpoint) {
+      kms->endpoint = bson_strdup (key->kek.gcp.endpoint->host_and_port);
+      host = key->kek.gcp.endpoint->host;
+   } else {
+      kms->endpoint = bson_strdup ("cloudkms.googleapis.com");
+      host = kms->endpoint;
+   }
+
+   opt = kms_request_opt_new ();
+   BSON_ASSERT (opt);
+   kms_request_opt_set_connection_close (opt, true);
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
+   kms->req = kms_gcp_request_decrypt_new (host,
+                                           access_token,
+                                           key->kek.gcp.project_id,
+                                           key->kek.gcp.location,
+                                           key->kek.gcp.key_ring,
+                                           key->kek.gcp.key_name,
+                                           key->key_material.data,
+                                           key->key_material.len,
+                                           opt);
+
+   if (kms_request_get_error (kms->req)) {
+      CLIENT_ERR ("error constructing GCP KMS decrypt message: %s",
+                  kms_request_get_error (kms->req));
+      goto fail;
+   }
+
+   request_string = kms_request_to_string (kms->req);
+   if (!request_string) {
+      CLIENT_ERR ("error getting GCP KMS decrypt KMS message: %s",
                   kms_request_get_error (kms->req));
       goto fail;
    }

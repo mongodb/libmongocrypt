@@ -197,13 +197,22 @@ test_mongocrypt_key_parsing (_mongocrypt_tester_t *tester)
    _recreate_and_reset (tester, &key_bson, status, "status", NULL);
    _parse_fails (&key_bson, status, "invalid key, no 'status'");
 
-   /* masterKey: unrecognized field */
+   /* masterKey: azure */
    _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
    bson_concat (
       &key_bson,
       TMP_BSON (
          "{'masterKey': { 'provider': 'azure', 'keyVaultEndpoint': "
          "'abc.example.com', 'keyName': 'test', 'keyVersion': 'abc' }}"));
+   _parse_ok (&key_bson, status);
+
+   /* masterKey: gcp */
+   _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
+   bson_concat (
+      &key_bson,
+      TMP_BSON ("{'masterKey': { 'provider': 'gcp', 'endpoint': "
+                "'abc.example.com', 'projectId': 'project', 'location': "
+                "'global', 'keyRing': 'ring', 'keyName': 'name' }}"));
    _parse_ok (&key_bson, status);
 
    mongocrypt_status_destroy (status);
