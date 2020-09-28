@@ -809,35 +809,8 @@ b64_b64url_test (void)
 void
 kms_response_parser_test (void)
 {
-   FILE *response_file;
    kms_response_parser_t *parser = kms_response_parser_new ();
-   uint8_t buf[512] = {0};
-   int bytes_to_read = 0;
    kms_response_t *response;
-
-   response_file = fopen ("./test/example-response.bin", "rb");
-   ASSERT (response_file);
-
-   while ((bytes_to_read = kms_response_parser_wants_bytes (parser, 512)) > 0) {
-      size_t ret = fread (buf, 1, (size_t) bytes_to_read, response_file);
-
-      ASSERT (kms_response_parser_feed (parser, buf, (int) ret));
-   }
-
-   fclose (response_file);
-
-   response = kms_response_parser_get_response (parser);
-
-   ASSERT (response->status == 200);
-   ASSERT_CMPSTR (response->body->str,
-                  "{\"CiphertextBlob\":\"AQICAHifzrL6n/"
-                  "3uqZyz+z1bJj80DhqPcSAibAaIoYc+HOVP6QEplwbM0wpvU5zsQG/"
-                  "1SBKvAAAAZDBiBgkqhkiG9w0BBwagVTBTAgEAME4GCSqGSIb3DQEHATAeBgl"
-                  "ghkgBZQMEAS4wEQQM5syMJE7RodxDaqYqAgEQgCHMFCnFso4Lih0CNbLT1ki"
-                  "ET0hQyzjgoa9733353GQkGlM=\",\"KeyId\":\"arn:aws:kms:us-east-"
-                  "1:524754917239:key/bd05530b-0a7f-4fbd-8362-ab3667370db0\"}");
-
-   kms_response_destroy (response);
 
    /* the parser resets after returning a response. */
    ASSERT (
@@ -962,6 +935,83 @@ kms_response_parser_test (void)
    ASSERT (strstr (kms_response_parser_error (parser),
                    "Unexpected: exceeded content length"));
    kms_response_parser_destroy (parser);
+}
+
+typedef struct {
+   const char *filepath;
+   const char *expected_body;
+   int max_to_read;
+   int expected_status;
+} parser_testcase_t;
+
+/* File should have \r\n line endings (use /etc/rewrite.py) */
+static void
+parser_testcase_run (parser_testcase_t *testcase)
+{
+   FILE *response_file;
+   kms_response_parser_t *parser;
+   kms_response_t *response;
+   uint8_t buf[512] = {0};
+   int bytes_to_read;
+
+   response_file = fopen (testcase->filepath, "rb");
+   ASSERT (response_file);
+
+   parser = kms_response_parser_new ();
+
+   while ((bytes_to_read = kms_response_parser_wants_bytes (
+              parser, testcase->max_to_read)) > 0) {
+      if (bytes_to_read > testcase->max_to_read) {
+         bytes_to_read = testcase->max_to_read;
+      }
+      size_t ret = fread (buf, 1, (size_t) bytes_to_read, response_file);
+
+      if (!kms_response_parser_feed (parser, buf, (int) ret)) {
+         printf ("feed error: %s\n", parser->error);
+         ASSERT (false);
+      }
+   }
+
+   fclose (response_file);
+
+   ASSERT (0 == kms_response_parser_wants_bytes (parser, 123));
+   response = kms_response_parser_get_response (parser);
+   ASSERT_CMPSTR (testcase->expected_body, response->body->str);
+   ASSERT (response->status == testcase->expected_status);
+
+   kms_response_parser_destroy (parser);
+   kms_response_destroy (response);
+}
+
+static void
+kms_response_parser_files (void)
+{
+   const char *body = "{\"CiphertextBlob\":\"AQICAHifzrL6n/"
+                      "3uqZyz+z1bJj80DhqPcSAibAaIoYc+HOVP6QEplwbM0wpvU5zsQG/"
+                      "1SBKvAAAAZDBiBgkqhkiG9w0BBwagVTBTAgEAME4GCSqGSIb3DQEHATA"
+                      "eBglghkgBZQMEAS4wEQQM5syMJE7RodxDaqYqAgEQgCHMFCnFso4Lih0"
+                      "CNbLT1kiET0hQyzjgoa9733353GQkGlM=\",\"KeyId\":\"arn:aws:"
+                      "kms:us-east-1:524754917239:key/"
+                      "bd05530b-0a7f-4fbd-8362-ab3667370db0\"}";
+   const char *chunked_body =
+      "{\"access_token\":"
+      "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\","
+      "\"expires_in\":3599,\"token_type\":\"Bearer\"}";
+   parser_testcase_t tests[] = {
+      {"./test/example-response.bin", body, 512, 200},
+      {"./test/example-response.bin", body, 1, 200},
+      {"./test/example-chunked-response.bin", chunked_body, 512, 200},
+      {"./test/example-chunked-response.bin", chunked_body, 1, 200},
+      {"./test/example-multi-chunked-response.bin", chunked_body, 512, 200},
+      {"./test/example-multi-chunked-response.bin", chunked_body, 1, 200}};
+   size_t i;
+
+   for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      printf (" parser testcase: %d\n", (int) i);
+      parser_testcase_run (tests + i);
+   }
 }
 
 #define CLEAR(_field)                   \
@@ -1165,6 +1215,7 @@ main (int argc, char *argv[])
    ran_tests |= all_aws_sig_v4_tests (aws_test_suite_dir, selector);
 
    RUN_TEST (kms_response_parser_test);
+   RUN_TEST (kms_response_parser_files);
    RUN_TEST (kms_request_validate_test);
 
    RUN_TEST (kms_signature_test);

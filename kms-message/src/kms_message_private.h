@@ -58,6 +58,8 @@ typedef enum {
    PARSING_STATUS_LINE,
    PARSING_HEADER,
    PARSING_BODY,
+   PARSING_CHUNK_LENGTH,
+   PARSING_CHUNK,
    PARSING_DONE
 } kms_response_parser_state_t;
 
@@ -68,6 +70,14 @@ struct _kms_response_parser_t {
    kms_request_str_t *raw_response;
    int content_length;
    int start; /* start of the current thing getting parsed. */
+
+   /* Support two types of HTTP 1.1 responses.
+    * - "Content-Length: x" header is present, indicating the body length.
+    * - "Transfer-Encoding: chunked" header is present, indicating a stream of
+    * chunks.
+    */
+   bool transfer_encoding_chunked;
+   int chunk_size;
    kms_response_parser_state_t state;
 };
 
