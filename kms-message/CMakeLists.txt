@@ -24,6 +24,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_caller_identity_request.c
    src/kms_decrypt_request.c
    src/kms_encrypt_request.c
+   src/kms_gcp_request.c
    src/kms_kv_list.c
    src/kms_kv_list.h
    src/kms_message.c
@@ -32,6 +33,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
+   src/kms_message/kms_gcp_request.h
    src/kms_message/kms_message.h
    src/kms_message/kms_request.h
    src/kms_message/kms_request_opt.h
@@ -152,6 +154,7 @@ install (
    src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
+   src/kms_message/kms_gcp_request.h
    src/kms_message/kms_message.h
    src/kms_message/kms_message_defines.h
    src/kms_message/kms_request.h
@@ -237,10 +240,17 @@ if(NOT mongoc-1.0_FOUND)
 elseif(DISABLE_NATIVE_CRYPTO)
    message ("test_kms_azure_online target disabled: Not building with native crypto.")
 elseif(ENABLE_ONLINE_TESTS)
-   add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms.c)
+   add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms.c test/test_kms_online_util.c)
    target_include_directories(test_kms_azure_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_include_directories(test_kms_azure_online PRIVATE ${PROJECT_SOURCE_DIR}/src/kms_message)
    target_compile_definitions(test_kms_azure_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
    target_link_libraries(test_kms_azure_online mongo::mongoc_shared)
    target_link_libraries(test_kms_azure_online kms_message_static)
+
+   add_executable(test_kms_gcp_online test/test_kms_gcp_online.c test/test_kms.c test/test_kms_online_util.c)
+   target_include_directories(test_kms_gcp_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
+   target_include_directories(test_kms_gcp_online PRIVATE ${PROJECT_SOURCE_DIR}/src/kms_message)
+   target_compile_definitions(test_kms_gcp_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
+   target_link_libraries(test_kms_gcp_online mongo::mongoc_shared)
+   target_link_libraries(test_kms_gcp_online kms_message_static)
 endif ()
