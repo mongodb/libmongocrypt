@@ -440,8 +440,7 @@ fail:
 }
 
 /* A Azure/GCP oauth KMS context has received full response. Parse out the
- * bearer
- * token or error. */
+ * bearer token or error. */
 static bool
 _ctx_done_oauth (mongocrypt_kms_ctx_t *kms)
 {
@@ -599,7 +598,7 @@ fail:
    return ret;
 }
 
-/* An AWS KMS context has received full response. Parse out the result or error.
+/* A GCP KMS context has received full response. Parse out the result or error.
  */
 static bool
 _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
