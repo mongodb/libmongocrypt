@@ -43,7 +43,9 @@ typedef struct {
    char *endpoint;
    uint64_t creation_date;
    uint64_t update_date;
-   _mongocrypt_azure_kek_t azure_kek;
+   union {
+      _mongocrypt_azure_kek_t azure;
+   } kek;
 } _mongocrypt_key_doc_t;
 
 _mongocrypt_key_alt_name_t *

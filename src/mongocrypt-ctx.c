@@ -544,18 +544,22 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       ctx->vtable.cleanup (ctx);
    }
 
+   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
+      _mongocrypt_endpoint_destroy (ctx->opts.kek.azure.key_vault_endpoint);
+      bson_free (ctx->opts.kek.azure.key_name);
+      bson_free (ctx->opts.kek.azure.key_version);
+   } else if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
+      _mongocrypt_endpoint_destroy (ctx->opts.kek.gcp.endpoint);
+      bson_free (ctx->opts.kek.gcp.project_id);
+      bson_free (ctx->opts.kek.gcp.location);
+      bson_free (ctx->opts.kek.gcp.key_ring);
+      bson_free (ctx->opts.kek.gcp.key_name);
+      bson_free (ctx->opts.kek.gcp.key_version);
+   }
    bson_free (ctx->opts.masterkey_aws_region);
    bson_free (ctx->opts.masterkey_aws_cmk);
    bson_free (ctx->opts.masterkey_aws_endpoint);
-   _mongocrypt_endpoint_destroy (ctx->opts.azure_kek.key_vault_endpoint);
-   bson_free (ctx->opts.azure_kek.key_name);
-   bson_free (ctx->opts.azure_kek.key_version);
-   _mongocrypt_endpoint_destroy (ctx->opts.gcp_kek.endpoint);
-   bson_free (ctx->opts.gcp_kek.project_id);
-   bson_free (ctx->opts.gcp_kek.location);
-   bson_free (ctx->opts.gcp_kek.key_ring);
-   bson_free (ctx->opts.gcp_kek.key_name);
-   bson_free (ctx->opts.gcp_kek.key_version);
+
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
    _mongocrypt_key_alt_name_destroy_all (ctx->opts.key_alt_names);
@@ -868,19 +872,19 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
       if (!_mongocrypt_parse_required_endpoint (
              &as_bson,
              "keyVaultEndpoint",
-             &ctx->opts.azure_kek.key_vault_endpoint,
+             &ctx->opts.kek.azure.key_vault_endpoint,
              ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
 
       if (!_mongocrypt_parse_required_utf8 (
-             &as_bson, "keyName", &ctx->opts.azure_kek.key_name, ctx->status)) {
+             &as_bson, "keyName", &ctx->opts.kek.azure.key_name, ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
 
       if (!_mongocrypt_parse_optional_utf8 (&as_bson,
                                             "keyVersion",
-                                            &ctx->opts.azure_kek.key_version,
+                                            &ctx->opts.kek.azure.key_version,
                                             ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
@@ -888,35 +892,35 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
       ctx->opts.masterkey_kms_provider = MONGOCRYPT_KMS_PROVIDER_AZURE;
    } else if (0 == strcmp (bson_iter_utf8 (&iter, NULL), "gcp")) {
       if (!_mongocrypt_parse_optional_endpoint (
-             &as_bson, "endpoint", &ctx->opts.gcp_kek.endpoint, ctx->status)) {
+             &as_bson, "endpoint", &ctx->opts.kek.gcp.endpoint, ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
 
       if (!_mongocrypt_parse_required_utf8 (&as_bson,
                                             "projectId",
-                                            &ctx->opts.gcp_kek.project_id,
+                                            &ctx->opts.kek.gcp.project_id,
                                             ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
 
       if (!_mongocrypt_parse_required_utf8 (
-             &as_bson, "location", &ctx->opts.gcp_kek.location, ctx->status)) {
+             &as_bson, "location", &ctx->opts.kek.gcp.location, ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
 
       if (!_mongocrypt_parse_required_utf8 (
-             &as_bson, "keyRing", &ctx->opts.gcp_kek.key_ring, ctx->status)) {
+             &as_bson, "keyRing", &ctx->opts.kek.gcp.key_ring, ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
 
       if (!_mongocrypt_parse_required_utf8 (
-             &as_bson, "keyName", &ctx->opts.gcp_kek.key_name, ctx->status)) {
+             &as_bson, "keyName", &ctx->opts.kek.gcp.key_name, ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
 
       if (!_mongocrypt_parse_optional_utf8 (&as_bson,
                                             "keyVersion",
-                                            &ctx->opts.gcp_kek.key_version,
+                                            &ctx->opts.kek.gcp.key_version,
                                             ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }

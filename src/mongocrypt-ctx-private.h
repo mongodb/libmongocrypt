@@ -62,8 +62,12 @@ typedef struct __mongocrypt_ctx_opts_t {
    _mongocrypt_buffer_t key_id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    mongocrypt_encryption_algorithm_t algorithm;
-   _mongocrypt_ctx_opts_azure_kek_t azure_kek;
-   _mongocrypt_ctx_opts_gcp_kek_t gcp_kek;
+
+   /* Determined by the masterkey_kms_provider. */
+   union {
+      _mongocrypt_ctx_opts_azure_kek_t azure;
+      _mongocrypt_ctx_opts_gcp_kek_t gcp;
+   } kek;
 } _mongocrypt_ctx_opts_t;
 
 

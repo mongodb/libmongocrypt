@@ -539,7 +539,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                    &kb->crypt->log,
                    &kb->crypt->opts,
                    /* The key vault endpoint is used to determine the scope. */
-                   key_doc->azure_kek.key_vault_endpoint)) {
+                   key_doc->kek.azure.key_vault_endpoint)) {
                mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
                _key_broker_fail (kb);
                goto done;

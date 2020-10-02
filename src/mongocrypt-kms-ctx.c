@@ -657,7 +657,7 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
 
          CLIENT_ERR ("Error in KMS response '%s', code: '%d'. "
                      "HTTP status=%d",
-                     bson_iter_utf8 (&iter, NULL),
+                     msg,
                      code,
                      http_status);
          goto fail;
@@ -964,8 +964,8 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    status = kms->status;
 
    kms->endpoint =
-      bson_strdup (ctx_opts->azure_kek.key_vault_endpoint->host_and_port);
-   host = ctx_opts->azure_kek.key_vault_endpoint->host;
+      bson_strdup (ctx_opts->kek.azure.key_vault_endpoint->host_and_port);
+   host = ctx_opts->kek.azure.key_vault_endpoint->host;
 
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
@@ -973,8 +973,8 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
    kms->req = kms_azure_request_wrapkey_new (host,
                                              access_token,
-                                             ctx_opts->azure_kek.key_name,
-                                             ctx_opts->azure_kek.key_version,
+                                             ctx_opts->kek.azure.key_name,
+                                             ctx_opts->kek.azure.key_version,
                                              plaintext_key_material->data,
                                              plaintext_key_material->len,
                                              opt);
@@ -1025,8 +1025,8 @@ _mongocrypt_kms_ctx_init_azure_unwrapkey (mongocrypt_kms_ctx_t *kms,
    status = kms->status;
 
    kms->endpoint =
-      bson_strdup (key->azure_kek.key_vault_endpoint->host_and_port);
-   host = key->azure_kek.key_vault_endpoint->host;
+      bson_strdup (key->kek.azure.key_vault_endpoint->host_and_port);
+   host = key->kek.azure.key_vault_endpoint->host;
 
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
@@ -1034,8 +1034,8 @@ _mongocrypt_kms_ctx_init_azure_unwrapkey (mongocrypt_kms_ctx_t *kms,
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
    kms->req = kms_azure_request_unwrapkey_new (host,
                                                access_token,
-                                               key->azure_kek.key_name,
-                                               key->azure_kek.key_version,
+                                               key->kek.azure.key_name,
+                                               key->kek.azure.key_version,
                                                key->key_material.data,
                                                key->key_material.len,
                                                opt);
@@ -1199,9 +1199,9 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    _init_common (kms, log, MONGOCRYPT_KMS_GCP_ENCRYPT);
    status = kms->status;
 
-   if (ctx_opts->gcp_kek.endpoint) {
-      kms->endpoint = bson_strdup (ctx_opts->gcp_kek.endpoint->host_and_port);
-      host = ctx_opts->gcp_kek.endpoint->host;
+   if (ctx_opts->kek.gcp.endpoint) {
+      kms->endpoint = bson_strdup (ctx_opts->kek.gcp.endpoint->host_and_port);
+      host = ctx_opts->kek.gcp.endpoint->host;
    } else {
       kms->endpoint = bson_strdup ("cloudkms.googleapis.com");
       host = kms->endpoint;
@@ -1213,11 +1213,11 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
    kms->req = kms_gcp_request_encrypt_new (host,
                                            access_token,
-                                           ctx_opts->gcp_kek.project_id,
-                                           ctx_opts->gcp_kek.location,
-                                           ctx_opts->gcp_kek.key_ring,
-                                           ctx_opts->gcp_kek.key_name,
-                                           ctx_opts->gcp_kek.key_version,
+                                           ctx_opts->kek.gcp.project_id,
+                                           ctx_opts->kek.gcp.location,
+                                           ctx_opts->kek.gcp.key_ring,
+                                           ctx_opts->kek.gcp.key_name,
+                                           ctx_opts->kek.gcp.key_version,
                                            plaintext_key_material->data,
                                            plaintext_key_material->len,
                                            opt);

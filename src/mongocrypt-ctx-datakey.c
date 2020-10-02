@@ -149,7 +149,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
                 &dkctx->kms,
                 &ctx->crypt->log,
                 &ctx->crypt->opts,
-                ctx->opts.azure_kek.key_vault_endpoint)) {
+                ctx->opts.kek.azure.key_vault_endpoint)) {
             mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail (ctx);
             goto done;
@@ -174,7 +174,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
          if (!_mongocrypt_kms_ctx_init_gcp_auth (&dkctx->kms,
                                                  &ctx->crypt->log,
                                                  &ctx->crypt->opts,
-                                                 ctx->opts.gcp_kek.endpoint)) {
+                                                 ctx->opts.kek.gcp.endpoint)) {
             mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail (ctx);
             goto done;
@@ -363,16 +363,16 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       BSON_CHECK (bson_append_utf8 (
          &child,
          MONGOCRYPT_STR_AND_LEN ("keyVaultEndpoint"),
-         ctx->opts.azure_kek.key_vault_endpoint->host_and_port,
+         ctx->opts.kek.azure.key_vault_endpoint->host_and_port,
          -1));
       BSON_CHECK (bson_append_utf8 (&child,
                                     MONGOCRYPT_STR_AND_LEN ("keyName"),
-                                    ctx->opts.azure_kek.key_name,
+                                    ctx->opts.kek.azure.key_name,
                                     -1));
-      if (ctx->opts.azure_kek.key_version) {
+      if (ctx->opts.kek.azure.key_version) {
          BSON_CHECK (bson_append_utf8 (&child,
                                        MONGOCRYPT_STR_AND_LEN ("keyVersion"),
-                                       ctx->opts.azure_kek.key_version,
+                                       ctx->opts.kek.azure.key_version,
                                        -1));
       }
    } else if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
@@ -381,36 +381,36 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                     MONGOCRYPT_STR_AND_LEN ("gcp")));
       BSON_CHECK (bson_append_utf8 (&child,
                                     MONGOCRYPT_STR_AND_LEN ("projectId"),
-                                    ctx->opts.gcp_kek.project_id,
+                                    ctx->opts.kek.gcp.project_id,
                                     -1));
 
       BSON_CHECK (bson_append_utf8 (&child,
                                     MONGOCRYPT_STR_AND_LEN ("location"),
-                                    ctx->opts.gcp_kek.location,
+                                    ctx->opts.kek.gcp.location,
                                     -1));
 
       BSON_CHECK (bson_append_utf8 (&child,
                                     MONGOCRYPT_STR_AND_LEN ("keyRing"),
-                                    ctx->opts.gcp_kek.key_ring,
+                                    ctx->opts.kek.gcp.key_ring,
                                     -1));
 
       BSON_CHECK (bson_append_utf8 (&child,
                                     MONGOCRYPT_STR_AND_LEN ("keyName"),
-                                    ctx->opts.gcp_kek.key_name,
+                                    ctx->opts.kek.gcp.key_name,
                                     -1));
 
-      if (ctx->opts.gcp_kek.key_version) {
+      if (ctx->opts.kek.gcp.key_version) {
          BSON_CHECK (bson_append_utf8 (&child,
                                        MONGOCRYPT_STR_AND_LEN ("keyVersion"),
-                                       ctx->opts.gcp_kek.key_version,
+                                       ctx->opts.kek.gcp.key_version,
                                        -1));
       }
 
-      if (ctx->opts.gcp_kek.endpoint) {
+      if (ctx->opts.kek.gcp.endpoint) {
          BSON_CHECK (
             bson_append_utf8 (&child,
                               MONGOCRYPT_STR_AND_LEN ("endpoint"),
-                              ctx->opts.gcp_kek.endpoint->host_and_port,
+                              ctx->opts.kek.gcp.endpoint->host_and_port,
                               -1));
       }
    } else {
