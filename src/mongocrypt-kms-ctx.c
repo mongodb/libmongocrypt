@@ -1087,9 +1087,9 @@ _sign_rsaes_pkcs1_v1_5_trampoline (void *ctx,
    status = mongocrypt_status_new ();
    crypt_opts = (_mongocrypt_opts_t *) ctx;
    private_key_bin.data = (uint8_t *) private_key;
-   private_key_bin.len = private_key_len;
+   private_key_bin.len = (uint32_t) private_key_len;
    input_bin.data = (uint8_t *) input;
-   input_bin.len = input_len;
+   input_bin.len = (uint32_t) input_len;
    output_bin.data = (uint8_t *) signature_out;
    output_bin.len = RSAES_PKCS1_V1_5_SIGNATURE_LEN;
 

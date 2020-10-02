@@ -232,6 +232,7 @@ _sign_rsaes_pkcs1_v1_5 (void *ctx,
    _append_bin ("in", in);
 
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
+   memset (out->data, 0, out->len);
 
    _mongocrypt_buffer_copy_from_hex (&tmp, HASH_HEX);
    memcpy (out->data, tmp.data, tmp.len);
