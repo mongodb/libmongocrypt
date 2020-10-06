@@ -144,8 +144,7 @@ _parse_masterkey (bson_iter_t *iter,
       if (0 == strcmp ("keyVaultEndpoint", field) ||
           0 == strcmp ("keyName", field) || 0 == strcmp ("keyVersion", field) ||
           0 == strcmp ("projectId", field) || 0 == strcmp ("location", field) ||
-          0 == strcmp ("keyRing", field) || 0 == strcmp ("keyName", field) ||
-          0 == strcmp ("keyVersion", field)) {
+          0 == strcmp ("keyRing", field)) {
          /* These are parsed after the loop. */
          continue;
       }
