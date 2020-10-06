@@ -96,9 +96,8 @@ send_kms_request (kms_request_t *req, const char *host)
    response_parser = kms_response_parser_new ();
    while ((bytes_to_read =
               kms_response_parser_wants_bytes (response_parser, 1024)) > 0) {
-      bytes_read =
-         (int) mongoc_stream_read (tls_stream, buf, 1024, 0, socket_timeout_ms);
-      printf ("read bytes: %.*s", bytes_read, (char*) buf);
+      bytes_read = (int) mongoc_stream_read (
+         tls_stream, buf, bytes_to_read, 0, socket_timeout_ms);
       if (!kms_response_parser_feed (response_parser, buf, bytes_read)) {
          TEST_ERROR ("read failed: %s",
                      kms_response_parser_error (response_parser));

@@ -108,8 +108,8 @@ typedef struct {
    mongocrypt_t *crypt;
 
    key_returned_t *decryptor_iter;
-   /* TODO: for GCP, make this a list or array of two. */
-   auth_request_t auth_request;
+   auth_request_t auth_request_azure;
+   auth_request_t auth_request_gcp;
 } _mongocrypt_key_broker_t;
 
 void
