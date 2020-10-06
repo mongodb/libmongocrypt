@@ -309,7 +309,7 @@ read_req (const char *path)
    }
 
    while ((line_len = test_getline (&line, &len, f)) != -1) {
-      kms_request_append_payload (request, line, (size_t) line_len);
+      KMS_ASSERT (kms_request_append_payload (request, line, (size_t) line_len));
    }
 
    fclose (f);
@@ -590,7 +590,7 @@ content_length_test (void)
 {
    const char *payload = "foo-payload";
    kms_request_t *request = make_test_request ();
-   kms_request_append_payload (request, payload, strlen (payload));
+   KMS_ASSERT (kms_request_append_payload (request, payload, strlen (payload)));
    test_compare_sreq (request, "test/content_length");
    kms_request_destroy (request);
 }
