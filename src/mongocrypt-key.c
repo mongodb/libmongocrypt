@@ -174,16 +174,16 @@ _parse_masterkey (bson_iter_t *iter,
       if (!_mongocrypt_parse_required_endpoint (
              &kek_doc,
              "keyVaultEndpoint",
-             &out->azure_kek.key_vault_endpoint,
+             &out->kek.azure.key_vault_endpoint,
              status)) {
          return false;
       }
       if (!_mongocrypt_parse_required_utf8 (
-             &kek_doc, "keyName", &out->azure_kek.key_name, status)) {
+             &kek_doc, "keyName", &out->kek.azure.key_name, status)) {
          return false;
       }
       if (!_mongocrypt_parse_optional_utf8 (
-             &kek_doc, "keyVersion", &out->azure_kek.key_version, status)) {
+             &kek_doc, "keyVersion", &out->kek.azure.key_version, status)) {
          return false;
       }
    }
@@ -420,9 +420,9 @@ _mongocrypt_key_destroy (_mongocrypt_key_doc_t *key)
    bson_free (key->masterkey_region);
    bson_free (key->masterkey_cmk);
    bson_free (key->endpoint);
-   _mongocrypt_endpoint_destroy (key->azure_kek.key_vault_endpoint);
-   bson_free (key->azure_kek.key_name);
-   bson_free (key->azure_kek.key_version);
+   _mongocrypt_endpoint_destroy (key->kek.azure.key_vault_endpoint);
+   bson_free (key->kek.azure.key_name);
+   bson_free (key->kek.azure.key_version);
    bson_destroy (&key->bson);
    bson_free (key);
 }
@@ -443,9 +443,9 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
    dst->masterkey_provider = src->masterkey_provider;
    dst->masterkey_region = bson_strdup (src->masterkey_region);
    dst->masterkey_cmk = bson_strdup (src->masterkey_cmk);
-   dst->azure_kek.key_name = bson_strdup (src->azure_kek.key_name);
-   dst->azure_kek.key_version = bson_strdup (src->azure_kek.key_version);
-   dst->azure_kek.key_vault_endpoint = _mongocrypt_endpoint_copy (src->azure_kek.key_vault_endpoint);
+   dst->kek.azure.key_name = bson_strdup (src->kek.azure.key_name);
+   dst->kek.azure.key_version = bson_strdup (src->kek.azure.key_version);
+   dst->kek.azure.key_vault_endpoint = _mongocrypt_endpoint_copy (src->kek.azure.key_vault_endpoint);
 }
 
 _mongocrypt_key_alt_name_t *

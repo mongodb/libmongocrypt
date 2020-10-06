@@ -640,7 +640,20 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "Invalid endpoint"},
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
       {"{'aws': {}}", "unsupported KMS provider"},
-      {"{'local': {}}", "unsupported KMS provider"}};
+      {"{'local': {}}", "unsupported KMS provider"},
+      /* either base64 string or binary is acceptable for privateKey */
+      {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
+       "'privateKey': 'AAAA' }}"},
+      {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
+       "'privateKey': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}"},
+      /* endpoint is not required. */
+      {"{'gcp': {'email': 'test', 'privateKey': 'AAAA' }}"},
+      {"{'gcp': {'privateKey': 'AAAA'}}", "expected UTF-8 gcp.email"},
+      {"{'gcp': {'email': 'test', 'privateKey': 'invalid base64' }}",
+       "unable to parse base64"},
+      {"{'gcp': {'endpoint': 'example', 'email': 'test', 'privateKey': "
+       "'AAAA'}}",
+       "Invalid endpoint"}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;

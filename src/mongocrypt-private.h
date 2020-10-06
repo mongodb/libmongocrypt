@@ -83,6 +83,7 @@ struct _mongocrypt_t {
    /* A counter, protected by mutex, for generating unique context ids */
    uint32_t ctx_counter;
    _mongocrypt_cache_oauth_t *cache_oauth_azure;
+   _mongocrypt_cache_oauth_t *cache_oauth_gcp;
 };
 
 typedef enum {

@@ -84,11 +84,12 @@ kms_gcp_request_oauth_new (const char *host,
    req->crypto.sign_rsaes_pkcs1_v1_5 = kms_sign_rsaes_pkcs1_v1_5;
    if (opt->crypto.sign_rsaes_pkcs1_v1_5) {
       req->crypto.sign_rsaes_pkcs1_v1_5 = opt->crypto.sign_rsaes_pkcs1_v1_5;
+      req->crypto.sign_ctx = opt->crypto.sign_ctx;
    }
 
    jwt_signature = malloc (SIGNATURE_LEN);
    if (!req->crypto.sign_rsaes_pkcs1_v1_5 (
-          req->crypto.ctx,
+          req->crypto.sign_ctx,
           private_key_data,
           private_key_len,
           jwt_header_and_claims_b64url,

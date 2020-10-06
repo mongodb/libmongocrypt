@@ -217,15 +217,47 @@ _random (void *ctx,
    return true;
 }
 
+bool
+_sign_rsaes_pkcs1_v1_5 (void *ctx,
+                        mongocrypt_binary_t *key,
+                        mongocrypt_binary_t *in,
+                        mongocrypt_binary_t *out,
+                        mongocrypt_status_t *status)
+{
+   _mongocrypt_buffer_t tmp;
+
+   BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
+   bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
+   _append_bin ("key", key);
+   _append_bin ("in", in);
+
+   bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
+   memset (out->data, 0, out->len);
+
+   _mongocrypt_buffer_copy_from_hex (&tmp, HASH_HEX);
+   memcpy (out->data, tmp.data, tmp.len);
+   _mongocrypt_buffer_cleanup (&tmp);
+   if (0 == strcmp ((char *) ctx, "error_on:sign_rsaes_pkcs1_v1_5")) {
+      mongocrypt_status_set (
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, "error message", -1);
+      return false;
+   }
+   return true;
+}
 
 static mongocrypt_t *
-_create_mongocrypt (const char *error_on)
+_create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
 {
    bool ret;
 
    mongocrypt_t *crypt = mongocrypt_new ();
    ASSERT_OK (
       mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON ("{'gcp': { 'email': 'test', 'privateKey': 'AAAA'}}")),
       crypt);
    ret = mongocrypt_setopt_crypto_hooks (crypt,
                                          _aes_256_cbc_encrypt,
@@ -235,6 +267,9 @@ _create_mongocrypt (const char *error_on)
                                          _hmac_sha_256,
                                          _sha_256,
                                          (void *) error_on);
+   ASSERT_OK (ret, crypt);
+   ret = mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
+      crypt, _sign_rsaes_pkcs1_v1_5, (void *) error_on);
    ASSERT_OK (ret, crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    return crypt;
@@ -262,7 +297,7 @@ _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
       "ret:_hmac_sha_512\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt (error_on);
+   crypt = _create_mongocrypt (tester, error_on);
 
    _mongocrypt_buffer_copy_from_hex (&iv, IV_HEX);
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
@@ -347,7 +382,7 @@ _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
       "ret:_aes_256_cbc_decrypt\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt (error_on);
+   crypt = _create_mongocrypt (tester, error_on);
 
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
    _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
@@ -414,7 +449,7 @@ _test_crypto_hooks_iv_gen_helper (_mongocrypt_tester_t *tester, char *error_on)
                                        "ret:_hmac_sha_512\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt (error_on);
+   crypt = _create_mongocrypt (tester, error_on);
 
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
    _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
@@ -471,7 +506,7 @@ _test_crypto_hooks_random_helper (_mongocrypt_tester_t *tester,
                                        "ret:_random\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt (error_on);
+   crypt = _create_mongocrypt (tester, error_on);
 
    _mongocrypt_buffer_init (&random);
    _mongocrypt_buffer_resize (&random, 96);
@@ -513,7 +548,7 @@ _test_kms_request (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt ("error_on:none");
+   crypt = _create_mongocrypt (tester, "error_on:none");
    ctx = mongocrypt_ctx_new (crypt);
 
    call_history = bson_string_new (NULL);
@@ -560,7 +595,7 @@ _test_crypto_hooks_explicit_err (_mongocrypt_tester_t *tester)
    call_history = bson_string_new (NULL);
 
    /* error on something during encryption. */
-   crypt = _create_mongocrypt ("error_on:hmac_sha512");
+   crypt = _create_mongocrypt (tester, "error_on:hmac_sha512");
 
    ctx = mongocrypt_ctx_new (crypt);
    key_id = mongocrypt_binary_new_from_data (
@@ -592,7 +627,7 @@ _test_crypto_hooks_explicit_sha256_err (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt ("error_on:sha256");
+   crypt = _create_mongocrypt (tester, "error_on:sha256");
    ctx = mongocrypt_ctx_new (crypt);
 
    call_history = bson_string_new (NULL);
@@ -600,7 +635,8 @@ _test_crypto_hooks_explicit_sha256_err (_mongocrypt_tester_t *tester)
    ASSERT_OK (
       mongocrypt_ctx_setopt_masterkey_aws (ctx, "us-east-1", -1, "cmk", -1),
       ctx);
-   ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx), ctx, "failed to create KMS message");
+   ASSERT_FAILS (
+      mongocrypt_ctx_datakey_init (ctx), ctx, "failed to create KMS message");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_status_destroy (status);
@@ -608,6 +644,29 @@ _test_crypto_hooks_explicit_sha256_err (_mongocrypt_tester_t *tester)
    bson_string_free (call_history, true);
 }
 
+static void
+_test_crypto_hook_sign_rsaes_pkcs1_v1_5 (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _create_mongocrypt (tester, "error_on:none");
+   call_history = bson_string_new (NULL);
+
+   ctx = mongocrypt_ctx_new (crypt);
+   mongocrypt_ctx_setopt_key_encryption_key (
+      ctx, TEST_BSON ("{'provider': 'gcp', 'projectId': 'test', 'location': "
+                      "'global', 'keyRing': 'ring', 'keyName': 'key'}"));
+   ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+
+   /* _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_KMS); */
+   BSON_ASSERT (strstr (call_history->str, "call:_sign_rsaes_pkcs1_v1_5"));
+   BSON_ASSERT (strstr (call_history->str, "key:000000"));
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+   bson_string_free (call_history, true);
+}
 
 void
 _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
@@ -619,5 +678,8 @@ _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
    INSTALL_TEST_CRYPTO (_test_kms_request, CRYPTO_OPTIONAL);
    INSTALL_TEST_CRYPTO (_test_crypto_hooks_unset, CRYPTO_PROHIBITED);
    INSTALL_TEST_CRYPTO (_test_crypto_hooks_explicit_err, CRYPTO_OPTIONAL);
-   INSTALL_TEST_CRYPTO (_test_crypto_hooks_explicit_sha256_err, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_crypto_hooks_explicit_sha256_err,
+                        CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_crypto_hook_sign_rsaes_pkcs1_v1_5,
+                        CRYPTO_OPTIONAL);
 }

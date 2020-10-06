@@ -74,7 +74,8 @@ set_kms_providers (mongocrypt_t *crypt, bson_t *args)
       mongocrypt_binary_destroy (bin);
    }
 
-   if (bson_iter_init_find (&iter, kms_providers, "azure")) {
+   if (bson_iter_init_find (&iter, kms_providers, "azure") ||
+       bson_iter_init_find (&iter, kms_providers, "gcp")) {
       bson_t tmp;
 
       bson_init (&tmp);
@@ -216,20 +217,17 @@ fn_createdatakey (bson_t *args)
       }
    } else if (0 == strcmp ("azure", kms_provider)) {
       bson_t azure_kek = BSON_INITIALIZER;
-      const char *keyvaultendpoint;
-      const char *keyname;
-      const char *keyversion;
-
-      keyvaultendpoint =
-         bson_get_utf8 (args, "azure_kek_keyvaultendpoint", NULL);
-      keyname = bson_req_utf8 (args, "azure_kek_keyname");
-      keyversion = bson_get_utf8 (args, "azure_kek_keyversion", NULL);
 
       BSON_APPEND_UTF8 (&azure_kek, "provider", "azure");
-      BSON_APPEND_UTF8 (&azure_kek, "keyVaultEndpoint", keyvaultendpoint);
-      BSON_APPEND_UTF8 (&azure_kek, "keyName", keyname);
-      if (keyversion) {
-         BSON_APPEND_UTF8 (&azure_kek, "keyVersion", keyversion);
+      BSON_APPEND_UTF8 (&azure_kek,
+                        "keyVaultEndpoint",
+                        bson_req_utf8 (args, "azure_kek_keyvaultendpoint"));
+      BSON_APPEND_UTF8 (
+         &azure_kek, "keyName", bson_req_utf8 (args, "azure_kek_keyname"));
+      if (bson_has_field (args, "azure_kek_keyversion")) {
+         BSON_APPEND_UTF8 (&azure_kek,
+                           "keyVersion",
+                           bson_req_utf8 (args, "azure_kek_keyversion"));
       }
 
       bin = util_bson_to_bin (&azure_kek);
@@ -238,6 +236,35 @@ fn_createdatakey (bson_t *args)
       }
       mongocrypt_binary_destroy (bin);
       bson_destroy (&azure_kek);
+   } else if (0 == strcmp ("gcp", kms_provider)) {
+      bson_t gcp_kek = BSON_INITIALIZER;
+
+      BSON_APPEND_UTF8 (&gcp_kek, "provider", "gcp");
+      if (bson_has_field (args, "gcp_kek_endpoint")) {
+         BSON_APPEND_UTF8 (
+            &gcp_kek, "endpoint", bson_req_utf8 (args, "gcp_kek_endpoint"));
+      }
+
+      BSON_APPEND_UTF8 (
+         &gcp_kek, "projectId", bson_req_utf8 (args, "gcp_kek_projectid"));
+      BSON_APPEND_UTF8 (
+         &gcp_kek, "location", bson_req_utf8 (args, "gcp_kek_location"));
+      BSON_APPEND_UTF8 (
+         &gcp_kek, "keyRing", bson_req_utf8 (args, "gcp_kek_keyring"));
+      BSON_APPEND_UTF8 (
+         &gcp_kek, "keyName", bson_req_utf8 (args, "gcp_kek_keyname"));
+
+      if (bson_has_field (args, "gcp_kek_keyversion")) {
+         BSON_APPEND_UTF8 (
+            &gcp_kek, "keyVersion", bson_req_utf8 (args, "gcp_kek_keyversion"));
+      }
+
+      bin = util_bson_to_bin (&gcp_kek);
+      if (!mongocrypt_ctx_setopt_key_encryption_key (ctx, bin)) {
+         ERREXIT_CTX (ctx);
+      }
+      mongocrypt_binary_destroy (bin);
+      bson_destroy (&gcp_kek);
    } else {
       ERREXIT ("Unknown KMS provider: %s", kms_provider);
    }

@@ -31,13 +31,14 @@ typedef struct {
                         const char *input,
                         size_t len,
                         unsigned char *hash_out);
-   bool (*sign_rsaes_pkcs1_v1_5) (void *ctx,
+   bool (*sign_rsaes_pkcs1_v1_5) (void *sign_ctx,
                                   const char *private_key,
                                   size_t private_key_len,
                                   const char *input,
                                   size_t input_len,
                                   unsigned char *signature_out);
    void *ctx;
+   void *sign_ctx;
 } _kms_crypto_t;
 
 int
@@ -59,7 +60,7 @@ kms_sha256_hmac (void *ctx,
 
 /* signature_out must be a preallocated buffer of 256 bytes (or greater). */
 bool
-kms_sign_rsaes_pkcs1_v1_5 (void *unused_ctx,
+kms_sign_rsaes_pkcs1_v1_5 (void *sign_ctx,
                            const char *private_key,
                            size_t private_key_len,
                            const char *input,

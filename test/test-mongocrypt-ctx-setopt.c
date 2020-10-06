@@ -208,6 +208,43 @@ _test_setopt_key_encryption_key_azure (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_setopt_key_encryption_key_gcp (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx = NULL;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+
+   /* Test double setting. */
+   REFRESH;
+   KEY_ENCRYPTION_KEY_OK (
+      TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
+                 "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"));
+   KEY_ENCRYPTION_KEY_FAILS (
+      TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
+                 "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"),
+      "key encryption key already set");
+
+   /* Cannot be set when another masterkey is set. */
+   REFRESH;
+   MASTERKEY_LOCAL_OK;
+   KEY_ENCRYPTION_KEY_FAILS (
+      TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
+                 "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"),
+      "key encryption key already set");
+
+   REFRESH;
+   _mongocrypt_ctx_fail_w_msg (ctx, "test");
+   KEY_ENCRYPTION_KEY_FAILS (
+      TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
+                 "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"),
+      "test");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 
 static void
 _test_setopt_key_id (_mongocrypt_tester_t *tester)
@@ -741,6 +778,7 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_key_alt_name (tester);
    _test_setopt_endpoint (tester);
    _test_setopt_key_encryption_key_azure (tester);
+   _test_setopt_key_encryption_key_gcp (tester);
 
    /* Test options on different contexts */
    _test_setopt_for_datakey (tester);
