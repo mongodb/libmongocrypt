@@ -30,6 +30,8 @@ public class MongoCryptOptions {
 
     private final MongoAwsKmsProviderOptions awsKmsProviderOptions;
     private final MongoLocalKmsProviderOptions localKmsProviderOptions;
+    private final BsonDocument kmsProviderOptions;
+
     private final Map<String, BsonDocument> localSchemaMap;
 
     /**
@@ -60,6 +62,16 @@ public class MongoCryptOptions {
     }
 
     /**
+     * Returns the KMS provider options.
+     *
+     * @return the KMS provider options, which may be null
+     * @since 1.1
+     */
+    public BsonDocument getKmsProviderOptions() {
+        return kmsProviderOptions;
+    }
+
+    /**
      * Gets the local schema map.
      *
      * @return the local schema map
@@ -74,6 +86,7 @@ public class MongoCryptOptions {
     public static class Builder {
         private MongoAwsKmsProviderOptions awsKmsProviderOptions;
         private MongoLocalKmsProviderOptions localKmsProviderOptions;
+        private BsonDocument kmsProviderOptions = null;
         private Map<String, BsonDocument> localSchemaMap = null;
 
         private Builder() {
@@ -102,6 +115,18 @@ public class MongoCryptOptions {
         }
 
         /**
+         * Sets the KMS provider options.
+         *
+         * @param kmsProviderOptions the KMS provider options document
+         * @return this
+         * @since 1.1
+         */
+        public Builder kmsProviderOptions(final BsonDocument kmsProviderOptions) {
+            this.kmsProviderOptions = kmsProviderOptions;
+            return this;
+        }
+
+        /**
          * Sets the local schema map.
          *
          * @param localSchemaMap local schema map
@@ -124,9 +149,11 @@ public class MongoCryptOptions {
 
     private MongoCryptOptions(final Builder builder) {
         isTrue("at least one KMS provider is configured",
-                builder.awsKmsProviderOptions != null || builder.localKmsProviderOptions != null);
+                builder.awsKmsProviderOptions != null || builder.localKmsProviderOptions != null
+                        || builder.kmsProviderOptions != null );
         this.awsKmsProviderOptions = builder.awsKmsProviderOptions;
         this.localKmsProviderOptions = builder.localKmsProviderOptions;
+        this.kmsProviderOptions = builder.kmsProviderOptions;
         this.localSchemaMap = builder.localSchemaMap;
     }
 }

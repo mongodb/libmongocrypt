@@ -1,4 +1,4 @@
-# mongocrypt Java Wrapper#
+# mongocrypt Java Wrapper #
 The Java wrapper for the companion C library for client side encryption in drivers.
 
 
