@@ -23,22 +23,7 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-endpoint-private.h"
-
-/* KMS providers are used in a bit set.
- *
- * Check for set membership using bitwise and:
- *   int kms_set = fn();
- *   if (kms_set & MONGOCRYPT_KMS_PROVIDER_AWS)
- * Add to a set using bitwise or:
- *   kms_set |= MONGOCRYPT_KMS_PROVIDER_LOCAL
- */
-typedef enum {
-   MONGOCRYPT_KMS_PROVIDER_NONE = 0,
-   MONGOCRYPT_KMS_PROVIDER_AWS = 1 << 0,
-   MONGOCRYPT_KMS_PROVIDER_LOCAL = 1 << 1,
-   MONGOCRYPT_KMS_PROVIDER_AZURE = 1 << 2,
-   MONGOCRYPT_KMS_PROVIDER_GCP = 1 << 3
-} _mongocrypt_kms_provider_t;
+#include "mongocrypt-kek-private.h"
 
 typedef struct {
    char *tenant_id;
@@ -89,7 +74,7 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
  * Returns true if no error occured.
  */
 bool
-_mongocrypt_parse_optional_utf8 (bson_t *bson,
+_mongocrypt_parse_optional_utf8 (const bson_t *bson,
                                  const char *dotkey,
                                  char **out,
                                  mongocrypt_status_t *status);
@@ -102,7 +87,7 @@ _mongocrypt_parse_optional_utf8 (bson_t *bson,
  * Returns true if no error occured.
  */
 bool
-_mongocrypt_parse_required_utf8 (bson_t *bson,
+_mongocrypt_parse_required_utf8 (const bson_t *bson,
                                  const char *dotkey,
                                  char **out,
                                  mongocrypt_status_t *status);
@@ -115,7 +100,7 @@ _mongocrypt_parse_required_utf8 (bson_t *bson,
  * Returns true if no error occured.
  */
 bool
-_mongocrypt_parse_optional_endpoint (bson_t *bson,
+_mongocrypt_parse_optional_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
                                      mongocrypt_status_t *status);
@@ -128,7 +113,7 @@ _mongocrypt_parse_optional_endpoint (bson_t *bson,
  * Returns true if no error occured.
  */
 bool
-_mongocrypt_parse_required_endpoint (bson_t *bson,
+_mongocrypt_parse_required_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
                                      mongocrypt_status_t *status);
@@ -145,7 +130,7 @@ _mongocrypt_parse_required_endpoint (bson_t *bson,
  * Returns true if no error occurred.
  */
 bool
-_mongocrypt_parse_optional_binary (bson_t *bson,
+_mongocrypt_parse_optional_binary (const bson_t *bson,
                                    const char *dotkey,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status);
@@ -162,7 +147,7 @@ _mongocrypt_parse_optional_binary (bson_t *bson,
  * Returns true if no error occurred.
  */
 bool
-_mongocrypt_parse_required_binary (bson_t *bson,
+_mongocrypt_parse_required_binary (const bson_t *bson,
                                    const char *dotkey,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status);

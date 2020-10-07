@@ -19,3 +19,7 @@
 /* Iterate a document or array into a bson_t. */
 void
 bson_iter_bson (bson_iter_t *iter, bson_t *bson);
+
+/* Copied from libmongoc. */
+void
+_assert_match_bson (const bson_t *doc, const bson_t *pattern);

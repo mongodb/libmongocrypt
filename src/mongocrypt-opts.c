@@ -87,7 +87,7 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
 }
 
 bool
-_mongocrypt_parse_optional_utf8 (bson_t *bson,
+_mongocrypt_parse_optional_utf8 (const bson_t *bson,
                                  const char *dotkey,
                                  char **out,
                                  mongocrypt_status_t *status)
@@ -116,7 +116,7 @@ _mongocrypt_parse_optional_utf8 (bson_t *bson,
 
 
 bool
-_mongocrypt_parse_required_utf8 (bson_t *bson,
+_mongocrypt_parse_required_utf8 (const bson_t *bson,
                                  const char *dotkey,
                                  char **out,
                                  mongocrypt_status_t *status)
@@ -134,7 +134,7 @@ _mongocrypt_parse_required_utf8 (bson_t *bson,
 }
 
 bool
-_mongocrypt_parse_optional_endpoint (bson_t *bson,
+_mongocrypt_parse_optional_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
                                      mongocrypt_status_t *status)
@@ -158,7 +158,7 @@ _mongocrypt_parse_optional_endpoint (bson_t *bson,
 }
 
 bool
-_mongocrypt_parse_required_endpoint (bson_t *bson,
+_mongocrypt_parse_required_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
                                      mongocrypt_status_t *status)
@@ -177,7 +177,7 @@ _mongocrypt_parse_required_endpoint (bson_t *bson,
 
 
 bool
-_mongocrypt_parse_optional_binary (bson_t *bson,
+_mongocrypt_parse_optional_binary (const bson_t *bson,
                                    const char *dotkey,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status)
@@ -221,7 +221,7 @@ _mongocrypt_parse_optional_binary (bson_t *bson,
 }
 
 bool
-_mongocrypt_parse_required_binary (bson_t *bson,
+_mongocrypt_parse_required_binary (const bson_t *bson,
                                    const char *dotkey,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status)

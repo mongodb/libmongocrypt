@@ -556,7 +556,6 @@ _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b)
    bson_free (msg);
 }
 
-
 static void
 _test_setopt_schema (_mongocrypt_tester_t *tester)
 {
@@ -718,6 +717,7 @@ main (int argc, char **argv)
                                "_test_setopt_kms_providers",
                                _test_setopt_kms_providers,
                                CRYPTO_OPTIONAL);
+   _mongocrypt_tester_install_kek (&tester);
 
 
    printf ("Running tests...\n");
