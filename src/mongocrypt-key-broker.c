@@ -428,7 +428,7 @@ _decrypt_with_local_kms (_mongocrypt_key_broker_t *kb,
 
    crypt_ret = _mongocrypt_do_decryption (kb->crypt->crypto,
                                           NULL /* associated data. */,
-                                          &kb->crypt->opts.kms_local_key,
+                                          &kb->crypt->opts.kms_provider_local.key,
                                           key_material,
                                           decrypted_key_material,
                                           &bytes_written,

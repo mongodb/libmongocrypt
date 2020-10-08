@@ -51,9 +51,9 @@ _mongocrypt_opts_kms_provider_gcp_cleanup (
 void
 _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
-   bson_free (opts->kms_aws_secret_access_key);
-   bson_free (opts->kms_aws_access_key_id);
-   _mongocrypt_buffer_cleanup (&opts->kms_local_key);
+   bson_free (opts->kms_provider_aws.secret_access_key);
+   bson_free (opts->kms_provider_aws.access_key_id);
+   _mongocrypt_buffer_cleanup (&opts->kms_provider_local.key);
    _mongocrypt_buffer_cleanup (&opts->schema_map);
    _mongocrypt_opts_kms_provider_azure_cleanup (&opts->kms_provider_azure);
    _mongocrypt_opts_kms_provider_gcp_cleanup (&opts->kms_provider_gcp);
@@ -70,14 +70,14 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
    }
 
    if (opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
-      if (!opts->kms_aws_access_key_id || !opts->kms_aws_secret_access_key) {
+      if (!opts->kms_provider_aws.access_key_id || !opts->kms_provider_aws.secret_access_key) {
          CLIENT_ERR ("aws credentials unset");
          return false;
       }
    }
 
    if (opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
-      if (_mongocrypt_buffer_empty (&opts->kms_local_key)) {
+      if (_mongocrypt_buffer_empty (&opts->kms_provider_local.key)) {
          CLIENT_ERR ("local data key unset");
          return false;
       }

@@ -145,12 +145,12 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
       return false;
    }
 
-   if (!crypt_opts->kms_aws_access_key_id) {
+   if (!crypt_opts->kms_provider_aws.access_key_id) {
       CLIENT_ERR ("aws access key id not provided");
       return false;
    }
 
-   if (!crypt_opts->kms_aws_secret_access_key) {
+   if (!crypt_opts->kms_provider_aws.secret_access_key) {
       CLIENT_ERR ("aws secret access key not provided");
       return false;
    }
@@ -190,12 +190,12 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    }
 
    if (!kms_request_set_access_key_id (kms->req,
-                                       crypt_opts->kms_aws_access_key_id)) {
+                                       crypt_opts->kms_provider_aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
       return false;
    }
    if (!kms_request_set_secret_key (kms->req,
-                                    crypt_opts->kms_aws_secret_access_key)) {
+                                    crypt_opts->kms_provider_aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
    }
 
@@ -255,12 +255,12 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
       return false;
    }
 
-   if (!crypt_opts->kms_aws_access_key_id) {
+   if (!crypt_opts->kms_provider_aws.access_key_id) {
       CLIENT_ERR ("aws access key id not provided");
       return false;
    }
 
-   if (!crypt_opts->kms_aws_secret_access_key) {
+   if (!crypt_opts->kms_provider_aws.secret_access_key) {
       CLIENT_ERR ("aws secret access key not provided");
       return false;
    }
@@ -301,12 +301,12 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    }
 
    if (!kms_request_set_access_key_id (kms->req,
-                                       crypt_opts->kms_aws_access_key_id)) {
+                                       crypt_opts->kms_provider_aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
       return false;
    }
    if (!kms_request_set_secret_key (kms->req,
-                                    crypt_opts->kms_aws_secret_access_key)) {
+                                    crypt_opts->kms_provider_aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
    }
 

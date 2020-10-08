@@ -39,13 +39,22 @@ typedef struct {
 } _mongocrypt_opts_kms_provider_gcp_t;
 
 typedef struct {
-   int kms_providers; /* A bit set of _mongocrypt_kms_provider_t */
-   char *kms_aws_secret_access_key;    /* Set for AWS provider. */
-   char *kms_aws_access_key_id;        /* Set for AWS provider. */
-   _mongocrypt_buffer_t kms_local_key; /* Set for local provider. */
+   char *secret_access_key;
+   char *access_key_id;
+} _mongocrypt_opts_kms_provider_aws_t;
+
+typedef struct {
+   _mongocrypt_buffer_t key;
+} _mongocrypt_opts_kms_provider_local_t;
+
+typedef struct {
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
    _mongocrypt_buffer_t schema_map;
+   
+   int kms_providers; /* A bit set of _mongocrypt_kms_provider_t */
+   _mongocrypt_opts_kms_provider_local_t kms_provider_local;
+   _mongocrypt_opts_kms_provider_aws_t kms_provider_aws;
    _mongocrypt_opts_kms_provider_azure_t kms_provider_azure;
    _mongocrypt_opts_kms_provider_gcp_t kms_provider_gcp;
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;

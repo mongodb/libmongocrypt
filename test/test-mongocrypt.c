@@ -638,8 +638,12 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "'identityPlatformEndpoint': 'example' }}",
        "Invalid endpoint"},
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
-      {"{'aws': {}}", "unsupported KMS provider"},
-      {"{'local': {}}", "unsupported KMS provider"},
+      {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
+      {"{'aws': {}}", "expected UTF-8 aws.accessKeyId"},
+      {"{'local': {'key': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}", NULL},
+      {"{'local': {'key': 'AAAA' }}", NULL},
+      {"{'local': {'key': 'invalid base64' }}", "unable to parse base64"},
+      {"{'local': {}}", "expected UTF-8 or binary local.key"},
       /* either base64 string or binary is acceptable for privateKey */
       {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
        "'privateKey': 'AAAA' }}"},

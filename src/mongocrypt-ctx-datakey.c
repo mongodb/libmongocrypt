@@ -95,7 +95,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
       crypt_ret = _mongocrypt_do_encryption (ctx->crypt->crypto,
                                              &iv,
                                              NULL /* associated data. */,
-                                             &ctx->crypt->opts.kms_local_key,
+                                             &ctx->crypt->opts.kms_provider_local.key,
                                              &dkctx->plaintext_key_material,
                                              &dkctx->encrypted_key_material,
                                              &bytes_written,
