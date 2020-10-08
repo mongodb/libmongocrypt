@@ -1087,8 +1087,6 @@ kms_request_validate_test (void)
 static void
 kms_signature_test (void)
 {
-#if defined(KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO) || \
-   defined(KMS_MESSAGE_ENABLE_CRYPTO_COMMON_CRYPTO)
    const char *private_key_b64 =
       "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4JOyv5z05cL18ztpknRC7"
       "CFY2gYol4DAKerdVUoDJxCTmFMf39dVUEqD0WDiw/qcRtSO1/"
@@ -1161,9 +1159,6 @@ kms_signature_test (void)
    free (signature_b64);
 
    KMS_ASSERT (!ret);
-#else
-   return;
-#endif
 }
 
 #define RUN_TEST(_func)                                          \
