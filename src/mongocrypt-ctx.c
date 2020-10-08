@@ -564,7 +564,7 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
    mongocrypt_binary_t *bin;
    bson_t as_bson;
    bool ret;
-   char *temp;
+   char *temp = NULL;
 
    if (!ctx) {
       return false;
@@ -577,18 +577,27 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
       return false;
    }
 
-   if (ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_NONE) {
+   if (ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_AWS &&
+       ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "master key already set");
+   }
+
+   if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS &&
+       ctx->opts.kek.provider.aws.region) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "master key already set");
    }
 
    if (!_mongocrypt_validate_and_copy_string (region, region_len, &temp) ||
        region_len == 0) {
+      bson_free (temp);
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid region");
    }
    bson_free (temp);
 
+   temp = NULL;
    if (!_mongocrypt_validate_and_copy_string (cmk, cmk_len, &temp) ||
        cmk_len == 0) {
+      bson_free (temp);
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid cmk");
    }
    bson_free (temp);
@@ -817,6 +826,8 @@ mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
        ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_NONE) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "endpoint prohibited");
    }
+
+   ctx->opts.kek.kms_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
 
    if (ctx->opts.kek.provider.aws.endpoint) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "already set masterkey endpoint");
