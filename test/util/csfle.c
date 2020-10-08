@@ -39,7 +39,6 @@ static void
 set_kms_providers (mongocrypt_t *crypt, bson_t *args)
 {
    bson_t *kms_providers;
-   bson_iter_t iter;
    mongocrypt_binary_t *bin;
 
    kms_providers = bson_get_json (args, "kms_providers_file");
@@ -47,47 +46,11 @@ set_kms_providers (mongocrypt_t *crypt, bson_t *args)
       kms_providers = util_read_json_file (".csfle/kms_providers.json");
    }
 
-   if (bson_iter_init_find (&iter, kms_providers, "aws")) {
-      const char *secret_access_key =
-         bson_req_utf8 (kms_providers, "aws.secretAccessKey");
-      const char *access_key_id =
-         bson_req_utf8 (kms_providers, "aws.accessKeyId");
-
-      if (!mongocrypt_setopt_kms_provider_aws (
-             crypt, access_key_id, -1, secret_access_key, -1)) {
-         ERREXIT_MONGOCRYPT (crypt);
-      }
+   bin = util_bson_to_bin (kms_providers);
+   if (!mongocrypt_setopt_kms_providers (crypt, bin)) {
+      ERREXIT_MONGOCRYPT (crypt);
    }
-
-   if (bson_iter_init_find (&iter, kms_providers, "local")) {
-      const uint8_t *key;
-      uint32_t key_len;
-
-      key = bson_req_bin (kms_providers, "local.key", &key_len);
-      if (key_len != 96) {
-         ERREXIT ("Expected local.key to be 96 bytes, got: %d", (int) key_len);
-      }
-      bin = mongocrypt_binary_new_from_data ((uint8_t *) key, key_len);
-      if (!mongocrypt_setopt_kms_provider_local (crypt, bin)) {
-         ERREXIT_MONGOCRYPT (crypt);
-      }
-      mongocrypt_binary_destroy (bin);
-   }
-
-   if (bson_iter_init_find (&iter, kms_providers, "azure") ||
-       bson_iter_init_find (&iter, kms_providers, "gcp")) {
-      bson_t tmp;
-
-      bson_init (&tmp);
-      bson_copy_to_excluding_noinit (kms_providers, &tmp, "local", "aws", NULL);
-      /* Use the cool new way to set KMS providers, by a document. */
-      bin = util_bson_to_bin (&tmp);
-      if (!mongocrypt_setopt_kms_providers (crypt, bin)) {
-         ERREXIT_MONGOCRYPT (crypt);
-      }
-      mongocrypt_binary_destroy (bin);
-      bson_destroy (&tmp);
-   }
+   mongocrypt_binary_destroy (bin);
 
    bson_destroy (kms_providers);
 }
@@ -194,27 +157,34 @@ fn_createdatakey (bson_t *args)
 
    /* Set the key encryption key (KEK). */
    if (0 == strcmp ("aws", kms_provider)) {
-      const char *region;
-      const char *cmk;
-      const char *endpoint;
+      bson_t aws_kek = BSON_INITIALIZER;
 
-      region = bson_req_utf8 (args, "aws_kek_region");
-      cmk = bson_req_utf8 (args, "aws_kek_key");
-      if (!mongocrypt_ctx_setopt_masterkey_aws (ctx, region, -1, cmk, -1)) {
+      BSON_APPEND_UTF8 (&aws_kek, "provider", "aws");
+      BSON_APPEND_UTF8 (
+         &aws_kek, "region", bson_req_utf8 (args, "aws_kek_region"));
+      BSON_APPEND_UTF8 (&aws_kek, "key", bson_req_utf8 (args, "aws_kek_key"));
+
+      if (bson_has_field (args, "aws_kek_endpoint")) {
+         BSON_APPEND_UTF8 (&aws_kek,
+                           "endpoint",
+                           bson_get_utf8 (args, "aws_kek_endpoint", NULL));
+      }
+      bin = util_bson_to_bin (&aws_kek);
+      if (!mongocrypt_ctx_setopt_key_encryption_key (ctx, bin)) {
          ERREXIT_CTX (ctx);
       }
-
-      endpoint = bson_get_utf8 (args, "aws_kek_endpoint", NULL);
-      if (endpoint) {
-         if (!mongocrypt_ctx_setopt_masterkey_aws_endpoint (
-                ctx, endpoint, -1)) {
-            ERREXIT_CTX (ctx);
-         }
-      }
+      mongocrypt_binary_destroy (bin);
+      bson_destroy (&aws_kek);
    } else if (0 == strcmp ("local", kms_provider)) {
-      if (!mongocrypt_ctx_setopt_masterkey_local (ctx)) {
+      bson_t local_kek = BSON_INITIALIZER;
+
+      BSON_APPEND_UTF8 (&local_kek, "provider", "local");
+      bin = util_bson_to_bin (&local_kek);
+      if (!mongocrypt_ctx_setopt_key_encryption_key (ctx, bin)) {
          ERREXIT_CTX (ctx);
       }
+      mongocrypt_binary_destroy (bin);
+      bson_destroy (&local_kek);
    } else if (0 == strcmp ("azure", kms_provider)) {
       bson_t azure_kek = BSON_INITIALIZER;
 

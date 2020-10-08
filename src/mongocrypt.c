@@ -348,7 +348,8 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
       bson_free (key_val);
    }
 
-   _mongocrypt_buffer_copy_from_binary (&crypt->opts.kms_provider_local.key, key);
+   _mongocrypt_buffer_copy_from_binary (&crypt->opts.kms_provider_local.key,
+                                        key);
    crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
    return true;
 }
@@ -591,7 +592,6 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
       return false;
    }
 
-   /* TODO: just Azure and GCP for now. AWS, and local later. */
    while (bson_iter_next (&iter)) {
       const char *field_name;
 
@@ -669,18 +669,30 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
 
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
       } else if (0 == strcmp (field_name, "local")) {
-         if (!_mongocrypt_parse_required_binary (&as_bson, "local.key", &crypt->opts.kms_provider_local.key, crypt->status)) {
+         if (!_mongocrypt_parse_required_binary (
+                &as_bson,
+                "local.key",
+                &crypt->opts.kms_provider_local.key,
+                crypt->status)) {
             return false;
          }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
       } else if (0 == strcmp (field_name, "aws")) {
-         if (!_mongocrypt_parse_required_utf8 (&as_bson, "aws.accessKeyId", &crypt->opts.kms_provider_aws.secret_access_key, crypt->status)) {
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "aws.accessKeyId",
+                &crypt->opts.kms_provider_aws.access_key_id,
+                crypt->status)) {
             return false;
          }
-         if (!_mongocrypt_parse_required_utf8 (&as_bson, "aws.secretAccessKey", &crypt->opts.kms_provider_aws.secret_access_key, crypt->status)) {
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "aws.secretAccessKey",
+                &crypt->opts.kms_provider_aws.secret_access_key,
+                crypt->status)) {
             return false;
          }
-         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
       } else {
          CLIENT_ERR ("unsupported KMS provider: %s", field_name);
          return false;
