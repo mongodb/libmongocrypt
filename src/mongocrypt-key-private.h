@@ -32,16 +32,9 @@ typedef struct {
    _mongocrypt_buffer_t id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    _mongocrypt_buffer_t key_material;
-   _mongocrypt_kms_provider_t masterkey_provider;
-   char *masterkey_region;
-   char *masterkey_cmk;
-   char *endpoint;
    uint64_t creation_date;
    uint64_t update_date;
-   union {
-      _mongocrypt_azure_kek_t azure;
-      _mongocrypt_gcp_kek_t gcp;
-   } kek;
+   _mongocrypt_kek_t kek;
 } _mongocrypt_key_doc_t;
 
 _mongocrypt_key_alt_name_t *

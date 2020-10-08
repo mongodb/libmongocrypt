@@ -737,7 +737,7 @@ _test_key_missing_region (_mongocrypt_tester_t *tester)
    ASSERT_FAILS (mongocrypt_ctx_mongo_feed (
                     ctx, TEST_FILE ("./test/data/key-document-no-region.json")),
                  ctx,
-                 "no 'region'");
+                 "expected UTF-8 region");
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
 
    mongocrypt_ctx_destroy (ctx);

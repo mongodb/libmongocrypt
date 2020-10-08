@@ -83,10 +83,8 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
          goto done;
       }
 
-      if (!_mongocrypt_parse_optional_utf8 (bson,
-                                            "keyVersion",
-                                            &kek->provider.azure.key_version,
-                                            status)) {
+      if (!_mongocrypt_parse_optional_utf8 (
+             bson, "keyVersion", &kek->provider.azure.key_version, status)) {
          goto done;
       }
    } else if (0 == strcmp (kms_provider, "gcp")) {
@@ -96,10 +94,8 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
          goto done;
       }
 
-      if (!_mongocrypt_parse_required_utf8 (bson,
-                                            "projectId",
-                                            &kek->provider.gcp.project_id,
-                                            status)) {
+      if (!_mongocrypt_parse_required_utf8 (
+             bson, "projectId", &kek->provider.gcp.project_id, status)) {
          goto done;
       }
 
@@ -118,10 +114,8 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
          goto done;
       }
 
-      if (!_mongocrypt_parse_optional_utf8 (bson,
-                                            "keyVersion",
-                                            &kek->provider.gcp.key_version,
-                                            status)) {
+      if (!_mongocrypt_parse_optional_utf8 (
+             bson, "keyVersion", &kek->provider.gcp.key_version, status)) {
          goto done;
       }
    } else {
@@ -145,13 +139,16 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
       BSON_APPEND_UTF8 (bson, "region", kek->provider.aws.region);
       BSON_APPEND_UTF8 (bson, "key", kek->provider.aws.cmk);
       if (kek->provider.aws.endpoint) {
-         BSON_APPEND_UTF8 (bson, "endpoint", kek->provider.aws.endpoint->host_and_port);
+         BSON_APPEND_UTF8 (
+            bson, "endpoint", kek->provider.aws.endpoint->host_and_port);
       }
    } else if (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
       BSON_APPEND_UTF8 (bson, "provider", "local");
    } else if (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
       BSON_APPEND_UTF8 (bson, "provider", "azure");
-      BSON_APPEND_UTF8 (bson, "keyVaultEndpoint", kek->provider.azure.key_vault_endpoint->host_and_port);
+      BSON_APPEND_UTF8 (bson,
+                        "keyVaultEndpoint",
+                        kek->provider.azure.key_vault_endpoint->host_and_port);
       BSON_APPEND_UTF8 (bson, "keyName", kek->provider.azure.key_name);
       if (kek->provider.azure.key_version) {
          BSON_APPEND_UTF8 (bson, "keyVersion", kek->provider.azure.key_version);
@@ -166,10 +163,38 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
          BSON_APPEND_UTF8 (bson, "keyVersion", kek->provider.gcp.key_version);
       }
       if (kek->provider.gcp.endpoint) {
-         BSON_APPEND_UTF8 (bson, "endpoint", kek->provider.gcp.endpoint->host_and_port);
+         BSON_APPEND_UTF8 (
+            bson, "endpoint", kek->provider.gcp.endpoint->host_and_port);
       }
    }
    return true;
+}
+
+void
+_mongocrypt_kek_copy_to (const _mongocrypt_kek_t *src, _mongocrypt_kek_t *dst)
+{
+   if (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+      dst->provider.aws.cmk = bson_strdup (src->provider.aws.cmk);
+      dst->provider.aws.region = bson_strdup (src->provider.aws.region);
+      dst->provider.aws.endpoint =
+         _mongocrypt_endpoint_copy (src->provider.aws.endpoint);
+   } else if (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
+      dst->provider.azure.key_vault_endpoint =
+         _mongocrypt_endpoint_copy (src->provider.azure.key_vault_endpoint);
+      dst->provider.azure.key_name = bson_strdup (src->provider.azure.key_name);
+      dst->provider.azure.key_version =
+         bson_strdup (src->provider.azure.key_version);
+   } else if (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
+      dst->provider.gcp.project_id = bson_strdup (src->provider.gcp.project_id);
+      dst->provider.gcp.location = bson_strdup (src->provider.gcp.location);
+      dst->provider.gcp.key_ring = bson_strdup (src->provider.gcp.key_ring);
+      dst->provider.gcp.key_name = bson_strdup (src->provider.gcp.key_name);
+      dst->provider.gcp.key_version =
+         bson_strdup (src->provider.gcp.key_version);
+      dst->provider.gcp.endpoint =
+         _mongocrypt_endpoint_copy (src->provider.gcp.endpoint);
+   }
+   dst->kms_provider = src->kms_provider;
 }
 
 void

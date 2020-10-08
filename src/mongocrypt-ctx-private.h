@@ -147,12 +147,11 @@ typedef enum {
    OPT_OPTIONAL
 } _mongocrypt_ctx_opt_spec_t;
 typedef struct {
-   _mongocrypt_ctx_opt_spec_t masterkey;
+   _mongocrypt_ctx_opt_spec_t kek;
    _mongocrypt_ctx_opt_spec_t schema;
    _mongocrypt_ctx_opt_spec_t key_descriptor; /* a key_id or key_alt_name */
    _mongocrypt_ctx_opt_spec_t key_alt_names;
    _mongocrypt_ctx_opt_spec_t algorithm;
-   _mongocrypt_ctx_opt_spec_t endpoint;
 } _mongocrypt_ctx_opts_spec_t;
 
 /* Common initialization. */

@@ -454,7 +454,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    _mongocrypt_key_doc_t *key_doc = NULL;
    key_request_t *key_request;
    key_returned_t *key_returned;
-   _mongocrypt_kms_provider_t masterkey_provider;
+   _mongocrypt_kms_provider_t kek_provider;
 
    if (kb->state != KB_ADDING_DOCS) {
       _key_broker_fail_w_msg (
@@ -497,8 +497,8 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    key_returned = _key_returned_prepend (kb, &kb->keys_returned, key_doc);
 
    /* Check that the returned key doc's provider matches. */
-   masterkey_provider = key_doc->masterkey_provider;
-   if (0 == (masterkey_provider & kb->crypt->opts.kms_providers)) {
+   kek_provider = key_doc->kek.kms_provider;
+   if (0 == (kek_provider & kb->crypt->opts.kms_providers)) {
       _key_broker_fail_w_msg (
          kb, "client not configured with KMS provider necessary to decrypt");
       goto done;
@@ -506,7 +506,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 
    /* If the KMS provider is local, decrypt immediately. Otherwise, create the
     * HTTP KMS request. */
-   if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+   if (kek_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
       if (!_decrypt_with_local_kms (kb,
                                     &key_returned->doc->key_material,
                                     &key_returned->decrypted_key_material)) {
@@ -516,7 +516,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
       if (!_store_to_cache (kb, key_returned)) {
          goto done;
       }
-   } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+   } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       if (!_mongocrypt_kms_ctx_init_aws_decrypt (&key_returned->kms,
                                                  &kb->crypt->opts,
                                                  key_doc,
@@ -526,7 +526,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          _key_broker_fail (kb);
          goto done;
       }
-   } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
+   } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
       char *access_token;
 
       access_token = _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
@@ -539,7 +539,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                    &kb->crypt->log,
                    &kb->crypt->opts,
                    /* The key vault endpoint is used to determine the scope. */
-                   key_doc->kek.azure.key_vault_endpoint)) {
+                   key_doc->kek.provider.azure.key_vault_endpoint)) {
                mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
                _key_broker_fail (kb);
                goto done;
@@ -557,7 +557,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
             goto done;
          }
       }
-   } else if (masterkey_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
+   } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
       char *access_token;
 
       access_token = _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_gcp);
@@ -569,7 +569,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                    &kb->auth_request_gcp.kms,
                    &kb->crypt->log,
                    &kb->crypt->opts,
-                   key_doc->kek.gcp.endpoint)) {
+                   key_doc->kek.provider.gcp.endpoint)) {
                mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
                _key_broker_fail (kb);
                goto done;
@@ -765,7 +765,7 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
             continue;
          }
 
-         if (key_returned->doc->masterkey_provider ==
+         if (key_returned->doc->kek.kms_provider ==
              MONGOCRYPT_KMS_PROVIDER_AZURE) {
             access_token =
                _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
@@ -787,7 +787,7 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
 
             key_returned->needs_auth = false;
             bson_free (access_token);
-         } else if (key_returned->doc->masterkey_provider ==
+         } else if (key_returned->doc->kek.kms_provider ==
                     MONGOCRYPT_KMS_PROVIDER_GCP) {
             access_token =
                _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_gcp);
@@ -824,12 +824,10 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
    for (key_returned = kb->keys_returned; NULL != key_returned;
         key_returned = key_returned->next) {
       /* Local keys were already decrypted. */
-      if (key_returned->doc->masterkey_provider ==
-             MONGOCRYPT_KMS_PROVIDER_AWS ||
-          key_returned->doc->masterkey_provider ==
+      if (key_returned->doc->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS ||
+          key_returned->doc->kek.kms_provider ==
              MONGOCRYPT_KMS_PROVIDER_AZURE ||
-          key_returned->doc->masterkey_provider ==
-             MONGOCRYPT_KMS_PROVIDER_GCP) {
+          key_returned->doc->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
          if (key_returned->decrypted) {
             return _key_broker_fail_w_msg (
                kb,

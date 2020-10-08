@@ -122,8 +122,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
       }
 
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
-   } else if (ctx->opts.kek.kms_provider ==
-              MONGOCRYPT_KMS_PROVIDER_AZURE) {
+   } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
       access_token =
          _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_azure);
       if (access_token) {
@@ -165,10 +164,11 @@ _kms_start (mongocrypt_ctx_t *ctx)
             goto done;
          }
       } else {
-         if (!_mongocrypt_kms_ctx_init_gcp_auth (&dkctx->kms,
-                                                 &ctx->crypt->log,
-                                                 &ctx->crypt->opts,
-                                                 ctx->opts.kek.provider.gcp.endpoint)) {
+         if (!_mongocrypt_kms_ctx_init_gcp_auth (
+                &dkctx->kms,
+                &ctx->crypt->log,
+                &ctx->crypt->opts,
+                ctx->opts.kek.provider.gcp.endpoint)) {
             mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail (ctx);
             goto done;
@@ -349,9 +349,8 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    }
    ret = false;
    memset (&opts_spec, 0, sizeof (opts_spec));
-   opts_spec.masterkey = OPT_REQUIRED;
+   opts_spec.kek = OPT_REQUIRED;
    opts_spec.key_alt_names = OPT_OPTIONAL;
-   opts_spec.endpoint = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;

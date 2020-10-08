@@ -564,6 +564,7 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
    mongocrypt_binary_t *bin;
    bson_t as_bson;
    bool ret;
+   char *temp;
 
    if (!ctx) {
       return false;
@@ -575,6 +576,22 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
    if (ctx->state == MONGOCRYPT_CTX_ERROR) {
       return false;
    }
+
+   if (ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "master key already set");
+   }
+
+   if (!_mongocrypt_validate_and_copy_string (region, region_len, &temp) ||
+       region_len == 0) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid region");
+   }
+   bson_free (temp);
+
+   if (!_mongocrypt_validate_and_copy_string (cmk, cmk_len, &temp) ||
+       cmk_len == 0) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid cmk");
+   }
+   bson_free (temp);
 
    bson_init (&as_bson);
    bson_append_utf8 (&as_bson,
@@ -657,7 +674,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
     * not.
     */
 
-   if (opts_spec->masterkey == OPT_REQUIRED) {
+   if (opts_spec->kek == OPT_REQUIRED) {
       if (!ctx->opts.kek.kms_provider) {
          return _mongocrypt_ctx_fail_w_msg (ctx, "master key required");
       }
@@ -667,7 +684,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       }
    }
 
-   if (opts_spec->masterkey == OPT_PROHIBITED && ctx->opts.kek.kms_provider) {
+   if (opts_spec->kek == OPT_PROHIBITED && ctx->opts.kek.kms_provider) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "master key prohibited");
    }
 
