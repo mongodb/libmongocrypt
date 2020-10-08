@@ -63,16 +63,10 @@ _kms_start (mongocrypt_ctx_t *ctx)
    _mongocrypt_kms_ctx_cleanup (&dkctx->kms);
    memset (&dkctx->kms, 0, sizeof (dkctx->kms));
    dkctx->kms_returned = false;
-   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+   if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
       bool crypt_ret;
       uint32_t bytes_written;
       _mongocrypt_buffer_t iv;
-
-      if (ctx->opts.masterkey_aws_endpoint) {
-         _mongocrypt_ctx_fail_w_msg (
-            ctx, "endpoint not supported for local masterkey");
-         goto done;
-      }
 
       /* For a local KMS provider, the customer master key is supplied by the
        * user in mongocrypt_setopt_kms_provider_local. We use it to
@@ -112,7 +106,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
          goto done;
       }
       ctx->state = MONGOCRYPT_CTX_READY;
-   } else if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
+   } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       /* For AWS provider, AWS credentials are supplied in
        * mongocrypt_setopt_kms_provider_aws. Data keys are encrypted with an
        * "encrypt" HTTP message to KMS. */
@@ -128,7 +122,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
       }
 
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
-   } else if (ctx->opts.masterkey_kms_provider ==
+   } else if (ctx->opts.kek.kms_provider ==
               MONGOCRYPT_KMS_PROVIDER_AZURE) {
       access_token =
          _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_azure);
@@ -149,14 +143,14 @@ _kms_start (mongocrypt_ctx_t *ctx)
                 &dkctx->kms,
                 &ctx->crypt->log,
                 &ctx->crypt->opts,
-                ctx->opts.kek.azure.key_vault_endpoint)) {
+                ctx->opts.kek.provider.azure.key_vault_endpoint)) {
             mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail (ctx);
             goto done;
          }
       }
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
-   } else if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
+   } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
       access_token = _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_gcp);
       if (access_token) {
          if (!_mongocrypt_kms_ctx_init_gcp_encrypt (
@@ -174,7 +168,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
          if (!_mongocrypt_kms_ctx_init_gcp_auth (&dkctx->kms,
                                                  &ctx->crypt->log,
                                                  &ctx->crypt->opts,
-                                                 ctx->opts.kek.gcp.endpoint)) {
+                                                 ctx->opts.kek.provider.gcp.endpoint)) {
             mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail (ctx);
             goto done;
@@ -331,92 +325,9 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       &key_doc, MONGOCRYPT_STR_AND_LEN ("status"), 0)); /* 0 = enabled. */
    BSON_CHECK (bson_append_document_begin (
       &key_doc, MONGOCRYPT_STR_AND_LEN ("masterKey"), &child));
-
-   if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("provider"),
-                                    MONGOCRYPT_STR_AND_LEN ("aws")));
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("region"),
-                                    ctx->opts.masterkey_aws_region,
-                                    ctx->opts.masterkey_aws_region_len));
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("key"),
-                                    ctx->opts.masterkey_aws_cmk,
-                                    ctx->opts.masterkey_aws_cmk_len));
-      if (ctx->opts.masterkey_aws_endpoint) {
-         BSON_CHECK (bson_append_utf8 (&child,
-                                       MONGOCRYPT_STR_AND_LEN ("endpoint"),
-                                       ctx->opts.masterkey_aws_endpoint,
-                                       ctx->opts.masterkey_aws_endpoint_len))
-      }
-   } else if (ctx->opts.masterkey_kms_provider ==
-              MONGOCRYPT_KMS_PROVIDER_LOCAL) {
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("provider"),
-                                    MONGOCRYPT_STR_AND_LEN ("local")));
-   } else if (ctx->opts.masterkey_kms_provider ==
-              MONGOCRYPT_KMS_PROVIDER_AZURE) {
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("provider"),
-                                    MONGOCRYPT_STR_AND_LEN ("azure")));
-      BSON_CHECK (bson_append_utf8 (
-         &child,
-         MONGOCRYPT_STR_AND_LEN ("keyVaultEndpoint"),
-         ctx->opts.kek.azure.key_vault_endpoint->host_and_port,
-         -1));
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("keyName"),
-                                    ctx->opts.kek.azure.key_name,
-                                    -1));
-      if (ctx->opts.kek.azure.key_version) {
-         BSON_CHECK (bson_append_utf8 (&child,
-                                       MONGOCRYPT_STR_AND_LEN ("keyVersion"),
-                                       ctx->opts.kek.azure.key_version,
-                                       -1));
-      }
-   } else if (ctx->opts.masterkey_kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("provider"),
-                                    MONGOCRYPT_STR_AND_LEN ("gcp")));
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("projectId"),
-                                    ctx->opts.kek.gcp.project_id,
-                                    -1));
-
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("location"),
-                                    ctx->opts.kek.gcp.location,
-                                    -1));
-
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("keyRing"),
-                                    ctx->opts.kek.gcp.key_ring,
-                                    -1));
-
-      BSON_CHECK (bson_append_utf8 (&child,
-                                    MONGOCRYPT_STR_AND_LEN ("keyName"),
-                                    ctx->opts.kek.gcp.key_name,
-                                    -1));
-
-      if (ctx->opts.kek.gcp.key_version) {
-         BSON_CHECK (bson_append_utf8 (&child,
-                                       MONGOCRYPT_STR_AND_LEN ("keyVersion"),
-                                       ctx->opts.kek.gcp.key_version,
-                                       -1));
-      }
-
-      if (ctx->opts.kek.gcp.endpoint) {
-         BSON_CHECK (
-            bson_append_utf8 (&child,
-                              MONGOCRYPT_STR_AND_LEN ("endpoint"),
-                              ctx->opts.kek.gcp.endpoint->host_and_port,
-                              -1));
-      }
-   } else {
-      bson_append_document_end (&key_doc, &child);
+   if (!_mongocrypt_kek_append (&ctx->opts.kek, &child, ctx->status)) {
       bson_destroy (&key_doc);
-      return _mongocrypt_ctx_fail_w_msg (ctx, "unsupported KMS provider");
+      return _mongocrypt_ctx_fail (ctx);
    }
    BSON_CHECK (bson_append_document_end (&key_doc, &child));
    _mongocrypt_buffer_steal_from_bson (&dkctx->key_doc, &key_doc);

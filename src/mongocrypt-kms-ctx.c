@@ -233,17 +233,17 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _init_common (kms, log, MONGOCRYPT_KMS_AWS_ENCRYPT);
    status = kms->status;
 
-   if (MONGOCRYPT_KMS_PROVIDER_AWS != ctx_opts->masterkey_kms_provider) {
+   if (MONGOCRYPT_KMS_PROVIDER_AWS != ctx_opts->kek.kms_provider) {
       CLIENT_ERR ("expected aws kms provider");
       return false;
    }
 
-   if (!ctx_opts->masterkey_aws_region) {
+   if (!ctx_opts->kek.provider.aws.region) {
       CLIENT_ERR ("no key region provided");
       return false;
    }
 
-   if (!ctx_opts->masterkey_aws_cmk) {
+   if (!ctx_opts->kek.provider.aws.cmk) {
       CLIENT_ERR ("no aws cmk provided");
       return false;
    }
@@ -272,7 +272,7 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
                                        plaintext_key_material->len,
-                                       ctx_opts->masterkey_aws_cmk,
+                                       ctx_opts->kek.provider.aws.cmk,
                                        opt);
 
    kms_request_opt_destroy (opt);
@@ -285,15 +285,15 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    }
 
    /* If an endpoint was set, override the default Host header. */
-   if (ctx_opts->masterkey_aws_endpoint) {
+   if (ctx_opts->kek.provider.aws.endpoint) {
       if (!kms_request_add_header_field (
-             kms->req, "Host", ctx_opts->masterkey_aws_endpoint)) {
+             kms->req, "Host", ctx_opts->kek.provider.aws.endpoint->host)) {
          CLIENT_ERR ("error constructing KMS message: %s",
                      kms_request_get_error (kms->req));
       }
    }
 
-   if (!kms_request_set_region (kms->req, ctx_opts->masterkey_aws_region)) {
+   if (!kms_request_set_region (kms->req, ctx_opts->kek.provider.aws.region)) {
       CLIENT_ERR ("failed to set region");
       return false;
    }
@@ -318,11 +318,11 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    kms->msg.owned = true;
 
    /* construct the endpoint */
-   if (ctx_opts->masterkey_aws_endpoint) {
-      kms->endpoint = bson_strdup (ctx_opts->masterkey_aws_endpoint);
+   if (ctx_opts->kek.provider.aws.endpoint) {
+      kms->endpoint = bson_strdup (ctx_opts->kek.provider.aws.endpoint->host_and_port);
    } else {
       kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
-                                          ctx_opts->masterkey_aws_region);
+                                          ctx_opts->kek.provider.aws.region);
    }
    return true;
 }
@@ -964,8 +964,8 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    status = kms->status;
 
    kms->endpoint =
-      bson_strdup (ctx_opts->kek.azure.key_vault_endpoint->host_and_port);
-   host = ctx_opts->kek.azure.key_vault_endpoint->host;
+      bson_strdup (ctx_opts->kek.provider.azure.key_vault_endpoint->host_and_port);
+   host = ctx_opts->kek.provider.azure.key_vault_endpoint->host;
 
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
@@ -973,8 +973,8 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
    kms->req = kms_azure_request_wrapkey_new (host,
                                              access_token,
-                                             ctx_opts->kek.azure.key_name,
-                                             ctx_opts->kek.azure.key_version,
+                                             ctx_opts->kek.provider.azure.key_name,
+                                             ctx_opts->kek.provider.azure.key_version,
                                              plaintext_key_material->data,
                                              plaintext_key_material->len,
                                              opt);
@@ -1199,9 +1199,9 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    _init_common (kms, log, MONGOCRYPT_KMS_GCP_ENCRYPT);
    status = kms->status;
 
-   if (ctx_opts->kek.gcp.endpoint) {
-      kms->endpoint = bson_strdup (ctx_opts->kek.gcp.endpoint->host_and_port);
-      host = ctx_opts->kek.gcp.endpoint->host;
+   if (ctx_opts->kek.provider.gcp.endpoint) {
+      kms->endpoint = bson_strdup (ctx_opts->kek.provider.gcp.endpoint->host_and_port);
+      host = ctx_opts->kek.provider.gcp.endpoint->host;
    } else {
       kms->endpoint = bson_strdup ("cloudkms.googleapis.com");
       host = kms->endpoint;
@@ -1213,11 +1213,11 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
    kms->req = kms_gcp_request_encrypt_new (host,
                                            access_token,
-                                           ctx_opts->kek.gcp.project_id,
-                                           ctx_opts->kek.gcp.location,
-                                           ctx_opts->kek.gcp.key_ring,
-                                           ctx_opts->kek.gcp.key_name,
-                                           ctx_opts->kek.gcp.key_version,
+                                           ctx_opts->kek.provider.gcp.project_id,
+                                           ctx_opts->kek.provider.gcp.location,
+                                           ctx_opts->kek.provider.gcp.key_ring,
+                                           ctx_opts->kek.provider.gcp.key_name,
+                                           ctx_opts->kek.provider.gcp.key_version,
                                            plaintext_key_material->data,
                                            plaintext_key_material->len,
                                            opt);

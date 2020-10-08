@@ -93,6 +93,9 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 void
+_mongocrypt_kek_copy_to (const _mongocrypt_kek_t *src, mongocrypt_kek_t *dst);
+
+void
 _mongocrypt_kek_cleanup (_mongocrypt_kek_t *kek);
 
 

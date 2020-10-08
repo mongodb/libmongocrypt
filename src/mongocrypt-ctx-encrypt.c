@@ -848,7 +848,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
 
    ectx->ns = bson_strdup_printf ("%s.%s", ectx->db_name, ectx->coll_name);
 
-   if (ctx->opts.masterkey_aws_region || ctx->opts.masterkey_aws_cmk) {
+   if (ctx->opts.kek.provider.aws.region || ctx->opts.kek.provider.aws.cmk) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "aws masterkey options must not be set");
    }

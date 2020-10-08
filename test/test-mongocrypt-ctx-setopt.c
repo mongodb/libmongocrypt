@@ -741,13 +741,13 @@ _test_setopt_endpoint (_mongocrypt_tester_t *tester)
 
    REFRESH;
    ENDPOINT_OK ("example.com", -1);
-   BSON_ASSERT (0 == strcmp (ctx->opts.masterkey_aws_endpoint, "example.com"));
+   BSON_ASSERT (0 == strcmp (ctx->opts.kek.provider.aws.endpoint->host_and_port, "example.com"));
 
    /* Including a port is ok. */
    REFRESH;
    ENDPOINT_OK ("example.com:80", -1);
    BSON_ASSERT (0 ==
-                strcmp (ctx->opts.masterkey_aws_endpoint, "example.com:80"));
+                strcmp (ctx->opts.kek.provider.aws.endpoint->host_and_port, "example.com:80"));
 
    /* Test double setting. */
    REFRESH;
@@ -756,7 +756,7 @@ _test_setopt_endpoint (_mongocrypt_tester_t *tester)
 
    /* Test NULL input */
    REFRESH;
-   ENDPOINT_FAILS (NULL, 0, "invalid masterkey endpoint");
+   ENDPOINT_FAILS (NULL, 0, "Invalid endpoint");
 
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
