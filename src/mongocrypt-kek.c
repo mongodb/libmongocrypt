@@ -166,6 +166,8 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
          BSON_APPEND_UTF8 (
             bson, "endpoint", kek->provider.gcp.endpoint->host_and_port);
       }
+   } else {
+      BSON_ASSERT (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE);
    }
    return true;
 }
@@ -193,6 +195,9 @@ _mongocrypt_kek_copy_to (const _mongocrypt_kek_t *src, _mongocrypt_kek_t *dst)
          bson_strdup (src->provider.gcp.key_version);
       dst->provider.gcp.endpoint =
          _mongocrypt_endpoint_copy (src->provider.gcp.endpoint);
+   } else {
+      BSON_ASSERT (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE ||
+                   src->kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL);
    }
    dst->kms_provider = src->kms_provider;
 }
@@ -215,6 +220,9 @@ _mongocrypt_kek_cleanup (_mongocrypt_kek_t *kek)
       bson_free (kek->provider.gcp.key_name);
       bson_free (kek->provider.gcp.key_version);
       _mongocrypt_endpoint_destroy (kek->provider.gcp.endpoint);
+   } else {
+      BSON_ASSERT (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE ||
+                   kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL);
    }
    return;
 }
