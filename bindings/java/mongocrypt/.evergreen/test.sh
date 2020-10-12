@@ -15,4 +15,4 @@ fi
 
 ./gradlew -version
 
-./gradlew clean check --info -Djna.debug_load=true
+./gradlew clean check --info -Djna.debug_load=true -Djna.library.path=${PROJECT_DIRECTORY}/install/libmongocrypt/lib/
