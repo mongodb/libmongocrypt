@@ -347,6 +347,8 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test java"
+      vars:
+        test_env: PROJECT_DIRECTORY=${project_directory}
 
 - name: test-python
   depends_on:
