@@ -25,11 +25,13 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_t;
 import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
+import org.bson.BsonValue;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
@@ -235,7 +237,9 @@ class MongoCryptImpl implements MongoCrypt {
         } else if (kmsProvider.equals("local")) {
             success = mongocrypt_ctx_setopt_masterkey_local(context);
         } else {
-            success = mongocrypt_ctx_setopt_key_encryption_key(context, toBinary(options.getMasterKey()).getBinary());
+            BsonDocument masterKey = options.getMasterKey().clone();
+            masterKey.put("provider", new BsonString(kmsProvider));
+            success = mongocrypt_ctx_setopt_key_encryption_key(context, toBinary(masterKey).getBinary());
         }
 
         if (!success) {

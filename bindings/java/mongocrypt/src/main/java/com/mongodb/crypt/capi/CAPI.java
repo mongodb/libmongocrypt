@@ -542,7 +542,6 @@ public class CAPI {
 
     /**
      * Set key encryption key document for creating a data key.
-     * Currently only applies to Azure.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
      * @param keyDocument BSON representing the key encryption key document.
