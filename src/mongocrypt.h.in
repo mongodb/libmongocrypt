@@ -328,6 +328,9 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
 
 /**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_setopt_kms_providers
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] aws_access_key_id The AWS access key ID used to generate KMS
@@ -355,6 +358,9 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
 
 /**
  * Configure a local KMS provider on the @ref mongocrypt_t object.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_setopt_kms_providers
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] key A 96 byte master key used to encrypt and decrypt key vault
@@ -371,7 +377,6 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
 
 /**
  * Configure KMS providers with a BSON document.
- * Currently only applies to Azure.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] kms_providers A BSON document mapping the KMS provider names
@@ -556,6 +561,9 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_ctx_setopt_key_encryption_key
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] region The AWS region.
@@ -584,6 +592,9 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
  * (with the Host header set to this endpoint). This endpoint
  * is persisted in the new data key, and will be returned via
  * @ref mongocrypt_kms_ctx_endpoint.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_ctx_setopt_key_encryption_key
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] endpoint The endpoint.
@@ -600,6 +611,8 @@ mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
 
 /**
  * Set the master key to "local" for creating a data key.
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_ctx_setopt_key_encryption_key
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @pre @p ctx has not been initialized.
@@ -612,7 +625,6 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 
 /**
  * Set key encryption key document for creating a data key.
- * Currently only applies to Azure.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] bin BSON representing the key encryption key document.

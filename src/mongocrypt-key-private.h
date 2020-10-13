@@ -19,6 +19,7 @@
 
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-opts-private.h"
+#include "mongocrypt-kek-private.h"
 
 /* A linked list of key alt names */
 typedef struct __mongocrypt_key_alt_name_t {
@@ -27,35 +28,13 @@ typedef struct __mongocrypt_key_alt_name_t {
 } _mongocrypt_key_alt_name_t;
 
 typedef struct {
-   _mongocrypt_endpoint_t *key_vault_endpoint;
-   char *key_name;
-   char *key_version;
-} _mongocrypt_azure_kek_t;
-
-typedef struct {
-   _mongocrypt_endpoint_t *endpoint;
-   char *project_id;
-   char *location;
-   char *key_ring;
-   char *key_name;
-   char *key_version;
-} _mongocrypt_gcp_kek_t;
-
-typedef struct {
    bson_t bson; /* original BSON for this key. */
    _mongocrypt_buffer_t id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    _mongocrypt_buffer_t key_material;
-   _mongocrypt_kms_provider_t masterkey_provider;
-   char *masterkey_region;
-   char *masterkey_cmk;
-   char *endpoint;
    uint64_t creation_date;
    uint64_t update_date;
-   union {
-      _mongocrypt_azure_kek_t azure;
-      _mongocrypt_gcp_kek_t gcp;
-   } kek;
+   _mongocrypt_kek_t kek;
 } _mongocrypt_key_doc_t;
 
 _mongocrypt_key_alt_name_t *

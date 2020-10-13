@@ -185,7 +185,7 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
    if (!_mongocrypt_validate_and_copy_string (
           aws_access_key_id,
           aws_access_key_id_len,
-          &crypt->opts.kms_aws_access_key_id)) {
+          &crypt->opts.kms_provider_aws.access_key_id)) {
       CLIENT_ERR ("invalid aws access key id");
       return false;
    }
@@ -193,7 +193,7 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
    if (!_mongocrypt_validate_and_copy_string (
           aws_secret_access_key,
           aws_secret_access_key_len,
-          &crypt->opts.kms_aws_secret_access_key)) {
+          &crypt->opts.kms_provider_aws.secret_access_key)) {
       CLIENT_ERR ("invalid aws secret access key");
       return false;
    }
@@ -204,11 +204,11 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                        "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
                        BSON_FUNC,
                        "aws_access_key_id",
-                       crypt->opts.kms_aws_access_key_id,
+                       crypt->opts.kms_provider_aws.access_key_id,
                        "aws_access_key_id_len",
                        aws_access_key_id_len,
                        "aws_secret_access_key",
-                       crypt->opts.kms_aws_secret_access_key,
+                       crypt->opts.kms_provider_aws.secret_access_key,
                        "aws_secret_access_key_len",
                        aws_secret_access_key_len);
    }
@@ -348,7 +348,8 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
       bson_free (key_val);
    }
 
-   _mongocrypt_buffer_copy_from_binary (&crypt->opts.kms_local_key, key);
+   _mongocrypt_buffer_copy_from_binary (&crypt->opts.kms_provider_local.key,
+                                        key);
    crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
    return true;
 }
@@ -591,7 +592,6 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
       return false;
    }
 
-   /* TODO: just Azure and GCP for now. AWS, and local later. */
    while (bson_iter_next (&iter)) {
       const char *field_name;
 
@@ -668,6 +668,31 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
          }
 
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
+      } else if (0 == strcmp (field_name, "local")) {
+         if (!_mongocrypt_parse_required_binary (
+                &as_bson,
+                "local.key",
+                &crypt->opts.kms_provider_local.key,
+                crypt->status)) {
+            return false;
+         }
+         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+      } else if (0 == strcmp (field_name, "aws")) {
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "aws.accessKeyId",
+                &crypt->opts.kms_provider_aws.access_key_id,
+                crypt->status)) {
+            return false;
+         }
+         if (!_mongocrypt_parse_required_utf8 (
+                &as_bson,
+                "aws.secretAccessKey",
+                &crypt->opts.kms_provider_aws.secret_access_key,
+                crypt->status)) {
+            return false;
+         }
+         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
       } else {
          CLIENT_ERR ("unsupported KMS provider: %s", field_name);
          return false;

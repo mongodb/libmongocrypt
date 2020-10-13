@@ -63,6 +63,7 @@ static void
 _parse_fails (bson_t *key_bson, mongocrypt_status_t *status, const char *msg)
 {
    _mongocrypt_key_doc_t *key_doc = _mongocrypt_key_new ();
+
    ASSERT_FAILS_STATUS (
       _mongocrypt_key_parse_owned (key_bson, key_doc, status), status, msg);
    _mongocrypt_key_destroy (key_doc);
@@ -143,38 +144,29 @@ test_mongocrypt_key_parsing (_mongocrypt_tester_t *tester)
    /* masterKey: missing provider. */
    _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
    bson_concat (&key_bson, TMP_BSON ("{'masterKey': { }}"));
-   _parse_fails (&key_bson, status, "invalid 'masterKey', no 'provider'");
+   _parse_fails (&key_bson, status, "expected UTF-8 provider");
    /* masterKey: wrong provider. */
    _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
    bson_concat (&key_bson, TMP_BSON ("{'masterKey': { 'provider': 'bad' }}"));
-   _parse_fails (&key_bson,
-                 status,
-                 "invalid 'masterKey.provider', expected 'aws' or 'local' or "
-                 "'azure' or 'gcp'");
+   _parse_fails (&key_bson, status, "unrecognized KMS provider");
    /* masterKey: provider=aws, missing key */
    _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
    bson_concat (
       &key_bson,
       TMP_BSON ("{'masterKey': { 'provider': 'aws', 'region': 'us-east-1' }}"));
-   _parse_fails (&key_bson, status, "invalid 'masterKey', no 'key'");
+   _parse_fails (&key_bson, status, "expected UTF-8 key");
    /* masterKey: provider=aws, missing region */
    _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
    bson_concat (
       &key_bson,
       TMP_BSON ("{'masterKey': { 'provider': 'aws', 'key': 'cmk-string' }}"));
-   _parse_fails (&key_bson, status, "invalid 'masterKey', no 'region'");
+   _parse_fails (&key_bson, status, "expected UTF-8 region");
    /* masterKey: provider=aws, bad region */
    _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
    bson_concat (&key_bson,
                 TMP_BSON ("{'masterKey': { 'provider': 'aws', "
                           "'key': 'cmk-string', 'region': 1 }}"));
-   _parse_fails (
-      &key_bson, status, "invalid 'masterKey.region', expected string");
-   /* masterKey: unrecognized field */
-   _recreate_and_reset (tester, &key_bson, status, "masterKey", NULL);
-   bson_concat (&key_bson,
-                TMP_BSON ("{'masterKey': { 'provider': 'local', 'bad': 1 }}"));
-   _parse_fails (&key_bson, status, "unrecognized provider field");
+   _parse_fails (&key_bson, status, "expected UTF-8 region");
 
    /* creationDate: missing */
    _recreate_and_reset (tester, &key_bson, status, "creationDate", NULL);

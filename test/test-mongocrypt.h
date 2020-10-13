@@ -172,6 +172,9 @@ _mongocrypt_tester_mongocrypt (void);
 void
 _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
 
+void
+_assert_match_bson (const bson_t *doc, const bson_t *pattern);
+
 typedef enum {
    CRYPTO_REQUIRED,
    CRYPTO_OPTIONAL,
@@ -255,6 +258,8 @@ _mongocrypt_tester_install_status (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_endpoint (_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_kek (_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
@@ -289,5 +294,6 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 
 void
 _load_json_as_bson (const char *path, bson_t *out);
+
 
 #endif

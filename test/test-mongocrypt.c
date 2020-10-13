@@ -556,7 +556,6 @@ _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b)
    bson_free (msg);
 }
 
-
 static void
 _test_setopt_schema (_mongocrypt_tester_t *tester)
 {
@@ -639,8 +638,12 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "'identityPlatformEndpoint': 'example' }}",
        "Invalid endpoint"},
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
-      {"{'aws': {}}", "unsupported KMS provider"},
-      {"{'local': {}}", "unsupported KMS provider"},
+      {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
+      {"{'aws': {}}", "expected UTF-8 aws.accessKeyId"},
+      {"{'local': {'key': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}", NULL},
+      {"{'local': {'key': 'AAAA' }}", NULL},
+      {"{'local': {'key': 'invalid base64' }}", "unable to parse base64"},
+      {"{'local': {}}", "expected UTF-8 or binary local.key"},
       /* either base64 string or binary is acceptable for privateKey */
       {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
        "'privateKey': 'AAAA' }}"},
@@ -718,6 +721,7 @@ main (int argc, char **argv)
                                "_test_setopt_kms_providers",
                                _test_setopt_kms_providers,
                                CRYPTO_OPTIONAL);
+   _mongocrypt_tester_install_kek (&tester);
 
 
    printf ("Running tests...\n");

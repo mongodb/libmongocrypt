@@ -31,43 +31,15 @@ typedef enum {
    _MONGOCRYPT_TYPE_CREATE_DATA_KEY,
 } _mongocrypt_ctx_type_t;
 
-/* Key encryption key (aka masterkey) options for Azure. */
-typedef struct {
-   _mongocrypt_endpoint_t *key_vault_endpoint;
-   char *key_name;
-   char *key_version;
-} _mongocrypt_ctx_opts_azure_kek_t;
-
-typedef struct {
-   _mongocrypt_endpoint_t *endpoint;
-   char *project_id;
-   char *location;
-   char *key_ring;
-   char *key_name;
-   char *key_version;
-} _mongocrypt_ctx_opts_gcp_kek_t;
-
 /* Option values are validated when set.
  * Different contexts accept/require different options,
  * validated when a context is initialized.
  */
 typedef struct __mongocrypt_ctx_opts_t {
-   _mongocrypt_kms_provider_t masterkey_kms_provider;
-   char *masterkey_aws_cmk;
-   uint32_t masterkey_aws_cmk_len;
-   char *masterkey_aws_region;
-   uint32_t masterkey_aws_region_len;
-   char *masterkey_aws_endpoint;
-   uint32_t masterkey_aws_endpoint_len;
    _mongocrypt_buffer_t key_id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    mongocrypt_encryption_algorithm_t algorithm;
-
-   /* Determined by the masterkey_kms_provider. */
-   union {
-      _mongocrypt_ctx_opts_azure_kek_t azure;
-      _mongocrypt_ctx_opts_gcp_kek_t gcp;
-   } kek;
+   _mongocrypt_kek_t kek;
 } _mongocrypt_ctx_opts_t;
 
 
@@ -175,12 +147,11 @@ typedef enum {
    OPT_OPTIONAL
 } _mongocrypt_ctx_opt_spec_t;
 typedef struct {
-   _mongocrypt_ctx_opt_spec_t masterkey;
+   _mongocrypt_ctx_opt_spec_t kek;
    _mongocrypt_ctx_opt_spec_t schema;
    _mongocrypt_ctx_opt_spec_t key_descriptor; /* a key_id or key_alt_name */
    _mongocrypt_ctx_opt_spec_t key_alt_names;
    _mongocrypt_ctx_opt_spec_t algorithm;
-   _mongocrypt_ctx_opt_spec_t endpoint;
 } _mongocrypt_ctx_opts_spec_t;
 
 /* Common initialization. */

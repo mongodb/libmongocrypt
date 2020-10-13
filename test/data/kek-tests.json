@@ -1,0 +1,94 @@
+[
+    {
+        "input": {
+            "keyVaultEndpoint": "keyvault.example.com", 
+            "keyVersion": "example keyVersion", 
+            "keyName": "example keyName", 
+            "provider": "azure"
+        }, 
+        "expect": "ok"
+    }, 
+    {
+        "input": {
+            "keyVaultEndpoint": "invalid endpoint", 
+            "keyVersion": "example keyVersion", 
+            "keyName": "example keyName", 
+            "provider": "azure"
+        }, 
+        "expect": "invalid endpoint"
+    }, 
+    {
+        "input": {
+            "keyVaultEndpoint": "keyvault.example.com", 
+            "keyName": "example keyName", 
+            "provider": "azure"
+        }, 
+        "expect": "ok"
+    }, 
+    {
+        "input": {
+            "provider": "local"
+        }, 
+        "expect": "ok"
+    }, 
+    {
+        "input": {
+            "region": "example region", 
+            "endpoint": "example.com", 
+            "key": "example arn", 
+            "provider": "aws"
+        }, 
+        "expect": "ok"
+    }, 
+    {
+        "input": {
+            "region": "example region", 
+            "endpoint": "invalid endpoint", 
+            "key": "example arn", 
+            "provider": "aws"
+        }, 
+        "expect": "invalid endpoint"
+    }, 
+    {
+        "input": {
+            "region": "example region", 
+            "key": "example arn", 
+            "provider": "aws"
+        }, 
+        "expect": "ok"
+    }, 
+    {
+        "input": {
+            "keyVersion": "example keyVersion", 
+            "endpoint": "example.com", 
+            "projectId": "example projectId", 
+            "keyRing": "example keyRing", 
+            "keyName": "example keyName", 
+            "location": "example location", 
+            "provider": "gcp"
+        }, 
+        "expect": "ok"
+    }, 
+    {
+        "input": {
+            "keyVersion": "example keyVersion", 
+            "endpoint": "invalid endpoint", 
+            "location": "example location", 
+            "provider": "gcp", 
+            "projectId": "example projectId", 
+            "keyRing": "example keyRing", 
+            "keyName": "example keyName"
+        }, 
+        "expect": "invalid endpoint"
+    }, 
+    {
+        "input": {
+            "projectId": "example projectId", 
+            "keyName": "example keyName", 
+            "keyRing": "example keyRing", 
+            "location": "example location", 
+            "provider": "gcp"
+        }, 
+        "expect": "ok"
+    }
+]
