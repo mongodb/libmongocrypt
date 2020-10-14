@@ -74,7 +74,8 @@ val gitVersion: String by lazy {
         commandLine = listOf("git", "describe", "--tags", "--always", "--dirty")
         standardOutput = describeStdOut
     }
-    describeStdOut.toString().trim()
+    val gv: String = describeStdOut.toString().trim()
+    gv.subSequence(gv.toCharArray().indexOfFirst { it.isDigit() }, gv.length).toString()
 }
 
 val gitHash: String by lazy {
@@ -107,11 +108,13 @@ val copyResources by tasks.register<Copy>("copyResources") {
                 "mongocrypt.dll" to "win32-" + com.sun.jna.Platform.ARCH,
                 "libmongocrypt.dylib" to "darwin")
 
-        val copySpecs = jnaMapping.mapTo(mutableListOf(), { copySpec {
-            from(cmakeBuildPath)
-            include(it.key)
-            into(it.value)
-        }}).toTypedArray()
+        val copySpecs = jnaMapping.mapTo(mutableListOf(), {
+            copySpec {
+                from(cmakeBuildPath)
+                include(it.key)
+                into(it.value)
+            }
+        }).toTypedArray()
         with(*copySpecs)
     }
 }
