@@ -107,28 +107,38 @@ class TestMongoCrypt(unittest.TestCase):
         kms_providers = {
             'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}
         opts = MongoCryptOptions(kms_providers)
-        mc = MongoCrypt(opts)
+        mc = MongoCrypt(opts, MockCallback())
         mc.close()
         mc.close()
 
     def test_mongocrypt_validation(self):
+        callback = MockCallback()
+        options = MongoCryptOptions({'local': {'key': b'\x00' * 96}})
+
         with self.assertRaisesRegex(
                 TypeError, 'options must be a MongoCryptOptions'):
-            MongoCrypt({})
+            MongoCrypt({}, callback)
         with self.assertRaisesRegex(
                 TypeError, 'options must be a MongoCryptOptions'):
-            MongoCrypt(None)
+            MongoCrypt(None, callback)
+
+        with self.assertRaisesRegex(
+                TypeError, 'callback must be a MongoCryptCallback'):
+            MongoCrypt(options, {})
+        with self.assertRaisesRegex(
+                TypeError, 'callback must be a MongoCryptCallback'):
+            MongoCrypt(options, None)
 
         invalid_key_len_opts = MongoCryptOptions({'local': {'key': b'1'}})
         with self.assertRaisesRegex(
                 MongoCryptError, "local key must be 96 bytes"):
-            MongoCrypt(invalid_key_len_opts)
+            MongoCrypt(invalid_key_len_opts, callback)
 
     @staticmethod
     def create_mongocrypt():
         return MongoCrypt(MongoCryptOptions({
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
-            'local': {'key': b'\x00'*96}}))
+            'local': {'key': b'\x00'*96}}), MockCallback())
 
     def _test_kms_context(self, ctx):
         key_filter = ctx.mongo_operation()

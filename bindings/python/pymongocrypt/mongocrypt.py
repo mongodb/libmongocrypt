@@ -12,18 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
+
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
-from pymongocrypt.compat import str_to_bytes
+from pymongocrypt.compat import str_to_bytes, PY3
 from pymongocrypt.errors import MongoCryptError
+from pymongocrypt.state_machine import MongoCryptCallback
 
 from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  aes_256_cbc_decrypt,
                                  hmac_sha_256,
                                  hmac_sha_512,
                                  sha_256,
-                                 secure_random)
+                                 secure_random,
+                                 sign_rsaes_pkcs1_v1_5)
 
 
 class MongoCryptOptions(object):
@@ -64,6 +68,22 @@ class MongoCryptOptions(object):
                 raise ValueError("kms_providers['aws'] must contain "
                                  "'accessKeyId' and 'secretAccessKey'")
 
+        if 'azure' in kms_providers:
+            azure = kms_providers["azure"]
+            if not isinstance(azure, dict):
+                raise ValueError("kms_providers['azure'] must be a dict")
+            if 'clientId' not in azure or 'clientSecret' not in azure:
+                raise ValueError("kms_providers['azure'] must contain "
+                                 "'clientId' and 'clientSecret'")
+
+        if 'gcp' in kms_providers:
+            gcp = kms_providers['gcp']
+            if not isinstance(gcp, dict):
+                raise ValueError("kms_providers['gcp'] must be a dict")
+            if 'email' not in gcp or 'privateKey' not in gcp:
+                raise ValueError("kms_providers['gcp'] must contain "
+                                 "'email' and 'privateKey'")
+
         if 'local' in kms_providers:
             local = kms_providers['local']
             if not isinstance(local, dict):
@@ -76,6 +96,14 @@ class MongoCryptOptions(object):
                 raise TypeError("kms_providers['local']['key'] must be a "
                                 "bytes (or str in Python 2)")
 
+            # TODO: remove this after dropping Python 2 support.
+            # pymongo.bson encodes bytes to BSON string in Python 2,
+            # while the libmongocrypt API expects BSON Binary or a base64
+            # encoded string. To avoid needing to import bson.Binary, we pass
+            # a base64 encoded string.
+            if not PY3:
+                kms_providers['local']['key'] = base64.b64encode(key)
+
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
 
@@ -84,17 +112,22 @@ class MongoCryptOptions(object):
 
 
 class MongoCrypt(object):
-    def __init__(self, options):
+    def __init__(self, options, callback):
         """Abstracts libmongocrypt's mongocrypt_t type.
 
         :Parameters:
           - `options`: A :class:`MongoCryptOptions`.
+          - `callback`: A :class:`MongoCryptCallback`.
         """
         self.__opts = options
+        self.__callback = callback
         self.__crypt = None
 
         if not isinstance(options, MongoCryptOptions):
             raise TypeError("options must be a MongoCryptOptions")
+
+        if not isinstance(callback, MongoCryptCallback):
+            raise TypeError("callback must be a MongoCryptCallback")
 
         self.__crypt = lib.mongocrypt_new()
         if self.__crypt == ffi.NULL:
@@ -110,21 +143,11 @@ class MongoCrypt(object):
     def __init(self):
         """Internal init helper."""
         kms_providers = self.__opts.kms_providers
-        if 'aws' in kms_providers:
-            access_key_id = str_to_bytes(kms_providers['aws']['accessKeyId'])
-            secret_access_key = str_to_bytes(
-                kms_providers['aws']['secretAccessKey'])
-            if not lib.mongocrypt_setopt_kms_provider_aws(
-                    self.__crypt,
-                    access_key_id, len(access_key_id),
-                    secret_access_key, len(secret_access_key)):
+        with MongoCryptBinaryIn(
+                self.__callback.bson_encode(kms_providers)) as kmsopt:
+            if not lib.mongocrypt_setopt_kms_providers(
+                    self.__crypt, kmsopt.bin):
                 self.__raise_from_status()
-        if 'local' in kms_providers:
-            key = kms_providers['local']['key']
-            with MongoCryptBinaryIn(key) as binary_key:
-                if not lib.mongocrypt_setopt_kms_provider_local(
-                        self.__crypt, binary_key.bin):
-                    self.__raise_from_status()
 
         schema_map = self.__opts.schema_map
         if schema_map is not None:
@@ -136,6 +159,10 @@ class MongoCrypt(object):
         if not lib.mongocrypt_setopt_crypto_hooks(
                 self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
                 secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
+            self.__raise_from_status()
+
+        if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+                self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
             self.__raise_from_status()
 
         if not lib.mongocrypt_init(self.__crypt):
@@ -225,7 +252,8 @@ class MongoCrypt(object):
         :Returns:
           A :class:`DataKeyContext`.
         """
-        return DataKeyContext(self._create_context(), kms_provider, opts)
+        return DataKeyContext(self._create_context(), kms_provider, opts,
+                              self.__callback)
 
 
 class MongoCryptContext(object):
@@ -425,7 +453,7 @@ class ExplicitDecryptionContext(MongoCryptContext):
 class DataKeyContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, kms_provider, opts):
+    def __init__(self, ctx, kms_provider, opts, callback):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
@@ -433,33 +461,50 @@ class DataKeyContext(MongoCryptContext):
             of the underlying mongocrypt_ctx_t.
           - `kms_provider`: The KMS provider.
           - `opts`: An optional class:`DataKeyOpts`.
+          - `callback`: A :class:`MongoCryptCallback`.
         """
         super(DataKeyContext, self).__init__(ctx)
         try:
-            if kms_provider == 'aws':
-                if opts is None or opts.master_key is None:
+            if kms_provider not in ['aws', 'gcp', 'azure', 'local']:
+                raise ValueError('unknown kms_provider: %s' % (kms_provider,))
+
+            if opts is None or opts.master_key is None:
+                if kms_provider == 'local':
+                    master_key = {}
+                else:
                     raise ValueError(
-                        'master_key is required for kms_provider: "aws"')
+                        'master_key is required for kms_provider: "%s"' % (
+                            kms_provider,))
+            else:
+                master_key = opts.master_key.copy()
+
+            if kms_provider == 'aws':
                 if ('region' not in opts.master_key or
                         'key' not in opts.master_key):
                     raise ValueError(
                         'master_key must include "region" and "key" for '
                         'kms_provider: "aws"')
-                region = str_to_bytes(opts.master_key['region'])
-                key = str_to_bytes(opts.master_key['key'])
-                if not lib.mongocrypt_ctx_setopt_masterkey_aws(
-                        ctx, region, len(region), key, len(key)):
+            elif kms_provider == 'azure':
+                if ('keyName' not in opts.master_key or
+                        'keyVaultEndpoint' not in opts.master_key):
+                    raise ValueError(
+                        'master key must include "keyName" and '
+                        '"keyVaultEndpoint" for kms_provider: "azure"')
+            elif kms_provider == 'gcp':
+                if ('projectId' not in opts.master_key or
+                        'location' not in opts.master_key or
+                        'keyRing' not in opts.master_key or
+                        'keyName' not in opts.master_key):
+                    raise ValueError(
+                        'master key must include "projectId", "location",'
+                        '"keyRing", and "keyName" for kms_provider: "gcp"')
+
+            master_key['provider'] = kms_provider
+            with MongoCryptBinaryIn(
+                    callback.bson_encode(master_key)) as mkey:
+                if not lib.mongocrypt_ctx_setopt_key_encryption_key(
+                        ctx, mkey.bin):
                     self._raise_from_status()
-                if 'endpoint' in opts.master_key:
-                    endpoint = str_to_bytes(opts.master_key['endpoint'])
-                    if not lib.mongocrypt_ctx_setopt_masterkey_aws_endpoint(
-                            ctx, endpoint, len(endpoint)):
-                        self._raise_from_status()
-            elif kms_provider == 'local':
-                if not lib.mongocrypt_ctx_setopt_masterkey_local(ctx):
-                    self._raise_from_status()
-            else:
-                raise ValueError('unknown kms_provider: %s' % (kms_provider,))
 
             if opts.key_alt_names:
                 for key_alt_name in opts.key_alt_names:
