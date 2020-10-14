@@ -321,6 +321,12 @@ public class CAPI {
                                    mongocrypt_hash_fn sha_256,
                                    Pointer ctx);
 
+    public static native boolean
+    mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+            mongocrypt_t crypt,
+            mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
+            Pointer sign_ctx);
+
     /**
      * Set a handler to get called on every log message.
      *
@@ -354,6 +360,18 @@ public class CAPI {
     public static native boolean
     mongocrypt_setopt_kms_provider_local(mongocrypt_t crypt,
                                          mongocrypt_binary_t key);
+
+    /**
+     * Configure KMS providers with a BSON document.
+     *
+     * @param crypt The @ref mongocrypt_t object.
+     * @param kms_providers A BSON document mapping the KMS provider names to credentials.
+     * @return A boolean indicating success. If false, an error status is set.
+     * @since 1.1
+     */
+    public static native boolean
+    mongocrypt_setopt_kms_providers(mongocrypt_t crypt,
+                                    mongocrypt_binary_t kms_providers);
 
     /**
      * Set a local schema map for encryption.
@@ -522,6 +540,17 @@ public class CAPI {
     public static native boolean
     mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t ctx);
 
+    /**
+     * Set key encryption key document for creating a data key.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param keyDocument BSON representing the key encryption key document.
+     * @return A boolean indicating success. If false, and error status is set.
+     * @since 1.1
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_key_encryption_key(mongocrypt_ctx_t ctx,
+                                             mongocrypt_binary_t keyDocument);
 
     /**
      * Initialize a context to create a data key.

@@ -25,18 +25,19 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_t;
 import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
+import org.bson.BsonValue;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_INFO;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_TRACE;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_WARNING;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
@@ -45,6 +46,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_encryption_key;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws_endpoint;
@@ -52,9 +54,11 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_new;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hooks;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_local;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_providers;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_log_handler;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_schema_map;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status;
@@ -85,6 +89,8 @@ class MongoCryptImpl implements MongoCrypt {
     private final MessageDigestCallback sha256Callback;
     @SuppressWarnings("FieldCanBeLocal")
     private final SecureRandomCallback secureRandomCallback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final SigningRSAESPKCSCallback signingRSAESPKCSCallback;
 
     private volatile boolean closed;
 
@@ -121,6 +127,12 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
 
+        signingRSAESPKCSCallback = new SigningRSAESPKCSCallback();
+        success = mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(wrapped, signingRSAESPKCSCallback, null);
+        if (!success) {
+            throwExceptionFromStatus();
+        }
+
         if (options.getLocalKmsProviderOptions() != null) {
             try (BinaryHolder localMasterKeyBinaryHolder = toBinary(options.getLocalKmsProviderOptions().getLocalMasterKey())) {
                 success = mongocrypt_setopt_kms_provider_local(wrapped, localMasterKeyBinaryHolder.getBinary());
@@ -136,6 +148,15 @@ class MongoCryptImpl implements MongoCrypt {
                     new cstring(options.getAwsKmsProviderOptions().getSecretAccessKey()), -1);
             if (!success) {
                 throwExceptionFromStatus();
+            }
+        }
+
+        if (options.getKmsProviderOptions() != null) {
+            try (BinaryHolder binaryHolder = toBinary(options.getKmsProviderOptions())) {
+                success = mongocrypt_setopt_kms_providers(wrapped, binaryHolder.getBinary());
+                if (!success) {
+                    throwExceptionFromStatus();
+                }
             }
         }
 
@@ -205,7 +226,6 @@ class MongoCryptImpl implements MongoCrypt {
         }
 
         boolean success;
-
         if (kmsProvider.equals("aws")) {
             success = mongocrypt_ctx_setopt_masterkey_aws(context,
                     new cstring(options.getMasterKey().getString("region").getValue()), -1,
@@ -217,7 +237,9 @@ class MongoCryptImpl implements MongoCrypt {
         } else if (kmsProvider.equals("local")) {
             success = mongocrypt_ctx_setopt_masterkey_local(context);
         } else {
-            throw new IllegalArgumentException("Unsupported KMS provider " + kmsProvider);
+            BsonDocument masterKey = options.getMasterKey().clone();
+            masterKey.put("provider", new BsonString(kmsProvider));
+            success = mongocrypt_ctx_setopt_key_encryption_key(context, toBinary(masterKey).getBinary());
         }
 
         if (!success) {
@@ -235,8 +257,7 @@ class MongoCryptImpl implements MongoCrypt {
             }
         }
 
-        success = mongocrypt_ctx_datakey_init(context);
-        if (!success) {
+        if (!mongocrypt_ctx_datakey_init(context)) {
             MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
 
