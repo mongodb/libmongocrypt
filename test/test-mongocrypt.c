@@ -705,7 +705,19 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "unable to parse base64"},
       {"{'gcp': {'endpoint': 'example', 'email': 'test', 'privateKey': "
        "'AAAA'}}",
-       "Invalid endpoint"}};
+       "Invalid endpoint"},
+      {"{'azure': {'tenantId': '', 'clientId': '', 'clientSecret': '', "
+       "'identityPlatformEndpoint': 'example.com', 'extra': 'invalid' }}",
+       "Unexpected field: 'extra'"},
+      {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def', 'extra': "
+       "'invalid'}}",
+       "Unexpected field: 'extra'"},
+      {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
+       "'privateKey': 'AAAA', 'extra': 'invalid' }}",
+       "Unexpected field: 'extra'"},
+      {"{'local': {'key': 'AAAA', 'extra': 'invalid' }}",
+       "Unexpected field: 'extra'"},
+   };
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;

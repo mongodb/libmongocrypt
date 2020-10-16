@@ -635,7 +635,15 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
             return false;
          }
 
-
+         if (!_mongocrypt_check_allowed_fields (&as_bson,
+                                                "azure",
+                                                crypt->status,
+                                                "tenantId",
+                                                "clientId",
+                                                "clientSecret",
+                                                "identityPlatformEndpoint")) {
+            return false;
+         }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
       } else if (0 == strcmp (field_name, "gcp")) {
          if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_GCP)) {
@@ -667,6 +675,14 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
             return false;
          }
 
+         if (!_mongocrypt_check_allowed_fields (&as_bson,
+                                                "gcp",
+                                                crypt->status,
+                                                "email",
+                                                "privateKey",
+                                                "endpoint")) {
+            return false;
+         }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
       } else if (0 == strcmp (field_name, "local")) {
          if (!_mongocrypt_parse_required_binary (
@@ -674,6 +690,11 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                 "local.key",
                 &crypt->opts.kms_provider_local.key,
                 crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_check_allowed_fields (
+                &as_bson, "local", crypt->status, "key")) {
             return false;
          }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
@@ -690,6 +711,14 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                 "aws.secretAccessKey",
                 &crypt->opts.kms_provider_aws.secret_access_key,
                 crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_check_allowed_fields (&as_bson,
+                                                "aws",
+                                                crypt->status,
+                                                "accessKeyId",
+                                                "secretAccessKey")) {
             return false;
          }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
