@@ -51,6 +51,8 @@ typedef struct __mongocrypt_tester_t {
    int blob_count;
    uint8_t *test_blob[TEST_DATA_COUNT];
 
+   char *key_file_path;
+
    /* Example encrypted doc. */
    _mongocrypt_buffer_t encrypted_doc;
 } _mongocrypt_tester_t;
@@ -258,7 +260,8 @@ _mongocrypt_tester_install_status (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_endpoint (_mongocrypt_tester_t *tester);
 
-void _mongocrypt_tester_install_kek (_mongocrypt_tester_t *tester);
+void
+_mongocrypt_tester_install_kek (_mongocrypt_tester_t *tester);
 
 /* Conveniences for getting test data. */
 

@@ -1,0 +1,33 @@
+{
+    "status": {
+        "$numberInt": "1"
+    }, 
+    "_id": {
+        "$binary": {
+            "base64": "YWFhYWFhYWFhYWFhYWFhYQ==", 
+            "subType": "04"
+        }
+    }, 
+    "masterKey": {
+        "provider": "azure",
+        "keyVaultEndpoint": "test.vault.azure.net",
+        "keyName": "test"
+    }, 
+    "updateDate": {
+        "$date": {
+            "$numberLong": "1557827033449"
+        }
+    }, 
+    "keyMaterial": {
+        "$binary": {
+            "base64": "pLD/TmeVF1jV/Frp/0f24/Vdsz3bIL3CbtUo4vGiZ0bMzPrngzjBqH+UXdvqzTda1FrsRFfF3r4e1MPXo7oElt9eh76ZidbKhHRMR9tO41aSfxOYdN/J3eG+aNvrecmF",
+            "subType": "00"
+        }
+    }, 
+    "creationDate": {
+        "$date": {
+            "$numberLong": "1557827033449"
+        }
+    },
+    "keyAltNames": [ "keyDocumentName" ]
+}

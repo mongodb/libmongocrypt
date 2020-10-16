@@ -1,0 +1,35 @@
+{
+    "status": {
+        "$numberInt": "1"
+    }, 
+    "_id": {
+        "$binary": {
+            "base64": "YWFhYWFhYWFhYWFhYWFhYQ==", 
+            "subType": "04"
+        }
+    }, 
+    "masterKey": {
+        "provider": "gcp",
+        "projectId": "test",
+        "location": "global",
+        "keyRing": "test",
+        "keyName": "test"
+    }, 
+    "updateDate": {
+        "$date": {
+            "$numberLong": "1557827033449"
+        }
+    }, 
+    "keyMaterial": {
+        "$binary": {
+            "base64": "PwwOESbKs57YTJtGSCsuAJbv9VWRHjLdPdziUVxH0K9woZUka4SghSwJlw9n6TU/dYHFODvSa4p7bfKzS6U8kGFvOnd7LcPU63IkTek4qZEbGpTRwI5lMT4FFWdpYpUf",
+            "subType": "00"
+        }
+    }, 
+    "creationDate": {
+        "$date": {
+            "$numberLong": "1557827033449"
+        }
+    },
+    "keyAltNames": [ "keyDocumentName" ]
+}

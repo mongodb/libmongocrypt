@@ -569,6 +569,13 @@ done:
       mongoc_stream_destroy (stream);
       stream = NULL;
    }
+
+   if (!mongoc_stream_tls_handshake_block (
+          stream, host, connecttimeoutms, error)) {
+      mongoc_stream_destroy (stream);
+      stream = NULL;
+   }
+
    bson_free (host);
    bson_free (port);
    return stream;
