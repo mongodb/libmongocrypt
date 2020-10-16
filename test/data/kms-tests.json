@@ -124,5 +124,79 @@
       "\r\n"
     ],
     "expect": "Could not parse Status-Code"
+  },
+  {
+    "description": "Successful oauth request",
+    "ctx": ["azure_oauth_datakey", "azure_oauth_decrypt", "gcp_oauth_datakey", "gcp_oauth_decrypt"],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "Cache-Control: no-store, no-cache\r\n",
+      "Pragma: no-cache\r\n",
+      "Content-Type: application/json; charset=utf-8\r\n",
+      "Expires: -1\r\n",
+      "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n",
+      "X-Content-Type-Options: nosniff\r\n",
+      "P3P: CP=\"DSP CUR OTPi IND OTRi ONL FIN\"\r\n",
+      "x-ms-request-id: d5f2911d-6574-42fd-bb6f-2e5755ef1200\r\n",
+      "x-ms-ests-server: 2.1.11140.11 - EST ProdSlices\r\n",
+      "Set-Cookie: fpc=Al-86TFxDiZDvC96TyXEMKU9q7ekAQAAAC3jGtcOAAAA; expires=Sun, 15-Nov-2020 00:41:18 GMT; path=/; secure; HttpOnly; SameSite=None\r\n",
+      "Set-Cookie: x-ms-gateway-slice=prod; path=/; secure; samesite=none; httponly\r\n",
+      "Set-Cookie: stsservicecookie=ests; path=/; secure; samesite=none; httponly\r\n",
+      "Date: Fri, 16 Oct 2020 00:41:17 GMT\r\n",
+      "Content-Length: 85\r\n",
+      "\r\n",
+      "{\"token_type\":\"Bearer\",\"expires_in\":3599,\"ext_expires_in\":3599,\"access_token\":\"AAAA\"}"
+    ],
+    "expect": "ok"
+  },
+  {
+    "description": "Invalid client id in Azure oauth request",
+    "ctx": ["azure_oauth_datakey", "azure_oauth_decrypt"],
+    "http_reply": [
+      "HTTP/1.1 400 Bad Request\r\n",
+      "Cache-Control: no-store, no-cache\r\n",
+      "Pragma: no-cache\r\n",
+      "Content-Type: application/json; charset=utf-8\r\n",
+      "Expires: -1\r\n",
+      "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n",
+      "X-Content-Type-Options: nosniff\r\n",
+      "P3P: CP=\"DSP CUR OTPi IND OTRi ONL FIN\"\r\n",
+      "x-ms-request-id: a1029d4e-fcae-4d24-bb46-ad4f3d8c1200\r\n",
+      "x-ms-ests-server: 2.1.11140.11 - EST ProdSlices\r\n",
+      "Set-Cookie: fpc=At8uDzjFi7ZAqLOAe9gcjXu3BobWAQAAALfoGtcOAAAA; expires=Sun, 15-Nov-2020 01:04:56 GMT; path=/; secure; HttpOnly; SameSite=None\r\n",
+      "Set-Cookie: x-ms-gateway-slice=prod; path=/; secure; samesite=none; httponly\r\n",
+      "Set-Cookie: stsservicecookie=ests; path=/; secure; samesite=none; httponly\r\n",
+      "Date: Fri, 16 Oct 2020 01:04:56 GMT\r\n",
+      "Content-Length: 752\r\n",
+      "\r\n",
+      "{\"error\":\"unauthorized_client\",\"error_description\":\"AADSTS700016: Application with identifier 'CLIENT_ID' was not found in the directory 'a1d0ca08-34e5-4a1b-924d-ef3cea0e4b49'. This can happen if the application has not been installed by the administrator of the tenant or consented to by any user in the tenant. You may have sent your authentication request to the wrong tenant.\\r\\nTrace ID: 5458a904-9ab0-4f95-97e5-24f47ca21400\\r\\nCorrelation ID: e43f3081-dd2e-4989-8975-d5e4cdd597c1\\r\\nTimestamp: 2020-10-16 01:11:04Z\",\"error_codes\":[700016],\"timestamp\":\"2020-10-16 01:11:04Z\",\"trace_id\":\"5458a904-9ab0-4f95-97e5-24f47ca21400\",\"correlation_id\":\"e43f3081-dd2e-4989-8975-d5e4cdd597c1\",\"error_uri\":\"https://login.microsoftonline.com/error?code=700016\"}"
+    ],
+    "expect": "Application with identifier 'CLIENT_ID' was not found"
+  },
+  {
+    "description": "GCP invalid signature",
+    "ctx": ["gcp_oauth_datakey", "gcp_oauth_decrypt"],
+    "http_reply": [
+      "HTTP/1.1 400 Bad Request\r\n",
+      "Content-Type: application/json; charset=UTF-8\r\n",
+      "Vary: X-Origin\r\n",
+      "Vary: Referer\r\n",
+      "Date: Fri, 16 Oct 2020 01:22:34 GMT\r\n",
+      "Server: scaffolding on HTTPServer2\r\n",
+      "Cache-Control: private\r\n",
+      "X-XSS-Protection: 0\r\n",
+      "X-Frame-Options: SAMEORIGIN\r\n",
+      "X-Content-Type-Options: nosniff\r\n",
+      "Alt-Svc: h3-Q050=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-27=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-T050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"\r\n",
+      "Accept-Ranges: none\r\n",
+      "Vary: Origin,Accept-Encoding\r\n",
+      "Transfer-Encoding: chunked\r\n",
+      "\r\n",
+      "46\r\n",
+      "{\"error\":\"invalid_grant\",\"error_description\":\"Invalid JWT Signature.\"}\r\n",
+      "0\r\n",
+      "\r\n"
+    ],
+    "expect": "Invalid JWT Signature"
   }
 ]

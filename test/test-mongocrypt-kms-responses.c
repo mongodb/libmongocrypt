@@ -53,18 +53,38 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
 
       status = mongocrypt_status_new ();
       crypt = _mongocrypt_tester_mongocrypt ();
+      ctx = mongocrypt_ctx_new (crypt);
 
       /* Test both contexts for creating a data key and automatic decryption
        * since they go through different code paths related to KMS. */
       if (0 == strcmp ("datakey", ctx_type)) {
-         ctx = mongocrypt_ctx_new (crypt);
          mongocrypt_ctx_setopt_masterkey_aws (
             ctx, "example", -1, "example", -1);
          ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
       } else if (0 == strcmp ("decrypt", ctx_type)) {
-         ctx = mongocrypt_ctx_new (crypt);
          mongocrypt_binary_destroy (bin);
          bin = _mongocrypt_tester_encrypted_doc (tester);
+         tester->key_file_path = "./test/example/key-document.json";
+         ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
+      } else if (0 == strcmp ("azure_oauth_datakey", ctx_type)) {
+         mongocrypt_ctx_setopt_key_encryption_key (
+            ctx,
+            TEST_BSON ("{'provider': 'azure', 'keyVaultEndpoint': "
+                       "'example.vault.azure.net', 'keyName': 'test'}"));
+         ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+      } else if (0 == strcmp ("azure_oauth_decrypt", ctx_type)) {
+         bin = _mongocrypt_tester_encrypted_doc (tester);
+         tester->key_file_path = "./test/data/key-document-azure.json";
+         ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
+      } else if (0 == strcmp ("gcp_oauth_datakey", ctx_type)) {
+         mongocrypt_ctx_setopt_key_encryption_key (
+            ctx,
+            TEST_BSON ("{'provider': 'gcp', 'projectId': 'test', 'location': "
+                       "'global', 'keyRing': 'test', 'keyName': 'test'}"));
+         ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+      } else if (0 == strcmp ("gcp_oauth_decrypt", ctx_type)) {
+         bin = _mongocrypt_tester_encrypted_doc (tester);
+         tester->key_file_path = "./test/data/key-document-gcp.json";
          ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
       } else {
          fprintf (stderr, "unsupported ctx type: %s\n", ctx_type);

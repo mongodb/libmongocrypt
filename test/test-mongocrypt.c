@@ -324,8 +324,12 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
-         res = mongocrypt_ctx_mongo_feed (
-            ctx, TEST_FILE ("./test/example/key-document.json"));
+         if (tester->key_file_path) {
+            bin = TEST_FILE (tester->key_file_path);
+         } else {
+            bin = TEST_FILE ("./test/example/key-document.json");
+         }
+         res = mongocrypt_ctx_mongo_feed (ctx, bin);
          mongocrypt_ctx_status (ctx, status);
          ASSERT_OR_PRINT (res, status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
@@ -438,6 +442,36 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n)
    buf->owned = true;
 }
 
+#define PRIVATE_KEY_FOR_TESTING                                                \
+   "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4JOyv5z05cL18ztpknRC7C" \
+   "FY2gYol4DAKerdVUoDJxCTmFMf39dVUEqD0WDiw/qcRtSO1/"                          \
+   "FRut08PlSPmvbyKetsLoxlpS8lukSzEFpFK7+L+R4miFOl6HvECyg7lbC1H/"              \
+   "WGAhIz9yZRlXhRo9qmO/"                                                      \
+   "fB6PV9IeYtU+"                                                              \
+   "1xYuXicjCDPp36uuxBAnCz7JfvxJ3mdVc0vpSkbSb141nWuKNYR1mgyvvL6KzxO6mYsCo4hRA" \
+   "dhuizD9C4jDHk0V2gDCFBk0h8SLEdzStX8L0jG90/Og4y7J1b/cPo/"                    \
+   "kbYokkYisxe8cPlsvGBf+rZex7XPxc1yWaP080qeABJb+S88O//"                       \
+   "LAgMBAAECggEBAKVxP1m3FzHBUe2NZ3fYCc0Qa2zjK7xl1KPFp2u4CU+"                  \
+   "9sy0oZJUqQHUdm5CMprqWwIHPTftWboFenmCwrSXFOFzujljBO7Z3yc1WD3NJl1ZNepLcsRJ3" \
+   "WWFH5V+NLJ8Bdxlj1DMEZCwr7PC5+vpnCuYWzvT0qOPTl9RNVaW9VVjHouJ9Fg+"           \
+   "s2DrShXDegFabl1iZEDdI4xScHoYBob06A5lw0WOCTayzw0Naf37lM8Y4psRAmI46XLiF/"    \
+   "Vbuorna4hcChxDePlNLEfMipICcuxTcei1RBSlBa2t1tcnvoTy6cuYDqqImRYjp1KnMKlKQBn" \
+   "Q1NjS2TsRGm+F0FbreVCECgYEA4IDJlm8q/hVyNcPe4OzIcL1rsdYN3bNm2Y2O/"           \
+   "YtRPIkQ446ItyxD06d9VuXsQpFp9jNACAPfCMSyHpPApqlxdc8z/"                      \
+   "xATlgHkcGezEOd1r4E7NdTpGg8y6Rj9b8kVlED6v4grbRhKcU6moyKUQT3+"               \
+   "1B6ENZTOKyxuyDEgTwZHtFECgYEA0fqdv9h9s77d6eWmIioP7FSymq93pC4umxf6TVicpjpME" \
+   "rdD2ZfJGulN37dq8FOsOFnSmFYJdICj/PbJm6p1i8O21lsFCltEqVoVabJ7/"              \
+   "0alPfdG2U76OeBqI8ZubL4BMnWXAB/"                                            \
+   "VVEYbyWCNpQSDTjHQYs54qa2I0dJB7OgJt1sCgYEArctFQ02/"                         \
+   "7H5Rscl1yo3DBXO94SeiCFSPdC8f2Kt3MfOxvVdkAtkjkMACSbkoUsgbTVqTYSEOEc2jTgR3i" \
+   "Q13JgpHaFbbsq64V0QP3TAxbLIQUjYGVgQaF1UfLOBv8hrzgj45z/ST/"                  \
+   "G80lOl595+0nCUbmBcgG1AEWrmdF0/"                                            \
+   "3RmECgYAKvIzKXXB3+19vcT2ga5Qq2l3TiPtOGsppRb2XrNs9qKdxIYvHmXo/"             \
+   "9QP1V3SRW0XoD7ez8FpFabp42cmPOxUNk3FK3paQZABLxH5pzCWI9PzIAVfPDrm+"          \
+   "sdnbgG7vAnwfL2IMMJSA3aDYGCbF9EgefG+"                                       \
+   "STcpfqq7fQ6f5TBgLFwKBgCd7gn1xYL696SaKVSm7VngpXlczHVEpz3kStWR5gfzriPBxXgMV" \
+   "cWmcbajRser7ARpCEfbxM1UJyv6oAYZWVSNErNzNVb4POqLYcCNySuC6xKhs9FrEQnyKjyk8w" \
+   "I4VnrEMGrQ8e+qYSwYk9Gh6dKGoRMAPYVXQAO0fIsHF/T0a"
 
 mongocrypt_t *
 _mongocrypt_tester_mongocrypt (void)
@@ -455,8 +489,22 @@ _mongocrypt_tester_mongocrypt (void)
                                                sizeof localkey_data);
    mongocrypt_setopt_kms_provider_local (crypt, localkey);
    mongocrypt_binary_destroy (localkey);
-   kms_providers = BCON_NEW (
-      "azure", "{", "tenantId", "", "clientId", "", "clientSecret", "", "}");
+   kms_providers = BCON_NEW ("azure",
+                             "{",
+                             "tenantId",
+                             "",
+                             "clientId",
+                             "",
+                             "clientSecret",
+                             "",
+                             "}",
+                             "gcp",
+                             "{",
+                             "email",
+                             "test@example.com",
+                             "privateKey",
+                             PRIVATE_KEY_FOR_TESTING,
+                             "}");
    bin = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);
@@ -640,7 +688,8 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
       {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
       {"{'aws': {}}", "expected UTF-8 aws.accessKeyId"},
-      {"{'local': {'key': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}", NULL},
+      {"{'local': {'key': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}",
+       NULL},
       {"{'local': {'key': 'AAAA' }}", NULL},
       {"{'local': {'key': 'invalid base64' }}", "unable to parse base64"},
       {"{'local': {}}", "expected UTF-8 or binary local.key"},
@@ -741,6 +790,8 @@ main (int argc, char **argv)
       }
       printf ("  begin %s\n", tester.test_names[i]);
       tester.test_fns[i](&tester);
+      /* Clear state. */
+      tester.key_file_path = NULL;
       printf ("  end %s\n", tester.test_names[i]);
    }
    printf ("... done running tests\n");
