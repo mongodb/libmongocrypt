@@ -70,7 +70,8 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
    }
 
    if (opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
-      if (!opts->kms_provider_aws.access_key_id || !opts->kms_provider_aws.secret_access_key) {
+      if (!opts->kms_provider_aws.access_key_id ||
+          !opts->kms_provider_aws.secret_access_key) {
          CLIENT_ERR ("aws credentials unset");
          return false;
       }
@@ -235,5 +236,51 @@ _mongocrypt_parse_required_binary (const bson_t *bson,
       return false;
    }
 
+   return true;
+}
+
+bool
+_mongocrypt_check_allowed_fields_va (const bson_t *bson,
+                                     const char *dotkey,
+                                     mongocrypt_status_t *status,
+                                     ...)
+{
+   va_list args;
+   const char *field;
+   bson_iter_t iter;
+
+   if (dotkey) {
+      bson_iter_t parent;
+
+      bson_iter_init (&parent, bson);
+      if (!bson_iter_find_descendant (&parent, dotkey, &iter) ||
+          !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         CLIENT_ERR ("invalid BSON, expected %s", dotkey);
+         return false;
+      }
+      bson_iter_recurse (&iter, &iter);
+   } else {
+      bson_iter_init (&iter, bson);
+   }
+
+   while (bson_iter_next (&iter)) {
+      bool found = false;
+
+      va_start (args, status);
+      field = va_arg (args, const char *);
+      while (field) {
+         if (0 == strcmp (field, bson_iter_key (&iter))) {
+            found = true;
+            break;
+         }
+         field = va_arg (args, const char *);
+      }
+      va_end (args);
+
+      if (!found) {
+         CLIENT_ERR ("Unexpected field: '%s'", bson_iter_key (&iter));
+         return false;
+      }
+   }
    return true;
 }

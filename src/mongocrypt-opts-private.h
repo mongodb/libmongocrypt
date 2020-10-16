@@ -51,7 +51,7 @@ typedef struct {
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
    _mongocrypt_buffer_t schema_map;
-   
+
    int kms_providers; /* A bit set of _mongocrypt_kms_provider_t */
    _mongocrypt_opts_kms_provider_local_t kms_provider_local;
    _mongocrypt_opts_kms_provider_aws_t kms_provider_aws;
@@ -160,5 +160,20 @@ _mongocrypt_parse_required_binary (const bson_t *bson,
                                    const char *dotkey,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status);
+
+/*
+ * Checks for unrecognized fields in parsing @bson.
+ * @dotkey is a dot separated path to a document field, like "a.b.c" or NULL.
+ * Pass a list of allowed fields.
+ * Returns true if no error occurred.
+ */
+bool
+_mongocrypt_check_allowed_fields_va (const bson_t *bson,
+                                     const char *dotkey,
+                                     mongocrypt_status_t *status,
+                                     ...);
+
+#define _mongocrypt_check_allowed_fields(bson, path, status, ...) \
+   _mongocrypt_check_allowed_fields_va (bson, path, status, __VA_ARGS__, NULL)
 
 #endif /* MONGOCRYPT_OPTS_PRIVATE_H */

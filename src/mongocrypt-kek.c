@@ -66,8 +66,15 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
              bson, "endpoint", &kek->provider.aws.endpoint, status)) {
          goto done;
       }
+      if (!_mongocrypt_check_allowed_fields (
+             bson, NULL, status, "provider", "key", "region", "endpoint")) {
+         goto done;
+      }
    } else if (0 == strcmp (kms_provider, "local")) {
       kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+      if (!_mongocrypt_check_allowed_fields (bson, NULL, status, "provider")) {
+         goto done;
+      }
    } else if (0 == strcmp (kms_provider, "azure")) {
       kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_AZURE;
       if (!_mongocrypt_parse_required_endpoint (
@@ -85,6 +92,16 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
 
       if (!_mongocrypt_parse_optional_utf8 (
              bson, "keyVersion", &kek->provider.azure.key_version, status)) {
+         goto done;
+      }
+
+      if (!_mongocrypt_check_allowed_fields (bson,
+                                             NULL,
+                                             status,
+                                             "provider",
+                                             "keyVaultEndpoint",
+                                             "keyName",
+                                             "keyVersion")) {
          goto done;
       }
    } else if (0 == strcmp (kms_provider, "gcp")) {
@@ -116,6 +133,18 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
 
       if (!_mongocrypt_parse_optional_utf8 (
              bson, "keyVersion", &kek->provider.gcp.key_version, status)) {
+         goto done;
+      }
+      if (!_mongocrypt_check_allowed_fields (bson,
+                                             NULL,
+                                             status,
+                                             "provider",
+                                             "endpoint",
+                                             "projectId",
+                                             "location",
+                                             "keyRing",
+                                             "keyName",
+                                             "keyVersion")) {
          goto done;
       }
    } else {

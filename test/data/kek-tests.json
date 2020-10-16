@@ -90,5 +90,43 @@
             "provider": "gcp"
         }, 
         "expect": "ok"
+    },
+    {
+        "input": {
+            "projectId": "example projectId", 
+            "keyName": "example keyName", 
+            "keyRing": "example keyRing", 
+            "location": "example location", 
+            "provider": "gcp",
+            "extra": "invalid"
+        }, 
+        "expect": "Unexpected field: 'extra'"
+    },
+    {
+        "input": {
+            "keyVaultEndpoint": "keyvault.example.com", 
+            "keyVersion": "example keyVersion", 
+            "keyName": "example keyName", 
+            "provider": "azure",
+            "extra": "invalid"
+        }, 
+        "expect": "Unexpected field: 'extra'"
+    },
+    {
+        "input": {
+            "region": "example region", 
+            "endpoint": "example.com", 
+            "key": "example arn", 
+            "provider": "aws",
+            "extra": "invalid"
+        }, 
+        "expect": "Unexpected field: 'extra'"
+    },
+    {
+        "input": {
+            "provider": "local",
+            "extra": "invalid"
+        }, 
+        "expect": "Unexpected field: 'extra'"
     }
 ]
