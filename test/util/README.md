@@ -4,6 +4,7 @@ To build `csfle`, ensure libmongoc is installed (in addition to libbson) and set
 
 Options can also be provided through a config flag.
 
+```
 Global options
     --options_file <string>
         Alternative way to pass all options.
@@ -59,6 +60,7 @@ csfle explicit_encrypt
 
 csfle explicit_decrypt
     --value <JSON string> Document must have form { "v": ... }
+```
 
 
 The KMS providers file must be extended canonical JSON of the following form.
