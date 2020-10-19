@@ -65,7 +65,9 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
 
    endpoint = _mongocrypt_endpoint_new ("malformed", -1, status);
    BSON_ASSERT (!endpoint);
-   ASSERT_STATUS_CONTAINS (status, "Invalid");
+   ASSERT_STATUS_CONTAINS (
+      status,
+      "Invalid endpoint, expected dot separator in host, but got: malformed");
    _mongocrypt_endpoint_destroy (endpoint);
 
    mongocrypt_status_destroy (status);
