@@ -77,7 +77,9 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    prev = pos;
    pos = strstr (pos, ".");
    if (!pos) {
-      CLIENT_ERR ("Invalid endpoint, expected .: %s", endpoint->original);
+      CLIENT_ERR (
+         "Invalid endpoint, expected dot separator in host, but got: %s",
+         endpoint->original);
       goto fail;
    }
    endpoint->subdomain = bson_strndup (prev, pos - prev);
@@ -161,7 +163,8 @@ fail:
 }
 
 _mongocrypt_endpoint_t *
-_mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src) {
+_mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src)
+{
    _mongocrypt_endpoint_t *endpoint;
 
    if (!src) {
