@@ -666,6 +666,40 @@ _test_crypto_hook_sign_rsaes_pkcs1_v1_5 (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
    bson_string_free (call_history, true);
+
+   /* Test error when creating a data key. */
+   crypt = _create_mongocrypt (tester, "error_on:sign_rsaes_pkcs1_v1_5");
+   ctx = mongocrypt_ctx_new (crypt);
+   call_history = bson_string_new (NULL);
+
+   mongocrypt_ctx_setopt_key_encryption_key (
+      ctx,
+      TEST_BSON ("{'provider': 'gcp', 'projectId': 'test', 'location': "
+                 "'global', 'keyRing': 'ring', 'keyName': 'key'}"));
+   ASSERT_FAILS (
+      mongocrypt_ctx_datakey_init (ctx), ctx, "error constructing KMS message");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+   bson_string_free (call_history, true);
+
+   /* Test error when encrypting. */
+   crypt = _create_mongocrypt (tester, "error_on:sign_rsaes_pkcs1_v1_5");
+   ctx = mongocrypt_ctx_new (crypt);
+   call_history = bson_string_new (NULL);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_FAILS (mongocrypt_ctx_mongo_feed (
+                    ctx, TEST_FILE ("./test/data/key-document-gcp.json")),
+                 ctx,
+                 "error constructing KMS message");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+   bson_string_free (call_history, true);
 }
 
 void

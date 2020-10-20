@@ -426,13 +426,14 @@ _decrypt_with_local_kms (_mongocrypt_key_broker_t *kb,
 
    decrypted_key_material->owned = true;
 
-   crypt_ret = _mongocrypt_do_decryption (kb->crypt->crypto,
-                                          NULL /* associated data. */,
-                                          &kb->crypt->opts.kms_provider_local.key,
-                                          key_material,
-                                          decrypted_key_material,
-                                          &bytes_written,
-                                          kb->status);
+   crypt_ret =
+      _mongocrypt_do_decryption (kb->crypt->crypto,
+                                 NULL /* associated data. */,
+                                 &kb->crypt->opts.kms_provider_local.key,
+                                 key_material,
+                                 decrypted_key_material,
+                                 &bytes_written,
+                                 kb->status);
    if (!crypt_ret) {
       return _key_broker_fail (kb);
    }
@@ -540,7 +541,8 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                    &kb->crypt->opts,
                    /* The key vault endpoint is used to determine the scope. */
                    key_doc->kek.provider.azure.key_vault_endpoint)) {
-               mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
+               mongocrypt_kms_ctx_status (&kb->auth_request_azure.kms,
+                                          kb->status);
                _key_broker_fail (kb);
                goto done;
             }
@@ -570,7 +572,8 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                    &kb->crypt->log,
                    &kb->crypt->opts,
                    key_doc->kek.provider.gcp.endpoint)) {
-               mongocrypt_kms_ctx_status (&key_returned->kms, kb->status);
+               mongocrypt_kms_ctx_status (&kb->auth_request_gcp.kms,
+                                          kb->status);
                _key_broker_fail (kb);
                goto done;
             }
