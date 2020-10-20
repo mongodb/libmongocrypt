@@ -671,6 +671,11 @@ typedef struct {
    char *errmsg;
 } setopt_kms_providers_testcase_t;
 
+#define EXAMPLE_LOCAL_MATERIAL                                                 \
+   "TlPm8M/Uxs0eK13ReFeOUyxVC2rarCf5+LbKuY/dnFxS/"                             \
+   "LoYc1CZqnfSXujqqWrrt3fOTQ2TdtNhO4bBfamOyJPx4uJSstehc7It4pLp3LHes70z64AYqJ" \
+   "Uemk4G+2He"
+
 static void
 _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
 {
@@ -688,9 +693,10 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
       {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
       {"{'aws': {}}", "expected UTF-8 aws.accessKeyId"},
-      {"{'local': {'key': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}",
+      {"{'local': {'key': {'$binary': {'base64': '" EXAMPLE_LOCAL_MATERIAL
+       "', 'subType': '00'}} }}",
        NULL},
-      {"{'local': {'key': 'AAAA' }}", NULL},
+      {"{'local': {'key': '" EXAMPLE_LOCAL_MATERIAL "' }}", NULL},
       {"{'local': {'key': 'invalid base64' }}", "unable to parse base64"},
       {"{'local': {}}", "expected UTF-8 or binary local.key"},
       /* either base64 string or binary is acceptable for privateKey */
@@ -715,8 +721,9 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
        "'privateKey': 'AAAA', 'extra': 'invalid' }}",
        "Unexpected field: 'extra'"},
-      {"{'local': {'key': 'AAAA', 'extra': 'invalid' }}",
+      {"{'local': {'key': '" EXAMPLE_LOCAL_MATERIAL "', 'extra': 'invalid' }}",
        "Unexpected field: 'extra'"},
+      {"{'local': {'key': 'AAAA'}}", "local key must be 96 bytes"},
    };
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {

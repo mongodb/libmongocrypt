@@ -693,6 +693,11 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
             return false;
          }
 
+         if (crypt->opts.kms_provider_local.key.len != MONGOCRYPT_KEY_LEN) {
+            CLIENT_ERR ("local key must be %d bytes", MONGOCRYPT_KEY_LEN);
+            return false;
+         }
+
          if (!_mongocrypt_check_allowed_fields (
                 &as_bson, "local", crypt->status, "key")) {
             return false;
