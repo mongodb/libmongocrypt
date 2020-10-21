@@ -888,7 +888,7 @@ buildvariants:
     - rhel70-small
 - name: suse12-64
   display_name: "SLES 12 64-bit"
-  run_on: suse12-test
+  run_on: suse12-sp5-small
   expansions:
     has_packages: true
     packager_distro: suse12
