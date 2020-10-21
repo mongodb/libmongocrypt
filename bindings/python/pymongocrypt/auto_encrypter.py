@@ -28,7 +28,7 @@ class AutoEncrypter(object):
           - `mongo_crypt_opts`: A :class:`MongoCryptOptions`.
         """
         self.callback = callback
-        self.mongocrypt = MongoCrypt(mongo_crypt_opts)
+        self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
     def encrypt(self, database, cmd):
         """Encrypt a MongoDB command.

@@ -71,7 +71,7 @@ class ExplicitEncrypter(object):
         self.callback = callback
         if mongo_crypt_opts.schema_map is not None:
             raise ValueError("mongo_crypt_opts.schema_map must be None")
-        self.mongocrypt = MongoCrypt(mongo_crypt_opts)
+        self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
     def create_data_key(self, kms_provider, master_key=None,
                         key_alt_names=None):

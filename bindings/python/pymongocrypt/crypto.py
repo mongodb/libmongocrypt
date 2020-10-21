@@ -17,10 +17,12 @@
 import os
 import traceback
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.hashes import Hash, SHA256, SHA512
 from cryptography.hazmat.primitives.hmac import HMAC
-from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import load_der_private_key
 
 from pymongocrypt.binary import _to_bytes, _write_bytes
 from pymongocrypt.binding import ffi, lib
@@ -116,4 +118,17 @@ def sha_256(ctx, input, output, status):
 def secure_random(ctx, output, count, status):
     data = os.urandom(int(count))
     _write_bytes(output, data)
+    return True
+
+
+@ffi.callback(
+    "bool(void *, mongocrypt_binary_t *, mongocrypt_binary_t *, "
+    "     mongocrypt_binary_t *, mongocrypt_status_t *)",
+    onerror=_callback_error_handler)
+def sign_rsaes_pkcs1_v1_5(ctx, key, input, output, status):
+    rsa_private_key = load_der_private_key(
+        _to_bytes(key), password=None, backend=default_backend())
+    signature = rsa_private_key.sign(
+        _to_bytes(input), padding=padding.PKCS1v15(), algorithm=SHA256())
+    _write_bytes(output, signature)
     return True

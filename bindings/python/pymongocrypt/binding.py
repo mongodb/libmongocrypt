@@ -353,6 +353,21 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
                                       mongocrypt_binary_t *key);
 
 /**
+ * Configure KMS providers with a BSON document.
+ * Currently only applies to Azure.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] kms_providers A BSON document mapping the KMS provider names
+ * to credentials.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+bool
+mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
+                                 mongocrypt_binary_t *kms_providers);
+
+/**
  * Set a local schema map for encryption.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
@@ -555,6 +570,20 @@ mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
  */
 bool
 mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
+
+/**
+ * Set key encryption key document for creating a data key.
+ * Currently only applies to Azure.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] bin BSON representing the key encryption key document.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success. If false, and error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status.
+ */
+bool
+mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
+                                          mongocrypt_binary_t *bin);
 
 /**
  * Initialize a context to create a data key.
@@ -763,7 +792,7 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx);
  * guaranteed to be valid until the call of @ref mongocrypt_ctx_kms_done of the
  * parent @ref mongocrypt_ctx_t.
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
 bool
 mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
@@ -780,7 +809,7 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * may include a port (e.g. "example.com:123"). If it does not, default to port
  * 443.
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
 bool
 mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms, const char **endpoint);
@@ -804,7 +833,7 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms);
  * @param[in] bytes The bytes to feed. The viewed data is copied. It is valid to
  * destroy @p bytes with @ref mongocrypt_binary_destroy immediately after.
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
 bool
 mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
@@ -816,7 +845,6 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
  * @param[out] status Receives the status.
  *
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
  */
 bool
 mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
@@ -899,7 +927,10 @@ typedef bool (*mongocrypt_crypto_fn) (void *ctx,
                                       mongocrypt_status_t *status);
 
 /**
- * A crypto HMAC SHA-512 or SHA-256 function.
+ * A crypto signature or HMAC function.
+ *
+ * Currently used in callbacks for HMAC SHA-512, HMAC SHA-256, and RSA SHA-256
+ * signature.
  *
  * @param[in] ctx An optional context object that may have been set when hooks
  * were enabled.
@@ -963,6 +994,12 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hmac_fn hmac_sha_256,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx);
+
+bool
+mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
+   mongocrypt_t *crypt,
+   mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
+   void *sign_ctx);
 """)
 
 # Use the PYMONGOCRYPT_LIB environment variable to load a custom libmongocrypt
