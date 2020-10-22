@@ -36,6 +36,12 @@ make
 This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the `CMAKE_PREFIX_PATH` must include the path to the BSON library installation directory if it was not the defaults.  Also note that if your project will also dynamically link to the BSON library, you will need to add `-DENABLE_SHARED_BSON=ON` to the `cmake` command line.
 
 ## Installing libmongocrypt on macOS ##
+Install the latest release of libmongocrypt with the following.
+```
+brew install mongodb/brew/libmongocrypt
+```
+
+## Building libmongocrypt from source on macOS ##
 First install [Homebrew according to its own instructions](https://brew.sh/). Using Homebrew, install the following dependencies.
 ```
 brew install mongo-c-driver cmake
@@ -106,11 +112,13 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 
 #### Steps to release ####
 Do the following when releasing:
+- Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"`.
 - Commit, create a new git tag, like `1.0.0-rc123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
 - Commit and push.
 - Create a BUILD ticket to update the version of libmongocrypt installed on Evergreen hosts.
+- Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb
 
 ## Installing libmongocrypt From Distribution Packages ##
 Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.
