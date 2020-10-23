@@ -54,8 +54,8 @@ class DataKeyOpts(object):
             If the `kms_provider` is "azure" it is required and has the
             following fields::
 
-              - `keyVaultEndpoint` (string): Host with optional port, e.g.
-                 "example.vault.azure.net".
+              - `keyVaultEndpoint` (string): Required. Host with optional
+                 port, e.g. "example.vault.azure.net".
               - `keyName` (string): Required. Key name in the key vault.
               - `keyVersion` (string): Optional. Version of the key to use.
 
