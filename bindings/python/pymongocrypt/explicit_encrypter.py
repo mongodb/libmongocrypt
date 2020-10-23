@@ -39,8 +39,10 @@ class DataKeyOpts(object):
         :Parameters:
           - `master_key`: Identifies a KMS-specific key used to encrypt the
             new data key. If the kmsProvider is "local" the `master_key` is
-            not applicable and may be omitted. If the `kms_provider` is "aws"
-            it is required and has the following fields::
+            not applicable and may be omitted.
+
+            If the `kms_provider` is "aws" it is required and has the
+            following fields::
 
               - `region` (string): Required. The AWS region, e.g. "us-east-1".
               - `key` (string): Required. The Amazon Resource Name (ARN) to
@@ -48,6 +50,26 @@ class DataKeyOpts(object):
               - `endpoint` (string): Optional. An alternate host to send KMS
                 requests to. May include port number, e.g.
                 "kms.us-east-1.amazonaws.com:443".
+
+            If the `kms_provider` is "azure" it is required and has the
+            following fields::
+
+              - `keyVaultEndpoint` (string): Required. Host with optional
+                 port, e.g. "example.vault.azure.net".
+              - `keyName` (string): Required. Key name in the key vault.
+              - `keyVersion` (string): Optional. Version of the key to use.
+
+            If the `kms_provider` is "gcp" it is required and has the
+            following fields::
+
+              - `projectId` (string): Required. The Google cloud project ID.
+              - `location` (string): Required. The GCP location, e.g. "us-east1".
+              - `keyRing` (string): Required. Name of the key ring that contains
+                the key to use.
+              - `keyName` (string): Required. Name of the key to use.
+              - `keyVersion` (string): Optional. Version of the key to use.
+              - `endpoint` (string): Optional. Host with optional port.
+                Defaults to "cloudkms.googleapis.com".
 
           - `key_alt_names`: An optional list of bytes suitable to be passed to
             mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON

@@ -20,9 +20,11 @@ PY3 = sys.version_info[0] == 3
 
 if PY3:
     from abc import ABC
+    unicode_type = str
 else:
     from abc import ABCMeta as _ABCMeta
     ABC = _ABCMeta('ABC', (object,), {})
+    unicode_type = unicode
 
 
 def str_to_bytes(string):
