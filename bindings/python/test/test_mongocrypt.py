@@ -15,12 +15,13 @@
 """Test the mongocrypt module."""
 
 import base64
+import copy
 import os
 import sys
 import uuid
 
 from bson import json_util, BSON
-from bson.binary import STANDARD
+from bson.binary import Binary, STANDARD
 from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
@@ -77,23 +78,34 @@ class TestMongoCryptOptions(unittest.TestCase):
             self.assertEqual(opts.schema_map, schema_map)
 
     @unittest.skipIf(PY3, 'python 2 only')
-    def test_mongocrypt_options_local_kms_py2(self):
+    def test_mongocrypt_options_py2(self):
         valid = [
             ({'local': {'key': b'1'*96}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'},
               'local': {'key': b'1'*96}}, None),
-            ({'local': {'key': unicode_type(base64.b64encode('1'*96))}}, None)
+            ({'local': {'key': unicode_type(base64.b64encode('1'*96))}}, None),
+            ({'local': {'key': Binary(b'1'*96)}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': b'1'}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': unicode_type(base64.b64encode(b'1'))}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': Binary(b'1')}}, None)
         ]
+
+        sp_providers = {"local": "key", "gcp": "privateKey"}
         for kms_providers, schema_map in valid:
             opts = MongoCryptOptions(kms_providers, schema_map)
             for provider_name in kms_providers:
                 map = kms_providers[provider_name]
-                if provider_name == 'local':
-                    if isinstance(map['key'], unicode_type):
+                if provider_name in sp_providers:
+                    fname = sp_providers[provider_name]
+                    if isinstance(map[fname], unicode_type):
                         self.assertEqual(
                             opts.kms_providers[provider_name], map)
                     else:
-                        expected = {'key': base64.b64encode(map['key'])}
+                        expected = copy.deepcopy(map)
+                        expected[fname] = base64.b64encode(map[fname])
                         self.assertEqual(
                             opts.kms_providers[provider_name], expected)
                 else:
@@ -101,11 +113,20 @@ class TestMongoCryptOptions(unittest.TestCase):
             self.assertEqual(opts.schema_map, schema_map)
 
     @unittest.skipIf(not PY3, 'python 3 only')
-    def test_mongocrypt_options_local_kms_py3(self):
+    def test_mongocrypt_options_py3(self):
         valid = [
             ({'local': {'key': b'1'*96}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'},
-              'local': {'key': b'1'*96}}, None)]
+              'local': {'key': b'1'*96}}, None),
+            ({'local': {'key': base64.b64encode(b'1' * 96)}}, None),
+            ({'local': {'key': Binary(b'1'*96)}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': b'1'}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': base64.b64encode(b'1')}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': Binary(b'1')}}, None)
+        ]
         for kms_providers, schema_map in valid:
             opts = MongoCryptOptions(kms_providers, schema_map)
             self.assertEqual(opts.kms_providers, kms_providers)
@@ -124,9 +145,14 @@ class TestMongoCryptOptions(unittest.TestCase):
                                 "'accessKeyId' and 'secretAccessKey'"):
                 MongoCryptOptions(invalid_kms_providers)
         with self.assertRaisesRegex(
-                TypeError, "kms_providers\['local'\]\['key'\] must be a "
-                           "bytes \(or str in Python 2\)"):
+                TypeError, "kms_providers\['local'\]\['key'\] must be an "
+                           "instance of bytes or str \(unicode in Python 2\)"):
             MongoCryptOptions({'local': {'key': None}})
+        with self.assertRaisesRegex(
+                TypeError, "kms_providers\['gcp'\]\['privateKey'\] must be an "
+                           "instance of bytes or str \(unicode in Python 2\)"):
+            MongoCryptOptions({'gcp': {'email': "foo@bar.baz",
+                                       "privateKey": None}})
 
         valid_kms = {'aws': {'accessKeyId': '', 'secretAccessKey': ''}}
         with self.assertRaisesRegex(

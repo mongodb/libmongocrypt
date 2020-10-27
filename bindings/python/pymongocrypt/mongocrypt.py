@@ -18,7 +18,7 @@ import copy
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
-from pymongocrypt.compat import str_to_bytes, unicode_type, PY3
+from pymongocrypt.compat import safe_bytearray_or_base64, str_to_bytes
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.state_machine import MongoCryptCallback
 
@@ -41,10 +41,12 @@ class MongoCryptOptions(object):
             differ by provider:
               - `aws`: Map with "accessKeyId" and "secretAccessKey" as strings.
               - `azure`: Map with "clientId" and "clientSecret" as strings.
-              - `gcp`: Map with "email" and "privateKey" as strings.
+              - `gcp`: Map with "email" as a string and "privateKey" as
+                a byte array or a base64-encoded string. On Python 2,
+                base64-encoded strings must be passed as unicode literals.
               - `local`: Map with "key" as a 96-byte array or the equivalent
                 base64-encoded string. On Python 2, base64-encoded strings
-                must be passed as a unicode literal.
+                must be passed as unicode literals.
           - `schema_map`: Optional map of collection namespace ("db.coll") to
             JSON Schema.  By default, a collection's JSONSchema is periodically
             polled with the listCollections command. But a JSONSchema may be
@@ -59,6 +61,9 @@ class MongoCryptOptions(object):
             automatic encryption for client side encryption. Other validation
             rules in the JSON schema will not be enforced by the driver and
             will result in an error.
+
+        .. versionadded:: 1.1
+           Support for "azure" and "gcp" kmsProviders.
 
         .. versionchanged:: 1.1
            For kmsProvider "local", the "key" field can now be specified
@@ -93,6 +98,13 @@ class MongoCryptOptions(object):
                 raise ValueError("kms_providers['gcp'] must contain "
                                  "'email' and 'privateKey'")
 
+            key = kms_providers['gcp']['privateKey']
+            safe_key = safe_bytearray_or_base64(
+                key, "kms_providers['gcp']['privateKey']")
+            if key != safe_key:
+                kms_providers = copy.deepcopy(kms_providers)
+                kms_providers['gcp']['privateKey'] = safe_key
+
         if 'local' in kms_providers:
             local = kms_providers['local']
             if not isinstance(local, dict):
@@ -101,19 +113,11 @@ class MongoCryptOptions(object):
                 raise ValueError("kms_providers['local'] must contain 'key'")
 
             key = kms_providers['local']['key']
-            if not isinstance(key, (bytes, unicode_type)):
-                raise TypeError("kms_providers['local']['key'] must be a "
-                                "bytes or str (or unicode in Python 2)")
-
-            # TODO: remove this after dropping Python 2 support.
-            # pymongo.bson encodes bytes to BSON string in Python 2,
-            # while the libmongocrypt API expects BSON Binary or a base64
-            # encoded string. To avoid needing to import bson.Binary, we pass
-            # a base64 encoded string.
-            if not PY3 and not isinstance(key, unicode_type):
+            safe_key = safe_bytearray_or_base64(
+                key, "kms_providers['local']['key']")
+            if key != safe_key:
                 kms_providers = copy.deepcopy(kms_providers)
-                kms_providers['local']['key'] = unicode_type(
-                    base64.b64encode(key))
+                kms_providers['local']['key'] = safe_key
 
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
