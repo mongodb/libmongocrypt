@@ -42,7 +42,9 @@ class MongoCryptOptions(object):
               - `aws`: Map with "accessKeyId" and "secretAccessKey" as strings.
               - `azure`: Map with "clientId" and "clientSecret" as strings.
               - `gcp`: Map with "email" and "privateKey" as strings.
-              - `local`: Map with "key" as a 96-byte array or string.
+              - `local`: Map with "key" as a 96-byte array or the equivalent
+                base64-encoded string. On Python 2, base64-encoded strings
+                must be passed as a unicode literal.
           - `schema_map`: Optional map of collection namespace ("db.coll") to
             JSON Schema.  By default, a collection's JSONSchema is periodically
             polled with the listCollections command. But a JSONSchema may be
@@ -57,6 +59,10 @@ class MongoCryptOptions(object):
             automatic encryption for client side encryption. Other validation
             rules in the JSON schema will not be enforced by the driver and
             will result in an error.
+
+        .. versionchanged:: 1.1
+           For kmsProvider "local", the "key" field can now be specified
+           as either a 96-byte array or the equivalent base64-encoded string.
         """
         if not isinstance(kms_providers, dict):
             raise ValueError('kms_providers must be a dict')
@@ -95,9 +101,9 @@ class MongoCryptOptions(object):
                 raise ValueError("kms_providers['local'] must contain 'key'")
 
             key = kms_providers['local']['key']
-            if not isinstance(key, bytes):
+            if not isinstance(key, (bytes, unicode_type)):
                 raise TypeError("kms_providers['local']['key'] must be a "
-                                "bytes (or str in Python 2)")
+                                "bytes or str (or unicode in Python 2)")
 
             # TODO: remove this after dropping Python 2 support.
             # pymongo.bson encodes bytes to BSON string in Python 2,
