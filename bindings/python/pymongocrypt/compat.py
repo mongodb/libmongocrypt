@@ -35,7 +35,7 @@ def str_to_bytes(string):
     return string.encode('utf-8')
 
 
-def safe_bytearray_or_base64(data, field_identifier):
+def safe_bytearray_or_base64(data):
     """Convert the given value to a type that, when BSON-encoded can be safely
     passed to libmongocrypt functions that expect a BSON document containing
     BSON Binary data or a base64-encoded string.

@@ -162,8 +162,7 @@ class MongoCrypt(object):
         for f1, f2 in base64_or_bytes_fields:
             value = kms_providers.get(f1, {}).get(f2, None)
             if value is not None:
-                safe_value = safe_bytearray_or_base64(
-                    value, "kms_providers['%s']['%s']" % (f1, f2))
+                safe_value = safe_bytearray_or_base64(value)
                 if value != safe_value:
                     kms_providers = copy.deepcopy(kms_providers)
                     kms_providers[f1][f2] = safe_value
