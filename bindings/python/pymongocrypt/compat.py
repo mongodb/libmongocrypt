@@ -38,18 +38,13 @@ def str_to_bytes(string):
 def safe_bytearray_or_base64(data, field_identifier):
     """Convert the given value to a type that, when BSON-encoded can be safely
     passed to libmongocrypt functions that expect a BSON document containing
-    BSON Binary data or a base64-encoded string. Also validates that the given
-    value is either bytes or a string.
+    BSON Binary data or a base64-encoded string.
 
     pymongo.bson encodes bytes to BSON string in Python 2, while the
     libmongocrypt API expects BSON Binary or a base64 encoded string.
     To avoid needing to import bson.Binary, we return a base64 encoded string
     when using Python 2.
     """
-    if not isinstance(data, (bytes, unicode_type)):
-        raise TypeError("%s must be an instance of bytes or str (unicode in "
-                        "Python 2)" % (field_identifier, ))
-
     # On Python 3 byte-arrays are encoded as BSON Binary and
     # base64 encoded strings can be passed as-is.
     if PY3:
