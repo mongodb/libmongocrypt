@@ -18,7 +18,8 @@ import copy
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
-from pymongocrypt.compat import safe_bytearray_or_base64, str_to_bytes
+from pymongocrypt.compat import (safe_bytearray_or_base64, str_to_bytes,
+                                 unicode_type)
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.state_machine import MongoCryptCallback
 
@@ -97,13 +98,11 @@ class MongoCryptOptions(object):
             if 'email' not in gcp or 'privateKey' not in gcp:
                 raise ValueError("kms_providers['gcp'] must contain "
                                  "'email' and 'privateKey'")
-
-            key = kms_providers['gcp']['privateKey']
-            safe_key = safe_bytearray_or_base64(
-                key, "kms_providers['gcp']['privateKey']")
-            if key != safe_key:
-                kms_providers = copy.deepcopy(kms_providers)
-                kms_providers['gcp']['privateKey'] = safe_key
+            if not isinstance(kms_providers['gcp']['privateKey'],
+                              (bytes, unicode_type)):
+                raise TypeError("kms_providers['gcp']['privateKey'] must "
+                                "be an instance of bytes or str "
+                                "(unicode in Python 2)")
 
         if 'local' in kms_providers:
             local = kms_providers['local']
@@ -111,13 +110,11 @@ class MongoCryptOptions(object):
                 raise ValueError("kms_providers['local'] must be a dict")
             if 'key' not in local:
                 raise ValueError("kms_providers['local'] must contain 'key'")
-
-            key = kms_providers['local']['key']
-            safe_key = safe_bytearray_or_base64(
-                key, "kms_providers['local']['key']")
-            if key != safe_key:
-                kms_providers = copy.deepcopy(kms_providers)
-                kms_providers['local']['key'] = safe_key
+            if not isinstance(kms_providers['local']['key'],
+                              (bytes, unicode_type)):
+                raise TypeError("kms_providers['local']['key'] must be an "
+                                "instance of bytes or str (unicode in "
+                                "Python 2)")
 
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
@@ -158,6 +155,18 @@ class MongoCrypt(object):
     def __init(self):
         """Internal init helper."""
         kms_providers = self.__opts.kms_providers
+
+        # Make fields that can be passed as binary or string safe to
+        # encode to BSON.
+        base64_or_bytes_fields = [("local", "key"), ("gcp", "privateKey")]
+        for f1, f2 in base64_or_bytes_fields:
+            value = kms_providers.get(f1, {}).get(f2, None)
+            if value is not None:
+                safe_value = safe_bytearray_or_base64(
+                    value, "kms_providers['%s']['%s']" % (f1, f2))
+                if value != safe_value:
+                    kms_providers = copy.deepcopy(kms_providers)
+                    kms_providers[f1][f2] = safe_value
         with MongoCryptBinaryIn(
                 self.__callback.bson_encode(kms_providers)) as kmsopt:
             if not lib.mongocrypt_setopt_kms_providers(
