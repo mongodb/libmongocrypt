@@ -15,7 +15,7 @@
  */
 
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace MongoDB.Libmongocrypt
@@ -65,12 +65,27 @@ namespace MongoDB.Libmongocrypt
         /// <summary>
         /// Converts to array.
         /// </summary>
-        /// <returns></returns>
         public byte[] ToArray()
         {
             byte[] arr = new byte[Length];
             Marshal.Copy(Data, arr, 0, arr.Length);
             return arr;
+        }
+
+        /// <summary>
+        /// Write bytes into Data.
+        /// </summary>
+        public void WriteBytes(byte[] bytes)
+        {
+            if (Length == bytes.Length)
+            {
+                Marshal.Copy(bytes, 0, Data, (int)Length);
+            }
+            else
+            {
+                // this code path is not expected, but it's worth doing it to avoid silent saving of corrupted data
+                throw new InvalidDataException($"Incorrect bytes size. The bytes size must be {Length}.");
+            }
         }
 
         /// <summary>

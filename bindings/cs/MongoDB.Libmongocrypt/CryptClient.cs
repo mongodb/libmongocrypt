@@ -41,12 +41,11 @@ namespace MongoDB.Libmongocrypt
         /// </summary>
         /// <param name="keyId">The key identifier.</param>
         /// <returns>A crypt context for creating a data key</returns>
-        public CryptContext StartCreateDataKeyContext(IKmsKeyId keyId)
+        public CryptContext StartCreateDataKeyContext(KmsKeyId keyId)
         {
             ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
 
-            IInternalKmsKeyId key = (IInternalKmsKeyId)keyId;
-            key.SetCredentials(handle, _status);
+            keyId.SetCredentials(handle, _status);
 
             handle.Check(_status, Library.mongocrypt_ctx_datakey_init(handle));
 

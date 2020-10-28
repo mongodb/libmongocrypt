@@ -32,10 +32,28 @@ namespace MongoDB.Libmongocrypt
             _handle = Library.mongocrypt_status_new();
         }
 
+        public Status(StatusSafeHandle handle)
+        {
+            _handle = handle;
+        }
+
         public void Check(IStatus status)
         {
             status.Check(this);
             ThrowExceptionIfNeeded();
+        }
+
+        public void SetStatus(uint code, string msg)
+        {
+            IntPtr stringPointer = (IntPtr)Marshal.StringToHGlobalAnsi(msg);
+            try
+            {
+                Library.mongocrypt_status_set(_handle, (int)Library.StatusType.MONGOCRYPT_STATUS_ERROR_CLIENT, code, stringPointer, -1);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(stringPointer);
+            }
         }
 
         #region IDisposable
@@ -62,14 +80,14 @@ namespace MongoDB.Libmongocrypt
         {
             if (!Library.mongocrypt_status_ok(_handle))
             {
-                var errorType = Library.mongocrypt_status_type(_handle);
+                var statusType = Library.mongocrypt_status_type(_handle);
                 var statusCode = Library.mongocrypt_status_code(_handle);
 
                 uint length;
                 IntPtr msgPtr = Library.mongocrypt_status_message(_handle, out length);
                 var message = Marshal.PtrToStringAnsi(msgPtr);
 
-                throw new CryptException(errorType, statusCode, message);
+                throw new CryptException(statusType, statusCode, message);
             }
         }
     }

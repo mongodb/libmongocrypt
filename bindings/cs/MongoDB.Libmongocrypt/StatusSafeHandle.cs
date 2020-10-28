@@ -33,6 +33,16 @@ namespace MongoDB.Libmongocrypt
         {
         }
 
+        private StatusSafeHandle(IntPtr ptr)
+            : base(ptr, false)
+        {
+        }
+
+        public static StatusSafeHandle FromIntPtr(IntPtr ptr)
+        {
+            return new StatusSafeHandle(ptr);
+        }
+
         public override bool IsInvalid
         {
             get

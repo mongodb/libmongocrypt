@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace MongoDB.Libmongocrypt
 {
@@ -24,18 +26,18 @@ namespace MongoDB.Libmongocrypt
     /// </summary>
     public class CryptOptions
     {
-        public IReadOnlyDictionary<KmsType, IKmsCredentials> KmsCredentialsMap { get; }
+        public IReadOnlyList<KmsCredentials> KmsCredentials { get; }
         public byte[] Schema { get; }
 
-        public CryptOptions(IDictionary<KmsType, IKmsCredentials> map) : this(map, null)
+        public CryptOptions(IEnumerable<KmsCredentials> credentials) : this(credentials, null)
         {
         }
 
         public CryptOptions(
-            IDictionary<KmsType, IKmsCredentials> map,
+            IEnumerable<KmsCredentials> credentials,
             byte[] schema)
         {
-            KmsCredentialsMap = new ReadOnlyDictionary<KmsType, IKmsCredentials>(map);
+            KmsCredentials = new ReadOnlyCollection<KmsCredentials>((credentials ?? throw new ArgumentNullException(nameof(credentials))).ToList());
             Schema = schema;
         }
 

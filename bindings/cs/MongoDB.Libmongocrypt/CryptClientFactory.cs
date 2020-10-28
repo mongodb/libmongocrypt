@@ -32,9 +32,9 @@ namespace MongoDB.Libmongocrypt
 
             Status status = new Status();
 
-            foreach (var kmsCredentials in options.KmsCredentialsMap)
+            foreach (var kmsCredentials in options.KmsCredentials)
             {
-                ((IInternalKmsCredentials)kmsCredentials.Value).SetCredentials(handle,status);
+                kmsCredentials.SetCredentials(handle, status);
             }
 
             if (options.Schema != null)

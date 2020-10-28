@@ -58,42 +58,46 @@ namespace MongoDB.Libmongocrypt
             string basepath = Path.GetDirectoryName(location);
             candidatePaths.Add(basepath);
             // TODO - .NET Standard 2.0
-//            Trace.WriteLine("Base Path: " + basepath)
 
-#if NETSTANDARD1_5
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            switch (OperatingSystemHelper.CurrentOperatingSystem)
             {
-                string[] suffixPaths = new[]
-                {
-                    "../../native/osx/",
-                    string.Empty
-                };
-                string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.dylib");
-                _loader = new DarwinLibraryLoader(path);
+                case OperatingSystemPlatform.MacOS:
+                    {
+                        string[] suffixPaths = new[]
+                        {
+                            "../../native/osx/",
+                            string.Empty
+                        };
+                        string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.dylib");
+                        _loader = new DarwinLibraryLoader(path);
+                    }
+                    break;
+                case OperatingSystemPlatform.Linux:
+                    {
+                        string[] suffixPaths = new[]
+                        {
+                            "../../native/linux/",
+                            string.Empty
+                        };
+                        string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.so");
+                        _loader = new LinuxLibrary(path);
+                    }
+                    break;
+                case OperatingSystemPlatform.Windows:
+                    {
+                        string[] suffixPaths = new[]
+                        {
+                            @"..\..\x64\native\windows\",
+                            string.Empty
+                        };
+                        string path = FindLibrary(candidatePaths, suffixPaths, "mongocrypt.dll");
+                        _loader = new WindowsLibrary(path);
+                    }
+                    break;
+                default:
+                    // should not be reached. If we're here, then there is a bug in OperatingSystemHelper
+                    throw new PlatformNotSupportedException("Unsupported operating system.");
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                string[] suffixPaths = new[]
-                {
-                    "../../native/linux/",
-                    string.Empty
-                };
-                string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.so");
-                _loader = new LinuxLibrary(path);
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-
-#endif
-            {
-                string[] suffixPaths = new[]
-                {
-                    @"..\..\x64\native\windows\",
-                    string.Empty
-                };
-                string path = FindLibrary(candidatePaths, suffixPaths, "mongocrypt.dll");
-                _loader = new WindowsLibrary(path);
-            }
-
         }
 
         private string FindLibrary(IList<string> basePaths, string[] suffixPaths, string library)
@@ -139,7 +143,6 @@ namespace MongoDB.Libmongocrypt
             IntPtr GetFunction(string name);
         }
 
-#if NETSTANDARD1_5
         /// <summary>
         /// macOS Dynamic Library loader using dlsym
         /// </summary>
@@ -214,7 +217,6 @@ namespace MongoDB.Libmongocrypt
             public static extern IntPtr dlsym(IntPtr handle, string symbol);
 #pragma warning restore IDE1006 // Naming Styles
         }
-#endif
 
         /// <summary>
         /// Windows DLL loader using GetProcAddress
@@ -238,7 +240,8 @@ namespace MongoDB.Libmongocrypt
             public IntPtr GetFunction(string name)
             {
                 var ptr = GetProcAddress(_handle, name);
-                if (ptr == null) {
+                if (ptr == null)
+                {
                     var gle = Marshal.GetLastWin32Error();
                     throw new FunctionNotFoundException(name + ", Windows Error: " + gle);
                 }
@@ -247,7 +250,7 @@ namespace MongoDB.Libmongocrypt
             }
 
             [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
-            public static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)]string lpFileName);
+            public static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
 
             [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
             public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);

@@ -19,7 +19,6 @@ using System.Runtime.InteropServices;
 
 namespace MongoDB.Libmongocrypt
 {
-
     /// <summary>
     /// The low-level interface to libmongocrypt.
     /// </summary>
@@ -39,12 +38,17 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_status = new Lazy<Delegates.mongocrypt_status>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_status>(("mongocrypt_status")), true);
 
-            _mongocrypt_setopt_kms_provider_aws = new Lazy<Delegates.mongocrypt_setopt_kms_provider_aws>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_kms_provider_aws>(
-                    ("mongocrypt_setopt_kms_provider_aws")), true);
-            _mongocrypt_setopt_kms_provider_local = new Lazy<Delegates.mongocrypt_setopt_kms_provider_local>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_kms_provider_local>(
-                    ("mongocrypt_setopt_kms_provider_local")), true);
+            _mongocrypt_setopt_kms_providers = new Lazy<Delegates.mongocrypt_setopt_kms_providers>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_kms_providers>(
+                    ("mongocrypt_setopt_kms_providers")), true);
+            _mongocrypt_ctx_setopt_key_encryption_key = new Lazy<Delegates.mongocrypt_ctx_setopt_key_encryption_key>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_key_encryption_key>(
+                    ("mongocrypt_ctx_setopt_key_encryption_key")), true);
+
+            _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 = new Lazy<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5>(
+                    ("mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5")), true);
+
             _mongocrypt_setopt_log_handler = new Lazy<Delegates.mongocrypt_setopt_log_handler>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_log_handler>(
                     ("mongocrypt_setopt_log_handler")), true);
@@ -66,6 +70,8 @@ namespace MongoDB.Libmongocrypt
                 true);
             _mongocrypt_status_ok = new Lazy<Delegates.mongocrypt_status_ok>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_status_ok>(("mongocrypt_status_ok")), true);
+            _mongocrypt_status_set = new Lazy<Delegates.mongocrypt_status_set>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_status_set>(("mongocrypt_status_set")), true);
 
             _mongocrypt_binary_new = new Lazy<Delegates.mongocrypt_binary_new>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_binary_new>(("mongocrypt_binary_new")), true);
@@ -175,8 +181,10 @@ namespace MongoDB.Libmongocrypt
 
         internal static Delegates.mongocrypt_new mongocrypt_new => _mongocrypt_new.Value;
         internal static Delegates.mongocrypt_setopt_log_handler mongocrypt_setopt_log_handler => _mongocrypt_setopt_log_handler.Value;
-        internal static Delegates.mongocrypt_setopt_kms_provider_aws mongocrypt_setopt_kms_provider_aws => _mongocrypt_setopt_kms_provider_aws.Value;
-        internal static Delegates.mongocrypt_setopt_kms_provider_local mongocrypt_setopt_kms_provider_local => _mongocrypt_setopt_kms_provider_local.Value;
+        internal static Delegates.mongocrypt_setopt_kms_providers mongocrypt_setopt_kms_providers => _mongocrypt_setopt_kms_providers.Value;
+        internal static Delegates.mongocrypt_ctx_setopt_key_encryption_key mongocrypt_ctx_setopt_key_encryption_key => _mongocrypt_ctx_setopt_key_encryption_key.Value;
+
+        internal static Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 => _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5.Value;
         internal static Delegates.mongocrypt_setopt_schema_map mongocrypt_setopt_schema_map => _mongocrypt_setopt_schema_map.Value;
 
         internal static Delegates.mongocrypt_init mongocrypt_init => _mongocrypt_init.Value;
@@ -191,6 +199,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_status_code mongocrypt_status_code => _mongocrypt_status_code.Value;
         internal static Delegates.mongocrypt_status_message mongocrypt_status_message => _mongocrypt_status_message.Value;
         internal static Delegates.mongocrypt_status_ok mongocrypt_status_ok => _mongocrypt_status_ok.Value;
+        internal static Delegates.mongocrypt_status_set mongocrypt_status_set => _mongocrypt_status_set.Value;
 
         internal static Delegates.mongocrypt_binary_new mongocrypt_binary_new => _mongocrypt_binary_new.Value;
         internal static Delegates.mongocrypt_binary_destroy mongocrypt_binary_destroy => _mongocrypt_binary_destroy.Value;
@@ -232,9 +241,11 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_version> _mongocrypt_version;
         private static readonly Lazy<Delegates.mongocrypt_new> _mongocrypt_new;
         private static readonly Lazy<Delegates.mongocrypt_setopt_log_handler> _mongocrypt_setopt_log_handler;
-        private static readonly Lazy<Delegates.mongocrypt_setopt_kms_provider_aws> _mongocrypt_setopt_kms_provider_aws;
 
-        private static readonly Lazy<Delegates.mongocrypt_setopt_kms_provider_local> _mongocrypt_setopt_kms_provider_local;
+        private static readonly Lazy<Delegates.mongocrypt_setopt_kms_providers> _mongocrypt_setopt_kms_providers;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_encryption_key> _mongocrypt_ctx_setopt_key_encryption_key;
+
+        private static readonly Lazy<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5> _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
 
         private static readonly Lazy<Delegates.mongocrypt_setopt_schema_map> _mongocrypt_setopt_schema_map;
 
@@ -250,6 +261,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_status_code> _mongocrypt_status_code;
         private static readonly Lazy<Delegates.mongocrypt_status_message> _mongocrypt_status_message;
         private static readonly Lazy<Delegates.mongocrypt_status_ok> _mongocrypt_status_ok;
+        private static readonly Lazy<Delegates.mongocrypt_status_set> _mongocrypt_status_set;
 
         private static readonly Lazy<Delegates.mongocrypt_binary_new> _mongocrypt_binary_new;
         private static readonly Lazy<Delegates.mongocrypt_binary_destroy> _mongocrypt_binary_destroy;
@@ -293,12 +305,11 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_finalize> _mongocrypt_ctx_finalize;
         private static readonly Lazy<Delegates.mongocrypt_ctx_destroy> _mongocrypt_ctx_destroy;
 
-        internal enum ErrorType
+        internal enum StatusType
         {
-            MONGOCRYPT_type_NONE = 0,
-            MONGOCRYPT_type_MONGOCRYPTD,
-            MONGOCRYPT_type_KMS,
-            MONGOCRYPT_type_CLIENT
+            MONGOCRYPT_STATUS_OK = 0,
+            MONGOCRYPT_STATUS_ERROR_CLIENT,
+            MONGOCRYPT_STATUS_ERROR_KMS
         }
 
         internal class Delegates
@@ -316,14 +327,27 @@ namespace MongoDB.Libmongocrypt
             public delegate bool mongocrypt_setopt_log_handler(MongoCryptSafeHandle handle,
                 [MarshalAs(UnmanagedType.FunctionPtr)] LogCallback log_fn, IntPtr log_ctx);
 
-            [return: MarshalAs(UnmanagedType.I1),]
-            public delegate bool mongocrypt_setopt_kms_provider_aws(MongoCryptSafeHandle handle,
-                [MarshalAs(UnmanagedType.LPStr)] string aws_access_key_id, int aws_access_key_id_len,
-                [MarshalAs(UnmanagedType.LPStr)] string aws_secret_access_key, int aws_secret_access_key_len);
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_setopt_kms_providers(
+                MongoCryptSafeHandle handle, BinarySafeHandle kms_providers);
 
-            [return: MarshalAs(UnmanagedType.I1),]
-            public delegate bool
-                mongocrypt_setopt_kms_provider_local(MongoCryptSafeHandle handle, BinarySafeHandle key);
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_setopt_key_encryption_key(
+                ContextSafeHandle handle, BinarySafeHandle bin);
+
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool CryptoCallback(
+                IntPtr ctx,
+                IntPtr key,
+                IntPtr @in,
+                IntPtr @out,
+                IntPtr status);
+
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+                MongoCryptSafeHandle handle,
+                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback sign_rsaes_pkcs1_v1_5,
+                IntPtr sign_ctx);
 
             [return: MarshalAs(UnmanagedType.I1),]
             public delegate bool mongocrypt_setopt_schema_map(MongoCryptSafeHandle handle, BinarySafeHandle schema);
@@ -339,7 +363,7 @@ namespace MongoDB.Libmongocrypt
 
             public delegate void mongocrypt_status_destroy(IntPtr ptr);
 
-            public delegate ErrorType mongocrypt_status_type(StatusSafeHandle ptr);
+            public delegate StatusType mongocrypt_status_type(StatusSafeHandle ptr);
 
             public delegate uint mongocrypt_status_code(StatusSafeHandle ptr);
 
@@ -347,6 +371,9 @@ namespace MongoDB.Libmongocrypt
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_status_ok(StatusSafeHandle ptr);
+
+            // currently it does nothing due to MONGOCRYPT-257
+            public delegate void mongocrypt_status_set(StatusSafeHandle ptr, int type, uint code, IntPtr msg, int length);
 
             public delegate BinarySafeHandle mongocrypt_binary_new();
 
