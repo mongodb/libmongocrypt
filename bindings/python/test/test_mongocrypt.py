@@ -14,6 +14,8 @@
 
 """Test the mongocrypt module."""
 
+import base64
+import copy
 import os
 import sys
 import uuid
@@ -28,6 +30,7 @@ sys.path[0:0] = [""]
 
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
+from pymongocrypt.compat import unicode_type, PY3
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
@@ -40,6 +43,13 @@ from test import unittest
 
 # Data for testing libbmongocrypt binding.
 DATA_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data'))
+
+
+def to_base64(data):
+    b64 = base64.b64encode(data)
+    if not PY3:
+        return unicode_type(b64)
+    return b64.decode('utf-8')
 
 
 class TestMongoCryptBinary(unittest.TestCase):
@@ -67,15 +77,23 @@ class TestMongoCryptOptions(unittest.TestCase):
     def test_mongocrypt_options(self):
         schema_map = bson_data('schema-map.json')
         valid = [
+            ({'local': {'key': b'1' * 96}}, None),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
-            ({'local': {'key': b'1'*96}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'},
-              'local': {'key': b'1'*96}}, None),
+              'local': {'key': b'1' * 96}}, None),
+            ({'local': {'key': to_base64(b'1' * 96)}}, None),
+            ({'local': {'key': Binary(b'1' * 96)}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': b'1'}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': to_base64(b'1')}}, None),
+            ({'gcp': {'email': 'foo@bar.baz',
+                      'privateKey': Binary(b'1')}}, None)
         ]
         for kms_providers, schema_map in valid:
             opts = MongoCryptOptions(kms_providers, schema_map)
-            self.assertEqual(opts.kms_providers, kms_providers)
+            self.assertEqual(opts.kms_providers, kms_providers, msg=kms_providers)
             self.assertEqual(opts.schema_map, schema_map)
 
     def test_mongocrypt_options_validation(self):
@@ -91,9 +109,14 @@ class TestMongoCryptOptions(unittest.TestCase):
                                 "'accessKeyId' and 'secretAccessKey'"):
                 MongoCryptOptions(invalid_kms_providers)
         with self.assertRaisesRegex(
-                TypeError, "kms_providers\['local'\]\['key'\] must be a "
-                           "bytes \(or str in Python 2\)"):
+                TypeError, "kms_providers\['local'\]\['key'\] must be an "
+                           "instance of bytes or str \(unicode in Python 2\)"):
             MongoCryptOptions({'local': {'key': None}})
+        with self.assertRaisesRegex(
+                TypeError, "kms_providers\['gcp'\]\['privateKey'\] must be an "
+                           "instance of bytes or str \(unicode in Python 2\)"):
+            MongoCryptOptions({'gcp': {'email': "foo@bar.baz",
+                                       "privateKey": None}})
 
         valid_kms = {'aws': {'accessKeyId': '', 'secretAccessKey': ''}}
         with self.assertRaisesRegex(
@@ -133,6 +156,46 @@ class TestMongoCrypt(unittest.TestCase):
         with self.assertRaisesRegex(
                 MongoCryptError, "local key must be 96 bytes"):
             MongoCrypt(invalid_key_len_opts, callback)
+
+    def test_setopt_kms_provider_base64_or_bytes(self):
+        test_fields = [("local", "key"), ("gcp", "privateKey")]
+        callback = MockCallback()
+        base_kms_dict = {'local': {'key': b'\x00' * 96},
+                         'gcp': {'email': 'foo@bar.baz',
+                                 'privateKey': b'\x00'}}
+
+        for f1, f2 in test_fields:
+            kms_dict = copy.deepcopy(base_kms_dict)
+
+            # Case 1: pass key as string containing bytes (valid)
+            kms_dict[f1][f2] = b'\x00' * 96
+            options = MongoCryptOptions(kms_dict)
+            mc = MongoCrypt(options, callback)
+            mc.close()
+
+            # Case 2: pass key as base64-encoded unicode literal (valid)
+            kms_dict[f1][f2] = to_base64(b'\x00' * 96)
+            options = MongoCryptOptions(kms_dict)
+            mc = MongoCrypt(options, callback)
+            mc.close()
+
+            # Case 3: pass key as unicode string containing bytes (invalid)
+            kms_dict[f1][f2] = unicode_type(b'\x00' * 96)
+            options = MongoCryptOptions(kms_dict)
+            with self.assertRaisesRegex(
+                    MongoCryptError,
+                    "unable to parse base64 from UTF-8 field %s.%s" % (
+                            f1, f2)):
+                MongoCrypt(options, callback)
+
+        # Case 4: pass key as base64-encoded string (invalid)
+        # Only applicable to "local" as key length is not validated for gcp.
+        kms_dict = copy.deepcopy(base_kms_dict)
+        kms_dict['local']['key'] = base64.b64encode(b'\x00' * 96)
+        options = MongoCryptOptions(kms_dict)
+        with self.assertRaisesRegex(
+                MongoCryptError, "local key must be 96 bytes"):
+            MongoCrypt(options, callback)
 
     @staticmethod
     def create_mongocrypt():
