@@ -157,7 +157,6 @@ class TestMongoCrypt(unittest.TestCase):
                 MongoCryptError, "local key must be 96 bytes"):
             MongoCrypt(invalid_key_len_opts, callback)
 
-    # @unittest.skipUnless(not PY3, 'bytes are encoded to BSON binary on Py 3')
     def test_setopt_kms_provider_base64_or_bytes(self):
         test_fields = [("local", "key"), ("gcp", "privateKey")]
         callback = MockCallback()
