@@ -1,5 +1,6 @@
 # ChangeLog
-## [1.1.0-beta1]
+## [Unreleased]
+## 1.1.0-beta1
 ### Deprecated
 - mongocrypt_setopt_kms_provider_aws and mongocrypt_setopt_kms_provider_local are deprecated in favor of the more flexible mongocrypt_setopt_kms_providers, which supports configuration of all KMS providers.
 - mongocrypt_ctx_setopt_masterkey_aws and mongocrypt_ctx_setopt_masterkey_aws_endpoint are deprecated in favor of the more flexible mongocrypt_ctx_setopt_key_encryption_key, which supports configuration for all KMS providers.
