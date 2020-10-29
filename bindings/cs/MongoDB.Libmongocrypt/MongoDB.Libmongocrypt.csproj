@@ -62,7 +62,7 @@
   <ItemGroup>
     <Content Include="$(LibMongoCryptBinaries)/mongocrypt.dll">
       <Pack>true</Pack>
-      <PackagePath>x64/native/windows</PackagePath>
+      <PackagePath>runtimes/win/native</PackagePath>
     </Content>
   </ItemGroup>
 
