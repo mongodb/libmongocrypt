@@ -1,0 +1,19 @@
+{
+    "buildvariants": [
+        {
+            "tasks": [
+                {
+                    "name": "windows-upload"
+                }
+            ],
+            "display_name": "Windows uploader",
+            "run_on": [
+                "windows-64-vs2017-test"
+            ],
+            "name": "windows-uploader",
+            "expansions": {
+                "upload_suffix": "_unstable"
+            }
+        }
+    ]
+}
