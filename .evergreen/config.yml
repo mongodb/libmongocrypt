@@ -587,6 +587,10 @@ tasks:
               # Not a tagged release.
               echo "{}" > ./.evergreen/windows-upload.json
               ;;
+            *-*)
+              # This is an unstable release, like 1.1.0-beta1 or 1.0.1-rc0
+              cp ./.evergreen/windows-upload-doit-unstable.json ./.evergreen/windows-upload.json
+              ;;
             *)
               # It is a tagged release.
               cp ./.evergreen/windows-upload-doit.json ./.evergreen/windows-upload.json
@@ -627,7 +631,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/windows/latest_release/libmongocrypt.tar.gz'
+        remote_file: '${project}/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt_upload.tar.gz'

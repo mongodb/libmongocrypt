@@ -75,6 +75,9 @@ find_package (mongocrypt)
 For Windows, there is a fixed URL to download the DLL and includes directory:
 https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt.tar.gz
 
+To download the latest unstable release, download from this URL:
+https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt_unstable.tar.gz
+
 ### Testing ###
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
 
