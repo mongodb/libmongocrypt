@@ -3,7 +3,6 @@
     <ItemGroup Condition="$([MSBuild]::IsOsPlatform('Windows'))">
         <Content Include="$(MSBuildThisFileDirectory)../runtimes/win/native/mongocrypt.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>false</Visible>
             <Link>mongocrypt.dll</Link>
         </Content>
     </ItemGroup>
