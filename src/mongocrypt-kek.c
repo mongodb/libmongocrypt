@@ -30,6 +30,7 @@
  *    keyName: <string>
  *    keyVersion: <optional string>
  * GCP
+ *    provider: "gcp"
  *    projectId: <string>
  *    location: <string>
  *    keyRing: <string>
