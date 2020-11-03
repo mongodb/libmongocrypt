@@ -19,6 +19,7 @@ import sys
 import cffi
 
 from pymongocrypt.compat import PY3
+from pymongocrypt.version import Version, __min_libmongocrypt_version__
 
 
 ffi = cffi.FFI()
@@ -1052,3 +1053,10 @@ else:
 def libmongocrypt_version():
     """Returns the version of libmongocrypt."""
     return _to_string(lib.mongocrypt_version(ffi.NULL))
+
+
+# Check the libmongocrypt version.
+if Version(libmongocrypt_version()) < Version(__min_libmongocrypt_version__):
+    raise RuntimeError(
+        "Expected libmongocrypt version %s or greater, found %s" % (
+            __min_libmongocrypt_version__, libmongocrypt_version()))

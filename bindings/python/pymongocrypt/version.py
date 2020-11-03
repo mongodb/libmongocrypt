@@ -12,4 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from distutils.version import LooseVersion as Version
+
 __version__ = '1.0.2.dev0'
+__min_libmongocrypt_version__ = '1.1.0beta1'
