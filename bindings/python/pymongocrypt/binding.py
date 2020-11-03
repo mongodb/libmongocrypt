@@ -19,7 +19,7 @@ import sys
 import cffi
 
 from pymongocrypt.compat import PY3
-from pymongocrypt.version import Version, __min_libmongocrypt_version__
+from pymongocrypt.version import _MIN_LIBMONGOCRYPT_VERSION, _parse_version
 
 
 ffi = cffi.FFI()
@@ -1003,42 +1003,6 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
    void *sign_ctx);
 """)
 
-# Use the PYMONGOCRYPT_LIB environment variable to load a custom libmongocrypt
-# build without relying on platform specific library path environment
-# variables, like LD_LIBRARY_PATH. For example:
-# export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
-# If the PYMONGOCRYPT_LIB is not set then load the embedded library and
-# fallback to the relying on a system installed library.
-_base = os.path.dirname(os.path.realpath(__file__))
-if sys.platform == 'win32':
-    _path = os.path.join(_base, 'mongocrypt.dll')
-elif sys.platform == 'darwin':
-    _path = os.path.join(_base, 'libmongocrypt.dylib')
-else:
-    _path = os.path.join(_base, 'libmongocrypt.so')
-
-_PYMONGOCRYPT_LIB = os.environ.get('PYMONGOCRYPT_LIB')
-try:
-    if _PYMONGOCRYPT_LIB:
-        lib = ffi.dlopen(_PYMONGOCRYPT_LIB)
-    else:
-        try:
-            lib = ffi.dlopen(_path)
-        except OSError as exc:
-            # Fallback to libmongocrypt installed on the system.
-            lib = ffi.dlopen('mongocrypt')
-except OSError as exc:
-    # dlopen raises OSError when the library cannot be found.
-    # Delay the error until the library is actually used.
-    class _Library(object):
-        def __init__(self, error):
-            self._error = error
-
-        def __getattr__(self, name):
-            raise self._error
-
-    lib = _Library(exc)
-
 
 if PY3:
     def _to_string(cdata):
@@ -1055,8 +1019,50 @@ def libmongocrypt_version():
     return _to_string(lib.mongocrypt_version(ffi.NULL))
 
 
-# Check the libmongocrypt version.
-if Version(libmongocrypt_version()) < Version(__min_libmongocrypt_version__):
-    raise RuntimeError(
-        "Expected libmongocrypt version %s or greater, found %s" % (
-            __min_libmongocrypt_version__, libmongocrypt_version()))
+# Use the PYMONGOCRYPT_LIB environment variable to load a custom libmongocrypt
+# build without relying on platform specific library path environment
+# variables, like LD_LIBRARY_PATH. For example:
+# export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
+# If the PYMONGOCRYPT_LIB is not set then load the embedded library and
+# fallback to the relying on a system installed library.
+_base = os.path.dirname(os.path.realpath(__file__))
+if sys.platform == 'win32':
+    _path = os.path.join(_base, 'mongocrypt.dll')
+elif sys.platform == 'darwin':
+    _path = os.path.join(_base, 'libmongocrypt.dylib')
+else:
+    _path = os.path.join(_base, 'libmongocrypt.so')
+
+
+class _Library(object):
+    """Helper class for delaying errors that would usually be raised at
+    import time until the library is actually used."""
+    def __init__(self, error):
+        self._error = error
+
+    def __getattr__(self, name):
+        raise self._error
+
+
+_PYMONGOCRYPT_LIB = os.environ.get('PYMONGOCRYPT_LIB')
+try:
+    if _PYMONGOCRYPT_LIB:
+        lib = ffi.dlopen(_PYMONGOCRYPT_LIB)
+    else:
+        try:
+            lib = ffi.dlopen(_path)
+        except OSError as exc:
+            # Fallback to libmongocrypt installed on the system.
+            lib = ffi.dlopen('mongocrypt')
+except OSError as exc:
+    # dlopen raises OSError when the library cannot be found.
+    # Delay the error until the library is actually used.
+    lib = _Library(exc)
+else:
+    # Check the libmongocrypt version when the library is found.
+    _limongocrypt_version = _parse_version(libmongocrypt_version())
+    if _limongocrypt_version < _parse_version(_MIN_LIBMONGOCRYPT_VERSION):
+        exc = RuntimeError(
+            "Expected libmongocrypt version %s or greater, found %s" % (
+                _MIN_LIBMONGOCRYPT_VERSION, libmongocrypt_version()))
+        lib = _Library(exc)
