@@ -627,7 +627,41 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * Set key encryption key document for creating a data key.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] bin BSON representing the key encryption key document.
+ * @param[in] bin BSON representing the key encryption key document with
+ * an additional "provider" field. The following forms are accepted:
+ * 
+ * AWS
+ * {
+ *    provider: "aws",
+ *    region: <string>,
+ *    key: <string>,
+ *    endpoint: <optional string>
+ * }
+ * 
+ * Azure
+ * {
+ *    provider: "azure",
+ *    keyVaultEndpoint: <string>,
+ *    keyName: <string>,
+ *    keyVersion: <optional string>
+ * }
+ * 
+ * GCP
+ * {
+ *    provider: "gcp",
+ *    projectId: <string>,
+ *    location: <string>,
+ *    keyRing: <string>,
+ *    keyName: <string>,
+ *    keyVersion: <string>,
+ *    endpoint: <optional string>
+ * }
+ * 
+ * Local
+ * {
+ *    provider: "local"
+ * }
+ * 
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, and error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
