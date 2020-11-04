@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.1.0b0
+--------------------------
+
+- Add support for Azure and GCP KMS providers.
+- Bundle libmongocrypt 1.1.0-beta1 in release wheels.
+
 Changes in Version 1.0.1
 ------------------------
 
