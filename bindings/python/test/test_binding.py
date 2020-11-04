@@ -19,7 +19,7 @@ import sys
 sys.path[0:0] = [""]
 
 import pymongocrypt
-from pymongocrypt.binding import ffi, lib
+from pymongocrypt.binding import ffi, lib, _parse_version
 
 from test import unittest
 
@@ -51,6 +51,20 @@ class TestBinding(unittest.TestCase):
         data = lib.mongocrypt_status_new()
         self.assertNotEqual(data, ffi.NULL)
         lib.mongocrypt_status_destroy(data)
+
+    def test_parse_version(self):
+        # Dev versions, betas, RCs should be less than stable releases.
+        for v in ('1.1.0-beta1', '1.1.0-b2', '1.1.0-rc1',
+                  '1.1.0-beta1', '1.1.0-pre1'):
+            self.assertLess(_parse_version(v),
+                            _parse_version('1.1.0'))
+
+        # Dev versions should parse correctly.
+        _parse_version('1.1.0-beta1+20201102git80202647fc')
+
+        # Hyphenation in patch version should be disregarded.
+        self.assertEqual(_parse_version('1.1.0-beta1'),
+                         _parse_version('1.1.0beta1'))
 
 
 if __name__ == "__main__":

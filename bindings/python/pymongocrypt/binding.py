@@ -19,7 +19,15 @@ import sys
 import cffi
 
 from pymongocrypt.compat import PY3
-from pymongocrypt.version import _MIN_LIBMONGOCRYPT_VERSION, _parse_version
+from pymongocrypt.version import _MIN_LIBMONGOCRYPT_VERSION
+
+try:
+    from pkg_resources import parse_version as _parse_version
+except ImportError:
+    from distutils.version import LooseVersion as _LooseVersion
+
+    def _parse_version(version):
+        return _LooseVersion(version)
 
 
 ffi = cffi.FFI()
