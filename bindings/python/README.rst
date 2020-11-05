@@ -104,10 +104,10 @@ First, install PyMongoCrypt from source::
 
 Next, install libmongocrypt.
 
-libmongocrypt is [continuously built and published on evergreen]
-(https://evergreen.mongodb.com/waterfall/libmongocrypt).
+libmongocrypt is
+`continuously built and published on evergreen <https://evergreen.mongodb.com/waterfall/libmongocrypt>`_.
 The latest tarball containing libmongocrypt built on all supported variants is
-(published here)[https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz].
+`published here <https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz>`_.
 Download and extract ``libmongocrypt-all.tar.gz`` and set
 ``PYMONGOCRYPT_LIB`` to the path to your operating system's libmongocrypt.so file.
 For example::
@@ -142,6 +142,29 @@ Linux::
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
   1.0.4
+
+
+Installing the Azure and GCP beta release
+-----------------------------------------
+
+To install the beta release, first checkout the ``pymongocrypt-1.1.0b0`` tag
+and install it::
+
+  $ git clone --branch 1.1.0b0 git@github.com:mongodb/libmongocrypt.git
+  $ python -m pip install ./libmongocrypt/bindings/python
+
+Next, download the tarball containing the ``1.1.0-beta1`` version of the libmongocrypt
+binaries, and extract it::
+
+  $ export LIBMONGOCRYPT_REVISION=$(git -C ./libmongocrypt rev-list -n 1 1.1.0-beta1)
+  $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/$LIBMONGOCRYPT_REVISION/libmongocrypt-all.tar.gz
+  $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
+
+Finally, set the ``PYMONGOCRPYT_LIB`` environment to the appropriate file
+as per platform-specific instructions in `Installing from source`_::
+
+  $ export PYMONGOCRYPT_LIB=<path to library file corresponding to operating system>
+
 
 Dependencies
 ============
