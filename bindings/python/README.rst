@@ -160,10 +160,10 @@ binaries, and extract it::
   $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/$LIBMONGOCRYPT_REVISION/libmongocrypt-all.tar.gz
   $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
 
-.. note:: If you are installing PyMongoCrypt from a source tarball, use the following command
-   to download the tarball containing the libmongocrypt ``1.1.0-beta1`` binaries::
+If you are installing PyMongoCrypt from a source tarball, use the following command
+to download the tarball containing the libmongocrypt ``1.1.0-beta1`` binaries::
 
-     $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/5d40c56b75f96df4d0e8ba431a7b3ca3218c0891/libmongocrypt-all.tar.gz
+  $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/5d40c56b75f96df4d0e8ba431a7b3ca3218c0891/libmongocrypt-all.tar.gz
 
 Finally, set the ``PYMONGOCRPYT_LIB`` environment to the appropriate file
 as per platform-specific instructions in `Installing from source`_::
