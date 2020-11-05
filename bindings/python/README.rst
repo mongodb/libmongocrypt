@@ -104,10 +104,10 @@ First, install PyMongoCrypt from source::
 
 Next, install libmongocrypt.
 
-libmongocrypt is [continuously built and published on evergreen]
-(https://evergreen.mongodb.com/waterfall/libmongocrypt).
+libmongocrypt is
+`continuously built and published on evergreen <https://evergreen.mongodb.com/waterfall/libmongocrypt>`_.
 The latest tarball containing libmongocrypt built on all supported variants is
-(published here)[https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz].
+`published here <https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz>`_.
 Download and extract ``libmongocrypt-all.tar.gz`` and set
 ``PYMONGOCRYPT_LIB`` to the path to your operating system's libmongocrypt.so file.
 For example::
@@ -142,6 +142,46 @@ Linux::
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
   1.0.4
+
+
+Installing a Beta or Release Candidate
+--------------------------------------
+
+Installing Beta and RC releases of PyMongoCrypt follows much the same process as
+`Installing from source`_ as we do not publish wheel for these releases
+to PyPI. Instead, these releases are available as
+`tags <https://git-scm.com/book/en/v2/Git-Basics-Tagging>`_ in the project's
+`GitHub repository <https://github.com/mongodb/libmongocrypt/>`_. Tags are
+usually named as follows::
+
+  pymongocrypt-<version>
+
+where ``<version>>`` is the Beta/RC version string (e.g. `1.1.0b0`).
+
+Start by identifying the tag corresponding to the release you want to install
+(in this example, we install ``pymongocrypt-1.1.0b0``) and exporting it as an
+environment variable::
+
+  $ export PYMONGOCRYPT_TAG='pymongocrypt-1.1.0b0'
+
+Now, install PyMongoCrypt from source::
+
+  $ git clone --branch $PYMONGOCRYPT_TAG git@github.com:mongodb/libmongocrypt.git
+  $ python -m pip install ./libmongocrypt/bindings/python
+
+Next, we identify the required version of libmongocrypt, download the corresponding
+tarball, and extract it::
+
+  $ export LIBMONGOCRYPT_TAG=$(python -c "import pymongocrypt; print(pymongocrypt.version.MIN_LIBMONGOCRYPT_VERSION)")
+  $ cd ./libmongocrypt && export LIBMONGOCRYPT_REVISION=$(git rev-list -n 1 $LIBMONGOCRYPT_TAG)
+  $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/$LIBMONGOCRYPT_REVISION/libmongocrypt-all.tar.gz
+  $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
+
+Finally, set the ``PYMONGOCRPYT_LIB`` environment to the appropriate file
+as per platform-specific instructions in `Installing from source`_::
+
+  $ export PYMONGOCRYPT_LIB=<path to library file corresponding to operating system>
+
 
 Dependencies
 ============
