@@ -144,36 +144,19 @@ Linux::
   1.0.4
 
 
-Installing a Beta or Release Candidate
---------------------------------------
+Installing the Azure and GCP beta release
+-----------------------------------------
 
-Installing Beta and RC releases of PyMongoCrypt follows much the same process as
-`Installing from source`_ as we do not publish wheels for these releases
-to PyPI. Instead, these releases are available as
-`tags <https://git-scm.com/book/en/v2/Git-Basics-Tagging>`_ in the project's
-`GitHub repository <https://github.com/mongodb/libmongocrypt/>`_. Tags are
-usually named as follows::
+To install the beta release, first checkout the ``pymongocrypt-1.1.0b0`` tag
+and install it::
 
-  pymongocrypt-<version>
-
-where ``<version>`` is the Beta/RC version string (e.g. ``1.1.0b0``).
-
-Start by identifying the tag corresponding to the release you want to install
-(in this example, we install ``pymongocrypt-1.1.0b0``) and exporting it as an
-environment variable::
-
-  $ export PYMONGOCRYPT_TAG='pymongocrypt-1.1.0b0'
-
-Now, install PyMongoCrypt from source::
-
-  $ git clone --branch $PYMONGOCRYPT_TAG git@github.com:mongodb/libmongocrypt.git
+  $ git clone --branch 1.1.0b0 git@github.com:mongodb/libmongocrypt.git
   $ python -m pip install ./libmongocrypt/bindings/python
 
-Next, we identify the required version of libmongocrypt, download the corresponding
-tarball, and extract it::
+Next, download the tarball containing the ``1.1.0-beta1`` version of the libmongocrypt
+binaries, and extract it::
 
-  $ export LIBMONGOCRYPT_TAG=$(python -c "import pymongocrypt; print(pymongocrypt.version._MIN_LIBMONGOCRYPT_VERSION)")
-  $ export LIBMONGOCRYPT_REVISION=$(git -C ./libmongocrypt rev-list -n 1 $LIBMONGOCRYPT_TAG)
+  $ export LIBMONGOCRYPT_REVISION=$(git -C ./libmongocrypt rev-list -n 1 1.1.0-beta1)
   $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/$LIBMONGOCRYPT_REVISION/libmongocrypt-all.tar.gz
   $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
 
