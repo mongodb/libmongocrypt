@@ -172,7 +172,7 @@ Now, install PyMongoCrypt from source::
 Next, we identify the required version of libmongocrypt, download the corresponding
 tarball, and extract it::
 
-  $ export LIBMONGOCRYPT_TAG=$(python -c "import pymongocrypt; print(pymongocrypt.version.MIN_LIBMONGOCRYPT_VERSION)")
+  $ export LIBMONGOCRYPT_TAG=$(python -c "import pymongocrypt; print(pymongocrypt.version._MIN_LIBMONGOCRYPT_VERSION)")
   $ export LIBMONGOCRYPT_REVISION=$(git -C ./libmongocrypt rev-list -n 1 $LIBMONGOCRYPT_TAG)
   $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/$LIBMONGOCRYPT_REVISION/libmongocrypt-all.tar.gz
   $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all

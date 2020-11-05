@@ -19,7 +19,7 @@ import sys
 import cffi
 
 from pymongocrypt.compat import PY3
-from pymongocrypt.version import MIN_LIBMONGOCRYPT_VERSION
+from pymongocrypt.version import _MIN_LIBMONGOCRYPT_VERSION
 
 try:
     from pkg_resources import parse_version as _parse_version
@@ -1069,8 +1069,8 @@ except OSError as exc:
 else:
     # Check the libmongocrypt version when the library is found.
     _limongocrypt_version = _parse_version(libmongocrypt_version())
-    if _limongocrypt_version < _parse_version(MIN_LIBMONGOCRYPT_VERSION):
+    if _limongocrypt_version < _parse_version(_MIN_LIBMONGOCRYPT_VERSION):
         exc = RuntimeError(
             "Expected libmongocrypt version %s or greater, found %s" % (
-                MIN_LIBMONGOCRYPT_VERSION, libmongocrypt_version()))
+                _MIN_LIBMONGOCRYPT_VERSION, libmongocrypt_version()))
         lib = _Library(exc)

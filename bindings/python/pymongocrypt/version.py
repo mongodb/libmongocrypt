@@ -14,4 +14,4 @@
 
 __version__ = '1.1.0b0'
 
-MIN_LIBMONGOCRYPT_VERSION = '1.1.0-beta1'
+_MIN_LIBMONGOCRYPT_VERSION = '1.1.0-beta1'
