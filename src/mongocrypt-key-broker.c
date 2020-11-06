@@ -456,6 +456,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    key_request_t *key_request;
    key_returned_t *key_returned;
    _mongocrypt_kms_provider_t kek_provider;
+   char* access_token = NULL;
 
    if (kb->state != KB_ADDING_DOCS) {
       _key_broker_fail_w_msg (
@@ -528,7 +529,6 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          goto done;
       }
    } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
-      char *access_token;
 
       access_token = _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
       if (!access_token) {
@@ -560,7 +560,6 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          }
       }
    } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-      char *access_token;
 
       access_token = _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_gcp);
       if (!access_token) {
@@ -609,6 +608,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 
    ret = true;
 done:
+   bson_free (access_token);
    _mongocrypt_key_destroy (key_doc);
    return ret;
 }
