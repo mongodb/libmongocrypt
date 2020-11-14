@@ -77,6 +77,12 @@ add_library (
    ${KMS_MESSAGE_SOURCES}
 )
 
+string(FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
+if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
+   target_compile_options (kms_message_static PUBLIC -fPIC)
+   message ("Adding -fPIC to compilation of kms_message_static components")
+endif ()
+
 add_library (
    kms_message_obj OBJECT
    ${KMS_MESSAGE_SOURCES}

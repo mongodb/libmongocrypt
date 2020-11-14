@@ -1,5 +1,8 @@
 # ChangeLog
 ## [Unreleased]
+### Added
+- Add ENABLE_PIC cmake option, set to ON by default, so static libraries build with -fPIC by default on relevant systems.
+
 ## 1.1.0-beta1
 ### Deprecated
 - mongocrypt_setopt_kms_provider_aws and mongocrypt_setopt_kms_provider_local are deprecated in favor of the more flexible mongocrypt_setopt_kms_providers, which supports configuration of all KMS providers.

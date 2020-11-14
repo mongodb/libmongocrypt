@@ -11,6 +11,10 @@ set (CMAKE_C_STANDARD 99)
 
 option (ENABLE_SHARED_BSON "Dynamically link libbson (default is static)" OFF)
 option (ENABLE_STATIC "Install static libraries" ON)
+option (ENABLE_PIC 
+   "Enables building of position independent code for static library components."
+   ON
+)
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -175,6 +179,15 @@ endif ()
 generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
+# Checking CMAKE_C_FLAGS for -fPIC is not a foolproof way of checking whether
+# -fPIC was set as a compiler flag. However, users were instructed before to
+# pass -fPIC through CMAKE_C_FLAGS. This will prevent redundant output in
+# the common case that users are setting -DCMAKE_C_FLAGS='-fPIC'
+string(FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
+if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
+   target_compile_options (mongocrypt_static PUBLIC -fPIC)
+   message ("Adding -fPIC to compilation of mongocrypt_static components")
+endif ()
 target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_include_directories (mongocrypt_static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
 target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")

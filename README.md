@@ -16,7 +16,7 @@ First build the following dependencies:
    git clone https://github.com/mongodb/mongo-c-driver
    cd mongo-c-driver
    mkdir cmake-build && cd cmake-build
-   cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PREFIX="/path/to/bson-install" -DCMAKE_C_FLAGS="-fPIC" ../
+   cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PREFIX="/path/to/bson-install" ../
    make -j8 install
    ```
    This installs the library and includes into /path/to/bson-install. The prefix can be omitted if you prefer installing in /usr/local.
@@ -29,7 +29,7 @@ Then build libmongocrypt:
 git clone https://github.com/mongodb/libmongocrypt
 cd libmongocrypt
 mkdir cmake-build && cd cmake-build
-cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
+cmake -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
 make
 ```
 
