@@ -58,7 +58,7 @@ mkdir cmake-build
 cd cmake-build
 INSTALL_PATH="$(system_path $linker_tests_root/install/bson1)"
 SRC_PATH="$(system_path ../)"
-$CMAKE -DBUILD_VERSION=1.16.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DBUILD_VERSION=1.18.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 # Make libbson2
 cd ..
@@ -67,7 +67,7 @@ git apply --ignore-whitespace "$(system_path $linker_tests_deps_root/bson_patche
 cd cmake-build
 INSTALL_PATH="$(system_path $linker_tests_root/install/bson2)"
 SRC_PATH="$(system_path ../)"
-$CMAKE -DBUILD_VERSION=1.16.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DBUILD_VERSION=1.18.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 # Build libmongocrypt, static linking against libbson2
@@ -75,7 +75,7 @@ cd $linker_tests_root/libmongocrypt-cmake-build
 PREFIX_PATH="$(system_path $linker_tests_root/install/bson2)"
 INSTALL_PATH="$(system_path $linker_tests_root/install/libmongocrypt)"
 SRC_PATH="$(system_path $libmongocrypt_root)"
-$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 echo "Test case: Modelling libmongoc's use"
@@ -84,7 +84,7 @@ echo "Test case: Modelling libmongoc's use"
 cd $linker_tests_root/app-cmake-build
 PREFIX_PATH="$(system_path $linker_tests_root/install/bson1);$(system_path $linker_tests_root/install/libmongocrypt)"
 SRC_PATH="$(system_path $linker_tests_deps_root/app)"
-$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH="$PREFIX_PATH" "$SRC_PATH"
+$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" "$SRC_PATH"
 $CMAKE --build . --target app --config RelWithDebInfo
 
 if [ "$OS" == "Windows_NT" ]; then

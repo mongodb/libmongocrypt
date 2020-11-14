@@ -43,7 +43,7 @@ mkdir cmake-build
 cd cmake-build
 INSTALL_PATH="$(system_path $pkgconfig_tests_root/install)"
 SRC_PATH="$(system_path ../)"
-$CMAKE -DBUILD_VERSION=1.18.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DBUILD_VERSION=1.18.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 # Build libmongocrypt, static linking against libbson
@@ -51,7 +51,7 @@ cd $pkgconfig_tests_root/libmongocrypt-cmake-build
 PREFIX_PATH="$(system_path $pkgconfig_tests_root/install)"
 INSTALL_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt)"
 SRC_PATH="$(system_path $libmongocrypt_root)"
-$CMAKE -DENABLE_SHARED_BSON=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DENABLE_SHARED_BSON=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 export PKG_CONFIG_PATH="$(system_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install -name libbson-1.0.pc))):$(system_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install/libmongocrypt -name libmongocrypt.pc)))"
@@ -81,7 +81,7 @@ cd $pkgconfig_tests_root/libmongocrypt-cmake-build
 PREFIX_PATH="$(system_path $pkgconfig_tests_root/install)"
 INSTALL_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt)"
 SRC_PATH="$(system_path $libmongocrypt_root)"
-$CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 # Build example-state-machine, static linking against libmongocrypt
