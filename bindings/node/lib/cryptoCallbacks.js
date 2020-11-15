@@ -83,11 +83,32 @@ function makeHmacHook(algorithm) {
   };
 }
 
+function signRsaSha256Hook(key, input, output) {
+  let result;
+  try {
+    const signer = crypto.createSign('sha256WithRSAEncryption');
+    const privateKey = Buffer.from(
+      `-----BEGIN PRIVATE KEY-----\n${key.toString('base64')}\n-----END PRIVATE KEY-----\n`
+    );
+
+    result = signer
+      .update(input)
+      .end()
+      .sign(privateKey);
+  } catch (e) {
+    return e;
+  }
+
+  result.copy(output);
+  return result.length;
+}
+
 module.exports = {
   aes256CbcEncryptHook,
   aes256CbcDecryptHook,
   randomHook: typeof crypto.randomFillSync === 'function' ? randomHook : randomHookNode4,
   hmacSha512Hook: makeHmacHook('sha512'),
   hmacSha256Hook: makeHmacHook('sha256'),
-  sha256Hook
+  sha256Hook,
+  signRsaSha256Hook
 };

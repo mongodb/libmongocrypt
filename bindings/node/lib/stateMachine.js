@@ -8,6 +8,7 @@ module.exports = function(modules) {
   const databaseNamespace = common.databaseNamespace;
   const collectionNamespace = common.collectionNamespace;
   const MongoCryptError = common.MongoCryptError;
+  const BufferList = require('bl');
 
   // libmongocrypt states
   const MONGOCRYPT_CTX_ERROR = 0;
@@ -216,10 +217,11 @@ module.exports = function(modules) {
     kmsRequest(request) {
       const parsedUrl = request.endpoint.split(':');
       const port = parsedUrl[1] != null ? Number.parseInt(parsedUrl[1], 10) : HTTPS_PORT;
-      const options = { host: parsedUrl[0], port };
+      const options = { host: parsedUrl[0], port, rejectUnauthorized: false };
       const message = request.message;
 
       return new Promise((resolve, reject) => {
+        const buffer = new BufferList();
         const socket = tls.connect(options, () => {
           socket.write(message);
         });
@@ -233,13 +235,19 @@ module.exports = function(modules) {
         socket.once('error', err => {
           socket.removeAllListeners();
           socket.destroy();
+
           const mcError = new MongoCryptError('KMS request failed');
           mcError.originalError = err;
           reject(mcError);
         });
 
-        socket.on('data', buffer => {
-          request.addResponse(buffer);
+        socket.on('data', data => {
+          buffer.append(data);
+          while (request.bytesNeeded > 0 && buffer.length) {
+            const bytesNeeded = Math.min(request.bytesNeeded, buffer.length);
+            request.addResponse(buffer.slice(0, bytesNeeded));
+            buffer.consume(bytesNeeded);
+          }
 
           if (request.bytesNeeded <= 0) {
             socket.end(resolve);
