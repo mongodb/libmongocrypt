@@ -314,7 +314,7 @@ mongocrypt_new (void);
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] log_fn The log callback.
  * @param[in] log_ctx A context passed as an argument to the log callback every
- * invokation.
+ * invocation.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -1038,7 +1038,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_crypto_fn) (void *ctx,
                                       mongocrypt_binary_t *key,
@@ -1063,7 +1063,7 @@ typedef bool (*mongocrypt_crypto_fn) (void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hmac_fn) (void *ctx,
                                     mongocrypt_binary_t *key,
@@ -1083,7 +1083,7 @@ typedef bool (*mongocrypt_hmac_fn) (void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hash_fn) (void *ctx,
                                     mongocrypt_binary_t *in,
@@ -1101,7 +1101,7 @@ typedef bool (*mongocrypt_hash_fn) (void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_random_fn) (void *ctx,
                                       mongocrypt_binary_t *out,
@@ -1119,6 +1119,23 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx);
 
+/**
+ * Set a crypto hook for the RSASSA-PKCS1-v1_5 algorithm with a SHA-256 hash.
+ *
+ * See: https://tools.ietf.org/html/rfc3447#section-8.2
+ *
+ * Note: this function has the wrong name. It should be:
+ * mongocrypt_setopt_crypto_hook_sign_rsassa_pkcs1_v1_5
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] sign_rsaes_pkcs1_v1_5 The crypto callback function.
+ * @param[in] sign_ctx A context passed as an argument to the crypto callback every
+ * invocation.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ *
+ */
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
