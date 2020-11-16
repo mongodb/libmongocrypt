@@ -1133,7 +1133,7 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
  * invocation.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_status
  *
  */
 MONGOCRYPT_EXPORT
