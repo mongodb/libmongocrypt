@@ -585,7 +585,7 @@ namespace MongoDB.Libmongocrypt.Test
         static IEnumerable<string> FindTestDirectories()
         {
             string[] searchPaths = new[] { Path.Combine("..", "test", "example"), Path.Combine("..", "test", "data") };
-            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var assemblyLocation = Path.GetDirectoryName(typeof(BasicTests).GetTypeInfo().Assembly.Location);
             string cwd = Directory.GetCurrentDirectory(); // Assume we are in a child directory of the repo
             var searchDirectory = assemblyLocation ?? cwd;
             var testDirs = Enumerable.Range(1, 10)

@@ -23,14 +23,52 @@ namespace MongoDB.Libmongocrypt
     /// </summary>
     public class CryptClientFactory
     {
+        // MUST be static fields since otherwise these callbacks can be collected via the garbage collector
+        // regardless they're used by mongocrypt level or no
+        private static Library.Delegates.CryptoCallback __crypto256DecryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.Decrypt);
+        private static Library.Delegates.CryptoCallback __crypto256EncryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.Encrypt);
+        private static Library.Delegates.HashCallback __cryptoHashCallback = new Library.Delegates.HashCallback(HashCallback.Hash);
+        private static Library.Delegates.CryptoHmacCallback __cryptoHmacSha256Callback = new Library.Delegates.CryptoHmacCallback(HmacShaCallbacks.HmacSha256);
+        private static Library.Delegates.CryptoHmacCallback __cryptoHmacSha512Callback = new Library.Delegates.CryptoHmacCallback(HmacShaCallbacks.HmacSha512);
+        private static Library.Delegates.RandomCallback __randomCallback = new Library.Delegates.RandomCallback(SecureRandomCallback.GenerateRandom);
+        private static Library.Delegates.CryptoHmacCallback __signRsaesPkcs1HmacCallback = new Library.Delegates.CryptoHmacCallback(SigningRSAESPKCSCallback.RsaSign);
+
         /// <summary>Creates a CryptClient with the specified options.</summary>
         /// <param name="options">The options.</param>
         /// <returns>A CryptClient</returns>
         public static CryptClient Create(CryptOptions options)
         {
-            MongoCryptSafeHandle handle = Library.mongocrypt_new();
+            var handle = Library.mongocrypt_new();
 
-            Status status = new Status();
+            var status = new Status();
+
+            // The below code can be avoided on Windows. So, we don't call it on this system 
+            // to avoid restrictions on target frameworks that present in some of below
+            if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
+            {
+#if !NETSTANDARD1_5
+                handle.Check(
+                    status,
+                    Library.mongocrypt_setopt_crypto_hooks(
+                        handle,
+                        __crypto256EncryptCallback,
+                        __crypto256DecryptCallback,
+                        __randomCallback,
+                        __cryptoHmacSha512Callback,
+                        __cryptoHmacSha256Callback,
+                        __cryptoHashCallback,
+                        IntPtr.Zero));
+#endif
+
+#if NETSTANDARD2_1
+                handle.Check(
+                    status,
+                    Library.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+                        handle,
+                        __signRsaesPkcs1HmacCallback, 
+                        IntPtr.Zero));
+#endif
+            }
 
             foreach (var kmsCredentials in options.KmsCredentials)
             {

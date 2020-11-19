@@ -77,14 +77,16 @@ namespace MongoDB.Libmongocrypt
         /// </summary>
         public void WriteBytes(byte[] bytes)
         {
-            if (Length == bytes.Length)
+            // The length of the new bytes can be smaller than allocated memory 
+            // because sometimes the allocated memory contains reserved blocks for future usage
+            if (bytes.Length <= Length)
             {
-                Marshal.Copy(bytes, 0, Data, (int)Length);
+                Marshal.Copy(bytes, 0, Data, bytes.Length);
             }
             else
             {
                 // this code path is not expected, but it's worth doing it to avoid silent saving of corrupted data
-                throw new InvalidDataException($"Incorrect bytes size. The bytes size must be {Length}.");
+                throw new InvalidDataException($"Incorrect bytes size {bytes.Length}. The bytes size must be less than or equal to {Length}.");
             }
         }
 

@@ -45,6 +45,10 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_key_encryption_key>(
                     ("mongocrypt_ctx_setopt_key_encryption_key")), true);
 
+            _mongocrypt_setopt_crypto_hooks = new Lazy<Delegates.mongocrypt_setopt_crypto_hooks>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_crypto_hooks>(
+                    ("mongocrypt_setopt_crypto_hooks")), true);
+
             _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 = new Lazy<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5>(
                     ("mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5")), true);
@@ -184,6 +188,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_setopt_kms_providers mongocrypt_setopt_kms_providers => _mongocrypt_setopt_kms_providers.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_encryption_key mongocrypt_ctx_setopt_key_encryption_key => _mongocrypt_ctx_setopt_key_encryption_key.Value;
 
+        internal static Delegates.mongocrypt_setopt_crypto_hooks mongocrypt_setopt_crypto_hooks => _mongocrypt_setopt_crypto_hooks.Value;
         internal static Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 => _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5.Value;
         internal static Delegates.mongocrypt_setopt_schema_map mongocrypt_setopt_schema_map => _mongocrypt_setopt_schema_map.Value;
 
@@ -245,6 +250,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_setopt_kms_providers> _mongocrypt_setopt_kms_providers;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_encryption_key> _mongocrypt_ctx_setopt_key_encryption_key;
 
+        private static readonly Lazy<Delegates.mongocrypt_setopt_crypto_hooks> _mongocrypt_setopt_crypto_hooks;
         private static readonly Lazy<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5> _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
 
         private static readonly Lazy<Delegates.mongocrypt_setopt_schema_map> _mongocrypt_setopt_schema_map;
@@ -336,7 +342,14 @@ namespace MongoDB.Libmongocrypt
                 ContextSafeHandle handle, BinarySafeHandle bin);
 
             [return: MarshalAs(UnmanagedType.I1)]
-            public delegate bool CryptoCallback(
+            public delegate bool HashCallback(
+                IntPtr ctx,
+                IntPtr @in,
+                IntPtr @out,
+                IntPtr status);
+
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool CryptoHmacCallback(
                 IntPtr ctx,
                 IntPtr key,
                 IntPtr @in,
@@ -344,9 +357,37 @@ namespace MongoDB.Libmongocrypt
                 IntPtr status);
 
             [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool CryptoCallback(
+                IntPtr ctx,
+                IntPtr key,
+                IntPtr iv,
+                IntPtr @in,
+                IntPtr @out,
+                ref uint bytes_written,
+                IntPtr status);
+
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool RandomCallback(
+                IntPtr ctx,
+                IntPtr @out,
+                uint count,
+                IntPtr statusPtr);
+
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_setopt_crypto_hooks(
+                MongoCryptSafeHandle handle,
+                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback aes_256_cbc_encrypt,
+                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback aes_256_cbc_decrypt,
+                [MarshalAs(UnmanagedType.FunctionPtr)] RandomCallback random,
+                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoHmacCallback hmac_sha_512,
+                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoHmacCallback hmac_sha_256,
+                [MarshalAs(UnmanagedType.FunctionPtr)] HashCallback mongocrypt_hash_fn,
+                IntPtr ctx);
+
+            [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
                 MongoCryptSafeHandle handle,
-                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback sign_rsaes_pkcs1_v1_5,
+                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoHmacCallback sign_rsaes_pkcs1_v1_5,
                 IntPtr sign_ctx);
 
             [return: MarshalAs(UnmanagedType.I1),]

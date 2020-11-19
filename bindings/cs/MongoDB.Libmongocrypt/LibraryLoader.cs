@@ -57,7 +57,6 @@ namespace MongoDB.Libmongocrypt
             var location = assembly.Location;
             string basepath = Path.GetDirectoryName(location);
             candidatePaths.Add(basepath);
-            // TODO - .NET Standard 2.0
 
             switch (OperatingSystemHelper.CurrentOperatingSystem)
             {
