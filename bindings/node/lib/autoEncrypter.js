@@ -111,7 +111,9 @@ module.exports = function(modules) {
       }
 
       if (options.kmsProviders) {
-        mongoCryptOptions.kmsProviders = options.kmsProviders;
+        mongoCryptOptions.kmsProviders = !Buffer.isBuffer(options.kmsProviders)
+          ? this._bson.serialize(options.kmsProviders)
+          : options.kmsProviders;
       }
 
       if (options.logger) {
@@ -129,7 +131,11 @@ module.exports = function(modules) {
      */
     init(callback) {
       const _callback = (err, res) => {
-        if (err && err.message && err.message.match(/timed out after/)) {
+        if (
+          err &&
+          err.message &&
+          (err.message.match(/timed out after/) || err.message.match(/ENOTFOUND/))
+        ) {
           callback(
             new MongoError(
               'Unable to connect to `mongocryptd`, please make sure it is running or in your PATH for auto-spawn'

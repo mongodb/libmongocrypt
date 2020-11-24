@@ -49,11 +49,20 @@ module.exports = function(modules) {
   /**
    * @typedef {object} KMSProviders
    * @description Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
-   * @prop {object} [aws] Configuration options for using 'aws' as your KMS provider
-   * @prop {string} [aws.accessKeyId] The access key used for the AWS KMS provider
-   * @prop {string} [aws.secretAccessKey] The secret access key used for the AWS KMS provider
-   * @prop {object} [local] Configuration options for using 'local' as your KMS provider
-   * @prop {Buffer} [local.key] The master key used to encrypt/decrypt data keys. A 96-byte long Buffer.
+   * @property {object} [aws] Configuration options for using 'aws' as your KMS provider
+   * @property {string} [aws.accessKeyId] The access key used for the AWS KMS provider
+   * @property {string} [aws.secretAccessKey] The secret access key used for the AWS KMS provider
+   * @property {object} [local] Configuration options for using 'local' as your KMS provider
+   * @property {Buffer} [local.key] The master key used to encrypt/decrypt data keys. A 96-byte long Buffer.
+   * @property {object} [azure] Configuration options for using 'azure' as your KMS provider
+   * @property {string} [azure.tenantId] The tenant ID identifies the organization for the account
+   * @property {string} [azure.clientId] The client ID to authenticate a registered application
+   * @property {string} [azure.clientSecret] The client secret to authenticate a registered application
+   * @property {string} [azure.identityPlatformEndpoint] If present, a host with optional port. E.g. "example.com" or "example.com:443". This is optional, and only needed if customer is using a non-commercial Azure instance (e.g. a government or China account, which use different URLs). Defaults to  "login.microsoftonline.com"
+   * @property {object} [gcp] Configuration options for using 'gcp' as your KMS provider
+   * @property {string} [gcp.email] The service account email to authenticate
+   * @property {string|Binary} [gcp.privateKey] A PKCS#8 encrypted key. This can either be a base64 string or a binary representation
+   * @property {string} [gcp.endpoint] If present, a host with optional port. E.g. "example.com" or "example.com:443". Defaults to "oauth2.googleapis.com"
    */
 
   /**
@@ -99,6 +108,12 @@ module.exports = function(modules) {
       }
 
       Object.assign(options, { cryptoCallbacks });
+
+      // kmsProviders will be parsed by libmongocrypt, must be provided as BSON binary data
+      if (options.kmsProviders && !Buffer.isBuffer(options.kmsProviders)) {
+        options.kmsProviders = this._bson.serialize(options.kmsProviders);
+      }
+
       this._keyVaultNamespace = options.keyVaultNamespace;
       this._keyVaultClient = options.keyVaultClient || client;
       this._mongoCrypt = new mc.MongoCrypt(options);
@@ -118,14 +133,38 @@ module.exports = function(modules) {
      */
 
     /**
+     * @typedef {object} AWSEncryptionKeyOptions
+     * @description Configuration options for making an AWS encryption key
+     * @property {string} region The AWS region of the KMS
+     * @property {string} key The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
+     * @property {string} endpoint An alternate host to send KMS requests to. May include port number
+     */
+
+    /**
+     * @typedef {object} GCPEncryptionKeyOptions
+     * @description Configuration options for making a GCP encryption key
+     * @property {string} projectId Azue project id
+     * @property {string} location Location name (e.g. "global")
+     * @property {string} keyRing Key ring name
+     * @property {string} keyName Key name
+     * @property {string} keyVersion Key version
+     * @property {string} endpoint KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms`
+     */
+
+    /**
+     * @typedef {object} AzureEncryptionKeyOptions
+     * @description Configuration options for making an Azure encryption key
+     * @property {string} keyName Key name
+     * @property {string} keyVersion Key version
+     * @property {string} keyVaultEndpoint Key vault URL, typically `<name>.vault.azure.net`
+     */
+
+    /**
      * Creates a data key used for explicit encryption and inserts it into the key vault namespace
      *
      * @param {string} provider The KMS provider used for this data key. Must be `'aws'` or `'local'`
      * @param {object} [options] Options for creating the data key
-     * @param {object} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key. If the kmsProvider is "aws" it is required.
-     * @param {string} [options.masterKey.region] The AWS region of the KMS
-     * @param {string} [options.masterKey.key] The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
-     * @param {string} [options.masterKey.endpoint] An alternate host to send KMS requests to. May include port number.
+     * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key
      * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
      * @param {ClientEncryption~createDataKeyCallback} [callback] Optional callback to invoke when key is created
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with {@link ClientEncryption~dataKeyId the id of the created data key}, or rejects with an error. If a callback is provided, returns nothing.
@@ -167,7 +206,8 @@ module.exports = function(modules) {
 
       const bson = this._bson;
       options = sanitizeDataKeyOptions(bson, options);
-      const context = this._mongoCrypt.makeDataKeyContext(provider, options);
+      const dataKeyBson = bson.serialize(Object.assign({ provider }, options.masterKey));
+      const context = this._mongoCrypt.makeDataKeyContext(dataKeyBson);
       const stateMachine = new StateMachine({ bson });
 
       return promiseOrCallback(callback, cb => {

@@ -50,6 +50,7 @@ class MongoCrypt : public Nan::ObjectWrap {
         std::unique_ptr<Nan::Callback> hmacSha512Hook;
         std::unique_ptr<Nan::Callback> hmacSha256Hook;
         std::unique_ptr<Nan::Callback> sha256Hook;
+        std::unique_ptr<Nan::Callback> signRsaSha256Hook;
     };
 
     friend class MongoCryptContext;
