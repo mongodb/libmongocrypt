@@ -57,7 +57,7 @@ java {
 val bsonRangeVersion = "[3.10,5.0)"
 dependencies {
     api("org.mongodb:bson:$bsonRangeVersion")
-    api("net.java.dev.jna:jna:4.5.2")
+    api("net.java.dev.jna:jna:5.6.0")
     implementation("org.slf4j:slf4j-api:1.7.6")
 
     // Tests
