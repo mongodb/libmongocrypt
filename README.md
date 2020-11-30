@@ -41,6 +41,8 @@ Install the latest release of libmongocrypt with the following.
 brew install mongodb/brew/libmongocrypt
 ```
 
+To install the latest unstable development version of libmongocrypt, use `brew install mongodb/brew/libmongocrypt --HEAD`. Do not use the unstable version of libmongocrypt in a production environment.
+
 ## Building libmongocrypt from source on macOS ##
 First install [Homebrew according to its own instructions](https://brew.sh/). Using Homebrew, install the following dependencies.
 ```
@@ -77,6 +79,7 @@ https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmong
 
 To download the latest unstable release, download from this URL:
 https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt_unstable.tar.gz
+Do not use the unstable version of libmongocrypt in a production environment.
 
 ### Testing ###
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
@@ -126,6 +129,9 @@ Do the following when releasing:
 
 ## Installing libmongocrypt From Distribution Packages ##
 Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.
+
+### Unstable Development Distribution Packages ###
+To install the latest unstable development package, change `1.0` to `development` in the package URLs listed in the subsequent instructions. For example, `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.0` in the instructions would become `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/development`. Do not use the unstable version of libmongocrypt in a production environment.
 
 ### .deb Packages (Debian and Ubuntu) ###
 
