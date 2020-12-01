@@ -19,10 +19,19 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python35/python.exe" \
              "C:/python/Python36/python.exe" \
              "C:/python/Python37/python.exe" \
-             "C:/python/Python38/python.exe")
+             "C:/python/Python38/python.exe" \
+             "C:/python/Python39/python.exe")
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
-    PYTHONS=("python")
+    PYTHONS=("python" \   # Python 2.7 from brew
+             "python3" \  # Python 3 from brew
+             "/System/Library/Frameworks/Python.framework/Versions/2.7/bin/python" \
+             "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3" \
+             "/Library/Frameworks/Python.framework/Versions/3.5/bin/python3" \
+             "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3" \
+             "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3" \
+             "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3" \
+             "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3")
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
     PYTHONS=("/opt/python/2.7/bin/python" \
