@@ -569,6 +569,7 @@ tasks:
           . bin/activate
           ./bin/pip install requests
           ./bin/pip install poster
+          ./bin/pip install pycrypto
           cd ..
           pkg_version=$mongocrypt_version
           CURATOR_RELEASE=${curator_release|"latest"}
