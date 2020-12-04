@@ -26,5 +26,5 @@ createvirtualenv () {
     # smart enough to know the latest compatible version of pip, setuptools,
     # and wheel.
     python -m pip install --upgrade 'pip<19.2'  # 19.2 dropped support for Python 3.4
-    python -m pip install --upgrade pip, setuptools, wheel
+    python -m pip install --upgrade pip setuptools wheel
 }
