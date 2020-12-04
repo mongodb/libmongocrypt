@@ -14,24 +14,32 @@ MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
     export PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
-    PYTHONS=("C:/python/Python27/python.exe" \
-             "C:/python/Python34/python.exe" \
-             "C:/python/Python35/python.exe" \
-             "C:/python/Python36/python.exe" \
-             "C:/python/Python37/python.exe" \
-             "C:/python/Python38/python.exe")
+    PYTHONS=("C:/python/Python27/python.exe"
+             "C:/python/Python34/python.exe"
+             "C:/python/Python35/python.exe"
+             "C:/python/Python36/python.exe"
+             "C:/python/Python37/python.exe"
+             "C:/python/Python38/python.exe"
+             "C:/python/Python39/python.exe")
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
-    PYTHONS=("python")
+    PYTHONS=("python"   # Python 2.7 from brew
+             "python3"  # Python 3 from brew
+             "/System/Library/Frameworks/Python.framework/Versions/2.7/bin/python"
+             "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.5/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3")
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
-    PYTHONS=("/opt/python/2.7/bin/python" \
-             "/opt/python/3.4/bin/python3" \
-             "/opt/python/3.5/bin/python3" \
-             "/opt/python/3.6/bin/python3")
-             # Enable when MONGOCRYPT-279 is fixed.
-             #"/opt/python/pypy/bin/pypy" \
-             #"/opt/python/pypy3.6/bin/pypy3")
+    PYTHONS=("/opt/python/2.7/bin/python"
+             "/opt/python/3.4/bin/python3"
+             "/opt/python/3.5/bin/python3"
+             "/opt/python/3.6/bin/python3"
+             "/opt/python/pypy/bin/pypy"
+             "/opt/python/pypy3.6/bin/pypy3")
 fi
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
