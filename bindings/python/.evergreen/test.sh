@@ -28,17 +28,16 @@ else
     PYTHONS=("/opt/python/2.7/bin/python" \
              "/opt/python/3.4/bin/python3" \
              "/opt/python/3.5/bin/python3" \
-             "/opt/python/3.6/bin/python3")
-             # Enable when MONGOCRYPT-279 is fixed.
-             #"/opt/python/pypy/bin/pypy" \
-             #"/opt/python/pypy3.6/bin/pypy3")
+             "/opt/python/3.6/bin/python3" \
+             "/opt/python/pypy/bin/pypy" \
+             "/opt/python/pypy3.6/bin/pypy3")
 fi
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     createvirtualenv $PYTHON_BINARY .venv
-    python -m pip install --prefer-binary -r test-requirements.txt
+    python -m pip install -r test-requirements.txt
     python setup.py test
     deactivate
     rm -rf .venv

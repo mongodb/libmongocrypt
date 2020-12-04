@@ -21,4 +21,10 @@ createvirtualenv () {
     else
         . $VENVPATH/bin/activate
     fi
+    # Bootstrap pip to deal with old versions that may install an unsupported
+    # version when told to upgrade. First upgrade to 19.1, which should be
+    # smart enough to know the latest compatible version of pip, setuptools,
+    # and wheel.
+    python -m pip install --upgrade 'pip<19.2'  # 19.2 dropped support for Python 3.4
+    python -m pip install --upgrade pip, setuptools, wheel
 }
