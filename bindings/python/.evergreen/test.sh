@@ -5,6 +5,9 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
+# For createvirtualenv.
+. .evergreen/utils.sh
+
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 
@@ -32,9 +35,11 @@ else
 fi
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
-    # Clear cached eggs for different python versions.
-    rm -rf .eggs
+    echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
-
-    $PYTHON_BINARY setup.py test
+    createvirtualenv $PYTHON_BINARY .venv
+    python -m pip install --prefer-binary -r test-requirements.txt
+    python setup.py test
+    deactivate
+    rm -rf .venv
 done
