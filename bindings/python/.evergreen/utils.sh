@@ -21,4 +21,7 @@ createvirtualenv () {
     else
         . $VENVPATH/bin/activate
     fi
+    # Upgrade to the latest versions of pip setuptools wheel so that
+    # pip can always download the latest cryptography+cffi wheels.
+    python -m pip install --upgrade pip setuptools wheel
 }
