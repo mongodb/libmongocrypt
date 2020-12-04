@@ -46,7 +46,7 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     createvirtualenv $PYTHON_BINARY .venv
-    python -m pip install -r test-requirements.txt
+    python -m pip install --prefer-binary -r test-requirements.txt
     python setup.py test
     deactivate
     rm -rf .venv
