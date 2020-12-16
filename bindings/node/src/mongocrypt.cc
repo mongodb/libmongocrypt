@@ -52,16 +52,19 @@ v8::Local<v8::Object> BufferFromBinary(mongocrypt_binary_t* binary) {
     return scope.Escape(buffer);
 }
 
-static void NoopFreeCallback(char* data, void* message) {
-   // in a no-copy scenario we want to let libmongoc clean up the memory
+v8::Local<v8::Object> BufferWithLengthOf(mongocrypt_binary_t* binary) {
+    Nan::EscapableHandleScope scope;
+    size_t len = mongocrypt_binary_len(binary);
+    v8::Local<v8::Object> buffer = Nan::NewBuffer(len).ToLocalChecked();
+    return scope.Escape(buffer);
 }
 
-v8::Local<v8::Object> BufferFromBinaryNoCopy(mongocrypt_binary_t* binary) {
-    Nan::EscapableHandleScope scope;
-    const uint8_t* data = mongocrypt_binary_data(binary);
-    size_t len = mongocrypt_binary_len(binary);
-    v8::Local<v8::Object> buffer = Nan::NewBuffer((char*)data, len, NoopFreeCallback, nullptr).ToLocalChecked();
-    return scope.Escape(buffer);
+void CopyBufferData(mongocrypt_binary_t* out, v8::Local<v8::Object> buffer, size_t count) {
+    memcpy(mongocrypt_binary_data(out), node::Buffer::Data(buffer), count);
+}
+
+void CopyBufferData(mongocrypt_binary_t* out, v8::Local<v8::Object> buffer) {
+    CopyBufferData(out, buffer, mongocrypt_binary_len(out));
 }
 
 NAN_INLINE bool BooleanOptionValue(v8::Local<v8::Object> options,
@@ -196,7 +199,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
             v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
             v8::Local<v8::Object> ivBuffer = BufferFromBinary(iv);
             v8::Local<v8::Object> inBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Object> outBuffer = BufferWithLengthOf(out);
 
             v8::Local<v8::Value> argv[] = {keyBuffer, ivBuffer, inBuffer, outBuffer};
             v8::Local<v8::Value> defaultValue = Nan::False();
@@ -209,6 +212,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
             }
 
             *bytes_written = Nan::To<uint32_t>(result).ToChecked();
+            CopyBufferData(out, outBuffer, *bytes_written);
             return true;
         };
 
@@ -221,7 +225,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
             v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
             v8::Local<v8::Object> ivBuffer = BufferFromBinary(iv);
             v8::Local<v8::Object> inBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Object> outBuffer = BufferWithLengthOf(out);
 
             v8::Local<v8::Value> argv[] = {keyBuffer, ivBuffer, inBuffer, outBuffer};
             v8::Local<v8::Value> defaultValue = Nan::False();
@@ -234,6 +238,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
             }
 
             *bytes_written = Nan::To<uint32_t>(result).ToChecked();
+            CopyBufferData(out, outBuffer, *bytes_written);
             return true;
         };
 
@@ -243,7 +248,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
             CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
             Nan::Callback* hook = cryptoHooks->randomHook.get();
 
-            v8::Local<v8::Object> outBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Object> outBuffer = BufferWithLengthOf(out);
             v8::Local<v8::Value> argv[] = {outBuffer, Nan::New(count)};
             v8::Local<v8::Value> defaultValue = Nan::False();
             v8::Local<v8::Value> result = Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 2, argv).FromMaybe(defaultValue);
@@ -253,6 +258,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
                 return false;
             }
 
+            CopyBufferData(out, outBuffer);
             return true;
         };
 
@@ -264,7 +270,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
 
             v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
             v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
 
             v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
             v8::Local<v8::Value> defaultValue = Nan::False();
@@ -273,6 +279,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+            CopyBufferData(out, outputBuffer);
             return true;
         };
 
@@ -284,7 +291,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
 
             v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
             v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
 
             v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
             v8::Local<v8::Value> defaultValue = Nan::False();
@@ -293,6 +300,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+            CopyBufferData(out, outputBuffer);
             return true;
         };
 
@@ -303,7 +311,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
             Nan::Callback* hook = cryptoHooks->sha256Hook.get();
 
             v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
             v8::Local<v8::Value> argv[] = {inputBuffer, outputBuffer};
 
             v8::Local<v8::Value> defaultValue = Nan::False();
@@ -313,6 +321,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+            CopyBufferData(out, outputBuffer);
             return true;
         };
 
@@ -324,7 +333,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
 
             v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
             v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferFromBinaryNoCopy(out);
+            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
 
             v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
             v8::Local<v8::Value> defaultValue = Nan::False();
@@ -333,6 +342,7 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+            CopyBufferData(out, outputBuffer);
             return true;
         };
 
