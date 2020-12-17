@@ -100,6 +100,7 @@ namespace MongoDB.Libmongocrypt.Test
                 });
         }
 
+#if !NETCOREAPP1_1
         [Fact]
         public void EncryptQuery()
         {
@@ -475,6 +476,7 @@ namespace MongoDB.Libmongocrypt.Test
                 state.Should().Be(CryptContext.StateCode.MONGOCRYPT_CTX_DONE);
             }
         }
+#endif
 
         // private methods
         private (Binary binarySent, BsonDocument document) ProcessContextToCompletion(CryptContext context, bool isKmsDecrypt = true)

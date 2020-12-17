@@ -46,7 +46,6 @@ namespace MongoDB.Libmongocrypt
             // to avoid restrictions on target frameworks that present in some of below
             if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
             {
-#if !NETSTANDARD1_5
                 handle.Check(
                     status,
                     Library.mongocrypt_setopt_crypto_hooks(
@@ -58,16 +57,13 @@ namespace MongoDB.Libmongocrypt
                         __cryptoHmacSha256Callback,
                         __cryptoHashCallback,
                         IntPtr.Zero));
-#endif
 
-#if NETSTANDARD2_1
                 handle.Check(
                     status,
                     Library.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
                         handle,
                         __signRsaesPkcs1HmacCallback, 
                         IntPtr.Zero));
-#endif
             }
 
             foreach (var kmsCredentials in options.KmsCredentials)

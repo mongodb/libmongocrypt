@@ -17,24 +17,24 @@
 using FluentAssertions;
 using Xunit;
 
-namespace MongoDB.Libmongocrypt.Test.Callbacks
+namespace MongoDB.Libmongocrypt.Test
 {
-    public class HmacShaCallbacksTests
+    public class HashCallbackTests
     {
-        [Theory]
-        [InlineData(256, "74657374206f66206d6163", "37626663386235656333306537336439386565666133653263633334643635376535323734623537656633326661353862663638313534396535663737303138", "ebfaa874ff7fcf5b48637a4aff49ed60f48b53a0802719d6ad85f96d315b2df2")]
-        [InlineData(512, "74657374206f6620686d61630a", "06645237ece5638d1dcb66c70d8158c6ba5922dce3ae9f95242147fce0f989d9", "c8bc88465593980da5ed9bd213dcc4594106f6573d08eddc2b7cead3a642ef37dd848e8901a8c340f2a5d909057d28b1355fc9c82e7f7710e688f8c0c7635e9a")]
-        public void HmacShaTest(int bitness, string inputHex, string keyHex, string expectedHex)
+        [Fact]
+        public void HashTest()
         {
-            var keyBytes = CallbackUtils.GetBytesFromHex(keyHex);
+            var inputHex = "74657374206f66206d6163";
+            var expectedHex = "9ff3e52fa31c9e0fa0b08e19c40591553ea64b73709633271975bfab2db9d980";
+            
             var inputBytes = CallbackUtils.GetBytesFromHex(inputHex);
             var expectedBytes = CallbackUtils.GetBytesFromHex(expectedHex);
 
 #if !NETCOREAPP1_1
-            var resultBytes = HmacShaCallbacks.CalculateHash(keyBytes, inputBytes, bitness);
+            var resultBytes = HashCallback.CalculateHash(inputBytes);
             resultBytes.Should().Equal(expectedBytes);
 #else
-            var exception = Record.Exception(() => HmacShaCallbacks.CalculateHash(keyBytes, inputBytes, bitness));
+            var exception = Record.Exception(() => HashCallback.CalculateHash(inputBytes));
             exception.Should().BeOfType<System.PlatformNotSupportedException>();
 #endif
         }

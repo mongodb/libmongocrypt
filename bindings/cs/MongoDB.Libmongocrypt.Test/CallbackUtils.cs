@@ -16,7 +16,7 @@
 
 using System;
 
-namespace MongoDB.Libmongocrypt.Test.Callbacks
+namespace MongoDB.Libmongocrypt.Test
 {
     internal static class CallbackUtils
     {

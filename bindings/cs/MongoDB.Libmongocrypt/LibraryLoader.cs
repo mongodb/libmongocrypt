@@ -31,11 +31,10 @@ namespace MongoDB.Libmongocrypt
 
         public LibraryLoader()
         {
-
-#if NET452 || NETSTANDARD2_0
-            var is64Bit = Environment.Is64BitProcess;
-#else
+#if NETSTANDARD1_5
             var is64Bit = IntPtr.Size == 8;
+#else
+            var is64Bit = Environment.Is64BitProcess;
 #endif
             if (!is64Bit)
             {
@@ -75,7 +74,8 @@ namespace MongoDB.Libmongocrypt
                     {
                         string[] suffixPaths = new[]
                         {
-                            "../../native/linux/",
+                            "../../runtimes/linux/native/",
+                            "runtimes/linux/native/",
                             string.Empty
                         };
                         string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.so");

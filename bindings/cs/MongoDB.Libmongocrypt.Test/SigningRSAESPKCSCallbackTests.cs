@@ -50,7 +50,7 @@ namespace MongoDB.Libmongocrypt.Test.Callbacks
         {
             byte[] privateKeyBytes = Convert.FromBase64String(PrivateKey);
             var dataBytes = Encoding.ASCII.GetBytes(DataToSign);
-#if NETSTANDARD2_1
+#if NETCOREAPP3_0
             byte[] signature = SigningRSAESPKCSCallback.HashAndSignBytes(dataBytes, privateKeyBytes);
             string output = Convert.ToBase64String(signature);
 

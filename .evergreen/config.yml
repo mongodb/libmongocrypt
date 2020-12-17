@@ -376,13 +376,15 @@ tasks:
     - func: "test python"
       vars: { variant_name: windows-test }
 
-- name: build-csharp-and-test
+- name: build-and-test-csharp
   depends_on:
   - variant: ubuntu1804-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build csharp and test"
+    vars:
+      test_env: PROJECT_DIRECTORY=${project_directory}
 
 - name: build-and-test-node
   depends_on:
@@ -755,7 +757,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-csharp-and-test
+  - build-and-test-csharp
   - build-and-test-node
   - windows-upload-check
 - name: windows-test-python
@@ -976,6 +978,7 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-java
   - build-and-test-node
+  - build-and-test-csharp
   - name: publish-packages
     distros:
     - ubuntu2004-large

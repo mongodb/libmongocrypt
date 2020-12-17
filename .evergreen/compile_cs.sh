@@ -12,11 +12,7 @@ evergreen_root="$(pwd)"
 
 . ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
 
-. ${evergreen_root}/libmongocrypt/.evergreen/setup-venv.sh
-
 cd $evergreen_root
-
-dotnet_tool=$(which dotnet)
 
 if [ "$OS" == "Windows_NT" ]; then
     # Make sure libbson.dll is in the path on Windows
@@ -26,7 +22,11 @@ if [ "$OS" == "Windows_NT" ]; then
 
     # Make dotnet happy over ssh
     export DOTNET_CLI_HOME=$(cygpath -w "${evergreen_root}/dotnet_home")
+else
+    export PATH=$PATH:/usr/share/dotnet
 fi
+
+dotnet_tool=$(which dotnet)
 
 "$dotnet_tool" build -c Release libmongocrypt/cmake-build/bindings/cs/cs.sln
 
