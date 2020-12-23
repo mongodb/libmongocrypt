@@ -63,7 +63,8 @@ namespace MongoDB.Libmongocrypt
                     {
                         string[] suffixPaths = new[]
                         {
-                            "../../native/osx/",
+                            "../../runtimes/osx/native/",
+                            "runtimes/osx/native/",
                             string.Empty
                         };
                         string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.dylib");

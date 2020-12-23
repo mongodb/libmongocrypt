@@ -736,6 +736,7 @@ buildvariants:
   - build-and-test-asan-mac
   - build-and-test-java
   - build-and-test-node
+  - build-and-test-csharp
   - test-python
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"

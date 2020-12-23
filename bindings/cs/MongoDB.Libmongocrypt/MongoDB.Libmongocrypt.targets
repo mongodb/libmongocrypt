@@ -12,4 +12,10 @@
       <Link>libmongocrypt.so</Link>
     </Content>
   </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOsPlatform('OSX'))">
+    <Content Include="$(MSBuildThisFileDirectory)../runtimes/osx/native/libmongocrypt.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libmongocrypt.dylib</Link>
+    </Content>
+  </ItemGroup>
 </Project>

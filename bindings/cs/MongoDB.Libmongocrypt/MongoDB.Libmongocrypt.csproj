@@ -68,6 +68,10 @@
       <Pack>true</Pack>
       <PackagePath>runtimes/linux/native</PackagePath>
     </Content>
+    <Content Include="$(LibMongoCryptBinaries)/libmongocrypt.dylib">
+      <Pack>true</Pack>
+      <PackagePath>runtimes/osx/native</PackagePath>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
