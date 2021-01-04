@@ -80,7 +80,7 @@ _aes_256_cbc_encrypt (void *ctx,
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
    if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_encrypt")) {
       mongocrypt_status_set (
-         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char*) ctx, -1);
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
    }
    return true;
@@ -106,7 +106,7 @@ _aes_256_cbc_decrypt (void *ctx,
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
    if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_decrypt")) {
       mongocrypt_status_set (
-         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char*) ctx, -1);
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
    }
    return true;
@@ -133,7 +133,7 @@ _hmac_sha_512 (void *ctx,
    _mongocrypt_buffer_cleanup (&tmp);
    if (0 == strcmp ((char *) ctx, "error_on:hmac_sha512")) {
       mongocrypt_status_set (
-         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char*) ctx, -1);
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
    }
    return true;
@@ -160,7 +160,7 @@ _hmac_sha_256 (void *ctx,
    _mongocrypt_buffer_cleanup (&tmp);
    if (0 == strcmp ((char *) ctx, "error_on:hmac_sha256")) {
       mongocrypt_status_set (
-         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char*) ctx, -1);
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
    }
    return true;
@@ -185,7 +185,7 @@ _sha_256 (void *ctx,
    _mongocrypt_buffer_cleanup (&tmp);
    if (0 == strcmp ((char *) ctx, "error_on:sha256")) {
       mongocrypt_status_set (
-         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char*) ctx, -1);
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
    }
    return true;
@@ -211,7 +211,7 @@ _random (void *ctx,
    _mongocrypt_buffer_cleanup (&tmp);
    if (0 == strcmp ((char *) ctx, "error_on:random")) {
       mongocrypt_status_set (
-         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char*) ctx, -1);
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
    }
    return true;
@@ -239,7 +239,7 @@ _sign_rsaes_pkcs1_v1_5 (void *ctx,
    _mongocrypt_buffer_cleanup (&tmp);
    if (0 == strcmp ((char *) ctx, "error_on:sign_rsaes_pkcs1_v1_5")) {
       mongocrypt_status_set (
-         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char*) ctx, -1);
+         status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
    }
    return true;
@@ -541,7 +541,7 @@ _test_crypto_hooks_random (_mongocrypt_tester_t *tester)
 }
 
 static void
-_test_kms_request_helper (_mongocrypt_tester_t *tester, const char* error_on)
+_test_kms_request_helper (_mongocrypt_tester_t *tester, const char *error_on)
 {
    mongocrypt_t *crypt;
    mongocrypt_status_t *status;
@@ -560,11 +560,12 @@ _test_kms_request_helper (_mongocrypt_tester_t *tester, const char* error_on)
 
    mongocrypt_ctx_datakey_init (ctx);
    ret = mongocrypt_ctx_status (ctx, status);
-   
+
    if (0 == strcmp (error_on, "error_on:none")) {
       ASSERT_OK_STATUS (ret, status);
 
-      /* The call history includes some random data, just assert we've called our hooks. */
+      /* The call history includes some random data, just assert we've called
+       * our hooks. */
       BSON_ASSERT (strstr (call_history->str, "call:_hmac_sha_256"));
       BSON_ASSERT (strstr (call_history->str, "call:_sha_256"));
    } else {
@@ -578,7 +579,8 @@ _test_kms_request_helper (_mongocrypt_tester_t *tester, const char* error_on)
 }
 
 static void
-_test_kms_request (_mongocrypt_tester_t *tester) {
+_test_kms_request (_mongocrypt_tester_t *tester)
+{
    _test_kms_request_helper (tester, "error_on:none");
    _test_kms_request_helper (tester, "error_on:hmac_sha256");
    _test_kms_request_helper (tester, "error_on:sha256");
@@ -624,7 +626,8 @@ _test_crypto_hooks_explicit_err (_mongocrypt_tester_t *tester)
 
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
    bin = mongocrypt_binary_new ();
-   ASSERT_FAILS (mongocrypt_ctx_finalize (ctx, bin), ctx, "error message");
+   ASSERT_FAILS (
+      mongocrypt_ctx_finalize (ctx, bin), ctx, "error_on:hmac_sha512");
    BSON_ASSERT (MONGOCRYPT_CTX_ERROR == mongocrypt_ctx_state (ctx));
    mongocrypt_binary_destroy (bin);
    mongocrypt_binary_destroy (key_id);

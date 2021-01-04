@@ -148,3 +148,17 @@ mongocrypt_status_destroy (mongocrypt_status_t *status)
    bson_free (status->message);
    bson_free (status);
 }
+
+
+void
+_mongocrypt_status_wrap (mongocrypt_status_t *status,
+                         mongocrypt_status_t *to_wrap)
+{
+   char *orig = status->message;
+
+   if (mongocrypt_status_ok (to_wrap)) {
+      return;
+   }
+   status->message = bson_strdup_printf ("%s: %s", orig, to_wrap->message);
+   bson_free (orig);
+}

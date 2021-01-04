@@ -26,4 +26,8 @@ _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst);
 void
 _mongocrypt_status_reset (mongocrypt_status_t *status);
 
+void
+_mongocrypt_status_wrap (mongocrypt_status_t *status,
+                         mongocrypt_status_t *to_wrap);
+
 #endif /* MONGOCRYPT_STATUS_PRIVATE_H */
