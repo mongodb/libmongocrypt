@@ -38,7 +38,7 @@ echo "Installing libmongocrypt"
 $CMAKE --build . --target install --config RelWithDebInfo
 # CDRIVER-3187, ensure the final distributed tarball contains the libbson static
 # library to support consumers that static link to libmongocrypt
-find ${BSON_INSTALL_PREFIX} \( -name libbson-static-1.0.a -o -name bson-1.0.lib \) -execdir cp {} $(dirname $(find ${MONGOCRYPT_INSTALL_PREFIX} -name libmongocrypt-static.a -o -name mongocrypt-static.lib)) \;
+find ${BSON_INSTALL_PREFIX} \( -name libbson-static-1.0.a -o -name bson-1.0.lib -o -name bson-static-1.0.lib \) -execdir cp {} $(dirname $(find ${MONGOCRYPT_INSTALL_PREFIX} -name libmongocrypt-static.a -o -name mongocrypt-static.lib)) \;
 $CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
 $CMAKE --build ./kms-message --target test_kms_request --config RelWithDebInfo
 cd $evergreen_root
