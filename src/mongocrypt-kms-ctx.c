@@ -180,7 +180,7 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
@@ -190,27 +190,27 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
              kms->req, "Host", key->kek.provider.aws.endpoint->host_and_port)) {
          CLIENT_ERR ("error constructing KMS message: %s",
                      kms_request_get_error (kms->req));
-         _mongocrypt_status_wrap (status, ctx_with_status.status);
+         _mongocrypt_status_append (status, ctx_with_status.status);
          goto done;
       }
    }
 
    if (!kms_request_set_region (kms->req, key->kek.provider.aws.region)) {
       CLIENT_ERR ("failed to set region");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
    if (!kms_request_set_access_key_id (
           kms->req, crypt_opts->kms_provider_aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
    if (!kms_request_set_secret_key (
           kms->req, crypt_opts->kms_provider_aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
@@ -218,7 +218,7 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
    if (!kms->msg.data) {
       CLIENT_ERR ("failed to create KMS message");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
    kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
@@ -309,7 +309,7 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
@@ -319,27 +319,27 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
              kms->req, "Host", ctx_opts->kek.provider.aws.endpoint->host)) {
          CLIENT_ERR ("error constructing KMS message: %s",
                      kms_request_get_error (kms->req));
-         _mongocrypt_status_wrap (status, ctx_with_status.status);
+         _mongocrypt_status_append (status, ctx_with_status.status);
          goto done;
       }
    }
 
    if (!kms_request_set_region (kms->req, ctx_opts->kek.provider.aws.region)) {
       CLIENT_ERR ("failed to set region");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
    if (!kms_request_set_access_key_id (
           kms->req, crypt_opts->kms_provider_aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
    if (!kms_request_set_secret_key (
           kms->req, crypt_opts->kms_provider_aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
@@ -347,7 +347,7 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
    if (!kms->msg.data) {
       CLIENT_ERR ("failed to create KMS message");
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
    kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
@@ -1203,7 +1203,7 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto fail;
    }
 
@@ -1211,7 +1211,7 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
    if (!request_string) {
       CLIENT_ERR ("error getting GCP OAuth KMS message: %s",
                   kms_request_get_error (kms->req));
-      _mongocrypt_status_wrap (status, ctx_with_status.status);
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto fail;
    }
    _mongocrypt_buffer_init (&kms->msg);
