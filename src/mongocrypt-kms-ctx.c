@@ -27,6 +27,11 @@
 #include <kms_message/kms_gcp_request.h>
 #include "mongocrypt.h"
 
+typedef struct {
+   mongocrypt_status_t *status;
+   void *ctx;
+} ctx_with_status_t;
+
 /* Before we've read the Content-Length header in an HTTP response,
  * we don't know how many bytes we'll need. So return this value
  * in kms_ctx_bytes_needed until we are fed the Content-Length.
@@ -38,11 +43,10 @@ static bool
 _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
 {
    bool ret;
-   mongocrypt_status_t *status;
-   _mongocrypt_crypto_t *crypto = (_mongocrypt_crypto_t *) ctx;
+   ctx_with_status_t *ctx_with_status = (ctx_with_status_t *) ctx;
+   _mongocrypt_crypto_t *crypto = (_mongocrypt_crypto_t *) ctx_with_status->ctx;
    mongocrypt_binary_t *plaintext, *out;
 
-   status = mongocrypt_status_new ();
    plaintext =
       mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
@@ -50,9 +54,8 @@ _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
    out->data = hash_out;
    out->len = SHA256_LEN;
 
-   ret = crypto->sha_256 (crypto->ctx, plaintext, out, status);
+   ret = crypto->sha_256 (crypto->ctx, plaintext, out, ctx_with_status->status);
 
-   mongocrypt_status_destroy (status);
    mongocrypt_binary_destroy (plaintext);
    mongocrypt_binary_destroy (out);
    return ret;
@@ -66,14 +69,13 @@ _sha256_hmac (void *ctx,
               size_t len,
               unsigned char *hash_out)
 {
-   mongocrypt_status_t *status;
-   _mongocrypt_crypto_t *crypto = (_mongocrypt_crypto_t *) ctx;
+   ctx_with_status_t *ctx_with_status = (ctx_with_status_t *) ctx;
+   _mongocrypt_crypto_t *crypto = (_mongocrypt_crypto_t *) ctx_with_status->ctx;
    mongocrypt_binary_t *key, *plaintext, *out;
    bool ret;
 
    (void) crypto;
 
-   status = mongocrypt_status_new ();
    key = mongocrypt_binary_new_from_data ((uint8_t *) key_input,
                                           (uint32_t) key_len);
    plaintext =
@@ -83,9 +85,9 @@ _sha256_hmac (void *ctx,
    out->data = hash_out;
    out->len = SHA256_LEN;
 
-   ret = crypto->hmac_sha_256 (crypto->ctx, key, plaintext, out, status);
+   ret = crypto->hmac_sha_256 (
+      crypto->ctx, key, plaintext, out, ctx_with_status->status);
 
-   mongocrypt_status_destroy (status);
    mongocrypt_binary_destroy (key);
    mongocrypt_binary_destroy (plaintext);
    mongocrypt_binary_destroy (out);
@@ -93,10 +95,13 @@ _sha256_hmac (void *ctx,
 }
 
 static void
-_set_kms_crypto_hooks (_mongocrypt_crypto_t *crypto, kms_request_opt_t *opts)
+_set_kms_crypto_hooks (_mongocrypt_crypto_t *crypto,
+                       ctx_with_status_t *ctx_with_status,
+                       kms_request_opt_t *opts)
 {
    if (crypto->hooks_enabled) {
-      kms_request_opt_set_crypto_hooks (opts, _sha256, _sha256_hmac, crypto);
+      kms_request_opt_set_crypto_hooks (
+         opts, _sha256, _sha256_hmac, ctx_with_status);
    }
 }
 
@@ -121,45 +126,49 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
+   ctx_with_status_t ctx_with_status;
+   bool ret = false;
 
    _init_common (kms, log, MONGOCRYPT_KMS_AWS_DECRYPT);
    status = kms->status;
+   ctx_with_status.ctx = crypto;
+   ctx_with_status.status = mongocrypt_status_new ();
 
    if (!key->kek.kms_provider) {
       CLIENT_ERR ("no kms provider specified on key");
-      return false;
+      goto done;
    }
 
    if (MONGOCRYPT_KMS_PROVIDER_AWS != key->kek.kms_provider) {
       CLIENT_ERR ("expected aws kms provider");
-      return false;
+      goto done;
    }
 
    if (!key->kek.provider.aws.region) {
       CLIENT_ERR ("no key region provided");
-      return false;
+      goto done;
    }
 
    if (0 == (crypt_opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
       CLIENT_ERR ("aws kms not configured");
-      return false;
+      goto done;
    }
 
    if (!crypt_opts->kms_provider_aws.access_key_id) {
       CLIENT_ERR ("aws access key id not provided");
-      return false;
+      goto done;
    }
 
    if (!crypt_opts->kms_provider_aws.secret_access_key) {
       CLIENT_ERR ("aws secret access key not provided");
-      return false;
+      goto done;
    }
 
    /* create the KMS request. */
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
 
-   _set_kms_crypto_hooks (crypto, opt);
+   _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
 
    kms->req = kms_decrypt_request_new (
@@ -171,7 +180,8 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
 
    /* If an endpoint was set, override the default Host header. */
@@ -180,30 +190,36 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
              kms->req, "Host", key->kek.provider.aws.endpoint->host_and_port)) {
          CLIENT_ERR ("error constructing KMS message: %s",
                      kms_request_get_error (kms->req));
-         return false;
+         _mongocrypt_status_append (status, ctx_with_status.status);
+         goto done;
       }
    }
 
    if (!kms_request_set_region (kms->req, key->kek.provider.aws.region)) {
       CLIENT_ERR ("failed to set region");
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
 
-   if (!kms_request_set_access_key_id (kms->req,
-                                       crypt_opts->kms_provider_aws.access_key_id)) {
+   if (!kms_request_set_access_key_id (
+          kms->req, crypt_opts->kms_provider_aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
-   if (!kms_request_set_secret_key (kms->req,
-                                    crypt_opts->kms_provider_aws.secret_access_key)) {
+   if (!kms_request_set_secret_key (
+          kms->req, crypt_opts->kms_provider_aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
 
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
    if (!kms->msg.data) {
       CLIENT_ERR ("failed to create KMS message");
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
    kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
@@ -216,7 +232,12 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
       kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
                                           key->kek.provider.aws.region);
    }
-   return true;
+
+   ret = true;
+done:
+   mongocrypt_status_destroy (ctx_with_status.status);
+
+   return ret;
 }
 
 
@@ -231,45 +252,50 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 {
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
+   ctx_with_status_t ctx_with_status;
+   bool ret = false;
 
    _init_common (kms, log, MONGOCRYPT_KMS_AWS_ENCRYPT);
    status = kms->status;
+   ctx_with_status.ctx = crypto;
+   ctx_with_status.status = mongocrypt_status_new ();
 
    if (MONGOCRYPT_KMS_PROVIDER_AWS != ctx_opts->kek.kms_provider) {
       CLIENT_ERR ("expected aws kms provider");
-      return false;
+      goto done;
    }
 
    if (!ctx_opts->kek.provider.aws.region) {
       CLIENT_ERR ("no key region provided");
-      return false;
+      goto done;
    }
 
    if (!ctx_opts->kek.provider.aws.cmk) {
       CLIENT_ERR ("no aws cmk provided");
-      return false;
+      goto done;
    }
 
    if (0 == (crypt_opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
       CLIENT_ERR ("aws kms not configured");
-      return false;
+      goto done;
    }
 
    if (!crypt_opts->kms_provider_aws.access_key_id) {
       CLIENT_ERR ("aws access key id not provided");
-      return false;
+      goto done;
    }
 
    if (!crypt_opts->kms_provider_aws.secret_access_key) {
       CLIENT_ERR ("aws secret access key not provided");
-      return false;
+      goto done;
    }
 
    /* create the KMS request. */
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
 
-   _set_kms_crypto_hooks (crypto, opt);
+
+   _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
 
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
@@ -283,7 +309,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
 
    /* If an endpoint was set, override the default Host header. */
@@ -292,29 +319,36 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
              kms->req, "Host", ctx_opts->kek.provider.aws.endpoint->host)) {
          CLIENT_ERR ("error constructing KMS message: %s",
                      kms_request_get_error (kms->req));
+         _mongocrypt_status_append (status, ctx_with_status.status);
+         goto done;
       }
    }
 
    if (!kms_request_set_region (kms->req, ctx_opts->kek.provider.aws.region)) {
       CLIENT_ERR ("failed to set region");
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
 
-   if (!kms_request_set_access_key_id (kms->req,
-                                       crypt_opts->kms_provider_aws.access_key_id)) {
+   if (!kms_request_set_access_key_id (
+          kms->req, crypt_opts->kms_provider_aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
-   if (!kms_request_set_secret_key (kms->req,
-                                    crypt_opts->kms_provider_aws.secret_access_key)) {
+   if (!kms_request_set_secret_key (
+          kms->req, crypt_opts->kms_provider_aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
 
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
    if (!kms->msg.data) {
       CLIENT_ERR ("failed to create KMS message");
-      return false;
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
    }
    kms->msg.len = (uint32_t) strlen ((char *) kms->msg.data);
    kms->msg.owned = true;
@@ -327,7 +361,11 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
       kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
                                           ctx_opts->kek.provider.aws.region);
    }
-   return true;
+
+   ret = true;
+done:
+   mongocrypt_status_destroy (ctx_with_status.status);
+   return ret;
 }
 
 
@@ -1082,15 +1120,15 @@ _sign_rsaes_pkcs1_v1_5_trampoline (void *ctx,
                                    size_t input_len,
                                    unsigned char *signature_out)
 {
+   ctx_with_status_t *ctx_with_status;
    _mongocrypt_opts_t *crypt_opts;
    mongocrypt_binary_t private_key_bin;
    mongocrypt_binary_t input_bin;
    mongocrypt_binary_t output_bin;
-   mongocrypt_status_t *status;
    bool ret;
 
-   status = mongocrypt_status_new ();
-   crypt_opts = (_mongocrypt_opts_t *) ctx;
+   ctx_with_status = (ctx_with_status_t *) ctx;
+   crypt_opts = (_mongocrypt_opts_t *) ctx_with_status->ctx;
    private_key_bin.data = (uint8_t *) private_key;
    private_key_bin.len = (uint32_t) private_key_len;
    input_bin.data = (uint8_t *) input;
@@ -1098,10 +1136,11 @@ _sign_rsaes_pkcs1_v1_5_trampoline (void *ctx,
    output_bin.data = (uint8_t *) signature_out;
    output_bin.len = RSAES_PKCS1_V1_5_SIGNATURE_LEN;
 
-   ret = crypt_opts->sign_rsaes_pkcs1_v1_5 (
-      crypt_opts->sign_ctx, &private_key_bin, &input_bin, &output_bin, status);
-   /* TODO: MONGOCRYPT-257 status is swallowed. */
-   mongocrypt_status_destroy (status);
+   ret = crypt_opts->sign_rsaes_pkcs1_v1_5 (crypt_opts->sign_ctx,
+                                            &private_key_bin,
+                                            &input_bin,
+                                            &output_bin,
+                                            ctx_with_status->status);
    return ret;
 }
 
@@ -1119,10 +1158,13 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
    const char *host;
    char *request_string;
    bool ret = false;
+   ctx_with_status_t ctx_with_status;
 
    _init_common (kms, log, MONGOCRYPT_KMS_GCP_OAUTH);
    status = kms->status;
    auth_endpoint = crypt_opts->kms_provider_gcp.endpoint;
+   ctx_with_status.ctx = crypt_opts;
+   ctx_with_status.status = mongocrypt_status_new ();
 
    if (auth_endpoint) {
       kms->endpoint = bson_strdup (auth_endpoint->host_and_port);
@@ -1148,7 +1190,7 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
    if (crypt_opts->sign_rsaes_pkcs1_v1_5) {
       kms_request_opt_set_crypto_hook_sign_rsaes_pkcs1_v1_5 (
-         opt, _sign_rsaes_pkcs1_v1_5_trampoline, crypt_opts);
+         opt, _sign_rsaes_pkcs1_v1_5_trampoline, &ctx_with_status);
    }
    kms->req = kms_gcp_request_oauth_new (
       host,
@@ -1161,6 +1203,7 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto fail;
    }
 
@@ -1168,6 +1211,7 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
    if (!request_string) {
       CLIENT_ERR ("error getting GCP OAuth KMS message: %s",
                   kms_request_get_error (kms->req));
+      _mongocrypt_status_append (status, ctx_with_status.status);
       goto fail;
    }
    _mongocrypt_buffer_init (&kms->msg);
@@ -1180,6 +1224,7 @@ fail:
    bson_free (scope);
    bson_free (audience);
    kms_request_opt_destroy (opt);
+   mongocrypt_status_destroy (ctx_with_status.status);
    return ret;
 }
 
