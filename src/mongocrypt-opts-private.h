@@ -41,6 +41,7 @@ typedef struct {
 typedef struct {
    char *secret_access_key;
    char *access_key_id;
+   char *session_token;
 } _mongocrypt_opts_kms_provider_aws_t;
 
 typedef struct {

@@ -719,11 +719,20 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
             return false;
          }
 
+         if (!_mongocrypt_parse_optional_utf8 (
+                &as_bson,
+                "aws.sessionToken",
+                &crypt->opts.kms_provider_aws.session_token,
+                crypt->status)) {
+            return false;
+         }
+
          if (!_mongocrypt_check_allowed_fields (&as_bson,
                                                 "aws",
                                                 crypt->status,
                                                 "accessKeyId",
-                                                "secretAccessKey")) {
+                                                "secretAccessKey",
+                                                "sessionToken")) {
             return false;
          }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
