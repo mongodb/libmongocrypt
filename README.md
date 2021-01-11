@@ -123,7 +123,6 @@ Do the following when releasing:
 - Commit, create a new git tag, like `1.0.0-rc123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
 - Commit and push.
-- Create a BUILD ticket to update the version of libmongocrypt installed on Evergreen hosts.
 - Create the release from the GitHub releases page from the new tag.
 - Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb
 
