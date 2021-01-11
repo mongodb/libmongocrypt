@@ -1,7 +1,10 @@
 # ChangeLog
-## [Unreleased]
+## 1.1.0
 ### Added
 - Add ENABLE_PIC cmake option, set to ON by default, so static libraries build with -fPIC by default on relevant systems.
+
+### Fixed
+- Errors produced in all crypto callbacks are propagated to user.
 
 ## 1.1.0-beta1
 ### Deprecated
