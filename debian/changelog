@@ -1,4 +1,4 @@
-libmongocrypt (1.1.0-1) UNRELEASED; urgency=medium
+libmongocrypt (1.1.0-1) unstable; urgency=medium
 
   * New upstream release.
   * Update to Standards-Version 4.5.1 (no changes)
