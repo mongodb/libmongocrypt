@@ -1,6 +1,7 @@
 libmongocrypt (1.1.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Update to Standards-Version 4.5.1 (no changes)
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 12 Jan 2021 14:17:05 -0500
 
