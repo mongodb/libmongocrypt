@@ -143,7 +143,7 @@ module.exports = function(modules) {
     /**
      * @typedef {object} GCPEncryptionKeyOptions
      * @description Configuration options for making a GCP encryption key
-     * @property {string} projectId Azue project id
+     * @property {string} projectId GCP project id
      * @property {string} location Location name (e.g. "global")
      * @property {string} keyRing Key ring name
      * @property {string} keyName Key name
@@ -162,7 +162,7 @@ module.exports = function(modules) {
     /**
      * Creates a data key used for explicit encryption and inserts it into the key vault namespace
      *
-     * @param {string} provider The KMS provider used for this data key. Must be `'aws'` or `'local'`
+     * @param {string} provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
      * @param {object} [options] Options for creating the data key
      * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key
      * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.

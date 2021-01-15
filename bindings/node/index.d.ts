@@ -1,6 +1,7 @@
 import type { Binary } from 'bson';
+import type { MongoClient } from 'mongodb';
 
-export type ClientEncryptionDataKeyProvider = 'aws' | 'local';
+export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local';
 
 /**
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
@@ -60,6 +61,55 @@ export interface KMSProviders {
      */
     key?: Buffer | undefined;
   };
+
+  /**
+   * Configuration options for using 'azure' as your KMS provider
+   */
+  azure?: {
+    /**
+     * The tenant ID identifies the organization for the account
+     */
+    tenantId?: string | undefined;
+
+    /**
+     * The client ID to authenticate a registered application
+     */
+    clientId?: string | undefined;
+
+    /**
+     * The client secret to authenticate a registered application
+     */
+    clientSecret?: string | undefined;
+
+    /**
+     * If present, a host with optional port. E.g. "example.com" or "example.com:443".
+     * This is optional, and only needed if customer is using a non-commercial Azure instance
+     * (e.g. a government or China account, which use different URLs).
+     * Defaults to "login.microsoftonline.com"
+     */
+    identityPlatformEndpoint?: string | undefined;
+  };
+  
+  /**
+   * Configuration options for using 'gcp' as your KMS provider
+   */
+  gcp?: {
+    /**
+     * The service account email to authenticate
+     */
+    email?: string | undefined;
+
+    /**
+     * A PKCS#8 encrypted key. This can either be a base64 string or a binary representation
+     */
+    privateKey?: string | Buffer | undefined;
+
+    /**
+     * If present, a host with optional port. E.g. "example.com" or "example.com:443".
+     * Defaults to "oauth2.googleapis.com"
+     */
+    endpoint?: string | undefined;
+  }
 }
 
 /**
@@ -69,7 +119,12 @@ export interface ClientEncryptionOptions {
   /**
    * The namespace of the key vault, used to store encryption keys
    */
-  keyVaultNamespace?: string | undefined;
+  keyVaultNamespace: string;
+
+  /**
+   * A MongoClient used to fetch keys from a key vault. Defaults to client.
+   */
+  keyVaultClient?: MongoClient | undefined;
 
   /**
    * Options for specific KMS providers to use
@@ -78,28 +133,88 @@ export interface ClientEncryptionOptions {
 }
 
 /**
+ * Configuration options for making an AWS encryption key
+ */
+export interface AWSEncryptionKeyOptions {
+  /**
+   * The AWS region of the KMS
+   */
+  region?: string | undefined;
+
+  /**
+   * The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
+   */
+  key?: string | undefined;
+
+  /**
+   * An alternate host to send KMS requests to. May include port number.
+   */
+  endpoint?: string | undefined;
+}
+
+/**
+ * Configuration options for making an AWS encryption key
+ */
+export interface GCPEncryptionKeyOptions {
+  /**
+   * GCP project ID
+   */
+  projectId?: string | undefined;
+
+  /**
+   * Location name (e.g. "global")
+   */
+  location?: string | undefined;
+
+  /**
+   * Key ring name
+   */
+  keyRing?: string | undefined;
+
+  /**
+   * Key name
+   */
+  keyName?: string | undefined;
+
+  /**
+   * Key version
+   */
+  keyVersion?: string | undefined;
+
+  /**
+   * KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms`
+   */
+  endpoint?: string | undefined;
+}
+
+/**
+ * Configuration options for making an Azure encryption key
+ */
+export interface AzureEncryptionKeyOptions {
+  /**
+   * Key name
+   */
+  keyName?: string | undefined;
+
+  /**
+   * Key version
+   */
+  keyVersion?: string | undefined;
+
+  /**
+   * Key vault URL, typically `<name>.vault.azure.net`
+   */
+  keyVaultEndpoint?: string | undefined;
+}
+
+/**
  * Options to provide when creating a new data key.
  */
 export interface ClientEncryptionCreateDataKeyProviderOptions {
   /**
-   * Idenfities a new KMS-specific key used to encrypt the new data key. If the kmsProvider is "aws" it is required.
+   * Idenfities a new KMS-specific key used to encrypt the new data key
    */
-  masterKey?: {
-    /**
-     * The AWS region of the KMS
-     */
-    region?: string | undefined;
-
-    /**
-     * The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
-     */
-    key?: string | undefined;
-
-    /**
-     * An alternate host to send KMS requests to. May include port number.
-     */
-    endpoint?: string | undefined;
-  };
+  masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
 
   /**
    * An optional list of string alternate names used to reference a key.
@@ -141,7 +256,7 @@ export class ClientEncryption {
 
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
-   * @param provider The KMS provider used for this data key. Must be 'aws' or 'local'
+   * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    */
   createDataKey(
     provider: ClientEncryptionDataKeyProvider
@@ -149,7 +264,7 @@ export class ClientEncryption {
 
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
-   * @param provider The KMS provider used for this data key. Must be 'aws' or 'local'
+   * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    * @param options Options for creating the data key
    */
   createDataKey(
@@ -159,7 +274,7 @@ export class ClientEncryption {
 
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
-   * @param provider The KMS provider used for this data key. Must be 'aws' or 'local'
+   * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    * @param callback Callback to invoke when key is created
    */
   createDataKey(
@@ -169,7 +284,7 @@ export class ClientEncryption {
 
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
-   * @param provider The KMS provider used for this data key. Must be 'aws' or 'local'
+   * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    * @param options Options for creating the data key
    * @param callback Callback to invoke when key is created
    */
