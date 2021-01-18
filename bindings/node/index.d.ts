@@ -44,12 +44,12 @@ export interface KMSProviders {
     /**
      * The access key used for the AWS KMS provider
      */
-    accessKeyId?: string | undefined;
+    accessKeyId: string;
 
     /**
      * The secret access key used for the AWS KMS provider
      */
-    secretAccessKey?: string | undefined;
+    secretAccessKey: string;
   };
 
   /**
@@ -57,9 +57,10 @@ export interface KMSProviders {
    */
   local?: {
     /**
-     * The master key used to encrypt/decrypt data keys. A 96-byte long Buffer.
+     * The master key used to encrypt/decrypt data keys.
+     * A 96-byte long Buffer or base64 encoded string.
      */
-    key?: Buffer | undefined;
+    key: Buffer | string;
   };
 
   /**
@@ -69,17 +70,17 @@ export interface KMSProviders {
     /**
      * The tenant ID identifies the organization for the account
      */
-    tenantId?: string | undefined;
+    tenantId: string;
 
     /**
      * The client ID to authenticate a registered application
      */
-    clientId?: string | undefined;
+    clientId: string;
 
     /**
      * The client secret to authenticate a registered application
      */
-    clientSecret?: string | undefined;
+    clientSecret: string;
 
     /**
      * If present, a host with optional port. E.g. "example.com" or "example.com:443".
@@ -97,12 +98,12 @@ export interface KMSProviders {
     /**
      * The service account email to authenticate
      */
-    email?: string | undefined;
+    email: string;
 
     /**
      * A PKCS#8 encrypted key. This can either be a base64 string or a binary representation
      */
-    privateKey?: string | Buffer | undefined;
+    privateKey: string | Buffer;
 
     /**
      * If present, a host with optional port. E.g. "example.com" or "example.com:443".
@@ -113,7 +114,7 @@ export interface KMSProviders {
 }
 
 /**
- * Optional settings to provide when creating a new `ClientEncryption` instance.
+ * Additional settings to provide when creating a new `ClientEncryption` instance.
  */
 export interface ClientEncryptionOptions {
   /**
@@ -129,7 +130,7 @@ export interface ClientEncryptionOptions {
   /**
    * Options for specific KMS providers to use
    */
-  kmsProviders?: KMSProviders | undefined;
+  kmsProviders?: KMSProviders;
 }
 
 /**
@@ -139,12 +140,12 @@ export interface AWSEncryptionKeyOptions {
   /**
    * The AWS region of the KMS
    */
-  region?: string | undefined;
+  region: string;
 
   /**
    * The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
    */
-  key?: string | undefined;
+  key: string;
 
   /**
    * An alternate host to send KMS requests to. May include port number.
@@ -159,22 +160,22 @@ export interface GCPEncryptionKeyOptions {
   /**
    * GCP project ID
    */
-  projectId?: string | undefined;
+  projectId: string;
 
   /**
    * Location name (e.g. "global")
    */
-  location?: string | undefined;
+  location: string;
 
   /**
    * Key ring name
    */
-  keyRing?: string | undefined;
+  keyRing: string;
 
   /**
    * Key name
    */
-  keyName?: string | undefined;
+  keyName: string;
 
   /**
    * Key version
@@ -194,17 +195,17 @@ export interface AzureEncryptionKeyOptions {
   /**
    * Key name
    */
-  keyName?: string | undefined;
+  keyName: string;
+
+  /**
+   * Key vault URL, typically `<name>.vault.azure.net`
+   */
+  keyVaultEndpoint: string;
 
   /**
    * Key version
    */
   keyVersion?: string | undefined;
-
-  /**
-   * Key vault URL, typically `<name>.vault.azure.net`
-   */
-  keyVaultEndpoint?: string | undefined;
 }
 
 /**
@@ -250,9 +251,9 @@ export class ClientEncryption {
   /**
    * Create a new encryption instance.
    * @param client The client used for encryption
-   * @param options Optional settings
+   * @param options Additional settings
    */
-  constructor(client: MongoClient, options?: ClientEncryptionOptions);
+  constructor(client: MongoClient, options: ClientEncryptionOptions);
 
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace

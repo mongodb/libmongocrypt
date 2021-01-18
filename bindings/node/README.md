@@ -203,7 +203,7 @@ The public interface for explicit client side encryption
 | Param | Type | Description |
 | --- | --- | --- |
 | client | <code>MongoClient</code> | The client used for encryption |
-| options | <code>object</code> | Optional settings |
+| options | <code>object</code> | Additional settings |
 | options.keyVaultNamespace | <code>string</code> | The namespace of the key vault, used to store encryption keys |
 | [options.keyVaultClient] | <code>MongoClient</code> | A `MongoClient` used to fetch keys from a key vault. Defaults to `client` |
 | [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) | options for specific KMS providers to use |
@@ -428,7 +428,7 @@ Configuration options that are used by specific KMS providers during key generat
 | --- | --- | --- |
 | region | <code>string</code> | The AWS region of the KMS |
 | key | <code>string</code> | The Amazon Resource Name (ARN) to the AWS customer master key (CMK) |
-| endpoint | <code>string</code> | An alternate host to send KMS requests to. May include port number |
+| [endpoint] | <code>string</code> | An alternate host to send KMS requests to. May include port number |
 
 Configuration options for making an AWS encryption key
 
@@ -443,8 +443,8 @@ Configuration options for making an AWS encryption key
 | location | <code>string</code> | Location name (e.g. "global") |
 | keyRing | <code>string</code> | Key ring name |
 | keyName | <code>string</code> | Key name |
-| keyVersion | <code>string</code> | Key version |
-| endpoint | <code>string</code> | KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms` |
+| [keyVersion] | <code>string</code> | Key version |
+| [endpoint] | <code>string</code> | KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms` |
 
 Configuration options for making a GCP encryption key
 
@@ -456,8 +456,8 @@ Configuration options for making a GCP encryption key
 | Name | Type | Description |
 | --- | --- | --- |
 | keyName | <code>string</code> | Key name |
-| keyVersion | <code>string</code> | Key version |
 | keyVaultEndpoint | <code>string</code> | Key vault URL, typically `<name>.vault.azure.net` |
+| [keyVersion] | <code>string</code> | Key version |
 
 Configuration options for making an Azure encryption key
 

@@ -73,7 +73,7 @@ module.exports = function(modules) {
      * Create a new encryption instance
      *
      * @param {MongoClient} client The client used for encryption
-     * @param {object} options Optional settings
+     * @param {object} options Additional settings
      * @param {string} options.keyVaultNamespace The namespace of the key vault, used to store encryption keys
      * @param {MongoClient} [options.keyVaultClient] A `MongoClient` used to fetch keys from a key vault. Defaults to `client`
      * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
@@ -137,7 +137,7 @@ module.exports = function(modules) {
      * @description Configuration options for making an AWS encryption key
      * @property {string} region The AWS region of the KMS
      * @property {string} key The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
-     * @property {string} endpoint An alternate host to send KMS requests to. May include port number
+     * @property {string} [endpoint] An alternate host to send KMS requests to. May include port number
      */
 
     /**
@@ -147,16 +147,16 @@ module.exports = function(modules) {
      * @property {string} location Location name (e.g. "global")
      * @property {string} keyRing Key ring name
      * @property {string} keyName Key name
-     * @property {string} keyVersion Key version
-     * @property {string} endpoint KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms`
+     * @property {string} [keyVersion] Key version
+     * @property {string} [endpoint] KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms`
      */
 
     /**
      * @typedef {object} AzureEncryptionKeyOptions
      * @description Configuration options for making an Azure encryption key
      * @property {string} keyName Key name
-     * @property {string} keyVersion Key version
      * @property {string} keyVaultEndpoint Key vault URL, typically `<name>.vault.azure.net`
+     * @property {string} [keyVersion] Key version
      */
 
     /**
