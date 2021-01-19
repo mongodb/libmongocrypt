@@ -73,7 +73,7 @@ module.exports = function(modules) {
      * Create a new encryption instance
      *
      * @param {MongoClient} client The client used for encryption
-     * @param {object} options Optional settings
+     * @param {object} options Additional settings
      * @param {string} options.keyVaultNamespace The namespace of the key vault, used to store encryption keys
      * @param {MongoClient} [options.keyVaultClient] A `MongoClient` used to fetch keys from a key vault. Defaults to `client`
      * @param {KMSProviders} [options.kmsProviders] options for specific KMS providers to use
@@ -137,32 +137,32 @@ module.exports = function(modules) {
      * @description Configuration options for making an AWS encryption key
      * @property {string} region The AWS region of the KMS
      * @property {string} key The Amazon Resource Name (ARN) to the AWS customer master key (CMK)
-     * @property {string} endpoint An alternate host to send KMS requests to. May include port number
+     * @property {string} [endpoint] An alternate host to send KMS requests to. May include port number
      */
 
     /**
      * @typedef {object} GCPEncryptionKeyOptions
      * @description Configuration options for making a GCP encryption key
-     * @property {string} projectId Azue project id
+     * @property {string} projectId GCP project id
      * @property {string} location Location name (e.g. "global")
      * @property {string} keyRing Key ring name
      * @property {string} keyName Key name
-     * @property {string} keyVersion Key version
-     * @property {string} endpoint KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms`
+     * @property {string} [keyVersion] Key version
+     * @property {string} [endpoint] KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms`
      */
 
     /**
      * @typedef {object} AzureEncryptionKeyOptions
      * @description Configuration options for making an Azure encryption key
      * @property {string} keyName Key name
-     * @property {string} keyVersion Key version
      * @property {string} keyVaultEndpoint Key vault URL, typically `<name>.vault.azure.net`
+     * @property {string} [keyVersion] Key version
      */
 
     /**
      * Creates a data key used for explicit encryption and inserts it into the key vault namespace
      *
-     * @param {string} provider The KMS provider used for this data key. Must be `'aws'` or `'local'`
+     * @param {string} provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
      * @param {object} [options] Options for creating the data key
      * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key
      * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.

@@ -46,6 +46,15 @@ npm test
 <dt><a href="#KMSProviders">KMSProviders</a> : <code>object</code></dt>
 <dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
 </dd>
+<dt><a href="#AWSEncryptionKeyOptions">AWSEncryptionKeyOptions</a> : <code>object</code></dt>
+<dd><p>Configuration options for making an AWS encryption key</p>
+</dd>
+<dt><a href="#GCPEncryptionKeyOptions">GCPEncryptionKeyOptions</a> : <code>object</code></dt>
+<dd><p>Configuration options for making a GCP encryption key</p>
+</dd>
+<dt><a href="#AzureEncryptionKeyOptions">AzureEncryptionKeyOptions</a> : <code>object</code></dt>
+<dd><p>Configuration options for making an Azure encryption key</p>
+</dd>
 </dl>
 
 <a name="AutoEncrypter"></a>
@@ -141,7 +150,7 @@ Configuration options for a automatic client encryption.
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| [mongocryptURI] | <code>string</code> |  | A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise |
+| [mongocryptdURI] | <code>string</code> |  | A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise |
 | [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | If true, autoEncryption will not attempt to spawn a mongocryptd before connecting |
 | [mongocryptdSpawnPath] | <code>string</code> |  | The path to the mongocryptd executable on the system |
 | [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
@@ -194,8 +203,9 @@ The public interface for explicit client side encryption
 | Param | Type | Description |
 | --- | --- | --- |
 | client | <code>MongoClient</code> | The client used for encryption |
-| options | <code>object</code> | Optional settings |
+| options | <code>object</code> | Additional settings |
 | options.keyVaultNamespace | <code>string</code> | The namespace of the key vault, used to store encryption keys |
+| [options.keyVaultClient] | <code>MongoClient</code> | A `MongoClient` used to fetch keys from a key vault. Defaults to `client` |
 | [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) | options for specific KMS providers to use |
 
 Create a new encryption instance
@@ -229,12 +239,9 @@ new ClientEncryption(mongoClient, {
 
 | Param | Type | Description |
 | --- | --- | --- |
-| provider | <code>string</code> | The KMS provider used for this data key. Must be `'aws'` or `'local'` |
+| provider | <code>string</code> | The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'` |
 | [options] | <code>object</code> | Options for creating the data key |
-| [options.masterKey] | <code>object</code> | Idenfities a new KMS-specific key used to encrypt the new data key. If the kmsProvider is "aws" it is required. |
-| [options.masterKey.region] | <code>string</code> | The AWS region of the KMS |
-| [options.masterKey.key] | <code>string</code> | The Amazon Resource Name (ARN) to the AWS customer master key (CMK) |
-| [options.masterKey.endpoint] | <code>string</code> | An alternate host to send KMS requests to. May include port number. |
+| [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | Idenfities a new KMS-specific key used to encrypt the new data key |
 | [options.keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id. |
 | [callback] | [<code>createDataKeyCallback</code>](#ClientEncryption..createDataKeyCallback) | Optional callback to invoke when key is created |
 
@@ -400,6 +407,57 @@ An error indicating that something went wrong specifically with MongoDB Client E
 | [aws.secretAccessKey] | <code>string</code> | The secret access key used for the AWS KMS provider |
 | [local] | <code>object</code> | Configuration options for using 'local' as your KMS provider |
 | [local.key] | <code>Buffer</code> | The master key used to encrypt/decrypt data keys. A 96-byte long Buffer. |
+| [azure] | <code>object</code> | Configuration options for using 'azure' as your KMS provider |
+| [azure.tenantId] | <code>string</code> | The tenant ID identifies the organization for the account |
+| [azure.clientId] | <code>string</code> | The client ID to authenticate a registered application |
+| [azure.clientSecret] | <code>string</code> | The client secret to authenticate a registered application |
+| [azure.identityPlatformEndpoint] | <code>string</code> | If present, a host with optional port. E.g. "example.com" or "example.com:443". This is optional, and only needed if customer is using a non-commercial Azure instance (e.g. a government or China account, which use different URLs). Defaults to  "login.microsoftonline.com" |
+| [gcp] | <code>object</code> | Configuration options for using 'gcp' as your KMS provider |
+| [gcp.email] | <code>string</code> | The service account email to authenticate |
+| [gcp.privateKey] | <code>string</code> \| <code>Binary</code> | A PKCS#8 encrypted key. This can either be a base64 string or a binary representation |
+| [gcp.endpoint] | <code>string</code> | If present, a host with optional port. E.g. "example.com" or "example.com:443". Defaults to "oauth2.googleapis.com" |
 
 Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
+
+<a name="AWSEncryptionKeyOptions"></a>
+
+## AWSEncryptionKeyOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| region | <code>string</code> | The AWS region of the KMS |
+| key | <code>string</code> | The Amazon Resource Name (ARN) to the AWS customer master key (CMK) |
+| [endpoint] | <code>string</code> | An alternate host to send KMS requests to. May include port number |
+
+Configuration options for making an AWS encryption key
+
+<a name="GCPEncryptionKeyOptions"></a>
+
+## GCPEncryptionKeyOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| projectId | <code>string</code> | GCP project id |
+| location | <code>string</code> | Location name (e.g. "global") |
+| keyRing | <code>string</code> | Key ring name |
+| keyName | <code>string</code> | Key name |
+| [keyVersion] | <code>string</code> | Key version |
+| [endpoint] | <code>string</code> | KMS URL, defaults to `https://www.googleapis.com/auth/cloudkms` |
+
+Configuration options for making a GCP encryption key
+
+<a name="AzureEncryptionKeyOptions"></a>
+
+## AzureEncryptionKeyOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| keyName | <code>string</code> | Key name |
+| keyVaultEndpoint | <code>string</code> | Key vault URL, typically `<name>.vault.azure.net` |
+| [keyVersion] | <code>string</code> | Key version |
+
+Configuration options for making an Azure encryption key
 

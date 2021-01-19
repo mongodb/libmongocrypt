@@ -3,6 +3,7 @@
   "version": "1.1.1-beta.0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "index.js",
+  "types": "index.d.ts",
   "directories": {
     "lib": "lib"
   },
