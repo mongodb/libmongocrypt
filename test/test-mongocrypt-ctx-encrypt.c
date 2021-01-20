@@ -1424,6 +1424,42 @@ _test_encrypt_custom_endpoint (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_encrypt_with_aws_session_token (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_binary_t *bin;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_kms_ctx_t *kms_ctx;
+   char *http_req;
+
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_providers (
+                 crypt, TEST_BSON ("{'aws': {'sessionToken': 'mySessionToken', "
+                                   "'accessKeyId': 'myAccessKeyId', "
+                                   "'secretAccessKey': 'mySecretAccessKey'}}")),
+              crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_KMS);
+   kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
+   BSON_ASSERT (NULL != kms_ctx);
+
+   bin = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_kms_ctx_message (kms_ctx, bin), kms_ctx);
+   http_req = (char *) mongocrypt_binary_data (bin);
+   ASSERT_STRCONTAINS (http_req, "X-Amz-Security-Token:mySessionToken");
+
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -1448,4 +1484,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_explicit_encryption);
    INSTALL_TEST (_test_encrypt_empty_aws);
    INSTALL_TEST (_test_encrypt_custom_endpoint);
+   INSTALL_TEST (_test_encrypt_with_aws_session_token);
 }
