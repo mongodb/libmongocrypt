@@ -788,8 +788,8 @@ b64_b64url_test (void)
                                     strlen (base64_data),
                                     base64url_data,
                                     sizeof (base64url_data));
-   ASSERT (ret == 10);
-   ASSERT_CMPSTR (base64url_data, "PDw_Pz8-Pg");
+   ASSERT (ret == 12);
+   ASSERT_CMPSTR (base64url_data, "PDw_Pz8-Pg==");
 
    memset (base64_data, 0, sizeof (base64_data));
    ret = kms_message_b64url_to_b64 (base64url_data,
@@ -802,8 +802,8 @@ b64_b64url_test (void)
    /* Convert to base64url in-place. */
    ret = kms_message_b64_to_b64url (
       base64_data, strlen (base64_data), base64_data, sizeof (base64_data));
-   ASSERT (ret == 10);
-   ASSERT_CMPSTR (base64_data, "PDw_Pz8-Pg");
+   ASSERT (ret == 12);
+   ASSERT_CMPSTR (base64_data, "PDw_Pz8-Pg==");
 }
 
 void

@@ -677,7 +677,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
 
       if (state_machine->trace) {
          MONGOC_DEBUG (
-            "--> sending KMS message: \n%.*s", (int) iov.iov_len, iov.iov_base);
+            "--> sending KMS message: \n%.*s", (int) iov.iov_len, (char*) iov.iov_base);
       }
 
       if (!_mongoc_stream_writev_full (
