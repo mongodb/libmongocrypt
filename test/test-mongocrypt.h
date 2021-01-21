@@ -171,6 +171,17 @@ _mongocrypt_tester_mongocrypt (void);
       BSON_ASSERT (0 == _ret);                                            \
    } while (0);
 
+#define ASSERT_STRCONTAINS(_expr_a, _expr_b)                                  \
+   do {                                                                       \
+      const char *_str_a = (_expr_a);                                         \
+      const char *_str_b = (_expr_b);                                         \
+      char *_ret = strstr (_str_a, _str_b);                                   \
+      if (_ret == NULL) {                                                     \
+         fprintf (stderr, "string %s does not contain %s\n", _str_a, _str_b); \
+      }                                                                       \
+      BSON_ASSERT (NULL != _ret);                                             \
+   } while (0);
+
 void
 _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
 

@@ -177,6 +177,12 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
    kms_request_opt_destroy (opt);
    kms_request_set_service (kms->req, "kms");
 
+   if (crypt_opts->kms_provider_aws.session_token) {
+      kms_request_add_header_field (kms->req,
+                                    "X-Amz-Security-Token",
+                                    crypt_opts->kms_provider_aws.session_token);
+   }
+
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
@@ -305,6 +311,12 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    kms_request_opt_destroy (opt);
    kms_request_set_service (kms->req, "kms");
+
+   if (crypt_opts->kms_provider_aws.session_token) {
+      kms_request_add_header_field (kms->req,
+                                    "X-Amz-Security-Token",
+                                    crypt_opts->kms_provider_aws.session_token);
+   }
 
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
