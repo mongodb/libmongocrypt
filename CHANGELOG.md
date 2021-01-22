@@ -1,4 +1,11 @@
 # ChangeLog
+
+## 1.2.0
+### Added
+- Support AWS temporary credentials via session token.
+
+### Fixed
+- Add "=" padding to base64url encoding.
 ## 1.1.0
 ### Added
 - Add ENABLE_PIC cmake option, set to ON by default, so static libraries build with -fPIC by default on relevant systems.
