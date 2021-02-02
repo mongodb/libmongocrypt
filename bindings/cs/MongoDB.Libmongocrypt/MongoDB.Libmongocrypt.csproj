@@ -34,22 +34,22 @@
   <ItemGroup>
     <Content Include="$(LibMongoCryptBinaries)/libmongocrypt.so" Condition="Exists('$(LibMongoCryptBinaries)/libmongocrypt.so')">
       <Link>libmongocrypt.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
 
     <Content Include="$(LibMongoCryptBinaries)/libmongocrypt.dylib" Condition="Exists('$(LibMongoCryptBinaries)/libmongocrypt.dylib')">
       <Link>libmongocrypt.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
 
     <Content Include="$(LibMongoCryptBinaries)/mongocrypt.dll" Condition="Exists('$(LibMongoCryptBinaries)/mongocrypt.dll')">
       <Link>mongocrypt.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
 
     <Content Include="$(LibMongoCryptBinaries)/mongocrypt.pdb" Condition="Exists('$(LibMongoCryptBinaries)/mongocrypt.pdb')">
       <Link>mongocrypt.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
@@ -89,7 +89,7 @@
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Version)'==''">
-    <Version>0.0.0-local</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
