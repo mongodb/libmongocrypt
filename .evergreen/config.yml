@@ -752,6 +752,12 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+- name: windows-vs2015-compile
+  display_name: "Windows VS 2015 compile"
+  run_on: windows-64-vs2015-test
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
 - name: windows-test
   display_name: "Windows 2016"
   run_on: windows-64-vs2017-test
