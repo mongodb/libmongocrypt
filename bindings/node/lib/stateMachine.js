@@ -217,7 +217,7 @@ module.exports = function(modules) {
     kmsRequest(request) {
       const parsedUrl = request.endpoint.split(':');
       const port = parsedUrl[1] != null ? Number.parseInt(parsedUrl[1], 10) : HTTPS_PORT;
-      const options = { host: parsedUrl[0], port, rejectUnauthorized: false };
+      const options = { host: parsedUrl[0], servername: parsedUrl[0], port };
       const message = request.message;
 
       return new Promise((resolve, reject) => {
