@@ -19,6 +19,7 @@
 
 #include "kms_message_defines.h"
 
+#include <stddef.h>
 #include <sys/types.h>
 
 #ifdef __cplusplus
