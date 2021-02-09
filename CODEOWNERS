@@ -1,0 +1,4 @@
+# Code Owners will automatically be added as reviewers on PRs
+
+# NodeJS Bindings
+bindings/node @nbbeeken @emadum @durran
