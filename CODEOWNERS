@@ -2,3 +2,12 @@
 
 # NodeJS Bindings
 bindings/node @nbbeeken @emadum @durran
+
+# Python Bindings
+bindings/python @ShaneHarvey @prashantmital
+
+# Java Bindings
+bindings/java @jyemin @rozza
+
+# CSharp Bindings
+bindings/cs @DmitryLukyanov
