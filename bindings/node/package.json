@@ -47,7 +47,7 @@
     "standard-version": "^8.0.2"
   },
   "peerDependencies": {
-    "mongodb": "^3.4.0"
+    "mongodb": ">=3.4.0"
   },
   "repository": {
     "type": "git",
