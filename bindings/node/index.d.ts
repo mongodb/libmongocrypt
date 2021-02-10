@@ -50,6 +50,12 @@ export interface KMSProviders {
      * The secret access key used for the AWS KMS provider
      */
     secretAccessKey: string;
+
+    /**
+     * An optional AWS session token that will be used as the
+     * X-Amz-Security-Token header for AWS requests.
+     */
+    sessionToken?: string;
   };
 
   /**
@@ -90,7 +96,7 @@ export interface KMSProviders {
      */
     identityPlatformEndpoint?: string | undefined;
   };
-  
+
   /**
    * Configuration options for using 'gcp' as your KMS provider
    */
