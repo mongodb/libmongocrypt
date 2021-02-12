@@ -40,7 +40,8 @@ class MongoCryptOptions(object):
           - `kms_providers`: Map of KMS provider options. Two KMS providers
             are supported: "aws" and "local". The kmsProviders map values
             differ by provider:
-              - `aws`: Map with "accessKeyId" and "secretAccessKey" as strings.
+              - `aws`: Map with "accessKeyId" and "secretAccessKey" as strings,
+                 and optionally a "sessionToken" for temporary credentials.
               - `azure`: Map with "clientId" and "clientSecret" as strings.
               - `gcp`: Map with "email" as a string and "privateKey" as
                 a byte array or a base64-encoded string. On Python 2,

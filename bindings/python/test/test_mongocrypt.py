@@ -80,6 +80,8 @@ class TestMongoCryptOptions(unittest.TestCase):
             ({'local': {'key': b'1' * 96}}, None),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
+            ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
+                      'sessionToken': 'token'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'},
               'local': {'key': b'1' * 96}}, None),
             ({'local': {'key': to_base64(b'1' * 96)}}, None),
@@ -132,6 +134,14 @@ class TestMongoCrypt(unittest.TestCase):
         opts = MongoCryptOptions(kms_providers)
         mc = MongoCrypt(opts, MockCallback())
         mc.close()
+        mc.close()
+
+    def test_mongocrypt_aws_session_token(self):
+        kms_providers = {
+            'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
+                    'sessionToken': 'token'}}
+        opts = MongoCryptOptions(kms_providers)
+        mc = MongoCrypt(opts, MockCallback())
         mc.close()
 
     def test_mongocrypt_validation(self):
