@@ -3,7 +3,7 @@ The Java wrapper for the companion C library for client side encryption in drive
 
 
 ### Testing ###
-`./gradlew clean check` runs the java test suite. By default it expects that libmongocrypt has been built and is in the `../../../cmake-build` directory.
+`./gradlew clean check` runs the java test suite. By default it expects that libmongocrypt has been built and is in the `../../../cmake-build-nocrypto` directory.
 
 Note: libmongocrypt and the java library are [continuously built on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
 
