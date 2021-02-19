@@ -1,11 +1,13 @@
 Changelog
 =========
 
-Changes in Version 1.1.0b0
---------------------------
+Changes in Version 1.1.0
+------------------------
 
 - Add support for Azure and GCP KMS providers.
-- Bundle libmongocrypt 1.1.0-beta1 in release wheels.
+- Add support for temporary AWS credentials via the "sessionToken" option.
+- Bundle libmongocrypt 1.2.0 in release wheels.
+- Note: Support for libmongocrypt 1.0 is removed.
 
 Changes in Version 1.0.1
 ------------------------

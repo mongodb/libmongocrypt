@@ -77,7 +77,7 @@ PyMongoCrypt can be installed with `pip <http://pypi.python.org/pypi/pip>`_::
 
   $ python -m pip install pymongocrypt
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.4
+  1.2.0
 
 
 PyMongoCrypt ships wheels for macOS, Windows, and manylinux2010 that include
@@ -126,7 +126,7 @@ macOS::
   $ # Set PYMONGOCRYPT_LIB for macOS:
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/nocrypto/lib/libmongocrypt.dylib
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.4
+  1.2.0
 
 Windows::
 
@@ -134,14 +134,14 @@ Windows::
   $ chmod +x $(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.4
+  1.2.0
 
 Linux::
 
   $ # Set PYMONGOCRYPT_LIB for RHEL 6.2 x86_64:
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.4
+  1.2.0
 
 
 Installing the Azure and GCP beta release
@@ -207,7 +207,7 @@ variables, like ``LD_LIBRARY_PATH``. For example::
 
   $ export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.0.4
+  1.2.0
 
 Testing
 =======
