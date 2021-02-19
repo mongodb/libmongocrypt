@@ -7,7 +7,9 @@ Changes in Version 1.1.0
 - Add support for Azure and GCP KMS providers.
 - Add support for temporary AWS credentials via the "sessionToken" option.
 - Bundle libmongocrypt 1.2.0 in release wheels.
-- Note: Support for libmongocrypt 1.0 is removed.
+- **Remove support for libmongocrypt 1.0 and 1.1, libmongocrypt >=1.2
+  is now required.** Note this is only relevant for users that install from
+  source or use the ``PYMONGOCRYPT_LIB`` envirnoment variable.
 
 Changes in Version 1.0.1
 ------------------------
