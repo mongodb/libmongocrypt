@@ -38,7 +38,7 @@ class MongoCryptOptions(object):
 
         :Parameters:
           - `kms_providers`: Map of KMS provider options. Two KMS providers
-            are supported: "aws" and "local". The kmsProviders map values
+            are supported: "aws" and "local". The kms_providers map values
             differ by provider:
               - `aws`: Map with "accessKeyId" and "secretAccessKey" as strings,
                  and optionally a "sessionToken" for temporary credentials.
@@ -65,7 +65,8 @@ class MongoCryptOptions(object):
             will result in an error.
 
         .. versionadded:: 1.1
-           Support for "azure" and "gcp" kmsProviders.
+           Support for "azure" and "gcp" kms_providers.
+           Support for temporary AWS credentials via "sessionToken".
 
         .. versionchanged:: 1.1
            For kmsProvider "local", the "key" field can now be specified
