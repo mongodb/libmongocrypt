@@ -400,7 +400,9 @@ NAN_METHOD(MongoCrypt::New) {
                     return;
                 }
 
-                if (!mongocrypt_setopt_kms_providers(crypt.get(), BufferToBinary(kmsProvidersOptions))) {
+                std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kmsProvidersBinary(
+                    BufferToBinary(kmsProvidersOptions));
+                if (!mongocrypt_setopt_kms_providers(crypt.get(), kmsProvidersBinary.get())) {
                     Nan::ThrowTypeError(errorStringFromStatus(crypt.get()));
                     return;
                 }
@@ -416,7 +418,9 @@ NAN_METHOD(MongoCrypt::New) {
                     return;
                 }
 
-                if (!mongocrypt_setopt_schema_map(crypt.get(), BufferToBinary(schemaMapBuffer))) {
+                std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> schemaMapBinary(
+                    BufferToBinary(schemaMapBuffer));
+                if (!mongocrypt_setopt_schema_map(crypt.get(), schemaMapBinary.get())) {
                     Nan::ThrowTypeError(errorStringFromStatus(crypt.get()));
                     return;
                 }
