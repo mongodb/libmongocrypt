@@ -37,11 +37,7 @@ std::string StringFromBinary(mongocrypt_binary_t* binary) {
 mongocrypt_binary_t* BufferToBinary(v8::Local<v8::Object> node_buffer) {
     uint8_t* buffer = (uint8_t*)node::Buffer::Data(node_buffer);
     size_t buffer_len = node::Buffer::Length(node_buffer);
-
-    uint8_t* buffer_copy = new uint8_t[buffer_len];
-    memcpy(buffer_copy, buffer, buffer_len);
-
-    return mongocrypt_binary_new_from_data(buffer_copy, buffer_len);
+    return mongocrypt_binary_new_from_data(buffer, buffer_len);
 }
 
 v8::Local<v8::Object> BufferFromBinary(mongocrypt_binary_t* binary) {
