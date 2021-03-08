@@ -121,7 +121,6 @@ std::string errorStringFromStatus(mongocrypt_ctx_t* context) {
     return errorMessage;
 }
 
-Nan::Persistent<v8::Function> MongoCrypt::constructor;
 NAN_MODULE_INIT(MongoCrypt::Init) {
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
     tpl->SetClassName(Nan::New("MongoCrypt").ToLocalChecked());
@@ -138,7 +137,7 @@ NAN_MODULE_INIT(MongoCrypt::Init) {
 
     Nan::SetAccessor(itpl, Nan::New("status").ToLocalChecked(), Status);
 
-    constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
+    constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
     Nan::Set(
         target, Nan::New("MongoCrypt").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
@@ -497,7 +496,7 @@ NAN_METHOD(MongoCrypt::New) {
 
     const int argc = 1;
     v8::Local<v8::Value> argv[argc] = {info[0]};
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(MongoCrypt::constructor);
+    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(constructor());
     info.GetReturnValue().Set(Nan::NewInstance(ctor, argc, argv).ToLocalChecked());
 }
 
@@ -684,7 +683,6 @@ NAN_METHOD(MongoCrypt::MakeDataKeyContext) {
     info.GetReturnValue().Set(result);
 }
 
-Nan::Persistent<v8::Function> MongoCryptContext::constructor;
 NAN_MODULE_INIT(MongoCryptContext::Init) {
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>();
     tpl->SetClassName(Nan::New("MongoCryptContext").ToLocalChecked());
@@ -701,7 +699,7 @@ NAN_MODULE_INIT(MongoCryptContext::Init) {
     Nan::SetAccessor(itpl, Nan::New("status").ToLocalChecked(), Status);
     Nan::SetAccessor(itpl, Nan::New("state").ToLocalChecked(), State);
 
-    constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
+    constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
     Nan::Set(target,
              Nan::New("MongoCryptContext").ToLocalChecked(),
              Nan::GetFunction(tpl).ToLocalChecked());
@@ -709,7 +707,7 @@ NAN_MODULE_INIT(MongoCryptContext::Init) {
 
 v8::Local<v8::Object> MongoCryptContext::NewInstance(mongocrypt_ctx_t* context) {
     Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(MongoCryptContext::constructor);
+    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(constructor());
     v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
     MongoCryptContext* class_instance = new MongoCryptContext(context);
     class_instance->Wrap(object);
@@ -798,7 +796,6 @@ NAN_METHOD(MongoCryptContext::Finalize) {
     info.GetReturnValue().Set(buffer);
 }
 
-Nan::Persistent<v8::Function> MongoCryptKMSRequest::constructor;
 NAN_MODULE_INIT(MongoCryptKMSRequest::Init) {
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>();
     tpl->SetClassName(Nan::New("MongoCryptKMSRequest").ToLocalChecked());
@@ -812,7 +809,7 @@ NAN_MODULE_INIT(MongoCryptKMSRequest::Init) {
     Nan::SetAccessor(itpl, Nan::New("endpoint").ToLocalChecked(), Endpoint);
     Nan::SetAccessor(itpl, Nan::New("message").ToLocalChecked(), Message);
 
-    constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
+    constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
     Nan::Set(target,
              Nan::New("MongoCryptKMSRequest").ToLocalChecked(),
              Nan::GetFunction(tpl).ToLocalChecked());
@@ -820,7 +817,7 @@ NAN_MODULE_INIT(MongoCryptKMSRequest::Init) {
 
 v8::Local<v8::Object> MongoCryptKMSRequest::NewInstance(mongocrypt_kms_ctx_t* kms_context) {
     Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(MongoCryptKMSRequest::constructor);
+    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(constructor());
     v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
     MongoCryptKMSRequest* class_instance = new MongoCryptKMSRequest(kms_context);
     class_instance->Wrap(object);
