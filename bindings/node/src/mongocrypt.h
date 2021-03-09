@@ -31,7 +31,10 @@ class MongoCrypt : public Nan::ObjectWrap {
     static NAN_MODULE_INIT(Init);
 
    private:
-    static Nan::Persistent<v8::Function> constructor;
+    static inline Nan::Persistent<v8::Function> & constructor() {
+        static Nan::Persistent<v8::Function> ctor;
+        return ctor;
+    }
 
     static NAN_METHOD(New);
     static NAN_METHOD(MakeEncryptionContext);
@@ -73,7 +76,10 @@ class MongoCryptContext : public Nan::ObjectWrap {
     static v8::Local<v8::Object> NewInstance(mongocrypt_ctx_t* context);
 
    private:
-    static Nan::Persistent<v8::Function> constructor;
+    static inline Nan::Persistent<v8::Function> & constructor() {
+        static Nan::Persistent<v8::Function> ctor;
+        return ctor;
+    }
 
     static NAN_METHOD(NextMongoOperation);
     static NAN_METHOD(AddMongoOperationResponse);
@@ -96,7 +102,10 @@ class MongoCryptKMSRequest : public Nan::ObjectWrap {
     static v8::Local<v8::Object> NewInstance(mongocrypt_kms_ctx_t* kms_context);
 
    private:
-    static Nan::Persistent<v8::Function> constructor;
+    static inline Nan::Persistent<v8::Function> & constructor() {
+        static Nan::Persistent<v8::Function> ctor;
+        return ctor;
+    }
 
     static NAN_METHOD(AddResponse);
 
