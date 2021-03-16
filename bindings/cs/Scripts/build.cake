@@ -146,7 +146,7 @@ Task("NugetPush")
             });
     });
     
-Task("GreateGitTag")
+Task("CreateGitTag")
     .Does(() =>
     {
         ThrowIfLocalRelease();
@@ -173,7 +173,7 @@ string GetSettingValue(string commandArgumentName, string defaultValue)
     {
         if (defaultValue == null)
         {
-            throw new Exception($"Neither {commandArgumentName} command argument or {environmentVariableName} environmentVariable have not been configured.");
+            throw new Exception($"Neither {commandArgumentName} command argument nor {environmentVariableName} environmentVariable have been configured.");
         }
         else
         {
