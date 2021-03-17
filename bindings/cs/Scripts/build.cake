@@ -140,7 +140,7 @@ Task("NugetPush")
         ThrowIfLocalRelease();
 
         var nugetApi = GetSettingValue("NugetApiKey", null);
-        var packageFilePath = artifactsDirectory.CombineWithFilePath($"{libmongocryptSolutionFile.GetFilename().ToString()}.{releaseVersion}.nupkg");
+        var packageFilePath = artifactsDirectory.CombineWithFilePath($"{libmongocryptSolutionFile.GetFilenameWithoutExtension().ToString()}.{releaseVersion}.nupkg");
         Information(packageFilePath);
         NuGetPush(
             packageFilePath,
