@@ -131,7 +131,7 @@ Task("CreatePackage")
         };
         DotNetCorePack(
             projectFullPath,
-            settings);            
+            settings);
     });
     
 Task("NugetPush")
@@ -156,6 +156,7 @@ Task("CreateGitTag")
     {
         ThrowIfLocalRelease();
 
+        Information($"Directory: {libmongocryptSolutionDirectory}");
         Information("Show origin:");
         Git(libmongocryptSolutionDirectory, "remote -v");
         Git(libmongocryptSolutionDirectory, $"tag -a {csharpBindingsGitTagName} -m {csharpBindingsGitTagName}"); 
