@@ -119,10 +119,15 @@ Task("CreatePackage")
     .Does(() =>
     {
         var projectFullPath = libmongocryptSolutionFile.FullPath;
+        Information($"Project path: {projectFullPath}. ReleaseVersion: {releaseVersion}");
         var settings = new DotNetCorePackSettings
         {
             Configuration = configuration,
-            OutputDirectory = artifactsDirectory
+            OutputDirectory = artifactsDirectory,
+            EnvironmentVariables = new Dictionary<string, string>
+            {
+               { "Version", releaseVersion },
+            }
         };
         DotNetCorePack(
             projectFullPath,
