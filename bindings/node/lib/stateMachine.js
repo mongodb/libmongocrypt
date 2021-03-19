@@ -84,9 +84,9 @@ module.exports = function(modules) {
      */
     execute(autoEncrypter, context, callback) {
       const bson = this.bson;
-      const client = autoEncrypter._client;
       const keyVaultNamespace = autoEncrypter._keyVaultNamespace;
       const keyVaultClient = autoEncrypter._keyVaultClient;
+      const metaDataClient = autoEncrypter._metaDataClient;
       const mongocryptdClient = autoEncrypter._mongocryptdClient;
       const mongocryptdManager = autoEncrypter._mongocryptdManager;
 
@@ -94,7 +94,7 @@ module.exports = function(modules) {
       switch (context.state) {
         case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: {
           const filter = bson.deserialize(context.nextMongoOperation());
-          this.fetchCollectionInfo(client, context.ns, filter, (err, collInfo) => {
+          this.fetchCollectionInfo(metaDataClient, context.ns, filter, (err, collInfo) => {
             if (err) {
               return callback(err, null);
             }

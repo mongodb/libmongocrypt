@@ -100,6 +100,7 @@ module.exports = function(modules) {
       });
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
       this._keyVaultClient = options.keyVaultClient || client;
+      this._metaDataClient = options.metadataClient || client;
       this._bypassEncryption =
         typeof options.bypassAutoEncryption === 'boolean' ? options.bypassAutoEncryption : false;
 
