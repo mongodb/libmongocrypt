@@ -21,11 +21,7 @@
       'src/mongocrypt.cc'
     ],
     'xcode_settings': {
-      'MACOSX_DEPLOYMENT_TARGET': '10.12',
-      'OTHER_CFLAGS': [
-        "-std=c++11",
-        "-stdlib=libc++"
-      ],
+      'MACOSX_DEPLOYMENT_TARGET': '10.12'
     },
     'conditions': [
       ['build_type=="dynamic"', {
