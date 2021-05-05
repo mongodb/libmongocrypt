@@ -116,9 +116,6 @@ The main reason behind creating a C library is to make it easier for drivers to 
 #### Lightweight ####
 We decided against the "have libmongocrypt do everything" approach because it complicated integration, especially with async drivers. Because of this we decided no I/O occurs in libmongocrypt.
 
-#### Narrowly scoped ####
-The first version of FLE is to get signal. If FLE becomes popular, further improvements will be made (removing mongocryptd process, support for more queries, better performance). libmongocrypt takes the same approach. Making it blazing fast and completely future-proof is not a high priority.
-
 ### Releasing ###
 
 #### Version number scheme ####
