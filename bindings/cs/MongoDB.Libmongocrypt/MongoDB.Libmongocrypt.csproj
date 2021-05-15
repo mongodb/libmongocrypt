@@ -15,7 +15,7 @@
     <Company>MongoDB Inc.</Company>
     <Copyright>Copyright © 2019–present MongoDB Inc.</Copyright>
     <Description>Libmongocrypt wrapper for the .NET driver.</Description>
-    <Authors>markbenvenuto;vincentkam;dmitry_lukyanov;rstam</Authors>
+    <Authors>MongoDB Inc.</Authors>
     <PackageIconUrl>http://jobs.mongodb.org/files/logos/889002/889002.png</PackageIconUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageDescription>Libmongocrypt wrapper for the .NET driver.</PackageDescription>
