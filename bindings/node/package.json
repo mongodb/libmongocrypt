@@ -26,7 +26,7 @@
     "bindings": "^1.5.0",
     "bl": "^2.2.1",
     "nan": "^2.14.2",
-    "prebuild-install": "6.0.1"
+    "prebuild-install": "6.1.2"
   },
   "devDependencies": {
     "bson": "^4.2.3",
@@ -48,6 +48,9 @@
   },
   "peerDependencies": {
     "mongodb": ">=3.4.0"
+  },
+  "engines": {
+    "node": ">=6"
   },
   "repository": {
     "type": "git",
