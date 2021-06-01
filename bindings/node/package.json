@@ -4,6 +4,15 @@
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "index.js",
   "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "README.md",
+    "CHANGELOG.md",
+    "lib",
+    "src",
+    "build",
+    "index.d.ts"
+  ],
   "directories": {
     "lib": "lib"
   },
