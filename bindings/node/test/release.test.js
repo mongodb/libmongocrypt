@@ -29,6 +29,7 @@ const REQUIRED_FILES = [
 describe(`Release ${packFile}`, () => {
   let tarFileList;
   before(() => {
+    expect(fs.existsSync(packFile)).to.equal(false);
     cp.execSync('npm pack', { stdio: 'ignore' });
     tarFileList = [];
     tar.list({
@@ -42,7 +43,6 @@ describe(`Release ${packFile}`, () => {
 
   after(() => {
     fs.unlinkSync(packFile);
-    tarFileList = [];
   });
 
   for (const requiredFile of REQUIRED_FILES) {
