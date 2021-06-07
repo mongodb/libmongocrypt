@@ -17,4 +17,4 @@ build
 npm-debug.log
 .vscode
 deps
-
+*.tgz
