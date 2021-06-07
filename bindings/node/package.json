@@ -10,7 +10,6 @@
     "CHANGELOG.md",
     "lib",
     "src",
-    "build",
     "index.d.ts",
     "binding.gyp"
   ],
