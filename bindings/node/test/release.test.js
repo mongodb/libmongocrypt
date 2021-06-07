@@ -8,22 +8,22 @@ const pkg = require('../package.json');
 const packFile = `mongodb-client-encryption-${pkg.version}.tgz`;
 
 const REQUIRED_FILES = [
-  'package/LICENSE',
-  'package/src/mongocrypt.cc',
   'package/binding.gyp',
-  'package/src/mongocrypt.h',
+  'package/build/Release/mongocrypt.node',
+  'package/CHANGELOG.md',
+  'package/index.d.ts',
+  'package/index.js',
   'package/lib/autoEncrypter.js',
   'package/lib/clientEncryption.js',
   'package/lib/common.js',
   'package/lib/cryptoCallbacks.js',
-  'package/index.js',
   'package/lib/mongocryptdManager.js',
   'package/lib/stateMachine.js',
+  'package/LICENSE',
   'package/package.json',
-  'package/CHANGELOG.md',
   'package/README.md',
-  'package/index.d.ts',
-  'package/build/Release/mongocrypt.node'
+  'package/src/mongocrypt.cc',
+  'package/src/mongocrypt.h'
 ];
 
 describe(`Release ${packFile}`, () => {
