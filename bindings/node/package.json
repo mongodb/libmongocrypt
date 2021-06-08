@@ -41,6 +41,7 @@
     "bson": "^4.2.3",
     "chai": "^4.3.4",
     "chai-subset": "^1.6.0",
+    "clang-format": "^1.5.0",
     "dmd-clear": "^0.1.2",
     "eslint": "^4.19.1",
     "eslint-plugin-prettier": "^2.7.0",
