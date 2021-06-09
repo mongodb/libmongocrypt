@@ -230,7 +230,18 @@ describe('ClientEncryption', function() {
     });
 
     function makeOptions(keyAltNames) {
-      return Object.assign({}, dataKeyOptions, { keyAltNames });
+      expect(dataKeyOptions.masterKey).to.be.an('object');
+      expect(dataKeyOptions.masterKey.key).to.be.a('string');
+      expect(dataKeyOptions.masterKey.region).to.be.a('string');
+      expect(Array.isArray(keyAltNames)).to.equal(true);
+
+      return {
+        masterKey: {
+          key: dataKeyOptions.masterKey.key,
+          region: dataKeyOptions.masterKey.region
+        },
+        keyAltNames
+      };
     }
 
     describe('errors', function() {
