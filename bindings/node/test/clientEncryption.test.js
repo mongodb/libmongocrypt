@@ -276,6 +276,7 @@ describe('ClientEncryption', function() {
         .then(_dataKey => (dataKey = _dataKey))
         .then(() => this.collection.findOne({ keyAltNames: 'foobar' }))
         .then(document => {
+          expect(document).to.be.a('object');
           expect(document)
             .to.have.property('keyAltNames')
             .that.includes.members(['foobar']);
@@ -297,8 +298,11 @@ describe('ClientEncryption', function() {
           ])
         )
         .then(docs => {
+          expect(docs).to.have.lengthOf(2);
           const doc1 = docs[0];
           const doc2 = docs[1];
+          expect(doc1).to.be.a('object');
+          expect(doc2).to.be.a('object');
           expect(doc1)
             .to.have.property('keyAltNames')
             .that.includes.members(['foobar', 'fizzbuzz']);
