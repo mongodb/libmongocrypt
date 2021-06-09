@@ -680,7 +680,7 @@ NAN_METHOD(MongoCrypt::MakeDataKeyContext) {
         if (Nan::Has(options, ALT_NAMES_KEY).FromMaybe(false)) {
             v8::Local<v8::Value> keyAltNames = Nan::Get(options, ALT_NAMES_KEY).ToLocalChecked();
 
-            if (!(keyAltNames->IsUndefined() && keyAltNames->IsNull())) {
+            if (!keyAltNames->IsNullOrUndefined()) {
                 if (!keyAltNames->IsArray()) {
                     Nan::ThrowTypeError("keyAltNames must be an array of strings");
                     return;
