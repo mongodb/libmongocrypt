@@ -51,6 +51,7 @@ describe(`Release ${packFile}`, () => {
   }
 
   it('should not have extraneous files', () => {
-    expect(tarFileList.sort()).to.deep.equal(REQUIRED_FILES.sort());
+    const unexpectedFileList = tarFileList.filter(f => !REQUIRED_FILES.some(r => r === f));
+    expect(unexpectedFileList).to.have.lengthOf(0, `Extra files: ${unexpectedFileList.join(', ')}`);
   });
 });
