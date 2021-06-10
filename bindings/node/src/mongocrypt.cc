@@ -6,6 +6,8 @@ void ThrowTypeError(std::string error) {
 }
 }  // namespace Nan
 
+// anonymous namepace for helpers
+namespace {
 struct MongoCryptStatusDeleter {
     void operator()(mongocrypt_status_t* status) {
         mongocrypt_status_destroy(status);
@@ -117,6 +119,8 @@ std::string errorStringFromStatus(mongocrypt_ctx_t* context) {
     return errorMessage;
 }
 
+}  // anonymous namespace
+
 NAN_MODULE_INIT(MongoCrypt::Init) {
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
     tpl->SetClassName(Nan::New("MongoCrypt").ToLocalChecked());
@@ -159,7 +163,7 @@ void MongoCrypt::logHandler(mongocrypt_log_level_t level,
 }
 
 
-void MaybeSetCryptoHookErrorStatus(v8::Local<v8::Value> result, mongocrypt_status_t *status) {
+static void MaybeSetCryptoHookErrorStatus(v8::Local<v8::Value> result, mongocrypt_status_t *status) {
     if (!result->IsObject()) {
         return;
     }
@@ -875,7 +879,7 @@ NAN_METHOD(MongoCryptKMSRequest::AddResponse) {
     mongocrypt_kms_ctx_feed(mckr->_kms_context, reply_bytes.get());
 }
 
-NAN_MODULE_INIT(Init) {
+static NAN_MODULE_INIT(Init) {
     MongoCrypt::Init(target);
     MongoCryptContext::Init(target);
     MongoCryptKMSRequest::Init(target);
