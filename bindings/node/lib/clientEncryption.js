@@ -211,7 +211,7 @@ module.exports = function(modules) {
           this._keyVaultClient
             .db(dbName)
             .collection(collectionName)
-            .insertOne(dataKey, { w: 'majority' }, (err, result) => {
+            .insertOne(dataKey, { writeConcern: { w: 'majority' } }, (err, result) => {
               if (err) {
                 cb(err, null);
                 return;

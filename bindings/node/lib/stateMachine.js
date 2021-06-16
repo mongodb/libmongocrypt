@@ -2,7 +2,11 @@
 
 module.exports = function(modules) {
   const tls = require('tls');
-  const MongoTimeoutError = modules.mongodb.MongoTimeoutError;
+
+  // Try first to import 4.x name, fallback to 3.x name
+  const MongoNetworkTimeoutError =
+    modules.mongodb.MongoNetworkTimeoutError || modules.mongodb.MongoTimeoutError;
+
   const common = require('./common');
   const debug = common.debug;
   const databaseNamespace = common.databaseNamespace;
@@ -59,7 +63,7 @@ module.exports = function(modules) {
    * @ignore
    * @callback StateMachine~fetchKeysCallback
    * @param {Error} [err] If present, indicates that fetching the keys failed with the given error
-   * @param {object[]} [result] If present, is all the keys from the keyVault colleciton that matched the given filter
+   * @param {object[]} [result] If present, is all the keys from the keyVault collection that matched the given filter
    */
 
   /**
@@ -116,7 +120,7 @@ module.exports = function(modules) {
             if (err) {
               // If we are not bypassing spawning, then we should retry once on a MongoTimeoutError (server selection error)
               if (
-                err instanceof MongoTimeoutError &&
+                err instanceof MongoNetworkTimeoutError &&
                 mongocryptdManager &&
                 !mongocryptdManager.bypassSpawn
               ) {

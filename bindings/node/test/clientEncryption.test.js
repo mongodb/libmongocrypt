@@ -24,7 +24,10 @@ describe('ClientEncryption', function() {
   let client;
 
   function setup() {
-    client = new MongoClient('mongodb://localhost:27017/test', { useNewUrlParser: true });
+    client = new MongoClient('mongodb://localhost:27017/test', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
     return client.connect().then(() =>
       client
         .db('client')
@@ -166,6 +169,7 @@ describe('ClientEncryption', function() {
         });
     });
 
+    // TODO(NODE-TODO): resolve KMS JSON response does not include string 'Plaintext'. HTTP status=200 error
     it.skip('should explicitly encrypt and decrypt with the "aws" KMS provider', function(done) {
       const encryption = new ClientEncryption(client, {
         keyVaultNamespace: 'client.encryption',
@@ -233,7 +237,6 @@ describe('ClientEncryption', function() {
       expect(dataKeyOptions.masterKey).to.be.an('object');
       expect(dataKeyOptions.masterKey.key).to.be.a('string');
       expect(dataKeyOptions.masterKey.region).to.be.a('string');
-      expect(Array.isArray(keyAltNames)).to.equal(true);
 
       return {
         masterKey: {
@@ -247,43 +250,34 @@ describe('ClientEncryption', function() {
     describe('errors', function() {
       [42, 'hello', { keyAltNames: 'foobar' }, /foobar/].forEach(val => {
         it(`should fail if typeof keyAltNames = ${typeof val}`, function(done) {
-          try {
-            this.encryption.createDataKey('aws', makeOptions(val), () => {
+          const options = makeOptions(val);
+          expect(() =>
+            this.encryption.createDataKey('aws', options, () => {
               done(new Error('expected test to fail'));
-            });
-          } catch (e) {
-            try {
-              expect(e).to.be.an.instanceof(TypeError);
-              done();
-            } catch (_e) {
-              done(_e);
-            }
-          }
+            })
+          ).to.throw(TypeError);
+          done();
         });
       });
 
       [undefined, null, 42, { keyAltNames: 'foobar' }, ['foobar'], /foobar/].forEach(val => {
         it(`should fail if typeof keyAltNames[x] = ${typeof val}`, function(done) {
-          try {
-            this.encryption.createDataKey('aws', makeOptions([val]), () => {
+          const options = makeOptions([val]);
+          expect(() =>
+            this.encryption.createDataKey('aws', options, () => {
               done(new Error('expected test to fail'));
-            });
-          } catch (e) {
-            try {
-              expect(e).to.be.an.instanceof(TypeError);
-              done();
-            } catch (_e) {
-              done(_e);
-            }
-          }
+            })
+          ).to.throw(TypeError);
+          done();
         });
       });
     });
 
     it('should create a key with keyAltNames', function() {
       let dataKey;
+      const options = makeOptions(['foobar']);
       return this.encryption
-        .createDataKey('aws', makeOptions(['foobar']))
+        .createDataKey('aws', options)
         .then(_dataKey => (dataKey = _dataKey))
         .then(() => this.collection.findOne({ keyAltNames: 'foobar' }))
         .then(document => {
