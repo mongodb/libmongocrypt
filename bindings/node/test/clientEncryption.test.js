@@ -249,26 +249,20 @@ describe('ClientEncryption', function() {
 
     describe('errors', function() {
       [42, 'hello', { keyAltNames: 'foobar' }, /foobar/].forEach(val => {
-        it(`should fail if typeof keyAltNames = ${typeof val}`, function(done) {
+        it(`should fail if typeof keyAltNames = ${typeof val}`, function() {
           const options = makeOptions(val);
-          expect(() =>
-            this.encryption.createDataKey('aws', options, () => {
-              done(new Error('expected test to fail'));
-            })
-          ).to.throw(TypeError);
-          done();
+          expect(() => this.encryption.createDataKey('aws', options, () => undefined)).to.throw(
+            TypeError
+          );
         });
       });
 
       [undefined, null, 42, { keyAltNames: 'foobar' }, ['foobar'], /foobar/].forEach(val => {
-        it(`should fail if typeof keyAltNames[x] = ${typeof val}`, function(done) {
+        it(`should fail if typeof keyAltNames[x] = ${typeof val}`, function() {
           const options = makeOptions([val]);
-          expect(() =>
-            this.encryption.createDataKey('aws', options, () => {
-              done(new Error('expected test to fail'));
-            })
-          ).to.throw(TypeError);
-          done();
+          expect(() => this.encryption.createDataKey('aws', options, () => undefined)).to.throw(
+            TypeError
+          );
         });
       });
     });
@@ -281,7 +275,7 @@ describe('ClientEncryption', function() {
         .then(_dataKey => (dataKey = _dataKey))
         .then(() => this.collection.findOne({ keyAltNames: 'foobar' }))
         .then(document => {
-          expect(document).to.be.a('object');
+          expect(document).to.be.an('object');
           expect(document)
             .to.have.property('keyAltNames')
             .that.includes.members(['foobar']);
@@ -306,8 +300,8 @@ describe('ClientEncryption', function() {
           expect(docs).to.have.lengthOf(2);
           const doc1 = docs[0];
           const doc2 = docs[1];
-          expect(doc1).to.be.a('object');
-          expect(doc2).to.be.a('object');
+          expect(doc1).to.be.an('object');
+          expect(doc2).to.be.an('object');
           expect(doc1)
             .to.have.property('keyAltNames')
             .that.includes.members(['foobar', 'fizzbuzz']);
