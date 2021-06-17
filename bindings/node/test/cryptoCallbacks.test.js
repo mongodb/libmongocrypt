@@ -59,7 +59,7 @@ describe('cryptoCallbacks', function() {
     this.sinon = undefined;
   });
 
-  // TODO(NODE-TODO): fix key formatting error "asn1_check_tlen:wrong tag"
+  // TODO(NODE-3370): fix key formatting error "asn1_check_tlen:wrong tag"
   it.skip('should support support crypto callback for signing RSA-SHA256', function() {
     const input = Buffer.from('data to sign');
     const pemFileData =

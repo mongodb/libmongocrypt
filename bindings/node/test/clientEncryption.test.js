@@ -169,7 +169,7 @@ describe('ClientEncryption', function() {
         });
     });
 
-    // TODO(NODE-TODO): resolve KMS JSON response does not include string 'Plaintext'. HTTP status=200 error
+    // TODO(NODE-3371): resolve KMS JSON response does not include string 'Plaintext'. HTTP status=200 error
     it.skip('should explicitly encrypt and decrypt with the "aws" KMS provider', function(done) {
       const encryption = new ClientEncryption(client, {
         keyVaultNamespace: 'client.encryption',
