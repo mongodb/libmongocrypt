@@ -177,8 +177,14 @@ module.exports = function(modules) {
 
       const dataKey = Object.assign({ provider }, options.masterKey);
 
-      let keyAltNames;
-      if (Array.isArray(options.keyAltNames) && options.keyAltNames.length > 0) {
+      if (options.keyAltNames && !Array.isArray(options.keyAltNames)) {
+        throw new TypeError(
+          `Option "keyAltNames" must be an array of string, but was of type ${typeof options.keyAltNames}.`
+        );
+      }
+
+      let keyAltNames = undefined;
+      if (options.keyAltNames && options.keyAltNames.length > 0) {
         keyAltNames = options.keyAltNames.map((keyAltName, i) => {
           if (typeof keyAltName !== 'string') {
             throw new TypeError(
@@ -188,10 +194,6 @@ module.exports = function(modules) {
 
           return bson.serialize({ keyAltName });
         });
-      } else if (options.keyAltNames && !Array.isArray(options.keyAltNames)) {
-        throw new TypeError(
-          `Option "keyAltNames" must be an array of string, but was of type ${typeof options.keyAltNames}.`
-        );
       }
 
       const dataKeyBson = bson.serialize(dataKey);
