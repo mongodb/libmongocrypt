@@ -4,11 +4,8 @@ const fs = require('fs');
 const BSON = require('bson');
 const EJSON = require('bson').EJSON;
 const sinon = require('sinon');
-const mongodb = Object.assign({}, require('mongodb'), {
-  // TODO: once this is actually defined, use the real one
-  MongoTimeoutError: class MongoTimeoutError {}
-});
-const MongoTimeoutError = mongodb.MongoTimeoutError;
+const mongodb = require('mongodb');
+const MongoNetworkTimeoutError = mongodb.MongoNetworkTimeoutError || mongodb.MongoTimeoutError;
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
 const MongocryptdManager = require('../lib/mongocryptdManager').MongocryptdManager;
@@ -277,12 +274,12 @@ describe('AutoEncrypter', function() {
       });
     });
 
-    it('should restore the mongocryptd and retry once if a MongoTimeoutError is experienced', function(done) {
+    it('should restore the mongocryptd and retry once if a MongoNetworkTimeoutError is experienced', function(done) {
       let called = false;
       StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
         if (!called) {
           called = true;
-          callback(new MongoTimeoutError('msg'));
+          callback(new MongoNetworkTimeoutError('msg'));
           return;
         }
 
@@ -313,12 +310,12 @@ describe('AutoEncrypter', function() {
       });
     });
 
-    it('should propagate error if MongoTimeoutError is experienced twice in a row', function(done) {
+    it('should propagate error if MongoNetworkTimeoutError is experienced twice in a row', function(done) {
       let counter = 2;
       StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
         if (counter) {
           counter -= 1;
-          callback(new MongoTimeoutError('msg'));
+          callback(new MongoNetworkTimeoutError('msg'));
           return;
         }
 
@@ -343,7 +340,7 @@ describe('AutoEncrypter', function() {
 
         this.mc.encrypt('test.test', TEST_COMMAND, err => {
           expect(localMcdm.spawn).to.have.been.calledOnce;
-          expect(err).to.be.an.instanceof(MongoTimeoutError);
+          expect(err).to.be.an.instanceof(MongoNetworkTimeoutError);
           done();
         });
       });
@@ -423,7 +420,7 @@ describe('AutoEncrypter', function() {
 
     it('should not spawn a mongocryptd or retry on a server selection error', function(done) {
       let called = false;
-      const timeoutError = new MongoTimeoutError('msg');
+      const timeoutError = new MongoNetworkTimeoutError('msg');
       StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
         if (!called) {
           called = true;

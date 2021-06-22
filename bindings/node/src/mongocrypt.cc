@@ -674,6 +674,36 @@ NAN_METHOD(MongoCrypt::MakeDataKeyContext) {
         return;
     }
 
+    v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
+    auto ALT_NAMES_KEY = Nan::New("keyAltNames").ToLocalChecked();
+    if (Nan::Has(options, ALT_NAMES_KEY).FromMaybe(false)) {
+        v8::Local<v8::Value> keyAltNames = Nan::Get(options, ALT_NAMES_KEY).ToLocalChecked();
+
+        if (keyAltNames->IsArray()) {
+            v8::Local<v8::Array> keyAltNamesArray = v8::Local<v8::Array>::Cast(keyAltNames);
+            uint32_t keyAltNamesLength = keyAltNamesArray->Length();
+            for (uint32_t i = 0; i < keyAltNamesLength; i += 1) {
+                if (Nan::Has(keyAltNamesArray, i).FromMaybe(false)) {
+                    v8::Local<v8::Object> keyAltName =
+                        Nan::To<v8::Object>(Nan::Get(keyAltNamesArray, i).ToLocalChecked())
+                            .ToLocalChecked();
+                    if (!node::Buffer::HasInstance(keyAltName)) {
+                        // We should never get here
+                        Nan::ThrowTypeError("Serialized keyAltName must be a Buffer");
+                        return;
+                    }
+
+                    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
+                        BufferToBinary(keyAltName));
+                    if (!mongocrypt_ctx_setopt_key_alt_name(context.get(), binary.get())) {
+                        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     if (!mongocrypt_ctx_datakey_init(context.get())) {
         Nan::ThrowTypeError(errorStringFromStatus(context.get()));
         return;
