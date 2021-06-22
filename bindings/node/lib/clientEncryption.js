@@ -179,7 +179,7 @@ module.exports = function(modules) {
 
       if (options.keyAltNames && !Array.isArray(options.keyAltNames)) {
         throw new TypeError(
-          `Option "keyAltNames" must be an array of string, but was of type ${typeof options.keyAltNames}.`
+          `Option "keyAltNames" must be an array of strings, but was of type ${typeof options.keyAltNames}.`
         );
       }
 
@@ -188,7 +188,7 @@ module.exports = function(modules) {
         keyAltNames = options.keyAltNames.map((keyAltName, i) => {
           if (typeof keyAltName !== 'string') {
             throw new TypeError(
-              `Option "keyAltNames" must be an array of string, but item at index ${i} was of type ${typeof keyAltName}`
+              `Option "keyAltNames" must be an array of strings, but item at index ${i} was of type ${typeof keyAltName}`
             );
           }
 
