@@ -255,7 +255,6 @@ _test_cache_duplicates (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
    _mongocrypt_cache_cleanup (&cache);
 }
-
 void
 _mongocrypt_tester_install_cache (_mongocrypt_tester_t *tester)
 {

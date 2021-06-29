@@ -97,6 +97,7 @@ _mongocrypt_cache_oauth_get (_mongocrypt_cache_oauth_t *cache)
 
    if (bson_get_monotonic_time () >= cache->expiration_time_us) {
       bson_destroy (cache->entry);
+      cache->entry = NULL;
       cache->expiration_time_us = 0;
       _mongocrypt_mutex_unlock (&cache->mutex);
       return NULL;

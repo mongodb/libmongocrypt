@@ -790,6 +790,7 @@ main (int argc, char **argv)
                                _test_setopt_kms_providers,
                                CRYPTO_OPTIONAL);
    _mongocrypt_tester_install_kek (&tester);
+   _mongocrypt_tester_install_cache_oauth (&tester);
 
 
    printf ("Running tests...\n");
