@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.6](https://github.com/mongodb/libmongocrypt/compare/node-v1.2.5...node-v1.2.6) (2021-07-01)
+
 ### [1.2.5](https://github.com/mongodb/libmongocrypt/compare/node-v1.2.4...node-v1.2.5) (2021-06-10)
 
 ### [1.2.4](https://github.com/mongodb/libmongocrypt/compare/node-v1.2.3...node-v1.2.4) (2021-06-01)
