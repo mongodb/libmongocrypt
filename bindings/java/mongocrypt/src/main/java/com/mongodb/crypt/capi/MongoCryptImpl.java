@@ -322,9 +322,11 @@ class MongoCryptImpl implements MongoCrypt {
     }
 
     @Override
-    public void close() {
-        mongocrypt_destroy(wrapped);
-        closed = true;
+    public synchronized void close() {
+        if (!closed) {
+            mongocrypt_destroy(wrapped);
+            closed = true;
+        }
     }
 
     private void throwExceptionFromStatus() {

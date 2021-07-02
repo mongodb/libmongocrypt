@@ -107,6 +107,15 @@ public class MongoCryptTest {
     }
 
     @Test
+    public void testMultipleCloseCalls() {
+        MongoCrypt mongoCrypt = createMongoCrypt();
+        assertNotNull(mongoCrypt);
+
+        mongoCrypt.close();
+        mongoCrypt.close();
+    }
+
+    @Test
     public void testDataKeyCreation() {
         MongoCrypt mongoCrypt = createMongoCrypt();
         assertNotNull(mongoCrypt);
