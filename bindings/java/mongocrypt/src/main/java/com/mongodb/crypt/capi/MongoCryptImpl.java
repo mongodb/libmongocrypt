@@ -25,13 +25,12 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_t;
 import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
-import org.bson.BsonValue;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
@@ -92,9 +91,10 @@ class MongoCryptImpl implements MongoCrypt {
     @SuppressWarnings("FieldCanBeLocal")
     private final SigningRSAESPKCSCallback signingRSAESPKCSCallback;
 
-    private volatile boolean closed;
+    private final AtomicBoolean closed;
 
     MongoCryptImpl(final MongoCryptOptions options) {
+        closed = new AtomicBoolean();
         wrapped = mongocrypt_new();
         if (wrapped == null) {
             throw new MongoCryptException("Unable to create new mongocrypt object");
@@ -182,7 +182,7 @@ class MongoCryptImpl implements MongoCrypt {
 
     @Override
     public MongoCryptContext createEncryptionContext(final String database, final BsonDocument commandDocument) {
-        isTrue("open", !closed);
+        isTrue("open", !closed.get());
         notNull("database", database);
         notNull("commandDocument", commandDocument);
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
@@ -203,7 +203,7 @@ class MongoCryptImpl implements MongoCrypt {
 
     @Override
     public MongoCryptContext createDecryptionContext(final BsonDocument document) {
-        isTrue("open", !closed);
+        isTrue("open", !closed.get());
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
             throwExceptionFromStatus();
@@ -219,7 +219,7 @@ class MongoCryptImpl implements MongoCrypt {
 
     @Override
     public MongoCryptContext createDataKeyContext(final String kmsProvider, final MongoDataKeyOptions options) {
-        isTrue("open", !closed);
+        isTrue("open", !closed.get());
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
             throwExceptionFromStatus();
@@ -266,7 +266,7 @@ class MongoCryptImpl implements MongoCrypt {
 
     @Override
     public MongoCryptContext createExplicitEncryptionContext(final BsonDocument document, final MongoExplicitEncryptOptions options) {
-        isTrue("open", !closed);
+        isTrue("open", !closed.get());
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
             throwExceptionFromStatus();
@@ -307,7 +307,7 @@ class MongoCryptImpl implements MongoCrypt {
 
     @Override
     public MongoCryptContext createExplicitDecryptionContext(final BsonDocument document) {
-        isTrue("open", !closed);
+        isTrue("open", !closed.get());
         mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
         if (context == null) {
             throwExceptionFromStatus();
@@ -323,8 +323,9 @@ class MongoCryptImpl implements MongoCrypt {
 
     @Override
     public void close() {
-        mongocrypt_destroy(wrapped);
-        closed = true;
+        if (!closed.getAndSet(true)) {
+            mongocrypt_destroy(wrapped);
+        }
     }
 
     private void throwExceptionFromStatus() {
