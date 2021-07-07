@@ -28,7 +28,13 @@
     "prebuild": "prebuild  --strip --verbose --tag-prefix node-v --all",
     "prebuild-legacy": "prebuild  --strip --verbose --tag-prefix node-v --runtime node --target 4.0.0"
   },
-  "author": "Matt Broadstone <mbroadst@mongodb.com>",
+  "author": { 
+    "name" : "The MongoDB NodeJS Team", 
+    "email" : "dbx-node@mongodb.com"
+  },
+  "bugs": {
+    "url": "https://jira.mongodb.org/projects/NODE/issues/"
+  },
   "license": "Apache-2.0",
   "gypfile": true,
   "dependencies": {
