@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 1.2.1
+### Fixed
+- Fix possible crash when oauth credentials expire.
+
 ## 1.2.0
 ### Added
 - Support AWS temporary credentials via session token.
