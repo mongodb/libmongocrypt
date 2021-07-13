@@ -1,3 +1,9 @@
+libmongocrypt (1.2.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 13 Jul 2021 19:21:05 -0400
+
 libmongocrypt (1.2.0-1) unstable; urgency=medium
 
   * New upstream release.
