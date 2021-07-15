@@ -65,7 +65,7 @@ Docker and a Windows machine.
      pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
      pymongocrypt-<version>-py2.py3-none-macosx_10_9_x86_64.whl
 
-#. To build the release package for Windows, launch a windows-64-vs2017-test
+#. To build the release package for Windows, launch a windows-64-vsMulti-small
    Evergreen spawn host, clone the repro, checkout the release tag, and run
    the release script::
 
