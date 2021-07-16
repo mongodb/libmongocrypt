@@ -47,11 +47,11 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
-    # 2021-05-01-28d233a was the last release to generate pip < 20.3 compatible
+    # 2021-05-05-1ac6ef3 was the last release to generate pip < 20.3 compatible
     # wheels. After that auditwheel was upgraded to v4 which produces PEP 600
     # manylinux_x_y wheels which requires pip >= 20.3. We use the older docker
     # image to support older pip versions.
-    images=(quay.io/pypa/manylinux2010_x86_64:2021-05-01-28d233a \
+    images=(quay.io/pypa/manylinux2010_x86_64:2021-05-05-1ac6ef3 \
             quay.io/pypa/manylinux2010_x86_64)
     for image in "${images[@]}"; do
         docker pull $image
