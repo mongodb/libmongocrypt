@@ -4,6 +4,7 @@
 # On macOS it will create the following distributions:
 # pymongocrypt-<version>.tar.gz
 # pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
+# pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
 # pymongocrypt-<version>-py2.py3-none-macosx_10_9_x86_64.whl
 #
 # On Windows it will create the following distribution:
@@ -37,7 +38,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     python3.7 setup.py sdist
 
-    # Build the manylinux2010 wheel
+    # Build the manylinux2010 wheels
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/rhel-62-64-bit/master/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
