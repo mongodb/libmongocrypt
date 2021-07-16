@@ -63,6 +63,7 @@ Docker and a Windows machine.
      $ ls dist
      pymongocrypt-<version>.tar.gz
      pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
+     pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
      pymongocrypt-<version>-py2.py3-none-macosx_10_9_x86_64.whl
 
 #. To build the release package for Windows, launch a windows-64-vsMulti-small

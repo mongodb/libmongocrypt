@@ -6,10 +6,10 @@ cd /python
 rm -rf build
 /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel --universal
 
-# Audit wheels and write manylinux2010 tag
+# Audit wheels and write manylinux tag
 for whl in dist/*.whl; do
-    # Skip already built manylinux2010 wheels.
-    if [[ "$whl" != *"manylinux2"* ]]; then
+    # Skip already built manylinux wheels.
+    if [[ "$whl" != *"manylinux"* ]]; then
         auditwheel repair $whl -w dist
         rm $whl
     fi

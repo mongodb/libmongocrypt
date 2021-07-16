@@ -4,6 +4,7 @@
 # On macOS it will create the following distributions:
 # pymongocrypt-<version>.tar.gz
 # pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
+# pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
 # pymongocrypt-<version>-py2.py3-none-macosx_10_9_x86_64.whl
 #
 # On Windows it will create the following distribution:
@@ -37,7 +38,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     python3.7 setup.py sdist
 
-    # Build the manylinux2010 wheel
+    # Build the manylinux2010 wheels
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/rhel-62-64-bit/master/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
@@ -47,7 +48,16 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
-    docker run --rm -v `pwd`:/python quay.io/pypa/manylinux2010_x86_64 /python/build-manylinux-wheel.sh
+    # 2021-05-05-1ac6ef3 was the last release to generate pip < 20.3 compatible
+    # wheels. After that auditwheel was upgraded to v4 which produces PEP 600
+    # manylinux_x_y wheels which requires pip >= 20.3. We use the older docker
+    # image to support older pip versions.
+    images=(quay.io/pypa/manylinux2010_x86_64:2021-05-05-1ac6ef3 \
+            quay.io/pypa/manylinux2010_x86_64)
+    for image in "${images[@]}"; do
+        docker pull $image
+        docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
+    done
 
     # Build the mac wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
