@@ -88,8 +88,7 @@ Task("Tests")
     {
         var monikersDetails = new List<(string Moniker, string Bitness)>
         {
-            { ("net452", "x64") },
-            { ("netcoreapp1.1", "x64") },
+            { ("net472", "x64") },
             { ("netcoreapp2.1", "x64") },
             { ("netcoreapp3.0", "x64") },
             { ("net50", "x64") }

@@ -15,9 +15,7 @@
  */
 
 using System;
-#if NET452 || NETSTANDARD2_0
 using System.Runtime.ConstrainedExecution;
-#endif
 using System.Runtime.InteropServices;
 
 namespace MongoDB.Libmongocrypt
@@ -51,9 +49,7 @@ namespace MongoDB.Libmongocrypt
             }
         }
 
-#if NET452 || NETSTANDARD2_0
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
-#endif
         protected override bool ReleaseHandle()
         {
             // Here, we must obey all rules for constrained execution regions.

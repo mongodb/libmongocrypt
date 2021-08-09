@@ -46,12 +46,8 @@ namespace MongoDB.Libmongocrypt
             using (var hmac = GetHmacByBitness(bitness, keyBytes))
             {
                 hmac.Initialize();
-#if !NETSTANDARD1_5
                 _ = hmac.TransformFinalBlock(inputBytes, 0, inputBytes.Length);
                 return hmac.Hash;
-#else
-                throw new System.PlatformNotSupportedException("HMACSHA.TransformFinalBlock is not supported on .netstandard1.5.");
-#endif
             }
         }
 

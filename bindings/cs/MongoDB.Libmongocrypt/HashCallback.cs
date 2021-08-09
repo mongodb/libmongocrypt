@@ -51,12 +51,8 @@ namespace MongoDB.Libmongocrypt
             using (var sha256 = SHA256.Create())
             {
                 sha256.Initialize();
-#if !NETSTANDARD1_5
                 _ = sha256.TransformFinalBlock(inputBytes, 0, inputBytes.Length);
                 return sha256.Hash;
-#else
-                throw new System.PlatformNotSupportedException("Cryptography.SHA256 is not supported on .netstandard1.5.");
-#endif
             }
         }
     }
