@@ -271,7 +271,7 @@ tasks:
 
 - name: build-and-test-and-upload
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -281,7 +281,7 @@ tasks:
 
 - name: clang-tidy
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -289,7 +289,7 @@ tasks:
 
 - name: build-and-test-shared-bson
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -299,7 +299,7 @@ tasks:
 
 - name: build-and-test-asan
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -310,7 +310,7 @@ tasks:
 
 - name: build-and-test-asan-mac
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -321,7 +321,7 @@ tasks:
 
 - name: build-and-test-asan-s390x
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -332,7 +332,7 @@ tasks:
 
 - name: build-and-test-valgrind
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -342,7 +342,7 @@ tasks:
 
 - name: build-and-test-java
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
     - func: "fetch source"
@@ -352,7 +352,7 @@ tasks:
 
 - name: test-python
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   - build-and-test-and-upload
   commands:
@@ -364,7 +364,7 @@ tasks:
 
 - name: test-python-windows
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   # Depends on the windows-64-vs2017-test upload.
   - variant: windows-test
@@ -378,7 +378,7 @@ tasks:
 
 - name: build-and-test-csharp
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
   - func: "fetch source"
@@ -388,7 +388,7 @@ tasks:
 
 - name: build-and-test-node
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
     - func: "fetch source"
@@ -398,7 +398,7 @@ tasks:
 # Note: keep this disabled unless you want master to force-push
 - name: build-and-test-node-force-publish
   depends_on:
-    - variant: ubuntu1804-64
+    - variant: ubuntu2004-64
       name: prep-c-driver-source
   commands:
     - func: "fetch source"
@@ -408,7 +408,7 @@ tasks:
 
 - name: publish-snapshot
   depends_on:
-    - variant: ubuntu1804-64
+    - variant: ubuntu2004-64
       name: prep-c-driver-source
     - variant: rhel-62-64-bit
       name: build-and-test-java
@@ -464,6 +464,10 @@ tasks:
       name: build-and-test-and-upload
     - variant: ubuntu1804-arm64
       name: build-and-test-and-upload
+    - variant: ubuntu2004-64
+      name: build-and-test-and-upload
+    - variant: ubuntu2004-arm64
+      name: build-and-test-and-upload
   commands:
     - command: shell.exec
       params:
@@ -506,6 +510,10 @@ tasks:
       vars: { variant_name: "ubuntu1804-64" }
     - func: "download tarball"
       vars: { variant_name: "ubuntu1804-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2004-64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2004-arm64" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-all.tar.gz
@@ -649,7 +657,7 @@ tasks:
 
 - name: debian-package-build
   depends_on:
-  - variant: ubuntu1804-64
+  - variant: ubuntu2004-64
     name: prep-c-driver-source
   commands:
     - func: "fetch source"
@@ -978,8 +986,6 @@ buildvariants:
     packager_distro: ubuntu1804
     packager_arch: x86_64
   tasks:
-  - clang-tidy
-  - prep-c-driver-source
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -995,6 +1001,39 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: ubuntu1804
+    packager_arch: arm64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-java
+  - build-and-test-node
+  - name: publish-packages
+    distros:
+    - ubuntu2004-large
+- name: ubuntu2004-64
+  display_name: "Ubuntu 20.04 64-bit"
+  run_on: ubuntu2004-large
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2004
+    packager_arch: x86_64
+  tasks:
+  - clang-tidy
+  - prep-c-driver-source
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-java
+  - build-and-test-node
+  - build-and-test-csharp
+  - publish-packages
+- name: ubuntu2004-arm64
+  display_name: "Ubuntu 20.04 arm64"
+  run_on: ubuntu2004-arm64-build
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2004
     packager_arch: arm64
   tasks:
   - build-and-test-and-upload
