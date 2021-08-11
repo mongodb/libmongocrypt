@@ -17,6 +17,14 @@ echo "Begin compile process"
 evergreen_root="$(pwd)"
 
 . ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
+
+if [ "$PPA_BUILD_ONLY" ]; then
+    # Clean-up from previous build iteration
+    cd $evergreen_root
+    rm -rf libmongocrypt/cmake-build* "${MONGOCRYPT_INSTALL_PREFIX}"
+    ADDITIONAL_CMAKE_FLAGS="${ADDITIONAL_CMAKE_FLAGS} -DENABLE_BUILD_FOR_PPA=ON"
+fi
+
 . ${evergreen_root}/libmongocrypt/.evergreen/build_install_bson.sh
 
 cd $evergreen_root
@@ -42,6 +50,11 @@ find ${BSON_INSTALL_PREFIX} \( -name libbson-static-1.0.a -o -name bson-1.0.lib 
 $CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
 $CMAKE --build ./kms-message --target test_kms_request --config RelWithDebInfo
 cd $evergreen_root
+
+if [ "$PPA_BUILD_ONLY" ]; then
+    echo "Only building/installing for PPA";
+    exit 0;
+fi
 
 # Build and install libmongocrypt with no native crypto.
 cd libmongocrypt
