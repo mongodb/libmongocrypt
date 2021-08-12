@@ -1,17 +1,17 @@
 cmake_minimum_required (VERSION 3.5)
 
-if(CMAKE_VERSION VERSION_EQUAL 3.12 OR CMAKE_VERSION VERSION_GREATER 3.12)
+if (CMAKE_VERSION VERSION_EQUAL 3.12 OR CMAKE_VERSION VERSION_GREATER 3.12)
    project (mongocrypt C)
-else()
+else ()
    # GenerateExportHeader only works with C with 3.12 - https://gitlab.kitware.com/cmake/cmake/commit/de348a9638bd51af4523f36c68884b901d4aff18
    project (mongocrypt C CXX)
-endif()
+endif ()
 
 set (CMAKE_C_STANDARD 99)
 
 option (ENABLE_SHARED_BSON "Dynamically link libbson (default is static)" OFF)
 option (ENABLE_STATIC "Install static libraries" ON)
-option (ENABLE_PIC 
+option (ENABLE_PIC
    "Enables building of position independent code for static library components."
    ON
 )
@@ -28,7 +28,7 @@ if (bson-1.0_FOUND)
    endif ()
 elseif (ENABLE_SHARED_BSON)
    # Try old package name for libbson.
-   find_package(libbson-1.0 1.11 REQUIRED)
+   find_package (libbson-1.0 1.11 REQUIRED)
    message ("--   libbson found version \"${BSON_VERSION}\"")
    message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
    message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
@@ -37,7 +37,7 @@ elseif (ENABLE_SHARED_BSON)
    set (BSON_DEFINITIONS ${BSON_DEFINITIONS})
 else ()
    # Try old package name for libbson.
-   find_package(libbson-static-1.0 1.11 REQUIRED)
+   find_package (libbson-static-1.0 1.11 REQUIRED)
    message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
    message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
    message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
@@ -48,12 +48,12 @@ endif ()
 
 find_package ( Threads REQUIRED )
 
-add_subdirectory(bindings/cs)
+add_subdirectory (bindings/cs)
 
-include(GenerateExportHeader)
+include (GenerateExportHeader)
 include (GNUInstallDirs)
 
-enable_testing()
+enable_testing ()
 
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-compat.h
@@ -95,13 +95,13 @@ set (MONGOCRYPT_SOURCES
 
 if ( MSVC )
    # W4996 - POSIX name for this item is deprecated
-   set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX")
+   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX")
 
    # TODO: add support for clang-cl which is detected as MSVC
-else()
+else ()
    # GNU, Clang, AppleClang
-   set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Werror -Wno-missing-braces")
-endif()
+   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Werror -Wno-missing-braces")
+endif ()
 
 # Choose a Crypto provider
 set (MONGOCRYPT_CRYPTO OpenSSL)
@@ -145,7 +145,7 @@ set (MONGOCRYPT_ENABLE_TRACE 0)
 if (ENABLE_TRACE)
    message (WARNING "Building with trace logging. This is highly insecure. Do not use in a production environment")
    set (MONGOCRYPT_ENABLE_TRACE 1)
-endif()
+endif ()
 
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongocrypt-config.h.in"
@@ -176,14 +176,14 @@ if (NOT ENABLE_SHARED_BSON)
    endif ()
 endif ()
 
-generate_export_header(mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
+generate_export_header (mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
 # Checking CMAKE_C_FLAGS for -fPIC is not a foolproof way of checking whether
 # -fPIC was set as a compiler flag. However, users were instructed before to
 # pass -fPIC through CMAKE_C_FLAGS. This will prevent redundant output in
 # the common case that users are setting -DCMAKE_C_FLAGS='-fPIC'
-string(FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
+string (FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
 if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
    target_compile_options (mongocrypt_static PUBLIC -fPIC)
    message ("Adding -fPIC to compilation of mongocrypt_static components")
@@ -269,7 +269,7 @@ target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET})
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES})
 target_compile_definitions (test-mongocrypt PRIVATE ${BSON_DEFINITIONS})
 
-add_test(mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_test (mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Exclude example-state-machine since it requires native crypto.
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
