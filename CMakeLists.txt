@@ -138,7 +138,7 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
 elseif (MONGOCRYPT_CRYPTO STREQUAL none)
    message ("Building with no native crypto, hooks MUST be supplied with mongocrypt_setopt_crypto_hooks")
 else ()
-   message (FATAL "Unknown crypto provider ${MONGOCRYPT_CRYPTO}")
+   message (FATAL_ERROR "Unknown crypto provider ${MONGOCRYPT_CRYPTO}")
 endif ()
 
 set (MONGOCRYPT_ENABLE_TRACE 0)
