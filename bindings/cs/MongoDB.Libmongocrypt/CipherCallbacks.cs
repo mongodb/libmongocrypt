@@ -100,7 +100,6 @@ namespace MongoDB.Libmongocrypt
 
         public static byte[] AesCrypt(byte[] keyBytes, byte[] ivBytes, byte[] inputBytes, CryptMode cryptMode)
         {
-#if !NETSTANDARD1_5
             using (var aes = new RijndaelManaged())
             {
                 aes.Mode = CipherMode.CBC;
@@ -126,9 +125,6 @@ namespace MongoDB.Libmongocrypt
                     }
                 }
             }
-#else
-            throw new System.PlatformNotSupportedException("Cryptography.RijndaelManaged is not supported on .netstandard1.5.");
-#endif
         }
     }
 }

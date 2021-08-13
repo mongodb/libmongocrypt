@@ -30,13 +30,8 @@ namespace MongoDB.Libmongocrypt.Test
             var inputBytes = CallbackUtils.GetBytesFromHex(inputHex);
             var expectedBytes = CallbackUtils.GetBytesFromHex(expectedHex);
 
-#if !NETCOREAPP1_1
             var resultBytes = HmacShaCallbacks.CalculateHash(keyBytes, inputBytes, bitness);
             resultBytes.Should().Equal(expectedBytes);
-#else
-            var exception = Record.Exception(() => HmacShaCallbacks.CalculateHash(keyBytes, inputBytes, bitness));
-            exception.Should().BeOfType<System.PlatformNotSupportedException>();
-#endif
         }
     }
 }

@@ -31,15 +31,9 @@ namespace MongoDB.Libmongocrypt
 
         public LibraryLoader()
         {
-#if NETSTANDARD1_5
-            var is64Bit = IntPtr.Size == 8;
-#else
-            var is64Bit = Environment.Is64BitProcess;
-#endif
-            if (!is64Bit)
+            if (!Environment.Is64BitProcess)
             {
-                throw new PlatformNotSupportedException(
-                    $"{this.GetType().Namespace} needs to be run in a 64-bit process.");
+                throw new PlatformNotSupportedException($"{this.GetType().Namespace} needs to be run in a 64-bit process.");
             }
 
             // Windows:

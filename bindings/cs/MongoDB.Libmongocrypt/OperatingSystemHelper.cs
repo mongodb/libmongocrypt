@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if !NET452
+#if !NET472
 using System;
 using System.Runtime.InteropServices;
 #endif
@@ -34,7 +34,7 @@ namespace MongoDB.Libmongocrypt
         {
             get
             {
-#if NET452
+#if NET472
                 return OperatingSystemPlatform.Windows;
 #else
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

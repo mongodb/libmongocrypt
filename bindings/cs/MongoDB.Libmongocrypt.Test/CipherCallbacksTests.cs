@@ -33,18 +33,11 @@ namespace MongoDB.Libmongocrypt.Test
             var ivBytes = CallbackUtils.GetBytesFromHex(ivHex);
             var inputBytes = CallbackUtils.GetBytesFromHex(inputHex); // decryptedBytes
             var expectedEncryptedBytes = CallbackUtils.GetBytesFromHex(expectedHex);
-#if !NETCOREAPP1_1
             var encryptedBytes = CipherCallbacks.AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Encrypt);
             encryptedBytes.Should().Equal(expectedEncryptedBytes);
 
             var decryptedBytes = CipherCallbacks.AesCrypt(keyBytes, ivBytes, encryptedBytes, CryptMode.Decrypt);
             decryptedBytes.Should().Equal(inputBytes);
-#else
-            var exception = Record.Exception(() => CipherCallbacks.AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Encrypt));
-            exception.Should().BeOfType<System.PlatformNotSupportedException>();
-            exception = Record.Exception(() => CipherCallbacks.AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Decrypt));
-            exception.Should().BeOfType<System.PlatformNotSupportedException>();
-#endif
         }
     }
 }
