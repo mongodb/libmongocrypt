@@ -392,6 +392,7 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
 
 /**
  * Set a local schema map for encryption.
+ * This may be called repeatedly.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] schema_map A BSON document representing the schema map supplied by

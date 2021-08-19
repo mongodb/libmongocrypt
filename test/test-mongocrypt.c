@@ -642,24 +642,6 @@ _test_setopt_schema (_mongocrypt_tester_t *tester)
    BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test2"));
    BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test3"));
 
-   /* Test NULL/empty input */
-   mongocrypt_destroy (crypt);
-   crypt = mongocrypt_new ();
-   ASSERT_FAILS (
-      mongocrypt_setopt_schema_map (crypt, NULL), crypt, "passed null schema");
-
-   mongocrypt_destroy (crypt);
-   crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_setopt_schema_map (crypt, TEST_BIN (0)),
-                 crypt,
-                 "passed null schema");
-
-   /* Test malformed BSON */
-   mongocrypt_destroy (crypt);
-   crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_setopt_schema_map (crypt, TEST_BIN (10)),
-                 crypt,
-                 "invalid bson");
    mongocrypt_destroy (crypt);
 }
 
