@@ -604,6 +604,23 @@ _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b)
    bson_free (msg);
 }
 
+static bool
+_check_if_schema_map_contains_entry (mongocrypt_t *crypt, const char* ns)
+{
+   bson_t schema_map;
+   bson_iter_t iter;
+
+   if (_mongocrypt_buffer_empty (&crypt->opts.schema_map)) {
+      return false;
+   }
+
+   if (!_mongocrypt_buffer_to_bson (&crypt->opts.schema_map, &schema_map)) {
+      false;
+   }
+
+   return bson_iter_init_find (&iter, &schema_map, ns);
+}
+
 static void
 _test_setopt_schema (_mongocrypt_tester_t *tester)
 {
@@ -614,10 +631,16 @@ _test_setopt_schema (_mongocrypt_tester_t *tester)
    ASSERT_OK (mongocrypt_setopt_schema_map (
                  crypt, TEST_FILE ("./test/data/schema-map.json")),
               crypt);
-   ASSERT_FAILS (mongocrypt_setopt_schema_map (
-                    crypt, TEST_FILE ("./test/data/schema-map.json")),
-                 crypt,
-                 "already set schema");
+
+   BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test"));
+   BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test2"));
+   BSON_ASSERT (!_check_if_schema_map_contains_entry (crypt, "test.test3"));
+   ASSERT_OK (mongocrypt_setopt_schema_map (
+               crypt, TEST_FILE ("./test/data/schema-map2.json")),
+            crypt);
+   BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test"));
+   BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test2"));
+   BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test3"));
 
    /* Test NULL/empty input */
    mongocrypt_destroy (crypt);
