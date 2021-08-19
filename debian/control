@@ -2,8 +2,6 @@ Source: libmongocrypt
 Priority: optional
 Maintainer: Mongo C Driver Team <mongo-c-driver-debian@googlegroups.com>
 Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
-           Clyde Bazile <clyde.bazile@mongodb.com>,
-           Samantha Ritter <samantha.ritter@mongodb.com>,
            Roberto C. Sanchez <roberto@connexer.com>
 Build-Depends: debhelper (>= 10),
                cmake,
