@@ -273,16 +273,12 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
    }
    status = crypt->status;
 
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
-
    if (!schema_map || !mongocrypt_binary_data (schema_map) || schema_map->len == 0) {
       CLIENT_ERR ("passed null schema map");
       return false;
    }
 
+   _mongocrypt_mutex_lock (&crypt->mutex);
    if (!_mongocrypt_buffer_empty (&crypt->opts.schema_map)) {
       /* copy to orig */
       BSON_ASSERT (_mongocrypt_buffer_to_bson (&crypt->opts.schema_map, &tmp));
@@ -295,12 +291,14 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
 
    if (!bson_validate_with_error (&tmp, BSON_VALIDATE_NONE, &bson_err)) {
       CLIENT_ERR (bson_err.message);
+      _mongocrypt_mutex_unlock (&crypt->mutex);
       return false;
    }
 
    bson_concat (&schema_map_bson, &tmp);
 
    _mongocrypt_buffer_steal_from_bson (&crypt->opts.schema_map, &schema_map_bson);
+   _mongocrypt_mutex_unlock (&crypt->mutex);
    return true;
 }
 

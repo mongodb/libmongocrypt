@@ -646,6 +646,22 @@ _test_setopt_schema (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_setopt_schema_after_init (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+
+   ASSERT_OK (mongocrypt_setopt_schema_map (crypt, TEST_FILE ("./test/data/schema-map.json")), crypt);
+
+   BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test"));
+   BSON_ASSERT (_check_if_schema_map_contains_entry (crypt, "test.test2"));
+   BSON_ASSERT (!_check_if_schema_map_contains_entry (crypt, "test.test3"));
+
+   mongocrypt_destroy (crypt);
+}
+
+static void
 _test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
@@ -796,6 +812,7 @@ main (int argc, char **argv)
                                CRYPTO_OPTIONAL);
    _mongocrypt_tester_install_kek (&tester);
    _mongocrypt_tester_install_cache_oauth (&tester);
+   _mongocrypt_tester_install (&tester, "_test_setopt_schema_after_init", _test_setopt_schema_after_init, CRYPTO_REQUIRED);
 
 
    printf ("Running tests...\n");
