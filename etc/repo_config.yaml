@@ -215,3 +215,17 @@ repos:
       - arm64
     repos:
       - apt/ubuntu/dists/bionic/libmongocrypt
+
+  - name: ubuntu2004
+    type: deb
+    code_name: "focal"
+    edition: org
+    bucket: libmongocrypt
+    region: us-east-1
+    component: universe
+    architectures:
+      - amd64
+      - i386
+      - arm64
+    repos:
+      - apt/ubuntu/dists/focal/libmongocrypt
