@@ -88,6 +88,7 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
       bson_t empty = BSON_INITIALIZER;
 
       _mongocrypt_buffer_steal_from_bson (&ectx->schema, &empty);
+      bson_destroy (&empty);
    }
 
 
@@ -132,8 +133,10 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
       /* If no collinfo was fed, cache an empty collinfo. */
       if (!_mongocrypt_cache_add_copy (
             &ctx->crypt->cache_collinfo, ectx->ns, &empty_collinfo, ctx->status)) {
+         bson_destroy (&empty_collinfo);
          return _mongocrypt_ctx_fail (ctx);
       }
+      bson_destroy (&empty_collinfo);
    }
 
    ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;

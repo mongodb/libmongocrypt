@@ -1472,7 +1472,7 @@ _test_encrypt_caches_empty_collinfo (_mongocrypt_tester_t *tester)
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
-   /* Do not feed a anything for collinfo. */
+   /* Do not feed anything for collinfo. */
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
    mongocrypt_ctx_destroy (ctx);
