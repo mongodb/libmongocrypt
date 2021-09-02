@@ -87,7 +87,7 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
    if (!found_jsonschema) {
       bson_t empty = BSON_INITIALIZER;
 
-      _mongocrypt_buffer_from_bson (&ectx->schema, &empty);
+      _mongocrypt_buffer_steal_from_bson (&ectx->schema, &empty);
    }
 
 
