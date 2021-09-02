@@ -1506,8 +1506,8 @@ _test_encrypt_caches_collinfo_without_jsonschema (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_mongo_feed (
          ctx, TEST_FILE ("./test/data/collection-info-no-validator.json")),
       ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
    mongocrypt_ctx_destroy (ctx);
 
