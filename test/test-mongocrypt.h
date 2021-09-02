@@ -188,6 +188,19 @@ _assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
 void
 _assert_match_bson (const bson_t *doc, const bson_t *pattern);
 
+const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state);
+
+#define ASSERT_STATE_EQUAL(actual, expected)                    \
+   do {                                                         \
+      if (actual != expected) {                                 \
+         fprintf (stderr,                                       \
+                  "actual state: %s, but expected state: %s\n", \
+                  mongocrypt_ctx_state_to_string (actual),      \
+                  mongocrypt_ctx_state_to_string (expected));   \
+         abort ();                                              \
+      }                                                         \
+   } while (0)
+
 typedef enum {
    CRYPTO_REQUIRED,
    CRYPTO_OPTIONAL,

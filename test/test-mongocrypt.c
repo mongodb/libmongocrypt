@@ -356,17 +356,17 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          fprintf (stderr,
                   "Got error: %s\n",
                   mongocrypt_status_message (status, NULL));
-         BSON_ASSERT (state == stop_state);
+         ASSERT_STATE_EQUAL (state, stop_state);
          mongocrypt_status_destroy (status);
          return;
       case MONGOCRYPT_CTX_DONE:
-         BSON_ASSERT (state == stop_state);
+         ASSERT_STATE_EQUAL (state, stop_state);
          mongocrypt_status_destroy (status);
          return;
       }
       state = mongocrypt_ctx_state (ctx);
    }
-   BSON_ASSERT (state == stop_state);
+   ASSERT_STATE_EQUAL (state, stop_state);
    mongocrypt_status_destroy (status);
 }
 
@@ -745,6 +745,26 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
    }
 }
 
+const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state) {
+   switch (state) {
+   case MONGOCRYPT_CTX_ERROR:
+      return "MONGOCRYPT_CTX_ERROR";
+   case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+      return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO";
+   case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+      return "MONGOCRYPT_CTX_NEED_MONGO_MARKINGS";
+   case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+      return "MONGOCRYPT_CTX_NEED_MONGO_KEYS";
+   case MONGOCRYPT_CTX_NEED_KMS:
+      return "MONGOCRYPT_CTX_NEED_KMS";
+   case MONGOCRYPT_CTX_READY:
+      return "MONGOCRYPT_CTX_READY";
+   case MONGOCRYPT_CTX_DONE:
+      return "MONGOCRYPT_CTX_DONE";
+   default:
+      return "UNKNOWN";
+   }
+}
 
 int
 main (int argc, char **argv)

@@ -84,6 +84,12 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
       }
    }
 
+   if (!found_jsonschema) {
+      bson_t empty = BSON_INITIALIZER;
+
+      _mongocrypt_buffer_from_bson (&ectx->schema, &empty);
+   }
+
 
    return true;
 }
@@ -120,6 +126,16 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   if (_mongocrypt_buffer_empty (&ectx->schema)) {
+      bson_t empty_collinfo = BSON_INITIALIZER;
+
+      /* If no collinfo was fed, cache an empty collinfo. */
+      if (!_mongocrypt_cache_add_copy (
+            &ctx->crypt->cache_collinfo, ectx->ns, &empty_collinfo, ctx->status)) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   }
+
    ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    return true;
 }

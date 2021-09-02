@@ -1460,6 +1460,69 @@ _test_encrypt_with_aws_session_token (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_encrypt_caches_empty_collinfo (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   /* Do not feed a anything for collinfo. */
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* Create another encryption context on the same namespace test.test. It
+    * should not transition to the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO state. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
+   mongocrypt_ctx_destroy (ctx);
+
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_encrypt_caches_collinfo_without_jsonschema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   ASSERT_OK (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_FILE ("./test/data/collection-info-no-validator.json")),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* Create another encryption context on the same namespace test.test. It
+    * should not transition to the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO state. */
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
+   mongocrypt_ctx_destroy (ctx);
+
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -1485,4 +1548,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_empty_aws);
    INSTALL_TEST (_test_encrypt_custom_endpoint);
    INSTALL_TEST (_test_encrypt_with_aws_session_token);
+   INSTALL_TEST (_test_encrypt_caches_empty_collinfo);
+   INSTALL_TEST (_test_encrypt_caches_collinfo_without_jsonschema);
 }
