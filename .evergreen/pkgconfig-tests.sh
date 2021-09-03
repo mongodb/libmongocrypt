@@ -68,16 +68,22 @@ export PKG_CONFIG_PATH="$(system_path $(/usr/bin/dirname $(/usr/bin/find $pkgcon
 cd $libmongocrypt_root
 gcc $(pkg-config --cflags libmongocrypt-static libbson-static-1.0) -o example-state-machine test/example-state-machine.c $(pkg-config --libs libmongocrypt-static)
 ./example-state-machine
+# Build example-no-bson, static linking against libmongocrypt
+gcc $(pkg-config --cflags libmongocrypt-static) -o example-no-bson test/example-no-bson.c $(pkg-config --libs libmongocrypt-static)
+./example-no-bson
 
-rm -f example-state-machine
+rm -f example-state-machine example-no-bson
 
 # Build example-state-machine, dynamic linking against libmongocrypt
 gcc $(pkg-config --cflags libmongocrypt libbson-static-1.0) -o example-state-machine test/example-state-machine.c $(pkg-config --libs libmongocrypt)
+# Build example-no-bson, dynamic linking against libmongocrypt
+gcc $(pkg-config --cflags libmongocrypt) -o example-no-bson test/example-no-bson.c $(pkg-config --libs libmongocrypt)
 export LD_LIBRARY_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib):$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib64)"
 ./example-state-machine
+./example-no-bson
 unset LD_LIBRARY_PATH
 
-rm -f example-state-machine
+rm -f example-state-machine example-no-bson
 
 # Clean up prior to next execution
 cd $pkgconfig_tests_root
@@ -95,17 +101,23 @@ $CMAKE --build . --target install --config RelWithDebInfo
 # Build example-state-machine, static linking against libmongocrypt
 cd $libmongocrypt_root
 gcc $(pkg-config --cflags libmongocrypt-static libbson-static-1.0) -o example-state-machine test/example-state-machine.c $(pkg-config --libs libmongocrypt-static)
+# Build example-no-bson, static linking against libmongocrypt
+gcc $(pkg-config --cflags libmongocrypt-static) -o example-no-bson test/example-no-bson.c $(pkg-config --libs libmongocrypt-static)
 export LD_LIBRARY_PATH="$(system_path $pkgconfig_tests_root/install/lib):$(system_path $pkgconfig_tests_root/install/lib64)"
 ./example-state-machine
+./example-no-bson
 unset LD_LIBRARY_PATH
 
-rm -f example-state-machine
+rm -f example-state-machine example-no-bson
 
 # Build example-state-machine, dynamic linking against libmongocrypt
 gcc $(pkg-config --cflags libmongocrypt libbson-static-1.0) -o example-state-machine test/example-state-machine.c $(pkg-config --libs libmongocrypt)
+# Build example-no-bson, dynamic linking against libmongocrypt
+gcc $(pkg-config --cflags libmongocrypt) -o example-no-bson test/example-no-bson.c $(pkg-config --libs libmongocrypt)
 export LD_LIBRARY_PATH="$(system_path $pkgconfig_tests_root/install/lib):$(system_path $pkgconfig_tests_root/install/lib64):$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib):$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib64)"
 ./example-state-machine
+./example-no-bson
 unset LD_LIBRARY_PATH
 
-rm -f example-state-machine
+rm -f example-state-machine example-no-bson
 
