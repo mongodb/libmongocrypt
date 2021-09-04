@@ -25,6 +25,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_decrypt_request.c
    src/kms_encrypt_request.c
    src/kms_gcp_request.c
+   src/kms_kmip_reader_writer.c
    src/kms_kv_list.c
    src/kms_kv_list.h
    src/kms_message.c

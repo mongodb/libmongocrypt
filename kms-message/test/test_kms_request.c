@@ -1161,6 +1161,10 @@ kms_signature_test (void)
    KMS_ASSERT (!ret);
 }
 
+static void kms_kmip_writer_test (void) {
+   printf ("TODO");
+}
+
 #define RUN_TEST(_func)                                          \
    do {                                                          \
       if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
@@ -1214,6 +1218,8 @@ main (int argc, char *argv[])
    RUN_TEST (kms_request_validate_test);
 
    RUN_TEST (kms_signature_test);
+
+   RUN_TEST (kms_kmip_writer_test);
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
