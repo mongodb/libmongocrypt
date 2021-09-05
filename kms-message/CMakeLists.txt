@@ -68,6 +68,16 @@ else()
          "KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO")
 endif()
 
+include (TestBigEndian)
+TEST_BIG_ENDIAN (KMS_BIG_ENDIAN)
+if (KMS_BIG_ENDIAN)
+   message ("Detected byte order: big endian")
+   set (KMS_MESSAGE_DEFINITIONS ${KMS_MESSAGE_DEFINITIONS} "KMS_MESSAGE_BIG_ENDIAN")
+else ()
+   message ("Detected byte order: little endian")
+   set (KMS_MESSAGE_DEFINITIONS ${KMS_MESSAGE_DEFINITIONS} "KMS_MESSAGE_LITTLE_ENDIAN")
+endif ()
+
 add_library (
    kms_message SHARED
    ${KMS_MESSAGE_SOURCES}
