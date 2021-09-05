@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// #ifndef KMS_KMIP_READER_WRITER_PRIVATE_H
+#ifndef KMS_KMIP_READER_WRITER_PRIVATE_H
 #define KMS_KMIP_READER_WRITER_PRIVATE_H
 
 #include "kms_message/kms_b64.h"
@@ -385,6 +385,9 @@ kmip_writer_begin_struct (kmip_writer_t *writer, int32_t tag);
 void
 kmip_writer_close_struct (kmip_writer_t *writer);
 
+const uint8_t *
+kmip_writer_get_buffer (kmip_writer_t *writer, size_t* len);
+
 typedef struct _kmip_reader_t kmip_reader_t;
 
 kmip_reader_t *
@@ -436,11 +439,11 @@ bool
 kmip_reader_read_enumeration (kmip_reader_t *reader, uint32_t *enum_value);
 
 bool
-kmip_reader_read_integer (kmip_reader_t *reader, uint32_t *value);
+kmip_reader_read_integer (kmip_reader_t *reader, int32_t *value);
 
 // KMIPTODO: naming seems off.
 bool
-kmip_reader_read_long_integer (kmip_reader_t *reader, uint64_t *value);
+kmip_reader_read_long_integer (kmip_reader_t *reader, int64_t *value);
 
 bool
 kmip_reader_read_bytes (kmip_reader_t *reader, uint8_t **ptr, size_t length);
@@ -470,4 +473,4 @@ kmip_reader_find_and_read_bytes (kmip_reader_t *reader,
                                  uint8_t **out_ptr,
                                  size_t *out_len);
 
-// #endif /* KMS_KMIP_READER_WRITER_PRIVATE_H */
+#endif /* KMS_KMIP_READER_WRITER_PRIVATE_H */

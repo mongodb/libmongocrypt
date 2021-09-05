@@ -16,78 +16,16 @@
 
 #include "kms_kmip_reader_writer_private.h"
 
+#include "kms_endian_private.h"
 #include "kms_message/kms_b64.h"
 #include "kms_message_private.h"
 #include "kms_request_opt_private.h"
 #include "kms_request_str.h"
 #include <stdint.h>
 
-#define BSON_BIG_ENDIAN 4321
-#define BSON_LITTLE_ENDIAN 1234
-
-#if defined(__sun)
-#define BSON_UINT16_SWAP_LE_BE(v) BSWAP_16 ((uint16_t) v)
-#define BSON_UINT32_SWAP_LE_BE(v) BSWAP_32 ((uint32_t) v)
-#define BSON_UINT64_SWAP_LE_BE(v) BSWAP_64 ((uint64_t) v)
-#elif defined(__clang__) && defined(__clang_major__) &&  \
-   defined(__clang_minor__) && (__clang_major__ >= 3) && \
-   (__clang_minor__ >= 1)
-#if __has_builtin(__builtin_bswap16)
-#define BSON_UINT16_SWAP_LE_BE(v) __builtin_bswap16 (v)
-#endif
-#if __has_builtin(__builtin_bswap32)
-#define BSON_UINT32_SWAP_LE_BE(v) __builtin_bswap32 (v)
-#endif
-#if __has_builtin(__builtin_bswap64)
-#define BSON_UINT64_SWAP_LE_BE(v) __builtin_bswap64 (v)
-#endif
-#elif defined(__GNUC__) && (__GNUC__ >= 4)
-#if __GNUC__ > 4 || (defined(__GNUC_MINOR__) && __GNUC_MINOR__ >= 3)
-#define BSON_UINT32_SWAP_LE_BE(v) __builtin_bswap32 ((uint32_t) v)
-#define BSON_UINT64_SWAP_LE_BE(v) __builtin_bswap64 ((uint64_t) v)
-#endif
-#if __GNUC__ > 4 || (defined(__GNUC_MINOR__) && __GNUC_MINOR__ >= 8)
-#define BSON_UINT16_SWAP_LE_BE(v) __builtin_bswap16 ((uint32_t) v)
-#endif
-#endif
-
-// KMIPTODO
-#if 1 // BSON_BYTE_ORDER == BSON_LITTLE_ENDIAN
-#define BSON_UINT16_FROM_LE(v) ((uint16_t) v)
-#define BSON_UINT16_TO_LE(v) ((uint16_t) v)
-#define BSON_UINT16_FROM_BE(v) BSON_UINT16_SWAP_LE_BE (v)
-#define BSON_UINT16_TO_BE(v) BSON_UINT16_SWAP_LE_BE (v)
-#define BSON_UINT32_FROM_LE(v) ((uint32_t) v)
-#define BSON_UINT32_TO_LE(v) ((uint32_t) v)
-#define BSON_UINT32_FROM_BE(v) BSON_UINT32_SWAP_LE_BE (v)
-#define BSON_UINT32_TO_BE(v) BSON_UINT32_SWAP_LE_BE (v)
-#define BSON_UINT64_FROM_LE(v) ((uint64_t) v)
-#define BSON_UINT64_TO_LE(v) ((uint64_t) v)
-#define BSON_UINT64_FROM_BE(v) BSON_UINT64_SWAP_LE_BE (v)
-#define BSON_UINT64_TO_BE(v) BSON_UINT64_SWAP_LE_BE (v)
-#define BSON_DOUBLE_FROM_LE(v) ((double) v)
-#define BSON_DOUBLE_TO_LE(v) ((double) v)
-#elif BSON_BYTE_ORDER == BSON_BIG_ENDIAN
-#define BSON_UINT16_FROM_LE(v) BSON_UINT16_SWAP_LE_BE (v)
-#define BSON_UINT16_TO_LE(v) BSON_UINT16_SWAP_LE_BE (v)
-#define BSON_UINT16_FROM_BE(v) ((uint16_t) v)
-#define BSON_UINT16_TO_BE(v) ((uint16_t) v)
-#define BSON_UINT32_FROM_LE(v) BSON_UINT32_SWAP_LE_BE (v)
-#define BSON_UINT32_TO_LE(v) BSON_UINT32_SWAP_LE_BE (v)
-#define BSON_UINT32_FROM_BE(v) ((uint32_t) v)
-#define BSON_UINT32_TO_BE(v) ((uint32_t) v)
-#define BSON_UINT64_FROM_LE(v) BSON_UINT64_SWAP_LE_BE (v)
-#define BSON_UINT64_TO_LE(v) BSON_UINT64_SWAP_LE_BE (v)
-#define BSON_UINT64_FROM_BE(v) ((uint64_t) v)
-#define BSON_UINT64_TO_BE(v) ((uint64_t) v)
-#define BSON_DOUBLE_FROM_LE(v) (__bson_double_swap_slow (v))
-#define BSON_DOUBLE_TO_LE(v) (__bson_double_swap_slow (v))
-#else
-#error "The endianness of target architecture is unknown."
-#endif
-
 #define MAX_POSITIONS 10
 
+// KMIPTODO: prefix everything with "kms_"
 struct _kmip_writer_t {
    kms_request_str_t *buffer;
 
@@ -121,7 +59,7 @@ kmip_writer_write_u8 (kmip_writer_t *writer, uint8_t value)
 void
 kmip_writer_write_u16 (kmip_writer_t *writer, uint16_t value)
 {
-   uint16_t v = BSON_UINT16_TO_BE (value);
+   uint16_t v = KMS_UINT16_TO_BE (value);
    char *c = (char *) &v;
 
    kms_request_str_append_chars (writer->buffer, c, 2);
@@ -130,7 +68,7 @@ kmip_writer_write_u16 (kmip_writer_t *writer, uint16_t value)
 void
 kmip_writer_write_u32 (kmip_writer_t *writer, uint32_t value)
 {
-   uint32_t v = BSON_UINT32_TO_BE (value);
+   uint32_t v = KMS_UINT32_TO_BE (value);
    char *c = (char *) &v;
 
    kms_request_str_append_chars (writer->buffer, c, 4);
@@ -139,7 +77,7 @@ kmip_writer_write_u32 (kmip_writer_t *writer, uint32_t value)
 void
 kmip_writer_write_u64 (kmip_writer_t *writer, uint64_t value)
 {
-   uint64_t v = BSON_UINT64_TO_BE (value);
+   uint64_t v = KMS_UINT64_TO_BE (value);
    char *c = (char *) &v;
 
    kms_request_str_append_chars (writer->buffer, c, 8);
@@ -202,6 +140,7 @@ kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, in
    }
 }
 
+/* KMIPTODO: rename this to "integer" for consistency with KMIP spec. */
 void
 kmip_writer_write_i32 (kmip_writer_t *writer, int32_t tag, int32_t value)
 {
@@ -268,9 +207,15 @@ kmip_writer_close_struct (kmip_writer_t *writer)
    // offset by 4
    size_t len = current_pos - start_pos - 4;
 
-   uint32_t v = BSON_UINT32_TO_BE (len);
+   uint32_t v = KMS_UINT32_TO_BE (len);
    char *c = (char *) &v;
    memcpy (writer->buffer->str + start_pos, c, 4);
+}
+
+const uint8_t *
+kmip_writer_get_buffer (kmip_writer_t *writer, size_t* len) {
+   *len = writer->buffer->len;
+   return (const uint8_t*) writer->buffer->str;
 }
 
 struct _kmip_reader_t {
@@ -353,7 +298,7 @@ kmip_reader_read_u16 (kmip_reader_t *reader, uint16_t *value)
 
    uint16_t temp;
    memcpy (&temp, reader->ptr + reader->pos, sizeof (uint16_t));
-   *value = BSON_UINT16_FROM_BE (temp);
+   *value = KMS_UINT16_FROM_BE (temp);
    reader->pos += sizeof (uint16_t);
 
    return true;
@@ -366,7 +311,7 @@ kmip_reader_read_u32 (kmip_reader_t *reader, uint32_t *value)
 
    uint32_t temp;
    memcpy (&temp, reader->ptr + reader->pos, sizeof (uint32_t));
-   *value = BSON_UINT32_FROM_BE (temp);
+   *value = KMS_UINT32_FROM_BE (temp);
    reader->pos += sizeof (uint32_t);
 
    return true;
@@ -379,7 +324,7 @@ kmip_reader_read_u64 (kmip_reader_t *reader, uint64_t *value)
 
    uint64_t temp;
    memcpy (&temp, reader->ptr + reader->pos, sizeof (uint64_t));
-   *value = BSON_UINT64_FROM_BE (temp);
+   *value = KMS_UINT64_FROM_BE (temp);
    reader->pos += sizeof (uint64_t);
 
    return true;
@@ -444,9 +389,9 @@ kmip_reader_read_enumeration (kmip_reader_t *reader, uint32_t *enum_value)
 }
 
 bool
-kmip_reader_read_integer (kmip_reader_t *reader, uint32_t *value)
+kmip_reader_read_integer (kmip_reader_t *reader, int32_t *value)
 {
-   READER_CHECK_AND_RET (kmip_reader_read_u32 (reader, value));
+   READER_CHECK_AND_RET (kmip_reader_read_u32 (reader, (uint32_t*) value));
 
    // Skip 4 bytes becase integers are padded
    uint32_t ignored;
@@ -455,15 +400,10 @@ kmip_reader_read_integer (kmip_reader_t *reader, uint32_t *value)
 }
 
 bool
-kmip_reader_read_long_integer (kmip_reader_t *reader, uint64_t *value)
+kmip_reader_read_long_integer (kmip_reader_t *reader, int64_t *value)
 {
-   return kmip_reader_read_u64 (reader, value);
-}
-
-bool
-kmip_reader_read_bytes (kmip_reader_t *reader, uint8_t **ptr, size_t length)
-{
-   return kmip_reader_read_bytes (reader, ptr, length);
+   /* KMIPTODO: how will casting work if there are overflows? */
+   return kmip_reader_read_u64 (reader, (uint64_t*) value);
 }
 
 bool
@@ -506,6 +446,7 @@ kmip_reader_find (kmip_reader_t *reader,
       }
 
       size_t advance_length = read_length;
+      // KMIPTODO
       // if(read_type == ITEM_TYPE_ByteString || read_type ==
       // ITEM_TYPE_TextString ) {
       advance_length = compute_padding (advance_length);
