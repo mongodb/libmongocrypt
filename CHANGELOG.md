@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 1.2.2
+- Fix pkg-config and PPA build dependency on libbson.
+- Fix JSON schema caching behavior when server reports no JSON schema.
+
 ## 1.2.1
 ### Fixed
 - Fix possible crash when oauth credentials expire.
