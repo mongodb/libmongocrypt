@@ -108,7 +108,7 @@ kmip_writer_write_string (kmip_writer_t *writer, int32_t tag, const char *str, s
 {
    kmip_writer_write_tag_enum (writer, tag);
    kmip_writer_write_u8 (writer, ITEM_TYPE_TextString);
-   kmip_writer_write_u32 (writer, len);
+   kmip_writer_write_u32 (writer, (uint32_t) len);
 
    size_t i;
    for (i = 0; i < len; i++) {
@@ -127,7 +127,7 @@ kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, si
    kmip_writer_write_tag_enum (writer, tag);
 
    kmip_writer_write_u8 (writer, ITEM_TYPE_ByteString);
-   kmip_writer_write_u32 (writer, len);
+   kmip_writer_write_u32 (writer, (uint32_t) len);
 
    size_t i;
    for (i = 0; i < len; i++) {
