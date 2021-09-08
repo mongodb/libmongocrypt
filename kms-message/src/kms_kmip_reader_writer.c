@@ -483,7 +483,7 @@ kmip_reader_find_and_read_enum (kmip_reader_t *reader,
    size_t length;
 
    if (!kmip_reader_find (reader, tag, ITEM_TYPE_Enumeration, &pos, &length)) {
-      return NULL;
+      return false;
    }
 
    kmip_reader_t temp_reader;
@@ -503,7 +503,7 @@ kmip_reader_find_and_read_bytes (kmip_reader_t *reader,
    size_t pos;
 
    if (!kmip_reader_find (reader, tag, ITEM_TYPE_ByteString, &pos, out_len)) {
-      return NULL;
+      return false;
    }
 
    kmip_reader_t temp_reader;
