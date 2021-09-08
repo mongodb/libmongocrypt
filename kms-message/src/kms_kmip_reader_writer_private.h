@@ -362,10 +362,10 @@ void
 kmip_writer_write_tag_enum (kmip_writer_t *writer, int32_t tag);
 
 void
-kmip_writer_write_string (kmip_writer_t *writer, int32_t tag, const char *str, int len);
+kmip_writer_write_string (kmip_writer_t *writer, int32_t tag, const char *str, size_t len);
 
 void
-kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, int len);
+kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, size_t len);
 
 void
 kmip_writer_write_i32 (kmip_writer_t *writer, int32_t tag, int32_t value);

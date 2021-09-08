@@ -92,49 +92,49 @@ kmip_writer_write_tag_enum (kmip_writer_t *writer, int32_t tag)
    kmip_writer_write_u16 (writer, tag);
 }
 
-static int
-compute_padding (int len)
+static size_t
+compute_padding (size_t len)
 {
    if (len % 8 == 0) {
       return len;
    }
 
-   int padding = 8 - (len % 8);
+   size_t padding = 8 - (len % 8);
    return len + padding;
 }
 
 void
-kmip_writer_write_string (kmip_writer_t *writer, int32_t tag, const char *str, int len)
+kmip_writer_write_string (kmip_writer_t *writer, int32_t tag, const char *str, size_t len)
 {
    kmip_writer_write_tag_enum (writer, tag);
    kmip_writer_write_u8 (writer, ITEM_TYPE_TextString);
    kmip_writer_write_u32 (writer, len);
 
-   int i;
+   size_t i;
    for (i = 0; i < len; i++) {
       kmip_writer_write_u8 (writer, str[i]);
    }
 
-   int padded_length = compute_padding (len);
+   size_t padded_length = compute_padding (len);
    for (i = 0; i < padded_length - len; i++) {
       kmip_writer_write_u8 (writer, 0);
    }
 }
 
 void
-kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, int len)
+kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, size_t len)
 {
    kmip_writer_write_tag_enum (writer, tag);
 
    kmip_writer_write_u8 (writer, ITEM_TYPE_ByteString);
    kmip_writer_write_u32 (writer, len);
 
-   int i;
+   size_t i;
    for (i = 0; i < len; i++) {
       kmip_writer_write_u8 (writer, str[i]);
    }
 
-   int padded_length = compute_padding (len);
+   size_t padded_length = compute_padding (len);
    for (i = 0; i < padded_length - len; i++) {
       kmip_writer_write_u8 (writer, 0);
    }
