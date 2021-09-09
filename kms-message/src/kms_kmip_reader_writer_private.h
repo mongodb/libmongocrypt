@@ -333,11 +333,6 @@ enum TAG_TYPE {
    TAG_Extractable = 0x420122,
    TAG_NeverExtractable = 0x420123,
    TAG_ReplaceExisting = 0x420124,
-
-   // Used by tests, named x-ID, just takes a string
-   // Could not find it documented in Tag list
-   // TODO
-   TAG_XID = 0x540000,
 };
 
 typedef struct _kmip_writer_t kmip_writer_t;
@@ -368,16 +363,16 @@ void
 kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, size_t len);
 
 void
-kmip_writer_write_i32 (kmip_writer_t *writer, int32_t tag, int32_t value);
+kmip_writer_write_integer (kmip_writer_t *writer, int32_t tag, int32_t value);
 
 void
-kmip_writer_write_i64 (kmip_writer_t *writer, int32_t tag, int64_t value);
+kmip_writer_write_long_integer (kmip_writer_t *writer, int32_t tag, int64_t value);
 
 void
 kmip_writer_write_enumeration (kmip_writer_t *writer, int32_t tag, int32_t value);
 
 void
-kmip_writer_write_i64_datetime (kmip_writer_t *writer, int32_t tag, int64_t value);
+kmip_writer_write_datetime (kmip_writer_t *writer, int32_t tag, int64_t value);
 
 void
 kmip_writer_begin_struct (kmip_writer_t *writer, int32_t tag);
@@ -441,7 +436,6 @@ kmip_reader_read_enumeration (kmip_reader_t *reader, uint32_t *enum_value);
 bool
 kmip_reader_read_integer (kmip_reader_t *reader, int32_t *value);
 
-// KMIPTODO: naming seems off.
 bool
 kmip_reader_read_long_integer (kmip_reader_t *reader, int64_t *value);
 
@@ -451,7 +445,7 @@ kmip_reader_read_bytes (kmip_reader_t *reader, uint8_t **ptr, size_t length);
 bool
 kmip_reader_read_string (kmip_reader_t *reader, uint8_t **ptr, size_t length);
 
-// Note: does not descend structures
+/* Note: does not descend structures. */
 bool
 kmip_reader_find (kmip_reader_t *reader,
                   size_t search_tag,

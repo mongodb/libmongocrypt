@@ -25,7 +25,6 @@
 
 #define MAX_POSITIONS 10
 
-// KMIPTODO: prefix everything with "kms_"
 struct _kmip_writer_t {
    kms_request_str_t *buffer;
 
@@ -140,9 +139,8 @@ kmip_writer_write_bytes (kmip_writer_t *writer, int32_t tag, const char *str, si
    }
 }
 
-/* KMIPTODO: rename this to "integer" for consistency with KMIP spec. */
 void
-kmip_writer_write_i32 (kmip_writer_t *writer, int32_t tag, int32_t value)
+kmip_writer_write_integer (kmip_writer_t *writer, int32_t tag, int32_t value)
 {
    kmip_writer_write_tag_enum (writer, tag);
    kmip_writer_write_u8 (writer, ITEM_TYPE_Integer);
@@ -152,7 +150,7 @@ kmip_writer_write_i32 (kmip_writer_t *writer, int32_t tag, int32_t value)
 }
 
 void
-kmip_writer_write_i64 (kmip_writer_t *writer, int32_t tag, int64_t value)
+kmip_writer_write_long_integer (kmip_writer_t *writer, int32_t tag, int64_t value)
 {
    kmip_writer_write_tag_enum (writer, tag);
    kmip_writer_write_u8 (writer, ITEM_TYPE_LongInteger);
@@ -171,7 +169,7 @@ kmip_writer_write_enumeration (kmip_writer_t *writer, int32_t tag, int32_t value
 }
 
 void
-kmip_writer_write_i64_datetime (kmip_writer_t *writer, int32_t tag, int64_t value)
+kmip_writer_write_datetime (kmip_writer_t *writer, int32_t tag, int64_t value)
 {
    kmip_writer_write_tag_enum (writer, tag);
    kmip_writer_write_u8 (writer, ITEM_TYPE_DateTime);
@@ -417,7 +415,6 @@ kmip_reader_read_string (kmip_reader_t *reader, uint8_t **ptr, size_t length)
       return false;           \
    }
 
-// Note: does not descend structures
 bool
 kmip_reader_find (kmip_reader_t *reader,
                   size_t search_tag,
@@ -426,7 +423,6 @@ kmip_reader_find (kmip_reader_t *reader,
                   size_t *length)
 {
    reader->pos = 0;
-   // size_t saved_pos = kmip_reader_save_position(reader);
 
    while (kmip_reader_has_data (reader)) {
       uint32_t read_tag;
@@ -446,15 +442,11 @@ kmip_reader_find (kmip_reader_t *reader,
       }
 
       size_t advance_length = read_length;
-      // KMIPTODO
-      // if(read_type == ITEM_TYPE_ByteString || read_type ==
-      // ITEM_TYPE_TextString ) {
       advance_length = compute_padding (advance_length);
-      //}
 
       CHECK_REMAINING_BUFFER_AND_RET (advance_length);
 
-      // Skip to the next type,
+      /* Skip to the next type */
       reader->pos += advance_length;
    }
 

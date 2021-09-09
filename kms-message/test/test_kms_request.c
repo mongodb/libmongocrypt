@@ -1221,7 +1221,7 @@ kms_kmip_writer_test (void)
    /* The following test cases come from section 9.1.2 of
     * http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html */
    writer = kmip_writer_new ();
-   kmip_writer_write_i32 (writer, TAG_CompromiseDate, 8);
+   kmip_writer_write_integer (writer, TAG_CompromiseDate, 8);
    kms_kmip_writer_test_evaluate (
       writer,
       "42 00 20 | 02 | 00 00 00 04 | 00 00 00 08 00 00 00 00",
@@ -1229,7 +1229,7 @@ kms_kmip_writer_test (void)
    kmip_writer_destroy (writer);
 
    writer = kmip_writer_new ();
-   kmip_writer_write_i64 (writer, TAG_CompromiseDate, 123456789000000000LL);
+   kmip_writer_write_long_integer (writer, TAG_CompromiseDate, 123456789000000000LL);
    kms_kmip_writer_test_evaluate (
       writer,
       "42 00 20 | 03 | 00 00 00 08 | 01 B6 9B 4B A5 74 92 00",
@@ -1282,7 +1282,7 @@ kms_kmip_writer_test (void)
    kmip_writer_destroy (writer);
 
    writer = kmip_writer_new ();
-   kmip_writer_write_i64_datetime (
+   kmip_writer_write_datetime (
       writer, TAG_CompromiseDate, 0x0000000047DA67F8LL);
    kms_kmip_writer_test_evaluate (
       writer,
@@ -1305,7 +1305,7 @@ kms_kmip_writer_test (void)
    kmip_writer_begin_struct (writer, TAG_CompromiseDate);
    kmip_writer_write_enumeration (
       writer, TAG_ApplicationSpecificInformation, 254);
-   kmip_writer_write_i32 (writer, TAG_ArchiveDate, 255);
+   kmip_writer_write_integer (writer, TAG_ArchiveDate, 255);
    kmip_writer_close_struct (writer);
    kms_kmip_writer_test_evaluate (
       writer,
