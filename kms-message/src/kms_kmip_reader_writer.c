@@ -202,7 +202,7 @@ kmip_writer_close_struct (kmip_writer_t *writer)
    }
    size_t start_pos = writer->positions[writer->cur_pos];
    writer->cur_pos--;
-   // offset by 4
+   /* offset by 4 */
    size_t len = current_pos - start_pos - 4;
 
    uint32_t v = KMS_UINT32_TO_BE (len);
@@ -243,7 +243,7 @@ kmip_reader_in_place (kmip_reader_t *reader,
                       size_t len,
                       kmip_reader_t *out_reader)
 {
-   // Everything should be padding to 8 byte boundaries
+   /* Everything should be padding to 8 byte boundaries. */
    len = compute_padding (len);
    if ((pos + len) > reader->len) {
       return false;
@@ -380,7 +380,7 @@ kmip_reader_read_enumeration (kmip_reader_t *reader, uint32_t *enum_value)
 {
    READER_CHECK_AND_RET (kmip_reader_read_u32 (reader, enum_value));
 
-   // Skip 4 bytes becase enums are padded
+   /* Skip 4 bytes because enums are padded. */
    uint32_t ignored;
 
    return kmip_reader_read_u32 (reader, &ignored);
@@ -391,7 +391,7 @@ kmip_reader_read_integer (kmip_reader_t *reader, int32_t *value)
 {
    READER_CHECK_AND_RET (kmip_reader_read_u32 (reader, (uint32_t*) value));
 
-   // Skip 4 bytes becase integers are padded
+   /* Skip 4 bytes because integers are padded. */
    uint32_t ignored;
 
    return kmip_reader_read_u32 (reader, &ignored);
@@ -400,7 +400,6 @@ kmip_reader_read_integer (kmip_reader_t *reader, int32_t *value)
 bool
 kmip_reader_read_long_integer (kmip_reader_t *reader, int64_t *value)
 {
-   /* KMIPTODO: how will casting work if there are overflows? */
    return kmip_reader_read_u64 (reader, (uint64_t*) value);
 }
 
