@@ -56,19 +56,19 @@ enum TAG_TYPE {
    TAG_BlockCipherMode = 0x420011,
    TAG_CancellationResult = 0x420012,
    TAG_Certificate = 0x420013,
-   TAG_CertificateIdentifier = 0x420014, //(deprecatedasofvers=ion1.1),
-   TAG_CertificateIssuer = 0x420015,     //(deprecatedasofvers=ion1.1),
+   TAG_CertificateIdentifier = 0x420014, /* deprecated as of version 1.1 */
+   TAG_CertificateIssuer = 0x420015,     /* deprecated as of version 1.1 */
    TAG_CertificateIssuerAlternativeName =
-      0x420016, //(deprecatedasofvers=ion1.1),
+      0x420016, /* deprecated as of version 1.1 */
    TAG_CertificateIssuerDistinguishedName =
-      0x420017, //(deprecatedasofvers=ion1.1),
+      0x420017, /* deprecated as of version 1.1 */
    TAG_CertificateRequest = 0x420018,
    TAG_CertificateRequestType = 0x420019,
-   TAG_CertificateSubject = 0x42001A, //(deprecatedasofvers=ion1.1),
+   TAG_CertificateSubject = 0x42001A, /* deprecated as of version 1.1 */
    TAG_CertificateSubjectAlternativeName =
-      0x42001B, //(deprecatedasofvers=ion1.1),
+      0x42001B, /* deprecated as of version 1.1 */
    TAG_CertificateSubjectDistinguishedName =
-      0x42001C, //(deprecatedasofvers=ion1.1),
+      0x42001C, /* deprecated as of version 1.1 */
    TAG_CertificateType = 0x42001D,
    TAG_CertificateValue = 0x42001E,
    TAG_CommonTemplateAttribute = 0x42001F,
@@ -99,7 +99,7 @@ enum TAG_TYPE {
    TAG_HashingAlgorithm = 0x420038,
    TAG_InitialDate = 0x420039,
    TAG_InitializationVector = 0x42003A,
-   TAG_Issuer = 0x42003B, //(deprecatedasofvers=ion1.1),
+   TAG_Issuer = 0x42003B, /* deprecated as of version 1.1 */
    TAG_IterationCount = 0x42003C,
    TAG_IVCounterNonce = 0x42003D,
    TAG_J = 0x42003E,
@@ -133,7 +133,7 @@ enum TAG_TYPE {
    TAG_OpaqueDataValue = 0x42005A,
    TAG_OpaqueObject = 0x42005B,
    TAG_Operation = 0x42005C,
-   TAG_OperationPolicyName = 0x42005D, //(deprecated),
+   TAG_OperationPolicyName = 0x42005D, /* deprecated */,
    TAG_P = 0x42005E,
    TAG_PaddingMethod = 0x42005F,
    TAG_PrimeExponentP = 0x420060,
@@ -175,7 +175,7 @@ enum TAG_TYPE {
    TAG_Salt = 0x420084,
    TAG_SecretData = 0x420085,
    TAG_SecretDataType = 0x420086,
-   TAG_SerialNumber = 0x420087, //(deprecatedasofvers=ion1.1),
+   TAG_SerialNumber = 0x420087, /* deprecated as of version 1.1 */
    TAG_ServerInformation = 0x420088,
    TAG_SplitKey = 0x420089,
    TAG_SplitKeyMethod = 0x42008A,

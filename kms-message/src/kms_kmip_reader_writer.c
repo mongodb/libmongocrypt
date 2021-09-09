@@ -85,8 +85,8 @@ kmip_writer_write_u64 (kmip_writer_t *writer, uint64_t value)
 void
 kmip_writer_write_tag_enum (kmip_writer_t *writer, int32_t tag)
 {
-   // 0x42 for tags built into the protocol
-   // 0x54 for extension tags
+   /* The 0x42 prefix is for tags built into the protocol. */
+   /* The 0x54 prefix is for extension tags. */
    kmip_writer_write_u8 (writer, 0x42);
    kmip_writer_write_u16 (writer, tag);
 }
@@ -446,7 +446,7 @@ kmip_reader_find (kmip_reader_t *reader,
 
       CHECK_REMAINING_BUFFER_AND_RET (advance_length);
 
-      /* Skip to the next type */
+      /* Skip to the next type. */
       reader->pos += advance_length;
    }
 
