@@ -20,7 +20,7 @@
 #include "kms_message_private.h"
 #include <stdint.h>
 
-enum ITEM_TYPE {
+typedef enum {
    ITEM_TYPE_Structure = 0x01,
    ITEM_TYPE_Integer = 0x02,
    ITEM_TYPE_LongInteger = 0x03,
@@ -31,9 +31,9 @@ enum ITEM_TYPE {
    ITEM_TYPE_ByteString = 0x08,
    ITEM_TYPE_DateTime = 0x09,
    ITEM_TYPE_Interval = 0x0A,
-};
+} kmip_item_type_t;
 
-enum TAG_TYPE {
+typedef enum {
    TAG_ActivationDate = 0x420001,
    TAG_ApplicationData = 0x420002,
    TAG_ApplicationNamespace = 0x420003,
@@ -330,7 +330,7 @@ enum TAG_TYPE {
    TAG_Extractable = 0x420122,
    TAG_NeverExtractable = 0x420123,
    TAG_ReplaceExisting = 0x420124,
-};
+} kmip_tag_type_t;
 
 typedef struct _kmip_writer_t kmip_writer_t;
 
@@ -351,28 +351,28 @@ void
 kmip_writer_write_u64 (kmip_writer_t *writer, uint64_t value);
 
 void
-kmip_writer_write_tag_enum (kmip_writer_t *writer, enum TAG_TYPE tag);
+kmip_writer_write_tag_enum (kmip_writer_t *writer, kmip_tag_type_t tag);
 
 void
-kmip_writer_write_string (kmip_writer_t *writer, enum TAG_TYPE tag, const char *str, size_t len);
+kmip_writer_write_string (kmip_writer_t *writer, kmip_tag_type_t tag, const char *str, size_t len);
 
 void
-kmip_writer_write_bytes (kmip_writer_t *writer, enum TAG_TYPE tag, const char *str, size_t len);
+kmip_writer_write_bytes (kmip_writer_t *writer, kmip_tag_type_t tag, const char *str, size_t len);
 
 void
-kmip_writer_write_integer (kmip_writer_t *writer, enum TAG_TYPE tag, int32_t value);
+kmip_writer_write_integer (kmip_writer_t *writer, kmip_tag_type_t tag, int32_t value);
 
 void
-kmip_writer_write_long_integer (kmip_writer_t *writer, enum TAG_TYPE tag, int64_t value);
+kmip_writer_write_long_integer (kmip_writer_t *writer, kmip_tag_type_t tag, int64_t value);
 
 void
-kmip_writer_write_enumeration (kmip_writer_t *writer, enum TAG_TYPE tag, int32_t value);
+kmip_writer_write_enumeration (kmip_writer_t *writer, kmip_tag_type_t tag, int32_t value);
 
 void
-kmip_writer_write_datetime (kmip_writer_t *writer, enum TAG_TYPE tag, int64_t value);
+kmip_writer_write_datetime (kmip_writer_t *writer, kmip_tag_type_t tag, int64_t value);
 
 void
-kmip_writer_begin_struct (kmip_writer_t *writer, enum TAG_TYPE tag);
+kmip_writer_begin_struct (kmip_writer_t *writer, kmip_tag_type_t tag);
 
 void
 kmip_writer_close_struct (kmip_writer_t *writer);
@@ -416,13 +416,13 @@ bool
 kmip_reader_read_u64 (kmip_reader_t *reader, uint64_t *value);
 
 bool
-kmip_reader_read_tag (kmip_reader_t *reader, enum TAG_TYPE *tag);
+kmip_reader_read_tag (kmip_reader_t *reader, kmip_tag_type_t *tag);
 
 bool
 kmip_reader_read_length (kmip_reader_t *reader, uint32_t *length);
 
 bool
-kmip_reader_read_type (kmip_reader_t *reader, enum ITEM_TYPE *type);
+kmip_reader_read_type (kmip_reader_t *reader, kmip_item_type_t *type);
 
 bool
 kmip_reader_read_enumeration (kmip_reader_t *reader, uint32_t *enum_value);
@@ -442,8 +442,8 @@ kmip_reader_read_string (kmip_reader_t *reader, uint8_t **ptr, size_t length);
 /* Note: does not descend structures. */
 bool
 kmip_reader_find (kmip_reader_t *reader,
-                  enum TAG_TYPE search_tag,
-                  enum ITEM_TYPE type,
+                  kmip_tag_type_t search_tag,
+                  kmip_item_type_t type,
                   size_t *pos,
                   size_t *length);
 

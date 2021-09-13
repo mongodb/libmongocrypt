@@ -159,8 +159,8 @@ kms_kmip_reader_test (void)
    uint8_t *data;
    size_t datalen;
    kmip_reader_t *reader;
-   enum TAG_TYPE tag;
-   enum ITEM_TYPE type;
+   kmip_tag_type_t tag;
+   kmip_item_type_t type;
    uint32_t length;
    int32_t i32;
    int64_t i64;
@@ -317,8 +317,8 @@ kms_kmip_reader_negative_int_test (void)
    uint8_t *data;
    size_t datalen;
    kmip_reader_t *reader;
-   enum TAG_TYPE tag;
-   enum ITEM_TYPE type;
+   kmip_tag_type_t tag;
+   kmip_item_type_t type;
    uint32_t length;
    int32_t i32;
 
