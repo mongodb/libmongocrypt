@@ -40,7 +40,7 @@ struct _kmip_writer_t {
 };
 
 kmip_writer_t *
-kmip_writer_new ()
+kmip_writer_new (void)
 {
    kmip_writer_t *writer = calloc (1, sizeof (kmip_writer_t));
    writer->buffer = kms_request_str_new ();

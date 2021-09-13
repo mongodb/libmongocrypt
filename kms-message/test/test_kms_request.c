@@ -20,7 +20,6 @@
 #include "src/kms_message/kms_message.h"
 #include "src/kms_message_private.h"
 
-#include <ctype.h>
 #ifndef _WIN32
 #include <dirent.h>
 #else

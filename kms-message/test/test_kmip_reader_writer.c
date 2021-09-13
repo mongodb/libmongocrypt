@@ -12,11 +12,12 @@ typedef struct {
 } kms_kmip_writer_test_case_t;
 
 /* Return a copy of @hex with the following characters removed: ' ', '|' */
-static char*
-copy_and_filter_hex (const char* hex) {
+static char *
+copy_and_filter_hex (const char *hex)
+{
    size_t i, j;
 
-   char* filtered = malloc (strlen (hex) + 1);
+   char *filtered = malloc (strlen (hex) + 1);
    j = 0;
    for (i = 0; i < strlen (hex); i++) {
       if (hex[i] != ' ' && hex[i] != '|') {
@@ -55,7 +56,9 @@ kms_kmip_writer_test_evaluate (kmip_writer_t *writer,
    free (expected_hex);
 }
 
-void kms_kmip_writer_test (void) {
+void
+kms_kmip_writer_test (void)
+{
    kmip_writer_t *writer;
 
    /* The following test cases come from section 9.1.2 of
@@ -69,23 +72,15 @@ void kms_kmip_writer_test (void) {
    kmip_writer_destroy (writer);
 
    writer = kmip_writer_new ();
-   kmip_writer_write_long_integer (writer, TAG_CompromiseDate, 123456789000000000LL);
+   kmip_writer_write_long_integer (
+      writer, TAG_CompromiseDate, 123456789000000000LL);
    kms_kmip_writer_test_evaluate (
       writer,
       "42 00 20 | 03 | 00 00 00 08 | 01 B6 9B 4B A5 74 92 00",
       "A Long Integer containing the decimal value 123456789000000000");
    kmip_writer_destroy (writer);
 
-   /* BigInteger is not implemented.
-   writer = kmip_writer_new ();
-   kms_kmip_writer_test_evaluate (
-      writer,
-      "42 00 20 | 04 | 00 00 00 10 | 00 00 00 00 03 FD 35 EB 6B C2 DF 46 18 08
-   00 00", "A Big Integer containing the decimal value
-   1234567890000000000000000000"
-   );
-   kmip_writer_destroy (writer);
-   */
+   /* BigInteger is not implemented. */
 
    writer = kmip_writer_new ();
    kmip_writer_write_enumeration (writer, TAG_CompromiseDate, 255);
@@ -95,15 +90,7 @@ void kms_kmip_writer_test (void) {
       "An Enumeration with value 255");
    kmip_writer_destroy (writer);
 
-   /* Boolean is not implemented.
-   writer = kmip_writer_new ();
-   kms_kmip_writer_test_evaluate (
-      writer,
-      "42 00 20 | 06 | 00 00 00 08 | 00 00 00 00 00 00 00 01",
-      "A Boolean with the value True"
-   );
-   kmip_writer_destroy (writer);
-   */
+   /* Boolean is not implemented. */
 
    writer = kmip_writer_new ();
    kmip_writer_write_string (writer, TAG_CompromiseDate, "Hello World", 11);
@@ -131,15 +118,7 @@ void kms_kmip_writer_test (void) {
       "GMT");
    kmip_writer_destroy (writer);
 
-   /* Interval is not implemented.
-   writer = kmip_writer_new ();
-   kms_kmip_writer_test_evaluate (
-      writer,
-      "42 00 20 | 0A | 00 00 00 04 | 00 0D 2F 00 00 00 00 00",
-      "An Interval, containing the value for 10 days"
-   );
-   kmip_writer_destroy (writer);
-   */
+   /* Interval is not implemented. */
 
    writer = kmip_writer_new ();
    kmip_writer_begin_struct (writer, TAG_CompromiseDate);
@@ -156,7 +135,9 @@ void kms_kmip_writer_test (void) {
    kmip_writer_destroy (writer);
 }
 
-static uint8_t* kms_kmip_reader_test_new_data (char* hex, size_t *outlen) {
+static uint8_t *
+kms_kmip_reader_test_new_data (char *hex, size_t *outlen)
+{
    char *filtered_hex;
    uint8_t *bytes;
    size_t i;
@@ -172,7 +153,9 @@ static uint8_t* kms_kmip_reader_test_new_data (char* hex, size_t *outlen) {
    return bytes;
 }
 
-void kms_kmip_reader_test (void) {
+void
+kms_kmip_reader_test (void)
+{
    uint8_t *data;
    size_t datalen;
    kmip_reader_t *reader;
@@ -187,7 +170,8 @@ void kms_kmip_reader_test (void) {
    /* The following test cases come from section 9.1.2 of
     * http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html */
    /* An Integer containing the decimal value 8 */
-   data = kms_kmip_reader_test_new_data ("42 00 20 | 02 | 00 00 00 04 | 00 00 00 08 00 00 00 00", &datalen);
+   data = kms_kmip_reader_test_new_data (
+      "42 00 20 | 02 | 00 00 00 04 | 00 00 00 08 00 00 00 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == TAG_CompromiseDate);
@@ -202,7 +186,8 @@ void kms_kmip_reader_test (void) {
    free (data);
 
    /* A Long Integer containing the decimal value 123456789000000000 */
-   data = kms_kmip_reader_test_new_data ("42 00 20 | 03 | 00 00 00 08 | 01 B6 9B 4B A5 74 92 00", &datalen);
+   data = kms_kmip_reader_test_new_data (
+      "42 00 20 | 03 | 00 00 00 08 | 01 B6 9B 4B A5 74 92 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == TAG_CompromiseDate);
@@ -216,19 +201,7 @@ void kms_kmip_reader_test (void) {
    kmip_reader_destroy (reader);
    free (data);
 
-   /* Big Integer is not implemented.
-    * A Big Integer containing the decimal value 123456789000000000000000000
-   data = kms_kmip_reader_test_new_data ("42 00 20 | 04 | 00 00 00 10 | 00 00 00
-   00 03 FD 35 EB 6B C2 DF 46 18 08 00 00", &datalen); reader = kmip_reader_new
-   (data, datalen); ASSERT (kmip_reader_read_tag (reader, &tag)); ASSERT (tag ==
-   TAG_CompromiseDate); ASSERT (kmip_reader_read_type (reader, &type)); ASSERT
-   (type == ITEM_TYPE_BigInteger); ASSERT (kmip_reader_read_length (reader,
-   &length)); ASSERT (length == 0);
-    * Fill in future call here.
-   ASSERT (!kmip_reader_has_data (reader));
-   kmip_reader_destroy (reader);
-   free (data);
-   */
+   /* Big Integer is not implemented. */
 
    /* An Enumeration with value 255 */
    data = kms_kmip_reader_test_new_data (
@@ -246,20 +219,7 @@ void kms_kmip_reader_test (void) {
    kmip_reader_destroy (reader);
    free (data);
 
-   /* Boolean is not implemented
-    * A Boolean with the value True
-   data = kms_kmip_reader_test_new_data ("42 00 20 | 06 | 00 00 00 08 | 00 00 00
-   00 00 00 00 01", &datalen); reader = kmip_reader_new (data, datalen); ASSERT
-   (kmip_reader_read_tag (reader, &tag)); ASSERT (tag == TAG_CompromiseDate);
-   ASSERT (kmip_reader_read_type (reader, &type));
-   ASSERT (type == ITEM_TYPE_Boolean);
-   ASSERT (kmip_reader_read_length (reader, &length));
-   ASSERT (length == 0);
-    * Fill in future call here.
-   ASSERT (!kmip_reader_has_data (reader));
-   kmip_reader_destroy (reader);
-   free (data);
-   */
+   /* Boolean is not implemented */
 
    /* A Text String with the value 'Hello World' */
    data =
@@ -312,20 +272,7 @@ void kms_kmip_reader_test (void) {
    kmip_reader_destroy (reader);
    free (data);
 
-   /* Interval is not implemented.
-   * An Interval, containing the value for 10 days
-   data = kms_kmip_reader_test_new_data ("42 00 20 | 0A | 00 00 00 04 | 00 0D 2F
-   00 00 00 00 00", &datalen); reader = kmip_reader_new (data, datalen); ASSERT
-   (kmip_reader_read_tag (reader, &tag)); ASSERT (tag == TAG_CompromiseDate);
-   ASSERT (kmip_reader_read_type (reader, &type));
-   ASSERT (type == ITEM_TYPE_Integer);
-   ASSERT (kmip_reader_read_length (reader, &length));
-   ASSERT (length == 0);
-   * Fill in future call here.
-   ASSERT (!kmip_reader_has_data (reader));
-   kmip_reader_destroy (reader);
-   free (data);
-   */
+   /* Interval is not implemented. */
 
    /* A Structure containing an Enumeration, value 254, followed by an Integer,
     * value 255, having tags 420004 and 420005 respectively */
@@ -364,7 +311,9 @@ void kms_kmip_reader_test (void) {
    free (data);
 }
 
-void kms_kmip_reader_negative_int_test (void) {
+void
+kms_kmip_reader_negative_int_test (void)
+{
    uint8_t *data;
    size_t datalen;
    kmip_reader_t *reader;

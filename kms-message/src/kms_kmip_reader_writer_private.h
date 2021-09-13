@@ -334,7 +334,7 @@ enum TAG_TYPE {
 
 typedef struct _kmip_writer_t kmip_writer_t;
 
-kmip_writer_t * kmip_writer_new ();
+kmip_writer_t * kmip_writer_new (void);
 
 void kmip_writer_destroy (kmip_writer_t *writer);
 
@@ -414,9 +414,6 @@ kmip_reader_read_u32 (kmip_reader_t *reader, uint32_t *value);
 
 bool
 kmip_reader_read_u64 (kmip_reader_t *reader, uint64_t *value);
-
-bool
-kmip_reader_read_bytes (kmip_reader_t *reader, uint8_t **ptr, size_t length);
 
 bool
 kmip_reader_read_tag (kmip_reader_t *reader, enum TAG_TYPE *tag);
