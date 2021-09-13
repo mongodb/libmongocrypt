@@ -19,6 +19,8 @@
 #ifndef KMS_ENDIAN_PRIVATE_H
 #define KMS_ENDIAN_PRIVATE_H
 
+#include <string.h>
+
 #include "kms_message/kms_message_defines.h"
 
 /* Define a fallback for __has_builtin for compatibility with non-clang compilers. */
@@ -171,7 +173,7 @@ __kms_uint64_swap_slow (uint64_t v) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * __KMS_double_swap_slow --
+ * __kms_double_swap_slow --
  *
  *       Fallback endianness conversion for double floating point.
  *
