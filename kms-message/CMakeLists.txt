@@ -237,6 +237,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       test_kms_request
       ${KMS_MESSAGE_SOURCES}
       test/test_kms_request.c
+      test/test_kmip_reader_writer.c
    )
    target_include_directories(test_kms_request PRIVATE  ${PROJECT_SOURCE_DIR})
    target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})
