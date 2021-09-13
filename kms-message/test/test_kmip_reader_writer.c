@@ -159,7 +159,7 @@ kms_kmip_reader_test (void)
    uint8_t *data;
    size_t datalen;
    kmip_reader_t *reader;
-   uint32_t tag;
+   enum TAG_TYPE tag;
    enum ITEM_TYPE type;
    uint32_t length;
    int32_t i32;

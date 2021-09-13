@@ -428,7 +428,7 @@ kmip_reader_read_string (kmip_reader_t *reader, uint8_t **ptr, size_t length)
 
 bool
 kmip_reader_find (kmip_reader_t *reader,
-                  size_t search_tag,
+                  enum TAG_TYPE search_tag,
                   enum ITEM_TYPE type,
                   size_t *pos,
                   size_t *length)
@@ -436,7 +436,7 @@ kmip_reader_find (kmip_reader_t *reader,
    reader->pos = 0;
 
    while (kmip_reader_has_data (reader)) {
-      uint32_t read_tag;
+      enum TAG_TYPE read_tag;
       FIND_CHECK_AND_RET (kmip_reader_read_tag (reader, &read_tag));
 
       enum ITEM_TYPE read_type;

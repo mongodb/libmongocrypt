@@ -442,7 +442,7 @@ kmip_reader_read_string (kmip_reader_t *reader, uint8_t **ptr, size_t length);
 /* Note: does not descend structures. */
 bool
 kmip_reader_find (kmip_reader_t *reader,
-                  size_t search_tag,
+                  enum TAG_TYPE search_tag,
                   enum ITEM_TYPE type,
                   size_t *pos,
                   size_t *length);
