@@ -25,6 +25,15 @@
 
 #define MAX_POSITIONS 10
 
+/* KMIP encodes signed integers with two's complement.
+ * Parsing functions read Integer / LongInteger as int32_t / int64_t by
+ * reinterpreting byte representation.
+ * Ensure that platform represents integers in two's complement.
+ * See: https://stackoverflow.com/a/64843863/774658 */
+#if (-1 & 3) != 3
+#error Error: Two's complement integer representation is required.
+#endif
+
 struct _kmip_writer_t {
    kms_request_str_t *buffer;
 

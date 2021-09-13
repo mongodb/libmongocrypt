@@ -133,7 +133,7 @@ enum TAG_TYPE {
    TAG_OpaqueDataValue = 0x42005A,
    TAG_OpaqueObject = 0x42005B,
    TAG_Operation = 0x42005C,
-   TAG_OperationPolicyName = 0x42005D, /* deprecated */,
+   TAG_OperationPolicyName = 0x42005D, /* deprecated */
    TAG_P = 0x42005E,
    TAG_PaddingMethod = 0x42005F,
    TAG_PrimeExponentP = 0x420060,

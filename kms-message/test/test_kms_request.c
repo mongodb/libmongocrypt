@@ -1524,6 +1524,46 @@ static void kms_kmip_reader_test (void) {
    free (data);
 }
 
+static void kms_kmip_reader_negative_int_test (void) {
+   uint8_t *data;
+   size_t datalen;
+   kmip_reader_t *reader;
+   uint32_t tag;
+   uint8_t type;
+   uint32_t length;
+   int32_t i32;
+
+   /* Test reading the integer -1. */
+   data = kms_kmip_reader_test_new_data ("42 00 20 | 02 | 00 00 00 04 | FF FF FF FF 00 00 00 00", &datalen);
+   reader = kmip_reader_new (data, datalen);
+   ASSERT (kmip_reader_read_tag (reader, &tag));
+   ASSERT (tag == TAG_CompromiseDate);
+   ASSERT (kmip_reader_read_type (reader, &type));
+   ASSERT (type == ITEM_TYPE_Integer);
+   ASSERT (kmip_reader_read_length (reader, &length));
+   ASSERT (length == 4);
+   ASSERT (kmip_reader_read_integer (reader, &i32));
+   ASSERT (i32 == -1);
+   ASSERT (!kmip_reader_has_data (reader));
+   kmip_reader_destroy (reader);
+   free (data);
+
+   /* Test reading the integer INT32_MIN (-2^31). */
+   data = kms_kmip_reader_test_new_data ("42 00 20 | 02 | 00 00 00 04 | 80 00 00 00 00 00 00 00", &datalen);
+   reader = kmip_reader_new (data, datalen);
+   ASSERT (kmip_reader_read_tag (reader, &tag));
+   ASSERT (tag == TAG_CompromiseDate);
+   ASSERT (kmip_reader_read_type (reader, &type));
+   ASSERT (type == ITEM_TYPE_Integer);
+   ASSERT (kmip_reader_read_length (reader, &length));
+   ASSERT (length == 4);
+   ASSERT (kmip_reader_read_integer (reader, &i32));
+   ASSERT (i32 == INT32_MIN);
+   ASSERT (!kmip_reader_has_data (reader));
+   kmip_reader_destroy (reader);
+   free (data);
+}
+
 #define RUN_TEST(_func)                                          \
    do {                                                          \
       if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
@@ -1580,6 +1620,7 @@ main (int argc, char *argv[])
 
    RUN_TEST (kms_kmip_writer_test);
    RUN_TEST (kms_kmip_reader_test);
+   RUN_TEST (kms_kmip_reader_negative_int_test);
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
