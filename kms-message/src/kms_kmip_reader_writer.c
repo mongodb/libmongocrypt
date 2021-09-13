@@ -31,7 +31,7 @@
  * Ensure that platform represents integers in two's complement.
  * See: https://stackoverflow.com/a/64843863/774658 */
 #if (-1 & 3) != 3
-#error Error: Two's complement integer representation is required.
+#error Error: Twos complement integer representation is required.
 #endif
 
 struct _kmip_writer_t {
