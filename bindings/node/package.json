@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "index.js",
   "types": "index.d.ts",
@@ -28,8 +28,8 @@
     "prebuild": "prebuild  --strip --verbose --tag-prefix node-v --all",
     "prebuild-legacy": "prebuild  --strip --verbose --tag-prefix node-v --runtime node --target 4.0.0"
   },
-  "author": { 
-    "name": "The MongoDB NodeJS Team", 
+  "author": {
+    "name": "The MongoDB NodeJS Team",
     "email": "dbx-node@mongodb.com"
   },
   "bugs": {
