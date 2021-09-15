@@ -1,106 +1,68 @@
 #include "mongocrypt.h"
+#include <cassert>
 
-namespace Nan {
-void ThrowTypeError(std::string error) {
-    Nan::ThrowTypeError(error.c_str());
-}
-}  // namespace Nan
+namespace node_mongocrypt {
+
+using namespace Napi;
 
 // anonymous namepace for helpers
 namespace {
+struct InstanceData {
+    Reference<Function> MongoCryptContextCtor;
+    Reference<Function> MongoCryptKMSRequestCtor;
+};
+
 struct MongoCryptStatusDeleter {
     void operator()(mongocrypt_status_t* status) {
         mongocrypt_status_destroy(status);
     }
 };
 
-v8::Local<v8::Object> ExtractStatus(mongocrypt_status_t* status) {
-    Nan::EscapableHandleScope scope;
-    v8::Local<v8::Object> result = Nan::New<v8::Object>();
-    Nan::Set(result, Nan::New("type").ToLocalChecked(),
-                Nan::New<v8::Number>(mongocrypt_status_type(status)));
-    Nan::Set(result, Nan::New("code").ToLocalChecked(),
-                Nan::New<v8::Number>(mongocrypt_status_code(status)));
-
-    const char* message = mongocrypt_status_message(status, NULL);
-    if (message != NULL) {
-        Nan::Set(result, Nan::New("message").ToLocalChecked(), Nan::New(message).ToLocalChecked());
+Object ExtractStatus(Env env, mongocrypt_status_t* status) {
+    Object result = Object::New(env);
+    result["type"] = Number::New(env, mongocrypt_status_type(status));
+    result["code"] = Number::New(env, mongocrypt_status_code(status));
+    const char* message = mongocrypt_status_message(status, nullptr);
+    if (message != nullptr) {
+        result["message"] = String::New(env, message);
     }
 
-    return scope.Escape(result);
+    return result;
 }
 
-std::string StringFromBinary(mongocrypt_binary_t* binary) {
+std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter>
+BufferToBinary(Uint8Array node_buffer) {
+    uint8_t* buffer = node_buffer.Data();
+    size_t buffer_len = node_buffer.ByteLength();
+    return std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter>(
+        mongocrypt_binary_new_from_data(buffer, buffer_len));
+}
+
+Uint8Array BufferFromBinary(Env env, mongocrypt_binary_t* binary) {
     const uint8_t* data = mongocrypt_binary_data(binary);
     size_t len = mongocrypt_binary_len(binary);
-    return std::string(data, data + len);
+    return Buffer<uint8_t>::Copy(env, data, len);
 }
 
-mongocrypt_binary_t* BufferToBinary(v8::Local<v8::Object> node_buffer) {
-    uint8_t* buffer = (uint8_t*)node::Buffer::Data(node_buffer);
-    size_t buffer_len = node::Buffer::Length(node_buffer);
-    return mongocrypt_binary_new_from_data(buffer, buffer_len);
-}
-
-v8::Local<v8::Object> BufferFromBinary(mongocrypt_binary_t* binary) {
-    Nan::EscapableHandleScope scope;
-    const uint8_t* data = mongocrypt_binary_data(binary);
+Uint8Array BufferWithLengthOf(Env env, mongocrypt_binary_t* binary) {
     size_t len = mongocrypt_binary_len(binary);
-    v8::Local<v8::Object> buffer = Nan::CopyBuffer((char*)data, len).ToLocalChecked();
-    return scope.Escape(buffer);
+    return Buffer<uint8_t>::New(env, len);
 }
 
-v8::Local<v8::Object> BufferWithLengthOf(mongocrypt_binary_t* binary) {
-    Nan::EscapableHandleScope scope;
-    size_t len = mongocrypt_binary_len(binary);
-    v8::Local<v8::Object> buffer = Nan::NewBuffer(len).ToLocalChecked();
-    return scope.Escape(buffer);
+void CopyBufferData(mongocrypt_binary_t* out, Uint8Array buffer, size_t count) {
+    assert(count <= mongocrypt_binary_len(out));
+    assert(count <= buffer.ByteLength());
+    memcpy(mongocrypt_binary_data(out), buffer.Data(), count);
 }
 
-void CopyBufferData(mongocrypt_binary_t* out, v8::Local<v8::Object> buffer, size_t count) {
-    memcpy(mongocrypt_binary_data(out), node::Buffer::Data(buffer), count);
-}
-
-void CopyBufferData(mongocrypt_binary_t* out, v8::Local<v8::Object> buffer) {
+void CopyBufferData(mongocrypt_binary_t* out, Uint8Array buffer) {
     CopyBufferData(out, buffer, mongocrypt_binary_len(out));
-}
-
-NAN_INLINE bool BooleanOptionValue(v8::Local<v8::Object> options,
-                                   const char* _key,
-                                   bool def = false) {
-    Nan::HandleScope scope;
-    v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
-    if (options.IsEmpty() || !Nan::Has(options, key).FromMaybe(false)) {
-        return def;
-    }
-
-    v8::Local<v8::Value> value = Nan::Get(options, key).ToLocalChecked();
-    if (!value->IsBoolean()) {
-        return def;
-    }
-
-    return Nan::To<bool>(value).FromMaybe(def);
-}
-
-NAN_INLINE std::string StringOptionValue(v8::Local<v8::Object> options, const char* _key) {
-    Nan::HandleScope scope;
-    v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
-    if (options.IsEmpty() || !Nan::Has(options, key).FromMaybe(false)) {
-        return std::string();
-    }
-
-    v8::Local<v8::Value> value = Nan::Get(options, key).ToLocalChecked();
-    if (!value->IsString()) {
-        return std::string();
-    }
-
-    return std::string(*(Nan::Utf8String(value)));
 }
 
 std::string errorStringFromStatus(mongocrypt_t* crypt) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_status(crypt, status.get());
-    const char* errorMessage = mongocrypt_status_message(status.get(), NULL);
+    const char* errorMessage = mongocrypt_status_message(status.get(), nullptr);
     if (!errorMessage) {
         return "Operation failed";
     }
@@ -111,7 +73,7 @@ std::string errorStringFromStatus(mongocrypt_t* crypt) {
 std::string errorStringFromStatus(mongocrypt_ctx_t* context) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_ctx_status(context, status.get());
-    const char* errorMessage = mongocrypt_status_message(status.get(), NULL);
+    const char* errorMessage = mongocrypt_status_message(status.get(), nullptr);
     if (!errorMessage) {
         return "Operation failed";
     }
@@ -121,25 +83,18 @@ std::string errorStringFromStatus(mongocrypt_ctx_t* context) {
 
 }  // anonymous namespace
 
-NAN_MODULE_INIT(MongoCrypt::Init) {
-    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
-    tpl->SetClassName(Nan::New("MongoCrypt").ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-    Nan::SetPrototypeMethod(tpl, "makeEncryptionContext", MakeEncryptionContext);
-    Nan::SetPrototypeMethod(tpl, "makeExplicitEncryptionContext", MakeExplicitEncryptionContext);
-    Nan::SetPrototypeMethod(tpl, "makeDecryptionContext", MakeDecryptionContext);
-    Nan::SetPrototypeMethod(tpl, "makeExplicitDecryptionContext", MakeExplicitDecryptionContext);
-    Nan::SetPrototypeMethod(tpl, "makeDataKeyContext", MakeDataKeyContext);
-
-    v8::Local<v8::ObjectTemplate> itpl = tpl->InstanceTemplate();
-    itpl->SetInternalFieldCount(1);
-
-    Nan::SetAccessor(itpl, Nan::New("status").ToLocalChecked(), Status);
-
-    constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
-    Nan::Set(
-        target, Nan::New("MongoCrypt").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+Function MongoCrypt::Init(Napi::Env env) {
+  return
+      DefineClass(env,
+                  "MongoCrypt",
+                  {
+                    InstanceMethod("makeEncryptionContext", &MongoCrypt::MakeEncryptionContext),
+                    InstanceMethod("makeExplicitEncryptionContext", &MongoCrypt::MakeExplicitEncryptionContext),
+                    InstanceMethod("makeDecryptionContext", &MongoCrypt::MakeDecryptionContext),
+                    InstanceMethod("makeExplicitDecryptionContext", &MongoCrypt::MakeExplicitDecryptionContext),
+                    InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
+                    InstanceAccessor("status", &MongoCrypt::Status, nullptr)
+                  });
 }
 
 void MongoCrypt::logHandler(mongocrypt_log_level_t level,
@@ -152,29 +107,35 @@ void MongoCrypt::logHandler(mongocrypt_log_level_t level,
         return;
     }
 
-    if (!mongoCrypt->_logger) {
+    Napi::Env env = mongoCrypt->Env();
+    HandleScope scope(env);
+    Function logger = mongoCrypt->GetCallback("logger");
+
+    if (logger.IsEmpty()) {
         fprintf(stderr, "No logger set, but log handler registered\n");
         return;
     }
 
-    Nan::HandleScope scope;
-    v8::Local<v8::Value> argv[] = {Nan::New(level), Nan::New(message).ToLocalChecked()};
-    Nan::Call(*mongoCrypt->_logger.get(), Nan::GetCurrentContext()->Global(), 2, argv);
+    try {
+        logger.Call(std::initializer_list<napi_value>
+            { Number::New(env, level), String::New(env, message, message_len) });
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "Uncaught exception in logger callback: %s\n", ex.what());
+    } catch (...) {
+        fprintf(stderr, "Uncaught exception in logger callback\n");
+    }
 }
 
 
-static void MaybeSetCryptoHookErrorStatus(v8::Local<v8::Value> result, mongocrypt_status_t *status) {
-    if (!result->IsObject()) {
+static void MaybeSetCryptoHookErrorStatus(Value result, mongocrypt_status_t *status) {
+    if (!result.IsObject()) {
         return;
     }
-    auto kErrorMessageKey = Nan::New("message").ToLocalChecked();
-    auto hookError = Nan::To<v8::Object>(result).ToLocalChecked();
-    if (!Nan::Has(hookError, kErrorMessageKey).FromMaybe(false)) {
+    Object hookError = result.As<Object>();
+    if (!hookError.Has("message")) {
         return;
     }
-    v8::Local<v8::Value> emptyString = Nan::New("").ToLocalChecked();
-    auto errorMessageValue = Nan::To<v8::String>(Nan::Get(hookError, kErrorMessageKey).ToLocalChecked()).FromMaybe(emptyString);
-    std::string errorMessage(*Nan::Utf8String(errorMessageValue));
+    std::string errorMessage = hookError.Get("message").ToString();
     mongocrypt_status_set(
         status,
         MONGOCRYPT_STATUS_ERROR_CLIENT,
@@ -184,75 +145,84 @@ static void MaybeSetCryptoHookErrorStatus(v8::Local<v8::Value> result, mongocryp
     );
 }
 
-MongoCrypt::MongoCrypt(mongocrypt_t* mongo_crypt, Nan::Callback* logger, CryptoHooks* hooks)
-    : _mongo_crypt(mongo_crypt), _logger(logger), _cryptoHooks(hooks) {}
-
-
-bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoHooks) {
+bool MongoCrypt::setupCryptoHooks() {
     auto aes_256_cbc_encrypt =
         [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-            Nan::HandleScope scope;
-            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
-            Nan::Callback* hook = cryptoHooks->aes256CbcEncryptHook.get();
+            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+            Napi::Env env = mongoCrypt->Env();
+            HandleScope scope(env);
+            Function hook = mongoCrypt->GetCallback("aes256CbcEncryptHook");
 
-            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
-            v8::Local<v8::Object> ivBuffer = BufferFromBinary(iv);
-            v8::Local<v8::Object> inBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outBuffer = BufferWithLengthOf(out);
+            Uint8Array keyBuffer = BufferFromBinary(env, key);
+            Uint8Array ivBuffer = BufferFromBinary(env, iv);
+            Uint8Array inBuffer = BufferFromBinary(env, in);
+            Uint8Array outBuffer = BufferWithLengthOf(env, out);
 
-            v8::Local<v8::Value> argv[] = {keyBuffer, ivBuffer, inBuffer, outBuffer};
-            v8::Local<v8::Value> defaultValue = Nan::False();
-            v8::Local<v8::Value> result =
-                Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 4, argv).FromMaybe(defaultValue);
+            Napi::Value result;
+            try {
+                result = hook.Call(std::initializer_list<napi_value>
+                    { keyBuffer, ivBuffer, inBuffer, outBuffer });
+            } catch (...) {
+                return false;
+            }
 
-            if (!result->IsNumber()) {
+            if (!result.IsNumber()) {
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
 
-            *bytes_written = Nan::To<uint32_t>(result).ToChecked();
+            *bytes_written = result.ToNumber().Uint32Value();
             CopyBufferData(out, outBuffer, *bytes_written);
             return true;
         };
 
     auto aes_256_cbc_decrypt =
         [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-            Nan::HandleScope scope;
-            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
-            Nan::Callback* hook = cryptoHooks->aes256CbcDecryptHook.get();
+            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+            Napi::Env env = mongoCrypt->Env();
+            HandleScope scope(env);
+            Function hook = mongoCrypt->GetCallback("aes256CbcDecryptHook");
 
-            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
-            v8::Local<v8::Object> ivBuffer = BufferFromBinary(iv);
-            v8::Local<v8::Object> inBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outBuffer = BufferWithLengthOf(out);
+            Uint8Array keyBuffer = BufferFromBinary(env, key);
+            Uint8Array ivBuffer = BufferFromBinary(env, iv);
+            Uint8Array inBuffer = BufferFromBinary(env, in);
+            Uint8Array outBuffer = BufferWithLengthOf(env, out);
 
-            v8::Local<v8::Value> argv[] = {keyBuffer, ivBuffer, inBuffer, outBuffer};
-            v8::Local<v8::Value> defaultValue = Nan::False();
-            v8::Local<v8::Value> result =
-                Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 4, argv).FromMaybe(defaultValue);
+            Napi::Value result;
+            try {
+                result = hook.Call(std::initializer_list<napi_value>
+                    { keyBuffer, ivBuffer, inBuffer, outBuffer });
+            } catch (...) {
+                return false;
+            }
 
-            if (!result->IsNumber()) {
+            if (!result.IsNumber()) {
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
 
-            *bytes_written = Nan::To<uint32_t>(result).ToChecked();
+            *bytes_written = result.ToNumber().Uint32Value();
             CopyBufferData(out, outBuffer, *bytes_written);
             return true;
         };
 
     auto random =
-        [](void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) -> bool{
-            Nan::HandleScope scope;
-            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
-            Nan::Callback* hook = cryptoHooks->randomHook.get();
+        [](void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) -> bool {
+            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+            Napi::Env env = mongoCrypt->Env();
+            HandleScope scope(env);
+            Function hook = mongoCrypt->GetCallback("randomHook");
 
-            v8::Local<v8::Object> outBuffer = BufferWithLengthOf(out);
-            v8::Local<v8::Value> argv[] = {outBuffer, Nan::New(count)};
-            v8::Local<v8::Value> defaultValue = Nan::False();
-            v8::Local<v8::Value> result = Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 2, argv).FromMaybe(defaultValue);
+            Uint8Array outBuffer = BufferWithLengthOf(env, out);
+            Napi::Value result;
+            try {
+                result = hook.Call(std::initializer_list<napi_value>
+                    { outBuffer, Number::New(env, count) });
+            } catch (...) {
+                return false;
+            }
 
-            if (!result->IsNumber()) {
+            if (!result.IsNumber()) {
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
@@ -263,441 +233,348 @@ bool MongoCrypt::setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoH
 
     auto hmac_sha_512 =
         [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            Nan::HandleScope scope;
-            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
-            Nan::Callback* hook = cryptoHooks->hmacSha512Hook.get();
+            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+            Napi::Env env = mongoCrypt->Env();
+            HandleScope scope(env);
+            Function hook = mongoCrypt->GetCallback("hmacSha512Hook");
 
-            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
-            v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
+            Uint8Array keyBuffer = BufferFromBinary(env, key);
+            Uint8Array inputBuffer = BufferFromBinary(env, in);
+            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
-            v8::Local<v8::Value> defaultValue = Nan::False();
-            v8::Local<v8::Value> result = Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 3, argv).FromMaybe(defaultValue);
-            if (!result->IsNumber()) {
+            Napi::Value result;
+            try {
+                result = hook.Call(std::initializer_list<napi_value>
+                    { keyBuffer, inputBuffer, outputBuffer });
+            } catch (...) {
+                return false;
+            }
+
+            if (!result.IsNumber()) {
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+
             CopyBufferData(out, outputBuffer);
             return true;
         };
 
     auto hmac_sha_256 =
         [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            Nan::HandleScope scope;
-            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
-            Nan::Callback* hook = cryptoHooks->hmacSha256Hook.get();
+            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+            Napi::Env env = mongoCrypt->Env();
+            HandleScope scope(env);
+            Function hook = mongoCrypt->GetCallback("hmacSha256Hook");
 
-            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
-            v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
+            Uint8Array keyBuffer = BufferFromBinary(env, key);
+            Uint8Array inputBuffer = BufferFromBinary(env, in);
+            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
-            v8::Local<v8::Value> defaultValue = Nan::False();
-            v8::Local<v8::Value> result = Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 3, argv).FromMaybe(defaultValue);
-            if (!result->IsNumber()) {
+            Napi::Value result;
+            try {
+                result = hook.Call(std::initializer_list<napi_value>
+                    { keyBuffer, inputBuffer, outputBuffer });
+            } catch (...) {
+                return false;
+            }
+
+            if (!result.IsNumber()) {
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+
             CopyBufferData(out, outputBuffer);
             return true;
         };
 
     auto sha_256 =
         [](void *ctx, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            Nan::HandleScope scope;
-            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
-            Nan::Callback* hook = cryptoHooks->sha256Hook.get();
+            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+            Napi::Env env = mongoCrypt->Env();
+            HandleScope scope(env);
+            Function hook = mongoCrypt->GetCallback("sha256Hook");
 
-            v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
-            v8::Local<v8::Value> argv[] = {inputBuffer, outputBuffer};
+            Uint8Array inputBuffer = BufferFromBinary(env, in);
+            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            v8::Local<v8::Value> defaultValue = Nan::False();
-            v8::Local<v8::Value> result = Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 2, argv).FromMaybe(defaultValue);
+            Napi::Value result;
+            try {
+                result = hook.Call(std::initializer_list<napi_value>
+                    { inputBuffer, outputBuffer });
+            } catch (...) {
+                return false;
+            }
 
-            if (!result->IsNumber()) {
+            if (!result.IsNumber()) {
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+
             CopyBufferData(out, outputBuffer);
             return true;
         };
 
     auto sign_rsa_sha256 =
         [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            Nan::HandleScope scope;
-            CryptoHooks* cryptoHooks = static_cast<CryptoHooks*>(ctx);
-            Nan::Callback* hook = cryptoHooks->signRsaSha256Hook.get();
+            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+            Napi::Env env = mongoCrypt->Env();
+            HandleScope scope(env);
+            Function hook = mongoCrypt->GetCallback("signRsaSha256Hook");
 
-            v8::Local<v8::Object> keyBuffer = BufferFromBinary(key);
-            v8::Local<v8::Object> inputBuffer = BufferFromBinary(in);
-            v8::Local<v8::Object> outputBuffer = BufferWithLengthOf(out);
+            Uint8Array keyBuffer = BufferFromBinary(env, key);
+            Uint8Array inputBuffer = BufferFromBinary(env, in);
+            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            v8::Local<v8::Value> argv[] = {keyBuffer, inputBuffer, outputBuffer};
-            v8::Local<v8::Value> defaultValue = Nan::False();
-            v8::Local<v8::Value> result = Nan::Call(*hook, Nan::GetCurrentContext()->Global(), 3, argv).FromMaybe(defaultValue);
-            if (!result->IsNumber()) {
+            Napi::Value result;
+            try {
+                result = hook.Call(std::initializer_list<napi_value>
+                    { keyBuffer, inputBuffer, outputBuffer });
+            } catch (...) {
+                return false;
+            }
+
+            if (!result.IsNumber()) {
                 MaybeSetCryptoHookErrorStatus(result, status);
                 return false;
             }
+
             CopyBufferData(out, outputBuffer);
             return true;
         };
 
     // Added after `mongocrypt_setopt_crypto_hooks`, they should be treated as the same during configuration
-    if (!mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(mongoCrypt, sign_rsa_sha256, cryptoHooks)) {
-        Nan::ThrowError("unable to configure crypto hooks");
+    if (!mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(_mongo_crypt.get(), sign_rsa_sha256, this)) {
+        return false;
     }
 
-    return mongocrypt_setopt_crypto_hooks(mongoCrypt,
+    return mongocrypt_setopt_crypto_hooks(_mongo_crypt.get(),
         aes_256_cbc_encrypt,
         aes_256_cbc_decrypt,
         random,
         hmac_sha_512,
         hmac_sha_256,
         sha_256,
-        cryptoHooks
+        this
     );
 }
 
-NAN_METHOD(MongoCrypt::New) {
-    Nan::HandleScope scope;
-
-    if (info.IsConstructCall()) {
-        if (info.Length() >= 1 && !info[0]->IsObject()) {
-            Nan::ThrowTypeError("First parameter must be an object");
-            return;
-        }
-
-        Nan::Callback* logger = nullptr;
-        CryptoHooks *cryptoHooks = nullptr;
-        std::unique_ptr<mongocrypt_t, MongoCryptDeleter> crypt(mongocrypt_new());
-
-        if (info.Length() >= 1) {
-            v8::Local<v8::Object> options = Nan::To<v8::Object>(info[0]).ToLocalChecked();
-            v8::Local<v8::String> KMS_PROVIDERS_KEY = Nan::New("kmsProviders").ToLocalChecked();
-            v8::Local<v8::String> SCHEMA_MAP_KEY = Nan::New("schemaMap").ToLocalChecked();
-            v8::Local<v8::String> LOGGER_KEY = Nan::New("logger").ToLocalChecked();
-            v8::Local<v8::String> CRYPTO_CALLBACKS_KEY = Nan::New("cryptoCallbacks").ToLocalChecked();
-
-            v8::Local<v8::String> AES256_ENCRYPT_HOOK_KEY = Nan::New("aes256CbcEncryptHook").ToLocalChecked();
-            v8::Local<v8::String> AES256_DECRYPT_HOOK_KEY = Nan::New("aes256CbcDecryptHook").ToLocalChecked();
-            v8::Local<v8::String> RANDOM_HOOK_KEY = Nan::New("randomHook").ToLocalChecked();
-            v8::Local<v8::String> HMAC_SHA512_HOOK_KEY = Nan::New("hmacSha512Hook").ToLocalChecked();
-            v8::Local<v8::String> HMAC_SHA256_HOOK_KEY = Nan::New("hmacSha256Hook").ToLocalChecked();
-            v8::Local<v8::String> SHA256_HOOK_KEY = Nan::New("sha256Hook").ToLocalChecked();
-            v8::Local<v8::String> SIGN_RSASHA256_HOOK_KEY = Nan::New("signRsaSha256Hook").ToLocalChecked();
-
-            if (Nan::Has(options, KMS_PROVIDERS_KEY).FromMaybe(false)) {
-                v8::Local<v8::Object> kmsProvidersOptions =
-                    Nan::To<v8::Object>(Nan::Get(options, KMS_PROVIDERS_KEY).ToLocalChecked())
-                        .ToLocalChecked();
-
-                if (!node::Buffer::HasInstance(kmsProvidersOptions)) {
-                    Nan::ThrowTypeError("Option `kmsProviders` must be a Buffer");
-                    return;
-                }
-
-                std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kmsProvidersBinary(
-                    BufferToBinary(kmsProvidersOptions));
-                if (!mongocrypt_setopt_kms_providers(crypt.get(), kmsProvidersBinary.get())) {
-                    Nan::ThrowTypeError(errorStringFromStatus(crypt.get()));
-                    return;
-                }
-            }
-
-            if (Nan::Has(options, SCHEMA_MAP_KEY).FromMaybe(false)) {
-                v8::Local<v8::Object> schemaMapBuffer =
-                    Nan::To<v8::Object>(Nan::Get(options, SCHEMA_MAP_KEY).ToLocalChecked())
-                        .ToLocalChecked();
-
-                if (!node::Buffer::HasInstance(schemaMapBuffer)) {
-                    Nan::ThrowTypeError("Option `schemaMap` must be a Buffer");
-                    return;
-                }
-
-                std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> schemaMapBinary(
-                    BufferToBinary(schemaMapBuffer));
-                if (!mongocrypt_setopt_schema_map(crypt.get(), schemaMapBinary.get())) {
-                    Nan::ThrowTypeError(errorStringFromStatus(crypt.get()));
-                    return;
-                }
-            }
-
-            if (Nan::Has(options, LOGGER_KEY).FromMaybe(false)) {
-                logger = new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(options, LOGGER_KEY).ToLocalChecked())
-                        .ToLocalChecked());
-            }
-
-            if (Nan::Has(options, CRYPTO_CALLBACKS_KEY).FromMaybe(false)) {
-                v8::Local<v8::Object> cryptoCallbacks =
-                    Nan::To<v8::Object>(Nan::Get(options, CRYPTO_CALLBACKS_KEY).ToLocalChecked())
-                        .ToLocalChecked();
-
-                cryptoHooks = new CryptoHooks();
-                cryptoHooks->aes256CbcEncryptHook.reset(new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, AES256_ENCRYPT_HOOK_KEY).ToLocalChecked())
-                        .ToLocalChecked()));
-
-                cryptoHooks->aes256CbcDecryptHook.reset(new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, AES256_DECRYPT_HOOK_KEY).ToLocalChecked())
-                        .ToLocalChecked()));
-
-                cryptoHooks->randomHook.reset(new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, RANDOM_HOOK_KEY).ToLocalChecked())
-                        .ToLocalChecked()));
-
-                cryptoHooks->hmacSha512Hook.reset(new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, HMAC_SHA512_HOOK_KEY).ToLocalChecked())
-                        .ToLocalChecked()));
-
-                cryptoHooks->hmacSha256Hook.reset(new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, HMAC_SHA256_HOOK_KEY).ToLocalChecked())
-                        .ToLocalChecked()));
-
-                cryptoHooks->sha256Hook.reset(new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, SHA256_HOOK_KEY).ToLocalChecked())
-                        .ToLocalChecked()));
-
-                cryptoHooks->signRsaSha256Hook.reset(new Nan::Callback(
-                    Nan::To<v8::Function>(Nan::Get(cryptoCallbacks, SIGN_RSASHA256_HOOK_KEY).ToLocalChecked())
-                        .ToLocalChecked()));
-            }
-        }
-
-        MongoCrypt* class_instance = new MongoCrypt(crypt.release(), logger, cryptoHooks);
-        if (logger) {
-            if (!mongocrypt_setopt_log_handler(
-                    class_instance->_mongo_crypt.get(), MongoCrypt::logHandler, class_instance)) {
-                Nan::ThrowTypeError(errorStringFromStatus(class_instance->_mongo_crypt.get()));
-                return;
-            }
-        }
-
-        if (cryptoHooks) {
-            if (!setupCryptoHooks(class_instance->_mongo_crypt.get(), cryptoHooks)) {
-                Nan::ThrowError("unable to configure crypto hooks");
-                return;
-            }
-        }
-
-        // initialize afer all options are set, but after `MongoCrypt` instance is created so we can
-        // optionally pass the instance to the logging function.
-        if (!mongocrypt_init(class_instance->_mongo_crypt.get())) {
-            Nan::ThrowTypeError(errorStringFromStatus(class_instance->_mongo_crypt.get()));
-            return;
-        }
-
-        class_instance->Wrap(info.This());
-        return info.GetReturnValue().Set(info.This());
+MongoCrypt::MongoCrypt(const CallbackInfo& info)
+    : ObjectWrap(info), _mongo_crypt(mongocrypt_new()) {
+    if (info.Length() < 1 || !info[0].IsObject()) {
+        throw TypeError::New(Env(), "First parameter must be an object");
     }
 
-    const int argc = 1;
-    v8::Local<v8::Value> argv[argc] = {info[0]};
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(constructor());
-    info.GetReturnValue().Set(Nan::NewInstance(ctor, argc, argv).ToLocalChecked());
+    Object options = info[0].ToObject();
+
+    if (options.Has("kmsProviders")) {
+        Napi::Value kmsProvidersOptions = options["kmsProviders"];
+
+        if (!kmsProvidersOptions.IsBuffer()) {
+            throw TypeError::New(Env(), "Option `kmsProviders` must be a Buffer");
+        }
+
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kmsProvidersBinary(
+            BufferToBinary(kmsProvidersOptions.As<Uint8Array>()));
+        if (!mongocrypt_setopt_kms_providers(_mongo_crypt.get(), kmsProvidersBinary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
+        }
+    }
+
+    if (options.Has("schemaMap")) {
+        Napi::Value schemaMapBuffer = options["schemaMap"];
+
+        if (!schemaMapBuffer.IsBuffer()) {
+            throw TypeError::New(Env(), "Option `schemaMap` must be a Buffer");
+        }
+
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> schemaMapBinary(
+            BufferToBinary(schemaMapBuffer.As<Uint8Array>()));
+        if (!mongocrypt_setopt_schema_map(_mongo_crypt.get(), schemaMapBinary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
+        }
+    }
+
+    if (options.Has("logger")) {
+        SetCallback("logger", options["logger"]);
+        if (!mongocrypt_setopt_log_handler(
+                _mongo_crypt.get(), MongoCrypt::logHandler, this)) {
+            throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
+        }
+    }
+
+    if (options.Has("cryptoCallbacks")) {
+        Object cryptoCallbacks = options.Get("cryptoCallbacks").ToObject();
+
+        SetCallback("aes256CbcEncryptHook", cryptoCallbacks["aes256CbcEncryptHook"]);
+        SetCallback("aes256CbcDecryptHook", cryptoCallbacks["aes256CbcDecryptHook"]);
+        SetCallback("randomHook", cryptoCallbacks["randomHook"]);
+        SetCallback("hmacSha512Hook", cryptoCallbacks["hmacSha512Hook"]);
+        SetCallback("hmacSha256Hook", cryptoCallbacks["hmacSha256Hook"]);
+        SetCallback("sha256Hook", cryptoCallbacks["sha256Hook"]);
+        SetCallback("signRsaSha256Hook", cryptoCallbacks["signRsaSha256Hook"]);
+
+        if (!setupCryptoHooks()) {
+            throw Error::New(Env(), "unable to configure crypto hooks");
+        }
+    }
+
+    // initialize afer all options are set, but after `MongoCrypt` instance is created so we can
+    // optionally pass the instance to the logging function.
+    if (!mongocrypt_init(_mongo_crypt.get())) {
+        throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
+    }
 }
 
-NAN_GETTER(MongoCrypt::Status) {
-    Nan::HandleScope scope;
-    MongoCrypt* mc = Nan::ObjectWrap::Unwrap<MongoCrypt>(info.This());
+Value MongoCrypt::Status(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
-    mongocrypt_status(mc->_mongo_crypt.get(), status.get());
-    v8::Local<v8::Object> result = ExtractStatus(status.get());
-    info.GetReturnValue().Set(result);
+    mongocrypt_status(_mongo_crypt.get(), status.get());
+    return ExtractStatus(Env(), status.get());
 }
 
-NAN_METHOD(MongoCrypt::MakeEncryptionContext) {
-    Nan::HandleScope scope;
-    MongoCrypt* mc = Nan::ObjectWrap::Unwrap<MongoCrypt>(info.This());
-    std::string ns(*Nan::Utf8String(Nan::To<v8::String>(info[0]).FromMaybe(v8::Local<v8::String>())));
+Value MongoCrypt::MakeEncryptionContext(const CallbackInfo& info) {
+    std::string ns = info[0].ToString();
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(mc->_mongo_crypt.get()));
+        mongocrypt_ctx_new(_mongo_crypt.get()));
 
-    v8::Local<v8::Object> commandBuffer = Nan::To<v8::Object>(info[1]).ToLocalChecked();
-    if (!node::Buffer::HasInstance(commandBuffer)) {
-        Nan::ThrowTypeError("Parameter `command` must be a Buffer");
-        return;
+    Napi::Value commandBuffer = info[1];
+    if (!commandBuffer.IsBuffer()) {
+        throw TypeError::New(Env(), "Parameter `command` must be a Buffer");
     }
 
-
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(BufferToBinary(commandBuffer));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(BufferToBinary(commandBuffer.As<Uint8Array>()));
     if (!mongocrypt_ctx_encrypt_init(
             context.get(), ns.c_str(), ns.size(), binaryCommand.get())) {
-        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-        return;
+        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 
-    v8::Local<v8::Object> result = MongoCryptContext::NewInstance(context.release());
-    info.GetReturnValue().Set(result);
+    return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-NAN_METHOD(MongoCrypt::MakeExplicitEncryptionContext) {
-    Nan::HandleScope scope;
-    MongoCrypt* mc = Nan::ObjectWrap::Unwrap<MongoCrypt>(info.This());
+Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(mc->_mongo_crypt.get()));
+        mongocrypt_ctx_new(_mongo_crypt.get()));
 
-    v8::Local<v8::Object> valueBuffer = Nan::To<v8::Object>(info[0]).ToLocalChecked();
-    if (!node::Buffer::HasInstance(valueBuffer)) {
-        Nan::ThrowTypeError("Parameter `value` must be a Buffer");
-        return;
+    Napi::Value valueBuffer = info[0];
+    if (!valueBuffer.IsBuffer()) {
+        throw TypeError::New(Env(), "Parameter `value` must be a Buffer");
     }
 
     if (info.Length() > 1) {
-        v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
+        Object options = info[1].ToObject();
 
-        v8::Local<v8::String> KEY_ID_KEY = Nan::New("keyId").ToLocalChecked();
-        v8::Local<v8::String> ALGORITHM_KEY = Nan::New("algorithm").ToLocalChecked();
-        v8::Local<v8::String> KEY_ALT_NAME_KEY = Nan::New("keyAltName").ToLocalChecked();
+        if (options.Has("keyId")) {
+            Napi::Value keyId = options["keyId"];
 
-        if (Nan::Has(options, KEY_ID_KEY).FromMaybe(false)) {
-            if (!Nan::Get(options, KEY_ID_KEY).ToLocalChecked()->IsObject()) {
-                Nan::ThrowTypeError("`keyId` must be a Buffer");
-                return;
+            if (!keyId.IsBuffer()) {
+                throw TypeError::New(Env(), "`keyId` must be a Buffer");
             }
 
-            v8::Local<v8::Object> keyId =
-                Nan::To<v8::Object>(Nan::Get(options, KEY_ID_KEY).ToLocalChecked()).ToLocalChecked();
-            if (!node::Buffer::HasInstance(keyId)) {
-                Nan::ThrowTypeError("`keyId` must be a Buffer");
-                return;
-            }
-
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(keyId));
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(keyId.As<Uint8Array>()));
             if (!mongocrypt_ctx_setopt_key_id(context.get(), binary.get())) {
-                Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-                return;
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }
 
-        if (Nan::Has(options, KEY_ALT_NAME_KEY).FromMaybe(false)) {
-            v8::Local<v8::Value> keyAltName = Nan::Get(options, KEY_ALT_NAME_KEY).ToLocalChecked();
-            if (!keyAltName->IsObject()) {
-                Nan::ThrowTypeError("`keyAltName` must be a Buffer");
-                return;
+        if (options.Has("keyAltName")) {
+            Napi::Value keyAltName = options["keyAltName"];
+
+            if (!keyAltName.IsBuffer()) {
+                throw TypeError::New(Env(), "`keyAltName` must be a Buffer");
             }
 
-            v8::Local<v8::Object> keyAltNameObj = Nan::To<v8::Object>(keyAltName).ToLocalChecked();
-            if (!node::Buffer::HasInstance(keyAltNameObj)) {
-                Nan::ThrowTypeError("`keyAltName` must be a Buffer");
-                return;
-            }
-
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(keyAltNameObj));
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
+                BufferToBinary(keyAltName.As<Uint8Array>()));
             if (!mongocrypt_ctx_setopt_key_alt_name(context.get(), binary.get())) {
-                Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-                return;
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }
 
-        if (Nan::Has(options, ALGORITHM_KEY).FromMaybe(false)) {
-            std::string algorithm = StringOptionValue(options, "algorithm");
+        if (options.Has("algorithm")) {
+            std::string algorithm = options.Get("algorithm").ToString();
             if (!mongocrypt_ctx_setopt_algorithm(
                     context.get(), const_cast<char*>(algorithm.c_str()), algorithm.size())) {
 
-                Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-                return;
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(BufferToBinary(valueBuffer));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(BufferToBinary(valueBuffer.As<Uint8Array>()));
     if (!mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get())) {
-        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-        return;
+        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 
-    v8::Local<v8::Object> result = MongoCryptContext::NewInstance(context.release());
-    info.GetReturnValue().Set(result);
+    return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-NAN_METHOD(MongoCrypt::MakeDecryptionContext) {
-    if (!node::Buffer::HasInstance(info[0])) {
-        Nan::ThrowTypeError("First parameter must be a Buffer");
-        return;
+Value MongoCrypt::MakeDecryptionContext(const CallbackInfo& info) {
+    if (!info[0].IsBuffer()) {
+        throw TypeError::New(Env(), "First parameter must be a Buffer");
     }
 
-    MongoCrypt* mc = Nan::ObjectWrap::Unwrap<MongoCrypt>(info.This());
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-        BufferToBinary(Nan::To<v8::Object>(info[0]).ToLocalChecked()));
+        BufferToBinary(info[0].As<Uint8Array>()));
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(mc->_mongo_crypt.get()));
+        mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!mongocrypt_ctx_decrypt_init(context.get(), binary.get())) {
-        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-        return;
+        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 
-    v8::Local<v8::Object> result = MongoCryptContext::NewInstance(context.release());
-    info.GetReturnValue().Set(result);
+    return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-NAN_METHOD(MongoCrypt::MakeExplicitDecryptionContext) {
-    if (!node::Buffer::HasInstance(info[0])) {
-        Nan::ThrowTypeError("First parameter must be a Buffer");
-        return;
+Value MongoCrypt::MakeExplicitDecryptionContext(const CallbackInfo& info) {
+    if (!info[0].IsBuffer()) {
+        throw TypeError::New(Env(), "First parameter must be a Buffer");
     }
 
-    MongoCrypt* mc = Nan::ObjectWrap::Unwrap<MongoCrypt>(info.This());
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-        BufferToBinary(Nan::To<v8::Object>(info[0]).ToLocalChecked()));
+        BufferToBinary(info[0].As<Uint8Array>()));
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(mc->_mongo_crypt.get()));
+        mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!mongocrypt_ctx_explicit_decrypt_init(context.get(), binary.get())) {
-        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-        return;
+        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 
-    v8::Local<v8::Object> result = MongoCryptContext::NewInstance(context.release());
-    info.GetReturnValue().Set(result);
+    return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-NAN_METHOD(MongoCrypt::MakeDataKeyContext) {
-    MongoCrypt* mc = Nan::ObjectWrap::Unwrap<MongoCrypt>(info.This());
-    v8::Local<v8::Object> optionsBuffer = Nan::To<v8::Object>(info[0]).ToLocalChecked();
-    if (!node::Buffer::HasInstance(optionsBuffer)) {
-        Nan::ThrowTypeError("Parameter `options` must be a Buffer");
-        return;
+Value MongoCrypt::MakeDataKeyContext(const CallbackInfo& info) {
+    Napi::Value optionsBuffer = info[0];
+    if (!optionsBuffer.IsBuffer()) {
+        throw TypeError::New(Env(), "Parameter `options` must be a Buffer");
     }
 
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(mc->_mongo_crypt.get()));
+        mongocrypt_ctx_new(_mongo_crypt.get()));
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-        BufferToBinary(optionsBuffer));
+        BufferToBinary(optionsBuffer.As<Uint8Array>()));
 
     if (!mongocrypt_ctx_setopt_key_encryption_key(context.get(), binary.get())) {
-        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-        return;
+        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 
-    v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
-    auto ALT_NAMES_KEY = Nan::New("keyAltNames").ToLocalChecked();
-    if (Nan::Has(options, ALT_NAMES_KEY).FromMaybe(false)) {
-        v8::Local<v8::Value> keyAltNames = Nan::Get(options, ALT_NAMES_KEY).ToLocalChecked();
+    Object options = info[1].ToObject();
+    if (options.Has("keyAltNames")) {
+        Napi::Value keyAltNames = options["keyAltNames"];
 
-        if (keyAltNames->IsArray()) {
-            v8::Local<v8::Array> keyAltNamesArray = v8::Local<v8::Array>::Cast(keyAltNames);
-            uint32_t keyAltNamesLength = keyAltNamesArray->Length();
+        if (keyAltNames.IsArray()) {
+            Array keyAltNamesArray = keyAltNames.As<Array>();
+            uint32_t keyAltNamesLength = keyAltNamesArray.Length();
             for (uint32_t i = 0; i < keyAltNamesLength; i += 1) {
-                if (Nan::Has(keyAltNamesArray, i).FromMaybe(false)) {
-                    v8::Local<v8::Object> keyAltName =
-                        Nan::To<v8::Object>(Nan::Get(keyAltNamesArray, i).ToLocalChecked())
-                            .ToLocalChecked();
-                    if (!node::Buffer::HasInstance(keyAltName)) {
+                if (keyAltNamesArray.Has(i)) {
+                    Napi::Value keyAltName = keyAltNamesArray[i];
+                    if (!keyAltName.IsBuffer()) {
                         // We should never get here
-                        Nan::ThrowTypeError("Serialized keyAltName must be a Buffer");
-                        return;
+                        throw TypeError::New(Env(), "Serialized keyAltName must be a Buffer");
                     }
 
                     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-                        BufferToBinary(keyAltName));
+                        BufferToBinary(keyAltName.As<Uint8Array>()));
                     if (!mongocrypt_ctx_setopt_key_alt_name(context.get(), binary.get())) {
-                        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-                        return;
+                        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
                     }
                 }
             }
@@ -705,214 +582,199 @@ NAN_METHOD(MongoCrypt::MakeDataKeyContext) {
     }
 
     if (!mongocrypt_ctx_datakey_init(context.get())) {
-        Nan::ThrowTypeError(errorStringFromStatus(context.get()));
-        return;
+        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 
-    v8::Local<v8::Object> result = MongoCryptContext::NewInstance(context.release());
-    info.GetReturnValue().Set(result);
+    return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-NAN_MODULE_INIT(MongoCryptContext::Init) {
-    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>();
-    tpl->SetClassName(Nan::New("MongoCryptContext").ToLocalChecked());
-    Nan::SetPrototypeMethod(tpl, "nextMongoOperation", NextMongoOperation);
-    Nan::SetPrototypeMethod(tpl, "addMongoOperationResponse", AddMongoOperationResponse);
-    Nan::SetPrototypeMethod(tpl, "finishMongoOperation", FinishMongoOperation);
-    Nan::SetPrototypeMethod(tpl, "nextKMSRequest", NextKMSRequest);
-    Nan::SetPrototypeMethod(tpl, "finishKMSRequests", FinishKMSRequests);
-    Nan::SetPrototypeMethod(tpl, "finalize", Finalize);
-
-    v8::Local<v8::ObjectTemplate> itpl = tpl->InstanceTemplate();
-    itpl->SetInternalFieldCount(1);
-
-    Nan::SetAccessor(itpl, Nan::New("status").ToLocalChecked(), Status);
-    Nan::SetAccessor(itpl, Nan::New("state").ToLocalChecked(), State);
-
-    constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("MongoCryptContext").ToLocalChecked(),
-             Nan::GetFunction(tpl).ToLocalChecked());
+// Store callbacks as nested properties on the MongoCrypt binding object
+// itself, and use these helpers to do so. Storing them as JS engine
+// References is a big memory leak footgun.
+Function MongoCrypt::GetCallback(const char* name) {
+    Napi::Value storage = Value().Get("__callbackStorage");
+    if (!storage.IsObject()) {
+        throw Error::New(Env(), "Cannot get callbacks becauses none were registered");
+    }
+    Napi::Value entry = storage.As<Object>().Get(name);
+    if (!entry.IsFunction()) {
+        throw Error::New(Env(), std::string("Trying to look up unknown callback ") + name);
+    }
+    return entry.As<Function>();
 }
 
-v8::Local<v8::Object> MongoCryptContext::NewInstance(mongocrypt_ctx_t* context) {
-    Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(constructor());
-    v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
-    MongoCryptContext* class_instance = new MongoCryptContext(context);
-    class_instance->Wrap(object);
-    return scope.Escape(object);
+void MongoCrypt::SetCallback(const char* name, Napi::Value fn) {
+    if (!fn.IsFunction()) {
+        throw Error::New(Env(), std::string("Storing non-function as callback ") + name);
+    }
+
+    Napi::Value storage = Value().Get("__callbackStorage");
+    if (!storage.IsObject()) {
+        storage = Object::New(Env());
+        Value().Set("__callbackStorage", storage);
+    }
+    storage.As<Object>().Set(name, fn);
 }
 
-MongoCryptContext::MongoCryptContext(mongocrypt_ctx_t* context) : _context(context) {}
+Function MongoCryptContext::Init(Napi::Env env) {
+  return
+      DefineClass(env,
+                  "MongoCryptContext",
+                  {
+                    InstanceMethod("nextMongoOperation", &MongoCryptContext::NextMongoOperation),
+                    InstanceMethod("addMongoOperationResponse", &MongoCryptContext::AddMongoOperationResponse),
+                    InstanceMethod("finishMongoOperation", &MongoCryptContext::FinishMongoOperation),
+                    InstanceMethod("nextKMSRequest", &MongoCryptContext::NextKMSRequest),
+                    InstanceMethod("finishKMSRequests", &MongoCryptContext::FinishKMSRequests),
+                    InstanceMethod("finalize", &MongoCryptContext::FinalizeContext),
+                    InstanceAccessor("status", &MongoCryptContext::Status, nullptr),
+                    InstanceAccessor("state", &MongoCryptContext::State, nullptr)
+                  });
+}
 
-NAN_GETTER(MongoCryptContext::Status) {
-    Nan::HandleScope scope;
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
+Object MongoCryptContext::NewInstance(Napi::Env env, std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context) {
+    InstanceData* instance_data = env.GetInstanceData<InstanceData>();
+    Object obj = instance_data->MongoCryptContextCtor.Value().New({});
+    MongoCryptContext* instance = MongoCryptContext::Unwrap(obj);
+    instance->_context = std::move(context);
+    return obj;
+}
+
+MongoCryptContext::MongoCryptContext(const CallbackInfo& info)
+    : ObjectWrap(info) {}
+
+Value MongoCryptContext::Status(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
-    mongocrypt_ctx_status(mcc->_context.get(), status.get());
-    v8::Local<v8::Object> result = ExtractStatus(status.get());
-    info.GetReturnValue().Set(result);
+    mongocrypt_ctx_status(_context.get(), status.get());
+    return ExtractStatus(Env(), status.get());
 }
 
-NAN_GETTER(MongoCryptContext::State) {
-    Nan::HandleScope scope;
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
-    v8::Local<v8::Number> result = Nan::New<v8::Number>(mongocrypt_ctx_state(mcc->_context.get()));
-    info.GetReturnValue().Set(result);
+Value MongoCryptContext::State(const CallbackInfo& info) {
+    return Number::New(Env(), mongocrypt_ctx_state(_context.get()));
 }
 
-NAN_METHOD(MongoCryptContext::NextMongoOperation) {
-    Nan::HandleScope scope;
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
-
+Value MongoCryptContext::NextMongoOperation(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> op_bson(mongocrypt_binary_new());
-    mongocrypt_ctx_mongo_op(mcc->_context.get(), op_bson.get());
-    v8::Local<v8::Object> buffer = BufferFromBinary(op_bson.get());
-    info.GetReturnValue().Set(buffer);
+    mongocrypt_ctx_mongo_op(_context.get(), op_bson.get());
+    return BufferFromBinary(Env(), op_bson.get());
 }
 
-NAN_METHOD(MongoCryptContext::AddMongoOperationResponse) {
-    Nan::HandleScope scope;
-    if (info.Length() != 1 || (info.Length() == 1 && !info[0]->IsObject())) {
-        Nan::ThrowTypeError("Missing required parameter `buffer`");
-        return;
+void MongoCryptContext::AddMongoOperationResponse(const CallbackInfo& info) {
+    if (info.Length() != 1 || !info[0].IsObject()) {
+        throw TypeError::New(Env(), "Missing required parameter `buffer`");
     }
 
-    if (!node::Buffer::HasInstance(info[0])) {
-        Nan::ThrowTypeError("First parameter must be a Buffer");
-        return;
+    if (!info[0].IsBuffer()) {
+        throw TypeError::New(Env(), "First parameter must be a Buffer");
     }
 
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bson(
-        BufferToBinary(Nan::To<v8::Object>(info[0]).ToLocalChecked()));
-    mongocrypt_ctx_mongo_feed(mcc->_context.get(), reply_bson.get());
+        BufferToBinary(info[0].As<Uint8Array>()));
+    mongocrypt_ctx_mongo_feed(_context.get(), reply_bson.get());
     // return value
 }
 
-NAN_METHOD(MongoCryptContext::FinishMongoOperation) {
-    Nan::HandleScope scope;
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
-    mongocrypt_ctx_mongo_done(mcc->_context.get());
+void MongoCryptContext::FinishMongoOperation(const CallbackInfo& info) {
+    mongocrypt_ctx_mongo_done(_context.get());
 }
 
-NAN_METHOD(MongoCryptContext::NextKMSRequest) {
-    Nan::HandleScope scope;
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
-
-    mongocrypt_kms_ctx_t* kms_context = mongocrypt_ctx_next_kms_ctx(mcc->_context.get());
-    if (kms_context == NULL) {
-        info.GetReturnValue().Set(Nan::Null());
+Value MongoCryptContext::NextKMSRequest(const CallbackInfo& info) {
+    mongocrypt_kms_ctx_t* kms_context = mongocrypt_ctx_next_kms_ctx(_context.get());
+    if (kms_context == nullptr) {
+        return Env().Null();
     } else {
-        v8::Local<v8::Object> result = MongoCryptKMSRequest::NewInstance(kms_context);
-        info.GetReturnValue().Set(result);
+        Object result = MongoCryptKMSRequest::NewInstance(Env(), kms_context);
+        // The lifetime of the `kms_context` pointer is not specified
+        // anywhere, so it seems reasonable to assume that it is at
+        // least the lifetime of this context object.
+        // Use a symbol to enforce that lifetime dependency.
+        result.Set("__kmsRequestContext", Value());
+        return result;
     }
 }
 
-NAN_METHOD(MongoCryptContext::FinishKMSRequests) {
-    Nan::HandleScope scope;
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
-    mongocrypt_ctx_kms_done(mcc->_context.get());
+void MongoCryptContext::FinishKMSRequests(const CallbackInfo& info) {
+    mongocrypt_ctx_kms_done(_context.get());
 }
 
-NAN_METHOD(MongoCryptContext::Finalize) {
-    Nan::HandleScope scope;
-    MongoCryptContext* mcc = Nan::ObjectWrap::Unwrap<MongoCryptContext>(info.This());
-
+Value MongoCryptContext::FinalizeContext(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> output(mongocrypt_binary_new());
-    mongocrypt_ctx_finalize(mcc->_context.get(), output.get());
-    v8::Local<v8::Object> buffer = BufferFromBinary(output.get());
-    info.GetReturnValue().Set(buffer);
+    mongocrypt_ctx_finalize(_context.get(), output.get());
+    return BufferFromBinary(Env(), output.get());
 }
 
-NAN_MODULE_INIT(MongoCryptKMSRequest::Init) {
-    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>();
-    tpl->SetClassName(Nan::New("MongoCryptKMSRequest").ToLocalChecked());
-    Nan::SetPrototypeMethod(tpl, "addResponse", AddResponse);
-
-    v8::Local<v8::ObjectTemplate> itpl = tpl->InstanceTemplate();
-    itpl->SetInternalFieldCount(1);
-
-    Nan::SetAccessor(itpl, Nan::New("status").ToLocalChecked(), Status);
-    Nan::SetAccessor(itpl, Nan::New("bytesNeeded").ToLocalChecked(), BytesNeeded);
-    Nan::SetAccessor(itpl, Nan::New("endpoint").ToLocalChecked(), Endpoint);
-    Nan::SetAccessor(itpl, Nan::New("message").ToLocalChecked(), Message);
-
-    constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("MongoCryptKMSRequest").ToLocalChecked(),
-             Nan::GetFunction(tpl).ToLocalChecked());
+Function MongoCryptKMSRequest::Init(Napi::Env env) {
+  return
+      DefineClass(env,
+                  "MongoCryptKMSRequest",
+                  {
+                    InstanceMethod("addResponse", &MongoCryptKMSRequest::AddResponse),
+                    InstanceAccessor("status", &MongoCryptKMSRequest::Status, nullptr),
+                    InstanceAccessor("bytesNeeded", &MongoCryptKMSRequest::BytesNeeded, nullptr),
+                    InstanceAccessor("endpoint", &MongoCryptKMSRequest::Endpoint, nullptr),
+                    InstanceAccessor("message", &MongoCryptKMSRequest::Message, nullptr)
+                  });
 }
 
-v8::Local<v8::Object> MongoCryptKMSRequest::NewInstance(mongocrypt_kms_ctx_t* kms_context) {
-    Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(constructor());
-    v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
-    MongoCryptKMSRequest* class_instance = new MongoCryptKMSRequest(kms_context);
-    class_instance->Wrap(object);
-    return scope.Escape(object);
+Object MongoCryptKMSRequest::NewInstance(Napi::Env env, mongocrypt_kms_ctx_t* kms_context) {
+    InstanceData* instance_data = env.GetInstanceData<InstanceData>();
+    Object obj = instance_data->MongoCryptKMSRequestCtor.Value().New({});
+    MongoCryptKMSRequest* instance = MongoCryptKMSRequest::Unwrap(obj);
+    instance->_kms_context = kms_context;
+    return obj;
 }
 
-MongoCryptKMSRequest::MongoCryptKMSRequest(mongocrypt_kms_ctx_t* kms_context)
-    : _kms_context(kms_context) {}
+MongoCryptKMSRequest::MongoCryptKMSRequest(const CallbackInfo& info)
+    : ObjectWrap(info), _kms_context(nullptr) {}
 
-NAN_GETTER(MongoCryptKMSRequest::Status) {
-    Nan::HandleScope scope;
-    MongoCryptKMSRequest* mckr = Nan::ObjectWrap::Unwrap<MongoCryptKMSRequest>(info.This());
+Value MongoCryptKMSRequest::Status(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
-    mongocrypt_kms_ctx_status(mckr->_kms_context, status.get());
-    v8::Local<v8::Object> result = ExtractStatus(status.get());
-    info.GetReturnValue().Set(result);
+    mongocrypt_kms_ctx_status(_kms_context, status.get());
+    return ExtractStatus(Env(), status.get());
 }
 
-NAN_GETTER(MongoCryptKMSRequest::BytesNeeded) {
-    Nan::HandleScope scope;
-    MongoCryptKMSRequest* mckr = Nan::ObjectWrap::Unwrap<MongoCryptKMSRequest>(info.This());
-    v8::Local<v8::Number> result =
-        Nan::New<v8::Number>(mongocrypt_kms_ctx_bytes_needed(mckr->_kms_context));
-    info.GetReturnValue().Set(result);
+Value MongoCryptKMSRequest::BytesNeeded(const CallbackInfo& info) {
+    return Number::New(Env(), mongocrypt_kms_ctx_bytes_needed(_kms_context));
 }
 
-NAN_GETTER(MongoCryptKMSRequest::Message) {
-    Nan::HandleScope scope;
-    MongoCryptKMSRequest* mckr = Nan::ObjectWrap::Unwrap<MongoCryptKMSRequest>(info.This());
-
+Value MongoCryptKMSRequest::Message(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> message(mongocrypt_binary_new());
-    mongocrypt_kms_ctx_message(mckr->_kms_context, message.get());
-    v8::Local<v8::Object> result = BufferFromBinary(message.get());
-    info.GetReturnValue().Set(result);
+    mongocrypt_kms_ctx_message(_kms_context, message.get());
+    return BufferFromBinary(Env(), message.get());
 }
 
-NAN_GETTER(MongoCryptKMSRequest::Endpoint) {
-    Nan::HandleScope scope;
-    MongoCryptKMSRequest* mckr = Nan::ObjectWrap::Unwrap<MongoCryptKMSRequest>(info.This());
+Value MongoCryptKMSRequest::Endpoint(const CallbackInfo& info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> message(mongocrypt_binary_new());
 
     const char* endpoint;
-    mongocrypt_kms_ctx_endpoint(mckr->_kms_context, &endpoint);
-    info.GetReturnValue().Set(Nan::New(endpoint).ToLocalChecked());
+    mongocrypt_kms_ctx_endpoint(_kms_context, &endpoint);
+    return String::New(Env(), endpoint);
 }
 
-NAN_METHOD(MongoCryptKMSRequest::AddResponse) {
-    Nan::HandleScope scope;
-    MongoCryptKMSRequest* mckr = Nan::ObjectWrap::Unwrap<MongoCryptKMSRequest>(info.This());
-
-    auto buffer = Nan::To<v8::Object>(info[0]);
-    if (buffer.IsEmpty()) {
-        Nan::ThrowTypeError("First parameter must be of type Buffer");
-        return;
+void MongoCryptKMSRequest::AddResponse(const CallbackInfo& info) {
+    if (!info[0].IsBuffer()) {
+        throw TypeError::New(Env(), "First parameter must be of type Buffer");
     }
 
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bytes(
-        BufferToBinary(buffer.ToLocalChecked()));
-    mongocrypt_kms_ctx_feed(mckr->_kms_context, reply_bytes.get());
+        BufferToBinary(info[0].As<Uint8Array>()));
+    mongocrypt_kms_ctx_feed(_kms_context, reply_bytes.get());
 }
 
-static NAN_MODULE_INIT(Init) {
-    MongoCrypt::Init(target);
-    MongoCryptContext::Init(target);
-    MongoCryptKMSRequest::Init(target);
+static Object Init(Env env, Object exports) {
+    Function MongoCryptCtor = MongoCrypt::Init(env);
+    Function MongoCryptContextCtor = MongoCryptContext::Init(env);
+    Function MongoCryptKMSRequestCtor = MongoCryptKMSRequest::Init(env);
+    exports["MongoCrypt"] = MongoCryptCtor;
+    exports["MongoCryptContextCtor"] = MongoCryptContextCtor;
+    exports["MongoCryptKMSRequestCtor"] = MongoCryptKMSRequestCtor;
+    env.SetInstanceData(new InstanceData {
+        Reference<Function>::New(MongoCryptContextCtor, 1),
+        Reference<Function>::New(MongoCryptKMSRequestCtor, 1)
+    });
+    return exports;
 }
 
-NODE_MODULE(mongocrypt, Init)
+NODE_API_MODULE(mongocrypt, Init)
+
+} // namespace node_mongocrypt

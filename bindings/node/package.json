@@ -17,7 +17,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "install": "prebuild-install --tag-prefix node-v || node-gyp rebuild",
+    "install": "prebuild-install --runtime napi --tag-prefix node-v || node-gyp rebuild",
     "format-cxx": "git-clang-format",
     "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
     "lint": "eslint lib test",
@@ -25,8 +25,7 @@
     "test": "mocha test",
     "rebuild": "prebuild --compile",
     "release": "standard-version --tag-prefix node-v --path bindings/node",
-    "prebuild": "prebuild  --strip --verbose --tag-prefix node-v --all",
-    "prebuild-legacy": "prebuild  --strip --verbose --tag-prefix node-v --runtime node --target 4.0.0"
+    "prebuild": "prebuild --runtime napi --strip --verbose --tag-prefix node-v --all"
   },
   "author": {
     "name": "The MongoDB NodeJS Team",
@@ -40,7 +39,7 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "bl": "^2.2.1",
-    "nan": "^2.14.2",
+    "node-addon-api": "^4.1.0",
     "prebuild-install": "6.1.2"
   },
   "devDependencies": {
@@ -67,7 +66,12 @@
     "mongodb": ">=3.4.0"
   },
   "engines": {
-    "node": ">=6"
+    "node": ">=12.9.0"
+  },
+  "binary": {
+    "napi_versions": [
+      4
+    ]
   },
   "repository": {
     "type": "git",

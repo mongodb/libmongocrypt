@@ -1,12 +1,21 @@
 #ifndef NODE_MONGOCRYPT_H
 #define NODE_MONGOCRYPT_H
 
-#include <nan.h>
+// We generally only target N-API version 4, but the instance data
+// feature is only available in N-API version 6. However, it is
+// available in all Node.js versions that have N-API version 4
+// as an experimental feature (that has not been changed since then).
+#define NAPI_VERSION 6
+#define NAPI_EXPERIMENTAL
+
+#include <napi.h>
 #include <memory>
 
 extern "C" {
 #include <mongocrypt/mongocrypt.h>
 }
+
+namespace node_mongocrypt {
 
 struct MongoCryptBinaryDeleter {
     void operator()(mongocrypt_binary_t* binary) {
@@ -26,39 +35,26 @@ struct MongoCryptContextDeleter {
     }
 };
 
-class MongoCrypt : public Nan::ObjectWrap {
+class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
    public:
-    static NAN_MODULE_INIT(Init);
+    static Napi::Function Init(Napi::Env env);
 
    private:
-    static inline Nan::Persistent<v8::Function> & constructor() {
-        static Nan::Persistent<v8::Function> ctor;
-        return ctor;
-    }
+    Napi::Value MakeEncryptionContext(const Napi::CallbackInfo& info);
+    Napi::Value MakeExplicitEncryptionContext(const Napi::CallbackInfo& info);
+    Napi::Value MakeDecryptionContext(const Napi::CallbackInfo& info);
+    Napi::Value MakeExplicitDecryptionContext(const Napi::CallbackInfo& info);
+    Napi::Value MakeDataKeyContext(const Napi::CallbackInfo& info);
 
-    static NAN_METHOD(New);
-    static NAN_METHOD(MakeEncryptionContext);
-    static NAN_METHOD(MakeExplicitEncryptionContext);
-    static NAN_METHOD(MakeDecryptionContext);
-    static NAN_METHOD(MakeExplicitDecryptionContext);
-    static NAN_METHOD(MakeDataKeyContext);
-
-    static NAN_GETTER(Status);
+    Napi::Value Status(const Napi::CallbackInfo& info);
 
    private:
-    struct CryptoHooks {
-        std::unique_ptr<Nan::Callback> aes256CbcEncryptHook;
-        std::unique_ptr<Nan::Callback> aes256CbcDecryptHook;
-        std::unique_ptr<Nan::Callback> randomHook;
-        std::unique_ptr<Nan::Callback> hmacSha512Hook;
-        std::unique_ptr<Nan::Callback> hmacSha256Hook;
-        std::unique_ptr<Nan::Callback> sha256Hook;
-        std::unique_ptr<Nan::Callback> signRsaSha256Hook;
-    };
+    friend class Napi::ObjectWrap<MongoCrypt>;
+    Napi::Function GetCallback(const char* name);
+    void SetCallback(const char* name, Napi::Value fn);
 
-    friend class MongoCryptContext;
-    explicit MongoCrypt(mongocrypt_t* mongo_crypt, Nan::Callback* logger, CryptoHooks* hooks);
-    static bool setupCryptoHooks(mongocrypt_t* mongoCrypt, CryptoHooks* cryptoHooks);
+    explicit MongoCrypt(const Napi::CallbackInfo& info);
+    bool setupCryptoHooks();
 
     static void logHandler(mongocrypt_log_level_t level,
                            const char* message,
@@ -66,57 +62,49 @@ class MongoCrypt : public Nan::ObjectWrap {
                            void* ctx);
 
     std::unique_ptr<mongocrypt_t, MongoCryptDeleter> _mongo_crypt;
-    std::unique_ptr<Nan::Callback> _logger;
-    std::unique_ptr<CryptoHooks> _cryptoHooks;
 };
 
-class MongoCryptContext : public Nan::ObjectWrap {
+class MongoCryptContext : public Napi::ObjectWrap<MongoCryptContext> {
    public:
-    static NAN_MODULE_INIT(Init);
-    static v8::Local<v8::Object> NewInstance(mongocrypt_ctx_t* context);
+    static Napi::Function Init(Napi::Env env);
+    static Napi::Object NewInstance(Napi::Env env, std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context);
 
    private:
-    static inline Nan::Persistent<v8::Function> & constructor() {
-        static Nan::Persistent<v8::Function> ctor;
-        return ctor;
-    }
+    Napi::Value NextMongoOperation(const Napi::CallbackInfo& info);
+    void AddMongoOperationResponse(const Napi::CallbackInfo& info);
+    void FinishMongoOperation(const Napi::CallbackInfo& info);
+    Napi::Value NextKMSRequest(const Napi::CallbackInfo& info);
+    void FinishKMSRequests(const Napi::CallbackInfo& info);
+    Napi::Value FinalizeContext(const Napi::CallbackInfo& info);
 
-    static NAN_METHOD(NextMongoOperation);
-    static NAN_METHOD(AddMongoOperationResponse);
-    static NAN_METHOD(FinishMongoOperation);
-    static NAN_METHOD(NextKMSRequest);
-    static NAN_METHOD(FinishKMSRequests);
-    static NAN_METHOD(Finalize);
-
-    static NAN_GETTER(Status);
-    static NAN_GETTER(State);
+    Napi::Value Status(const Napi::CallbackInfo& info);
+    Napi::Value State(const Napi::CallbackInfo& info);
 
    private:
-    explicit MongoCryptContext(mongocrypt_ctx_t* context);
+   friend class Napi::ObjectWrap<MongoCryptContext>;
+    explicit MongoCryptContext(const Napi::CallbackInfo& info);
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> _context;
 };
 
-class MongoCryptKMSRequest : public Nan::ObjectWrap {
+class MongoCryptKMSRequest : public Napi::ObjectWrap<MongoCryptKMSRequest> {
    public:
-    static NAN_MODULE_INIT(Init);
-    static v8::Local<v8::Object> NewInstance(mongocrypt_kms_ctx_t* kms_context);
+    static Napi::Function Init(Napi::Env env);
+    static Napi::Object NewInstance(Napi::Env env, mongocrypt_kms_ctx_t* kms_context);
 
    private:
-    static inline Nan::Persistent<v8::Function> & constructor() {
-        static Nan::Persistent<v8::Function> ctor;
-        return ctor;
-    }
+    void AddResponse(const Napi::CallbackInfo& info);
 
-    static NAN_METHOD(AddResponse);
-
-    static NAN_GETTER(Status);
-    static NAN_GETTER(Message);
-    static NAN_GETTER(BytesNeeded);
-    static NAN_GETTER(Endpoint);
+    Napi::Value Status(const Napi::CallbackInfo& info);
+    Napi::Value Message(const Napi::CallbackInfo& info);
+    Napi::Value BytesNeeded(const Napi::CallbackInfo& info);
+    Napi::Value Endpoint(const Napi::CallbackInfo& info);
 
    private:
-    explicit MongoCryptKMSRequest(mongocrypt_kms_ctx_t* kms_context);
+   friend class Napi::ObjectWrap<MongoCryptKMSRequest>;
+    explicit MongoCryptKMSRequest(const Napi::CallbackInfo& info);
     mongocrypt_kms_ctx_t* _kms_context;
 };
+
+} // namespace node_mongocrypt
 
 #endif  // NODE_MONGOCRYPT_H
