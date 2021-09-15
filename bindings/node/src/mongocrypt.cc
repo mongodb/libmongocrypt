@@ -592,7 +592,6 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo& info) {
 // itself, and use these helpers to do so. Storing them as JS engine
 // References is a big memory leak footgun.
 Function MongoCrypt::GetCallback(const char* name) {
-    InstanceData* instance_data = Env().GetInstanceData<InstanceData>();
     Napi::Value storage = Value().Get("__callbackStorage");
     if (!storage.IsObject()) {
         throw Error::New(Env(), "Cannot get callbacks becauses none were registered");
@@ -609,7 +608,6 @@ void MongoCrypt::SetCallback(const char* name, Napi::Value fn) {
         throw Error::New(Env(), std::string("Storing non-function as callback ") + name);
     }
 
-    InstanceData* instance_data = Env().GetInstanceData<InstanceData>();
     Napi::Value storage = Value().Get("__callbackStorage");
     if (!storage.IsObject()) {
         storage = Object::New(Env());
