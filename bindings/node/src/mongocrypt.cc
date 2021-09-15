@@ -683,7 +683,6 @@ Value MongoCryptContext::NextKMSRequest(const CallbackInfo& info) {
     if (kms_context == nullptr) {
         return Env().Null();
     } else {
-        InstanceData* instance_data = Env().GetInstanceData<InstanceData>();
         Object result = MongoCryptKMSRequest::NewInstance(Env(), kms_context);
         // The lifetime of the `kms_context` pointer is not specified
         // anywhere, so it seems reasonable to assume that it is at
