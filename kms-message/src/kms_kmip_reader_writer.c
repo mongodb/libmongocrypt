@@ -332,8 +332,8 @@ kmip_reader_read_bytes (kmip_reader_t *reader, uint8_t **ptr, size_t length)
 }
 
 #define CHECK_AND_RET(x) \
-   if (!(x)) {                  \
-      return false;             \
+   if (!(x)) {           \
+      return false;      \
    }
 
 bool

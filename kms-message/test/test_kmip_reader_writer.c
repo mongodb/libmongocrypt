@@ -376,21 +376,28 @@ kms_kmip_reader_find_test (void)
    reader = kmip_reader_new (data, datalen);
 
    /* Finds the top-level Structure. */
-   found = kmip_reader_find (reader, KMIP_TAG_CompromiseDate, KMIP_ITEM_TYPE_Structure, &pos, &len);
+   found = kmip_reader_find (
+      reader, KMIP_TAG_CompromiseDate, KMIP_ITEM_TYPE_Structure, &pos, &len);
    ASSERT (found);
    ASSERT (pos == 0);
    ASSERT (len == 32);
 
    /* Mismatched tag does not find the Structure. */
-   found = kmip_reader_find (reader, KMIP_TAG_ActivationDate, KMIP_ITEM_TYPE_Structure, &pos, &len);
+   found = kmip_reader_find (
+      reader, KMIP_TAG_ActivationDate, KMIP_ITEM_TYPE_Structure, &pos, &len);
    ASSERT (!found);
 
    /* Mismatched type does not find the Structure. */
-   found = kmip_reader_find (reader, KMIP_TAG_CompromiseDate, KMIP_ITEM_TYPE_Integer, &pos, &len);
+   found = kmip_reader_find (
+      reader, KMIP_TAG_CompromiseDate, KMIP_ITEM_TYPE_Integer, &pos, &len);
    ASSERT (!found);
 
    /* Values nested within the Structure are not found. */
-   found = kmip_reader_find (reader, KMIP_TAG_ApplicationSpecificInformation, KMIP_ITEM_TYPE_Enumeration, &pos, &len);
+   found = kmip_reader_find (reader,
+                             KMIP_TAG_ApplicationSpecificInformation,
+                             KMIP_ITEM_TYPE_Enumeration,
+                             &pos,
+                             &len);
    ASSERT (!found);
 
    kmip_reader_destroy (reader);
@@ -416,11 +423,16 @@ kms_kmip_reader_find_and_get_struct_reader_test (void)
       &datalen);
 
    reader = kmip_reader_new (data, datalen);
-   struct_reader = kmip_reader_find_and_get_struct_reader (reader, KMIP_TAG_CompromiseDate);
+   struct_reader =
+      kmip_reader_find_and_get_struct_reader (reader, KMIP_TAG_CompromiseDate);
    ASSERT (NULL != struct_reader);
 
    /* Values nested within the Structure are found. */
-   found = kmip_reader_find (struct_reader, KMIP_TAG_ApplicationSpecificInformation, KMIP_ITEM_TYPE_Enumeration, &pos, &len);
+   found = kmip_reader_find (struct_reader,
+                             KMIP_TAG_ApplicationSpecificInformation,
+                             KMIP_ITEM_TYPE_Enumeration,
+                             &pos,
+                             &len);
    ASSERT (found);
    ASSERT (pos == 8);
    ASSERT (len == 4);
@@ -439,19 +451,23 @@ kms_kmip_reader_find_and_read_enum_test (void)
    bool found;
    uint32_t value;
 
-   /* An Integer, value 255, followed by an Enumeration, value 254 having tags 420005 and 420004 respectively. */
+   /* An Integer, value 255, followed by an Enumeration, value 254 having tags
+    * 420005 and 420004 respectively. */
    data = kms_kmip_reader_test_new_data (
-      "42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00 | 42 00 04 | 05 | 00 00 00 04 | 00 00 00 FE 00 00 00 00",
+      "42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00 | 42 00 04 | 05 | "
+      "00 00 00 04 | 00 00 00 FE 00 00 00 00",
       &datalen);
 
    reader = kmip_reader_new (data, datalen);
 
-   found = kmip_reader_find_and_read_enum (reader, KMIP_TAG_ApplicationSpecificInformation, &value);
+   found = kmip_reader_find_and_read_enum (
+      reader, KMIP_TAG_ApplicationSpecificInformation, &value);
    ASSERT (found);
    ASSERT (value == 254);
 
    /* The Integer should not be found. */
-   found = kmip_reader_find_and_read_enum (reader, KMIP_TAG_ArchiveDate, &value);
+   found =
+      kmip_reader_find_and_read_enum (reader, KMIP_TAG_ArchiveDate, &value);
    ASSERT (!found);
 
    kmip_reader_destroy (reader);
@@ -468,21 +484,25 @@ kms_kmip_reader_find_and_read_bytes_test (void)
    uint8_t *outptr;
    size_t outlen;
 
-   /* An Integer, value 255, followed by ByteString of value 0x1122 having tags 420005 and 420004 respectively. */
+   /* An Integer, value 255, followed by ByteString of value 0x1122 having tags
+    * 420005 and 420004 respectively. */
    data = kms_kmip_reader_test_new_data (
-      "42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00 | 42 00 04 | 08 | 00 00 00 02 | 11 22 00 00 00 00 00 00",
+      "42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00 | 42 00 04 | 08 | "
+      "00 00 00 02 | 11 22 00 00 00 00 00 00",
       &datalen);
 
    reader = kmip_reader_new (data, datalen);
 
-   found = kmip_reader_find_and_read_bytes (reader, KMIP_TAG_ApplicationSpecificInformation, &outptr, &outlen);
+   found = kmip_reader_find_and_read_bytes (
+      reader, KMIP_TAG_ApplicationSpecificInformation, &outptr, &outlen);
    ASSERT (found);
    ASSERT (outlen == 2);
    ASSERT (outptr[0] == 0x11);
    ASSERT (outptr[1] == 0x22);
 
    /* The Integer should not be found. */
-   found = kmip_reader_find_and_read_bytes (reader, KMIP_TAG_ArchiveDate, &outptr, &outlen);
+   found = kmip_reader_find_and_read_bytes (
+      reader, KMIP_TAG_ArchiveDate, &outptr, &outlen);
    ASSERT (!found);
 
    kmip_reader_destroy (reader);
