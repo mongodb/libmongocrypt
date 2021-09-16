@@ -28,11 +28,7 @@
   #define __has_builtin(x) 0
 #endif
 
-#if defined(__sun)
-#define KMS_UINT16_SWAP_LE_BE(v) BSWAP_16 ((uint16_t) v)
-#define KMS_UINT32_SWAP_LE_BE(v) BSWAP_32 ((uint32_t) v)
-#define KMS_UINT64_SWAP_LE_BE(v) BSWAP_64 ((uint64_t) v)
-#elif defined(__clang__) && __has_builtin(__builtin_bswap16) && \
+#if defined(__clang__) && __has_builtin(__builtin_bswap16) && \
    __has_builtin(__builtin_bswap32) && __has_builtin(__builtin_bswap64)
 #define KMS_UINT16_SWAP_LE_BE(v) __builtin_bswap16 (v)
 #define KMS_UINT32_SWAP_LE_BE(v) __builtin_bswap32 (v)
@@ -72,8 +68,6 @@
 #define KMS_UINT64_TO_LE(v) ((uint64_t) v)
 #define KMS_UINT64_FROM_BE(v) KMS_UINT64_SWAP_LE_BE (v)
 #define KMS_UINT64_TO_BE(v) KMS_UINT64_SWAP_LE_BE (v)
-#define KMS_DOUBLE_FROM_LE(v) ((double) v)
-#define KMS_DOUBLE_TO_LE(v) ((double) v)
 #elif defined(KMS_MESSAGE_BIG_ENDIAN)
 #define KMS_UINT16_FROM_LE(v) KMS_UINT16_SWAP_LE_BE (v)
 #define KMS_UINT16_TO_LE(v) KMS_UINT16_SWAP_LE_BE (v)
@@ -87,8 +81,6 @@
 #define KMS_UINT64_TO_LE(v) KMS_UINT64_SWAP_LE_BE (v)
 #define KMS_UINT64_FROM_BE(v) ((uint64_t) v)
 #define KMS_UINT64_TO_BE(v) ((uint64_t) v)
-#define KMS_DOUBLE_FROM_LE(v) (__kms_double_swap_slow (v))
-#define KMS_DOUBLE_TO_LE(v) (__kms_double_swap_slow (v))
 #else
 #error "The endianness of target architecture is unknown."
 #endif
@@ -169,33 +161,5 @@ __kms_uint64_swap_slow (uint64_t v) /* IN */
           ((v & 0xFF00000000000000ULL) >> 56);
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * __kms_double_swap_slow --
- *
- *       Fallback endianness conversion for double floating point.
- *
- * Returns:
- *       The endian swapped version.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static KMS_MSG_INLINE double
-__kms_double_swap_slow (double v) /* IN */
-{
-   uint64_t uv;
-
-   memcpy (&uv, &v, sizeof (v));
-   uv = KMS_UINT64_SWAP_LE_BE (uv);
-   memcpy (&v, &uv, sizeof (v));
-
-   return v;
-}
 
 #endif /* KMS_ENDIAN_PRIVATE_H */
