@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
+#include "kms_kmip_reader_writer_private.h"
 
 #include "kms_endian_private.h"
 #include "kms_request_str.h"
 
-#include "kms_kmip_reader_writer_private.h"
+#include <stdint.h>
 
-#define MAX_POSITIONS 10
+#define MAX_KMIP_WRITER_POSITIONS 10
 
 /* KMIP encodes signed integers with two's complement.
  * Parsing functions read Integer / LongInteger as int32_t / int64_t by
@@ -99,7 +99,7 @@ kmip_writer_write_tag_enum (kmip_writer_t *writer, kmip_tag_type_t tag)
 }
 
 static size_t
-compute_padding (size_t len)
+compute_padded_length (size_t len)
 {
    if (len % 8 == 0) {
       return len;
@@ -193,9 +193,7 @@ kmip_writer_begin_struct (kmip_writer_t *writer, kmip_tag_type_t tag)
    size_t pos = writer->buffer->len;
 
    kmip_writer_write_u32 (writer, 0);
-   if (writer->cur_pos == MAX_POSITIONS) {
-      abort ();
-   }
+   KMS_ASSERT(writer->cur_pos < MAX_POSITIONS);
    writer->cur_pos++;
    writer->positions[writer->cur_pos] = pos;
 }
@@ -204,9 +202,7 @@ void
 kmip_writer_close_struct (kmip_writer_t *writer)
 {
    size_t current_pos = writer->buffer->len;
-   if (writer->cur_pos == 0) {
-      abort ();
-   }
+   KMS_ASSERT(writer->cur_pos > 0);
    size_t start_pos = writer->positions[writer->cur_pos];
    writer->cur_pos--;
    /* offset by 4 */
@@ -263,13 +259,13 @@ kmip_reader_in_place (kmip_reader_t *reader,
 }
 
 size_t
-kmip_reader_save_position (kmip_reader_t *reader)
+kmip_reader_get_position (kmip_reader_t *reader)
 {
    return reader->pos;
 }
 
 void
-kmip_reader_restore_position (kmip_reader_t *reader, size_t pos)
+kmip_reader_set_position (kmip_reader_t *reader, size_t pos)
 {
    reader->pos = pos;
 }
@@ -380,9 +376,7 @@ bool
 kmip_reader_read_type (kmip_reader_t *reader, kmip_item_type_t *type)
 {
    uint8_t u8;
-   if (!kmip_reader_read_u8 (reader, &u8)) {
-      return false;
-   }
+   READER_CHECK_AND_RET (kmip_reader_read_u8 (reader, &u8));
    *type = (kmip_item_type_t) u8;
    return true;
 }

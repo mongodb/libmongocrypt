@@ -1,10 +1,11 @@
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "test_kms_request.h"
 
 #include "src/hexlify.h"
 #include "src/kms_kmip_reader_writer_private.h"
-#include "test_kms_request.h"
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct {
    char *desc;
