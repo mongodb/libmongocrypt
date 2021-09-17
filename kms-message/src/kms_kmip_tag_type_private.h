@@ -313,7 +313,7 @@ typedef enum {
    KMIP_TAG_AlwaysSensitive = 0x420121,
    KMIP_TAG_Extractable = 0x420122,
    KMIP_TAG_NeverExtractable = 0x420123,
-   KMIP_TAG_ReplaceExisting = 0x420124,
+   KMIP_TAG_ReplaceExisting = 0x420124
 } kmip_tag_type_t;
 
 #endif /* KMS_KMIP_TAG_TYPE_PRIVATE_H */
