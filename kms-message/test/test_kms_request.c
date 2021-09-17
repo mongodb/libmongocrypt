@@ -38,29 +38,7 @@
 #include <src/kms_kv_list.h>
 #include <src/kms_port.h>
 
-#define ASSERT_CONTAINS(_a, _b)                                              \
-   do {                                                                      \
-      kms_request_str_t *_a_str = kms_request_str_new_from_chars ((_a), -1); \
-      kms_request_str_t *_b_str = kms_request_str_new_from_chars ((_b), -1); \
-      kms_request_str_t *_a_lower = kms_request_str_new ();                  \
-      kms_request_str_t *_b_lower = kms_request_str_new ();                  \
-      kms_request_str_append_lowercase (_a_lower, (_a_str));                 \
-      kms_request_str_append_lowercase (_b_lower, (_b_str));                 \
-      if (NULL == strstr ((_a_lower->str), (_b_lower->str))) {               \
-         fprintf (stderr,                                                    \
-                  "%s:%d %s(): [%s] does not contain [%s]\n",                \
-                  __FILE__,                                                  \
-                  __LINE__,                                                  \
-                  __FUNCTION__,                                              \
-                  _a,                                                        \
-                  _b);                                                       \
-         abort ();                                                           \
-      }                                                                      \
-      kms_request_str_destroy (_a_str);                                      \
-      kms_request_str_destroy (_b_str);                                      \
-      kms_request_str_destroy (_a_lower);                                    \
-      kms_request_str_destroy (_b_lower);                                    \
-   } while (0)
+#include "test_kms_request.h"
 
 const char *aws_test_suite_dir = "aws-sig-v4-test-suite";
 
@@ -365,14 +343,6 @@ compare_strs (const char *test_name, const char *expect, const char *actual)
       abort ();
    }
 }
-
-#define ASSERT_CMPSTR(_a, _b) compare_strs (__FUNCTION__, (_a), (_b))
-
-#define ASSERT(stmt)                                    \
-   if (!(stmt)) {                                       \
-      fprintf (stderr, "statement failed %s\n", #stmt); \
-      abort ();                                         \
-   }
 
 void
 test_compare (kms_request_t *request,
@@ -1170,6 +1140,14 @@ kms_signature_test (void)
       }                                                          \
    } while (0)
 
+extern void kms_kmip_writer_test (void);
+extern void kms_kmip_reader_test (void);
+extern void kms_kmip_reader_negative_int_test (void);
+extern void kms_kmip_reader_find_test (void);
+extern void kms_kmip_reader_find_and_get_struct_reader_test (void);
+extern void kms_kmip_reader_find_and_read_enum_test (void);
+extern void kms_kmip_reader_find_and_read_bytes_test (void);
+
 int
 main (int argc, char *argv[])
 {
@@ -1214,6 +1192,14 @@ main (int argc, char *argv[])
    RUN_TEST (kms_request_validate_test);
 
    RUN_TEST (kms_signature_test);
+
+   RUN_TEST (kms_kmip_writer_test);
+   RUN_TEST (kms_kmip_reader_test);
+   RUN_TEST (kms_kmip_reader_negative_int_test);
+   RUN_TEST (kms_kmip_reader_test);
+   RUN_TEST (kms_kmip_reader_find_and_get_struct_reader_test);
+   RUN_TEST (kms_kmip_reader_find_and_read_enum_test);
+   RUN_TEST (kms_kmip_reader_find_and_read_bytes_test);
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);

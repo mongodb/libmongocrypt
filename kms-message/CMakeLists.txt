@@ -25,6 +25,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_decrypt_request.c
    src/kms_encrypt_request.c
    src/kms_gcp_request.c
+   src/kms_kmip_reader_writer.c
    src/kms_kv_list.c
    src/kms_kv_list.h
    src/kms_message.c
@@ -67,6 +68,16 @@ else()
          "KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO")
 endif()
 
+include (TestBigEndian)
+TEST_BIG_ENDIAN (KMS_BIG_ENDIAN)
+if (KMS_BIG_ENDIAN)
+   message ("Detected byte order: big endian")
+   set (KMS_MESSAGE_DEFINITIONS ${KMS_MESSAGE_DEFINITIONS} "KMS_MESSAGE_BIG_ENDIAN")
+else ()
+   message ("Detected byte order: little endian")
+   set (KMS_MESSAGE_DEFINITIONS ${KMS_MESSAGE_DEFINITIONS} "KMS_MESSAGE_LITTLE_ENDIAN")
+endif ()
+
 add_library (
    kms_message SHARED
    ${KMS_MESSAGE_SOURCES}
@@ -87,6 +98,8 @@ add_library (
    kms_message_obj OBJECT
    ${KMS_MESSAGE_SOURCES}
 )
+
+target_compile_definitions (kms_message_obj PRIVATE ${KMS_MESSAGE_DEFINITIONS})
 
 if (NOT DISABLE_NATIVE_CRYPTO)
    if (WIN32)
@@ -224,6 +237,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       test_kms_request
       ${KMS_MESSAGE_SOURCES}
       test/test_kms_request.c
+      test/test_kmip_reader_writer.c
    )
    target_include_directories(test_kms_request PRIVATE  ${PROJECT_SOURCE_DIR})
    target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})
