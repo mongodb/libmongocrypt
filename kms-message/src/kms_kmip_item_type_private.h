@@ -27,7 +27,7 @@ typedef enum {
    KMIP_ITEM_TYPE_TextString = 0x07,
    KMIP_ITEM_TYPE_ByteString = 0x08,
    KMIP_ITEM_TYPE_DateTime = 0x09,
-   KMIP_ITEM_TYPE_Interval = 0x0A,
+   KMIP_ITEM_TYPE_Interval = 0x0A
 } kmip_item_type_t;
 
 #endif /* KMS_KMIP_ITEM_TYPE_PRIVATE_H */
