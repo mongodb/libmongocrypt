@@ -27,7 +27,7 @@ rm -rf pkgconfig_tests
 mkdir -p pkgconfig_tests/{install,libmongocrypt-cmake-build}
 cd pkgconfig_tests
 
-git clone https://github.com/mongodb/mongo-c-driver.git --depth=1 --config core.eol=lf --config core.autocrlf=false
+$libmongocrypt_root/clone-mongo-c-driver.sh
 cd mongo-c-driver
 
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
