@@ -65,6 +65,12 @@ class TestMongoCryptBinary(unittest.TestCase):
             self.assertEqual(binary.to_bytes(), b'')
         self.assertIsNone(binary.bin)
 
+        # Memoryview
+        with MongoCryptBinaryIn(memoryview(b'1\x0023')) as binary:
+            self.assertIsNotNone(binary.bin)
+            self.assertEqual(binary.to_bytes(), b'1\x0023')
+        self.assertIsNone(binary.bin)
+
     def test_mongocrypt_binary_out(self):
         with MongoCryptBinaryOut() as binary:
             self.assertIsNotNone(binary.bin)

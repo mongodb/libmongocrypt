@@ -76,19 +76,19 @@ class MongoCryptBinaryOut(_MongoCryptBinary):
 
 
 class MongoCryptBinaryIn(_MongoCryptBinary):
-    __slots__ = ("__copy",)
+    __slots__ = ("cref",)
 
     def __init__(self, data):
         """Creates a mongocrypt_binary_t from binary data."""
         # mongocrypt_binary_t does not own the data it is passed so we need to
-        # create a copy to keep the data alive.
-        self.__copy = ffi.new("uint8_t[]", data)
+        # create a separate reference to keep the data alive.
+        self.cref = ffi.from_buffer("uint8_t[]", data)
         super(MongoCryptBinaryIn, self).__init__(
-            lib.mongocrypt_binary_new_from_data(self.__copy, len(data)))
+            lib.mongocrypt_binary_new_from_data(self.cref, len(data)))
 
     def _close(self):
         """Cleanup resources."""
         super(MongoCryptBinaryIn, self)._close()
-        if self.__copy is None:
-            ffi.release(self.__copy)
-            self.__copy = None
+        if self.cref is not None:
+            ffi.release(self.cref)
+            self.cref = None
