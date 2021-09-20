@@ -353,8 +353,6 @@ tasks:
 
 - name: test-python
   depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   - build-and-test-and-upload
   commands:
     - func: "fetch source"
@@ -365,8 +363,6 @@ tasks:
 
 - name: test-python-windows
   depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   # Depends on the windows-64-vs2017-test upload.
   - variant: windows-test
     name: build-and-test-and-upload
