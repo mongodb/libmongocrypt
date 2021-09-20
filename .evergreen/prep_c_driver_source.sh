@@ -4,6 +4,7 @@ set -o xtrace
 set -o errexit
 
 ./libmongocrypt/.evergreen/clone-mongo-c-driver.sh
+cd mongo-c-driver
 
 if [ -z "$MONGO_C_DRIVER_VERSION" ]; then
     echo "No MONGO_C_DRIVER_VERSION specified, calculating release version"
