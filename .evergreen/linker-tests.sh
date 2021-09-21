@@ -41,7 +41,7 @@ mkdir -p linker_tests/{install,libmongocrypt-cmake-build,app-cmake-build}
 cd linker_tests
 
 # Make libbson1 and libbson2
-$libmongocrypt_root/clone-mongo-c-driver.sh
+$libmongocrypt_root/.evergreen/clone-mongo-c-driver.sh
 cd mongo-c-driver
 
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
