@@ -25,5 +25,14 @@ createvirtualenv () {
     fi
     # Upgrade to the latest versions of pip setuptools wheel so that
     # pip can always download the latest cryptography+cffi wheels.
+    PYTHON_VERSION=$(python -c 'import sys;print("%s.%s" % sys.version_info[:2])')
+    if [[ $PYTHON_VERSION == "2.7" || $PYTHON_VERSION == "3.4" || $PYTHON_VERSION == "3.5" ]]; then
+        # pip 19.2 dropped support for Python 3.4.
+        # pip 21 dropped support for Python 2.7 and 3.5.
+        curl -sSL https://bootstrap.pypa.io/pip/${PYTHON_VERSION}/get-pip.py -o get-pip.py
+        python get-pip.py
+    else
+        python -m pip install --upgrade pip
+    fi
     python -m pip install --upgrade pip setuptools wheel
 }
