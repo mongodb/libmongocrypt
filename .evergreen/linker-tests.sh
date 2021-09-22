@@ -41,7 +41,7 @@ mkdir -p linker_tests/{install,libmongocrypt-cmake-build,app-cmake-build}
 cd linker_tests
 
 # Make libbson1 and libbson2
-git clone https://github.com/mongodb/mongo-c-driver.git --depth=1 --config core.eol=lf --config core.autocrlf=false
+$libmongocrypt_root/.evergreen/prep_c_driver_source.sh
 cd mongo-c-driver
 
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
@@ -58,7 +58,7 @@ mkdir cmake-build
 cd cmake-build
 INSTALL_PATH="$(system_path $linker_tests_root/install/bson1)"
 SRC_PATH="$(system_path ../)"
-$CMAKE -DBUILD_VERSION=1.18.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 # Make libbson2
 cd ..
@@ -67,7 +67,7 @@ git apply --ignore-whitespace "$(system_path $linker_tests_deps_root/bson_patche
 cd cmake-build
 INSTALL_PATH="$(system_path $linker_tests_root/install/bson2)"
 SRC_PATH="$(system_path ../)"
-$CMAKE -DBUILD_VERSION=1.18.0-pre -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 # Build libmongocrypt, static linking against libbson2
