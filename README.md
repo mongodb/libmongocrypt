@@ -5,7 +5,7 @@ The companion C library for client side encryption in drivers.
 
 If you have encountered a bug, or would like to see a new feature in libmongocrypt, please open a case in our issue management tool, JIRA:
 
-- [Create an account and login](https://jira.mongodb.org>).
+- [Create an account and login](https://jira.mongodb.org).
 - Navigate to [the MONGOCRYPT project](https://jira.mongodb.org/projects/MONGOCRYPT).
 - Click **Create Issue** - Please provide as much information as possible about the issue type and how to reproduce it.
 
