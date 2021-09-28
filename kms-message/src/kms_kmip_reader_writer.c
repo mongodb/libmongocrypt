@@ -493,3 +493,735 @@ kmip_reader_find_and_read_bytes (kmip_reader_t *reader,
 
    return kmip_reader_read_bytes (&temp_reader, out_ptr, *out_len);
 }
+
+#include <inttypes.h>
+
+static const char *
+kmip_tag_type_to_string (kmip_tag_type_t tag)
+{
+   switch (tag) {
+   case KMIP_TAG_ActivationDate:
+      return "ActivationDate";
+   case KMIP_TAG_ApplicationData:
+      return "ApplicationData";
+   case KMIP_TAG_ApplicationNamespace:
+      return "ApplicationNamespace";
+   case KMIP_TAG_ApplicationSpecificInformation:
+      return "ApplicationSpecificInformation";
+   case KMIP_TAG_ArchiveDate:
+      return "ArchiveDate";
+   case KMIP_TAG_AsynchronousCorrelationValue:
+      return "AsynchronousCorrelationValue";
+   case KMIP_TAG_AsynchronousIndicator:
+      return "AsynchronousIndicator";
+   case KMIP_TAG_Attribute:
+      return "Attribute";
+   case KMIP_TAG_AttributeIndex:
+      return "AttributeIndex";
+   case KMIP_TAG_AttributeName:
+      return "AttributeName";
+   case KMIP_TAG_AttributeValue:
+      return "AttributeValue";
+   case KMIP_TAG_Authentication:
+      return "Authentication";
+   case KMIP_TAG_BatchCount:
+      return "BatchCount";
+   case KMIP_TAG_BatchErrorContinuationOption:
+      return "BatchErrorContinuationOption";
+   case KMIP_TAG_BatchItem:
+      return "BatchItem";
+   case KMIP_TAG_BatchOrderOption:
+      return "BatchOrderOption";
+   case KMIP_TAG_BlockCipherMode:
+      return "BlockCipherMode";
+   case KMIP_TAG_CancellationResult:
+      return "CancellationResult";
+   case KMIP_TAG_Certificate:
+      return "Certificate";
+   case KMIP_TAG_CertificateIdentifier:
+      return "CertificateIdentifier";
+   case KMIP_TAG_CertificateIssuer:
+      return "CertificateIssuer";
+   case KMIP_TAG_CertificateIssuerAlternativeName:
+      return "CertificateIssuerAlternativeName";
+   case KMIP_TAG_CertificateIssuerDistinguishedName:
+      return "CertificateIssuerDistinguishedName";
+   case KMIP_TAG_CertificateRequest:
+      return "CertificateRequest";
+   case KMIP_TAG_CertificateRequestType:
+      return "CertificateRequestType";
+   case KMIP_TAG_CertificateSubject:
+      return "CertificateSubject";
+   case KMIP_TAG_CertificateSubjectAlternativeName:
+      return "CertificateSubjectAlternativeName";
+   case KMIP_TAG_CertificateSubjectDistinguishedName:
+      return "CertificateSubjectDistinguishedName";
+   case KMIP_TAG_CertificateType:
+      return "CertificateType";
+   case KMIP_TAG_CertificateValue:
+      return "CertificateValue";
+   case KMIP_TAG_CommonTemplateAttribute:
+      return "CommonTemplateAttribute";
+   case KMIP_TAG_CompromiseDate:
+      return "CompromiseDate";
+   case KMIP_TAG_CompromiseOccurrenceDate:
+      return "CompromiseOccurrenceDate";
+   case KMIP_TAG_ContactInformation:
+      return "ContactInformation";
+   case KMIP_TAG_Credential:
+      return "Credential";
+   case KMIP_TAG_CredentialType:
+      return "CredentialType";
+   case KMIP_TAG_CredentialValue:
+      return "CredentialValue";
+   case KMIP_TAG_CriticalityIndicator:
+      return "CriticalityIndicator";
+   case KMIP_TAG_CRTCoefficient:
+      return "CRTCoefficient";
+   case KMIP_TAG_CryptographicAlgorithm:
+      return "CryptographicAlgorithm";
+   case KMIP_TAG_CryptographicDomainParameters:
+      return "CryptographicDomainParameters";
+   case KMIP_TAG_CryptographicLength:
+      return "CryptographicLength";
+   case KMIP_TAG_CryptographicParameters:
+      return "CryptographicParameters";
+   case KMIP_TAG_CryptographicUsageMask:
+      return "CryptographicUsageMask";
+   case KMIP_TAG_CustomAttribute:
+      return "CustomAttribute";
+   case KMIP_TAG_D:
+      return "D";
+   case KMIP_TAG_DeactivationDate:
+      return "DeactivationDate";
+   case KMIP_TAG_DerivationData:
+      return "DerivationData";
+   case KMIP_TAG_DerivationMethod:
+      return "DerivationMethod";
+   case KMIP_TAG_DerivationParameters:
+      return "DerivationParameters";
+   case KMIP_TAG_DestroyDate:
+      return "DestroyDate";
+   case KMIP_TAG_Digest:
+      return "Digest";
+   case KMIP_TAG_DigestValue:
+      return "DigestValue";
+   case KMIP_TAG_EncryptionKeyInformation:
+      return "EncryptionKeyInformation";
+   case KMIP_TAG_G:
+      return "G";
+   case KMIP_TAG_HashingAlgorithm:
+      return "HashingAlgorithm";
+   case KMIP_TAG_InitialDate:
+      return "InitialDate";
+   case KMIP_TAG_InitializationVector:
+      return "InitializationVector";
+   case KMIP_TAG_Issuer:
+      return "Issuer";
+   case KMIP_TAG_IterationCount:
+      return "IterationCount";
+   case KMIP_TAG_IVCounterNonce:
+      return "IVCounterNonce";
+   case KMIP_TAG_J:
+      return "J";
+   case KMIP_TAG_Key:
+      return "Key";
+   case KMIP_TAG_KeyBlock:
+      return "KeyBlock";
+   case KMIP_TAG_KeyCompressionType:
+      return "KeyCompressionType";
+   case KMIP_TAG_KeyFormatType:
+      return "KeyFormatType";
+   case KMIP_TAG_KeyMaterial:
+      return "KeyMaterial";
+   case KMIP_TAG_KeyPartIdentifier:
+      return "KeyPartIdentifier";
+   case KMIP_TAG_KeyValue:
+      return "KeyValue";
+   case KMIP_TAG_KeyWrappingData:
+      return "KeyWrappingData";
+   case KMIP_TAG_KeyWrappingSpecification:
+      return "KeyWrappingSpecification";
+   case KMIP_TAG_LastChangeDate:
+      return "LastChangeDate";
+   case KMIP_TAG_LeaseTime:
+      return "LeaseTime";
+   case KMIP_TAG_Link:
+      return "Link";
+   case KMIP_TAG_LinkType:
+      return "LinkType";
+   case KMIP_TAG_LinkedObjectIdentifier:
+      return "LinkedObjectIdentifier";
+   case KMIP_TAG_MACSignature:
+      return "MACSignature";
+   case KMIP_TAG_MACSignatureKeyInformation:
+      return "MACSignatureKeyInformation";
+   case KMIP_TAG_MaximumItems:
+      return "MaximumItems";
+   case KMIP_TAG_MaximumResponseSize:
+      return "MaximumResponseSize";
+   case KMIP_TAG_MessageExtension:
+      return "MessageExtension";
+   case KMIP_TAG_Modulus:
+      return "Modulus";
+   case KMIP_TAG_Name:
+      return "Name";
+   case KMIP_TAG_NameType:
+      return "NameType";
+   case KMIP_TAG_NameValue:
+      return "NameValue";
+   case KMIP_TAG_ObjectGroup:
+      return "ObjectGroup";
+   case KMIP_TAG_ObjectType:
+      return "ObjectType";
+   case KMIP_TAG_Offset:
+      return "Offset";
+   case KMIP_TAG_OpaqueDataType:
+      return "OpaqueDataType";
+   case KMIP_TAG_OpaqueDataValue:
+      return "OpaqueDataValue";
+   case KMIP_TAG_OpaqueObject:
+      return "OpaqueObject";
+   case KMIP_TAG_Operation:
+      return "Operation";
+   case KMIP_TAG_OperationPolicyName:
+      return "OperationPolicyName";
+   case KMIP_TAG_P:
+      return "P";
+   case KMIP_TAG_PaddingMethod:
+      return "PaddingMethod";
+   case KMIP_TAG_PrimeExponentP:
+      return "PrimeExponentP";
+   case KMIP_TAG_PrimeExponentQ:
+      return "PrimeExponentQ";
+   case KMIP_TAG_PrimeFieldSize:
+      return "PrimeFieldSize";
+   case KMIP_TAG_PrivateExponent:
+      return "PrivateExponent";
+   case KMIP_TAG_PrivateKey:
+      return "PrivateKey";
+   case KMIP_TAG_PrivateKeyTemplateAttribute:
+      return "PrivateKeyTemplateAttribute";
+   case KMIP_TAG_PrivateKeyUniqueIdentifier:
+      return "PrivateKeyUniqueIdentifier";
+   case KMIP_TAG_ProcessStartDate:
+      return "ProcessStartDate";
+   case KMIP_TAG_ProtectStopDate:
+      return "ProtectStopDate";
+   case KMIP_TAG_ProtocolVersion:
+      return "ProtocolVersion";
+   case KMIP_TAG_ProtocolVersionMajor:
+      return "ProtocolVersionMajor";
+   case KMIP_TAG_ProtocolVersionMinor:
+      return "ProtocolVersionMinor";
+   case KMIP_TAG_PublicExponent:
+      return "PublicExponent";
+   case KMIP_TAG_PublicKey:
+      return "PublicKey";
+   case KMIP_TAG_PublicKeyTemplateAttribute:
+      return "PublicKeyTemplateAttribute";
+   case KMIP_TAG_PublicKeyUniqueIdentifier:
+      return "PublicKeyUniqueIdentifier";
+   case KMIP_TAG_PutFunction:
+      return "PutFunction";
+   case KMIP_TAG_Q:
+      return "Q";
+   case KMIP_TAG_QString:
+      return "QString";
+   case KMIP_TAG_Qlength:
+      return "Qlength";
+   case KMIP_TAG_QueryFunction:
+      return "QueryFunction";
+   case KMIP_TAG_RecommendedCurve:
+      return "RecommendedCurve";
+   case KMIP_TAG_ReplacedUniqueIdentifier:
+      return "ReplacedUniqueIdentifier";
+   case KMIP_TAG_RequestHeader:
+      return "RequestHeader";
+   case KMIP_TAG_RequestMessage:
+      return "RequestMessage";
+   case KMIP_TAG_RequestPayload:
+      return "RequestPayload";
+   case KMIP_TAG_ResponseHeader:
+      return "ResponseHeader";
+   case KMIP_TAG_ResponseMessage:
+      return "ResponseMessage";
+   case KMIP_TAG_ResponsePayload:
+      return "ResponsePayload";
+   case KMIP_TAG_ResultMessage:
+      return "ResultMessage";
+   case KMIP_TAG_ResultReason:
+      return "ResultReason";
+   case KMIP_TAG_ResultStatus:
+      return "ResultStatus";
+   case KMIP_TAG_RevocationMessage:
+      return "RevocationMessage";
+   case KMIP_TAG_RevocationReason:
+      return "RevocationReason";
+   case KMIP_TAG_RevocationReasonCode:
+      return "RevocationReasonCode";
+   case KMIP_TAG_KeyRoleType:
+      return "KeyRoleType";
+   case KMIP_TAG_Salt:
+      return "Salt";
+   case KMIP_TAG_SecretData:
+      return "SecretData";
+   case KMIP_TAG_SecretDataType:
+      return "SecretDataType";
+   case KMIP_TAG_SerialNumber:
+      return "SerialNumber";
+   case KMIP_TAG_ServerInformation:
+      return "ServerInformation";
+   case KMIP_TAG_SplitKey:
+      return "SplitKey";
+   case KMIP_TAG_SplitKeyMethod:
+      return "SplitKeyMethod";
+   case KMIP_TAG_SplitKeyParts:
+      return "SplitKeyParts";
+   case KMIP_TAG_SplitKeyThreshold:
+      return "SplitKeyThreshold";
+   case KMIP_TAG_State:
+      return "State";
+   case KMIP_TAG_StorageStatusMask:
+      return "StorageStatusMask";
+   case KMIP_TAG_SymmetricKey:
+      return "SymmetricKey";
+   case KMIP_TAG_Template:
+      return "Template";
+   case KMIP_TAG_TemplateAttribute:
+      return "TemplateAttribute";
+   case KMIP_TAG_TimeStamp:
+      return "TimeStamp";
+   case KMIP_TAG_UniqueBatchItemID:
+      return "UniqueBatchItemID";
+   case KMIP_TAG_UniqueIdentifier:
+      return "UniqueIdentifier";
+   case KMIP_TAG_UsageLimits:
+      return "UsageLimits";
+   case KMIP_TAG_UsageLimitsCount:
+      return "UsageLimitsCount";
+   case KMIP_TAG_UsageLimitsTotal:
+      return "UsageLimitsTotal";
+   case KMIP_TAG_UsageLimitsUnit:
+      return "UsageLimitsUnit";
+   case KMIP_TAG_Username:
+      return "Username";
+   case KMIP_TAG_ValidityDate:
+      return "ValidityDate";
+   case KMIP_TAG_ValidityIndicator:
+      return "ValidityIndicator";
+   case KMIP_TAG_VendorExtension:
+      return "VendorExtension";
+   case KMIP_TAG_VendorIdentification:
+      return "VendorIdentification";
+   case KMIP_TAG_WrappingMethod:
+      return "WrappingMethod";
+   case KMIP_TAG_X:
+      return "X";
+   case KMIP_TAG_Y:
+      return "Y";
+   case KMIP_TAG_Password:
+      return "Password";
+   case KMIP_TAG_DeviceIdentifier:
+      return "DeviceIdentifier";
+   case KMIP_TAG_EncodingOption:
+      return "EncodingOption";
+   case KMIP_TAG_ExtensionInformation:
+      return "ExtensionInformation";
+   case KMIP_TAG_ExtensionName:
+      return "ExtensionName";
+   case KMIP_TAG_ExtensionTag:
+      return "ExtensionTag";
+   case KMIP_TAG_ExtensionType:
+      return "ExtensionType";
+   case KMIP_TAG_Fresh:
+      return "Fresh";
+   case KMIP_TAG_MachineIdentifier:
+      return "MachineIdentifier";
+   case KMIP_TAG_MediaIdentifier:
+      return "MediaIdentifier";
+   case KMIP_TAG_NetworkIdentifier:
+      return "NetworkIdentifier";
+   case KMIP_TAG_ObjectGroupMember:
+      return "ObjectGroupMember";
+   case KMIP_TAG_CertificateLength:
+      return "CertificateLength";
+   case KMIP_TAG_DigitalSignatureAlgorithm:
+      return "DigitalSignatureAlgorithm";
+   case KMIP_TAG_CertificateSerialNumber:
+      return "CertificateSerialNumber";
+   case KMIP_TAG_DeviceSerialNumber:
+      return "DeviceSerialNumber";
+   case KMIP_TAG_IssuerAlternativeName:
+      return "IssuerAlternativeName";
+   case KMIP_TAG_IssuerDistinguishedName:
+      return "IssuerDistinguishedName";
+   case KMIP_TAG_SubjectAlternativeName:
+      return "SubjectAlternativeName";
+   case KMIP_TAG_SubjectDistinguishedName:
+      return "SubjectDistinguishedName";
+   case KMIP_TAG_X509CertificateIdentifier:
+      return "X509CertificateIdentifier";
+   case KMIP_TAG_X509CertificateIssuer:
+      return "X509CertificateIssuer";
+   case KMIP_TAG_X509CertificateSubject:
+      return "X509CertificateSubject";
+   case KMIP_TAG_KeyValueLocation:
+      return "KeyValueLocation";
+   case KMIP_TAG_KeyValueLocationValue:
+      return "KeyValueLocationValue";
+   case KMIP_TAG_KeyValueLocationType:
+      return "KeyValueLocationType";
+   case KMIP_TAG_KeyValuePresent:
+      return "KeyValuePresent";
+   case KMIP_TAG_OriginalCreationDate:
+      return "OriginalCreationDate";
+   case KMIP_TAG_PGPKey:
+      return "PGPKey";
+   case KMIP_TAG_PGPKeyVersion:
+      return "PGPKeyVersion";
+   case KMIP_TAG_AlternativeName:
+      return "AlternativeName";
+   case KMIP_TAG_AlternativeNameValue:
+      return "AlternativeNameValue";
+   case KMIP_TAG_AlternativeNameType:
+      return "AlternativeNameType";
+   case KMIP_TAG_Data:
+      return "Data";
+   case KMIP_TAG_SignatureData:
+      return "SignatureData";
+   case KMIP_TAG_DataLength:
+      return "DataLength";
+   case KMIP_TAG_RandomIV:
+      return "RandomIV";
+   case KMIP_TAG_MACData:
+      return "MACData";
+   case KMIP_TAG_AttestationType:
+      return "AttestationType";
+   case KMIP_TAG_Nonce:
+      return "Nonce";
+   case KMIP_TAG_NonceID:
+      return "NonceID";
+   case KMIP_TAG_NonceValue:
+      return "NonceValue";
+   case KMIP_TAG_AttestationMeasurement:
+      return "AttestationMeasurement";
+   case KMIP_TAG_AttestationAssertion:
+      return "AttestationAssertion";
+   case KMIP_TAG_IVLength:
+      return "IVLength";
+   case KMIP_TAG_TagLength:
+      return "TagLength";
+   case KMIP_TAG_FixedFieldLength:
+      return "FixedFieldLength";
+   case KMIP_TAG_CounterLength:
+      return "CounterLength";
+   case KMIP_TAG_InitialCounterValue:
+      return "InitialCounterValue";
+   case KMIP_TAG_InvocationFieldLength:
+      return "InvocationFieldLength";
+   case KMIP_TAG_AttestationCapableIndicator:
+      return "AttestationCapableIndicator";
+   case KMIP_TAG_OffsetItems:
+      return "OffsetItems";
+   case KMIP_TAG_LocatedItems:
+      return "LocatedItems";
+   case KMIP_TAG_CorrelationValue:
+      return "CorrelationValue";
+   case KMIP_TAG_InitIndicator:
+      return "InitIndicator";
+   case KMIP_TAG_FinalIndicator:
+      return "FinalIndicator";
+   case KMIP_TAG_RNGParameters:
+      return "RNGParameters";
+   case KMIP_TAG_RNGAlgorithm:
+      return "RNGAlgorithm";
+   case KMIP_TAG_DRBGAlgorithm:
+      return "DRBGAlgorithm";
+   case KMIP_TAG_FIPS186Variation:
+      return "FIPS186Variation";
+   case KMIP_TAG_PredictionResistance:
+      return "PredictionResistance";
+   case KMIP_TAG_RandomNumberGenerator:
+      return "RandomNumberGenerator";
+   case KMIP_TAG_ValidationInformation:
+      return "ValidationInformation";
+   case KMIP_TAG_ValidationAuthorityType:
+      return "ValidationAuthorityType";
+   case KMIP_TAG_ValidationAuthorityCountry:
+      return "ValidationAuthorityCountry";
+   case KMIP_TAG_ValidationAuthorityURI:
+      return "ValidationAuthorityURI";
+   case KMIP_TAG_ValidationVersionMajor:
+      return "ValidationVersionMajor";
+   case KMIP_TAG_ValidationVersionMinor:
+      return "ValidationVersionMinor";
+   case KMIP_TAG_ValidationType:
+      return "ValidationType";
+   case KMIP_TAG_ValidationLevel:
+      return "ValidationLevel";
+   case KMIP_TAG_ValidationCertificateIdentifier:
+      return "ValidationCertificateIdentifier";
+   case KMIP_TAG_ValidationCertificateURI:
+      return "ValidationCertificateURI";
+   case KMIP_TAG_ValidationVendorURI:
+      return "ValidationVendorURI";
+   case KMIP_TAG_ValidationProfile:
+      return "ValidationProfile";
+   case KMIP_TAG_ProfileInformation:
+      return "ProfileInformation";
+   case KMIP_TAG_ProfileName:
+      return "ProfileName";
+   case KMIP_TAG_ServerURI:
+      return "ServerURI";
+   case KMIP_TAG_ServerPort:
+      return "ServerPort";
+   case KMIP_TAG_StreamingCapability:
+      return "StreamingCapability";
+   case KMIP_TAG_AsynchronousCapability:
+      return "AsynchronousCapability";
+   case KMIP_TAG_AttestationCapability:
+      return "AttestationCapability";
+   case KMIP_TAG_UnwrapMode:
+      return "UnwrapMode";
+   case KMIP_TAG_DestroyAction:
+      return "DestroyAction";
+   case KMIP_TAG_ShreddingAlgorithm:
+      return "ShreddingAlgorithm";
+   case KMIP_TAG_RNGMode:
+      return "RNGMode";
+   case KMIP_TAG_ClientRegistrationMethod:
+      return "ClientRegistrationMethod";
+   case KMIP_TAG_CapabilityInformation:
+      return "CapabilityInformation";
+   case KMIP_TAG_KeyWrapType:
+      return "KeyWrapType";
+   case KMIP_TAG_BatchUndoCapability:
+      return "BatchUndoCapability";
+   case KMIP_TAG_BatchContinueCapability:
+      return "BatchContinueCapability";
+   case KMIP_TAG_PKCS12FriendlyName:
+      return "PKCS12FriendlyName";
+   case KMIP_TAG_Description:
+      return "Description";
+   case KMIP_TAG_Comment:
+      return "Comment";
+   case KMIP_TAG_AuthenticatedEncryptionAdditionalData:
+      return "AuthenticatedEncryptionAdditionalData";
+   case KMIP_TAG_AuthenticatedEncryptionTag:
+      return "AuthenticatedEncryptionTag";
+   case KMIP_TAG_SaltLength:
+      return "SaltLength";
+   case KMIP_TAG_MaskGenerator:
+      return "MaskGenerator";
+   case KMIP_TAG_MaskGeneratorHashingAlgorithm:
+      return "MaskGeneratorHashingAlgorithm";
+   case KMIP_TAG_PSource:
+      return "PSource";
+   case KMIP_TAG_TrailerField:
+      return "TrailerField";
+   case KMIP_TAG_ClientCorrelationValue:
+      return "ClientCorrelationValue";
+   case KMIP_TAG_ServerCorrelationValue:
+      return "ServerCorrelationValue";
+   case KMIP_TAG_DigestedData:
+      return "DigestedData";
+   case KMIP_TAG_CertificateSubjectCN:
+      return "CertificateSubjectCN";
+   case KMIP_TAG_CertificateSubjectO:
+      return "CertificateSubjectO";
+   case KMIP_TAG_CertificateSubjectOU:
+      return "CertificateSubjectOU";
+   case KMIP_TAG_CertificateSubjectEmail:
+      return "CertificateSubjectEmail";
+   case KMIP_TAG_CertificateSubjectC:
+      return "CertificateSubjectC";
+   case KMIP_TAG_CertificateSubjectST:
+      return "CertificateSubjectST";
+   case KMIP_TAG_CertificateSubjectL:
+      return "CertificateSubjectL";
+   case KMIP_TAG_CertificateSubjectUID:
+      return "CertificateSubjectUID";
+   case KMIP_TAG_CertificateSubjectSerialNumber:
+      return "CertificateSubjectSerialNumber";
+   case KMIP_TAG_CertificateSubjectTitle:
+      return "CertificateSubjectTitle";
+   case KMIP_TAG_CertificateSubjectDC:
+      return "CertificateSubjectDC";
+   case KMIP_TAG_CertificateSubjectDNQualifier:
+      return "CertificateSubjectDNQualifier";
+   case KMIP_TAG_CertificateIssuerCN:
+      return "CertificateIssuerCN";
+   case KMIP_TAG_CertificateIssuerO:
+      return "CertificateIssuerO";
+   case KMIP_TAG_CertificateIssuerOU:
+      return "CertificateIssuerOU";
+   case KMIP_TAG_CertificateIssuerEmail:
+      return "CertificateIssuerEmail";
+   case KMIP_TAG_CertificateIssuerC:
+      return "CertificateIssuerC";
+   case KMIP_TAG_CertificateIssuerST:
+      return "CertificateIssuerST";
+   case KMIP_TAG_CertificateIssuerL:
+      return "CertificateIssuerL";
+   case KMIP_TAG_CertificateIssuerUID:
+      return "CertificateIssuerUID";
+   case KMIP_TAG_CertificateIssuerSerialNumber:
+      return "CertificateIssuerSerialNumber";
+   case KMIP_TAG_CertificateIssuerTitle:
+      return "CertificateIssuerTitle";
+   case KMIP_TAG_CertificateIssuerDC:
+      return "CertificateIssuerDC";
+   case KMIP_TAG_CertificateIssuerDNQualifier:
+      return "CertificateIssuerDNQualifier";
+   case KMIP_TAG_Sensitive:
+      return "Sensitive";
+   case KMIP_TAG_AlwaysSensitive:
+      return "AlwaysSensitive";
+   case KMIP_TAG_Extractable:
+      return "Extractable";
+   case KMIP_TAG_NeverExtractable:
+      return "NeverExtractable";
+   case KMIP_TAG_ReplaceExisting:
+      return "ReplaceExisting";
+   default:
+      return "(Unknown Tag)";
+   }
+}
+
+static const char *kmip_item_type_to_string (kmip_item_type_t type) {
+   switch (type) {
+   case KMIP_ITEM_TYPE_Structure:
+   return "Structure";
+   case KMIP_ITEM_TYPE_Integer:
+   return "Integer";
+   case KMIP_ITEM_TYPE_LongInteger:
+   return "LongInteger";
+   case KMIP_ITEM_TYPE_BigInteger:
+   return "BigInteger";
+   case KMIP_ITEM_TYPE_Enumeration:
+   return "Enumeration";
+   case KMIP_ITEM_TYPE_Boolean:
+   return "Boolean";
+   case KMIP_ITEM_TYPE_TextString:
+   return "TextString";
+   case KMIP_ITEM_TYPE_ByteString:
+   return "ByteString";
+   case KMIP_ITEM_TYPE_DateTime:
+   return "DateTime";
+   case KMIP_ITEM_TYPE_Interval:
+   return "Interval";
+   default:
+   return "(Unknown Type)";
+   }
+}
+
+static bool kmip_reader_next (kmip_reader_t *reader, uint32_t read_length) {
+   uint32_t advance_length = read_length;
+   advance_length = compute_padded_length (advance_length);
+
+   CHECK_REMAINING_BUFFER_AND_RET (advance_length);
+
+   /* Skip to the next type. */
+   reader->pos += advance_length;
+   return true;
+}
+
+static bool
+kmip_dump_recursive (kms_request_str_t *str, kmip_reader_t *reader, int level)
+{
+   kmip_tag_type_t tag;
+   kmip_item_type_t type;
+   uint32_t len;
+   kmip_reader_t subreader;
+
+   while (true) {
+      int i;
+
+      if (!kmip_reader_read_tag (reader, &tag)) {
+         /* EOF */
+         return false;
+      }
+
+      for (i = 0; i < level; i++) {
+         kms_request_str_append_char (str, ' ');
+      }
+
+      kms_request_str_appendf (str,
+                               "tag=%s (%02x%02x%02x)",
+                               kmip_tag_type_to_string (tag),
+                               (tag & 0xFF0000) >> 16,
+                               (tag & 0xFF00) >> 8,
+                               tag & 0xFF);
+      if (!kmip_reader_read_type (reader, &type)) {
+         goto error;
+      }
+      kms_request_str_appendf (
+         str, " type=%s (%02x)", kmip_item_type_to_string (type), type);
+      if (!kmip_reader_read_length (reader, &len)) {
+         goto error;
+      }
+      kms_request_str_appendf (str, " length=%" PRIu32, len);
+
+      if (type == KMIP_ITEM_TYPE_Structure) {
+         kmip_reader_in_place (reader, reader->pos, (size_t) len, &subreader);
+         kms_request_str_append_char (str, '\n');
+         kmip_dump_recursive (str, &subreader, level + 1);
+         kmip_reader_next (reader, len);
+         continue;
+      } else if (type == KMIP_ITEM_TYPE_Integer) {
+         int32_t value;
+         kmip_reader_read_integer (reader, &value);
+         kms_request_str_appendf (str, " value=%" PRId32, value);
+      } else if (type == KMIP_ITEM_TYPE_LongInteger) {
+         int64_t value;
+         kmip_reader_read_long_integer (reader, &value);
+         kms_request_str_appendf (str, " value=%" PRId64, value);
+      } else if (type == KMIP_ITEM_TYPE_BigInteger) {
+         kms_request_str_appendf (str, " value=(TODO)");
+         kmip_reader_next (reader, len);
+      } else if (type == KMIP_ITEM_TYPE_Enumeration) {
+         uint32_t value;
+         kmip_reader_read_enumeration (reader, &value);
+         kms_request_str_appendf (str, " value=%" PRIu32, value);
+      } else if (type == KMIP_ITEM_TYPE_Boolean) {
+         kms_request_str_appendf (str, " value=(TODO)");
+         kmip_reader_next (reader, len);
+      } else if (type == KMIP_ITEM_TYPE_TextString) {
+         uint8_t *value;
+         value = malloc (len + 1);
+         value[len] = 0;
+         kmip_reader_read_string (reader, &value, len);
+         kms_request_str_appendf (str, " value=%s", (char *) value);
+      } else if (type == KMIP_ITEM_TYPE_ByteString) {
+         kms_request_str_appendf (str, " value=(TODO)");
+         kmip_reader_next (reader, len);
+      } else if (type == KMIP_ITEM_TYPE_DateTime) {
+         kms_request_str_appendf (str, " value=(TODO)");
+         kmip_reader_next (reader, len);
+      } else if (type == KMIP_ITEM_TYPE_Interval) {
+         kms_request_str_appendf (str, " value=(TODO)");
+         kmip_reader_next (reader, len);
+      } else {
+         goto error;
+      }
+
+      kms_request_str_append_char (str, '\n');
+   }
+
+error:
+   kms_request_str_append_chars (str, "<malformed>", -1);
+   return false;
+}
+
+char *
+kmip_dump (uint8_t *data, size_t len)
+{
+   kms_request_str_t *str = kms_request_str_new ();
+   kmip_reader_t *reader;
+
+
+   reader = kmip_reader_new (data, len);
+   kmip_dump_recursive (str, reader, 0);
+   return kms_request_str_detach (str);
+}

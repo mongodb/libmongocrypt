@@ -147,4 +147,7 @@ kmip_reader_find_and_read_bytes (kmip_reader_t *reader,
                                  uint8_t **out_ptr,
                                  size_t *out_len);
 
+char *
+kmip_dump (uint8_t* data, size_t len);
+
 #endif /* KMS_KMIP_READER_WRITER_PRIVATE_H */
