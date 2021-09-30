@@ -162,6 +162,7 @@ kmip_register_and_activate_secretdata (void)
 
    reqbytes = kms_kmip_request_to_bytes (req, &reqlen);
    res = send_kms_kmip_request (req, &test_env);
+   kms_kmip_request_destroy (req);
    return /* unique identifier */ NULL;
 }
 
@@ -179,6 +180,7 @@ kmip_discover_versions (void)
    TEST_ASSERT (req != NULL);
 
    res = send_kms_kmip_request (req, &test_env);
+   kms_kmip_request_destroy (req);
    return /* unique identifier */ NULL;
 }
 
