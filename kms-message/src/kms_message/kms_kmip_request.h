@@ -37,5 +37,8 @@ kms_kmip_request_discover_versions_new (void *reserved, kms_status_t *status);
 KMS_MSG_EXPORT (uint8_t *)
 kms_kmip_request_to_bytes (kms_kmip_request_t *req, uint32_t *len);
 
+KMS_MSG_EXPORT (void)
+kms_kmip_request_destroy (kms_kmip_request_t *req);
+
 
 #endif /* KMS_KMIP_REQUEST_H */
