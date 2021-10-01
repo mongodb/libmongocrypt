@@ -249,6 +249,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       test/test_kms_kmip_request.c
       test/test_kms_status.c
       test/test_kms_kmip_response_parser.c
+      test/test_kms_kmip_response.c
    )
    target_include_directories(test_kms_request PRIVATE ${PROJECT_SOURCE_DIR})
    target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})
