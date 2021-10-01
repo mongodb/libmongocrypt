@@ -34,6 +34,10 @@ kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
 KMS_MSG_EXPORT (kms_kmip_request_t *)
 kms_kmip_request_discover_versions_new (void *reserved, kms_status_t *status);
 
+/* uid is a NULL terminated string. */
+KMS_MSG_EXPORT (kms_kmip_request_t *)
+kms_kmip_request_get_new (void *reserved, char *uid, kms_status_t *status);
+
 KMS_MSG_EXPORT (uint8_t *)
 kms_kmip_request_to_bytes (kms_kmip_request_t *req, uint32_t *len);
 

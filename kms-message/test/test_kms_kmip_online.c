@@ -29,6 +29,8 @@
 #include "src/kms_kmip_reader_writer_private.h"
 #include "test_kms_online_util.h"
 
+#include "src/hexlify.h"
+
 /* Define TEST_TRACING_INSECURE in compiler flags to enable
  * log output with sensitive information (for debugging). */
 #ifdef TEST_TRACING_INSECURE
@@ -139,7 +141,9 @@ send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
 
    resbytes = kms_kmip_response_to_bytes (res, &reslen);
    debugstr = kmip_dump (resbytes, reslen);
+   char * reshex = hexlify (resbytes, reslen);
    printf ("%s\n", debugstr);
+   printf ("as hex:\n%s\n", reshex);
    free (debugstr);
    return res;
 }
@@ -154,6 +158,7 @@ kmip_register_and_activate_secretdata (void)
    char *data = "\xff\xa8\xcc\x79\xe8\xc3\x76\x3b\x01\x21\xfc\xd0\x6b\xb3\x48\x8c\x8b\xf4\x2c\x07\x74\x60\x46\x40\x27\x9b\x16\xb2\x64\x19\x40\x30\xee\xb0\x83\x96\x24\x1d\xef\xcc\x4d\x32\xd1\x6e\xa8\x31\xad\x77\x71\x38\xf0\x8e\x2f\x98\x56\x64\xc0\x04\xc2\x48\x5d\x6f\x49\x91\xeb\x3d\x9e\xc3\x28\x02\x53\x78\x36\xa9\x06\x6b\x4e\x10\xae\xb5\x6a\x5c\xcf\x6a\xa4\x69\x01\xe6\x25\xe3\x40\x0c\x78\x11\xd2\xec";
    uint8_t *reqbytes;
    uint32_t reqlen;
+   char *uid;
 
    test_env_init (&test_env);
    status = kms_status_new ();
@@ -163,10 +168,13 @@ kmip_register_and_activate_secretdata (void)
    reqbytes = kms_kmip_request_to_bytes (req, &reqlen);
    res = send_kms_kmip_request (req, &test_env);
    kms_kmip_request_destroy (req);
-   return /* unique identifier */ NULL;
+
+   uid = kms_kmip_response_get_unique_identifier (res, status);
+   ASSERT_STATUS_OK (status);
+   return uid;
 }
 
-static char *
+static void
 kmip_discover_versions (void)
 {
    test_env_t test_env;
@@ -181,19 +189,61 @@ kmip_discover_versions (void)
 
    res = send_kms_kmip_request (req, &test_env);
    kms_kmip_request_destroy (req);
-   return /* unique identifier */ NULL;
+   kms_kmip_response_destroy (res);
+}
+
+static uint8_t *
+kmip_get (char *uid, uint32_t* secretdata_len) {
+   test_env_t test_env;
+   kms_kmip_request_t *req;
+   kms_kmip_response_t *res;
+   kms_status_t *status;
+   uint8_t *secretdata;
+
+   test_env_init (&test_env);
+   status = kms_status_new ();
+   req = kms_kmip_request_get_new (NULL, uid, status);
+   ASSERT_STATUS_OK (status);
+
+   res = send_kms_kmip_request (req, &test_env);
+   kms_kmip_request_destroy (req);
+   secretdata = kms_kmip_response_get_secretdata (res, secretdata_len, status);
+   ASSERT_STATUS_OK (status);
+   kms_kmip_response_destroy (res);
+   return secretdata;
 }
 
 static void
 test_kmip_register_and_activate_secretdata (void)
 {
-   kmip_register_and_activate_secretdata ();
+   char *uid;
+   uid = kmip_register_and_activate_secretdata ();
+   free (uid);
 }
 
 static void
 test_kmip_discover_versions (void)
 {
    kmip_discover_versions ();
+}
+
+
+static void
+test_kmip_get (void) {
+   char *uid;
+   uint8_t *secretdata;
+   uint32_t secretdata_len;
+   char *secretdata_hex;
+
+   uid = kmip_register_and_activate_secretdata ();
+   secretdata = kmip_get (uid, &secretdata_len);
+   
+   secretdata_hex = hexlify (secretdata, secretdata_len);
+   printf ("got hex: %s\n", secretdata_hex);
+   
+   free (secretdata_hex);
+   free (uid);
+   free (secretdata);
 }
 
 static void
@@ -256,6 +306,8 @@ main (int argc, char **argv)
       RUN_TEST (test_kmip_discover_versions);
    } else if (test_selector == NULL || 0 == strcmp (test_selector, "dump_kmip_from_pykmip")) {
       RUN_TEST (dump_kmip_from_pykmip);
+   } else if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_get")) {
+      RUN_TEST (test_kmip_get);
    }
    return 0;
 }
