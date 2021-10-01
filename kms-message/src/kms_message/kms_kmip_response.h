@@ -30,12 +30,10 @@ typedef struct _kms_kmip_response_t kms_kmip_response_t;
 KMS_MSG_EXPORT (const uint8_t *)
 kms_kmip_response_to_bytes (kms_kmip_response_t *req, uint32_t *len);
 
-/* Caveat, reads the UniqueIdentifier in the first BatchItem it sees. */
-KMS_MSG_EXPORT (bool)
-kms_kmip_response_get_unique_identifier (kms_kmip_response_t *req,
-                                     char **uid,
-                                     uint32_t *uidlen,
-                                     kms_status_t *status);
+/* Caveat, reads the UniqueIdentifier in the first BatchItem it sees.
+ * Returns a null terminated string for the UniqueIdentifier. */
+KMS_MSG_EXPORT (char*)
+kms_kmip_response_get_unique_identifier (kms_kmip_response_t *req, kms_status_t *status);
 
 KMS_MSG_EXPORT (bool)
 kms_kmip_response_get_secretdata (kms_kmip_response_t *req,
