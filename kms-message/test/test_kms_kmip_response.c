@@ -91,6 +91,25 @@ as hex:
 42007b01000000c842007a0100000048420069010000002042006a0200000004000000010000000042006b020000000400000000000000004200920900000008000000006155cd8742000d0200000004000000010000000042000f010000007042007f0500000004000000010000000042007e0500000004000000040000000042007d07000000444572726f722070617273696e672072657175657374206d6573736167652e2053656520736572766572206c6f677320666f72206d6f726520696e666f726d6174696f6e2e00000000
 */
 
+/* (TODO) Hashicorp Vault error on unique identifier not found
+2021/10/01 10:43:13.0129: [3400917]:    DEBUG: test_kms_kmip_online: reading response from KMIP server
+tag=ResponseMessage (42007b) type=Structure (01) length=168
+ tag=ResponseHeader (42007a) type=Structure (01) length=72
+  tag=ProtocolVersion (420069) type=Structure (01) length=32
+   tag=ProtocolVersionMajor (42006a) type=Integer (02) length=4 value=1
+   tag=ProtocolVersionMinor (42006b) type=Integer (02) length=4 value=4
+  tag=TimeStamp (420092) type=DateTime (09) length=8 value=(TODO)
+  tag=BatchCount (42000d) type=Integer (02) length=4 value=1
+ tag=BatchItem (42000f) type=Structure (01) length=80
+  tag=Operation (42005c) type=Enumeration (05) length=4 value=10
+  tag=ResultStatus (42007f) type=Enumeration (05) length=4 value=1
+  tag=ResultReason (42007e) type=Enumeration (05) length=4 value=1
+  tag=ResultMessage (42007d) type=TextString (07) length=24 value=ResultReasonItemNotFound
+
+as hex:
+42007b01000000a842007a0100000048420069010000002042006a0200000004000000010000000042006b0200000004000000040000000042009209000000080000000061571e8142000d0200000004000000010000000042000f010000005042005c05000000040000000a0000000042007f0500000004000000010000000042007e0500000004000000010000000042007d0700000018526573756c74526561736f6e4974656d4e6f74466f756e64
+*/
+
 void
 kms_kmip_response_get_unique_identifier_test (void)
 {
@@ -102,6 +121,9 @@ kms_kmip_response_get_unique_identifier_test (void)
    res.data = example_response;
    res.len = sizeof (example_response);
    status = kms_status_new ();
+
+   kms_kmip_response_ok (&res, status);
+   ASSERT_STATUS_OK (status);
 
    actual_uid = kms_kmip_response_get_unique_identifier (&res, status);
    ASSERT_STATUS_OK (status);
@@ -167,6 +189,9 @@ kms_kmip_response_get_secretdata_test (void)
    res.len = sizeof (example_response);
    status = kms_status_new ();
 
+   kms_kmip_response_ok (&res, status);
+   ASSERT_STATUS_OK (status);
+
    actual_secretdata =
       kms_kmip_response_get_secretdata (&res, &actual_secretdata_len, status);
    ASSERT_STATUS_OK (status);
@@ -175,5 +200,46 @@ kms_kmip_response_get_secretdata_test (void)
                     actual_secretdata,
                     actual_secretdata_len);
    free (actual_secretdata);
+   kms_status_destroy (status);
+}
+
+#define ERROR_GET_RESPOSE_NOTFOUND                                            \
+   0x42, 0x00, 0x7b, 0x01, 0x00, 0x00, 0x00, 0xa8, 0x42, 0x00, 0x7a, 0x01,    \
+      0x00, 0x00, 0x00, 0x48, 0x42, 0x00, 0x69, 0x01, 0x00, 0x00, 0x00, 0x20, \
+      0x42, 0x00, 0x6a, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, \
+      0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x6b, 0x02, 0x00, 0x00, 0x00, 0x04, \
+      0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x92, 0x09, \
+      0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x61, 0x57, 0x1e, 0x81, \
+      0x42, 0x00, 0x0d, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, \
+      0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x0f, 0x01, 0x00, 0x00, 0x00, 0x50, \
+      0x42, 0x00, 0x5c, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0a, \
+      0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x7f, 0x05, 0x00, 0x00, 0x00, 0x04, \
+      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x7e, 0x05, \
+      0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, \
+      0x42, 0x00, 0x7d, 0x07, 0x00, 0x00, 0x00, 0x18, 0x52, 0x65, 0x73, 0x75, \
+      0x6c, 0x74, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x49, 0x74, 0x65, 0x6d, \
+      0x4e, 0x6f, 0x74, 0x46, 0x6f, 0x75, 0x6e, 0x64
+
+void
+kms_kmip_response_get_secretdata_notfound_test (void) {
+   uint8_t example_response[] = {ERROR_GET_RESPOSE_NOTFOUND};
+   kms_kmip_response_t res;
+   kms_status_t *status;
+   bool ok;
+   uint8_t* secretdata;
+   uint32_t secretdata_len;
+
+   res.data = example_response;
+   res.len = sizeof (example_response);
+   status = kms_status_new ();
+
+   ok = kms_kmip_response_ok (&res, status);
+   ASSERT_STATUS_ERROR (status, "ResultReasonItemNotFound");
+
+   kms_status_reset (status);
+   secretdata = kms_kmip_response_get_secretdata (&res, &secretdata_len, status);
+   ASSERT_STATUS_ERROR (status, "ResultReasonItemNotFound");
+   ASSERT (NULL == secretdata);
+
    kms_status_destroy (status);
 }
