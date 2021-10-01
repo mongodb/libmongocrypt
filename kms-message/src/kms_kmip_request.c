@@ -189,6 +189,62 @@ kms_kmip_request_register_secretdata_new (void *reserved,
 }
 
 kms_kmip_request_t *
+kms_kmip_request_activate_new (void *reserved, char* uid, kms_status_t *status) {
+   /*
+   // The following is the XML representation of the request.
+   <RequestMessage>
+      <RequestHeader>
+         <ProtocolVersion>
+            <ProtocolVersionMajor type="Integer" value="1" />
+            <ProtocolVersionMinor type="Integer" value="4" />
+         </ProtocolVersion>
+         <BatchCount type="Integer" value="1" />
+      </RequestHeader>
+      <BatchItem>
+         // 00000012 = Activate
+         <Operation type="Enumeration" value="00000012" />
+         <RequestPayload>
+            <UniqueIdentifier type="TextString" value="...">
+         </RequestPayload>
+      </BatchItem>
+   */
+
+   kmip_writer_t *writer;
+   kms_kmip_request_t *req;
+   const uint8_t *buf;
+   size_t buflen;
+
+   writer = kmip_writer_new ();
+   kmip_writer_begin_struct (writer, KMIP_TAG_RequestMessage);
+
+   kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
+   kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 1);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 4);
+   kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
+   kmip_writer_write_integer(writer, KMIP_TAG_BatchCount, 1);
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
+   
+   kmip_writer_begin_struct (writer, KMIP_TAG_BatchItem);
+   /* 0x0A == Get */
+   kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x12);
+   kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
+   kmip_writer_write_string (writer, KMIP_TAG_UniqueIdentifier, uid, strlen(uid));
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
+
+   /* Copy the KMIP writer buffer to a KMIP request. */
+   buf = kmip_writer_get_buffer (writer, &buflen);
+   req = calloc (1, sizeof (kms_kmip_request_t));
+   req->data = malloc (buflen);
+   memcpy (req->data, buf, buflen);
+   req->len = (uint32_t) buflen;
+   kmip_writer_destroy (writer);
+   return req;
+}
+
+kms_kmip_request_t *
 kms_kmip_request_get_new (void *reserved, char *uid, kms_status_t *status) {
    /*
    // The following is the XML representation of the request.
@@ -205,8 +261,6 @@ kms_kmip_request_get_new (void *reserved, char *uid, kms_status_t *status) {
          <Operation type="Enumeration" value="0000000A" />
          <RequestPayload>
             <UniqueIdentifier type="TextString" value="...">
-            // 00000001 = Raw
-            <KeyFormatType type="Enumeration" value="00000001" />
          </RequestPayload>
       </BatchItem>
    */

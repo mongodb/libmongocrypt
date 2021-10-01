@@ -171,6 +171,15 @@ kmip_register_and_activate_secretdata (void)
 
    uid = kms_kmip_response_get_unique_identifier (res, status);
    ASSERT_STATUS_OK (status);
+   kms_kmip_response_destroy (res);
+
+   req = kms_kmip_request_activate_new (NULL, uid, status);
+   ASSERT_STATUS_OK (status);
+   res = send_kms_kmip_request (req, &test_env);
+   kms_kmip_request_destroy (req);
+   kms_kmip_response_ok (res, status);
+   ASSERT_STATUS_OK (status);
+   kms_kmip_response_destroy (res);
    return uid;
 }
 

@@ -51,7 +51,6 @@ kms_kmip_request_register_secretdata_invalid_test (void)
    kms_status_destroy (status);
 }
 
-#include "src/kms_kmip_reader_writer_private.h"
 
 void
 kms_kmip_get_test (void)
@@ -71,10 +70,47 @@ kms_kmip_get_test (void)
 
    actual_bytes = kms_kmip_request_to_bytes (req, &actual_len);
    ASSERT (actual_bytes != NULL);
+   ASSERT_CMPBYTES (actual_bytes, actual_len, expected_bytes, expected_len);
 
-   // printf ("expect: %s", kmip_dump (expected_bytes, expected_len));
-   // printf ("actual: %s", kmip_dump (actual_bytes, actual_len));
+   kms_kmip_request_destroy (req);
+   kms_status_destroy (status);
+}
 
+
+/*
+2021/10/01 11:50:45.0874: [3530715]:    DEBUG: test_kms_kmip_online: reading response from KMIP server
+tag=ResponseMessage (42007b) type=Structure (01) length=168
+ tag=ResponseHeader (42007a) type=Structure (01) length=72
+  tag=ProtocolVersion (420069) type=Structure (01) length=32
+   tag=ProtocolVersionMajor (42006a) type=Integer (02) length=4 value=1
+   tag=ProtocolVersionMinor (42006b) type=Integer (02) length=4 value=4
+  tag=TimeStamp (420092) type=DateTime (09) length=8 value=(TODO)
+  tag=BatchCount (42000d) type=Integer (02) length=4 value=1
+ tag=BatchItem (42000f) type=Structure (01) length=80
+  tag=Operation (42005c) type=Enumeration (05) length=4 value=18
+  tag=ResultStatus (42007f) type=Enumeration (05) length=4 value=0
+  tag=ResponsePayload (42007c) type=Structure (01) length=40
+   tag=UniqueIdentifier (420094) type=TextString (07) length=32 value=ZAjjSGE0r9YdtUWaY585Jk1lISQwhPW4
+
+as hex:
+42007b01000000a842007a0100000048420069010000002042006a0200000004000000010000000042006b0200000004000000040000000042009209000000080000000061572e5542000d0200000004000000010000000042000f010000005042005c0500000004000000120000000042007f0500000004000000000000000042007c010000002842009407000000205a416a6a534745307239596474555761593538354a6b316c4953517768505734
+*/
+void
+kms_kmip_request_activate_test (void) {
+      kms_kmip_request_t *req;
+   kms_status_t *status;
+
+   uint8_t *actual_bytes;
+   uint32_t actual_len;
+   uint8_t expected_bytes[] = {0x42,0x00,0x78,0x01,0x00,0x00,0x00,0x70,0x42,0x00,0x77,0x01,0x00,0x00,0x00,0x38,0x42,0x00,0x69,0x01,0x00,0x00,0x00,0x20,0x42,0x00,0x6a,0x02,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x42,0x00,0x6b,0x02,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x42,0x00,0x0d,0x02,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x42,0x00,0x0f,0x01,0x00,0x00,0x00,0x28,0x42,0x00,0x5c,0x05,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x12,0x00,0x00,0x00,0x00,0x42,0x00,0x79,0x01,0x00,0x00,0x00,0x10,0x42,0x00,0x94,0x07,0x00,0x00,0x00,0x03,0x66,0x6f,0x6f,0x00,0x00,0x00,0x00,0x00};
+   uint32_t expected_len = sizeof (expected_bytes);
+
+   status = kms_status_new ();
+   req = kms_kmip_request_activate_new (NULL, "foo", status);
+   ASSERT_STATUS_OK (status);
+
+   actual_bytes = kms_kmip_request_to_bytes (req, &actual_len);
+   ASSERT (actual_bytes != NULL);
    ASSERT_CMPBYTES (actual_bytes, actual_len, expected_bytes, expected_len);
 
    kms_kmip_request_destroy (req);
