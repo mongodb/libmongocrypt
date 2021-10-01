@@ -96,24 +96,17 @@ kms_kmip_response_get_unique_identifier_test (void)
 {
    uint8_t example_response[] = {SUCCESS_RESPONSE};
    kms_kmip_response_t res;
-   bool ok;
    char *actual_uid;
-   uint32_t actual_uidlen;
    kms_status_t *status;
 
    res.data = example_response;
    res.len = sizeof (example_response);
    status = kms_status_new ();
 
-   ok = kms_kmip_response_get_unique_identifier (&res, &actual_uid, &actual_uidlen, status);
+   actual_uid = kms_kmip_response_get_unique_identifier (&res, status);
    ASSERT_STATUS_OK (status);
-   ASSERT (ok);
-
-   /* actual_uid is not NULL terminated. Use ASSERT_CMPBYTES instead of ASSERT_CMPSTR. */
-   ASSERT_CMPSTR_WITH_LEN (SUCCESS_RESPONSE_UNIQUE_IDENTIFIER,
-                           strlen (SUCCESS_RESPONSE_UNIQUE_IDENTIFIER),
-                           actual_uid,
-                           actual_uidlen);
+   ASSERT_CMPSTR (SUCCESS_RESPONSE_UNIQUE_IDENTIFIER, actual_uid);
+   free (actual_uid);
    kms_status_destroy (status);
 }
 

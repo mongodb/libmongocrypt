@@ -37,10 +37,8 @@ const char* kmip_tag_to_string (kmip_tag_type_t tag) {
     return "TODO";
 }
 
-bool
+char *
 kms_kmip_response_get_unique_identifier (kms_kmip_response_t *req,
-                                        char **uid,
-                                        uint32_t *uidlen,
                                         kms_status_t *status)
 {
     kmip_reader_t *reader = NULL;
@@ -50,6 +48,8 @@ kms_kmip_response_get_unique_identifier (kms_kmip_response_t *req,
     bool ok;
     size_t pos;
     size_t len;
+    char *uid = NULL;
+    kms_request_str_t *nullterminated = NULL;
 
     ok = false;
     reader = kmip_reader_new (req->data, req->len);
@@ -73,12 +73,12 @@ kms_kmip_response_get_unique_identifier (kms_kmip_response_t *req,
         goto fail;
     }
 
-    if (!kmip_reader_read_string (reader4, (uint8_t**) uid, len)) {
+    if (!kmip_reader_read_string (reader4, (uint8_t**) &uid, len)) {
         kms_status_errorf (status, "unable to read unique identifier");
         goto fail;
     }
 
-    *uidlen = len;
+    nullterminated = kms_request_str_new_from_chars (uid, len);
 
     ok = true;
 fail:
@@ -86,7 +86,7 @@ fail:
     kmip_reader_destroy (reader3);
     kmip_reader_destroy (reader2);
     kmip_reader_destroy (reader);
-    return ok;
+    return kms_request_str_detach (nullterminated);
 }
 
 bool
