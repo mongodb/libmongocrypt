@@ -162,7 +162,7 @@ kmip_register_and_activate_secretdata (void)
 
    test_env_init (&test_env);
    status = kms_status_new ();
-   req = kms_kmip_request_register_and_activate_secretdata_new (NULL, (uint8_t*) data, 96, status);
+   req = kms_kmip_request_register_secretdata_new (NULL, (uint8_t*) data, 96, status);
    ASSERT_STATUS_OK (status);
 
    reqbytes = kms_kmip_request_to_bytes (req, &reqlen);

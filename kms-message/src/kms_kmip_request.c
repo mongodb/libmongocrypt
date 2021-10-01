@@ -92,7 +92,7 @@ kms_kmip_request_discover_versions_new (void *reserved, kms_status_t *status) {
 
 
 kms_kmip_request_t *
-kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
+kms_kmip_request_register_secretdata_new (void *reserved,
                                                        uint8_t *data,
                                                        uint32_t len,
                                                        kms_status_t *status)
@@ -115,7 +115,7 @@ kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
             <ProtocolVersionMajor type="Integer" value="1" />
             <ProtocolVersionMinor type="Integer" value="4" />
          </ProtocolVersion>
-         <BatchCount type="Integer" value="2" />
+         <BatchCount type="Integer" value="1" />
       </RequestHeader>
       <BatchItem>
          <Operation type="Enumeration" value="00000003" />
@@ -141,13 +141,6 @@ kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
             </SecretData>
          </RequestPayload>
       </BatchItem>
-      <BatchItem>
-         <Operation type="Enumeration" value="00000012" />
-         <UniqueBatchItemID type="ByteString" value="B" />
-         <RequestPayload>
-            (No payload. This should use the previous unique identifier)
-         </RequestPayload>
-      </BatchItem>
    */
 
    writer = kmip_writer_new ();
@@ -159,7 +152,6 @@ kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
    kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 4);
    kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
    kmip_writer_write_integer(writer, KMIP_TAG_BatchCount, 1);
-   // TODO: PyKMIP errors when BatchCount is 2. I think the best course of action is to not activate.
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
    
    kmip_writer_begin_struct (writer, KMIP_TAG_BatchItem);
@@ -182,14 +174,6 @@ kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
    kmip_writer_close_struct (writer); /* KMIP_TAG_KeyValue */
    kmip_writer_close_struct (writer); /* KMIP_TAG_KeyBlock */
    kmip_writer_close_struct (writer); /* KMIP_TAG_SecretData */
-   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
-   kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
-
-   kmip_writer_begin_struct (writer, KMIP_TAG_BatchItem);
-   /* 0x12 == Activate */
-   kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x12);
-   kmip_writer_write_bytes (writer, KMIP_TAG_UniqueBatchItemID, "B", 1);
-   kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
    kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */

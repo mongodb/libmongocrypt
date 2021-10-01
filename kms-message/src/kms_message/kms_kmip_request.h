@@ -26,10 +26,10 @@
 typedef struct _kms_kmip_request_t kms_kmip_request_t;
 
 KMS_MSG_EXPORT (kms_kmip_request_t *)
-kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
-                                                       uint8_t *data,
-                                                       uint32_t len,
-                                                       kms_status_t *status);
+kms_kmip_request_register_secretdata_new (void *reserved,
+                                          uint8_t *data,
+                                          uint32_t len,
+                                          kms_status_t *status);
 
 KMS_MSG_EXPORT (kms_kmip_request_t *)
 kms_kmip_request_discover_versions_new (void *reserved, kms_status_t *status);
