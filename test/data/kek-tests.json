@@ -128,5 +128,40 @@
             "extra": "invalid"
         }, 
         "expect": "Unexpected field: 'extra'"
+    },
+    {
+        "input": {
+            "provider": "kmip"
+        }, 
+        "expect": "ok"
+    },
+    {
+        "input": {
+            "provider": "kmip",
+            "endpoint": "localhost:5696"
+        }, 
+        "expect": "ok"
+    },
+    {
+        "input": {
+            "provider": "kmip",
+            "endpoint": "localhost:5696",
+            "keyId": "myKeyId"
+        }, 
+        "expect": "ok"
+    },
+    {
+        "input": {
+            "provider": "kmip",
+            "endpoint": 123
+        }, 
+        "expect": "expected UTF-8 endpoint"
+    },
+    {
+        "input": {
+            "provider": "kmip",
+            "keyId": 123
+        }, 
+        "expect": "expected UTF-8 keyId"
     }
 ]

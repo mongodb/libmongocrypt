@@ -67,11 +67,21 @@ typedef struct {
 } _mongocrypt_aws_kek_t;
 
 typedef struct {
+   /* KMIPTODO
+    * The keyId field breaks the existing model.
+    * It is optional in the options for creating a 'kmip' data key.
+    * It is required in the final data encryption key document. */
+   char *key_id; /* optional. */
+   _mongocrypt_endpoint_t *endpoint; /* optional. */
+} _mongocrypt_kmip_kek_t;
+
+typedef struct {
    _mongocrypt_kms_provider_t kms_provider;
    union {
       _mongocrypt_azure_kek_t azure;
       _mongocrypt_gcp_kek_t gcp;
       _mongocrypt_aws_kek_t aws;
+      _mongocrypt_kmip_kek_t kmip;
    } provider;
 } _mongocrypt_kek_t;
 

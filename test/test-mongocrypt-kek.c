@@ -42,12 +42,22 @@ static void _run_one_test (_mongocrypt_tester_t *tester, bson_t *test) {
 
     ret = _mongocrypt_kek_parse_owned (&input, &kek, status);
     if (0 == strcmp (expect, "ok")) {
+        _mongocrypt_kek_t kek_copy;
+
         ASSERT_OK_STATUS (ret, status);
         bson_init (&out);
         ret = _mongocrypt_kek_append (&kek, &out, status);
         ASSERT_OK_STATUS (ret, status);
         /* This should round trip. */
         _assert_match_bson (&out, &input);
+
+        /* Check that copy works as well. */
+        bson_reinit (&out);
+        _mongocrypt_kek_copy_to (&kek, &kek_copy);
+        ret = _mongocrypt_kek_append (&kek_copy, &out, status);
+        ASSERT_OK_STATUS (ret, status);
+        _assert_match_bson (&out, &input);
+        _mongocrypt_kek_cleanup (&kek_copy);
         bson_destroy (&out);
     } else {
         ASSERT_FAILS_STATUS (ret, status, expect);
