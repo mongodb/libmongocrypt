@@ -49,6 +49,10 @@ typedef struct {
 } _mongocrypt_opts_kms_provider_local_t;
 
 typedef struct {
+   _mongocrypt_endpoint_t *endpoint;
+} _mongocrypt_opts_kms_provider_kmip_t;
+
+typedef struct {
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
    _mongocrypt_buffer_t schema_map;
@@ -58,6 +62,7 @@ typedef struct {
    _mongocrypt_opts_kms_provider_aws_t kms_provider_aws;
    _mongocrypt_opts_kms_provider_azure_t kms_provider_azure;
    _mongocrypt_opts_kms_provider_gcp_t kms_provider_gcp;
+   _mongocrypt_opts_kms_provider_kmip_t kms_provider_kmip;
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;
    void *sign_ctx;
 } _mongocrypt_opts_t;
