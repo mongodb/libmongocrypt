@@ -1570,3 +1570,36 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
 fail:
    return ret;
 }
+
+const char *
+mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len)
+{
+#define SET_AND_RET(x)                              \
+   do {                                             \
+      if (len) {                                    \
+         *len = (sizeof (x) / sizeof ((x)[0]) - 1); \
+      }                                             \
+      return (x);                                   \
+   } while (0);
+
+   switch (kms->req_type) {
+   default:
+      BSON_ASSERT ("unknown KMS request");
+   case MONGOCRYPT_KMS_AWS_ENCRYPT:
+   case MONGOCRYPT_KMS_AWS_DECRYPT:
+      SET_AND_RET ("aws");
+   case MONGOCRYPT_KMS_AZURE_OAUTH:
+   case MONGOCRYPT_KMS_AZURE_WRAPKEY:
+   case MONGOCRYPT_KMS_AZURE_UNWRAPKEY:
+      SET_AND_RET ("azure");
+   case MONGOCRYPT_KMS_GCP_OAUTH:
+   case MONGOCRYPT_KMS_GCP_ENCRYPT:
+   case MONGOCRYPT_KMS_GCP_DECRYPT:
+      SET_AND_RET ("gcp");
+   case MONGOCRYPT_KMS_KMIP_REGISTER:
+   case MONGOCRYPT_KMS_KMIP_ACTIVATE:
+   case MONGOCRYPT_KMS_KMIP_GET:
+      SET_AND_RET ("kmip");
+   }
+#undef SET_AND_RET
+}
