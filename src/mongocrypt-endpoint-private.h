@@ -39,12 +39,19 @@ _mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src);
 void
 _mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint);
 
+typedef struct {
+   /* allow_empty_subdomain does not require "host" to contain dot separators.
+    * If allow_empty_subdomain is true, then "localhost" is a valid endpoint. */
+   bool allow_empty_subdomain;
+} _mongocrypt_endpoint_parse_opts_t;
+
 /* Parses a subset of URIs of the form:
  * [protocol://][host[:port]][path][?query]
  */
 _mongocrypt_endpoint_t *
 _mongocrypt_endpoint_new (const char *endpoint_raw,
                           int32_t len,
+                          _mongocrypt_endpoint_parse_opts_t *opts,
                           mongocrypt_status_t *status);
 
 #endif /* MONGOCRYPT_ENDPOINT_PRIVATE_H */

@@ -110,20 +110,20 @@ _mongocrypt_tester_mongocrypt (void);
 #define ASSERT_OR_PRINT(_statement, _err) \
    ASSERT_OR_PRINT_MSG (_statement, mongocrypt_status_message (_err, NULL))
 
-#define ASSERT_OK_STATUS(_stmt, _status)                            \
-   do {                                                             \
-      bool _retval = (_stmt);                                       \
-      bool _status_ok = mongocrypt_status_ok (_status);             \
-      const char *_msg = mongocrypt_status_message (_status, NULL); \
-      if (!_retval) {                                               \
-         fprintf (stderr, "%s failed with msg: %s", #_stmt, _msg);  \
-      } else if (!_status_ok) {                                     \
-         fprintf (stderr,                                           \
-                  "%s resulted in unexpected error status: %s\n",   \
-                  #_stmt,                                           \
-                  _msg);                                            \
-      }                                                             \
-      BSON_ASSERT (_retval &&_status_ok);                           \
+#define ASSERT_OK_STATUS(_stmt, _status)                             \
+   do {                                                              \
+      bool _retval = (_stmt);                                        \
+      bool _status_ok = mongocrypt_status_ok (_status);              \
+      const char *_msg = mongocrypt_status_message (_status, NULL);  \
+      if (!_retval) {                                                \
+         fprintf (stderr, "%s failed with msg: %s\n", #_stmt, _msg); \
+      } else if (!_status_ok) {                                      \
+         fprintf (stderr,                                            \
+                  "%s resulted in unexpected error status: %s\n",    \
+                  #_stmt,                                            \
+                  _msg);                                             \
+      }                                                              \
+      BSON_ASSERT (_retval &&_status_ok);                            \
    } while (0)
 
 #define ASSERT_FAILS_STATUS(_stmt, _status, _msg_pattern)                      \
@@ -134,7 +134,7 @@ _mongocrypt_tester_mongocrypt (void);
       bool _found_msg = _msg && strstr (_msg, _msg_pattern) != NULL;           \
       if (_retval) {                                                           \
          fprintf (stderr,                                                      \
-                  "%s succeeded (but should have failed) with msg: '%s'",      \
+                  "%s succeeded (but should have failed) with msg: '%s'\n",    \
                   #_stmt,                                                      \
                   _msg_pattern);                                               \
       } else if (_status_ok) {                                                 \

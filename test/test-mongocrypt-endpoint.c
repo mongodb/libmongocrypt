@@ -23,12 +23,14 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
 {
    _mongocrypt_endpoint_t *endpoint;
    mongocrypt_status_t *status;
+   _mongocrypt_endpoint_parse_opts_t opts;
 
    status = mongocrypt_status_new ();
 
    endpoint = _mongocrypt_endpoint_new (
       "https://kevin.keyvault.azure.net:443/some/path/?query=value",
       -1,
+      NULL /* opts */,
       status);
    ASSERT_STREQUAL (endpoint->host, "kevin.keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->domain, "keyvault.azure.net");
@@ -41,7 +43,7 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    _mongocrypt_endpoint_destroy (endpoint);
 
    endpoint =
-      _mongocrypt_endpoint_new ("kevin.keyvault.azure.net:443", -1, status);
+      _mongocrypt_endpoint_new ("kevin.keyvault.azure.net:443", -1, NULL /* opts */, status);
    ASSERT_STREQUAL (endpoint->host, "kevin.keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->domain, "keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->subdomain, "kevin");
@@ -52,7 +54,7 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_status_ok (status));
    _mongocrypt_endpoint_destroy (endpoint);
 
-   endpoint = _mongocrypt_endpoint_new ("kevin.keyvault.azure.net", -1, status);
+   endpoint = _mongocrypt_endpoint_new ("kevin.keyvault.azure.net", -1, NULL /* opts */, status);
    ASSERT_STREQUAL (endpoint->host, "kevin.keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->domain, "keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->subdomain, "kevin");
@@ -63,12 +65,48 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_status_ok (status));
    _mongocrypt_endpoint_destroy (endpoint);
 
-   endpoint = _mongocrypt_endpoint_new ("malformed", -1, status);
+   endpoint = _mongocrypt_endpoint_new ("malformed", -1, NULL /* opts */, status);
    BSON_ASSERT (!endpoint);
    ASSERT_STATUS_CONTAINS (
       status,
       "Invalid endpoint, expected dot separator in host, but got: malformed");
    _mongocrypt_endpoint_destroy (endpoint);
+
+   /* A host without a dot separator is valid if the "allow_empty_subdomain" option is true. */
+   memset (&opts, 0, sizeof (opts));
+   opts.allow_empty_subdomain = true;
+   endpoint = _mongocrypt_endpoint_new ("localhost", -1, &opts, status);
+   ASSERT_STREQUAL (endpoint->host, "localhost");
+   ASSERT_STREQUAL (endpoint->domain, "localhost");
+   BSON_ASSERT (!endpoint->subdomain);
+   BSON_ASSERT (!endpoint->protocol);
+   BSON_ASSERT (!endpoint->port);
+   BSON_ASSERT (!endpoint->path);
+   BSON_ASSERT (!endpoint->query);
+   BSON_ASSERT (mongocrypt_status_ok (status));
+   _mongocrypt_endpoint_destroy (endpoint);
+
+   memset (&opts, 0, sizeof (opts));
+   opts.allow_empty_subdomain = true;
+   endpoint = _mongocrypt_endpoint_new ("localhost:1234", -1, &opts, status);
+   ASSERT_STREQUAL (endpoint->host, "localhost");
+   ASSERT_STREQUAL (endpoint->domain, "localhost");
+   BSON_ASSERT (!endpoint->subdomain);
+   BSON_ASSERT (!endpoint->protocol);
+   ASSERT_STREQUAL (endpoint->port, "1234");
+   BSON_ASSERT (!endpoint->path);
+   BSON_ASSERT (!endpoint->query);
+   BSON_ASSERT (mongocrypt_status_ok (status));
+   _mongocrypt_endpoint_destroy (endpoint);
+
+   /* A host without a dot separator is invalid if the "allow_empty_subdomain" option is false. */
+   memset (&opts, 0, sizeof (opts));
+   opts.allow_empty_subdomain = false;
+   endpoint = _mongocrypt_endpoint_new ("localhost", -1, &opts, status);
+   ASSERT_STATUS_CONTAINS (
+      status,
+      "Invalid endpoint, expected dot separator in host, but got: localhost");
+   BSON_ASSERT (!endpoint);
 
    mongocrypt_status_destroy (status);
 }

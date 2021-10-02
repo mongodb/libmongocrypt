@@ -42,6 +42,7 @@ _mongocrypt_endpoint_destroy (_mongocrypt_endpoint_t *endpoint)
 _mongocrypt_endpoint_t *
 _mongocrypt_endpoint_new (const char *endpoint_raw,
                           int32_t len,
+                          _mongocrypt_endpoint_parse_opts_t *opts,
                           mongocrypt_status_t *status)
 {
    _mongocrypt_endpoint_t *endpoint;
@@ -55,6 +56,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    char *host_end;
 
    endpoint = bson_malloc0 (sizeof (_mongocrypt_endpoint_t));
+   _mongocrypt_status_reset (status); // TODO: functions that take a status should reset.
    BSON_ASSERT (endpoint);
    if (!_mongocrypt_validate_and_copy_string (
           endpoint_raw, len, &endpoint->original)) {
@@ -77,13 +79,18 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    prev = pos;
    pos = strstr (pos, ".");
    if (!pos) {
-      CLIENT_ERR (
+      if (!opts || !opts->allow_empty_subdomain) {
+         CLIENT_ERR (
          "Invalid endpoint, expected dot separator in host, but got: %s",
          endpoint->original);
-      goto fail;
+         goto fail;
+      }
+      /* OK, reset pos to the start of the host. */
+      pos = prev;
+   } else {
+      endpoint->subdomain = bson_strndup (prev, pos - prev);
+      pos += 1;
    }
-   endpoint->subdomain = bson_strndup (prev, pos - prev);
-   pos += 1;
 
    /* Parse domain. */
    prev = pos;

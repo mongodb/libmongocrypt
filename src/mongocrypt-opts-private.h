@@ -111,6 +111,7 @@ _mongocrypt_parse_required_utf8 (const bson_t *bson,
  * Parse an optional endpoint UTF-8 from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
  * @*out is set to a new _mongocrypt_endpoint_t of the if found, NULL otherwise.
+ * @*opts may be set to configure endpoint parsing. It is optional and may be NULL. 
  * Caller must clean up with _mongocrypt_endpoint_destroy (*out).
  * Returns true if no error occured.
  */
@@ -118,12 +119,14 @@ bool
 _mongocrypt_parse_optional_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
+                                     _mongocrypt_endpoint_parse_opts_t *opts,
                                      mongocrypt_status_t *status);
 
 /*
  * Parse a required endpoint UTF-8 from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
  * @*out is set to a new _mongocrypt_endpoint_t of the if found, NULL otherwise.
+ * @*opts may be set to configure endpoint parsing. It is optional and may be NULL. 
  * Caller must clean up with _mongocrypt_endpoint_destroy (*out).
  * Returns true if no error occured.
  */
@@ -131,6 +134,7 @@ bool
 _mongocrypt_parse_required_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
+                                     _mongocrypt_endpoint_parse_opts_t *opts,
                                      mongocrypt_status_t *status);
 
 /*
