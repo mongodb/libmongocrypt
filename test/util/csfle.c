@@ -238,6 +238,26 @@ fn_createdatakey (bson_t *args)
       }
       mongocrypt_binary_destroy (bin);
       bson_destroy (&gcp_kek);
+   } else if (0 == strcmp ("kmip", kms_provider)) {
+      bson_t kmip_kek = BSON_INITIALIZER;
+
+      BSON_APPEND_UTF8 (&kmip_kek, "provider", "kmip");
+      if (bson_has_field (args, "kmip_kek_endpoint")) {
+         BSON_APPEND_UTF8 (
+            &kmip_kek, "endpoint", bson_req_utf8 (args, "kmip_kek_endpoint"));
+      }
+
+      if (bson_has_field (args, "kmip_kek_keyid")) {
+         BSON_APPEND_UTF8 (
+            &kmip_kek, "keyId", bson_req_utf8 (args, "kmip_kek_keyid"));
+      }
+
+      bin = util_bson_to_bin (&kmip_kek);
+      if (!mongocrypt_ctx_setopt_key_encryption_key (ctx, bin)) {
+         ERREXIT_CTX (ctx);
+      }
+      mongocrypt_binary_destroy (bin);
+      bson_destroy (&kmip_kek);
    } else {
       ERREXIT ("Unknown KMS provider: %s", kms_provider);
    }
