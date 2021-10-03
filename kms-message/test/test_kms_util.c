@@ -56,6 +56,6 @@ hex_to_data (char *unfiltered_hex, size_t *outlen)
 }
 
 char *
-data_to_hex (uint8_t *buf, uint32_t len) {
+data_to_hex (const uint8_t *buf, uint32_t len) {
    return hexlify (buf, (size_t)len);
 }
