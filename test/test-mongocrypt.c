@@ -504,7 +504,8 @@ _mongocrypt_tester_mongocrypt (void)
                              "test@example.com",
                              "privateKey",
                              PRIVATE_KEY_FOR_TESTING,
-                             "}");
+                             "}",
+                             "kmip", "{", "endpoint", "localhost", "}");
    bin = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);

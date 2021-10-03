@@ -79,7 +79,8 @@
 #define SUCCESS_REGISTER_RESPONSE_UNIQUE_IDENTIFIER \
    "7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI"
 
-static void
+/* TODO: move this to test-mongocrypt-util.c */
+void
 kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,
                   uint8_t *data,
                   uint32_t datalen)
