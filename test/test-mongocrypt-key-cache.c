@@ -17,7 +17,7 @@
 #include "mongocrypt.h"
 #include "mongocrypt-cache-key-private.h"
 #include "mongocrypt-crypto-private.h"
-#include "test-conveniences.h"
+#include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt.h"
 
 typedef struct {

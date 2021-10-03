@@ -18,7 +18,7 @@
 
 #include "mongocrypt-private.h"
 #include "test-mongocrypt.h"
-#include "test-conveniences.h"
+#include "test-mongocrypt-assert-match-bson.h"
 
 /* Tests have the form
 {

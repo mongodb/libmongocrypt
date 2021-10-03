@@ -589,20 +589,7 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
 }
 
 
-void
-_assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b)
-{
-   bson_t bin_a_bson, bin_b_bson;
-   BSON_ASSERT (_mongocrypt_binary_to_bson (bin_a, &bin_a_bson));
-   BSON_ASSERT (_mongocrypt_binary_to_bson (bin_b, &bin_b_bson));
-   char *str_a = bson_as_canonical_extended_json (&bin_a_bson, NULL);
-   char *str_b = bson_as_canonical_extended_json (&bin_b_bson, NULL);
-   char *msg = bson_strdup_printf ("BSON unequal:%s\n!=\n%s\n", str_a, str_b);
-   bson_free (str_a);
-   bson_free (str_b);
-   ASSERT_OR_PRINT_MSG (bson_equal (&bin_a_bson, &bin_b_bson), msg);
-   bson_free (msg);
-}
+
 
 static void
 _test_setopt_schema (_mongocrypt_tester_t *tester)
@@ -742,27 +729,6 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
             test->errmsg);
       }
       mongocrypt_destroy (crypt);
-   }
-}
-
-const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state) {
-   switch (state) {
-   case MONGOCRYPT_CTX_ERROR:
-      return "MONGOCRYPT_CTX_ERROR";
-   case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
-      return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO";
-   case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
-      return "MONGOCRYPT_CTX_NEED_MONGO_MARKINGS";
-   case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
-      return "MONGOCRYPT_CTX_NEED_MONGO_KEYS";
-   case MONGOCRYPT_CTX_NEED_KMS:
-      return "MONGOCRYPT_CTX_NEED_KMS";
-   case MONGOCRYPT_CTX_READY:
-      return "MONGOCRYPT_CTX_READY";
-   case MONGOCRYPT_CTX_DONE:
-      return "MONGOCRYPT_CTX_DONE";
-   default:
-      return "UNKNOWN";
    }
 }
 

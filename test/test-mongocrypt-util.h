@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-present MongoDB, Inc.
+ * Copyright 2021-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
+#ifndef TEST_MONGOCRYPT_UTIL_H
+#define TEST_MONGOCRYPT_UTIL_H
+
+#include "mongocrypt.h"
+
 #include <bson/bson.h>
 
-/* Iterate a document or array into a bson_t. */
-void
-bson_iter_bson (bson_iter_t *iter, bson_t *bson);
+#include <stdint.h>
+#include <stdio.h>
 
-/* Copied from libmongoc. */
-void
-_assert_match_bson (const bson_t *doc, const bson_t *pattern);
+const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state);
+
+char *
+data_to_hex (const uint8_t *data, uint32_t len);
+
+/* bson_iter_bson iterates a document or array into a bson_t. */
+void bson_iter_bson (bson_iter_t *iter, bson_t *bson);
+
+#endif /* TEST_MONGOCRYPT_UTIL_H */

@@ -16,7 +16,7 @@
 
 #include <bson/bson.h>
 #include "test-mongocrypt.h"
-#include "test-conveniences.h"
+#include "test-mongocrypt-assert-match-bson.h"
 #include "mongocrypt-kek-private.h"
 
 static void _run_one_test (_mongocrypt_tester_t *tester, bson_t *test) {

@@ -248,7 +248,8 @@ set_target_properties (mongocrypt_static PROPERTIES
 
 
 set (TEST_MONGOCRYPT_SOURCES
-   test/test-conveniences.c
+   test/test-mongocrypt-assert.c
+   test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
    test/test-mongocrypt-cache.c
    test/test-mongocrypt-cache-oauth.c
@@ -270,6 +271,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-marking.c
    test/test-mongocrypt-status.c
    test/test-mongocrypt-traverse-util.c
+   test/test-mongocrypt-util.c
    test/test-mongocrypt.c
 )
 
