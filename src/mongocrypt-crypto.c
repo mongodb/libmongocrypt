@@ -912,3 +912,83 @@ done:
    _mongocrypt_buffer_cleanup (&to_hmac);
    return ret;
 }
+
+bool
+_mongocrypt_wrap_key (_mongocrypt_crypto_t *crypto,
+                      _mongocrypt_buffer_t *kek,
+                      _mongocrypt_buffer_t *dek,
+                      _mongocrypt_buffer_t *encrypted_dek,
+                      mongocrypt_status_t *status)
+{
+   uint32_t bytes_written;
+   _mongocrypt_buffer_t iv = {0};
+   bool ret = false;
+
+   _mongocrypt_buffer_init (encrypted_dek);
+
+   if (dek->len != MONGOCRYPT_KEY_LEN) {
+      CLIENT_ERR ("data encryption key is incorrect length, expected: %" PRIu32
+                  ", got: %" PRIu32,
+                  MONGOCRYPT_KEY_LEN,
+                  dek->len);
+      goto done;
+   }
+
+   _mongocrypt_buffer_resize (encrypted_dek,
+                              _mongocrypt_calculate_ciphertext_len (dek->len));
+   _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
+
+   if (!_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
+      goto done;
+   }
+
+   if (!_mongocrypt_do_encryption (crypto,
+                                   &iv,
+                                   NULL /* associated data. */,
+                                   kek,
+                                   dek,
+                                   encrypted_dek,
+                                   &bytes_written,
+                                   status)) {
+      goto done;
+   }
+
+   ret = true;
+done:
+   _mongocrypt_buffer_cleanup (&iv);
+   return ret;
+}
+
+bool
+_mongocrypt_unwrap_key (_mongocrypt_crypto_t *crypto,
+                        _mongocrypt_buffer_t *kek,
+                        _mongocrypt_buffer_t *encrypted_dek,
+                        _mongocrypt_buffer_t *dek,
+                        mongocrypt_status_t *status)
+{
+   uint32_t bytes_written;
+
+   _mongocrypt_buffer_init (dek);
+   _mongocrypt_buffer_resize (
+      dek, _mongocrypt_calculate_plaintext_len (encrypted_dek->len));
+
+   if (!_mongocrypt_do_decryption (crypto,
+                                   NULL /* associated data. */,
+                                   kek,
+                                   encrypted_dek,
+                                   dek,
+                                   &bytes_written,
+                                   status)) {
+      return false;
+   }
+   dek->len = bytes_written;
+
+   if (dek->len != MONGOCRYPT_KEY_LEN) {
+      CLIENT_ERR ("decrypted key is incorrect length, expected: %" PRIu32
+                  ", got: %" PRIu32,
+                  MONGOCRYPT_KEY_LEN,
+                  dek->len);
+      return false;
+   }
+   return true;
+}

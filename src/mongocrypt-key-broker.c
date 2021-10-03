@@ -410,42 +410,6 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
    return true;
 }
 
-static bool
-_decrypt_with_local_kms (_mongocrypt_key_broker_t *kb,
-                         _mongocrypt_buffer_t *key_material,
-                         _mongocrypt_buffer_t *decrypted_key_material)
-{
-   bool crypt_ret;
-   uint32_t bytes_written;
-
-   _mongocrypt_buffer_init (decrypted_key_material);
-   decrypted_key_material->len =
-      _mongocrypt_calculate_plaintext_len (key_material->len);
-   decrypted_key_material->data = bson_malloc (decrypted_key_material->len);
-   BSON_ASSERT (decrypted_key_material->data);
-
-   decrypted_key_material->owned = true;
-
-   crypt_ret =
-      _mongocrypt_do_decryption (kb->crypt->crypto,
-                                 NULL /* associated data. */,
-                                 &kb->crypt->opts.kms_provider_local.key,
-                                 key_material,
-                                 decrypted_key_material,
-                                 &bytes_written,
-                                 kb->status);
-   if (!crypt_ret) {
-      return _key_broker_fail (kb);
-   }
-
-   decrypted_key_material->len = bytes_written;
-
-   if (decrypted_key_material->len != MONGOCRYPT_KEY_LEN) {
-      return _key_broker_fail_w_msg (kb, "decrypted key is incorrect length");
-   }
-   return true;
-}
-
 bool
 _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                                 const _mongocrypt_buffer_t *doc)
@@ -509,9 +473,12 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    /* If the KMS provider is local, decrypt immediately. Otherwise, create the
     * HTTP KMS request. */
    if (kek_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
-      if (!_decrypt_with_local_kms (kb,
-                                    &key_returned->doc->key_material,
-                                    &key_returned->decrypted_key_material)) {
+      if (!_mongocrypt_unwrap_key (kb->crypt->crypto,
+                                   &kb->crypt->opts.kms_provider_local.key,
+                                   &key_returned->doc->key_material,
+                                   &key_returned->decrypted_key_material,
+                                   kb->status)) {
+         _key_broker_fail (kb);
          goto done;
       }
       key_returned->decrypted = true;
