@@ -21,9 +21,8 @@
 #include <kms_message/kms_response_parser.h>
 
 
-/* Create a TLS stream to a host. */
 mongoc_stream_t *
-connect_with_tls (const char *host)
+connect_with_tls (const char *host, const char *port, mongoc_ssl_opt_t *ssl_opt)
 {
    mongoc_stream_t *stream;
    mongoc_socket_t *sock = NULL;
@@ -39,7 +38,7 @@ connect_with_tls (const char *host)
    hints.ai_flags = 0;
    hints.ai_protocol = 0;
 
-   s = getaddrinfo (host, "443", &hints, &result);
+   s = getaddrinfo (host, port, &hints, &result);
    TEST_ASSERT (s == 0);
 
    for (rp = result; rp; rp = rp->ai_next) {
@@ -68,8 +67,11 @@ connect_with_tls (const char *host)
 
    stream = mongoc_stream_socket_new (sock);
    TEST_ASSERT (stream);
+   if (ssl_opt == NULL) {
+      ssl_opt = (mongoc_ssl_opt_t *) mongoc_ssl_opt_get_default ();
+   }
    return mongoc_stream_tls_new_with_hostname (
-      stream, host, (mongoc_ssl_opt_t *) mongoc_ssl_opt_get_default (), 1);
+      stream, host, ssl_opt, 1);
 }
 
 /* Helper to send an HTTP request and receive a response. */
@@ -86,7 +88,7 @@ send_kms_request (kms_request_t *req, const char *host)
    uint8_t buf[1024];
    kms_response_t *response;
 
-   tls_stream = connect_with_tls (host);
+   tls_stream = connect_with_tls (host, NULL, NULL);
    req_str = kms_request_to_string (req);
 
    write_ret = mongoc_stream_write (
