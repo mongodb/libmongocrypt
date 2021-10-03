@@ -1,0 +1,32 @@
+{
+    "_id": {
+        "$binary": {
+            "base64": "RCkVkmNKRVeraJFOfmws6g==",
+            "subType": "04"
+        }
+    },
+    "keyMaterial": {
+        "$binary": {
+            "base64": "CWXvc+c2e7hRWf8pWeh8/GBMM7vu206tcClWgn1BuNJRaAZFim+9WcjzYUr6QjYUiHldHugdxliWM9icOJGhWjtEATmN3VyoascCtobkKVb7Jwp3FciK8Ndpqfc81lPffugkXJlY59IvBWEZaRAR6RdoEzcJNmNqDIQLzb2ODTtfdmzQHM6Ldg3AV4CN073ovPbaPQVg/2HvBA28MXxz4Q==",
+            "subType": "00"
+        }
+    },
+    "creationDate": {
+        "$date": {
+            "$numberLong": "1633204805484"
+        }
+    },
+    "updateDate": {
+        "$date": {
+            "$numberLong": "1633204805484"
+        }
+    },
+    "status": {
+        "$numberInt": "0"
+    },
+    "masterKey": {
+        "provider": "kmip",
+        "keyId": "ywxrSj5TLjswd1G4oGFJ6hwWgtTsQip0"
+    },
+    "keyAltNames": [ "keyDocumentKMIP" ]
+}
