@@ -18,7 +18,7 @@
 
 #include "test_kms.h"
 
-#include <kms_message/kms_response_parser.h>
+#include "src/kms_message/kms_response_parser.h"
 
 
 mongoc_stream_t *
