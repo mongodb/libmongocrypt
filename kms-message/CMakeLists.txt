@@ -238,6 +238,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       ${KMS_MESSAGE_SOURCES}
       test/test_kms_request.c
       test/test_kmip_reader_writer.c
+      test/test_kms_util.c
    )
    target_include_directories(test_kms_request PRIVATE ${PROJECT_SOURCE_DIR})
    target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})
@@ -260,13 +261,13 @@ if(NOT mongoc-1.0_FOUND)
 elseif(DISABLE_NATIVE_CRYPTO)
    message ("test_kms_azure_online target disabled: Not building with native crypto.")
 elseif(ENABLE_ONLINE_TESTS)
-   add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms.c test/test_kms_online_util.c)
+   add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms_util.c test/test_kms_online_util.c)
    target_include_directories(test_kms_azure_online PRIVATE ${PROJECT_SOURCE_DIR})
    target_compile_definitions(test_kms_azure_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
    target_link_libraries(test_kms_azure_online mongo::mongoc_shared)
    target_link_libraries(test_kms_azure_online kms_message_static)
 
-   add_executable(test_kms_gcp_online test/test_kms_gcp_online.c test/test_kms.c test/test_kms_online_util.c)
+   add_executable(test_kms_gcp_online test/test_kms_gcp_online.c test/test_kms_util.c test/test_kms_online_util.c)
    target_include_directories(test_kms_gcp_online PRIVATE ${PROJECT_SOURCE_DIR})
    target_compile_definitions(test_kms_gcp_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
    target_link_libraries(test_kms_gcp_online mongo::mongoc_shared)

@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-#include "test_kms.h"
+#ifndef TEST_KMS_UTIL_H
+#define TEST_KMS_UTIL_H
 
-void
-_test_error (const char *format, ...)
-{
-   va_list ap;
+#include <stdio.h>
+#include "src/kms_request_str.h"
 
-   va_start (ap, format);
-   vfprintf (stderr, format, ap);
-   fprintf (stderr, "\n");
-   fflush (stderr);
-   va_end (ap);
-   abort ();
-}
+/* copy_and_filter_hex returns a copy of @unfiltered_hex with the following
+ * characters removed: ' ', '|' */
+char *
+copy_and_filter_hex (const char *unfiltered_hex);
+
+/* hex_to_data calls copy_and_filter_hex on @unfiltered_hex, then converts it to
+ * binary and returns a byte array. */
+uint8_t *
+hex_to_data (char *unfiltered_hex, size_t *outlen);
+
+char *
+data_to_hex (uint8_t *data, uint32_t len);
+
+#endif /* TEST_KMS_UTIL_H */

@@ -23,7 +23,7 @@
 #define MONGOC_LOG_DOMAIN "test_kms_azure_online"
 #include <mongoc/mongoc.h>
 
-#include "test_kms.h"
+#include "test_kms_assert.h"
 
 #include <stdio.h>
 
@@ -76,7 +76,7 @@ test_env_init (test_env_t *test_env)
    test_env->key_version = test_getenv ("AZURE_KEY_VERSION");
 
    loc = strstr (test_env->key_url, azure_domain);
-   TEST_ASSERT (loc);
+   ASSERT (loc);
    test_env->key_vault_url = bson_strndup (
       test_env->key_url, strlen (azure_domain) + loc - test_env->key_url);
    test_env->key_path = bson_strdup (loc + strlen (azure_domain));
@@ -135,11 +135,11 @@ azure_authenticate (void)
    res = send_kms_request (req, "login.microsoftonline.com");
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s\n", res_str);
-   TEST_ASSERT (kms_response_get_status (res) == 200);
+   ASSERT (kms_response_get_status (res) == 200);
 
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
-   TEST_ASSERT (res_bson);
+   ASSERT (res_bson);
    if (!bson_iter_init_find (&iter, res_bson, "access_token")) {
       TEST_ERROR ("could not find 'access_token' in HTTP response");
    }
@@ -205,11 +205,11 @@ test_azure_wrapkey (void)
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
-   TEST_ASSERT (res_bson);
-   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "value"));
+   ASSERT (res_bson);
+   ASSERT (bson_iter_init_find (&iter, res_bson, "value"));
    encrypted_raw = kms_message_b64url_to_raw (bson_iter_utf8 (&iter, NULL),
                                               &encrypted_raw_len);
-   TEST_ASSERT (encrypted_raw);
+   ASSERT (encrypted_raw);
 
    bson_destroy (res_bson);
    bson_free (req_str);
@@ -231,10 +231,10 @@ test_azure_wrapkey (void)
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
-   TEST_ASSERT (res_bson);
-   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "value"));
+   ASSERT (res_bson);
+   ASSERT (bson_iter_init_find (&iter, res_bson, "value"));
    decrypted = bson_strdup (bson_iter_utf8 (&iter, NULL));
-   TEST_ASSERT_STREQUAL (decrypted, key_data_b64url);
+   ASSERT_CMPSTR (decrypted, key_data_b64url);
 
    bson_destroy (res_bson);
    kms_response_destroy (res);
@@ -253,6 +253,6 @@ int
 main (int argc, char **argv)
 {
    kms_message_init ();
-   RUN_TEST (test_azure_wrapkey);
+   test_azure_wrapkey ();
    return 0;
 }

@@ -1,9 +1,8 @@
-#include "test_kms_request.h"
+#include "test_kms_assert.h"
+#include "test_kms_util.h"
 
-#include "src/hexlify.h"
 #include "src/kms_kmip_reader_writer_private.h"
 
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,24 +10,6 @@ typedef struct {
    char *desc;
    char *expected_hex;
 } kms_kmip_writer_test_case_t;
-
-/* Return a copy of @hex with the following characters removed: ' ', '|' */
-static char *
-copy_and_filter_hex (const char *hex)
-{
-   size_t i, j;
-
-   char *filtered = malloc (strlen (hex) + 1);
-   j = 0;
-   for (i = 0; i < strlen (hex); i++) {
-      if (hex[i] != ' ' && hex[i] != '|') {
-         filtered[j] = (char) tolower (hex[i]);
-         j++;
-      }
-   }
-   filtered[j] = '\0';
-   return filtered;
-}
 
 static void
 kms_kmip_writer_test_evaluate (kmip_writer_t *writer,
@@ -42,7 +23,7 @@ kms_kmip_writer_test_evaluate (kmip_writer_t *writer,
 
    expected_hex = copy_and_filter_hex (expected_hex_in);
    actual_buf = kmip_writer_get_buffer (writer, &actual_len);
-   actual_hex = hexlify (actual_buf, actual_len);
+   actual_hex = data_to_hex (actual_buf, actual_len);
 
    if (0 != strcmp (expected_hex, actual_hex)) {
       fprintf (stderr,
@@ -136,24 +117,6 @@ kms_kmip_writer_test (void)
    kmip_writer_destroy (writer);
 }
 
-static uint8_t *
-kms_kmip_reader_test_new_data (char *hex, size_t *outlen)
-{
-   char *filtered_hex;
-   uint8_t *bytes;
-   size_t i;
-
-   filtered_hex = copy_and_filter_hex (hex);
-   *outlen = strlen (filtered_hex) / 2;
-   bytes = malloc (*outlen);
-   for (i = 0; i < *outlen; i++) {
-      bytes[i] = unhexlify (filtered_hex + (i * 2), 2);
-   }
-
-   free (filtered_hex);
-   return bytes;
-}
-
 void
 kms_kmip_reader_test (void)
 {
@@ -171,7 +134,7 @@ kms_kmip_reader_test (void)
    /* The following test cases come from section 9.1.2 of
     * http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html */
    /* An Integer containing the decimal value 8 */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 02 | 00 00 00 04 | 00 00 00 08 00 00 00 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
@@ -187,7 +150,7 @@ kms_kmip_reader_test (void)
    free (data);
 
    /* A Long Integer containing the decimal value 123456789000000000 */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 03 | 00 00 00 08 | 01 B6 9B 4B A5 74 92 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
@@ -205,7 +168,7 @@ kms_kmip_reader_test (void)
    /* Big Integer is not implemented. */
 
    /* An Enumeration with value 255 */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 05 | 00 00 00 04 | 00 00 00 FF 00 00 00 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
@@ -224,7 +187,7 @@ kms_kmip_reader_test (void)
 
    /* A Text String with the value 'Hello World' */
    data =
-      kms_kmip_reader_test_new_data ("42 00 20 | 07 | 00 00 00 0B | 48 65 6C "
+      hex_to_data ("42 00 20 | 07 | 00 00 00 0B | 48 65 6C "
                                      "6C 6F 20 57 6F 72 6C 64 00 00 00 00 00",
                                      &datalen);
    reader = kmip_reader_new (data, datalen);
@@ -241,7 +204,7 @@ kms_kmip_reader_test (void)
    free (data);
 
    /* A Byte String with the value { 0x01, 0x02, 0x03 } */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 08 | 00 00 00 03 | 01 02 03 00 00 00 00 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
@@ -258,7 +221,7 @@ kms_kmip_reader_test (void)
 
    /* A Date-Time, containing the value for Friday, March 14, 2008, 11:56:40 GMT
     */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 09 | 00 00 00 08 | 00 00 00 00 47 DA 67 F8", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
@@ -277,7 +240,7 @@ kms_kmip_reader_test (void)
 
    /* A Structure containing an Enumeration, value 254, followed by an Integer,
     * value 255, having tags 420004 and 420005 respectively */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 01 | 00 00 00 20 | 42 00 04 | 05 | 00 00 00 04 | 00 00 00 FE "
       "00 00 00 00 | 42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00",
       &datalen);
@@ -324,7 +287,7 @@ kms_kmip_reader_negative_int_test (void)
    int32_t i32;
 
    /* Test reading the integer -1. */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 02 | 00 00 00 04 | FF FF FF FF 00 00 00 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
@@ -340,7 +303,7 @@ kms_kmip_reader_negative_int_test (void)
    free (data);
 
    /* Test reading the integer INT32_MIN (-2^31). */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 02 | 00 00 00 04 | 80 00 00 00 00 00 00 00", &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
@@ -368,7 +331,7 @@ kms_kmip_reader_find_test (void)
 
    /* A Structure containing an Enumeration, value 254, followed by an Integer,
     * value 255, having tags 420004 and 420005 respectively */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 01 | 00 00 00 20 | 42 00 04 | 05 | 00 00 00 04 | 00 00 00 FE "
       "00 00 00 00 | 42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00",
       &datalen);
@@ -417,7 +380,7 @@ kms_kmip_reader_find_and_get_struct_reader_test (void)
 
    /* A Structure containing an Enumeration, value 254, followed by an Integer,
     * value 255, having tags 420004 and 420005 respectively */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 20 | 01 | 00 00 00 20 | 42 00 04 | 05 | 00 00 00 04 | 00 00 00 FE "
       "00 00 00 00 | 42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00",
       &datalen);
@@ -453,7 +416,7 @@ kms_kmip_reader_find_and_read_enum_test (void)
 
    /* An Integer, value 255, followed by an Enumeration, value 254 having tags
     * 420005 and 420004 respectively. */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00 | 42 00 04 | 05 | "
       "00 00 00 04 | 00 00 00 FE 00 00 00 00",
       &datalen);
@@ -486,7 +449,7 @@ kms_kmip_reader_find_and_read_bytes_test (void)
 
    /* An Integer, value 255, followed by ByteString of value 0x1122 having tags
     * 420005 and 420004 respectively. */
-   data = kms_kmip_reader_test_new_data (
+   data = hex_to_data (
       "42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00 | 42 00 04 | 08 | "
       "00 00 00 02 | 11 22 00 00 00 00 00 00",
       &datalen);

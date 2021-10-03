@@ -16,7 +16,7 @@
 
 #include "test_kms_online_util.h"
 
-#include "test_kms.h"
+#include "test_kms_assert.h"
 
 #include "src/kms_message/kms_response_parser.h"
 
@@ -39,7 +39,7 @@ connect_with_tls (const char *host, const char *port, mongoc_ssl_opt_t *ssl_opt)
    hints.ai_protocol = 0;
 
    s = getaddrinfo (host, port, &hints, &result);
-   TEST_ASSERT (s == 0);
+   ASSERT_CMPINT (s, ==, 0);
 
    for (rp = result; rp; rp = rp->ai_next) {
       if (!(sock = mongoc_socket_new (
@@ -66,7 +66,7 @@ connect_with_tls (const char *host, const char *port, mongoc_ssl_opt_t *ssl_opt)
    freeaddrinfo (result);
 
    stream = mongoc_stream_socket_new (sock);
-   TEST_ASSERT (stream);
+   ASSERT (stream);
    if (ssl_opt == NULL) {
       ssl_opt = (mongoc_ssl_opt_t *) mongoc_ssl_opt_get_default ();
    }
@@ -93,7 +93,7 @@ send_kms_request (kms_request_t *req, const char *host)
 
    write_ret = mongoc_stream_write (
       tls_stream, req_str, strlen (req_str), socket_timeout_ms);
-   TEST_ASSERT (write_ret == (ssize_t) strlen (req_str));
+   ASSERT_CMPINT (write_ret, ==, strlen (req_str));
 
    response_parser = kms_response_parser_new ();
    while ((bytes_to_read =
@@ -107,7 +107,7 @@ send_kms_request (kms_request_t *req, const char *host)
    }
 
    response = kms_response_parser_get_response (response_parser);
-   TEST_ASSERT (response);
+   ASSERT (response);
 
    kms_request_free_string (req_str);
    kms_response_parser_destroy (response_parser);
