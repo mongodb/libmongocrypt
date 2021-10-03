@@ -492,7 +492,8 @@ fail:
 
 /* Create a TLS stream to a host. */
 static mongoc_stream_t *
-connect_with_tls (const char *endpoint,
+connect_with_tls (mongoc_ssl_opt_t *ssl_opt,
+                  const char *endpoint,
                   int32_t connecttimeoutms,
                   bson_error_t *error)
 {
@@ -564,7 +565,7 @@ done:
    }
    if (success) {
       stream = mongoc_stream_tls_new_with_hostname (
-         stream, host, (mongoc_ssl_opt_t *) mongoc_ssl_opt_get_default (), 1);
+         stream, host, ssl_opt, 1);
    } else {
       mongoc_stream_destroy (stream);
       stream = NULL;
@@ -643,6 +644,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    mongocrypt_binary_t *http_reply = NULL;
    const char *endpoint;
    uint32_t sockettimeout;
+   mongoc_ssl_opt_t ssl_opt;
 
    sockettimeout = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
    kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
@@ -661,11 +663,14 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          goto fail;
       }
 
-      tls_stream = connect_with_tls (endpoint, sockettimeout, error);
+      ssl_opt = *mongoc_ssl_opt_get_default ();
+      ssl_opt.ca_file = state_machine->tls_ca_file;
+      ssl_opt.pem_file = state_machine->tls_certificate_key_file;
+      tls_stream = connect_with_tls (&ssl_opt, endpoint, sockettimeout, error);
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
       /* Retry once with schannel as a workaround for CDRIVER-3566. */
       if (!tls_stream) {
-         tls_stream = connect_with_tls (endpoint, sockettimeout, error);
+         tls_stream = connect_with_tls (&ssl_opt, endpoint, sockettimeout, error);
       }
 #endif
       if (!tls_stream) {

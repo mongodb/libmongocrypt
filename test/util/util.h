@@ -56,6 +56,8 @@ typedef struct {
    mongoc_client_t *collinfo_client;
    const char *db_name;
    bool trace;
+   const char *tls_ca_file;
+   const char *tls_certificate_key_file;
 } _state_machine_t;
 
 bool

@@ -125,6 +125,9 @@ state_init (state_t *state, bson_t *args, mongocrypt_ctx_t *ctx)
    state->machine.collinfo_client = state->mongodb_client;
    state->machine.db_name = bson_get_utf8 (args, "db", NULL);
    state->machine.trace = bson_get_bool (args, "trace", false);
+   state->machine.tls_ca_file = bson_get_utf8 (args, "tls_ca_file", NULL);
+   state->machine.tls_certificate_key_file =
+      bson_get_utf8 (args, "tls_certificate_key_file", NULL);
 }
 
 static void
