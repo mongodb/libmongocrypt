@@ -248,7 +248,6 @@ set_target_properties (mongocrypt_static PROPERTIES
 
 
 set (TEST_MONGOCRYPT_SOURCES
-   test/test-mongocrypt-assert.c
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
    test/test-mongocrypt-cache.c

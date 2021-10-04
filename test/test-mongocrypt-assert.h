@@ -112,12 +112,6 @@
       }                                                                  \
    } while (0);
 
-void
-_assert_bin_bson_equal (mongocrypt_binary_t *bin_a, mongocrypt_binary_t *bin_b);
-
-void
-_assert_match_bson (const bson_t *doc, const bson_t *pattern);
-
 #define ASSERT_STATE_EQUAL(actual, expected)                       \
    do {                                                            \
       if (actual != expected) {                                    \
@@ -147,5 +141,22 @@ _assert_match_bson (const bson_t *doc, const bson_t *pattern);
             "comparison failed: %d %s %d", _a_int, #_operator, _b_int); \
       }                                                                 \
    } while (0);
+
+#define ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expected, actual)                  \
+   do {                                                                        \
+      bson_t _expected_bson, _actual_bson;                                     \
+      char *_expected_str, *_actual_str;                                       \
+      ASSERT (_mongocrypt_binary_to_bson (expected, &_expected_bson));         \
+      ASSERT (_mongocrypt_binary_to_bson (actual, &_actual_bson));             \
+      _expected_str = bson_as_canonical_extended_json (&_expected_bson, NULL); \
+      _actual_str = bson_as_canonical_extended_json (&_actual_bson, NULL);     \
+      if (!bson_equal (&_expected_bson, &_actual_bson)) {                      \
+         TEST_ERROR ("BSON unequal.\nExpected: %s\nGot: %s",                   \
+                     _expected_str,                                            \
+                     _actual_str);                                             \
+      }                                                                        \
+      bson_free (_actual_str);                                                 \
+      bson_free (_expected_str);                                               \
+   } while (0)
 
 #endif /* TEST_MONGOCRYPT_ASSERT_H */

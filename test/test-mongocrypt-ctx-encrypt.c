@@ -525,7 +525,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    mongocrypt_ctx_mongo_op (ctx, bin);
-   _assert_bin_bson_equal (bin, TEST_FILE ("./test/data/mongocryptd-cmd.json"));
+   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE ("./test/data/mongocryptd-cmd.json"), bin);
 
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/example/mongocryptd-reply.json")),
@@ -712,8 +712,7 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    ASSERT_OR_PRINT (ret, status);
 
    /* check that encrypted command matches. */
-   _assert_bin_bson_equal (encrypted_cmd,
-                           TEST_FILE ("./test/data/encrypted-cmd.json"));
+   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE ("./test/data/encrypted-cmd.json"), encrypted_cmd);
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_binary_destroy (encrypted_cmd);
@@ -1121,7 +1120,7 @@ _init_ok (_mongocrypt_tester_t *tester, const char *json)
 
    filter = mongocrypt_binary_new ();
    ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
-   _assert_bin_bson_equal (filter, TEST_BSON ("{'name': 'coll'}"));
+   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'name': 'coll'}"), filter);
 
    mongocrypt_binary_destroy (filter);
    mongocrypt_ctx_destroy (ctx);
@@ -1143,7 +1142,7 @@ _init_bypass (_mongocrypt_tester_t *tester, const char *json)
               ctx);
    BSON_ASSERT (MONGOCRYPT_CTX_READY == mongocrypt_ctx_state (ctx));
    ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
-   _assert_bin_bson_equal (bin, TEST_BSON (json));
+   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON (json), (bin));
 
    mongocrypt_binary_destroy (bin);
    mongocrypt_ctx_destroy (ctx);
