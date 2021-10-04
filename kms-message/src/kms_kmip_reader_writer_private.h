@@ -47,6 +47,7 @@ kmip_writer_write_tag_enum (kmip_writer_t *writer, kmip_tag_type_t tag);
 void
 kmip_writer_write_string (kmip_writer_t *writer, kmip_tag_type_t tag, const char *str, size_t len);
 
+/* TODO: rename to bytestring for consistency with KMIP. */
 void
 kmip_writer_write_bytes (kmip_writer_t *writer, kmip_tag_type_t tag, const char *str, size_t len);
 

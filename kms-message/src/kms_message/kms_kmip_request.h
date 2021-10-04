@@ -17,17 +17,25 @@
 #ifndef KMS_KMIP_REQUEST_H
 #define KMS_KMIP_REQUEST_H
 
+#include "kms_status.h"
+#include "kms_message_defines.h"
+
 #include <stdbool.h>
+#include <stdint.h>
 
-/* TODO: move to another header. */
-typedef struct {
-   char error[512];
-   bool ok;
-} kms_status_t;
+typedef struct _kms_kmip_request_t kms_kmip_request_t;
 
-typedef struct _kmip_request_t kmip_request_t;
+KMS_MSG_EXPORT (kms_kmip_request_t *)
+kms_kmip_request_register_and_activate_secretdata_new (void *reserved,
+                                                       uint8_t *data,
+                                                       uint32_t len,
+                                                       kms_status_t *status);
 
-kmip_request_t *
-kmip_request_create_new (void* reserved, kms_status_t *status);
+KMS_MSG_EXPORT (kms_kmip_request_t *)
+kms_kmip_request_discover_versions_new (void *reserved, kms_status_t *status);
+
+KMS_MSG_EXPORT (uint8_t *)
+kms_kmip_request_to_bytes (kms_kmip_request_t *req, uint32_t *len);
+
 
 #endif /* KMS_KMIP_REQUEST_H */

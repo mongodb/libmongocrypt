@@ -1189,10 +1189,13 @@ kmip_dump_recursive (kms_request_str_t *str, kmip_reader_t *reader, int level)
          kmip_reader_next (reader, len);
       } else if (type == KMIP_ITEM_TYPE_TextString) {
          uint8_t *value;
-         value = malloc (len + 1);
-         value[len] = 0;
+         char* valuestr;
+
+         valuestr = malloc (len + 1);
+         valuestr[len] = 0;
          kmip_reader_read_string (reader, &value, len);
-         kms_request_str_appendf (str, " value=%s", (char *) value);
+         memcpy (valuestr, value, len);
+         kms_request_str_appendf (str, " value=%s", valuestr);
       } else if (type == KMIP_ITEM_TYPE_ByteString) {
          kms_request_str_appendf (str, " value=(TODO)");
          kmip_reader_next (reader, len);

@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-const uint8_t * kms_kmip_response_to_bytes (kms_kmip_response_t *res, uint32_t *len) {
+uint8_t * kms_kmip_response_to_bytes (kms_kmip_response_t *res, uint32_t *len) {
     *len = res->len;
     return res->data;
 }

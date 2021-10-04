@@ -27,7 +27,7 @@
  * kms_kmip_msg_t? */
 typedef struct _kms_kmip_response_t kms_kmip_response_t;
 
-KMS_MSG_EXPORT (const uint8_t *)
+KMS_MSG_EXPORT (uint8_t *)
 kms_kmip_response_to_bytes (kms_kmip_response_t *req, uint32_t *len);
 
 KMS_MSG_EXPORT (void) kms_kmip_response_destroy (kms_kmip_response_t *res);
