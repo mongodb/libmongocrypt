@@ -23,7 +23,7 @@ kms_kmip_writer_test_evaluate (kmip_writer_t *writer,
 
    expected_hex = copy_and_filter_hex (expected_hex_in);
    actual_buf = kmip_writer_get_buffer (writer, &actual_len);
-   actual_hex = data_to_hex (actual_buf, actual_len);
+   actual_hex = data_to_hex (actual_buf, (uint32_t) actual_len);
 
    if (0 != strcmp (expected_hex, actual_hex)) {
       fprintf (stderr,
