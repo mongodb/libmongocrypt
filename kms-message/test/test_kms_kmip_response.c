@@ -1,4 +1,4 @@
-#include "test_kms_request.h"
+#include "test_kms_assert.h"
 
 #include "src/kms_message/kms_kmip_response.h"
 #include "src/kms_kmip_response_private.h"

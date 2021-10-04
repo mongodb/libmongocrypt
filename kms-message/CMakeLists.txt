@@ -284,7 +284,7 @@ elseif(ENABLE_ONLINE_TESTS)
    target_link_libraries(test_kms_gcp_online mongo::mongoc_shared)
    target_link_libraries(test_kms_gcp_online kms_message_static)
 
-   add_executable(test_kms_kmip_online test/test_kms_kmip_online.c test/test_kms.c test/test_kms_online_util.c)
+   add_executable(test_kms_kmip_online test/test_kms_kmip_online.c test/test_kms_util.c test/test_kms_online_util.c)
    target_include_directories(test_kms_kmip_online PRIVATE  ${PROJECT_SOURCE_DIR})
    target_include_directories(test_kms_kmip_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_include_directories(test_kms_kmip_online PRIVATE ${PROJECT_SOURCE_DIR}/src/kms_message)

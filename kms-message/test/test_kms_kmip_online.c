@@ -21,8 +21,8 @@
 #define MONGOC_LOG_DOMAIN "test_kms_kmip_online"
 #include <mongoc/mongoc.h>
 
-#include "test_kms.h"
-#include "test_kms_request.h"
+#include "test_kms_assert.h"
+#include "test_kms_util.h"
 
 #include <stdio.h>
 
@@ -108,7 +108,7 @@ send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
    free (debugstr);
    write_ret = mongoc_stream_write (
       stream, (void *) message_bytes, message_len, NETWORK_TIMEOUT_MS);
-   TEST_ASSERT (write_ret == message_len);
+   ASSERT (write_ret == message_len);
 
    MONGOC_DEBUG ("reading response from KMIP server");
    status = kms_status_new ();
@@ -163,6 +163,8 @@ kmip_register_and_activate_secretdata (void)
    test_env_init (&test_env);
    status = kms_status_new ();
    req = kms_kmip_request_register_secretdata_new (NULL, (uint8_t*) data, 96, status);
+   // KMIPTODO:
+   // Use ASSERT_REQUEST_OK and assert that the kms_request_t does not have an error.
    ASSERT_STATUS_OK (status);
 
    reqbytes = kms_kmip_request_to_bytes (req, &reqlen);
@@ -194,7 +196,7 @@ kmip_discover_versions (void)
    test_env_init (&test_env);
    status = kms_status_new ();
    req = kms_kmip_request_discover_versions_new (NULL, status);
-   TEST_ASSERT (req != NULL);
+   ASSERT (req != NULL);
 
    res = send_kms_kmip_request (req, &test_env);
    kms_kmip_request_destroy (req);
@@ -310,13 +312,13 @@ main (int argc, char **argv)
    }
 
    if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_register_and_activate_secretdata")) {
-      RUN_TEST (test_kmip_register_and_activate_secretdata);
+      test_kmip_register_and_activate_secretdata ();
    } else if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_discover_versions")) {
-      RUN_TEST (test_kmip_discover_versions);
+      test_kmip_discover_versions ();
    } else if (test_selector == NULL || 0 == strcmp (test_selector, "dump_kmip_from_pykmip")) {
-      RUN_TEST (dump_kmip_from_pykmip);
+      dump_kmip_from_pykmip ();
    } else if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_get")) {
-      RUN_TEST (test_kmip_get);
+      test_kmip_get ();
    }
    return 0;
 }
