@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2021-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-#ifndef KMS_MESSAGE_H
-#define KMS_MESSAGE_H
+#include "test_kms_assert.h"
 
-#include <sys/types.h>
+#include "src/kms_message/kms_message.h"
+#include "src/kms_status_private.h"
 
-#include "kms_message_defines.h"
-#include "kms_request_opt.h"
-#include "kms_request.h"
-#include "kms_response.h"
-#include "kms_response_parser.h"
-#include "kms_status.h"
-#include "kms_caller_identity_request.h"
-#include "kms_decrypt_request.h"
-#include "kms_encrypt_request.h"
+void kms_status_test (void) {
+   kms_status_t* status;
+   const char* str;
 
-#endif /* KMS_MESSAGE_H */
+   status = kms_status_new ();
+   ASSERT (kms_status_ok (status));
+
+   kms_status_errorf (status, "error: %s", "foo");
+   ASSERT (!kms_status_ok (status));
+   str = kms_status_to_string (status);
+   ASSERT_CMPSTR (str, "error: foo");
+
+   kms_status_reset (status);
+   ASSERT (kms_status_ok (status));
+   kms_status_destroy (status);
+}

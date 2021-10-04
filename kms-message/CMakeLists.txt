@@ -47,6 +47,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_request_str.h
    src/kms_response.c
    src/kms_response_parser.c
+   src/kms_status.c
    src/sort.c
    )
 
@@ -180,6 +181,7 @@ install (
    src/kms_message/kms_request_opt.h
    src/kms_message/kms_response.h
    src/kms_message/kms_response_parser.h
+   src/kms_message/kms_status.h
    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/kms_message
    COMPONENT Devel
 )
@@ -238,6 +240,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       ${KMS_MESSAGE_SOURCES}
       test/test_kms_request.c
       test/test_kmip_reader_writer.c
+      test/test_kms_status.c
    )
    target_include_directories(test_kms_request PRIVATE  ${PROJECT_SOURCE_DIR})
    target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})

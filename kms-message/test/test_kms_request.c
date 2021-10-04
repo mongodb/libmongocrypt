@@ -1147,6 +1147,7 @@ extern void kms_kmip_reader_find_test (void);
 extern void kms_kmip_reader_find_and_get_struct_reader_test (void);
 extern void kms_kmip_reader_find_and_read_enum_test (void);
 extern void kms_kmip_reader_find_and_read_bytes_test (void);
+extern void kms_status_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1200,6 +1201,8 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_reader_find_and_get_struct_reader_test);
    RUN_TEST (kms_kmip_reader_find_and_read_enum_test);
    RUN_TEST (kms_kmip_reader_find_and_read_bytes_test);
+
+   RUN_TEST (kms_status_test);
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
