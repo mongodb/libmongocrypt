@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2021-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef KMS_MESSAGE_H
-#define KMS_MESSAGE_H
+#ifndef KMS_STATUS_PRIVATE_H
+#define KMS_STATUS_PRIVATE_H
 
-#include <sys/types.h>
+#include "kms_message/kms_status.h"
 
-#include "kms_message_defines.h"
-#include "kms_request_opt.h"
-#include "kms_request.h"
-#include "kms_response.h"
-#include "kms_response_parser.h"
-#include "kms_status.h"
-#include "kms_caller_identity_request.h"
-#include "kms_decrypt_request.h"
-#include "kms_encrypt_request.h"
+void kms_status_errorf (kms_status_t *status, const char* format, ...);
 
-#endif /* KMS_MESSAGE_H */
+#endif /* KMS_STATUS_PRIVATE_H */

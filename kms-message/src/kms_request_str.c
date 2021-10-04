@@ -252,9 +252,8 @@ kms_request_str_append_lowercase (kms_request_str_t *str,
 }
 
 void
-kms_request_str_appendf (kms_request_str_t *str, const char *format, ...)
-{
-   va_list args;
+kms_request_str_append_va (kms_request_str_t *str, const char* format, va_list args) {
+   va_list args_copy;
    size_t remaining;
    int n;
 
@@ -263,9 +262,9 @@ kms_request_str_appendf (kms_request_str_t *str, const char *format, ...)
    while (true) {
       remaining = str->size - str->len;
 
-      va_start (args, format);
-      n = vsnprintf (&str->str[str->len], remaining, format, args);
-      va_end (args);
+      va_copy (args_copy, args);
+      n = vsnprintf (&str->str[str->len], remaining, format, args_copy);
+      va_end (args_copy);
 
       if (n > -1 && (size_t) n < remaining) {
          /* success */
@@ -280,6 +279,16 @@ kms_request_str_appendf (kms_request_str_t *str, const char *format, ...)
          abort ();
       }
    }
+}
+
+void
+kms_request_str_appendf (kms_request_str_t *str, const char *format, ...)
+{
+   va_list args;
+
+   va_start (args, format);
+   kms_request_str_append_va (str, format, args);
+   va_end (args);
 }
 
 void
