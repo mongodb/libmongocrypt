@@ -1106,6 +1106,8 @@ extern void kms_kmip_reader_find_and_read_enum_test (void);
 extern void kms_kmip_reader_find_and_read_bytes_test (void);
 extern void kms_status_test (void);
 extern void kms_kmip_response_parser_test (void);
+extern void kms_kmip_request_register_and_activate_secretdata_test (void);
+extern void kms_kmip_request_register_and_activate_secretdata_invalid_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1163,6 +1165,10 @@ main (int argc, char *argv[])
    RUN_TEST (kms_status_test);
 
    RUN_TEST (kms_kmip_response_parser_test);
+
+   RUN_TEST (kms_kmip_request_register_and_activate_secretdata_test);
+
+   RUN_TEST (kms_kmip_request_register_and_activate_secretdata_invalid_test);
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
