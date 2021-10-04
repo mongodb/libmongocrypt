@@ -497,7 +497,7 @@ connect_stream_with_tls (mongoc_ssl_opt_t *ssl_opt,
                          int32_t connecttimeoutms,
                          bson_error_t *error)
 {
-   mongoc_stream_t *stream;
+   mongoc_stream_t *stream = NULL;
    mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
    struct addrinfo *result, *rp;
