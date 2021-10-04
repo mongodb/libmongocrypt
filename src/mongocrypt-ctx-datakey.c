@@ -64,44 +64,11 @@ _kms_start (mongocrypt_ctx_t *ctx)
    memset (&dkctx->kms, 0, sizeof (dkctx->kms));
    dkctx->kms_returned = false;
    if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
-      bool crypt_ret;
-      uint32_t bytes_written;
-      _mongocrypt_buffer_t iv;
-
-      /* For a local KMS provider, the customer master key is supplied by the
-       * user in mongocrypt_setopt_kms_provider_local. We use it to
-       * encrypt/decrypt data keys directly. */
-      dkctx->encrypted_key_material.len = _mongocrypt_calculate_ciphertext_len (
-         dkctx->plaintext_key_material.len);
-      dkctx->encrypted_key_material.data =
-         bson_malloc (dkctx->encrypted_key_material.len);
-      dkctx->encrypted_key_material.owned = true;
-      BSON_ASSERT (dkctx->encrypted_key_material.data);
-
-      /* use a random IV. */
-      _mongocrypt_buffer_init (&iv);
-      iv.data = bson_malloc0 (MONGOCRYPT_IV_LEN);
-      BSON_ASSERT (iv.data);
-
-      iv.len = MONGOCRYPT_IV_LEN;
-      iv.owned = true;
-      if (!_mongocrypt_random (
-             ctx->crypt->crypto, &iv, MONGOCRYPT_IV_LEN, ctx->status)) {
-         _mongocrypt_buffer_cleanup (&iv);
-         _mongocrypt_ctx_fail (ctx);
-         goto done;
-      }
-
-      crypt_ret = _mongocrypt_do_encryption (ctx->crypt->crypto,
-                                             &iv,
-                                             NULL /* associated data. */,
-                                             &ctx->crypt->opts.kms_provider_local.key,
-                                             &dkctx->plaintext_key_material,
-                                             &dkctx->encrypted_key_material,
-                                             &bytes_written,
-                                             ctx->status);
-      _mongocrypt_buffer_cleanup (&iv);
-      if (!crypt_ret) {
+      if (!_mongocrypt_wrap_key (ctx->crypt->crypto,
+                                 &ctx->crypt->opts.kms_provider_local.key,
+                                 &dkctx->plaintext_key_material,
+                                 &dkctx->encrypted_key_material,
+                                 ctx->status)) {
          _mongocrypt_ctx_fail (ctx);
          goto done;
       }

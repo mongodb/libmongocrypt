@@ -77,6 +77,43 @@ _mongocrypt_random (_mongocrypt_crypto_t *crypto,
 int
 _mongocrypt_memequal (const void *const b1, const void *const b2, size_t len);
 
+
+/*
+ * _mongocrypt_wrap_key encrypts a DEK with a KEK.
+
+ * kek is an input Key Encryption Key.
+ * dek is an input Data Encryption Key.
+ * encrypted_dek the result of encrypting dek with kek.
+ * encrypted_dek is always initialized.
+ * Returns true if no error occurred.
+ * Returns false and sets @status if an error occurred.
+ */
+bool
+_mongocrypt_wrap_key (_mongocrypt_crypto_t *crypto,
+                      _mongocrypt_buffer_t *kek,
+                      _mongocrypt_buffer_t *dek,
+                      _mongocrypt_buffer_t *encrypted_dek,
+                      mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/*
+ * _mongocrypt_unwrap_key decrypts an encrypted DEK with a KEK.
+ * 
+ * kek is an input Key Encryption Key.
+ * encrypted_dek is an input encrypted Data Encryption Key.
+ * dek is the result of decrypting encrypted_dek with kek.
+ * dek is always initialized.
+ * Returns true if no error occurred.
+ * Returns false and sets @status if an error occurred.
+ */
+bool
+_mongocrypt_unwrap_key (_mongocrypt_crypto_t *crypto,
+                        _mongocrypt_buffer_t *kek,
+                        _mongocrypt_buffer_t *encrypted_dek,
+                        _mongocrypt_buffer_t *dek,
+                        mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
 bool
 _mongocrypt_calculate_deterministic_iv (
    _mongocrypt_crypto_t *crypto,
