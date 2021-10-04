@@ -98,16 +98,6 @@ set (MONGOCRYPT_SOURCES
    src/os_posix/os_once.c
    )
 
-if ( MSVC )
-   # W4996 - POSIX name for this item is deprecated
-   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX")
-
-   # TODO: add support for clang-cl which is detected as MSVC
-else ()
-   # GNU, Clang, AppleClang
-   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Werror -Wno-missing-braces")
-endif ()
-
 # Choose a Crypto provider
 set (MONGOCRYPT_CRYPTO OpenSSL)
 if (APPLE)
