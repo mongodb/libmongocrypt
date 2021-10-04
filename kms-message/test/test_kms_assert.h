@@ -17,7 +17,11 @@
 #ifndef TEST_KMS_ASSERT_H
 #define TEST_KMS_ASSERT_H
 
+#include "src/kms_request_str.h"
 #include "test_kms_util.h"
+
+#include <stdio.h>
+#include <string.h>
 
 #define TEST_ERROR(...)                                                        \
    do {                                                                        \
@@ -42,7 +46,7 @@
          kms_request_str_new_from_chars ((_actual), _actual_len);              \
       if (0 != strcmp (_expect_str->str, _actual_str->str)) {                  \
          TEST_ERROR (                                                          \
-            "Strings not equal:\n%s\n%s", _expect_str->str, _actual_str->str); \
+            "strings not equal:\n%s\n%s", _expect_str->str, _actual_str->str); \
       }                                                                        \
       kms_request_str_destroy (_actual_str);                                   \
       kms_request_str_destroy (_expect_str);                                   \
@@ -61,7 +65,7 @@
       kms_request_str_append_lowercase (_a_lower, (_a_str));                 \
       kms_request_str_append_lowercase (_b_lower, (_b_str));                 \
       if (NULL == strstr ((_a_lower->str), (_b_lower->str))) {               \
-         TEST_ERROR ("[%s] does not contain [%s]", _a, _b);                  \
+         TEST_ERROR ("string \"%s\" does not contain \"%s\"", _a, _b);       \
       }                                                                      \
       kms_request_str_destroy (_a_str);                                      \
       kms_request_str_destroy (_b_str);                                      \
