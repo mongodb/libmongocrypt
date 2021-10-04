@@ -28,6 +28,8 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 
+#include <inttypes.h>
+
 /* Crypto primitives. These either call the native built in crypto primitives or
  * user supplied hooks. */
 static bool
