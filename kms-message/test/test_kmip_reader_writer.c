@@ -23,7 +23,7 @@ kms_kmip_writer_test_evaluate (kmip_writer_t *writer,
 
    expected_hex = copy_and_filter_hex (expected_hex_in);
    actual_buf = kmip_writer_get_buffer (writer, &actual_len);
-   actual_hex = data_to_hex (actual_buf, (uint32_t) actual_len);
+   actual_hex = data_to_hex (actual_buf, actual_len);
 
    if (0 != strcmp (expected_hex, actual_hex)) {
       fprintf (stderr,
@@ -75,7 +75,8 @@ kms_kmip_writer_test (void)
    /* Boolean is not implemented. */
 
    writer = kmip_writer_new ();
-   kmip_writer_write_string (writer, KMIP_TAG_CompromiseDate, "Hello World", 11);
+   kmip_writer_write_string (
+      writer, KMIP_TAG_CompromiseDate, "Hello World", 11);
    kms_kmip_writer_test_evaluate (writer,
                                   "42 00 20 | 07 | 00 00 00 0B | 48 65 6C 6C "
                                   "6F 20 57 6F 72 6C 64 00 00 00 00 00",
@@ -134,8 +135,8 @@ kms_kmip_reader_test (void)
    /* The following test cases come from section 9.1.2 of
     * http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html */
    /* An Integer containing the decimal value 8 */
-   data = hex_to_data (
-      "42 00 20 | 02 | 00 00 00 04 | 00 00 00 08 00 00 00 00", &datalen);
+   data = hex_to_data ("42 00 20 | 02 | 00 00 00 04 | 00 00 00 08 00 00 00 00",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);
@@ -150,8 +151,8 @@ kms_kmip_reader_test (void)
    free (data);
 
    /* A Long Integer containing the decimal value 123456789000000000 */
-   data = hex_to_data (
-      "42 00 20 | 03 | 00 00 00 08 | 01 B6 9B 4B A5 74 92 00", &datalen);
+   data = hex_to_data ("42 00 20 | 03 | 00 00 00 08 | 01 B6 9B 4B A5 74 92 00",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);
@@ -168,8 +169,8 @@ kms_kmip_reader_test (void)
    /* Big Integer is not implemented. */
 
    /* An Enumeration with value 255 */
-   data = hex_to_data (
-      "42 00 20 | 05 | 00 00 00 04 | 00 00 00 FF 00 00 00 00", &datalen);
+   data = hex_to_data ("42 00 20 | 05 | 00 00 00 04 | 00 00 00 FF 00 00 00 00",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);
@@ -186,10 +187,9 @@ kms_kmip_reader_test (void)
    /* Boolean is not implemented */
 
    /* A Text String with the value 'Hello World' */
-   data =
-      hex_to_data ("42 00 20 | 07 | 00 00 00 0B | 48 65 6C "
-                                     "6C 6F 20 57 6F 72 6C 64 00 00 00 00 00",
-                                     &datalen);
+   data = hex_to_data ("42 00 20 | 07 | 00 00 00 0B | 48 65 6C "
+                       "6C 6F 20 57 6F 72 6C 64 00 00 00 00 00",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);
@@ -204,8 +204,8 @@ kms_kmip_reader_test (void)
    free (data);
 
    /* A Byte String with the value { 0x01, 0x02, 0x03 } */
-   data = hex_to_data (
-      "42 00 20 | 08 | 00 00 00 03 | 01 02 03 00 00 00 00 00", &datalen);
+   data = hex_to_data ("42 00 20 | 08 | 00 00 00 03 | 01 02 03 00 00 00 00 00",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);
@@ -221,8 +221,8 @@ kms_kmip_reader_test (void)
 
    /* A Date-Time, containing the value for Friday, March 14, 2008, 11:56:40 GMT
     */
-   data = hex_to_data (
-      "42 00 20 | 09 | 00 00 00 08 | 00 00 00 00 47 DA 67 F8", &datalen);
+   data = hex_to_data ("42 00 20 | 09 | 00 00 00 08 | 00 00 00 00 47 DA 67 F8",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);
@@ -287,8 +287,8 @@ kms_kmip_reader_negative_int_test (void)
    int32_t i32;
 
    /* Test reading the integer -1. */
-   data = hex_to_data (
-      "42 00 20 | 02 | 00 00 00 04 | FF FF FF FF 00 00 00 00", &datalen);
+   data = hex_to_data ("42 00 20 | 02 | 00 00 00 04 | FF FF FF FF 00 00 00 00",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);
@@ -303,8 +303,8 @@ kms_kmip_reader_negative_int_test (void)
    free (data);
 
    /* Test reading the integer INT32_MIN (-2^31). */
-   data = hex_to_data (
-      "42 00 20 | 02 | 00 00 00 04 | 80 00 00 00 00 00 00 00", &datalen);
+   data = hex_to_data ("42 00 20 | 02 | 00 00 00 04 | 80 00 00 00 00 00 00 00",
+                       &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
    ASSERT (tag == KMIP_TAG_CompromiseDate);

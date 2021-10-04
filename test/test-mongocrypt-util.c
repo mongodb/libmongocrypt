@@ -26,12 +26,12 @@ const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state) {
 }
 
 char *
-data_to_hex (const uint8_t *buf, uint32_t len)
+data_to_hex (const uint8_t *buf, size_t len)
 {
    char *hex_chars = malloc (len * 2 + 1);
 
    char *p = hex_chars;
-   uint32_t i;
+   size_t i;
 
    for (i = 0; i < len; i++) {
       p += sprintf (p, "%02x", buf[i]);

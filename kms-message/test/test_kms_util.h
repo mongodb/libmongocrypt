@@ -31,6 +31,6 @@ uint8_t *
 hex_to_data (char *unfiltered_hex, size_t *outlen);
 
 char *
-data_to_hex (const uint8_t *data, uint32_t len);
+data_to_hex (const uint8_t *data, size_t len);
 
 #endif /* TEST_KMS_UTIL_H */
