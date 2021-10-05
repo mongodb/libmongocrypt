@@ -96,15 +96,4 @@
       free (_expected_hex);                                             \
    } while (0)
 
-#define ASSERT_CMPKMIP(expected, expected_len, actual, actual_len) \
-   do {                                                            \
-      if (actual_len != expected_len ||                            \
-          0 != memcmp (actual, expected, actual_len)) {            \
-         char *_expected_str = kmip_dump (expected, expected_len); \
-         char *_actual_str = kmip_dump (actual, actual_len);       \
-         TEST_ERROR ("KMIP not equal\nExpected:\n%s\nGot:\n%s\n",  \
-                     _expected_str,                                \
-                     _actual_str);                                 \
-      } } while (0)
-
 #endif /* TEST_KMS_ASSERT_H */

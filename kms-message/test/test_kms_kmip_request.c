@@ -90,7 +90,7 @@ kms_kmip_request_register_secretdata_test (void)
    actual_bytes = kms_kmip_request_to_bytes (req, &actual_len);
    ASSERT (actual_bytes != NULL);
 
-   ASSERT_CMPKMIP (expected_bytes, expected_len, actual_bytes, actual_len);
+   ASSERT_CMPBYTES (expected_bytes, expected_len, actual_bytes, actual_len);
 
    kms_kmip_request_destroy (req);
    kms_status_destroy (status);
@@ -168,7 +168,7 @@ kms_kmip_get_test (void)
    actual_bytes = kms_kmip_request_to_bytes (req, &actual_len);
 
    ASSERT (actual_bytes != NULL);
-   ASSERT_CMPKMIP (actual_bytes, actual_len, expected_bytes, expected_len);
+   ASSERT_CMPBYTES (actual_bytes, actual_len, expected_bytes, expected_len);
 
    kms_kmip_request_destroy (req);
    kms_status_destroy (status);
@@ -226,7 +226,7 @@ kms_kmip_request_activate_test (void)
 
    actual_bytes = kms_kmip_request_to_bytes (req, &actual_len);
    ASSERT (actual_bytes != NULL);
-   ASSERT_CMPKMIP (actual_bytes, actual_len, expected_bytes, expected_len);
+   ASSERT_CMPBYTES (actual_bytes, actual_len, expected_bytes, expected_len);
 
    kms_kmip_request_destroy (req);
    kms_status_destroy (status);
