@@ -13,22 +13,71 @@ kms_kmip_response_to_bytes (kms_kmip_response_t *res, uint32_t *len)
    return res->data;
 }
 
-const char *
-kmip_tag_to_string (kmip_tag_type_t tag)
+/*
+Result reason strings were obtained from 9.1.3.2.29 of the KMIP 1.4
+specification.
+http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html
+*/
+static const char *
+result_reason_to_string (uint32_t result_reason)
 {
-   return "TODO";
+   switch (result_reason) {
+   case 0x00000011:
+      return "Key Compression Type Not Supported";
+
+   case 0x00000012:
+      return "Encoding Option Error";
+
+   case 0x00000013:
+      return "Key Value Not Present";
+
+   case 0x00000014:
+      return "Attestation Required";
+
+   case 0x00000015:
+      return "Attestation Failed";
+
+   case 0x00000016:
+      return "Sensitive";
+
+   case 0x00000017:
+      return "Not Extractable";
+
+   case 0x00000018:
+      return "Object Already Exists";
+
+   case 0x00000100:
+      return "General Failure";
+
+   default:
+      return "(Unknown Result Reason)";
+   }
 }
 
-const char *
-kmip_result_reason_to_string (uint32_t result_reason)
+/*
+Result status strings were obtained from 9.1.3.2.28 of the KMIP 1.4
+specification.
+http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html
+*/
+static const char *
+result_status_to_string (uint32_t result_status)
 {
-   return "TODO";
-}
+   switch (result_status) {
+   case 0x00000000:
+      return "Success";
 
-const char *
-kmip_result_status_to_string (uint32_t result_status)
-{
-   return "TODO";
+   case 0x00000001:
+      return "Operation Failed";
+
+   case 0x00000002:
+      return "Operation Pending";
+
+   case 0x00000003:
+      return "Operation Undone";
+
+   default:
+      return "(Unknown Result Status)";
+   }
 }
 
 /* Example successful Response to a Register request:
@@ -38,8 +87,9 @@ kmip_result_status_to_string (uint32_t result_status)
    <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
    <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
   </ProtocolVersion>
-  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-05T10/05/21-0500"/>
-  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+  <TimeStamp tag="0x420092" type="DateTime"
+value="2021-10-05T10/05/21-0500"/> <BatchCount tag="0x42000d" type="Integer"
+value="1"/>
  </ResponseHeader>
  <BatchItem tag="0x42000f" type="Structure">
   <Operation tag="0x42005c" type="Enumeration" value="3"/>
@@ -69,20 +119,20 @@ kms_kmip_response_get_unique_identifier (kms_kmip_response_t *res,
    reader = kmip_reader_new (res->data, res->len);
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
       kms_status_errorf (status,
-                         "unable to find tag1: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponseMessage));
       goto fail;
    }
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
       kms_status_errorf (status,
-                         "unable to find tag2: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponseMessage));
       goto fail;
    }
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponsePayload)) {
       kms_status_errorf (status,
-                         "unable to find tag3: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponsePayload));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponsePayload));
       goto fail;
    }
    if (!kmip_reader_find (reader,
@@ -91,8 +141,8 @@ kms_kmip_response_get_unique_identifier (kms_kmip_response_t *res,
                           &pos,
                           &len)) {
       kms_status_errorf (status,
-                         "unable to find tag4: %s",
-                         kmip_tag_to_string (KMIP_TAG_UniqueIdentifier));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_UniqueIdentifier));
       goto fail;
    }
 
@@ -116,8 +166,9 @@ Example successful Response to a Get Request of a SecretData.
    <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
    <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
   </ProtocolVersion>
-  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-01T10/01/21-0500"/>
-  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+  <TimeStamp tag="0x420092" type="DateTime"
+value="2021-10-01T10/01/21-0500"/> <BatchCount tag="0x42000d" type="Integer"
+value="1"/>
  </ResponseHeader>
  <BatchItem tag="0x42000f" type="Structure">
   <Operation tag="0x42005c" type="Enumeration" value="10"/>
@@ -126,11 +177,10 @@ Example successful Response to a Get Request of a SecretData.
    <ObjectType tag="0x420057" type="Enumeration" value="7"/>
    <UniqueIdentifier tag="0x420094" type="TextString"
 value="VeUgqtuTi4bI8mHXH9CeocbMHLyrXnfF"/> <SecretData tag="0x420085"
-type="Structure"> <SecretDataType tag="0x420086" type="Enumeration" value="2"/>
-    <KeyBlock tag="0x420040" type="Structure">
-     <KeyFormatType tag="0x420042" type="Enumeration" value="1"/>
-     <KeyValue tag="0x420045" type="Structure">
-      <KeyMaterial tag="0x420043" type="ByteString"
+type="Structure"> <SecretDataType tag="0x420086" type="Enumeration"
+value="2"/> <KeyBlock tag="0x420040" type="Structure"> <KeyFormatType
+tag="0x420042" type="Enumeration" value="1"/> <KeyValue tag="0x420045"
+type="Structure"> <KeyMaterial tag="0x420043" type="ByteString"
 value="ffa8cc79e8c3763b0121fcd06bb3488c8bf42c0774604640279b16b264194030eeb08396241defcc4d32d16ea831ad777138f08e2f985664c004c2485d6f4991eb3d9ec32802537836a9066b4e10aeb56a5ccf6aa46901e625e3400c7811d2ec"/>
      </KeyValue>
     </KeyBlock>
@@ -158,43 +208,43 @@ kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
       kms_status_errorf (status,
-                         "unable to find tag1: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponseMessage));
       goto fail;
    }
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
       kms_status_errorf (status,
-                         "unable to find tag2: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponseMessage));
       goto fail;
    }
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponsePayload)) {
       kms_status_errorf (status,
-                         "unable to find tag3: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponsePayload));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponsePayload));
       goto fail;
    }
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_SecretData)) {
       kms_status_errorf (status,
-                         "unable to find tag4: %s",
-                         kmip_tag_to_string (KMIP_TAG_SecretData));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_SecretData));
       goto fail;
    }
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_KeyBlock)) {
       kms_status_errorf (status,
-                         "unable to find tag5: %s",
-                         kmip_tag_to_string (KMIP_TAG_KeyBlock));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_KeyBlock));
       goto fail;
    }
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_KeyValue)) {
       kms_status_errorf (status,
-                         "unable to find tag6: %s",
-                         kmip_tag_to_string (KMIP_TAG_KeyValue));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_KeyValue));
       goto fail;
    }
 
@@ -204,8 +254,8 @@ kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
                           &pos,
                           &len)) {
       kms_status_errorf (status,
-                         "unable to find tag7: %s",
-                         kmip_tag_to_string (KMIP_TAG_KeyMaterial));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_KeyMaterial));
       goto fail;
    }
 
@@ -241,8 +291,9 @@ Example error response to a Get request:
    <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
    <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
   </ProtocolVersion>
-  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-01T10/01/21-0500"/>
-  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+  <TimeStamp tag="0x420092" type="DateTime"
+value="2021-10-01T10/01/21-0500"/> <BatchCount tag="0x42000d" type="Integer"
+value="1"/>
  </ResponseHeader>
  <BatchItem tag="0x42000f" type="Structure">
   <Operation tag="0x42005c" type="Enumeration" value="10"/>
@@ -272,15 +323,15 @@ kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status)
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
       kms_status_errorf (status,
-                         "unable to find tag1: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponseMessage));
       goto fail;
    }
 
    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
       kms_status_errorf (status,
-                         "unable to find tag2: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResponseMessage));
       goto fail;
    }
 
@@ -317,8 +368,8 @@ kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status)
                           &pos,
                           &len)) {
       kms_status_errorf (status,
-                         "unable to find tag3: %s",
-                         kmip_tag_to_string (KMIP_TAG_ResultStatus));
+                         "unable to find tag: %s",
+                         kmip_tag_type_to_string (KMIP_TAG_ResultStatus));
       goto fail;
    }
 
@@ -333,9 +384,9 @@ kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status)
                          "): %s. Result Reason (%" PRIu32
                          "): %s. Result Message: %.*s",
                          result_status,
-                         kmip_result_status_to_string (result_status),
+                         result_status_to_string (result_status),
                          result_reason,
-                         kmip_result_reason_to_string (result_reason),
+                         result_reason_to_string (result_reason),
                          result_message_len,
                          result_message);
       goto fail;

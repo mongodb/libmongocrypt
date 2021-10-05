@@ -17,6 +17,9 @@
 #ifndef KMS_KMIP_ITEM_TYPE_PRIVATE_H
 #define KMS_KMIP_ITEM_TYPE_PRIVATE_H
 
+/* KMS_MSG_INLINE */
+#include "kms_message/kms_message_defines.h"
+
 typedef enum {
    KMIP_ITEM_TYPE_Structure = 0x01,
    KMIP_ITEM_TYPE_Integer = 0x02,
@@ -29,5 +32,34 @@ typedef enum {
    KMIP_ITEM_TYPE_DateTime = 0x09,
    KMIP_ITEM_TYPE_Interval = 0x0A
 } kmip_item_type_t;
+
+static KMS_MSG_INLINE const char *
+kmip_item_type_to_string (kmip_item_type_t type)
+{
+   switch (type) {
+   case KMIP_ITEM_TYPE_Structure:
+      return "Structure";
+   case KMIP_ITEM_TYPE_Integer:
+      return "Integer";
+   case KMIP_ITEM_TYPE_LongInteger:
+      return "LongInteger";
+   case KMIP_ITEM_TYPE_BigInteger:
+      return "BigInteger";
+   case KMIP_ITEM_TYPE_Enumeration:
+      return "Enumeration";
+   case KMIP_ITEM_TYPE_Boolean:
+      return "Boolean";
+   case KMIP_ITEM_TYPE_TextString:
+      return "TextString";
+   case KMIP_ITEM_TYPE_ByteString:
+      return "ByteString";
+   case KMIP_ITEM_TYPE_DateTime:
+      return "DateTime";
+   case KMIP_ITEM_TYPE_Interval:
+      return "Interval";
+   default:
+      return "(Unknown Type)";
+   }
+}
 
 #endif /* KMS_KMIP_ITEM_TYPE_PRIVATE_H */
