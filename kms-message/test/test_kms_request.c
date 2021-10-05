@@ -1166,23 +1166,14 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_reader_find_and_recurse_test);
    RUN_TEST (kms_kmip_reader_find_and_read_enum_test);
    RUN_TEST (kms_kmip_reader_find_and_read_bytes_test);
-
    RUN_TEST (kms_status_test);
-
    RUN_TEST (kms_kmip_response_parser_test);
-
    RUN_TEST (kms_kmip_request_register_secretdata_test);
-
    RUN_TEST (kms_kmip_request_register_secretdata_invalid_test);
-
    RUN_TEST (kms_kmip_response_get_unique_identifier_test);
-
    RUN_TEST (kms_kmip_get_test);
-
    RUN_TEST (kms_kmip_response_get_secretdata_test);
-
    RUN_TEST (kms_kmip_response_get_secretdata_notfound_test);
-
    RUN_TEST (kms_kmip_request_activate_test);
 
    if (!ran_tests) {
