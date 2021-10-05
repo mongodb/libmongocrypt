@@ -1130,8 +1130,16 @@ static bool kmip_reader_next (kmip_reader_t *reader, uint32_t read_length) {
    return true;
 }
 
+static void prefix_level (kms_request_str_t *str, uint32_t level) {
+   uint32_t i;
+
+   for (i = 0; i < level; i++) {
+      kms_request_str_append_char (str, ' ');
+   }
+}
+
 static bool
-kmip_dump_recursive (kms_request_str_t *str, kmip_reader_t *reader, int level)
+kmip_dump_recursive_xml (kms_request_str_t *str, kmip_reader_t *reader, uint32_t level)
 {
    kmip_tag_type_t tag;
    kmip_item_type_t type;
@@ -1139,20 +1147,15 @@ kmip_dump_recursive (kms_request_str_t *str, kmip_reader_t *reader, int level)
    kmip_reader_t subreader;
 
    while (true) {
-      int i;
-
       if (!kmip_reader_read_tag (reader, &tag)) {
          /* EOF */
          return false;
       }
 
-      for (i = 0; i < level; i++) {
-         kms_request_str_append_char (str, ' ');
-      }
+      prefix_level (str, level);
 
       kms_request_str_appendf (str,
-                               "tag=%s (%02x%02x%02x)",
-                               kmip_tag_type_to_string (tag),
+                               "<%s tag=\"0x%02x%02x%02x\"", kmip_tag_type_to_string (tag),
                                (tag & 0xFF0000) >> 16,
                                (tag & 0xFF00) >> 8,
                                tag & 0xFF);
@@ -1160,36 +1163,43 @@ kmip_dump_recursive (kms_request_str_t *str, kmip_reader_t *reader, int level)
          goto error;
       }
       kms_request_str_appendf (
-         str, " type=%s (%02x)", kmip_item_type_to_string (type), type);
+         str, " type=\"%s\"", kmip_item_type_to_string (type));
       if (!kmip_reader_read_length (reader, &len)) {
          goto error;
       }
-      kms_request_str_appendf (str, " length=%" PRIu32, len);
 
       if (type == KMIP_ITEM_TYPE_Structure) {
          kmip_reader_in_place (reader, reader->pos, (size_t) len, &subreader);
-         kms_request_str_append_char (str, '\n');
-         kmip_dump_recursive (str, &subreader, level + 1);
+         kms_request_str_appendf (str, ">\n");
+         kmip_dump_recursive_xml (str, &subreader, level + 1);
+         prefix_level (str, level);
+         kms_request_str_appendf (str, "</%s>\n", kmip_tag_type_to_string (tag));
          kmip_reader_next (reader, len);
          continue;
       } else if (type == KMIP_ITEM_TYPE_Integer) {
          int32_t value;
          kmip_reader_read_integer (reader, &value);
-         kms_request_str_appendf (str, " value=%" PRId32, value);
+         kms_request_str_appendf (str, " value=\"%" PRId32 "\"/>", value);
       } else if (type == KMIP_ITEM_TYPE_LongInteger) {
          int64_t value;
          kmip_reader_read_long_integer (reader, &value);
-         kms_request_str_appendf (str, " value=%" PRId64, value);
+         kms_request_str_appendf (str, " value=\"%" PRId64 "\"/>", value);
       } else if (type == KMIP_ITEM_TYPE_BigInteger) {
-         kms_request_str_appendf (str, " value=(TODO)");
+         kms_request_str_appendf (str, " value=\"(TODO)\"");
          kmip_reader_next (reader, len);
       } else if (type == KMIP_ITEM_TYPE_Enumeration) {
          uint32_t value;
          kmip_reader_read_enumeration (reader, &value);
-         kms_request_str_appendf (str, " value=%" PRIu32, value);
+         kms_request_str_appendf (str, " value=\"%" PRIu32 "\"/>", value);
       } else if (type == KMIP_ITEM_TYPE_Boolean) {
-         kms_request_str_appendf (str, " value=(TODO)");
-         kmip_reader_next (reader, len);
+         uint64_t u64;
+
+         kmip_reader_read_u64 (reader, &u64);
+         if (u64 == 1) {
+            kms_request_str_appendf (str, " value=\"true\"/>");
+         } else {
+            kms_request_str_appendf (str, " value=\"false\"/>");
+         }
       } else if (type == KMIP_ITEM_TYPE_TextString) {
          uint8_t *value;
          char* valuestr;
@@ -1198,15 +1208,32 @@ kmip_dump_recursive (kms_request_str_t *str, kmip_reader_t *reader, int level)
          valuestr[len] = 0;
          kmip_reader_read_string (reader, &value, len);
          memcpy (valuestr, value, len);
-         kms_request_str_appendf (str, " value=%s", valuestr);
+         kms_request_str_appendf (str, " value=\"%s\"/>", valuestr);
       } else if (type == KMIP_ITEM_TYPE_ByteString) {
-         kms_request_str_appendf (str, " value=(TODO)");
-         kmip_reader_next (reader, len);
+         uint8_t *bytes;
+         uint32_t i;
+
+         kmip_reader_read_bytes (reader, &bytes, len);
+
+         kms_request_str_appendf (str, " value=\"");
+         for (i = 0; i < len; i++) {
+            kms_request_str_appendf (str, "%02x", bytes[i]);   
+         }
+         kms_request_str_appendf (str, "\"/>");
       } else if (type == KMIP_ITEM_TYPE_DateTime) {
-         kms_request_str_appendf (str, " value=(TODO)");
-         kmip_reader_next (reader, len);
+         uint64_t u64;
+         time_t time;
+         struct tm tmtime;
+         char timestr[100] = {0};
+
+         kmip_reader_read_u64 (reader, &u64);
+         time = (time_t) u64;
+         tmtime = *gmtime (&time);
+
+         strftime (timestr, 100, "%FT%D%z", &tmtime);
+         kms_request_str_appendf (str, " value=\"%s\"/>", timestr);
       } else if (type == KMIP_ITEM_TYPE_Interval) {
-         kms_request_str_appendf (str, " value=(TODO)");
+         kms_request_str_appendf (str, " value=\"(TODO)\"");
          kmip_reader_next (reader, len);
       } else {
          goto error;
@@ -1216,7 +1243,7 @@ kmip_dump_recursive (kms_request_str_t *str, kmip_reader_t *reader, int level)
    }
 
 error:
-   kms_request_str_append_chars (str, "<malformed>", -1);
+   kms_request_str_append_chars (str, "<Malformed/>", -1);
    return false;
 }
 
@@ -1225,9 +1252,23 @@ kmip_dump (uint8_t *data, size_t len)
 {
    kms_request_str_t *str = kms_request_str_new ();
    kmip_reader_t *reader;
-
+   size_t i = 0;
 
    reader = kmip_reader_new (data, len);
-   kmip_dump_recursive (str, reader, 0);
+   kmip_dump_recursive_xml (str, reader, 0);
+   kmip_reader_destroy (reader);
+
+   kms_request_str_appendf (str, "\n");
+
+   for (i = 0; i < len; i++) {
+      kms_request_str_appendf (str, "0x%02x", data[i]);
+      if (i < len - 1) {
+         kms_request_str_appendf (str, ", ");
+      }
+   }
+
+
+   kms_request_str_appendf (str, "\n");
+
    return kms_request_str_detach (str);
 }
