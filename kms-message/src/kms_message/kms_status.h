@@ -23,6 +23,10 @@
 #include "kms_message_defines.h"
 #include "kms_status.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* TODO: File a QOL ticket for adding API to expand and use kms_status_t
  * in more of KMS message API.
  * - Identify the source of the error (client, server).
@@ -47,5 +51,8 @@ KMS_MSG_EXPORT (bool) kms_status_ok (kms_status_t *status);
 /* kms_status_to_string returns a message. */
 KMS_MSG_EXPORT (const char *) kms_status_to_string (kms_status_t *status);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* KMS_KMIP_STATUS_H */

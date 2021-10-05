@@ -24,6 +24,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct _kms_kmip_response_parser_t kms_kmip_response_parser_t;
 
 KMS_MSG_EXPORT(kms_kmip_response_parser_t *)
@@ -40,5 +44,9 @@ kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser, kms_s
 
 KMS_MSG_EXPORT(void)
 kms_kmip_response_parser_destroy (kms_kmip_response_parser_t *parser);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* KMS_KMIP_RESPONSE_PARSER_H */

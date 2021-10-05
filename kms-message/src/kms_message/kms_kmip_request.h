@@ -23,6 +23,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct _kms_kmip_request_t kms_kmip_request_t;
 
 KMS_MSG_EXPORT (kms_kmip_request_t *)
@@ -47,5 +51,8 @@ kms_kmip_request_to_bytes (kms_kmip_request_t *req, uint32_t *len);
 KMS_MSG_EXPORT (void)
 kms_kmip_request_destroy (kms_kmip_request_t *req);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* KMS_KMIP_REQUEST_H */

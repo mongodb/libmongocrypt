@@ -23,8 +23,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* TODO: consolidate kms_kmip_response_t and kms_kmip_request_t into
- * kms_kmip_msg_t? */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct _kms_kmip_response_t kms_kmip_response_t;
 
 KMS_MSG_EXPORT (uint8_t *)
@@ -44,5 +46,9 @@ KMS_MSG_EXPORT (bool)
 kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status);
 
 KMS_MSG_EXPORT (void) kms_kmip_response_destroy (kms_kmip_response_t *res);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* KMS_KMIP_RESPONSE_H */
