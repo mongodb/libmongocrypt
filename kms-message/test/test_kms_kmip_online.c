@@ -185,24 +185,6 @@ kmip_register_and_activate_secretdata (void)
    return uid;
 }
 
-static void
-kmip_discover_versions (void)
-{
-   test_env_t test_env;
-   kms_kmip_request_t *req;
-   kms_kmip_response_t *res;
-   kms_status_t *status;
-
-   test_env_init (&test_env);
-   status = kms_status_new ();
-   req = kms_kmip_request_discover_versions_new (NULL, status);
-   ASSERT (req != NULL);
-
-   res = send_kms_kmip_request (req, &test_env);
-   kms_kmip_request_destroy (req);
-   kms_kmip_response_destroy (res);
-}
-
 static uint8_t *
 kmip_get (char *uid, uint32_t* secretdata_len) {
    test_env_t test_env;
@@ -231,13 +213,6 @@ test_kmip_register_and_activate_secretdata (void)
    uid = kmip_register_and_activate_secretdata ();
    free (uid);
 }
-
-static void
-test_kmip_discover_versions (void)
-{
-   kmip_discover_versions ();
-}
-
 
 static void
 test_kmip_get (void) {
@@ -313,8 +288,6 @@ main (int argc, char **argv)
 
    if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_register_and_activate_secretdata")) {
       test_kmip_register_and_activate_secretdata ();
-   } else if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_discover_versions")) {
-      test_kmip_discover_versions ();
    } else if (test_selector == NULL || 0 == strcmp (test_selector, "dump_kmip_from_pykmip")) {
       dump_kmip_from_pykmip ();
    } else if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_get")) {
