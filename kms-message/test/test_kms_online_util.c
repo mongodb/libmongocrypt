@@ -38,6 +38,10 @@ connect_with_tls (const char *host, const char *port, mongoc_ssl_opt_t *ssl_opt)
    hints.ai_flags = 0;
    hints.ai_protocol = 0;
 
+   if (!port) {
+      port = "443";
+   }
+
    s = getaddrinfo (host, port, &hints, &result);
    ASSERT_CMPINT (s, ==, 0);
 
