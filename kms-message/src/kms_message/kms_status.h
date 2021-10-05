@@ -27,13 +27,6 @@
 extern "C" {
 #endif
 
-/* TODO: File a QOL ticket for adding API to expand and use kms_status_t
- * in more of KMS message API.
- * - Identify the source of the error (client, server).
- * - Add an error code.
- * - Remove limit on message size.
- */
-
 /* kms_status_t is used as output parameter to obtain error information. */
 typedef struct _kms_status_t kms_status_t;
 
