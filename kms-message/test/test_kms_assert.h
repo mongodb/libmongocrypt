@@ -19,7 +19,6 @@
 
 #include "src/kms_request_str.h"
 #include "test_kms_util.h"
-#include "src/kms_kmip_reader_writer_private.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -39,8 +38,6 @@
       TEST_ERROR ("statement failed %s", #stmt); \
    }
 
-#define ASSERT_STATUS_OK(stmt) /* KMIPTODO */
-#define ASSERT_STATUS_ERROR(stmt, errmsg) /* KMIPTODO */
 #define ASSERT_CMPSTR_WITH_LEN(_expect, _expect_len, _actual, _actual_len)     \
    do {                                                                        \
       kms_request_str_t *_expect_str =                                         \
