@@ -19,6 +19,7 @@
 
 #include "src/kms_request_str.h"
 #include "test_kms_util.h"
+#include "src/kms_message/kms_status.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -91,6 +92,23 @@
       ASSERT_CMPSTR (_actual_hex, _expected_hex);                       \
       free (_actual_hex);                                               \
       free (_expected_hex);                                             \
+   } while (0)
+
+#define ASSERT_STATUS_OK(status)                             \
+   do {                                                      \
+      if (!kms_status_ok (status)) {                         \
+         TEST_ERROR ("expected ok status but got error: %s", \
+                     kms_status_to_string (status));         \
+      }                                                      \
+   } while (0)
+
+#define ASSERT_STATUS_ERROR(status, expect_substring)          \
+   do {                                                        \
+      if (kms_status_ok (status)) {                            \
+         TEST_ERROR ("expected error status but got ok");      \
+      }                                                        \
+      const char *_status_str = kms_status_to_string (status); \
+      ASSERT_CONTAINS (_status_str, expect_substring);         \
    } while (0)
 
 #endif /* TEST_KMS_ASSERT_H */
