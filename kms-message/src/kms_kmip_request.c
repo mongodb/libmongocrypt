@@ -23,7 +23,7 @@
 
 static void
 copy_writer_buffer (kms_request_t *req, kmip_writer_t *writer) {
-   uint8_t *buf;
+   const uint8_t *buf;
    size_t buflen;
 
    buf = kmip_writer_get_buffer (writer, &buflen);
