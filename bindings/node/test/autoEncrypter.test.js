@@ -395,9 +395,8 @@ describe('AutoEncrypter', function() {
       }
     });
 
-    it('should not spawn mongocryptd on startup', function(done) {
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
+    ['mongocryptdBypassSpawn', 'bypassAutoEncryption'].forEach(opt => {
+      const encryptionOptions = {
         keyVaultNamespace: 'admin.datakeys',
         logger: () => {},
         kmsProviders: {
@@ -405,58 +404,64 @@ describe('AutoEncrypter', function() {
           local: { key: Buffer.alloc(96) }
         },
         extraOptions: {
-          mongocryptdBypassSpawn: true
-        }
-      });
-
-      const localMcdm = this.mc._mongocryptdManager;
-      sandbox.spy(localMcdm, 'spawn');
-
-      this.mc.init(err => {
-        expect(err).to.not.exist;
-        expect(localMcdm.spawn).to.have.a.callCount(0);
-        done();
-      });
-    });
-
-    it('should not spawn a mongocryptd or retry on a server selection error', function(done) {
-      let called = false;
-      const timeoutError = new MongoNetworkTimeoutError('msg');
-      StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
-        if (!called) {
-          called = true;
-          callback(timeoutError);
-          return;
-        }
-
-        callback(null, MOCK_MONGOCRYPTD_RESPONSE);
-      });
-
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
+          mongocryptdBypassSpawn: opt === 'mongocryptdBypassSpawn'
         },
-        extraOptions: {
-          mongocryptdBypassSpawn: true
-        }
-      });
+        bypassAutoEncryption: opt === 'bypassAutoEncryption'
+      };
 
-      const localMcdm = this.mc._mongocryptdManager;
-      sandbox.spy(localMcdm, 'spawn');
+      it(`should not spawn mongocryptd on startup if ${opt} is true`, function(done) {
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, encryptionOptions);
 
-      this.mc.init(err => {
-        expect(err).to.not.exist;
-        expect(localMcdm.spawn).to.not.have.been.called;
+        const localMcdm = this.mc._mongocryptdManager;
+        sandbox.spy(localMcdm, 'spawn');
 
-        this.mc.encrypt('test.test', TEST_COMMAND, (err, response) => {
-          expect(localMcdm.spawn).to.not.have.been.called;
-          expect(response).to.not.exist;
-          expect(err).to.equal(timeoutError);
+        this.mc.init(err => {
+          expect(err).to.not.exist;
+          expect(localMcdm.spawn).to.have.a.callCount(0);
           done();
+        });
+      });
+
+      it('should not spawn a mongocryptd or retry on a server selection error if mongocryptdBypassSpawn: true', function(done) {
+        let called = false;
+        const timeoutError = new MongoNetworkTimeoutError('msg');
+        StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
+          if (!called) {
+            called = true;
+            callback(timeoutError);
+            return;
+          }
+
+          callback(null, MOCK_MONGOCRYPTD_RESPONSE);
+        });
+
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          },
+          extraOptions: {
+            mongocryptdBypassSpawn: true
+          }
+        });
+
+        const localMcdm = this.mc._mongocryptdManager;
+        sandbox.spy(localMcdm, 'spawn');
+
+        this.mc.init(err => {
+          expect(err).to.not.exist;
+          expect(localMcdm.spawn).to.not.have.been.called;
+
+          this.mc.encrypt('test.test', TEST_COMMAND, (err, response) => {
+            expect(localMcdm.spawn).to.not.have.been.called;
+            expect(response).to.not.exist;
+            expect(err).to.equal(timeoutError);
+            done();
+          });
         });
       });
     });
