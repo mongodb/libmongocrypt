@@ -58,7 +58,7 @@ elif [[ "$VERSION_AT_HEAD" != "$VERSION_AT_HEAD_1" ]]; then
   run_prebuild
 else
   echo "No difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
-  echo "Will prebuild without submit ($ARCH - $DISTRO_ID)"
+  echo "Will prebuild without submit ($DISTRO_ID)"
   npm run prebuild
   echo "Local prebuild successful."
 fi
