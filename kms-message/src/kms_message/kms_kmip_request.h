@@ -38,17 +38,16 @@ kms_kmip_request_register_secretdata_new (void *reserved,
 /* kms_request_activate_new creates a KMIP Activate request with the
  * provided unique identifer.
  * - unique_identifier must be a NULL terminated string.
- * - Returns NULL and sets status on error. */
+ * - Callers must check for an error by calling kms_request_get_error. */
 KMS_MSG_EXPORT (kms_request_t *)
 kms_request_activate_new (void *reserved, char *unique_identifier);
 
 /* kms_kmip_request_get_new creates a KMIP Get request with the provided unique
  * identifer.
  * - unique_identifier must be a NULL terminated string.
- * - Returns NULL and sets status on error. */
+ * - Callers must check for an error by calling kms_request_get_error. */
 KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_get_new (void *reserved, char *unique_identifier);
-
 
 #ifdef __cplusplus
 }
