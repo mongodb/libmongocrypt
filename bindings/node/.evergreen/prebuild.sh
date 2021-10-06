@@ -49,7 +49,7 @@ elif [[ "$VERSION_AT_HEAD" != "$VERSION_AT_HEAD_1" ]]; then
       run_prebuild
     else
       # Non RHEL 7 linux variants should just test the prebuild task
-      echo "Will prebuild without submit ($ARCH - $DISTRO_ID)"
+      echo "Will prebuild without submit ($OS - $ARCH - $DISTRO_ID)"
       npm run prebuild
     fi
 
@@ -60,7 +60,7 @@ elif [[ "$VERSION_AT_HEAD" != "$VERSION_AT_HEAD_1" ]]; then
   run_prebuild
 else
   echo "No difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
-  echo "Will prebuild without submit ($DISTRO_ID)"
+  echo "Will prebuild without submit ($OS - $DISTRO_ID)"
   npm run prebuild
   echo "Local prebuild successful."
 fi
