@@ -64,7 +64,8 @@ kms_request_opt_set_provider (kms_request_opt_t *opt,
 {
    if (provider != KMS_REQUEST_PROVIDER_AWS &&
        provider != KMS_REQUEST_PROVIDER_AZURE &&
-       provider != KMS_REQUEST_PROVIDER_GCP) {
+       provider != KMS_REQUEST_PROVIDER_GCP &&
+       provider != KMS_REQUEST_PROVIDER_KMIP) {
       return false;
    }
    opt->provider = provider;

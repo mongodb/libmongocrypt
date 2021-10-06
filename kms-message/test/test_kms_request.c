@@ -1088,6 +1088,18 @@ kms_signature_test (void)
    KMS_ASSERT (!ret);
 }
 
+static void kms_request_kmip_prohibited_test (void) {
+   kms_request_opt_t* opt;
+   kms_request_t *req;
+
+   opt = kms_request_opt_new ();
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_KMIP);
+   req = kms_request_new ("method", "path_and_query", opt);
+   ASSERT_REQUEST_ERROR (req, "Function not applicable to KMIP");
+   kms_request_destroy (req);
+   kms_request_opt_destroy (opt);
+}
+
 #define RUN_TEST(_func)                                          \
    do {                                                          \
       if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
@@ -1104,6 +1116,10 @@ extern void kms_kmip_reader_find_test (void);
 extern void kms_kmip_reader_find_and_get_struct_reader_test (void);
 extern void kms_kmip_reader_find_and_read_enum_test (void);
 extern void kms_kmip_reader_find_and_read_bytes_test (void);
+extern void kms_kmip_request_register_secretdata_test (void);
+extern void kms_kmip_request_register_secretdata_invalid_test (void);
+extern void kms_kmip_request_get_test (void);
+extern void kms_kmip_request_activate_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1157,6 +1173,11 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_reader_find_and_get_struct_reader_test);
    RUN_TEST (kms_kmip_reader_find_and_read_enum_test);
    RUN_TEST (kms_kmip_reader_find_and_read_bytes_test);
+   RUN_TEST (kms_kmip_request_register_secretdata_test);
+   RUN_TEST (kms_kmip_request_register_secretdata_invalid_test);
+   RUN_TEST (kms_kmip_request_get_test);
+   RUN_TEST (kms_kmip_request_activate_test);
+   RUN_TEST (kms_request_kmip_prohibited_test);
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);

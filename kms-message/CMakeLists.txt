@@ -26,6 +26,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_encrypt_request.c
    src/kms_gcp_request.c
    src/kms_kmip_reader_writer.c
+   src/kms_kmip_request.c
    src/kms_kv_list.c
    src/kms_kv_list.h
    src/kms_message.c
@@ -176,6 +177,7 @@ install (
    src/kms_message/kms_gcp_request.h
    src/kms_message/kms_message.h
    src/kms_message/kms_message_defines.h
+   src/kms_message/kms_kmip_request.h
    src/kms_message/kms_request.h
    src/kms_message/kms_request_opt.h
    src/kms_message/kms_response.h
@@ -239,6 +241,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       test/test_kms_request.c
       test/test_kmip_reader_writer.c
       test/test_kms_util.c
+      test/test_kms_kmip_request.c
    )
    target_include_directories(test_kms_request PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})

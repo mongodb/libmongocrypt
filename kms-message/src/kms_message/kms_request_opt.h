@@ -33,6 +33,7 @@ typedef size_t kms_request_provider_t;
 #define KMS_REQUEST_PROVIDER_AWS 0
 #define KMS_REQUEST_PROVIDER_AZURE 1
 #define KMS_REQUEST_PROVIDER_GCP 2
+#define KMS_REQUEST_PROVIDER_KMIP 3
 
 KMS_MSG_EXPORT (kms_request_opt_t *)
 kms_request_opt_new (void);

@@ -53,6 +53,14 @@ parse_query_params (kms_request_str_t *q)
    return lst;
 }
 
+static bool check_and_prohibit_kmip (kms_request_t *req) {
+   if (req->provider == KMS_REQUEST_PROVIDER_KMIP) {
+      KMS_ERROR (req, "Function not applicable to KMIP");
+      return false;
+   }
+   return true;
+}
+
 kms_request_t *
 kms_request_new (const char *method,
                  const char *path_and_query,
@@ -66,6 +74,10 @@ kms_request_new (const char *method,
       request->provider = opt->provider;
    } else {
       request->provider = KMS_REQUEST_PROVIDER_AWS;
+   }
+
+   if (!check_and_prohibit_kmip (request)) {
+      return request;
    }
    /* parsing may set failed to true */
    request->failed = false;
@@ -135,6 +147,7 @@ kms_request_destroy (kms_request_t *request)
    kms_request_str_destroy (request->date);
    kms_kv_list_destroy (request->query_params);
    kms_kv_list_destroy (request->header_fields);
+   free (request->kmip.data);
    free (request);
 }
 
@@ -153,6 +166,10 @@ kms_request_set_date (kms_request_t *request, const struct tm *tm)
    struct tm tmp_tm;
 
    if (request->failed) {
+      return false;
+   }
+
+   if (!check_and_prohibit_kmip (request)) {
       return false;
    }
 
@@ -188,6 +205,9 @@ kms_request_set_date (kms_request_t *request, const struct tm *tm)
 bool
 kms_request_set_region (kms_request_t *request, const char *region)
 {
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
    kms_request_str_set_chars (request->region, region, -1);
    return true;
 }
@@ -195,6 +215,9 @@ kms_request_set_region (kms_request_t *request, const char *region)
 bool
 kms_request_set_service (kms_request_t *request, const char *service)
 {
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
    kms_request_str_set_chars (request->service, service, -1);
    return true;
 }
@@ -202,6 +225,9 @@ kms_request_set_service (kms_request_t *request, const char *service)
 bool
 kms_request_set_access_key_id (kms_request_t *request, const char *akid)
 {
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
    kms_request_str_set_chars (request->access_key_id, akid, -1);
    return true;
 }
@@ -209,6 +235,9 @@ kms_request_set_access_key_id (kms_request_t *request, const char *akid)
 bool
 kms_request_set_secret_key (kms_request_t *request, const char *key)
 {
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
    kms_request_str_set_chars (request->secret_key, key, -1);
    return true;
 }
@@ -221,6 +250,10 @@ kms_request_add_header_field (kms_request_t *request,
    kms_request_str_t *k, *v;
 
    CHECK_FAILED;
+
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
 
    k = kms_request_str_new_from_chars (field_name, -1);
    v = kms_request_str_new_from_chars (value, -1);
@@ -239,6 +272,10 @@ kms_request_append_header_field_value (kms_request_t *request,
    kms_request_str_t *v;
 
    CHECK_FAILED;
+
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
 
    if (request->header_fields->len == 0) {
       KMS_ERROR (
@@ -259,6 +296,10 @@ kms_request_append_payload (kms_request_t *request,
                             size_t len)
 {
    CHECK_FAILED;
+
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
 
    kms_request_str_append_chars (request->payload, payload, len);
 
@@ -458,6 +499,10 @@ kms_request_get_canonical (kms_request_t *request)
       return NULL;
    }
 
+   if (!check_and_prohibit_kmip (request)) {
+      return NULL;
+   }
+
    if (!finalize (request)) {
       return NULL;
    }
@@ -496,6 +541,10 @@ kms_request_get_canonical_header (kms_request_t *request, const char *header)
       return NULL;
    }
 
+   if (!check_and_prohibit_kmip (request)) {
+      return NULL;
+   }
+
    if (!finalize (request)) {
       return NULL;
    }
@@ -516,6 +565,10 @@ kms_request_get_string_to_sign (kms_request_t *request)
    kms_request_str_t *creq = NULL; /* canonical request */
 
    if (request->failed) {
+      return NULL;
+   }
+
+   if (!check_and_prohibit_kmip (request)) {
       return NULL;
    }
 
@@ -590,6 +643,10 @@ kms_request_get_signing_key (kms_request_t *request, unsigned char *key)
       return false;
    }
 
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
+
    /* docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
     * Pseudocode for deriving a signing key
     *
@@ -637,6 +694,10 @@ kms_request_get_signature (kms_request_t *request)
       return NULL;
    }
 
+   if (!check_and_prohibit_kmip (request)) {
+      return NULL;
+   }
+
    sts = kms_request_str_wrap (kms_request_get_string_to_sign (request), -1);
    if (!sts) {
       goto done;
@@ -678,6 +739,9 @@ done:
 void
 kms_request_validate (kms_request_t *request)
 {
+   if (!check_and_prohibit_kmip (request)) {
+      return;
+   }
    if (0 == request->region->len) {
       KMS_ERROR (request, "Region not set");
    } else if (0 == request->service->len) {
@@ -707,6 +771,10 @@ kms_request_get_signed (kms_request_t *request)
    kms_request_validate (request);
    if (request->failed) {
       return NULL;
+   }
+
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
    }
 
    if (!finalize (request)) {
@@ -777,6 +845,10 @@ kms_request_to_string (kms_request_t *request)
       return false;
    }
 
+   if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
+
    sreq = kms_request_str_new ();
    /* like "POST / HTTP/1.1" */
    kms_request_str_append (sreq, request->method);
@@ -815,4 +887,16 @@ void
 kms_request_free_string (char *ptr)
 {
    free (ptr);
+}
+
+uint8_t *
+kms_request_to_bytes (kms_request_t *request, uint32_t *len)
+{
+   if (request->provider != KMS_REQUEST_PROVIDER_KMIP) {
+      KMS_ERROR (request, "kms_request_to_bytes only applies to KMIP requests");
+      return NULL;
+   }
+
+   *len = request->kmip.len;
+   return request->kmip.data;
 }
