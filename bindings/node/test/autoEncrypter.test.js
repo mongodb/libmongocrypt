@@ -92,6 +92,7 @@ describe('AutoEncrypter', function() {
     const client = new MockClient();
     const autoEncrypter = new AutoEncrypter(client, {
       bypassAutoEncryption: true,
+      mongocryptdBypassSpawn: true,
       keyVaultNamespace: 'admin.datakeys',
       logger: () => {},
       kmsProviders: {
@@ -217,7 +218,7 @@ describe('AutoEncrypter', function() {
       }
     });
 
-    it('should autoSpawn a mongocryptd on init', function(done) {
+    it('should autoSpawn a mongocryptd on init by default', function(done) {
       const client = new MockClient();
       this.mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',

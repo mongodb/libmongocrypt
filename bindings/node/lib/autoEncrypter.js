@@ -131,6 +131,9 @@ module.exports = function(modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
+      if (this._bypassEncryption) {
+        return callback();
+      }
       const _callback = (err, res) => {
         if (
           err &&
