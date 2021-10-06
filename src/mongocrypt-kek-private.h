@@ -67,8 +67,7 @@ typedef struct {
 } _mongocrypt_aws_kek_t;
 
 typedef struct {
-   /* KMIPTODO
-    * The keyId field breaks the existing model.
+   /* Note: The keyId field breaks the existing model.
     * It is optional in the options for creating a 'kmip' data key.
     * It is required in the final data encryption key document. */
    char *key_id; /* optional. */
