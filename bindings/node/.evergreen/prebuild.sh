@@ -36,20 +36,29 @@ elif [[ "$VERSION_AT_HEAD" != "$VERSION_AT_HEAD_1" ]]; then
   echo "Beginning prebuild"
 
   if [[ "$OS" == "LINUX" ]]; then
-    # We're on linux should be able to use uname -m
+    # Handle limiting which linux gets to publish prebuild
     ARCH=$(uname -m)
-    if [[ "$ARCH" == "x86_64" && $DISTRO_ID == "rhel70-small" ]]; then
+
+    if [[ $DISTRO_ID == "rhel70-small" ]]; then
       # only publish x86_64 linux prebuilds from RHEL 7
       run_prebuild
     elif [[ "$ARCH" != "x86_64" ]]; then
+      # Non-x86 linux variants should just publish
       run_prebuild
+    else
+      # Non RHEL 7 linux variants should just test the prebuild task
+      echo "Will prebuild without submit ($ARCH - $DISTRO_ID)"
+      npm run prebuild
     fi
-  else
-    run_prebuild
+
+    exit 0
   fi
+
+  # Windows and MacOS
+  run_prebuild
 else
   echo "No difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
-  echo "Will prebuild without submit"
+  echo "Will prebuild without submit ($ARCH - $DISTRO_ID)"
   npm run prebuild
   echo "Local prebuild successful."
 fi
