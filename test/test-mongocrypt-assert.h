@@ -33,7 +33,7 @@
       fprintf (stderr, "\n");                                                  \
       fflush (stderr);                                                         \
       abort ();                                                                \
-   } while (0);
+   } while (0)
 
 #define ASSERT(stmt)                             \
    if (!(stmt)) {                                \
@@ -134,8 +134,8 @@
 
 #define ASSERT_CMPINT(_a, _operator, _b)                                \
    do {                                                                 \
-      int _a_int = (int) _a;                                            \
-      int _b_int = (int) _b;                                            \
+      int _a_int = _a;                                                  \
+      int _b_int = _b;                                                  \
       if (!(_a_int _operator _b_int)) {                                 \
          TEST_ERROR (                                                   \
             "comparison failed: %d %s %d", _a_int, #_operator, _b_int); \

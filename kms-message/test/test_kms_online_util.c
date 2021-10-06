@@ -97,7 +97,7 @@ send_kms_request (kms_request_t *req, const char *host)
 
    write_ret = mongoc_stream_write (
       tls_stream, req_str, strlen (req_str), socket_timeout_ms);
-   ASSERT_CMPINT (write_ret, ==, strlen (req_str));
+   ASSERT_CMPINT ((int)write_ret, ==, (int)strlen (req_str));
 
    response_parser = kms_response_parser_new ();
    while ((bytes_to_read =

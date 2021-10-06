@@ -492,10 +492,10 @@ fail:
 
 /* Create a TLS stream to a host. */
 static mongoc_stream_t *
-connect_with_tls (mongoc_ssl_opt_t *ssl_opt,
-                  const char *endpoint,
-                  int32_t connecttimeoutms,
-                  bson_error_t *error)
+connect_stream_with_tls (mongoc_ssl_opt_t *ssl_opt,
+                         const char *endpoint,
+                         int32_t connecttimeoutms,
+                         bson_error_t *error)
 {
    mongoc_stream_t *stream;
    mongoc_socket_t *sock = NULL;
@@ -666,11 +666,11 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       ssl_opt = *mongoc_ssl_opt_get_default ();
       ssl_opt.ca_file = state_machine->tls_ca_file;
       ssl_opt.pem_file = state_machine->tls_certificate_key_file;
-      tls_stream = connect_with_tls (&ssl_opt, endpoint, sockettimeout, error);
+      tls_stream = connect_stream_with_tls (&ssl_opt, endpoint, sockettimeout, error);
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
       /* Retry once with schannel as a workaround for CDRIVER-3566. */
       if (!tls_stream) {
-         tls_stream = connect_with_tls (&ssl_opt, endpoint, sockettimeout, error);
+         tls_stream = connect_stream_with_tls (&ssl_opt, endpoint, sockettimeout, error);
       }
 #endif
       if (!tls_stream) {
