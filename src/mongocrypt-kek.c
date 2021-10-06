@@ -67,8 +67,11 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
              bson, "region", &kek->provider.aws.region, status)) {
          goto done;
       }
-      if (!_mongocrypt_parse_optional_endpoint (
-             bson, "endpoint", &kek->provider.aws.endpoint, NULL /* opts */, status)) {
+      if (!_mongocrypt_parse_optional_endpoint (bson,
+                                                "endpoint",
+                                                &kek->provider.aws.endpoint,
+                                                NULL /* opts */,
+                                                status)) {
          goto done;
       }
       if (!_mongocrypt_check_allowed_fields (
@@ -112,8 +115,11 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
       }
    } else if (0 == strcmp (kms_provider, "gcp")) {
       kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_GCP;
-      if (!_mongocrypt_parse_optional_endpoint (
-             bson, "endpoint", &kek->provider.gcp.endpoint, NULL /* opts */, status)) {
+      if (!_mongocrypt_parse_optional_endpoint (bson,
+                                                "endpoint",
+                                                &kek->provider.gcp.endpoint,
+                                                NULL /* opts */,
+                                                status)) {
          goto done;
       }
 
@@ -258,7 +264,8 @@ _mongocrypt_kek_copy_to (const _mongocrypt_kek_t *src, _mongocrypt_kek_t *dst)
       dst->provider.gcp.endpoint =
          _mongocrypt_endpoint_copy (src->provider.gcp.endpoint);
    } else if (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
-      dst->provider.kmip.endpoint = _mongocrypt_endpoint_copy (src->provider.kmip.endpoint);
+      dst->provider.kmip.endpoint =
+         _mongocrypt_endpoint_copy (src->provider.kmip.endpoint);
       dst->provider.kmip.key_id = bson_strdup (src->provider.kmip.key_id);
    } else {
       BSON_ASSERT (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE ||

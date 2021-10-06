@@ -81,8 +81,8 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    if (!pos) {
       if (!opts || !opts->allow_empty_subdomain) {
          CLIENT_ERR (
-         "Invalid endpoint, expected dot separator in host, but got: %s",
-         endpoint->original);
+            "Invalid endpoint, expected dot separator in host, but got: %s",
+            endpoint->original);
          goto fail;
       }
       /* OK, reset pos to the start of the host. */

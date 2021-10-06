@@ -833,8 +833,8 @@ mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "already set masterkey endpoint");
    }
 
-   ctx->opts.kek.provider.aws.endpoint =
-      _mongocrypt_endpoint_new (endpoint, endpoint_len, NULL /* opts */, ctx->status);
+   ctx->opts.kek.provider.aws.endpoint = _mongocrypt_endpoint_new (
+      endpoint, endpoint_len, NULL /* opts */, ctx->status);
    if (!ctx->opts.kek.provider.aws.endpoint) {
       return _mongocrypt_ctx_fail (ctx);
    }

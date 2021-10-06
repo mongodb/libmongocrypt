@@ -42,8 +42,8 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_status_ok (status));
    _mongocrypt_endpoint_destroy (endpoint);
 
-   endpoint =
-      _mongocrypt_endpoint_new ("kevin.keyvault.azure.net:443", -1, NULL /* opts */, status);
+   endpoint = _mongocrypt_endpoint_new (
+      "kevin.keyvault.azure.net:443", -1, NULL /* opts */, status);
    ASSERT_STREQUAL (endpoint->host, "kevin.keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->domain, "keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->subdomain, "kevin");
@@ -54,7 +54,8 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_status_ok (status));
    _mongocrypt_endpoint_destroy (endpoint);
 
-   endpoint = _mongocrypt_endpoint_new ("kevin.keyvault.azure.net", -1, NULL /* opts */, status);
+   endpoint = _mongocrypt_endpoint_new (
+      "kevin.keyvault.azure.net", -1, NULL /* opts */, status);
    ASSERT_STREQUAL (endpoint->host, "kevin.keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->domain, "keyvault.azure.net");
    ASSERT_STREQUAL (endpoint->subdomain, "kevin");
@@ -65,7 +66,8 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_status_ok (status));
    _mongocrypt_endpoint_destroy (endpoint);
 
-   endpoint = _mongocrypt_endpoint_new ("malformed", -1, NULL /* opts */, status);
+   endpoint =
+      _mongocrypt_endpoint_new ("malformed", -1, NULL /* opts */, status);
    BSON_ASSERT (!endpoint);
    ASSERT_STATUS_CONTAINS (
       status,
