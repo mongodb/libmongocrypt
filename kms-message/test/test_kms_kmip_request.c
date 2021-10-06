@@ -1,7 +1,6 @@
 #include "test_kms_assert.h"
 
 #include "src/kms_message/kms_kmip_request.h"
-#include "src/kms_kmip_reader_writer_private.h"
 
 /*
 <RequestMessage tag="0x420078" type="Structure">
@@ -79,7 +78,8 @@ kms_kmip_request_register_secretdata_test (void)
    uint8_t expected_bytes[] = {REGISTER_SECRETDATA_REQUEST};
    uint32_t expected_len = sizeof (expected_bytes);
 
-   req = kms_kmip_request_register_secretdata_new (NULL, secret_data, sizeof (secret_data));
+   req = kms_kmip_request_register_secretdata_new (
+      NULL, secret_data, sizeof (secret_data));
    ASSERT_REQUEST_OK (req);
 
    actual_bytes = kms_request_to_bytes (req, &actual_len);
