@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "test_kms_assert.h"
+#include "test_kms_request.h"
 
 #include "src/kms_message/kms_message.h"
 #include "src/kms_status_private.h"
