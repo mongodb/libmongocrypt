@@ -742,11 +742,17 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
          _mongocrypt_endpoint_parse_opts_t opts = {0};
 
          opts.allow_empty_subdomain = true;
-         if (!_mongocrypt_parse_required_endpoint (&as_bson, "kmip.endpoint", &crypt->opts.kms_provider_kmip.endpoint, &opts, crypt->status)) {
+         if (!_mongocrypt_parse_required_endpoint (
+                &as_bson,
+                "kmip.endpoint",
+                &crypt->opts.kms_provider_kmip.endpoint,
+                &opts,
+                crypt->status)) {
             return false;
          }
 
-         if (!_mongocrypt_check_allowed_fields (&as_bson, "kmip", crypt->status, "endpoint")) {
+         if (!_mongocrypt_check_allowed_fields (
+                &as_bson, "kmip", crypt->status, "endpoint")) {
             return false;
          }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;

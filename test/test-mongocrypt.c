@@ -730,8 +730,8 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       /* localhost is a valid endpoint for KMIP.
        * Unlike Azure, GCP, and AWS, applications run their own KMIP servers. */
       {"{'kmip': { 'endpoint': 'localhost' }}", NULL},
-      {"{'kmip': { 'endpoint': '127.0.0.1:5696', 'extra': 'invalid' }}", "Unexpected field: 'extra'"}
-   };
+      {"{'kmip': { 'endpoint': '127.0.0.1:5696', 'extra': 'invalid' }}",
+       "Unexpected field: 'extra'"}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;

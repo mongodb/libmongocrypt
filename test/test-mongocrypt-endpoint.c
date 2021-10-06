@@ -72,7 +72,8 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
       "Invalid endpoint, expected dot separator in host, but got: malformed");
    _mongocrypt_endpoint_destroy (endpoint);
 
-   /* A host without a dot separator is valid if the "allow_empty_subdomain" option is true. */
+   /* A host without a dot separator is valid if the "allow_empty_subdomain"
+    * option is true. */
    memset (&opts, 0, sizeof (opts));
    opts.allow_empty_subdomain = true;
    endpoint = _mongocrypt_endpoint_new ("localhost", -1, &opts, status);
@@ -99,7 +100,8 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    BSON_ASSERT (mongocrypt_status_ok (status));
    _mongocrypt_endpoint_destroy (endpoint);
 
-   /* A host without a dot separator is invalid if the "allow_empty_subdomain" option is false. */
+   /* A host without a dot separator is invalid if the "allow_empty_subdomain"
+    * option is false. */
    memset (&opts, 0, sizeof (opts));
    opts.allow_empty_subdomain = false;
    endpoint = _mongocrypt_endpoint_new ("localhost", -1, &opts, status);
