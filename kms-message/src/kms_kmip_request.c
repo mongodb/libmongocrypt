@@ -15,14 +15,22 @@
  */
 
 #include "kms_kmip_reader_writer_private.h"
-
 #include "kms_message/kms_kmip_request.h"
+#include "kms_message_private.h"
 
 #include <inttypes.h>
 #include <stdint.h>
 
-#include "kms_message_private.h"
+static void
+copy_writer_buffer (kms_request_t *req, kmip_writer_t *writer) {
+   uint8_t *buf;
+   size_t buflen;
 
+   buf = kmip_writer_get_buffer (writer, &buflen);
+   req->kmip.data = malloc (buflen);
+   memcpy (req->kmip.data, buf, buflen);
+   req->kmip.len = (uint32_t) buflen;
+}
 kms_request_t *
 kms_kmip_request_register_secretdata_new (void *reserved,
                                           uint8_t *data,
@@ -61,8 +69,6 @@ kms_kmip_request_register_secretdata_new (void *reserved,
 
    kmip_writer_t *writer;
    kms_request_t *req;
-   const uint8_t *buf;
-   size_t buflen;
 
    req = calloc (1, sizeof (kms_request_t));
    req->provider = KMS_REQUEST_PROVIDER_KMIP;
@@ -106,11 +112,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
 
-   /* Copy the KMIP writer buffer to a KMIP request. */
-   buf = kmip_writer_get_buffer (writer, &buflen);
-   req->kmip.data = malloc (buflen);
-   memcpy (req->kmip.data, buf, buflen);
-   req->kmip.len = (uint32_t) buflen;
+   copy_writer_buffer (req, writer);
    kmip_writer_destroy (writer);
    return req;
 }
@@ -139,8 +141,6 @@ kms_request_activate_new (void *reserved, char *unique_identifer)
 
    kmip_writer_t *writer;
    kms_request_t *req;
-   const uint8_t *buf;
-   size_t buflen;
 
    req = calloc (1, sizeof (kms_request_t));
    req->provider = KMS_REQUEST_PROVIDER_KMIP;
@@ -168,11 +168,7 @@ kms_request_activate_new (void *reserved, char *unique_identifer)
    kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
 
-   /* Copy the KMIP writer buffer to a KMIP request. */
-   buf = kmip_writer_get_buffer (writer, &buflen);
-   req->kmip.data = malloc (buflen);
-   memcpy (req->kmip.data, buf, buflen);
-   req->kmip.len = (uint32_t) buflen;
+   copy_writer_buffer (req, writer);
    kmip_writer_destroy (writer);
    return req;
 }
@@ -201,8 +197,6 @@ kms_kmip_request_get_new (void *reserved, char *unique_identifer)
 
    kmip_writer_t *writer;
    kms_request_t *req;
-   const uint8_t *buf;
-   size_t buflen;
 
    req = calloc (1, sizeof (kms_request_t));
    req->provider = KMS_REQUEST_PROVIDER_KMIP;
@@ -232,10 +226,7 @@ kms_kmip_request_get_new (void *reserved, char *unique_identifer)
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
 
    /* Copy the KMIP writer buffer to a KMIP request. */
-   buf = kmip_writer_get_buffer (writer, &buflen);
-   req->kmip.data = malloc (buflen);
-   memcpy (req->kmip.data, buf, buflen);
-   req->kmip.len = (uint32_t) buflen;
+   copy_writer_buffer (req, writer);
    kmip_writer_destroy (writer);
    return req;
 }
