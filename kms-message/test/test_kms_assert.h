@@ -96,7 +96,7 @@
 #define ASSERT_REQUEST_OK(req)                                \
    do {                                                       \
       if (kms_request_get_error (req)) {                      \
-         TEST_ERROR ("expected ok request but got error: %s", \
+         TEST_ERROR ("expected request ok but got error: %s", \
                      kms_request_get_error (req));            \
       }                                                       \
    } while (0)
