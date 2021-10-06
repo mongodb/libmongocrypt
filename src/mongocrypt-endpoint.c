@@ -56,6 +56,7 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    char *host_end;
 
    endpoint = bson_malloc0 (sizeof (_mongocrypt_endpoint_t));
+   _mongocrypt_status_reset (status); // TODO: functions that take a status should reset.
    BSON_ASSERT (endpoint);
    if (!_mongocrypt_validate_and_copy_string (
           endpoint_raw, len, &endpoint->original)) {
