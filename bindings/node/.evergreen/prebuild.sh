@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+if [ -z ${DISTRO_ID+omitted} ]; then echo "DISTRO_ID is unset" && exit 1; fi
+
 set -o errexit
 set +o xtrace
 

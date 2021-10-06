@@ -173,6 +173,8 @@ functions:
         env:
           PROJECT_DIRECTORY: ${project_directory}
           NODE_GITHUB_TOKEN: ${node_github_token}
+          DISTRO_ID: ${distro_id}
+          BUILD_VARIANT: ${build_variant}
 
   "publish snapshot":
     - command: shell.exec
