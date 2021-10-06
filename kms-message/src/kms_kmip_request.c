@@ -31,6 +31,7 @@ copy_writer_buffer (kms_request_t *req, kmip_writer_t *writer) {
    memcpy (req->kmip.data, buf, buflen);
    req->kmip.len = (uint32_t) buflen;
 }
+
 kms_request_t *
 kms_kmip_request_register_secretdata_new (void *reserved,
                                           uint8_t *data,
