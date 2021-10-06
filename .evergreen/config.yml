@@ -164,10 +164,15 @@ functions:
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
 
   "build and test node":
-    - command: "shell.exec"
+    - command: "subprocess.exec"
       params:
-        script: |-
-          cd ./libmongocrypt/bindings/node && ${test_env|} ./.evergreen/test.sh
+        binary: bash
+        working_dir: "./libmongocrypt/bindings/node"
+        args:
+          - "./.evergreen/test.sh"
+        env:
+          PROJECT_DIRECTORY: ${project_directory}
+          NODE_GITHUB_TOKEN: ${node_github_token}
 
   "publish snapshot":
     - command: shell.exec
@@ -390,8 +395,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test node"
-      vars:
-        test_env: PROJECT_DIRECTORY=${project_directory} NODE_GITHUB_TOKEN=${node_github_token}
+
 # Note: keep this disabled unless you want master to force-push
 - name: build-and-test-node-force-publish
   depends_on:
@@ -400,8 +404,6 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test node"
-      vars:
-        test_env: PROJECT_DIRECTORY=${project_directory} NODE_GITHUB_TOKEN=${node_github_token} NODE_FORCE_PUBLISH=1
 
 - name: publish-snapshot
   depends_on:
