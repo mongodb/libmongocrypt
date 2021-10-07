@@ -665,8 +665,8 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * KMIP
  * {
  *    provider: "kmip",
- *    endpoint: <string>
  *    keyId: <optional string>
+ *    endpoint: <string>
  * }
  *
  * @pre @p ctx has not been initialized.

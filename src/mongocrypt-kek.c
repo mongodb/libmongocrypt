@@ -229,7 +229,8 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
    } else if (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
       BSON_APPEND_UTF8 (bson, "provider", "kmip");
       if (kek->provider.kmip.endpoint) {
-         BSON_APPEND_UTF8 (bson, "endpoint", kek->provider.kmip.endpoint->host_and_port);
+         BSON_APPEND_UTF8 (
+            bson, "endpoint", kek->provider.kmip.endpoint->host_and_port);
       }
       if (kek->provider.kmip.key_id) {
          BSON_APPEND_UTF8 (bson, "keyId", kek->provider.kmip.key_id);
