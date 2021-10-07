@@ -42,36 +42,30 @@ kms_kmip_response_get_unique_identifier (kms_kmip_response_t *res,
                                         kms_status_t *status)
 {
     kmip_reader_t *reader = NULL;
-    kmip_reader_t *reader2 = NULL;
-    kmip_reader_t *reader3 = NULL;
-    kmip_reader_t *reader4 = NULL;
     size_t pos;
     size_t len;
     char *uid = NULL;
     kms_request_str_t *nullterminated = NULL;
 
     reader = kmip_reader_new (res->data, res->len);
-    reader2 = kmip_reader_find_and_get_struct_reader (reader, KMIP_TAG_ResponseMessage);
-    if (!reader2) {
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
         kms_status_errorf (status, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
-    reader3 = kmip_reader_find_and_get_struct_reader (reader2, KMIP_TAG_BatchItem);
-    if (!reader3) {
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
         kms_status_errorf (status, "unable to find tag2: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
-    reader4 = kmip_reader_find_and_get_struct_reader (reader3, KMIP_TAG_ResponsePayload);
-    if (!reader4) {
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponsePayload)) {
         kms_status_errorf (status, "unable to find tag3: %s", kmip_tag_to_string (KMIP_TAG_ResponsePayload));
         goto fail;
     }
-    if (!kmip_reader_find (reader4, KMIP_TAG_UniqueIdentifier, KMIP_ITEM_TYPE_TextString, &pos, &len)) {
+    if (!kmip_reader_find (reader, KMIP_TAG_UniqueIdentifier, KMIP_ITEM_TYPE_TextString, &pos, &len)) {
         kms_status_errorf (status, "unable to find tag4: %s", kmip_tag_to_string (KMIP_TAG_UniqueIdentifier));
         goto fail;
     }
 
-    if (!kmip_reader_read_string (reader4, (uint8_t**) &uid, len)) {
+    if (!kmip_reader_read_string (reader, (uint8_t**) &uid, len)) {
         kms_status_errorf (status, "unable to read unique identifier");
         goto fail;
     }
@@ -79,9 +73,6 @@ kms_kmip_response_get_unique_identifier (kms_kmip_response_t *res,
     nullterminated = kms_request_str_new_from_chars (uid, len);
 
 fail:
-    kmip_reader_destroy (reader4);
-    kmip_reader_destroy (reader3);
-    kmip_reader_destroy (reader2);
     kmip_reader_destroy (reader);
     return kms_request_str_detach (nullterminated);
 }
@@ -113,55 +104,49 @@ kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
                                   kms_status_t *status)
 {
     kmip_reader_t *reader = NULL;
-    kmip_reader_t *reader2 = NULL;
-    kmip_reader_t *reader3 = NULL;
-    kmip_reader_t *reader4 = NULL;
-    kmip_reader_t *reader5 = NULL;
-    kmip_reader_t *reader6 = NULL;
-    kmip_reader_t *reader7 = NULL;
     size_t pos;
     size_t len;
     uint8_t *secretdata = NULL;
     uint8_t *tmp;
 
     reader = kmip_reader_new (res->data, res->len);
-    reader2 = kmip_reader_find_and_get_struct_reader (reader, KMIP_TAG_ResponseMessage);
-    if (!reader2) {
+    
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
         kms_status_errorf (status, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
-    reader3 = kmip_reader_find_and_get_struct_reader (reader2, KMIP_TAG_BatchItem);
-    if (!reader3) {
+    
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
         kms_status_errorf (status, "unable to find tag2: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
-    reader4 = kmip_reader_find_and_get_struct_reader (reader3, KMIP_TAG_ResponsePayload);
-    if (!reader4) {
+    
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponsePayload)) {
         kms_status_errorf (status, "unable to find tag3: %s", kmip_tag_to_string (KMIP_TAG_ResponsePayload));
         goto fail;
     }
-    reader5 = kmip_reader_find_and_get_struct_reader (reader4, KMIP_TAG_SecretData);
-    if (!reader5) {
+    
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_SecretData)) {
         kms_status_errorf (status, "unable to find tag4: %s", kmip_tag_to_string (KMIP_TAG_SecretData));
         goto fail;
     }
-    reader6 = kmip_reader_find_and_get_struct_reader (reader5, KMIP_TAG_KeyBlock);
-    if (!reader6) {
+    
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_KeyBlock)) {
         kms_status_errorf (status, "unable to find tag5: %s", kmip_tag_to_string (KMIP_TAG_KeyBlock));
         goto fail;
     }
-    reader7 = kmip_reader_find_and_get_struct_reader (reader6, KMIP_TAG_KeyValue);
-    if (!reader7) {
+    
+    if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_KeyValue)) {
         kms_status_errorf (status, "unable to find tag6: %s", kmip_tag_to_string (KMIP_TAG_KeyValue));
         goto fail;
     }
 
-    if (!kmip_reader_find (reader7, KMIP_TAG_KeyMaterial, KMIP_ITEM_TYPE_ByteString, &pos, &len)) {
+    if (!kmip_reader_find (reader, KMIP_TAG_KeyMaterial, KMIP_ITEM_TYPE_ByteString, &pos, &len)) {
         kms_status_errorf (status, "unable to find tag7: %s", kmip_tag_to_string (KMIP_TAG_KeyMaterial));
         goto fail;
     }
 
-    if (!kmip_reader_read_bytes (reader7, &tmp, len)) {
+    if (!kmip_reader_read_bytes (reader, &tmp, len)) {
         kms_status_errorf (status, "unable to read secretdata bytes");
         goto fail;
     }
@@ -170,12 +155,6 @@ kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
     *secretdatalen = len;
 
 fail:
-    kmip_reader_destroy (reader7);
-    kmip_reader_destroy (reader6);
-    kmip_reader_destroy (reader5);
-    kmip_reader_destroy (reader4);
-    kmip_reader_destroy (reader3);
-    kmip_reader_destroy (reader2);
     kmip_reader_destroy (reader);
     return secretdata;
 }
@@ -188,4 +167,9 @@ kms_kmip_response_destroy (kms_kmip_response_t *res)
    }
    free (res->data);
    free (res);
+}
+
+bool
+kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status) {
+    return false;
 }

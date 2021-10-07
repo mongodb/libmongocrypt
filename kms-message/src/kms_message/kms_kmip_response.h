@@ -40,6 +40,9 @@ kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
                                   uint32_t *secretdatalen,
                                   kms_status_t *status);
 
+KMS_MSG_EXPORT (bool)
+kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status);
+
 KMS_MSG_EXPORT (void) kms_kmip_response_destroy (kms_kmip_response_t *res);
 
 #endif /* KMS_KMIP_RESPONSE_H */
