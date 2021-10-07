@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 
+#include "kms_kmip_response_private.h"
 #include "kms_kmip_reader_writer_private.h"
 #include "test_kms_online_util.h"
 
