@@ -41,8 +41,8 @@
  *    provider: "local"
  * KMIP
  *    provider: "kmip"
- *    endpoint: <optional string>
  *    keyId: <optional string>
+ *    endpoint: <optional string>
  */
 bool
 _mongocrypt_kek_parse_owned (const bson_t *bson,
