@@ -17,7 +17,7 @@
 #include "test_kms_assert.h"
 #include "test_kms_util.h"
 
-#include "src/kms_kmip_reader_writer_private.h"
+#include "kms_kmip_reader_writer_private.h"
 
 #include <stdio.h>
 #include <stdlib.h>

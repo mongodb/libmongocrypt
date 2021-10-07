@@ -17,7 +17,7 @@
 #ifndef TEST_KMS_ASSERT_H
 #define TEST_KMS_ASSERT_H
 
-#include "src/kms_request_str.h"
+#include "kms_request_str.h"
 #include "test_kms_util.h"
 
 #include <stdio.h>

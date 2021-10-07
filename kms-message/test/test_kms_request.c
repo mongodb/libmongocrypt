@@ -17,8 +17,8 @@
 /* Needed for strptime */
 #define _GNU_SOURCE
 
-#include "src/kms_message/kms_message.h"
-#include "src/kms_message_private.h"
+#include "kms_message/kms_message.h"
+#include "kms_message_private.h"
 
 #ifndef _WIN32
 #include <dirent.h>
@@ -32,11 +32,11 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <src/kms_message/kms_b64.h>
-#include <src/hexlify.h>
-#include <src/kms_request_str.h>
-#include <src/kms_kv_list.h>
-#include <src/kms_port.h>
+#include "kms_message/kms_b64.h"
+#include "hexlify.h"
+#include "kms_request_str.h"
+#include "kms_kv_list.h"
+#include "kms_port.h"
 
 #include "test_kms_assert.h"
 

@@ -18,7 +18,7 @@
 #define TEST_KMS_UTIL_H
 
 #include <stdio.h>
-#include "src/kms_request_str.h"
+#include "kms_request_str.h"
 
 /* copy_and_filter_hex returns a copy of @unfiltered_hex with the following
  * characters removed: ' ', '|' */

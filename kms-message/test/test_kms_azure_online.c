@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "src/kms_message/kms_azure_request.h"
-#include "src/kms_message/kms_b64.h"
-#include "src/kms_message/kms_request.h"
-#include "src/kms_message/kms_response.h"
-#include "src/kms_message/kms_response_parser.h"
+#include "kms_message/kms_azure_request.h"
+#include "kms_message/kms_b64.h"
+#include "kms_message/kms_request.h"
+#include "kms_message/kms_response.h"
+#include "kms_message/kms_response_parser.h"
 
 #define MONGOC_LOG_DOMAIN "test_kms_azure_online"
 #include <mongoc/mongoc.h>

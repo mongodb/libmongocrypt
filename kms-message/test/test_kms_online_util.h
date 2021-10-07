@@ -18,8 +18,8 @@
 #define TEST_KMS_ONLINE_UTIL_H
 
 #include <mongoc/mongoc.h>
-#include "src/kms_message/kms_request.h"
-#include "src/kms_message/kms_response.h"
+#include "kms_message/kms_request.h"
+#include "kms_message/kms_response.h"
 
 /* connect_with_tls creates a TLS stream.
  * port may be NULL. It defaults to "443".

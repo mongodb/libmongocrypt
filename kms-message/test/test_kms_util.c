@@ -16,7 +16,7 @@
 
 #include "test_kms_util.h"
 
-#include "src/hexlify.h"
+#include "hexlify.h"
 
 #include <ctype.h> /* tolower */
 
