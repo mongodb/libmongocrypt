@@ -50,6 +50,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_request_str.h
    src/kms_response.c
    src/kms_response_parser.c
+   src/kms_status.c
    src/sort.c
    )
 

@@ -18,7 +18,6 @@
 #define KMS_KMIP_RESPONSE_PARSER_H
 
 #include "kms_message_defines.h"
-#include "kms_status.h"
 #include "kms_kmip_response.h"
 
 #include <stdbool.h>

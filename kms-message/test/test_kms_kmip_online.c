@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "kms_message/kms_kmip_request.h"
+#include "kms_message/kms_request.h"
 #include "kms_message/kms_kmip_response.h"
 #include "kms_message/kms_kmip_response_parser.h"
 
@@ -29,7 +29,7 @@
 #include "kms_kmip_reader_writer_private.h"
 #include "test_kms_online_util.h"
 
-#include "src/hexlify.h"
+#include "test_kms_util.h"
 
 /* Define TEST_TRACING_INSECURE in compiler flags to enable
  * log output with sensitive information (for debugging). */
@@ -69,8 +69,9 @@ test_env_init (test_env_t *test_env)
    test_env->kmip_ca_certificate = test_getenv ("KMIP_CA_CERTIFICATE");
 }
 
+/* TODO: use common send_kms_request? */
 static kms_kmip_response_t *
-send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
+send_kms_kmip_request (kms_request_t *req, test_env_t *test_env)
 {
    mongoc_stream_t *stream;
    mongoc_ssl_opt_t ssl_opt = {0};
@@ -84,7 +85,7 @@ send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
    uint8_t buf[BUF_SIZE];
    kms_status_t *status;
    kms_kmip_response_t *res;
-   uint8_t *resbytes;
+   const uint8_t *resbytes;
    uint32_t reslen;
    char *debugstr;
 
@@ -102,7 +103,7 @@ send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
    }
 
    MONGOC_DEBUG ("writing request to KMIP server");
-   message_bytes = kms_kmip_request_to_bytes (req, &message_len);
+   message_bytes = kms_request_to_bytes (req, &message_len);
    debugstr = data_to_hex (message_bytes, message_len);
    printf ("%s\n", debugstr);
    free (debugstr);
@@ -142,7 +143,6 @@ send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
    resbytes = kms_kmip_response_to_bytes (res, &reslen);
    debugstr = data_to_hex (resbytes, reslen);
    printf ("%s\n", debugstr);
-   printf ("as hex:\n%s\n", reshex);
    free (debugstr);
    return res;
 }
@@ -150,46 +150,27 @@ send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
 static char *
 kmip_register_and_activate_secretdata (void)
 {
-   test_env_t test_env;
-   kms_kmip_request_t *req;
-   kms_kmip_response_t *res;
-   kms_status_t *status;
-   uint8_t secretdata[96] = {0} uint8_t * reqbytes;
-   uint32_t reqlen;
-   char *uid;
-
-   test_env_init (&test_env);
-   status = kms_status_new ();
-   req = kms_kmip_request_register_and_activate_secretdata_new (
-      NULL, secretdata, 96, status);
-   ASSERT_STATUS_OK (status);
-
-   reqbytes = kms_kmip_request_to_bytes (req, &reqlen);
-   res = send_kms_kmip_request (req, &test_env);
-   kms_kmip_request_destroy (req);
-
-   uid = kms_kmip_response_get_unique_identifier (res, status);
-   ASSERT_STATUS_OK (status);
-   return uid;
+   /* TODO */
+   return NULL;
 }
 
 static uint8_t *
 kmip_get (char *uid, uint32_t* secretdata_len) {
    test_env_t test_env;
-   kms_kmip_request_t *req;
+   kms_request_t *req;
    kms_kmip_response_t *res;
    kms_status_t *status;
    uint8_t *secretdata;
 
    test_env_init (&test_env);
    status = kms_status_new ();
-   req = kms_kmip_request_get_new (NULL, uid, status);
-   ASSERT_STATUS_OK (status);
+   req = kms_kmip_request_get_new (NULL, uid);
+   // ASSERT_STATUS_OK (status);
 
    res = send_kms_kmip_request (req, &test_env);
-   kms_kmip_request_destroy (req);
+   kms_request_destroy (req);
    secretdata = kms_kmip_response_get_secretdata (res, secretdata_len, status);
-   ASSERT_STATUS_OK (status);
+   // ASSERT_STATUS_OK (status);
    kms_kmip_response_destroy (res);
    return secretdata;
 }
@@ -234,9 +215,9 @@ main (int argc, char **argv)
    if (test_selector == NULL ||
        0 == strcmp (test_selector,
                     "test_kmip_register_and_activate_secretdata")) {
-      RUN_TEST (test_kmip_register_and_activate_secretdata);
+      test_kmip_register_and_activate_secretdata ();
    } else if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_get")) {
-      RUN_TEST (test_kmip_get);
+      test_kmip_get ();
    }
    return 0;
 }
