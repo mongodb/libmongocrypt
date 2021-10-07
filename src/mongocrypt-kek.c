@@ -232,6 +232,11 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
          BSON_APPEND_UTF8 (
             bson, "endpoint", kek->provider.kmip.endpoint->host_and_port);
       }
+
+      /* "keyId" is required in the final data key document for the "kmip" KMS
+       * provider. It may be set from the "kmip.keyId" in the BSON document set
+       * in mongocrypt_ctx_setopt_key_encryption_key, Otherwise, libmongocrypt
+       * is expected to set "keyId". */
       if (kek->provider.kmip.key_id) {
          BSON_APPEND_UTF8 (bson, "keyId", kek->provider.kmip.key_id);
       } else {
