@@ -32,7 +32,6 @@ os_name() {
   echo $OS_NAME
 }
 
-export OS
 OS=$(os_name)
 
 get_version_at_git_rev () {
