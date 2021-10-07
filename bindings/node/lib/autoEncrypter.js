@@ -92,17 +92,19 @@ module.exports = function(modules) {
     constructor(client, options) {
       this._client = client;
       this._bson = options.bson || client.topology.bson;
-      this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
-      this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 1000
-      });
+      this._bypassEncryption = options.bypassAutoEncryption === true;
+      if (!this._bypassAutoEncryption) {
+        this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
+        this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+          serverSelectionTimeoutMS: 1000
+        });
+      }
+
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
       this._keyVaultClient = options.keyVaultClient || client;
       this._metaDataClient = options.metadataClient || client;
-      this._bypassEncryption =
-        typeof options.bypassAutoEncryption === 'boolean' ? options.bypassAutoEncryption : false;
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
@@ -131,6 +133,9 @@ module.exports = function(modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
+      if (this._bypassEncryption) {
+        return callback();
+      }
       const _callback = (err, res) => {
         if (
           err &&
