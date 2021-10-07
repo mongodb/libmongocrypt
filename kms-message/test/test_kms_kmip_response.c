@@ -116,22 +116,19 @@ void
 kms_kmip_response_get_unique_identifier_test (void)
 {
    uint8_t example_response[] = {SUCCESS_REGISTER_RESPONSE};
-   kms_response_t res;
+   kms_response_t res = {0};
    char *actual_uid;
-   kms_status_t *status;
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
    res.kmip.data = example_response;
    res.kmip.len = sizeof (example_response);
-   status = kms_status_new ();
 
-   kms_kmip_response_ok (&res, status);
-   // ASSERT_STATUS_OK (status);
+   kms_kmip_response_ok (&res);
+   ASSERT_RESPONSE_OK (&res);
 
-   actual_uid = kms_kmip_response_get_unique_identifier (&res, status);
-   // ASSERT_STATUS_OK (status);
+   actual_uid = kms_kmip_response_get_unique_identifier (&res);
+   ASSERT_RESPONSE_OK (&res);
    ASSERT_CMPSTR (SUCCESS_REGISTER_RESPONSE_UNIQUE_IDENTIFIER, actual_uid);
    free (actual_uid);
-   kms_status_destroy (status);
 }
 
 /* Successful get response */
@@ -181,29 +178,25 @@ void
 kms_kmip_response_get_secretdata_test (void)
 {
    uint8_t example_response[] = {SUCCESS_GET_RESPONSE};
-   kms_response_t res;
+   kms_response_t res = {0};
    uint8_t *actual_secretdata;
    uint32_t actual_secretdata_len;
-   kms_status_t *status;
    uint8_t expected_secretdata[] = {SUCCESS_GET_RESPONSE_SECRETDATA};
 
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
    res.kmip.data = example_response;
    res.kmip.len = sizeof (example_response);
-   status = kms_status_new ();
 
-   kms_kmip_response_ok (&res, status);
-   // ASSERT_STATUS_OK (status);
+   kms_kmip_response_ok (&res);
+   ASSERT_RESPONSE_OK (&res);
 
-   actual_secretdata =
-      kms_kmip_response_get_secretdata (&res, &actual_secretdata_len, status);
-   // ASSERT_STATUS_OK (status);
+   actual_secretdata = kms_kmip_response_get_secretdata (&res, &actual_secretdata_len);
+   ASSERT_RESPONSE_OK (&res);
    ASSERT_CMPBYTES (expected_secretdata,
                     sizeof (expected_secretdata),
                     actual_secretdata,
                     actual_secretdata_len);
    free (actual_secretdata);
-   kms_status_destroy (status);
 }
 
 #define ERROR_GET_RESPOSE_NOTFOUND                                            \
@@ -226,24 +219,15 @@ kms_kmip_response_get_secretdata_test (void)
 void
 kms_kmip_response_get_secretdata_notfound_test (void) {
    uint8_t example_response[] = {ERROR_GET_RESPOSE_NOTFOUND};
-   kms_response_t res;
-   kms_status_t *status;
-   bool ok;
+   kms_response_t res = {0};
    uint8_t* secretdata;
    uint32_t secretdata_len;
 
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
    res.kmip.data = example_response;
    res.kmip.len = sizeof (example_response);
-   status = kms_status_new ();
 
-   ok = kms_kmip_response_ok (&res, status);
-   // ASSERT_STATUS_ERROR (status, "ResultReasonItemNotFound");
-
-   kms_status_reset (status);
-   secretdata = kms_kmip_response_get_secretdata (&res, &secretdata_len, status);
-   // ASSERT_STATUS_ERROR (status, "ResultReasonItemNotFound");
+   secretdata = kms_kmip_response_get_secretdata (&res, &secretdata_len);
+   ASSERT_RESPONSE_ERROR (&res, "ResultReasonItemNotFound");
    ASSERT (NULL == secretdata);
-
-   kms_status_destroy (status);
 }

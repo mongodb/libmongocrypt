@@ -160,19 +160,17 @@ kmip_get (char *uid, uint32_t* secretdata_len) {
    test_env_t test_env;
    kms_request_t *req;
    kms_response_t *res;
-   kms_status_t *status;
    uint8_t *secretdata;
 
    test_env_init (&test_env);
-   status = kms_status_new ();
    req = kms_kmip_request_get_new (NULL, uid);
-   // ASSERT_STATUS_OK (status);
+   ASSERT_REQUEST_OK (req);
 
    res = send_kms_kmip_request (req, &test_env);
    kms_request_destroy (req);
-   secretdata = kms_kmip_response_get_secretdata (res, secretdata_len, status);
-   // ASSERT_STATUS_OK (status);
-   kms_kmip_response_destroy (res);
+   secretdata = kms_kmip_response_get_secretdata (res, secretdata_len);
+   ASSERT_RESPONSE_OK (res);
+   kms_response_destroy (res);
    return secretdata;
 }
 

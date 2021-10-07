@@ -63,7 +63,7 @@ kms_kmip_response_parser_test (void)
    res = kms_kmip_response_parser_get_response (parser, status);
    // ASSERT_STATUS_OK (status);
    ASSERT (res);
-   kms_kmip_response_destroy (res);
+   kms_response_destroy (res);
 
    kms_kmip_response_parser_destroy (parser);
    free (data);

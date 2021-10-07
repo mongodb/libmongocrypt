@@ -25,6 +25,6 @@ kms_response_to_bytes (kms_response_t *res, uint32_t *len);
 
 /* kms_kmip_response_ok is needed for tests. */
 bool
-kms_kmip_response_ok (kms_response_t *res, kms_status_t *status);
+kms_kmip_response_ok (kms_response_t *res);
 
 #endif /* KMS_KMIP_RESPONSE_PRIVATE_H */

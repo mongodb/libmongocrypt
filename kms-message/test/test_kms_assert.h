@@ -110,4 +110,21 @@
       ASSERT_CONTAINS (_error_str, expect_substring);       \
    } while (0)
 
+#define ASSERT_RESPONSE_OK(req)                                \
+   do {                                                        \
+      if (kms_response_get_error (req)) {                      \
+         TEST_ERROR ("expected response ok but got error: %s", \
+                     kms_response_get_error (req));            \
+      }                                                        \
+   } while (0)
+
+#define ASSERT_RESPONSE_ERROR(req, expect_substring)         \
+   do {                                                      \
+      if (!kms_response_get_error (req)) {                   \
+         TEST_ERROR ("expected response error but got ok");  \
+      }                                                      \
+      const char *_error_str = kms_response_get_error (req); \
+      ASSERT_CONTAINS (_error_str, expect_substring);        \
+   } while (0)
+
 #endif /* TEST_KMS_ASSERT_H */
