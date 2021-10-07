@@ -29,6 +29,8 @@
 #include "kms_kmip_reader_writer_private.h"
 #include "test_kms_online_util.h"
 
+#include "src/hexlify.h"
+
 /* Define TEST_TRACING_INSECURE in compiler flags to enable
  * log output with sensitive information (for debugging). */
 #ifdef TEST_TRACING_INSECURE
@@ -140,6 +142,7 @@ send_kms_kmip_request (kms_kmip_request_t *req, test_env_t *test_env)
    resbytes = kms_kmip_response_to_bytes (res, &reslen);
    debugstr = data_to_hex (resbytes, reslen);
    printf ("%s\n", debugstr);
+   printf ("as hex:\n%s\n", reshex);
    free (debugstr);
    return res;
 }
@@ -153,6 +156,7 @@ kmip_register_and_activate_secretdata (void)
    kms_status_t *status;
    uint8_t secretdata[96] = {0} uint8_t * reqbytes;
    uint32_t reqlen;
+   char *uid;
 
    test_env_init (&test_env);
    status = kms_status_new ();
@@ -162,13 +166,58 @@ kmip_register_and_activate_secretdata (void)
 
    reqbytes = kms_kmip_request_to_bytes (req, &reqlen);
    res = send_kms_kmip_request (req, &test_env);
-   return /* unique identifier */ NULL;
+   kms_kmip_request_destroy (req);
+
+   uid = kms_kmip_response_get_unique_identifier (res, status);
+   ASSERT_STATUS_OK (status);
+   return uid;
+}
+
+static uint8_t *
+kmip_get (char *uid, uint32_t* secretdata_len) {
+   test_env_t test_env;
+   kms_kmip_request_t *req;
+   kms_kmip_response_t *res;
+   kms_status_t *status;
+   uint8_t *secretdata;
+
+   test_env_init (&test_env);
+   status = kms_status_new ();
+   req = kms_kmip_request_get_new (NULL, uid, status);
+   ASSERT_STATUS_OK (status);
+
+   res = send_kms_kmip_request (req, &test_env);
+   kms_kmip_request_destroy (req);
+   secretdata = kms_kmip_response_get_secretdata (res, secretdata_len, status);
+   ASSERT_STATUS_OK (status);
+   kms_kmip_response_destroy (res);
+   return secretdata;
 }
 
 static void
 test_kmip_register_and_activate_secretdata (void)
 {
-   kmip_register_and_activate_secretdata ();
+   char *uid;
+   uid = kmip_register_and_activate_secretdata ();
+   free (uid);
+}
+
+static void
+test_kmip_get (void) {
+   char *uid;
+   uint8_t *secretdata;
+   uint32_t secretdata_len;
+   char *secretdata_hex;
+
+   uid = kmip_register_and_activate_secretdata ();
+   secretdata = kmip_get (uid, &secretdata_len);
+   
+   secretdata_hex = data_to_hex (secretdata, secretdata_len);
+   printf ("got hex: %s\n", secretdata_hex);
+   
+   free (secretdata_hex);
+   free (uid);
+   free (secretdata);
 }
 
 int
@@ -186,9 +235,8 @@ main (int argc, char **argv)
        0 == strcmp (test_selector,
                     "test_kmip_register_and_activate_secretdata")) {
       RUN_TEST (test_kmip_register_and_activate_secretdata);
-   } else if (test_selector == NULL ||
-              0 == strcmp (test_selector, "test_kmip_discover_versions")) {
-      RUN_TEST (test_kmip_discover_versions);
+   } else if (test_selector == NULL || 0 == strcmp (test_selector, "test_kmip_get")) {
+      RUN_TEST (test_kmip_get);
    }
    return 0;
 }
