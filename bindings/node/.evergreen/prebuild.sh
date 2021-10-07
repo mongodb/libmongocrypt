@@ -5,12 +5,35 @@ if [ -z ${DISTRO_ID+omitted} ]; then echo "DISTRO_ID is unset" && exit 1; fi
 set -o errexit
 set +o xtrace
 
-# FLE platform matrix (as of Oct 6th 2021)
+# FLE platform matrix (as of Oct 7th 2021)
 # macos   x86_64 (compiled on 10.14)
 # windows x86_64 (compiled on vs2017)
-# linux   x86_64
+# linux   x86_64 (releases on RHEL7)
 # linux   s390x
 # linux   arm64
+
+# Determines the OS name through uname results
+# Returns 'windows' 'linux' 'macos' or 'unknown'
+os_name() {
+  local WINDOWS_REGEX="cygwin|windows|mingw|msys"
+  local UNAME
+  UNAME=$(uname | tr '[:upper:]' '[:lower:]')
+
+  local OS_NAME="unknown"
+
+  if [[ $UNAME =~ $WINDOWS_REGEX ]]; then
+    OS_NAME="windows"
+  elif [[ $UNAME == "darwin" ]]; then
+    OS_NAME="macos"
+  elif [[ $UNAME == "linux" ]]; then
+    OS_NAME="linux"
+  fi
+
+  echo $OS_NAME
+}
+
+export OS
+OS=$(os_name)
 
 get_version_at_git_rev () {
   local REV=$1
@@ -37,7 +60,7 @@ elif [[ "$VERSION_AT_HEAD" != "$VERSION_AT_HEAD_1" ]]; then
   echo "Difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
   echo "Beginning prebuild"
 
-  if [[ "$OS" == "LINUX" ]]; then
+  if [[ "$OS" == "linux" ]]; then
     # Handle limiting which linux gets to publish prebuild
     ARCH=$(uname -m)
 
