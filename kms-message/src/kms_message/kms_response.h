@@ -34,6 +34,9 @@ KMS_MSG_EXPORT (const char *)
 kms_response_get_body (kms_response_t *response, size_t *len);
 KMS_MSG_EXPORT (void) kms_response_destroy (kms_response_t *response);
 
+KMS_MSG_EXPORT (const char*)
+kms_response_get_error (kms_response_t *response);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

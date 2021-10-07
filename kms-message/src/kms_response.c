@@ -44,3 +44,9 @@ kms_response_get_status (kms_response_t *response)
 {
    return response->status;
 }
+
+const char *
+kms_response_get_error (kms_response_t *response)
+{
+   return response->failed ? response->error : NULL;
+}
