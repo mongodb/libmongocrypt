@@ -78,7 +78,10 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    /* Parse subdomain. */
    prev = pos;
    pos = strstr (pos, ".");
-   if (!pos) {
+   if (pos) {
+      endpoint->subdomain = bson_strndup (prev, pos - prev);
+      pos += 1;
+   } else {
       if (!opts || !opts->allow_empty_subdomain) {
          CLIENT_ERR (
             "Invalid endpoint, expected dot separator in host, but got: %s",
@@ -87,9 +90,6 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
       }
       /* OK, reset pos to the start of the host. */
       pos = prev;
-   } else {
-      endpoint->subdomain = bson_strndup (prev, pos - prev);
-      pos += 1;
    }
 
    /* Parse domain. */

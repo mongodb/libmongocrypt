@@ -48,13 +48,6 @@ _mongocrypt_opts_kms_provider_gcp_cleanup (
    _mongocrypt_buffer_cleanup (&kms_provider_gcp->private_key);
 }
 
-static void
-_mongocrypt_opts_kms_provider_kmip_cleanup (
-   _mongocrypt_opts_kms_provider_kmip_t *kms_provider_kmip)
-{
-   _mongocrypt_endpoint_destroy (kms_provider_kmip->endpoint);
-}
-
 void
 _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
@@ -65,7 +58,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
    _mongocrypt_buffer_cleanup (&opts->schema_map);
    _mongocrypt_opts_kms_provider_azure_cleanup (&opts->kms_provider_azure);
    _mongocrypt_opts_kms_provider_gcp_cleanup (&opts->kms_provider_gcp);
-   _mongocrypt_opts_kms_provider_kmip_cleanup (&opts->kms_provider_kmip);
+   _mongocrypt_endpoint_destroy (opts->kms_provider_kmip.endpoint);
 }
 
 

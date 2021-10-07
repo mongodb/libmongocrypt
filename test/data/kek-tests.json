@@ -133,14 +133,16 @@
         "input": {
             "provider": "kmip"
         }, 
-        "expect": "ok"
+        "expect": "ok",
+        "expect_append": "keyId required for KMIP"
     },
     {
         "input": {
             "provider": "kmip",
             "endpoint": "localhost:5696"
         }, 
-        "expect": "ok"
+        "expect": "ok",
+        "expect_append": "keyId required for KMIP"
     },
     {
         "input": {

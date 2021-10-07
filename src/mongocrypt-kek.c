@@ -233,6 +233,9 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
       }
       if (kek->provider.kmip.key_id) {
          BSON_APPEND_UTF8 (bson, "keyId", kek->provider.kmip.key_id);
+      } else {
+         CLIENT_ERR ("keyId required for KMIP");
+         return false;
       }
    } else {
       BSON_ASSERT (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE);
