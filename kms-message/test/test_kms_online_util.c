@@ -16,14 +16,13 @@
 
 #include "test_kms_online_util.h"
 
-#include "test_kms.h"
+#include "test_kms_assert.h"
 
-#include <kms_message/kms_response_parser.h>
+#include "kms_message/kms_response_parser.h"
 
 
-/* Create a TLS stream to a host. */
 mongoc_stream_t *
-connect_with_tls (const char *host)
+connect_with_tls (const char *host, const char *port, mongoc_ssl_opt_t *ssl_opt)
 {
    mongoc_stream_t *stream;
    mongoc_socket_t *sock = NULL;
@@ -39,8 +38,12 @@ connect_with_tls (const char *host)
    hints.ai_flags = 0;
    hints.ai_protocol = 0;
 
-   s = getaddrinfo (host, "443", &hints, &result);
-   TEST_ASSERT (s == 0);
+   if (!port) {
+      port = "443";
+   }
+
+   s = getaddrinfo (host, port, &hints, &result);
+   ASSERT_CMPINT (s, ==, 0);
 
    for (rp = result; rp; rp = rp->ai_next) {
       if (!(sock = mongoc_socket_new (
@@ -67,9 +70,12 @@ connect_with_tls (const char *host)
    freeaddrinfo (result);
 
    stream = mongoc_stream_socket_new (sock);
-   TEST_ASSERT (stream);
+   ASSERT (stream);
+   if (ssl_opt == NULL) {
+      ssl_opt = (mongoc_ssl_opt_t *) mongoc_ssl_opt_get_default ();
+   }
    return mongoc_stream_tls_new_with_hostname (
-      stream, host, (mongoc_ssl_opt_t *) mongoc_ssl_opt_get_default (), 1);
+      stream, host, ssl_opt, 1);
 }
 
 /* Helper to send an HTTP request and receive a response. */
@@ -86,12 +92,12 @@ send_kms_request (kms_request_t *req, const char *host)
    uint8_t buf[1024];
    kms_response_t *response;
 
-   tls_stream = connect_with_tls (host);
+   tls_stream = connect_with_tls (host, NULL, NULL);
    req_str = kms_request_to_string (req);
 
    write_ret = mongoc_stream_write (
       tls_stream, req_str, strlen (req_str), socket_timeout_ms);
-   TEST_ASSERT (write_ret == (ssize_t) strlen (req_str));
+   ASSERT_CMPINT ((int) write_ret, ==, (int) strlen (req_str));
 
    response_parser = kms_response_parser_new ();
    while ((bytes_to_read =
@@ -105,7 +111,7 @@ send_kms_request (kms_request_t *req, const char *host)
    }
 
    response = kms_response_parser_get_response (response_parser);
-   TEST_ASSERT (response);
+   ASSERT (response);
 
    kms_request_free_string (req_str);
    kms_response_parser_destroy (response_parser);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "test-conveniences.h"
+#include "test-mongocrypt-assert-match-bson.h"
 
 #ifndef _WIN32
 #define MONGOCRYPT_PRINTF_FORMAT(a, b) __attribute__ ((format (__printf__, a, b)))
@@ -27,21 +27,6 @@
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 #endif
-
-void
-bson_iter_bson (bson_iter_t *iter, bson_t *bson)
-{
-   uint32_t len;
-   const uint8_t *data = NULL;
-   if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
-      bson_iter_document (iter, &len, &data);
-   }
-   if (BSON_ITER_HOLDS_ARRAY (iter)) {
-      bson_iter_array (iter, &len, &data);
-   }
-   BSON_ASSERT (data);
-   bson_init_static (bson, data, len);
-}
 
 /* The following matching logic is copied from libmongoc. */
 bool

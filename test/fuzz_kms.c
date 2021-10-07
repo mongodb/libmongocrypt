@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "src/kms_message/kms_message.h"
-#include "src/kms_message_private.h"
+#include "kms_message/kms_message.h"
+#include "kms_message_private.h"
 #include <src/kms_message/kms_b64.h>
 #include <src/hexlify.h>
 #include <src/kms_request_str.h>

@@ -17,8 +17,8 @@
 /* Needed for strptime */
 #define _GNU_SOURCE
 
-#include "src/kms_message/kms_message.h"
-#include "src/kms_message_private.h"
+#include "kms_message/kms_message.h"
+#include "kms_message_private.h"
 
 #ifndef _WIN32
 #include <dirent.h>
@@ -32,13 +32,13 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <src/kms_message/kms_b64.h>
-#include <src/hexlify.h>
-#include <src/kms_request_str.h>
-#include <src/kms_kv_list.h>
-#include <src/kms_port.h>
+#include "kms_message/kms_b64.h"
+#include "hexlify.h"
+#include "kms_request_str.h"
+#include "kms_kv_list.h"
+#include "kms_port.h"
 
-#include "test_kms_request.h"
+#include "test_kms_assert.h"
 
 const char *aws_test_suite_dir = "aws-sig-v4-test-suite";
 
@@ -301,49 +301,6 @@ read_req (const char *path)
    return request;
 }
 
-ssize_t
-first_non_matching (const char *x, const char *y)
-{
-   size_t len = strlen (x) > strlen (y) ? strlen (x) : strlen (y);
-   size_t i;
-
-   for (i = 0; i < len; i++) {
-      if (x[i] != y[i]) {
-         return i;
-      }
-   }
-
-   if (strlen (x) > strlen (y)) {
-      return strlen (y) + 1;
-   }
-
-   if (strlen (y) > strlen (x)) {
-      return strlen (x) + 1;
-   }
-
-   /* the strings match */
-   return -1;
-}
-
-void
-compare_strs (const char *test_name, const char *expect, const char *actual)
-{
-   if (0 != strcmp (actual, expect)) {
-      fprintf (stderr,
-               "%s failed, mismatch starting at %zd\n"
-               "--- Expect (%zu chars) ---\n%s\n"
-               "--- Actual (%zu chars) ---\n%s\n",
-               test_name,
-               first_non_matching (expect, actual),
-               strlen (expect),
-               expect,
-               strlen (actual),
-               actual);
-
-      abort ();
-   }
-}
-
 void
 test_compare (kms_request_t *request,
               char *(*func) (kms_request_t *),
@@ -356,7 +313,7 @@ test_compare (kms_request_t *request,
 
    expect = read_test (dir_path, suffix);
    actual = func (request);
-   compare_strs (test_name, expect, actual);
+   ASSERT_CMPSTR (expect, actual);
    free (actual);
    free (expect);
    free (test_name);
@@ -473,7 +430,7 @@ example_signature_test (void)
 
    KMS_ASSERT (kms_request_get_signing_key (request, signing));
    sig = hexlify (signing, 32);
-   compare_strs (__FUNCTION__, expect, sig);
+   ASSERT_CMPSTR (expect, sig);
    free (sig);
    kms_request_destroy (request);
 }
@@ -527,7 +484,7 @@ path_normalization_test (void)
       in = kms_request_str_new_from_chars (test[0], -1);
       out = test[1];
       norm = kms_request_str_path_normalized (in);
-      compare_strs (__FUNCTION__, out, norm->str);
+      ASSERT_CMPSTR (out, norm->str);
       kms_request_str_destroy (in);
       kms_request_str_destroy (norm);
    }

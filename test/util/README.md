@@ -22,6 +22,10 @@ Global options
         Defaults to using remote schemas.
     --trace <bool>
         Defaults to false.
+    --tls_ca_file <string>
+        Set a custom CA to verify server certificates in TLS connections. If not set, uses system defaults. Useful for KMIP.
+    --tls_certificate_key_file <string>
+        The client certificate and private key. If not set, a client certificate is not sent in TLS connections. Useful for KMIP.
 
 csfle create_datakey
     --kms_provider <string>

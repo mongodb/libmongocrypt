@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include <kms_message/kms_gcp_request.h>
-#include <kms_message/kms_b64.h>
-#include <kms_message/kms_request.h>
-#include <kms_message/kms_response.h>
-#include <kms_message/kms_response_parser.h>
+#include "kms_message/kms_gcp_request.h"
+#include "kms_message/kms_b64.h"
+#include "kms_message/kms_request.h"
+#include "kms_message/kms_response.h"
+#include "kms_message/kms_response_parser.h"
 
 #define MONGOC_LOG_DOMAIN "test_kms_azure_online"
 #include <mongoc/mongoc.h>
 
-#include "test_kms.h"
+#include "test_kms_assert.h"
 
 #include <stdio.h>
 
@@ -118,11 +118,11 @@ gcp_authenticate (void)
    res = send_kms_request (req, "oauth2.googleapis.com");
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s\n", res_str);
-   TEST_ASSERT (kms_response_get_status (res) == 200);
+   ASSERT (kms_response_get_status (res) == 200);
 
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
-   TEST_ASSERT (res_bson);
+   ASSERT (res_bson);
    if (!bson_iter_init_find (&iter, res_bson, "access_token")) {
       TEST_ERROR ("could not find 'access_token' in HTTP response");
    }
@@ -181,10 +181,10 @@ test_gcp (void)
                                       key_data,
                                       KEYLEN,
                                       opt);
-   TEST_ASSERT (req);
+   ASSERT (req);
    if (kms_request_get_error (req)) {
       printf ("error: %s\n", kms_request_get_error (req));
-      TEST_ASSERT (false);
+      ASSERT (false);
    }
    req_str = kms_request_to_string (req);
    TEST_TRACE ("--> HTTP request:\n%s\n", req_str);
@@ -194,11 +194,11 @@ test_gcp (void)
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
-   TEST_ASSERT (res_bson);
-   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "ciphertext"));
+   ASSERT (res_bson);
+   ASSERT (bson_iter_init_find (&iter, res_bson, "ciphertext"));
    encrypted_raw =
       kms_message_b64_to_raw (bson_iter_utf8 (&iter, NULL), &encrypted_raw_len);
-   TEST_ASSERT (encrypted_raw);
+   ASSERT (encrypted_raw);
 
    bson_destroy (res_bson);
    bson_free (req_str);
@@ -222,10 +222,10 @@ test_gcp (void)
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
    res_bson =
       bson_new_from_json ((const uint8_t *) res_str, strlen (res_str), NULL);
-   TEST_ASSERT (res_bson);
-   TEST_ASSERT (bson_iter_init_find (&iter, res_bson, "plaintext"));
+   ASSERT (res_bson);
+   ASSERT (bson_iter_init_find (&iter, res_bson, "plaintext"));
    decrypted = bson_strdup (bson_iter_utf8 (&iter, NULL));
-   TEST_ASSERT_STREQUAL (decrypted, key_data_b64url);
+   ASSERT_CMPSTR (decrypted, key_data_b64url);
 
    bson_destroy (res_bson);
    kms_response_destroy (res);
@@ -243,6 +243,6 @@ int
 main (int argc, char **argv)
 {
    kms_message_init ();
-   RUN_TEST (test_gcp);
+   test_gcp ();
    return 0;
 }

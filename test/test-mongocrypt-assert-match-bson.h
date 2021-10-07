@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
+#ifndef TEST_MONGOCRYPT_ASSERT_MATCH_BSON_H
+#define TEST_MONGOCRYPT_ASSERT_MATCH_BSON_H
 
-/* Iterate a document or array into a bson_t. */
-void
-bson_iter_bson (bson_iter_t *iter, bson_t *bson);
+#include <bson/bson.h>
 
 /* Copied from libmongoc. */
 void
 _assert_match_bson (const bson_t *doc, const bson_t *pattern);
+
+#endif /* TEST_MONGOCRYPT_ASSERT_MATCH_BSON_H */
