@@ -37,7 +37,8 @@ static void _run_one_test (_mongocrypt_tester_t *tester, bson_t *test) {
     BSON_ASSERT (bson_iter_init_find (&iter, test, "expect"));
     expect = bson_iter_utf8 (&iter, NULL);
 
-    /* Tests may include an optional different expectation for calling _mongocrypt_kek_append. */
+    /* Tests may include an optional different expectation for calling
+     * _mongocrypt_kek_append. */
     if (bson_iter_init_find (&iter, test, "expect_append")) {
         expect_append = bson_iter_utf8 (&iter, NULL);
     } else {
