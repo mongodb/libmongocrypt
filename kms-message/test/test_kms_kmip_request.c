@@ -1,6 +1,6 @@
 #include "test_kms_assert.h"
 
-#include "src/kms_message/kms_kmip_request.h"
+#include "kms_message/kms_kmip_request.h"
 
 /*
 <RequestMessage tag="0x420078" type="Structure">
