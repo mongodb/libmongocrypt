@@ -1122,6 +1122,7 @@ extern void kms_kmip_request_register_secretdata_test (void);
 extern void kms_kmip_request_register_secretdata_invalid_test (void);
 extern void kms_kmip_request_get_test (void);
 extern void kms_kmip_request_activate_test (void);
+extern void kms_kmip_response_parser_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1180,6 +1181,8 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_request_get_test);
    RUN_TEST (kms_kmip_request_activate_test);
    RUN_TEST (kms_request_kmip_prohibited_test);
+
+   RUN_TEST (kms_kmip_response_parser_test);
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
