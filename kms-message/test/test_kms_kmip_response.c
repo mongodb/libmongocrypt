@@ -3,6 +3,7 @@
 
 #include "kms_message/kms_kmip_response.h"
 #include "kms_kmip_response_private.h"
+#include "kms_message_private.h"
 
 
 /* An example successful response obtained from Hashicorp Vault.
@@ -115,12 +116,12 @@ void
 kms_kmip_response_get_unique_identifier_test (void)
 {
    uint8_t example_response[] = {SUCCESS_REGISTER_RESPONSE};
-   kms_kmip_response_t res;
+   kms_response_t res;
    char *actual_uid;
    kms_status_t *status;
-
-   res.data = example_response;
-   res.len = sizeof (example_response);
+   res.provider = KMS_REQUEST_PROVIDER_KMIP;
+   res.kmip.data = example_response;
+   res.kmip.len = sizeof (example_response);
    status = kms_status_new ();
 
    kms_kmip_response_ok (&res, status);
@@ -180,14 +181,15 @@ void
 kms_kmip_response_get_secretdata_test (void)
 {
    uint8_t example_response[] = {SUCCESS_GET_RESPONSE};
-   kms_kmip_response_t res;
+   kms_response_t res;
    uint8_t *actual_secretdata;
    uint32_t actual_secretdata_len;
    kms_status_t *status;
    uint8_t expected_secretdata[] = {SUCCESS_GET_RESPONSE_SECRETDATA};
 
-   res.data = example_response;
-   res.len = sizeof (example_response);
+   res.provider = KMS_REQUEST_PROVIDER_KMIP;
+   res.kmip.data = example_response;
+   res.kmip.len = sizeof (example_response);
    status = kms_status_new ();
 
    kms_kmip_response_ok (&res, status);
@@ -224,14 +226,15 @@ kms_kmip_response_get_secretdata_test (void)
 void
 kms_kmip_response_get_secretdata_notfound_test (void) {
    uint8_t example_response[] = {ERROR_GET_RESPOSE_NOTFOUND};
-   kms_kmip_response_t res;
+   kms_response_t res;
    kms_status_t *status;
    bool ok;
    uint8_t* secretdata;
    uint32_t secretdata_len;
 
-   res.data = example_response;
-   res.len = sizeof (example_response);
+   res.provider = KMS_REQUEST_PROVIDER_KMIP;
+   res.kmip.data = example_response;
+   res.kmip.len = sizeof (example_response);
    status = kms_status_new ();
 
    ok = kms_kmip_response_ok (&res, status);

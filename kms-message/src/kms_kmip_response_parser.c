@@ -75,21 +75,22 @@ kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
    return true;
 }
 
-kms_kmip_response_t *
+kms_response_t *
 kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser,
                                        kms_status_t *status)
 {
-   kms_kmip_response_t *res;
+   kms_response_t *res;
 
    if (kms_kmip_response_parser_wants_bytes (parser, 1) != 0) {
       kms_status_errorf (status, "KMIP parser does not have complete message");
       return NULL;
    }
 
-   res = calloc (1, sizeof (kms_kmip_response_t));
-   res->data = malloc (parser->buf->len);
-   memcpy (res->data, parser->buf->str, parser->buf->len);
-   res->len = parser->buf->len;
+   res = calloc (1, sizeof (kms_response_t));
+   res->provider = KMS_REQUEST_PROVIDER_KMIP;
+   res->kmip.data = malloc (parser->buf->len);
+   memcpy (res->kmip.data, parser->buf->str, parser->buf->len);
+   res->kmip.len = parser->buf->len;
    return res;
 }
 

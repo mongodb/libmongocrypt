@@ -2,15 +2,27 @@
 #include "kms_kmip_response_private.h"
 #include "kms_kmip_reader_writer_private.h"
 #include "kms_status_private.h"
+#include "kms_message_private.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
 
+static bool check_and_require_kmip (kms_response_t *res) {
+   if (res->provider != KMS_REQUEST_PROVIDER_KMIP) {
+      KMS_ERROR (res, "Function requires KMIP request");
+      return false;
+   }
+   return true;
+}
+
 const uint8_t *
-kms_kmip_response_to_bytes (kms_kmip_response_t *res, uint32_t *len)
+kms_response_to_bytes (kms_response_t *res, uint32_t *len)
 {
-   *len = res->len;
-   return res->data;
+   if (!check_and_require_kmip (res)) {
+       return NULL;
+   }
+   *len = res->kmip.len;
+   return res->kmip.data;
 }
 
 /* 
@@ -47,7 +59,7 @@ const char* kmip_result_status_to_string (uint32_t result_status) {
 }
 
 char *
-kms_kmip_response_get_unique_identifier (kms_kmip_response_t *res,
+kms_kmip_response_get_unique_identifier (kms_response_t *res,
                                         kms_status_t *status)
 {
     kmip_reader_t *reader = NULL;
@@ -60,7 +72,7 @@ kms_kmip_response_get_unique_identifier (kms_kmip_response_t *res,
         goto fail;
     }
 
-    reader = kmip_reader_new (res->data, res->len);
+    reader = kmip_reader_new (res->kmip.data, res->kmip.len);
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
         kms_status_errorf (status, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
@@ -112,7 +124,7 @@ tag=ResponseMessage (42007b) type=Structure (01) length=320
       tag=KeyMaterial (420043) type=ByteString (08) length=96 value=(TODO) 
 */
 uint8_t*
-kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
+kms_kmip_response_get_secretdata (kms_response_t *res,
                                   uint32_t *secretdatalen,
                                   kms_status_t *status)
 {
@@ -126,7 +138,7 @@ kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
         goto fail;
     }
 
-    reader = kmip_reader_new (res->data, res->len);
+    reader = kmip_reader_new (res->kmip.data, res->kmip.len);
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
         kms_status_errorf (status, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
@@ -177,12 +189,12 @@ fail:
 }
 
 void
-kms_kmip_response_destroy (kms_kmip_response_t *res)
+kms_kmip_response_destroy (kms_response_t *res)
 {
    if (!res) {
       return;
    }
-   free (res->data);
+   free (res->kmip.data);
    free (res);
 }
 
@@ -201,7 +213,7 @@ tag=ResponseMessage (42007b) type=Structure (01) length=168
   tag=ResultMessage (42007d) type=TextString (07) length=24 value=ResultReasonItemNotFound
 */
 bool
-kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status) {
+kms_kmip_response_ok (kms_response_t *res, kms_status_t *status) {
 #define RESULT_STATUS_SUCCESS 0
 
     kmip_reader_t *reader = NULL;
@@ -214,7 +226,7 @@ kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status) {
     bool ok = false;
 
     kms_status_reset (status);
-    reader = kmip_reader_new (res->data, res->len);
+    reader = kmip_reader_new (res->kmip.data, res->kmip.len);
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
         kms_status_errorf (status, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));

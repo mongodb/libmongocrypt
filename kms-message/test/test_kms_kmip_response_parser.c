@@ -14,7 +14,7 @@ kms_kmip_response_parser_test (void)
    size_t outlen;
    int32_t want_bytes;
    kms_status_t *status;
-   kms_kmip_response_t *res;
+   kms_response_t *res;
 
    status = kms_status_new ();
 

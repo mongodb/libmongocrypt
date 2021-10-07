@@ -71,7 +71,7 @@ test_env_init (test_env_t *test_env)
 }
 
 /* TODO: use common send_kms_request? */
-static kms_kmip_response_t *
+static kms_response_t *
 send_kms_kmip_request (kms_request_t *req, test_env_t *test_env)
 {
    mongoc_stream_t *stream;
@@ -85,7 +85,7 @@ send_kms_kmip_request (kms_request_t *req, test_env_t *test_env)
    int32_t bytes_read;
    uint8_t buf[BUF_SIZE];
    kms_status_t *status;
-   kms_kmip_response_t *res;
+   kms_response_t *res;
    const uint8_t *resbytes;
    uint32_t reslen;
    char *debugstr;
@@ -141,7 +141,7 @@ send_kms_kmip_request (kms_request_t *req, test_env_t *test_env)
    mongoc_stream_destroy (stream);
    kms_status_destroy (status);
 
-   resbytes = kms_kmip_response_to_bytes (res, &reslen);
+   resbytes = kms_response_to_bytes (res, &reslen);
    debugstr = data_to_hex (resbytes, reslen);
    printf ("%s\n", debugstr);
    free (debugstr);
@@ -159,7 +159,7 @@ static uint8_t *
 kmip_get (char *uid, uint32_t* secretdata_len) {
    test_env_t test_env;
    kms_request_t *req;
-   kms_kmip_response_t *res;
+   kms_response_t *res;
    kms_status_t *status;
    uint8_t *secretdata;
 

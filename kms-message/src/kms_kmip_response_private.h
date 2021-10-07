@@ -19,17 +19,12 @@
 
 #include <stdint.h>
 
-struct _kms_kmip_response_t {
-    uint8_t *data;
-    uint32_t len;
-};
-
 /* kms_kmip_response_ok is needed for tests. */
 const uint8_t *
-kms_kmip_response_to_bytes (kms_kmip_response_t *res, uint32_t *len);
+kms_response_to_bytes (kms_response_t *res, uint32_t *len);
 
 /* kms_kmip_response_ok is needed for tests. */
 bool
-kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status);
+kms_kmip_response_ok (kms_response_t *res, kms_status_t *status);
 
 #endif /* KMS_KMIP_RESPONSE_PRIVATE_H */

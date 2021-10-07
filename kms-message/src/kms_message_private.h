@@ -66,6 +66,15 @@ struct _kms_response_t {
    int status;
    kms_kv_list_t *headers;
    kms_request_str_t *body;
+
+   /* TODO (MONGOCRYPT-???): make a union for each KMS provider type. */
+   char error[512];
+   bool failed;
+   kms_request_provider_t provider;
+   struct {
+      uint8_t *data;
+      uint32_t len;
+   } kmip;
 };
 
 typedef enum {

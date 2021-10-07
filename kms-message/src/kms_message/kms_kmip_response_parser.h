@@ -34,10 +34,14 @@ kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser, int32_
 KMS_MSG_EXPORT(bool)
 kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser, uint8_t *buf, uint32_t len, kms_status_t *status);
 
-KMS_MSG_EXPORT(kms_kmip_response_t *)
+KMS_MSG_EXPORT(kms_response_t *)
 kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser, kms_status_t *status);
 
 KMS_MSG_EXPORT(void)
 kms_kmip_response_parser_destroy (kms_kmip_response_parser_t *parser);
+
+// Begin desired API
+// KMS_MSG_EXPORT(kms_response_parser_t *) kms_kmip_response_parser_new (void* reserved);
+// End desired API
 
 #endif /* KMS_KMIP_RESPONSE_PARSER_H */

@@ -23,26 +23,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* TODO: consolidate kms_kmip_response_t and kms_kmip_request_t into
- * kms_kmip_msg_t? */
-typedef struct _kms_kmip_response_t kms_kmip_response_t;
+#include "kms_response.h"
 
-KMS_MSG_EXPORT (const uint8_t *)
-kms_kmip_response_to_bytes (kms_kmip_response_t *res, uint32_t *len);
+/* TODO: consolidate kms_response_t and kms_kmip_request_t into
+ * kms_kmip_msg_t? */
 
 /* Caveat, reads the UniqueIdentifier in the first BatchItem it sees.
  * Returns a null terminated string for the UniqueIdentifier. */
 KMS_MSG_EXPORT (char*)
-kms_kmip_response_get_unique_identifier (kms_kmip_response_t *res, kms_status_t *status);
+kms_kmip_response_get_unique_identifier (kms_response_t *res, kms_status_t *status);
 
 KMS_MSG_EXPORT (uint8_t*)
-kms_kmip_response_get_secretdata (kms_kmip_response_t *res,
+kms_kmip_response_get_secretdata (kms_response_t *res,
                                   uint32_t *secretdatalen,
                                   kms_status_t *status);
 
-KMS_MSG_EXPORT (bool)
-kms_kmip_response_ok (kms_kmip_response_t *res, kms_status_t *status);
-
-KMS_MSG_EXPORT (void) kms_kmip_response_destroy (kms_kmip_response_t *res);
+KMS_MSG_EXPORT (void) kms_kmip_response_destroy (kms_response_t *res);
 
 #endif /* KMS_KMIP_RESPONSE_H */
