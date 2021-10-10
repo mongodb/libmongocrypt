@@ -631,6 +631,7 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                 &as_bson,
                 "azure.identityPlatformEndpoint",
                 &crypt->opts.kms_provider_azure.identity_platform_endpoint,
+                NULL /* opts */,
                 crypt->status)) {
             return false;
          }
@@ -671,6 +672,7 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                 &as_bson,
                 "gcp.endpoint",
                 &crypt->opts.kms_provider_gcp.endpoint,
+                NULL /* opts */,
                 crypt->status)) {
             return false;
          }
@@ -736,6 +738,24 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
             return false;
          }
          crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+      } else if (0 == strcmp (field_name, "kmip")) {
+         _mongocrypt_endpoint_parse_opts_t opts = {0};
+
+         opts.allow_empty_subdomain = true;
+         if (!_mongocrypt_parse_required_endpoint (
+                &as_bson,
+                "kmip.endpoint",
+                &crypt->opts.kms_provider_kmip.endpoint,
+                &opts,
+                crypt->status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_check_allowed_fields (
+                &as_bson, "kmip", crypt->status, "endpoint")) {
+            return false;
+         }
+         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
       } else {
          CLIENT_ERR ("unsupported KMS provider: %s", field_name);
          return false;

@@ -28,6 +28,7 @@ static void _run_one_test (_mongocrypt_tester_t *tester, bson_t *test) {
     const char* expect;
     bool ret;
     bson_t out;
+    const char* expect_append;
 
     status = mongocrypt_status_new ();
     memset (&kek, 0, sizeof (_mongocrypt_kek_t));
@@ -35,6 +36,14 @@ static void _run_one_test (_mongocrypt_tester_t *tester, bson_t *test) {
     bson_iter_bson (&iter, &input);
     BSON_ASSERT (bson_iter_init_find (&iter, test, "expect"));
     expect = bson_iter_utf8 (&iter, NULL);
+
+    /* Tests may include an optional different expectation for calling
+     * _mongocrypt_kek_append. */
+    if (bson_iter_init_find (&iter, test, "expect_append")) {
+        expect_append = bson_iter_utf8 (&iter, NULL);
+    } else {
+        expect_append = expect;
+    }
 
     input_str = bson_as_json (&input, NULL);
     printf ("- testcase: %s\n", input_str);
@@ -45,9 +54,24 @@ static void _run_one_test (_mongocrypt_tester_t *tester, bson_t *test) {
         ASSERT_OK_STATUS (ret, status);
         bson_init (&out);
         ret = _mongocrypt_kek_append (&kek, &out, status);
-        ASSERT_OK_STATUS (ret, status);
-        /* This should round trip. */
-        _assert_match_bson (&out, &input);
+        if (0 == strcmp (expect_append, "ok")) {
+            _mongocrypt_kek_t kek_copy;
+
+            ASSERT_OK_STATUS (ret, status);
+            /* This should round trip. */
+            _assert_match_bson (&out, &input);
+
+            /* Check that copy works as well. */
+            bson_reinit (&out);
+            _mongocrypt_kek_copy_to (&kek, &kek_copy);
+            ret = _mongocrypt_kek_append (&kek_copy, &out, status);
+            ASSERT_OK_STATUS (ret, status);
+            _assert_match_bson (&out, &input);
+            _mongocrypt_kek_cleanup (&kek_copy);
+        } else {
+            ASSERT_FAILS_STATUS (ret, status, expect_append);
+        }
+
         bson_destroy (&out);
     } else {
         ASSERT_FAILS_STATUS (ret, status, expect);

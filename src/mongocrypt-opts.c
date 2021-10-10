@@ -58,6 +58,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
    _mongocrypt_buffer_cleanup (&opts->schema_map);
    _mongocrypt_opts_kms_provider_azure_cleanup (&opts->kms_provider_azure);
    _mongocrypt_opts_kms_provider_gcp_cleanup (&opts->kms_provider_gcp);
+   _mongocrypt_endpoint_destroy (opts->kms_provider_kmip.endpoint);
 }
 
 
@@ -139,6 +140,7 @@ bool
 _mongocrypt_parse_optional_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
+                                     _mongocrypt_endpoint_parse_opts_t *opts,
                                      mongocrypt_status_t *status)
 {
    char *endpoint_raw;
@@ -154,7 +156,7 @@ _mongocrypt_parse_optional_endpoint (const bson_t *bson,
       return true;
    }
 
-   *out = _mongocrypt_endpoint_new (endpoint_raw, -1, status);
+   *out = _mongocrypt_endpoint_new (endpoint_raw, -1, opts, status);
    bson_free (endpoint_raw);
    return (*out) != NULL;
 }
@@ -163,9 +165,10 @@ bool
 _mongocrypt_parse_required_endpoint (const bson_t *bson,
                                      const char *dotkey,
                                      _mongocrypt_endpoint_t **out,
+                                     _mongocrypt_endpoint_parse_opts_t *opts,
                                      mongocrypt_status_t *status)
 {
-   if (!_mongocrypt_parse_optional_endpoint (bson, dotkey, out, status)) {
+   if (!_mongocrypt_parse_optional_endpoint (bson, dotkey, out, opts, status)) {
       return false;
    }
 
