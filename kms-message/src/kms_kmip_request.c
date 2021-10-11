@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include "kms_kmip_reader_writer_private.h"
 #include "kms_message/kms_kmip_request.h"
+
 #include "kms_message_private.h"
+#include "kms_kmip_reader_writer_private.h"
 
 #include <inttypes.h>
 #include <stdint.h>
