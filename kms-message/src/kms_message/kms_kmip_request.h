@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/* kms_request_register_secretdata_new creates a KMIP Register request with
+/* kms_kmip_request_register_secretdata_new creates a KMIP Register request with
  * a 96 byte SecretData payload.
  * - len must be 96.
  * - Callers must check for an error by calling kms_request_get_error. */
