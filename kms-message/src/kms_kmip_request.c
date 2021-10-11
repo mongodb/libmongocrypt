@@ -45,7 +45,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
     <RequestHeader tag="0x420077" type="Structure">
      <ProtocolVersion tag="0x420069" type="Structure">
       <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
-      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="1"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
      </ProtocolVersion>
      <BatchCount tag="0x42000d" type="Integer" value="1"/>
     </RequestHeader>
@@ -89,7 +89,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
    kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
    kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 1);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 1);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 0);
    kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
    kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
