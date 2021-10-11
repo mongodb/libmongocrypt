@@ -47,7 +47,7 @@ struct _kms_request_t {
    _kms_crypto_t crypto;
    kms_request_provider_t provider;
 
-   /* TODO (MONGOCRYPT-???): make a union for each KMS provider type.
+   /* TODO (MONGOCRYPT-342): make a union for each KMS provider type.
       kms_request_provider_t provider;
       union {
          struct {} aws;

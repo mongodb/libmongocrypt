@@ -45,7 +45,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
     <RequestHeader tag="0x420077" type="Structure">
      <ProtocolVersion tag="0x420069" type="Structure">
       <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
-      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="1"/>
      </ProtocolVersion>
      <BatchCount tag="0x42000d" type="Integer" value="1"/>
     </RequestHeader>
@@ -56,7 +56,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
       <TemplateAttribute tag="0x420091" type="Structure">
       </TemplateAttribute>
       <SecretData tag="0x420085" type="Structure">
-       <SecretDataType tag="0x420086" type="Enumeration" value="2"/>
+       <SecretDataType tag="0x420086" type="Enumeration" value="1"/>
        <KeyBlock tag="0x420040" type="Structure">
         <KeyFormatType tag="0x420042" type="Enumeration" value="1"/>
         <KeyValue tag="0x420045" type="Structure">
@@ -86,7 +86,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
    kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
    kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 1);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 4);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 1);
    kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
    kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
@@ -100,7 +100,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    kmip_writer_begin_struct (writer, KMIP_TAG_TemplateAttribute);
    kmip_writer_close_struct (writer); /* KMIP_TAG_TemplateAttribute */
    kmip_writer_begin_struct (writer, KMIP_TAG_SecretData);
-   /* 0x02 = Seed */
+   /* 0x01 = Password */
    kmip_writer_write_enumeration (writer, KMIP_TAG_SecretDataType, 0x02);
    kmip_writer_begin_struct (writer, KMIP_TAG_KeyBlock);
    /* 0x01 = Raw */
@@ -128,7 +128,7 @@ kms_request_activate_new (void *reserved, char *unique_identifer)
     <RequestHeader tag="0x420077" type="Structure">
      <ProtocolVersion tag="0x420069" type="Structure">
       <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
-      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
      </ProtocolVersion>
      <BatchCount tag="0x42000d" type="Integer" value="1"/>
     </RequestHeader>
@@ -153,7 +153,7 @@ kms_request_activate_new (void *reserved, char *unique_identifer)
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
    kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
    kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 1);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 4);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 0);
    kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
    kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
@@ -184,7 +184,7 @@ kms_kmip_request_get_new (void *reserved, char *unique_identifer)
     <RequestHeader tag="0x420077" type="Structure">
      <ProtocolVersion tag="0x420069" type="Structure">
       <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
-      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
      </ProtocolVersion>
      <BatchCount tag="0x42000d" type="Integer" value="1"/>
     </RequestHeader>
@@ -209,7 +209,7 @@ kms_kmip_request_get_new (void *reserved, char *unique_identifer)
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
    kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
    kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 1);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 4);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 0);
    kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
    kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
