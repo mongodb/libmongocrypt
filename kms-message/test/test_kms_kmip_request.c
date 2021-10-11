@@ -93,13 +93,12 @@ kms_kmip_request_register_secretdata_test (void)
 void
 kms_kmip_request_register_secretdata_invalid_test (void)
 {
-#define SECRET_DATA_INVALID_LENGTH 95
 
    kms_request_t *req;
-   uint8_t secret_data[SECRET_DATA_INVALID_LENGTH] = {0};
+   uint8_t secret_data[KMS_KMIP_REQUEST_SECRETDATA_LENGTH] = {0};
 
    req = kms_kmip_request_register_secretdata_new (
-      NULL, secret_data, SECRET_DATA_INVALID_LENGTH);
+      NULL, secret_data, KMS_KMIP_REQUEST_SECRETDATA_LENGTH - 1);
    ASSERT_REQUEST_ERROR (req, "SecretData length");
 
    kms_request_destroy (req);

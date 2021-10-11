@@ -75,8 +75,11 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    req = calloc (1, sizeof (kms_request_t));
    req->provider = KMS_REQUEST_PROVIDER_KMIP;
 
-   if (len != 96) {
-      KMS_ERROR (req, "expected SecretData length of 96, got %" PRIu32, len);
+   if (len != KMS_KMIP_REQUEST_SECRETDATA_LENGTH) {
+      KMS_ERROR (req,
+                 "expected SecretData length of %d, got %" PRIu32,
+                 KMS_KMIP_REQUEST_SECRETDATA_LENGTH,
+                 len);
       return req;
    }
 

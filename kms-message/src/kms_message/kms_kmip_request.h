@@ -26,9 +26,11 @@
 extern "C" {
 #endif
 
+#define KMS_KMIP_REQUEST_SECRETDATA_LENGTH 96
+
 /* kms_kmip_request_register_secretdata_new creates a KMIP Register request with
- * a 96 byte SecretData payload.
- * - len must be 96.
+ * a SecretData payload of length KMS_KMIP_REQUEST_SECRETDATA_LENGTH.
+ * - len must be KMS_KMIP_REQUEST_SECRETDATA_LENGTH.
  * - Callers must check for an error by calling kms_request_get_error. */
 KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_register_secretdata_new (void *reserved,
