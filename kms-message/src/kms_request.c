@@ -53,7 +53,9 @@ parse_query_params (kms_request_str_t *q)
    return lst;
 }
 
-static bool check_and_prohibit_kmip (kms_request_t *req) {
+static bool
+check_and_prohibit_kmip (kms_request_t *req)
+{
    if (req->provider == KMS_REQUEST_PROVIDER_KMIP) {
       KMS_ERROR (req, "Function not applicable to KMIP");
       return false;
