@@ -1088,8 +1088,10 @@ kms_signature_test (void)
    KMS_ASSERT (!ret);
 }
 
-static void kms_request_kmip_prohibited_test (void) {
-   kms_request_opt_t* opt;
+static void
+kms_request_kmip_prohibited_test (void)
+{
+   kms_request_opt_t *opt;
    kms_request_t *req;
 
    opt = kms_request_opt_new ();
