@@ -206,6 +206,8 @@ kms_kmip_request_activate_test (void)
    uint32_t actual_len;
    uint8_t expected_bytes[] = {ACTIVATE_REQUEST};
    uint32_t expected_len = sizeof (expected_bytes);
+   static const char *const ACTIVATE_UNIQUE_IDENTIFIER =
+      "7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI";
 
    req = kms_request_activate_new (NULL, ACTIVATE_UNIQUE_IDENTIFIER);
    ASSERT_REQUEST_OK (req);
