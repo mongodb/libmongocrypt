@@ -149,6 +149,8 @@ kms_kmip_request_get_test (void)
    uint32_t actual_len;
    uint8_t expected_bytes[] = {GET_REQUEST};
    uint32_t expected_len = sizeof (expected_bytes);
+   static const char *const GET_UNIQUE_IDENTIFIER =
+      "7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI";
 
    req = kms_kmip_request_get_new (NULL, GET_UNIQUE_IDENTIFIER);
    ASSERT_REQUEST_OK (req);
