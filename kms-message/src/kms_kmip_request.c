@@ -123,7 +123,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
 }
 
 kms_request_t *
-kms_request_activate_new (void *reserved, char *unique_identifer)
+kms_kmip_request_activate_new (void *reserved, const char *unique_identifer)
 {
    /*
    Create a KMIP Activate request of this form:
@@ -179,7 +179,7 @@ kms_request_activate_new (void *reserved, char *unique_identifer)
 }
 
 kms_request_t *
-kms_kmip_request_get_new (void *reserved, char *unique_identifer)
+kms_kmip_request_get_new (void *reserved, const char *unique_identifer)
 {
    /*
    Create a KMIP Get request of this form:

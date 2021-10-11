@@ -208,7 +208,7 @@ kms_kmip_request_activate_test (void)
    static const char *const ACTIVATE_UNIQUE_IDENTIFIER =
       "7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI";
 
-   req = kms_request_activate_new (NULL, ACTIVATE_UNIQUE_IDENTIFIER);
+   req = kms_kmip_request_activate_new (NULL, ACTIVATE_UNIQUE_IDENTIFIER);
    ASSERT_REQUEST_OK (req);
 
    actual_bytes = kms_request_to_bytes (req, &actual_len);
