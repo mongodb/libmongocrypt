@@ -47,7 +47,7 @@ kms_kmip_request_activate_new (void *reserved, const char *unique_identifier);
  * - unique_identifier must be a NULL terminated string.
  * - Callers must check for an error by calling kms_request_get_error. */
 KMS_MSG_EXPORT (kms_request_t *)
-kms_kmip_request_get_new (void *reserved, char *unique_identifier);
+kms_kmip_request_get_new (void *reserved, const char *unique_identifier);
 
 #ifdef __cplusplus
 }
