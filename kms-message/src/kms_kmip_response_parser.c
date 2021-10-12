@@ -29,19 +29,32 @@ struct _kms_kmip_response_parser_t {
    char error[512];
 };
 
-/* FIRST_LENGTH is the number of bytes needed to determine the length of the remaining message. */
-#define FIRST_LENGTH 8
 /* FIRST_LENGTH_OFFSET is the offset of the first four byte length. */
 #define FIRST_LENGTH_OFFSET 4
+
+/* _parser_destroy destroys the fields of parser, but not the parser itself. */
+static void
+_parser_destroy (kms_kmip_response_parser_t *parser)
+{
+   kms_request_str_destroy (parser->buf);
+}
+
+/* _parser_init initializes the members of parser. */
+static void
+_parser_init (kms_kmip_response_parser_t *parser)
+{
+   memset (parser, 0, sizeof (*parser));
+   parser->buf = kms_request_str_new ();
+}
 
 kms_response_parser_t *
 kms_kmip_response_parser_new (void *reserved)
 {
    kms_response_parser_t *parser = kms_response_parser_new ();
-   
 
-   parser->kmip = calloc (1, sizeof (kms_kmip_response_parser_t));
-   parser->kmip->buf = kms_request_str_new ();
+   parser->kmip = malloc (sizeof (kms_kmip_response_parser_t));
+   _parser_init (parser->kmip);
+
    return parser;
 }
 
@@ -50,10 +63,12 @@ kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser,
                                       int32_t max)
 {
    int32_t wants_bytes;
-   if (parser->bytes_fed < FIRST_LENGTH) {
-      wants_bytes = FIRST_LENGTH - parser->bytes_fed;
+   if (parser->bytes_fed < KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) {
+      wants_bytes = KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH - parser->bytes_fed;
    } else {
-      wants_bytes = (parser->first_len + FIRST_LENGTH) - parser->bytes_fed;
+      wants_bytes =
+         (parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) -
+         parser->bytes_fed;
    }
    if (max < wants_bytes) {
       return max;
@@ -66,10 +81,17 @@ kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
                                uint8_t *buf,
                                uint32_t len)
 {
-   kms_request_str_append_chars (parser->buf, (char*) buf, len);
+   kms_request_str_append_chars (parser->buf, (char *) buf, len);
    parser->bytes_fed += len;
 
-   if (parser->first_len == 0 && parser->bytes_fed >= FIRST_LENGTH) {
+   if (parser->first_len > 0) {
+      if (parser->bytes_fed >
+          parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) {
+         KMS_ERROR (parser, "KMIP parser fed too much data");
+         return false;
+      }
+   } else if (parser->first_len == 0 &&
+              parser->bytes_fed >= KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) {
       uint32_t temp;
       memcpy (&temp, parser->buf->str + FIRST_LENGTH_OFFSET, sizeof (uint32_t));
       parser->first_len = KMS_UINT32_FROM_BE (temp);
@@ -89,9 +111,13 @@ kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser)
 
    res = calloc (1, sizeof (kms_response_t));
    res->provider = KMS_REQUEST_PROVIDER_KMIP;
-   res->kmip.data = malloc (parser->buf->len);
-   memcpy (res->kmip.data, parser->buf->str, parser->buf->len);
    res->kmip.len = parser->buf->len;
+   res->kmip.data = (uint8_t *) kms_request_str_detach (parser->buf);
+   parser->buf = NULL;
+
+   /* Reinitialize for reuse. */
+   _parser_destroy (parser);
+   _parser_init (parser);
    return res;
 }
 
@@ -107,6 +133,7 @@ kms_kmip_response_parser_destroy (kms_kmip_response_parser_t *parser)
    if (!parser) {
       return;
    }
-   kms_request_str_destroy (parser->buf);
+
+   _parser_destroy (parser);
    free (parser);
 }

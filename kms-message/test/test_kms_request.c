@@ -1126,6 +1126,9 @@ extern void kms_kmip_response_parser_test (void);
 extern void kms_kmip_response_get_unique_identifier_test (void);
 extern void kms_kmip_response_get_secretdata_test (void);
 extern void kms_kmip_response_get_secretdata_notfound_test (void);
+extern void kms_kmip_response_parser_reuse_test (void);
+extern void kms_kmip_response_parser_excess_test (void);
+extern void kms_kmip_response_parser_notenough_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1188,6 +1191,9 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_response_get_unique_identifier_test);
    RUN_TEST (kms_kmip_response_get_secretdata_test);
    RUN_TEST (kms_kmip_response_get_secretdata_notfound_test);
+   RUN_TEST (kms_kmip_response_parser_reuse_test);
+   RUN_TEST (kms_kmip_response_parser_excess_test);
+   RUN_TEST (kms_kmip_response_parser_notenough_test);
 
 
    if (!ran_tests) {

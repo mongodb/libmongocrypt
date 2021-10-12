@@ -26,6 +26,10 @@
  * response. */
 typedef struct _kms_kmip_response_parser_t kms_kmip_response_parser_t;
 
+/* KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH is the number of bytes needed to
+ * determine the length of the remaining message. */
+#define KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH 8
+
 int32_t
 kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser,
                                       int32_t max);
