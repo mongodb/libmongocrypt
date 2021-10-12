@@ -111,7 +111,7 @@ kmip_register_and_activate_secretdata (void)
    ASSERT (uid);
    kms_response_destroy (res);
 
-   req = kms_request_activate_new (NULL, uid);
+   req = kms_kmip_request_activate_new (NULL, uid);
    ASSERT_REQUEST_OK (req);
 
    res = send_kms_kmip_request (req, &test_env);
