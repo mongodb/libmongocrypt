@@ -18,23 +18,21 @@
 #define KMS_KMIP_RESPONSE_H
 
 #include "kms_message_defines.h"
-#include "kms_status.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include "kms_response.h"
 
-/* TODO: consolidate kms_response_t and kms_kmip_request_t into
- * kms_kmip_msg_t? */
-
-/* Caveat, reads the UniqueIdentifier in the first BatchItem it sees.
- * Returns a null terminated string for the UniqueIdentifier. */
-KMS_MSG_EXPORT (char*)
+/* kms_kmip_response_get_unique_identifier returns the UniqueIdentifier in the
+ * first BatchItem in a ResponseMessage.
+ * - Returns a NULL terminated string. */
+KMS_MSG_EXPORT (char *)
 kms_kmip_response_get_unique_identifier (kms_response_t *res);
 
-KMS_MSG_EXPORT (uint8_t*)
-kms_kmip_response_get_secretdata (kms_response_t *res,
-                                  uint32_t *secretdatalen);
+/* kms_kmip_response_get_secretdata returns the KeyMaterial in the
+ * first BatchItem in a ResponseMessage.
+ * - Returns a NULL terminated string. */
+KMS_MSG_EXPORT (uint8_t *)
+kms_kmip_response_get_secretdata (kms_response_t *res, uint32_t *secretdatalen);
 
 #endif /* KMS_KMIP_RESPONSE_H */
