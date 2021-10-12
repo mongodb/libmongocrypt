@@ -26,18 +26,23 @@ const char* kmip_result_status_to_string (uint32_t result_status) {
 }
 
 /*
-tag=ResponseMessage (42007b) type=Structure (01) length=168
- tag=ResponseHeader (42007a) type=Structure (01) length=72
-  tag=ProtocolVersion (420069) type=Structure (01) length=32
-   tag=ProtocolVersionMajor (42006a) type=Integer (02) length=4 value=1
-   tag=ProtocolVersionMinor (42006b) type=Integer (02) length=4 value=4
-  tag=TimeStamp (420092) type=DateTime (09) length=8 value=(TODO)
-  tag=BatchCount (42000d) type=Integer (02) length=4 value=1
- tag=BatchItem (42000f) type=Structure (01) length=80
-  tag=Operation (42005c) type=Enumeration (05) length=4 value=10
-  tag=ResultStatus (42007f) type=Enumeration (05) length=4 value=1
-  tag=ResultReason (42007e) type=Enumeration (05) length=4 value=1
-  tag=ResultMessage (42007d) type=TextString (07) length=24 value=ResultReasonItemNotFound
+Example of an error message:
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-01T14:43:13-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="10"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="1"/>
+  <ResultReason tag="0x42007e" type="Enumeration" value="1"/>
+  <ResultMessage tag="0x42007d" type="TextString" value="ResultReasonItemNotFound"/>
+ </BatchItem>
+</ResponseMessage>
 */
 static bool
 kms_kmip_response_ok (kms_response_t *res) {
@@ -114,26 +119,25 @@ fail:
 }
 
 /* 
- tag=ResponseMessage (42007b) type=Structure (01) length=288
-  tag=ResponseHeader (42007a) type=Structure (01) length=72
-   tag=ProtocolVersion (420069) type=Structure (01) length=32
-    tag=ProtocolVersionMajor (42006a) type=Integer (02) length=4 value=1
-    tag=ProtocolVersionMinor (42006b) type=Integer (02) length=4 value=4
-   tag=TimeStamp (420092) type=DateTime (09) length=8 value=(TODO)
-   tag=BatchCount (42000d) type=Integer (02) length=4 value=1
-  tag=BatchItem (42000f) type=Structure (01) length=96
-   tag=Operation (42005c) type=Enumeration (05) length=4 value=3
-   tag=UniqueBatchItemID (420093) type=ByteString (08) length=1 value=A
-   tag=ResultStatus (42007f) type=Enumeration (05) length=4 value=0
-   tag=ResponsePayload (42007c) type=Structure (01) length=40
-    tag=UniqueIdentifier (420094) type=TextString (07) length=32 value=7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI
-  tag=BatchItem (42000f) type=Structure (01) length=96 tag=Operation (42005c) type=Enumeration (05) length=4 value=18
-   tag=UniqueBatchItemID (420093) type=ByteString (08) length=1 value=(TODO)
-   tag=ResultStatus (42007f) type=Enumeration (05) length=4 value=0
-   tag=ResponsePayload (42007c) type=Structure (01) length=40
-    tag=UniqueIdentifier (420094) type=TextString (07) length=32 value=7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI
+Example of a successful response to a Register request:
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-12T14:09:25-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="3"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
+  <ResponsePayload tag="0x42007c" type="Structure">
+   <UniqueIdentifier tag="0x420094" type="TextString" value="39"/>
+  </ResponsePayload>
+ </BatchItem>
+</ResponseMessage>
  */
-
 char *
 kms_kmip_response_get_unique_identifier (kms_response_t *res)
 {
@@ -182,25 +186,35 @@ fail:
 }
 
 /*
-tag=ResponseMessage (42007b) type=Structure (01) length=320
- tag=ResponseHeader (42007a) type=Structure (01) length=72
-  tag=ProtocolVersion (420069) type=Structure (01) length=32
-   tag=ProtocolVersionMajor (42006a) type=Integer (02) length=4 value=1
-   tag=ProtocolVersionMinor (42006b) type=Integer (02) length=4 value=4
-  tag=TimeStamp (420092) type=DateTime (09) length=8 value=(TODO)
-  tag=BatchCount (42000d) type=Integer (02) length=4 value=1
- tag=BatchItem (42000f) type=Structure (01) length=232
-  tag=Operation (42005c) type=Enumeration (05) length=4 value=10
-  tag=ResultStatus (42007f) type=Enumeration (05) length=4 value=0
-  tag=ResponsePayload (42007c) type=Structure (01) length=192
-   tag=ObjectType (420057) type=Enumeration (05) length=4 value=7
-   tag=UniqueIdentifier (420094) type=TextString (07) length=2 value=31
-   tag=SecretData (420085) type=Structure (01) length=152
-    tag=SecretDataType (420086) type=Enumeration (05) length=4 value=2
-    tag=KeyBlock (420040) type=Structure (01) length=128
-     tag=KeyFormatType (420042) type=Enumeration (05) length=4 value=2
-     tag=KeyValue (420045) type=Structure (01) length=104
-      tag=KeyMaterial (420043) type=ByteString (08) length=96 value=(TODO) 
+Example of a successful response to a Get request:
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-12T14:09:25-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="10"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
+  <ResponsePayload tag="0x42007c" type="Structure">
+   <ObjectType tag="0x420057" type="Enumeration" value="7"/>
+   <UniqueIdentifier tag="0x420094" type="TextString" value="39"/>
+   <SecretData tag="0x420085" type="Structure">
+    <SecretDataType tag="0x420086" type="Enumeration" value="1"/>
+    <KeyBlock tag="0x420040" type="Structure">
+     <KeyFormatType tag="0x420042" type="Enumeration" value="2"/>
+     <KeyValue tag="0x420045" type="Structure">
+      <KeyMaterial tag="0x420043" type="ByteString"
+value="ffa8cc79e8c3763b0121fcd06bb3488c8bf42c0774604640279b16b264194030eeb08396241defcc4d32d16ea831ad777138f08e2f985664c004c2485d6f4991eb3d9ec32802537836a9066b4e10aeb56a5ccf6aa46901e625e3400c7811d2ec"/>
+     </KeyValue>
+    </KeyBlock>
+   </SecretData>
+  </ResponsePayload>
+ </BatchItem>
+</ResponseMessage> 
 */
 uint8_t*
 kms_kmip_response_get_secretdata (kms_response_t *res,
