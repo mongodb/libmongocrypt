@@ -56,8 +56,7 @@ kms_kmip_response_parser_test (void)
    ASSERT_PARSER_OK (parser);
    ASSERT (ok);
 
-   /* The parser knows first length. Expect the parser knows to want exactly the
-    * remaining length. */
+   /* The parser knows first length. Expect the parser wants the remaining length. */
    want_bytes =
       kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
    ASSERT_CMPINT (want_bytes, ==, SAMPLE_KMIP_FIRST_LENGTH);
@@ -82,21 +81,13 @@ kms_kmip_response_parser_test (void)
    free (data);
 }
 
-void
-kms_kmip_response_parser_reuse_test (void)
+static void
+feed_full_response (kms_response_parser_t *parser, uint8_t *data)
 {
-   kms_response_parser_t *parser;
-   uint8_t *data;
-   size_t outlen;
-   int32_t want_bytes;
-   kms_response_t *res;
    uint32_t i = 0;
+   int32_t want_bytes;
    bool ok;
 
-   data = hex_to_data (SAMPLE_KMIP, &outlen);
-   parser = kms_kmip_response_parser_new (NULL);
-
-   /* Feed a full response. */
    want_bytes =
       kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
    ASSERT_CMPINT (KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH, ==, want_bytes);
@@ -108,6 +99,20 @@ kms_kmip_response_parser_reuse_test (void)
       want_bytes =
          kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
    }
+}
+
+void
+kms_kmip_response_parser_reuse_test (void)
+{
+   kms_response_parser_t *parser;
+   uint8_t *data;
+   size_t outlen;
+   kms_response_t *res;
+
+   data = hex_to_data (SAMPLE_KMIP, &outlen);
+   parser = kms_kmip_response_parser_new (NULL);
+
+   feed_full_response (parser, data);
    ASSERT_PARSER_OK (parser);
 
    res = kms_response_parser_get_response (parser);
@@ -116,18 +121,7 @@ kms_kmip_response_parser_reuse_test (void)
    kms_response_destroy (res);
 
    /* Feed another full response. */
-   i = 0;
-   want_bytes =
-      kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
-   ASSERT_CMPINT (KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH, ==, want_bytes);
-   while (want_bytes > 0) {
-      ok = kms_response_parser_feed (parser, data + i, want_bytes);
-      ASSERT_PARSER_OK (parser);
-      ASSERT (ok);
-      i += want_bytes;
-      want_bytes =
-         kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
-   }
+   feed_full_response (parser, data);
    ASSERT_PARSER_OK (parser);
 
    res = kms_response_parser_get_response (parser);
@@ -145,22 +139,12 @@ kms_kmip_response_parser_excess_test (void)
    kms_response_parser_t *parser;
    uint8_t *data;
    size_t outlen;
-   int32_t want_bytes;
-   uint32_t i = 0;
    bool ok;
 
    data = hex_to_data (SAMPLE_KMIP, &outlen);
    parser = kms_kmip_response_parser_new (NULL);
 
-   /* Feed a full response. */
-   want_bytes =
-      kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
-   while (want_bytes > 0) {
-      kms_response_parser_feed (parser, data + i, want_bytes);
-      i += want_bytes;
-      want_bytes =
-         kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
-   }
+   feed_full_response (parser, data);
    ASSERT_PARSER_OK (parser);
 
    ok = kms_response_parser_feed (parser, data, 1);
@@ -176,17 +160,12 @@ kms_kmip_response_parser_notenough_test (void)
    kms_response_parser_t *parser;
    uint8_t *data;
    size_t outlen;
-   int32_t want_bytes;
    kms_response_t *res;
    bool ok;
 
    data = hex_to_data (SAMPLE_KMIP, &outlen);
    parser = kms_kmip_response_parser_new (NULL);
 
-   /* Feed a full response. */
-   want_bytes =
-      kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
-   ASSERT_CMPINT (want_bytes, ==, KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH);
    ok = kms_response_parser_feed (
       parser, data, KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH);
    ASSERT_PARSER_OK (parser);
