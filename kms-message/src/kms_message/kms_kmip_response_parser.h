@@ -18,30 +18,9 @@
 #define KMS_KMIP_RESPONSE_PARSER_H
 
 #include "kms_message_defines.h"
-#include "kms_kmip_response.h"
+#include "kms_response_parser.h"
 
-#include <stdbool.h>
-#include <stdint.h>
-
-typedef struct _kms_kmip_response_parser_t kms_kmip_response_parser_t;
-
-KMS_MSG_EXPORT(kms_kmip_response_parser_t *)
-kms_kmip_response_parser_new (void);
-
-KMS_MSG_EXPORT(int32_t)
-kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser, int32_t max);
-
-KMS_MSG_EXPORT(bool)
-kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser, uint8_t *buf, uint32_t len, kms_status_t *status);
-
-KMS_MSG_EXPORT(kms_response_t *)
-kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser, kms_status_t *status);
-
-KMS_MSG_EXPORT(void)
-kms_kmip_response_parser_destroy (kms_kmip_response_parser_t *parser);
-
-// Begin desired API
-// KMS_MSG_EXPORT(kms_response_parser_t *) kms_kmip_response_parser_new (void* reserved);
-// End desired API
+KMS_MSG_EXPORT(kms_response_parser_t *)
+kms_kmip_response_parser_new (void * reserved);
 
 #endif /* KMS_KMIP_RESPONSE_PARSER_H */

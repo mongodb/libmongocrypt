@@ -25,6 +25,8 @@ struct _kms_kmip_response_parser_t {
    uint32_t first_len;
    uint32_t bytes_fed;
    kms_request_str_t *buf;
+   bool failed;
+   char error[512];
 };
 
 /* FIRST_LENGTH is the number of bytes needed to determine the length of the remaining message. */
@@ -32,13 +34,14 @@ struct _kms_kmip_response_parser_t {
 /* FIRST_LENGTH_OFFSET is the offset of the first four byte length. */
 #define FIRST_LENGTH_OFFSET 4
 
-kms_kmip_response_parser_t *
-kms_kmip_response_parser_new (void)
+kms_response_parser_t *
+kms_kmip_response_parser_new (void *reserved)
 {
-   kms_kmip_response_parser_t *parser;
+   kms_response_parser_t *parser = kms_response_parser_new ();
+   
 
-   parser = calloc (1, sizeof (kms_kmip_response_parser_t));
-   parser->buf = kms_request_str_new ();
+   parser->kmip = calloc (1, sizeof (kms_kmip_response_parser_t));
+   parser->kmip->buf = kms_request_str_new ();
    return parser;
 }
 
@@ -61,8 +64,7 @@ kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser,
 bool
 kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
                                uint8_t *buf,
-                               uint32_t len,
-                               kms_status_t *status)
+                               uint32_t len)
 {
    kms_request_str_append_chars (parser->buf, (char*) buf, len);
    parser->bytes_fed += len;
@@ -76,13 +78,12 @@ kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
 }
 
 kms_response_t *
-kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser,
-                                       kms_status_t *status)
+kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser)
 {
    kms_response_t *res;
 
    if (kms_kmip_response_parser_wants_bytes (parser, 1) != 0) {
-      kms_status_errorf (status, "KMIP parser does not have complete message");
+      KMS_ERROR (parser, "KMIP parser does not have complete message");
       return NULL;
    }
 
@@ -92,6 +93,12 @@ kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser,
    memcpy (res->kmip.data, parser->buf->str, parser->buf->len);
    res->kmip.len = parser->buf->len;
    return res;
+}
+
+const char *
+kms_kmip_response_parser_error (kms_kmip_response_parser_t *parser)
+{
+   return parser->failed ? parser->error : NULL;
 }
 
 void

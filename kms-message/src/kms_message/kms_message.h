@@ -21,6 +21,8 @@
 
 #include "kms_message_defines.h"
 #include "kms_kmip_request.h"
+#include "kms_kmip_response.h"
+#include "kms_kmip_response_parser.h"
 #include "kms_request_opt.h"
 #include "kms_request.h"
 #include "kms_response.h"

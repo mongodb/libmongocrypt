@@ -1,5 +1,6 @@
 #include "kms_message/kms_response_parser.h"
 #include "kms_message_private.h"
+#include "kms_kmip_response_parser_private.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -17,6 +18,7 @@ _parser_destroy (kms_response_parser_t *parser)
    parser->content_length = -1;
    kms_response_destroy (parser->response);
    parser->response = NULL;
+   kms_kmip_response_parser_destroy (parser->kmip);
 }
 
 /* initializes the members of parser. */
@@ -33,6 +35,7 @@ _parser_init (kms_response_parser_t *parser)
    parser->failed = false;
    parser->chunk_size = 0;
    parser->transfer_encoding_chunked = false;
+   parser->kmip = NULL;
 }
 
 kms_response_parser_t *
@@ -48,6 +51,9 @@ kms_response_parser_new (void)
 int
 kms_response_parser_wants_bytes (kms_response_parser_t *parser, int32_t max)
 {
+   if (parser->kmip) {
+      return kms_kmip_response_parser_wants_bytes (parser->kmip, max);
+   }
    switch (parser->state) {
    case PARSING_DONE:
       return 0;
@@ -259,6 +265,10 @@ kms_response_parser_feed (kms_response_parser_t *parser,
    kms_request_str_t *raw = parser->raw_response;
    int curr, body_read, chunk_read;
 
+   if (parser->kmip) {
+      return kms_kmip_response_parser_feed (parser->kmip, buf, len);
+   }
+
    curr = (int) raw->len;
    kms_request_str_append_chars (raw, (char *) buf, len);
    /* process the new data appended. */
@@ -336,7 +346,13 @@ kms_response_parser_feed (kms_response_parser_t *parser,
 kms_response_t *
 kms_response_parser_get_response (kms_response_parser_t *parser)
 {
-   kms_response_t *response = parser->response;
+   kms_response_t *response;
+
+   if (parser->kmip) {
+      return kms_kmip_response_parser_get_response (parser->kmip);
+   }
+   
+   response = parser->response;
 
    parser->response = NULL;
    /* reset the parser. */
@@ -348,7 +364,16 @@ kms_response_parser_get_response (kms_response_parser_t *parser)
 int
 kms_response_parser_status (kms_response_parser_t *parser)
 {
-   if (!parser || !(parser->response)) {
+   if (!parser) {
+      return 0;
+   }
+   
+   if (parser->kmip) {
+      KMS_ERROR (parser, "kms_response_parser_status not applicable to KMIP");
+      return 0;
+   }
+   
+   if (!parser->response) {
       return 0;
    }
 
@@ -360,6 +385,10 @@ kms_response_parser_error (kms_response_parser_t *parser)
 {
    if (!parser) {
       return NULL;
+   }
+
+   if (parser->kmip) {
+      return kms_kmip_response_parser_error (parser->kmip);
    }
 
    return parser->error;

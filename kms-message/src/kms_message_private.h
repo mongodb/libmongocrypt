@@ -23,6 +23,7 @@
 #include "kms_request_str.h"
 #include "kms_kv_list.h"
 #include "kms_crypto.h"
+#include "kms_kmip_response_parser_private.h"
 
 struct _kms_request_t {
    char error[512];
@@ -102,6 +103,9 @@ struct _kms_response_parser_t {
    bool transfer_encoding_chunked;
    int chunk_size;
    kms_response_parser_state_t state;
+   /* TODO: MONGOCRYPT-??? reorganize this struct to better separate fields for
+    * HTTP parsing and fields for KMIP parsing. */
+   kms_kmip_response_parser_t *kmip;
 };
 
 #define CHECK_FAILED         \
