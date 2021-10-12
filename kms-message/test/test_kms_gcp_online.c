@@ -90,6 +90,7 @@ gcp_authenticate (void)
    char *bearer_token;
    char *private_key_data;
    size_t private_key_len;
+   kms_response_parser_t *parser;
 
    kms_response_t *res;
    test_env_t test_env;
@@ -115,7 +116,8 @@ gcp_authenticate (void)
    req_str = kms_request_to_string (req);
    TEST_TRACE ("--> HTTP request:\n%s\n", req_str);
 
-   res = send_kms_request (req, "oauth2.googleapis.com");
+   parser = kms_response_parser_new ();
+   res = send_kms_request (req, "oauth2.googleapis.com", NULL /* port */, NULL /* ssl_opt */, parser);
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s\n", res_str);
    ASSERT (kms_response_get_status (res) == 200);
@@ -135,6 +137,7 @@ gcp_authenticate (void)
    bson_destroy (res_bson);
    kms_request_opt_destroy (opt);
    bson_free (private_key_data);
+   kms_response_parser_destroy (parser);
    return bearer_token;
 }
 
@@ -156,6 +159,7 @@ test_gcp (void)
    uint8_t *key_data;
    char *key_data_b64url;
    int i;
+   kms_response_parser_t *parser;
 
 #define KEYLEN 96
 
@@ -188,7 +192,8 @@ test_gcp (void)
    }
    req_str = kms_request_to_string (req);
    TEST_TRACE ("--> HTTP request:\n%s\n", req_str);
-   res = send_kms_request (req, test_env.kms_host);
+   parser = kms_response_parser_new ();
+   res = send_kms_request (req, test_env.kms_host, NULL /* port */, NULL /* ssl_opt */, parser);
 
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
@@ -217,7 +222,7 @@ test_gcp (void)
                                       opt);
    req_str = kms_request_to_string (req);
    TEST_TRACE ("--> HTTP request:\n%s\n", req_str);
-   res = send_kms_request (req, test_env.kms_host);
+   res = send_kms_request (req, test_env.kms_host, NULL /* port */, NULL /* ssl_opt */, parser);
    res_str = kms_response_get_body (res, NULL);
    TEST_TRACE ("<-- HTTP response:\n%s", res_str);
    res_bson =
@@ -237,6 +242,7 @@ test_gcp (void)
    bson_free (key_data);
    bson_free (decrypted);
    kms_request_opt_destroy (opt);
+   kms_response_parser_destroy (parser);
 }
 
 int

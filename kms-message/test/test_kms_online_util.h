@@ -20,6 +20,7 @@
 #include <mongoc/mongoc.h>
 #include "kms_message/kms_request.h"
 #include "kms_message/kms_response.h"
+#include "kms_message/kms_response_parser.h"
 
 /* connect_with_tls creates a TLS stream.
  * port may be NULL. It defaults to "443".
@@ -30,6 +31,10 @@ connect_with_tls (const char *host,
                   mongoc_ssl_opt_t *ssl_opt);
 
 kms_response_t *
-send_kms_request (kms_request_t *req, const char *host);
+send_kms_request (kms_request_t *req,
+                  const char *host,
+                  const char *port,
+                  mongoc_ssl_opt_t *ssl_opt,
+                  kms_response_parser_t *parser);
 
 #endif /* TEST_KMS_ONLINE_UTIL_H */
