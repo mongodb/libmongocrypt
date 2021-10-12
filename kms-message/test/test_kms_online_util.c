@@ -80,52 +80,41 @@ connect_with_tls (const char *host, const char *port, mongoc_ssl_opt_t *ssl_opt)
 
 /* Helper to send an HTTP request and receive a response. */
 kms_response_t *
-send_kms_request (kms_request_t *req,
-                  const char *host,
-                  const char *port,
-                  mongoc_ssl_opt_t *ssl_opt,
-                  kms_response_parser_t *parser)
+send_kms_request (kms_request_t *req, const char *host)
 {
    mongoc_stream_t *tls_stream;
-   const uint8_t *req_data;
-   uint32_t req_len;
+   char *req_str;
    int32_t socket_timeout_ms = 5000;
    ssize_t write_ret;
+   kms_response_parser_t *response_parser;
    int bytes_to_read;
    int bytes_read;
    uint8_t buf[1024];
    kms_response_t *response;
-   bson_error_t error;
 
-   tls_stream = connect_with_tls (host, port, ssl_opt);
-   req_data = kms_request_to_bytes (req, &req_len);
-
-   if (!mongoc_stream_tls_handshake_block (
-          tls_stream, host, socket_timeout_ms, &error)) {
-      TEST_ERROR ("failed to connect to server (%s:%s): %s",
-                  host,
-                  port ? port : "443",
-                  error.message);
-   }
-
+   tls_stream = connect_with_tls (host, NULL, NULL);
+   req_str = kms_request_to_string (req);
 
    write_ret = mongoc_stream_write (
-      tls_stream, (void*) req_data, req_len, socket_timeout_ms);
-   ASSERT_CMPINT ((int) write_ret, ==, (int) req_len);
+      tls_stream, req_str, strlen (req_str), socket_timeout_ms);
+   ASSERT_CMPINT ((int) write_ret, ==, (int) strlen (req_str));
 
+   response_parser = kms_response_parser_new ();
    while ((bytes_to_read =
-              kms_response_parser_wants_bytes (parser, 1024)) > 0) {
+              kms_response_parser_wants_bytes (response_parser, 1024)) > 0) {
       bytes_read = (int) mongoc_stream_read (
          tls_stream, buf, bytes_to_read, 0, socket_timeout_ms);
-      if (!kms_response_parser_feed (parser, buf, bytes_read)) {
+      if (!kms_response_parser_feed (response_parser, buf, bytes_read)) {
          TEST_ERROR ("read failed: %s",
-                     kms_response_parser_error (parser));
+                     kms_response_parser_error (response_parser));
       }
    }
 
-   response = kms_response_parser_get_response (parser);
+   response = kms_response_parser_get_response (response_parser);
    ASSERT (response);
 
+   kms_request_free_string (req_str);
+   kms_response_parser_destroy (response_parser);
    mongoc_stream_destroy (tls_stream);
    return response;
 }
