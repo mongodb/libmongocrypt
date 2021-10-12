@@ -30,7 +30,7 @@ struct _kms_kmip_response_parser_t {
 };
 
 /* FIRST_LENGTH_OFFSET is the offset of the first four byte length. */
-#define FIRST_LENGTH_OFFSET 4
+static const uint32_t FIRST_LENGTH_OFFSET = 4;
 
 /* _parser_destroy destroys the fields of parser, but not the parser itself. */
 static void
