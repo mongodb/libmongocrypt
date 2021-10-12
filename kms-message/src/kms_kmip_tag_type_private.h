@@ -19,7 +19,6 @@
 
 #include "kms_message/kms_message_defines.h"
 
-/* Use an x-macro to generate the enum and strings for each KMIP tag value. */
 #define KMS_XMACRO                                                                          \
    KMS_X (ActivationDate, 0x420001)                                                         \
    KMS_X (ApplicationData, 0x420002)                                                        \
