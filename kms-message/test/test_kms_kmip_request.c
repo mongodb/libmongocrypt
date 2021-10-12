@@ -73,7 +73,7 @@ kms_kmip_request_register_secretdata_test (void)
 {
    kms_request_t *req;
    uint8_t secret_data[] = {REGISTER_SECRETDATA_SECRETDATA};
-   uint8_t *actual_bytes;
+   const uint8_t *actual_bytes;
    uint32_t actual_len;
    uint8_t expected_bytes[] = {REGISTER_SECRETDATA_REQUEST};
    uint32_t expected_len = sizeof (expected_bytes);
@@ -142,7 +142,7 @@ kms_kmip_request_get_test (void)
 {
    kms_request_t *req;
 
-   uint8_t *actual_bytes;
+   const uint8_t *actual_bytes;
    uint32_t actual_len;
    uint8_t expected_bytes[] = {GET_REQUEST};
    uint32_t expected_len = sizeof (expected_bytes);
@@ -198,7 +198,7 @@ kms_kmip_request_activate_test (void)
 {
    kms_request_t *req;
 
-   uint8_t *actual_bytes;
+   const uint8_t *actual_bytes;
    uint32_t actual_len;
    uint8_t expected_bytes[] = {ACTIVATE_REQUEST};
    uint32_t expected_len = sizeof (expected_bytes);

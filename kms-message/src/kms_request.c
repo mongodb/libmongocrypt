@@ -891,7 +891,7 @@ kms_request_free_string (char *ptr)
    free (ptr);
 }
 
-uint8_t *
+const uint8_t *
 kms_request_to_bytes (kms_request_t *request, uint32_t *len)
 {
    if (request->provider != KMS_REQUEST_PROVIDER_KMIP) {

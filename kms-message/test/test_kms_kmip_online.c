@@ -78,7 +78,7 @@ send_kms_kmip_request (kms_request_t *req, test_env_t *test_env)
    mongoc_stream_t *stream;
    mongoc_ssl_opt_t ssl_opt = {0};
    bson_error_t error;
-   uint8_t *message_bytes;
+   const uint8_t *message_bytes;
    uint32_t message_len;
    ssize_t write_ret;
    kms_kmip_response_parser_t *parser;

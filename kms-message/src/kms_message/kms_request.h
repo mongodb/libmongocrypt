@@ -94,7 +94,7 @@ KMS_MSG_EXPORT (char *) kms_request_to_string (kms_request_t *request);
 /* kms_request_to_bytes returns the data for a request.
  * - Only applies to the KMIP provider.
  * - Returns NULL on error and sets an error on request. */
-KMS_MSG_EXPORT (uint8_t *)
+KMS_MSG_EXPORT (const uint8_t *)
 kms_request_to_bytes (kms_request_t *request, uint32_t *len);
 
 #ifdef __cplusplus
