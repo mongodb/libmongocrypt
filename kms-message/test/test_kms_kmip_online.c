@@ -29,6 +29,7 @@
 #include "kms_kmip_response_private.h"
 #include "kms_kmip_reader_writer_private.h"
 #include "test_kms_online_util.h"
+#include "kms_kmip_response_parser_private.h"
 
 #include "test_kms_util.h"
 
@@ -84,7 +85,6 @@ send_kms_kmip_request (kms_request_t *req, test_env_t *test_env)
    int32_t wants_bytes;
    int32_t bytes_read;
    uint8_t buf[BUF_SIZE];
-   kms_status_t *status;
    kms_response_t *res;
    const uint8_t *resbytes;
    uint32_t reslen;
@@ -113,33 +113,29 @@ send_kms_kmip_request (kms_request_t *req, test_env_t *test_env)
    ASSERT (write_ret == message_len);
 
    MONGOC_DEBUG ("reading response from KMIP server");
-   status = kms_status_new ();
 
-   parser = kms_kmip_response_parser_new ();
+   parser = kms_kmip_response_parser_new (NULL)->kmip;
    wants_bytes = kms_kmip_response_parser_wants_bytes (parser, BUF_SIZE);
    while (wants_bytes > 0) {
       bytes_read = (int32_t) mongoc_stream_read (
          stream, buf, wants_bytes, 0, NETWORK_TIMEOUT_MS);
       ASSERT_CMPINT (bytes_read, >=, 0);
-      if (!kms_kmip_response_parser_feed (
-             parser, buf, (uint32_t) bytes_read, status)) {
-         TEST_ERROR ("error parsing response: %s",
-                     kms_status_to_string (status));
+      if (!kms_kmip_response_parser_feed (parser, buf, (uint32_t) bytes_read)) {
+         TEST_ERROR ("error parsing response: %s", kms_kmip_response_parser_error (parser));
       }
       wants_bytes = kms_kmip_response_parser_wants_bytes (parser, BUF_SIZE);
    }
    ASSERT_CMPINT (wants_bytes, ==, 0);
 
-   res = kms_kmip_response_parser_get_response (parser, status);
+   res = kms_kmip_response_parser_get_response (parser);
    if (!res) {
       TEST_ERROR ("error in kms_response_parser_get_response: %s",
-                  kms_status_to_string (status));
+                  kms_kmip_response_parser_error (parser));
    }
 
    kms_kmip_response_parser_destroy (parser);
    mongoc_stream_close (stream);
    mongoc_stream_destroy (stream);
-   kms_status_destroy (status);
 
    resbytes = kms_response_to_bytes (res, &reslen);
    debugstr = data_to_hex (resbytes, reslen);
