@@ -111,7 +111,7 @@ kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser)
 
    res = calloc (1, sizeof (kms_response_t));
    res->provider = KMS_REQUEST_PROVIDER_KMIP;
-   res->kmip.len = parser->buf->len;
+   res->kmip.len = (uint32_t) parser->buf->len;
    res->kmip.data = (uint8_t *) kms_request_str_detach (parser->buf);
    parser->buf = NULL;
 

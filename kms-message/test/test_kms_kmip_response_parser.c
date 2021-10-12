@@ -190,6 +190,7 @@ kms_kmip_response_parser_notenough_test (void)
    ok = kms_response_parser_feed (
       parser, data, KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH);
    ASSERT_PARSER_OK (parser);
+   ASSERT (ok);
 
    res = kms_response_parser_get_response (parser);
    ASSERT_PARSER_ERROR (parser, "KMIP parser does not have complete message");

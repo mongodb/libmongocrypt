@@ -911,6 +911,6 @@ kms_request_to_bytes (kms_request_t *request, uint32_t *len)
    }
 
    KMS_ASSERT (request->to_string);
-   *len = request->to_string->len;
+   *len = (uint32_t) request->to_string->len;
    return (const uint8_t*) request->to_string->str;
 }

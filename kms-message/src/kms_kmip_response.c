@@ -72,7 +72,7 @@ kms_kmip_response_ok (kms_response_t *res) {
             KMS_ERROR (res, "unable to read result message value");
             goto fail;
         }
-        result_message_len = len;
+        result_message_len = (uint32_t) len;
     }
     
     /* Look for required Result Status. */
@@ -265,7 +265,7 @@ kms_kmip_response_get_secretdata (kms_response_t *res,
     }
     secretdata = malloc (len);
     memcpy (secretdata, tmp, len);
-    *secretdatalen = len;
+    *secretdatalen = (uint32_t) len;
 
 fail:
     kmip_reader_destroy (reader);
