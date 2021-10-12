@@ -19,8 +19,6 @@
 
 #include "kms_message/kms_message_defines.h"
 
-/* Use an x-macro to generate the enum and strings for each KMIP item type
- * value. */
 #define KMS_XMACRO           \
    KMS_X (Structure, 0x01)   \
    KMS_X (Integer, 0x02)     \

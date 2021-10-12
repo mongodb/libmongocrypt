@@ -18,8 +18,7 @@
 #define KMS_KMIP_RESULT_REASON_PRIVATE_H
 
 #include "kms_message/kms_message_defines.h"
-/* Use an x-macro to generate the enum and strings for each KMIP item type
- * value. */
+
 #define KMS_XMACRO                                                                             \
    KMS_X (ItemNotFound, "Item Not Found", 0x00000001)                                          \
    KMS_X (ResponseTooLarge, "Response Too Large", 0x00000002)                                  \

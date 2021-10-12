@@ -18,13 +18,12 @@
 #define KMS_KMIP_RESULT_STATUS_PRIVATE_H
 
 #include "kms_message/kms_message_defines.h"
-/* Use an x-macro to generate the enum and strings for each KMIP item type
- * value. */
-#define KMS_XMACRO                                         \
-   KMS_X (OperationSuccess, "Success", 00000000)           \
-   KMS_X (OperationFailed, "Operation Failed", 00000001)   \
-   KMS_X (OperationPending, "Operation Pending", 00000002) \
-   KMS_X_LAST (OperationUndone, "Operation Undone", 00000003)
+
+#define KMS_XMACRO                                           \
+   KMS_X (OperationSuccess, "Success", 0x00000000)           \
+   KMS_X (OperationFailed, "Operation Failed", 0x00000001)   \
+   KMS_X (OperationPending, "Operation Pending", 0x00000002) \
+   KMS_X_LAST (OperationUndone, "Operation Undone", 0x00000003)
 
 /* Generate an enum with each result_status value. */
 #define KMS_X(RESULT_STATUS, STR, VAL) KMIP_RESULT_STATUS_##RESULT_STATUS = VAL,
