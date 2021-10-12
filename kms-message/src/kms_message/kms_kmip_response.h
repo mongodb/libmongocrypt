@@ -25,13 +25,15 @@
 
 /* kms_kmip_response_get_unique_identifier returns the UniqueIdentifier in the
  * first BatchItem in a ResponseMessage.
- * - Returns a NULL terminated string. */
+ * - Returns a NULL terminated string that the caller must free.
+ * - Returns NULL on error and sets an error on kms_response_t. */
 KMS_MSG_EXPORT (char *)
 kms_kmip_response_get_unique_identifier (kms_response_t *res);
 
 /* kms_kmip_response_get_secretdata returns the KeyMaterial in the
  * first BatchItem in a ResponseMessage.
- * - Returns a NULL terminated string. */
+ * - Caller must free returned data.
+ * - Returns NULL on error and sets an error on kms_response_t. */
 KMS_MSG_EXPORT (uint8_t *)
 kms_kmip_response_get_secretdata (kms_response_t *res, uint32_t *secretdatalen);
 
