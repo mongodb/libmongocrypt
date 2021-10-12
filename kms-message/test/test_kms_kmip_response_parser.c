@@ -9,16 +9,16 @@
  * http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html. The
  * data describes "A Structure containing an Enumeration, value 254, followed
  * by an Integer, value 255, having tags 420004 and 420005 respectively." */
-#define SAMPLE_KMIP                                                           \
-   "42 00 20 | 01 | 00 00 00 20 | 42 00 04 | 05 | 00 00 00 04 | 00 00 00 FE " \
-   "00 00 00 00 | 42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00"
+static const char *const SAMPLE_KMIP =
+   "42 00 20 | 01 | 00 00 00 20 | 42 00 04 | 05 | 00 00 00 04 | 00 00 00 FE 00 "
+   "00 00 00 | 42 00 05 | 02 | 00 00 00 04 | 00 00 00 FF 00 00 00 00";
 
 /* SAMPLE_KMIP_FIRST_LENGTH is the length of message after the first tag, type,
  * and length. */
-#define SAMPLE_KMIP_FIRST_LENGTH 32
+static int SAMPLE_KMIP_FIRST_LENGTH = 32;
 
 /* SAMPLE_KMIP_LARGE_LENGTH is a byte size larger than the message. */
-#define SAMPLE_KMIP_LARGE_LENGTH 1024
+static int SAMPLE_KMIP_LARGE_LENGTH = 1024;
 
 void
 kms_kmip_response_parser_test (void)
