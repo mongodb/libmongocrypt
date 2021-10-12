@@ -45,11 +45,10 @@ kms_kmip_response_get_unique_identifier_test (void)
 {
    kms_response_t res = {0};
    char *actual_uid;
+
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
    res.kmip.data = SUCCESS_REGISTER_RESPONSE;
    res.kmip.len = sizeof (SUCCESS_REGISTER_RESPONSE);
-
-   ASSERT_RESPONSE_OK (&res);
 
    actual_uid = kms_kmip_response_get_unique_identifier (&res);
    ASSERT_RESPONSE_OK (&res);
@@ -136,8 +135,6 @@ kms_kmip_response_get_secretdata_test (void)
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
    res.kmip.data = SUCCESS_GET_RESPONSE;
    res.kmip.len = sizeof (SUCCESS_GET_RESPONSE);
-
-   ASSERT_RESPONSE_OK (&res);
 
    actual_secretdata =
       kms_kmip_response_get_secretdata (&res, &actual_secretdata_len);
