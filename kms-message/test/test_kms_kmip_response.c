@@ -2,7 +2,6 @@
 #include "test_kms_util.h"
 
 #include "kms_message/kms_kmip_response.h"
-#include "kms_kmip_response_private.h"
 #include "kms_message_private.h"
 
 
@@ -122,7 +121,6 @@ kms_kmip_response_get_unique_identifier_test (void)
    res.kmip.data = example_response;
    res.kmip.len = sizeof (example_response);
 
-   kms_kmip_response_ok (&res);
    ASSERT_RESPONSE_OK (&res);
 
    actual_uid = kms_kmip_response_get_unique_identifier (&res);
@@ -187,7 +185,6 @@ kms_kmip_response_get_secretdata_test (void)
    res.kmip.data = example_response;
    res.kmip.len = sizeof (example_response);
 
-   kms_kmip_response_ok (&res);
    ASSERT_RESPONSE_OK (&res);
 
    actual_secretdata = kms_kmip_response_get_secretdata (&res, &actual_secretdata_len);

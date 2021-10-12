@@ -16,10 +16,10 @@
 
 #include "kms_message/kms_kmip_response_parser.h"
 
-#include "kms_request_str.h"
 #include "kms_endian_private.h"
-#include "kms_status_private.h"
-#include "kms_kmip_response_private.h"
+#include "kms_kmip_response_parser_private.h"
+#include "kms_message_private.h"
+#include "kms_request_str.h"
 
 struct _kms_kmip_response_parser_t {
    uint32_t first_len;
