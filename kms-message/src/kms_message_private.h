@@ -46,6 +46,7 @@ struct _kms_request_t {
    /* turn off for tests only, not in public kms_request_opt_t API */
    bool auto_content_length;
    _kms_crypto_t crypto;
+   kms_request_str_t *to_string;
    kms_request_provider_t provider;
 
    /* TODO (MONGOCRYPT-342): make a union for each KMS provider type.

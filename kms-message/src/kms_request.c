@@ -149,6 +149,7 @@ kms_request_destroy (kms_request_t *request)
    kms_request_str_destroy (request->date);
    kms_kv_list_destroy (request->query_params);
    kms_kv_list_destroy (request->header_fields);
+   kms_request_str_destroy (request->to_string);
    free (request->kmip.data);
    free (request);
 }
@@ -851,6 +852,11 @@ kms_request_to_string (kms_request_t *request)
       return false;
    }
 
+   if (request->to_string) {
+      sreq = kms_request_str_dup (request->to_string);
+      return kms_request_str_detach (sreq);
+   }
+
    sreq = kms_request_str_new ();
    /* like "POST / HTTP/1.1" */
    kms_request_str_append (sreq, request->method);
@@ -882,6 +888,7 @@ kms_request_to_string (kms_request_t *request)
    }
 
    kms_kv_list_destroy (lst);
+   request->to_string = kms_request_str_dup (sreq);
    return kms_request_str_detach (sreq);
 }
 
@@ -894,11 +901,16 @@ kms_request_free_string (char *ptr)
 const uint8_t *
 kms_request_to_bytes (kms_request_t *request, uint32_t *len)
 {
-   if (request->provider != KMS_REQUEST_PROVIDER_KMIP) {
-      KMS_ERROR (request, "kms_request_to_bytes only applies to KMIP requests");
+   if (request->provider == KMS_REQUEST_PROVIDER_KMIP) {
+      *len = request->kmip.len;
+      return request->kmip.data;
+   }
+
+   if (!request->to_string && !kms_request_to_string (request)) {
       return NULL;
    }
 
-   *len = request->kmip.len;
-   return request->kmip.data;
+   KMS_ASSERT (request->to_string);
+   *len = request->to_string->len;
+   return (const uint8_t*) request->to_string->str;
 }
