@@ -38,7 +38,7 @@ copy_and_filter_hex (const char *unfiltered_hex)
 }
 
 uint8_t *
-hex_to_data (char *unfiltered_hex, size_t *outlen)
+hex_to_data (const char *unfiltered_hex, size_t *outlen)
 {
    char *filtered_hex;
    uint8_t *bytes;
