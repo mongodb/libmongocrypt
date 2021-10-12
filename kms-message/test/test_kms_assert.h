@@ -138,7 +138,7 @@
 #define ASSERT_PARSER_ERROR(parser, expect_substring)              \
    do {                                                            \
       if (!kms_response_parser_error (parser)) {                   \
-         TEST_ERROR ("expected response error but got ok");        \
+         TEST_ERROR ("expected parser error but got ok");          \
       }                                                            \
       const char *_error_str = kms_response_parser_error (parser); \
       ASSERT_CONTAINS (_error_str, expect_substring);              \

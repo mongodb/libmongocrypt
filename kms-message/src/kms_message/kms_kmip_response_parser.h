@@ -20,7 +20,7 @@
 #include "kms_message_defines.h"
 #include "kms_response_parser.h"
 
-KMS_MSG_EXPORT(kms_response_parser_t *)
-kms_kmip_response_parser_new (void * reserved);
+KMS_MSG_EXPORT (kms_response_parser_t *)
+kms_kmip_response_parser_new (void *reserved);
 
 #endif /* KMS_KMIP_RESPONSE_PARSER_H */
