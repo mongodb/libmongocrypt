@@ -1,6 +1,8 @@
 #include "kms_message/kms_kmip_response.h"
 #include "kms_kmip_reader_writer_private.h"
 #include "kms_message_private.h"
+#include "kms_kmip_result_reason_private.h"
+#include "kms_kmip_result_status_private.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
@@ -11,18 +13,6 @@ static bool check_and_require_kmip (kms_response_t *res) {
       return false;
    }
    return true;
-}
-
-const char* kmip_tag_to_string (kmip_tag_type_t tag) {
-    return "TODO";
-}
-
-const char* kmip_result_reason_to_string (uint32_t result_reason) {
-    return "TODO";
-}
-
-const char* kmip_result_status_to_string (uint32_t result_status) {
-    return "TODO";
 }
 
 /*
@@ -46,7 +36,6 @@ Example of an error message:
 */
 static bool
 kms_kmip_response_ok (kms_response_t *res) {
-#define RESULT_STATUS_SUCCESS 0
 
     kmip_reader_t *reader = NULL;
     size_t pos;
@@ -60,12 +49,12 @@ kms_kmip_response_ok (kms_response_t *res) {
     reader = kmip_reader_new (res->kmip.data, res->kmip.len);
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
-        KMS_ERROR (res, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
-        KMS_ERROR (res, "unable to find tag2: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
 
@@ -88,7 +77,7 @@ kms_kmip_response_ok (kms_response_t *res) {
     
     /* Look for required Result Status. */
     if (!kmip_reader_find (reader, KMIP_TAG_ResultStatus, KMIP_ITEM_TYPE_Enumeration, &pos, &len)) {
-        KMS_ERROR (res, "unable to find tag3: %s", kmip_tag_to_string (KMIP_TAG_ResultStatus));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResultStatus));
         goto fail;
     }
     
@@ -97,7 +86,7 @@ kms_kmip_response_ok (kms_response_t *res) {
         goto fail;
     }
 
-    if (result_status != RESULT_STATUS_SUCCESS) {
+    if (result_status != KMIP_RESULT_STATUS_OperationSuccess) {
        KMS_ERROR (res,
                           "KMIP response error. Result Status (%" PRIu32
                           "): %s. Result Reason (%" PRIu32
@@ -115,7 +104,6 @@ kms_kmip_response_ok (kms_response_t *res) {
 fail:
     kmip_reader_destroy (reader);
     return ok;
-#undef RESULT_STATUS_SUCCESS
 }
 
 /* 
@@ -157,19 +145,19 @@ kms_kmip_response_get_unique_identifier (kms_response_t *res)
 
     reader = kmip_reader_new (res->kmip.data, res->kmip.len);
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
-        KMS_ERROR (res, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
-        KMS_ERROR (res, "unable to find tag2: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponsePayload)) {
-        KMS_ERROR (res, "unable to find tag3: %s", kmip_tag_to_string (KMIP_TAG_ResponsePayload));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponsePayload));
         goto fail;
     }
     if (!kmip_reader_find (reader, KMIP_TAG_UniqueIdentifier, KMIP_ITEM_TYPE_TextString, &pos, &len)) {
-        KMS_ERROR (res, "unable to find tag4: %s", kmip_tag_to_string (KMIP_TAG_UniqueIdentifier));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_UniqueIdentifier));
         goto fail;
     }
 
@@ -237,37 +225,37 @@ kms_kmip_response_get_secretdata (kms_response_t *res,
     reader = kmip_reader_new (res->kmip.data, res->kmip.len);
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
-        KMS_ERROR (res, "unable to find tag1: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
-        KMS_ERROR (res, "unable to find tag2: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponseMessage));
         goto fail;
     }
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponsePayload)) {
-        KMS_ERROR (res, "unable to find tag3: %s", kmip_tag_to_string (KMIP_TAG_ResponsePayload));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_ResponsePayload));
         goto fail;
     }
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_SecretData)) {
-        KMS_ERROR (res, "unable to find tag4: %s", kmip_tag_to_string (KMIP_TAG_SecretData));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_SecretData));
         goto fail;
     }
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_KeyBlock)) {
-        KMS_ERROR (res, "unable to find tag5: %s", kmip_tag_to_string (KMIP_TAG_KeyBlock));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_KeyBlock));
         goto fail;
     }
     
     if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_KeyValue)) {
-        KMS_ERROR (res, "unable to find tag6: %s", kmip_tag_to_string (KMIP_TAG_KeyValue));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_KeyValue));
         goto fail;
     }
 
     if (!kmip_reader_find (reader, KMIP_TAG_KeyMaterial, KMIP_ITEM_TYPE_ByteString, &pos, &len)) {
-        KMS_ERROR (res, "unable to find tag7: %s", kmip_tag_to_string (KMIP_TAG_KeyMaterial));
+        KMS_ERROR (res, "unable to find tag: %s", kmip_tag_to_string (KMIP_TAG_KeyMaterial));
         goto fail;
     }
 

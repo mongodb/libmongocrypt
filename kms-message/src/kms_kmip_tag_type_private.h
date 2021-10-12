@@ -17,303 +17,326 @@
 #ifndef KMS_KMIP_TAG_TYPE_PRIVATE_H
 #define KMS_KMIP_TAG_TYPE_PRIVATE_H
 
-typedef enum {
-   KMIP_TAG_ActivationDate = 0x420001,
-   KMIP_TAG_ApplicationData = 0x420002,
-   KMIP_TAG_ApplicationNamespace = 0x420003,
-   KMIP_TAG_ApplicationSpecificInformation = 0x420004,
-   KMIP_TAG_ArchiveDate = 0x420005,
-   KMIP_TAG_AsynchronousCorrelationValue = 0x420006,
-   KMIP_TAG_AsynchronousIndicator = 0x420007,
-   KMIP_TAG_Attribute = 0x420008,
-   KMIP_TAG_AttributeIndex = 0x420009,
-   KMIP_TAG_AttributeName = 0x42000A,
-   KMIP_TAG_AttributeValue = 0x42000B,
-   KMIP_TAG_Authentication = 0x42000C,
-   KMIP_TAG_BatchCount = 0x42000D,
-   KMIP_TAG_BatchErrorContinuationOption = 0x42000E,
-   KMIP_TAG_BatchItem = 0x42000F,
-   KMIP_TAG_BatchOrderOption = 0x420010,
-   KMIP_TAG_BlockCipherMode = 0x420011,
-   KMIP_TAG_CancellationResult = 0x420012,
-   KMIP_TAG_Certificate = 0x420013,
-   KMIP_TAG_CertificateIdentifier = 0x420014, /* deprecated as of version 1.1 */
-   KMIP_TAG_CertificateIssuer = 0x420015,     /* deprecated as of version 1.1 */
-   KMIP_TAG_CertificateIssuerAlternativeName =
-      0x420016, /* deprecated as of version 1.1 */
-   KMIP_TAG_CertificateIssuerDistinguishedName =
-      0x420017, /* deprecated as of version 1.1 */
-   KMIP_TAG_CertificateRequest = 0x420018,
-   KMIP_TAG_CertificateRequestType = 0x420019,
-   KMIP_TAG_CertificateSubject = 0x42001A, /* deprecated as of version 1.1 */
-   KMIP_TAG_CertificateSubjectAlternativeName =
-      0x42001B, /* deprecated as of version 1.1 */
-   KMIP_TAG_CertificateSubjectDistinguishedName =
-      0x42001C, /* deprecated as of version 1.1 */
-   KMIP_TAG_CertificateType = 0x42001D,
-   KMIP_TAG_CertificateValue = 0x42001E,
-   KMIP_TAG_CommonTemplateAttribute = 0x42001F,
-   KMIP_TAG_CompromiseDate = 0x420020,
-   KMIP_TAG_CompromiseOccurrenceDate = 0x420021,
-   KMIP_TAG_ContactInformation = 0x420022,
-   KMIP_TAG_Credential = 0x420023,
-   KMIP_TAG_CredentialType = 0x420024,
-   KMIP_TAG_CredentialValue = 0x420025,
-   KMIP_TAG_CriticalityIndicator = 0x420026,
-   KMIP_TAG_CRTCoefficient = 0x420027,
-   KMIP_TAG_CryptographicAlgorithm = 0x420028,
-   KMIP_TAG_CryptographicDomainParameters = 0x420029,
-   KMIP_TAG_CryptographicLength = 0x42002A,
-   KMIP_TAG_CryptographicParameters = 0x42002B,
-   KMIP_TAG_CryptographicUsageMask = 0x42002C,
-   KMIP_TAG_CustomAttribute = 0x42002D,
-   KMIP_TAG_D = 0x42002E,
-   KMIP_TAG_DeactivationDate = 0x42002F,
-   KMIP_TAG_DerivationData = 0x420030,
-   KMIP_TAG_DerivationMethod = 0x420031,
-   KMIP_TAG_DerivationParameters = 0x420032,
-   KMIP_TAG_DestroyDate = 0x420033,
-   KMIP_TAG_Digest = 0x420034,
-   KMIP_TAG_DigestValue = 0x420035,
-   KMIP_TAG_EncryptionKeyInformation = 0x420036,
-   KMIP_TAG_G = 0x420037,
-   KMIP_TAG_HashingAlgorithm = 0x420038,
-   KMIP_TAG_InitialDate = 0x420039,
-   KMIP_TAG_InitializationVector = 0x42003A,
-   KMIP_TAG_Issuer = 0x42003B, /* deprecated as of version 1.1 */
-   KMIP_TAG_IterationCount = 0x42003C,
-   KMIP_TAG_IVCounterNonce = 0x42003D,
-   KMIP_TAG_J = 0x42003E,
-   KMIP_TAG_Key = 0x42003F,
-   KMIP_TAG_KeyBlock = 0x420040,
-   KMIP_TAG_KeyCompressionType = 0x420041,
-   KMIP_TAG_KeyFormatType = 0x420042,
-   KMIP_TAG_KeyMaterial = 0x420043,
-   KMIP_TAG_KeyPartIdentifier = 0x420044,
-   KMIP_TAG_KeyValue = 0x420045,
-   KMIP_TAG_KeyWrappingData = 0x420046,
-   KMIP_TAG_KeyWrappingSpecification = 0x420047,
-   KMIP_TAG_LastChangeDate = 0x420048,
-   KMIP_TAG_LeaseTime = 0x420049,
-   KMIP_TAG_Link = 0x42004A,
-   KMIP_TAG_LinkType = 0x42004B,
-   KMIP_TAG_LinkedObjectIdentifier = 0x42004C,
-   KMIP_TAG_MACSignature = 0x42004D,
-   KMIP_TAG_MACSignatureKeyInformation = 0x42004E,
-   KMIP_TAG_MaximumItems = 0x42004F,
-   KMIP_TAG_MaximumResponseSize = 0x420050,
-   KMIP_TAG_MessageExtension = 0x420051,
-   KMIP_TAG_Modulus = 0x420052,
-   KMIP_TAG_Name = 0x420053,
-   KMIP_TAG_NameType = 0x420054,
-   KMIP_TAG_NameValue = 0x420055,
-   KMIP_TAG_ObjectGroup = 0x420056,
-   KMIP_TAG_ObjectType = 0x420057,
-   KMIP_TAG_Offset = 0x420058,
-   KMIP_TAG_OpaqueDataType = 0x420059,
-   KMIP_TAG_OpaqueDataValue = 0x42005A,
-   KMIP_TAG_OpaqueObject = 0x42005B,
-   KMIP_TAG_Operation = 0x42005C,
-   KMIP_TAG_OperationPolicyName = 0x42005D, /* deprecated */
-   KMIP_TAG_P = 0x42005E,
-   KMIP_TAG_PaddingMethod = 0x42005F,
-   KMIP_TAG_PrimeExponentP = 0x420060,
-   KMIP_TAG_PrimeExponentQ = 0x420061,
-   KMIP_TAG_PrimeFieldSize = 0x420062,
-   KMIP_TAG_PrivateExponent = 0x420063,
-   KMIP_TAG_PrivateKey = 0x420064,
-   KMIP_TAG_PrivateKeyTemplateAttribute = 0x420065,
-   KMIP_TAG_PrivateKeyUniqueIdentifier = 0x420066,
-   KMIP_TAG_ProcessStartDate = 0x420067,
-   KMIP_TAG_ProtectStopDate = 0x420068,
-   KMIP_TAG_ProtocolVersion = 0x420069,
-   KMIP_TAG_ProtocolVersionMajor = 0x42006A,
-   KMIP_TAG_ProtocolVersionMinor = 0x42006B,
-   KMIP_TAG_PublicExponent = 0x42006C,
-   KMIP_TAG_PublicKey = 0x42006D,
-   KMIP_TAG_PublicKeyTemplateAttribute = 0x42006E,
-   KMIP_TAG_PublicKeyUniqueIdentifier = 0x42006F,
-   KMIP_TAG_PutFunction = 0x420070,
-   KMIP_TAG_Q = 0x420071,
-   KMIP_TAG_QString = 0x420072,
-   KMIP_TAG_Qlength = 0x420073,
-   KMIP_TAG_QueryFunction = 0x420074,
-   KMIP_TAG_RecommendedCurve = 0x420075,
-   KMIP_TAG_ReplacedUniqueIdentifier = 0x420076,
-   KMIP_TAG_RequestHeader = 0x420077,
-   KMIP_TAG_RequestMessage = 0x420078,
-   KMIP_TAG_RequestPayload = 0x420079,
-   KMIP_TAG_ResponseHeader = 0x42007A,
-   KMIP_TAG_ResponseMessage = 0x42007B,
-   KMIP_TAG_ResponsePayload = 0x42007C,
-   KMIP_TAG_ResultMessage = 0x42007D,
-   KMIP_TAG_ResultReason = 0x42007E,
-   KMIP_TAG_ResultStatus = 0x42007F,
-   KMIP_TAG_RevocationMessage = 0x420080,
-   KMIP_TAG_RevocationReason = 0x420081,
-   KMIP_TAG_RevocationReasonCode = 0x420082,
-   KMIP_TAG_KeyRoleType = 0x420083,
-   KMIP_TAG_Salt = 0x420084,
-   KMIP_TAG_SecretData = 0x420085,
-   KMIP_TAG_SecretDataType = 0x420086,
-   KMIP_TAG_SerialNumber = 0x420087, /* deprecated as of version 1.1 */
-   KMIP_TAG_ServerInformation = 0x420088,
-   KMIP_TAG_SplitKey = 0x420089,
-   KMIP_TAG_SplitKeyMethod = 0x42008A,
-   KMIP_TAG_SplitKeyParts = 0x42008B,
-   KMIP_TAG_SplitKeyThreshold = 0x42008C,
-   KMIP_TAG_State = 0x42008D,
-   KMIP_TAG_StorageStatusMask = 0x42008E,
-   KMIP_TAG_SymmetricKey = 0x42008F,
-   KMIP_TAG_Template = 0x420090,
-   KMIP_TAG_TemplateAttribute = 0x420091,
-   KMIP_TAG_TimeStamp = 0x420092,
-   KMIP_TAG_UniqueBatchItemID = 0x420093,
-   KMIP_TAG_UniqueIdentifier = 0x420094,
-   KMIP_TAG_UsageLimits = 0x420095,
-   KMIP_TAG_UsageLimitsCount = 0x420096,
-   KMIP_TAG_UsageLimitsTotal = 0x420097,
-   KMIP_TAG_UsageLimitsUnit = 0x420098,
-   KMIP_TAG_Username = 0x420099,
-   KMIP_TAG_ValidityDate = 0x42009A,
-   KMIP_TAG_ValidityIndicator = 0x42009B,
-   KMIP_TAG_VendorExtension = 0x42009C,
-   KMIP_TAG_VendorIdentification = 0x42009D,
-   KMIP_TAG_WrappingMethod = 0x42009E,
-   KMIP_TAG_X = 0x42009F,
-   KMIP_TAG_Y = 0x4200A0,
-   KMIP_TAG_Password = 0x4200A1,
-   KMIP_TAG_DeviceIdentifier = 0x4200A2,
-   KMIP_TAG_EncodingOption = 0x4200A3,
-   KMIP_TAG_ExtensionInformation = 0x4200A4,
-   KMIP_TAG_ExtensionName = 0x4200A5,
-   KMIP_TAG_ExtensionTag = 0x4200A6,
-   KMIP_TAG_ExtensionType = 0x4200A7,
-   KMIP_TAG_Fresh = 0x4200A8,
-   KMIP_TAG_MachineIdentifier = 0x4200A9,
-   KMIP_TAG_MediaIdentifier = 0x4200AA,
-   KMIP_TAG_NetworkIdentifier = 0x4200AB,
-   KMIP_TAG_ObjectGroupMember = 0x4200AC,
-   KMIP_TAG_CertificateLength = 0x4200AD,
-   KMIP_TAG_DigitalSignatureAlgorithm = 0x4200AE,
-   KMIP_TAG_CertificateSerialNumber = 0x4200AF,
-   KMIP_TAG_DeviceSerialNumber = 0x4200B0,
-   KMIP_TAG_IssuerAlternativeName = 0x4200B1,
-   KMIP_TAG_IssuerDistinguishedName = 0x4200B2,
-   KMIP_TAG_SubjectAlternativeName = 0x4200B3,
-   KMIP_TAG_SubjectDistinguishedName = 0x4200B4,
-   KMIP_TAG_X509CertificateIdentifier = 0x4200B5,
-   KMIP_TAG_X509CertificateIssuer = 0x4200B6,
-   KMIP_TAG_X509CertificateSubject = 0x4200B7,
-   KMIP_TAG_KeyValueLocation = 0x4200B8,
-   KMIP_TAG_KeyValueLocationValue = 0x4200B9,
-   KMIP_TAG_KeyValueLocationType = 0x4200BA,
-   KMIP_TAG_KeyValuePresent = 0x4200BB,
-   KMIP_TAG_OriginalCreationDate = 0x4200BC,
-   KMIP_TAG_PGPKey = 0x4200BD,
-   KMIP_TAG_PGPKeyVersion = 0x4200BE,
-   KMIP_TAG_AlternativeName = 0x4200BF,
-   KMIP_TAG_AlternativeNameValue = 0x4200C0,
-   KMIP_TAG_AlternativeNameType = 0x4200C1,
-   KMIP_TAG_Data = 0x4200C2,
-   KMIP_TAG_SignatureData = 0x4200C3,
-   KMIP_TAG_DataLength = 0x4200C4,
-   KMIP_TAG_RandomIV = 0x4200C5,
-   KMIP_TAG_MACData = 0x4200C6,
-   KMIP_TAG_AttestationType = 0x4200C7,
-   KMIP_TAG_Nonce = 0x4200C8,
-   KMIP_TAG_NonceID = 0x4200C9,
-   KMIP_TAG_NonceValue = 0x4200CA,
-   KMIP_TAG_AttestationMeasurement = 0x4200CB,
-   KMIP_TAG_AttestationAssertion = 0x4200CC,
-   KMIP_TAG_IVLength = 0x4200CD,
-   KMIP_TAG_TagLength = 0x4200CE,
-   KMIP_TAG_FixedFieldLength = 0x4200CF,
-   KMIP_TAG_CounterLength = 0x4200D0,
-   KMIP_TAG_InitialCounterValue = 0x4200D1,
-   KMIP_TAG_InvocationFieldLength = 0x4200D2,
-   KMIP_TAG_AttestationCapableIndicator = 0x4200D3,
-   KMIP_TAG_OffsetItems = 0x4200D4,
-   KMIP_TAG_LocatedItems = 0x4200D5,
-   KMIP_TAG_CorrelationValue = 0x4200D6,
-   KMIP_TAG_InitIndicator = 0x4200D7,
-   KMIP_TAG_FinalIndicator = 0x4200D8,
-   KMIP_TAG_RNGParameters = 0x4200D9,
-   KMIP_TAG_RNGAlgorithm = 0x4200DA,
-   KMIP_TAG_DRBGAlgorithm = 0x4200DB,
-   KMIP_TAG_FIPS186Variation = 0x4200DC,
-   KMIP_TAG_PredictionResistance = 0x4200DD,
-   KMIP_TAG_RandomNumberGenerator = 0x4200DE,
-   KMIP_TAG_ValidationInformation = 0x4200DF,
-   KMIP_TAG_ValidationAuthorityType = 0x4200E0,
-   KMIP_TAG_ValidationAuthorityCountry = 0x4200E1,
-   KMIP_TAG_ValidationAuthorityURI = 0x4200E2,
-   KMIP_TAG_ValidationVersionMajor = 0x4200E3,
-   KMIP_TAG_ValidationVersionMinor = 0x4200E4,
-   KMIP_TAG_ValidationType = 0x4200E5,
-   KMIP_TAG_ValidationLevel = 0x4200E6,
-   KMIP_TAG_ValidationCertificateIdentifier = 0x4200E7,
-   KMIP_TAG_ValidationCertificateURI = 0x4200E8,
-   KMIP_TAG_ValidationVendorURI = 0x4200E9,
-   KMIP_TAG_ValidationProfile = 0x4200EA,
-   KMIP_TAG_ProfileInformation = 0x4200EB,
-   KMIP_TAG_ProfileName = 0x4200EC,
-   KMIP_TAG_ServerURI = 0x4200ED,
-   KMIP_TAG_ServerPort = 0x4200EE,
-   KMIP_TAG_StreamingCapability = 0x4200EF,
-   KMIP_TAG_AsynchronousCapability = 0x4200F0,
-   KMIP_TAG_AttestationCapability = 0x4200F1,
-   KMIP_TAG_UnwrapMode = 0x4200F2,
-   KMIP_TAG_DestroyAction = 0x4200F3,
-   KMIP_TAG_ShreddingAlgorithm = 0x4200F4,
-   KMIP_TAG_RNGMode = 0x4200F5,
-   KMIP_TAG_ClientRegistrationMethod = 0x4200F6,
-   KMIP_TAG_CapabilityInformation = 0x4200F7,
-   KMIP_TAG_KeyWrapType = 0x4200F8,
-   KMIP_TAG_BatchUndoCapability = 0x4200F9,
-   KMIP_TAG_BatchContinueCapability = 0x4200FA,
-   KMIP_TAG_PKCS12FriendlyName = 0x4200FB,
-   KMIP_TAG_Description = 0x4200FC,
-   KMIP_TAG_Comment = 0x4200FD,
-   KMIP_TAG_AuthenticatedEncryptionAdditionalData = 0x4200FE,
-   KMIP_TAG_AuthenticatedEncryptionTag = 0x4200FF,
-   KMIP_TAG_SaltLength = 0x420100,
-   KMIP_TAG_MaskGenerator = 0x420101,
-   KMIP_TAG_MaskGeneratorHashingAlgorithm = 0x420102,
-   KMIP_TAG_PSource = 0x420103,
-   KMIP_TAG_TrailerField = 0x420104,
-   KMIP_TAG_ClientCorrelationValue = 0x420105,
-   KMIP_TAG_ServerCorrelationValue = 0x420106,
-   KMIP_TAG_DigestedData = 0x420107,
-   KMIP_TAG_CertificateSubjectCN = 0x420108,
-   KMIP_TAG_CertificateSubjectO = 0x420109,
-   KMIP_TAG_CertificateSubjectOU = 0x42010A,
-   KMIP_TAG_CertificateSubjectEmail = 0x42010B,
-   KMIP_TAG_CertificateSubjectC = 0x42010C,
-   KMIP_TAG_CertificateSubjectST = 0x42010D,
-   KMIP_TAG_CertificateSubjectL = 0x42010E,
-   KMIP_TAG_CertificateSubjectUID = 0x42010F,
-   KMIP_TAG_CertificateSubjectSerialNumber = 0x420110,
-   KMIP_TAG_CertificateSubjectTitle = 0x420111,
-   KMIP_TAG_CertificateSubjectDC = 0x420112,
-   KMIP_TAG_CertificateSubjectDNQualifier = 0x420113,
-   KMIP_TAG_CertificateIssuerCN = 0x420114,
-   KMIP_TAG_CertificateIssuerO = 0x420115,
-   KMIP_TAG_CertificateIssuerOU = 0x420116,
-   KMIP_TAG_CertificateIssuerEmail = 0x420117,
-   KMIP_TAG_CertificateIssuerC = 0x420118,
-   KMIP_TAG_CertificateIssuerST = 0x420119,
-   KMIP_TAG_CertificateIssuerL = 0x42011A,
-   KMIP_TAG_CertificateIssuerUID = 0x42011B,
-   KMIP_TAG_CertificateIssuerSerialNumber = 0x42011C,
-   KMIP_TAG_CertificateIssuerTitle = 0x42011D,
-   KMIP_TAG_CertificateIssuerDC = 0x42011E,
-   KMIP_TAG_CertificateIssuerDNQualifier = 0x42011F,
-   KMIP_TAG_Sensitive = 0x420120,
-   KMIP_TAG_AlwaysSensitive = 0x420121,
-   KMIP_TAG_Extractable = 0x420122,
-   KMIP_TAG_NeverExtractable = 0x420123,
-   KMIP_TAG_ReplaceExisting = 0x420124
-} kmip_tag_type_t;
+#include "kms_message/kms_message_defines.h"
+
+/* Use an x-macro to generate the enum and strings for each KMIP tag value. */
+#define KMS_XMACRO                                                                          \
+   KMS_X (ActivationDate, 0x420001)                                                         \
+   KMS_X (ApplicationData, 0x420002)                                                        \
+   KMS_X (ApplicationNamespace, 0x420003)                                                   \
+   KMS_X (ApplicationSpecificInformation, 0x420004)                                         \
+   KMS_X (ArchiveDate, 0x420005)                                                            \
+   KMS_X (AsynchronousCorrelationValue, 0x420006)                                           \
+   KMS_X (AsynchronousIndicator, 0x420007)                                                  \
+   KMS_X (Attribute, 0x420008)                                                              \
+   KMS_X (AttributeIndex, 0x420009)                                                         \
+   KMS_X (AttributeName, 0x42000A)                                                          \
+   KMS_X (AttributeValue, 0x42000B)                                                         \
+   KMS_X (Authentication, 0x42000C)                                                         \
+   KMS_X (BatchCount, 0x42000D)                                                             \
+   KMS_X (BatchErrorContinuationOption, 0x42000E)                                           \
+   KMS_X (BatchItem, 0x42000F)                                                              \
+   KMS_X (BatchOrderOption, 0x420010)                                                       \
+   KMS_X (BlockCipherMode, 0x420011)                                                        \
+   KMS_X (CancellationResult, 0x420012)                                                     \
+   KMS_X (Certificate, 0x420013)                                                            \
+   KMS_X (CertificateIdentifier, 0x420014)              /* deprecated as of version 1.1 */  \
+   KMS_X (CertificateIssuer, 0x420015)                  /* deprecated as of version 1.1 */  \
+   KMS_X (CertificateIssuerAlternativeName, 0x420016)   /* deprecated as of version 1.1 */  \
+   KMS_X (CertificateIssuerDistinguishedName, 0x420017) /* deprecated as of version 1.1 */  \
+   KMS_X (CertificateRequest, 0x420018)                                                     \
+   KMS_X (CertificateRequestType, 0x420019)                                                 \
+   KMS_X (CertificateSubject, 0x42001A)                  /* deprecated as of version 1.1 */ \
+   KMS_X (CertificateSubjectAlternativeName, 0x42001B)   /* deprecated as of version 1.1 */ \
+   KMS_X (CertificateSubjectDistinguishedName, 0x42001C) /* deprecated as of version 1.1 */ \
+   KMS_X (CertificateType, 0x42001D)                                                        \
+   KMS_X (CertificateValue, 0x42001E)                                                       \
+   KMS_X (CommonTemplateAttribute, 0x42001F)                                                \
+   KMS_X (CompromiseDate, 0x420020)                                                         \
+   KMS_X (CompromiseOccurrenceDate, 0x420021)                                               \
+   KMS_X (ContactInformation, 0x420022)                                                     \
+   KMS_X (Credential, 0x420023)                                                             \
+   KMS_X (CredentialType, 0x420024)                                                         \
+   KMS_X (CredentialValue, 0x420025)                                                        \
+   KMS_X (CriticalityIndicator, 0x420026)                                                   \
+   KMS_X (CRTCoefficient, 0x420027)                                                         \
+   KMS_X (CryptographicAlgorithm, 0x420028)                                                 \
+   KMS_X (CryptographicDomainParameters, 0x420029)                                          \
+   KMS_X (CryptographicLength, 0x42002A)                                                    \
+   KMS_X (CryptographicParameters, 0x42002B)                                                \
+   KMS_X (CryptographicUsageMask, 0x42002C)                                                 \
+   KMS_X (CustomAttribute, 0x42002D)                                                        \
+   KMS_X (D, 0x42002E)                                                                      \
+   KMS_X (DeactivationDate, 0x42002F)                                                       \
+   KMS_X (DerivationData, 0x420030)                                                         \
+   KMS_X (DerivationMethod, 0x420031)                                                       \
+   KMS_X (DerivationParameters, 0x420032)                                                   \
+   KMS_X (DestroyDate, 0x420033)                                                            \
+   KMS_X (Digest, 0x420034)                                                                 \
+   KMS_X (DigestValue, 0x420035)                                                            \
+   KMS_X (EncryptionKeyInformation, 0x420036)                                               \
+   KMS_X (G, 0x420037)                                                                      \
+   KMS_X (HashingAlgorithm, 0x420038)                                                       \
+   KMS_X (InitialDate, 0x420039)                                                            \
+   KMS_X (InitializationVector, 0x42003A)                                                   \
+   KMS_X (Issuer, 0x42003B) /* deprecated as of version 1.1 */                              \
+   KMS_X (IterationCount, 0x42003C)                                                         \
+   KMS_X (IVCounterNonce, 0x42003D)                                                         \
+   KMS_X (J, 0x42003E)                                                                      \
+   KMS_X (Key, 0x42003F)                                                                    \
+   KMS_X (KeyBlock, 0x420040)                                                               \
+   KMS_X (KeyCompressionType, 0x420041)                                                     \
+   KMS_X (KeyFormatType, 0x420042)                                                          \
+   KMS_X (KeyMaterial, 0x420043)                                                            \
+   KMS_X (KeyPartIdentifier, 0x420044)                                                      \
+   KMS_X (KeyValue, 0x420045)                                                               \
+   KMS_X (KeyWrappingData, 0x420046)                                                        \
+   KMS_X (KeyWrappingSpecification, 0x420047)                                               \
+   KMS_X (LastChangeDate, 0x420048)                                                         \
+   KMS_X (LeaseTime, 0x420049)                                                              \
+   KMS_X (Link, 0x42004A)                                                                   \
+   KMS_X (LinkType, 0x42004B)                                                               \
+   KMS_X (LinkedObjectIdentifier, 0x42004C)                                                 \
+   KMS_X (MACSignature, 0x42004D)                                                           \
+   KMS_X (MACSignatureKeyInformation, 0x42004E)                                             \
+   KMS_X (MaximumItems, 0x42004F)                                                           \
+   KMS_X (MaximumResponseSize, 0x420050)                                                    \
+   KMS_X (MessageExtension, 0x420051)                                                       \
+   KMS_X (Modulus, 0x420052)                                                                \
+   KMS_X (Name, 0x420053)                                                                   \
+   KMS_X (NameType, 0x420054)                                                               \
+   KMS_X (NameValue, 0x420055)                                                              \
+   KMS_X (ObjectGroup, 0x420056)                                                            \
+   KMS_X (ObjectType, 0x420057)                                                             \
+   KMS_X (Offset, 0x420058)                                                                 \
+   KMS_X (OpaqueDataType, 0x420059)                                                         \
+   KMS_X (OpaqueDataValue, 0x42005A)                                                        \
+   KMS_X (OpaqueObject, 0x42005B)                                                           \
+   KMS_X (Operation, 0x42005C)                                                              \
+   KMS_X (OperationPolicyName, 0x42005D) /* deprecated */                                   \
+   KMS_X (P, 0x42005E)                                                                      \
+   KMS_X (PaddingMethod, 0x42005F)                                                          \
+   KMS_X (PrimeExponentP, 0x420060)                                                         \
+   KMS_X (PrimeExponentQ, 0x420061)                                                         \
+   KMS_X (PrimeFieldSize, 0x420062)                                                         \
+   KMS_X (PrivateExponent, 0x420063)                                                        \
+   KMS_X (PrivateKey, 0x420064)                                                             \
+   KMS_X (PrivateKeyTemplateAttribute, 0x420065)                                            \
+   KMS_X (PrivateKeyUniqueIdentifier, 0x420066)                                             \
+   KMS_X (ProcessStartDate, 0x420067)                                                       \
+   KMS_X (ProtectStopDate, 0x420068)                                                        \
+   KMS_X (ProtocolVersion, 0x420069)                                                        \
+   KMS_X (ProtocolVersionMajor, 0x42006A)                                                   \
+   KMS_X (ProtocolVersionMinor, 0x42006B)                                                   \
+   KMS_X (PublicExponent, 0x42006C)                                                         \
+   KMS_X (PublicKey, 0x42006D)                                                              \
+   KMS_X (PublicKeyTemplateAttribute, 0x42006E)                                             \
+   KMS_X (PublicKeyUniqueIdentifier, 0x42006F)                                              \
+   KMS_X (PutFunction, 0x420070)                                                            \
+   KMS_X (Q, 0x420071)                                                                      \
+   KMS_X (QString, 0x420072)                                                                \
+   KMS_X (Qlength, 0x420073)                                                                \
+   KMS_X (QueryFunction, 0x420074)                                                          \
+   KMS_X (RecommendedCurve, 0x420075)                                                       \
+   KMS_X (ReplacedUniqueIdentifier, 0x420076)                                               \
+   KMS_X (RequestHeader, 0x420077)                                                          \
+   KMS_X (RequestMessage, 0x420078)                                                         \
+   KMS_X (RequestPayload, 0x420079)                                                         \
+   KMS_X (ResponseHeader, 0x42007A)                                                         \
+   KMS_X (ResponseMessage, 0x42007B)                                                        \
+   KMS_X (ResponsePayload, 0x42007C)                                                        \
+   KMS_X (ResultMessage, 0x42007D)                                                          \
+   KMS_X (ResultReason, 0x42007E)                                                           \
+   KMS_X (ResultStatus, 0x42007F)                                                           \
+   KMS_X (RevocationMessage, 0x420080)                                                      \
+   KMS_X (RevocationReason, 0x420081)                                                       \
+   KMS_X (RevocationReasonCode, 0x420082)                                                   \
+   KMS_X (KeyRoleType, 0x420083)                                                            \
+   KMS_X (Salt, 0x420084)                                                                   \
+   KMS_X (SecretData, 0x420085)                                                             \
+   KMS_X (SecretDataType, 0x420086)                                                         \
+   KMS_X (SerialNumber, 0x420087) /* deprecated as of version 1.1 */                        \
+   KMS_X (ServerInformation, 0x420088)                                                      \
+   KMS_X (SplitKey, 0x420089)                                                               \
+   KMS_X (SplitKeyMethod, 0x42008A)                                                         \
+   KMS_X (SplitKeyParts, 0x42008B)                                                          \
+   KMS_X (SplitKeyThreshold, 0x42008C)                                                      \
+   KMS_X (State, 0x42008D)                                                                  \
+   KMS_X (StorageStatusMask, 0x42008E)                                                      \
+   KMS_X (SymmetricKey, 0x42008F)                                                           \
+   KMS_X (Template, 0x420090)                                                               \
+   KMS_X (TemplateAttribute, 0x420091)                                                      \
+   KMS_X (TimeStamp, 0x420092)                                                              \
+   KMS_X (UniqueBatchItemID, 0x420093)                                                      \
+   KMS_X (UniqueIdentifier, 0x420094)                                                       \
+   KMS_X (UsageLimits, 0x420095)                                                            \
+   KMS_X (UsageLimitsCount, 0x420096)                                                       \
+   KMS_X (UsageLimitsTotal, 0x420097)                                                       \
+   KMS_X (UsageLimitsUnit, 0x420098)                                                        \
+   KMS_X (Username, 0x420099)                                                               \
+   KMS_X (ValidityDate, 0x42009A)                                                           \
+   KMS_X (ValidityIndicator, 0x42009B)                                                      \
+   KMS_X (VendorExtension, 0x42009C)                                                        \
+   KMS_X (VendorIdentification, 0x42009D)                                                   \
+   KMS_X (WrappingMethod, 0x42009E)                                                         \
+   KMS_X (X, 0x42009F)                                                                      \
+   KMS_X (Y, 0x4200A0)                                                                      \
+   KMS_X (Password, 0x4200A1)                                                               \
+   KMS_X (DeviceIdentifier, 0x4200A2)                                                       \
+   KMS_X (EncodingOption, 0x4200A3)                                                         \
+   KMS_X (ExtensionInformation, 0x4200A4)                                                   \
+   KMS_X (ExtensionName, 0x4200A5)                                                          \
+   KMS_X (ExtensionTag, 0x4200A6)                                                           \
+   KMS_X (ExtensionType, 0x4200A7)                                                          \
+   KMS_X (Fresh, 0x4200A8)                                                                  \
+   KMS_X (MachineIdentifier, 0x4200A9)                                                      \
+   KMS_X (MediaIdentifier, 0x4200AA)                                                        \
+   KMS_X (NetworkIdentifier, 0x4200AB)                                                      \
+   KMS_X (ObjectGroupMember, 0x4200AC)                                                      \
+   KMS_X (CertificateLength, 0x4200AD)                                                      \
+   KMS_X (DigitalSignatureAlgorithm, 0x4200AE)                                              \
+   KMS_X (CertificateSerialNumber, 0x4200AF)                                                \
+   KMS_X (DeviceSerialNumber, 0x4200B0)                                                     \
+   KMS_X (IssuerAlternativeName, 0x4200B1)                                                  \
+   KMS_X (IssuerDistinguishedName, 0x4200B2)                                                \
+   KMS_X (SubjectAlternativeName, 0x4200B3)                                                 \
+   KMS_X (SubjectDistinguishedName, 0x4200B4)                                               \
+   KMS_X (X509CertificateIdentifier, 0x4200B5)                                              \
+   KMS_X (X509CertificateIssuer, 0x4200B6)                                                  \
+   KMS_X (X509CertificateSubject, 0x4200B7)                                                 \
+   KMS_X (KeyValueLocation, 0x4200B8)                                                       \
+   KMS_X (KeyValueLocationValue, 0x4200B9)                                                  \
+   KMS_X (KeyValueLocationType, 0x4200BA)                                                   \
+   KMS_X (KeyValuePresent, 0x4200BB)                                                        \
+   KMS_X (OriginalCreationDate, 0x4200BC)                                                   \
+   KMS_X (PGPKey, 0x4200BD)                                                                 \
+   KMS_X (PGPKeyVersion, 0x4200BE)                                                          \
+   KMS_X (AlternativeName, 0x4200BF)                                                        \
+   KMS_X (AlternativeNameValue, 0x4200C0)                                                   \
+   KMS_X (AlternativeNameType, 0x4200C1)                                                    \
+   KMS_X (Data, 0x4200C2)                                                                   \
+   KMS_X (SignatureData, 0x4200C3)                                                          \
+   KMS_X (DataLength, 0x4200C4)                                                             \
+   KMS_X (RandomIV, 0x4200C5)                                                               \
+   KMS_X (MACData, 0x4200C6)                                                                \
+   KMS_X (AttestationType, 0x4200C7)                                                        \
+   KMS_X (Nonce, 0x4200C8)                                                                  \
+   KMS_X (NonceID, 0x4200C9)                                                                \
+   KMS_X (NonceValue, 0x4200CA)                                                             \
+   KMS_X (AttestationMeasurement, 0x4200CB)                                                 \
+   KMS_X (AttestationAssertion, 0x4200CC)                                                   \
+   KMS_X (IVLength, 0x4200CD)                                                               \
+   KMS_X (TagLength, 0x4200CE)                                                              \
+   KMS_X (FixedFieldLength, 0x4200CF)                                                       \
+   KMS_X (CounterLength, 0x4200D0)                                                          \
+   KMS_X (InitialCounterValue, 0x4200D1)                                                    \
+   KMS_X (InvocationFieldLength, 0x4200D2)                                                  \
+   KMS_X (AttestationCapableIndicator, 0x4200D3)                                            \
+   KMS_X (OffsetItems, 0x4200D4)                                                            \
+   KMS_X (LocatedItems, 0x4200D5)                                                           \
+   KMS_X (CorrelationValue, 0x4200D6)                                                       \
+   KMS_X (InitIndicator, 0x4200D7)                                                          \
+   KMS_X (FinalIndicator, 0x4200D8)                                                         \
+   KMS_X (RNGParameters, 0x4200D9)                                                          \
+   KMS_X (RNGAlgorithm, 0x4200DA)                                                           \
+   KMS_X (DRBGAlgorithm, 0x4200DB)                                                          \
+   KMS_X (FIPS186Variation, 0x4200DC)                                                       \
+   KMS_X (PredictionResistance, 0x4200DD)                                                   \
+   KMS_X (RandomNumberGenerator, 0x4200DE)                                                  \
+   KMS_X (ValidationInformation, 0x4200DF)                                                  \
+   KMS_X (ValidationAuthorityType, 0x4200E0)                                                \
+   KMS_X (ValidationAuthorityCountry, 0x4200E1)                                             \
+   KMS_X (ValidationAuthorityURI, 0x4200E2)                                                 \
+   KMS_X (ValidationVersionMajor, 0x4200E3)                                                 \
+   KMS_X (ValidationVersionMinor, 0x4200E4)                                                 \
+   KMS_X (ValidationType, 0x4200E5)                                                         \
+   KMS_X (ValidationLevel, 0x4200E6)                                                        \
+   KMS_X (ValidationCertificateIdentifier, 0x4200E7)                                        \
+   KMS_X (ValidationCertificateURI, 0x4200E8)                                               \
+   KMS_X (ValidationVendorURI, 0x4200E9)                                                    \
+   KMS_X (ValidationProfile, 0x4200EA)                                                      \
+   KMS_X (ProfileInformation, 0x4200EB)                                                     \
+   KMS_X (ProfileName, 0x4200EC)                                                            \
+   KMS_X (ServerURI, 0x4200ED)                                                              \
+   KMS_X (ServerPort, 0x4200EE)                                                             \
+   KMS_X (StreamingCapability, 0x4200EF)                                                    \
+   KMS_X (AsynchronousCapability, 0x4200F0)                                                 \
+   KMS_X (AttestationCapability, 0x4200F1)                                                  \
+   KMS_X (UnwrapMode, 0x4200F2)                                                             \
+   KMS_X (DestroyAction, 0x4200F3)                                                          \
+   KMS_X (ShreddingAlgorithm, 0x4200F4)                                                     \
+   KMS_X (RNGMode, 0x4200F5)                                                                \
+   KMS_X (ClientRegistrationMethod, 0x4200F6)                                               \
+   KMS_X (CapabilityInformation, 0x4200F7)                                                  \
+   KMS_X (KeyWrapType, 0x4200F8)                                                            \
+   KMS_X (BatchUndoCapability, 0x4200F9)                                                    \
+   KMS_X (BatchContinueCapability, 0x4200FA)                                                \
+   KMS_X (PKCS12FriendlyName, 0x4200FB)                                                     \
+   KMS_X (Description, 0x4200FC)                                                            \
+   KMS_X (Comment, 0x4200FD)                                                                \
+   KMS_X (AuthenticatedEncryptionAdditionalData, 0x4200FE)                                  \
+   KMS_X (AuthenticatedEncryptionTag, 0x4200FF)                                             \
+   KMS_X (SaltLength, 0x420100)                                                             \
+   KMS_X (MaskGenerator, 0x420101)                                                          \
+   KMS_X (MaskGeneratorHashingAlgorithm, 0x420102)                                          \
+   KMS_X (PSource, 0x420103)                                                                \
+   KMS_X (TrailerField, 0x420104)                                                           \
+   KMS_X (ClientCorrelationValue, 0x420105)                                                 \
+   KMS_X (ServerCorrelationValue, 0x420106)                                                 \
+   KMS_X (DigestedData, 0x420107)                                                           \
+   KMS_X (CertificateSubjectCN, 0x420108)                                                   \
+   KMS_X (CertificateSubjectO, 0x420109)                                                    \
+   KMS_X (CertificateSubjectOU, 0x42010A)                                                   \
+   KMS_X (CertificateSubjectEmail, 0x42010B)                                                \
+   KMS_X (CertificateSubjectC, 0x42010C)                                                    \
+   KMS_X (CertificateSubjectST, 0x42010D)                                                   \
+   KMS_X (CertificateSubjectL, 0x42010E)                                                    \
+   KMS_X (CertificateSubjectUID, 0x42010F)                                                  \
+   KMS_X (CertificateSubjectSerialNumber, 0x420110)                                         \
+   KMS_X (CertificateSubjectTitle, 0x420111)                                                \
+   KMS_X (CertificateSubjectDC, 0x420112)                                                   \
+   KMS_X (CertificateSubjectDNQualifier, 0x420113)                                          \
+   KMS_X (CertificateIssuerCN, 0x420114)                                                    \
+   KMS_X (CertificateIssuerO, 0x420115)                                                     \
+   KMS_X (CertificateIssuerOU, 0x420116)                                                    \
+   KMS_X (CertificateIssuerEmail, 0x420117)                                                 \
+   KMS_X (CertificateIssuerC, 0x420118)                                                     \
+   KMS_X (CertificateIssuerST, 0x420119)                                                    \
+   KMS_X (CertificateIssuerL, 0x42011A)                                                     \
+   KMS_X (CertificateIssuerUID, 0x42011B)                                                   \
+   KMS_X (CertificateIssuerSerialNumber, 0x42011C)                                          \
+   KMS_X (CertificateIssuerTitle, 0x42011D)                                                 \
+   KMS_X (CertificateIssuerDC, 0x42011E)                                                    \
+   KMS_X (CertificateIssuerDNQualifier, 0x42011F)                                           \
+   KMS_X (Sensitive, 0x420120)                                                              \
+   KMS_X (AlwaysSensitive, 0x420121)                                                        \
+   KMS_X (Extractable, 0x420122)                                                            \
+   KMS_X (NeverExtractable, 0x420123)                                                       \
+   KMS_X_LAST (ReplaceExisting, 0x420124)
+
+/* Generate an enum with each tag value. */
+#define KMS_X(TAG, VAL) KMIP_TAG_##TAG = VAL,
+#define KMS_X_LAST(TAG, VAL) KMIP_TAG_##TAG = VAL
+typedef enum { KMS_XMACRO } kmip_tag_type_t;
+#undef KMS_X
+#undef KMS_X_LAST
+
+#define KMS_X(TAG, VAL) \
+   case KMIP_TAG_##TAG:          \
+      return #TAG;
+#define KMS_X_LAST(TAG, VAL) KMS_X (TAG, VAL)
+static KMS_MSG_INLINE const char *
+kmip_tag_to_string (kmip_tag_type_t tag)
+{
+   switch (tag) {
+   default:
+      return "Unknown tag";
+      KMS_XMACRO
+   }
+}
+#undef KMS_X
+#undef KMS_X_LAST
+
+#undef KMS_XMACRO
 
 #endif /* KMS_KMIP_TAG_TYPE_PRIVATE_H */

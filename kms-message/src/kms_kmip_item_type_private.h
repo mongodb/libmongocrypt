@@ -17,17 +17,45 @@
 #ifndef KMS_KMIP_ITEM_TYPE_PRIVATE_H
 #define KMS_KMIP_ITEM_TYPE_PRIVATE_H
 
-typedef enum {
-   KMIP_ITEM_TYPE_Structure = 0x01,
-   KMIP_ITEM_TYPE_Integer = 0x02,
-   KMIP_ITEM_TYPE_LongInteger = 0x03,
-   KMIP_ITEM_TYPE_BigInteger = 0x04,
-   KMIP_ITEM_TYPE_Enumeration = 0x05,
-   KMIP_ITEM_TYPE_Boolean = 0x06,
-   KMIP_ITEM_TYPE_TextString = 0x07,
-   KMIP_ITEM_TYPE_ByteString = 0x08,
-   KMIP_ITEM_TYPE_DateTime = 0x09,
-   KMIP_ITEM_TYPE_Interval = 0x0A
-} kmip_item_type_t;
+#include "kms_message/kms_message_defines.h"
+
+/* Use an x-macro to generate the enum and strings for each KMIP item type
+ * value. */
+#define KMS_XMACRO           \
+   KMS_X (Structure, 0x01)   \
+   KMS_X (Integer, 0x02)     \
+   KMS_X (LongInteger, 0x03) \
+   KMS_X (BigInteger, 0x04)  \
+   KMS_X (Enumeration, 0x05) \
+   KMS_X (Boolean, 0x06)     \
+   KMS_X (TextString, 0x07)  \
+   KMS_X (ByteString, 0x08)  \
+   KMS_X (DateTime, 0x09)    \
+   KMS_X_LAST (Interval, 0x0A)
+
+/* Generate an enum with each item_type value. */
+#define KMS_X(ITEM_TYPE, VAL) KMIP_ITEM_TYPE_##ITEM_TYPE = VAL,
+#define KMS_X_LAST(ITEM_TYPE, VAL) KMIP_ITEM_TYPE_##ITEM_TYPE = VAL
+typedef enum { KMS_XMACRO } kmip_item_type_t;
+#undef KMS_X
+#undef KMS_X_LAST
+
+#define KMS_X(ITEM_TYPE, VAL)       \
+   case KMIP_ITEM_TYPE_##ITEM_TYPE: \
+      return #ITEM_TYPE;
+#define KMS_X_LAST(ITEM_TYPE, VAL) KMS_X (ITEM_TYPE, VAL)
+static KMS_MSG_INLINE const char *
+kmip_item_type_to_string (kmip_item_type_t item_type)
+{
+   switch (item_type) {
+   default:
+      return "Unknown item type";
+      KMS_XMACRO
+   }
+}
+#undef KMS_X
+#undef KMS_X_LAST
+
+#undef KMS_XMACRO
 
 #endif /* KMS_KMIP_ITEM_TYPE_PRIVATE_H */
