@@ -182,6 +182,8 @@ _mongocrypt_tester_install_kek (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_cache_oauth (_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_kms_ctx (_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */

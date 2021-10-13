@@ -36,7 +36,10 @@ typedef enum {
    MONGOCRYPT_KMS_AZURE_UNWRAPKEY,
    MONGOCRYPT_KMS_GCP_OAUTH,
    MONGOCRYPT_KMS_GCP_ENCRYPT,
-   MONGOCRYPT_KMS_GCP_DECRYPT
+   MONGOCRYPT_KMS_GCP_DECRYPT,
+   MONGOCRYPT_KMS_KMIP_REGISTER,
+   MONGOCRYPT_KMS_KMIP_ACTIVATE,
+   MONGOCRYPT_KMS_KMIP_GET,
 } _kms_request_type_t;
 
 struct _mongocrypt_kms_ctx_t {
@@ -48,6 +51,10 @@ struct _mongocrypt_kms_ctx_t {
    _mongocrypt_buffer_t result;
    char *endpoint;
    _mongocrypt_log_t *log;
+
+   kms_kmip_request_t *kmip_req;
+   kms_kmip_response_t *kmip_res;
+   kms_kmip_response_parser_t *kmip_parser;
 };
 
 
@@ -123,6 +130,28 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (mongocrypt_kms_ctx_t *kms,
                                       const char *access_token,
                                       _mongocrypt_key_doc_t *key,
                                       _mongocrypt_log_t *log)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms,
+                                       _mongocrypt_endpoint_t *endpoint,
+                                        uint8_t *secretdata,
+                                        uint32_t secretdata_len,
+                                        _mongocrypt_log_t *log)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms,
+                                        _mongocrypt_endpoint_t *endpoint,
+                                        char *unique_identifier,
+                                        _mongocrypt_log_t *log)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms,
+                                   _mongocrypt_endpoint_t *endpoint,
+                                   char *unique_identifier,
+                                   _mongocrypt_log_t *log)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_KMX_CTX_PRIVATE_H */
