@@ -787,7 +787,7 @@ _ctx_done_kmip_register (mongocrypt_kms_ctx_t *kms_ctx)
    }
 
    kms_ctx->result.data = (uint8_t*) uid;
-   kms_ctx->result.len = strlen (uid);
+   kms_ctx->result.len = (uint32_t) strlen (uid);
    kms_ctx->result.owned = true;
    ret = true;
 
