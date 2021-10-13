@@ -29,6 +29,8 @@ _cleanup (mongocrypt_ctx_t *ctx)
    _mongocrypt_kms_ctx_cleanup (&dkctx->kms);
    _mongocrypt_buffer_cleanup (&dkctx->encrypted_key_material);
    _mongocrypt_buffer_cleanup (&dkctx->plaintext_key_material);
+   bson_free (dkctx->kmip_unique_identifier);
+   _mongocrypt_buffer_cleanup (&dkctx->kmip_secretdata);
 }
 
 
@@ -43,6 +45,140 @@ _next_kms_ctx (mongocrypt_ctx_t *ctx)
    }
    dkctx->kms_returned = true;
    return &dkctx->kms;
+}
+
+static bool
+_kms_kmip_start (mongocrypt_ctx_t *ctx)
+{
+   bool ret = false;
+   _mongocrypt_ctx_datakey_t *dkctx;
+   char *user_supplied_keyid;
+   _mongocrypt_endpoint_t *endpoint;
+   mongocrypt_status_t *status = ctx->status;
+   _mongocrypt_buffer_t secretdata = {0};
+
+   dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
+
+   if (ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_KMIP) {
+      CLIENT_ERR ("KMS provider is not KMIP");
+      _mongocrypt_ctx_fail (ctx);
+      goto done;
+   }
+
+   user_supplied_keyid = ctx->opts.kek.provider.kmip.key_id;
+
+   if (ctx->opts.kek.provider.kmip.endpoint) {
+      endpoint = ctx->opts.kek.provider.kmip.endpoint;
+   } else if (ctx->crypt->opts.kms_provider_kmip.endpoint) {
+      endpoint = ctx->crypt->opts.kms_provider_kmip.endpoint;
+   } else {
+      CLIENT_ERR ("endpoint not set for KMIP request");
+      _mongocrypt_ctx_fail (ctx);
+      goto done;
+   }
+
+   /* There are two KMIP flows.
+    * 1. Send a KMIP Get request.
+     *    Expect a 96 byte SecretData in the response.
+     * 2. Use the 96 byte SecretData to encrypt a new DEK.
+
+     KMIP flow 2: User did not set a 'keyId'.
+    * 1. Create a new random 96 byte key to use as the KEK.
+    * 2. Send a KMIP Register request with the 96 byte key as a SecretData
+    managed object.
+    *    This returns a Unique Identifier.
+    * 3. Send a KMIP Activate request with the Unique Identifier.
+    *    This returns the same Unique Identifier.
+    * 4. Send a KMIP Get request with the Unique Identifier.
+    *    This returns the 96 byte SecretData.
+    * 5. Use the 96 byte SecretData to encrypt a new DEK. */
+
+   if (user_supplied_keyid) {
+      /*  KMIP flow 1: User set a 'keyId'. */
+      if (!dkctx->kmip_unique_identifier) {
+         dkctx->kmip_unique_identifier = bson_strdup (user_supplied_keyid);
+         dkctx->kmip_activated = true;
+      }
+   }
+
+   if (!dkctx->kmip_unique_identifier) {
+      /* KMIP flow 2: User did not set a 'keyId'. */
+      /* Step 1. Create a new 96 byte secret data. */
+      _mongocrypt_buffer_init (&secretdata);
+      _mongocrypt_buffer_resize (&secretdata, MONGOCRYPT_KEY_LEN);
+      if (!_mongocrypt_random (ctx->crypt->crypto,
+                               &secretdata,
+                               MONGOCRYPT_KEY_LEN,
+                               ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+
+      /* Step 2. Send a KMIP Register request. */
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "creating KMIP Register response");
+      if (!_mongocrypt_kms_ctx_init_kmip_register (&dkctx->kms,
+                                                   endpoint,
+                                                   secretdata.data,
+                                                   secretdata.len,
+                                                   &ctx->crypt->log)) {
+         mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+
+      ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+   } else if (!dkctx->kmip_activated) {
+      /* Step 3. Send a KMIP Activate request. */
+      _mongocrypt_log (
+         &ctx->crypt->log,
+         MONGOCRYPT_LOG_LEVEL_TRACE,
+         "creating KMIP Activate request with Unique Identifier: %s",
+         dkctx->kmip_unique_identifier);
+      if (!_mongocrypt_kms_ctx_init_kmip_activate (
+             &dkctx->kms,
+             endpoint,
+             dkctx->kmip_unique_identifier,
+             &ctx->crypt->log)) {
+         mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+      ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+   } else if (!dkctx->kmip_secretdata.data) {
+      /* Step 4. Send a KMIP Get request with the Unique Identifier. */
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "creating KMIP Get request with Unique Identifier: %s",
+                       dkctx->kmip_unique_identifier);
+      if (!_mongocrypt_kms_ctx_init_kmip_get (&dkctx->kms,
+                                              endpoint,
+                                              dkctx->kmip_unique_identifier,
+                                              &ctx->crypt->log)) {
+         mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+      ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+   } else {
+      /* Step 5. Use the 96 byte SecretData to encrypt a new DEK. */
+      if (!_mongocrypt_wrap_key (ctx->crypt->crypto,
+                                 &dkctx->kmip_secretdata,
+                                 &dkctx->plaintext_key_material,
+                                 &dkctx->encrypted_key_material,
+                                 ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
+
+      ctx->state = MONGOCRYPT_CTX_READY;
+   }
+
+   ret = true;
+done:
+   _mongocrypt_buffer_cleanup (&secretdata);
+   return ret;
 }
 
 /* For local, immediately encrypt.
@@ -142,6 +278,12 @@ _kms_start (mongocrypt_ctx_t *ctx)
          }
       }
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+   } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
+      if (!_kms_kmip_start (ctx)) {
+         mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
    } else {
       _mongocrypt_ctx_fail_w_msg (ctx, "unsupported KMS provider");
       goto done;
@@ -190,6 +332,29 @@ _kms_done (mongocrypt_ctx_t *ctx)
              ctx->crypt->cache_oauth_gcp, &oauth_response, status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
+      return _kms_start (ctx);
+   } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER) {
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "handling KMIP Register response");
+      dkctx->kmip_unique_identifier =
+         bson_strdup ((char *) dkctx->kms.result.data);
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "got KEK UID: %s",
+                       dkctx->kmip_unique_identifier);
+      return _kms_start (ctx);
+   } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE) {
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "handling KMIP Activate response");
+      dkctx->kmip_activated = true;
+      return _kms_start (ctx);
+   } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_GET) {
+      _mongocrypt_log (&ctx->crypt->log,
+                       MONGOCRYPT_LOG_LEVEL_TRACE,
+                       "handling KMIP Get response");
+      _mongocrypt_buffer_copy_to (&dkctx->kms.result, &dkctx->kmip_secretdata);
       return _kms_start (ctx);
    }
 

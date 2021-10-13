@@ -137,6 +137,10 @@ typedef struct {
    _mongocrypt_buffer_t key_doc;
    _mongocrypt_buffer_t plaintext_key_material;
    _mongocrypt_buffer_t encrypted_key_material;
+
+   char *kmip_unique_identifier;
+   bool kmip_activated;
+   _mongocrypt_buffer_t kmip_secretdata;
 } _mongocrypt_ctx_datakey_t;
 
 
