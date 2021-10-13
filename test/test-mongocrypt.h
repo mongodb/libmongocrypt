@@ -219,10 +219,5 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 void
 _load_json_as_bson (const char *path, bson_t *out);
 
-void
-kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,
-                  uint8_t *data,
-                  uint32_t datalen);
-
 
 #endif
