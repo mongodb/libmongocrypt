@@ -18,7 +18,6 @@
 
 #include "mongocrypt-private.h"
 #include "test-mongocrypt.h"
-#include "test-conveniences.h"
 
 #define SECRET_DATA_LENGTH 96
 

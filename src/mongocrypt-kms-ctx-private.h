@@ -51,10 +51,6 @@ struct _mongocrypt_kms_ctx_t {
    _mongocrypt_buffer_t result;
    char *endpoint;
    _mongocrypt_log_t *log;
-
-   kms_kmip_request_t *kmip_req;
-   kms_kmip_response_t *kmip_res;
-   kms_kmip_response_parser_t *kmip_parser;
 };
 
 
