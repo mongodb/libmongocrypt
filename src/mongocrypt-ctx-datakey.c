@@ -171,8 +171,12 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
          _mongocrypt_ctx_fail (ctx);
          goto done;
       }
+
       if (!ctx->opts.kek.provider.kmip.key_id) {
-         ctx->opts.kek.provider.kmip.key_id = bson_strdup (dkctx->kmip_unique_identifier);
+         /* If there was no user supplied key_id, set it from the
+          * UniqueIdentifer of the newly registered SecretData. */
+         ctx->opts.kek.provider.kmip.key_id =
+            bson_strdup (dkctx->kmip_unique_identifier);
       }
       ctx->state = MONGOCRYPT_CTX_READY;
    }
