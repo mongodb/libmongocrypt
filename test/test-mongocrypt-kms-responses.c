@@ -20,9 +20,6 @@
 #include "test-mongocrypt.h"
 #include "test-mongocrypt-assert-match-bson.h"
 
-// KMIPTODO: consider consolidating these tests with test-mongocrypt-kms-ctx.c.
-// These tests only exercise the first KMS request in a mongocrypt_ctx_t.
-// I think preferable unit tests would test each type of mongocrypt_kms_ctx_t.
 /* Tests have the form
 {
    ctx: [],
