@@ -91,6 +91,12 @@ kms_request_free_string (char *ptr);
 /* Finalize and obtain a plain HTTP request (no signing). */
 KMS_MSG_EXPORT (char *) kms_request_to_string (kms_request_t *request);
 
+/* kms_request_to_bytes returns the data for a request.
+ * - Only applies to the KMIP provider.
+ * - Returns NULL on error and sets an error on request. */
+KMS_MSG_EXPORT (uint8_t *)
+kms_request_to_bytes (kms_request_t *request, uint32_t *len);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

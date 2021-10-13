@@ -93,4 +93,21 @@
       free (_expected_hex);                                             \
    } while (0)
 
+#define ASSERT_REQUEST_OK(req)                                \
+   do {                                                       \
+      if (kms_request_get_error (req)) {                      \
+         TEST_ERROR ("expected request ok but got error: %s", \
+                     kms_request_get_error (req));            \
+      }                                                       \
+   } while (0)
+
+#define ASSERT_REQUEST_ERROR(req, expect_substring)         \
+   do {                                                     \
+      if (!kms_request_get_error (req)) {                   \
+         TEST_ERROR ("expected request error but got ok");  \
+      }                                                     \
+      const char *_error_str = kms_request_get_error (req); \
+      ASSERT_CONTAINS (_error_str, expect_substring);       \
+   } while (0)
+
 #endif /* TEST_KMS_ASSERT_H */
