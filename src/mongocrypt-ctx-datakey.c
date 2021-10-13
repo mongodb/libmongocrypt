@@ -171,7 +171,9 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
          _mongocrypt_ctx_fail (ctx);
          goto done;
       }
-
+      if (!ctx->opts.kek.provider.kmip.key_id) {
+         ctx->opts.kek.provider.kmip.key_id = bson_strdup (dkctx->kmip_unique_identifier);
+      }
       ctx->state = MONGOCRYPT_CTX_READY;
    }
 
