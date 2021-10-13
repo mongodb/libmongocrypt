@@ -977,7 +977,7 @@ mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
  * Get the KMS provider identifier associated with this KMS request.
  *
  * This is used to conditionally configure TLS connections based on the KMS
- * request. It is useful for KMIP, which authenticates with a certificate
+ * request. It is useful for KMIP, which authenticates with a client
  * certificate.
  *
  * @param[in] kms The @ref mongocrypt_kms_ctx_t object.
