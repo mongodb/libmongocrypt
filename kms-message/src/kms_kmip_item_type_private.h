@@ -47,7 +47,7 @@ kmip_item_type_to_string (kmip_item_type_t item_type)
 {
    switch (item_type) {
    default:
-      return "Unknown item type";
+      return "Unknown KMIP item type";
       KMS_XMACRO
    }
 }
