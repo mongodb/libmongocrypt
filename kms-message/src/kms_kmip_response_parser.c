@@ -29,7 +29,9 @@ struct _kms_kmip_response_parser_t {
    char error[512];
 };
 
-/* FIRST_LENGTH_OFFSET is the offset of the first four byte length. */
+/* FIRST_LENGTH_OFFSET is the offset of the first Length in a TTLV sequence. The
+ * sequence is: Tag (3 bytes), Type (1 byte), Length (4 bytes), Value (Length
+ * bytes). */
 static const uint32_t FIRST_LENGTH_OFFSET = 4;
 
 /* _parser_destroy destroys the fields of parser, but not the parser itself. */
