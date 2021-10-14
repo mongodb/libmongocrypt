@@ -321,7 +321,7 @@ typedef enum { KMS_XMACRO } kmip_tag_type_t;
 #undef KMS_X_LAST
 
 #define KMS_X(TAG, VAL) \
-   case KMIP_TAG_##TAG:          \
+   case KMIP_TAG_##TAG: \
       return #TAG;
 #define KMS_X_LAST KMS_X
 static KMS_MSG_INLINE const char *
@@ -329,7 +329,7 @@ kmip_tag_to_string (kmip_tag_type_t tag)
 {
    switch (tag) {
    default:
-      return "Unknown tag";
+      return "Unknown KMIP tag";
       KMS_XMACRO
    }
 }

@@ -15,10 +15,10 @@ static const char *const SAMPLE_KMIP =
 
 /* SAMPLE_KMIP_FIRST_LENGTH is the length of message after the first tag, type,
  * and length. */
-static int SAMPLE_KMIP_FIRST_LENGTH = 32;
+static const int SAMPLE_KMIP_FIRST_LENGTH = 32;
 
 /* SAMPLE_KMIP_LARGE_LENGTH is a byte size larger than the message. */
-static int SAMPLE_KMIP_LARGE_LENGTH = 1024;
+static const int SAMPLE_KMIP_LARGE_LENGTH = 1024;
 
 void
 kms_kmip_response_parser_test (void)

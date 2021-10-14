@@ -853,8 +853,7 @@ kms_request_to_string (kms_request_t *request)
    }
 
    if (request->to_string) {
-      sreq = kms_request_str_dup (request->to_string);
-      return kms_request_str_detach (sreq);
+      return kms_request_str_detach (kms_request_str_dup (request->to_string));
    }
 
    sreq = kms_request_str_new ();

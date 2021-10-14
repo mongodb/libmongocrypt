@@ -105,7 +105,7 @@ kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser)
    kms_response_t *res;
 
    if (kms_kmip_response_parser_wants_bytes (parser, 1) != 0) {
-      KMS_ERROR (parser, "KMIP parser does not have complete message");
+      KMS_ERROR (parser, "KMIP parser does not have a complete message");
       return NULL;
    }
 

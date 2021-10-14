@@ -48,13 +48,14 @@
 
 /* Generate an enum with each result_reason value. */
 #define KMS_X(RESULT_REASON, STR, VAL) KMIP_RESULT_REASON_##RESULT_REASON = VAL,
-#define KMS_X_LAST(RESULT_REASON, STR, VAL) KMIP_RESULT_REASON_##RESULT_REASON = VAL
+#define KMS_X_LAST(RESULT_REASON, STR, VAL) \
+   KMIP_RESULT_REASON_##RESULT_REASON = VAL
 typedef enum { KMS_XMACRO } kmip_result_reason_t;
 #undef KMS_X
 #undef KMS_X_LAST
 
-#define KMS_X(RESULT_REASON, STR, VAL) \
-   case KMIP_RESULT_REASON_##RESULT_REASON:               \
+#define KMS_X(RESULT_REASON, STR, VAL)      \
+   case KMIP_RESULT_REASON_##RESULT_REASON: \
       return STR;
 #define KMS_X_LAST KMS_X
 static KMS_MSG_INLINE const char *
@@ -62,7 +63,7 @@ kmip_result_reason_to_string (kmip_result_reason_t result_reason)
 {
    switch (result_reason) {
    default:
-      return "Unknown result reason";
+      return "Unknown KMIP result reason";
       KMS_XMACRO
    }
 }

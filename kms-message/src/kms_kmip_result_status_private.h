@@ -27,13 +27,14 @@
 
 /* Generate an enum with each result_status value. */
 #define KMS_X(RESULT_STATUS, STR, VAL) KMIP_RESULT_STATUS_##RESULT_STATUS = VAL,
-#define KMS_X_LAST(RESULT_STATUS, STR, VAL) KMIP_RESULT_STATUS_##RESULT_STATUS = VAL
+#define KMS_X_LAST(RESULT_STATUS, STR, VAL) \
+   KMIP_RESULT_STATUS_##RESULT_STATUS = VAL
 typedef enum { KMS_XMACRO } kmip_result_status_t;
 #undef KMS_X
 #undef KMS_X_LAST
 
-#define KMS_X(RESULT_STATUS, STR, VAL) \
-   case KMIP_RESULT_STATUS_##RESULT_STATUS:               \
+#define KMS_X(RESULT_STATUS, STR, VAL)      \
+   case KMIP_RESULT_STATUS_##RESULT_STATUS: \
       return STR;
 #define KMS_X_LAST KMS_X
 static KMS_MSG_INLINE const char *
@@ -41,7 +42,7 @@ kmip_result_status_to_string (kmip_result_status_t result_status)
 {
    switch (result_status) {
    default:
-      return "Unknown result status";
+      return "Unknown KMIP result status";
       KMS_XMACRO
    }
 }

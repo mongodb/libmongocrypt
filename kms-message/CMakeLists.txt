@@ -181,6 +181,7 @@ install (
    src/kms_message/kms_message_defines.h
    src/kms_message/kms_kmip_request.h
    src/kms_message/kms_kmip_response.h
+   src/kms_message/kms_kmip_response_parser.h
    src/kms_message/kms_request.h
    src/kms_message/kms_request_opt.h
    src/kms_message/kms_response.h
