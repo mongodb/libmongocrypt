@@ -323,7 +323,7 @@ typedef enum { KMS_XMACRO } kmip_tag_type_t;
 #define KMS_X(TAG, VAL) \
    case KMIP_TAG_##TAG:          \
       return #TAG;
-#define KMS_X_LAST(TAG, VAL) KMS_X (TAG, VAL)
+#define KMS_X_LAST KMS_X
 static KMS_MSG_INLINE const char *
 kmip_tag_to_string (kmip_tag_type_t tag)
 {

@@ -35,7 +35,7 @@ typedef enum { KMS_XMACRO } kmip_result_status_t;
 #define KMS_X(RESULT_STATUS, STR, VAL) \
    case KMIP_RESULT_STATUS_##RESULT_STATUS:               \
       return STR;
-#define KMS_X_LAST(RESULT_STATUS, STR, VAL) KMS_X (RESULT_STATUS, STR, VAL)
+#define KMS_X_LAST KMS_X
 static KMS_MSG_INLINE const char *
 kmip_result_status_to_string (kmip_result_status_t result_status)
 {

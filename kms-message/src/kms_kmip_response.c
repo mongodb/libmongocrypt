@@ -45,7 +45,7 @@ kms_kmip_response_ok (kms_response_t *res)
    size_t len;
    uint32_t result_status;
    uint32_t result_reason = 0;
-   char *result_message = "";
+   const char *result_message = "";
    uint32_t result_message_len = 0;
    bool ok = false;
 

@@ -56,7 +56,7 @@ typedef enum { KMS_XMACRO } kmip_result_reason_t;
 #define KMS_X(RESULT_REASON, STR, VAL) \
    case KMIP_RESULT_REASON_##RESULT_REASON:               \
       return STR;
-#define KMS_X_LAST(RESULT_REASON, STR, VAL) KMS_X (RESULT_REASON, STR, VAL)
+#define KMS_X_LAST KMS_X
 static KMS_MSG_INLINE const char *
 kmip_result_reason_to_string (kmip_result_reason_t result_reason)
 {

@@ -31,12 +31,12 @@ typedef struct _kms_kmip_response_parser_t kms_kmip_response_parser_t;
 #define KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH 8
 
 int32_t
-kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser,
+kms_kmip_response_parser_wants_bytes (const kms_kmip_response_parser_t *parser,
                                       int32_t max);
 
 bool
 kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
-                               uint8_t *buf,
+                               const uint8_t *buf,
                                uint32_t len);
 
 /* kms_kmip_response_parser_get_response returns a kms_response_t and resets the
@@ -48,6 +48,6 @@ void
 kms_kmip_response_parser_destroy (kms_kmip_response_parser_t *parser);
 
 const char *
-kms_kmip_response_parser_error (kms_kmip_response_parser_t *parser);
+kms_kmip_response_parser_error (const kms_kmip_response_parser_t *parser);
 
 #endif /* KMS_KMIP_RESPONSE_PARSER_PRIVATE_H */

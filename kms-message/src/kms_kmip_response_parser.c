@@ -59,7 +59,7 @@ kms_kmip_response_parser_new (void *reserved)
 }
 
 int32_t
-kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser,
+kms_kmip_response_parser_wants_bytes (const kms_kmip_response_parser_t *parser,
                                       int32_t max)
 {
    int32_t wants_bytes;
@@ -78,7 +78,7 @@ kms_kmip_response_parser_wants_bytes (kms_kmip_response_parser_t *parser,
 
 bool
 kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
-                               uint8_t *buf,
+                               const uint8_t *buf,
                                uint32_t len)
 {
    kms_request_str_append_chars (parser->buf, (char *) buf, len);
@@ -122,7 +122,7 @@ kms_kmip_response_parser_get_response (kms_kmip_response_parser_t *parser)
 }
 
 const char *
-kms_kmip_response_parser_error (kms_kmip_response_parser_t *parser)
+kms_kmip_response_parser_error (const kms_kmip_response_parser_t *parser)
 {
    return parser->failed ? parser->error : NULL;
 }

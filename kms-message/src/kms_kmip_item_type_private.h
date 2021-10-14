@@ -41,7 +41,7 @@ typedef enum { KMS_XMACRO } kmip_item_type_t;
 #define KMS_X(ITEM_TYPE, VAL)       \
    case KMIP_ITEM_TYPE_##ITEM_TYPE: \
       return #ITEM_TYPE;
-#define KMS_X_LAST(ITEM_TYPE, VAL) KMS_X (ITEM_TYPE, VAL)
+#define KMS_X_LAST KMS_X
 static KMS_MSG_INLINE const char *
 kmip_item_type_to_string (kmip_item_type_t item_type)
 {
