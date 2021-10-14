@@ -87,7 +87,7 @@ kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
    if (parser->first_len > 0) {
       if (parser->bytes_fed >
           parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) {
-         KMS_ERROR (parser, "KMIP parser fed too much data");
+         KMS_ERROR (parser, "KMIP parser was fed too much data");
          return false;
       }
    } else if (parser->first_len == 0 &&
