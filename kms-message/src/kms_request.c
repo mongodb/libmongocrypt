@@ -898,7 +898,7 @@ kms_request_free_string (char *ptr)
 }
 
 const uint8_t *
-kms_request_to_bytes (kms_request_t *request, uint32_t *len)
+kms_request_to_bytes (kms_request_t *request, size_t *len)
 {
    if (request->provider == KMS_REQUEST_PROVIDER_KMIP) {
       *len = request->kmip.len;
@@ -910,6 +910,6 @@ kms_request_to_bytes (kms_request_t *request, uint32_t *len)
    }
 
    KMS_ASSERT (request->to_string);
-   *len = (uint32_t) request->to_string->len;
+   *len = request->to_string->len;
    return (const uint8_t*) request->to_string->str;
 }

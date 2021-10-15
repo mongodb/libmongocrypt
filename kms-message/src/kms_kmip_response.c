@@ -237,7 +237,7 @@ Example of a successful response to a Get request:
 </ResponseMessage>
 */
 uint8_t *
-kms_kmip_response_get_secretdata (kms_response_t *res, uint32_t *secretdatalen)
+kms_kmip_response_get_secretdata (kms_response_t *res, size_t *secretdatalen)
 {
    kmip_reader_t *reader = NULL;
    size_t pos;
@@ -312,7 +312,7 @@ kms_kmip_response_get_secretdata (kms_response_t *res, uint32_t *secretdatalen)
    }
    secretdata = malloc (len);
    memcpy (secretdata, tmp, len);
-   *secretdatalen = (uint32_t) len;
+   *secretdatalen = len;
 
 fail:
    kmip_reader_destroy (reader);

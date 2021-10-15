@@ -36,7 +36,7 @@ copy_writer_buffer (kms_request_t *req, kmip_writer_t *writer) {
 kms_request_t *
 kms_kmip_request_register_secretdata_new (void *reserved,
                                           uint8_t *data,
-                                          uint32_t len)
+                                          size_t len)
 {
    /*
    Create a KMIP Register request with a 96 byte SecretData of this form:

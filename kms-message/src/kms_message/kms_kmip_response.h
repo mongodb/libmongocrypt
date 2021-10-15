@@ -35,6 +35,6 @@ kms_kmip_response_get_unique_identifier (kms_response_t *res);
  * - Caller must free returned data.
  * - Returns NULL on error and sets an error on kms_response_t. */
 KMS_MSG_EXPORT (uint8_t *)
-kms_kmip_response_get_secretdata (kms_response_t *res, uint32_t *secretdatalen);
+kms_kmip_response_get_secretdata (kms_response_t *res, size_t *secretdatalen);
 
 #endif /* KMS_KMIP_RESPONSE_H */
