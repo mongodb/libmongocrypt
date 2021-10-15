@@ -26,8 +26,10 @@
  * response. */
 typedef struct _kms_kmip_response_parser_t kms_kmip_response_parser_t;
 
-/* KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH is the number of bytes needed to
- * determine the length of the remaining message. */
+/* KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH is the number of bytes needed by the
+ * parser to determine the total length of the message being parsed.
+ * It includes the first Length in a TTLV sequence. The sequence is: Tag (3
+ * bytes), Type (1 byte), Length (4 bytes), Value (Length bytes). */
 #define KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH 8
 
 int32_t

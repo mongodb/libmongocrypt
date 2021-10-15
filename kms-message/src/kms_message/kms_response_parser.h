@@ -44,6 +44,10 @@ kms_response_parser_feed (kms_response_parser_t *parser,
 KMS_MSG_EXPORT (kms_response_t *)
 kms_response_parser_get_response (kms_response_parser_t *parser);
 
+/* kms_response_parser_status returns the HTTP response status if one was
+ * parsed.
+ * - Calling on a KMIP parser is an error.
+ * - Returns an int for the HTTP status or 0 on error. */
 KMS_MSG_EXPORT (int)
 kms_response_parser_status (kms_response_parser_t *parser);
 

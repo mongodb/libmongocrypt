@@ -19,6 +19,7 @@
 
 #include "kms_message/kms_message_defines.h"
 
+/* clang-format off */
 #define KMS_XMACRO                                                                          \
    KMS_X (ActivationDate, 0x420001)                                                         \
    KMS_X (ApplicationData, 0x420002)                                                        \
@@ -312,6 +313,7 @@
    KMS_X (Extractable, 0x420122)                                                            \
    KMS_X (NeverExtractable, 0x420123)                                                       \
    KMS_X_LAST (ReplaceExisting, 0x420124)
+/* clang-format on */
 
 /* Generate an enum with each tag value. */
 #define KMS_X(TAG, VAL) KMIP_TAG_##TAG = VAL,

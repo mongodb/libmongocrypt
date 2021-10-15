@@ -19,6 +19,7 @@
 
 #include "kms_message/kms_message_defines.h"
 
+/* clang-format off */
 #define KMS_XMACRO                                                                             \
    KMS_X (ItemNotFound, "Item Not Found", 0x00000001)                                          \
    KMS_X (ResponseTooLarge, "Response Too Large", 0x00000002)                                  \
@@ -45,6 +46,7 @@
    KMS_X (NotExtractable, "Not Extractable", 0x00000017)                                       \
    KMS_X (ObjectAlreadyExists, "Object Already Exists", 0x00000018)                            \
    KMS_X_LAST (GeneralFailure, "General Failure", 0x00000100)
+/* clang-format on */
 
 /* Generate an enum with each result_reason value. */
 #define KMS_X(RESULT_REASON, STR, VAL) KMIP_RESULT_REASON_##RESULT_REASON = VAL,
