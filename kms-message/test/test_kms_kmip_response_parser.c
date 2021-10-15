@@ -164,7 +164,7 @@ kms_kmip_response_parser_excess_test (void)
    ASSERT_PARSER_OK (parser);
 
    ok = kms_response_parser_feed (parser, data, 1);
-   ASSERT_PARSER_ERROR (parser, "KMIP parser fed too much data");
+   ASSERT_PARSER_ERROR (parser, "KMIP parser was fed too much data");
    ASSERT (!ok);
    kms_response_parser_destroy (parser);
    free (data);
@@ -188,7 +188,7 @@ kms_kmip_response_parser_notenough_test (void)
    ASSERT (ok);
 
    res = kms_response_parser_get_response (parser);
-   ASSERT_PARSER_ERROR (parser, "KMIP parser does not have complete message");
+   ASSERT_PARSER_ERROR (parser, "KMIP parser does not have a complete message");
    ASSERT (!res);
 
    kms_response_parser_destroy (parser);
