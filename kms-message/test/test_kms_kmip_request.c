@@ -73,10 +73,10 @@ kms_kmip_request_register_secretdata_test (void)
 {
    kms_request_t *req;
    uint8_t secret_data[] = {REGISTER_SECRETDATA_SECRETDATA};
-   uint8_t *actual_bytes;
-   uint32_t actual_len;
+   const uint8_t *actual_bytes;
+   size_t actual_len;
    uint8_t expected_bytes[] = {REGISTER_SECRETDATA_REQUEST};
-   uint32_t expected_len = sizeof (expected_bytes);
+   size_t expected_len = sizeof (expected_bytes);
 
    req = kms_kmip_request_register_secretdata_new (
       NULL, secret_data, sizeof (secret_data));
@@ -142,10 +142,10 @@ kms_kmip_request_get_test (void)
 {
    kms_request_t *req;
 
-   uint8_t *actual_bytes;
-   uint32_t actual_len;
+   const uint8_t *actual_bytes;
+   size_t actual_len;
    uint8_t expected_bytes[] = {GET_REQUEST};
-   uint32_t expected_len = sizeof (expected_bytes);
+   size_t expected_len = sizeof (expected_bytes);
    static const char *const GET_UNIQUE_IDENTIFIER =
       "7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI";
 
@@ -198,10 +198,10 @@ kms_kmip_request_activate_test (void)
 {
    kms_request_t *req;
 
-   uint8_t *actual_bytes;
-   uint32_t actual_len;
+   const uint8_t *actual_bytes;
+   size_t actual_len;
    uint8_t expected_bytes[] = {ACTIVATE_REQUEST};
-   uint32_t expected_len = sizeof (expected_bytes);
+   size_t expected_len = sizeof (expected_bytes);
    static const char *const ACTIVATE_UNIQUE_IDENTIFIER =
       "7FJYvnV6XkaUCWuY96bCSc6AuhvkPpqI";
 

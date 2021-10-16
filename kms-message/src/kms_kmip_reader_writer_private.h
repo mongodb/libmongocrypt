@@ -133,8 +133,8 @@ kmip_reader_find (kmip_reader_t *reader,
                   size_t *pos,
                   size_t *length);
 
-kmip_reader_t *
-kmip_reader_find_and_get_struct_reader (kmip_reader_t *reader, size_t tag);
+bool
+kmip_reader_find_and_recurse (kmip_reader_t *reader, size_t tag);
 
 bool
 kmip_reader_find_and_read_enum (kmip_reader_t *reader,

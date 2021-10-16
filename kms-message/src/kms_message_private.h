@@ -23,6 +23,7 @@
 #include "kms_request_str.h"
 #include "kms_kv_list.h"
 #include "kms_crypto.h"
+#include "kms_kmip_response_parser_private.h"
 
 struct _kms_request_t {
    char error[512];
@@ -45,6 +46,7 @@ struct _kms_request_t {
    /* turn off for tests only, not in public kms_request_opt_t API */
    bool auto_content_length;
    _kms_crypto_t crypto;
+   kms_request_str_t *to_string;
    kms_request_provider_t provider;
 
    /* TODO (MONGOCRYPT-342): make a union for each KMS provider type.
@@ -66,6 +68,15 @@ struct _kms_response_t {
    int status;
    kms_kv_list_t *headers;
    kms_request_str_t *body;
+
+   /* TODO (MONGOCRYPT-347): make a union for each KMS provider type. */
+   char error[512];
+   bool failed;
+   kms_request_provider_t provider;
+   struct {
+      uint8_t *data;
+      uint32_t len;
+   } kmip;
 };
 
 typedef enum {
@@ -93,6 +104,9 @@ struct _kms_response_parser_t {
    bool transfer_encoding_chunked;
    int chunk_size;
    kms_response_parser_state_t state;
+   /* TODO: MONGOCRYPT-348 reorganize this struct to better separate fields for
+    * HTTP parsing and fields for KMIP parsing. */
+   kms_kmip_response_parser_t *kmip;
 };
 
 #define CHECK_FAILED         \

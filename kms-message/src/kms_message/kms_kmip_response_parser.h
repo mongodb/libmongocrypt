@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-present MongoDB, Inc.
+ * Copyright 2021-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef KMS_MESSAGE_H
-#define KMS_MESSAGE_H
-
-#include <sys/types.h>
+#ifndef KMS_KMIP_RESPONSE_PARSER_H
+#define KMS_KMIP_RESPONSE_PARSER_H
 
 #include "kms_message_defines.h"
-#include "kms_kmip_request.h"
-#include "kms_kmip_response.h"
-#include "kms_kmip_response_parser.h"
-#include "kms_request_opt.h"
-#include "kms_request.h"
-#include "kms_response.h"
 #include "kms_response_parser.h"
-#include "kms_caller_identity_request.h"
-#include "kms_decrypt_request.h"
-#include "kms_encrypt_request.h"
 
-#endif /* KMS_MESSAGE_H */
+KMS_MSG_EXPORT (kms_response_parser_t *)
+kms_kmip_response_parser_new (void *reserved);
+
+#endif /* KMS_KMIP_RESPONSE_PARSER_H */

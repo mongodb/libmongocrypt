@@ -441,17 +441,20 @@ kmip_reader_find (kmip_reader_t *reader,
    return false;
 }
 
-kmip_reader_t *
-kmip_reader_find_and_get_struct_reader (kmip_reader_t *reader, size_t tag)
+bool
+kmip_reader_find_and_recurse (kmip_reader_t *reader, size_t tag)
 {
    size_t pos;
    size_t length;
 
    if (!kmip_reader_find (reader, tag, KMIP_ITEM_TYPE_Structure, &pos, &length)) {
-      return NULL;
+      return false;
    }
 
-   return kmip_reader_new (reader->ptr + pos, length);
+   reader->pos = 0;
+   reader->ptr = reader->ptr + pos;
+   reader->len = length;
+   return true;
 }
 
 bool

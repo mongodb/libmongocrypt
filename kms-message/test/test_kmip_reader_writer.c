@@ -384,12 +384,11 @@ kms_kmip_reader_find_test (void)
 }
 
 void
-kms_kmip_reader_find_and_get_struct_reader_test (void)
+kms_kmip_reader_find_and_recurse_test (void)
 {
    uint8_t *data;
    size_t datalen;
    kmip_reader_t *reader;
-   kmip_reader_t *struct_reader;
    bool found;
    size_t pos = 0;
    size_t len = 0;
@@ -402,12 +401,10 @@ kms_kmip_reader_find_and_get_struct_reader_test (void)
       &datalen);
 
    reader = kmip_reader_new (data, datalen);
-   struct_reader =
-      kmip_reader_find_and_get_struct_reader (reader, KMIP_TAG_CompromiseDate);
-   ASSERT (NULL != struct_reader);
+   ASSERT (kmip_reader_find_and_recurse (reader, KMIP_TAG_CompromiseDate));
 
    /* Values nested within the Structure are found. */
-   found = kmip_reader_find (struct_reader,
+   found = kmip_reader_find (reader,
                              KMIP_TAG_ApplicationSpecificInformation,
                              KMIP_ITEM_TYPE_Enumeration,
                              &pos,
@@ -416,7 +413,6 @@ kms_kmip_reader_find_and_get_struct_reader_test (void)
    ASSERT (pos == 8);
    ASSERT (len == 4);
 
-   kmip_reader_destroy (struct_reader);
    kmip_reader_destroy (reader);
    free (data);
 }

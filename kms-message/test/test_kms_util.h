@@ -28,7 +28,7 @@ copy_and_filter_hex (const char *unfiltered_hex);
 /* hex_to_data calls copy_and_filter_hex on @unfiltered_hex, then converts it to
  * binary and returns a byte array. */
 uint8_t *
-hex_to_data (char *unfiltered_hex, size_t *outlen);
+hex_to_data (const char *unfiltered_hex, size_t *outlen);
 
 char *
 data_to_hex (const uint8_t *data, size_t len);

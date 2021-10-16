@@ -35,7 +35,7 @@ extern "C" {
 KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_register_secretdata_new (void *reserved,
                                           uint8_t *data,
-                                          uint32_t len);
+                                          size_t len);
 
 /* kms_kmip_request_activate_new creates a KMIP Activate request with the
  * provided unique identifer.

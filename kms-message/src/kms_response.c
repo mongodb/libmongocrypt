@@ -25,6 +25,8 @@ kms_response_destroy (kms_response_t *response)
    if (response == NULL) {
       return;
    }
+
+   free (response->kmip.data);
    kms_kv_list_destroy (response->headers);
    kms_request_str_destroy (response->body);
    free (response);
@@ -43,4 +45,10 @@ int
 kms_response_get_status (kms_response_t *response)
 {
    return response->status;
+}
+
+const char *
+kms_response_get_error (const kms_response_t *response)
+{
+   return response->failed ? response->error : NULL;
 }

@@ -1115,13 +1115,20 @@ extern void kms_kmip_writer_test (void);
 extern void kms_kmip_reader_test (void);
 extern void kms_kmip_reader_negative_int_test (void);
 extern void kms_kmip_reader_find_test (void);
-extern void kms_kmip_reader_find_and_get_struct_reader_test (void);
+extern void kms_kmip_reader_find_and_recurse_test (void);
 extern void kms_kmip_reader_find_and_read_enum_test (void);
 extern void kms_kmip_reader_find_and_read_bytes_test (void);
 extern void kms_kmip_request_register_secretdata_test (void);
 extern void kms_kmip_request_register_secretdata_invalid_test (void);
 extern void kms_kmip_request_get_test (void);
 extern void kms_kmip_request_activate_test (void);
+extern void kms_kmip_response_parser_test (void);
+extern void kms_kmip_response_get_unique_identifier_test (void);
+extern void kms_kmip_response_get_secretdata_test (void);
+extern void kms_kmip_response_get_secretdata_notfound_test (void);
+extern void kms_kmip_response_parser_reuse_test (void);
+extern void kms_kmip_response_parser_excess_test (void);
+extern void kms_kmip_response_parser_notenough_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1172,7 +1179,7 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_reader_test);
    RUN_TEST (kms_kmip_reader_negative_int_test);
    RUN_TEST (kms_kmip_reader_test);
-   RUN_TEST (kms_kmip_reader_find_and_get_struct_reader_test);
+   RUN_TEST (kms_kmip_reader_find_and_recurse_test);
    RUN_TEST (kms_kmip_reader_find_and_read_enum_test);
    RUN_TEST (kms_kmip_reader_find_and_read_bytes_test);
    RUN_TEST (kms_kmip_request_register_secretdata_test);
@@ -1180,6 +1187,14 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_request_get_test);
    RUN_TEST (kms_kmip_request_activate_test);
    RUN_TEST (kms_request_kmip_prohibited_test);
+   RUN_TEST (kms_kmip_response_parser_test);
+   RUN_TEST (kms_kmip_response_get_unique_identifier_test);
+   RUN_TEST (kms_kmip_response_get_secretdata_test);
+   RUN_TEST (kms_kmip_response_get_secretdata_notfound_test);
+   RUN_TEST (kms_kmip_response_parser_reuse_test);
+   RUN_TEST (kms_kmip_response_parser_excess_test);
+   RUN_TEST (kms_kmip_response_parser_notenough_test);
+
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
