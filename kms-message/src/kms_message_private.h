@@ -69,7 +69,7 @@ struct _kms_response_t {
    kms_kv_list_t *headers;
    kms_request_str_t *body;
 
-   /* TODO (MONGOCRYPT-???): make a union for each KMS provider type. */
+   /* TODO (MONGOCRYPT-347): make a union for each KMS provider type. */
    char error[512];
    bool failed;
    kms_request_provider_t provider;
@@ -104,7 +104,7 @@ struct _kms_response_parser_t {
    bool transfer_encoding_chunked;
    int chunk_size;
    kms_response_parser_state_t state;
-   /* TODO: MONGOCRYPT-??? reorganize this struct to better separate fields for
+   /* TODO: MONGOCRYPT-348 reorganize this struct to better separate fields for
     * HTTP parsing and fields for KMIP parsing. */
    kms_kmip_response_parser_t *kmip;
 };
