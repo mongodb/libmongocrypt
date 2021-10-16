@@ -33,7 +33,8 @@ Example of an error message:
   <Operation tag="0x42005c" type="Enumeration" value="10"/>
   <ResultStatus tag="0x42007f" type="Enumeration" value="1"/>
   <ResultReason tag="0x42007e" type="Enumeration" value="1"/>
-  <ResultMessage tag="0x42007d" type="TextString" value="ResultReasonItemNotFound"/>
+  <ResultMessage tag="0x42007d" type="TextString"
+value="ResultReasonItemNotFound"/>
  </BatchItem>
 </ResponseMessage>
 */

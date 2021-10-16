@@ -72,7 +72,8 @@ kms_kmip_response_parser_test (void)
    ASSERT_PARSER_OK (parser);
    ASSERT (ok);
 
-   /* The parser knows first length. Expect the parser wants the remaining length. */
+   /* The parser knows first length. Expect the parser wants the remaining
+    * length. */
    want_bytes =
       kms_response_parser_wants_bytes (parser, SAMPLE_KMIP_LARGE_LENGTH);
    ASSERT_CMPINT (want_bytes, ==, SAMPLE_KMIP_FIRST_LENGTH);

@@ -63,7 +63,7 @@ kms_kmip_response_get_unique_identifier_test (void)
    char *actual_uid;
 
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
-   res.kmip.data = (uint8_t*) SUCCESS_REGISTER_RESPONSE;
+   res.kmip.data = (uint8_t *) SUCCESS_REGISTER_RESPONSE;
    res.kmip.len = sizeof (SUCCESS_REGISTER_RESPONSE);
 
    actual_uid = kms_kmip_response_get_unique_identifier (&res);
@@ -149,7 +149,7 @@ kms_kmip_response_get_secretdata_test (void)
    size_t actual_secretdata_len;
 
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
-   res.kmip.data = (uint8_t*) SUCCESS_GET_RESPONSE;
+   res.kmip.data = (uint8_t *) SUCCESS_GET_RESPONSE;
    res.kmip.len = sizeof (SUCCESS_GET_RESPONSE);
 
    actual_secretdata =
@@ -205,7 +205,7 @@ kms_kmip_response_get_secretdata_notfound_test (void)
    size_t secretdata_len;
 
    res.provider = KMS_REQUEST_PROVIDER_KMIP;
-   res.kmip.data = (uint8_t*) ERROR_GET_RESPOSE_NOTFOUND;
+   res.kmip.data = (uint8_t *) ERROR_GET_RESPOSE_NOTFOUND;
    res.kmip.len = sizeof (ERROR_GET_RESPOSE_NOTFOUND);
 
    secretdata = kms_kmip_response_get_secretdata (&res, &secretdata_len);
