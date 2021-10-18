@@ -286,8 +286,6 @@ _kms_start (mongocrypt_ctx_t *ctx)
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
       if (!_kms_kmip_start (ctx)) {
-         mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
-         _mongocrypt_ctx_fail (ctx);
          goto done;
       }
    } else {
