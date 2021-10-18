@@ -78,15 +78,16 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
    }
 
    /* There are two KMIP flows.
+    *
+    * KMIP flow 1: User set a 'keyId':
     * 1. Send a KMIP Get request.
-     *    Expect a 96 byte SecretData in the response.
-     * 2. Use the 96 byte SecretData to encrypt a new DEK.
-
-     KMIP flow 2: User did not set a 'keyId'.
+    *    Expect a 96 byte SecretData in the response.
+    * 2. Use the 96 byte SecretData to encrypt a new DEK.
+    *
+    * KMIP flow 2: User did not set a 'keyId'.
     * 1. Create a new random 96 byte key to use as the KEK.
     * 2. Send a KMIP Register request with the 96 byte key as a SecretData
-    managed object.
-    *    This returns a Unique Identifier.
+    *    managed object. This returns a Unique Identifier.
     * 3. Send a KMIP Activate request with the Unique Identifier.
     *    This returns the same Unique Identifier.
     * 4. Send a KMIP Get request with the Unique Identifier.
@@ -115,9 +116,6 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
       }
 
       /* Step 2. Send a KMIP Register request. */
-      _mongocrypt_log (&ctx->crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_TRACE,
-                       "creating KMIP Register response");
       if (!_mongocrypt_kms_ctx_init_kmip_register (&dkctx->kms,
                                                    endpoint,
                                                    secretdata.data,
@@ -131,11 +129,6 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else if (!dkctx->kmip_activated) {
       /* Step 3. Send a KMIP Activate request. */
-      _mongocrypt_log (
-         &ctx->crypt->log,
-         MONGOCRYPT_LOG_LEVEL_TRACE,
-         "creating KMIP Activate request with Unique Identifier: %s",
-         dkctx->kmip_unique_identifier);
       if (!_mongocrypt_kms_ctx_init_kmip_activate (
              &dkctx->kms,
              endpoint,
@@ -148,10 +141,6 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else if (!dkctx->kmip_secretdata.data) {
       /* Step 4. Send a KMIP Get request with the Unique Identifier. */
-      _mongocrypt_log (&ctx->crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_TRACE,
-                       "creating KMIP Get request with Unique Identifier: %s",
-                       dkctx->kmip_unique_identifier);
       if (!_mongocrypt_kms_ctx_init_kmip_get (&dkctx->kms,
                                               endpoint,
                                               dkctx->kmip_unique_identifier,
