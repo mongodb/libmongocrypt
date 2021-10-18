@@ -803,6 +803,16 @@ _ctx_done_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx)
 }
 
 static bool
+size_to_uint32 (size_t in, uint32_t *out)
+{
+   if (in > UINT32_MAX) {
+      return false;
+   }
+   *out = (uint32_t) in;
+   return true;
+}
+
+static bool
 _ctx_done_kmip_get (mongocrypt_kms_ctx_t *kms_ctx)
 {
    kms_response_t *res = NULL;
@@ -826,7 +836,10 @@ _ctx_done_kmip_get (mongocrypt_kms_ctx_t *kms_ctx)
    }
 
    kms_ctx->result.data = (uint8_t *) secretdata;
-   kms_ctx->result.len = secretdata_len;
+   if (!size_to_uint32(secretdata_len, &kms_ctx->result.len)) {
+      CLIENT_ERR ("Error casting secret data length %zu to uint32_t", secretdata_len);
+      goto fail;
+   }
    kms_ctx->result.owned = true;
    ret = true;
 
@@ -1474,15 +1487,6 @@ fail:
    return ret;
 }
 
-static bool
-size_to_uint32 (size_t in, uint32_t *out)
-{
-   if (in > UINT32_MAX) {
-      return false;
-   }
-   *out = (uint32_t) in;
-   return true;
-}
 
 bool
 _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
