@@ -22,6 +22,7 @@
 #include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-status-private.h"
+#include "mongocrypt-util-private.h"
 #include <kms_message/kms_b64.h>
 #include <kms_message/kms_azure_request.h>
 #include <kms_message/kms_gcp_request.h>
@@ -787,7 +788,10 @@ _ctx_done_kmip_register (mongocrypt_kms_ctx_t *kms_ctx)
    }
 
    kms_ctx->result.data = (uint8_t *) uid;
-   kms_ctx->result.len = (uint32_t) strlen (uid);
+   if (!size_to_uint32 (strlen (uid), &kms_ctx->result.len)) {
+      CLIENT_ERR ("Error casting UniqueIdentifier length %zu to uint32_t", strlen (uid));
+      goto fail;
+   }
    kms_ctx->result.owned = true;
    ret = true;
 
@@ -800,16 +804,6 @@ static bool
 _ctx_done_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx)
 {
    return _ctx_done_kmip_register (kms_ctx);
-}
-
-static bool
-size_to_uint32 (size_t in, uint32_t *out)
-{
-   if (in > UINT32_MAX) {
-      return false;
-   }
-   *out = (uint32_t) in;
-   return true;
 }
 
 static bool
@@ -836,7 +830,7 @@ _ctx_done_kmip_get (mongocrypt_kms_ctx_t *kms_ctx)
    }
 
    kms_ctx->result.data = (uint8_t *) secretdata;
-   if (!size_to_uint32(secretdata_len, &kms_ctx->result.len)) {
+   if (!size_to_uint32 (secretdata_len, &kms_ctx->result.len)) {
       CLIENT_ERR ("Error casting secret data length %zu to uint32_t", secretdata_len);
       goto fail;
    }
