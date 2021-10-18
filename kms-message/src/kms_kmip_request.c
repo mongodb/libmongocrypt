@@ -35,7 +35,7 @@ copy_writer_buffer (kms_request_t *req, kmip_writer_t *writer) {
 
 kms_request_t *
 kms_kmip_request_register_secretdata_new (void *reserved,
-                                          uint8_t *data,
+                                          const uint8_t *data,
                                           size_t len)
 {
    /*
@@ -109,7 +109,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    /* 0x01 = Raw */
    kmip_writer_write_enumeration (writer, KMIP_TAG_KeyFormatType, 0x01);
    kmip_writer_begin_struct (writer, KMIP_TAG_KeyValue);
-   kmip_writer_write_bytes (writer, KMIP_TAG_KeyMaterial, (char *) data, len);
+   kmip_writer_write_bytes (writer, KMIP_TAG_KeyMaterial, (const char *) data, len);
    kmip_writer_close_struct (writer); /* KMIP_TAG_KeyValue */
    kmip_writer_close_struct (writer); /* KMIP_TAG_KeyBlock */
    kmip_writer_close_struct (writer); /* KMIP_TAG_SecretData */
