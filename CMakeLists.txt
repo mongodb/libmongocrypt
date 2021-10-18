@@ -90,6 +90,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-opts.c
    src/mongocrypt-status.c
    src/mongocrypt-traverse-util.c
+   src/mongocrypt-util.c
    src/mongocrypt.c
    src/os_win/os_mutex.c
    src/os_win/os_once.c
