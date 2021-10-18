@@ -637,7 +637,7 @@ value="ywxrSj5TLjswd1G4oGFJ6hwWgtTsQip0"/>
  </BatchItem>
 </RequestMessage>
 */
-static uint8_t EXPECTED_GET_REQUEST[] = {
+static const uint8_t EXPECTED_GET_REQUEST[] = {
    0x42, 0x00, 0x78, 0x01, 0x00, 0x00, 0x00, 0x88, 0x42, 0x00, 0x77, 0x01,
    0x00, 0x00, 0x00, 0x38, 0x42, 0x00, 0x69, 0x01, 0x00, 0x00, 0x00, 0x20,
    0x42, 0x00, 0x6a, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01,
@@ -682,7 +682,7 @@ value="0c2ea7297180f82a984b2fd47d6327ce226f62e9017b91dc6e5d6dfd98747d97e89f17bf0
  </BatchItem>
 </ResponseMessage>
 */
-static uint8_t SUCCESS_GET_RESPONSE[] = {
+static const uint8_t SUCCESS_GET_RESPONSE[] = {
    0x42, 0x00, 0x7b, 0x01, 0x00, 0x00, 0x01, 0x58, 0x42, 0x00, 0x7a, 0x01, 0x00,
    0x00, 0x00, 0x48, 0x42, 0x00, 0x69, 0x01, 0x00, 0x00, 0x00, 0x20, 0x42, 0x00,
    0x6a, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
@@ -712,7 +712,7 @@ static uint8_t SUCCESS_GET_RESPONSE[] = {
    0x53, 0xdc, 0xed, 0x78, 0x28, 0xdd, 0x8a, 0x35, 0xf2, 0x68, 0x43, 0x7f, 0xf1,
    0x41};
 
-static uint8_t EXPECTED_DEK[] = {
+static const uint8_t EXPECTED_SECRETDATA[] = {
    0x94, 0x82, 0x4f, 0x44, 0xbe, 0xb2, 0x20, 0x73, 0x14, 0xad, 0x8b, 0x36,
    0x38, 0xaf, 0x01, 0x45, 0xa5, 0x13, 0x80, 0x84, 0x44, 0x57, 0xdf, 0xde,
    0x9f, 0xb6, 0x7b, 0xfb, 0xf9, 0x21, 0xf9, 0x00, 0xb2, 0x00, 0x9e, 0x07,
@@ -734,7 +734,7 @@ _test_key_broker_kmip (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t keydoc;
    mongocrypt_kms_ctx_t *kms;
    mongocrypt_binary_t *msg;
-   _mongocrypt_buffer_t dek;
+   _mongocrypt_buffer_t secretdata;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    status = mongocrypt_status_new ();
@@ -766,10 +766,14 @@ _test_key_broker_kmip (_mongocrypt_tester_t *tester)
    kms_ctx_feed_all (kms, SUCCESS_GET_RESPONSE, sizeof (SUCCESS_GET_RESPONSE));
    ASSERT_OK (_mongocrypt_key_broker_kms_done (&kb), &kb);
 
-   BSON_ASSERT (_mongocrypt_key_broker_decrypted_key_by_id (&kb, &id, &dek));
-   ASSERT_CMPBYTES (dek.data, dek.len, EXPECTED_DEK, sizeof (EXPECTED_DEK));
+   BSON_ASSERT (
+      _mongocrypt_key_broker_decrypted_key_by_id (&kb, &id, &secretdata));
+   ASSERT_CMPBYTES (secretdata.data,
+                    secretdata.len,
+                    EXPECTED_SECRETDATA,
+                    sizeof (EXPECTED_SECRETDATA));
 
-   _mongocrypt_buffer_cleanup (&dek);
+   _mongocrypt_buffer_cleanup (&secretdata);
    mongocrypt_binary_destroy (msg);
    _mongocrypt_buffer_cleanup (&keydoc);
    _mongocrypt_buffer_cleanup (&id);

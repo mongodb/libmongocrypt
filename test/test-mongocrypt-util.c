@@ -78,7 +78,7 @@ bson_iter_bson (bson_iter_t *iter, bson_t *bson)
 
 void
 kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,
-                  uint8_t *data,
+                  const uint8_t *data,
                   uint32_t datalen)
 {
    mongocrypt_status_t *status;
@@ -90,7 +90,7 @@ kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,
    while (mongocrypt_kms_ctx_bytes_needed (kms_ctx) > 0) {
       uint32_t len = mongocrypt_kms_ctx_bytes_needed (kms_ctx);
 
-      bytes = mongocrypt_binary_new_from_data (data + offset, len);
+      bytes = mongocrypt_binary_new_from_data ((uint8_t*) data + offset, len);
       ok = mongocrypt_kms_ctx_feed (kms_ctx, bytes);
       mongocrypt_kms_ctx_status (kms_ctx, status);
       ASSERT_OK_STATUS (ok, status);
