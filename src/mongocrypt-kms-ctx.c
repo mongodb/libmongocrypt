@@ -1609,7 +1609,7 @@ mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len)
 
    switch (kms->req_type) {
    default:
-      BSON_ASSERT ("unknown KMS request");
+      BSON_ASSERT ("unknown KMS request type");
    case MONGOCRYPT_KMS_AWS_ENCRYPT:
    case MONGOCRYPT_KMS_AWS_DECRYPT:
       SET_AND_RET ("aws");
