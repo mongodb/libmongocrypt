@@ -1487,11 +1487,10 @@ fail:
    return ret;
 }
 
-
 bool
 _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
-                                        _mongocrypt_endpoint_t *endpoint,
-                                        uint8_t *secretdata,
+                                        const _mongocrypt_endpoint_t *endpoint,
+                                        const uint8_t *secretdata,
                                         uint32_t secretdata_len,
                                         _mongocrypt_log_t *log)
 {
@@ -1527,8 +1526,8 @@ fail:
 
 bool
 _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
-                                        _mongocrypt_endpoint_t *endpoint,
-                                        char *unique_identifier,
+                                        const _mongocrypt_endpoint_t *endpoint,
+                                        const char *unique_identifier,
                                         _mongocrypt_log_t *log)
 {
    mongocrypt_status_t *status;
@@ -1563,8 +1562,8 @@ fail:
 
 bool
 _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
-                                   _mongocrypt_endpoint_t *endpoint,
-                                   char *unique_identifier,
+                                   const _mongocrypt_endpoint_t *endpoint,
+                                   const char *unique_identifier,
                                    _mongocrypt_log_t *log)
 {
    mongocrypt_status_t *status;
