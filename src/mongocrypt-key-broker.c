@@ -124,7 +124,6 @@ _all_key_requests_satisfied (_mongocrypt_key_broker_t *kb)
    return true;
 }
 
-/* KMIPTODO: use an errorf function to supply additional information. */
 static bool
 _key_broker_fail_w_msg (_mongocrypt_key_broker_t *kb, const char *msg)
 {

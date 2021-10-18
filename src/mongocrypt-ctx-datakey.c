@@ -340,26 +340,13 @@ _kms_done (mongocrypt_ctx_t *ctx)
       }
       return _kms_start (ctx);
    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER) {
-      _mongocrypt_log (&ctx->crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_TRACE,
-                       "handling KMIP Register response");
       dkctx->kmip_unique_identifier =
          bson_strdup ((char *) dkctx->kms.result.data);
-      _mongocrypt_log (&ctx->crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_TRACE,
-                       "got KEK UID: %s",
-                       dkctx->kmip_unique_identifier);
       return _kms_start (ctx);
    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE) {
-      _mongocrypt_log (&ctx->crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_TRACE,
-                       "handling KMIP Activate response");
       dkctx->kmip_activated = true;
       return _kms_start (ctx);
    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_GET) {
-      _mongocrypt_log (&ctx->crypt->log,
-                       MONGOCRYPT_LOG_LEVEL_TRACE,
-                       "handling KMIP Get response");
       _mongocrypt_buffer_copy_to (&dkctx->kms.result, &dkctx->kmip_secretdata);
       return _kms_start (ctx);
    }
