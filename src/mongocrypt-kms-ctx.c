@@ -786,7 +786,7 @@ _ctx_done_kmip_register (mongocrypt_kms_ctx_t *kms_ctx)
       goto fail;
    }
 
-   kms_ctx->result.data = (uint8_t*) uid;
+   kms_ctx->result.data = (uint8_t *) uid;
    kms_ctx->result.len = (uint32_t) strlen (uid);
    kms_ctx->result.owned = true;
    ret = true;
@@ -825,7 +825,7 @@ _ctx_done_kmip_get (mongocrypt_kms_ctx_t *kms_ctx)
       goto fail;
    }
 
-   kms_ctx->result.data = (uint8_t*) secretdata;
+   kms_ctx->result.data = (uint8_t *) secretdata;
    kms_ctx->result.len = secretdata_len;
    kms_ctx->result.owned = true;
    ret = true;
@@ -1474,7 +1474,9 @@ fail:
    return ret;
 }
 
-static bool size_to_uint32 (size_t in, uint32_t *out) {
+static bool
+size_to_uint32 (size_t in, uint32_t *out)
+{
    if (in > UINT32_MAX) {
       return false;
    }
@@ -1507,8 +1509,7 @@ _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
    }
 
    _mongocrypt_buffer_init (&kms_ctx->msg);
-   kms_ctx->msg.data =
-      (uint8_t *) kms_request_to_bytes (kms_ctx->req, &reqlen);
+   kms_ctx->msg.data = (uint8_t *) kms_request_to_bytes (kms_ctx->req, &reqlen);
    if (!size_to_uint32 (reqlen, &kms_ctx->msg.len)) {
       CLIENT_ERR ("Error casting request length %zu to uint32_t", reqlen);
       goto fail;
@@ -1534,8 +1535,8 @@ _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
    status = kms_ctx->status;
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
-   kms_ctx->req = kms_kmip_request_activate_new (
-      NULL /* reserved */, unique_identifier);
+   kms_ctx->req =
+      kms_kmip_request_activate_new (NULL /* reserved */, unique_identifier);
 
    if (!kms_ctx->req) {
       CLIENT_ERR ("Error creating KMIP activate request: %s",
@@ -1544,8 +1545,7 @@ _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
    }
 
    _mongocrypt_buffer_init (&kms_ctx->msg);
-   kms_ctx->msg.data =
-      (uint8_t *) kms_request_to_bytes (kms_ctx->req, &reqlen);
+   kms_ctx->msg.data = (uint8_t *) kms_request_to_bytes (kms_ctx->req, &reqlen);
    if (!size_to_uint32 (reqlen, &kms_ctx->msg.len)) {
       CLIENT_ERR ("Error casting request length %zu to uint32_t", reqlen);
       goto fail;
@@ -1571,8 +1571,8 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
    status = kms_ctx->status;
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
-   kms_ctx->req = kms_kmip_request_get_new (
-      NULL /* reserved */, unique_identifier);
+   kms_ctx->req =
+      kms_kmip_request_get_new (NULL /* reserved */, unique_identifier);
 
    if (!kms_ctx->req) {
       CLIENT_ERR ("Error creating KMIP get request: %s",
@@ -1581,8 +1581,7 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
    }
 
    _mongocrypt_buffer_init (&kms_ctx->msg);
-   kms_ctx->msg.data =
-      (uint8_t *) kms_request_to_bytes (kms_ctx->req, &reqlen);
+   kms_ctx->msg.data = (uint8_t *) kms_request_to_bytes (kms_ctx->req, &reqlen);
    if (!size_to_uint32 (reqlen, &kms_ctx->msg.len)) {
       CLIENT_ERR ("Error casting request length %zu to uint32_t", reqlen);
       goto fail;

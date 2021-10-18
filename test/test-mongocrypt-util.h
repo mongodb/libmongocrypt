@@ -24,13 +24,15 @@
 #include <stdint.h>
 #include <stdio.h>
 
-const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state);
+const char *
+mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state);
 
 char *
 data_to_hex (const uint8_t *data, size_t len);
 
 /* bson_iter_bson iterates a document or array into a bson_t. */
-void bson_iter_bson (bson_iter_t *iter, bson_t *bson);
+void
+bson_iter_bson (bson_iter_t *iter, bson_t *bson);
 
 void
 kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,

@@ -505,7 +505,11 @@ _mongocrypt_tester_mongocrypt (void)
                              "privateKey",
                              PRIVATE_KEY_FOR_TESTING,
                              "}",
-                             "kmip", "{", "endpoint", "localhost", "}");
+                             "kmip",
+                             "{",
+                             "endpoint",
+                             "localhost",
+                             "}");
    bin = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);
@@ -588,8 +592,6 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
       "options cannot be set after initialization");
    mongocrypt_destroy (crypt);
 }
-
-
 
 
 static void

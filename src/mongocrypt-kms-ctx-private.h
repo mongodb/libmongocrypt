@@ -130,7 +130,7 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (mongocrypt_kms_ctx_t *kms,
 
 bool
 _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms,
-                                       _mongocrypt_endpoint_t *endpoint,
+                                        _mongocrypt_endpoint_t *endpoint,
                                         uint8_t *secretdata,
                                         uint32_t secretdata_len,
                                         _mongocrypt_log_t *log)

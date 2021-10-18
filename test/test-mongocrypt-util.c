@@ -21,7 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state) {
+const char *
+mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state)
+{
    switch (state) {
    case MONGOCRYPT_CTX_ERROR:
       return "MONGOCRYPT_CTX_ERROR";

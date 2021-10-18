@@ -631,7 +631,8 @@ _test_key_broker_multi_match (_mongocrypt_tester_t *tester)
  <BatchItem tag="0x42000f" type="Structure">
   <Operation tag="0x42005c" type="Enumeration" value="10"/>
   <RequestPayload tag="0x420079" type="Structure">
-   <UniqueIdentifier tag="0x420094" type="TextString" value="ywxrSj5TLjswd1G4oGFJ6hwWgtTsQip0"/>
+   <UniqueIdentifier tag="0x420094" type="TextString"
+value="ywxrSj5TLjswd1G4oGFJ6hwWgtTsQip0"/>
   </RequestPayload>
  </BatchItem>
 </RequestMessage>
@@ -665,13 +666,15 @@ static uint8_t EXPECTED_GET_REQUEST[] = {
   <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
   <ResponsePayload tag="0x42007c" type="Structure">
    <ObjectType tag="0x420057" type="Enumeration" value="7"/>
-   <UniqueIdentifier tag="0x420094" type="TextString" value="ywxrSj5TLjswd1G4oGFJ6hwWgtTsQip0"/>
+   <UniqueIdentifier tag="0x420094" type="TextString"
+value="ywxrSj5TLjswd1G4oGFJ6hwWgtTsQip0"/>
    <SecretData tag="0x420085" type="Structure">
     <SecretDataType tag="0x420086" type="Enumeration" value="2"/>
     <KeyBlock tag="0x420040" type="Structure">
      <KeyFormatType tag="0x420042" type="Enumeration" value="1"/>
      <KeyValue tag="0x420045" type="Structure">
-      <KeyMaterial tag="0x420043" type="ByteString" value="0c2ea7297180f82a984b2fd47d6327ce226f62e9017b91dc6e5d6dfd98747d97e89f17bf0926cfcc0afb24e69b7c00121dda12d0158c4375c31084abf7f2e6044edc2f92802ba3f676d470d2cbc4e33a2a8e53dced7828dd8a35f268437ff141"/>
+      <KeyMaterial tag="0x420043" type="ByteString"
+value="0c2ea7297180f82a984b2fd47d6327ce226f62e9017b91dc6e5d6dfd98747d97e89f17bf0926cfcc0afb24e69b7c00121dda12d0158c4375c31084abf7f2e6044edc2f92802ba3f676d470d2cbc4e33a2a8e53dced7828dd8a35f268437ff141"/>
      </KeyValue>
     </KeyBlock>
    </SecretData>
