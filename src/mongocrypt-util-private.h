@@ -23,6 +23,7 @@
 
 /* A utility for safely casting from size_t to uint32_t.
  * Returns false if @in exceeds the maximum value of a uint32_t. */
-bool size_to_uint32 (size_t in, uint32_t *out);
+bool
+size_to_uint32 (size_t in, uint32_t *out);
 
 #endif /* MONGOCRYPT_UTIL_PRIVATE_H */
