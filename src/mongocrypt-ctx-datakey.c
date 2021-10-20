@@ -33,7 +33,6 @@ _cleanup (mongocrypt_ctx_t *ctx)
    bson_free ((void *) dkctx->kmip_unique_identifier);
 }
 
-
 static mongocrypt_kms_ctx_t *
 _next_kms_ctx (mongocrypt_ctx_t *ctx)
 {
@@ -82,12 +81,12 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
     * 3. Send a KMIP Get request with the Unique Identifier.
     *    This returns the 96 byte SecretData.
     * 4. Use the 96 byte SecretData to encrypt a new DEK.
-    * 
+    *
     * If the user set a 'keyId' to use, the flow begins at step 3.
     */
 
    if (user_supplied_keyid && !dkctx->kmip_unique_identifier) {
-      /*  User set a 'keyId'. */
+      /* User set a 'keyId'. */
       dkctx->kmip_unique_identifier = bson_strdup (user_supplied_keyid);
       dkctx->kmip_activated = true;
       /* Fall through to Step 3. */
@@ -117,7 +116,7 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
       goto success;
    }
-   
+
    if (!dkctx->kmip_activated) {
       /* Step 2. Send a KMIP Activate request. */
       if (!_mongocrypt_kms_ctx_init_kmip_activate (
@@ -131,7 +130,7 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
       goto success;
    }
-   
+
    if (!dkctx->kmip_secretdata.data) {
       /* Step 3. Send a KMIP Get request with the Unique Identifier. */
       if (!_mongocrypt_kms_ctx_init_kmip_get (&dkctx->kms,
@@ -351,7 +350,6 @@ _kms_done (mongocrypt_ctx_t *ctx)
    return true;
 }
 
-
 /* Append a UUID _id. Confer with libmongoc's `_mongoc_server_session_uuid`. */
 static bool
 _append_id (mongocrypt_t *crypt, bson_t *bson, mongocrypt_status_t *status)
@@ -383,7 +381,6 @@ _append_id (mongocrypt_t *crypt, bson_t *bson, mongocrypt_status_t *status)
 
    return true;
 }
-
 
 static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
@@ -443,7 +440,6 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    ctx->state = MONGOCRYPT_CTX_DONE;
    return true;
 }
-
 
 bool
 mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
