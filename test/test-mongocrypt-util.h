@@ -34,7 +34,7 @@ data_to_hex (const uint8_t *data, size_t len);
 void
 bson_iter_bson (bson_iter_t *iter, bson_t *bson);
 
-void
+bool
 kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,
                   const uint8_t *data,
                   uint32_t datalen);

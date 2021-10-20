@@ -763,7 +763,9 @@ _test_key_broker_kmip (_mongocrypt_tester_t *tester)
                     mongocrypt_binary_data (msg),
                     mongocrypt_binary_len (msg));
 
-   kms_ctx_feed_all (kms, SUCCESS_GET_RESPONSE, sizeof (SUCCESS_GET_RESPONSE));
+   ASSERT_OK (kms_ctx_feed_all (
+                 kms, SUCCESS_GET_RESPONSE, sizeof (SUCCESS_GET_RESPONSE)),
+              kms);
    ASSERT_OK (_mongocrypt_key_broker_kms_done (&kb), &kb);
 
    BSON_ASSERT (
@@ -772,6 +774,98 @@ _test_key_broker_kmip (_mongocrypt_tester_t *tester)
                     secretdata.len,
                     EXPECTED_SECRETDATA,
                     sizeof (EXPECTED_SECRETDATA));
+
+   _mongocrypt_buffer_cleanup (&secretdata);
+   mongocrypt_binary_destroy (msg);
+   _mongocrypt_buffer_cleanup (&keydoc);
+   _mongocrypt_buffer_cleanup (&id);
+   bson_destroy (&keydoc_bson);
+   _mongocrypt_key_broker_cleanup (&kb);
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
+}
+
+/*
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="4"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-01T14:43:13-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="10"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="1"/>
+  <ResultReason tag="0x42007e" type="Enumeration" value="1"/>
+  <ResultMessage tag="0x42007d" type="TextString"
+value="ResultReasonItemNotFound"/>
+ </BatchItem>
+</ResponseMessage>
+*/
+static const uint8_t ERROR_GET_RESPOSE_NOTFOUND[] = {
+   0x42, 0x00, 0x7b, 0x01, 0x00, 0x00, 0x00, 0xa8, 0x42, 0x00, 0x7a, 0x01, 0x00,
+   0x00, 0x00, 0x48, 0x42, 0x00, 0x69, 0x01, 0x00, 0x00, 0x00, 0x20, 0x42, 0x00,
+   0x6a, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+   0x00, 0x42, 0x00, 0x6b, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04,
+   0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x92, 0x09, 0x00, 0x00, 0x00, 0x08, 0x00,
+   0x00, 0x00, 0x00, 0x61, 0x57, 0x1e, 0x81, 0x42, 0x00, 0x0d, 0x02, 0x00, 0x00,
+   0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x0f,
+   0x01, 0x00, 0x00, 0x00, 0x50, 0x42, 0x00, 0x5c, 0x05, 0x00, 0x00, 0x00, 0x04,
+   0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x7f, 0x05, 0x00,
+   0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00,
+   0x7e, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+   0x00, 0x42, 0x00, 0x7d, 0x07, 0x00, 0x00, 0x00, 0x18, 0x52, 0x65, 0x73, 0x75,
+   0x6c, 0x74, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x49, 0x74, 0x65, 0x6d, 0x4e,
+   0x6f, 0x74, 0x46, 0x6f, 0x75, 0x6e, 0x64};
+
+static void
+_test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+   _mongocrypt_key_broker_t kb;
+   bson_t keydoc_bson;
+   bson_iter_t iter;
+   _mongocrypt_buffer_t id;
+   _mongocrypt_buffer_t keydoc;
+   mongocrypt_kms_ctx_t *kms;
+   mongocrypt_binary_t *msg;
+   _mongocrypt_buffer_t secretdata;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   status = mongocrypt_status_new ();
+   _mongocrypt_key_broker_init (&kb, crypt);
+   _load_json_as_bson ("./test/data/key-document-kmip.json", &keydoc_bson);
+
+   ASSERT_OR_PRINT_MSG (bson_iter_init_find (&iter, &keydoc_bson, "_id"),
+                        "could not find _id in key-document-kmip.json");
+   BSON_ASSERT (_mongocrypt_buffer_from_binary_iter (&id, &iter));
+   ASSERT_OK (_mongocrypt_key_broker_request_id (&kb, &id), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
+
+   /* Add the key document. */
+   _mongocrypt_buffer_from_bson (&keydoc, &keydoc_bson);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, &keydoc), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+
+   /* There should be exactly one KMS request for KMIP. */
+   kms = _mongocrypt_key_broker_next_kms (&kb);
+   ASSERT_OR_PRINT_MSG (kms, "expected KMS context returned, got none");
+
+   msg = mongocrypt_binary_new ();
+   mongocrypt_kms_ctx_message (kms, msg);
+   ASSERT_CMPBYTES (EXPECTED_GET_REQUEST,
+                    sizeof (EXPECTED_GET_REQUEST),
+                    mongocrypt_binary_data (msg),
+                    mongocrypt_binary_len (msg));
+
+   ASSERT_FAILS (kms_ctx_feed_all (kms,
+                                   ERROR_GET_RESPOSE_NOTFOUND,
+                                   sizeof (ERROR_GET_RESPOSE_NOTFOUND)),
+                 kms,
+                 "ResultReasonItemNotFound");
 
    _mongocrypt_buffer_cleanup (&secretdata);
    mongocrypt_binary_destroy (msg);
@@ -792,4 +886,5 @@ _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_key_broker_wrong_subtype);
    INSTALL_TEST (_test_key_broker_multi_match);
    INSTALL_TEST (_test_key_broker_kmip);
+   INSTALL_TEST (_test_key_broker_kmip_notfound);
 }

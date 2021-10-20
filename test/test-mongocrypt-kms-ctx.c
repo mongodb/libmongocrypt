@@ -143,8 +143,11 @@ _test_mongocrypt_kms_ctx_kmip_register (_mongocrypt_tester_t *tester)
                     sizeof (REGISTER_REQUEST),
                     mongocrypt_binary_data (bytes),
                     mongocrypt_binary_len (bytes));
-   kms_ctx_feed_all (
-      &kms_ctx, SUCCESS_REGISTER_RESPONSE, sizeof (SUCCESS_REGISTER_RESPONSE));
+   ASSERT_OK (kms_ctx_feed_all (&kms_ctx,
+                                SUCCESS_REGISTER_RESPONSE,
+                                sizeof (SUCCESS_REGISTER_RESPONSE)),
+              &kms_ctx);
+
 
    ok = _mongocrypt_kms_ctx_result (&kms_ctx, &result);
    ASSERT_OK_STATUS (ok, kms_ctx.status);
@@ -253,8 +256,10 @@ _test_mongocrypt_kms_ctx_kmip_activate (_mongocrypt_tester_t *tester)
                     sizeof (ACTIVATE_REQUEST),
                     mongocrypt_binary_data (bytes),
                     mongocrypt_binary_len (bytes));
-   kms_ctx_feed_all (
-      &kms_ctx, SUCCESS_ACTIVATE_RESPONSE, sizeof (SUCCESS_ACTIVATE_RESPONSE));
+   ASSERT_OK (kms_ctx_feed_all (&kms_ctx,
+                                SUCCESS_ACTIVATE_RESPONSE,
+                                sizeof (SUCCESS_ACTIVATE_RESPONSE)),
+              &kms_ctx);
 
    ok = _mongocrypt_kms_ctx_result (&kms_ctx, &result);
    ASSERT_OK_STATUS (ok, kms_ctx.status);
@@ -394,8 +399,9 @@ _test_mongocrypt_kms_ctx_kmip_get (_mongocrypt_tester_t *tester)
                     sizeof (GET_REQUEST),
                     mongocrypt_binary_data (bytes),
                     mongocrypt_binary_len (bytes));
-   kms_ctx_feed_all (
-      &kms_ctx, SUCCESS_GET_RESPONSE, sizeof (SUCCESS_GET_RESPONSE));
+   ASSERT_OK (kms_ctx_feed_all (
+                 &kms_ctx, SUCCESS_GET_RESPONSE, sizeof (SUCCESS_GET_RESPONSE)),
+              &kms_ctx);
 
    ok = _mongocrypt_kms_ctx_result (&kms_ctx, &result);
    ASSERT_OK_STATUS (ok, kms_ctx.status);

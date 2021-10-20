@@ -983,7 +983,7 @@ mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
  * @param[in] kms The @ref mongocrypt_kms_ctx_t object.
  * @param[out] len Receives the length of the returned string.
  *
- * @returns One of the strings: "aws", "azure", "gcp", or "kmip".
+ * @returns One of the static strings: "aws", "azure", "gcp", or "kmip".
  */
 MONGOCRYPT_EXPORT
 const char *
