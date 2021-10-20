@@ -15,12 +15,15 @@
  */
 
 #include "test-mongocrypt-util.h"
+#include "test-mongocrypt-assert.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-const char* mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state) {
+const char *
+mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state)
+{
    switch (state) {
    case MONGOCRYPT_CTX_ERROR:
       return "MONGOCRYPT_CTX_ERROR";
@@ -71,4 +74,30 @@ bson_iter_bson (bson_iter_t *iter, bson_t *bson)
    }
    BSON_ASSERT (data);
    bson_init_static (bson, data, len);
+}
+
+bool
+kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,
+                  const uint8_t *data,
+                  uint32_t datalen)
+{
+   mongocrypt_binary_t *bytes;
+   uint32_t offset = 0;
+
+   while (mongocrypt_kms_ctx_bytes_needed (kms_ctx) > 0) {
+      uint32_t len = mongocrypt_kms_ctx_bytes_needed (kms_ctx);
+
+      ASSERT_CMPINT (offset + len, <=, datalen);
+      bytes = mongocrypt_binary_new_from_data ((uint8_t *) data + offset, len);
+      if (!mongocrypt_kms_ctx_feed (kms_ctx, bytes)) {
+         mongocrypt_binary_destroy (bytes);
+         return false;
+      }
+
+      offset += len;
+      mongocrypt_binary_destroy (bytes);
+   }
+   ASSERT_CMPINT (0, ==, mongocrypt_kms_ctx_bytes_needed (kms_ctx));
+
+   return true;
 }

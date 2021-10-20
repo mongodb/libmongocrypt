@@ -504,6 +504,11 @@ _mongocrypt_tester_mongocrypt (void)
                              "test@example.com",
                              "privateKey",
                              PRIVATE_KEY_FOR_TESTING,
+                             "}",
+                             "kmip",
+                             "{",
+                             "endpoint",
+                             "localhost",
                              "}");
    bin = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
@@ -587,8 +592,6 @@ _test_mongocrypt_bad_init (_mongocrypt_tester_t *tester)
       "options cannot be set after initialization");
    mongocrypt_destroy (crypt);
 }
-
-
 
 
 static void
@@ -784,6 +787,7 @@ main (int argc, char **argv)
                                CRYPTO_OPTIONAL);
    _mongocrypt_tester_install_kek (&tester);
    _mongocrypt_tester_install_cache_oauth (&tester);
+   _mongocrypt_tester_install_kms_ctx (&tester);
 
 
    printf ("Running tests...\n");

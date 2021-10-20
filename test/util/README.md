@@ -49,6 +49,10 @@ csfle create_datakey
     --gcp_kek_keyname <string>
     --gcp_kek_keyversion <string> (optional)
 
+    KMIP options.
+    --kmip_kek_endpoint <string>
+    --kmip_kek_keyid <string>
+
 csfle auto_encrypt
     --command <JSON string> or --command_file <string>
     --db <string>

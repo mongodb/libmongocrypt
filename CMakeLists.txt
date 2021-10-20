@@ -90,6 +90,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-opts.c
    src/mongocrypt-status.c
    src/mongocrypt-traverse-util.c
+   src/mongocrypt-util.c
    src/mongocrypt.c
    src/os_win/os_mutex.c
    src/os_win/os_once.c
@@ -264,6 +265,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-key.c
    test/test-mongocrypt-key-broker.c
    test/test-mongocrypt-key-cache.c
+   test/test-mongocrypt-kms-ctx.c
    test/test-mongocrypt-kms-responses.c
    test/test-mongocrypt-local-kms.c
    test/test-mongocrypt-log.c

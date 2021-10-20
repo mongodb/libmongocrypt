@@ -14,29 +14,16 @@
  * limitations under the License.
  */
 
-#ifndef TEST_MONGOCRYPT_UTIL_H
-#define TEST_MONGOCRYPT_UTIL_H
+#ifndef MONGOCRYPT_UTIL_PRIVATE_H
+#define MONGOCRYPT_UTIL_PRIVATE_H
 
-#include "mongocrypt.h"
-
-#include <bson/bson.h>
-
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
-const char *
-mongocrypt_ctx_state_to_string (mongocrypt_ctx_state_t state);
-
-char *
-data_to_hex (const uint8_t *data, size_t len);
-
-/* bson_iter_bson iterates a document or array into a bson_t. */
-void
-bson_iter_bson (bson_iter_t *iter, bson_t *bson);
-
+/* A utility for safely casting from size_t to uint32_t.
+ * Returns false if @in exceeds the maximum value of a uint32_t. */
 bool
-kms_ctx_feed_all (mongocrypt_kms_ctx_t *kms_ctx,
-                  const uint8_t *data,
-                  uint32_t datalen);
+size_to_uint32 (size_t in, uint32_t *out);
 
-#endif /* TEST_MONGOCRYPT_UTIL_H */
+#endif /* MONGOCRYPT_UTIL_PRIVATE_H */

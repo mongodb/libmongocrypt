@@ -497,7 +497,7 @@ connect_stream_with_tls (mongoc_ssl_opt_t *ssl_opt,
                          int32_t connecttimeoutms,
                          bson_error_t *error)
 {
-   mongoc_stream_t *stream;
+   mongoc_stream_t *stream = NULL;
    mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
    struct addrinfo *result, *rp;
@@ -564,8 +564,7 @@ done:
       freeaddrinfo (result);
    }
    if (success) {
-      stream = mongoc_stream_tls_new_with_hostname (
-         stream, host, ssl_opt, 1);
+      stream = mongoc_stream_tls_new_with_hostname (stream, host, ssl_opt, 1);
    } else {
       mongoc_stream_destroy (stream);
       stream = NULL;
@@ -666,11 +665,13 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       ssl_opt = *mongoc_ssl_opt_get_default ();
       ssl_opt.ca_file = state_machine->tls_ca_file;
       ssl_opt.pem_file = state_machine->tls_certificate_key_file;
-      tls_stream = connect_stream_with_tls (&ssl_opt, endpoint, sockettimeout, error);
+      tls_stream =
+         connect_stream_with_tls (&ssl_opt, endpoint, sockettimeout, error);
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
       /* Retry once with schannel as a workaround for CDRIVER-3566. */
       if (!tls_stream) {
-         tls_stream = connect_stream_with_tls (&ssl_opt, endpoint, sockettimeout, error);
+         tls_stream =
+            connect_stream_with_tls (&ssl_opt, endpoint, sockettimeout, error);
       }
 #endif
       if (!tls_stream) {
@@ -681,8 +682,9 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       iov.iov_len = mongocrypt_binary_len (http_req);
 
       if (state_machine->trace) {
-         MONGOC_DEBUG (
-            "--> sending KMS message: \n%.*s", (int) iov.iov_len, (char*) iov.iov_base);
+         MONGOC_DEBUG ("--> sending KMS message: \n%.*s",
+                       (int) iov.iov_len,
+                       (char *) iov.iov_base);
       }
 
       if (!_mongoc_stream_writev_full (

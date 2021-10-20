@@ -169,4 +169,36 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
 struct _mongocrypt_binary_t *
 _mongocrypt_buffer_as_binary (_mongocrypt_buffer_t *buf);
 
+/* _mongocrypt_buffer_copy_from_data_and_size initializes @buf and copies @len
+ * bytes from @data.
+ * - Returns false on error.
+ * - Caller must call _mongocrypt_buffer_cleanup. */
+bool
+_mongocrypt_buffer_copy_from_data_and_size (_mongocrypt_buffer_t *buf,
+                                            const uint8_t *data,
+                                            size_t len)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* _mongocrypt_buffer_steal_from_data_and_size initializes @buf from @data and
+ * @len and takes ownership of @data.
+ * - Returns false on error.
+ * - @buf does not take ownership of @str on error.
+ * - Caller must call _mongocrypt_buffer_cleanup. */
+bool
+_mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_buffer_t *buf,
+                                             uint8_t *data,
+                                             size_t len)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* _mongocrypt_buffer_steal_from_string initializes @buf from @str and takes
+ * ownership of @str.
+ * @buf retains a pointer to @str.
+ * @str must be NULL terminated.
+ * - Returns false on error.
+ * - @buf does not take ownership of @str on error.
+ * - Caller must call _mongocrypt_buffer_cleanup. */
+bool
+_mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf,
+                                      char *str) MONGOCRYPT_WARN_UNUSED_RESULT;
+
 #endif /* MONGOCRYPT_BUFFER_H */

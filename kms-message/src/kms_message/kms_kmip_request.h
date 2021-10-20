@@ -34,7 +34,7 @@ extern "C" {
  * - Callers must check for an error by calling kms_request_get_error. */
 KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_register_secretdata_new (void *reserved,
-                                          uint8_t *data,
+                                          const uint8_t *data,
                                           size_t len);
 
 /* kms_kmip_request_activate_new creates a KMIP Activate request with the

@@ -973,6 +973,22 @@ bool
 mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
                            mongocrypt_status_t *status);
 
+/**
+ * Get the KMS provider identifier associated with this KMS request.
+ *
+ * This is used to conditionally configure TLS connections based on the KMS
+ * request. It is useful for KMIP, which authenticates with a client
+ * certificate.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t object.
+ * @param[out] len Receives the length of the returned string.
+ *
+ * @returns One of the static strings: "aws", "azure", "gcp", or "kmip".
+ */
+MONGOCRYPT_EXPORT
+const char *
+mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len);
+
 
 /**
  * Call when done handling all KMS contexts.

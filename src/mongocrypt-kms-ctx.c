@@ -22,6 +22,7 @@
 #include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-status-private.h"
+#include "mongocrypt-util-private.h"
 #include <kms_message/kms_b64.h>
 #include <kms_message/kms_azure_request.h>
 #include <kms_message/kms_gcp_request.h>
@@ -105,12 +106,24 @@ _set_kms_crypto_hooks (_mongocrypt_crypto_t *crypto,
    }
 }
 
+static bool
+is_kms (_kms_request_type_t kms_type)
+{
+   return kms_type == MONGOCRYPT_KMS_KMIP_REGISTER ||
+          kms_type == MONGOCRYPT_KMS_KMIP_ACTIVATE ||
+          kms_type == MONGOCRYPT_KMS_KMIP_GET;
+}
+
 static void
 _init_common (mongocrypt_kms_ctx_t *kms,
               _mongocrypt_log_t *log,
               _kms_request_type_t kms_type)
 {
-   kms->parser = kms_response_parser_new ();
+   if (is_kms (kms_type)) {
+      kms->parser = kms_kmip_response_parser_new (NULL /* reserved */);
+   } else {
+      kms->parser = kms_response_parser_new ();
+   }
    kms->log = log;
    kms->status = mongocrypt_status_new ();
    kms->req_type = kms_type;
@@ -387,7 +400,7 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms)
    if (!kms) {
       return 0;
    }
-   /* TODO: an oddity of kms-message. After retrieving the JSON result, it
+   /* TODO: an oddity of kms-message. After retrieving the result, it
     * resets the parser. */
    if (!mongocrypt_status_ok (kms->status) ||
        !_mongocrypt_buffer_empty (&kms->result)) {
@@ -757,6 +770,84 @@ fail:
    return ret;
 }
 
+static bool
+_ctx_done_kmip_register (mongocrypt_kms_ctx_t *kms_ctx)
+{
+   kms_response_t *res = NULL;
+   mongocrypt_status_t *status = kms_ctx->status;
+   bool ret = false;
+   char *uid;
+
+   res = kms_response_parser_get_response (kms_ctx->parser);
+   if (!res) {
+      CLIENT_ERR ("Error getting KMIP response: %s",
+                  kms_response_parser_error (kms_ctx->parser));
+      goto done;
+   }
+
+   uid = kms_kmip_response_get_unique_identifier (res);
+   if (!uid) {
+      CLIENT_ERR (
+         "Error getting UniqueIdentifer from KMIP Register response: %s",
+         kms_response_get_error (res));
+      goto done;
+   }
+
+   if (!_mongocrypt_buffer_steal_from_string (&kms_ctx->result, uid)) {
+      CLIENT_ERR ("Error storing KMS UniqueIdentifer result");
+      bson_free (uid);
+      goto done;
+   }
+   ret = true;
+
+done:
+   kms_response_destroy (res);
+   return ret;
+}
+
+static bool
+_ctx_done_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx)
+{
+   return _ctx_done_kmip_register (kms_ctx);
+}
+
+static bool
+_ctx_done_kmip_get (mongocrypt_kms_ctx_t *kms_ctx)
+{
+   kms_response_t *res = NULL;
+   mongocrypt_status_t *status = kms_ctx->status;
+   bool ret = false;
+   uint8_t *secretdata;
+   size_t secretdata_len;
+
+   res = kms_response_parser_get_response (kms_ctx->parser);
+   if (!res) {
+      CLIENT_ERR ("Error getting KMIP response: %s",
+                  kms_response_parser_error (kms_ctx->parser));
+      goto done;
+   }
+
+   secretdata = kms_kmip_response_get_secretdata (res, &secretdata_len);
+   if (!secretdata) {
+      CLIENT_ERR ("Error getting SecretData from KMIP Get response: %s",
+                  kms_response_get_error (res));
+      goto done;
+   }
+
+   if (!_mongocrypt_buffer_steal_from_data_and_size (
+          &kms_ctx->result, secretdata, secretdata_len)) {
+      CLIENT_ERR ("Error storing KMS SecretData result");
+      bson_free (secretdata);
+      goto done;
+   }
+
+   ret = true;
+
+done:
+   kms_response_destroy (res);
+   return ret;
+}
+
 bool
 mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
 {
@@ -792,32 +883,47 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
    }
 
    if (!kms_response_parser_feed (kms->parser, bytes->data, bytes->len)) {
-      CLIENT_ERR ("KMS response parser error with status %d, error: '%s'",
-                  kms_response_parser_status (kms->parser),
-                  kms_response_parser_error (kms->parser));
+      if (is_kms (kms->req_type)) {
+         /* The KMIP response parser does not suport kms_response_parser_status.
+          * Only report the error string. */
+         CLIENT_ERR ("KMS response parser error with error: '%s'",
+                     kms_response_parser_error (kms->parser));
+      } else {
+         CLIENT_ERR ("KMS response parser error with status %d, error: '%s'",
+                     kms_response_parser_status (kms->parser),
+                     kms_response_parser_error (kms->parser));
+      }
+
       return false;
    }
 
    if (0 == mongocrypt_kms_ctx_bytes_needed (kms)) {
-      if (kms->req_type == MONGOCRYPT_KMS_AWS_ENCRYPT) {
-         return _ctx_done_aws (kms, "CiphertextBlob");
-      } else if (kms->req_type == MONGOCRYPT_KMS_AWS_DECRYPT) {
-         return _ctx_done_aws (kms, "Plaintext");
-      } else if (kms->req_type == MONGOCRYPT_KMS_AZURE_OAUTH) {
-         return _ctx_done_oauth (kms);
-      } else if (kms->req_type == MONGOCRYPT_KMS_AZURE_WRAPKEY) {
-         return _ctx_done_azure_wrapkey_unwrapkey (kms);
-      } else if (kms->req_type == MONGOCRYPT_KMS_AZURE_UNWRAPKEY) {
-         return _ctx_done_azure_wrapkey_unwrapkey (kms);
-      } else if (kms->req_type == MONGOCRYPT_KMS_GCP_OAUTH) {
-         return _ctx_done_oauth (kms);
-      } else if (kms->req_type == MONGOCRYPT_KMS_GCP_ENCRYPT) {
-         return _ctx_done_gcp (kms, "ciphertext");
-      } else if (kms->req_type == MONGOCRYPT_KMS_GCP_DECRYPT) {
-         return _ctx_done_gcp (kms, "plaintext");
-      } else {
+      switch (kms->req_type) {
+      default:
          CLIENT_ERR ("Unknown request type");
          return false;
+      case MONGOCRYPT_KMS_AWS_ENCRYPT:
+         return _ctx_done_aws (kms, "CiphertextBlob");
+      case MONGOCRYPT_KMS_AWS_DECRYPT:
+         return _ctx_done_aws (kms, "Plaintext");
+      case MONGOCRYPT_KMS_AZURE_OAUTH:
+         return _ctx_done_oauth (kms);
+      case MONGOCRYPT_KMS_AZURE_WRAPKEY:
+         return _ctx_done_azure_wrapkey_unwrapkey (kms);
+      case MONGOCRYPT_KMS_AZURE_UNWRAPKEY:
+         return _ctx_done_azure_wrapkey_unwrapkey (kms);
+      case MONGOCRYPT_KMS_GCP_OAUTH:
+         return _ctx_done_oauth (kms);
+      case MONGOCRYPT_KMS_GCP_ENCRYPT:
+         return _ctx_done_gcp (kms, "ciphertext");
+      case MONGOCRYPT_KMS_GCP_DECRYPT:
+         return _ctx_done_gcp (kms, "plaintext");
+      case MONGOCRYPT_KMS_KMIP_REGISTER:
+         return _ctx_done_kmip_register (kms);
+      case MONGOCRYPT_KMS_KMIP_ACTIVATE:
+         return _ctx_done_kmip_activate (kms);
+      case MONGOCRYPT_KMS_KMIP_GET:
+         return _ctx_done_kmip_get (kms);
       }
    }
    return true;
@@ -1378,4 +1484,146 @@ fail:
    bson_free (payload);
    bson_free (bearer_token_value);
    return ret;
+}
+
+bool
+_mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
+                                        const _mongocrypt_endpoint_t *endpoint,
+                                        const uint8_t *secretdata,
+                                        uint32_t secretdata_len,
+                                        _mongocrypt_log_t *log)
+{
+   mongocrypt_status_t *status;
+   bool ret = false;
+   const uint8_t *reqdata;
+   size_t reqlen;
+
+   _init_common (kms_ctx, log, MONGOCRYPT_KMS_KMIP_REGISTER);
+   status = kms_ctx->status;
+
+   kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
+   kms_ctx->req = kms_kmip_request_register_secretdata_new (
+      NULL /* reserved */, secretdata, secretdata_len);
+
+   if (!kms_ctx->req) {
+      CLIENT_ERR ("Error creating KMIP register request: %s",
+                  kms_request_get_error (kms_ctx->req));
+      goto done;
+   }
+
+   reqdata = kms_request_to_bytes (kms_ctx->req, &reqlen);
+   if (!_mongocrypt_buffer_copy_from_data_and_size (
+          &kms_ctx->msg, reqdata, reqlen)) {
+      CLIENT_ERR ("Error storing KMS request payload");
+      goto done;
+   }
+
+   ret = true;
+done:
+   return ret;
+}
+
+bool
+_mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
+                                        const _mongocrypt_endpoint_t *endpoint,
+                                        const char *unique_identifier,
+                                        _mongocrypt_log_t *log)
+{
+   mongocrypt_status_t *status;
+   bool ret = false;
+   size_t reqlen;
+   const uint8_t *reqdata;
+
+   _init_common (kms_ctx, log, MONGOCRYPT_KMS_KMIP_ACTIVATE);
+   status = kms_ctx->status;
+
+   kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
+   kms_ctx->req =
+      kms_kmip_request_activate_new (NULL /* reserved */, unique_identifier);
+
+   if (!kms_ctx->req) {
+      CLIENT_ERR ("Error creating KMIP activate request: %s",
+                  kms_request_get_error (kms_ctx->req));
+      goto done;
+   }
+
+   reqdata = kms_request_to_bytes (kms_ctx->req, &reqlen);
+   if (!_mongocrypt_buffer_copy_from_data_and_size (
+          &kms_ctx->msg, reqdata, reqlen)) {
+      CLIENT_ERR ("Error storing KMS request payload");
+      goto done;
+   }
+
+   ret = true;
+done:
+   return ret;
+}
+
+bool
+_mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
+                                   const _mongocrypt_endpoint_t *endpoint,
+                                   const char *unique_identifier,
+                                   _mongocrypt_log_t *log)
+{
+   mongocrypt_status_t *status;
+   bool ret = false;
+   size_t reqlen;
+   const uint8_t *reqdata;
+
+   _init_common (kms_ctx, log, MONGOCRYPT_KMS_KMIP_GET);
+   status = kms_ctx->status;
+
+   kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
+   kms_ctx->req =
+      kms_kmip_request_get_new (NULL /* reserved */, unique_identifier);
+
+   if (!kms_ctx->req) {
+      CLIENT_ERR ("Error creating KMIP get request: %s",
+                  kms_request_get_error (kms_ctx->req));
+      goto done;
+   }
+
+   reqdata = kms_request_to_bytes (kms_ctx->req, &reqlen);
+   if (!_mongocrypt_buffer_copy_from_data_and_size (
+          &kms_ctx->msg, reqdata, reqlen)) {
+      CLIENT_ERR ("Error storing KMS request payload");
+      goto done;
+   }
+
+   ret = true;
+done:
+   return ret;
+}
+
+const char *
+set_and_ret (const char *what, uint32_t *len)
+{
+   if (len) {
+      BSON_ASSERT (size_to_uint32 (strlen (what), len));
+   }
+   return what;
+}
+
+const char *
+mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len)
+{
+   switch (kms->req_type) {
+   default:
+      BSON_ASSERT ("unknown KMS request type");
+   case MONGOCRYPT_KMS_AWS_ENCRYPT:
+   case MONGOCRYPT_KMS_AWS_DECRYPT:
+      return set_and_ret ("aws", len);
+   case MONGOCRYPT_KMS_AZURE_OAUTH:
+   case MONGOCRYPT_KMS_AZURE_WRAPKEY:
+   case MONGOCRYPT_KMS_AZURE_UNWRAPKEY:
+      return set_and_ret ("azure", len);
+   case MONGOCRYPT_KMS_GCP_OAUTH:
+   case MONGOCRYPT_KMS_GCP_ENCRYPT:
+   case MONGOCRYPT_KMS_GCP_DECRYPT:
+      return set_and_ret ("gcp", len);
+   case MONGOCRYPT_KMS_KMIP_REGISTER:
+   case MONGOCRYPT_KMS_KMIP_ACTIVATE:
+   case MONGOCRYPT_KMS_KMIP_GET:
+      return set_and_ret ("kmip", len);
+   }
 }
