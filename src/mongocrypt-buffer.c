@@ -527,7 +527,7 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
    _mongocrypt_buffer_init (buf);
    buf->data = (uint8_t *) str;
    buf->owned = true;
-   if (!size_to_uint32 (strlen (str) + 1, &buf->len)) {
+   if (!size_to_uint32 (strlen (str), &buf->len)) {
       return false;
    }
    return true;
