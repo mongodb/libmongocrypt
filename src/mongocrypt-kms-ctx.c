@@ -832,7 +832,8 @@ _ctx_done_kmip_get (mongocrypt_kms_ctx_t *kms_ctx)
 
    kms_ctx->result.data = (uint8_t *) secretdata;
    if (!size_to_uint32 (secretdata_len, &kms_ctx->result.len)) {
-      CLIENT_ERR ("Error casting secret data length %zu to uint32_t", secretdata_len);
+      CLIENT_ERR ("Error casting secret data length %zu to uint32_t",
+                  secretdata_len);
       goto fail;
    }
    kms_ctx->result.owned = true;
