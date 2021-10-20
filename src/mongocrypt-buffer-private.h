@@ -182,6 +182,7 @@ _mongocrypt_buffer_copy_from_data_and_size (_mongocrypt_buffer_t *buf,
 /* _mongocrypt_buffer_steal_from_data_and_size initializes @buf from @data and
  * @len and takes ownership of @data.
  * - Returns false on error.
+ * - @buf takes ownership of @data on error.
  * - Caller must call _mongocrypt_buffer_cleanup. */
 bool
 _mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_buffer_t *buf,
@@ -194,6 +195,7 @@ _mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_buffer_t *buf,
  * @buf retains a pointer to @str.
  * @str must be NULL terminated.
  * - Returns false on error.
+ * - @buf takes ownership of @str on error.
  * - Caller must call _mongocrypt_buffer_cleanup. */
 bool
 _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf,

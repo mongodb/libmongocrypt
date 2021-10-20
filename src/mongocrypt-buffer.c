@@ -513,12 +513,11 @@ _mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_buffer_t *buf,
                                              size_t len)
 {
    _mongocrypt_buffer_init (buf);
-
+   buf->data = data;
+   buf->owned = true;
    if (!size_to_uint32 (len, &buf->len)) {
       return false;
    }
-   buf->data = data;
-   buf->owned = true;
    return true;
 }
 
@@ -526,11 +525,10 @@ bool
 _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
 {
    _mongocrypt_buffer_init (buf);
-
+   buf->data = (uint8_t *) str;
+   buf->owned = true;
    if (!size_to_uint32 (strlen (str) + 1, &buf->len)) {
       return false;
    }
-   buf->data = (uint8_t *) str;
-   buf->owned = true;
    return true;
 }
