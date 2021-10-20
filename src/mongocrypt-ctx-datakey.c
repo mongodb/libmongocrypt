@@ -30,6 +30,7 @@ _cleanup (mongocrypt_ctx_t *ctx)
    _mongocrypt_buffer_cleanup (&dkctx->encrypted_key_material);
    _mongocrypt_buffer_cleanup (&dkctx->plaintext_key_material);
    _mongocrypt_buffer_cleanup (&dkctx->kmip_secretdata);
+   bson_free (dkctx->kmip_unique_identifier);
 }
 
 
@@ -87,7 +88,7 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
 
    if (user_supplied_keyid && !dkctx->kmip_unique_identifier) {
       /*  User set a 'keyId'. */
-      dkctx->kmip_unique_identifier = user_supplied_keyid;
+      dkctx->kmip_unique_identifier = bson_strdup (user_supplied_keyid);
       dkctx->kmip_activated = true;
       /* Fall through to Step 3. */
    }
@@ -322,7 +323,8 @@ _kms_done (mongocrypt_ctx_t *ctx)
       }
       return _kms_start (ctx);
    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER) {
-      dkctx->kmip_unique_identifier = (const char *) dkctx->kms.result.data;
+      dkctx->kmip_unique_identifier =
+         bson_strdup ((const char *) dkctx->kms.result.data);
       return _kms_start (ctx);
    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE) {
       dkctx->kmip_activated = true;
