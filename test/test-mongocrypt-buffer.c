@@ -17,6 +17,7 @@
 #include <mongocrypt-marking-private.h>
 
 #include "test-mongocrypt.h"
+#include "test-mongocrypt-assert.h"
 
 #define TEST_STRING "?????" /* 3F 3F 3F 3F 3F */
 #define TEST_INT 5555555    /* 54 C5 63 */
@@ -161,8 +162,47 @@ _test_mongocrypt_buffer_from_iter (_mongocrypt_tester_t *tester)
    bson_destroy (&wrapper);
 }
 
+static void
+_test_mongocrypt_buffer_copy_from_data_and_size (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t buf;
+   const uint8_t data[] = {0, 1, 2};
+
+   ASSERT (_mongocrypt_buffer_copy_from_data_and_size (&buf, data, 3));
+   ASSERT_CMPBYTES (data, sizeof (data), buf.data, buf.len);
+   _mongocrypt_buffer_cleanup (&buf);
+}
+
+static void
+_test_mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t buf;
+   uint8_t *data = bson_malloc0 (3);
+
+   data[0] = 0;
+   data[1] = 1;
+   data[2] = 2;
+   ASSERT (_mongocrypt_buffer_steal_from_data_and_size (&buf, data, 3));
+   ASSERT_CMPBYTES (data, 3, buf.data, buf.len);
+   _mongocrypt_buffer_cleanup (&buf);
+}
+
+static void
+_test_mongocrypt_buffer_steal_from_string (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t buf;
+   char *str = bson_strdup ("foo");
+
+   ASSERT (_mongocrypt_buffer_steal_from_string (&buf, str));
+   ASSERT_STREQUAL ((const char *) buf.data, str);
+   _mongocrypt_buffer_cleanup (&buf);
+}
+
 void
 _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_mongocrypt_buffer_from_iter);
+   INSTALL_TEST (_test_mongocrypt_buffer_copy_from_data_and_size);
+   INSTALL_TEST (_test_mongocrypt_buffer_steal_from_data_and_size);
+   INSTALL_TEST (_test_mongocrypt_buffer_steal_from_string);
 }

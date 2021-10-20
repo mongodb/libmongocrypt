@@ -16,6 +16,7 @@
 
 #include <bson/bson.h>
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-util-private.h"
 
 #define INT32_LEN 4
 #define TYPE_LEN 1
@@ -488,4 +489,48 @@ _mongocrypt_buffer_as_binary (_mongocrypt_buffer_t *buf)
    buf->bin.data = buf->data;
    buf->bin.len = buf->len;
    return &buf->bin;
+}
+
+bool
+_mongocrypt_buffer_copy_from_data_and_size (_mongocrypt_buffer_t *buf,
+                                            const uint8_t *data,
+                                            size_t len)
+{
+   _mongocrypt_buffer_init (buf);
+
+   if (!size_to_uint32 (len, &buf->len)) {
+      return false;
+   }
+   buf->data = bson_malloc (len);
+   memcpy (buf->data, data, len);
+   buf->owned = true;
+   return true;
+}
+
+bool
+_mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_buffer_t *buf,
+                                             uint8_t *data,
+                                             size_t len)
+{
+   _mongocrypt_buffer_init (buf);
+
+   if (!size_to_uint32 (len, &buf->len)) {
+      return false;
+   }
+   buf->data = data;
+   buf->owned = true;
+   return true;
+}
+
+bool
+_mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
+{
+   _mongocrypt_buffer_init (buf);
+
+   if (!size_to_uint32 (strlen (str) + 1, &buf->len)) {
+      return false;
+   }
+   buf->data = (uint8_t *) str;
+   buf->owned = true;
+   return true;
 }
