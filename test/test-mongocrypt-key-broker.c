@@ -832,7 +832,6 @@ _test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t keydoc;
    mongocrypt_kms_ctx_t *kms;
    mongocrypt_binary_t *msg;
-   _mongocrypt_buffer_t secretdata;
 
    crypt = _mongocrypt_tester_mongocrypt ();
    status = mongocrypt_status_new ();
@@ -867,7 +866,6 @@ _test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
                  kms,
                  "ResultReasonItemNotFound");
 
-   _mongocrypt_buffer_cleanup (&secretdata);
    mongocrypt_binary_destroy (msg);
    _mongocrypt_buffer_cleanup (&keydoc);
    _mongocrypt_buffer_cleanup (&id);
