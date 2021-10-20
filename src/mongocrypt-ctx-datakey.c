@@ -156,7 +156,7 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
 
    if (!ctx->opts.kek.provider.kmip.key_id) {
       /* If there was no user supplied key_id, set it from the
-         * UniqueIdentifer of the newly registered SecretData. */
+       * UniqueIdentifer of the newly registered SecretData. */
       ctx->opts.kek.provider.kmip.key_id =
          bson_strdup (dkctx->kmip_unique_identifier);
    }
