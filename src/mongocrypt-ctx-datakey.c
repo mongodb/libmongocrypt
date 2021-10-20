@@ -328,7 +328,7 @@ _kms_done (mongocrypt_ctx_t *ctx)
       return _kms_start (ctx);
    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER) {
       dkctx->kmip_unique_identifier =
-         bson_strdup ((char *) dkctx->kms.result.data);
+         bson_strdup ((const char *) dkctx->kms.result.data);
       return _kms_start (ctx);
    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE) {
       dkctx->kmip_activated = true;
