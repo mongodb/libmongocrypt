@@ -28,5 +28,7 @@
         "provider": "kmip",
         "keyId": "ywxrSj5TLjswd1G4oGFJ6hwWgtTsQip0"
     },
-    "keyAltNames": [ "keyDocumentKMIP" ]
+    "keyAltNames": [
+        "keyDocumentKMIP"
+    ]
 }
