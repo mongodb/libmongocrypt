@@ -30,7 +30,7 @@ _cleanup (mongocrypt_ctx_t *ctx)
    _mongocrypt_buffer_cleanup (&dkctx->encrypted_key_material);
    _mongocrypt_buffer_cleanup (&dkctx->plaintext_key_material);
    _mongocrypt_buffer_cleanup (&dkctx->kmip_secretdata);
-   bson_free (dkctx->kmip_unique_identifier);
+   bson_free ((void *) dkctx->kmip_unique_identifier);
 }
 
 
