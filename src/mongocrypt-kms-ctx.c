@@ -789,7 +789,8 @@ _ctx_done_kmip_register (mongocrypt_kms_ctx_t *kms_ctx)
 
    kms_ctx->result.data = (uint8_t *) uid;
    if (!size_to_uint32 (strlen (uid), &kms_ctx->result.len)) {
-      CLIENT_ERR ("Error casting UniqueIdentifier length %zu to uint32_t", strlen (uid));
+      CLIENT_ERR ("Error casting UniqueIdentifier length %zu to uint32_t",
+                  strlen (uid));
       goto fail;
    }
    kms_ctx->result.owned = true;
