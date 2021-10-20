@@ -795,6 +795,7 @@ _ctx_done_kmip_register (mongocrypt_kms_ctx_t *kms_ctx)
 
    if (!_mongocrypt_buffer_steal_from_string (&kms_ctx->result, uid)) {
       CLIENT_ERR ("Error storing KMS UniqueIdentifer result");
+      bson_free (uid);
       goto done;
    }
    ret = true;
@@ -836,6 +837,7 @@ _ctx_done_kmip_get (mongocrypt_kms_ctx_t *kms_ctx)
    if (!_mongocrypt_buffer_steal_from_data_and_size (
           &kms_ctx->result, secretdata, secretdata_len)) {
       CLIENT_ERR ("Error storing KMS SecretData result");
+      bson_free (secretdata);
       goto done;
    }
 
