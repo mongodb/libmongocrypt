@@ -981,7 +981,9 @@ mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
  * certificate.
  *
  * @param[in] kms The @ref mongocrypt_kms_ctx_t object.
- * @param[out] len Receives the length of the returned string.
+ * @param[out] len Receives the length of the returned string. It may be NULL.
+ * If it is not NULL, it is set to the length of the returned string without
+ * the NULL terminator.
  *
  * @returns One of the NULL terminated static strings: "aws", "azure", "gcp", or
  * "kmip".
