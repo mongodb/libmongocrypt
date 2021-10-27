@@ -189,3 +189,15 @@ _mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src)
    endpoint->host_and_port = bson_strdup (src->host_and_port);
    return endpoint;
 }
+
+void _mongocrypt_apply_default_port (char **endpoint_raw, char *port) {
+   BSON_ASSERT (endpoint_raw);
+   BSON_ASSERT (port);
+   BSON_ASSERT (*endpoint_raw);
+
+   if (strstr (*endpoint_raw, ":") == NULL) {
+      char *tmp = *endpoint_raw;
+      *endpoint_raw = bson_strdup_printf ("%s:%s", *endpoint_raw, port);
+      bson_free (tmp);
+   }
+}
