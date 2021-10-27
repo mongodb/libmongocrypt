@@ -921,9 +921,10 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * is valid until calling @ref mongocrypt_ctx_kms_done.
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
- * @param[out] endpoint The output hostname as a NULL terminated string. This
- * may include a port (e.g. "example.com:123"). If it does not, default to port
- * 443.
+ * @param[out] endpoint The output endpoint as a NULL terminated string.
+ * The endpoint consists of a hostname and port separated by a colon.
+ * E.g. "example.com:123". A port is always present.
+ * 
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
