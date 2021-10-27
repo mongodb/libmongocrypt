@@ -40,7 +40,7 @@ typedef struct {
 #define DEFAULT_MAX_KMS_BYTE_REQUEST 1024
 #define SHA256_LEN 32
 #define DEFAULT_HTTPS_PORT "443"
-#define DEFAULT_KMIP_PORT "5969"
+#define DEFAULT_KMIP_PORT "5696"
 
 static bool
 _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
