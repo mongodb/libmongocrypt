@@ -437,7 +437,7 @@ class TestExplicitEncryption(unittest.TestCase):
             "endpoint": "example.com"
         }
         encrypter.create_data_key("aws", master_key=master_key)
-        self.assertEqual("example.com", mock_key_vault.kms_endpoint)
+        self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
 
 def read(filename, **kwargs):
