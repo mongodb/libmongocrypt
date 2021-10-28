@@ -309,7 +309,7 @@ namespace MongoDB.Libmongocrypt.Test
         [Fact]
         public void TestAwsKeyCreationWithEndPoint()
         {
-            var endpoint = "kms.us-east-1.amazonaws.com";
+            var endpoint = "kms.us-east-1.amazonaws.com:443";
             var keyId = CreateAwsKey(endpoint);
             var key = CreateAwsKmsCredentials();
 
@@ -324,7 +324,7 @@ namespace MongoDB.Libmongocrypt.Test
         [Fact]
         public void TestAwsKeyCreationWithEndpointStepwise()
         {
-            var endpoint = "kms.us-east-1.amazonaws.com";
+            var endpoint = "kms.us-east-1.amazonaws.com:443";
             var keyId = CreateAwsKey(endpoint);
             var key = CreateAwsKmsCredentials();
 
@@ -547,7 +547,7 @@ namespace MongoDB.Libmongocrypt.Test
                             _output.WriteLine("Key Document: " + binary);
                             var postRequest = binary.ToString();
                             // TODO: add different hosts handling
-                            postRequest.Should().Contain("Host:kms.us-east-1.amazonaws.com"); // only AWS
+                            postRequest.Should().Contain("Host:kms.us-east-1.amazonaws.com:443"); // only AWS
 
                             var reply = ReadHttpTestFile(isKmsDecrypt ? "kms-decrypt-reply.txt" : "kms-encrypt-reply.txt");
                             _output.WriteLine("Reply: " + reply);
