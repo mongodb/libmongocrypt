@@ -39,6 +39,8 @@ typedef struct {
  */
 #define DEFAULT_MAX_KMS_BYTE_REQUEST 1024
 #define SHA256_LEN 32
+#define DEFAULT_HTTPS_PORT "443"
+#define DEFAULT_KMIP_PORT "5696"
 
 static bool
 _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
@@ -251,6 +253,7 @@ _mongocrypt_kms_ctx_init_aws_decrypt (mongocrypt_kms_ctx_t *kms,
       kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
                                           key->kek.provider.aws.region);
    }
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
 
    ret = true;
 done:
@@ -386,6 +389,7 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
       kms->endpoint = bson_strdup_printf ("kms.%s.amazonaws.com",
                                           ctx_opts->kek.provider.aws.region);
    }
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
 
    ret = true;
 done:
@@ -1039,7 +1043,7 @@ _mongocrypt_kms_ctx_init_azure_auth (mongocrypt_kms_ctx_t *kms,
    mongocrypt_status_t *status;
    _mongocrypt_endpoint_t *identity_platform_endpoint;
    char *scope = NULL;
-   const char *host;
+   const char *hostname;
    char *request_string;
    bool ret = false;
 
@@ -1050,11 +1054,12 @@ _mongocrypt_kms_ctx_init_azure_auth (mongocrypt_kms_ctx_t *kms,
 
    if (identity_platform_endpoint) {
       kms->endpoint = bson_strdup (identity_platform_endpoint->host_and_port);
-      host = identity_platform_endpoint->host;
+      hostname = identity_platform_endpoint->host;
    } else {
       kms->endpoint = bson_strdup ("login.microsoftonline.com");
-      host = kms->endpoint;
+      hostname = "login.microsoftonline.com";
    }
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
 
    if (key_vault_endpoint) {
       /* Request a custom scope. It is URL encoded, like
@@ -1071,7 +1076,7 @@ _mongocrypt_kms_ctx_init_azure_auth (mongocrypt_kms_ctx_t *kms,
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
    kms->req =
-      kms_azure_request_oauth_new (host,
+      kms_azure_request_oauth_new (hostname,
                                    scope,
                                    crypt_opts->kms_provider_azure.tenant_id,
                                    crypt_opts->kms_provider_azure.client_id,
@@ -1124,6 +1129,7 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
 
    kms->endpoint = bson_strdup (
       ctx_opts->kek.provider.azure.key_vault_endpoint->host_and_port);
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
    host = ctx_opts->kek.provider.azure.key_vault_endpoint->host;
 
    opt = kms_request_opt_new ();
@@ -1186,6 +1192,7 @@ _mongocrypt_kms_ctx_init_azure_unwrapkey (mongocrypt_kms_ctx_t *kms,
 
    kms->endpoint =
       bson_strdup (key->kek.provider.azure.key_vault_endpoint->host_and_port);
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
    host = key->kek.provider.azure.key_vault_endpoint->host;
 
    opt = kms_request_opt_new ();
@@ -1273,7 +1280,7 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
    _mongocrypt_endpoint_t *auth_endpoint;
    char *scope = NULL;
    char *audience = NULL;
-   const char *host;
+   const char *hostname;
    char *request_string;
    bool ret = false;
    ctx_with_status_t ctx_with_status;
@@ -1286,13 +1293,14 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
 
    if (auth_endpoint) {
       kms->endpoint = bson_strdup (auth_endpoint->host_and_port);
-      host = auth_endpoint->host;
+      hostname = auth_endpoint->host;
       audience = bson_strdup_printf ("https://%s/token", auth_endpoint->host);
    } else {
       kms->endpoint = bson_strdup ("oauth2.googleapis.com");
-      host = kms->endpoint;
+      hostname = "oauth2.googleapis.com";
       audience = bson_strdup_printf ("https://oauth2.googleapis.com/token");
    }
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
 
    if (kms_endpoint) {
       /* Request a custom scope. */
@@ -1311,7 +1319,7 @@ _mongocrypt_kms_ctx_init_gcp_auth (mongocrypt_kms_ctx_t *kms,
          opt, _sign_rsaes_pkcs1_v1_5_trampoline, &ctx_with_status);
    }
    kms->req = kms_gcp_request_oauth_new (
-      host,
+      hostname,
       crypt_opts->kms_provider_gcp.email,
       audience,
       scope,
@@ -1359,7 +1367,7 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    mongocrypt_status_t *status;
    char *path_and_query = NULL;
    char *payload = NULL;
-   const char *host;
+   const char *hostname;
    char *request_string;
    bool ret = false;
    char *bearer_token_value = NULL;
@@ -1370,18 +1378,19 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    if (ctx_opts->kek.provider.gcp.endpoint) {
       kms->endpoint =
          bson_strdup (ctx_opts->kek.provider.gcp.endpoint->host_and_port);
-      host = ctx_opts->kek.provider.gcp.endpoint->host;
+      hostname = ctx_opts->kek.provider.gcp.endpoint->host;
    } else {
       kms->endpoint = bson_strdup ("cloudkms.googleapis.com");
-      host = kms->endpoint;
+      hostname = "cloudkms.googleapis.com";
    }
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
 
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
    kms->req =
-      kms_gcp_request_encrypt_new (host,
+      kms_gcp_request_encrypt_new (hostname,
                                    access_token,
                                    ctx_opts->kek.provider.gcp.project_id,
                                    ctx_opts->kek.provider.gcp.location,
@@ -1429,7 +1438,7 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (mongocrypt_kms_ctx_t *kms,
    mongocrypt_status_t *status;
    char *path_and_query = NULL;
    char *payload = NULL;
-   const char *host;
+   const char *hostname;
    char *request_string;
    bool ret = false;
    char *bearer_token_value = NULL;
@@ -1440,17 +1449,18 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (mongocrypt_kms_ctx_t *kms,
    if (key->kek.provider.gcp.endpoint) {
       kms->endpoint =
          bson_strdup (key->kek.provider.gcp.endpoint->host_and_port);
-      host = key->kek.provider.gcp.endpoint->host;
+      hostname = key->kek.provider.gcp.endpoint->host;
    } else {
       kms->endpoint = bson_strdup ("cloudkms.googleapis.com");
-      host = kms->endpoint;
+      hostname = "cloudkms.googleapis.com";
    }
+   _mongocrypt_apply_default_port (&kms->endpoint, DEFAULT_HTTPS_PORT);
 
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
-   kms->req = kms_gcp_request_decrypt_new (host,
+   kms->req = kms_gcp_request_decrypt_new (hostname,
                                            access_token,
                                            key->kek.provider.gcp.project_id,
                                            key->kek.provider.gcp.location,
@@ -1502,6 +1512,7 @@ _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
    status = kms_ctx->status;
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
+   _mongocrypt_apply_default_port (&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
    kms_ctx->req = kms_kmip_request_register_secretdata_new (
       NULL /* reserved */, secretdata, secretdata_len);
 
@@ -1538,6 +1549,7 @@ _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
    status = kms_ctx->status;
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
+   _mongocrypt_apply_default_port (&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
    kms_ctx->req =
       kms_kmip_request_activate_new (NULL /* reserved */, unique_identifier);
 
@@ -1574,6 +1586,7 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
    status = kms_ctx->status;
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
+   _mongocrypt_apply_default_port (&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
    kms_ctx->req =
       kms_kmip_request_get_new (NULL /* reserved */, unique_identifier);
 

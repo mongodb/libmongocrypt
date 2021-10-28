@@ -203,7 +203,7 @@ _test_datakey_custom_endpoint (_mongocrypt_tester_t *tester)
    kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
    BSON_ASSERT (kms_ctx);
    ASSERT_OK (mongocrypt_kms_ctx_endpoint (kms_ctx, &endpoint), ctx);
-   BSON_ASSERT (0 == strcmp ("example.com", endpoint));
+   BSON_ASSERT (0 == strcmp ("example.com:443", endpoint));
    bin = mongocrypt_binary_new ();
    ASSERT_OK (mongocrypt_kms_ctx_message (kms_ctx, bin), ctx);
    BSON_ASSERT (NULL != strstr ((char *) bin->data, "Host:example.com"));

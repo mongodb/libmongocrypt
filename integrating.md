@@ -188,9 +188,10 @@ The responses from one or more HTTP messages to AWS KMS.
 
     a.  Create/reuse a TLS socket connected to the endpoint indicated by
         mongocrypt\_kms\_ctx\_endpoint. The endpoint string is a host name with
-        optional port number separated by a colon. E.g.
-        "kms.us-east-1.amazonaws.com" or "kms.us-east-1.amazonaws.com:443".
-        Drivers may assume the host name is not an IP address or IP literal.
+        a port number separated by a colon. E.g.
+        "kms.us-east-1.amazonaws.com:443". A port number will always be
+        included. Drivers may assume the host name is not an IP address or IP
+        literal.
 
     b.  Write the message from mongocrypt\_kms\_ctx\_message to the
         > socket.

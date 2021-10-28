@@ -54,4 +54,11 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
                           _mongocrypt_endpoint_parse_opts_t *opts,
                           mongocrypt_status_t *status);
 
+/* _mongocrypt_apply_default_port checks if the endpoint string *endpoint_raw
+ * contains a port. If *endpoint_raw does not contain a port, *endpoint_raw is
+ * freed and overwritten to a copy of *endpoint_raw with ":<port>" appended.
+ */
+void
+_mongocrypt_apply_default_port (char **endpoint_raw, char *port);
+
 #endif /* MONGOCRYPT_ENDPOINT_PRIVATE_H */

@@ -229,7 +229,7 @@ class TestMongoCrypt(unittest.TestCase):
         km_contexts = list(ctx.kms_contexts())
         self.assertEqual(len(km_contexts), 1)
         with km_contexts[0] as kms_ctx:
-            self.assertEqual(kms_ctx.endpoint, "kms.us-east-1.amazonaws.com")
+            self.assertEqual(kms_ctx.endpoint, "kms.us-east-1.amazonaws.com:443")
             self.assertEqual(len(kms_ctx.message), 781)
             self.assertEqual(kms_ctx.bytes_needed, 1024)
 
@@ -437,7 +437,7 @@ class TestExplicitEncryption(unittest.TestCase):
             "endpoint": "example.com"
         }
         encrypter.create_data_key("aws", master_key=master_key)
-        self.assertEqual("example.com", mock_key_vault.kms_endpoint)
+        self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
 
 def read(filename, **kwargs):

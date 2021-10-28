@@ -115,8 +115,24 @@ _test_mongocrypt_endpoint (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
+static void
+_test_mongocrypt_apply_default_port (_mongocrypt_tester_t *tester) {
+   char *endpoint;
+
+   endpoint = bson_strdup ("example.com");
+   _mongocrypt_apply_default_port (&endpoint, "12");
+   ASSERT_STREQUAL (endpoint, "example.com:12");
+   bson_free (endpoint);
+
+   endpoint = bson_strdup ("example.com:34");
+   _mongocrypt_apply_default_port (&endpoint, "12");
+   ASSERT_STREQUAL (endpoint, "example.com:34");
+   bson_free (endpoint);
+}
+
 void
 _mongocrypt_tester_install_endpoint (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_mongocrypt_endpoint);
+   INSTALL_TEST (_test_mongocrypt_apply_default_port);
 }

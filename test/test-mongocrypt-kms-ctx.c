@@ -453,6 +453,59 @@ _test_mongocrypt_kms_ctx_get_kms_provider (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+
+static void
+_test_mongocrypt_kms_ctx_default_port (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_kms_ctx_t kms_ctx = {0};
+   mongocrypt_status_t *status;
+   _mongocrypt_endpoint_t *endpoint;
+   const char *kms_ctx_endpoint;
+
+   crypt = _mongocrypt_tester_mongocrypt ();
+   status = mongocrypt_status_new ();
+
+   /* Test an endpoint with no port. */
+   endpoint =
+      _mongocrypt_endpoint_new ("example.com", -1, NULL /* opts */, status);
+   ASSERT_OK_STATUS (endpoint != NULL, status);
+
+   /* Test a KMIP request. Expect a default of 5696. */
+   ASSERT_OK (_mongocrypt_kms_ctx_init_kmip_activate (
+                 &kms_ctx,
+                 endpoint,
+                 (char *) SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
+                 &crypt->log),
+              &kms_ctx);
+   ASSERT_OK (mongocrypt_kms_ctx_endpoint (&kms_ctx, &kms_ctx_endpoint),
+              &kms_ctx);
+   ASSERT_STREQUAL ("example.com:5696", kms_ctx_endpoint);
+   _mongocrypt_kms_ctx_cleanup (&kms_ctx);
+   _mongocrypt_endpoint_destroy (endpoint);
+
+   /* Test an endpoint with a custom port. */
+   endpoint = _mongocrypt_endpoint_new (
+      "example.com:1234", -1, NULL /* opts */, status);
+   ASSERT_OK_STATUS (endpoint != NULL, status);
+
+   /* Test a KMIP request. Expect the custom port to be retained. */
+   ASSERT_OK (_mongocrypt_kms_ctx_init_kmip_activate (
+                 &kms_ctx,
+                 endpoint,
+                 (char *) SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
+                 &crypt->log),
+              &kms_ctx);
+   ASSERT_OK (mongocrypt_kms_ctx_endpoint (&kms_ctx, &kms_ctx_endpoint),
+              &kms_ctx);
+   ASSERT_STREQUAL ("example.com:1234", kms_ctx_endpoint);
+   _mongocrypt_kms_ctx_cleanup (&kms_ctx);
+   _mongocrypt_endpoint_destroy (endpoint);
+
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
 void
 _mongocrypt_tester_install_kms_ctx (_mongocrypt_tester_t *tester)
 {
@@ -460,4 +513,5 @@ _mongocrypt_tester_install_kms_ctx (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_mongocrypt_kms_ctx_kmip_activate);
    INSTALL_TEST (_test_mongocrypt_kms_ctx_kmip_get);
    INSTALL_TEST (_test_mongocrypt_kms_ctx_get_kms_provider);
+   INSTALL_TEST (_test_mongocrypt_kms_ctx_default_port);
 }
