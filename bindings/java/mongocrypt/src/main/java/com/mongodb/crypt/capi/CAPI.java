@@ -712,6 +712,22 @@ public class CAPI {
     mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t ctx);
 
     /**
+     * Get the KMS provider identifier associated with this KMS request.
+     *
+     * This is used to conditionally configure TLS connections based on the KMS
+     * request. It is useful for KMIP, which authenticates with a client
+     * certificate.
+     *
+     * @param kms The mongocrypt_kms_ctx_t object.
+     * @param len Receives the length of the returned string.
+     *
+     * @return The name of the KMS provider
+     */
+    public static native cstring
+    mongocrypt_kms_ctx_get_kms_provider(mongocrypt_kms_ctx_t kms,
+                                        Pointer len);
+
+    /**
      * Get the HTTP request message for a KMS handle.
      *
      * @param kms A @ref mongocrypt_kms_ctx_t.
