@@ -457,8 +457,6 @@ tasks:
       name: build-and-test-and-upload
     - variant: suse15-64
       name: build-and-test-and-upload
-    - variant: suse12-s390x
-      name: build-and-test-and-upload
     - variant: ubuntu1604-arm64
       name: build-and-test-and-upload
     - variant: ubuntu1804-64
@@ -503,8 +501,6 @@ tasks:
       vars: { variant_name: "suse12-64" }
     - func: "download tarball"
       vars: { variant_name: "suse15-64" }
-    - func: "download tarball"
-      vars: { variant_name: "suse12-s390x" }
     - func: "download tarball"
       vars: { variant_name: "ubuntu1604-arm64" }
     - func: "download tarball"
@@ -943,21 +939,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
-  - build-and-test-node
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: suse12-s390x
-  display_name: "SLES 12 s390x"
-  run_on: suse12-zseries-test
-  expansions:
-    has_packages: true
-    packager_distro: suse12
-    packager_arch: s390x
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
   - build-and-test-java
   - build-and-test-node
   - name: publish-packages
