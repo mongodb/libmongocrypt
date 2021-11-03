@@ -25,6 +25,13 @@ import java.nio.ByteBuffer;
 public interface MongoKeyDecryptor {
 
     /**
+     * Gets the name of the KMS provider, e.g. "aws" or "kmip"
+     *
+     * @return the KMS provider name
+     */
+    String getKmsProvider();
+
+    /**
      * Gets the host name of the key management service.
      *
      * @return the host name

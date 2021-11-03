@@ -30,6 +30,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_bytes_needed;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_endpoint;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_feed;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_get_kms_provider;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_message;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_status;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status;
@@ -45,6 +46,11 @@ class MongoKeyDecryptorImpl implements MongoKeyDecryptor {
     MongoKeyDecryptorImpl(final mongocrypt_kms_ctx_t wrapped) {
         notNull("wrapped", wrapped);
         this.wrapped = wrapped;
+    }
+
+    @Override
+    public String getKmsProvider() {
+        return mongocrypt_kms_ctx_get_kms_provider(wrapped, null).toString();
     }
 
     @Override
