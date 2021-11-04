@@ -1,4 +1,4 @@
-libmongocrypt (1.3.0-1) UNRELEASED; urgency=medium
+libmongocrypt (1.3.0-1) unstable; urgency=medium
 
   * New upstream release.
 
