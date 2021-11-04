@@ -3,6 +3,7 @@
 ## 1.3.0
 - Support "kmip" KMS provider.
 - Add mongocrypt_kms_ctx_get_kms_provider.
+- Apply default port to endpoints returned in mongocrypt_kms_ctx_endpoint
 ## 1.2.2
 - Fix pkg-config and PPA build dependency on libbson.
 - Fix JSON schema caching behavior when server reports no JSON schema.
