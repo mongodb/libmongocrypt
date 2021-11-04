@@ -1,3 +1,3 @@
 # This file is a source file.  The presence of base64-encoded cryptographic
 # keys results in very long lines.
-libmongocrypt source: source-is-missing bindings/node/test/cryptoCallbacks.test.js *
+libmongocrypt source: source-is-missing bindings/node/test/cryptoCallbacks.test.js
