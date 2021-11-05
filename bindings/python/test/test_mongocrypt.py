@@ -20,8 +20,9 @@ import os
 import sys
 import uuid
 
-from bson import json_util, BSON
-from bson.binary import Binary, STANDARD
+import bson
+from bson import json_util
+from bson.binary import Binary, UuidRepresentation
 from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
@@ -265,8 +266,8 @@ class TestMongoCrypt(unittest.TestCase):
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_READY)
 
             encrypted = ctx.finish()
-            self.assertEqual(
-                BSON(encrypted).decode(), json_data('encrypted-command.json'))
+            self.assertEqual(bson.decode(encrypted, OPTS),
+                             json_data('encrypted-command.json'))
             self.assertEqual(encrypted, bson_data('encrypted-command.json'))
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
 
@@ -282,8 +283,8 @@ class TestMongoCrypt(unittest.TestCase):
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_READY)
 
             encrypted = ctx.finish()
-            self.assertEqual(
-                BSON(encrypted).decode(), json_data('command-reply.json'))
+            self.assertEqual(bson.decode(encrypted, OPTS),
+                             json_data('command-reply.json'))
             self.assertEqual(encrypted, bson_data('command-reply.json'))
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
 
@@ -317,7 +318,7 @@ class MockCallback(MongoCryptCallback):
         raise NotImplementedError
 
     def bson_encode(self, doc):
-        return BSON.encode(doc)
+        return bson.encode(doc)
 
     def close(self):
         pass
@@ -339,8 +340,8 @@ class TestMongoCryptCallback(unittest.TestCase):
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
         encrypted = encrypter.encrypt('text', bson_data('command.json'))
-        self.assertEqual(
-            BSON(encrypted).decode(), json_data('encrypted-command.json'))
+        self.assertEqual(bson.decode(encrypted, OPTS),
+                         json_data('encrypted-command.json'))
         self.assertEqual(encrypted, bson_data('encrypted-command.json'))
 
     def test_decrypt(self):
@@ -352,8 +353,8 @@ class TestMongoCryptCallback(unittest.TestCase):
         self.addCleanup(encrypter.close)
         decrypted = encrypter.decrypt(
             bson_data('encrypted-command-reply.json'))
-        self.assertEqual(
-            BSON(decrypted).decode(), json_data('command-reply.json'))
+        self.assertEqual(bson.decode(decrypted, OPTS),
+                         json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
 
 
@@ -367,7 +368,7 @@ class KeyVaultCallback(MockCallback):
 
     def insert_data_key(self, data_key):
         self.data_key = data_key
-        return BSON(data_key).decode()['_id']
+        return bson.decode(data_key, OPTS)['_id']
 
 
 class TestExplicitEncryption(unittest.TestCase):
@@ -385,21 +386,22 @@ class TestExplicitEncryption(unittest.TestCase):
         self.addCleanup(encrypter.close)
 
         val = {'v': 'hello'}
-        encoded_val = BSON.encode(val)
+        encoded_val = bson.encode(val)
         algo = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
         encrypted = encrypter.encrypt(
             encoded_val, algo, key_id=key_id, key_alt_name=key_alt_name)
-        self.assertEqual(
-            BSON(encrypted).decode(), json_data('encrypted-value.json'))
+        self.assertEqual(bson.decode(encrypted, OPTS),
+                         json_data('encrypted-value.json'))
         self.assertEqual(encrypted, bson_data('encrypted-value.json'))
 
         decrypted = encrypter.decrypt(encrypted)
-        self.assertEqual(BSON(decrypted).decode(), val)
+        self.assertEqual(bson.decode(decrypted, OPTS), val)
         self.assertEqual(encoded_val, decrypted)
 
     def test_encrypt_decrypt(self):
+
         key_id = json_data('key-document.json')['_id']
-        self._test_encrypt_decrypt(key_id=key_id.bytes)
+        self._test_encrypt_decrypt(key_id=key_id)
 
     def test_encrypt_decrypt_key_alt_name(self):
         key_alt_name = json_data('key-document.json')['keyAltNames'][0]
@@ -424,8 +426,9 @@ class TestExplicitEncryption(unittest.TestCase):
             key_id = encrypter.create_data_key(
                 kms_provider, master_key=master_key,
                 key_alt_names=key_alt_names)
-            self.assertIsInstance(key_id, uuid.UUID)
-            data_key = BSON(mock_key_vault.data_key).decode()
+            self.assertIsInstance(key_id, Binary)
+            self.assertEqual(key_id.subtype, 4)
+            data_key = bson.decode(mock_key_vault.data_key, OPTS)
             # CDRIVER-3277 The order of key_alt_names is not maintained.
             for name in key_alt_names:
                 self.assertIn(name, data_key['keyAltNames'])
@@ -445,10 +448,11 @@ def read(filename, **kwargs):
         return fp.read()
 
 
-OPTS = CodecOptions(uuid_representation=STANDARD)
+OPTS = CodecOptions(uuid_representation=UuidRepresentation.UNSPECIFIED)
 
 # Use SON to preserve the order of fields while parsing json.
-JSON_OPTS = JSONOptions(document_class=SON, uuid_representation=STANDARD)
+JSON_OPTS = JSONOptions(document_class=SON,
+                        uuid_representation=UuidRepresentation.UNSPECIFIED)
 
 
 def json_data(filename):
@@ -456,7 +460,7 @@ def json_data(filename):
 
 
 def bson_data(filename):
-    return BSON.encode(json_data(filename), codec_options=OPTS)
+    return bson.encode(json_data(filename), codec_options=OPTS)
 
 
 def http_data(filename):
