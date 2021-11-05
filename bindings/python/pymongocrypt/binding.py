@@ -311,7 +311,7 @@ mongocrypt_new (void);
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] log_fn The log callback.
  * @param[in] log_ctx A context passed as an argument to the log callback every
- * invokation.
+ * invocation.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -323,6 +323,9 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
 
 /**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_setopt_kms_providers
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] aws_access_key_id The AWS access key ID used to generate KMS
@@ -348,6 +351,9 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
 
 /**
  * Configure a local KMS provider on the @ref mongocrypt_t object.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_setopt_kms_providers
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] key A 96 byte master key used to encrypt and decrypt key vault
@@ -363,7 +369,6 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
 
 /**
  * Configure KMS providers with a BSON document.
- * Currently only applies to Azure.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] kms_providers A BSON document mapping the KMS provider names
@@ -530,6 +535,9 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_ctx_setopt_key_encryption_key
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] region The AWS region.
@@ -556,6 +564,9 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
  * (with the Host header set to this endpoint). This endpoint
  * is persisted in the new data key, and will be returned via
  * @ref mongocrypt_kms_ctx_endpoint.
+ * 
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_ctx_setopt_key_encryption_key
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] endpoint The endpoint.
@@ -571,6 +582,8 @@ mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
 
 /**
  * Set the master key to "local" for creating a data key.
+ * This has been superseded by the more flexible:
+ * @ref mongocrypt_ctx_setopt_key_encryption_key
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @pre @p ctx has not been initialized.
@@ -582,10 +595,50 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 
 /**
  * Set key encryption key document for creating a data key.
- * Currently only applies to Azure.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] bin BSON representing the key encryption key document.
+ * @param[in] bin BSON representing the key encryption key document with
+ * an additional "provider" field. The following forms are accepted:
+ * 
+ * AWS
+ * {
+ *    provider: "aws",
+ *    region: <string>,
+ *    key: <string>,
+ *    endpoint: <optional string>
+ * }
+ * 
+ * Azure
+ * {
+ *    provider: "azure",
+ *    keyVaultEndpoint: <string>,
+ *    keyName: <string>,
+ *    keyVersion: <optional string>
+ * }
+ * 
+ * GCP
+ * {
+ *    provider: "gcp",
+ *    projectId: <string>,
+ *    location: <string>,
+ *    keyRing: <string>,
+ *    keyName: <string>,
+ *    keyVersion: <string>,
+ *    endpoint: <optional string>
+ * }
+ * 
+ * Local
+ * {
+ *    provider: "local"
+ * }
+ * 
+ * KMIP
+ * {
+ *    provider: "kmip",
+ *    keyId: <optional string>
+ *    endpoint: <string>
+ * }
+ *
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, and error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
@@ -814,9 +867,10 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * is valid until calling @ref mongocrypt_ctx_kms_done.
  *
  * @param[in] kms A @ref mongocrypt_kms_ctx_t.
- * @param[out] endpoint The output hostname as a NULL terminated string. This
- * may include a port (e.g. "example.com:123"). If it does not, default to port
- * 443.
+ * @param[out] endpoint The output endpoint as a NULL terminated string.
+ * The endpoint consists of a hostname and port separated by a colon.
+ * E.g. "example.com:123". A port is always present.
+ * 
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
@@ -858,6 +912,24 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
 bool
 mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
                            mongocrypt_status_t *status);
+
+/**
+ * Get the KMS provider identifier associated with this KMS request.
+ *
+ * This is used to conditionally configure TLS connections based on the KMS
+ * request. It is useful for KMIP, which authenticates with a client
+ * certificate.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t object.
+ * @param[out] len Receives the length of the returned string. It may be NULL.
+ * If it is not NULL, it is set to the length of the returned string without
+ * the NULL terminator.
+ *
+ * @returns One of the NULL terminated static strings: "aws", "azure", "gcp", or
+ * "kmip".
+ */
+const char *
+mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len);
 
 /**
  * Call when done handling all KMS contexts.
@@ -925,7 +997,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_crypto_fn) (void *ctx,
                                       mongocrypt_binary_t *key,
@@ -950,7 +1022,7 @@ typedef bool (*mongocrypt_crypto_fn) (void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hmac_fn) (void *ctx,
                                     mongocrypt_binary_t *key,
@@ -969,7 +1041,7 @@ typedef bool (*mongocrypt_hmac_fn) (void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hash_fn) (void *ctx,
                                     mongocrypt_binary_t *in,
@@ -987,7 +1059,7 @@ typedef bool (*mongocrypt_hash_fn) (void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_ste.
+ * with a message indiciating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_random_fn) (void *ctx,
                                       mongocrypt_binary_t *out,
@@ -1004,6 +1076,23 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx);
 
+/**
+ * Set a crypto hook for the RSASSA-PKCS1-v1_5 algorithm with a SHA-256 hash.
+ *
+ * See: https://tools.ietf.org/html/rfc3447#section-8.2
+ *
+ * Note: this function has the wrong name. It should be:
+ * mongocrypt_setopt_crypto_hook_sign_rsassa_pkcs1_v1_5
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] sign_rsaes_pkcs1_v1_5 The crypto callback function.
+ * @param[in] sign_ctx A context passed as an argument to the crypto callback every
+ * invocation.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ *
+ */
 bool
 mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
    mongocrypt_t *crypt,

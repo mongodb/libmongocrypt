@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.2.0
+------------------------
+
+- Add MongoCryptKmsContext.kms_provider property.
+
 Changes in Version 1.1.2
 ------------------------
 
