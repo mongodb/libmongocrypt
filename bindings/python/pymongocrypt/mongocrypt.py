@@ -591,6 +591,18 @@ class MongoCryptKmsContext(object):
         """Indicates how many bytes to send to :meth:`feed`."""
         return lib.mongocrypt_kms_ctx_bytes_needed(self.__ctx)
 
+    @property
+    def kms_provider(self):
+        """The KMS provider identifier associated with this KMS request.
+
+        :Returns:
+          The KMS provider as a string, eg "aws", "azure", "gcp", or "kmip".
+
+        .. versionadded:: 1.2
+        """
+        return _to_string(
+            lib.mongocrypt_kms_ctx_get_kms_provider(self.__ctx, ffi.NULL))
+
     def feed(self, data):
         """Feed bytes from the HTTP response.
 
