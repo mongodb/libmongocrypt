@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.1.2
+------------------------
+
+- Fix a bug where decrypting from a memoryview was not supported.
+- Bundle libmongocrypt 1.2.2 in release wheels.
+
 Changes in Version 1.1.1
 ------------------------
 
