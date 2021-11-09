@@ -57,7 +57,7 @@ setup(
     keywords=["mongo", "mongodb", "pymongocrypt", "pymongo", "mongocrypt",
               "bson"],
     test_suite="test",
-    tests_require=["pymongo"],
+    tests_require=["pymongo>=3.11"],
     license="Apache License, Version 2.0",
     python_requires=">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*",
     classifiers=[
