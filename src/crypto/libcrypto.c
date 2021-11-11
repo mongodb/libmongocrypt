@@ -190,13 +190,29 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
                              mongocrypt_status_t *status)
 {
    const EVP_MD *algo;
+
+   algo = EVP_sha512 ();
+   BSON_ASSERT (EVP_MD_block_size (algo) == 128);
+   BSON_ASSERT (EVP_MD_size (algo) == MONGOCRYPT_HMAC_SHA512_LEN);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   if (!HMAC (algo,
+              key->data,
+              key->len,
+              in->data,
+              in->len,
+              out->data,
+              NULL /* unused out len */)) {
+      CLIENT_ERR ("error initializing HMAC: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      return false;
+   }
+   return true;
+#else
    HMAC_CTX *ctx;
    bool ret = false;
 
    ctx = HMAC_CTX_new ();
-   algo = EVP_sha512 ();
-   BSON_ASSERT (EVP_MD_block_size (algo) == 128);
-   BSON_ASSERT (EVP_MD_size (algo) == MONGOCRYPT_HMAC_SHA512_LEN);
 
    if (out->len != MONGOCRYPT_HMAC_SHA512_LEN) {
       CLIENT_ERR ("out does not contain %d bytes", MONGOCRYPT_HMAC_SHA512_LEN);
@@ -225,6 +241,7 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
 done:
    HMAC_CTX_free (ctx);
    return ret;
+#endif
 }
 
 
