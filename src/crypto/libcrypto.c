@@ -196,7 +196,13 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
    BSON_ASSERT (EVP_MD_size (algo) == MONGOCRYPT_HMAC_SHA512_LEN);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-   if (!HMAC(algo, key->data, key->len, in->data, in->len, out->data, NULL /* unused out len */)) {
+   if (!HMAC (algo,
+              key->data,
+              key->len,
+              in->data,
+              in->len,
+              out->data,
+              NULL /* unused out len */)) {
       CLIENT_ERR ("error initializing HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       return false;
