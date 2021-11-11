@@ -71,6 +71,16 @@ class DataKeyOpts(object):
               - `endpoint` (string): Optional. Host with optional port.
                 Defaults to "cloudkms.googleapis.com".
 
+            If the `kms_provider` is "kmip" it is optional and has the
+            following fields::
+
+              - `keyId` (string): Optional. `keyId` is the KMIP Unique
+                Identifier to a 96 byte KMIP Secret Data managed object. If
+                keyId is omitted, the driver creates a random 96 byte KMIP
+                Secret Data managed object.
+              - `endpoint` (string): Optional. Host with optional
+                 port, e.g. "example.vault.azure.net:".
+
           - `key_alt_names`: An optional list of bytes suitable to be passed to
             mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON
             encoded document in the form: { "keyAltName" : (BSON UTF8 value) }
@@ -101,19 +111,8 @@ class ExplicitEncrypter(object):
 
         :Parameters:
           - `kms_provider`: The KMS provider to use. Supported values are
-            "aws" and "local".
-          - `master_key`: Identifies a KMS-specific key used to encrypt the
-            new data key. If the kmsProvider is "local" the `master_key` is
-            not applicable and may be omitted. If the `kms_provider` is "aws"
-            it is required and has the following fields::
-
-              - `region` (string): Required. The AWS region, e.g. "us-east-1".
-              - `key` (string): Required. The Amazon Resource Name (ARN) to
-                 the AWS customer.
-              - `endpoint` (string): Optional. An alternate host to send KMS
-                requests to. May include port number, e.g.
-                "kms.us-east-1.amazonaws.com:443".
-
+            "aws", "azure", "gcp", "kmip", and "local".
+          - `master_key`: See DataKeyOpts.
           - `key_alt_names` (optional): An optional list of string alternate
             names used to reference a key. If a key is created with alternate
             names, then encryption may refer to the key by the unique
