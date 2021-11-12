@@ -37,15 +37,15 @@ class MongoCryptOptions(object):
         """Options for :class:`MongoCrypt`.
 
         :Parameters:
-          - `kms_providers`: Map of KMS provider options. Two KMS providers
-            are supported: "aws" and "local". The kms_providers map values
-            differ by provider:
+          - `kms_providers`: Map of KMS provider options. The kms_providers
+            map values differ by provider:
               - `aws`: Map with "accessKeyId" and "secretAccessKey" as strings,
                  and optionally a "sessionToken" for temporary credentials.
               - `azure`: Map with "clientId" and "clientSecret" as strings.
               - `gcp`: Map with "email" as a string and "privateKey" as
                 a byte array or a base64-encoded string. On Python 2,
                 base64-encoded strings must be passed as unicode literals.
+              - `kmip`: Map with "endpoint" as a string.
               - `local`: Map with "key" as a 96-byte array or the equivalent
                 base64-encoded string. On Python 2, base64-encoded strings
                 must be passed as unicode literals.
@@ -105,6 +105,18 @@ class MongoCryptOptions(object):
                 raise TypeError("kms_providers['gcp']['privateKey'] must "
                                 "be an instance of bytes or str "
                                 "(unicode in Python 2)")
+
+        if 'kmip' in kms_providers:
+            kmip = kms_providers['kmip']
+            if not isinstance(kmip, dict):
+                raise ValueError("kms_providers['kmip'] must be a dict")
+            if 'endpoint' not in kmip:
+                raise ValueError("kms_providers['kmip'] must contain "
+                                 "'endpoint'")
+            if not isinstance(kms_providers['kmip']['endpoint'],
+                              (str, unicode_type)):
+                raise TypeError("kms_providers['kmip']['endpoint'] must "
+                                "be an instance of str")
 
         if 'local' in kms_providers:
             local = kms_providers['local']
@@ -490,11 +502,11 @@ class DataKeyContext(MongoCryptContext):
         """
         super(DataKeyContext, self).__init__(ctx)
         try:
-            if kms_provider not in ['aws', 'gcp', 'azure', 'local']:
+            if kms_provider not in ['aws', 'gcp', 'azure', 'kmip', 'local']:
                 raise ValueError('unknown kms_provider: %s' % (kms_provider,))
 
             if opts is None or opts.master_key is None:
-                if kms_provider == 'local':
+                if kms_provider in ['kmip', 'local']:
                     master_key = {}
                 else:
                     raise ValueError(
@@ -504,22 +516,22 @@ class DataKeyContext(MongoCryptContext):
                 master_key = opts.master_key.copy()
 
             if kms_provider == 'aws':
-                if ('region' not in opts.master_key or
-                        'key' not in opts.master_key):
+                if ('region' not in master_key or
+                        'key' not in master_key):
                     raise ValueError(
                         'master_key must include "region" and "key" for '
                         'kms_provider: "aws"')
             elif kms_provider == 'azure':
-                if ('keyName' not in opts.master_key or
-                        'keyVaultEndpoint' not in opts.master_key):
+                if ('keyName' not in master_key or
+                        'keyVaultEndpoint' not in master_key):
                     raise ValueError(
                         'master key must include "keyName" and '
                         '"keyVaultEndpoint" for kms_provider: "azure"')
             elif kms_provider == 'gcp':
-                if ('projectId' not in opts.master_key or
-                        'location' not in opts.master_key or
-                        'keyRing' not in opts.master_key or
-                        'keyName' not in opts.master_key):
+                if ('projectId' not in master_key or
+                        'location' not in master_key or
+                        'keyRing' not in master_key or
+                        'keyName' not in master_key):
                     raise ValueError(
                         'master key must include "projectId", "location",'
                         '"keyRing", and "keyName" for kms_provider: "gcp"')
