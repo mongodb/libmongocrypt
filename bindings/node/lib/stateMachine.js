@@ -2,6 +2,9 @@
 
 module.exports = function(modules) {
   const tls = require('tls');
+  const net = require('net');
+  const { once } = require('events');
+  const { SocksClient } = require('socks');
 
   // Try first to import 4.x name, fallback to 3.x name
   const MongoNetworkTimeoutError =
@@ -224,26 +227,68 @@ module.exports = function(modules) {
       const options = { host: parsedUrl[0], servername: parsedUrl[0], port };
       const message = request.message;
 
-      return new Promise((resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
         const buffer = new BufferList();
-        const socket = tls.connect(options, () => {
-          socket.write(message);
-        });
 
-        socket.once('timeout', () => {
-          socket.removeAllListeners();
-          socket.destroy();
+        let socket;
+        let rawSocket;
+
+        function destroySockets() {
+          for (const sock of [socket, rawSocket]) {
+            if (sock) {
+              sock.removeAllListeners();
+              sock.destroy();
+            }
+          }
+        }
+
+        function ontimeout() {
+          destroySockets();
           reject(new MongoCryptError('KMS request timed out'));
-        });
+        }
 
-        socket.once('error', err => {
-          socket.removeAllListeners();
-          socket.destroy();
-
+        function onerror(err) {
+          destroySockets();
           const mcError = new MongoCryptError('KMS request failed');
           mcError.originalError = err;
           reject(mcError);
+        }
+
+        if (this.options.proxyOptions && this.options.proxyOptions.host) {
+          rawSocket = net.connect({
+            host: this.options.proxyOptions.host,
+            port: this.options.proxyOptions.port || 1080
+          });
+
+          rawSocket.on('timeout', ontimeout);
+          rawSocket.on('error', onerror);
+          try {
+            await once(rawSocket, 'connect');
+            options.socket = (
+              await SocksClient.createConnection({
+                existing_socket: rawSocket,
+                command: 'connect',
+                destination: { host: options.host, port: options.port },
+                proxy: {
+                  host: 'locahost',
+                  port: 0,
+                  type: 5,
+                  userId: this.options.proxyOptions.username,
+                  password: this.options.proxyOptions.username
+                }
+              })
+            ).socket;
+          } catch (err) {
+            return onerror(err);
+          }
+        }
+
+        socket = tls.connect(options, () => {
+          socket.write(message);
         });
+
+        socket.once('timeout', ontimeout);
+        socket.once('error', onerror);
 
         socket.on('data', data => {
           buffer.append(data);
