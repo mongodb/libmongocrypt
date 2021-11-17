@@ -7,7 +7,7 @@ Changes in Version 1.2.0
 - Add support for the "kmip" KMS provider.
 - Add MongoCryptKmsContext.kms_provider property.
 - Bundle libmongocrypt 1.3.0 in release wheels.
-- **Remove support for libmongocrypt 1.2, libmongocrypt >=1.2 is now
+- **Remove support for libmongocrypt 1.2, libmongocrypt >=1.3 is now
   required.** Note this is only relevant for users that install from
   source or use the ``PYMONGOCRYPT_LIB`` environment variable.
 
