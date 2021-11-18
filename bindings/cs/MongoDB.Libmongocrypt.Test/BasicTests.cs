@@ -24,6 +24,7 @@ using Xunit;
 using System.Text;
 using FluentAssertions;
 using Xunit.Abstractions;
+using MongoDB.Libmongocrypt.Test.Callbacks;
 
 namespace MongoDB.Libmongocrypt.Test
 {
@@ -36,70 +37,6 @@ namespace MongoDB.Libmongocrypt.Test
         public BasicTests(ITestOutputHelper output)
         {
             _output = output;
-        }
-
-        #region local data
-        BsonDocument CreateLocalCredentialsDocument() =>
-            new BsonDocument
-            {
-                {
-                    "local",
-                    new BsonDocument
-                    {
-                        { "key", new BsonBinaryData(new byte[96]) }
-                    }
-                }
-            };
-
-        KmsKeyId CreateLocalKey(IEnumerable<byte[]> keyAltNameBuffers = null) =>
-            new KmsKeyId(
-                new BsonDocument
-                {
-                    { "provider", "local" },
-                }.ToBson(),
-                keyAltNameBuffers);
-
-        KmsCredentials CreateLocalKmsCredentials() =>
-            new KmsCredentials(
-                CreateLocalCredentialsDocument().ToBson());
-        #endregion
-
-        #region aws data
-        BsonDocument CreateAwsCredentialsDocument() =>
-            new BsonDocument
-            {
-                {
-                    "aws",
-                    new BsonDocument
-                    {
-                        { "secretAccessKey", "us-east-1" },
-                        { "accessKeyId", "us-east-1" }
-                    }
-                }
-            };
-        KmsKeyId CreateAwsKey(string endpoint = null, IEnumerable<byte[]> keyAltNameBuffers = null) =>
-            new KmsKeyId(
-                new BsonDocument
-                {
-                    { "provider", "aws" },
-                    { "key", "cmk" },
-                    { "region", "us-east-1" },
-                    { "endpoint", endpoint, endpoint != null }
-                }.ToBson(),
-                alternateKeyNameBytes: keyAltNameBuffers);
-
-        KmsCredentials CreateAwsKmsCredentials() =>
-            new KmsCredentials(
-                CreateAwsCredentialsDocument().ToBson());
-        #endregion
-
-        CryptOptions CreateOptions()
-        {
-            return new CryptOptions(
-                new[] {
-                    CreateAwsKmsCredentials(),
-                    CreateLocalKmsCredentials()
-                });
         }
 
         [Fact]
@@ -149,7 +86,7 @@ namespace MongoDB.Libmongocrypt.Test
             var schema = new BsonDocument("test.test", listCollectionsReply["options"]["validator"]["$jsonSchema"]);
 
             var options = new CryptOptions(
-                new[] { CreateAwsKmsCredentials() },
+                new[] { CreateKmsCredentials("aws") },
                 BsonUtil.ToBytes(schema));
 
             using (var cryptClient = CryptClientFactory.Create(options))
@@ -310,8 +247,8 @@ namespace MongoDB.Libmongocrypt.Test
         public void TestAwsKeyCreationWithEndPoint()
         {
             var endpoint = "kms.us-east-1.amazonaws.com";
-            var keyId = CreateAwsKey(endpoint);
-            var key = CreateAwsKmsCredentials();
+            var keyId = CreateKmsKeyId("aws", endpoint);
+            var key = CreateKmsCredentials("aws");
 
             using (var cryptClient = CryptClientFactory.Create(new CryptOptions(new[] { key })))
             using (var context = cryptClient.StartCreateDataKeyContext(keyId))
@@ -325,8 +262,8 @@ namespace MongoDB.Libmongocrypt.Test
         public void TestAwsKeyCreationWithEndpointStepwise()
         {
             var endpoint = "kms.us-east-1.amazonaws.com";
-            var keyId = CreateAwsKey(endpoint);
-            var key = CreateAwsKmsCredentials();
+            var keyId = CreateKmsKeyId("aws", endpoint);
+            var key = CreateKmsCredentials("aws");
 
             using (var cryptClient = CryptClientFactory.Create(new CryptOptions(new[] { key })))
             using (var context = cryptClient.StartCreateDataKeyContext(keyId))
@@ -350,8 +287,8 @@ namespace MongoDB.Libmongocrypt.Test
             var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
-            var keyId = CreateAwsKey(keyAltNameBuffers: keyAltNameBuffers);
-            var key = CreateAwsKmsCredentials();
+            var keyId = CreateKmsKeyId("aws", keyAltNameBuffers: keyAltNameBuffers);
+            var key = CreateKmsCredentials("aws");
 
             using (var cryptClient = CryptClientFactory.Create(new CryptOptions(new[] { key })))
             using (var context = cryptClient.StartCreateDataKeyContext(keyId))
@@ -370,8 +307,8 @@ namespace MongoDB.Libmongocrypt.Test
             var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
-            var keyId = CreateAwsKey(keyAltNameBuffers: keyAltNameBuffers);
-            var key = CreateAwsKmsCredentials();
+            var keyId = CreateKmsKeyId("aws", keyAltNameBuffers: keyAltNameBuffers);
+            var key = CreateKmsCredentials("aws");
 
             using (var cryptClient = CryptClientFactory.Create(new CryptOptions(new[] { key })))
             using (var context =
@@ -399,8 +336,8 @@ namespace MongoDB.Libmongocrypt.Test
             var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
-            var key = CreateLocalKmsCredentials();
-            var keyId = CreateLocalKey(keyAltNameBuffers);
+            var key = CreateKmsCredentials("local");
+            var keyId = CreateKmsKeyId("local", keyAltNameBuffers: keyAltNameBuffers);
             var cryptOptions = new CryptOptions(new[] { key });
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
@@ -421,8 +358,8 @@ namespace MongoDB.Libmongocrypt.Test
             var keyAltNames = new[] { "KeyMaker", "Architect" };
             var keyAltNameDocuments = keyAltNames.Select(name => new BsonDocument("keyAltName", name));
             var keyAltNameBuffers = keyAltNameDocuments.Select(BsonUtil.ToBytes);
-            var key = CreateLocalKmsCredentials();
-            var keyId = CreateLocalKey(keyAltNameBuffers);
+            var key = CreateKmsCredentials("local");
+            var keyId = CreateKmsKeyId("local", keyAltNameBuffers: keyAltNameBuffers);
             var cryptOptions = new CryptOptions(new[] { key });
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
@@ -444,8 +381,8 @@ namespace MongoDB.Libmongocrypt.Test
         [Fact]
         public void TestLocalKeyCreation()
         {
-            var key = CreateLocalKmsCredentials();
-            var keyId = CreateLocalKey();
+            var key = CreateKmsCredentials("local");
+            var keyId = CreateKmsKeyId("local");
             var cryptOptions = new CryptOptions(new[] { key });
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
@@ -461,8 +398,8 @@ namespace MongoDB.Libmongocrypt.Test
         [Fact]
         public void TestLocalKeyCreationStepwise()
         {
-            var key = CreateLocalKmsCredentials();
-            var keyId = CreateLocalKey();
+            var key = CreateKmsCredentials("local");
+            var keyId = CreateKmsKeyId("local");
             var cryptOptions = new CryptOptions(new[] { key });
 
             using (var cryptClient = CryptClientFactory.Create(cryptOptions))
@@ -478,7 +415,162 @@ namespace MongoDB.Libmongocrypt.Test
             }
         }
 
+        [Theory]
+        [InlineData("aws")]
+        [InlineData("azure")]
+#if NETCOREAPP3_0
+        [InlineData("gcp")]
+#endif
+        [InlineData("kmip")]
+        public void TestGetKmsProviderName(string kmsName)
+        {
+            var key = CreateKmsCredentials(kmsName);
+            var keyId = CreateKmsKeyId(kmsName);
+            var cryptOptions = new CryptOptions(new[] { key });
+
+            using (var cryptClient = CryptClientFactory.Create(cryptOptions))
+            using (var context = cryptClient.StartCreateDataKeyContext(keyId))
+            {
+                var request = context.GetKmsMessageRequests().Single();
+                request.KmsProvider.Should().Be(kmsName);
+            }
+        }
+
         // private methods
+        private static KmsCredentials CreateKmsCredentials(string kmsName)
+        {
+            BsonDocument kmsCredentialsDocument;
+            switch (kmsName)
+            {
+                case "local":
+                    kmsCredentialsDocument = new BsonDocument
+                    {
+                        {
+                            "local",
+                            new BsonDocument
+                            {
+                                { "key", new BsonBinaryData(new byte[96]) }
+                            }
+                        }
+                    };
+                    break;
+                case "aws":
+                    kmsCredentialsDocument = new BsonDocument
+                    {
+                        {
+                            "aws",
+                            new BsonDocument
+                            {
+                                { "secretAccessKey", "dummy" },
+                                { "accessKeyId", "dummy" }
+                            }
+                        }
+                    };
+                    break;
+                case "azure":
+                    kmsCredentialsDocument = new BsonDocument
+                    {
+                        {
+                            "azure",
+                            new BsonDocument
+                            {
+                                { "tenantId", "dummy" },
+                                { "clientId", "dummy" },
+                                { "clientSecret", "dummy" }
+                            }
+                        }
+                    };
+                    break;
+                case "gcp":
+                    kmsCredentialsDocument = new BsonDocument
+                    {
+                        {
+                            "gcp",
+                            new BsonDocument
+                            {
+                                { "email", "dummy" },
+                                { "privateKey", SigningRSAESPKCSCallbackTests.PrivateKey }
+                            }
+                        }
+                    };
+                    break;
+                case "kmip":
+                    kmsCredentialsDocument = new BsonDocument
+                    {
+                        {
+                            "kmip", 
+                            new BsonDocument
+                            {
+                                { "endpoint", "dummy" }
+                            }
+                        }
+                    };
+                    break;
+                default: throw new Exception($"Unsupported kms {kmsName}.");
+            }
+            return new KmsCredentials(kmsCredentialsDocument.ToBson());
+        }
+
+        private static KmsKeyId CreateKmsKeyId(string kmsName, string endPoint = null, IEnumerable<byte[]> keyAltNameBuffers = null)
+        {
+            BsonDocument datakeyOptionsDocument;
+            switch (kmsName)
+            {
+                case "local":
+                    datakeyOptionsDocument = new BsonDocument
+                    {
+                        { "provider", "local" },
+                    };
+                    break;
+                case "aws":
+                    datakeyOptionsDocument = new BsonDocument
+                    {
+                        { "provider", "aws" },
+                        { "key", "cmk" },
+                        { "region", "us-east-1" },
+                        { "endpoint", () => endPoint, endPoint != null }
+                    };
+                    break;
+                case "azure":
+                    datakeyOptionsDocument = new BsonDocument
+                    {
+                        { "provider", "azure" },
+                        { "keyName", "dummy" },
+                        { "keyVaultEndpoint", endPoint ?? "dummy.azure.net" }
+                    };
+                    break;
+                case "gcp":
+                    datakeyOptionsDocument = new BsonDocument
+                    {
+                        { "provider", "gcp" },
+                        { "projectId", "dummy" },
+                        { "location", "dummy" },
+                        { "keyRing", "dummy" },
+                        { "keyName", "dummy" },
+                        { "endpoint", () => endPoint, endPoint != null }
+                    };
+                    break;
+                case "kmip":
+                    datakeyOptionsDocument = new BsonDocument
+                    {
+                        { "provider", "kmip" }
+                    };
+                    break;
+                default: throw new Exception($"Unsupported kms {kmsName}.");
+            }
+            return new KmsKeyId(datakeyOptionsDocument.ToBson(), keyAltNameBuffers);
+        }
+
+        private CryptOptions CreateOptions()
+        {
+            return new CryptOptions(
+                new[] 
+                {
+                    CreateKmsCredentials("aws"),
+                    CreateKmsCredentials("local")
+                });
+        }
+
         private (Binary binarySent, BsonDocument document) ProcessContextToCompletion(CryptContext context, bool isKmsDecrypt = true)
         {
             BsonDocument document = null;
@@ -605,7 +697,6 @@ namespace MongoDB.Libmongocrypt.Test
 
             return testDirs;
         }
-
 
         static string ReadHttpTestFile(string file)
         {

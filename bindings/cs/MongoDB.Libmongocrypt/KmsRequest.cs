@@ -61,6 +61,20 @@ namespace MongoDB.Libmongocrypt
             }
         }
 
+        /// <summary>
+        /// Gets the kms provider name.
+        /// </summary>
+        /// <value>
+        /// The kms provider name.
+        /// </value>
+        public string KmsProvider
+        {
+            get
+            {
+                var kmsProviderNamePointer = Library.mongocrypt_kms_ctx_get_kms_provider(_id, length: out _);
+                return Marshal.PtrToStringAnsi(kmsProviderNamePointer);
+            }
+        }
 
         /// <summary>
         /// Gets the message to send to KMS.

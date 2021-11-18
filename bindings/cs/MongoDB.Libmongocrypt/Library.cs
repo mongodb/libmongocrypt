@@ -163,6 +163,8 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_finalize>(("mongocrypt_ctx_finalize")), true);
             _mongocrypt_ctx_destroy = new Lazy<Delegates.mongocrypt_ctx_destroy>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_destroy>(("mongocrypt_ctx_destroy")), true);
+            _mongocrypt_kms_ctx_get_kms_provider = new Lazy<Delegates.mongocrypt_kms_ctx_get_kms_provider>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_kms_ctx_get_kms_provider>(("mongocrypt_kms_ctx_get_kms_provider")), true);
         }
 
         /// <summary>
@@ -240,6 +242,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_ctx_kms_done mongocrypt_ctx_kms_done => _mongocrypt_ctx_kms_done.Value;
         internal static Delegates.mongocrypt_ctx_finalize mongocrypt_ctx_finalize => _mongocrypt_ctx_finalize.Value;
         internal static Delegates.mongocrypt_ctx_destroy mongocrypt_ctx_destroy => _mongocrypt_ctx_destroy.Value;
+        internal static Delegates.mongocrypt_kms_ctx_get_kms_provider mongocrypt_kms_ctx_get_kms_provider => _mongocrypt_kms_ctx_get_kms_provider.Value;
 
         private static readonly Lazy<LibraryLoader> __loader = new Lazy<LibraryLoader>(
             () => new LibraryLoader(), true);
@@ -310,6 +313,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_kms_done> _mongocrypt_ctx_kms_done;
         private static readonly Lazy<Delegates.mongocrypt_ctx_finalize> _mongocrypt_ctx_finalize;
         private static readonly Lazy<Delegates.mongocrypt_ctx_destroy> _mongocrypt_ctx_destroy;
+        private static readonly Lazy<Delegates.mongocrypt_kms_ctx_get_kms_provider> _mongocrypt_kms_ctx_get_kms_provider;
 
         internal enum StatusType
         {
@@ -508,6 +512,7 @@ namespace MongoDB.Libmongocrypt
             public delegate bool mongocrypt_ctx_finalize(ContextSafeHandle handle, BinarySafeHandle binary);
 
             public delegate void mongocrypt_ctx_destroy(IntPtr ptr);
+            public delegate IntPtr mongocrypt_kms_ctx_get_kms_provider(IntPtr handle, out uint length);
         }
     }
 }
