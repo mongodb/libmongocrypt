@@ -711,6 +711,7 @@ Function MongoCryptKMSRequest::Init(Napi::Env env) {
                     InstanceMethod("addResponse", &MongoCryptKMSRequest::AddResponse),
                     InstanceAccessor("status", &MongoCryptKMSRequest::Status, nullptr),
                     InstanceAccessor("bytesNeeded", &MongoCryptKMSRequest::BytesNeeded, nullptr),
+                    InstanceAccessor("kmsProvider", &MongoCryptKMSRequest::KMSProvider, nullptr),
                     InstanceAccessor("endpoint", &MongoCryptKMSRequest::Endpoint, nullptr),
                     InstanceAccessor("message", &MongoCryptKMSRequest::Message, nullptr)
                   });
@@ -735,6 +736,10 @@ Value MongoCryptKMSRequest::Status(const CallbackInfo& info) {
 
 Value MongoCryptKMSRequest::BytesNeeded(const CallbackInfo& info) {
     return Number::New(Env(), mongocrypt_kms_ctx_bytes_needed(_kms_context));
+}
+
+Value MongoCryptKMSRequest::KMSProvider(const CallbackInfo& info) {
+    return String::New(Env(), mongocrypt_kms_ctx_get_kms_provider(_kms_context, nullptr));
 }
 
 Value MongoCryptKMSRequest::Message(const CallbackInfo& info) {

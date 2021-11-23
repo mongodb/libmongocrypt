@@ -1,7 +1,7 @@
 import type { Binary } from 'bson';
 import type { MongoClient } from 'mongodb';
 
-export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local';
+export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
 
 /**
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
@@ -67,6 +67,18 @@ export interface KMSProviders {
      * A 96-byte long Buffer or base64 encoded string.
      */
     key: Buffer | string;
+  };
+
+  /**
+   * Configuration options for using 'kmip' as your KMS provider
+   */
+  kmip?: {
+    /**
+     * The output endpoint string.
+     * The endpoint consists of a hostname and port separated by a colon.
+     * E.g. "example.com:123". A port is always present.
+     */
+    endpoint?: string;
   };
 
   /**

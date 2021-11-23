@@ -15,6 +15,7 @@ describe('StateMachine', function() {
         this._bytesNeeded = typeof bytesNeeded === 'number' ? bytesNeeded : 1024;
         this._message = message;
         this.endpoint = 'some.fake.host.com';
+        this._kmsProvider = 'aws';
       }
       get message() {
         return this._message;
@@ -22,6 +23,10 @@ describe('StateMachine', function() {
 
       get bytesNeeded() {
         return this._bytesNeeded;
+      }
+
+      get kmsProvider() {
+        return this._kmsProvider;
       }
 
       addResponse(buffer) {
@@ -69,6 +74,7 @@ describe('StateMachine', function() {
       setTimeout(() => {
         expect(status).to.equal('pending');
         expect(request.bytesNeeded).to.equal(500);
+        expect(request.kmsProvider).to.equal('aws');
         this.fakeSocket.emit('data', Buffer.alloc(300));
         setTimeout(() => {
           expect(status).to.equal('pending');
