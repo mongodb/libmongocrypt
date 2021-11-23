@@ -97,6 +97,7 @@ class MongoCryptKMSRequest : public Napi::ObjectWrap<MongoCryptKMSRequest> {
     Napi::Value Status(const Napi::CallbackInfo& info);
     Napi::Value Message(const Napi::CallbackInfo& info);
     Napi::Value BytesNeeded(const Napi::CallbackInfo& info);
+    Napi::Value KMSProvider(const Napi::CallbackInfo& info);
     Napi::Value Endpoint(const Napi::CallbackInfo& info);
 
    private:
