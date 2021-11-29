@@ -147,10 +147,6 @@ export interface ClientEncryptionTLSOptions {
    */
   tls?: boolean;
   /**
-   * Specifies the location of a local TLS Certificate
-   */
-  tlsCertificateFile?: string;
-  /**
    * Specifies the location of a local .pem file that contains
    * either the client's TLS/SSL certificate and key or only the
    * client's TLS/SSL key when tlsCertificateFile is used to
