@@ -370,7 +370,7 @@ tasks:
 
 - name: test-python-windows
   depends_on:
-  # Depends on the windows-64-vs2017-test upload.
+  # Depends on the windows-64-vs2019-test upload.
   - variant: windows-test
     name: build-and-test-and-upload
   commands:
@@ -764,8 +764,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
 - name: windows-test
-  display_name: "Windows 2016"
-  run_on: windows-64-vs2017-test
+  display_name: "Windows 2019"
+  run_on: windows-64-vs2019-test
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
