@@ -132,6 +132,41 @@ export interface KMSProviders {
 }
 
 /**
+ * TLS options to use when connecting. The spec specifically calls out which insecure
+ * tls options are not allowed:
+ *
+ *  - tlsAllowInvalidCertificates
+ *  - tlsAllowInvalidHostnames
+ *  - tlsInsecure
+ *  - tlsDisableOCSPEndpointCheck
+ *  - tlsDisableCertificateRevocationCheck
+ */
+export interface ClientEncryptionTLSOptions {
+  /**
+   * Enables or disables TLS/SSL for the connection.
+   */
+  tls?: boolean;
+  /**
+   * Specifies the location of a local .pem file that contains
+   * either the client's TLS/SSL certificate and key or only the
+   * client's TLS/SSL key when tlsCertificateFile is used to
+   * provide the certificate.
+   */
+  tlsCertificateKeyFile?: string;
+  /**
+   * Specifies the password to de-crypt the tlsCertificateKeyFile.
+   */
+  tlsCertificateKeyFilePassword?: string;
+  /**
+   * Specifies the location of a local .pem file that contains the
+   * root certificate chain from the Certificate Authority.
+   * This file is used to validate the certificate presented by the
+   * KMS provider.
+   */
+  tlsCAFile?: string;
+}
+
+/**
  * Additional settings to provide when creating a new `ClientEncryption` instance.
  */
 export interface ClientEncryptionOptions {
@@ -149,6 +184,11 @@ export interface ClientEncryptionOptions {
    * Options for specific KMS providers to use
    */
   kmsProviders?: KMSProviders;
+
+  /**
+   * TLS options for kms providers to use.
+   */
+  tlsOptions?: ClientEncryptionTLSOptions;
 }
 
 /**
