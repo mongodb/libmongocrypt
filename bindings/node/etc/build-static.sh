@@ -41,7 +41,16 @@ popd #./deps/tmp
 # build and install libmongocrypt
 pushd libmongocrypt-build #./deps/tmp/libmongocrypt-build
 
-CMAKE_FLAGS="-DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_C_FLAGS=\"-fPIC\" -DCMAKE_INSTALL_LIBDIR=lib "
+if [ "$OS" = "Windows_NT" ]; then
+    # W4996 - POSIX name for this item is deprecated
+    # TODO: add support for clang-cl which is detected as MSVC
+    LIBMONGOCRYPT_CFLAGS="/W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX"
+else
+    # GNU, Clang, AppleClang
+    LIBMONGOCRYPT_CFLAGS="-Wall -Werror -Wno-missing-braces"
+fi
+
+CMAKE_FLAGS="-DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_C_FLAGS=\"-fPIC ${LIBMONGOCRYPT_CFLAGS}\" -DCMAKE_INSTALL_LIBDIR=lib "
 if [ "$OS" == "Windows_NT" ]; then
   WINDOWS_CMAKE_FLAGS="-Thost=x64 -A x64 -DCMAKE_C_FLAGS_RELWITHDEBINFO=\"/MT\""
   $CMAKE $CMAKE_FLAGS $WINDOWS_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="`cygpath -w $DEPS_PREFIX`" -DCMAKE_INSTALL_PREFIX="`cygpath -w $DEPS_PREFIX`" "`cygpath -w $LIBMONGOCRYPT_DIR`"
