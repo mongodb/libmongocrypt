@@ -108,6 +108,23 @@ describe('AutoEncrypter', function() {
     });
   });
 
+  context('when checking serverSelectionTimeoutMS on the mongocryptd client', function() {
+    const client = new MockClient();
+    const autoEncrypter = new AutoEncrypter(client, {
+      mongocryptdBypassSpawn: true,
+      keyVaultNamespace: 'admin.datakeys',
+      logger: () => {},
+      kmsProviders: {
+        aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+        local: { key: Buffer.alloc(96) }
+      }
+    });
+
+    it('defaults to 10000', function() {
+      expect(autoEncrypter._mongocryptdClient.s.options.serverSelectionTimeoutMS).to.equal(10000);
+    });
+  });
+
   describe('state machine', function() {
     it('should decrypt mock data', function(done) {
       const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
