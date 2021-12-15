@@ -98,7 +98,7 @@ module.exports = function(modules) {
         this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
           useNewUrlParser: true,
           useUnifiedTopology: true,
-          serverSelectionTimeoutMS: 1000
+          serverSelectionTimeoutMS: 10000
         });
       }
 
