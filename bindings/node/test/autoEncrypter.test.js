@@ -47,6 +47,7 @@ class MockClient {
 
 const AutoEncrypter = require('../lib/autoEncrypter')({ mongodb, stateMachine }).AutoEncrypter;
 describe('AutoEncrypter', function() {
+  this.timeout(12000);
   let ENABLE_LOG_TEST = false;
   let sandbox = sinon.createSandbox();
   beforeEach(() => {
