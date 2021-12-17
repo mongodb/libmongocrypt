@@ -9,6 +9,16 @@ export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' 
 export class MongoCryptError extends Error {
 }
 
+/**
+ * A set of options for specifying a Socks5 proxy.
+ */
+export interface ProxyOptions {
+  host: string;
+  port?: number;
+  username?: string;
+  password?: string;
+}
+
 export interface ClientEncryptionCreateDataKeyCallback {
   /**
    * @param error If present, indicates an error that occurred in the creation of the data key
@@ -184,6 +194,11 @@ export interface ClientEncryptionOptions {
    * Options for specific KMS providers to use
    */
   kmsProviders?: KMSProviders;
+
+  /**
+   * Options for specifying a Socks5 proxy to use for connecting to the KMS.
+   */
+  proxyOptions?: ProxyOptions;
 
   /**
    * TLS options for kms providers to use.

@@ -212,7 +212,7 @@ module.exports = function(modules) {
       context.ns = ns;
       context.document = cmd;
 
-      const stateMachine = new StateMachine(Object.assign({ bson }, options));
+      const stateMachine = new StateMachine({ bson, ...options, proxyOptions: this._proxyOptions });
       stateMachine.execute(this, context, callback);
     }
 
@@ -243,7 +243,7 @@ module.exports = function(modules) {
       // TODO: should this be an accessor from the addon?
       context.id = this._contextCounter++;
 
-      const stateMachine = new StateMachine(Object.assign({ bson }, options));
+      const stateMachine = new StateMachine({ bson, ...options, proxyOptions: this._proxyOptions });
       stateMachine.execute(this, context, callback);
     }
   }
