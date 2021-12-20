@@ -254,10 +254,10 @@ module.exports = function(modules) {
           reject(mcError);
         }
 
-        if (this.options.proxyOptions && this.options.proxyOptions.host) {
+        if (this.options.proxyOptions && this.options.proxyOptions.proxyHost) {
           rawSocket = net.connect({
-            host: this.options.proxyOptions.host,
-            port: this.options.proxyOptions.port || 1080
+            host: this.options.proxyOptions.proxyHost,
+            port: this.options.proxyOptions.proxyPort || 1080
           });
 
           rawSocket.on('timeout', ontimeout);
@@ -273,8 +273,8 @@ module.exports = function(modules) {
                   host: 'locahost',
                   port: 0,
                   type: 5,
-                  userId: this.options.proxyOptions.username,
-                  password: this.options.proxyOptions.username
+                  userId: this.options.proxyOptions.proxyUsername,
+                  password: this.options.proxyOptions.proxyPassword
                 }
               })
             ).socket;

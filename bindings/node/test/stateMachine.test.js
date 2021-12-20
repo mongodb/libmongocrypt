@@ -99,17 +99,34 @@ describe('StateMachine', function() {
   describe('Socks5 support', function() {
     let socks5srv;
     let hasTlsConnection;
+    let withUsernamePassword;
 
     beforeEach(async () => {
       hasTlsConnection = false;
-      socks5srv = net.createServer(async(socket) => {
-        expect(await once(socket, 'data')).to.deep.equal([Buffer.from('05020002', 'hex')]);
-        socket.write(Buffer.from('0500', 'hex'));
-        expect(await once(socket, 'data')).to.deep.equal([Buffer.concat([
-          Buffer.from('0501000312', 'hex'),
-          Buffer.from('some.fake.host.com'),
-          Buffer.from('01bb', 'hex')
-        ])]);
+      socks5srv = net.createServer(async socket => {
+        if (withUsernamePassword) {
+          expect(await once(socket, 'data')).to.deep.equal([Buffer.from('05020002', 'hex')]);
+          socket.write(Buffer.from('0502', 'hex'));
+          expect(await once(socket, 'data')).to.deep.equal([
+            Buffer.concat([
+              Buffer.from('0103', 'hex'),
+              Buffer.from('foo'),
+              Buffer.from('03', 'hex'),
+              Buffer.from('bar')
+            ])
+          ]);
+          socket.write(Buffer.from('0100', 'hex'));
+        } else {
+          expect(await once(socket, 'data')).to.deep.equal([Buffer.from('050100', 'hex')]);
+          socket.write(Buffer.from('0500', 'hex'));
+        }
+        expect(await once(socket, 'data')).to.deep.equal([
+          Buffer.concat([
+            Buffer.from('0501000312', 'hex'),
+            Buffer.from('some.fake.host.com'),
+            Buffer.from('01bb', 'hex')
+          ])
+        ]);
         socket.write(Buffer.from('0500007f0000010100', 'hex'));
         expect((await once(socket, 'data'))[0][1]).to.equal(3); // TLS handshake version byte
         hasTlsConnection = true;
@@ -123,14 +140,36 @@ describe('StateMachine', function() {
       socks5srv.close();
     });
 
-    it('should create HTTPS connections through a Socks5 proxy', async function() {
+    it('should create HTTPS connections through a Socks5 proxy (no proxy auth)', async function() {
       const stateMachine = new StateMachine({
         bson: BSON,
         proxyOptions: {
-          host: 'localhost',
-          port: socks5srv.address().port,
-          username: 'foo',
-          password: 'bar'
+          proxyHost: 'localhost',
+          proxyPort: socks5srv.address().port
+        }
+      });
+
+      const request = new MockRequest(Buffer.from('foobar'), 500);
+      try {
+        await stateMachine.kmsRequest(request);
+      } catch (err) {
+        expect(err.name).to.equal('MongoCryptError');
+        expect(err.originalError.code).to.equal('ECONNRESET');
+        expect(hasTlsConnection).to.equal(true);
+        return;
+      }
+      expect.fail('missed exception');
+    });
+
+    it('should create HTTPS connections through a Socks5 proxy (username/password auth)', async function() {
+      withUsernamePassword = true;
+      const stateMachine = new StateMachine({
+        bson: BSON,
+        proxyOptions: {
+          proxyHost: 'localhost',
+          proxyPort: socks5srv.address().port,
+          proxyUsername: 'foo',
+          proxyPassword: 'bar'
         }
       });
 
