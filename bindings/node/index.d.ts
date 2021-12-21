@@ -13,10 +13,10 @@ export class MongoCryptError extends Error {
  * A set of options for specifying a Socks5 proxy.
  */
 export interface ProxyOptions {
-  host: string;
-  port?: number;
-  username?: string;
-  password?: string;
+  proxyHost: string;
+  proxyPort?: number;
+  proxyUsername?: string;
+  proxyPassword?: string;
 }
 
 export interface ClientEncryptionCreateDataKeyCallback {
