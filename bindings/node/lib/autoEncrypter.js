@@ -105,6 +105,7 @@ module.exports = function(modules) {
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
       this._keyVaultClient = options.keyVaultClient || client;
       this._metaDataClient = options.metadataClient || client;
+      this._proxyOptions = options.proxyOptions || {};
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
