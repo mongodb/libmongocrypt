@@ -579,9 +579,10 @@ tasks:
           ./bin/pip install pycrypto
           cd ..
           pkg_version=$mongocrypt_version
-          CURATOR_RELEASE=${curator_release|"latest"}
+          CURATOR_RELEASE=${curator_release|"e0b5f66fc89ec0acddcd40ea5f447a8300ded2b9"}
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
+          ./curator version
           ./curator repo --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --packages repo
 
 - name: windows-upload-check
