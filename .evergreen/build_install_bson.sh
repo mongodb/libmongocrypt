@@ -17,7 +17,8 @@ if [ "$OS" == "Windows_NT" ]; then
     ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 else
     chmod u+x ./.evergreen/find-cmake.sh
-    . ./.evergreen/find-cmake.sh
+    # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
+    IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
 fi
 
 $CMAKE --version

@@ -11,7 +11,7 @@ find_cmake ()
     CMAKE="/Applications/Cmake.app/Contents/bin/cmake"
   elif [ -f "/opt/cmake/bin/cmake" ]; then
     CMAKE="/opt/cmake/bin/cmake"
-  elif command -v cmake 2>/dev/null; then
+  elif [ -z "$IGNORE_SYSTEM_CMAKE" ] && command -v cmake 2>/dev/null; then
      CMAKE=cmake
   elif uname -a | grep -iq 'x86_64 GNU/Linux'; then
      curl --retry 5 https://cmake.org/files/v3.11/cmake-3.11.0-Linux-x86_64.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz

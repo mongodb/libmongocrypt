@@ -27,7 +27,7 @@ if [ "$OS" == "Windows_NT" ]; then
   ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 else
   chmod u+x ./.evergreen/find_cmake.sh
-  . ./.evergreen/find_cmake.sh
+  IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find_cmake.sh
 fi
 
 # this needs to be explicitly exported for the nvm install below

@@ -81,7 +81,8 @@ functions:
              CMAKE=/cygdrive/c/cmake/bin/cmake
           else
              chmod u+x ./mongo-c-driver/.evergreen/find-cmake.sh
-             . ./mongo-c-driver/.evergreen/find-cmake.sh
+             # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
+             IGNORE_SYSTEM_CMAKE=1 . ./mongo-c-driver/.evergreen/find-cmake.sh
           fi
           # Get current version of libmongocrypt.
           cd libmongocrypt
@@ -439,6 +440,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: amazon2
       name: build-and-test-and-upload
+    - variant: amazon2-arm64
+      name: build-and-test-and-upload
     - variant: debian10
       name: build-and-test-and-upload
     - variant: debian92
@@ -483,6 +486,8 @@ tasks:
       vars: { variant_name: "linux-64-amazon-ami" }
     - func: "download tarball"
       vars: { variant_name: "amazon2" }
+    - func: "download tarball"
+      vars: { variant_name: "amazon2-arm64" }
     - func: "download tarball"
       vars: { variant_name: "debian10" }
     - func: "download tarball"
@@ -555,7 +560,8 @@ tasks:
             CMAKE=/cygdrive/c/cmake/bin/cmake
           else
             chmod u+x ../mongo-c-driver/.evergreen/find-cmake.sh
-            . ../mongo-c-driver/.evergreen/find-cmake.sh
+            # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
+            IGNORE_SYSTEM_CMAKE=1 . ../mongo-c-driver/.evergreen/find-cmake.sh
           fi
           # Get the current version of libmongocrypt.
           mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
@@ -805,6 +811,21 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-java
+  - build-and-test-node
+  - name: publish-packages
+    distros:
+    - rhel70-small
+- name: amazon2-arm64
+  display_name: "Amazon Linux 2 (arm64)"
+  run_on: amazon2-arm64
+  expansions:
+    has_packages: true
+    packager_distro: amazon2
+    packager_arch: arm64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
   - build-and-test-node
   - name: publish-packages
     distros:
