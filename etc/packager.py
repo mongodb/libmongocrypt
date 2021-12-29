@@ -208,6 +208,8 @@ class Distro(object):
                 return "ppc64le"
             elif arch == "s390x":
                 return "s390x"
+            elif arch == "arm64":
+                return "aarch64"
             elif arch.endswith("86"):
                 return "i686"
             return "x86_64"
