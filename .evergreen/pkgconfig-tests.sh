@@ -40,6 +40,10 @@ else
     IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
 fi
 
+if [ "darwin" = "$OS" -a "arm64" = "$MARCH" ]; then
+   ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
+fi
+
 mkdir cmake-build
 cd cmake-build
 INSTALL_PATH="$(system_path $pkgconfig_tests_root/install)"
