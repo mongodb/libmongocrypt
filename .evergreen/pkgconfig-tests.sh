@@ -38,14 +38,9 @@ else
     chmod u+x ./.evergreen/find-cmake.sh
     # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
     IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
-fi
-
-if [ "$OS" != "Windows_NT" ]; then
     # Check if on macOS with arm64.
     OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
-    echo "OS_NAME: $OS_NAME"
     MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-
     if [ "darwin" = "$OS_NAME" -a "arm64" = "$MARCH" ]; then
         ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
     fi
