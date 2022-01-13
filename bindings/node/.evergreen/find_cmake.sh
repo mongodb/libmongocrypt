@@ -1,4 +1,5 @@
 #!/usr/bin/env bash -x
+
 # Copied from the mongo-c-driver
 find_cmake ()
 {
