@@ -3,6 +3,7 @@
 module.exports = function(modules) {
   const tls = require('tls');
   const net = require('net');
+  const { readFile } = require('fs/promises');
   const { once } = require('events');
   const { SocksClient } = require('socks');
 
@@ -283,6 +284,7 @@ module.exports = function(modules) {
           }
         }
 
+        await this.setTlsOptions(request.kmsProvider, options);
         socket = tls.connect(options, () => {
           socket.write(message);
         });
@@ -303,6 +305,28 @@ module.exports = function(modules) {
           }
         });
       });
+    }
+
+    /**
+     * @ignore
+     * Sets the Node TLS options if provided for the specific KMS provider.
+     */
+    async setTlsOptions(kmsProvider, options) {
+      const tlsOptions = this.options.tlsOptions;
+      if (tlsOptions) {
+        const providerTlsOptions = tlsOptions[kmsProvider];
+        if (providerTlsOptions) {
+          if (providerTlsOptions.tlsCertificateKeyFile) {
+            options.cert = await readFile(providerTlsOptions.tlsCertificateKeyFile, { encoding: 'ascii' });
+          }
+          if (providerTlsOptions.tlsCAFile) {
+            options.ca = await readFile(providerTlsOptions.tlsCAFile, { encoding: 'ascii' });
+          }
+          if (providerTlsOptions.tlsCertificateKeyFilePassword) {
+            options.passphrase = providerTlsOptions.tlsCertificateKeyFilePassword;
+          }
+        }
+      }
     }
 
     /**
