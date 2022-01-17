@@ -203,7 +203,13 @@ export interface ClientEncryptionOptions {
   /**
    * TLS options for kms providers to use.
    */
-  tlsOptions?: ClientEncryptionTLSOptions;
+  tlsOptions?: {
+    aws?: ClientEncryptionTLSOptions;
+    local?: ClientEncryptionTLSOptions;
+    azure?: ClientEncryptionTLSOptions;
+    gcp?: ClientEncryptionTLSOptions;
+    kmip?: ClientEncryptionTLSOptions;
+  }
 }
 
 /**
