@@ -3,6 +3,14 @@
 # Copied from the mongo-c-driver
 find_cmake ()
 {
+  # Check if on macOS with arm64. Use system cmake. See BUILD-14565.
+  OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
+  MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
+  if [ "darwin" = "$OS_NAME" -a "arm64" = "$MARCH" ]; then
+      CMAKE=cmake
+      return 0
+  fi
+
   if [ ! -z "$CMAKE" ]; then
     return 0
   elif [ -f "/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake" ]; then
