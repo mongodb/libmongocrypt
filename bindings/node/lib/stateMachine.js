@@ -326,7 +326,7 @@ module.exports = function(modules) {
 
     validateTlsOptions(tlsOptions) {
       const tlsOptionNames = Object.keys(tlsOptions);
-      for (const option in INSECURE_TLS_OPTIONS) {
+      for (const option of INSECURE_TLS_OPTIONS) {
         if (tlsOptionNames.includes(option)) {
           return new MongoCryptError(`Insecure TLS options prohibited: ${option}`);
         }

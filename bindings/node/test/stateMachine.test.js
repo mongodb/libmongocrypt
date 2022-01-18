@@ -91,9 +91,33 @@ describe('StateMachine', function() {
       });
     });
 
-    context('when tls options are provided', function(done) {
-      context('when the options are insecure', function(done) {
+    context('when tls options are provided', function() {
+      context('when the options are insecure', function() {
+        [
+          'tlsInsecure',
+          'tlsAllowInvalidCertificates',
+          'tlsAllowInvalidHostnames',
+          'tlsDisableOCSPEndpointCheck',
+          'tlsDisableCertificateRevocationCheck'
+        ].forEach(function(option) {
+          context(`when the option is ${option}`, function() {
+            const stateMachine = new StateMachine({
+              bson: BSON,
+              tlsOptions: { aws: { [option]: true }}
+            });
+            const request = new MockRequest(Buffer.from('foobar'), 500);
+            let status = 'pending';
 
+            it('rejects with the validation error', function(done) {
+              stateMachine
+                .kmsRequest(request)
+                .catch((err) => {
+                  expect(err.message).to.equal(`Insecure TLS options prohibited: ${option}`);
+                  done();
+                });
+            });
+          });
+        });
       });
 
       context('when the options are secure', function(done) {
