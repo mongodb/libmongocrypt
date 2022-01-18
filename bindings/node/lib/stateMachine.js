@@ -325,6 +325,15 @@ module.exports = function(modules) {
       });
     }
 
+    /**
+     * @ignore
+     * Validates the provided TLS options are secure.
+     *
+     * @param {string} kmsProvider The KMS provider name.
+     * @param {ClientEncryptionTLSOptions} tlsOptions The client TLS options for the provider.
+     *
+     * @returns {Error} If any option is invalid.
+     */
     validateTlsOptions(kmsProvider, tlsOptions) {
       const tlsOptionNames = Object.keys(tlsOptions);
       for (const option of INSECURE_TLS_OPTIONS) {
@@ -334,6 +343,13 @@ module.exports = function(modules) {
       }
     }
 
+    /**
+     * @ignore
+     * Sets only the valid secure TLS options.
+     *
+     * @param {ClientEncryptionTLSOptions} tlsOptions The client TLS options for the provider.
+     * @param {Object} options The existing connection options.
+     */
     setTlsOptions(tlsOptions, options) {
       if (tlsOptions.tlsCertificateKeyFile) {
         const cert = fs.readFileSync(tlsOptions.tlsCertificateKeyFile, {
