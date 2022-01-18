@@ -129,13 +129,13 @@ describe('StateMachine', function() {
             tlsOptions: { aws: { tlsCertificateKeyFile: 'test.pem' }}
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
+          const buffer = Buffer.from('foobar');
           let connectOptions;
 
           it('sets the cert and key options in the tls connect options', function(done) {
-            this.sinon.stub(fs, 'readFileSync').callsFake((fileName, options) => {
+            this.sinon.stub(fs, 'readFileSync').callsFake((fileName) => {
               expect(fileName).to.equal('test.pem');
-              expect(options.encoding).to.equal('ascii');
-              return 'test';
+              return buffer;
             });
             this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
               connectOptions = options;
@@ -143,8 +143,8 @@ describe('StateMachine', function() {
               return this.fakeSocket;
             });
             stateMachine.kmsRequest(request).then(function() {
-              expect(connectOptions.cert).to.equal('test');
-              expect(connectOptions.key).to.equal('test');
+              expect(connectOptions.cert).to.equal(buffer);
+              expect(connectOptions.key).to.equal(buffer);
               done();
             });
             this.fakeSocket.emit('data', Buffer.alloc(0));
@@ -157,13 +157,13 @@ describe('StateMachine', function() {
             tlsOptions: { aws: { tlsCAFile: 'test.pem' }}
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
+          const buffer = Buffer.from('foobar');
           let connectOptions;
 
           it('sets the ca options in the tls connect options', function(done) {
-            this.sinon.stub(fs, 'readFileSync').callsFake((fileName, options) => {
+            this.sinon.stub(fs, 'readFileSync').callsFake((fileName) => {
               expect(fileName).to.equal('test.pem');
-              expect(options.encoding).to.equal('ascii');
-              return 'test';
+              return buffer;
             });
             this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
               connectOptions = options;
@@ -171,7 +171,7 @@ describe('StateMachine', function() {
               return this.fakeSocket;
             });
             stateMachine.kmsRequest(request).then(function() {
-              expect(connectOptions.ca).to.equal('test');
+              expect(connectOptions.ca).to.equal(buffer);
               done();
             });
             this.fakeSocket.emit('data', Buffer.alloc(0));
