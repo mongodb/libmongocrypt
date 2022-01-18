@@ -91,6 +91,16 @@ describe('StateMachine', function() {
       });
     });
 
+    context('when tls options are provided', function(done) {
+      context('when the options are insecure', function(done) {
+
+      });
+
+      context('when the options are secure', function(done) {
+
+      });
+    });
+
     afterEach(function() {
       this.sinon.restore();
     });

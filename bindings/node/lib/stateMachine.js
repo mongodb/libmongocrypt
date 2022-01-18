@@ -3,7 +3,8 @@
 module.exports = function(modules) {
   const tls = require('tls');
   const net = require('net');
-  const fs = require('fs');
+  const path = require('path');
+  const fs = require ('fs');
   const { once } = require('events');
   const { SocksClient } = require('socks');
 
@@ -38,6 +39,14 @@ module.exports = function(modules) {
     [MONGOCRYPT_CTX_READY, 'MONGOCRYPT_CTX_READY'],
     [MONGOCRYPT_CTX_DONE, 'MONGOCRYPT_CTX_DONE']
   ]);
+
+  const INSECURE_TLS_OPTIONS = [
+    'tlsInsecure',
+    'tlsAllowInvalidCertificates',
+    'tlsAllowInvalidHostnames',
+    'tlsDisableOCSPEndpointCheck',
+    'tlsDisableCertificateRevocationCheck'
+  ];
 
   /**
    * @ignore
@@ -284,7 +293,15 @@ module.exports = function(modules) {
           }
         }
 
-        this.setTlsOptions(request.kmsProvider, options);
+        const tlsOptions = this.options.tlsOptions;
+        if (tlsOptions) {
+          const providerTlsOptions = tlsOptions[request.kmsProvider];
+          if (providerTlsOptions) {
+            const error = this.validateTlsOptions(providerTlsOptions);
+            if (error) reject(error);
+            this.setTlsOptions(providerTlsOptions, options);
+          }
+        }
         socket = tls.connect(options, () => {
           socket.write(message);
         });
@@ -307,28 +324,25 @@ module.exports = function(modules) {
       });
     }
 
-    /**
-     * @ignore
-     * Sets the Node TLS options if provided for the specific KMS provider.
-     */
-    setTlsOptions(kmsProvider, options) {
-      const tlsOptions = this.options.tlsOptions;
-      if (tlsOptions) {
-        const providerTlsOptions = tlsOptions[kmsProvider];
-        if (providerTlsOptions) {
-          if (providerTlsOptions.tlsCertificateKeyFile) {
-            const cert = fs.readFileSync(providerTlsOptions.tlsCertificateKeyFile, {
-              encoding: 'ascii'
-            });
-            options.cert = options.key = cert;
-          }
-          if (providerTlsOptions.tlsCAFile) {
-            options.ca = fs.readFileSync(providerTlsOptions.tlsCAFile, { encoding: 'ascii' });
-          }
-          if (providerTlsOptions.tlsCertificateKeyFilePassword) {
-            options.passphrase = providerTlsOptions.tlsCertificateKeyFilePassword;
-          }
+    validateTlsOptions(tlsOptions) {
+      const tlsOptionNames = Object.keys(tlsOptions);
+      for (const option in INSECURE_TLS_OPTIONS) {
+        if (tlsOptionNames.includes(option)) {
+          return new MongoCryptError(`Insecure TLS options prohibited: ${option}`);
         }
+      }
+    }
+
+    setTlsOptions(tlsOptions, options) {
+      if (tlsOptions.tlsCertificateKeyFile) {
+        const cert = fs.readFileSync(tlsOptions.tlsCertificateKeyFile, { encoding: 'ascii' });
+        options.cert = options.key = cert;
+      }
+      if (tlsOptions.tlsCAFile) {
+        options.ca = fs.readFileSync(tlsOptions.tlsCAFile, { encoding: 'ascii' });
+      }
+      if (tlsOptions.tlsCertificateKeyFilePassword) {
+        options.passphrase = tlsOptions.tlsCertificateKeyFilePassword;
       }
     }
 
