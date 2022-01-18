@@ -106,13 +106,12 @@ describe('StateMachine', function() {
               tlsOptions: { aws: { [option]: true }}
             });
             const request = new MockRequest(Buffer.from('foobar'), 500);
-            let status = 'pending';
 
             it('rejects with the validation error', function(done) {
               stateMachine
                 .kmsRequest(request)
                 .catch((err) => {
-                  expect(err.message).to.equal(`Insecure TLS options prohibited: ${option}`);
+                  expect(err.message).to.equal(`Insecure TLS options prohibited for aws: ${option}`);
                   done();
                 });
             });

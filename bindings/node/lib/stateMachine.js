@@ -295,9 +295,10 @@ module.exports = function(modules) {
 
         const tlsOptions = this.options.tlsOptions;
         if (tlsOptions) {
-          const providerTlsOptions = tlsOptions[request.kmsProvider];
+          const kmsProvider = request.kmsProvider;
+          const providerTlsOptions = tlsOptions[kmsProvider];
           if (providerTlsOptions) {
-            const error = this.validateTlsOptions(providerTlsOptions);
+            const error = this.validateTlsOptions(kmsProvider, providerTlsOptions);
             if (error) reject(error);
             this.setTlsOptions(providerTlsOptions, options);
           }
@@ -324,11 +325,11 @@ module.exports = function(modules) {
       });
     }
 
-    validateTlsOptions(tlsOptions) {
+    validateTlsOptions(kmsProvider, tlsOptions) {
       const tlsOptionNames = Object.keys(tlsOptions);
       for (const option of INSECURE_TLS_OPTIONS) {
         if (tlsOptionNames.includes(option)) {
-          return new MongoCryptError(`Insecure TLS options prohibited: ${option}`);
+          return new MongoCryptError(`Insecure TLS options prohibited for ${kmsProvider}: ${option}`);
         }
       }
     }
