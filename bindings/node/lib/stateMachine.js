@@ -335,7 +335,9 @@ module.exports = function(modules) {
 
     setTlsOptions(tlsOptions, options) {
       if (tlsOptions.tlsCertificateKeyFile) {
-        const cert = fs.readFileSync(tlsOptions.tlsCertificateKeyFile, { encoding: 'ascii' });
+        const cert = fs.readFileSync(tlsOptions.tlsCertificateKeyFile, {
+          encoding: 'ascii'
+        });
         options.cert = options.key = cert;
       }
       if (tlsOptions.tlsCAFile) {
