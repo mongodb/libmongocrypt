@@ -106,6 +106,7 @@ module.exports = function(modules) {
       this._keyVaultClient = options.keyVaultClient || client;
       this._metaDataClient = options.metadataClient || client;
       this._proxyOptions = options.proxyOptions || {};
+      this._tlsOptions = options.tlsOptions || {};
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
@@ -213,7 +214,12 @@ module.exports = function(modules) {
       context.ns = ns;
       context.document = cmd;
 
-      const stateMachine = new StateMachine({ bson, ...options, proxyOptions: this._proxyOptions });
+      const stateMachine = new StateMachine({
+        bson,
+        ...options,
+        proxyOptions: this._proxyOptions,
+        tlsOptions: this._tlsOptions
+      });
       stateMachine.execute(this, context, callback);
     }
 
@@ -244,7 +250,12 @@ module.exports = function(modules) {
       // TODO: should this be an accessor from the addon?
       context.id = this._contextCounter++;
 
-      const stateMachine = new StateMachine({ bson, ...options, proxyOptions: this._proxyOptions });
+      const stateMachine = new StateMachine({
+        bson,
+        ...options,
+        proxyOptions: this._proxyOptions,
+        tlsOptions: this._tlsOptions
+      });
       stateMachine.execute(this, context, callback);
     }
   }

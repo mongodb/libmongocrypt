@@ -3,8 +3,7 @@
 module.exports = function(modules) {
   const tls = require('tls');
   const net = require('net');
-  const path = require('path');
-  const fs = require ('fs');
+  const fs = require('fs');
   const { once } = require('events');
   const { SocksClient } = require('socks');
 
@@ -289,7 +288,6 @@ module.exports = function(modules) {
         socket = tls.connect(options, () => {
           socket.write(message);
         });
-        socket.disableRenegotiation();
 
         socket.once('timeout', ontimeout);
         socket.once('error', onerror);
@@ -319,7 +317,9 @@ module.exports = function(modules) {
         const providerTlsOptions = tlsOptions[kmsProvider];
         if (providerTlsOptions) {
           if (providerTlsOptions.tlsCertificateKeyFile) {
-            const cert = fs.readFileSync(providerTlsOptions.tlsCertificateKeyFile, { encoding: 'ascii' });
+            const cert = fs.readFileSync(providerTlsOptions.tlsCertificateKeyFile, {
+              encoding: 'ascii'
+            });
             options.cert = options.key = cert;
           }
           if (providerTlsOptions.tlsCAFile) {
