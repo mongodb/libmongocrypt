@@ -3,6 +3,8 @@
 module.exports = function(modules) {
   const tls = require('tls');
   const net = require('net');
+  const path = require('path');
+  const fs = require ('fs');
   const { once } = require('events');
   const { SocksClient } = require('socks');
 
@@ -37,6 +39,14 @@ module.exports = function(modules) {
     [MONGOCRYPT_CTX_READY, 'MONGOCRYPT_CTX_READY'],
     [MONGOCRYPT_CTX_DONE, 'MONGOCRYPT_CTX_DONE']
   ]);
+
+  const INSECURE_TLS_OPTIONS = [
+    'tlsInsecure',
+    'tlsAllowInvalidCertificates',
+    'tlsAllowInvalidHostnames',
+    'tlsDisableOCSPEndpointCheck',
+    'tlsDisableCertificateRevocationCheck'
+  ];
 
   /**
    * @ignore
@@ -283,6 +293,16 @@ module.exports = function(modules) {
           }
         }
 
+        const tlsOptions = this.options.tlsOptions;
+        if (tlsOptions) {
+          const kmsProvider = request.kmsProvider;
+          const providerTlsOptions = tlsOptions[kmsProvider];
+          if (providerTlsOptions) {
+            const error = this.validateTlsOptions(kmsProvider, providerTlsOptions);
+            if (error) reject(error);
+            this.setTlsOptions(providerTlsOptions, options);
+          }
+        }
         socket = tls.connect(options, () => {
           socket.write(message);
         });
@@ -303,6 +323,44 @@ module.exports = function(modules) {
           }
         });
       });
+    }
+
+    /**
+     * @ignore
+     * Validates the provided TLS options are secure.
+     *
+     * @param {string} kmsProvider The KMS provider name.
+     * @param {ClientEncryptionTLSOptions} tlsOptions The client TLS options for the provider.
+     *
+     * @returns {Error} If any option is invalid.
+     */
+    validateTlsOptions(kmsProvider, tlsOptions) {
+      const tlsOptionNames = Object.keys(tlsOptions);
+      for (const option of INSECURE_TLS_OPTIONS) {
+        if (tlsOptionNames.includes(option)) {
+          return new MongoCryptError(`Insecure TLS options prohibited for ${kmsProvider}: ${option}`);
+        }
+      }
+    }
+
+    /**
+     * @ignore
+     * Sets only the valid secure TLS options.
+     *
+     * @param {ClientEncryptionTLSOptions} tlsOptions The client TLS options for the provider.
+     * @param {Object} options The existing connection options.
+     */
+    setTlsOptions(tlsOptions, options) {
+      if (tlsOptions.tlsCertificateKeyFile) {
+        const cert = fs.readFileSync(tlsOptions.tlsCertificateKeyFile);
+        options.cert = options.key = cert;
+      }
+      if (tlsOptions.tlsCAFile) {
+        options.ca = fs.readFileSync(tlsOptions.tlsCAFile);
+      }
+      if (tlsOptions.tlsCertificateKeyFilePassword) {
+        options.passphrase = tlsOptions.tlsCertificateKeyFilePassword;
+      }
     }
 
     /**

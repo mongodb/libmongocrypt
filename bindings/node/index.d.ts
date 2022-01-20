@@ -151,11 +151,7 @@ export interface KMSProviders {
  *  - tlsDisableOCSPEndpointCheck
  *  - tlsDisableCertificateRevocationCheck
  */
-export interface ClientEncryptionTLSOptions {
-  /**
-   * Enables or disables TLS/SSL for the connection.
-   */
-  tls?: boolean;
+export interface ClientEncryptionTlsOptions {
   /**
    * Specifies the location of a local .pem file that contains
    * either the client's TLS/SSL certificate and key or only the
@@ -203,7 +199,7 @@ export interface ClientEncryptionOptions {
   /**
    * TLS options for kms providers to use.
    */
-  tlsOptions?: ClientEncryptionTLSOptions;
+  tlsOptions?: { [kms in keyof KMSProviders]?: ClientEncryptionTLSOptions };
 }
 
 /**

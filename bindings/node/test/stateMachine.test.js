@@ -4,6 +4,7 @@ const BSON = require('bson');
 const { EventEmitter, once } = require('events');
 const net = require('net');
 const tls = require('tls');
+const fs = require('fs');
 const expect = require('chai').expect;
 const sinon = require('sinon');
 const mongodb = require('mongodb');
@@ -52,40 +53,150 @@ describe('StateMachine', function() {
       this.sinon = sinon.createSandbox();
     });
 
-    beforeEach(function() {
-      this.fakeSocket = undefined;
-      this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
-        this.fakeSocket = new MockSocket(callback);
-        return this.fakeSocket;
+    context('when handling standard kms requests', function() {
+      beforeEach(function() {
+        this.fakeSocket = undefined;
+        this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
+          this.fakeSocket = new MockSocket(callback);
+          return this.fakeSocket;
+        });
+      });
+
+      it('should only resolve once bytesNeeded drops to zero', function(done) {
+        const stateMachine = new StateMachine({ bson: BSON });
+        const request = new MockRequest(Buffer.from('foobar'), 500);
+        let status = 'pending';
+        stateMachine
+          .kmsRequest(request)
+          .then(
+            () => (status = 'resolved'),
+            () => (status = 'rejected')
+          )
+          .catch(() => {});
+
+        this.fakeSocket.emit('connect');
+        setTimeout(() => {
+          expect(status).to.equal('pending');
+          expect(request.bytesNeeded).to.equal(500);
+          expect(request.kmsProvider).to.equal('aws');
+          this.fakeSocket.emit('data', Buffer.alloc(300));
+          setTimeout(() => {
+            expect(status).to.equal('pending');
+            expect(request.bytesNeeded).to.equal(200);
+            this.fakeSocket.emit('data', Buffer.alloc(200));
+            setTimeout(() => {
+              expect(status).to.equal('resolved');
+              expect(request.bytesNeeded).to.equal(0);
+              done();
+            });
+          });
+        });
       });
     });
 
-    it('should only resolve once bytesNeeded drops to zero', function(done) {
-      const stateMachine = new StateMachine({ bson: BSON });
-      const request = new MockRequest(Buffer.from('foobar'), 500);
-      let status = 'pending';
-      stateMachine
-        .kmsRequest(request)
-        .then(
-          () => (status = 'resolved'),
-          () => (status = 'rejected')
-        )
-        .catch(() => {});
+    context('when tls options are provided', function() {
+      context('when the options are insecure', function() {
+        [
+          'tlsInsecure',
+          'tlsAllowInvalidCertificates',
+          'tlsAllowInvalidHostnames',
+          'tlsDisableOCSPEndpointCheck',
+          'tlsDisableCertificateRevocationCheck'
+        ].forEach(function(option) {
+          context(`when the option is ${option}`, function() {
+            const stateMachine = new StateMachine({
+              bson: BSON,
+              tlsOptions: { aws: { [option]: true }}
+            });
+            const request = new MockRequest(Buffer.from('foobar'), 500);
 
-      this.fakeSocket.emit('connect');
-      setTimeout(() => {
-        expect(status).to.equal('pending');
-        expect(request.bytesNeeded).to.equal(500);
-        expect(request.kmsProvider).to.equal('aws');
-        this.fakeSocket.emit('data', Buffer.alloc(300));
-        setTimeout(() => {
-          expect(status).to.equal('pending');
-          expect(request.bytesNeeded).to.equal(200);
-          this.fakeSocket.emit('data', Buffer.alloc(200));
-          setTimeout(() => {
-            expect(status).to.equal('resolved');
-            expect(request.bytesNeeded).to.equal(0);
-            done();
+            it('rejects with the validation error', function(done) {
+              stateMachine
+                .kmsRequest(request)
+                .catch((err) => {
+                  expect(err.message).to.equal(`Insecure TLS options prohibited for aws: ${option}`);
+                  done();
+                });
+            });
+          });
+        });
+      });
+
+      context('when the options are secure', function() {
+        context('when providing tlsCertificateKeyFile', function() {
+          const stateMachine = new StateMachine({
+            bson: BSON,
+            tlsOptions: { aws: { tlsCertificateKeyFile: 'test.pem' }}
+          });
+          const request = new MockRequest(Buffer.from('foobar'), -1);
+          const buffer = Buffer.from('foobar');
+          let connectOptions;
+
+          it('sets the cert and key options in the tls connect options', function(done) {
+            this.sinon.stub(fs, 'readFileSync').callsFake((fileName) => {
+              expect(fileName).to.equal('test.pem');
+              return buffer;
+            });
+            this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
+              connectOptions = options;
+              this.fakeSocket = new MockSocket(callback);
+              return this.fakeSocket;
+            });
+            stateMachine.kmsRequest(request).then(function() {
+              expect(connectOptions.cert).to.equal(buffer);
+              expect(connectOptions.key).to.equal(buffer);
+              done();
+            });
+            this.fakeSocket.emit('data', Buffer.alloc(0));
+          });
+        });
+
+        context('when providing tlsCAFile', function() {
+          const stateMachine = new StateMachine({
+            bson: BSON,
+            tlsOptions: { aws: { tlsCAFile: 'test.pem' }}
+          });
+          const request = new MockRequest(Buffer.from('foobar'), -1);
+          const buffer = Buffer.from('foobar');
+          let connectOptions;
+
+          it('sets the ca options in the tls connect options', function(done) {
+            this.sinon.stub(fs, 'readFileSync').callsFake((fileName) => {
+              expect(fileName).to.equal('test.pem');
+              return buffer;
+            });
+            this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
+              connectOptions = options;
+              this.fakeSocket = new MockSocket(callback);
+              return this.fakeSocket;
+            });
+            stateMachine.kmsRequest(request).then(function() {
+              expect(connectOptions.ca).to.equal(buffer);
+              done();
+            });
+            this.fakeSocket.emit('data', Buffer.alloc(0));
+          });
+        });
+
+        context('when providing tlsCertificateKeyFilePassword', function() {
+          const stateMachine = new StateMachine({
+            bson: BSON,
+            tlsOptions: { aws: { tlsCertificateKeyFilePassword: 'test' }}
+          });
+          const request = new MockRequest(Buffer.from('foobar'), -1);
+          let connectOptions;
+
+          it('sets the passphrase option in the tls connect options', function(done) {
+            this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
+              connectOptions = options;
+              this.fakeSocket = new MockSocket(callback);
+              return this.fakeSocket;
+            });
+            stateMachine.kmsRequest(request).then(function() {
+              expect(connectOptions.passphrase).to.equal('test');
+              done();
+            });
+            this.fakeSocket.emit('data', Buffer.alloc(0));
           });
         });
       });
