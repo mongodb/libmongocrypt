@@ -320,6 +320,9 @@ module.exports = function(modules) {
 
           if (request.bytesNeeded <= 0) {
             socket.end(resolve);
+            if (socket.unref) {
+              socket.unref();
+            }
           }
         });
       });
