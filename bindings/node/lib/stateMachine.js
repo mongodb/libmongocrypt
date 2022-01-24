@@ -319,10 +319,9 @@ module.exports = function(modules) {
           }
 
           if (request.bytesNeeded <= 0) {
-            socket.end(resolve);
-            if (socket.unref) {
-              socket.unref();
-            }
+            // There's no need for any more activity on this socket at this point.
+            socket.destroy();
+            resolve();
           }
         });
       });
