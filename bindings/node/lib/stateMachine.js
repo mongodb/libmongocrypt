@@ -320,8 +320,7 @@ module.exports = function(modules) {
 
           if (request.bytesNeeded <= 0) {
             // There's no need for any more activity on this socket at this point.
-            socket.destroy();
-            if (rawSocket) rawSocket.destroy();
+            destroySockets();
             resolve();
           }
         });
