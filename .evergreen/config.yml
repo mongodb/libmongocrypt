@@ -288,6 +288,19 @@ tasks:
   - func: "tar and upload libmongocrypt libraries"
   - func: "create packages and repos"
 
+- name: build-and-test-universal-mac
+  depends_on:
+  - variant: ubuntu2004-64
+    name: prep-c-driver-source
+  commands:
+  - func: "fetch source"
+  - func: "build and test"
+    vars:
+      compile_env: MACOS_UNIVERSAL=ON
+      test_env: MACOS_UNIVERSAL=ON
+  - func: "tar and upload libmongocrypt libraries"
+  - func: "create packages and repos"
+
 - name: clang-tidy
   depends_on:
   - variant: ubuntu2004-64
@@ -754,6 +767,7 @@ buildvariants:
   - build-and-test-node
   - build-and-test-csharp
   - test-python
+  - build-and-test-universal-mac
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test

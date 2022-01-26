@@ -27,6 +27,10 @@ else
     fi
 fi
 
+if [ "$MACOS_UNIVERSAL" = "ON" ]; then
+    ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
+fi
+
 $CMAKE --version
 
 # Remove remnants of any earlier build
