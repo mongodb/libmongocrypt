@@ -767,7 +767,7 @@ buildvariants:
   - build-and-test-node
   - build-and-test-csharp
   - test-python
-  - build-and-test-universal-mac
+
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
@@ -1082,4 +1082,5 @@ buildvariants:
   run_on: macos-1100-arm64
   tasks:
   - build-and-test-and-upload
+  - build-and-test-universal-mac
   
