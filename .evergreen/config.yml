@@ -484,7 +484,7 @@ tasks:
     - variant: ubuntu2004-arm64
       name: build-and-test-and-upload
     - variant: macos_m1
-      name: build-and-test-and-upload
+      name: build-and-test-universal-mac
   commands:
     - command: shell.exec
       params:
@@ -1081,6 +1081,6 @@ buildvariants:
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
   tasks:
-  - build-and-test-and-upload
+  # - build-and-test-and-upload
   - build-and-test-universal-mac
   
