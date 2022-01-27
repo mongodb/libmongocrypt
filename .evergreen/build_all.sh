@@ -61,6 +61,18 @@ $CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
 $CMAKE --build ./kms-message --target test_kms_request --config RelWithDebInfo
 cd $evergreen_root
 
+# MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
+if [ "$MACOS_UNIVERSAL" = "ON" ]; then
+    echo "Checking if libmongocrypt.dylib contains both x86_64 and arm64 architectures..."
+    ARCHS=$(lipo -archs $MONGOCRYPT_INSTALL_PREFIX/lib/libmongocrypt.dylib)
+    if [[ "$ARCHS" == *"x86_64"* && "$ARCHS" == *"arm64"* ]]; then
+        echo "Checking if libmongocrypt.dylib contains both x86_64 and arm64 architectures... OK"
+    else
+        echo "Checking if libmongocrypt.dylib contains both x86_64 and arm64 architectures... ERROR. Got: $ARCHS"
+        exit
+    fi
+fi
+
 if [ "$PPA_BUILD_ONLY" ]; then
     echo "Only building/installing for PPA";
     exit 0;
