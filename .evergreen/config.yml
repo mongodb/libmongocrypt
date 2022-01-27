@@ -471,7 +471,7 @@ tasks:
     - variant: ubuntu2004-arm64
       name: build-and-test-and-upload
     - variant: macos_x86_64
-      name: build-and-test-universal-mac
+      name: build-and-test-and-upload
   commands:
     - command: shell.exec
       params:
