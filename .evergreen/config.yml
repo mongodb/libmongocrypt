@@ -288,19 +288,6 @@ tasks:
   - func: "tar and upload libmongocrypt libraries"
   - func: "create packages and repos"
 
-- name: build-and-test-universal-mac
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-    vars:
-      compile_env: MACOS_UNIVERSAL=ON
-      test_env: MACOS_UNIVERSAL=ON
-  - func: "tar and upload libmongocrypt libraries"
-  - func: "create packages and repos"
-
 - name: clang-tidy
   depends_on:
   - variant: ubuntu2004-64
@@ -1080,7 +1067,9 @@ buildvariants:
 - name: macos_m1
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
+  expansions:
+    compile_env: MACOS_UNIVERSAL=ON
+    test_env: MACOS_UNIVERSAL=ON
   tasks:
-  # - build-and-test-and-upload
-  - build-and-test-universal-mac
+  - build-and-test-and-upload
   
