@@ -472,7 +472,7 @@ tasks:
       name: build-and-test-and-upload
     - variant: ubuntu2004-arm64
       name: build-and-test-and-upload
-    - variant: macos_universal
+    - variant: macos
       name: build-and-test-and-upload
   commands:
     - command: shell.exec
@@ -521,7 +521,7 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "ubuntu2004-arm64" }
     - func: "download tarball"
-      vars: { variant_name: "macos_universal" }
+      vars: { variant_name: "macos" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-all.tar.gz
@@ -1065,7 +1065,7 @@ buildvariants:
   run_on: ubuntu2004-small
   tasks:
   - name: debian-package-build
-- name: macos_universal
+- name: macos
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
   expansions:
