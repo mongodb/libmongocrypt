@@ -121,12 +121,12 @@ if (NOT DISABLE_NATIVE_CRYPTO)
 endif ()
 
 if ( CMAKE_COMPILER_IS_GNUCC )
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -Wsign-compare -Werror")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -Wsign-compare")
 endif()
 if ( MSVC )
     # W4273 - inconsistent dll linkage
     # W4996 - POSIX name for this item is deprecated
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4273 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4273 /wd4996 /D_CRT_SECURE_NO_WARNINGS")
 endif()
 
 set_target_properties (kms_message PROPERTIES

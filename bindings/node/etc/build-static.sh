@@ -44,10 +44,10 @@ pushd libmongocrypt-build #./deps/tmp/libmongocrypt-build
 if [ "$OS" = "Windows_NT" ]; then
     # W4996 - POSIX name for this item is deprecated
     # TODO: add support for clang-cl which is detected as MSVC
-    LIBMONGOCRYPT_CFLAGS="/W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX"
+    LIBMONGOCRYPT_CFLAGS="/WX"
 else
     # GNU, Clang, AppleClang
-    LIBMONGOCRYPT_CFLAGS="-fPIC -Wall -Werror -Wno-missing-braces"
+    LIBMONGOCRYPT_CFLAGS="-fPIC -Werror"
 fi
 
 CMAKE_FLAGS="-DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_INSTALL_LIBDIR=lib"
