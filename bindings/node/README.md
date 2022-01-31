@@ -95,7 +95,7 @@ It protects against a malicious server advertising a false JSON Schema, which co
 Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.
 Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
-**Example**  
+**Example**
 ```js
 // Enabling autoEncryption via a MongoClient
 const { MongoClient } = require('mongodb');
@@ -210,7 +210,7 @@ The public interface for explicit client side encryption
 
 Create a new encryption instance
 
-**Example**  
+**Example**
 ```js
 new ClientEncryption(mongoClient, {
   keyVaultNamespace: 'client.encryption',
@@ -221,7 +221,7 @@ new ClientEncryption(mongoClient, {
   }
 });
 ```
-**Example**  
+**Example**
 ```js
 new ClientEncryption(mongoClient, {
   keyVaultNamespace: 'client.encryption',
@@ -247,8 +247,8 @@ new ClientEncryption(mongoClient, {
 
 Creates a data key used for explicit encryption and inserts it into the key vault namespace
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with [the id of the created data key](#ClientEncryption..dataKeyId), or rejects with an error. If a callback is provided, returns nothing.  
-**Example**  
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with [the id of the created data key](#ClientEncryption..dataKeyId), or rejects with an error. If a callback is provided, returns nothing.
+**Example**
 ```js
 // Using callbacks to create a local key
 clientEncryption.createDataKey('local', (err, dataKey) => {
@@ -259,12 +259,12 @@ clientEncryption.createDataKey('local', (err, dataKey) => {
   }
 });
 ```
-**Example**  
+**Example**
 ```js
 // Using async/await to create a local key
 const dataKeyId = await clientEncryption.createDataKey('local');
 ```
-**Example**  
+**Example**
 ```js
 // Using async/await to create an aws key
 const dataKeyId = await clientEncryption.createDataKey('aws', {
@@ -274,7 +274,7 @@ const dataKeyId = await clientEncryption.createDataKey('aws', {
   }
 });
 ```
-**Example**  
+**Example**
 ```js
 // Using async/await to create an aws key with a keyAltName
 const dataKeyId = await clientEncryption.createDataKey('aws', {
@@ -301,8 +301,8 @@ const dataKeyId = await clientEncryption.createDataKey('aws', {
 Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
 be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.  
-**Example**  
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.
+**Example**
 ```js
 // Encryption with callback API
 function encryptMyData(value, callback) {
@@ -314,7 +314,7 @@ function encryptMyData(value, callback) {
   });
 }
 ```
-**Example**  
+**Example**
 ```js
 // Encryption with async/await api
 async function encryptMyData(value) {
@@ -322,7 +322,7 @@ async function encryptMyData(value) {
   return clientEncryption.encrypt(value, { keyId, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
 }
 ```
-**Example**  
+**Example**
 ```js
 // Encryption using a keyAltName
 async function encryptMyData(value) {
@@ -336,20 +336,20 @@ async function encryptMyData(value) {
 
 | Param | Type | Description |
 | --- | --- | --- |
-| value | <code>Buffer</code> | An encrypted value |
+| value | `Buffer \| Binary` | An encrypted value |
 | callback | [<code>decryptCallback</code>](#ClientEncryption..decryptCallback) | Optional callback to invoke when value is decrypted |
 
 Explicitly decrypt a provided encrypted value
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.  
-**Example**  
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.
+**Example**
 ```js
 // Decrypting value with callback API
 function decryptMyValue(value, callback) {
   clientEncryption.decrypt(value, callback);
 }
 ```
-**Example**  
+**Example**
 ```js
 // Decrypting value with async/await API
 async function decryptMyValue(value) {
@@ -460,4 +460,3 @@ Configuration options for making a GCP encryption key
 | [keyVersion] | <code>string</code> | Key version |
 
 Configuration options for making an Azure encryption key
-

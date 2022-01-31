@@ -395,7 +395,7 @@ export class ClientEncryption {
    * @param value An encrypted value
    */
   decrypt(
-    value: Binary
+    value: Buffer | Binary
   ): Promise<any>;
 
   /**
@@ -404,7 +404,7 @@ export class ClientEncryption {
    * @param callback Callback to invoke when value is decrypted
    */
   decrypt(
-    value: Binary,
+    value: Buffer | Binary,
     callback: ClientEncryptionDecryptCallback
   ): void;
 }
