@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "index.js",
   "types": "index.d.ts",
