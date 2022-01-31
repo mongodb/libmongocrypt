@@ -325,7 +325,7 @@ module.exports = function(modules) {
     /**
      * Explicitly decrypt a provided encrypted value
      *
-     * @param {Buffer} value An encrypted value
+     * @param {Buffer | Binary} value An encrypted value
      * @param {ClientEncryption~decryptCallback} callback Optional callback to invoke when value is decrypted
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.
      *
