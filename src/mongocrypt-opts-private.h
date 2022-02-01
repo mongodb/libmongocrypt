@@ -65,6 +65,9 @@ typedef struct {
    _mongocrypt_opts_kms_provider_kmip_t kms_provider_kmip;
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;
    void *sign_ctx;
+
+   int n_cselib_search_paths;
+   char **cselib_search_paths;
 } _mongocrypt_opts_t;
 
 

@@ -437,6 +437,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    bson_free (crypt->crypto);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_azure);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_gcp);
+
    bson_free (crypt);
 }
 
@@ -774,4 +775,24 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
    }
 
    return true;
+}
+
+
+void
+mongocrypt_setopt_append_csefle_search_path (mongocrypt_t *crypt,
+                                             const char *path)
+{
+   // Dup the path string for us to manage
+   char *const pathdup = strdup (path);
+   // Increase array len
+   const int new_len = crypt->opts.n_cselib_search_paths + 1;
+   char **const new_array = bson_realloc (crypt->opts.cselib_search_paths,
+                                          sizeof (const char *) * new_len);
+   // Store the path
+   new_array[new_len - 1] = pathdup;
+   // Release the prior array
+   bson_free (crypt->opts.cselib_search_paths);
+   // Write back opts
+   crypt->opts.cselib_search_paths = new_array;
+   crypt->opts.n_cselib_search_paths = new_len;
 }
