@@ -8,10 +8,10 @@ const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const cryptoCallbacks = require('../lib/cryptoCallbacks');
-const ClientEncryption = require('../lib/clientEncryption')({ mongodb, stateMachine })
-  .ClientEncryption;
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
+const ClientEncryption = require('../lib/clientEncryption')({
+  mongodb,
+  stateMachine
+}).ClientEncryption;
 
 const requirements = require('./requirements.helper');
 
@@ -19,17 +19,18 @@ const requirements = require('./requirements.helper');
 const kmsProviders = Object.assign({}, requirements.awsKmsProviders);
 const dataKeyOptions = Object.assign({}, requirements.awsDataKeyOptions);
 
-describe('cryptoCallbacks', function() {
-  before(function() {
+describe('cryptoCallbacks', function () {
+  before(function () {
     if (requirements.SKIP_AWS_TESTS) {
-      console.log('Skipping crypto callback tests');
+      console.error('Skipping crypto callback tests');
       return;
     }
     this.sinon = sinon.createSandbox();
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     if (requirements.SKIP_AWS_TESTS) {
+      this.currentTest.skipReason = `requirements.SKIP_AWS_TESTS=${requirements.SKIP_AWS_TESTS}`;
       this.test.skip();
       return;
     }
@@ -42,7 +43,7 @@ describe('cryptoCallbacks', function() {
     return this.client.connect();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     if (requirements.SKIP_AWS_TESTS) {
       return;
     }
@@ -55,12 +56,12 @@ describe('cryptoCallbacks', function() {
     return p;
   });
 
-  after(function() {
+  after(function () {
     this.sinon = undefined;
   });
 
   // TODO(NODE-3370): fix key formatting error "asn1_check_tlen:wrong tag"
-  it.skip('should support support crypto callback for signing RSA-SHA256', function() {
+  it.skip('should support support crypto callback for signing RSA-SHA256', function () {
     const input = Buffer.from('data to sign');
     const pemFileData =
       '-----BEGIN PRIVATE KEY-----\n' +
@@ -80,7 +81,7 @@ describe('cryptoCallbacks', function() {
     }
 
     expect(output).to.deep.equal(expectedOutput);
-  });
+  }).skipReason = 'TODO(NODE-3370): fix key formatting error "asn1_check_tlen:wrong tag"';
 
   const hookNames = new Set([
     'aes256CbcEncryptHook',
@@ -91,7 +92,7 @@ describe('cryptoCallbacks', function() {
     'sha256Hook'
   ]);
 
-  it('should invoke crypto callbacks when doing encryption', function(done) {
+  it('should invoke crypto callbacks when doing encryption', function (done) {
     for (const name of hookNames) {
       this.sinon.spy(cryptoCallbacks, name);
     }
@@ -156,9 +157,9 @@ describe('cryptoCallbacks', function() {
     });
   });
 
-  describe('error testing', function() {
+  describe('error testing', function () {
     ['aes256CbcEncryptHook', 'aes256CbcDecryptHook', 'hmacSha512Hook'].forEach(hookName => {
-      it(`should properly propagate an error when ${hookName} fails`, function(done) {
+      it(`should properly propagate an error when ${hookName} fails`, function (done) {
         const error = new Error('some random error text');
         this.sinon.stub(cryptoCallbacks, hookName).returns(error);
 
@@ -200,7 +201,7 @@ describe('cryptoCallbacks', function() {
     // These ones will fail with an error, but that error will get overridden
     // with "failed to create KMS message" in mongocrypt-kms-ctx.c
     ['hmacSha256Hook', 'sha256Hook'].forEach(hookName => {
-      it(`should error with a specific kms error when ${hookName} fails`, function() {
+      it(`should error with a specific kms error when ${hookName} fails`, function () {
         const error = new Error('some random error text');
         this.sinon.stub(cryptoCallbacks, hookName).returns(error);
 
@@ -215,7 +216,7 @@ describe('cryptoCallbacks', function() {
       });
     });
 
-    it('should error synchronously with error when randomHook fails', function(done) {
+    it('should error synchronously with error when randomHook fails', function (done) {
       const error = new Error('some random error text');
       this.sinon.stub(cryptoCallbacks, 'randomHook').returns(error);
 

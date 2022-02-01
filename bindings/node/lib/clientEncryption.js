@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function(modules) {
+module.exports = function (modules) {
   const mc = require('bindings')('mongocrypt');
   const common = require('./common');
   const databaseNamespace = common.databaseNamespace;
@@ -172,7 +172,7 @@ module.exports = function(modules) {
         callback = options;
         options = {};
       }
-      if (typeof options === 'undefined') {
+      if (options == null) {
         options = {};
       }
 
