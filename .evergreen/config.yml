@@ -418,7 +418,9 @@ tasks:
       name: build-and-test-and-upload
     - variant: ubuntu1604-arm64
       name: build-and-test-java
-    - variant: macos
+    # JAVA-4445 use the "macos" univeral build instead of the "macos_x86_64" build.
+    # Currently the variant named "macos" does not run the build-and-test-java task.
+    - variant: macos_x86_64
       name: build-and-test-java
     - variant: windows-test
       name: build-and-test-and-upload # Todo update once java build passing on windows
@@ -430,7 +432,7 @@ tasks:
   depends_on:
     - variant: ubuntu1604
       name: build-and-test-and-upload
-    - variant: macos
+    - variant: macos_x86_64
       name: build-and-test-and-upload
     - variant: rhel72-zseries-test
       name: build-and-test-and-upload
@@ -470,7 +472,7 @@ tasks:
       name: build-and-test-and-upload
     - variant: ubuntu2004-arm64
       name: build-and-test-and-upload
-    - variant: macos_m1
+    - variant: macos
       name: build-and-test-and-upload
   commands:
     - command: shell.exec
@@ -519,7 +521,7 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "ubuntu2004-arm64" }
     - func: "download tarball"
-      vars: { variant_name: "macos_m1" }
+      vars: { variant_name: "macos" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-all.tar.gz
@@ -743,8 +745,8 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
-- name: macos
-  display_name: "macOS 10.14"
+- name: macos_x86_64
+  display_name: "macOS (x86_64) 10.14"
   run_on: macos-1014
   tasks:
   - build-and-test-and-upload
@@ -1063,9 +1065,12 @@ buildvariants:
   run_on: ubuntu2004-small
   tasks:
   - name: debian-package-build
-- name: macos_m1
+- name: macos
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
+  expansions:
+    compile_env: MACOS_UNIVERSAL=ON
+    test_env: MACOS_UNIVERSAL=ON
   tasks:
   - build-and-test-and-upload
   
