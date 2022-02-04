@@ -125,7 +125,7 @@ mpath_current_exe_path ()
    _NSGetExecutablePath (ret.data, &bufsize);
    return (mpath_current_exe_result){.path = ret.mstr, .error = 0};
 #else
-#error "Don't know how to get the executable path on this platform
+#error "Don't know how to get the executable path on this platform"
 #endif
 }
 
