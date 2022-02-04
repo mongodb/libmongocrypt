@@ -9,9 +9,10 @@ static void
 _test_load_simple_library (_mongocrypt_tester_t *t)
 {
    (void) t;
-   mstr self_path = mpath_current_exe_path ();
+   mpath_current_exe_result self_path = mpath_current_exe_path ();
+   ASSERT_CMPINT (self_path.error, ==, 0);
 
-   mstr dll_path = mpath_join (mpath_parent (self_path.view),
+   mstr dll_path = mpath_join (mpath_parent (self_path.path.view),
                                mstrv_view_cstr ("test-dll.dll"));
 
    _mcr_dll lib = _mcr_dll_open (dll_path.data);
@@ -24,7 +25,7 @@ _test_load_simple_library (_mongocrypt_tester_t *t)
    ASSERT_CMPINT (rval, ==, 42);
 
    _mcr_dll_close (lib);
-   mstr_free (self_path);
+   mstr_free (self_path.path);
    mstr_free (dll_path);
 }
 

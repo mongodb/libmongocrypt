@@ -62,22 +62,69 @@ mpath_join (mstr_view base, mstr_view suffix)
    return r.mstr;
 }
 
-#if _WIN32
+/**
+ * @brief The result type of mpath_current_exe_path()
+ *
+ * The @ref mpath_current_exe_result::path member must be freed with mstr_free()
+ */
+typedef struct mpath_current_exe_result {
+   /// The resulting executable path
+   mstr path;
+   /// An error, if the path could not be obtained
+   int error;
+} mpath_current_exe_result;
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include <errno.h>
+#include <unistd.h>
+#endif
 
-mcr_cxx_inline mstr
+#if __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
+/**
+ * @brief Obtain the path to the calling executable module
+ *
+ * On Unix-like platforms, this will be the actual executable file. On Windows,
+ * this may be the path to the DLL that contains the caller.
+ *
+ * @return mpath_current_exe_result A result object of the operation. Check the
+ * `.error` member for non-zero. The `.path` member must be freed with
+ * mtsr_free()
+ */
+static inline mpath_current_exe_result
 mpath_current_exe_path ()
 {
+#ifdef _WIN32
    int len = GetModuleFileNameW (NULL, NULL, 0);
    wchar_t *path = calloc (len + 1, sizeof (wchar_t));
    GetModuleFileNameW (NULL, path, len);
    mstr_narrow_result narrow = mstr_win32_narrow (path);
    // GetModuleFileNameW should never return invalid Unicode:
    assert (narrow.error == 0);
-   return narrow.string;
-}
-
+   return {.path = narrow.string, .error = 0};
+#elif defined(__linux__)
+   mstr_mut ret = mstr_new (8096);
+   ssize_t n_len = readlink ("/proc/self/exe", ret.data, ret.len);
+   if (n_len < 0) {
+      mstr_free (ret.mstr);
+      return (mpath_current_exe_result){.path = MSTR_NULL, .error = errno};
+   }
+   mstrm_resize (&ret, (size_t) n_len);
+   return (mpath_current_exe_result){.path = ret.mstr, .error = 0};
+#elif defined(__APPLE__)
+   char nil = 0;
+   size_t bufsize = 0;
+   _NSGetExecutablePath (&nil, &bufsize);
+   mstr_mut ret = mstr_new (bufsize);
+   _NSGetExecutablePath (ret.data, &bufsize);
+   return (mpath_current_exe_result){.path = ret.mstr, .error = 0};
+#else
+#error "Don't know how to get the executable path on this platform
 #endif
+}
 
 #endif // MONGOCRYPT_PATH_PRIVATE_H
