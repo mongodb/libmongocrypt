@@ -117,7 +117,7 @@ mpath_current_exe_path ()
    return (mpath_current_exe_result){.path = ret.mstr, .error = 0};
 #elif defined(__APPLE__)
    char nil = 0;
-   size_t bufsize = 0;
+   uint32_t bufsize = 0;
    _NSGetExecutablePath (&nil, &bufsize);
    mstr_mut ret = mstr_new (bufsize);
    _NSGetExecutablePath (ret.data, &bufsize);
