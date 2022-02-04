@@ -1,13 +1,13 @@
 #ifndef MONGOCRYPT_STR_PRIVATE_H
 #define MONGOCRYPT_STR_PRIVATE_H
 
+#include "mlib-macros-private.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
-
-#include "mongocrypt-macros-private.h"
 
 /**
  * @brief A simple string-view type.

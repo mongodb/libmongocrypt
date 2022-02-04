@@ -7,7 +7,7 @@
  * @brief Determine if the given character is a path separator on the current
  * platform.
  */
-static bool
+mcr_cxx_inline bool
 mpath_is_sep (char c)
 {
 #ifdef BSON_OS_WIN32
@@ -17,13 +17,13 @@ mpath_is_sep (char c)
 #endif
 }
 
-static bool
+mcr_cxx_inline bool
 mpath_has_trailing_sep (mstr_view path)
 {
    return path.len && mpath_is_sep (path.data[path.len - 1]);
 }
 
-static mstr_view
+mcr_cxx_inline mstr_view
 mpath_parent (mstr_view path)
 {
    // Remove trailing separators:
@@ -42,7 +42,7 @@ mpath_parent (mstr_view path)
    return path;
 }
 
-static mstr
+mcr_cxx_inline mstr
 mpath_join (mstr_view base, mstr_view suffix)
 {
    if (!base.len) {

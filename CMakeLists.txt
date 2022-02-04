@@ -102,6 +102,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-dll-private.h
    src/mlib-str-private.h
    src/mlib-path-private.h
+   src/mlib-macros-private.h
    )
 
 if ( MSVC )
