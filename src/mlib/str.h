@@ -204,7 +204,7 @@ mstr_copy (mstr_view s)
 }
 
 /**
- * @brief Free the resources of the given @ref mstr
+ * @brief Free the resources of the given string
  *
  * @param s The string to free
  */
@@ -276,7 +276,7 @@ mstr_assign (mstr *s, mstr from)
  * @return int
  */
 static inline int
-mstrv_find (mstr_view given, mstr_view needle)
+mstr_find (mstr_view given, mstr_view needle)
 {
    const char *const scan_end = given.data + given.len;
    const char *const needle_end = needle.data + needle.len;
@@ -414,6 +414,37 @@ mstr_trunc (mstr_view s, size_t new_len)
    return mstr_remove_suffix (s, s.len - new_len);
 }
 
+static inline mstr
+mstr_replace (const mstr_view string,
+              const mstr_view find,
+              const mstr_view subst)
+{
+   if (find.len == 0) {
+      // Finding an empty string would loop forever
+      return mstr_copy (string);
+   }
+   // First copy the string
+   mstr ret = mstr_copy (string);
+   // Keep an index of how far we have processed
+   size_t whence = 0;
+   for (;;) {
+      // Chop off the front that has already been processed
+      mstr_view tail = mstrv_subview (ret.view, whence, ~0);
+      // Find where in that tail is the next needle
+      int pos = mstr_find (tail, find);
+      if (pos == -1) {
+         // We're done
+         break;
+      }
+      // Do the replacement
+      mstr_assign (
+         &ret, mstr_splice (ret.view, (size_t) pos + whence, find.len, subst));
+      // Advance our position by how many chars we skipped and how many we
+      // inserted
+      whence += pos + subst.len;
+   }
+   return ret;
+}
 
 static inline bool
 mstr_eq (mstr_view left, mstr_view right)
@@ -495,8 +526,13 @@ mstr_inplace_trunc (mstr *s, size_t new_len)
    mstr_assign (s, mstr_trunc (s->view, new_len));
 }
 
+static inline void
+mstr_inplace_replace (mstr *s, mstr_view find, mstr_view subst)
+{
+   mstr_assign (s, mstr_replace (s->view, find, subst));
+}
+
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 typedef struct mstr_widen_result {
    wchar_t *wstring;
