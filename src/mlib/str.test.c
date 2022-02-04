@@ -1,6 +1,6 @@
-#include "test-mongocrypt.h"
+#include <test-mongocrypt.h>
 
-#include "mlib-str-private.h"
+#include <mlib/str.h>
 
 static void
 _test_mstr (_mongocrypt_tester_t *t)

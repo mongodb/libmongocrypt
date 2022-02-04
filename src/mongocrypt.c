@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <mlib/thread.h>
+
 #include <kms_message/kms_message.h>
 #include <bson/bson.h>
 
@@ -25,7 +27,6 @@
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
-#include "mongocrypt-os-private.h"
 #include "mongocrypt-status-private.h"
 
 /* Assert size for interop with wrapper purposes */
@@ -126,8 +127,10 @@ mongocrypt_new (void)
    crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new ();
    crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new ();
 
-   if (0 != _mongocrypt_once (_mongocrypt_do_init) ||
-       !(_native_crypto_initialized)) {
+   static mlib_once_flag init_flag = MLIB_ONCE_INITIALIZER;
+
+   if (mlib_call_once (&init_flag, _mongocrypt_do_init) != 0 ||
+       !_native_crypto_initialized) {
       mongocrypt_status_t *status = crypt->status;
 
       CLIENT_ERR ("failed to initialize");

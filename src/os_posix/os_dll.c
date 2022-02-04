@@ -1,5 +1,7 @@
 #include "../mongocrypt-dll-private.h"
 
+#ifndef _WIN32
+
 #include <string.h>
 #include <stdio.h>
 
@@ -30,7 +32,6 @@ _mcr_dll_close_handle (_mcr_dll dll)
    if (dll._native_handle) {
       dlclose (dll._native_handle);
    }
-   free (dll._error_string);
 }
 
 void *
@@ -38,3 +39,5 @@ _mcr_dll_sym (_mcr_dll dll, const char *sym)
 {
    return dlsym (dll._native_handle, sym);
 }
+
+#endif

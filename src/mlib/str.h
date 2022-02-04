@@ -1,13 +1,17 @@
 #ifndef MONGOCRYPT_STR_PRIVATE_H
 #define MONGOCRYPT_STR_PRIVATE_H
 
-#include "mlib-macros-private.h"
+#include "./user-check.h"
+
+#include "./macros.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <inttypes.h>
+#include <stdbool.h>
 
 /**
  * @brief A simple string-view type.
@@ -31,7 +35,7 @@ typedef struct mstr_view {
     *
     * @note DO NOT MODIFY
     */
-   uint32_t len;
+   size_t len;
 } mstr_view;
 
 /**
@@ -68,7 +72,7 @@ typedef struct mstr {
           *
           * @note DO NOT MODIFY
           */
-         uint32_t len;
+         size_t len;
       };
       mstr_view view;
    };
@@ -95,7 +99,7 @@ typedef struct mstr_mut {
           *
           * @note DO NOT MODIFY
           */
-         uint32_t len;
+         size_t len;
       };
       /// Convert the mutable string to an immutable string
       struct mstr mstr;
@@ -141,7 +145,7 @@ mstrv_view_data (const char *s, size_t len)
 {
    // Assert that the character array is null-terminated.
    assert (s[len] == 0);
-   return (mstr_view){.data = s, .len = (uint32_t) len};
+   return (mstr_view){.data = s, .len = len};
 }
 
 /**
@@ -223,7 +227,7 @@ mstrm_resize (mstr_mut *s, size_t new_len)
    if (new_len <= s->len) {
       s->len = new_len;
    } else {
-      const uint32_t old_len = s->len;
+      const size_t old_len = s->len;
       s->data = realloc ((char *) s->data, new_len + 1);
       s->len = new_len;
       memset (s->data + old_len, 0, new_len - old_len);
@@ -490,6 +494,63 @@ mstr_inplace_trunc (mstr *s, size_t new_len)
 {
    mstr_assign (s, mstr_trunc (s->view, new_len));
 }
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <windows.h>
+typedef struct mstr_widen_result {
+   wchar_t *wstring;
+   int error;
+} mstr_widen_result;
+
+mcr_cxx_inline mstr_widen_result
+mstr_win32_widen (mstr_view str)
+{
+   int length = MultiByteToWideChar (
+      CP_UTF8, MB_ERR_INVALID_CHARS, str.data, (int) str.len, NULL, 0);
+   if (length == 0 && str.len != 0) {
+      return (mstr_widen_result){.wstring = NULL, .error = GetLastError ()};
+   }
+   wchar_t *ret = calloc (length + 1, sizeof (wchar_t));
+   int got_length = MultiByteToWideChar (
+      CP_UTF8, MB_ERR_INVALID_CHARS, str.data, (int) str.len, ret, length + 1);
+   assert (got_length == length);
+   return (mstr_widen_result){.wstring = ret, .error = 0};
+}
+
+typedef struct mstr_narrow_result {
+   mstr string;
+   int error;
+} mstr_narrow_result;
+
+mcr_cxx_inline mstr_narrow_result
+mstr_win32_narrow (const wchar_t *wstring)
+{
+   int length = WideCharToMultiByte (CP_UTF8,
+                                     MB_ERR_INVALID_CHARS,
+                                     wstring,
+                                     -1 /* wstring is null-terminated */,
+                                     NULL,
+                                     0,
+                                     NULL,
+                                     NULL);
+   if (length == 0 && wstring[0] != 0) {
+      return (mstr_narrow_result){.string = MSTR_NULL,
+                                  .error = GetLastError ()};
+   }
+   mstr_mut ret = mstr_new ((size_t) length);
+   int got_len = WideCharToMultiByte (CP_UTF8,
+                                      MB_ERR_INVALID_CHARS,
+                                      wstring,
+                                      -1,
+                                      ret.data,
+                                      ret.len,
+                                      NULL,
+                                      NULL);
+   assert (length == got_len);
+   return (mstr_narrow_result){.string = ret.mstr, .error = 0};
+}
+#endif
 
 
 #endif // MONGOCRYPT_STR_PRIVATE_H

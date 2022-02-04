@@ -1,7 +1,9 @@
 #ifndef MONGOCRYPT_PATH_PRIVATE_H
 #define MONGOCRYPT_PATH_PRIVATE_H
 
-#include "mlib-str-private.h"
+#include "./user-check.h"
+
+#include <mlib/str.h>
 
 /**
  * @brief Determine if the given character is a path separator on the current
@@ -10,7 +12,7 @@
 mcr_cxx_inline bool
 mpath_is_sep (char c)
 {
-#ifdef BSON_OS_WIN32
+#ifdef _WIN32
    return c == '/' || c == '\\';
 #else
    return c == '/';
@@ -59,5 +61,23 @@ mpath_join (mstr_view base, mstr_view suffix)
    memcpy (p, suffix.data, suffix.len);
    return r.mstr;
 }
+
+#if _WIN32
+
+#include <windows.h>
+
+mcr_cxx_inline mstr
+mpath_current_exe_path ()
+{
+   int len = GetModuleFileNameW (NULL, NULL, 0);
+   wchar_t *path = calloc (len + 1, sizeof (wchar_t));
+   GetModuleFileNameW (NULL, path, len);
+   mstr_narrow_result narrow = mstr_win32_narrow (path);
+   // GetModuleFileNameW should never return invalid Unicode:
+   assert (narrow.error == 0);
+   return narrow.string;
+}
+
+#endif
 
 #endif // MONGOCRYPT_PATH_PRIVATE_H

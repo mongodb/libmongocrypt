@@ -5,8 +5,12 @@
 
 #include <stdio.h>
 
-__attribute__ ((visibility ("default"))) int
-say_hello ()
+#if _MSC_VER
+__declspec(dllexport)
+#else
+__attribute__ ((visibility ("default")))
+#endif
+   int say_hello ()
 {
    puts ("Hello, from DLL!\n");
    return 42;

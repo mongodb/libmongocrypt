@@ -1,6 +1,8 @@
 #ifndef MONGOCRYPT_DLL_PRIVATE_H
 #define MONGOCRYPT_DLL_PRIVATE_H
 
+#include <mlib/str.h>
+
 #include <stdlib.h>
 
 /* No header required for declarations. */
@@ -13,7 +15,7 @@
 typedef struct _mcr_dll {
    // (All supported platforms using a void* as the library handle type)
    void *_native_handle;
-   char *_error_string;
+   mstr _error_string;
 } _mcr_dll;
 
 /**
@@ -37,7 +39,7 @@ _mcr_dll_close (_mcr_dll dll)
 {
    extern void _mcr_dll_close_handle (_mcr_dll);
    _mcr_dll_close_handle (dll);
-   free (dll._error_string);
+   mstr_free (dll._error_string);
 }
 
 /**
@@ -53,7 +55,7 @@ _mcr_dll_sym (_mcr_dll dll, const char *symbol);
 static inline const char *
 _mcr_dll_error (_mcr_dll dll)
 {
-   return dll._error_string;
+   return dll._error_string.data;
 }
 
 #endif // MONGOCRYPT_DLL_PRIVATE_H
