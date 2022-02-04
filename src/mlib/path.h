@@ -107,7 +107,7 @@ mpath_current_exe_path ()
    mstr_narrow_result narrow = mstr_win32_narrow (path);
    // GetModuleFileNameW should never return invalid Unicode:
    assert (narrow.error == 0);
-   return {.path = narrow.string, .error = 0};
+   return (mpath_current_exe_result){.path = narrow.string, .error = 0};
 #elif defined(__linux__)
    mstr_mut ret = mstr_new (8096);
    ssize_t n_len = readlink ("/proc/self/exe", ret.data, ret.len);
