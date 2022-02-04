@@ -96,6 +96,12 @@ set (MONGOCRYPT_SOURCES
    src/os_win/os_once.c
    src/os_posix/os_mutex.c
    src/os_posix/os_once.c
+   src/os_win/os_dll.c
+   src/os_posix/os_dll.c
+   # Private headers
+   src/mongocrypt-dll-private.h
+   src/mlib-str-private.h
+   src/mlib-path-private.h
    )
 
 if ( MSVC )
@@ -247,6 +253,14 @@ set_target_properties (mongocrypt_static PROPERTIES
    OUTPUT_NAME "mongocrypt-static"
 )
 
+# Generate a dynamic library for use by the dll test cases
+add_library (test-dll SHARED test/test-dll.c)
+# Normalize its filename so we don't have to do a dance in the test case to find it
+set_target_properties(test-dll PROPERTIES
+   OUTPUT_NAME test-dll
+   PREFIX ""
+   SUFFIX ".dll"
+   )
 
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-assert-match-bson.c
@@ -261,6 +275,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c
    test/test-mongocrypt-datakey.c
+   test/test-mongocrypt-dll.c
    test/test-mongocrypt-endpoint.c
    test/test-mongocrypt-kek.c
    test/test-mongocrypt-key.c
@@ -275,6 +290,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-traverse-util.c
    test/test-mongocrypt-util.c
    test/test-mongocrypt.c
+   test/test-mstr.c
 )
 
 # Define test-mongocrypt
