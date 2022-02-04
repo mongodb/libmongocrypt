@@ -93,9 +93,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-util.c
    src/mongocrypt.c
    src/os_win/os_mutex.c
-   src/os_win/os_once.c
    src/os_posix/os_mutex.c
-   src/os_posix/os_once.c
    )
 
 if ( MSVC )
@@ -157,19 +155,41 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/mongocrypt-config.h"
 )
 
+# Define the mlib target, which is private and header-only. It is not exported
+# nor are its headers installed.
+add_library (_mongo-mlib INTERFACE)
+add_library (mongo::mlib ALIAS _mongo-mlib)
+set_property(
+   TARGET _mongo-mlib
+   APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
+   $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
+   $<$<PLATFORM_ID:Windows>:NOMINMAX>
+   MLIB_USER
+   )
+
 # kms-message
 add_subdirectory (kms-message)
 
 # Define mongocrypt library
 add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
-target_include_directories (mongocrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_include_directories (mongocrypt PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
-target_include_directories (mongocrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_include_directories (mongocrypt PRIVATE ${BSON_INCLUDES})
+target_include_directories (
+   mongocrypt
+   PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      ${BSON_INCLUDES}
+   PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
+   )
 target_compile_definitions (mongocrypt PRIVATE ${BSON_DEFINITIONS})
-target_link_libraries (mongocrypt PRIVATE ${BSON_TARGET})
-target_link_libraries (mongocrypt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (mongocrypt PRIVATE kms_message_static)
+target_link_libraries (
+   mongocrypt
+   PRIVATE
+      ${BSON_TARGET}
+      ${CMAKE_THREAD_LIBS_INIT}
+      kms_message_static
+      $<BUILD_INTERFACE:mongo::mlib>
+   )
 
 if (NOT ENABLE_SHARED_BSON)
    if (APPLE)
@@ -193,16 +213,32 @@ if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
    target_compile_options (mongocrypt_static PUBLIC -fPIC)
    message ("Adding -fPIC to compilation of mongocrypt_static components")
 endif ()
-target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_include_directories (mongocrypt_static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
-target_include_directories (mongocrypt_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_include_directories (mongocrypt_static PRIVATE ${BSON_INCLUDES})
-target_compile_definitions (mongocrypt_static PRIVATE ${BSON_DEFINITIONS})
+target_include_directories (
+   mongocrypt_static
+   PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      ${BSON_INCLUDES}
+   PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
+   )
+target_compile_definitions (
+   mongocrypt_static
+   PRIVATE
+      ${BSON_DEFINITIONS}
+      MONGOCRYPT_STATIC_DEFINE
+      KMS_MSG_STATIC
+   )
+target_link_libraries (
+   mongocrypt_static
+   PRIVATE
+      ${BSON_TARGET}
+      kms_message_static
+      $<BUILD_INTERFACE:mongo::mlib>
+      ${CMAKE_THREAD_LIBS_INIT}
+   )
 set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
-target_link_libraries (mongocrypt_static PRIVATE ${BSON_TARGET})
-target_link_libraries (mongocrypt_static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${CMAKE_THREAD_LIBS_INIT}")
-target_link_libraries (mongocrypt_static PRIVATE kms_message_static)
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libkms_message-static.a")
 if (ENABLE_BUILD_FOR_PPA)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
@@ -213,7 +249,6 @@ if (ENABLE_BUILD_FOR_PPA)
    endif ()
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -pthread")
 endif ()
-target_compile_definitions (mongocrypt_static PUBLIC MONGOCRYPT_STATIC_DEFINE KMS_MSG_STATIC)
 if (ENABLE_WINDOWS_STATIC_RUNTIME)
    target_compile_options (mongocrypt_static PUBLIC /MT)
    target_compile_options (kms_message_static PUBLIC /MT)
@@ -247,7 +282,6 @@ set_target_properties (mongocrypt_static PROPERTIES
    OUTPUT_NAME "mongocrypt-static"
 )
 
-
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
@@ -274,7 +308,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-traverse-util.c
    test/test-mongocrypt-util.c
    test/test-mongocrypt.c
-)
+   )
 
 # Define test-mongocrypt
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
@@ -282,10 +316,16 @@ add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET})
-target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES})
+target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE ${BSON_DEFINITIONS})
 
 add_test (mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+foreach (test IN ITEMS path str)
+   add_executable (mlib.${test}.test src/mlib/${test}.test.c)
+   add_test (mlib.${test} mlib.${test}.test)
+   target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
+endforeach ()
 
 # Exclude example-state-machine since it requires native crypto.
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
@@ -328,6 +368,10 @@ install (
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+# This export set is not installed, and is only to allow export() of the mlib-using targets
+install (TARGETS _mongo-mlib EXPORT _exports_for_export)
+export (EXPORT _exports_for_export)
 
 install (
    FILES
