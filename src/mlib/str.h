@@ -125,7 +125,7 @@ typedef struct mstr_mut {
  * @note The @ref mstr_mut::cnst member MUST eventually be given to
  * @ref mstr_free().
  */
-mcr_cxx_inline mstr_mut
+static inline mstr_mut
 mstr_new (size_t len)
 {
    return (mstr_mut){.data = calloc (1, len + 1), .len = len};
@@ -140,7 +140,7 @@ mstr_new (size_t len)
  *
  * @note The pointed-to character array MUST have a null-terminator at s[len]
  */
-mcr_cxx_inline mstr_view
+static inline mstr_view
 mstrv_view_data (const char *s, size_t len)
 {
    // Assert that the character array is null-terminated.
@@ -155,7 +155,7 @@ mstrv_view_data (const char *s, size_t len)
  * @param s A pointer to a null-terminated character array
  * @return mstr_view A view of the pointed-to string
  */
-mcr_cxx_inline mstr_view
+static inline mstr_view
 mstrv_view_cstr (const char *s)
 {
    return mstrv_view_data (s, strlen (s));
@@ -171,7 +171,7 @@ mstrv_view_cstr (const char *s)
  *
  * @note The resulting string will be null-terminated.
  */
-mcr_cxx_inline mstr
+static inline mstr
 mstr_copy_data (const char *s, size_t len)
 {
    mstr_mut r = mstr_new (len);
@@ -185,7 +185,7 @@ mstr_copy_data (const char *s, size_t len)
  * @param s A pointer to a null-terminated character array
  * @return mstr A new string copied from the pointed-to string
  */
-mcr_cxx_inline mstr
+static inline mstr
 mstr_copy_cstr (const char *s)
 {
    return mstr_copy_data (s, strlen (s));
@@ -197,7 +197,7 @@ mstr_copy_cstr (const char *s)
  * @param s A string view to copy from
  * @return mstr A new string copied from the given view
  */
-mcr_cxx_inline mstr
+static inline mstr
 mstr_copy (mstr_view s)
 {
    return mstr_copy_data (s.data, s.len);
@@ -208,7 +208,7 @@ mstr_copy (mstr_view s)
  *
  * @param s The string to free
  */
-mcr_cxx_inline void
+static inline void
 mstr_free (mstr s)
 {
    free ((char *) s.data);
@@ -221,7 +221,7 @@ mstr_free (mstr s)
  * @param s The @ref mstr_mut to update
  * @param new_len The new length of the string
  */
-mcr_cxx_inline void
+static inline void
 mstrm_resize (mstr_mut *s, size_t new_len)
 {
    if (new_len <= s->len) {
@@ -261,7 +261,7 @@ mstrm_resize (mstr_mut *s, size_t new_len)
  * mstr_assign(&s, convert_to_uppercase(s.view));
  * ```
  */
-mcr_cxx_inline void
+static inline void
 mstr_assign (mstr *s, mstr from)
 {
    mstr_free (*s);
@@ -275,7 +275,7 @@ mstr_assign (mstr *s, mstr from)
  * @param needle
  * @return int
  */
-mcr_cxx_inline int
+static inline int
 mstrv_find (mstr_view given, mstr_view needle)
 {
    const char *const scan_end = given.data + given.len;
@@ -302,7 +302,7 @@ mstrv_find (mstr_view given, mstr_view needle)
    return -1;
 }
 
-mcr_cxx_inline int
+static inline int
 mstr_rfind (mstr_view given, mstr_view needle)
 {
    if (needle.len > given.len) {
@@ -328,7 +328,7 @@ mstr_rfind (mstr_view given, mstr_view needle)
    return -1;
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
 {
    assert (at <= s.len);
@@ -347,43 +347,43 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
    return ret.mstr;
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_append (mstr_view s, mstr_view suffix)
 {
    return mstr_splice (s, s.len, 0, suffix);
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_prepend (mstr_view s, mstr_view prefix)
 {
    return mstr_splice (s, 0, 0, prefix);
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_insert (mstr_view s, size_t at, mstr_view infix)
 {
    return mstr_splice (s, at, 0, infix);
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_erase (mstr_view s, size_t at, size_t count)
 {
    return mstr_splice (s, at, count, mstrv_view_cstr (""));
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_remove_prefix (mstr_view s, size_t len)
 {
    return mstr_erase (s, 0, len);
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_remove_suffix (mstr_view s, size_t len)
 {
    return mstr_erase (s, s.len - len, len);
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_substr (mstr_view s, size_t at, size_t len)
 {
    assert (at <= s.len);
@@ -396,7 +396,7 @@ mstr_substr (mstr_view s, size_t at, size_t len)
    return r.mstr;
 }
 
-mcr_cxx_inline mstr_view
+static inline mstr_view
 mstrv_subview (mstr_view s, size_t at, size_t len)
 {
    assert (at <= s.len);
@@ -407,7 +407,7 @@ mstrv_subview (mstr_view s, size_t at, size_t len)
    return (mstr_view){.data = s.data + at, .len = len};
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mstr_trunc (mstr_view s, size_t new_len)
 {
    assert (new_len <= s.len);
@@ -415,7 +415,7 @@ mstr_trunc (mstr_view s, size_t new_len)
 }
 
 
-mcr_cxx_inline bool
+static inline bool
 mstr_eq (mstr_view left, mstr_view right)
 {
    if (left.len != right.len) {
@@ -424,7 +424,7 @@ mstr_eq (mstr_view left, mstr_view right)
    return memcmp (left.data, right.data, left.len) == 0;
 }
 
-mcr_cxx_inline void
+static inline void
 _mstr_assert_eq_ (mstr_view left, mstr_view right, const char *file, int line)
 {
    if (!mstr_eq (left, right)) {
@@ -441,55 +441,55 @@ _mstr_assert_eq_ (mstr_view left, mstr_view right, const char *file, int line)
 #define MSTR_ASSERT_EQ(Left, Right) \
    (_mstr_assert_eq_ (Left, Right, __FILE__, __LINE__))
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_splice (mstr *s, size_t at, size_t del_count, mstr_view insert)
 {
    mstr_assign (s, mstr_splice (s->view, at, del_count, insert));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_append (mstr *s, mstr_view suffix)
 {
    mstr_assign (s, mstr_append (s->view, suffix));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_prepend (mstr *s, mstr_view prefix)
 {
    mstr_assign (s, mstr_append (s->view, prefix));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_insert (mstr *s, size_t at, mstr_view infix)
 {
    mstr_assign (s, mstr_insert (s->view, at, infix));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_erase (mstr *s, size_t at, size_t count)
 {
    mstr_assign (s, mstr_erase (s->view, at, count));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_remove_prefix (mstr *s, size_t len)
 {
    mstr_assign (s, mstr_remove_prefix (s->view, len));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_remove_suffix (mstr *s, size_t len)
 {
    mstr_assign (s, mstr_remove_suffix (s->view, len));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_substr (mstr *s, size_t at, size_t count)
 {
    mstr_assign (s, mstr_substr (s->view, at, count));
 }
 
-mcr_cxx_inline void
+static inline void
 mstr_inplace_trunc (mstr *s, size_t new_len)
 {
    mstr_assign (s, mstr_trunc (s->view, new_len));
@@ -503,7 +503,7 @@ typedef struct mstr_widen_result {
    int error;
 } mstr_widen_result;
 
-mcr_cxx_inline mstr_widen_result
+static inline mstr_widen_result
 mstr_win32_widen (mstr_view str)
 {
    int length = MultiByteToWideChar (
@@ -523,7 +523,7 @@ typedef struct mstr_narrow_result {
    int error;
 } mstr_narrow_result;
 
-mcr_cxx_inline mstr_narrow_result
+static inline mstr_narrow_result
 mstr_win32_narrow (const wchar_t *wstring)
 {
    int length = WideCharToMultiByte (CP_UTF8,

@@ -15,19 +15,4 @@
 #endif
 // clang-format on
 
-/**
- * @macro mcr_cxx_inline
- * @brief Declare a function to have C++-style inline semantics.
- *
- * This differs from C's `inline` in that the inline definition will be repeated
- * into every translation unit, and then later "merged" into a single definition
- * by the linker.
- */
-#ifdef _MSC_VER
-// MSVC already gives C++ semantics to 'inline'
-#define mcr_cxx_inline inline
-#else
-#define mcr_cxx_inline MCR_WEAK_SYMBOL inline
-#endif
-
 #endif // MONGOCRYPT_MACROS_PRIVATE_H

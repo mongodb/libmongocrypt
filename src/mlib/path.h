@@ -5,11 +5,13 @@
 
 #include <mlib/str.h>
 
+#include <inttypes.h>
+
 /**
  * @brief Determine if the given character is a path separator on the current
  * platform.
  */
-mcr_cxx_inline bool
+static inline bool
 mpath_is_sep (char c)
 {
 #ifdef _WIN32
@@ -19,13 +21,13 @@ mpath_is_sep (char c)
 #endif
 }
 
-mcr_cxx_inline bool
+static inline bool
 mpath_has_trailing_sep (mstr_view path)
 {
    return path.len && mpath_is_sep (path.data[path.len - 1]);
 }
 
-mcr_cxx_inline mstr_view
+static inline mstr_view
 mpath_parent (mstr_view path)
 {
    // Remove trailing separators:
@@ -44,7 +46,7 @@ mpath_parent (mstr_view path)
    return path;
 }
 
-mcr_cxx_inline mstr
+static inline mstr
 mpath_join (mstr_view base, mstr_view suffix)
 {
    if (!base.len) {

@@ -10,7 +10,7 @@
 #include <windows.h>
 #endif
 
-mcr_cxx_inline mstr
+static inline mstr
 merror_system_error_string (int errn)
 {
    //    FormatMessageW (0, NULL, )
