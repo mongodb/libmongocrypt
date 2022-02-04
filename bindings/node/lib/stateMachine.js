@@ -281,7 +281,8 @@ module.exports = function (modules) {
                 command: 'connect',
                 destination: { host: options.host, port: options.port },
                 proxy: {
-                  host: 'localhost',
+                  // host and port are ignored because we pass existing_socket
+                  host: 'iLoveJavaScript',
                   port: 0,
                   type: 5,
                   userId: this.options.proxyOptions.proxyUsername,
