@@ -544,7 +544,7 @@ mstr_win32_narrow (const wchar_t *wstring)
                                       wstring,
                                       -1,
                                       ret.data,
-                                      ret.len,
+                                      (int) ret.len,
                                       NULL,
                                       NULL);
    assert (length == got_len);
