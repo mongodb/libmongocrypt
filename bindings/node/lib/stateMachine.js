@@ -236,7 +236,7 @@ module.exports = function (modules) {
       const options = { host: parsedUrl[0], servername: parsedUrl[0], port };
       const message = request.message;
 
-      // TODO(NODE-XXXX): We can adopt `for-await on(socket, 'data')` with logic to control abort
+      // TODO(NODE-3959): We can adopt `for-await on(socket, 'data')` with logic to control abort
       // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
         const buffer = new BufferPool();
