@@ -1,6 +1,5 @@
 'use strict';
 
-const util = require('util');
 const fs = require('fs');
 const BSON = require('bson');
 const EJSON = require('bson').EJSON;
