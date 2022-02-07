@@ -390,8 +390,8 @@ describe('AutoEncrypter', function () {
     });
   });
 
-  describe('noAutoSpawn', function (done) {
-    beforeEach('start MongocryptdManager', async function () {
+  describe('noAutoSpawn', function () {
+    beforeEach('start MongocryptdManager', function (done) {
       if (requirements.SKIP_LIVE_TESTS) {
         this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
         this.skip();
