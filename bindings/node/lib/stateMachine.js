@@ -1,10 +1,9 @@
 'use strict';
 
-module.exports = function(modules) {
+module.exports = function (modules) {
   const tls = require('tls');
   const net = require('net');
-  const path = require('path');
-  const fs = require ('fs');
+  const fs = require('fs');
   const { once } = require('events');
   const { SocksClient } = require('socks');
 
@@ -17,7 +16,7 @@ module.exports = function(modules) {
   const databaseNamespace = common.databaseNamespace;
   const collectionNamespace = common.collectionNamespace;
   const MongoCryptError = common.MongoCryptError;
-  const BufferList = require('bl');
+  const { BufferPool } = require('./buffer_pool');
 
   // libmongocrypt states
   const MONGOCRYPT_CTX_ERROR = 0;
@@ -237,8 +236,10 @@ module.exports = function(modules) {
       const options = { host: parsedUrl[0], servername: parsedUrl[0], port };
       const message = request.message;
 
+      // TODO(NODE-3959): We can adopt `for-await on(socket, 'data')` with logic to control abort
+      // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
-        const buffer = new BufferList();
+        const buffer = new BufferPool();
 
         let socket;
         let rawSocket;
@@ -280,7 +281,8 @@ module.exports = function(modules) {
                 command: 'connect',
                 destination: { host: options.host, port: options.port },
                 proxy: {
-                  host: 'locahost',
+                  // host and port are ignored because we pass existing_socket
+                  host: 'iLoveJavaScript',
                   port: 0,
                   type: 5,
                   userId: this.options.proxyOptions.proxyUsername,
@@ -314,8 +316,7 @@ module.exports = function(modules) {
           buffer.append(data);
           while (request.bytesNeeded > 0 && buffer.length) {
             const bytesNeeded = Math.min(request.bytesNeeded, buffer.length);
-            request.addResponse(buffer.slice(0, bytesNeeded));
-            buffer.consume(bytesNeeded);
+            request.addResponse(buffer.read(bytesNeeded));
           }
 
           if (request.bytesNeeded <= 0) {
@@ -340,7 +341,9 @@ module.exports = function(modules) {
       const tlsOptionNames = Object.keys(tlsOptions);
       for (const option of INSECURE_TLS_OPTIONS) {
         if (tlsOptionNames.includes(option)) {
-          return new MongoCryptError(`Insecure TLS options prohibited for ${kmsProvider}: ${option}`);
+          return new MongoCryptError(
+            `Insecure TLS options prohibited for ${kmsProvider}: ${option}`
+          );
         }
       }
     }

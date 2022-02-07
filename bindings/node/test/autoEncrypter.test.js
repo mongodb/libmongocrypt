@@ -5,6 +5,7 @@ const BSON = require('bson');
 const EJSON = require('bson').EJSON;
 const sinon = require('sinon');
 const mongodb = require('mongodb');
+const requirements = require('./requirements.helper');
 const MongoNetworkTimeoutError = mongodb.MongoNetworkTimeoutError || mongodb.MongoTimeoutError;
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
@@ -14,9 +15,6 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-subset'));
 chai.use(require('sinon-chai'));
-
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
 
 function readExtendedJsonToBuffer(path) {
   const ejson = EJSON.parse(fs.readFileSync(path, 'utf8'));
@@ -46,7 +44,7 @@ class MockClient {
 }
 
 const AutoEncrypter = require('../lib/autoEncrypter')({ mongodb, stateMachine }).AutoEncrypter;
-describe('AutoEncrypter', function() {
+describe('AutoEncrypter', function () {
   this.timeout(12000);
   let ENABLE_LOG_TEST = false;
   let sandbox = sinon.createSandbox();
@@ -89,7 +87,7 @@ describe('AutoEncrypter', function() {
     sandbox.restore();
   });
 
-  it('should support `bypassAutoEncryption`', function(done) {
+  it('should support `bypassAutoEncryption`', function (done) {
     const client = new MockClient();
     const autoEncrypter = new AutoEncrypter(client, {
       bypassAutoEncryption: true,
@@ -109,7 +107,7 @@ describe('AutoEncrypter', function() {
     });
   });
 
-  context('when checking serverSelectionTimeoutMS on the mongocryptd client', function() {
+  context('when checking serverSelectionTimeoutMS on the mongocryptd client', function () {
     const client = new MockClient();
     const autoEncrypter = new AutoEncrypter(client, {
       mongocryptdBypassSpawn: true,
@@ -121,13 +119,13 @@ describe('AutoEncrypter', function() {
       }
     });
 
-    it('defaults to 10000', function() {
+    it('defaults to 10000', function () {
       expect(autoEncrypter._mongocryptdClient.s.options.serverSelectionTimeoutMS).to.equal(10000);
     });
   });
 
-  describe('state machine', function() {
-    it('should decrypt mock data', function(done) {
+  describe('state machine', function () {
+    it('should decrypt mock data', function (done) {
       const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
       const client = new MockClient();
       const mc = new AutoEncrypter(client, {
@@ -145,7 +143,7 @@ describe('AutoEncrypter', function() {
       });
     });
 
-    it('should encrypt mock data', function(done) {
+    it('should encrypt mock data', function (done) {
       const client = new MockClient();
       const mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -179,8 +177,8 @@ describe('AutoEncrypter', function() {
     });
   });
 
-  describe('logging', function() {
-    it('should allow registration of a log handler', function(done) {
+  describe('logging', function () {
+    it('should allow registration of a log handler', function (done) {
       ENABLE_LOG_TEST = true;
 
       let loggerCalled = false;
@@ -218,14 +216,15 @@ describe('AutoEncrypter', function() {
     });
   });
 
-  describe('autoSpawn', function() {
-    beforeEach(function() {
-      if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
-        this.test.skip();
+  describe('autoSpawn', function () {
+    beforeEach(function () {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.currentTest.skip();
         return;
       }
     });
-    afterEach(function(done) {
+    afterEach(function (done) {
       if (this.mc) {
         this.mc.teardown(false, err => {
           this.mc = undefined;
@@ -236,7 +235,7 @@ describe('AutoEncrypter', function() {
       }
     });
 
-    it('should autoSpawn a mongocryptd on init by default', function(done) {
+    it('should autoSpawn a mongocryptd on init by default', function (done) {
       const client = new MockClient();
       this.mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -257,7 +256,7 @@ describe('AutoEncrypter', function() {
       });
     });
 
-    it('should not attempt to kick off mongocryptd on a normal error', function(done) {
+    it('should not attempt to kick off mongocryptd on a normal error', function (done) {
       let called = false;
       StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
         if (!called) {
@@ -293,7 +292,7 @@ describe('AutoEncrypter', function() {
       });
     });
 
-    it('should restore the mongocryptd and retry once if a MongoNetworkTimeoutError is experienced', function(done) {
+    it('should restore the mongocryptd and retry once if a MongoNetworkTimeoutError is experienced', function (done) {
       let called = false;
       StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
         if (!called) {
@@ -329,7 +328,7 @@ describe('AutoEncrypter', function() {
       });
     });
 
-    it('should propagate error if MongoNetworkTimeoutError is experienced twice in a row', function(done) {
+    it('should propagate error if MongoNetworkTimeoutError is experienced twice in a row', function (done) {
       let counter = 2;
       StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
         if (counter) {
@@ -365,7 +364,7 @@ describe('AutoEncrypter', function() {
       });
     });
 
-    it('should return a useful message if mongocryptd fails to autospawn', function(done) {
+    it('should return a useful message if mongocryptd fails to autospawn', function (done) {
       const client = new MockClient();
       this.mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -391,18 +390,18 @@ describe('AutoEncrypter', function() {
     });
   });
 
-  describe('noAutoSpawn', function() {
-    beforeEach(function(done) {
-      if (process.env.MONGODB_NODE_SKIP_LIVE_TESTS) {
-        this.test.skip();
-        return;
+  describe('noAutoSpawn', function (done) {
+    beforeEach('start MongocryptdManager', async function () {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.skip();
       }
-      this.mcdm = new MongocryptdManager({});
 
+      this.mcdm = new MongocryptdManager({});
       this.mcdm.spawn(done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
       if (this.mc) {
         this.mc.teardown(false, err => {
           this.mc = undefined;
@@ -427,7 +426,7 @@ describe('AutoEncrypter', function() {
         bypassAutoEncryption: opt === 'bypassAutoEncryption'
       };
 
-      it(`should not spawn mongocryptd on startup if ${opt} is true`, function(done) {
+      it(`should not spawn mongocryptd on startup if ${opt} is true`, function (done) {
         const client = new MockClient();
         this.mc = new AutoEncrypter(client, encryptionOptions);
 
@@ -441,7 +440,7 @@ describe('AutoEncrypter', function() {
         });
       });
 
-      it('should not spawn a mongocryptd or retry on a server selection error if mongocryptdBypassSpawn: true', function(done) {
+      it('should not spawn a mongocryptd or retry on a server selection error if mongocryptdBypassSpawn: true', function (done) {
         let called = false;
         const timeoutError = new MongoNetworkTimeoutError('msg');
         StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {

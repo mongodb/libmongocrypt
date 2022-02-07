@@ -177,6 +177,11 @@ functions:
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
 
+  "attach node xunit results":
+    - command: attach.xunit_results
+      params:
+        file: ./libmongocrypt/bindings/node/xunit.xml
+
   "publish snapshot":
     - command: shell.exec
       params:
@@ -398,6 +403,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test node"
+    - func: "attach node xunit results"
 
 # Note: keep this disabled unless you want master to force-push
 - name: build-and-test-node-force-publish
@@ -407,6 +413,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test node"
+    - func: "attach node xunit results"
 
 - name: publish-snapshot
   depends_on:
@@ -1073,4 +1080,3 @@ buildvariants:
     test_env: MACOS_UNIVERSAL=ON
   tasks:
   - build-and-test-and-upload
-  
