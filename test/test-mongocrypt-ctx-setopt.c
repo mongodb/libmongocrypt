@@ -56,6 +56,12 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
    ASSERT_FAILS (                             \
       mongocrypt_ctx_setopt_key_alt_name (ctx, key_alt_name), ctx, msg);
 
+#define KEY_MATERIAL_OK(key_material) \
+   ASSERT_OK (mongocrypt_ctx_setopt_key_material (ctx, key_material), ctx);
+#define KEY_MATERIAL_FAILS(key_material, msg) \
+   ASSERT_FAILS (                             \
+      mongocrypt_ctx_setopt_key_material (ctx, key_material), ctx, msg);
+
 #define ALGORITHM_OK(algo, algo_len) \
    ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, algo, algo_len), ctx);
 #define ALGORITHM_FAILS(algo, algo_len, msg) \
@@ -315,6 +321,84 @@ _test_setopt_key_alt_name (_mongocrypt_tester_t *tester)
    REFRESH;
    KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc', 'extra': 1}"),
                        "unrecognized field");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_test_setopt_key_material (_mongocrypt_tester_t *tester)
+{
+   /* "0123456789abcef", repeated 6 times. */
+   const char *const material =
+      "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmMDEyMzQ1"
+      "Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm";
+   const char *const pattern =
+      "{'keyMaterial': {'$binary': {'base64': '%s', 'subType': '00'}}%s}";
+   mongocrypt_binary_t *const valid = TEST_BSON (pattern, material, "");
+
+   mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_ctx_t *ctx = NULL;
+
+   /* Test double setting. */
+   REFRESH;
+   KEY_MATERIAL_OK (valid);
+   KEY_MATERIAL_FAILS (valid, "keyMaterial already set");
+
+   /* Test NULL input. */
+   REFRESH;
+   KEY_MATERIAL_FAILS (NULL, "option must be non-NULL");
+
+   /* Test empty input. */
+   REFRESH;
+   KEY_MATERIAL_FAILS (TEST_BIN (0), "option must be non-NULL");
+
+   /* Test empty key material. */
+   REFRESH;
+   KEY_MATERIAL_FAILS (TEST_BSON (pattern, "", ""),
+                       "keyMaterial should have length 96, but has length 0");
+
+   /* Test too short key material. */
+   REFRESH;
+   KEY_MATERIAL_FAILS (TEST_BSON (pattern,
+                                  "dG9vc2hvcnQ=", /* "tooshort" */
+                                  ""),
+                       "keyMaterial should have length 96, but has length 8");
+
+   /* Test too long key material. */
+   REFRESH;
+   KEY_MATERIAL_FAILS (
+      TEST_BSON (
+         pattern,
+         /* "0123456789abcdef", repeated 6 times, followed by "toolong". */
+         "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmMDEyM"
+         "zQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmdG9vbG9uZw"
+         "==",
+         ""),
+      "keyMaterial should have length 96, but has length 103");
+
+   /* Test invalid keyMaterial options. */
+   REFRESH;
+   KEY_MATERIAL_FAILS (TEST_BSON ("{}"), "invalid bson");
+
+   REFRESH;
+   KEY_MATERIAL_FAILS (TEST_BSON ("{'a': 1}"),
+                       "keyMaterial must have field 'keyMaterial'");
+
+   REFRESH;
+   KEY_MATERIAL_FAILS (TEST_BSON ("{'keyMaterial': 1}"),
+                       "keyMaterial must be binary data");
+
+   /* Test extra key. */
+   REFRESH;
+   KEY_MATERIAL_FAILS (TEST_BSON (pattern, material, ", 'a': 1"),
+                       "unrecognized field, only keyMaterial expected");
+
+   /* Test error propagation. */
+   REFRESH;
+   ASSERT (!_mongocrypt_ctx_fail_w_msg (ctx, "test"));
+   KEY_MATERIAL_FAILS (valid, "test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -758,6 +842,7 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_key_id (tester);
    _test_setopt_algorithm (tester);
    _test_setopt_key_alt_name (tester);
+   _test_setopt_key_material (tester);
    _test_setopt_endpoint (tester);
    _test_setopt_key_encryption_key_azure (tester);
    _test_setopt_key_encryption_key_gcp (tester);
