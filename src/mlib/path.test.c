@@ -1,5 +1,14 @@
 #include "./path.h"
 
+#define CHECK(Expr)                                   \
+   ((Expr) ? 0                                        \
+           : ((fprintf (stderr,                       \
+                        "%s:%d: Check '%s' failed\n", \
+                        __FILE__,                     \
+                        __LINE__,                     \
+                        #Expr),                       \
+               abort ()),                             \
+              0))
 int
 main ()
 {
@@ -16,7 +25,7 @@ main ()
    mstr_free (s);
 
    mpath_current_exe_result self = mpath_current_exe_path ();
-   assert (self.error == 0);
-   assert (self.path.len != 0);
+   CHECK (self.error == 0);
+   CHECK (self.path.len != 0);
    mstr_free (self.path);
 }

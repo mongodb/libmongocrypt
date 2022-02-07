@@ -1,14 +1,22 @@
 #include "./str.h"
 
-#include <assert.h>
+#define CHECK(Expr)                                   \
+   ((Expr) ? 0                                        \
+           : ((fprintf (stderr,                       \
+                        "%s:%d: Check '%s' failed\n", \
+                        __FILE__,                     \
+                        __LINE__,                     \
+                        #Expr),                       \
+               abort ()),                             \
+              0))
 
 int
 main ()
 {
    mstr str = mstr_copy_cstr ("foo");
-   assert (str.len == 3);
+   CHECK (str.len == 3);
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("foo"));
-   assert (strncmp (str.data, "foo", 3) == 0);
+   CHECK (strncmp (str.data, "foo", 3) == 0);
 
    mstr_inplace_append (&str, mstrv_lit ("bar"));
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("foobar"));
@@ -21,13 +29,13 @@ main ()
    mstr_free (str);
 
    int pos = mstr_find (mstrv_lit ("foo"), mstrv_lit ("bar"));
-   assert (pos == -1);
+   CHECK (pos == -1);
 
    pos = mstr_find (mstrv_lit ("foo"), mstrv_lit ("barbaz"));
-   assert (pos == -1);
+   CHECK (pos == -1);
 
    pos = mstr_find (mstrv_lit ("foobar"), mstrv_lit ("bar"));
-   assert (pos == 3);
+   CHECK (pos == 3);
 
    // Simple replacement:
    str = mstr_copy_cstr ("foo bar baz");
@@ -58,6 +66,6 @@ main ()
 
    mstr_free (str2);
 
-   assert (mstrv_view_cstr ("foo\000bar").len == 3);
-   assert (mstrv_lit ("foo\000bar").len == 7);
+   CHECK (mstrv_view_cstr ("foo\000bar").len == 3);
+   CHECK (mstrv_lit ("foo\000bar").len == 7);
 }
