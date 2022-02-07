@@ -96,14 +96,6 @@ set (MONGOCRYPT_SOURCES
    src/os_posix/os_mutex.c
    src/os_win/os_dll.c
    src/os_posix/os_dll.c
-   # Private headers
-   src/mongocrypt-dll-private.h
-   src/mlib/str.h
-   src/mlib/path.h
-   src/mlib/macros.h
-   src/mlib/thread.h
-   src/mlib/error.h
-   src/mlib/user-check.h
    )
 
 if ( MSVC )
