@@ -6,14 +6,51 @@
 #include "./macros.h"
 #include "./str.h"
 
-#if _WIN32
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include <errno.h>
 #endif
 
+/**
+ * @brief Obtain a string containing an error message corresponding to an error
+ * code from the host platform.
+ *
+ * @param errn An error code for the system. (e.g. GetLastError() on Windows)
+ * @return mstr A new string containing the resulting error. Must be freed with
+ * @ref mstr_free().
+ */
 static inline mstr
 merror_system_error_string (int errn)
 {
-   //    FormatMessageW (0, NULL, )
+#ifdef _WIN32
+   wchar_t *wbuffer = NULL;
+   DWORD slen = FormatMessageW (FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                                   FORMAT_MESSAGE_FROM_SYSTEM |
+                                   FORMAT_MESSAGE_IGNORE_INSERTS,
+                                NULL,
+                                (DWORD) errn,
+                                0,
+                                (LPWSTR) wbuffer,
+                                0,
+                                NULL);
+   if (slen == 0) {
+      return mstr_copy_cstr (
+         "[Error while getting error string from FormatMessageW()]");
+   }
+   mstr_narrow_result narrow = mstr_win32_narrow (wbuffer);
+   LocalFree (wbuffer);
+   assert (narrow.error == 0);
+   return narrow.string;
+#else
+   errno = 0;
+   char *const str = strerror (errn);
+   if (errno) {
+      return mstr_copy_cstr (
+         "[Error while getting error string from strerror()]");
+   }
+   return mstr_copy_cstr (str);
+#endif
 }
 
 #endif // MLIB_ERROR_PRIVATE_H
