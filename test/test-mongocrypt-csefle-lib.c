@@ -7,7 +7,8 @@ static void
 _test_append_path (_mongocrypt_tester_t *t)
 {
    char cwd[512 * 4];
-   getcwd (cwd, sizeof cwd);
+   char *r = getcwd (cwd, sizeof cwd);
+   BSON_ASSERT (r);
    mongocrypt_t *crypt = mongocrypt_new ();
    mongocrypt_setopt_append_csefle_search_path (crypt, cwd);
    mongocrypt_destroy (crypt);
