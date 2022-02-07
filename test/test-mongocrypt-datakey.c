@@ -228,6 +228,100 @@ _test_datakey_custom_endpoint (_mongocrypt_tester_t *tester)
 
 
 static void
+_test_datakey_custom_key_material (_mongocrypt_tester_t *tester)
+{
+   const uint8_t expected_dek[MONGOCRYPT_KEY_LEN] = "0123456789abcdef"
+                                                    "0123456789abcdef"
+                                                    "0123456789abcdef"
+                                                    "0123456789abcdef"
+                                                    "0123456789abcdef"
+                                                    "0123456789abcdef";
+
+   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+
+   _mongocrypt_buffer_t encrypted_dek_buf;
+
+   {
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+      /* Generate encrypted DEK using custom key material. */
+      {
+         mongocrypt_binary_t *const kek = TEST_BSON ("{'provider': 'local'}");
+
+         bson_t bson;
+         _mongocrypt_buffer_t key_material_buf;
+         mongocrypt_binary_t key_material;
+
+         bson_init (&bson);
+         ASSERT (BSON_APPEND_BINARY (&bson,
+                                     "keyMaterial",
+                                     BSON_SUBTYPE_BINARY,
+                                     expected_dek,
+                                     MONGOCRYPT_KEY_LEN));
+         _mongocrypt_buffer_from_bson (&key_material_buf, &bson);
+         _mongocrypt_buffer_to_binary (&key_material_buf, &key_material);
+
+         ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (ctx, kek), ctx);
+         ASSERT_OK (mongocrypt_ctx_setopt_key_material (ctx, &key_material),
+                    ctx);
+         ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+
+         bson_destroy (&bson);
+      }
+
+      /* Extract encrypted DEK from datakey. */
+      {
+         mongocrypt_binary_t *const datakey = mongocrypt_binary_new ();
+
+         bson_t bson;
+         bson_iter_t iter;
+         const uint8_t *binary;
+         uint32_t len;
+         bson_subtype_t subtype;
+
+         _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, datakey), ctx);
+         ASSERT (_mongocrypt_binary_to_bson (datakey, &bson));
+
+         ASSERT (bson_iter_init_find (&iter, &bson, "keyMaterial"));
+         ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
+         bson_iter_binary (&iter, &subtype, &len, &binary);
+         ASSERT (_mongocrypt_buffer_copy_from_data_and_size (
+            &encrypted_dek_buf, binary, len));
+
+         mongocrypt_binary_destroy (datakey);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+   }
+
+   /* Decrypt key material and confirm it matches original DEK. */
+   {
+      _mongocrypt_buffer_t decrypted_dek_buf;
+      mongocrypt_binary_t decrypted_dek;
+
+      ASSERT (_mongocrypt_unwrap_key (crypt->crypto,
+                                      &crypt->opts.kms_provider_local.key,
+                                      &encrypted_dek_buf,
+                                      &decrypted_dek_buf,
+                                      crypt->status));
+
+      _mongocrypt_buffer_to_binary (&decrypted_dek_buf, &decrypted_dek);
+
+      ASSERT_CMPBYTES (expected_dek,
+                       MONGOCRYPT_KEY_LEN,
+                       decrypted_dek.data,
+                       decrypted_dek.len);
+
+      _mongocrypt_buffer_cleanup (&decrypted_dek_buf);
+   }
+
+   _mongocrypt_buffer_cleanup (&encrypted_dek_buf);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
 _test_create_data_key (_mongocrypt_tester_t *tester)
 {
    _test_create_data_key_with_provider (
@@ -247,4 +341,5 @@ _mongocrypt_tester_install_data_key (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_random_generator);
    INSTALL_TEST (_test_create_data_key);
    INSTALL_TEST (_test_datakey_custom_endpoint);
+   INSTALL_TEST (_test_datakey_custom_key_material);
 }

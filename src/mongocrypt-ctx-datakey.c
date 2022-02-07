@@ -471,17 +471,24 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    ctx->vtable.cleanup = _cleanup;
 
    _mongocrypt_buffer_init (&dkctx->plaintext_key_material);
-   dkctx->plaintext_key_material.data = bson_malloc (MONGOCRYPT_KEY_LEN);
-   BSON_ASSERT (dkctx->plaintext_key_material.data);
 
-   dkctx->plaintext_key_material.len = MONGOCRYPT_KEY_LEN;
-   dkctx->plaintext_key_material.owned = true;
-   if (!_mongocrypt_random (ctx->crypt->crypto,
-                            &dkctx->plaintext_key_material,
-                            MONGOCRYPT_KEY_LEN,
-                            ctx->status)) {
-      _mongocrypt_ctx_fail (ctx);
-      goto done;
+   if (ctx->opts.key_material.owned) {
+      /* Use keyMaterial provided by user via DataKeyOpts. */
+      _mongocrypt_buffer_steal (&dkctx->plaintext_key_material,
+                                &ctx->opts.key_material);
+   } else {
+      /* Generate keyMaterial instead. */
+      dkctx->plaintext_key_material.data = bson_malloc (MONGOCRYPT_KEY_LEN);
+      BSON_ASSERT (dkctx->plaintext_key_material.data);
+      dkctx->plaintext_key_material.len = MONGOCRYPT_KEY_LEN;
+      dkctx->plaintext_key_material.owned = true;
+      if (!_mongocrypt_random (ctx->crypt->crypto,
+                               &dkctx->plaintext_key_material,
+                               MONGOCRYPT_KEY_LEN,
+                               ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto done;
+      }
    }
 
    if (!_kms_start (ctx)) {
