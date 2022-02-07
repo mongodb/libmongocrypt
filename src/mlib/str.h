@@ -12,9 +12,10 @@
 #include <stdbool.h>
 
 /**
- * @brief A simple string-view type.
+ * @brief A simple non-owning string-view type.
  *
- * The viewed string can be treated as an array of char.
+ * The viewed string can be treated as an array of char. It's pointed-to data
+ * must not be freed or manipulated.
  *
  * @note The viewed string is NOT guaranteed to be null-terminated. It WILL
  * be null-terminated if: Directly created from a string literal via
@@ -43,18 +44,23 @@ typedef struct mstr_view {
  *
  * The member `data` is a pointer to the beginning of a read-only array of code
  * units. This array will always be null-terminated, but MAY contain
- * intermittent null characters. To get the length of the string (in code
- * units), use @ref mstr_len(). The `data` member MUST NOT be retargeted, freed,
- * or realloc'd.
+ * intermittent null characters. The member `len` is the length of the code unit
+ * array (not including the null terminator). These two members should not be
+ * modified.
  *
- * The `_meta` member is opaque and must not be used or manipulated.
+ * The `view` member is a union member that will view the `mstr` as an
+ * @ref mstr_view.
  *
  * If you create an @ref mstr, it MUST eventually be passed to @ref mstr_free()
  *
  * The pointed-to code units of an mstr are immutable. To initialize the
  * contents of an mstr, @ref mstr_new returns an @ref mstr_mut, which can then
- * be "sealed" by converting it to an @ref mstr through the @ref mstr_mut::cnst
+ * be "sealed" by converting it to an @ref mstr through the @ref mstr_mut::mstr
  * union member.
+ *
+ * By convention, passing/returning an `mstr` to/from a function should
+ * relinquish ownership of that `mstr` to the callee/caller, respectively.
+ * Passing or returning an `mstr_view` is non-owning.
  */
 typedef struct mstr {
    union {
@@ -72,6 +78,9 @@ typedef struct mstr {
           */
          size_t len;
       };
+      /**
+       * @brief A non-owning `mstr_view` of the string
+       */
       mstr_view view;
    };
 } mstr;
@@ -80,7 +89,7 @@ typedef struct mstr {
  * @brief An interface for initializing the contents of an mstr.
  *
  * Returned by @ref mstr_new(). Once initialization is complete, the result can
- * be used as an @ref mstr by accessing the @ref cnst member.
+ * be used as an @ref mstr by accessing the @ref mstr_mut::mstr member.
  */
 typedef struct mstr_mut {
    union {
@@ -106,21 +115,30 @@ typedef struct mstr_mut {
    };
 } mstr_mut;
 
+/**
+ * @brief A null @ref mstr
+ */
 #define MSTR_NULL ((mstr){.data = NULL, .len = 0})
+/**
+ * @brief A null @ref mstr_view
+ */
 #define MSTRV_NULL ((mstr_view){.data = NULL, .len = 0})
 
-#define mstrv_lit(String) (mstrv_view_cstr (String ""))
+/**
+ * @brief Create an @ref mstr_view that views the given string literal
+ */
+#define mstrv_lit(String) (mstrv_view_data (String "", (sizeof String) - 1))
 
 /**
  * @brief Create a new mutable code-unit array of the given length,
  * zero-initialized. The caller can then modify the code units in the array via
  * the @ref mstr_mut::data member. Once finished modifying, can be converted to
- * an immutable mstr by copying the @ref mtsr_mut::cnst union member.
+ * an immutable mstr by copying the @ref mtsr_mut::mstr union member.
  *
  * @param len The length of the new string.
  * @return mstr_mut A new mstr_mut
  *
- * @note The @ref mstr_mut::cnst member MUST eventually be given to
+ * @note The @ref mstr_mut::mstr member MUST eventually be given to
  * @ref mstr_free().
  */
 static inline mstr_mut

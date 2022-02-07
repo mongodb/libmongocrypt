@@ -57,4 +57,7 @@ main ()
    MSTR_ASSERT_EQ (str2.view, mstrv_lit ("foo baz foo baz foo baz"));
 
    mstr_free (str2);
+
+   assert (mstrv_view_cstr ("foo\000bar").len == 3);
+   assert (mstrv_lit ("foo\000bar").len == 7);
 }
