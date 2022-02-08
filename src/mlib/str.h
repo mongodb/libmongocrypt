@@ -144,7 +144,13 @@ typedef struct mstr_mut {
 static inline mstr_mut
 mstr_new (size_t len)
 {
+#ifndef __clang_analyzer__
    return (mstr_mut){{{.data = calloc (1, len + 1), .len = len}}};
+#else
+   // Clang-analyzer is smart enough to see the calloc(), but not smart enough
+   // to link it to the free() in mstr_free()
+   return (mstr_mut){};
+#endif
 }
 
 /**
@@ -191,7 +197,7 @@ static inline mstr
 mstr_copy_data (const char *s, size_t len)
 {
    mstr_mut r = mstr_new (len);
-   memcpy ((r.data), s, len);
+   memcpy (r.data, s, len);
    return r.mstr;
 }
 
@@ -244,7 +250,11 @@ mstrm_resize (mstr_mut *s, size_t new_len)
       s->len = new_len;
    } else {
       const size_t old_len = s->len;
+#ifndef __clang_analyzer__
+      // Clang-analyzer is smart enough to see the calloc(), but not smart
+      // enough to link it to the free() in mstr_free()
       s->data = realloc ((char *) s->data, new_len + 1);
+#endif
       s->len = new_len;
       memset (s->data + old_len, 0, new_len - old_len);
    }
