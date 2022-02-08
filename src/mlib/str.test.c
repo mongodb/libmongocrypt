@@ -1,15 +1,27 @@
-#include <test-mongocrypt.h>
+#include "./str.h"
 
-#include <mlib/str.h>
+#define CHECK(Expr)                                   \
+   ((Expr) ? 0                                        \
+           : ((fprintf (stderr,                       \
+                        "%s:%d: Check '%s' failed\n", \
+                        __FILE__,                     \
+                        __LINE__,                     \
+                        #Expr),                       \
+               abort ()),                             \
+              0))
 
-static void
-_test_mstr (_mongocrypt_tester_t *t)
+int
+main ()
 {
-   (void) t;
-   mstr str = mstr_copy_cstr ("foo");
-   ASSERT_CMPINT (str.len, ==, 3);
+   // Test the null-initializers:
+   mstr str = MSTR_NULL;
+   mstr_view null_view = MSTRV_NULL;
+   (void) null_view;
+
+   str = mstr_copy_cstr ("foo");
+   CHECK (str.len == 3);
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("foo"));
-   BSON_ASSERT (strncmp (str.data, "foo", 3) == 0);
+   CHECK (strncmp (str.data, "foo", 3) == 0);
 
    mstr_inplace_append (&str, mstrv_lit ("bar"));
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("foobar"));
@@ -22,13 +34,13 @@ _test_mstr (_mongocrypt_tester_t *t)
    mstr_free (str);
 
    int pos = mstr_find (mstrv_lit ("foo"), mstrv_lit ("bar"));
-   ASSERT_CMPINT (pos, ==, -1);
+   CHECK (pos == -1);
 
    pos = mstr_find (mstrv_lit ("foo"), mstrv_lit ("barbaz"));
-   ASSERT_CMPINT (pos, ==, -1);
+   CHECK (pos == -1);
 
    pos = mstr_find (mstrv_lit ("foobar"), mstrv_lit ("bar"));
-   ASSERT_CMPINT (pos, ==, 3);
+   CHECK (pos == 3);
 
    // Simple replacement:
    str = mstr_copy_cstr ("foo bar baz");
@@ -58,10 +70,7 @@ _test_mstr (_mongocrypt_tester_t *t)
    MSTR_ASSERT_EQ (str2.view, mstrv_lit ("foo baz foo baz foo baz"));
 
    mstr_free (str2);
-}
 
-void
-_mongocrypt_tester_install_mstr (_mongocrypt_tester_t *tester)
-{
-   INSTALL_TEST (_test_mstr);
+   CHECK (mstrv_view_cstr ("foo\000bar").len == 3);
+   CHECK (mstrv_lit ("foo\000bar").len == 7);
 }

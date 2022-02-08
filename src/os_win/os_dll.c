@@ -10,8 +10,6 @@
 
 #include <windows.h>
 
-#undef widen
-
 _mcr_dll
 _mcr_dll_open (const char *filepath)
 {

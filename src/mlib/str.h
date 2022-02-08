@@ -3,8 +3,6 @@
 
 #include "./user-check.h"
 
-#include "./macros.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -14,9 +12,10 @@
 #include <stdbool.h>
 
 /**
- * @brief A simple string-view type.
+ * @brief A simple non-owning string-view type.
  *
- * The viewed string can be treated as an array of char.
+ * The viewed string can be treated as an array of char. It's pointed-to data
+ * must not be freed or manipulated.
  *
  * @note The viewed string is NOT guaranteed to be null-terminated. It WILL
  * be null-terminated if: Directly created from a string literal via
@@ -45,18 +44,23 @@ typedef struct mstr_view {
  *
  * The member `data` is a pointer to the beginning of a read-only array of code
  * units. This array will always be null-terminated, but MAY contain
- * intermittent null characters. To get the length of the string (in code
- * units), use @ref mstr_len(). The `data` member MUST NOT be retargeted, freed,
- * or realloc'd.
+ * intermittent null characters. The member `len` is the length of the code unit
+ * array (not including the null terminator). These two members should not be
+ * modified.
  *
- * The `_meta` member is opaque and must not be used or manipulated.
+ * The `view` member is a union member that will view the `mstr` as an
+ * @ref mstr_view.
  *
  * If you create an @ref mstr, it MUST eventually be passed to @ref mstr_free()
  *
  * The pointed-to code units of an mstr are immutable. To initialize the
  * contents of an mstr, @ref mstr_new returns an @ref mstr_mut, which can then
- * be "sealed" by converting it to an @ref mstr through the @ref mstr_mut::cnst
+ * be "sealed" by converting it to an @ref mstr through the @ref mstr_mut::mstr
  * union member.
+ *
+ * By convention, passing/returning an `mstr` to/from a function should
+ * relinquish ownership of that `mstr` to the callee/caller, respectively.
+ * Passing or returning an `mstr_view` is non-owning.
  */
 typedef struct mstr {
    union {
@@ -74,6 +78,9 @@ typedef struct mstr {
           */
          size_t len;
       };
+      /**
+       * @brief A non-owning `mstr_view` of the string
+       */
       mstr_view view;
    };
 } mstr;
@@ -82,7 +89,7 @@ typedef struct mstr {
  * @brief An interface for initializing the contents of an mstr.
  *
  * Returned by @ref mstr_new(). Once initialization is complete, the result can
- * be used as an @ref mstr by accessing the @ref cnst member.
+ * be used as an @ref mstr by accessing the @ref mstr_mut::mstr member.
  */
 typedef struct mstr_mut {
    union {
@@ -108,27 +115,42 @@ typedef struct mstr_mut {
    };
 } mstr_mut;
 
-#define MSTR_NULL ((mstr){.data = NULL, .len = 0})
+/**
+ * @brief A null @ref mstr
+ */
+#define MSTR_NULL ((mstr){{{.data = NULL, .len = 0}}})
+/**
+ * @brief A null @ref mstr_view
+ */
 #define MSTRV_NULL ((mstr_view){.data = NULL, .len = 0})
 
-#define mstrv_lit(String) (mstrv_view_cstr (String ""))
+/**
+ * @brief Create an @ref mstr_view that views the given string literal
+ */
+#define mstrv_lit(String) (mstrv_view_data (String "", (sizeof String) - 1))
 
 /**
  * @brief Create a new mutable code-unit array of the given length,
  * zero-initialized. The caller can then modify the code units in the array via
  * the @ref mstr_mut::data member. Once finished modifying, can be converted to
- * an immutable mstr by copying the @ref mtsr_mut::cnst union member.
+ * an immutable mstr by copying the @ref mtsr_mut::mstr union member.
  *
  * @param len The length of the new string.
  * @return mstr_mut A new mstr_mut
  *
- * @note The @ref mstr_mut::cnst member MUST eventually be given to
+ * @note The @ref mstr_mut::mstr member MUST eventually be given to
  * @ref mstr_free().
  */
 static inline mstr_mut
 mstr_new (size_t len)
 {
-   return (mstr_mut){.data = calloc (1, len + 1), .len = len};
+#ifndef __clang_analyzer__
+   return (mstr_mut){{{.data = calloc (1, len + 1), .len = len}}};
+#else
+   // Clang-analyzer is smart enough to see the calloc(), but not smart enough
+   // to link it to the free() in mstr_free()
+   return (mstr_mut){};
+#endif
 }
 
 /**
@@ -175,7 +197,7 @@ static inline mstr
 mstr_copy_data (const char *s, size_t len)
 {
    mstr_mut r = mstr_new (len);
-   memcpy ((r.data), s, len);
+   memcpy (r.data, s, len);
    return r.mstr;
 }
 
@@ -228,7 +250,11 @@ mstrm_resize (mstr_mut *s, size_t new_len)
       s->len = new_len;
    } else {
       const size_t old_len = s->len;
+#ifndef __clang_analyzer__
+      // Clang-analyzer is smart enough to see the calloc(), but not smart
+      // enough to link it to the free() in mstr_free()
       s->data = realloc ((char *) s->data, new_len + 1);
+#endif
       s->len = new_len;
       memset (s->data + old_len, 0, new_len - old_len);
    }
@@ -269,11 +295,13 @@ mstr_assign (mstr *s, mstr from)
 }
 
 /**
- * @brief Find the index of the given "needle" as a substring of another string.
+ * @brief Find the index of the first occurrence of the  given "needle" as a
+ * substring of another string.
  *
- * @param given
- * @param needle
- * @return int
+ * @param given A string to search within
+ * @param needle The substring to search for
+ * @return int The zero-based index of the first instance of `needle` in
+ * `given`, or -1 if no substring is found.
  */
 static inline int
 mstr_find (mstr_view given, mstr_view needle)
@@ -302,6 +330,15 @@ mstr_find (mstr_view given, mstr_view needle)
    return -1;
 }
 
+/**
+ * @brief Find the index of the last occurrence of the  given "needle" as a
+ * substring of another string.
+ *
+ * @param given A string to search within
+ * @param needle The substring to search for
+ * @return int The zero-based index of the last instance of `needle` in
+ * `given`, or -1 if no substring is found.
+ */
 static inline int
 mstr_rfind (mstr_view given, mstr_view needle)
 {
@@ -328,6 +365,16 @@ mstr_rfind (mstr_view given, mstr_view needle)
    return -1;
 }
 
+/**
+ * @brief Modify a string by deleting and/or inserting another string.
+ *
+ * @param s The string to modify
+ * @param at The position at which to insert and delete characters
+ * @param del_count The number of characters to delete. Clamped to the string
+ * lenth.
+ * @param insert The string to insert at `at`.
+ * @return mstr A new string that is the result of the splice
+ */
 static inline mstr
 mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
 {
@@ -343,46 +390,85 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
    p += at;
    memcpy (p, insert.data, insert.len);
    p += insert.len;
-   memcpy (p, s.data + at + del_count, s.len - at - del_count);
+   if (insert.data) {
+      memcpy (p, s.data + at + del_count, s.len - at - del_count);
+   }
    return ret.mstr;
 }
 
+/**
+ * @brief Append the given suffix to the given string
+ */
 static inline mstr
 mstr_append (mstr_view s, mstr_view suffix)
 {
    return mstr_splice (s, s.len, 0, suffix);
 }
 
+/**
+ * @brief Prepend the given prefix to the given string
+ */
 static inline mstr
 mstr_prepend (mstr_view s, mstr_view prefix)
 {
    return mstr_splice (s, 0, 0, prefix);
 }
 
+/**
+ * @brief Insert the given string into another string
+ *
+ * @param s The string to start with
+ * @param at The position in `s` where `infix` will be inserted
+ * @param infix The string to insert into `s`
+ * @return mstr A new string with `infix` inserted
+ */
 static inline mstr
 mstr_insert (mstr_view s, size_t at, mstr_view infix)
 {
    return mstr_splice (s, at, 0, infix);
 }
 
+/**
+ * @brief Erase characters from the given string
+ *
+ * @param s The string to start with
+ * @param at The position at which to begin deleting characters
+ * @param count The number of characters to remove
+ * @return mstr A new string with the deletion result.
+ */
 static inline mstr
 mstr_erase (mstr_view s, size_t at, size_t count)
 {
    return mstr_splice (s, at, count, mstrv_view_cstr (""));
 }
 
+/**
+ * @brief Erase `len` characters from the beginning of the string
+ */
 static inline mstr
 mstr_remove_prefix (mstr_view s, size_t len)
 {
    return mstr_erase (s, 0, len);
 }
 
+/**
+ * @brief Erase `len` characters from the end of the string
+ */
 static inline mstr
 mstr_remove_suffix (mstr_view s, size_t len)
 {
    return mstr_erase (s, s.len - len, len);
 }
 
+/**
+ * @brief Obtain a substring of the given string
+ *
+ * @param s The string to start with
+ * @param at The beginning position of the new string
+ * @param len The number of characters to include. Automatically clamped to the
+ * remaining length.
+ * @return mstr A new string that is a substring of `s`
+ */
 static inline mstr
 mstr_substr (mstr_view s, size_t at, size_t len)
 {
@@ -396,6 +482,15 @@ mstr_substr (mstr_view s, size_t at, size_t len)
    return r.mstr;
 }
 
+/**
+ * @brief Obtain a view of a substring of another string.
+ *
+ * @param s The string to view
+ * @param at The position at which the new view will begin
+ * @param len The number of characters to view. Automatically clamped to the
+ * remaining length.
+ * @return mstr_view A view of `s`.
+ */
 static inline mstr_view
 mstrv_subview (mstr_view s, size_t at, size_t len)
 {
@@ -407,6 +502,33 @@ mstrv_subview (mstr_view s, size_t at, size_t len)
    return (mstr_view){.data = s.data + at, .len = len};
 }
 
+/**
+ * @brief Obtain a view of another string by removing `len` characters from the
+ * front
+ */
+static inline mstr_view
+mstrv_remove_prefix (mstr_view s, size_t len)
+{
+   return mstrv_subview (s, len, s.len);
+}
+
+/**
+ * @brief Obtain a view of another string by removing `len` characters from the
+ * end.
+ */
+static inline mstr_view
+mstrv_remove_suffix (mstr_view s, size_t len)
+{
+   return mstrv_subview (s, 0, s.len - len);
+}
+
+/**
+ * @brief Truncate the given string to `new_len` characters.
+ *
+ * @param s The string to truncate
+ * @param new_len The new length of the string
+ * @return mstr A new string copied from the beginning of `s`
+ */
 static inline mstr
 mstr_trunc (mstr_view s, size_t new_len)
 {
@@ -414,6 +536,17 @@ mstr_trunc (mstr_view s, size_t new_len)
    return mstr_remove_suffix (s, s.len - new_len);
 }
 
+/**
+ * @brief Obtain a new string with all occurrences of a string replaced with a
+ * different string
+ *
+ * @param string The string to start with
+ * @param find The substring that will be replaced
+ * @param subst The string to insert in place of `find`
+ * @return mstr A new string modified from `string`
+ *
+ * @note If `find` is empty, returns a copy of `string`
+ */
 static inline mstr
 mstr_replace (const mstr_view string,
               const mstr_view find,
@@ -446,6 +579,9 @@ mstr_replace (const mstr_view string,
    return ret;
 }
 
+/**
+ * @brief Determine whether to strings are equivalent.
+ */
 static inline bool
 mstr_eq (mstr_view left, mstr_view right)
 {
@@ -469,63 +605,78 @@ _mstr_assert_eq_ (mstr_view left, mstr_view right, const char *file, int line)
    }
 }
 
+/**
+ * @brief Assert that two strings are equivalent.
+ *
+ * Prints and error message and aborts if they are not
+ */
 #define MSTR_ASSERT_EQ(Left, Right) \
    (_mstr_assert_eq_ (Left, Right, __FILE__, __LINE__))
 
+/// Compound in-place version of @ref mstr_splice
 static inline void
 mstr_inplace_splice (mstr *s, size_t at, size_t del_count, mstr_view insert)
 {
    mstr_assign (s, mstr_splice (s->view, at, del_count, insert));
 }
 
+/// Compound in-place version of @ref mstr_append
 static inline void
 mstr_inplace_append (mstr *s, mstr_view suffix)
 {
    mstr_assign (s, mstr_append (s->view, suffix));
 }
 
+/// Compound in-place version of @ref mstr_prepend
 static inline void
 mstr_inplace_prepend (mstr *s, mstr_view prefix)
 {
    mstr_assign (s, mstr_append (s->view, prefix));
 }
 
+/// Compound in-place version of @ref mstr_insert
 static inline void
 mstr_inplace_insert (mstr *s, size_t at, mstr_view infix)
 {
    mstr_assign (s, mstr_insert (s->view, at, infix));
 }
 
+/// Compound in-place version of @ref mstr_erase
 static inline void
 mstr_inplace_erase (mstr *s, size_t at, size_t count)
 {
    mstr_assign (s, mstr_erase (s->view, at, count));
 }
 
+/// Compound in-place version of @ref mstr_remove_prefix
 static inline void
 mstr_inplace_remove_prefix (mstr *s, size_t len)
 {
    mstr_assign (s, mstr_remove_prefix (s->view, len));
 }
 
+/// Compound in-place version of @ref mstr_remove_suffix
 static inline void
 mstr_inplace_remove_suffix (mstr *s, size_t len)
 {
    mstr_assign (s, mstr_remove_suffix (s->view, len));
 }
 
+/// Compound in-place version of @ref mstr_substr
 static inline void
 mstr_inplace_substr (mstr *s, size_t at, size_t count)
 {
    mstr_assign (s, mstr_substr (s->view, at, count));
 }
 
+/// Compound in-place version of @ref mstr_trunc
 static inline void
 mstr_inplace_trunc (mstr *s, size_t new_len)
 {
    mstr_assign (s, mstr_trunc (s->view, new_len));
 }
 
+/// Compound in-place version of @ref mstr_replace
 static inline void
 mstr_inplace_replace (mstr *s, mstr_view find, mstr_view subst)
 {
@@ -534,11 +685,22 @@ mstr_inplace_replace (mstr *s, mstr_view find, mstr_view subst)
 
 #ifdef _WIN32
 #include <windows.h>
+/**
+ * @brief The result type of mstr_win32_widen
+ */
 typedef struct mstr_widen_result {
    wchar_t *wstring;
    int error;
 } mstr_widen_result;
 
+/**
+ * @brief Widen a UTF-8 string using Win32 MultiBytetoWideChar
+ *
+ * @param str The UTF-8 string to widen.
+ * @return mstr_widen_result The result of widening, which may contain an error.
+ *
+ * @note The returned @ref mstr_widen_result::wstring must be given to free()
+ */
 static inline mstr_widen_result
 mstr_win32_widen (mstr_view str)
 {
@@ -554,11 +716,24 @@ mstr_win32_widen (mstr_view str)
    return (mstr_widen_result){.wstring = ret, .error = 0};
 }
 
+/**
+ * @brief The result type of mstr_win32_narrow
+ */
 typedef struct mstr_narrow_result {
    mstr string;
    int error;
 } mstr_narrow_result;
 
+/**
+ * @brief Narrow a UTF-16 string to UTF-8 using Win32 WideCharToMultiByte
+ *
+ * @param wstring A null-terminated UTF-16 string to narrow
+ * @return mstr_narrow_result The result of narrowing, which may contain an
+ * error.
+ *
+ * @note The returned @ref mstr_narrow_result::string must be freed with
+ * mstr_free()
+ */
 static inline mstr_narrow_result
 mstr_win32_narrow (const wchar_t *wstring)
 {

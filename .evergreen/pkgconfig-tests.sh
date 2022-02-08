@@ -46,6 +46,10 @@ else
     fi
 fi
 
+if [ "$MACOS_UNIVERSAL" = "ON" ]; then
+    ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
+fi
+
 mkdir cmake-build
 cd cmake-build
 INSTALL_PATH="$(system_path $pkgconfig_tests_root/install)"

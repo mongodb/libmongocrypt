@@ -7,7 +7,8 @@
  */
 function debug(msg) {
   if (process.env.MONGODB_CRYPT_DEBUG) {
-    console.log(msg);
+    // eslint-disable-next-line no-console
+    console.error(msg);
   }
 }
 
@@ -27,10 +28,7 @@ function databaseNamespace(ns) {
  * @returns {string} The collection portion of the namespace
  */
 function collectionNamespace(ns) {
-  return ns
-    .split('.')
-    .slice(1)
-    .join('.');
+  return ns.split('.').slice(1).join('.');
 }
 
 /**
@@ -57,7 +55,7 @@ class MongoCryptError extends Error {
  */
 function promiseOrCallback(callback, fn) {
   if (typeof callback === 'function') {
-    fn(function(err) {
+    fn(function (err) {
       if (err != null) {
         try {
           callback(err);
@@ -76,7 +74,7 @@ function promiseOrCallback(callback, fn) {
   }
 
   return new Promise((resolve, reject) => {
-    fn(function(err, res) {
+    fn(function (err, res) {
       if (err != null) {
         return reject(err);
       }

@@ -10,7 +10,7 @@ const sinon = require('sinon');
 const mongodb = require('mongodb');
 const StateMachine = require('../lib/stateMachine')({ mongodb }).StateMachine;
 
-describe('StateMachine', function() {
+describe('StateMachine', function () {
   class MockRequest {
     constructor(message, bytesNeeded) {
       this._bytesNeeded = typeof bytesNeeded === 'number' ? bytesNeeded : 1024;
@@ -36,7 +36,7 @@ describe('StateMachine', function() {
     }
   }
 
-  describe('kmsRequest', function() {
+  describe('kmsRequest', function () {
     class MockSocket extends EventEmitter {
       constructor(callback) {
         super();
@@ -49,12 +49,12 @@ describe('StateMachine', function() {
       }
     }
 
-    before(function() {
+    before(function () {
       this.sinon = sinon.createSandbox();
     });
 
-    context('when handling standard kms requests', function() {
-      beforeEach(function() {
+    context('when handling standard kms requests', function () {
+      beforeEach(function () {
         this.fakeSocket = undefined;
         this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
           this.fakeSocket = new MockSocket(callback);
@@ -62,7 +62,7 @@ describe('StateMachine', function() {
         });
       });
 
-      it('should only resolve once bytesNeeded drops to zero', function(done) {
+      it('should only resolve once bytesNeeded drops to zero', function (done) {
         const stateMachine = new StateMachine({ bson: BSON });
         const request = new MockRequest(Buffer.from('foobar'), 500);
         let status = 'pending';
@@ -94,46 +94,44 @@ describe('StateMachine', function() {
       });
     });
 
-    context('when tls options are provided', function() {
-      context('when the options are insecure', function() {
+    context('when tls options are provided', function () {
+      context('when the options are insecure', function () {
         [
           'tlsInsecure',
           'tlsAllowInvalidCertificates',
           'tlsAllowInvalidHostnames',
           'tlsDisableOCSPEndpointCheck',
           'tlsDisableCertificateRevocationCheck'
-        ].forEach(function(option) {
-          context(`when the option is ${option}`, function() {
+        ].forEach(function (option) {
+          context(`when the option is ${option}`, function () {
             const stateMachine = new StateMachine({
               bson: BSON,
-              tlsOptions: { aws: { [option]: true }}
+              tlsOptions: { aws: { [option]: true } }
             });
             const request = new MockRequest(Buffer.from('foobar'), 500);
 
-            it('rejects with the validation error', function(done) {
-              stateMachine
-                .kmsRequest(request)
-                .catch((err) => {
-                  expect(err.message).to.equal(`Insecure TLS options prohibited for aws: ${option}`);
-                  done();
-                });
+            it('rejects with the validation error', function (done) {
+              stateMachine.kmsRequest(request).catch(err => {
+                expect(err.message).to.equal(`Insecure TLS options prohibited for aws: ${option}`);
+                done();
+              });
             });
           });
         });
       });
 
-      context('when the options are secure', function() {
-        context('when providing tlsCertificateKeyFile', function() {
+      context('when the options are secure', function () {
+        context('when providing tlsCertificateKeyFile', function () {
           const stateMachine = new StateMachine({
             bson: BSON,
-            tlsOptions: { aws: { tlsCertificateKeyFile: 'test.pem' }}
+            tlsOptions: { aws: { tlsCertificateKeyFile: 'test.pem' } }
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
           const buffer = Buffer.from('foobar');
           let connectOptions;
 
-          it('sets the cert and key options in the tls connect options', function(done) {
-            this.sinon.stub(fs, 'readFileSync').callsFake((fileName) => {
+          it('sets the cert and key options in the tls connect options', function (done) {
+            this.sinon.stub(fs, 'readFileSync').callsFake(fileName => {
               expect(fileName).to.equal('test.pem');
               return buffer;
             });
@@ -142,7 +140,7 @@ describe('StateMachine', function() {
               this.fakeSocket = new MockSocket(callback);
               return this.fakeSocket;
             });
-            stateMachine.kmsRequest(request).then(function() {
+            stateMachine.kmsRequest(request).then(function () {
               expect(connectOptions.cert).to.equal(buffer);
               expect(connectOptions.key).to.equal(buffer);
               done();
@@ -151,17 +149,17 @@ describe('StateMachine', function() {
           });
         });
 
-        context('when providing tlsCAFile', function() {
+        context('when providing tlsCAFile', function () {
           const stateMachine = new StateMachine({
             bson: BSON,
-            tlsOptions: { aws: { tlsCAFile: 'test.pem' }}
+            tlsOptions: { aws: { tlsCAFile: 'test.pem' } }
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
           const buffer = Buffer.from('foobar');
           let connectOptions;
 
-          it('sets the ca options in the tls connect options', function(done) {
-            this.sinon.stub(fs, 'readFileSync').callsFake((fileName) => {
+          it('sets the ca options in the tls connect options', function (done) {
+            this.sinon.stub(fs, 'readFileSync').callsFake(fileName => {
               expect(fileName).to.equal('test.pem');
               return buffer;
             });
@@ -170,7 +168,7 @@ describe('StateMachine', function() {
               this.fakeSocket = new MockSocket(callback);
               return this.fakeSocket;
             });
-            stateMachine.kmsRequest(request).then(function() {
+            stateMachine.kmsRequest(request).then(function () {
               expect(connectOptions.ca).to.equal(buffer);
               done();
             });
@@ -178,21 +176,21 @@ describe('StateMachine', function() {
           });
         });
 
-        context('when providing tlsCertificateKeyFilePassword', function() {
+        context('when providing tlsCertificateKeyFilePassword', function () {
           const stateMachine = new StateMachine({
             bson: BSON,
-            tlsOptions: { aws: { tlsCertificateKeyFilePassword: 'test' }}
+            tlsOptions: { aws: { tlsCertificateKeyFilePassword: 'test' } }
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
           let connectOptions;
 
-          it('sets the passphrase option in the tls connect options', function(done) {
+          it('sets the passphrase option in the tls connect options', function (done) {
             this.sinon.stub(tls, 'connect').callsFake((options, callback) => {
               connectOptions = options;
               this.fakeSocket = new MockSocket(callback);
               return this.fakeSocket;
             });
-            stateMachine.kmsRequest(request).then(function() {
+            stateMachine.kmsRequest(request).then(function () {
               expect(connectOptions.passphrase).to.equal('test');
               done();
             });
@@ -202,12 +200,12 @@ describe('StateMachine', function() {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       this.sinon.restore();
     });
   });
 
-  describe('Socks5 support', function() {
+  describe('Socks5 support', function () {
     let socks5srv;
     let hasTlsConnection;
     let withUsernamePassword;
@@ -251,7 +249,7 @@ describe('StateMachine', function() {
       socks5srv.close();
     });
 
-    it('should create HTTPS connections through a Socks5 proxy (no proxy auth)', async function() {
+    it('should create HTTPS connections through a Socks5 proxy (no proxy auth)', async function () {
       const stateMachine = new StateMachine({
         bson: BSON,
         proxyOptions: {
@@ -272,7 +270,7 @@ describe('StateMachine', function() {
       expect.fail('missed exception');
     });
 
-    it('should create HTTPS connections through a Socks5 proxy (username/password auth)', async function() {
+    it('should create HTTPS connections through a Socks5 proxy (username/password auth)', async function () {
       withUsernamePassword = true;
       const stateMachine = new StateMachine({
         bson: BSON,

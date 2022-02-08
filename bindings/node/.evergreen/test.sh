@@ -12,6 +12,7 @@ echo "Installing package dependencies (includes a static build)"
 
 # Run tests
 echo "Running tests"
+npm run check:lint
 MONGODB_NODE_SKIP_LIVE_TESTS=true npm test
 
 # Run prebuild and deploy

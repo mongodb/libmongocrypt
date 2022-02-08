@@ -2,7 +2,6 @@
 #define MLIB_THREAD_H
 
 #include "./user-check.h"
-#include "./macros.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -72,20 +71,17 @@ _mlib_win32_once_callthru (INIT_ONCE *once, void *param, void *ctx)
  * @param flag A once-state flag. Should have been initialized by @ref
  * MLIB_ONCE_INITIALIZER.
  * @param fn A callback to execute if the flag is not in the "finished" state
- * @return zero on success, once otherwise.
+ * @return true on success, false otherwise
  */
-static inline int
+static inline bool
 mlib_call_once (mlib_once_flag *flag, mlib_init_once_fn_t fn)
 {
 #ifdef _WIN32
-   bool not_okay = InitOnceExecuteOnce (
+   bool okay = InitOnceExecuteOnce (
       &flag->_native, &_mlib_win32_once_callthru, &fn, NULL);
-   if (not_okay) {
-      return 1;
-   }
-   return 0;
+   return okay;
 #else
-   return pthread_once (&flag->_native, fn);
+   return pthread_once (&flag->_native, fn) == 0;
 #endif
 }
 

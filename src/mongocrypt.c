@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <mlib/thread.h>
+#include "mlib/thread.h"
 
 #include <kms_message/kms_message.h>
 #include <bson/bson.h>
@@ -129,7 +129,7 @@ mongocrypt_new (void)
 
    static mlib_once_flag init_flag = MLIB_ONCE_INITIALIZER;
 
-   if (mlib_call_once (&init_flag, _mongocrypt_do_init) != 0 ||
+   if (!mlib_call_once (&init_flag, _mongocrypt_do_init) ||
        !_native_crypto_initialized) {
       mongocrypt_status_t *status = crypt->status;
 

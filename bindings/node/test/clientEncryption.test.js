@@ -6,8 +6,6 @@ const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
 
 function readHttpResponse(path) {
   let data = fs.readFileSync(path, 'utf8').toString();
@@ -15,12 +13,14 @@ function readHttpResponse(path) {
   return Buffer.from(data, 'utf8');
 }
 
-const ClientEncryption = require('../lib/clientEncryption')({ mongodb, stateMachine })
-  .ClientEncryption;
+const ClientEncryption = require('../lib/clientEncryption')({
+  mongodb,
+  stateMachine
+}).ClientEncryption;
 
 const requirements = require('./requirements.helper');
 
-describe('ClientEncryption', function() {
+describe('ClientEncryption', function () {
   let client;
 
   function setup() {
@@ -45,13 +45,13 @@ describe('ClientEncryption', function() {
 
   function teardown() {
     if (requirements.SKIP_LIVE_TESTS) {
-      return;
+      return Promise.resolve();
     }
 
     return client.close();
   }
 
-  describe('stubbed stateMachine', function() {
+  describe('stubbed stateMachine', function () {
     let sandbox = sinon.createSandbox();
 
     after(() => sandbox.restore());
@@ -64,8 +64,9 @@ describe('ClientEncryption', function() {
       });
     });
 
-    beforeEach(function() {
+    beforeEach(function () {
       if (requirements.SKIP_LIVE_TESTS) {
+        this.test.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
         this.test.skip();
         return;
       }
@@ -73,7 +74,7 @@ describe('ClientEncryption', function() {
       return setup();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       return teardown();
     });
 
@@ -88,7 +89,7 @@ describe('ClientEncryption', function() {
         options: { masterKey: { region: 'region', key: 'cmk' } }
       }
     ].forEach(providerTest => {
-      it(`should create a data key with the "${providerTest.name}" KMS provider`, function(done) {
+      it(`should create a data key with the "${providerTest.name}" KMS provider`, function (done) {
         const providerName = providerTest.name;
         const encryption = new ClientEncryption(client, {
           keyVaultNamespace: 'client.encryption',
@@ -114,7 +115,7 @@ describe('ClientEncryption', function() {
       });
     });
 
-    it('should explicitly encrypt and decrypt with the "local" KMS provider', function(done) {
+    it('should explicitly encrypt and decrypt with the "local" KMS provider', function (done) {
       const encryption = new ClientEncryption(client, {
         keyVaultNamespace: 'client.encryption',
         kmsProviders: { local: { key: Buffer.alloc(96) } }
@@ -142,7 +143,7 @@ describe('ClientEncryption', function() {
       });
     });
 
-    it('should explicitly encrypt and decrypt with the "local" KMS provider (promise)', function() {
+    it('should explicitly encrypt and decrypt with the "local" KMS provider (promise)', function () {
       const encryption = new ClientEncryption(client, {
         keyVaultNamespace: 'client.encryption',
         kmsProviders: { local: { key: Buffer.alloc(96) } }
@@ -170,7 +171,7 @@ describe('ClientEncryption', function() {
     });
 
     // TODO(NODE-3371): resolve KMS JSON response does not include string 'Plaintext'. HTTP status=200 error
-    it.skip('should explicitly encrypt and decrypt with the "aws" KMS provider', function(done) {
+    it.skip('should explicitly encrypt and decrypt with the "aws" KMS provider', function (done) {
       const encryption = new ClientEncryption(client, {
         keyVaultNamespace: 'client.encryption',
         kmsProviders: { aws: { accessKeyId: 'example', secretAccessKey: 'example' } }
@@ -201,16 +202,16 @@ describe('ClientEncryption', function() {
           });
         });
       });
-    });
-
-    it('should be able to auto decrypt explicit encryption');
+    }).skipReason =
+      "TODO(NODE-3371): resolve KMS JSON response does not include string 'Plaintext'. HTTP status=200 error";
   });
 
-  describe('ClientEncryptionKeyAltNames', function() {
+  describe('ClientEncryptionKeyAltNames', function () {
     const kmsProviders = requirements.awsKmsProviders;
     const dataKeyOptions = requirements.awsDataKeyOptions;
-    beforeEach(function() {
+    beforeEach(function () {
       if (requirements.SKIP_AWS_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_AWS_TESTS=${requirements.SKIP_AWS_TESTS}`;
         this.skip();
         return;
       }
@@ -225,7 +226,7 @@ describe('ClientEncryption', function() {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       return teardown().then(() => {
         this.encryption = undefined;
         this.collection = undefined;
@@ -247,9 +248,9 @@ describe('ClientEncryption', function() {
       };
     }
 
-    describe('errors', function() {
+    describe('errors', function () {
       [42, 'hello', { keyAltNames: 'foobar' }, /foobar/].forEach(val => {
-        it(`should fail if typeof keyAltNames = ${typeof val}`, function() {
+        it(`should fail if typeof keyAltNames = ${typeof val}`, function () {
           const options = makeOptions(val);
           expect(() => this.encryption.createDataKey('aws', options, () => undefined)).to.throw(
             TypeError
@@ -258,7 +259,7 @@ describe('ClientEncryption', function() {
       });
 
       [undefined, null, 42, { keyAltNames: 'foobar' }, ['foobar'], /foobar/].forEach(val => {
-        it(`should fail if typeof keyAltNames[x] = ${typeof val}`, function() {
+        it(`should fail if typeof keyAltNames[x] = ${typeof val}`, function () {
           const options = makeOptions([val]);
           expect(() => this.encryption.createDataKey('aws', options, () => undefined)).to.throw(
             TypeError
@@ -267,7 +268,7 @@ describe('ClientEncryption', function() {
       });
     });
 
-    it('should create a key with keyAltNames', function() {
+    it('should create a key with keyAltNames', function () {
       let dataKey;
       const options = makeOptions(['foobar']);
       return this.encryption
@@ -276,16 +277,12 @@ describe('ClientEncryption', function() {
         .then(() => this.collection.findOne({ keyAltNames: 'foobar' }))
         .then(document => {
           expect(document).to.be.an('object');
-          expect(document)
-            .to.have.property('keyAltNames')
-            .that.includes.members(['foobar']);
-          expect(document)
-            .to.have.property('_id')
-            .that.deep.equals(dataKey);
+          expect(document).to.have.property('keyAltNames').that.includes.members(['foobar']);
+          expect(document).to.have.property('_id').that.deep.equals(dataKey);
         });
     });
 
-    it('should create a key with multiple keyAltNames', function() {
+    it('should create a key with multiple keyAltNames', function () {
       let dataKey;
       return this.encryption
         .createDataKey('aws', makeOptions(['foobar', 'fizzbuzz']))
@@ -305,19 +302,15 @@ describe('ClientEncryption', function() {
           expect(doc1)
             .to.have.property('keyAltNames')
             .that.includes.members(['foobar', 'fizzbuzz']);
-          expect(doc1)
-            .to.have.property('_id')
-            .that.deep.equals(dataKey);
+          expect(doc1).to.have.property('_id').that.deep.equals(dataKey);
           expect(doc2)
             .to.have.property('keyAltNames')
             .that.includes.members(['foobar', 'fizzbuzz']);
-          expect(doc2)
-            .to.have.property('_id')
-            .that.deep.equals(dataKey);
+          expect(doc2).to.have.property('_id').that.deep.equals(dataKey);
         });
     });
 
-    it('should be able to reference a key with `keyAltName` during encryption', function() {
+    it('should be able to reference a key with `keyAltName` during encryption', function () {
       let keyId;
       const keyAltName = 'mySpecialKey';
       const algorithm = 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic';

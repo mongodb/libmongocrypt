@@ -42,10 +42,7 @@ function randomHook(buffer, count) {
 function sha256Hook(input, output) {
   let result;
   try {
-    result = crypto
-      .createHash('sha256')
-      .update(input)
-      .digest();
+    result = crypto.createHash('sha256').update(input).digest();
   } catch (e) {
     return e;
   }
@@ -58,10 +55,7 @@ function makeHmacHook(algorithm) {
   return (key, input, output) => {
     let result;
     try {
-      result = crypto
-        .createHmac(algorithm, key)
-        .update(input)
-        .digest();
+      result = crypto.createHmac(algorithm, key).update(input).digest();
     } catch (e) {
       return e;
     }
@@ -79,10 +73,7 @@ function signRsaSha256Hook(key, input, output) {
       `-----BEGIN PRIVATE KEY-----\n${key.toString('base64')}\n-----END PRIVATE KEY-----\n`
     );
 
-    result = signer
-      .update(input)
-      .end()
-      .sign(privateKey);
+    result = signer.update(input).end().sign(privateKey);
   } catch (e) {
     return e;
   }

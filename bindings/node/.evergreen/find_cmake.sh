@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -x
+#!/usr/bin/env bash
 
 # Copied from the mongo-c-driver
 find_cmake ()

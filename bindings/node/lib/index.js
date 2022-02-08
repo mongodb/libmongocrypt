@@ -9,13 +9,13 @@ function loadDefaultModule() {
   return defaultModule;
 }
 
-const MongoCryptError = require('./lib/common').MongoCryptError;
+const MongoCryptError = require('./common').MongoCryptError;
 function extension(mongodb) {
   const modules = { mongodb };
 
-  modules.stateMachine = require('./lib/stateMachine')(modules);
-  modules.autoEncrypter = require('./lib/autoEncrypter')(modules);
-  modules.clientEncryption = require('./lib/clientEncryption')(modules);
+  modules.stateMachine = require('./stateMachine')(modules);
+  modules.autoEncrypter = require('./autoEncrypter')(modules);
+  modules.clientEncryption = require('./clientEncryption')(modules);
 
   return {
     AutoEncrypter: modules.autoEncrypter.AutoEncrypter,

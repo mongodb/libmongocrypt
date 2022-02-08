@@ -205,6 +205,7 @@ The public interface for explicit client side encryption
 | client | <code>MongoClient</code> | The client used for encryption |
 | options | <code>object</code> | Additional settings |
 | options.keyVaultNamespace | <code>string</code> | The namespace of the key vault, used to store encryption keys |
+| options.tlsOptions | <code>object</code> | An object that maps KMS provider names to TLS options. |
 | [options.keyVaultClient] | <code>MongoClient</code> | A `MongoClient` used to fetch keys from a key vault. Defaults to `client` |
 | [options.kmsProviders] | [<code>KMSProviders</code>](#KMSProviders) | options for specific KMS providers to use |
 
