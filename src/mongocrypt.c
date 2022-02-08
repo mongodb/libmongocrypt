@@ -15,6 +15,7 @@
  */
 
 #include "mlib/thread.h"
+#include "mlib/path.h"
 
 #include <kms_message/kms_message.h>
 #include <bson/bson.h>
@@ -126,6 +127,7 @@ mongocrypt_new (void)
    crypt->ctx_counter = 1;
    crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new ();
    crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new ();
+   crypt->csfle_lib = MCR_DLL_NULL;
 
    static mlib_once_flag init_flag = MLIB_ONCE_INITIALIZER;
 
@@ -357,6 +359,80 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
    return true;
 }
 
+typedef struct {
+   bool okay;
+   _mcr_dll lib;
+   _mcr_csfle_v1_vtable vtable;
+} _loaded_csfle;
+
+static _loaded_csfle
+_try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
+{
+   // Try to open the dynamic lib
+   _mcr_dll lib = _mcr_dll_open (filepath);
+   // Check for errors, which are represented by strings
+   if (lib.error_string.data) {
+      // Error opening candidate
+      _mongocrypt_log (
+         log,
+         MONGOCRYPT_LOG_LEVEL_WARNING,
+         "Error while opening candidate for CSFLE dynamic library [%s]: %s",
+         filepath,
+         lib.error_string.data);
+      // Free resources, which will include the error string
+      _mcr_dll_close (lib);
+      // Bad:
+      return (_loaded_csfle){.okay = false};
+   }
+
+   // Successfully opened DLL
+   _mongocrypt_log (log,
+                    MONGOCRYPT_LOG_LEVEL_TRACE,
+                    "Loading CSFLE dynamic library [%s]",
+                    filepath);
+
+   // Construct the library vtable
+   bool vtable_okay = true;
+   _mcr_csfle_v1_vtable vtable;
+#define X_FUNC(Name, RetType, ...)                                             \
+   {                                                                           \
+      /* Symbol names are qualified by the lib name and version: */            \
+      const char *symname = "mongo_csfle_v1_" #Name;                           \
+      vtable.Name = _mcr_dll_sym (lib, symname);                               \
+      if (vtable.Name == NULL) {                                               \
+         /* The requested symbol is not present */                             \
+         _mongocrypt_log (                                                     \
+            log,                                                               \
+            MONGOCRYPT_LOG_LEVEL_ERROR,                                        \
+            "Missing required symbol '%s' from CSFLE dynamic library [%s]",    \
+            symname,                                                           \
+            filepath);                                                         \
+         /* Mark the vtable as broken, but keep trying to load more symbols to \
+          * produce error messages for all missing symbols */                  \
+         vtable_okay = false;                                                  \
+      }                                                                        \
+   }
+   MONGOC_CSFLE_FUNCTIONS_X
+#undef X_FUNC
+
+   if (!vtable_okay) {
+      _mcr_dll_close (lib);
+      _mongocrypt_log (
+         log,
+         MONGOCRYPT_LOG_LEVEL_ERROR,
+         "One or more required symbols are missing from CSFLE dynamic library "
+         "[%s], so this dynamic library will not be used.",
+         filepath);
+      return (_loaded_csfle){.okay = false};
+   }
+
+   // Success!
+   _mongocrypt_log (log,
+                    MONGOCRYPT_LOG_LEVEL_INFO,
+                    "Opened CSFLE dynamic library [%s]",
+                    filepath);
+   return (_loaded_csfle){.okay = true, .lib = lib, .vtable = vtable};
+}
 
 bool
 mongocrypt_init (mongocrypt_t *crypt)
@@ -396,8 +472,29 @@ mongocrypt_init (mongocrypt_t *crypt)
       /* set default hooks. */
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
       BSON_ASSERT (crypt->crypto);
-
 #endif
+   }
+
+   _mcr_dll_close (crypt->csfle_lib);
+   for (int i = 0; i < crypt->opts.n_cselib_search_paths; ++i) {
+      mstr_view cand_dir = crypt->opts.cselib_search_paths[i].view;
+      mstr csfle_lib_filepath =
+         mpath_join (cand_dir, mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX));
+      const mpath_current_exe_result self_exe_r = mpath_current_exe_path ();
+      if (!self_exe_r.error) {
+         const mstr_view self_dir = mpath_parent (self_exe_r.path.view);
+         mstr_inplace_replace (
+            &csfle_lib_filepath, mstrv_lit ("$ORIGIN"), self_dir);
+      }
+      mstr_free (self_exe_r.path);
+      _loaded_csfle candidate =
+         _try_load_csfle (csfle_lib_filepath.data, &crypt->log);
+      mstr_free (csfle_lib_filepath);
+      if (candidate.okay) {
+         crypt->csfle_vtable = candidate.vtable;
+         crypt->csfle_lib = candidate.lib;
+         break;
+      }
    }
    return true;
 }
@@ -440,6 +537,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    bson_free (crypt->crypto);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_azure);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_gcp);
+   _mcr_dll_close (crypt->csfle_lib);
 
    bson_free (crypt);
 }
@@ -793,8 +891,6 @@ mongocrypt_setopt_append_csefle_search_path (mongocrypt_t *crypt,
       bson_realloc (crypt->opts.cselib_search_paths, sizeof (mstr) * new_len);
    // Store the path
    new_array[new_len - 1] = pathdup;
-   // Release the prior array
-   bson_free (crypt->opts.cselib_search_paths);
    // Write back opts
    crypt->opts.cselib_search_paths = new_array;
    crypt->opts.n_cselib_search_paths = new_len;

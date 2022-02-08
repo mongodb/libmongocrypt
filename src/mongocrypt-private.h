@@ -21,6 +21,7 @@
 #include "mongocrypt-config.h"
 #include "bson/bson.h"
 
+#include "mongocrypt-dll-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-cache-private.h"
@@ -29,6 +30,8 @@
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-cache-oauth-private.h"
+
+#include "mongo_csfle-v1.h"
 
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
@@ -69,6 +72,51 @@ _mongocrypt_set_error (mongocrypt_status_t *status,
                        const char *format,
                        ...);
 
+typedef struct _mcr_csfle_v1_vtable {
+#define MONGOC_CSFLE_FUNCTIONS_X                                             \
+   /* status methods */                                                      \
+   X_FUNC (status_create, mongo_csfle_v1_status *, void)                     \
+   X_FUNC (status_destroy, void, mongo_csfle_v1_status *status)              \
+   X_FUNC (status_get_error, int, const mongo_csfle_v1_status *status)       \
+   X_FUNC (status_get_explanation,                                           \
+           const char *,                                                     \
+           const mongo_csfle_v1_status *status)                              \
+   X_FUNC (status_get_code, int, const mongo_csfle_v1_status *status)        \
+   /* lib methods */                                                         \
+   X_FUNC (lib_create, mongo_csfle_v1_lib *, mongo_csfle_v1_status *status)  \
+   X_FUNC (lib_destroy,                                                      \
+           int,                                                              \
+           mongo_csfle_v1_lib *lib,                                          \
+           mongo_csfle_v1_status *status)                                    \
+   /* query_analyzer methods */                                              \
+   X_FUNC (query_analyzer_create,                                            \
+           mongo_csfle_v1_query_analyzer *,                                  \
+           mongo_csfle_v1_lib *lib,                                          \
+           mongo_csfle_v1_status *status)                                    \
+   X_FUNC (                                                                  \
+      query_analyzer_destroy, void, mongo_csfle_v1_query_analyzer *analyzer) \
+   X_FUNC (analyze_query,                                                    \
+           uint8_t *,                                                        \
+           mongo_csfle_v1_query_analyzer *analyer,                           \
+           const uint8_t *documentBSON,                                      \
+           const char *ns_str,                                               \
+           uint32_t ns_len,                                                  \
+           uint32_t *bson_len,                                               \
+           mongo_csfle_v1_status *status)                                    \
+   /* Free bson data created by csfle */                                     \
+   X_FUNC (bson_free, void, uint8_t *bson)
+
+   /// At time of writing, these two symbols seem to be missing from the CSFLE
+   /// build, despite documentation in the csfle header:
+   // X_FUNC (get_version, uint64_t, void)
+   // X_FUNC (get_version_str, const char *, void)
+
+#define X_FUNC(Name, RetType, ...) RetType (*Name) (__VA_ARGS__);
+   MONGOC_CSFLE_FUNCTIONS_X
+#undef X_FUNC
+
+} _mcr_csfle_v1_vtable;
+
 
 struct _mongocrypt_t {
    bool initialized;
@@ -84,6 +132,9 @@ struct _mongocrypt_t {
    uint32_t ctx_counter;
    _mongocrypt_cache_oauth_t *cache_oauth_azure;
    _mongocrypt_cache_oauth_t *cache_oauth_gcp;
+   /// A CSEFLE DLL, initialized after mongocrypt_init
+   _mcr_dll csfle_lib;
+   _mcr_csfle_v1_vtable csfle_vtable;
 };
 
 typedef enum {

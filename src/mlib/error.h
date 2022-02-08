@@ -3,7 +3,6 @@
 
 #include "./user-check.h"
 
-#include "./macros.h"
 #include "./str.h"
 
 #ifdef _WIN32

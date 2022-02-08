@@ -15,13 +15,13 @@ _mcr_dll_open (const char *filepath)
       // Failed to open. Return NULL and copy the error message
       return (_mcr_dll){
          ._native_handle = NULL,
-         ._error_string = strdup (dlerror ()),
+         .error_string = mstr_copy_cstr (dlerror ()),
       };
    } else {
       // Okay
       return (_mcr_dll){
          ._native_handle = handle,
-         ._error_string = NULL,
+         .error_string = MSTR_NULL,
       };
    }
 }

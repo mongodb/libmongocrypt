@@ -5,8 +5,16 @@
 
 #include <stdlib.h>
 
+#if _WIN32
+#define MCR_DLL_SUFFIX ".dll"
+#elif __APPLE__
+#define MCR_DLL_SUFFIX ".dylib"
+#else
+#define MCR_DLL_SUFFIX ".so"
+#endif
+
 /* No header required for declarations. */
-#define MCR_DLL_NULL ((_mcr_dll){._native_handle = NULL, ._error_string = NULL})
+#define MCR_DLL_NULL ((_mcr_dll){._native_handle = NULL, .error_string = NULL})
 
 /**
  * @brief A dynamically-loaded library i.e. returned by LoadLibrary() or
@@ -15,7 +23,7 @@
 typedef struct _mcr_dll {
    // (All supported platforms using a void* as the library handle type)
    void *_native_handle;
-   mstr _error_string;
+   mstr error_string;
 } _mcr_dll;
 
 /**
@@ -39,7 +47,7 @@ _mcr_dll_close (_mcr_dll dll)
 {
    extern void _mcr_dll_close_handle (_mcr_dll);
    _mcr_dll_close_handle (dll);
-   mstr_free (dll._error_string);
+   mstr_free (dll.error_string);
 }
 
 /**
@@ -55,7 +63,16 @@ _mcr_dll_sym (_mcr_dll dll, const char *symbol);
 static inline const char *
 _mcr_dll_error (_mcr_dll dll)
 {
-   return dll._error_string.data;
+   return dll.error_string.data;
+}
+
+/**
+ * @brief Determine whether the given DLL is a handle to an open library
+ */
+static inline bool
+_mcr_dll_is_open (_mcr_dll dll)
+{
+   return dll._native_handle != NULL;
 }
 
 #endif // MONGOCRYPT_DLL_PRIVATE_H
