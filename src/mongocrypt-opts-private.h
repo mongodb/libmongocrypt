@@ -19,6 +19,8 @@
 
 #include <bson/bson.h>
 
+#include "mlib/str.h"
+
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-log-private.h"
@@ -67,7 +69,7 @@ typedef struct {
    void *sign_ctx;
 
    int n_cselib_search_paths;
-   char **cselib_search_paths;
+   mstr *cselib_search_paths;
 } _mongocrypt_opts_t;
 
 

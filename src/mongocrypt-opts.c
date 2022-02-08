@@ -61,7 +61,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
    _mongocrypt_endpoint_destroy (opts->kms_provider_kmip.endpoint);
    // Free any lib search paths added by the caller
    for (int i = 0; i < opts->n_cselib_search_paths; ++i) {
-      bson_free (opts->cselib_search_paths[i]);
+      mstr_free (opts->cselib_search_paths[i]);
    }
    bson_free (opts->cselib_search_paths);
 }

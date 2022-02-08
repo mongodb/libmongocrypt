@@ -786,11 +786,11 @@ mongocrypt_setopt_append_csefle_search_path (mongocrypt_t *crypt,
                                              const char *path)
 {
    // Dup the path string for us to manage
-   char *const pathdup = strdup (path);
+   mstr pathdup = mstr_copy_cstr (path);
    // Increase array len
    const int new_len = crypt->opts.n_cselib_search_paths + 1;
-   char **const new_array = bson_realloc (crypt->opts.cselib_search_paths,
-                                          sizeof (const char *) * new_len);
+   mstr *const new_array =
+      bson_realloc (crypt->opts.cselib_search_paths, sizeof (mstr) * new_len);
    // Store the path
    new_array[new_len - 1] = pathdup;
    // Release the prior array
