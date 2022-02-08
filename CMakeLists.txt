@@ -325,7 +325,11 @@ target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET} mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE ${BSON_DEFINITIONS})
 
-add_test (mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_test (
+   NAME mongocrypt
+   COMMAND test-mongocrypt
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+   )
 
 foreach (test IN ITEMS path str)
    add_executable (mlib.${test}.test src/mlib/${test}.test.c)
