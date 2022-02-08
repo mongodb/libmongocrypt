@@ -118,7 +118,7 @@ typedef struct mstr_mut {
 /**
  * @brief A null @ref mstr
  */
-#define MSTR_NULL ((mstr){.data = NULL, .len = 0})
+#define MSTR_NULL ((mstr){{{.data = NULL, .len = 0}}})
 /**
  * @brief A null @ref mstr_view
  */
@@ -144,7 +144,7 @@ typedef struct mstr_mut {
 static inline mstr_mut
 mstr_new (size_t len)
 {
-   return (mstr_mut){.data = calloc (1, len + 1), .len = len};
+   return (mstr_mut){{{.data = calloc (1, len + 1), .len = len}}};
 }
 
 /**

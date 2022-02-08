@@ -13,7 +13,12 @@
 int
 main ()
 {
-   mstr str = mstr_copy_cstr ("foo");
+   // Test the null-initializers:
+   mstr str = MSTR_NULL;
+   mstr_view null_view = MSTRV_NULL;
+   (void) null_view;
+
+   str = mstr_copy_cstr ("foo");
    CHECK (str.len == 3);
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("foo"));
    CHECK (strncmp (str.data, "foo", 3) == 0);
