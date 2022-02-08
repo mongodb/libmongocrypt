@@ -6,6 +6,7 @@ set -o errexit
 set +o xtrace
 
 # FLE platform matrix (as of Oct 7th 2021)
+# macos   arm64  (compiled on 11.00)
 # macos   x86_64 (compiled on 10.14)
 # windows x86_64 (compiled on vs2017)
 # linux   x86_64 (releases on RHEL7)
