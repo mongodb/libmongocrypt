@@ -1,6 +1,7 @@
 #include "mongocrypt.h"
 
 #include "mongocrypt-dll-private.h"
+#include "mongocrypt-util-private.h"
 #include <mlib/path.h>
 
 #include "test-mongocrypt.h"
@@ -9,7 +10,7 @@ static void
 _test_load_simple_library (_mongocrypt_tester_t *t)
 {
    (void) t;
-   mpath_current_exe_result self_path = mpath_current_exe_path ();
+   current_module_result self_path = current_module_path ();
    ASSERT_CMPINT (self_path.error, ==, 0);
 
    mstr dll_path = mpath_join (mpath_parent (self_path.path.view),

@@ -15,6 +15,7 @@ _test_csfle_load (_mongocrypt_tester_t *tester)
       crypt);
    mongocrypt_setopt_append_csfle_search_path (crypt, "no-such-directory");
    mongocrypt_setopt_append_csfle_search_path (crypt, "$ORIGIN");
+   mongocrypt_setopt_append_csfle_search_path (crypt, "another-no-such-dir");
    ASSERT_OK (mongocrypt_setopt_schema_map (crypt, schema_map), crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    mongocrypt_destroy (crypt);
@@ -23,7 +24,7 @@ _test_csfle_load (_mongocrypt_tester_t *tester)
 static void
 _test_cur_exe_path ()
 {
-   current_exe_result self = current_module_path ();
+   current_module_result self = current_module_path ();
    BSON_ASSERT (self.error == 0);
    BSON_ASSERT (self.path.len != 0);
    mstr_free (self.path);

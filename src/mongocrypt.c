@@ -16,6 +16,7 @@
 
 #include "mlib/thread.h"
 #include "mlib/path.h"
+#include "mlib/error.h"
 
 #include <kms_message/kms_message.h>
 #include <bson/bson.h>
@@ -29,6 +30,7 @@
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-status-private.h"
+#include "mongocrypt-util-private.h"
 
 /* Assert size for interop with wrapper purposes */
 BSON_STATIC_ASSERT (sizeof (mongocrypt_log_level_t) == 4);
@@ -360,11 +362,18 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
 }
 
 typedef struct {
+   /// Whether the load is successful
    bool okay;
+   /// The DLL handle to the opened library.
    _mcr_dll lib;
+   /// A vtable for the functions in the DLL
    _mcr_csfle_v1_vtable vtable;
 } _loaded_csfle;
 
+/**
+ * @brief Attempt to open the CSFLE dynamic library and initialize a vtable for
+ * it.
+ */
 static _loaded_csfle
 _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
 {
@@ -434,6 +443,48 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
    return (_loaded_csfle){.okay = true, .lib = lib, .vtable = vtable};
 }
 
+/**
+ * @brief If the leading path element in `filepath` is $ORIGIN, replace that
+ * with the directory containing the current executing module.
+ *
+ * @return true If no error occurred and the path is valid
+ * @return false If there was an error and `filepath` cannot be processed
+ */
+bool
+_try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
+{
+   const mstr_view dollar_origin = mstrv_lit ("$ORIGIN");
+   if (!mstr_starts_with (filepath->view, dollar_origin)) {
+      // Nothing to replace
+      return true;
+   }
+   // Check that the next char is a path separator or end-of-string:
+   char peek = filepath->data[dollar_origin.len];
+   if (peek != 0 && !mpath_is_sep (peek)) {
+      // Not a single path element
+      return true;
+   }
+   // Replace $ORIGIN with the directory of the current module
+   const current_module_result self_exe_r = current_module_path ();
+   if (self_exe_r.error) {
+      // Failed to get the current module to load replace $ORIGIN
+      mstr_free (self_exe_r.path);
+      mstr error = merror_system_error_string (self_exe_r.error);
+      _mongocrypt_log (log,
+                       MONGOCRYPT_LOG_LEVEL_WARNING,
+                       "Error while loading the executable module path for "
+                       "substitution of $ORIGIN in CSFLE search path [%s]: %s",
+                       filepath->data,
+                       error.data);
+      mstr_free (error);
+      return false;
+   }
+   const mstr_view self_dir = mpath_parent (self_exe_r.path.view);
+   mstr_inplace_splice (filepath, 0, dollar_origin.len, self_dir);
+   mstr_free (self_exe_r.path);
+   return true;
+}
+
 bool
 mongocrypt_init (mongocrypt_t *crypt)
 {
@@ -476,26 +527,29 @@ mongocrypt_init (mongocrypt_t *crypt)
    }
 
    _mcr_dll_close (crypt->csfle_lib);
+
+   mstr csfle_cand_filepath = MSTR_NULL;
    for (int i = 0; i < crypt->opts.n_cselib_search_paths; ++i) {
       mstr_view cand_dir = crypt->opts.cselib_search_paths[i].view;
-      mstr csfle_lib_filepath =
-         mpath_join (cand_dir, mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX));
-      const mpath_current_exe_result self_exe_r = mpath_current_exe_path ();
-      if (!self_exe_r.error) {
-         const mstr_view self_dir = mpath_parent (self_exe_r.path.view);
-         mstr_inplace_replace (
-            &csfle_lib_filepath, mstrv_lit ("$ORIGIN"), self_dir);
+      // Compose the candidate filename:
+      mstr_assign (
+         &csfle_cand_filepath,
+         mpath_join (cand_dir, mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX)));
+      if (!_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
+         // Error while substituting $ORIGIN
+         continue;
       }
-      mstr_free (self_exe_r.path);
+      // Try to load the file:
       _loaded_csfle candidate =
-         _try_load_csfle (csfle_lib_filepath.data, &crypt->log);
-      mstr_free (csfle_lib_filepath);
+         _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
       if (candidate.okay) {
+         // We got one:
          crypt->csfle_vtable = candidate.vtable;
          crypt->csfle_lib = candidate.lib;
          break;
       }
    }
+   mstr_free (csfle_cand_filepath);
    return true;
 }
 
