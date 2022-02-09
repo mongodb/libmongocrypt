@@ -294,7 +294,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-crypto-hooks.c
-   test/test-mongocrypt-csefle-lib.c
+   test/test-mongocrypt-csfle-lib.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c

@@ -880,8 +880,8 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
 
 
 void
-mongocrypt_setopt_append_csefle_search_path (mongocrypt_t *crypt,
-                                             const char *path)
+mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
+                                            const char *path)
 {
    // Dup the path string for us to manage
    mstr pathdup = mstr_copy_cstr (path);

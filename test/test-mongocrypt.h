@@ -174,7 +174,7 @@ void
 _mongocrypt_tester_install_status (_mongocrypt_tester_t *tester);
 
 void
-_mongocrypt_tester_install_csefle_lib (_mongocrypt_tester_t *tester);
+_mongocrypt_tester_install_csfle_lib (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_dll (_mongocrypt_tester_t *tester);

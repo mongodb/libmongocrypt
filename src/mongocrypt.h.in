@@ -419,8 +419,8 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
  */
 MONGOCRYPT_EXPORT
 void
-mongocrypt_setopt_append_csefle_search_path (mongocrypt_t *crypt,
-                                             const char *path);
+mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
+                                            const char *path);
 
 
 /**
