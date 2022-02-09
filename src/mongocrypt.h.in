@@ -535,7 +535,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
 /**
  * Set the keyMaterial to use for encrypting data.
  *
- * Pass the binary encoding a BSON document like the following:
+ * Pass the binary encoding of a BSON document like the following:
  *
  *   { "keyMaterial" : (BSON BINARY value) }
  *
