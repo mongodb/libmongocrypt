@@ -159,14 +159,10 @@ mstr_new (size_t len)
  * @param s A pointer to the beginning of a character array.
  * @param len The length of the character array, in code units
  * @return mstr_view A non-owning string.
- *
- * @note The pointed-to character array MUST have a null-terminator at s[len]
  */
 static inline mstr_view
 mstrv_view_data (const char *s, size_t len)
 {
-   // Assert that the character array is null-terminated.
-   assert (s[len] == 0);
    return (mstr_view){.data = s, .len = len};
 }
 
@@ -363,6 +359,20 @@ mstr_rfind (mstr_view given, mstr_view needle)
       (void) 0;
    }
    return -1;
+}
+
+/**
+ * @brief Determine whether the given string contains the given substring
+ *
+ * @param given A string to search within
+ * @param needle A substring to search for
+ * @return true If `given` contains at least one occurrence of `needle`
+ * @return false Otherwise
+ */
+static inline bool
+mstr_contains (mstr_view given, mstr_view needle)
+{
+   return mstr_find (given, needle) >= 0;
 }
 
 /**
@@ -613,6 +623,23 @@ _mstr_assert_eq_ (mstr_view left, mstr_view right, const char *file, int line)
 #define MSTR_ASSERT_EQ(Left, Right) \
    (_mstr_assert_eq_ (Left, Right, __FILE__, __LINE__))
 
+static inline bool
+mstr_starts_with (mstr_view given, mstr_view prefix)
+{
+   given = mstrv_subview (given, 0, prefix.len);
+   return mstr_eq (given, prefix);
+}
+
+static inline bool
+mstr_ends_with (mstr_view given, mstr_view suffix)
+{
+   if (suffix.len < given.len) {
+      return false;
+   }
+   given = mstrv_subview (given, given.len - suffix.len, ~0);
+   return mstr_eq (given, suffix);
+}
+
 /// Compound in-place version of @ref mstr_splice
 static inline void
 mstr_inplace_splice (mstr *s, size_t at, size_t del_count, mstr_view insert)
@@ -763,5 +790,84 @@ mstr_win32_narrow (const wchar_t *wstring)
 }
 #endif
 
+/// Iteration state for string splitting
+struct _mstr_split_iter_ {
+   /// What hasn't been parsed yet
+   mstr_view remaining;
+   /// The current part
+   mstr_view part;
+   /// The string that we split on
+   mstr_view splitter;
+   /// A once-var for the inner loop. Set to 1 by iter_next, then decremented
+   int once;
+   /// The loop state. Starts at zero. Set to one when we part the final split.
+   /// Set to two to break out of the loop.
+   int state;
+};
+
+/// Hidden function to advance a string-split iterator
+static inline void
+_mstr_split_iter_next_ (struct _mstr_split_iter_ *iter)
+{
+   if (iter->once == 1) {
+      // We only get here if the loop body hit a 'break', skipping the decrement
+      // of the 'once'. Break out of the whole loop, as the user expects.
+      iter->state = 2;
+      return;
+   }
+   if (iter->state == 1) {
+      // We just completed the final loop pass.
+      iter->state = 2;
+      return;
+   }
+   // Find the next occurence of the token
+   const int pos = mstr_find (iter->remaining, iter->splitter);
+   if (pos < 0) {
+      // There are no more occurences. yield the remaining string
+      iter->part = iter->remaining;
+      iter->remaining = mstrv_subview (iter->remaining, iter->remaining.len, 0);
+      // Set state to 1 to break on the next pass
+      iter->state = 1;
+   } else {
+      // Advance our parts:
+      iter->part = mstrv_subview (iter->remaining, 0, pos);
+      iter->remaining =
+         mstrv_subview (iter->remaining, pos + iter->splitter.len, ~0);
+   }
+   // Prime the inner "loop" to execute once
+   iter->once = 1;
+}
+
+/// init a new split iterator
+static inline struct _mstr_split_iter_
+_mstr_split_iter_begin_ (mstr_view str, mstr_view split)
+{
+   struct _mstr_split_iter_ iter = {.remaining = str, .splitter = split};
+   _mstr_split_iter_next_ (&iter);
+   return iter;
+}
+
+/// Check whether we are done iterating
+static inline bool
+_mstr_split_iter_done_ (struct _mstr_split_iter_ *iter)
+{
+   return iter->state == 2;
+}
+
+// clang-format off
+#define MSTR_ITER_SPLIT(LineVar, String, SplitToken)              \
+   /* Open the main outer loop */                                 \
+   for (/* Declare an init the iterator */                        \
+        struct _mstr_split_iter_ _iter_var_ =                     \
+            _mstr_split_iter_begin_ ((String), (SplitToken));     \
+         /* Iterate until it is marked as done */                 \
+        !_mstr_split_iter_done_ (&_iter_var_);                    \
+        _mstr_split_iter_next_ (&_iter_var_))                     \
+      /* This inner loop will only execute once, but gives us */  \
+      /* a point to declare the loop variable: */                 \
+      for (mstr_view LineVar = _iter_var_.part;                   \
+           _iter_var_.once;                                       \
+           --_iter_var_.once)
+// clang-format on
 
 #endif // MONGOCRYPT_STR_PRIVATE_H

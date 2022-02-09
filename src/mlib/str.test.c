@@ -73,4 +73,14 @@ main ()
 
    CHECK (mstrv_view_cstr ("foo\000bar").len == 3);
    CHECK (mstrv_lit ("foo\000bar").len == 7);
+
+   str = mstr_new (0).mstr;
+   MSTR_ITER_SPLIT (part, mstrv_lit ("foo bar baz"), mstrv_lit (" "))
+   {
+      mstr_inplace_append (&str, part);
+      if (mstr_eq (part, mstrv_lit ("bar"))) {
+         break;
+      }
+   }
+   MSTR_ASSERT_EQ (str.view, mstrv_lit ("foobar"));
 }
