@@ -17,6 +17,8 @@
 #ifndef MONGOCRYPT_UTIL_PRIVATE_H
 #define MONGOCRYPT_UTIL_PRIVATE_H
 
+#include "mlib/str.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -25,5 +27,48 @@
  * Returns false if @in exceeds the maximum value of a uint32_t. */
 bool
 size_to_uint32 (size_t in, uint32_t *out);
+
+
+/**
+ * @brief The result type of mpath_current_exe_path()
+ *
+ * The @ref current_module_result::path member must be freed with mstr_free()
+ */
+typedef struct current_module_result {
+   /// The resulting executable path
+   mstr path;
+   /// An error, if the path could not be obtained
+   int error;
+} current_module_result;
+
+/**
+ * @brief Obtain the path to the calling executable module
+ *
+ * If this function is contained in a dynamic library, this will return the path
+ * to that library file, otherwise it will return the path to the running
+ * executable.
+ *
+ * @return current_module_result A result object of the operation. Check the
+ * `.error` member for non-zero. The `.path` member must be freed with
+ * mtsr_free()
+ */
+current_module_result
+current_module_path ();
+
+/**
+ * @brief Result of @ref read_file
+ */
+typedef struct read_file_result {
+   /// The content loaded from the file. Must be freed with mstr_free()
+   mstr content;
+   /// An error code, if the file could not be read.
+   int error;
+} read_file_result;
+
+/**
+ * @brief Read the contents of the named file into a string.
+ */
+read_file_result
+read_file (mstr_view filepath, size_t max_read);
 
 #endif /* MONGOCRYPT_UTIL_PRIVATE_H */

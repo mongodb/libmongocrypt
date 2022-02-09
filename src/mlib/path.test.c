@@ -23,9 +23,4 @@ main ()
    MSTR_ASSERT_EQ (s.view, mstrv_lit ("/foo/bar/quux.pdf"));
 #endif
    mstr_free (s);
-
-   mpath_current_exe_result self = mpath_current_exe_path ();
-   CHECK (self.error == 0);
-   CHECK (self.path.len != 0);
-   mstr_free (self.path);
 }
