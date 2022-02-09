@@ -631,7 +631,7 @@ mstr_inplace_append (mstr *s, mstr_view suffix)
 static inline void
 mstr_inplace_prepend (mstr *s, mstr_view prefix)
 {
-   mstr_assign (s, mstr_append (s->view, prefix));
+   mstr_assign (s, mstr_prepend (s->view, prefix));
 }
 
 /// Compound in-place version of @ref mstr_insert
