@@ -410,12 +410,14 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
 
 /**
  * @brief Append an additional search directory to the search path for loading
- * the CSEFLE dynamic library.
+ * the CSFLE dynamic library.
  *
  * @param[in] crypt The @ref mongocrypt_t object to update
- * @param[in] utf8_bytes A null-terminated sequence of bytes for the search
- * path. On some filesystems, this may be arbitrary bytes. On other filesystems,
- * this may be required to be a valid UTF-8 code unit sequence.
+ * @param[in] path A null-terminated sequence of bytes for the search path. On
+ * some filesystems, this may be arbitrary bytes. On other filesystems, this may
+ * be required to be a valid UTF-8 code unit sequence. If the leading element of
+ * the path is the literal string `$ORIGIN`, that substring will be replaced
+ * with the directory path containing the executable libmongocrypt module.
  */
 MONGOCRYPT_EXPORT
 void
