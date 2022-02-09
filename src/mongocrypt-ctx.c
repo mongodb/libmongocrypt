@@ -206,6 +206,8 @@ mongocrypt_ctx_setopt_key_material (mongocrypt_ctx_t *ctx,
                                          "invalid keyMaterial bson object");
    }
 
+   /* TODO: use _mongocrypt_parse_required_binary once MONGOCRYPT-380 is
+    * resolved.*/
    if (!bson_iter_init (&iter, &as_bson) || !bson_iter_next (&iter)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid bson");
    }
