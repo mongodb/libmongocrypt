@@ -808,6 +808,11 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       }
    }
 
+   if (opts_spec->key_material == OPT_PROHIBITED &&
+       ctx->opts.key_material.owned) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "key material prohibited");
+   }
+
    if (opts_spec->algorithm == OPT_REQUIRED &&
        ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm required");

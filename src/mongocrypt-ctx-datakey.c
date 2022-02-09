@@ -455,6 +455,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.kek = OPT_REQUIRED;
    opts_spec.key_alt_names = OPT_OPTIONAL;
+   opts_spec.key_material = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
