@@ -365,6 +365,23 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    endif ()
 endif ()
 
+
+if (DEFINED MONGOCRYPT_TEST_CSFLE_TGZ)
+   set (tgz_file "${CMAKE_CURRENT_BINARY_DIR}/csfle.tgz")
+   if (NOT EXISTS "${tgz_file}")
+      message (STATUS "Downloading mongo_csfle library from ${MONGOCRYPT_TEST_CSFLE_TGZ} ...")
+      file (DOWNLOAD "${MONGOCRYPT_TEST_CSFLE_TGZ}" "${tgz_file}")
+   endif ()
+   add_custom_target (get-csfle ALL
+      COMMAND "${CMAKE_COMMAND}" -E tar xf "${tgz_file}" lib/
+      COMMAND "${CMAKE_COMMAND}" -E copy
+         "${CMAKE_CURRENT_BINARY_DIR}/lib/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}"
+         "$<TARGET_FILE_DIR:test-mongocrypt>/"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+      COMMENT "Moving mongo_csfle library"
+      )
+endif ()
+
 if (ENABLE_STATIC)
    set (TARGETS_TO_INSTALL mongocrypt mongocrypt_static)
 else ()
