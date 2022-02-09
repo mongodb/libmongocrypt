@@ -529,27 +529,57 @@ mongocrypt_init (mongocrypt_t *crypt)
    _mcr_dll_close (crypt->csfle_lib);
 
    mstr csfle_cand_filepath = MSTR_NULL;
-   for (int i = 0; i < crypt->opts.n_cselib_search_paths; ++i) {
-      mstr_view cand_dir = crypt->opts.cselib_search_paths[i].view;
-      // Compose the candidate filename:
-      mstr_assign (
-         &csfle_cand_filepath,
-         mpath_join (cand_dir, mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX)));
-      if (!_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
-         // Error while substituting $ORIGIN
-         continue;
+   if (crypt->opts.csfle_lib_override_path.data) {
+      // If an override path was specified, skip the library searching behavior
+      csfle_cand_filepath =
+         mstr_copy (crypt->opts.csfle_lib_override_path.view);
+      if (_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
+         // Succesfully substituted $ORIGIN
+         _loaded_csfle candidate =
+            _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
+         if (candidate.okay) {
+            // Successfully loaded
+            crypt->csfle_vtable = candidate.vtable;
+            crypt->csfle_lib = candidate.lib;
+         }
       }
-      // Try to load the file:
-      _loaded_csfle candidate =
-         _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
-      if (candidate.okay) {
-         // We got one:
-         crypt->csfle_vtable = candidate.vtable;
-         crypt->csfle_lib = candidate.lib;
-         break;
+   } else {
+      // No override path was specified, so try to find it on the provided
+      // search paths.
+      for (int i = 0; i < crypt->opts.n_cselib_search_paths; ++i) {
+         mstr_view cand_dir = crypt->opts.cselib_search_paths[i].view;
+         // Compose the candidate filename:
+         mstr_assign (
+            &csfle_cand_filepath,
+            mpath_join (cand_dir, mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX)));
+         if (!_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
+            // Error while substituting $ORIGIN
+            continue;
+         }
+         // Try to load the file:
+         _loaded_csfle candidate =
+            _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
+         if (candidate.okay) {
+            // We got one:
+            crypt->csfle_vtable = candidate.vtable;
+            crypt->csfle_lib = candidate.lib;
+            // Stop searching:
+            break;
+         }
       }
    }
    mstr_free (csfle_cand_filepath);
+
+   // If a CSFLE override path was specified, but we did not succeed in loading
+   // CSFLE, that is a hard-error.
+   if (crypt->opts.csfle_lib_override_path.data &&
+       !_mcr_dll_is_open (crypt->csfle_lib)) {
+      CLIENT_ERR ("A CSFLE override path was specified [%s], but we failed to "
+                  "open a dynamic library at that location",
+                  crypt->opts.csfle_lib_override_path.data);
+      return false;
+   }
+
    return true;
 }
 
@@ -948,4 +978,12 @@ mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
    // Write back opts
    crypt->opts.cselib_search_paths = new_array;
    crypt->opts.n_cselib_search_paths = new_len;
+}
+
+
+void
+mongocrypt_setopt_set_csfle_lib_path_override (mongocrypt_t *crypt,
+                                               const char *path)
+{
+   mstr_assign (&crypt->opts.csfle_lib_override_path, mstr_copy_cstr (path));
 }

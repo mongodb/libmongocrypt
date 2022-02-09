@@ -68,8 +68,14 @@ typedef struct {
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;
    void *sign_ctx;
 
+   /// Keep an array of search paths for finding the CSFLE dynamic library
+   /// during mongocrypt_init()
    int n_cselib_search_paths;
    mstr *cselib_search_paths;
+   /// Optionally, a user may override the default search behavior by specifying
+   /// a specifiy path to the library. If this is set, this suppresses the
+   /// search behavior.
+   mstr csfle_lib_override_path;
 } _mongocrypt_opts_t;
 
 
