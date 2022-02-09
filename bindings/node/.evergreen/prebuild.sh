@@ -5,7 +5,7 @@ if [ -z ${DISTRO_ID+omitted} ]; then echo "DISTRO_ID is unset" && exit 1; fi
 set -o errexit
 set +o xtrace
 
-# FLE platform matrix (as of Oct 7th 2021)
+# FLE platform matrix (as of Feb 8th 2022)
 # macos   arm64  (compiled on 11.00)
 # macos   x86_64 (compiled on 10.14)
 # windows x86_64 (compiled on vs2017)
