@@ -286,6 +286,12 @@ set_target_properties (mongocrypt_static PROPERTIES
    OUTPUT_NAME "mongocrypt-static"
 )
 
+add_library (test-dll MODULE test/test-dll.c)
+set_target_properties (test-dll PROPERTIES
+   SUFFIX ".dll"
+   PREFIX ""
+   )
+
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
