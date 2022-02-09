@@ -347,7 +347,7 @@ mstr_rfind (mstr_view given, mstr_view needle)
    }
    const char *scan = given.data + given.len - needle.len;
    const char *const needle_end = needle.data + needle.len;
-   for (; scan != given.data; --scan) {
+   for (; scan >= given.data; --scan) {
       const char *subscan = scan;
       for (const char *nscan = needle.data; nscan != needle_end;
            ++nscan, ++subscan) {

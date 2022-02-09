@@ -73,4 +73,7 @@ main ()
 
    CHECK (mstrv_view_cstr ("foo\000bar").len == 3);
    CHECK (mstrv_lit ("foo\000bar").len == 7);
+
+   // rfind at the beginning of the string
+   CHECK (mstr_rfind (mstrv_lit ("foobar"), mstrv_lit ("foo")) == 0);
 }
