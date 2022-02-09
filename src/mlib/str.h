@@ -388,11 +388,11 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
    char *p = ret.data;
    memcpy (p, s.data, at);
    p += at;
-   memcpy (p, insert.data, insert.len);
-   p += insert.len;
    if (insert.data) {
-      memcpy (p, s.data + at + del_count, s.len - at - del_count);
+      memcpy (p, insert.data, insert.len);
+      p += insert.len;
    }
+   memcpy (p, s.data + at + del_count, s.len - at - del_count);
    return ret.mstr;
 }
 
