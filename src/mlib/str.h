@@ -295,7 +295,7 @@ mstr_assign (mstr *s, mstr from)
 }
 
 /**
- * @brief Find the index of the first occurrence of the  given "needle" as a
+ * @brief Find the index of the first occurrence of the given "needle" as a
  * substring of another string.
  *
  * @param given A string to search within
@@ -331,7 +331,7 @@ mstr_find (mstr_view given, mstr_view needle)
 }
 
 /**
- * @brief Find the index of the last occurrence of the  given "needle" as a
+ * @brief Find the index of the last occurrence of the given "needle" as a
  * substring of another string.
  *
  * @param given A string to search within
@@ -371,7 +371,7 @@ mstr_rfind (mstr_view given, mstr_view needle)
  * @param s The string to modify
  * @param at The position at which to insert and delete characters
  * @param del_count The number of characters to delete. Clamped to the string
- * lenth.
+ * length.
  * @param insert The string to insert at `at`.
  * @return mstr A new string that is the result of the splice
  */
@@ -580,7 +580,7 @@ mstr_replace (const mstr_view string,
 }
 
 /**
- * @brief Determine whether to strings are equivalent.
+ * @brief Determine whether two strings are equivalent.
  */
 static inline bool
 mstr_eq (mstr_view left, mstr_view right)

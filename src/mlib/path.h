@@ -33,7 +33,7 @@ mpath_is_sep (char c)
 }
 
 /**
- * @brief Determine whethre the given path string has a trailing path separator
+ * @brief Determine whether the given path string has a trailing path separator
  */
 static inline bool
 mpath_has_trailing_sep (mstr_view path)
