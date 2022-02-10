@@ -546,13 +546,21 @@ mongocrypt_init (mongocrypt_t *crypt)
       // search paths.
       for (int i = 0; i < crypt->opts.n_cselib_search_paths; ++i) {
          mstr_view cand_dir = crypt->opts.cselib_search_paths[i].view;
-         // Compose the candidate filename:
-         mstr_assign (
-            &csfle_cand_filepath,
-            mpath_join (cand_dir, mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX)));
-         if (!_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
-            // Error while substituting $ORIGIN
-            continue;
+         mstr_view csfle_filename = mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX);
+         if (mstr_eq (cand_dir, mstrv_lit ("$SYSTEM"))) {
+            // Caller wants us to search for the library on the system's default
+            // library paths. Pass only the library's filename to cause dll_open
+            // to search on the library paths.
+            mstr_assign (&csfle_cand_filepath, mstr_copy (csfle_filename));
+         } else {
+            // Compose the candidate filename:
+            mstr_assign (&csfle_cand_filepath,
+                         mpath_join (cand_dir, csfle_filename));
+            if (!_try_replace_dollar_origin (&csfle_cand_filepath,
+                                             &crypt->log)) {
+               // Error while substituting $ORIGIN
+               continue;
+            }
          }
          // Try to load the file:
          _loaded_csfle candidate =
