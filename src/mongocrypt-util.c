@@ -43,7 +43,7 @@ size_to_uint32 (size_t in, uint32_t *out)
 }
 
 read_file_result
-read_file (mstr_view filepath_, const size_t max_read)
+read_file (mstr_view filepath_, size_t max_read)
 {
    errno = 0;
    mstr filepath = mstr_copy (filepath_);
