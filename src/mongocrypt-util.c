@@ -16,6 +16,7 @@
 
 #include "mongocrypt-util-private.h"
 
+#include "mlib/thread.h"
 #include "mlib/charconv.h"
 
 
@@ -71,9 +72,20 @@ read_file (mstr_view filepath_, size_t max_read)
    return (read_file_result){.content = content};
 }
 
-current_module_result
-current_module_path ()
+static mstr THIS_MODULE_PATH = MSTR_NULL;
+static int THIS_MODULE_ERROR = 0;
+static mlib_once_flag INIT_THIS_MODULE_PATH = MLIB_ONCE_INITIALIZER;
+
+static void
+free_this_module_path ()
 {
+   mstr_free (THIS_MODULE_PATH);
+}
+
+static void
+do_init_this_module_path ()
+{
+   atexit (free_this_module_path);
 #ifdef _WIN32
    int len = GetModuleFileNameW (NULL, NULL, 0);
    wchar_t *path = calloc (len + 1, sizeof (wchar_t));
@@ -81,7 +93,7 @@ current_module_path ()
    mstr_narrow_result narrow = mstr_win32_narrow (path);
    // GetModuleFileNameW should never return invalid Unicode:
    assert (narrow.error == 0);
-   return (current_module_result){.path = narrow.string, .error = 0};
+   THIS_MODULE_PATH = narrow.string;
 #elif defined(__linux__)
    // We find the path to the current executable module by reading the path to
    // the executable that is loaded into memory. We find the appropriate module
@@ -92,7 +104,7 @@ current_module_path ()
    if (maps_file.error != 0) {
       // Failed to open the maps file
       mstr_free (maps_file.content);
-      return (current_module_result){.path = found_map, .error = errno};
+      THIS_MODULE_ERROR = errno;
    }
    // Find the address of the current function in the maps
    const uint64_t this_fn_addr = (uint64_t) (&current_module_path);
@@ -143,17 +155,26 @@ current_module_path ()
    mstr_free (maps_str);
    if (found_map.data) {
       // We found the mapping in the proc maps file
-      return (current_module_result){.path = found_map, .error = 0};
+      THIS_MODULE_PATH = found_map;
+   } else {
+      THIS_MODULE_ERROR = ENOENT;
    }
-   return (current_module_result){.path = MSTR_NULL, .error = ENOENT};
 #elif defined(__APPLE__)
    char nil = 0;
    uint32_t bufsize = 0;
    _NSGetExecutablePath (&nil, &bufsize);
    mstr_mut ret = mstr_new (bufsize);
    _NSGetExecutablePath (ret.data, &bufsize);
-   return (current_module_result){.path = ret.mstr, .error = 0};
+   THIS_MODULE_PATH = ret.mstr;
 #else
 #error "Don't know how to get the executable path on this platform"
 #endif
+}
+
+current_module_result
+current_module_path ()
+{
+   mlib_call_once (&INIT_THIS_MODULE_PATH, do_init_this_module_path);
+   return (current_module_result){.path = THIS_MODULE_PATH.view,
+                                  .error = THIS_MODULE_ERROR};
 }

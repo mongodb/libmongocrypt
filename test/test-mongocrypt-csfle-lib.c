@@ -80,7 +80,6 @@ _test_cur_exe_path ()
    current_module_result self = current_module_path ();
    BSON_ASSERT (self.error == 0);
    BSON_ASSERT (self.path.len != 0);
-   mstr_free (self.path);
 }
 
 void

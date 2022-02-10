@@ -36,7 +36,7 @@ size_to_uint32 (size_t in, uint32_t *out);
  */
 typedef struct current_module_result {
    /// The resulting executable path
-   mstr path;
+   mstr_view path;
    /// An error, if the path could not be obtained
    int error;
 } current_module_result;

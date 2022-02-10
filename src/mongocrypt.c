@@ -468,7 +468,6 @@ _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
    const current_module_result self_exe_r = current_module_path ();
    if (self_exe_r.error) {
       // Failed to get the current module to load replace $ORIGIN
-      mstr_free (self_exe_r.path);
       mstr error = merror_system_error_string (self_exe_r.error);
       _mongocrypt_log (log,
                        MONGOCRYPT_LOG_LEVEL_WARNING,
@@ -479,9 +478,8 @@ _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
       mstr_free (error);
       return false;
    }
-   const mstr_view self_dir = mpath_parent (self_exe_r.path.view);
+   const mstr_view self_dir = mpath_parent (self_exe_r.path);
    mstr_inplace_splice (filepath, 0, dollar_origin.len, self_dir);
-   mstr_free (self_exe_r.path);
    return true;
 }
 
