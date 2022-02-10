@@ -12,16 +12,12 @@ function (_getvar varname)
 endfunction ()
 
 # Set the MongoDB server commit from which we will pull a CSFLE binary
-_getvar (CSFLE_COMMIT "1938ca8564fb969f68058d68c55f632eec78a665")
+_getvar (CSFLE_COMMIT "267a971d6419f2adeed073c9b3f45da2e4c86b0e")
 # The version we will download:
-_getvar (CSFLE_VERSION "5.3.0-alpha2")
-# The source branch:
-_getvar (CSFLE_BRANCH "master")
-# The build number:
-_getvar (CSFLE_BUILDNUM "47")
+_getvar (CSFLE_VERSION "5.3.0-alpha4")
+# The source project:
+_getvar (CSFLE_PROJECT "mongo-release")
 
-# Generate the filename suffix
-string (SUBSTRING "g${CSFLE_COMMIT}" 0 8 _suffix)
 if (WIN32)
     set (_ext ".zip")
     set (_runtime_lib_dir "bin")
@@ -30,13 +26,17 @@ else ()
     set (_runtime_lib_dir "lib")
 endif ()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # Get a Linux binary that is reasonable ABI compatible with our platforms under test
-    set (_task "enterprise-rhel-80-64-bit-dynamic-required")
+if (EXISTS "/etc/debian_version")
+    set (_task "enterprise-debian10-64")
+elseif (EXISTS "/usr/bin/amazon-linux-extras")
+    set (_task "enterprise-linux-64-amazon-ami")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Get a Linux binary that is reasonably ABI compatible with our Linux platforms under test
+    set (_task "enterprise-rhel-70-64-bit")
 elseif (WIN32)
-    set (_task "enterprise-windows-required")
+    set (_task "enterprise-windows")
 elseif (APPLE)
-    set (_task "enterprise-macos-arm64")
+    set (_task "enterprise-macos")
 else ()
     if (NOT DEFINED CSFLE_FROM_TASK)
         message (WARNING "No CSFLE task already known for this platform.")
@@ -45,9 +45,9 @@ endif ()
 
 _getvar (CSFLE_FROM_TASK "${_task}")
 _getvar (CSFLE_FILENAME_EXT "${_ext}")
-_getvar (CSFLE_FILENAME "mongo_csfle_v1-${CSFLE_VERSION}-${CSFLE_BUILDNUM}-${_suffix}${CSFLE_FILENAME_EXT}")
+_getvar (CSFLE_FILENAME "mongo_csfle_v1-${CSFLE_VERSION}${CSFLE_FILENAME_EXT}")
 
-_getvar (CSFLE_URL "https://mciuploads.s3.amazonaws.com/mongodb-mongo-${CSFLE_BRANCH}/mongo_csfle/${CSFLE_FROM_TASK}/${CSFLE_COMMIT}/${CSFLE_FILENAME}")
+_getvar (CSFLE_URL "https://mciuploads.s3.amazonaws.com/${CSFLE_PROJECT}/mongo_csfle/${CSFLE_FROM_TASK}/${CSFLE_COMMIT}/${CSFLE_FILENAME}")
 
 string (MD5 _url_hash "${CSFLE_URL}")
 string (SUBSTRING "${_url_hash}" 0 5 _hash_part)
