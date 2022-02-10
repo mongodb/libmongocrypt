@@ -64,8 +64,13 @@ main ()
    TEST_DECOMP (relative_path, "foo", "foo");
    TEST_DECOMP (relative_path, "/", "");
 
+#ifndef _WIN32
    test_make_absolute ("foo", "/bar", "/bar/foo");
    test_make_absolute ("baz.txt", "/bar/foo/", "/bar/foo/baz.txt");
+#else
+   test_make_absolute ("foo", "C:/bar", "C:/bar\\foo");
+   test_make_absolute ("baz.txt", "D:/bar/foo/", "D:/bar/foo/baz.txt");
+#endif
 
    mstr_free (s);
 }

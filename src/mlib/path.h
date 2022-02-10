@@ -347,7 +347,7 @@ mpath_to_native (mstr_view path)
 #ifndef _WIN32
    return mstr_copy (path);
 #else
-   return mstr_win32_to_native (path);
+   return mpath_win32_to_native (path);
 #endif
 }
 
