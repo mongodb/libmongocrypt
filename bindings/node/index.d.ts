@@ -199,7 +199,7 @@ export interface ClientEncryptionOptions {
   /**
    * TLS options for kms providers to use.
    */
-  tlsOptions?: { [kms in keyof KMSProviders]?: ClientEncryptionTLSOptions };
+  tlsOptions?: { [kms in keyof KMSProviders]?: ClientEncryptionTlsOptions };
 }
 
 /**

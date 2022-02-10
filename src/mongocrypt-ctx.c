@@ -173,6 +173,80 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
 
 
 bool
+mongocrypt_ctx_setopt_key_material (mongocrypt_ctx_t *ctx,
+                                    mongocrypt_binary_t *key_material)
+{
+   bson_t as_bson;
+   bson_iter_t iter;
+   const char *key;
+   _mongocrypt_buffer_t buffer;
+
+   if (!ctx) {
+      return false;
+   }
+
+   if (ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
+   }
+
+   if (ctx->opts.key_material.owned) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "keyMaterial already set");
+   }
+
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+
+   if (!key_material || !key_material->data) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "option must be non-NULL");
+   }
+
+   if (!_mongocrypt_binary_to_bson (key_material, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "invalid keyMaterial bson object");
+   }
+
+   /* TODO: use _mongocrypt_parse_required_binary once MONGOCRYPT-380 is
+    * resolved.*/
+   if (!bson_iter_init (&iter, &as_bson) || !bson_iter_next (&iter)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid bson");
+   }
+
+   key = bson_iter_key (&iter);
+   BSON_ASSERT (key);
+   if (0 != strcmp (key, "keyMaterial")) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "keyMaterial must have field 'keyMaterial'");
+   }
+
+   if (!_mongocrypt_buffer_from_binary_iter (&buffer, &iter)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "keyMaterial must be binary data");
+   }
+
+   if (buffer.len != MONGOCRYPT_KEY_LEN) {
+      _mongocrypt_set_error (
+         ctx->status,
+         MONGOCRYPT_STATUS_ERROR_CLIENT,
+         MONGOCRYPT_GENERIC_ERROR_CODE,
+         "keyMaterial should have length %d, but has length %" PRIu32,
+         MONGOCRYPT_KEY_LEN,
+         buffer.len);
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   _mongocrypt_buffer_steal (&ctx->opts.key_material, &buffer);
+
+   if (bson_iter_next (&iter)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "unrecognized field, only keyMaterial expected");
+   }
+
+   return true;
+}
+
+
+bool
 mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                                  const char *algorithm,
                                  int len)
@@ -547,6 +621,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
    _mongocrypt_kek_cleanup (&ctx->opts.kek);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
+   _mongocrypt_buffer_cleanup (&ctx->opts.key_material);
    _mongocrypt_key_alt_name_destroy_all (ctx->opts.key_alt_names);
    _mongocrypt_buffer_cleanup (&ctx->opts.key_id);
    bson_free (ctx);
@@ -731,6 +806,11 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
          return _mongocrypt_ctx_fail_w_msg (ctx,
                                             "key id and alt name prohibited");
       }
+   }
+
+   if (opts_spec->key_material == OPT_PROHIBITED &&
+       ctx->opts.key_material.owned) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "key material prohibited");
    }
 
    if (opts_spec->algorithm == OPT_REQUIRED &&

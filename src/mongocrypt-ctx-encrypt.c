@@ -130,8 +130,10 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
       bson_t empty_collinfo = BSON_INITIALIZER;
 
       /* If no collinfo was fed, cache an empty collinfo. */
-      if (!_mongocrypt_cache_add_copy (
-            &ctx->crypt->cache_collinfo, ectx->ns, &empty_collinfo, ctx->status)) {
+      if (!_mongocrypt_cache_add_copy (&ctx->crypt->cache_collinfo,
+                                       ectx->ns,
+                                       &empty_collinfo,
+                                       ctx->status)) {
          bson_destroy (&empty_collinfo);
          return _mongocrypt_ctx_fail (ctx);
       }

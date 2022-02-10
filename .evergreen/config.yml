@@ -1080,3 +1080,4 @@ buildvariants:
     test_env: MACOS_UNIVERSAL=ON
   tasks:
   - build-and-test-and-upload
+  - build-and-test-node

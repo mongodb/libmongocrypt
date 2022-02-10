@@ -38,6 +38,7 @@ typedef enum {
 typedef struct __mongocrypt_ctx_opts_t {
    _mongocrypt_buffer_t key_id;
    _mongocrypt_key_alt_name_t *key_alt_names;
+   _mongocrypt_buffer_t key_material;
    mongocrypt_encryption_algorithm_t algorithm;
    _mongocrypt_kek_t kek;
 } _mongocrypt_ctx_opts_t;
@@ -155,6 +156,7 @@ typedef struct {
    _mongocrypt_ctx_opt_spec_t schema;
    _mongocrypt_ctx_opt_spec_t key_descriptor; /* a key_id or key_alt_name */
    _mongocrypt_ctx_opt_spec_t key_alt_names;
+   _mongocrypt_ctx_opt_spec_t key_material;
    _mongocrypt_ctx_opt_spec_t algorithm;
 } _mongocrypt_ctx_opts_spec_t;
 
