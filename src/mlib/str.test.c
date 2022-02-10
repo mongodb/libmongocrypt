@@ -83,4 +83,12 @@ main ()
       }
    }
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("foobar"));
+   mstr_free (str);
+
+   // rfind at the beginning of the string
+   CHECK (mstr_rfind (mstrv_lit ("foobar"), mstrv_lit ("foo")) == 0);
+
+   str = mstr_splice (mstrv_lit ("foobar"), 1, 2, MSTRV_NULL);
+   MSTR_ASSERT_EQ (str.view, mstrv_lit ("fbar"));
+   mstr_free (str);
 }

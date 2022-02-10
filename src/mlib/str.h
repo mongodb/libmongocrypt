@@ -291,7 +291,7 @@ mstr_assign (mstr *s, mstr from)
 }
 
 /**
- * @brief Find the index of the first occurrence of the  given "needle" as a
+ * @brief Find the index of the first occurrence of the given "needle" as a
  * substring of another string.
  *
  * @param given A string to search within
@@ -327,7 +327,7 @@ mstr_find (mstr_view given, mstr_view needle)
 }
 
 /**
- * @brief Find the index of the last occurrence of the  given "needle" as a
+ * @brief Find the index of the last occurrence of the given "needle" as a
  * substring of another string.
  *
  * @param given A string to search within
@@ -343,7 +343,7 @@ mstr_rfind (mstr_view given, mstr_view needle)
    }
    const char *scan = given.data + given.len - needle.len;
    const char *const needle_end = needle.data + needle.len;
-   for (; scan != given.data; --scan) {
+   for (; scan >= given.data; --scan) {
       const char *subscan = scan;
       for (const char *nscan = needle.data; nscan != needle_end;
            ++nscan, ++subscan) {
@@ -381,7 +381,7 @@ mstr_contains (mstr_view given, mstr_view needle)
  * @param s The string to modify
  * @param at The position at which to insert and delete characters
  * @param del_count The number of characters to delete. Clamped to the string
- * lenth.
+ * length.
  * @param insert The string to insert at `at`.
  * @return mstr A new string that is the result of the splice
  */
@@ -398,11 +398,11 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
    char *p = ret.data;
    memcpy (p, s.data, at);
    p += at;
-   memcpy (p, insert.data, insert.len);
-   p += insert.len;
    if (insert.data) {
-      memcpy (p, s.data + at + del_count, s.len - at - del_count);
+      memcpy (p, insert.data, insert.len);
+      p += insert.len;
    }
+   memcpy (p, s.data + at + del_count, s.len - at - del_count);
    return ret.mstr;
 }
 
@@ -590,7 +590,7 @@ mstr_replace (const mstr_view string,
 }
 
 /**
- * @brief Determine whether to strings are equivalent.
+ * @brief Determine whether two strings are equivalent.
  */
 static inline bool
 mstr_eq (mstr_view left, mstr_view right)
@@ -658,7 +658,7 @@ mstr_inplace_append (mstr *s, mstr_view suffix)
 static inline void
 mstr_inplace_prepend (mstr *s, mstr_view prefix)
 {
-   mstr_assign (s, mstr_append (s->view, prefix));
+   mstr_assign (s, mstr_prepend (s->view, prefix));
 }
 
 /// Compound in-place version of @ref mstr_insert

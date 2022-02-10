@@ -229,6 +229,7 @@ target_compile_definitions (
    mongocrypt_static
    PRIVATE
       ${BSON_DEFINITIONS}
+   PUBLIC
       MONGOCRYPT_STATIC_DEFINE
       KMS_MSG_STATIC
    )
