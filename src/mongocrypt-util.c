@@ -72,8 +72,8 @@ read_file (mstr_view filepath_, size_t max_read)
    return (read_file_result){.content = content};
 }
 
-static mstr THIS_MODULE_PATH = MSTR_NULL;
-static int THIS_MODULE_ERROR = 0;
+static mstr THIS_MODULE_PATH;
+static int THIS_MODULE_ERROR;
 static mlib_once_flag INIT_THIS_MODULE_PATH = MLIB_ONCE_INITIALIZER;
 
 static void
