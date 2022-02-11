@@ -533,6 +533,10 @@ mongocrypt_init (mongocrypt_t *crypt)
          mstr_copy (crypt->opts.csfle_lib_override_path.view);
       if (_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
          // Succesfully substituted $ORIGIN
+         // Do not allow a plain filename to go through, as that will cause the
+         // DLL load to search the system.
+         mstr_assign (&csfle_cand_filepath,
+                      mpath_absolute (csfle_cand_filepath.view, MPATH_NATIVE));
          _loaded_csfle candidate =
             _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
          if (candidate.okay) {
@@ -553,7 +557,7 @@ mongocrypt_init (mongocrypt_t *crypt)
             // to search on the library paths.
             mstr_assign (&csfle_cand_filepath, mstr_copy (csfle_filename));
          } else {
-            // Compose the candidate filename:
+            // Compose the candidate filepath:
             mstr_assign (&csfle_cand_filepath,
                          mpath_join (cand_dir, csfle_filename, MPATH_NATIVE));
             if (!_try_replace_dollar_origin (&csfle_cand_filepath,
