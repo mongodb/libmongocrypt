@@ -3,15 +3,20 @@
  * testing the dll loading code.
  */
 
-#include <stdio.h>
+#include <string>
+#include <iostream>
 
+static std::string global_str;
+
+extern "C"
 #if _MSC_VER
-__declspec(dllexport)
+   __declspec(dllexport)
 #else
 __attribute__ ((visibility ("default")))
 #endif
-   int say_hello ()
+      int say_hello ()
 {
-   puts ("Hello, from DLL!\n");
+   global_str = "Hello, DLL!";
+   std::cout << global_str << "\n";
    return 42;
 }

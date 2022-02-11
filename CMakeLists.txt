@@ -57,7 +57,7 @@ add_subdirectory (bindings/cs)
 include (GenerateExportHeader)
 include (GNUInstallDirs)
 
-enable_testing ()
+include (CTest)
 
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-compat.h
@@ -287,11 +287,14 @@ set_target_properties (mongocrypt_static PROPERTIES
    OUTPUT_NAME "mongocrypt-static"
 )
 
-add_library (test-dll MODULE test/test-dll.c)
-set_target_properties (test-dll PROPERTIES
-   SUFFIX ".dll"
-   PREFIX ""
-   )
+if (BUILD_TESTING)
+   enable_language (CXX)
+   add_library (test-dll MODULE test/test-dll.cpp)
+   set_target_properties (test-dll PROPERTIES
+      SUFFIX ".dll"
+      PREFIX ""
+      )
+endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-assert-match-bson.c
