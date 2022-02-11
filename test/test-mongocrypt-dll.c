@@ -26,6 +26,7 @@ _test_load_simple_library (_mongocrypt_tester_t *t)
 
    mcr_dll_close (lib);
    mstr_free (dll_path);
+   mstr_free (self_path);
 }
 
 static void
