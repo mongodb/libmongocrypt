@@ -30,7 +30,7 @@ merror_system_error_string (int errn)
                                 NULL,
                                 (DWORD) errn,
                                 0,
-                                (LPWSTR) wbuffer,
+                                (LPWSTR) &wbuffer,
                                 0,
                                 NULL);
    if (slen == 0) {
@@ -40,6 +40,10 @@ merror_system_error_string (int errn)
    mstr_narrow_result narrow = mstr_win32_narrow (wbuffer);
    LocalFree (wbuffer);
    assert (narrow.error == 0);
+   // Messages from FormatMessage contain an additional CR+LF
+   if (mstr_ends_with (narrow.string.view, mstrv_lit ("\r\n"))) {
+      mstr_inplace_remove_suffix (&narrow.string, 2);
+   }
    return narrow.string;
 #else
    errno = 0;
