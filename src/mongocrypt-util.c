@@ -47,20 +47,11 @@ size_to_uint32 (size_t in, uint32_t *out)
    return true;
 }
 
-static mstr THIS_MODULE_PATH;
-static int THIS_MODULE_ERROR;
-static mlib_once_flag INIT_THIS_MODULE_PATH = MLIB_ONCE_INITIALIZER;
-
-static void
-free_this_module_path (void)
+current_module_result
+current_module_path ()
 {
-   mstr_free (THIS_MODULE_PATH);
-}
-
-static void
-do_init_this_module_path (void)
-{
-   atexit (free_this_module_path);
+   mstr ret_str = MSTR_NULL;
+   int ret_error = 0;
 #ifdef _WIN32
    int len = GetModuleFileNameW (NULL, NULL, 0);
    wchar_t *path = calloc (len + 1, sizeof (wchar_t));
@@ -68,27 +59,20 @@ do_init_this_module_path (void)
    mstr_narrow_result narrow = mstr_win32_narrow (path);
    // GetModuleFileNameW should never return invalid Unicode:
    assert (narrow.error == 0);
-   THIS_MODULE_PATH = narrow.string;
+   ret_str = narrow.string;
 #elif defined(_GNU_SOURCE) || defined(_DARWIN_C_SOURCE)
    // Darwin/BSD/glibc define extensions for finding dynamic library info from
    // the address of a symbol.
    Dl_info info;
-   int rc = dladdr ((const void *) do_init_this_module_path, &info);
+   int rc = dladdr ((const void *) current_module_path, &info);
    if (rc == 0) {
       // Failed to resolve the symbol
-      THIS_MODULE_ERROR = ENOENT;
-      return;
+      ret_error = ENOENT;
+   } else {
+      ret_str = mstr_copy_cstr (info.dli_fname);
    }
-   THIS_MODULE_PATH = mstr_copy_cstr (info.dli_fname);
 #else
 #error "Don't know how to get the module path on this platform"
 #endif
-}
-
-current_module_result
-current_module_path ()
-{
-   mlib_call_once (&INIT_THIS_MODULE_PATH, do_init_this_module_path);
-   return (current_module_result){.path = THIS_MODULE_PATH.view,
-                                  .error = THIS_MODULE_ERROR};
+   return (current_module_result){.path = ret_str, .error = ret_error};
 }

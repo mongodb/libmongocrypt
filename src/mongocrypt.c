@@ -478,8 +478,9 @@ _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
       mstr_free (error);
       return false;
    }
-   const mstr_view self_dir = mpath_parent (self_exe_r.path, MPATH_NATIVE);
+   const mstr_view self_dir = mpath_parent (self_exe_r.path.view, MPATH_NATIVE);
    mstr_inplace_splice (filepath, 0, dollar_origin.len, self_dir);
+   mstr_free (self_exe_r.path);
    return true;
 }
 
