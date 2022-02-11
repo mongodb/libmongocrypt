@@ -94,6 +94,8 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt.c
    src/os_win/os_mutex.c
    src/os_posix/os_mutex.c
+   src/os_win/os_dll.c
+   src/os_posix/os_dll.c
    )
 
 if ( MSVC )
@@ -189,6 +191,7 @@ target_link_libraries (
       ${CMAKE_THREAD_LIBS_INIT}
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
+      ${CMAKE_DL_LIBS}
    )
 
 if (NOT ENABLE_SHARED_BSON)
@@ -237,6 +240,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
       ${CMAKE_THREAD_LIBS_INIT}
+      ${CMAKE_DL_LIBS}
    )
 set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${CMAKE_THREAD_LIBS_INIT}")
