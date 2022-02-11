@@ -738,7 +738,7 @@ static inline mstr_narrow_result
 mstr_win32_narrow (const wchar_t *wstring)
 {
    int length = WideCharToMultiByte (CP_UTF8,
-                                     MB_ERR_INVALID_CHARS,
+                                     WC_ERR_INVALID_CHARS,
                                      wstring,
                                      -1 /* wstring is null-terminated */,
                                      NULL,
@@ -751,7 +751,7 @@ mstr_win32_narrow (const wchar_t *wstring)
    }
    mstr_mut ret = mstr_new ((size_t) length);
    int got_len = WideCharToMultiByte (CP_UTF8,
-                                      MB_ERR_INVALID_CHARS,
+                                      WC_ERR_INVALID_CHARS,
                                       wstring,
                                       -1,
                                       ret.data,
