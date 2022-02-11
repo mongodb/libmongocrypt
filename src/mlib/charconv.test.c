@@ -25,7 +25,7 @@ check_conv_ (struct test_case t)
    mstr_view str = mstrv_view_cstr (t.given);
    int64_t value = 0;
    mlib_conv_result res = mlib_i64_from_chars (&value, str, t.base);
-   int n_parsed = res.ptr - str.data;
+   int64_t n_parsed = res.ptr - str.data;
    CHECK (res.ec == t.expect_error);
    CHECK (value == t.expect_value);
    if (res.ec == 0) {

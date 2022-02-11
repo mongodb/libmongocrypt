@@ -77,13 +77,13 @@ static int THIS_MODULE_ERROR;
 static mlib_once_flag INIT_THIS_MODULE_PATH = MLIB_ONCE_INITIALIZER;
 
 static void
-free_this_module_path ()
+free_this_module_path (void)
 {
    mstr_free (THIS_MODULE_PATH);
 }
 
 static void
-do_init_this_module_path ()
+do_init_this_module_path (void)
 {
    atexit (free_this_module_path);
 #ifdef _WIN32
