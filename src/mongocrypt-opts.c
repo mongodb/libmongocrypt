@@ -64,6 +64,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
       mstr_free (opts->cselib_search_paths[i]);
    }
    bson_free (opts->cselib_search_paths);
+   mstr_free (opts->csfle_lib_override_path);
 }
 
 
