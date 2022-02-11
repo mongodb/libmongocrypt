@@ -53,13 +53,25 @@ current_module_path ()
    mstr ret_str = MSTR_NULL;
    int ret_error = 0;
 #ifdef _WIN32
-   int len = GetModuleFileNameW (NULL, NULL, 0);
-   wchar_t *path = calloc (len + 1, sizeof (wchar_t));
-   GetModuleFileNameW (NULL, path, len);
-   mstr_narrow_result narrow = mstr_win32_narrow (path);
-   // GetModuleFileNameW should never return invalid Unicode:
-   assert (narrow.error == 0);
-   ret_str = narrow.string;
+   DWORD acc_size = 512;
+   while (!ret_str.data && !ret_error) {
+      // Loop until we allocate a large enough buffer or get an error
+      wchar_t *path = calloc (acc_size + 1, sizeof (wchar_t));
+      SetLastError (0);
+      GetModuleFileNameW (NULL, path, acc_size);
+      if (GetLastError () == ERROR_INSUFFICIENT_BUFFER) {
+         // Try again with more buffer
+         acc_size *= 2;
+      } else if (GetLastError () != 0) {
+         ret_error = GetLastError ();
+      } else {
+         mstr_narrow_result narrow = mstr_win32_narrow (path);
+         // GetModuleFileNameW should never return invalid Unicode:
+         assert (narrow.error == 0);
+         ret_str = narrow.string;
+      }
+      free (path);
+   }
 #elif defined(_GNU_SOURCE) || defined(_DARWIN_C_SOURCE)
    // Darwin/BSD/glibc define extensions for finding dynamic library info from
    // the address of a symbol.
