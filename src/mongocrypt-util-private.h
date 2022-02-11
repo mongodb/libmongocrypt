@@ -55,20 +55,4 @@ typedef struct current_module_result {
 current_module_result
 current_module_path ();
 
-/**
- * @brief Result of @ref read_file
- */
-typedef struct read_file_result {
-   /// The content loaded from the file. Must be freed with mstr_free()
-   mstr content;
-   /// An error code, if the file could not be read.
-   int error;
-} read_file_result;
-
-/**
- * @brief Read the contents of the named file into a string.
- */
-read_file_result
-read_file (mstr_view filepath, size_t max_read);
-
 #endif /* MONGOCRYPT_UTIL_PRIVATE_H */
