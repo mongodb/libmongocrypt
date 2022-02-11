@@ -288,6 +288,7 @@ set_target_properties (mongocrypt_static PROPERTIES
 )
 
 if (BUILD_TESTING)
+   # Use C++ in the testing DLL to ensure we can load a library with the C++ runtime
    enable_language (CXX)
    add_library (test-dll MODULE test/test-dll.cpp)
    set_target_properties (test-dll PROPERTIES
@@ -334,6 +335,9 @@ target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURC
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET} mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE ${BSON_DEFINITIONS})
+
+# Set a definition so that testcases can know where test-mongocrypt.exe was written to
+target_compile_definitions(test-mongocrypt PRIVATE "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\"")
 
 add_test (
    NAME mongocrypt

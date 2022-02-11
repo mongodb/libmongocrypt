@@ -365,7 +365,7 @@ typedef struct {
    /// Whether the load is successful
    bool okay;
    /// The DLL handle to the opened library.
-   _mcr_dll lib;
+   mcr_dll lib;
    /// A vtable for the functions in the DLL
    _mcr_csfle_v1_vtable vtable;
 } _loaded_csfle;
@@ -378,7 +378,7 @@ static _loaded_csfle
 _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
 {
    // Try to open the dynamic lib
-   _mcr_dll lib = _mcr_dll_open (filepath);
+   mcr_dll lib = mcr_dll_open (filepath);
    // Check for errors, which are represented by strings
    if (lib.error_string.data) {
       // Error opening candidate
@@ -389,7 +389,7 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
          filepath,
          lib.error_string.data);
       // Free resources, which will include the error string
-      _mcr_dll_close (lib);
+      mcr_dll_close (lib);
       // Bad:
       return (_loaded_csfle){.okay = false};
    }
@@ -407,7 +407,7 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
    {                                                                           \
       /* Symbol names are qualified by the lib name and version: */            \
       const char *symname = "mongo_csfle_v1_" #Name;                           \
-      vtable.Name = _mcr_dll_sym (lib, symname);                               \
+      vtable.Name = mcr_dll_sym (lib, symname);                                \
       if (vtable.Name == NULL) {                                               \
          /* The requested symbol is not present */                             \
          _mongocrypt_log (                                                     \
@@ -425,7 +425,7 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
 #undef X_FUNC
 
    if (!vtable_okay) {
-      _mcr_dll_close (lib);
+      mcr_dll_close (lib);
       _mongocrypt_log (
          log,
          MONGOCRYPT_LOG_LEVEL_ERROR,
@@ -460,7 +460,7 @@ _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
    }
    // Check that the next char is a path separator or end-of-string:
    char peek = filepath->data[dollar_origin.len];
-   if (peek != 0 && !mpath_is_sep (peek)) {
+   if (peek != 0 && !mpath_is_sep (peek, MPATH_NATIVE)) {
       // Not a single path element
       return true;
    }
@@ -478,7 +478,7 @@ _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
       mstr_free (error);
       return false;
    }
-   const mstr_view self_dir = mpath_parent (self_exe_r.path);
+   const mstr_view self_dir = mpath_parent (self_exe_r.path, MPATH_NATIVE);
    mstr_inplace_splice (filepath, 0, dollar_origin.len, self_dir);
    return true;
 }
@@ -524,7 +524,7 @@ mongocrypt_init (mongocrypt_t *crypt)
 #endif
    }
 
-   _mcr_dll_close (crypt->csfle_lib);
+   mcr_dll_close (crypt->csfle_lib);
 
    mstr csfle_cand_filepath = MSTR_NULL;
    if (crypt->opts.csfle_lib_override_path.data) {
@@ -555,7 +555,7 @@ mongocrypt_init (mongocrypt_t *crypt)
          } else {
             // Compose the candidate filename:
             mstr_assign (&csfle_cand_filepath,
-                         mpath_join (cand_dir, csfle_filename));
+                         mpath_join (cand_dir, csfle_filename, MPATH_NATIVE));
             if (!_try_replace_dollar_origin (&csfle_cand_filepath,
                                              &crypt->log)) {
                // Error while substituting $ORIGIN
@@ -579,7 +579,7 @@ mongocrypt_init (mongocrypt_t *crypt)
    // If a CSFLE override path was specified, but we did not succeed in loading
    // CSFLE, that is a hard-error.
    if (crypt->opts.csfle_lib_override_path.data &&
-       !_mcr_dll_is_open (crypt->csfle_lib)) {
+       !mcr_dll_is_open (crypt->csfle_lib)) {
       CLIENT_ERR ("A CSFLE override path was specified [%s], but we failed to "
                   "open a dynamic library at that location",
                   crypt->opts.csfle_lib_override_path.data);
@@ -627,7 +627,7 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    bson_free (crypt->crypto);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_azure);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_gcp);
-   _mcr_dll_close (crypt->csfle_lib);
+   mcr_dll_close (crypt->csfle_lib);
 
    bson_free (crypt);
 }

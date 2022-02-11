@@ -180,9 +180,6 @@ void
 _mongocrypt_tester_install_dll (_mongocrypt_tester_t *tester);
 
 void
-_mongocrypt_tester_install_mstr (_mongocrypt_tester_t *tester);
-
-void
 _mongocrypt_tester_install_endpoint (_mongocrypt_tester_t *tester);
 
 void

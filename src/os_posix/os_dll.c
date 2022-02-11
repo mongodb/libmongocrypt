@@ -7,19 +7,19 @@
 
 #include <dlfcn.h>
 
-_mcr_dll
-_mcr_dll_open (const char *filepath)
+mcr_dll
+mcr_dll_open (const char *filepath)
 {
    void *handle = dlopen (filepath, RTLD_LAZY | RTLD_LOCAL);
    if (handle == NULL) {
       // Failed to open. Return NULL and copy the error message
-      return (_mcr_dll){
+      return (mcr_dll){
          ._native_handle = NULL,
          .error_string = mstr_copy_cstr (dlerror ()),
       };
    } else {
       // Okay
-      return (_mcr_dll){
+      return (mcr_dll){
          ._native_handle = handle,
          .error_string = MSTR_NULL,
       };
@@ -27,7 +27,7 @@ _mcr_dll_open (const char *filepath)
 }
 
 void
-_mcr_dll_close_handle (_mcr_dll dll)
+mcr_dll_close_handle (mcr_dll dll)
 {
    if (dll._native_handle) {
       dlclose (dll._native_handle);
@@ -35,7 +35,7 @@ _mcr_dll_close_handle (_mcr_dll dll)
 }
 
 void *
-_mcr_dll_sym (_mcr_dll dll, const char *sym)
+mcr_dll_sym (mcr_dll dll, const char *sym)
 {
    return dlsym (dll._native_handle, sym);
 }

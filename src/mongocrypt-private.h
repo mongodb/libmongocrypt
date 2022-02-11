@@ -133,7 +133,7 @@ struct _mongocrypt_t {
    _mongocrypt_cache_oauth_t *cache_oauth_azure;
    _mongocrypt_cache_oauth_t *cache_oauth_gcp;
    /// A CSFLE DLL, initialized by mongocrypt_init
-   _mcr_dll csfle_lib;
+   mcr_dll csfle_lib;
    _mcr_csfle_v1_vtable csfle_vtable;
 };
 
