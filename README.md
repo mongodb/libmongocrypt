@@ -152,6 +152,11 @@ Second, create a list entry for the repository.  For Ubuntu systems (be sure to 
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.0 universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
+For Ubuntu 20.04 (focal), only the development branch is available, so this command would instead look like:
+```
+echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu focal/libmongocrypt/development universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
+```
+
 For Debian systems (be sure to change `<release>` to `stretch` or `buster`, as appropriate to your system):
 
 ```
