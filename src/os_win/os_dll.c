@@ -23,7 +23,7 @@ mcr_dll_open (const char *filepath_)
    if (!is_just_filename) {
       // If the path is only a filename, we'll allow LoadLibrary() to do a
       // proper full DLL search. If the path is NOT just a filename, resolve the
-      // given path to a single unambiguous absolute path t suppress
+      // given path to a single unambiguous absolute path to suppress
       // LoadLibrary()'s DLL search behavior.
       mstr_assign (&filepath, mpath_absolute (filepath.view, MPATH_WIN32));
    }
