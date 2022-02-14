@@ -25,7 +25,6 @@ typedef enum mpath_format {
 #else
       MPATH_POSIX,
 #endif
-   MPATH_NATIVE_ = 'n'
 } mpath_format;
 
 /**
@@ -371,7 +370,8 @@ mpath_absolute (mstr_view path, mpath_format f)
       return mstr_copy (path);
    }
    mstr cur = mpath_current_path ();
-   mstr ret = mpath_absolute_from (path, cur.view, f);
+   mstr ret = mpath_absolute_from (path, cur.view, MPATH_NATIVE);
+   mstr_assign (&ret, mpath_to_format (MPATH_NATIVE, ret.view, f));
    mstr_free (cur);
    return ret;
 }
