@@ -336,7 +336,7 @@ target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CU
 target_compile_definitions (test-mongocrypt PRIVATE ${BSON_DEFINITIONS})
 
 # Set a definition so that testcases can know where test-mongocrypt.exe was written to
-target_compile_definitions(test-mongocrypt PRIVATE "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\"")
+target_compile_definitions (test-mongocrypt PRIVATE "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\"")
 
 add_test (
    NAME mongocrypt
