@@ -274,7 +274,6 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lssl -lcrypto")
 endif ()
 
-
 set_target_properties (mongocrypt PROPERTIES
    SOVERSION 0
    VERSION "0.0.0"
@@ -295,6 +294,14 @@ if (BUILD_TESTING)
       SUFFIX ".dll"
       PREFIX ""
       )
+
+   add_library (stubbed-csfle MODULE test/csfle-stub.cpp)
+   set_target_properties (stubbed-csfle PROPERTIES
+      # Normalize the output name expected by libmongocrypt
+      PREFIX ""
+      OUTPUT_NAME "mongo_csfle_v1"
+      )
+   target_include_directories (stubbed-csfle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
@@ -378,9 +385,6 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
       target_link_libraries (csfle PRIVATE mongo::mongoc_shared)
    endif ()
 endif ()
-
-set (CSFLE_GET_FOR_TARGET "test-mongocrypt")
-include (GetCSFLE)
 
 if (ENABLE_STATIC)
    set (TARGETS_TO_INSTALL mongocrypt mongocrypt_static)
