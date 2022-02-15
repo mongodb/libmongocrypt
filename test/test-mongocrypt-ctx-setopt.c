@@ -488,6 +488,16 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
    KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc'}"),
                        "duplicate keyAltNames found");
 
+   /* Key Material is okay. */
+   REFRESH;
+   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   KEY_MATERIAL_OK (
+      TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
+                 "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
+                 "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
+                 "WJjZGVm', 'subType': '00'}}}"));
+   DATAKEY_INIT_OK;
+
    /* Test each prohibited option. */
    REFRESH;
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
@@ -557,6 +567,14 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "key id and alt name prohibited");
 
    REFRESH;
+   KEY_MATERIAL_OK (
+      TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
+                 "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
+                 "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
+                 "WJjZGVm', 'subType': '00'}}}"));
+   ENCRYPT_INIT_FAILS ("a", -1, cmd, "key material prohibited");
+
+   REFRESH;
    ALGORITHM_OK (DET, -1);
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "algorithm prohibited");
 
@@ -615,6 +633,16 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    ALGORITHM_OK (RAND, -1);
    MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
    EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
+
+   REFRESH;
+   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ALGORITHM_OK (RAND, -1);
+   KEY_MATERIAL_OK (
+      TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
+                 "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
+                 "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
+                 "WJjZGVm', 'subType': '00'}}}"));
+   EX_ENCRYPT_INIT_FAILS (bson, "key material prohibited");
 
    REFRESH;
    KEY_ID_OK (uuid);
@@ -710,6 +738,14 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
    DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
+   KEY_MATERIAL_OK (
+      TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
+                 "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
+                 "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
+                 "WJjZGVm', 'subType': '00'}}}"));
+   DECRYPT_INIT_FAILS (bson, "key material prohibited");
+
+   REFRESH;
    ALGORITHM_OK (DET, -1);
    DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
 
@@ -758,6 +794,14 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    REFRESH;
    KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
+
+   REFRESH;
+   KEY_MATERIAL_OK (
+      TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
+                 "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
+                 "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
+                 "WJjZGVm', 'subType': '00'}}}"));
+   DECRYPT_INIT_FAILS (bson, "key material prohibited");
 
    REFRESH;
    ALGORITHM_OK (DET, -1);
