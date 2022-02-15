@@ -29,7 +29,7 @@
 struct mongo_csfle_v1_status {
 };
 
-using status_t = mongo_csfle_v1_status;
+typedef mongo_csfle_v1_status status_t;
 
 status_t *
 mongo_csfle_v1_status_create (void)
@@ -64,7 +64,7 @@ mongo_csfle_v1_status_get_code (const status_t *)
 struct mongo_csfle_v1_lib {
 };
 
-using lib_t = mongo_csfle_v1_lib;
+typedef mongo_csfle_v1_lib lib_t;
 
 lib_t *
 mongo_csfle_v1_lib_create (status_t *)
@@ -82,7 +82,11 @@ mongo_csfle_v1_lib_destroy (lib_t *lib, status_t *)
 uint64_t
 mongo_csfle_v1_get_version (void)
 {
-   return UINT64_C (0x0006'0002'0001'000);
+#ifdef UINT64_C
+   return UINT64_C (0x000600020001000);
+#else
+   return 0x000600020001000;
+#endif
 }
 
 
@@ -95,7 +99,7 @@ mongo_csfle_v1_get_version_str (void)
 struct mongo_csfle_v1_query_analyzer {
 };
 
-using query_analyzer_t = mongo_csfle_v1_query_analyzer;
+typedef mongo_csfle_v1_query_analyzer query_analyzer_t;
 
 query_analyzer_t *
 mongo_csfle_v1_query_analyzer_create (lib_t *, status_t *)
