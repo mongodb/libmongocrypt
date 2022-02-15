@@ -20,7 +20,7 @@
  * dlopen()
  */
 typedef struct mcr_dll {
-   // (All supported platforms using a void* as the library handle type)
+   // (All supported platforms use a void* as the library handle type)
    void *_native_handle;
    mstr error_string;
 } mcr_dll;

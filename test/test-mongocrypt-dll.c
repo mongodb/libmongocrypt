@@ -1,6 +1,7 @@
 #include "mongocrypt.h"
 
 #include "mongocrypt-dll-private.h"
+
 #include <mlib/path.h>
 
 #include "test-mongocrypt.h"

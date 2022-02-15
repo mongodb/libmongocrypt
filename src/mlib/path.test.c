@@ -81,5 +81,13 @@ main ()
    test_make_absolute (
       MPATH_WIN32, "baz.txt", "D:/bar/foo/", "D:/bar/foo/baz.txt");
 
+   // Just test calling with each combo, no validation.
+   mstr_assign (&s, mpath_absolute (mstrv_lit ("foo"), MPATH_WIN32));
+   mstr_assign (&s, mpath_absolute (mstrv_lit ("foo"), MPATH_POSIX));
+   mstr_assign (&s, mpath_absolute (mstrv_lit ("/foo"), MPATH_WIN32));
+   mstr_assign (&s, mpath_absolute (mstrv_lit ("/foo"), MPATH_POSIX));
+   mstr_assign (&s, mpath_absolute (mstrv_lit ("Z:/foo"), MPATH_WIN32));
+   mstr_assign (&s, mpath_absolute (mstrv_lit ("Z:/foo"), MPATH_POSIX));
+
    mstr_free (s);
 }
