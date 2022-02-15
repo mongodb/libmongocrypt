@@ -29,7 +29,8 @@
 #include "mongocrypt-util-private.h"
 
 #include "mlib/thread.h"
-#include "mlib/charconv.h"
+
+#include <errno.h>
 
 #ifdef _WIN32
 #include <windows.h>
