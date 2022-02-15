@@ -632,7 +632,15 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    bson_free (crypt->crypto);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_azure);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_gcp);
+
+#ifndef __linux__
    mcr_dll_close (crypt->csfle_lib);
+#else
+   /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in the
+   /// way ld-linux and GCC interact causes static destructors to not run during
+   /// dlclose(). Still, free the error string that may be non-null:
+   mstr_free (crypt->csfle_lib.error_string);
+#endif
 
    bson_free (crypt);
 }
