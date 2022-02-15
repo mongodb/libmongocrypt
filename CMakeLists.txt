@@ -191,6 +191,7 @@ target_link_libraries (
       ${CMAKE_THREAD_LIBS_INIT}
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
+   PUBLIC
       ${CMAKE_DL_LIBS}
    )
 
@@ -239,11 +240,12 @@ target_link_libraries (
       ${BSON_TARGET}
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
+   PUBLIC
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
 set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
-set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${CMAKE_THREAD_LIBS_INIT}")
+set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS}")
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libkms_message-static.a")
 if (ENABLE_BUILD_FOR_PPA)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
