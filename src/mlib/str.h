@@ -362,20 +362,6 @@ mstr_rfind (mstr_view given, mstr_view needle)
 }
 
 /**
- * @brief Determine whether the given string contains the given substring
- *
- * @param given A string to search within
- * @param needle A substring to search for
- * @return true If `given` contains at least one occurrence of `needle`
- * @return false Otherwise
- */
-static inline bool
-mstr_contains (mstr_view given, mstr_view needle)
-{
-   return mstr_find (given, needle) >= 0;
-}
-
-/**
  * @brief Modify a string by deleting and/or inserting another string.
  *
  * @param s The string to modify
@@ -601,28 +587,88 @@ mstr_eq (mstr_view left, mstr_view right)
    return memcmp (left.data, right.data, left.len) == 0;
 }
 
-static inline void
-_mstr_assert_eq_ (mstr_view left, mstr_view right, const char *file, int line)
+/// Determine whether the given character is an printable ASCII codepoint
+static inline bool
+mstr_is_printable (char c)
 {
-   if (!mstr_eq (left, right)) {
-      fprintf (stderr,
-               "%s:%d: ASSERTION FAILED: \"%s\" != \"%s\"\n",
-               file,
-               line,
-               left.data,
-               right.data);
-      abort ();
+   return (c >= ' ' && c <= '~');
+}
+
+/// Write the given string to `out`, rendering non-printable characters as hex
+/// escapes
+static inline void
+_mstr_write_str_repr_ (FILE *out, mstr_view s)
+{
+   for (char const *it = s.data; it != s.data + s.len; ++it) {
+      if (mstr_is_printable (*it)) {
+         fputc (*it, out);
+      } else {
+         fprintf (out, "\\x%.2x", (unsigned) (unsigned char) *it);
+      }
    }
 }
+
+static inline void
+_mstr_assert_fail_ (mstr_view left,
+                    const char *predicate,
+                    mstr_view right,
+                    const char *file,
+                    int line)
+{
+   fprintf (stderr, "%s:%d: ASSERTION FAILED: \"", file, line);
+   _mstr_write_str_repr_ (stderr, left);
+   fprintf (stderr, "\" %s \"", predicate);
+   _mstr_write_str_repr_ (stderr, right);
+   fprintf (stderr, "\"\n");
+   abort ();
+}
+
+static inline void
+_mstr_assert_ (mstr_view left,
+               mstr_view right,
+               bool (*pred) (mstr_view left, mstr_view right),
+               bool B,
+               const char *pred_str,
+               const char *file,
+               int line)
+{
+   if (pred (left, right) != B) {
+      mstr pstr = mstr_copy_cstr (pred_str);
+      if (!B) {
+         mstr_assign (&pstr, mstr_prepend (pstr.view, mstrv_lit ("not ")));
+      }
+      _mstr_assert_fail_ (left, pstr.data, right, file, line);
+   }
+}
+
+#define MSTR_ASSERT(Bool, Left, Pred, Right) \
+   (_mstr_assert_ (                          \
+      (Left), (Right), mstr_##Pred, (Bool), #Pred, __FILE__, __LINE__))
 
 /**
  * @brief Assert that two strings are equivalent.
  *
  * Prints and error message and aborts if they are not
  */
-#define MSTR_ASSERT_EQ(Left, Right) \
-   (_mstr_assert_eq_ (Left, Right, __FILE__, __LINE__))
+#define MSTR_ASSERT_EQ(Left, Right) MSTR_ASSERT (true, Left, eq, Right)
 
+/**
+ * @brief Determine whether the given string contains the given substring
+ *
+ * @param given A string to search within
+ * @param needle A substring to search for
+ * @return true If `given` contains at least one occurrence of `needle`
+ * @return false Otherwise
+ */
+static inline bool
+mstr_contains (mstr_view given, mstr_view needle)
+{
+   return mstr_find (given, needle) >= 0;
+}
+
+/**
+ * @brief Determine whether `given` starts with `prefix`
+ */
 static inline bool
 mstr_starts_with (mstr_view given, mstr_view prefix)
 {
@@ -630,10 +676,13 @@ mstr_starts_with (mstr_view given, mstr_view prefix)
    return mstr_eq (given, prefix);
 }
 
+/**
+ * @brief Determine whether `given` ends with `suffix`
+ */
 static inline bool
 mstr_ends_with (mstr_view given, mstr_view suffix)
 {
-   if (suffix.len < given.len) {
+   if (suffix.len > given.len) {
       return false;
    }
    given = mstrv_subview (given, given.len - suffix.len, ~0);

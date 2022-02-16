@@ -10,6 +10,9 @@
                abort ()),                             \
               0))
 
+#define test_predicate(Bool, Left, Pred, Right) \
+   MSTR_ASSERT (Bool, mstrv_lit (Left), Pred, mstrv_lit (Right))
+
 int
 main ()
 {
@@ -91,4 +94,33 @@ main ()
    str = mstr_splice (mstrv_lit ("foobar"), 1, 2, MSTRV_NULL);
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("fbar"));
    mstr_free (str);
+
+   test_predicate (true, "foo", contains, "o");
+   test_predicate (true, "foo", contains, "oo");
+   test_predicate (true, "foo", contains, "foo");
+   test_predicate (true, "foo", contains, "fo");
+   test_predicate (true, "foo", contains, "f");
+   test_predicate (true, "foo", contains, "");
+   test_predicate (false, "foo", contains, "fooo");
+   test_predicate (false, "foo", contains, "ofo");
+   test_predicate (false, "foo", contains, "of");
+   test_predicate (false, "foo", contains, "bar");
+
+   test_predicate (true, "foo", starts_with, "f");
+   test_predicate (true, "foo", starts_with, "fo");
+   test_predicate (true, "foo", starts_with, "foo");
+   test_predicate (true, "foo", starts_with, "");
+   test_predicate (false, "foo", starts_with, "o");
+   test_predicate (false, "foo", starts_with, "oo");
+   test_predicate (false, "foo", starts_with, "oof");
+   test_predicate (false, "foo", starts_with, "bar");
+
+   test_predicate (true, "foo", ends_with, "o");
+   test_predicate (true, "foo", ends_with, "oo");
+   test_predicate (true, "foo", ends_with, "foo");
+   test_predicate (true, "foo", ends_with, "");
+   test_predicate (false, "foo", ends_with, "f");
+   test_predicate (false, "foo", ends_with, "fo");
+   test_predicate (false, "foo", ends_with, "oof");
+   test_predicate (false, "foo", ends_with, "bar");
 }
