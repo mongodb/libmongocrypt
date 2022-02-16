@@ -107,7 +107,7 @@ typedef struct _mcr_csfle_v1_vtable {
    X_FUNC (bson_free, void, uint8_t *bson)
 
    /// At time of writing, these two symbols seem to be missing from the CSFLE
-   /// build, despite documentation in the csfle header:
+   /// build, despite documentation in the csfle header (Refer: SERVER-63680):
    // X_FUNC (get_version, uint64_t, void)
    // X_FUNC (get_version_str, const char *, void)
 
