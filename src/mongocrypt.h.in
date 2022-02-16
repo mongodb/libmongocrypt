@@ -428,7 +428,7 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
  * @note The search paths are searched in the order that they are appended. This
  * allows one to provide a precedence in how the library will be discovered. For
  * example, appending known directories before appending "$SYSTEM" will allow
- * one to supercede the system's installed library, but still fall-back to it if
+ * one to supersede the system's installed library, but still fall-back to it if
  * the library wasn't found otherwise. If one does not ever append "$SYSTEM",
  * then the system's library-search mechanism will never be consulted.
  *
