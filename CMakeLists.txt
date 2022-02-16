@@ -300,7 +300,7 @@ if (BUILD_TESTING)
       PREFIX ""
       )
 
-   add_library (stubbed-csfle MODULE test/csfle-stub.cpp)
+   add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
    set_target_properties (stubbed-csfle PROPERTIES
       # Normalize the output name expected by libmongocrypt
       PREFIX ""
