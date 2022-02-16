@@ -59,6 +59,12 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
    _mongocrypt_opts_kms_provider_azure_cleanup (&opts->kms_provider_azure);
    _mongocrypt_opts_kms_provider_gcp_cleanup (&opts->kms_provider_gcp);
    _mongocrypt_endpoint_destroy (opts->kms_provider_kmip.endpoint);
+   // Free any lib search paths added by the caller
+   for (int i = 0; i < opts->n_cselib_search_paths; ++i) {
+      mstr_free (opts->cselib_search_paths[i]);
+   }
+   bson_free (opts->cselib_search_paths);
+   mstr_free (opts->csfle_lib_override_path);
 }
 
 

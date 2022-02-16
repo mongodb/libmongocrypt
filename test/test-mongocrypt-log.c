@@ -100,7 +100,7 @@ _test_trace_log (_mongocrypt_tester_t *tester)
 static void
 _test_no_log (_mongocrypt_tester_t *tester)
 {
-   const int buffer_size = 1024;
+   const int buffer_size = BUFSIZ;
    mongocrypt_t *crypt;
    mongocrypt_status_t *status;
    char captured_logs[buffer_size];
@@ -121,7 +121,7 @@ _test_no_log (_mongocrypt_tester_t *tester)
       &crypt->log, MONGOCRYPT_LOG_LEVEL_FATAL, "Please don't log");
    mongocrypt_status_destroy (status);
    mongocrypt_destroy (crypt);
-   BSON_ASSERT (strlen(captured_logs) == 0);
+   BSON_ASSERT (strlen (captured_logs) == 0);
    stdout = fdopen (saved_stdout, "w");
 }
 #endif

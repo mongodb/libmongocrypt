@@ -191,6 +191,7 @@ target_link_libraries (
       ${CMAKE_THREAD_LIBS_INIT}
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
+   PUBLIC
       ${CMAKE_DL_LIBS}
    )
 
@@ -239,11 +240,15 @@ target_link_libraries (
       ${BSON_TARGET}
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
+   PUBLIC
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
 set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${CMAKE_THREAD_LIBS_INIT}")
+if (CMAKE_DL_LIBS)
+   string (APPEND PKG_CONFIG_STATIC_LIBS " -l${CMAKE_DL_LIBS}")
+endif ()
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libkms_message-static.a")
 if (ENABLE_BUILD_FOR_PPA)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
@@ -274,7 +279,6 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lssl -lcrypto")
 endif ()
 
-
 set_target_properties (mongocrypt PROPERTIES
    SOVERSION 0
    VERSION "0.0.0"
@@ -295,6 +299,14 @@ if (BUILD_TESTING)
       SUFFIX ".dll"
       PREFIX ""
       )
+
+   add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
+   set_target_properties (stubbed-csfle PROPERTIES
+      # Normalize the output name expected by libmongocrypt
+      PREFIX ""
+      OUTPUT_NAME "mongo_csfle_v1"
+      )
+   target_include_directories (stubbed-csfle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
@@ -305,6 +317,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-crypto-hooks.c
+   test/test-mongocrypt-csfle-lib.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c
