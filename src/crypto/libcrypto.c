@@ -35,18 +35,6 @@
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
    (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
-static EVP_CIPHER_CTX *
-EVP_CIPHER_CTX_new (void)
-{
-   return bson_malloc0 (sizeof (EVP_CIPHER_CTX));
-}
-
-static void
-EVP_CIPHER_CTX_free (EVP_CIPHER_CTX *ctx)
-{
-   EVP_CIPHER_CTX_cleanup (ctx);
-   bson_free (ctx);
-}
 
 static HMAC_CTX *
 HMAC_CTX_new (void)
