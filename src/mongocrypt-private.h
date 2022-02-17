@@ -155,4 +155,12 @@ _mongocrypt_new_string_from_bytes (const void *in, int len);
 char *
 _mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary);
 
+
+bool
+_mongocrypt_parse_kms_providers (
+   mongocrypt_binary_t *kms_providers_definition,
+   _mongocrypt_opts_kms_providers_t *kms_providers,
+   mongocrypt_status_t *status,
+   _mongocrypt_log_t *log);
+
 #endif /* MONGOCRYPT_PRIVATE_H */

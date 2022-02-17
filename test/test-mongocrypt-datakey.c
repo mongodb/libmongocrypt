@@ -301,7 +301,7 @@ _test_datakey_custom_key_material (_mongocrypt_tester_t *tester)
       mongocrypt_binary_t decrypted_dek;
 
       ASSERT (_mongocrypt_unwrap_key (crypt->crypto,
-                                      &crypt->opts.kms_provider_local.key,
+                                      &crypt->opts.kms_providers.local.key,
                                       &encrypted_dek_buf,
                                       &decrypted_dek_buf,
                                       crypt->status));

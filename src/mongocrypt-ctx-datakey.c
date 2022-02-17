@@ -65,8 +65,8 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
 
    if (ctx->opts.kek.provider.kmip.endpoint) {
       endpoint = ctx->opts.kek.provider.kmip.endpoint;
-   } else if (ctx->crypt->opts.kms_provider_kmip.endpoint) {
-      endpoint = ctx->crypt->opts.kms_provider_kmip.endpoint;
+   } else if (_mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint) {
+      endpoint = _mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint;
    } else {
       CLIENT_ERR ("endpoint not set for KMIP request");
       goto fail;
@@ -112,8 +112,8 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
          mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
          goto fail;
       }
-
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+
       goto success;
    }
 
@@ -181,6 +181,8 @@ _kms_start (mongocrypt_ctx_t *ctx)
    bool ret = false;
    _mongocrypt_ctx_datakey_t *dkctx;
    char *access_token = NULL;
+   _mongocrypt_opts_kms_providers_t *const kms_providers =
+      _mongocrypt_ctx_kms_providers(ctx);
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
 
@@ -191,7 +193,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
    dkctx->kms_returned = false;
    if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
       if (!_mongocrypt_wrap_key (ctx->crypt->crypto,
-                                 &ctx->crypt->opts.kms_provider_local.key,
+                                 &kms_providers->local.key,
                                  &dkctx->plaintext_key_material,
                                  &dkctx->encrypted_key_material,
                                  ctx->status)) {
@@ -204,7 +206,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
        * mongocrypt_setopt_kms_provider_aws. Data keys are encrypted with an
        * "encrypt" HTTP message to KMS. */
       if (!_mongocrypt_kms_ctx_init_aws_encrypt (&dkctx->kms,
-                                                 &ctx->crypt->opts,
+                                                 kms_providers,
                                                  &ctx->opts,
                                                  &dkctx->plaintext_key_material,
                                                  &ctx->crypt->log,
@@ -222,7 +224,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
          if (!_mongocrypt_kms_ctx_init_azure_wrapkey (
                 &dkctx->kms,
                 &ctx->crypt->log,
-                &ctx->crypt->opts,
+                kms_providers,
                 &ctx->opts,
                 access_token,
                 &dkctx->plaintext_key_material)) {
@@ -234,7 +236,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
          if (!_mongocrypt_kms_ctx_init_azure_auth (
                 &dkctx->kms,
                 &ctx->crypt->log,
-                &ctx->crypt->opts,
+                kms_providers,
                 ctx->opts.kek.provider.azure.key_vault_endpoint)) {
             mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail (ctx);
@@ -248,7 +250,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
          if (!_mongocrypt_kms_ctx_init_gcp_encrypt (
                 &dkctx->kms,
                 &ctx->crypt->log,
-                &ctx->crypt->opts,
+                kms_providers,
                 &ctx->opts,
                 access_token,
                 &dkctx->plaintext_key_material)) {
@@ -261,6 +263,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
                 &dkctx->kms,
                 &ctx->crypt->log,
                 &ctx->crypt->opts,
+                kms_providers,
                 ctx->opts.kek.provider.gcp.endpoint)) {
             mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail (ctx);
@@ -467,6 +470,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
    ctx->vtable.mongo_feed_keys = NULL;
    ctx->vtable.mongo_done_keys = NULL;
    ctx->vtable.next_kms_ctx = _next_kms_ctx;
+   ctx->vtable.after_kms_credentials_provided = _kms_start;
    ctx->vtable.kms_done = _kms_done;
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
@@ -492,7 +496,9 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       }
    }
 
-   if (!_kms_start (ctx)) {
+   if (ctx->crypt->opts.use_need_kms_credentials_state) {
+      ctx->state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
+   } else if (!_kms_start (ctx)) {
       goto done;
    }
 

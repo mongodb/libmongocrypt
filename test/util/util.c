@@ -798,6 +798,8 @@ _state_string (mongocrypt_ctx_state_t state)
       return "MONGOCRYPT_CTX_NEED_MONGO_MARKINGS";
    case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
       return "MONGOCRYPT_CTX_NEED_MONGO_KEYS";
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+      return "MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS";
    case MONGOCRYPT_CTX_NEED_KMS:
       return "MONGOCRYPT_CTX_NEED_KMS";
    case MONGOCRYPT_CTX_READY:
@@ -855,6 +857,9 @@ _state_machine_run (_state_machine_t *state_machine,
          if (!_state_need_mongo_keys (state_machine, error)) {
             goto fail;
          }
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         // TODO
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          if (!_state_need_kms (state_machine, error)) {
