@@ -532,6 +532,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
 
    /* Success. With key alt names. */
    crypt = _mongocrypt_tester_mongocrypt ();
+   kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&key_broker, crypt);
    _key_broker_add_name (&key_broker, "Sharlene");
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
@@ -559,6 +560,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
 
    /* With both key ids and key alt names, some referring to the same key */
    crypt = _mongocrypt_tester_mongocrypt ();
+   kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&key_broker, crypt);
    BSON_ASSERT (
       _mongocrypt_buffer_to_bson (&key_doc_names, &key_doc_names_bson));
