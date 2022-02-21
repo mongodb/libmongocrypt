@@ -225,6 +225,104 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+typedef struct {
+   const char *testname;
+   const char *key;
+   const char *iv;
+   const char *plaintext;
+   const char *ciphertext;
+} aes_256_ctr_test_t;
+
+void
+_test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
+{
+   aes_256_ctr_test_t tests[] = {
+      {.testname = "See NIST SP 800-38A section F.5.5",
+       .key = "603deb1015ca71be2b73aef0857d7781"
+              "1f352c073b6108d72d9810a30914dff4",
+       .iv = "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+       .plaintext = "6bc1bee22e409f96e93d7e117393172a"
+                    "ae2d8a571e03ac9c9eb76fac45af8e51"
+                    "30c81c46a35ce411e5fbc1191a0a52ef"
+                    "f69f2445df4f9b17ad2b417be66c3710",
+       .ciphertext = "601ec313775789a5b7a7f504bbf3d228"
+                     "f443e3ca4d62b59aca84e990cacaf5c5"
+                     "2b0930daa23de94ce87017ba2d84988d"
+                     "dfc9c58db67aada613c2dd08457941a6"},
+      {.testname = "Not 64 byte aligned input",
+       .key = "603deb1015ca71be2b73aef0857d7781"
+              "1f352c073b6108d72d9810a30914dff4",
+       .iv = "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+       .plaintext = "AAAA",
+       .ciphertext = "A175"},
+      {0}};
+   aes_256_ctr_test_t *test;
+
+   for (test = tests; test->testname != NULL; test++) {
+      bool ret;
+      _mongocrypt_buffer_t key;
+      _mongocrypt_buffer_t iv;
+      _mongocrypt_buffer_t plaintext;
+      _mongocrypt_buffer_t ciphertext;
+      _mongocrypt_buffer_t plaintext_got;
+      _mongocrypt_buffer_t ciphertext_got;
+      mongocrypt_status_t *status;
+      uint32_t bytes_written;
+
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+              "remove.");
+      return;
+#endif
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+      return;
+#endif
+
+      printf ("Begin test '%s'.\n", test->testname);
+
+      _mongocrypt_buffer_copy_from_hex (&key, test->key);
+      _mongocrypt_buffer_copy_from_hex (&iv, test->iv);
+      _mongocrypt_buffer_copy_from_hex (&plaintext, test->plaintext);
+      _mongocrypt_buffer_copy_from_hex (&ciphertext, test->ciphertext);
+      _mongocrypt_buffer_init (&plaintext_got);
+      _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
+      /* Allocate memory for output ciphertext. CTR mode does not use padding.
+       * Use plaintext length as expected ciphertext length. */
+      _mongocrypt_buffer_init (&ciphertext_got);
+      _mongocrypt_buffer_resize (&ciphertext_got, plaintext.len);
+      status = mongocrypt_status_new ();
+
+      /* Test encrypt. */
+      ret = _native_crypto_aes_256_ctr_encrypt (
+         &key, &iv, &plaintext, &ciphertext_got, &bytes_written, status);
+      ASSERT_OR_PRINT (ret, status);
+      ASSERT_CMPBYTES (ciphertext.data,
+                       ciphertext.len,
+                       ciphertext_got.data,
+                       ciphertext_got.len);
+      ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
+
+      /* Test decrypt. */
+      ret = _native_crypto_aes_256_ctr_decrypt (
+         &key, &iv, &ciphertext, &plaintext_got, &bytes_written, status);
+      ASSERT_OR_PRINT (ret, status);
+      ASSERT_CMPBYTES (
+         plaintext.data, plaintext.len, plaintext_got.data, plaintext_got.len);
+      ASSERT_CMPINT ((int) bytes_written, ==, (int) plaintext.len);
+
+      mongocrypt_status_destroy (status);
+      _mongocrypt_buffer_cleanup (&ciphertext_got);
+      _mongocrypt_buffer_cleanup (&plaintext_got);
+      _mongocrypt_buffer_cleanup (&ciphertext);
+      _mongocrypt_buffer_cleanup (&plaintext);
+      _mongocrypt_buffer_cleanup (&iv);
+      _mongocrypt_buffer_cleanup (&key);
+
+      printf ("End test '%s'.\n", test->testname);
+   }
+}
+
 void
 _test_native_crypto_aes_256_ctr_encrypt (_mongocrypt_tester_t *tester) {
    bool ret;
@@ -340,4 +438,5 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_roundtrip);
    INSTALL_TEST (_test_native_crypto_aes_256_ctr_encrypt);
    INSTALL_TEST (_test_native_crypto_aes_256_ctr_decrypt);
+   INSTALL_TEST (_test_native_crypto_aes_256_ctr);
 }
