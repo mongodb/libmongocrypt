@@ -108,12 +108,14 @@ else ()
    set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-missing-braces")
 endif ()
 
-# Choose a Crypto provider
-set (MONGOCRYPT_CRYPTO OpenSSL)
-if (APPLE)
-   set (MONGOCRYPT_CRYPTO CommonCrypto)
-elseif (WIN32)
-   set (MONGOCRYPT_CRYPTO CNG)
+# If MONGOCRYPT_CRYPTO is not set, choose a system default.
+if (NOT MONGOCRYPT_CRYPTO)
+   set (MONGOCRYPT_CRYPTO OpenSSL)
+   if (APPLE)
+      set (MONGOCRYPT_CRYPTO CommonCrypto)
+   elseif (WIN32)
+      set (MONGOCRYPT_CRYPTO CNG)
+   endif ()
 endif ()
 
 # Otherwise, override with crypto hooks.
