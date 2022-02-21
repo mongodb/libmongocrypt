@@ -306,4 +306,55 @@ done:
    return ret;
 }
 
+bool
+_native_crypto_aes_256_ctr_decrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status) {
+   const EVP_CIPHER *cipher;
+   EVP_CIPHER_CTX *ctx;
+   bool ret = false;
+   int intermediate_bytes_written;
+
+   ctx = EVP_CIPHER_CTX_new ();
+   cipher = EVP_aes_256_ctr ();
+
+   BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == iv->len);
+   BSON_ASSERT (EVP_CIPHER_key_length (cipher) == key->len);
+   BSON_ASSERT (EVP_CIPHER_block_size (cipher) == 1);
+
+   if (!EVP_DecryptInit_ex (
+          ctx, cipher, NULL /* engine */, key->data, iv->data)) {
+      CLIENT_ERR ("error initializing cipher: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      goto done;
+   }
+
+   *bytes_written = 0;
+
+   if (!EVP_DecryptUpdate (
+          ctx, out->data, &intermediate_bytes_written, in->data, in->len)) {
+      CLIENT_ERR ("error decrypting: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      goto done;
+   }
+
+   *bytes_written = intermediate_bytes_written;
+
+   if (!EVP_DecryptFinal_ex (ctx, out->data, &intermediate_bytes_written)) {
+      CLIENT_ERR ("error decrypting: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      goto done;
+   }
+
+   *bytes_written += intermediate_bytes_written;
+
+   ret = true;
+done:
+   EVP_CIPHER_CTX_free (ctx);
+   return ret;
+}
+
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO */
