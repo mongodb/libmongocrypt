@@ -58,19 +58,22 @@ _native_crypto_init ()
    _native_crypto_initialized = true;
 }
 
-/* _encrypt_with_cipher encrypts @in with the OpenSSL cipher specified by @cipher.
+/* _encrypt_with_cipher encrypts @in with the OpenSSL cipher specified by
+ * @cipher.
  * @key is the input key. @iv is the input IV.
- * @out is the output ciphertext. @out must be allocated by the caller with enough room for the ciphertext.
+ * @out is the output ciphertext. @out must be allocated by the caller with
+ * enough room for the ciphertext.
  * @bytes_written is the resulting bytes written to @out.
  * Returns false and sets @status on error. */
 static bool
 _encrypt_with_cipher (const EVP_CIPHER *cipher,
-                     const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     const _mongocrypt_buffer_t *in,
-                     _mongocrypt_buffer_t *out,
-                     uint32_t *bytes_written,
-                     mongocrypt_status_t *status) {
+                      const _mongocrypt_buffer_t *key,
+                      const _mongocrypt_buffer_t *iv,
+                      const _mongocrypt_buffer_t *in,
+                      _mongocrypt_buffer_t *out,
+                      uint32_t *bytes_written,
+                      mongocrypt_status_t *status)
+{
    EVP_CIPHER_CTX *ctx;
    bool ret = false;
    int intermediate_bytes_written;
@@ -116,19 +119,22 @@ done:
    return ret;
 }
 
-/* _decrypt_with_cipher decrypts @in with the OpenSSL cipher specified by @cipher.
+/* _decrypt_with_cipher decrypts @in with the OpenSSL cipher specified by
+ * @cipher.
  * @key is the input key. @iv is the input IV.
- * @out is the output plaintext. @out must be allocated by the caller with enough room for the plaintext.
+ * @out is the output plaintext. @out must be allocated by the caller with
+ * enough room for the plaintext.
  * @bytes_written is the resulting bytes written to @out.
  * Returns false and sets @status on error. */
 static bool
 _decrypt_with_cipher (const EVP_CIPHER *cipher,
-                     const _mongocrypt_buffer_t *key,
-                     const _mongocrypt_buffer_t *iv,
-                     const _mongocrypt_buffer_t *in,
-                     _mongocrypt_buffer_t *out,
-                     uint32_t *bytes_written,
-                     mongocrypt_status_t *status) {
+                      const _mongocrypt_buffer_t *key,
+                      const _mongocrypt_buffer_t *iv,
+                      const _mongocrypt_buffer_t *in,
+                      _mongocrypt_buffer_t *out,
+                      uint32_t *bytes_written,
+                      mongocrypt_status_t *status)
+{
    EVP_CIPHER_CTX *ctx;
    bool ret = false;
    int intermediate_bytes_written;
@@ -287,8 +293,10 @@ _native_crypto_aes_256_ctr_encrypt (const _mongocrypt_buffer_t *key,
                                     const _mongocrypt_buffer_t *in,
                                     _mongocrypt_buffer_t *out,
                                     uint32_t *bytes_written,
-                                    mongocrypt_status_t *status) {
-   return _encrypt_with_cipher (EVP_aes_256_ctr(), key, iv, in, out, bytes_written, status);
+                                    mongocrypt_status_t *status)
+{
+   return _encrypt_with_cipher (
+      EVP_aes_256_ctr (), key, iv, in, out, bytes_written, status);
 }
 
 bool
@@ -297,8 +305,10 @@ _native_crypto_aes_256_ctr_decrypt (const _mongocrypt_buffer_t *key,
                                     const _mongocrypt_buffer_t *in,
                                     _mongocrypt_buffer_t *out,
                                     uint32_t *bytes_written,
-                                    mongocrypt_status_t *status) {
-   return _decrypt_with_cipher (EVP_aes_256_ctr(), key, iv, in, out, bytes_written, status);
+                                    mongocrypt_status_t *status)
+{
+   return _decrypt_with_cipher (
+      EVP_aes_256_ctr (), key, iv, in, out, bytes_written, status);
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO */

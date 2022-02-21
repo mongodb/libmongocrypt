@@ -94,7 +94,8 @@ _native_crypto_aes_256_ctr_decrypt (const _mongocrypt_buffer_t *key,
                                     const _mongocrypt_buffer_t *in,
                                     _mongocrypt_buffer_t *out,
                                     uint32_t *bytes_written,
-                                    mongocrypt_status_t *status) {
+                                    mongocrypt_status_t *status)
+{
    CLIENT_ERR ("hook not set for _native_crypto_aes_256_ctr_decrypt");
    return false;
 }

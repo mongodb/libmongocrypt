@@ -98,7 +98,7 @@ _mongocrypt_wrap_key (_mongocrypt_crypto_t *crypto,
 
 /*
  * _mongocrypt_unwrap_key decrypts an encrypted DEK with a KEK.
- * 
+ *
  * kek is an input Key Encryption Key.
  * encrypted_dek is an input encrypted Data Encryption Key.
  * dek is the result of decrypting encrypted_dek with kek.
