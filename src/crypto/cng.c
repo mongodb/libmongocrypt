@@ -315,4 +315,27 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
    return true;
 }
 
+bool
+_native_crypto_aes_256_ctr_encrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
+{
+   CLIENT_ERR ("_native_crypto_aes_256_ctr_encrypt not implemented for CNG");
+   return false;
+}
+
+bool
+_native_crypto_aes_256_ctr_decrypt (const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *in,
+                                    _mongocrypt_buffer_t *out,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status) {
+   CLIENT_ERR ("_native_crypto_aes_256_ctr_decrypt not implemented for CNG");
+   return false;
+}
+
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_CNG */
