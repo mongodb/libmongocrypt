@@ -825,7 +825,8 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       if (!ctx->opts.kek.kms_provider) {
          return _mongocrypt_ctx_fail_w_msg (ctx, "master key required");
       }
-      if (!(ctx->opts.kek.kms_provider &
+      if (!ctx->crypt->opts.use_need_kms_credentials_state &&
+          !(ctx->opts.kek.kms_provider &
             _mongocrypt_ctx_kms_providers(ctx)->configured_providers)) {
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "requested kms provider not configured");

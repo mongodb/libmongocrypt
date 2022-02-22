@@ -195,7 +195,7 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
          CHECK (mongocrypt_ctx_mongo_done (ctx));
          break;
       case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
-         // TODO
+         BSON_ASSERT (0);
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          while ((kms = mongocrypt_ctx_next_kms_ctx (ctx))) {
