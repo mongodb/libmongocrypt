@@ -63,8 +63,8 @@ _native_crypto_init ()
  * @key is the input key. @iv is the input IV.
  * @out is the output ciphertext. @out must be allocated by the caller with
  * enough room for the ciphertext.
- * @bytes_written is the resulting bytes written to @out.
- * Returns false and sets @status on error. */
+ * @bytes_written is the number of bytes that were written to @out.
+ * Returns false and sets @status on error. @status is required. */
 static bool
 _encrypt_with_cipher (const EVP_CIPHER *cipher,
                       const _mongocrypt_buffer_t *key,
@@ -124,8 +124,8 @@ done:
  * @key is the input key. @iv is the input IV.
  * @out is the output plaintext. @out must be allocated by the caller with
  * enough room for the plaintext.
- * @bytes_written is the resulting bytes written to @out.
- * Returns false and sets @status on error. */
+ * @bytes_written is the number of bytes that were written to @out.
+ * Returns false and sets @status on error. @status is required. */
 static bool
 _decrypt_with_cipher (const EVP_CIPHER *cipher,
                       const _mongocrypt_buffer_t *key,
