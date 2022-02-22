@@ -74,6 +74,7 @@ class MongoCryptContext : public Napi::ObjectWrap<MongoCryptContext> {
     void AddMongoOperationResponse(const Napi::CallbackInfo& info);
     void FinishMongoOperation(const Napi::CallbackInfo& info);
     Napi::Value NextKMSRequest(const Napi::CallbackInfo& info);
+    void ProvideKMSProviders(const Napi::CallbackInfo& info);
     void FinishKMSRequests(const Napi::CallbackInfo& info);
     Napi::Value FinalizeContext(const Napi::CallbackInfo& info);
 

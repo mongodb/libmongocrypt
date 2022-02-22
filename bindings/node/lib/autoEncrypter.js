@@ -258,6 +258,16 @@ module.exports = function (modules) {
       });
       stateMachine.execute(this, context, callback);
     }
+
+    /**
+     * Ask the user for KMS credentials.
+     */
+    askForKMSCredentials() {
+      /* This returns anything that looks like the kmsProviders original input
+       * option. It can be empty, and any provider specified here will override
+       * the original ones. */
+      return Promise.resolve({});
+    }
   }
 
   return { AutoEncrypter };
