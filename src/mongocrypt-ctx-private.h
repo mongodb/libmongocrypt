@@ -71,7 +71,9 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_key_broker_t kb;
    _mongocrypt_vtable_t vtable;
    _mongocrypt_ctx_opts_t opts;
-   _mongocrypt_opts_kms_providers_t kms_providers;
+   _mongocrypt_opts_kms_providers_t per_ctx_kms_providers; /* owned */
+   _mongocrypt_opts_kms_providers_t
+      kms_providers; /* not owned, is merged from per-ctx / per-mongocrypt_t */
    bool initialized;
    bool
       nothing_to_do; /* set to true if no encryption/decryption is required. */

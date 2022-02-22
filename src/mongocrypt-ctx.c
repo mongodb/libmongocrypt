@@ -564,23 +564,35 @@ mongocrypt_ctx_provide_kms_providers (
 
    if (!_mongocrypt_parse_kms_providers(
           kms_providers_definition,
-          &ctx->kms_providers,
+          &ctx->per_ctx_kms_providers,
           ctx->status,
           &ctx->crypt->log)) {
       return false;
    }
 
    if (!_mongocrypt_opts_kms_providers_validate(
-          &ctx->kms_providers,
+          &ctx->per_ctx_kms_providers,
           true,
           ctx->status)) {
       /* Remove the parsed KMS providers if they are invalid */
-      _mongocrypt_opts_kms_providers_cleanup(&ctx->kms_providers);
-      memset(&ctx->kms_providers, 0, sizeof(ctx->kms_providers));
+      _mongocrypt_opts_kms_providers_cleanup(&ctx->per_ctx_kms_providers);
+      memset(&ctx->per_ctx_kms_providers,
+             0,
+             sizeof(ctx->per_ctx_kms_providers));
       return false;
    }
 
-   ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+   memcpy(
+      &ctx->kms_providers,
+      &ctx->crypt->opts.kms_providers,
+      sizeof(_mongocrypt_opts_kms_providers_t));
+   _mongocrypt_opts_merge_kms_providers(
+      &ctx->kms_providers,
+      &ctx->per_ctx_kms_providers);
+
+   ctx->state = ctx->kb.state == KB_ADDING_DOCS ?
+      MONGOCRYPT_CTX_NEED_MONGO_KEYS :
+      MONGOCRYPT_CTX_NEED_KMS;
    if (ctx->vtable.after_kms_credentials_provided) {
       return ctx->vtable.after_kms_credentials_provided (ctx);
    }
@@ -668,7 +680,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       ctx->vtable.cleanup (ctx);
    }
 
-   _mongocrypt_opts_kms_providers_cleanup(&ctx->kms_providers);
+   _mongocrypt_opts_kms_providers_cleanup(&ctx->per_ctx_kms_providers);
    _mongocrypt_kek_cleanup (&ctx->opts.kek);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
@@ -902,18 +914,19 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
       ret = false;
       break;
    case KB_ADDING_DOCS:
-      /* Require key documents from driver. */
-      new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+      /* Encrypted keys need KMS, which need to be provided before
+       * adding docs. */
+      if (ctx->crypt->opts.use_need_kms_credentials_state) {
+         new_state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
+      } else {
+         /* Require key documents from driver. */
+         new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+      }
       ret = true;
       break;
    case KB_AUTHENTICATING:
    case KB_DECRYPTING_KEY_MATERIAL:
-      /* Encrypted keys need KMS. */
-      if (ctx->crypt->opts.use_need_kms_credentials_state) {
-         new_state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
-      } else {
-         new_state = MONGOCRYPT_CTX_NEED_KMS;
-      }
+      new_state = MONGOCRYPT_CTX_NEED_KMS;
       ret = true;
       break;
    case KB_DONE:

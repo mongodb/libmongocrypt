@@ -90,6 +90,14 @@ _mongocrypt_opts_kms_providers_cleanup (
    _mongocrypt_opts_kms_providers_t *kms_providers);
 
 
+/* Merge `source` into `dest`. Does not perform any memory ownership management;
+ * values in `dest` will be overwritten with values from `source` without
+ * being released. */
+void
+_mongocrypt_opts_merge_kms_providers (
+   _mongocrypt_opts_kms_providers_t* dest,
+   const _mongocrypt_opts_kms_providers_t* source);
+
 void
 _mongocrypt_opts_init (_mongocrypt_opts_t *opts);
 

@@ -61,6 +61,37 @@ _mongocrypt_opts_kms_providers_cleanup (
    _mongocrypt_endpoint_destroy (kms_providers->kmip.endpoint);
 }
 
+
+void
+_mongocrypt_opts_merge_kms_providers (
+   _mongocrypt_opts_kms_providers_t* dest,
+   const _mongocrypt_opts_kms_providers_t* source)
+{
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
+      memcpy(&dest->aws, &source->aws, sizeof(source->aws));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+      memcpy(&dest->local, &source->local, sizeof(source->local));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AZURE) {
+      memcpy(&dest->azure, &source->azure, sizeof(source->azure));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_GCP) {
+      memcpy(&dest->gcp, &source->gcp, sizeof(source->gcp));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_KMIP) {
+      memcpy(&dest->kmip, &source->kmip, sizeof(source->kmip));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
+   }
+   /* ensure all providers were copied */
+   BSON_ASSERT (!(source->configured_providers &~ dest->configured_providers));
+}
+
+
 void
 _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
@@ -111,7 +142,8 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
 {
    return _mongocrypt_opts_kms_providers_validate(
       &opts->kms_providers,
-      false,
+      /* providers list may be empty if on-demand KMS retrieval is used */
+      opts->use_need_kms_credentials_state,
       status);
 }
 
