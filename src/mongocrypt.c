@@ -844,8 +844,18 @@ _mongocrypt_parse_kms_providers (
 
    while (bson_iter_next (&iter)) {
       const char *field_name;
+      bson_t field_bson;
 
       field_name = bson_iter_key (&iter);
+      if (BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+         uint32_t len;
+         const uint8_t *data = NULL;
+         bson_iter_document (&iter, &len, &data);
+         bson_init_static (&field_bson, data, len);
+      } else {
+         CLIENT_ERR ("'%s' value must be a BSON document", field_name);
+         return false;
+      }
 
       if (0 == strcmp (field_name, "azure")) {
          if (0 != (
@@ -959,6 +969,8 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
          kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+      } else if (0 == strcmp (field_name, "aws") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AWS;
       } else if (0 == strcmp (field_name, "aws")) {
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,

@@ -686,7 +686,6 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "Invalid endpoint"},
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
       {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
-      {"{'aws': {}}", "expected UTF-8 aws.accessKeyId"},
       {"{'local': {'key': {'$binary': {'base64': '" EXAMPLE_LOCAL_MATERIAL
        "', 'subType': '00'}} }}",
        NULL},

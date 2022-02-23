@@ -496,7 +496,10 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
       }
    }
 
-   if (ctx->crypt->opts.use_need_kms_credentials_state) {
+   /* Only enter the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS if needed for AWS. */
+   if (ctx->crypt->opts.use_need_kms_credentials_state &&
+       ctx->crypt->opts.kms_providers.need_credentials ==
+          MONGOCRYPT_KMS_PROVIDER_AWS) {
       ctx->state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
    } else if (!_kms_start (ctx)) {
       goto done;
