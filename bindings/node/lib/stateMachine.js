@@ -178,15 +178,17 @@ module.exports = function (modules) {
         }
 
         case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS: {
-          autoEncrypter.askForKMSCredentials().then((kmsProviders) => {
-            context.provideKMSProviders(
-              !Buffer.isBuffer(kmsProviders)
-                ? bson.serialize(kmsProviders)
-                : kmsProviders);
-            this.execute(autoEncrypter, context, callback);
-          }).catch(err => {
-            callback(err, null);
-          });
+          autoEncrypter
+            .askForKMSCredentials()
+            .then(kmsProviders => {
+              context.provideKMSProviders(
+                !Buffer.isBuffer(kmsProviders) ? bson.serialize(kmsProviders) : kmsProviders
+              );
+              this.execute(autoEncrypter, context, callback);
+            })
+            .catch(err => {
+              callback(err, null);
+            });
 
           return;
         }
