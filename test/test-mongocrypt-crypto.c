@@ -295,7 +295,12 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
 
       /* Test encrypt. */
       ret = _native_crypto_aes_256_ctr_encrypt (
-         &key, &iv, &plaintext, &ciphertext_got, &bytes_written, status);
+         (aes_256_args_t){.key = &key,
+                          .iv = &iv,
+                          .in = &plaintext,
+                          .out = &ciphertext_got,
+                          .bytes_written = &bytes_written,
+                          .status = status});
       ASSERT_OR_PRINT (ret, status);
       ASSERT_CMPBYTES (ciphertext.data,
                        ciphertext.len,
@@ -305,7 +310,12 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
 
       /* Test decrypt. */
       ret = _native_crypto_aes_256_ctr_decrypt (
-         &key, &iv, &ciphertext, &plaintext_got, &bytes_written, status);
+         (aes_256_args_t){.key = &key,
+                          .iv = &iv,
+                          .in = &ciphertext,
+                          .out = &plaintext_got,
+                          .bytes_written = &bytes_written,
+                          .status = status});
       ASSERT_OR_PRINT (ret, status);
       ASSERT_CMPBYTES (
          plaintext.data, plaintext.len, plaintext_got.data, plaintext_got.len);

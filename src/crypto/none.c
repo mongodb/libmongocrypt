@@ -31,26 +31,18 @@ _native_crypto_init ()
 
 
 bool
-_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
 {
+   mongocrypt_status_t *status = args.status;
    CLIENT_ERR ("hook not set for aes_256_cbc_encrypt");
    return false;
 }
 
 
 bool
-_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 {
+   mongocrypt_status_t *status = args.status;
    CLIENT_ERR ("hook not set for aes_256_cbc_decrypt");
    return false;
 }
@@ -77,25 +69,17 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
 }
 
 bool
-_native_crypto_aes_256_ctr_encrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
 {
+   mongocrypt_status_t *status = args.status;
    CLIENT_ERR ("hook not set for _native_crypto_aes_256_ctr_encrypt");
    return false;
 }
 
 bool
-_native_crypto_aes_256_ctr_decrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
 {
+   mongocrypt_status_t *status = args.status;
    CLIENT_ERR ("hook not set for _native_crypto_aes_256_ctr_decrypt");
    return false;
 }

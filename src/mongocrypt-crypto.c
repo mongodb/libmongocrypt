@@ -70,7 +70,12 @@ _crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto,
       return ret;
    }
    return _native_crypto_aes_256_cbc_encrypt (
-      enc_key, iv, in, out, bytes_written, status);
+      (aes_256_args_t){.key = enc_key,
+                       .iv = iv,
+                       .in = in,
+                       .out = out,
+                       .bytes_written = bytes_written,
+                       .status = status});
 }
 
 
@@ -107,7 +112,12 @@ _crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto,
       return ret;
    }
    return _native_crypto_aes_256_cbc_decrypt (
-      enc_key, iv, in, out, bytes_written, status);
+      (aes_256_args_t){.key = enc_key,
+                       .iv = iv,
+                       .in = in,
+                       .out = out,
+                       .bytes_written = bytes_written,
+                       .status = status});
 }
 
 
