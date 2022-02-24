@@ -634,10 +634,15 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
 }
 
 static bool
-_state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
+_state_need_kms_credentials (
+   _state_machine_t *state_machine,
+   bson_error_t *error)
 {
-   bin = TEST_BSON ("{}");
+   bson_t empty = BSON_INITIALIZER;
+   mongocrypt_binary_t* bin = util_bson_to_bin (&empty);
    mongocrypt_ctx_provide_kms_providers (state_machine->ctx, bin);
+   mongocrypt_binary_destroy (bin);
+   return true;
 }
 
 static bool
