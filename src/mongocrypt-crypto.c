@@ -34,19 +34,15 @@
  * user supplied hooks. */
 static bool
 _crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto,
-                             const _mongocrypt_buffer_t *enc_key,
-                             const _mongocrypt_buffer_t *iv,
-                             const _mongocrypt_buffer_t *in,
-                             _mongocrypt_buffer_t *out,
-                             uint32_t *bytes_written,
-                             mongocrypt_status_t *status)
+                             aes_256_args_t args)
 {
-   if (enc_key->len != MONGOCRYPT_ENC_KEY_LEN) {
+   mongocrypt_status_t *status = args.status;
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }
 
-   if (iv->len != MONGOCRYPT_IV_LEN) {
+   if (args.iv->len != MONGOCRYPT_IV_LEN) {
       CLIENT_ERR ("invalid iv length");
       return false;
    }
@@ -55,35 +51,30 @@ _crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto,
       mongocrypt_binary_t enc_key_bin, iv_bin, out_bin, in_bin;
       bool ret;
 
-      _mongocrypt_buffer_to_binary (enc_key, &enc_key_bin);
-      _mongocrypt_buffer_to_binary (iv, &iv_bin);
-      _mongocrypt_buffer_to_binary (out, &out_bin);
-      _mongocrypt_buffer_to_binary (in, &in_bin);
+      _mongocrypt_buffer_to_binary (args.key, &enc_key_bin);
+      _mongocrypt_buffer_to_binary (args.iv, &iv_bin);
+      _mongocrypt_buffer_to_binary (args.out, &out_bin);
+      _mongocrypt_buffer_to_binary (args.in, &in_bin);
 
       ret = crypto->aes_256_cbc_encrypt (crypto->ctx,
                                          &enc_key_bin,
                                          &iv_bin,
                                          &in_bin,
                                          &out_bin,
-                                         bytes_written,
+                                         args.bytes_written,
                                          status);
       return ret;
    }
-   return _native_crypto_aes_256_cbc_encrypt (
-      enc_key, iv, in, out, bytes_written, status);
+   return _native_crypto_aes_256_cbc_encrypt (args);
 }
 
 
 static bool
 _crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto,
-                             const _mongocrypt_buffer_t *iv,
-                             const _mongocrypt_buffer_t *enc_key,
-                             const _mongocrypt_buffer_t *in,
-                             _mongocrypt_buffer_t *out,
-                             uint32_t *bytes_written,
-                             mongocrypt_status_t *status)
+                             aes_256_args_t args)
 {
-   if (enc_key->len != MONGOCRYPT_ENC_KEY_LEN) {
+   mongocrypt_status_t *status = args.status;
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }
@@ -92,22 +83,21 @@ _crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto,
       mongocrypt_binary_t enc_key_bin, iv_bin, out_bin, in_bin;
       bool ret;
 
-      _mongocrypt_buffer_to_binary (enc_key, &enc_key_bin);
-      _mongocrypt_buffer_to_binary (iv, &iv_bin);
-      _mongocrypt_buffer_to_binary (out, &out_bin);
-      _mongocrypt_buffer_to_binary (in, &in_bin);
+      _mongocrypt_buffer_to_binary (args.key, &enc_key_bin);
+      _mongocrypt_buffer_to_binary (args.iv, &iv_bin);
+      _mongocrypt_buffer_to_binary (args.out, &out_bin);
+      _mongocrypt_buffer_to_binary (args.in, &in_bin);
 
       ret = crypto->aes_256_cbc_decrypt (crypto->ctx,
                                          &enc_key_bin,
                                          &iv_bin,
                                          &in_bin,
                                          &out_bin,
-                                         bytes_written,
+                                         args.bytes_written,
                                          status);
       return ret;
    }
-   return _native_crypto_aes_256_cbc_decrypt (
-      enc_key, iv, in, out, bytes_written, status);
+   return _native_crypto_aes_256_cbc_decrypt (args);
 }
 
 
@@ -331,13 +321,14 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
       goto done;
    }
 
-   if (!_crypto_aes_256_cbc_encrypt (crypto,
-                                     enc_key,
-                                     iv,
-                                     &to_encrypt,
-                                     ciphertext,
-                                     bytes_written,
-                                     status)) {
+   if (!_crypto_aes_256_cbc_encrypt (
+          crypto,
+          (aes_256_args_t){.key = enc_key,
+                           .iv = iv,
+                           .in = &to_encrypt,
+                           .out = ciphertext,
+                           .bytes_written = bytes_written,
+                           .status = status})) {
       goto done;
    }
 
@@ -638,7 +629,13 @@ _decrypt_step (_mongocrypt_crypto_t *crypto,
    }
 
    if (!_crypto_aes_256_cbc_decrypt (
-          crypto, iv, enc_key, ciphertext, plaintext, bytes_written, status)) {
+          crypto,
+          (aes_256_args_t){.iv = iv,
+                           .key = enc_key,
+                           .in = ciphertext,
+                           .out = plaintext,
+                           .bytes_written = bytes_written,
+                           .status = status})) {
       return false;
    }
 

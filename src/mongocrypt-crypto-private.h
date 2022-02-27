@@ -98,7 +98,7 @@ _mongocrypt_wrap_key (_mongocrypt_crypto_t *crypto,
 
 /*
  * _mongocrypt_unwrap_key decrypts an encrypted DEK with a KEK.
- * 
+ *
  * kek is an input Key Encryption Key.
  * encrypted_dek is an input encrypted Data Encryption Key.
  * dek is the result of decrypting encrypted_dek with kek.
@@ -133,23 +133,21 @@ extern bool _native_crypto_initialized;
 void
 _native_crypto_init ();
 
+typedef struct {
+   const _mongocrypt_buffer_t *key;
+   const _mongocrypt_buffer_t *iv;
+   const _mongocrypt_buffer_t *in;
+   _mongocrypt_buffer_t *out;
+   uint32_t *bytes_written;
+   mongocrypt_status_t *status;
+} aes_256_args_t;
 
 bool
-_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
-_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
@@ -163,6 +161,14 @@ bool
 _native_crypto_random (_mongocrypt_buffer_t *out,
                        uint32_t count,
                        mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_CRYPTO_PRIVATE_H */

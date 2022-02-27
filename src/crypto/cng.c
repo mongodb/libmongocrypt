@@ -183,27 +183,23 @@ _crypto_state_destroy (cng_encrypt_state *state)
 
 
 bool
-_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
 {
    bool ret = false;
-   cng_encrypt_state *state = _crypto_state_init (key, iv, status);
+   mongocrypt_status_t *status = args.status;
+   cng_encrypt_state *state = _crypto_state_init (args.key, args.iv, status);
 
    NTSTATUS nt_status;
 
    nt_status = BCryptEncrypt (state->key_handle,
-                              (PUCHAR) (in->data),
-                              in->len,
+                              (PUCHAR) (args.in->data),
+                              args.in->len,
                               NULL,
                               state->iv,
                               state->iv_len,
-                              out->data,
-                              out->len,
-                              bytes_written,
+                              args.out->data,
+                              args.out->len,
+                              args.bytes_written,
                               0);
 
    if (nt_status != STATUS_SUCCESS) {
@@ -219,27 +215,23 @@ done:
 
 
 bool
-_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 {
    bool ret = false;
-   cng_encrypt_state *state = _crypto_state_init (key, iv, status);
+   mongocrypt_status_t *status = args.status;
+   cng_encrypt_state *state = _crypto_state_init (args.key, args.iv, status);
 
    NTSTATUS nt_status;
 
    nt_status = BCryptDecrypt (state->key_handle,
-                              (PUCHAR) (in->data),
-                              in->len,
+                              (PUCHAR) (args.in->data),
+                              args.in->len,
                               NULL,
                               state->iv,
                               state->iv_len,
-                              out->data,
-                              out->len,
-                              bytes_written,
+                              args.out->data,
+                              args.out->len,
+                              args.bytes_written,
                               0);
 
 
@@ -313,6 +305,22 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
    }
 
    return true;
+}
+
+bool
+_native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
+{
+   mongocrypt_status_t *status = args.status;
+   CLIENT_ERR ("_native_crypto_aes_256_ctr_encrypt not implemented for CNG");
+   return false;
+}
+
+bool
+_native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
+{
+   mongocrypt_status_t *status = args.status;
+   CLIENT_ERR ("_native_crypto_aes_256_ctr_decrypt not implemented for CNG");
+   return false;
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_CNG */
