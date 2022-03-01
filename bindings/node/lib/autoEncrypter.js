@@ -264,11 +264,12 @@ module.exports = function (modules) {
 
     /**
      * Ask the user for KMS credentials.
+     *
+     * This returns anything that looks like the kmsProviders original input
+     * option. It can be empty, and any provider specified here will override
+     * the original ones.
      */
     async askForKMSCredentials() {
-      /* This returns anything that looks like the kmsProviders original input
-       * option. It can be empty, and any provider specified here will override
-       * the original ones. */
       return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
     }
   }
