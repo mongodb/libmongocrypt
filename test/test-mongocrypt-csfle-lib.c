@@ -22,6 +22,9 @@ _test_csfle_no_paths (_mongocrypt_tester_t *tester)
    /// Test that mongocrypt_init succeeds if we have no search path
    mongocrypt_t *const crypt = get_test_mongocrypt (tester);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
+   // No csfle was loaded:
+   BSON_ASSERT (mongocrypt_csfle_version_string (crypt, NULL) == NULL);
+   BSON_ASSERT (mongocrypt_csfle_version (crypt) == 0);
    mongocrypt_destroy (crypt);
 }
 
@@ -33,6 +36,9 @@ _test_csfle_not_found (_mongocrypt_tester_t *tester)
    mongocrypt_t *const crypt = get_test_mongocrypt (tester);
    mongocrypt_setopt_append_csfle_search_path (crypt, "/no-such-directory");
    ASSERT_OK (mongocrypt_init (crypt), crypt);
+   // No csfle was loaded:
+   BSON_ASSERT (mongocrypt_csfle_version_string (crypt, NULL) == NULL);
+   BSON_ASSERT (mongocrypt_csfle_version (crypt) == 0);
    mongocrypt_destroy (crypt);
 }
 
@@ -44,6 +50,16 @@ _test_csfle_load (_mongocrypt_tester_t *tester)
    mongocrypt_setopt_append_csfle_search_path (crypt, "$ORIGIN");
    mongocrypt_setopt_append_csfle_search_path (crypt, "another-no-such-dir");
    ASSERT_OK (mongocrypt_init (crypt), crypt);
+   // csfle WAS loaded:
+   BSON_ASSERT (mongocrypt_csfle_version_string (crypt, NULL) != NULL);
+   BSON_ASSERT (mongocrypt_csfle_version (crypt) != 0);
+   mstr_view version =
+      mstrv_view_cstr (mongocrypt_csfle_version_string (crypt, NULL));
+   if (TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+      MSTR_ASSERT (true, version, starts_with, mstrv_lit ("mongo_csfle_v1-"));
+   } else {
+      MSTR_ASSERT (true, version, eq, mstrv_lit ("stubbed-mongo_csfle"));
+   }
    mongocrypt_destroy (crypt);
 }
 
@@ -51,10 +67,20 @@ static void
 _test_csfle_path_override_okay (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *const crypt = get_test_mongocrypt (tester);
-   // Set to the absolute path to the DLL we download for testing:
+   // Set to the absolute path to the DLL we use for testing:
    mongocrypt_setopt_set_csfle_lib_path_override (
       crypt, "$ORIGIN/mongo_csfle_v1" MCR_DLL_SUFFIX);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
+   // csfle WAS loaded:
+   BSON_ASSERT (mongocrypt_csfle_version_string (crypt, NULL) != NULL);
+   BSON_ASSERT (mongocrypt_csfle_version (crypt) != 0);
+   mstr_view version =
+      mstrv_view_cstr (mongocrypt_csfle_version_string (crypt, NULL));
+   if (TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+      MSTR_ASSERT (true, version, starts_with, mstrv_lit ("mongo_csfle_v1-"));
+   } else {
+      MSTR_ASSERT (true, version, eq, mstrv_lit ("stubbed-mongo_csfle"));
+   }
    mongocrypt_destroy (crypt);
 }
 
@@ -71,6 +97,8 @@ _test_csfle_path_override_fail (_mongocrypt_tester_t *tester)
    ASSERT_FAILS (mongocrypt_init (crypt),
                  crypt,
                  "but we failed to open a dynamic library at that location");
+   BSON_ASSERT (mongocrypt_csfle_version_string (crypt, NULL) == NULL);
+   BSON_ASSERT (mongocrypt_csfle_version (crypt) == 0);
    mongocrypt_destroy (crypt);
 }
 

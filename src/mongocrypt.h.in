@@ -511,6 +511,51 @@ MONGOCRYPT_EXPORT
 void
 mongocrypt_destroy (mongocrypt_t *crypt);
 
+/**
+ * Obtain a nul-terminated version string of the loaded csfle dynamic library,
+ * if available.
+ *
+ * If no csfle was successfully loaded, this function returns NULL.
+ *
+ * @param[in] crypt The mongocrypt_t object after a successful call to
+ * mongocrypt_init.
+ * @param[out] len An optional output parameter to which the length of the
+ * returned string is written. If provided and no csfle library was loaded, zero
+ * is written to *len.
+ *
+ * @return A nul-terminated string of the dynamically loaded csfle library.
+ *
+ * @note For a numeric value that can be compared against, use
+ * @ref mongocrypt_csfle_version.
+ */
+MONGOCRYPT_EXPORT
+const char *
+mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len);
+
+
+/**
+ * @brief Obtain a 64-bit constant encoding the version of the loaded csfle
+ * library, if available.
+ *
+ * @param[in] crypt The mongocrypt_t object after a successul call to
+ * mongocrypt_init.
+ *
+ * @return A 64-bit encoded version number, with the version encoded as four
+ * sixteen-bit integers, or zero if no csfle library was loaded.
+ *
+ * The version is encoded as four 16-bit numbers, from high to low:
+ *
+ * - Major version
+ * - Minor version
+ * - Revision
+ * - Reserved
+ *
+ * For example, version 6.2.1 would be encoded as: 0x0006'0002'0001'0000
+ */
+MONGOCRYPT_EXPORT
+uint64_t
+mongocrypt_csfle_version (const mongocrypt_t *crypt);
+
 
 /**
  * Manages the state machine for encryption or decryption.
