@@ -1,5 +1,13 @@
 # ChangeLog
 
+## 1.3.1
+
+### New Features
+- Support custom key material through `mongocrypt_ctx_setopt_key_material`.
+### Fixed
+- Fix deprecation warnings with OpenSSL 3.0.
+- Resolve possible symbol conflicts with OpenSSL.
+
 ## 1.3.0
 - Support "kmip" KMS provider.
 - Add mongocrypt_kms_ctx_get_kms_provider.
