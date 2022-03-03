@@ -32,8 +32,10 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_mongo_done;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_mongo_feed;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_mongo_op;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_next_kms_ctx;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_provide_kms_providers;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_state;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_status;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_providers;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
@@ -91,6 +93,16 @@ class MongoCryptContextImpl implements MongoCryptContext {
         boolean success = mongocrypt_ctx_mongo_done(wrapped);
         if (!success) {
             throwExceptionFromStatus();
+        }
+    }
+
+    @Override
+    public void provideKmsProviderCredentials(final BsonDocument credentialsDocument) {
+        try (BinaryHolder binaryHolder = toBinary(credentialsDocument)) {
+            boolean success = mongocrypt_ctx_provide_kms_providers(wrapped, binaryHolder.getBinary());
+            if (!success) {
+                throwExceptionFromStatus();
+            }
         }
     }
 

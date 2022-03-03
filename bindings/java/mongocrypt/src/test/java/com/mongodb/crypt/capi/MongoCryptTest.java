@@ -107,6 +107,28 @@ public class MongoCryptTest {
     }
 
     @Test
+    public void testEmptyAwsCredentials() throws URISyntaxException, IOException {
+        MongoCrypt mongoCrypt = MongoCrypts.create(MongoCryptOptions
+                .builder()
+                .kmsProviderOptions(new BsonDocument("aws", new BsonDocument()))
+                .build());
+
+        MongoCryptContext decryptor = mongoCrypt.createDecryptionContext(getResourceAsDocument("encrypted-command-reply.json"));
+
+        assertEquals(State.NEED_KMS_CREDENTIALS, decryptor.getState());
+
+        BsonDocument awsCredentials = new BsonDocument();
+        awsCredentials.put("accessKeyId", new BsonString("example"));
+        awsCredentials.put("secretAccessKey", new BsonString("example"));
+
+        decryptor.provideKmsProviderCredentials(new BsonDocument("aws", awsCredentials));
+
+        assertEquals(State.NEED_MONGO_KEYS, decryptor.getState());
+
+        mongoCrypt.close();
+    }
+
+    @Test
     public void testMultipleCloseCalls() {
         MongoCrypt mongoCrypt = createMongoCrypt();
         assertNotNull(mongoCrypt);
