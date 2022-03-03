@@ -302,13 +302,30 @@ if (BUILD_TESTING)
       PREFIX ""
       )
 
-   add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
-   set_target_properties (stubbed-csfle PROPERTIES
-      # Normalize the output name expected by libmongocrypt
-      PREFIX ""
-      OUTPUT_NAME "mongo_csfle_v1"
-      )
-   target_include_directories (stubbed-csfle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+   if (MONGOCRYPT_TESTING_CSFLE_FILE)
+      # Generate a target that copies the CSFLE library into the binary directory of test-mongocrypt
+      set (stamp "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1.copied.$<CONFIG>.stamp")
+      add_custom_command (
+         OUTPUT "${stamp}"
+         COMMAND "${CMAKE_COMMAND}" -E copy
+            "${MONGOCRYPT_TESTING_CSFLE_FILE}"
+            "$<TARGET_FILE_DIR:test-mongocrypt>/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}"
+         COMMAND "${CMAKE_COMMAND}" -E touch "${stamp}"
+         DEPENDS "${MONGOCRYPT_TESTING_CSFLE_FILE}"
+         COMMENT "Getting mongo_csfle library"
+         )
+      add_custom_target (copy-csfle ALL DEPENDS "${stamp}")
+   else ()
+      message (STATUS "Generating a stubbed csfle dynamic library for use in testing.")
+      message (STATUS "Provide a MONGOCRYPT_TESTING_CSFLE_FILE=<filepath> to provide a csfle for use in testing")
+      add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
+      set_target_properties (stubbed-csfle PROPERTIES
+         # Normalize the output name expected by libmongocrypt
+         PREFIX ""
+         OUTPUT_NAME "mongo_csfle_v1"
+         )
+      target_include_directories (stubbed-csfle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+   endif ()
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
@@ -348,10 +365,13 @@ target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET} mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
-target_compile_definitions (test-mongocrypt PRIVATE ${BSON_DEFINITIONS})
-
-# Set a definition so that testcases can know where test-mongocrypt.exe was written to
-target_compile_definitions (test-mongocrypt PRIVATE "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\"")
+target_compile_definitions (test-mongocrypt PRIVATE
+   ${BSON_DEFINITIONS}
+   # Set a definition so that testcases can know where test-mongocrypt.exe was written to
+   "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
+   # Tell test-mongocrypt whether we have a real csfle library for testing
+   TEST_MONGOCRYPT_HAVE_REAL_CSFLE=$<BOOL:${MONGOCRYPT_TESTING_CSFLE_FILE}>
+   )
 
 add_test (
    NAME mongocrypt

@@ -103,13 +103,10 @@ typedef struct _mcr_csfle_v1_vtable {
            uint32_t ns_len,                                                  \
            uint32_t *bson_len,                                               \
            mongo_csfle_v1_status *status)                                    \
+   X_FUNC (get_version, uint64_t, void)                                      \
+   X_FUNC (get_version_str, const char *, void)                              \
    /* Free bson data created by csfle */                                     \
    X_FUNC (bson_free, void, uint8_t *bson)
-
-   /// At time of writing, these two symbols seem to be missing from the CSFLE
-   /// build, despite documentation in the csfle header (Refer: SERVER-63680):
-   // X_FUNC (get_version, uint64_t, void)
-   // X_FUNC (get_version_str, const char *, void)
 
 #define X_FUNC(Name, RetType, ...) RetType (*Name) (__VA_ARGS__);
    MONGOC_CSFLE_FUNCTIONS_X

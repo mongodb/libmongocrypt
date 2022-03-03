@@ -93,7 +93,7 @@ mongo_csfle_v1_get_version (void)
 const char *
 mongo_csfle_v1_get_version_str (void)
 {
-   return "6.2.1";
+   return "stubbed-mongo_csfle";
 }
 
 struct mongo_csfle_v1_query_analyzer {

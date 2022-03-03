@@ -646,6 +646,32 @@ mongocrypt_destroy (mongocrypt_t *crypt)
 }
 
 
+const char *
+mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len)
+{
+   if (!mcr_dll_is_open (crypt->csfle_lib)) {
+      if (len) {
+         *len = 0;
+      }
+      return NULL;
+   }
+   const char *version = crypt->csfle_vtable.get_version_str ();
+   if (len) {
+      *len = (uint32_t) (strlen (version));
+   }
+   return version;
+}
+
+uint64_t
+mongocrypt_csfle_version (const mongocrypt_t *crypt)
+{
+   if (!mcr_dll_is_open (crypt->csfle_lib)) {
+      return 0;
+   }
+   return crypt->csfle_vtable.get_version ();
+}
+
+
 bool
 _mongocrypt_validate_and_copy_string (const char *in,
                                       int32_t in_len,
