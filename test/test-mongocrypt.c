@@ -800,6 +800,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_kms_ctx (&tester);
    _mongocrypt_tester_install_csfle_lib (&tester);
    _mongocrypt_tester_install_dll (&tester);
+   _mongocrypt_tester_install_mc_tokens (&tester);
 
 
    printf ("Running tests...\n");
