@@ -22,6 +22,18 @@ endif ()
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
+
+# Enable a higher warning level and warnings-as-errors
+include (MongoC-Warnings)
+option (ENABLE_MORE_WARNINGS_AS_ERRORS "Enable extra warnings-as-errors in the build." ON)
+if (ENABLE_MORE_WARNINGS_AS_ERRORS)
+   mongoc_add_platform_compile_options (
+      msvc:/W3 msvc:/WX msvc:/wd4996
+      gnu-like:-Werror
+      gnu-like:-Wno-missing-braces
+      )
+endif ()
+
 # Attempt to find libbson by new package name.
 find_package (bson-1.0 1.11 QUIET)
 if (bson-1.0_FOUND)
@@ -97,16 +109,6 @@ set (MONGOCRYPT_SOURCES
    src/os_win/os_dll.c
    src/os_posix/os_dll.c
    )
-
-if ( MSVC )
-   # W4996 - POSIX name for this item is deprecated
-   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS")
-
-   # TODO: add support for clang-cl which is detected as MSVC
-else ()
-   # GNU, Clang, AppleClang
-   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-missing-braces")
-endif ()
 
 # If MONGOCRYPT_CRYPTO is not set, choose a system default.
 if (NOT MONGOCRYPT_CRYPTO)
