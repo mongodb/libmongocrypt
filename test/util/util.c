@@ -634,6 +634,18 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
 }
 
 static bool
+_state_need_kms_credentials (
+   _state_machine_t *state_machine,
+   bson_error_t *error)
+{
+   bson_t empty = BSON_INITIALIZER;
+   mongocrypt_binary_t* bin = util_bson_to_bin (&empty);
+   mongocrypt_ctx_provide_kms_providers (state_machine->ctx, bin);
+   mongocrypt_binary_destroy (bin);
+   return true;
+}
+
+static bool
 _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
 {
    mongocrypt_kms_ctx_t *kms_ctx = NULL;
@@ -798,6 +810,8 @@ _state_string (mongocrypt_ctx_state_t state)
       return "MONGOCRYPT_CTX_NEED_MONGO_MARKINGS";
    case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
       return "MONGOCRYPT_CTX_NEED_MONGO_KEYS";
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+      return "MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS";
    case MONGOCRYPT_CTX_NEED_KMS:
       return "MONGOCRYPT_CTX_NEED_KMS";
    case MONGOCRYPT_CTX_READY:
@@ -853,6 +867,11 @@ _state_machine_run (_state_machine_t *state_machine,
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
          if (!_state_need_mongo_keys (state_machine, error)) {
+            goto fail;
+         }
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         if (!_state_need_kms_credentials (state_machine, error)) {
             goto fail;
          }
          break;

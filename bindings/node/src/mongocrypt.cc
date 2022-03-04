@@ -418,6 +418,8 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
+    mongocrypt_setopt_use_need_kms_credentials_state(_mongo_crypt.get());
+
     // initialize afer all options are set, but after `MongoCrypt` instance is created so we can
     // optionally pass the instance to the logging function.
     if (!mongocrypt_init(_mongo_crypt.get())) {
@@ -625,6 +627,7 @@ Function MongoCryptContext::Init(Napi::Env env) {
                     InstanceMethod("addMongoOperationResponse", &MongoCryptContext::AddMongoOperationResponse),
                     InstanceMethod("finishMongoOperation", &MongoCryptContext::FinishMongoOperation),
                     InstanceMethod("nextKMSRequest", &MongoCryptContext::NextKMSRequest),
+                    InstanceMethod("provideKMSProviders", &MongoCryptContext::ProvideKMSProviders),
                     InstanceMethod("finishKMSRequests", &MongoCryptContext::FinishKMSRequests),
                     InstanceMethod("finalize", &MongoCryptContext::FinalizeContext),
                     InstanceAccessor("status", &MongoCryptContext::Status, nullptr),
@@ -676,6 +679,20 @@ void MongoCryptContext::AddMongoOperationResponse(const CallbackInfo& info) {
 
 void MongoCryptContext::FinishMongoOperation(const CallbackInfo& info) {
     mongocrypt_ctx_mongo_done(_context.get());
+}
+
+void MongoCryptContext::ProvideKMSProviders(const CallbackInfo& info) {
+    if (info.Length() != 1 || !info[0].IsObject()) {
+        throw TypeError::New(Env(), "Missing required parameter `buffer`");
+    }
+
+    if (!info[0].IsBuffer()) {
+        throw TypeError::New(Env(), "First parameter must be a Buffer");
+    }
+
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kms_bson(
+        BufferToBinary(info[0].As<Uint8Array>()));
+    mongocrypt_ctx_provide_kms_providers(_context.get(), kms_bson.get());
 }
 
 Value MongoCryptContext::NextKMSRequest(const CallbackInfo& info) {

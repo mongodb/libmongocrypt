@@ -366,7 +366,10 @@ _mongo_feed_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    _mongocrypt_buffer_t buf;
 
    _mongocrypt_buffer_from_binary (&buf, in);
-   if (!_mongocrypt_key_broker_add_doc (&ctx->kb, &buf)) {
+   if (!_mongocrypt_key_broker_add_doc (
+         &ctx->kb,
+         _mongocrypt_ctx_kms_providers(ctx),
+         &buf)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
       return _mongocrypt_ctx_fail (ctx);
    }
@@ -391,7 +394,9 @@ _next_kms_ctx (mongocrypt_ctx_t *ctx)
 static bool
 _kms_done (mongocrypt_ctx_t *ctx)
 {
-   if (!_mongocrypt_key_broker_kms_done (&ctx->kb)) {
+   _mongocrypt_opts_kms_providers_t* kms_providers =
+      _mongocrypt_ctx_kms_providers(ctx);
+   if (!_mongocrypt_key_broker_kms_done (&ctx->kb, kms_providers)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
       return _mongocrypt_ctx_fail (ctx);
    }
@@ -539,6 +544,63 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
 
 
 bool
+mongocrypt_ctx_provide_kms_providers (
+   mongocrypt_ctx_t *ctx,
+   mongocrypt_binary_t *kms_providers_definition)
+{
+   if (!ctx) {
+      return false;
+   }
+
+   if (!ctx->initialized) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "ctx NULL or uninitialized");
+      return false;
+   }
+
+   if (ctx->state != MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
+      return false;
+   }
+
+   if (!_mongocrypt_parse_kms_providers(
+          kms_providers_definition,
+          &ctx->per_ctx_kms_providers,
+          ctx->status,
+          &ctx->crypt->log)) {
+      return false;
+   }
+
+   if (!_mongocrypt_opts_kms_providers_validate(
+          &ctx->per_ctx_kms_providers,
+          true,
+          ctx->status)) {
+      /* Remove the parsed KMS providers if they are invalid */
+      _mongocrypt_opts_kms_providers_cleanup(&ctx->per_ctx_kms_providers);
+      memset(&ctx->per_ctx_kms_providers,
+             0,
+             sizeof(ctx->per_ctx_kms_providers));
+      return false;
+   }
+
+   memcpy(
+      &ctx->kms_providers,
+      &ctx->crypt->opts.kms_providers,
+      sizeof(_mongocrypt_opts_kms_providers_t));
+   _mongocrypt_opts_merge_kms_providers(
+      &ctx->kms_providers,
+      &ctx->per_ctx_kms_providers);
+
+   ctx->state = ctx->kb.state == KB_ADDING_DOCS ?
+      MONGOCRYPT_CTX_NEED_MONGO_KEYS :
+      MONGOCRYPT_CTX_NEED_KMS;
+   if (ctx->vtable.after_kms_credentials_provided) {
+      return ctx->vtable.after_kms_credentials_provided (ctx);
+   }
+   return true;
+}
+
+
+bool
 mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx)
 {
    if (!ctx) {
@@ -618,6 +680,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       ctx->vtable.cleanup (ctx);
    }
 
+   _mongocrypt_opts_kms_providers_cleanup(&ctx->per_ctx_kms_providers);
    _mongocrypt_kek_cleanup (&ctx->opts.kek);
    mongocrypt_status_destroy (ctx->status);
    _mongocrypt_key_broker_cleanup (&ctx->kb);
@@ -762,7 +825,9 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       if (!ctx->opts.kek.kms_provider) {
          return _mongocrypt_ctx_fail_w_msg (ctx, "master key required");
       }
-      if (!(ctx->opts.kek.kms_provider & ctx->crypt->opts.kms_providers)) {
+      if (!ctx->crypt->opts.use_need_kms_credentials_state &&
+          !(ctx->opts.kek.kms_provider &
+            _mongocrypt_ctx_kms_providers(ctx)->configured_providers)) {
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "requested kms provider not configured");
       }
@@ -850,13 +915,18 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
       ret = false;
       break;
    case KB_ADDING_DOCS:
-      /* Require key documents from driver. */
-      new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+      /* Encrypted keys need KMS, which need to be provided before
+       * adding docs. */
+      if (ctx->crypt->opts.use_need_kms_credentials_state) {
+         new_state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
+      } else {
+         /* Require key documents from driver. */
+         new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+      }
       ret = true;
       break;
    case KB_AUTHENTICATING:
    case KB_DECRYPTING_KEY_MATERIAL:
-      /* Encrypted keys need KMS. */
       new_state = MONGOCRYPT_CTX_NEED_KMS;
       ret = true;
       break;
@@ -964,4 +1034,11 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
    }
 
    return true;
+}
+
+_mongocrypt_opts_kms_providers_t *
+_mongocrypt_ctx_kms_providers(mongocrypt_ctx_t *ctx) {
+   return ctx->kms_providers.configured_providers ?
+      &ctx->kms_providers :
+      &ctx->crypt->opts.kms_providers;
 }

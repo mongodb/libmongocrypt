@@ -334,6 +334,10 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          ASSERT_OR_PRINT (res, status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         bin = TEST_BSON ("{}");
+         mongocrypt_ctx_provide_kms_providers (ctx, bin);
+         break;
       case MONGOCRYPT_CTX_NEED_KMS:
          kms = mongocrypt_ctx_next_kms_ctx (ctx);
          while (kms) {

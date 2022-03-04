@@ -143,6 +143,23 @@ describe('AutoEncrypter', function () {
       });
     });
 
+    it('should decrypt mock data with per-context KMS credentials', function (done) {
+      const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        async onKmsProviderRefresh() {
+          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
+        }
+      });
+      mc.decrypt(input, (err, decrypted) => {
+        if (err) return done(err);
+        expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        done();
+      });
+    });
+
     it('should encrypt mock data', function (done) {
       const client = new MockClient();
       const mc = new AutoEncrypter(client, {
@@ -151,6 +168,38 @@ describe('AutoEncrypter', function () {
         kmsProviders: {
           aws: { accessKeyId: 'example', secretAccessKey: 'example' },
           local: { key: Buffer.alloc(96) }
+        }
+      });
+
+      mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
+        if (err) return done(err);
+        const expected = EJSON.parse(
+          JSON.stringify({
+            find: 'test',
+            filter: {
+              ssn: {
+                $binary: {
+                  base64:
+                    'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=',
+                  subType: '6'
+                }
+              }
+            }
+          })
+        );
+
+        expect(encrypted).to.containSubset(expected);
+        done();
+      });
+    });
+
+    it('should encrypt mock data with per-context KMS credentials', function (done) {
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        async onKmsProviderRefresh() {
+          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
         }
       });
 
