@@ -1074,3 +1074,24 @@ mongocrypt_setopt_set_csfle_lib_path_override (mongocrypt_t *crypt,
 {
    mstr_assign (&crypt->opts.csfle_lib_override_path, mstr_copy_cstr (path));
 }
+
+bool
+_mongocrypt_needs_credentials (mongocrypt_t *crypt)
+{
+   if (!crypt->opts.use_need_kms_credentials_state) {
+      return false;
+   }
+
+   return crypt->opts.kms_providers.need_credentials != 0;
+}
+
+bool
+_mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
+                               _mongocrypt_kms_provider_t provider)
+{
+   if (!crypt->opts.use_need_kms_credentials_state) {
+      return false;
+   }
+
+   return (crypt->opts.kms_providers.need_credentials & provider) != 0;
+}
