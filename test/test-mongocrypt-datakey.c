@@ -283,6 +283,36 @@ _test_datakey_kms_per_ctx_credentials (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Test creating a data key with a non "aws" KMS provider.
+ * Expect the context not to enter the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS
+ * state. */
+static void
+_test_datakey_kms_per_ctx_credentials_non_aws (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (mongocrypt_setopt_kms_providers (
+                 crypt,
+                 TEST_BSON ("{'aws': {}, 'azure': {'tenantId': '', 'clientId': "
+                            "'', 'clientSecret': '' }}")),
+              crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (
+                 ctx,
+                 TEST_BSON ("{'provider': 'azure', 'keyVaultEndpoint': "
+                            "'example.vault.azure.net', 'keyName': 'test'}")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 
 static void
 _test_datakey_custom_key_material (_mongocrypt_tester_t *tester)
@@ -400,4 +430,5 @@ _mongocrypt_tester_install_data_key (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_datakey_custom_endpoint);
    INSTALL_TEST (_test_datakey_custom_key_material);
    INSTALL_TEST (_test_datakey_kms_per_ctx_credentials);
+   INSTALL_TEST (_test_datakey_kms_per_ctx_credentials_non_aws);
 }
