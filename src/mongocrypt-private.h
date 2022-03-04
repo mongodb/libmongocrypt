@@ -161,12 +161,12 @@ _mongocrypt_parse_kms_providers (
    _mongocrypt_log_t *log);
 
 /* _mongocrypt_needs_credentials returns true if @crypt was configured to
-request credentials for any KMS provider. */
+ * request credentials for any KMS provider. */
 bool
 _mongocrypt_needs_credentials (mongocrypt_t *crypt);
 
 /* _mongocrypt_needs_credentials returns true if @crypt was configured to
-request credentials for @provider. */
+ * request credentials for @provider. */
 bool
 _mongocrypt_needs_credentials_for_provider (
    mongocrypt_t *crypt, _mongocrypt_kms_provider_t provider);

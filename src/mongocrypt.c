@@ -847,7 +847,7 @@ _mongocrypt_parse_kms_providers (
       bson_t field_bson;
 
       field_name = bson_iter_key (&iter);
-      if (BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          uint32_t len;
          const uint8_t *data = NULL;
          bson_iter_document (&iter, &len, &data);
