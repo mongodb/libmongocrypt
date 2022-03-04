@@ -198,6 +198,9 @@ describe('AutoEncrypter', function () {
       const mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
         logger: () => {},
+        kmsProviders: {
+          aws: {}
+        },
         async onKmsProviderRefresh() {
           return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
         }
