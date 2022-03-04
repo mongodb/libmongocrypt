@@ -409,7 +409,7 @@ _mongocrypt_tester_encrypted_doc (_mongocrypt_tester_t *tester)
       return bin;
    }
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
@@ -474,7 +474,7 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n)
    "I4VnrEMGrQ8e+qYSwYk9Gh6dKGoRMAPYVXQAO0fIsHF/T0a"
 
 mongocrypt_t *
-_mongocrypt_tester_mongocrypt (void)
+_mongocrypt_tester_mongocrypt (tester_mongocrypt_flags flags)
 {
    mongocrypt_t *crypt;
    char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
@@ -515,7 +515,16 @@ _mongocrypt_tester_mongocrypt (void)
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);
    bson_destroy (kms_providers);
    mongocrypt_binary_destroy (bin);
+   if (flags & TESTER_MONGOCRYPT_WITH_CSFLE_LIB) {
+      mongocrypt_setopt_append_csfle_search_path (crypt, "$ORIGIN");
+   }
    ASSERT_OK (mongocrypt_init (crypt), crypt);
+   if (flags & TESTER_MONGOCRYPT_WITH_CSFLE_LIB) {
+      if (mongocrypt_csfle_version (crypt) == 0) {
+         BSON_ASSERT (!"tester mongocrypt requested WITH_CSFLE_LIB, but not "
+                       "csfle library was loaded by mongocrypt_init");
+      }
+   }
    return crypt;
 }
 

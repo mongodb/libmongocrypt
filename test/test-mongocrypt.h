@@ -33,6 +33,14 @@
 struct __mongocrypt_tester_t;
 typedef void (*_mongocrypt_test_fn) (struct __mongocrypt_tester_t *tester);
 
+typedef enum tester_mongocrypt_flags {
+   /// Default settings for creating a mongocrypt_t for testing
+   TESTER_MONGOCRYPT_DEFAULT = 0,
+   /// Create a mongocrypt_t that has the csfle library loaded. A csfle library
+   /// must be present in the same directory as the test executable.
+   TESTER_MONGOCRYPT_WITH_CSFLE_LIB = 1 << 0,
+} tester_mongocrypt_flags;
+
 /* Arbitrary max of 1024 instances of temporary test data. Increase as needed.
  */
 #define TEST_DATA_COUNT 1024
@@ -91,7 +99,7 @@ _mongocrypt_tester_fill_buffer (_mongocrypt_buffer_t *buf, int n);
 
 /* Return a new initialized mongocrypt_t for testing. */
 mongocrypt_t *
-_mongocrypt_tester_mongocrypt (void);
+_mongocrypt_tester_mongocrypt (tester_mongocrypt_flags options);
 
 typedef enum {
    CRYPTO_REQUIRED,

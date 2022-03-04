@@ -130,7 +130,7 @@ _test_ciphertext_algorithm (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_resize (&zeros, MONGOCRYPT_IV_LEN);
    memset (zeros.data, 0, MONGOCRYPT_IV_LEN);
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    /* use a mongocrypt_ctx_t to get a key broker */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (

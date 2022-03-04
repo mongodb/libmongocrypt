@@ -27,7 +27,7 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    bson_iter_t iter;
 
    bin = mongocrypt_binary_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    /* Encrypt a document. */
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
@@ -54,7 +54,7 @@ _test_local_roundtrip (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* destroy because of caching. */
 
    /* Decrypt it back. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    _mongocrypt_buffer_to_binary (&encrypted_cmd, bin);
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);

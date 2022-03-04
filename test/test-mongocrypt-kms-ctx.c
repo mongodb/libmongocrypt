@@ -126,7 +126,7 @@ _test_mongocrypt_kms_ctx_kmip_register (_mongocrypt_tester_t *tester)
       _mongocrypt_endpoint_new ("example.com", -1, NULL /* opts */, status);
    ASSERT_OK_STATUS (endpoint != NULL, status);
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ok = _mongocrypt_kms_ctx_init_kmip_register (
       &kms_ctx,
       endpoint,
@@ -240,7 +240,7 @@ _test_mongocrypt_kms_ctx_kmip_activate (_mongocrypt_tester_t *tester)
       _mongocrypt_endpoint_new ("example.com", -1, NULL /* opts */, status);
    ASSERT_OK_STATUS (endpoint != NULL, status);
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ok = _mongocrypt_kms_ctx_init_kmip_activate (
       &kms_ctx,
       endpoint,
@@ -386,7 +386,7 @@ _test_mongocrypt_kms_ctx_kmip_get (_mongocrypt_tester_t *tester)
       _mongocrypt_endpoint_new ("example.com", -1, NULL /* opts */, status);
    ASSERT_OK_STATUS (endpoint != NULL, status);
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ok = _mongocrypt_kms_ctx_init_kmip_get (
       &kms_ctx, endpoint, (char *) GET_REQUEST_UNIQUE_IDENTIFIER, &crypt->log);
    ASSERT_OK_STATUS (ok, kms_ctx.status);
@@ -432,7 +432,7 @@ _test_mongocrypt_kms_ctx_get_kms_provider (_mongocrypt_tester_t *tester)
       _mongocrypt_endpoint_new ("example.com", -1, NULL /* opts */, status);
    ASSERT_OK_STATUS (endpoint != NULL, status);
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ok = _mongocrypt_kms_ctx_init_kmip_activate (
       &kms_ctx,
       endpoint,
@@ -463,7 +463,7 @@ _test_mongocrypt_kms_ctx_default_port (_mongocrypt_tester_t *tester)
    _mongocrypt_endpoint_t *endpoint;
    const char *kms_ctx_endpoint;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    status = mongocrypt_status_new ();
 
    /* Test an endpoint with no port. */

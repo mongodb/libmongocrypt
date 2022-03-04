@@ -116,7 +116,7 @@ _test_setopt_masterkey_aws (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    REFRESH;
    MASTERKEY_AWS_FAILS (NULL, 0, "cmk", 3, "invalid region");
@@ -161,7 +161,7 @@ _test_setopt_masterkey_local (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Test double setting. */
    REFRESH;
@@ -187,7 +187,7 @@ _test_setopt_key_encryption_key_azure (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Test double setting. */
    REFRESH;
@@ -220,7 +220,7 @@ _test_setopt_key_encryption_key_gcp (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Test double setting. */
    REFRESH;
@@ -258,7 +258,7 @@ _test_setopt_key_id (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Test double setting. */
    REFRESH;
@@ -291,7 +291,7 @@ _test_setopt_key_alt_name (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Test double setting - actually succeeds since multiple key alt names
     * allowed for data keys. */
@@ -338,7 +338,8 @@ _test_setopt_key_material (_mongocrypt_tester_t *tester)
       "{'keyMaterial': {'$binary': {'base64': '%s', 'subType': '00'}}%s}";
    mongocrypt_binary_t *const valid = TEST_BSON (pattern, material, "");
 
-   mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_ctx_t *ctx = NULL;
 
    /* Test double setting. */
@@ -411,7 +412,7 @@ _test_setopt_algorithm (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    REFRESH;
    ALGORITHM_FAILS (DET, -2, "invalid algorithm length");
@@ -452,7 +453,7 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_binary_t *uuid;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    uuid = TEST_BIN (16);
 
    /* Test required and prohibited options. */
@@ -537,7 +538,7 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_binary_t *uuid, *cmd;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    cmd = TEST_FILE ("./test/example/cmd.json");
    uuid = TEST_BIN (16);
 
@@ -598,7 +599,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_binary_t *bson, *uuid;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    uuid = TEST_BIN (16);
    bson = TEST_BSON ("{'v': 'hello'}");
 
@@ -708,7 +709,7 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_binary_t *bson, *uuid;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    uuid = TEST_BIN (16);
    bson = TEST_BSON ("{'a': 1}");
 
@@ -766,7 +767,7 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_binary_t *bson, *uuid;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    uuid = TEST_BIN (16);
    bson = TEST_FILE ("./test/data/explicit-decryption-input.json");
 
@@ -819,7 +820,7 @@ _test_setopt_failure_uninitialized (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_status_t *status;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    status = mongocrypt_status_new ();
 
    REFRESH;
@@ -843,7 +844,7 @@ _test_setopt_endpoint (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    REFRESH;
    ENDPOINT_FAILS ("example.com", -2, "Invalid endpoint");
