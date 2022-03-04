@@ -16,6 +16,8 @@
 
 #include <mongo_csfle-v1.h>
 
+#include <bson/bson.h>
+
 #include <cstring>
 
 #ifdef _WIN32
@@ -121,11 +123,12 @@ mongo_csfle_v1_analyze_query (query_analyzer_t *qa,
                               uint32_t *bson_len_out,
                               status_t *)
 {
-   const int size = 512;
-   uint8_t *ptr = new uint8_t[size];
-   std::memset (ptr, 42, size);
-   *bson_len_out = size;
-   return ptr;
+   bson_t doc;
+   bson_init_from_json (&doc, "{}", -1, NULL);
+   uint8_t *buf = new uint8_t[doc.len];
+   std::copy_n (bson_get_data (&doc), doc.len, buf);
+   *bson_len_out = doc.len;
+   return buf;
 }
 
 void

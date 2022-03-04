@@ -119,6 +119,8 @@ _mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    return true;
 }
 
+static bool
+_try_run_csfle_marking (mongocrypt_ctx_t *ctx);
 
 static bool
 _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
@@ -141,7 +143,7 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
    }
 
    ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-   return true;
+   return _try_run_csfle_marking (ctx);
 }
 
 
@@ -287,6 +289,129 @@ _mongo_done_markings (mongocrypt_ctx_t *ctx)
 {
    (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
+}
+
+
+/**
+ * @brief Attempt to generate csfle markings using a csfle dynamic library.
+ *
+ * @param ctx A context which has state NEED_MONGO_MARKINGS
+ * @return true On success
+ * @return false On error.
+ *
+ * This should be called only when we are ready for markings in the command
+ * document. This function will only do anything if the csfle dynamic library
+ * is loaded, otherwise it returns success immediately and leaves the state
+ * as NEED_MONGO_MARKINGS.
+ *
+ * If csfle is loaded, this function will request the csfle library generate a
+ * marked command document based on the caller's schema. If successful, the
+ * state will be changed via @ref _mongo_done_markings().
+ *
+ * The purporse of this function is to short-circuit the phase of encryption
+ * wherein we would normally return to the driver and give them the opportunity
+ * to generate the markings by passing a special command to a mongocryptd daemon
+ * process. Instead, we'll do it ourselves here, if possible.
+ */
+static bool
+_try_run_csfle_marking (mongocrypt_ctx_t *ctx)
+{
+   BSON_ASSERT (
+      ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS &&
+      "_try_run_csfle_marking() should only be called when mongocrypt is "
+      "ready for markings");
+
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   // We have a valid schema and just need to mark the fields for encryption
+   if (!mcr_dll_is_open (ctx->crypt->csfle_lib)) {
+      // We don't have a csfle library to use to obtain the markings. It's up to
+      // caller to resolve them.
+      return true;
+   }
+
+   _mcr_csfle_v1_vtable csfle = ctx->crypt->csfle_vtable;
+   bool okay = false;
+
+#define CHECK_CSFLE_ERROR(Func, FailLabel)                             \
+   if (1) {                                                            \
+      if (csfle.status_get_error (status)) {                           \
+         _mongocrypt_set_error (ctx->status,                           \
+                                MONGOCRYPT_STATUS_ERROR_CSFLE,         \
+                                MONGOCRYPT_GENERIC_ERROR_CODE,         \
+                                "csfle " #Func                         \
+                                " failed: %s [Error %d, code %d]",     \
+                                csfle.status_get_explanation (status), \
+                                csfle.status_get_error (status),       \
+                                csfle.status_get_code (status));       \
+         _mongocrypt_ctx_fail (ctx);                                   \
+         goto FailLabel;                                               \
+      }                                                                \
+   } else                                                              \
+      ((void) 0)
+
+   mongo_csfle_v1_status *status = csfle.status_create ();
+   BSON_ASSERT (status);
+
+   /// TODO: Must create one mongo_csfle_v1_lib for the whole application
+   mongo_csfle_v1_lib *csfle_lib = csfle.lib_create (status);
+   CHECK_CSFLE_ERROR ("lib_create", fail_lib_create);
+
+   // Obtain the OP_MSG for markings
+   mongocrypt_binary_t *op_msg = mongocrypt_binary_new ();
+   if (!_mongo_op_markings (ctx, op_msg)) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "Generating the markings OP_MSG failed");
+      goto fail_op_markings;
+   }
+
+   mongo_csfle_v1_query_analyzer *qa =
+      csfle.query_analyzer_create (csfle_lib, status);
+   CHECK_CSFLE_ERROR ("query_analyzer_create", fail_qa_create);
+
+   uint32_t marked_bson_len = 0;
+   uint8_t *marked_bson = csfle.analyze_query (
+      qa, op_msg->data, ectx->ns, strlen (ectx->ns), &marked_bson_len, status);
+   CHECK_CSFLE_ERROR ("analyze_query", analyze_failed);
+
+   // Copy out the marked document.
+   mongocrypt_binary_t *marked =
+      mongocrypt_binary_new_from_data (marked_bson, marked_bson_len);
+   if (!_mongo_feed_markings (ctx, marked)) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "Consuming the generated csfle markings failed");
+      goto feed_failed;
+   }
+
+   okay = _mongo_done_markings (ctx);
+   if (!okay) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "Finalizing the generated csfle markings failed");
+   }
+
+feed_failed:
+   mongocrypt_binary_destroy (marked);
+   csfle.bson_free (marked_bson);
+analyze_failed:
+   csfle.query_analyzer_destroy (qa);
+fail_qa_create:
+fail_op_markings:
+   mongocrypt_binary_destroy (op_msg);
+   csfle.lib_destroy (csfle_lib, status);
+   if (csfle.status_get_error (status)) {
+      _mongocrypt_log (
+         &ctx->crypt->log,
+         MONGOCRYPT_LOG_LEVEL_WARNING,
+         "Error while shutting down csfle library: %s [Error %d, code %d]",
+         csfle.status_get_explanation (status),
+         csfle.status_get_error (status),
+         csfle.status_get_code (status));
+   }
+fail_lib_create:
+   csfle.status_destroy (status);
+   if (!okay) {
+      return false;
+   }
+   return okay;
 }
 
 
@@ -915,5 +1040,12 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (_mongocrypt_buffer_empty (&ectx->schema)) {
       ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
    }
-   return true;
+
+   if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
+      // We're ready for markings. Try to generate them ourself.
+      return _try_run_csfle_marking (ctx);
+   } else {
+      // Other state, return to caller.
+      return true;
+   }
 }
