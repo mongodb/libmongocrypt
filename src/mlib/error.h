@@ -6,7 +6,7 @@
 #include "./str.h"
 
 #ifdef _WIN32
-#include <windows.h>
+#include "./windows-lean.h"
 #else
 #include <errno.h>
 #endif

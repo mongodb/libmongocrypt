@@ -10,7 +10,7 @@
 #ifndef _WIN32
 #include <unistd.h>
 #else
-#include <windows.h>
+#include "./windows-lean.h"
 #endif
 
 typedef enum mpath_format {

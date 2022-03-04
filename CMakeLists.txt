@@ -166,8 +166,6 @@ add_library (mongo::mlib ALIAS _mongo-mlib)
 set_property(
    TARGET _mongo-mlib
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
-   $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
-   $<$<PLATFORM_ID:Windows>:NOMINMAX>
    MLIB_USER
    )
 

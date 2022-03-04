@@ -760,7 +760,7 @@ mstr_inplace_replace (mstr *s, mstr_view find, mstr_view subst)
 }
 
 #ifdef _WIN32
-#include <windows.h>
+#include "./windows-lean.h"
 /**
  * @brief The result type of mstr_win32_widen
  */
