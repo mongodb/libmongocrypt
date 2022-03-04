@@ -1435,6 +1435,7 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
    /* Success. */
    crypt = mongocrypt_new ();
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}"));
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (

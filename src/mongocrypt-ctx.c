@@ -917,7 +917,9 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
    case KB_ADDING_DOCS:
       /* Encrypted keys need KMS, which need to be provided before
        * adding docs. */
-      if (ctx->crypt->opts.use_need_kms_credentials_state) {
+      if (ctx->crypt->opts.use_need_kms_credentials_state &&
+          ctx->crypt->opts.kms_providers.need_credentials ==
+             MONGOCRYPT_KMS_PROVIDER_AWS) {
          new_state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
       } else {
          /* Require key documents from driver. */
