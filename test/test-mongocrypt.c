@@ -658,6 +658,12 @@ _test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{}")), crypt);
+   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "no kms provider set");
+   mongocrypt_destroy (crypt);
 }
 
 typedef struct {
