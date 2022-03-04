@@ -169,6 +169,11 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
       BSON_APPEND_DOCUMENT (&mongocryptd_cmd_bson, "jsonSchema", &schema_bson);
 
+      // At present, a $db field is required on all command documents, even if
+      // mongocryptd/csfle don't make use of it. The reply from them will have
+      // the $db field stripped.
+      BSON_APPEND_UTF8 (&mongocryptd_cmd_bson, "$db", "admin");
+
       /* if a local schema was not set, set isRemoteSchema=true */
       BSON_APPEND_BOOL (
          &mongocryptd_cmd_bson, "isRemoteSchema", !ectx->used_local_schema);
