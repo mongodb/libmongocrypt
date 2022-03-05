@@ -290,7 +290,59 @@ _native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
                              const _mongocrypt_buffer_t *in,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status) {
-   return false;
+   const EVP_MD *algo;
+
+   algo = EVP_sha256 ();
+   BSON_ASSERT (EVP_MD_block_size (algo) == 64);
+   BSON_ASSERT (EVP_MD_size (algo) == MONGOCRYPT_HMAC_SHA256_LEN);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+   if (!HMAC (algo,
+              key->data,
+              key->len,
+              in->data,
+              in->len,
+              out->data,
+              NULL /* unused out len */)) {
+      CLIENT_ERR ("error initializing HMAC: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      return false;
+   }
+   return true;
+#else
+   HMAC_CTX *ctx;
+   bool ret = false;
+
+   ctx = HMAC_CTX_new ();
+
+   if (out->len != MONGOCRYPT_HMAC_SHA256_LEN) {
+      CLIENT_ERR ("out does not contain %d bytes", MONGOCRYPT_HMAC_SHA256_LEN);
+      return false;
+   }
+
+   if (!HMAC_Init_ex (ctx, key->data, key->len, algo, NULL /* engine */)) {
+      CLIENT_ERR ("error initializing HMAC: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      goto done;
+   }
+
+   if (!HMAC_Update (ctx, in->data, in->len)) {
+      CLIENT_ERR ("error updating HMAC: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      goto done;
+   }
+
+   if (!HMAC_Final (ctx, out->data, NULL /* unused out len */)) {
+      CLIENT_ERR ("error finalizing: %s",
+                  ERR_error_string (ERR_get_error (), NULL));
+      goto done;
+   }
+
+   ret = true;
+done:
+   HMAC_CTX_free (ctx);
+   return ret;
+#endif
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO */
