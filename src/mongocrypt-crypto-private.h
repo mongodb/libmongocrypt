@@ -28,6 +28,7 @@
 #define MONGOCRYPT_HMAC_SHA512_LEN 64
 #define MONGOCRYPT_HMAC_LEN 32
 #define MONGOCRYPT_BLOCK_SIZE 16
+#define MONGOCRYPT_HMAC_SHA256_LEN 32
 
 typedef struct {
    int hooks_enabled;
@@ -169,6 +170,13 @@ _native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
 
 bool
 _native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_CRYPTO_PRIVATE_H */

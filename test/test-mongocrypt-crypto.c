@@ -333,6 +333,73 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
    }
 }
 
+typedef struct {
+   const char *testname;
+   const char *key;
+   const char *input;
+   const char *expect;
+} hmac_sha_256_test_t;
+
+void
+_test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
+{
+   /* Test data generated with OpenSSL CLI:
+   $ echo -n "test" | openssl dgst -mac hmac -macopt hexkey:6bb2664e8d444377d3cd9566c005593b7ed8a35ab8eac9eb5ffa6e426854e5cc -sha256
+     d80a4d2271fdaa45ad4a1bf85d606fe465cb40176d1d83e69628a154c2c528ff
+   
+   Hex representation of "test" is: 74657374
+   */
+   hmac_sha_256_test_t tests[] = {{.testname = "test",
+                                   .key = "6bb2664e8d444377d3cd9566c005593b"
+                                          "7ed8a35ab8eac9eb5ffa6e426854e5cc",
+                                   .input = "74657374",
+                                   .expect =
+                                      "d80a4d2271fdaa45ad4a1bf85d606fe4"
+                                      "65cb40176d1d83e69628a154c2c528ff"},
+                                  {0}};
+   hmac_sha_256_test_t *test;
+
+   for (test = tests; test->testname != NULL; test++) {
+      bool ret;
+      _mongocrypt_buffer_t key;
+      _mongocrypt_buffer_t input;
+      _mongocrypt_buffer_t expect;
+      _mongocrypt_buffer_t got;
+      mongocrypt_status_t *status;
+
+
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+              "remove.");
+      return;
+#endif
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+      return;
+#endif
+
+      printf ("Begin test '%s'.\n", test->testname);
+
+      _mongocrypt_buffer_copy_from_hex (&key, test->key);
+      _mongocrypt_buffer_copy_from_hex (&input, test->input);
+      _mongocrypt_buffer_copy_from_hex (&expect, test->expect);
+      _mongocrypt_buffer_init (&got);
+      _mongocrypt_buffer_resize (&got, MONGOCRYPT_HMAC_SHA256_LEN);
+      status = mongocrypt_status_new ();
+
+      ret = _native_crypto_hmac_sha_256 (&key, &input, &got, status);
+      ASSERT_OR_PRINT (ret, status);
+      ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+
+      mongocrypt_status_destroy (status);
+      _mongocrypt_buffer_cleanup (&got);
+      _mongocrypt_buffer_cleanup (&expect);
+      _mongocrypt_buffer_cleanup (&input);
+      _mongocrypt_buffer_cleanup (&key);
+
+      printf ("End test '%s'.\n", test->testname);
+   }
+}
 
 void
 _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
@@ -340,4 +407,5 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_mcgrew);
    INSTALL_TEST (_test_roundtrip);
    INSTALL_TEST (_test_native_crypto_aes_256_ctr);
+   INSTALL_TEST (_test_native_crypto_hmac_sha_256);
 }
