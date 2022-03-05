@@ -369,6 +369,10 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
                  "7821228f7b880e72dbd0f314fb63e63f"},
       {0}};
    hmac_sha_256_test_t *test;
+   mongocrypt_t *crypt;
+
+   /* Create a mongocrypt_t to call _native_crypto_init(). */
+   crypt = mongocrypt_new ();
 
    for (test = tests; test->testname != NULL; test++) {
       bool ret;
@@ -378,11 +382,6 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_t got;
       mongocrypt_status_t *status;
 
-
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
-      return;
-#endif
 
       printf ("Begin test '%s'.\n", test->testname);
 
@@ -405,6 +404,8 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
 
       printf ("End test '%s'.\n", test->testname);
    }
+
+   mongocrypt_destroy (crypt);
 }
 
 void
