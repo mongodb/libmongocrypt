@@ -204,8 +204,22 @@ _native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
                              const _mongocrypt_buffer_t *in,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status) {
-   CLIENT_ERR ("_native_crypto_hmac_sha_256 not implemented for OpenSSL");
-   return false;
+   CCHmacContext *ctx;
+
+   if (out->len != MONGOCRYPT_HMAC_SHA256_LEN) {
+      CLIENT_ERR ("out does not contain %d bytes", MONGOCRYPT_HMAC_SHA256_LEN);
+      return false;
+   }
+
+   ctx = bson_malloc0 (sizeof (*ctx));
+   BSON_ASSERT (ctx);
+
+
+   CCHmacInit (ctx, kCCHmacAlgSHA256, key->data, key->len);
+   CCHmacUpdate (ctx, in->data, in->len);
+   CCHmacFinal (ctx, out->data);
+   bson_free (ctx);
+   return true;
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO */

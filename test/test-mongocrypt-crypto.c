@@ -368,11 +368,6 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
       mongocrypt_status_t *status;
 
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-              "remove.");
-      return;
-#endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
       printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
       return;
