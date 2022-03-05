@@ -349,14 +349,25 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
    
    Hex representation of "test" is: 74657374
    */
-   hmac_sha_256_test_t tests[] = {{.testname = "test",
-                                   .key = "6bb2664e8d444377d3cd9566c005593b"
-                                          "7ed8a35ab8eac9eb5ffa6e426854e5cc",
-                                   .input = "74657374",
-                                   .expect =
-                                      "d80a4d2271fdaa45ad4a1bf85d606fe4"
-                                      "65cb40176d1d83e69628a154c2c528ff"},
-                                  {0}};
+   hmac_sha_256_test_t tests[] = {
+      {.testname = "String 'test'",
+       .key = "6bb2664e8d444377d3cd9566c005593b"
+              "7ed8a35ab8eac9eb5ffa6e426854e5cc",
+       .input = "74657374",
+       .expect = "d80a4d2271fdaa45ad4a1bf85d606fe4"
+                 "65cb40176d1d83e69628a154c2c528ff"},
+      {.testname = "Data larger than one block",
+       .key = "6bb2664e8d444377d3cd9566c005593b"
+              "7ed8a35ab8eac9eb5ffa6e426854e5cc",
+       .input = "fd2368de92202a33fcaf48f9b5807fc8"
+                "6b9837aa376beb6044d6db6b07347f7e"
+                "2af3eedfc968218f76b588fff9ae1c91"
+                "74cca2368389bf211270f0449771c260"
+                "689bb59a32f0c5ae40372ecb371ec2a7"
+                "2179bbe8d46260eef7d0e7c1ae679b71",
+       .expect = "1985743613238e3c8c05a0274be76fa6"
+                 "7821228f7b880e72dbd0f314fb63e63f"},
+      {0}};
    hmac_sha_256_test_t *test;
 
    for (test = tests; test->testname != NULL; test++) {
