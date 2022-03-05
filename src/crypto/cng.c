@@ -22,6 +22,7 @@
 #include <bcrypt.h>
 
 static BCRYPT_ALG_HANDLE _algo_sha512_hmac = 0;
+static BCRYPT_ALG_HANDLE _algo_sha256_hmac = 0;
 static BCRYPT_ALG_HANDLE _algo_aes256 = 0;
 static DWORD _aes256_key_blob_length;
 
@@ -42,6 +43,14 @@ _native_crypto_init ()
     */
    nt_status = BCryptOpenAlgorithmProvider (&_algo_sha512_hmac,
                                             BCRYPT_SHA512_ALGORITHM,
+                                            MS_PRIMITIVE_PROVIDER,
+                                            BCRYPT_ALG_HANDLE_HMAC_FLAG);
+   if (nt_status != STATUS_SUCCESS) {
+      return;
+   }
+
+   nt_status = BCryptOpenAlgorithmProvider (&_algo_sha256_hmac,
+                                            BCRYPT_SHA256_ALGORITHM,
                                             MS_PRIMITIVE_PROVIDER,
                                             BCRYPT_ALG_HANDLE_HMAC_FLAG);
    if (nt_status != STATUS_SUCCESS) {
@@ -327,9 +336,45 @@ bool
 _native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
                              const _mongocrypt_buffer_t *in,
                              _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status) {
-   CLIENT_ERR ("_native_crypto_hmac_sha_256 not implemented for CNG");
-   return false;
+                             mongocrypt_status_t *status)
+{
+   bool ret = false;
+   BCRYPT_HASH_HANDLE hHash;
+   NTSTATUS nt_status;
+
+   if (out->len != 32) {
+      CLIENT_ERR ("out does not contain 32 bytes");
+      return false;
+   }
+
+   nt_status = BCryptCreateHash (_algo_sha256_hmac,
+                                 &hHash,
+                                 NULL,
+                                 0,
+                                 (PUCHAR) key->data,
+                                 (ULONG) key->len,
+                                 0);
+   if (nt_status != STATUS_SUCCESS) {
+      CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
+      return false;
+   }
+
+   nt_status = BCryptHashData (hHash, (PUCHAR) in->data, (ULONG) in->len, 0);
+   if (nt_status != STATUS_SUCCESS) {
+      CLIENT_ERR ("error hashing data: 0x%x", (int) nt_status);
+      goto done;
+   }
+
+   nt_status = BCryptFinishHash (hHash, out->data, out->len, 0);
+   if (nt_status != STATUS_SUCCESS) {
+      CLIENT_ERR ("error finishing hmac: 0x%x", (int) nt_status);
+      goto done;
+   }
+
+   ret = true;
+done:
+   (void) BCryptDestroyHash (hHash);
+   return ret;
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_CNG */
