@@ -280,7 +280,7 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
                                  0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
-      goto done;
+      return false; 
    }
 
    nt_status = BCryptHashData (hHash, (PUCHAR) in->data, (ULONG) in->len, 0);
