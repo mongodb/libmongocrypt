@@ -257,7 +257,7 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status)
 {
-   return _hmac_with_hash (EVP_sha512(), key, in, out, status);
+   return _hmac_with_hash (EVP_sha512 (), key, in, out, status);
 }
 
 
@@ -298,7 +298,8 @@ bool
 _native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
                              const _mongocrypt_buffer_t *in,
                              _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status) {
+                             mongocrypt_status_t *status)
+{
    return _hmac_with_hash (EVP_sha256 (), key, in, out, status);
 }
 

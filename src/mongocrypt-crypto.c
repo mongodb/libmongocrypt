@@ -33,8 +33,7 @@
 /* Crypto primitives. These either call the native built in crypto primitives or
  * user supplied hooks. */
 static bool
-_crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto,
-                             aes_256_args_t args)
+_crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 {
    mongocrypt_status_t *status = args.status;
    if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
@@ -70,8 +69,7 @@ _crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto,
 
 
 static bool
-_crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto,
-                             aes_256_args_t args)
+_crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 {
    mongocrypt_status_t *status = args.status;
    if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
@@ -997,8 +995,8 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
                           const _mongocrypt_buffer_t *key,
                           const _mongocrypt_buffer_t *in,
                           _mongocrypt_buffer_t *out,
-                          mongocrypt_status_t *status) {
-
+                          mongocrypt_status_t *status)
+{
    if (key->len != MONGOCRYPT_MAC_KEY_LEN) {
       CLIENT_ERR ("invalid hmac_sha_256 key length. Got %" PRIu32
                   " expect: %" PRIu32,
@@ -1015,11 +1013,8 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_to_binary (out, &out_bin);
       _mongocrypt_buffer_to_binary (in, &in_bin);
 
-      ret = crypto->hmac_sha_256 (crypto->ctx,
-                                         &key_bin,
-                                         &in_bin,
-                                         &out_bin,
-                                         status);
+      ret = crypto->hmac_sha_256 (
+         crypto->ctx, &key_bin, &in_bin, &out_bin, status);
       return ret;
    }
    return _native_crypto_hmac_sha_256 (key, in, out, status);

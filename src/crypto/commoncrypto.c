@@ -220,7 +220,8 @@ bool
 _native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
                              const _mongocrypt_buffer_t *in,
                              _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status) {
+                             mongocrypt_status_t *status)
+{
    return _hmac_with_algorithm (
       kCCHmacAlgSHA256, key, in, out, MONGOCRYPT_HMAC_SHA256_LEN, status);
 }

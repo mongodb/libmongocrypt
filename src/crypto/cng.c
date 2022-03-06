@@ -278,13 +278,8 @@ _hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
       return false;
    }
 
-   nt_status = BCryptCreateHash (hAlgorithm,
-                                 &hHash,
-                                 NULL,
-                                 0,
-                                 (PUCHAR) key->data,
-                                 (ULONG) key->len,
-                                 0);
+   nt_status = BCryptCreateHash (
+      hAlgorithm, &hHash, NULL, 0, (PUCHAR) key->data, (ULONG) key->len, 0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
       /* Only call BCryptDestroyHash if BCryptCreateHash succeeded. */
@@ -316,7 +311,7 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
                              mongocrypt_status_t *status)
 {
    return _hmac_with_algorithm (
-         _algo_sha512_hmac, key, in, out, MONGOCRYPT_HMAC_SHA512_LEN, status);
+      _algo_sha512_hmac, key, in, out, MONGOCRYPT_HMAC_SHA512_LEN, status);
 }
 
 
