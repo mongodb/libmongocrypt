@@ -255,6 +255,7 @@ done:
    return ret;
 }
 
+
 bool
 _hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
                       const _mongocrypt_buffer_t *key,
@@ -281,6 +282,7 @@ _hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
                                  0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
+      /* Only call BCryptDestroyHash if BCryptCreateHash succeeded. */
       return false;
    }
 
