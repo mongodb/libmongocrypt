@@ -437,6 +437,7 @@ _test_mongocrypt_hmac_sha_256 (_mongocrypt_tester_t *tester)
    crypt = mongocrypt_new ();
 
    status = mongocrypt_status_new ();
+   _mongocrypt_buffer_resize (&key, MONGOCRYPT_MAC_KEY_LEN);
    _mongocrypt_buffer_copy_from_hex (&expect,
                                      "000102030405060708090A0B0C0D0E0F"
                                      "101112131415161718191A1B1C1D1E1F");
@@ -454,6 +455,7 @@ _test_mongocrypt_hmac_sha_256 (_mongocrypt_tester_t *tester)
 
    _mongocrypt_buffer_cleanup (&got);
    _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&key);
    mongocrypt_status_destroy (status);
    mongocrypt_destroy (crypt);
 }

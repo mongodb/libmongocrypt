@@ -998,6 +998,29 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
                           const _mongocrypt_buffer_t *in,
                           _mongocrypt_buffer_t *out,
                           mongocrypt_status_t *status) {
-   CLIENT_ERR ("TODO");
-   return false;
+
+   if (key->len != MONGOCRYPT_MAC_KEY_LEN) {
+      CLIENT_ERR ("invalid hmac_sha_256 key length. Got %" PRIu32
+                  " expect: %" PRIu32,
+                  key->len,
+                  MONGOCRYPT_MAC_KEY_LEN);
+      return false;
+   }
+
+   if (crypto->hooks_enabled) {
+      mongocrypt_binary_t key_bin, out_bin, in_bin;
+      bool ret;
+
+      _mongocrypt_buffer_to_binary (key, &key_bin);
+      _mongocrypt_buffer_to_binary (out, &out_bin);
+      _mongocrypt_buffer_to_binary (in, &in_bin);
+
+      ret = crypto->hmac_sha_256 (crypto->ctx,
+                                         &key_bin,
+                                         &in_bin,
+                                         &out_bin,
+                                         status);
+      return ret;
+   }
+   return _native_crypto_hmac_sha_256 (key, in, out, status);
 }
