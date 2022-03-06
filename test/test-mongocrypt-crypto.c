@@ -427,7 +427,7 @@ _hook_hmac_sha_256 (void *ctx,
 }
 
 static void
-_test_mongocrypt_hmac_sha_256 (_mongocrypt_tester_t *tester)
+_test_mongocrypt_hmac_sha_256_hook (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    _mongocrypt_crypto_t crypto = {0};
@@ -471,5 +471,5 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_roundtrip);
    INSTALL_TEST (_test_native_crypto_aes_256_ctr);
    INSTALL_TEST (_test_native_crypto_hmac_sha_256);
-   INSTALL_TEST_CRYPTO (_test_mongocrypt_hmac_sha_256, CRYPTO_OPTIONAL);
+   INSTALL_TEST_CRYPTO (_test_mongocrypt_hmac_sha_256_hook, CRYPTO_OPTIONAL);
 }
