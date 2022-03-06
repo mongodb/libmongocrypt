@@ -124,6 +124,24 @@ _mongocrypt_calculate_deterministic_iv (
    _mongocrypt_buffer_t *out,
    mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
+/*
+ * _mongocrypt_hmac_sha_256 computes the HMAC SHA-256.
+ *
+ * Uses the hmac_sha_256 hook set on @crypto if set, and otherwise
+ * calls the native implementation.
+ *
+ * @out must have length 32 bytes.
+ *
+ * Returns true if no error occurred.
+ * Returns false sets @status if an error occurred.
+ */
+bool
+_mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
+                          const _mongocrypt_buffer_t *key,
+                          const _mongocrypt_buffer_t *in,
+                          _mongocrypt_buffer_t *out,
+                          mongocrypt_status_t *status);
+
 /* Crypto implementations must implement these functions. */
 
 /* This variable must be defined in implementation

@@ -408,6 +408,56 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static bool _hook_hmac_sha_256 (void *ctx,
+                                    mongocrypt_binary_t *key,
+                                    mongocrypt_binary_t *in,
+                                    mongocrypt_binary_t *out,
+                                    mongocrypt_status_t *status) {
+   const uint8_t *data_to_copy = (const uint8_t*) ctx;
+   uint8_t *outdata = mongocrypt_binary_data (out);
+   uint32_t outlen = mongocrypt_binary_len (out);
+
+   ASSERT_CMPINT ((int) outlen, ==, 32);
+   memcpy (outdata, data_to_copy, outlen);
+   return true;
+}
+
+static void
+_test_mongocrypt_hmac_sha_256 (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   _mongocrypt_crypto_t crypto = {0};
+   _mongocrypt_buffer_t key = {0};
+   _mongocrypt_buffer_t in = {0};
+   _mongocrypt_buffer_t expect;
+   _mongocrypt_buffer_t got;
+   mongocrypt_status_t *status;
+
+   /* Create a mongocrypt_t to call _native_crypto_init(). */
+   crypt = mongocrypt_new ();
+
+   status = mongocrypt_status_new ();
+   _mongocrypt_buffer_copy_from_hex (&expect,
+                                     "000102030405060708090A0B0C0D0E0F"
+                                     "101112131415161718191A1B1C1D1E1F");
+   _mongocrypt_buffer_init (&got);
+   _mongocrypt_buffer_resize (&got, MONGOCRYPT_HMAC_SHA256_LEN);
+
+   crypto.hooks_enabled = true;
+   crypto.hmac_sha_256 = _hook_hmac_sha_256;
+   crypto.ctx = expect.data;
+
+   ASSERT_OR_PRINT (_mongocrypt_hmac_sha_256 (&crypto, &key, &in, &got, status),
+                    status);
+
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+
+   _mongocrypt_buffer_cleanup (&got);
+   _mongocrypt_buffer_cleanup (&expect);
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
 {
@@ -415,4 +465,5 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_roundtrip);
    INSTALL_TEST (_test_native_crypto_aes_256_ctr);
    INSTALL_TEST (_test_native_crypto_hmac_sha_256);
+   INSTALL_TEST_CRYPTO (_test_mongocrypt_hmac_sha_256, CRYPTO_OPTIONAL);
 }

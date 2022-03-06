@@ -991,3 +991,13 @@ _mongocrypt_unwrap_key (_mongocrypt_crypto_t *crypto,
    }
    return true;
 }
+
+bool
+_mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
+                          const _mongocrypt_buffer_t *key,
+                          const _mongocrypt_buffer_t *in,
+                          _mongocrypt_buffer_t *out,
+                          mongocrypt_status_t *status) {
+   CLIENT_ERR ("TODO");
+   return false;
+}
