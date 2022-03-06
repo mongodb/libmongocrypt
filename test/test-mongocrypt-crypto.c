@@ -344,8 +344,8 @@ void
 _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
 {
    /* Test data generated with OpenSSL CLI:
-   $ echo -n "test" | openssl dgst -mac hmac -macopt
-   hexkey:6bb2664e8d444377d3cd9566c005593b7ed8a35ab8eac9eb5ffa6e426854e5cc
+   $ echo -n "test" | openssl dgst -mac hmac -macopt \
+   hexkey:6bb2664e8d444377d3cd9566c005593b7ed8a35ab8eac9eb5ffa6e426854e5cc \
    -sha256
      d80a4d2271fdaa45ad4a1bf85d606fe465cb40176d1d83e69628a154c2c528ff
 
