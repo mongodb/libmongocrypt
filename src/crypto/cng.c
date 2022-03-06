@@ -255,23 +255,24 @@ done:
    return ret;
 }
 
-
 bool
-_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
-                             const _mongocrypt_buffer_t *in,
-                             _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status)
+_hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
+                      const _mongocrypt_buffer_t *key,
+                      const _mongocrypt_buffer_t *in,
+                      _mongocrypt_buffer_t *out,
+                      uint32_t expect_out_len,
+                      mongocrypt_status_t *status)
 {
    bool ret = false;
    BCRYPT_HASH_HANDLE hHash;
    NTSTATUS nt_status;
 
-   if (out->len != 64) {
-      CLIENT_ERR ("out does not contain 64 bytes");
+   if (out->len != expect_out_len) {
+      CLIENT_ERR ("out does not contain " PRIu32 " bytes", expect_out_len);
       return false;
    }
 
-   nt_status = BCryptCreateHash (_algo_sha512_hmac,
+   nt_status = BCryptCreateHash (hAlgorithm,
                                  &hHash,
                                  NULL,
                                  0,
@@ -280,7 +281,7 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
                                  0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
-      return false; 
+      return false;
    }
 
    nt_status = BCryptHashData (hHash, (PUCHAR) in->data, (ULONG) in->len, 0);
@@ -299,6 +300,16 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
 done:
    (void) BCryptDestroyHash (hHash);
    return ret;
+}
+
+bool
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_algorithm (
+         _algo_sha512_hmac, key, in, out, MONGOCRYPT_HMAC_SHA512_LEN, status);
 }
 
 
@@ -338,43 +349,8 @@ _native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status)
 {
-   bool ret = false;
-   BCRYPT_HASH_HANDLE hHash;
-   NTSTATUS nt_status;
-
-   if (out->len != 32) {
-      CLIENT_ERR ("out does not contain 32 bytes");
-      return false;
-   }
-
-   nt_status = BCryptCreateHash (_algo_sha256_hmac,
-                                 &hHash,
-                                 NULL,
-                                 0,
-                                 (PUCHAR) key->data,
-                                 (ULONG) key->len,
-                                 0);
-   if (nt_status != STATUS_SUCCESS) {
-      CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
-      return false;
-   }
-
-   nt_status = BCryptHashData (hHash, (PUCHAR) in->data, (ULONG) in->len, 0);
-   if (nt_status != STATUS_SUCCESS) {
-      CLIENT_ERR ("error hashing data: 0x%x", (int) nt_status);
-      goto done;
-   }
-
-   nt_status = BCryptFinishHash (hHash, out->data, out->len, 0);
-   if (nt_status != STATUS_SUCCESS) {
-      CLIENT_ERR ("error finishing hmac: 0x%x", (int) nt_status);
-      goto done;
-   }
-
-   ret = true;
-done:
-   (void) BCryptDestroyHash (hHash);
-   return ret;
+   return _hmac_with_algorithm (
+      _algo_sha256_hmac, key, in, out, MONGOCRYPT_HMAC_SHA256_LEN, status);
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_CNG */
