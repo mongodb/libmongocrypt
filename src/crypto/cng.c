@@ -255,7 +255,12 @@ done:
    return ret;
 }
 
-
+/* _hmac_with_algorithm computes an HMAC of @in with the algorithm specified by
+ * @hAlgorithm.
+ * @key is the input key.
+ * @out is the output. @out must be allocated by the caller with
+ * the expected length @expect_out_len for the output.
+ * Returns false and sets @status on error. @status is required. */
 bool
 _hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
                       const _mongocrypt_buffer_t *key,
