@@ -844,8 +844,18 @@ _mongocrypt_parse_kms_providers (
 
    while (bson_iter_next (&iter)) {
       const char *field_name;
+      bson_t field_bson;
 
       field_name = bson_iter_key (&iter);
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         uint32_t len;
+         const uint8_t *data = NULL;
+         bson_iter_document (&iter, &len, &data);
+         bson_init_static (&field_bson, data, len);
+      } else {
+         CLIENT_ERR ("'%s' value must be a BSON document", field_name);
+         return false;
+      }
 
       if (0 == strcmp (field_name, "azure")) {
          if (0 != (
@@ -959,6 +969,8 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
          kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+      } else if (0 == strcmp (field_name, "aws") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AWS;
       } else if (0 == strcmp (field_name, "aws")) {
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,
@@ -1061,4 +1073,25 @@ mongocrypt_setopt_set_csfle_lib_path_override (mongocrypt_t *crypt,
                                                const char *path)
 {
    mstr_assign (&crypt->opts.csfle_lib_override_path, mstr_copy_cstr (path));
+}
+
+bool
+_mongocrypt_needs_credentials (mongocrypt_t *crypt)
+{
+   if (!crypt->opts.use_need_kms_credentials_state) {
+      return false;
+   }
+
+   return crypt->opts.kms_providers.need_credentials != 0;
+}
+
+bool
+_mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
+                               _mongocrypt_kms_provider_t provider)
+{
+   if (!crypt->opts.use_need_kms_credentials_state) {
+      return false;
+   }
+
+   return (crypt->opts.kms_providers.need_credentials & provider) != 0;
 }

@@ -109,10 +109,10 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 bool
 _mongocrypt_opts_kms_providers_validate (
    _mongocrypt_opts_kms_providers_t *kms_providers,
-   bool allow_empty_providers,
    mongocrypt_status_t *status)
 {
-   if (!kms_providers->configured_providers && !allow_empty_providers) {
+   if (!kms_providers->configured_providers &&
+       !kms_providers->need_credentials) {
       CLIENT_ERR ("no kms provider set");
       return false;
    }
@@ -142,8 +142,6 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
 {
    return _mongocrypt_opts_kms_providers_validate(
       &opts->kms_providers,
-      /* providers list may be empty if on-demand KMS retrieval is used */
-      opts->use_need_kms_credentials_state,
       status);
 }
 

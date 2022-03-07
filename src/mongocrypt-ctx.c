@@ -572,7 +572,6 @@ mongocrypt_ctx_provide_kms_providers (
 
    if (!_mongocrypt_opts_kms_providers_validate(
           &ctx->per_ctx_kms_providers,
-          true,
           ctx->status)) {
       /* Remove the parsed KMS providers if they are invalid */
       _mongocrypt_opts_kms_providers_cleanup(&ctx->per_ctx_kms_providers);
@@ -917,7 +916,7 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
    case KB_ADDING_DOCS:
       /* Encrypted keys need KMS, which need to be provided before
        * adding docs. */
-      if (ctx->crypt->opts.use_need_kms_credentials_state) {
+      if (_mongocrypt_needs_credentials (ctx->crypt)) {
          new_state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
       } else {
          /* Require key documents from driver. */
