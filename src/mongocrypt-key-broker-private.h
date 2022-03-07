@@ -53,8 +53,12 @@ typedef enum {
    /* Starting state. Accept requests for keys to be added (either by id or
       name) */
    KB_REQUESTING,
+   /* Accept requests for keys to be added without corresponding requests. */
+   KB_REQUESTING_ANY,
    /* Accept key documents fetched from the key vault collection. */
    KB_ADDING_DOCS,
+   /* Accept any key document fetched from the key vault collection. */
+   KB_ADDING_DOCS_ANY,
    /* Getting oauth token(s) from KMS providers. */
    KB_AUTHENTICATING,
    /* Accept KMS replies to decrypt key material in each key document. */
@@ -127,6 +131,11 @@ _mongocrypt_key_broker_request_id (_mongocrypt_key_broker_t *kb,
 bool
 _mongocrypt_key_broker_request_name (_mongocrypt_key_broker_t *kb,
                                      const bson_value_t *key_alt_name)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* Switch mode to permit adding documents without prior requests. */
+bool
+_mongocrypt_key_broker_request_any (_mongocrypt_key_broker_t *kb)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool

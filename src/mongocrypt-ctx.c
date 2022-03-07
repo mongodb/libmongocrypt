@@ -915,6 +915,11 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
       }
       ret = true;
       break;
+   case KB_ADDING_DOCS_ANY:
+      /* Assume KMS credentials have been provided. */
+      new_state = MONGOCRYPT_CTX_NEED_MONGO_KEYS;
+      ret = true;
+      break;
    case KB_AUTHENTICATING:
    case KB_DECRYPTING_KEY_MATERIAL:
       new_state = MONGOCRYPT_CTX_NEED_KMS;
@@ -929,8 +934,9 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
       ret = true;
       break;
    /* As currently implemented, we do not expect to ever be in KB_REQUESTING
-    * state when calling this function. */
+    * or KB_REQUESTING_ANY state when calling this function. */
    case KB_REQUESTING:
+   case KB_REQUESTING_ANY:
       CLIENT_ERR ("key broker in unexpected state");
       new_state = MONGOCRYPT_CTX_ERROR;
       ret = false;
