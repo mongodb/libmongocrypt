@@ -90,6 +90,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-ctx-datakey.c
    src/mongocrypt-ctx-decrypt.c
    src/mongocrypt-ctx-encrypt.c
+   src/mongocrypt-ctx-rewrap-many-datakey.c
    src/mongocrypt-ctx.c
    src/mongocrypt-endpoint.c
    src/mongocrypt-kek.c
@@ -338,6 +339,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-csfle-lib.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
+   test/test-mongocrypt-ctx-rewrap-many-datakey.c
    test/test-mongocrypt-ctx-setopt.c
    test/test-mongocrypt-datakey.c
    test/test-mongocrypt-dll.c

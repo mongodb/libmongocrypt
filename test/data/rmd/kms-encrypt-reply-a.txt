@@ -1,0 +1,7 @@
+HTTP/1.1 200 OK
+x-amzn-RequestId: 29f5ed0e-6362-408f-8b80-7400a6c6fdab
+Content-Type: application/x-amz-json-1.1
+Content-Length: 487
+Connection: close
+
+{"CiphertextBlob":"AQICAHjEc7oVE9nX494vQ37Y6VBvgh0L7Bjm5QzbH0Tf04D6bwEfH1MXhs2uh+eRM5zK/CA8AAAAwjCBvwYJKoZIhvcNAQcGoIGxMIGuAgEAMIGoBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDEv7o1A3VumZBUj7VgIBEIB7TKZcxPSasdzzAVme1Rn7DYTee+cCmhiUVQCQS4/Ae9Z870S+MhyiX8Ud1v9TAUbIGkeKahZoqq7UXpXsL7pvIghQPRxppkSNfKmT9kJhDy+u4pOOVmmvkCKueTW4FlBu2jik8vTO8/wp7tlRSA5BUcaqdEv5KWXAjgdt","EncryptionAlgorithm":"SYMMETRIC_DEFAULT","KeyId":"arn:aws:kms:us-east-1:579766882180:key/061334ae-07a8-4ceb-a813-8135540e837d"}
