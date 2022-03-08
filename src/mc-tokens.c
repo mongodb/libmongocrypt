@@ -311,7 +311,15 @@ mc_EDCDerivedFromDataTokenAndCounter_t*
 mc_EDCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_EDCDerivedFromDataToken_t *EDCDerivedFromDataToken, uint64_t u, mongocrypt_status_t *status) {
    mc_EDCDerivedFromDataTokenAndCounter_t * t = bson_malloc0 (sizeof (mc_EDCDerivedFromDataTokenAndCounter_t));
    _mongocrypt_buffer_init (&t->data);
-   /* TODO */
+   _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
+   _mongocrypt_buffer_t counter;
+   _mongocrypt_buffer_copy_from_uint64 (&counter, u);
+
+   if (!_mongocrypt_hmac_sha_256 (crypto, mc_EDCDerivedFromDataToken_get(EDCDerivedFromDataToken), &counter, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&counter);
+      return NULL;
+   }
+   _mongocrypt_buffer_cleanup (&counter);
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -335,7 +343,15 @@ mc_ESCDerivedFromDataTokenAndCounter_t*
 mc_ESCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_ESCDerivedFromDataToken_t *ESCDerivedFromDataToken, uint64_t u, mongocrypt_status_t *status) {
    mc_ESCDerivedFromDataTokenAndCounter_t * t = bson_malloc0 (sizeof (mc_ESCDerivedFromDataTokenAndCounter_t));
    _mongocrypt_buffer_init (&t->data);
-   /* TODO */
+   _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
+   _mongocrypt_buffer_t counter;
+   _mongocrypt_buffer_copy_from_uint64 (&counter, u);
+
+   if (!_mongocrypt_hmac_sha_256 (crypto, mc_ESCDerivedFromDataToken_get(ESCDerivedFromDataToken), &counter, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&counter);
+      return NULL;
+   }
+   _mongocrypt_buffer_cleanup (&counter);
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -359,7 +375,15 @@ mc_ECCDerivedFromDataTokenAndCounter_t*
 mc_ECCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_ECCDerivedFromDataToken_t *ECCDerivedFromDataToken, uint64_t u, mongocrypt_status_t *status) {
    mc_ECCDerivedFromDataTokenAndCounter_t * t = bson_malloc0 (sizeof (mc_ECCDerivedFromDataTokenAndCounter_t));
    _mongocrypt_buffer_init (&t->data);
-   /* TODO */
+   _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
+   _mongocrypt_buffer_t counter;
+   _mongocrypt_buffer_copy_from_uint64 (&counter, u);
+
+   if (!_mongocrypt_hmac_sha_256 (crypto, mc_ECCDerivedFromDataToken_get(ECCDerivedFromDataToken), &counter, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&counter);
+      return NULL;
+   }
+   _mongocrypt_buffer_cleanup (&counter);
    return t;
 }
 const _mongocrypt_buffer_t *
