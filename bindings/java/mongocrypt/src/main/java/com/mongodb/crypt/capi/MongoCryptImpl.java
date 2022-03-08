@@ -160,14 +160,7 @@ class MongoCryptImpl implements MongoCrypt {
         if (options.getKmsProviderOptions() != null) {
             BsonDocument kmsProviderOptions = options.getKmsProviderOptions();
             if (options.getKmsProviderOptions().values().stream().anyMatch(value -> value.asDocument().isEmpty())) {
-
                 mongocrypt_setopt_use_need_kms_credentials_state(wrapped);
-
-                kmsProviderOptions = options.getKmsProviderOptions().entrySet().stream()
-                        .filter(entry -> !entry.getValue().asDocument().isEmpty())
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                                (o1, o2) -> o1, BsonDocument::new));
-
             }
 
             try (BinaryHolder binaryHolder = toBinary(kmsProviderOptions)) {
