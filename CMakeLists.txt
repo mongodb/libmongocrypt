@@ -185,7 +185,16 @@ target_include_directories (
    PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
    )
-target_compile_definitions (mongocrypt PRIVATE ${BSON_DEFINITIONS})
+include (TestBigEndian)
+TEST_BIG_ENDIAN (MONGOCRYPT_BIG_ENDIAN)
+if (MONGOCRYPT_BIG_ENDIAN)
+   message ("Detected byte order: big endian")
+   set (MONGOCRYPT_DEFINITIONS "${MONGOCRYPT_DEFINITIONS} MONGOCRYPT_BIG_ENDIAN")
+else ()
+   message ("Detected byte order: little endian")
+   set (MONGOCRYPT_DEFINITIONS "${MONGOCRYPT_DEFINITIONS} MONGOCRYPT_LITTLE_ENDIAN")
+endif ()
+target_compile_definitions (mongocrypt PRIVATE ${BSON_DEFINITIONS} ${MONGOCRYPT_DEFINITIONS})
 target_link_libraries (
    mongocrypt
    PRIVATE
@@ -368,6 +377,7 @@ target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET} mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE
    ${BSON_DEFINITIONS}
+   ${MONGOCRYPT_DEFINITIONS}
    # Set a definition so that testcases can know where test-mongocrypt.exe was written to
    "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
    # Tell test-mongocrypt whether we have a real csfle library for testing
