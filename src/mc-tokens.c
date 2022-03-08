@@ -22,9 +22,20 @@ struct _mc_CollectionsLevel1Token_t {
 
 mc_CollectionsLevel1Token_t*
 mc_CollectionsLevel1Token_new (_mongocrypt_crypto_t *crypto,
-                               const _mongocrypt_buffer_t *RootKey) {
+                               const _mongocrypt_buffer_t *RootKey,
+                               mongocrypt_status_t *status) {
    mc_CollectionsLevel1Token_t * t = bson_malloc0 (sizeof (mc_CollectionsLevel1Token_t));
    _mongocrypt_buffer_init (&t->data);
+   _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
+   
+   _mongocrypt_buffer_t one;
+   uint8_t one_data[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+   one.data = one_data;
+   one.len = 8;
+   
+   if (!_mongocrypt_hmac_sha_256 (crypto, RootKey, &one, &t->data, status)) {
+      return NULL;
+   }
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -42,11 +53,12 @@ mc_CollectionsLevel1Token_destroy (mc_CollectionsLevel1Token_t *t) {
 }
 
 
+
 struct _mc_ServerDataEncryptionLevel1Token_t {
     _mongocrypt_buffer_t data;
 };
 mc_ServerDataEncryptionLevel1Token_t*
-mc_ServerDataEncryptionLevel1Token_new (_mongocrypt_crypto_t *crypto , const _mongocrypt_buffer_t *RootKey) {
+mc_ServerDataEncryptionLevel1Token_new (_mongocrypt_crypto_t *crypto , const _mongocrypt_buffer_t *RootKey, mongocrypt_status_t *status) {
    mc_ServerDataEncryptionLevel1Token_t * t = bson_malloc0 (sizeof (mc_ServerDataEncryptionLevel1Token_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -70,7 +82,7 @@ struct _mc_EDCToken_t {
     _mongocrypt_buffer_t data;
 };
 mc_EDCToken_t*
-mc_EDCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token) {
+mc_EDCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token, mongocrypt_status_t *status) {
    mc_EDCToken_t * t = bson_malloc0 (sizeof (mc_EDCToken_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -94,7 +106,7 @@ struct _mc_ESCToken_t {
     _mongocrypt_buffer_t data;
 };
 mc_ESCToken_t*
-mc_ESCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token) {
+mc_ESCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token, mongocrypt_status_t *status) {
    mc_ESCToken_t * t = bson_malloc0 (sizeof (mc_ESCToken_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -118,7 +130,7 @@ struct _mc_ECCToken_t {
     _mongocrypt_buffer_t data;
 };
 mc_ECCToken_t*
-mc_ECCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token) {
+mc_ECCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token, mongocrypt_status_t *status) {
    mc_ECCToken_t * t = bson_malloc0 (sizeof (mc_ECCToken_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -142,7 +154,7 @@ struct _mc_ECOCToken_t {
     _mongocrypt_buffer_t data;
 };
 mc_ECOCToken_t*
-mc_ECOCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token) {
+mc_ECOCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_t *CollectionsLevel1Token, mongocrypt_status_t *status) {
    mc_ECOCToken_t * t = bson_malloc0 (sizeof (mc_ECOCToken_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -166,7 +178,7 @@ struct _mc_EDCDerivedFromDataToken_t {
     _mongocrypt_buffer_t data;
 };
 mc_EDCDerivedFromDataToken_t*
-mc_EDCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_EDCToken_t *EDCToken, const _mongocrypt_buffer_t *v) {
+mc_EDCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_EDCToken_t *EDCToken, const _mongocrypt_buffer_t *v, mongocrypt_status_t *status) {
    mc_EDCDerivedFromDataToken_t * t = bson_malloc0 (sizeof (mc_EDCDerivedFromDataToken_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -190,7 +202,7 @@ struct _mc_ESCDerivedFromDataToken_t {
     _mongocrypt_buffer_t data;
 };
 mc_ESCDerivedFromDataToken_t*
-mc_ESCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_ESCToken_t *ESCToken, const _mongocrypt_buffer_t *v) {
+mc_ESCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_ESCToken_t *ESCToken, const _mongocrypt_buffer_t *v, mongocrypt_status_t *status) {
    mc_ESCDerivedFromDataToken_t * t = bson_malloc0 (sizeof (mc_ESCDerivedFromDataToken_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -214,7 +226,7 @@ struct _mc_ECCDerivedFromDataToken_t {
     _mongocrypt_buffer_t data;
 };
 mc_ECCDerivedFromDataToken_t*
-mc_ECCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_ECCToken_t *EDCToken, const _mongocrypt_buffer_t *v) {
+mc_ECCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_ECCToken_t *EDCToken, const _mongocrypt_buffer_t *v, mongocrypt_status_t *status) {
    mc_ECCDerivedFromDataToken_t * t = bson_malloc0 (sizeof (mc_ECCDerivedFromDataToken_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -238,7 +250,7 @@ struct _mc_EDCDerivedFromDataTokenAndCounter_t {
     _mongocrypt_buffer_t data;
 };
 mc_EDCDerivedFromDataTokenAndCounter_t*
-mc_EDCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_EDCDerivedFromDataToken_t *EDCDerivedFromDataToken, uint64_t u) {
+mc_EDCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_EDCDerivedFromDataToken_t *EDCDerivedFromDataToken, uint64_t u, mongocrypt_status_t *status) {
    mc_EDCDerivedFromDataTokenAndCounter_t * t = bson_malloc0 (sizeof (mc_EDCDerivedFromDataTokenAndCounter_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -262,7 +274,7 @@ struct _mc_ESCDerivedFromDataTokenAndCounter_t {
     _mongocrypt_buffer_t data;
 };
 mc_ESCDerivedFromDataTokenAndCounter_t*
-mc_ESCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_ESCDerivedFromDataToken_t *ESCDerivedFromDataToken, uint64_t u) {
+mc_ESCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_ESCDerivedFromDataToken_t *ESCDerivedFromDataToken, uint64_t u, mongocrypt_status_t *status) {
    mc_ESCDerivedFromDataTokenAndCounter_t * t = bson_malloc0 (sizeof (mc_ESCDerivedFromDataTokenAndCounter_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
@@ -286,7 +298,7 @@ struct _mc_ECCDerivedFromDataTokenAndCounter_t {
     _mongocrypt_buffer_t data;
 };
 mc_ECCDerivedFromDataTokenAndCounter_t*
-mc_ECCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_ECCDerivedFromDataToken_t *ECCDerivedFromDataToken, uint64_t u) {
+mc_ECCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const mc_ECCDerivedFromDataToken_t *ECCDerivedFromDataToken, uint64_t u, mongocrypt_status_t *status) {
    mc_ECCDerivedFromDataTokenAndCounter_t * t = bson_malloc0 (sizeof (mc_ECCDerivedFromDataTokenAndCounter_t));
    _mongocrypt_buffer_init (&t->data);
    /* TODO */
