@@ -35,7 +35,6 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_next_kms_ctx;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_provide_kms_providers;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_state;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_status;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_providers;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
