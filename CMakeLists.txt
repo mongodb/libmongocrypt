@@ -25,12 +25,11 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 # Enable a higher warning level and warnings-as-errors
 include (MongoC-Warnings)
-option (ENABLE_MORE_WARNINGS_AS_ERRORS "Enable extra warnings-as-errors in the build." ON)
+option (ENABLE_MORE_WARNINGS_AS_ERRORS "Enable extra warnings-as-errors in the build." OFF)
 if (ENABLE_MORE_WARNINGS_AS_ERRORS)
    mongoc_add_platform_compile_options (
       msvc:/W3 msvc:/WX msvc:/wd4996
-      gnu-like:-Werror
-      gnu-like:-Wno-missing-braces
+      gnu-like:-Wall gnu-like:-Werror
       )
 endif ()
 
