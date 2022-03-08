@@ -201,4 +201,12 @@ bool
 _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf,
                                       char *str) MONGOCRYPT_WARN_UNUSED_RESULT;
 
+/* _mongocrypt_buffer_copy_from_uint64 initializes @buf from the byte
+ * representation of @value.
+ * Caller must call _mongocrypt_buffer_cleanup.
+ * Endianness of @value is not modified. Use mongocrypt-endian-private.h
+ * to convert endianness beforehand.
+ */
+void _mongocrypt_buffer_copy_from_uint64 (_mongocrypt_buffer_t *buf, uint64_t value);
+
 #endif /* MONGOCRYPT_BUFFER_H */

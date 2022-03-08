@@ -19,6 +19,8 @@
 #include "test-mongocrypt.h"
 #include "test-mongocrypt-assert.h"
 
+#include "mongocrypt-endian-private.h"
+
 #define TEST_STRING "?????" /* 3F 3F 3F 3F 3F */
 #define TEST_INT 5555555    /* 54 C5 63 */
 
@@ -198,6 +200,24 @@ _test_mongocrypt_buffer_steal_from_string (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&buf);
 }
 
+static void
+_test_mongocrypt_buffer_copy_from_uint64 (_mongocrypt_tester_t *tester) {
+   _mongocrypt_buffer_t expect;
+   _mongocrypt_buffer_t got;
+
+   _mongocrypt_buffer_copy_from_hex (&expect, "0100000000000000");
+   _mongocrypt_buffer_copy_from_uint64 (&got, MONGOCRYPT_UINT64_TO_LE (0x0000000000000001ULL));
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&got);
+
+   _mongocrypt_buffer_copy_from_hex (&expect, "1122334455667788");
+   _mongocrypt_buffer_copy_from_uint64 (&got, MONGOCRYPT_UINT64_TO_LE (0x8877665544332211ULL));
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&got);
+}
+
 void
 _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester)
 {
@@ -205,4 +225,5 @@ _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_mongocrypt_buffer_copy_from_data_and_size);
    INSTALL_TEST (_test_mongocrypt_buffer_steal_from_data_and_size);
    INSTALL_TEST (_test_mongocrypt_buffer_steal_from_string);
+   INSTALL_TEST (_test_mongocrypt_buffer_copy_from_uint64);
 }
