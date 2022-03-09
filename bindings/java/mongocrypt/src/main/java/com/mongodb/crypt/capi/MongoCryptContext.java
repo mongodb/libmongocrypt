@@ -53,6 +53,7 @@ public interface MongoCryptContext extends Closeable {
 
         /**
          * Need to fetch/renew KMS credentials
+         * @since 1.4
          */
         NEED_KMS_CREDENTIALS(CAPI.MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS),
 
@@ -110,6 +111,7 @@ public interface MongoCryptContext extends Closeable {
      * Provide KMS credentials on demand, in response to NEED_KMS_CREDENTIALS state
      *
      * @param credentialsDocument document containing all credentials
+     * @since 1.4
      */
     void provideKmsProviderCredentials(BsonDocument credentialsDocument);
 
