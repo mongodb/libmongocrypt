@@ -19,6 +19,7 @@
 #include <bson/bson.h>
 
 #include <cstring>
+#include <cinttypes>
 
 #ifdef _WIN32
 #define MONGO_API_CALL __cdecl
@@ -123,11 +124,26 @@ mongo_csfle_v1_analyze_query (query_analyzer_t *qa,
                               uint32_t *bson_len_out,
                               status_t *)
 {
-   bson_t doc;
-   bson_init_from_json (&doc, "{}", -1, NULL);
+   std::uint32_t doc_len;
+   std::copy_n (doc_bson, sizeof doc_len, reinterpret_cast<char *> (&doc_len));
+   doc_len = BSON_UINT32_FROM_LE (doc_len);
+   bson_t *given = bson_new_from_data (doc_bson, doc_len);
+   bson_t doc = BSON_INITIALIZER;
+   BSON_APPEND_DOCUMENT (&doc, "originalCommand", given);
+   bson_t tmp_doc;
+   bson_init_from_json ( //
+      &tmp_doc,
+      R"({
+         "markedDocument": true
+      })",
+      -1,
+      nullptr);
+   BSON_APPEND_DOCUMENT (&doc, "result", &tmp_doc);
    uint8_t *buf = new uint8_t[doc.len];
    std::copy_n (bson_get_data (&doc), doc.len, buf);
    *bson_len_out = doc.len;
+   bson_destroy (given);
+   bson_destroy (&tmp_doc);
    return buf;
 }
 
