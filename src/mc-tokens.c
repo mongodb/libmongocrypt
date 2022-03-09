@@ -30,13 +30,13 @@ mc_CollectionsLevel1Token_new (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    
    _mongocrypt_buffer_t to_hash;
-   uint8_t to_hash_data[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-   to_hash.data = to_hash_data;
-   to_hash.len = 8;
+   _mongocrypt_buffer_copy_from_uint64 (&to_hash, 1);
    
    if (!_mongocrypt_hmac_sha_256 (crypto, RootKey, &to_hash, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&to_hash);
       return NULL;
    }
+   _mongocrypt_buffer_cleanup (&to_hash);
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -65,14 +65,13 @@ mc_ServerDataEncryptionLevel1Token_new (_mongocrypt_crypto_t *crypto , const _mo
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    
    _mongocrypt_buffer_t to_hash;
-   uint8_t to_hash_data[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-   to_hash.data = to_hash_data;
-   to_hash.len = 8;
+   _mongocrypt_buffer_copy_from_uint64 (&to_hash, 3);
    
    if (!_mongocrypt_hmac_sha_256 (crypto, RootKey, &to_hash, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&to_hash);
       return NULL;
    }
-
+   _mongocrypt_buffer_cleanup (&to_hash);
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -99,13 +98,13 @@ mc_EDCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    
    _mongocrypt_buffer_t to_hash;
-   uint8_t to_hash_data[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-   to_hash.data = to_hash_data;
-   to_hash.len = 8;
+   _mongocrypt_buffer_copy_from_uint64 (&to_hash, 1);
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&to_hash);
       return NULL;
    }
+   _mongocrypt_buffer_cleanup (&to_hash);
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -132,13 +131,13 @@ mc_ESCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    
    _mongocrypt_buffer_t to_hash;
-   uint8_t to_hash_data[] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-   to_hash.data = to_hash_data;
-   to_hash.len = 8;
+   _mongocrypt_buffer_copy_from_uint64 (&to_hash, 2);
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&to_hash);
       return NULL;
    }
+   _mongocrypt_buffer_cleanup (&to_hash);
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -165,13 +164,13 @@ mc_ECCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    
    _mongocrypt_buffer_t to_hash;
-   uint8_t to_hash_data[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-   to_hash.data = to_hash_data;
-   to_hash.len = 8;
+   _mongocrypt_buffer_copy_from_uint64 (&to_hash, 3);
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&to_hash);
       return NULL;
    }
+   _mongocrypt_buffer_cleanup (&to_hash);
    return t;
 }
 const _mongocrypt_buffer_t *
@@ -198,13 +197,13 @@ mc_ECOCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    
    _mongocrypt_buffer_t to_hash;
-   uint8_t to_hash_data[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-   to_hash.data = to_hash_data;
-   to_hash.len = 8;
+   _mongocrypt_buffer_copy_from_uint64 (&to_hash, 4);
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
+       _mongocrypt_buffer_cleanup (&to_hash);
       return NULL;
    }
+   _mongocrypt_buffer_cleanup (&to_hash);
    return t;
 }
 const _mongocrypt_buffer_t *
