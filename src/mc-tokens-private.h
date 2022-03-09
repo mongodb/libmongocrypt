@@ -65,8 +65,8 @@ mc_ServerDataEncryptionLevel1Token_new (_mongocrypt_crypto_t *crypto,
                                         const _mongocrypt_buffer_t *RootKey,
                                         mongocrypt_status_t *status);
 const _mongocrypt_buffer_t *
-mc_ServerDataEncryptionLevel1Token_get (const 
-   mc_ServerDataEncryptionLevel1Token_t *t);
+mc_ServerDataEncryptionLevel1Token_get (
+   const mc_ServerDataEncryptionLevel1Token_t *t);
 void
 mc_ServerDataEncryptionLevel1Token_destroy (
    mc_ServerDataEncryptionLevel1Token_t *t);
@@ -161,8 +161,8 @@ mc_EDCDerivedFromDataTokenAndCounter_new (
    uint64_t u,
    mongocrypt_status_t *status);
 const _mongocrypt_buffer_t *
-mc_EDCDerivedFromDataTokenAndCounter_get (const 
-   mc_EDCDerivedFromDataTokenAndCounter_t *t);
+mc_EDCDerivedFromDataTokenAndCounter_get (
+   const mc_EDCDerivedFromDataTokenAndCounter_t *t);
 void
 mc_EDCDerivedFromDataTokenAndCounter_destroy (
    mc_EDCDerivedFromDataTokenAndCounter_t *t);
@@ -177,8 +177,8 @@ mc_ESCDerivedFromDataTokenAndCounter_new (
    uint64_t u,
    mongocrypt_status_t *status);
 const _mongocrypt_buffer_t *
-mc_ESCDerivedFromDataTokenAndCounter_get (const 
-   mc_ESCDerivedFromDataTokenAndCounter_t *t);
+mc_ESCDerivedFromDataTokenAndCounter_get (
+   const mc_ESCDerivedFromDataTokenAndCounter_t *t);
 void
 mc_ESCDerivedFromDataTokenAndCounter_destroy (
    mc_ESCDerivedFromDataTokenAndCounter_t *t);
@@ -193,8 +193,8 @@ mc_ECCDerivedFromDataTokenAndCounter_new (
    uint64_t u,
    mongocrypt_status_t *status);
 const _mongocrypt_buffer_t *
-mc_ECCDerivedFromDataTokenAndCounter_get (const 
-   mc_ECCDerivedFromDataTokenAndCounter_t *t);
+mc_ECCDerivedFromDataTokenAndCounter_get (
+   const mc_ECCDerivedFromDataTokenAndCounter_t *t);
 void
 mc_ECCDerivedFromDataTokenAndCounter_destroy (
    mc_ECCDerivedFromDataTokenAndCounter_t *t);

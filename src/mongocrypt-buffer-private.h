@@ -207,6 +207,7 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf,
  * Endianness of @value is not modified. Use mongocrypt-endian-private.h
  * to convert endianness beforehand.
  */
-void _mongocrypt_buffer_copy_from_uint64 (_mongocrypt_buffer_t *buf, uint64_t value);
+void
+_mongocrypt_buffer_copy_from_uint64 (_mongocrypt_buffer_t *buf, uint64_t value);
 
 #endif /* MONGOCRYPT_BUFFER_H */

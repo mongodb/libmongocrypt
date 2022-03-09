@@ -22,9 +22,10 @@
 #include <stdint.h>
 #include <string.h>
 
-/* Define a fallback for __has_builtin for compatibility with non-clang compilers. */
+/* Define a fallback for __has_builtin for compatibility with non-clang
+ * compilers. */
 #ifndef __has_builtin
-  #define __has_builtin(x) 0
+#define __has_builtin(x) 0
 #endif
 
 #if defined(__clang__) && __has_builtin(__builtin_bswap16) && \
@@ -43,15 +44,18 @@
 #endif
 
 #ifndef MONGOCRYPT_UINT16_SWAP_LE_BE
-#define MONGOCRYPT_UINT16_SWAP_LE_BE(v) __mongocrypt_uint16_swap_slow ((uint16_t) v)
+#define MONGOCRYPT_UINT16_SWAP_LE_BE(v) \
+   __mongocrypt_uint16_swap_slow ((uint16_t) v)
 #endif
 
 #ifndef MONGOCRYPT_UINT32_SWAP_LE_BE
-#define MONGOCRYPT_UINT32_SWAP_LE_BE(v) __mongocrypt_uint32_swap_slow ((uint32_t) v)
+#define MONGOCRYPT_UINT32_SWAP_LE_BE(v) \
+   __mongocrypt_uint32_swap_slow ((uint32_t) v)
 #endif
 
 #ifndef MONGOCRYPT_UINT64_SWAP_LE_BE
-#define MONGOCRYPT_UINT64_SWAP_LE_BE(v) __mongocrypt_uint64_swap_slow ((uint64_t) v)
+#define MONGOCRYPT_UINT64_SWAP_LE_BE(v) \
+   __mongocrypt_uint64_swap_slow ((uint64_t) v)
 #endif
 
 #if defined(MONGOCRYPT_LITTLE_ENDIAN)

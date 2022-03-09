@@ -533,7 +533,9 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
    return true;
 }
 
-void _mongocrypt_buffer_copy_from_uint64 (_mongocrypt_buffer_t *buf, uint64_t value) {
+void
+_mongocrypt_buffer_copy_from_uint64 (_mongocrypt_buffer_t *buf, uint64_t value)
+{
    _mongocrypt_buffer_init (buf);
    _mongocrypt_buffer_resize (buf, 8);
    memcpy (buf->data, &value, buf->len);

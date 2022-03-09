@@ -179,7 +179,8 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
 }
 
 static void
-_test_mc_tokens_error (_mongocrypt_tester_t *tester) {
+_test_mc_tokens_error (_mongocrypt_tester_t *tester)
+{
    mongocrypt_status_t *status;
    mongocrypt_t *crypt;
    _mongocrypt_buffer_t RootKey;
@@ -191,7 +192,9 @@ _test_mc_tokens_error (_mongocrypt_tester_t *tester) {
 
    mc_CollectionsLevel1Token_t *CollectionsLevel1Token =
       mc_CollectionsLevel1Token_new (crypt->crypto, &RootKey, status);
-   ASSERT_FAILS_STATUS (CollectionsLevel1Token != NULL, status, "invalid hmac_sha_256 key length");
+   ASSERT_FAILS_STATUS (CollectionsLevel1Token != NULL,
+                        status,
+                        "invalid hmac_sha_256 key length");
 
    mc_CollectionsLevel1Token_destroy (CollectionsLevel1Token);
    _mongocrypt_buffer_cleanup (&RootKey);
