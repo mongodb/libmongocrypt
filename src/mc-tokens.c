@@ -20,7 +20,6 @@
 struct _mc_CollectionsLevel1Token_t {
     _mongocrypt_buffer_t data;
 };
-
 mc_CollectionsLevel1Token_t*
 mc_CollectionsLevel1Token_new (_mongocrypt_crypto_t *crypto,
                                const _mongocrypt_buffer_t *RootKey,
@@ -43,7 +42,6 @@ const _mongocrypt_buffer_t *
 mc_CollectionsLevel1Token_get (const mc_CollectionsLevel1Token_t *t) {
     return &t->data;
 }
-
 void
 mc_CollectionsLevel1Token_destroy (mc_CollectionsLevel1Token_t *t) {
     if (!t) {
@@ -52,8 +50,6 @@ mc_CollectionsLevel1Token_destroy (mc_CollectionsLevel1Token_t *t) {
     _mongocrypt_buffer_cleanup (&t->data);
     bson_free (t);
 }
-
-
 
 struct _mc_ServerDataEncryptionLevel1Token_t {
     _mongocrypt_buffer_t data;
@@ -87,7 +83,6 @@ mc_ServerDataEncryptionLevel1Token_destroy (mc_ServerDataEncryptionLevel1Token_t
     bson_free (t);
 }
 
-
 struct _mc_EDCToken_t {
     _mongocrypt_buffer_t data;
 };
@@ -119,7 +114,6 @@ mc_EDCToken_destroy (mc_EDCToken_t *t) {
     _mongocrypt_buffer_cleanup (&t->data);
     bson_free (t);
 }
-
 
 struct _mc_ESCToken_t {
     _mongocrypt_buffer_t data;
@@ -153,7 +147,6 @@ mc_ESCToken_destroy (mc_ESCToken_t *t) {
     bson_free (t);
 }
 
-
 struct _mc_ECCToken_t {
     _mongocrypt_buffer_t data;
 };
@@ -185,7 +178,6 @@ mc_ECCToken_destroy (mc_ECCToken_t *t) {
     _mongocrypt_buffer_cleanup (&t->data);
     bson_free (t);
 }
-
 
 struct _mc_ECOCToken_t {
     _mongocrypt_buffer_t data;
@@ -219,7 +211,6 @@ mc_ECOCToken_destroy (mc_ECOCToken_t *t) {
     bson_free (t);
 }
 
-
 struct _mc_EDCDerivedFromDataToken_t {
     _mongocrypt_buffer_t data;
 };
@@ -246,7 +237,6 @@ mc_EDCDerivedFromDataToken_destroy (mc_EDCDerivedFromDataToken_t *t) {
     _mongocrypt_buffer_cleanup (&t->data);
     bson_free (t);
 }
-
 
 struct _mc_ESCDerivedFromDataToken_t {
     _mongocrypt_buffer_t data;
@@ -275,7 +265,6 @@ mc_ESCDerivedFromDataToken_destroy (mc_ESCDerivedFromDataToken_t *t) {
     bson_free (t);
 }
 
-
 struct _mc_ECCDerivedFromDataToken_t {
     _mongocrypt_buffer_t data;
 };
@@ -302,7 +291,6 @@ mc_ECCDerivedFromDataToken_destroy (mc_ECCDerivedFromDataToken_t *t) {
     _mongocrypt_buffer_cleanup (&t->data);
     bson_free (t);
 }
-
 
 struct _mc_EDCDerivedFromDataTokenAndCounter_t {
     _mongocrypt_buffer_t data;
@@ -335,7 +323,6 @@ mc_EDCDerivedFromDataTokenAndCounter_destroy (mc_EDCDerivedFromDataTokenAndCount
     bson_free (t);
 }
 
-
 struct _mc_ESCDerivedFromDataTokenAndCounter_t {
     _mongocrypt_buffer_t data;
 };
@@ -367,7 +354,6 @@ mc_ESCDerivedFromDataTokenAndCounter_destroy (mc_ESCDerivedFromDataTokenAndCount
     bson_free (t);
 }
 
-
 struct _mc_ECCDerivedFromDataTokenAndCounter_t {
     _mongocrypt_buffer_t data;
 };
@@ -398,4 +384,3 @@ mc_ECCDerivedFromDataTokenAndCounter_destroy (mc_ECCDerivedFromDataTokenAndCount
     _mongocrypt_buffer_cleanup (&t->data);
     bson_free (t);
 }
-
