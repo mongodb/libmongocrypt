@@ -15,6 +15,7 @@
  */
 
 #include "mc-tokens-private.h"
+#include "mongocrypt-endian-private.h"
 
 struct _mc_CollectionsLevel1Token_t {
     _mongocrypt_buffer_t data;
@@ -313,7 +314,7 @@ mc_EDCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const m
    _mongocrypt_buffer_init (&t->data);
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    _mongocrypt_buffer_t counter;
-   _mongocrypt_buffer_copy_from_uint64 (&counter, u);
+   _mongocrypt_buffer_copy_from_uint64 (&counter, MONGOCRYPT_UINT64_TO_LE(u));
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_EDCDerivedFromDataToken_get(EDCDerivedFromDataToken), &counter, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&counter);
@@ -345,7 +346,7 @@ mc_ESCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const m
    _mongocrypt_buffer_init (&t->data);
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    _mongocrypt_buffer_t counter;
-   _mongocrypt_buffer_copy_from_uint64 (&counter, u);
+   _mongocrypt_buffer_copy_from_uint64 (&counter, MONGOCRYPT_UINT64_TO_LE(u));
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_ESCDerivedFromDataToken_get(ESCDerivedFromDataToken), &counter, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&counter);
@@ -377,7 +378,7 @@ mc_ECCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const m
    _mongocrypt_buffer_init (&t->data);
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    _mongocrypt_buffer_t counter;
-   _mongocrypt_buffer_copy_from_uint64 (&counter, u);
+   _mongocrypt_buffer_copy_from_uint64 (&counter, MONGOCRYPT_UINT64_TO_LE(u));
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_ECCDerivedFromDataToken_get(ECCDerivedFromDataToken), &counter, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&counter);
