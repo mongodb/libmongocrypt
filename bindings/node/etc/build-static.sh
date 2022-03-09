@@ -41,7 +41,7 @@ popd #./deps/tmp
 # build and install libmongocrypt
 pushd libmongocrypt-build #./deps/tmp/libmongocrypt-build
 
-CMAKE_FLAGS="-DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_INSTALL_LIBDIR=lib"
+CMAKE_FLAGS="-DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_MORE_WARNINGS_AS_ERRORS=ON"
 if [ "$OS" == "Windows_NT" ]; then
   WINDOWS_CMAKE_FLAGS="-Thost=x64 -A x64 -DCMAKE_C_FLAGS_RELWITHDEBINFO=\"/MT\""
   $CMAKE $CMAKE_FLAGS $WINDOWS_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="`cygpath -w $DEPS_PREFIX`" -DCMAKE_INSTALL_PREFIX="`cygpath -w $DEPS_PREFIX`" "`cygpath -w $LIBMONGOCRYPT_DIR`"
