@@ -259,7 +259,15 @@ module.exports = function (modules) {
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });
-      stateMachine.execute(this, context, callback);
+
+      const decorateResult = this[Symbol.for('@@mdb.decorateDecryptionResult')];
+      stateMachine.execute(this, context, function (err, result) {
+        // Only for testing/internal usage
+        if (decorateResult) {
+          decorateDecryptionResult(result, response, bson);
+        }
+        callback(err, result);
+      });
     }
 
     /**
@@ -276,3 +284,48 @@ module.exports = function (modules) {
 
   return { AutoEncrypter };
 };
+
+const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');
+/**
+ * Recurse through the (identically-shaped) `decrypted` and `original`
+ * objects and attach a `decryptedKeys` property on each sub-object that
+ * contained encrypted fields. Because we only call this on BSON responses,
+ * we do not need to worry about circular references.
+ */
+function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateCall = true) {
+  if (isTopLevelDecorateCall) {
+    // The original value can have been either a JS object or a BSON buffer
+    if (Buffer.isBuffer(original)) {
+      original = bson.deserialize(original);
+    }
+    if (Buffer.isBuffer(decrypted)) {
+      throw new Error('Expected result of decryption to be deserialize BSON object');
+    }
+  }
+
+  if (!decrypted || typeof decrypted !== 'object')
+    return;
+  for (const k of Object.keys(decrypted)) {
+    const originalValue = original[k];
+
+    // An object was decrypted by libmongocrypt if and only if it was
+    // a BSON Binary object with subtype 6.
+    if (
+      originalValue &&
+      originalValue.constructor.name === 'Binary' &&
+      originalValue.sub_type === 6
+    ) {
+      if (!decrypted[decryptedKeys]) {
+        Object.defineProperty(decrypted, decryptedKeys, {
+          value: [],
+          configurable: true,
+          enumerable: false,
+          writable: false
+        });
+      }
+      decrypted[decryptedKeys].push(k);
+    }
+
+    decorateDecryptionResult(decrypted[k], originalValue, bson, false);
+  }
+}
