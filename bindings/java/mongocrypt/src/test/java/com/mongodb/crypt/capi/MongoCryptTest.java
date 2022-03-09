@@ -111,6 +111,7 @@ public class MongoCryptTest {
         MongoCrypt mongoCrypt = MongoCrypts.create(MongoCryptOptions
                 .builder()
                 .kmsProviderOptions(new BsonDocument("aws", new BsonDocument()))
+                .needsKmsCredentialsStateEnabled(true)
                 .build());
 
         MongoCryptContext decryptor = mongoCrypt.createDecryptionContext(getResourceAsDocument("encrypted-command-reply.json"));

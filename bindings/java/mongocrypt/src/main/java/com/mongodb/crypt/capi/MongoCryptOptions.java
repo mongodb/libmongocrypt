@@ -33,6 +33,7 @@ public class MongoCryptOptions {
     private final BsonDocument kmsProviderOptions;
 
     private final Map<String, BsonDocument> localSchemaMap;
+    private final boolean needsKmsCredentialsStateEnabled;
 
     /**
      * Construct a builder for the options
@@ -81,6 +82,16 @@ public class MongoCryptOptions {
     }
 
     /**
+     * Gets whether the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS is enabled.  Defaults to false
+     *
+     * @return  whether the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS is enabled
+     * @since 1.4
+     */
+    public boolean isNeedsKmsCredentialsStateEnabled() {
+        return needsKmsCredentialsStateEnabled;
+    }
+
+    /**
      * The builder for the options
      */
     public static class Builder {
@@ -88,6 +99,7 @@ public class MongoCryptOptions {
         private MongoLocalKmsProviderOptions localKmsProviderOptions;
         private BsonDocument kmsProviderOptions = null;
         private Map<String, BsonDocument> localSchemaMap = null;
+        private boolean needsKmsCredentialsStateEnabled;
 
         private Builder() {
         }
@@ -138,6 +150,18 @@ public class MongoCryptOptions {
         }
 
         /**
+         * Sets whether the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS is enabled.  Defaults to false
+         *
+         * @param needsKmsCredentialsStateEnabled whether the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS is enabled
+         * @return this
+         * @since 1.4
+         */
+        public Builder needsKmsCredentialsStateEnabled(final boolean needsKmsCredentialsStateEnabled) {
+            this.needsKmsCredentialsStateEnabled = needsKmsCredentialsStateEnabled;
+            return this;
+        }
+
+        /**
          * Build the options.
          *
          * @return the options
@@ -155,5 +179,6 @@ public class MongoCryptOptions {
         this.localKmsProviderOptions = builder.localKmsProviderOptions;
         this.kmsProviderOptions = builder.kmsProviderOptions;
         this.localSchemaMap = builder.localSchemaMap;
+        this.needsKmsCredentialsStateEnabled = builder.needsKmsCredentialsStateEnabled;
     }
 }

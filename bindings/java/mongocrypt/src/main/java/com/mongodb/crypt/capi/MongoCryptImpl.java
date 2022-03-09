@@ -25,17 +25,12 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_t;
 import com.sun.jna.Pointer;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
-import org.bson.BsonValue;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
@@ -158,12 +153,13 @@ class MongoCryptImpl implements MongoCrypt {
         }
 
         if (options.getKmsProviderOptions() != null) {
-            BsonDocument kmsProviderOptions = options.getKmsProviderOptions();
-            if (options.getKmsProviderOptions().values().stream().anyMatch(value -> value.asDocument().isEmpty())) {
-                mongocrypt_setopt_use_need_kms_credentials_state(wrapped);
+            if (options.isNeedsKmsCredentialsStateEnabled()) {
+                if (options.getKmsProviderOptions().values().stream().anyMatch(value -> value.asDocument().isEmpty())) {
+                    mongocrypt_setopt_use_need_kms_credentials_state(wrapped);
+                }
             }
 
-            try (BinaryHolder binaryHolder = toBinary(kmsProviderOptions)) {
+            try (BinaryHolder binaryHolder = toBinary(options.getKmsProviderOptions())) {
                 success = mongocrypt_setopt_kms_providers(wrapped, binaryHolder.getBinary());
                 if (!success) {
                     throwExceptionFromStatus();
