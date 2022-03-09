@@ -32,6 +32,7 @@ mc_CollectionsLevel1Token_new (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE(1));
    
    if (!_mongocrypt_hmac_sha_256 (crypto, RootKey, &to_hash, &t->data, status)) {
+       mc_CollectionsLevel1Token_destroy (t);
        _mongocrypt_buffer_cleanup (&to_hash);
       return NULL;
    }
@@ -65,6 +66,7 @@ mc_ServerDataEncryptionLevel1Token_new (_mongocrypt_crypto_t *crypto , const _mo
    
    if (!_mongocrypt_hmac_sha_256 (crypto, RootKey, &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+       mc_ServerDataEncryptionLevel1Token_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
@@ -97,6 +99,7 @@ mc_EDCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+       mc_EDCToken_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
@@ -129,6 +132,7 @@ mc_ESCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+       mc_ESCToken_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
@@ -161,6 +165,7 @@ mc_ECCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token_
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+       mc_ECCToken_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
@@ -193,6 +198,7 @@ mc_ECOCToken_new (_mongocrypt_crypto_t *crypto , const mc_CollectionsLevel1Token
    
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_CollectionsLevel1Token_get(CollectionsLevel1Token), &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+       mc_ECOCToken_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
@@ -221,6 +227,7 @@ mc_EDCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_EDCToken
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_EDCToken_get(EDCToken), v, &t->data, status)) {
+       mc_EDCDerivedFromDataToken_destroy (t);
       return NULL;
    }
    return t;
@@ -248,6 +255,7 @@ mc_ESCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_ESCToken
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_ESCToken_get(ESCToken), v, &t->data, status)) {
+      mc_ESCDerivedFromDataToken_destroy (t);
       return NULL;
    }
    return t;
@@ -275,6 +283,7 @@ mc_ECCDerivedFromDataToken_new (_mongocrypt_crypto_t *crypto , const mc_ECCToken
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_ECCToken_get(ECCToken), v, &t->data, status)) {
+      mc_ECCDerivedFromDataToken_destroy (t);
       return NULL;
    }
    return t;
@@ -305,6 +314,7 @@ mc_EDCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const m
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_EDCDerivedFromDataToken_get(EDCDerivedFromDataToken), &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+       mc_EDCDerivedFromDataTokenAndCounter_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
@@ -336,6 +346,7 @@ mc_ESCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const m
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_ESCDerivedFromDataToken_get(ESCDerivedFromDataToken), &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+      mc_ESCDerivedFromDataTokenAndCounter_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
@@ -367,6 +378,7 @@ mc_ECCDerivedFromDataTokenAndCounter_new (_mongocrypt_crypto_t *crypto , const m
 
    if (!_mongocrypt_hmac_sha_256 (crypto, mc_ECCDerivedFromDataToken_get(ECCDerivedFromDataToken), &to_hash, &t->data, status)) {
        _mongocrypt_buffer_cleanup (&to_hash);
+      mc_ECCDerivedFromDataTokenAndCounter_destroy (t);
       return NULL;
    }
    _mongocrypt_buffer_cleanup (&to_hash);
