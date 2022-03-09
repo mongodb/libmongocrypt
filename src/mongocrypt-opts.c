@@ -49,16 +49,54 @@ _mongocrypt_opts_kms_provider_gcp_cleanup (
 }
 
 void
+_mongocrypt_opts_kms_providers_cleanup (
+   _mongocrypt_opts_kms_providers_t *kms_providers)
+{
+   bson_free (kms_providers->aws.secret_access_key);
+   bson_free (kms_providers->aws.access_key_id);
+   bson_free (kms_providers->aws.session_token);
+   _mongocrypt_buffer_cleanup (&kms_providers->local.key);
+   _mongocrypt_opts_kms_provider_azure_cleanup (&kms_providers->azure);
+   _mongocrypt_opts_kms_provider_gcp_cleanup (&kms_providers->gcp);
+   _mongocrypt_endpoint_destroy (kms_providers->kmip.endpoint);
+}
+
+
+void
+_mongocrypt_opts_merge_kms_providers (
+   _mongocrypt_opts_kms_providers_t* dest,
+   const _mongocrypt_opts_kms_providers_t* source)
+{
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
+      memcpy(&dest->aws, &source->aws, sizeof(source->aws));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+      memcpy(&dest->local, &source->local, sizeof(source->local));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AZURE) {
+      memcpy(&dest->azure, &source->azure, sizeof(source->azure));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_GCP) {
+      memcpy(&dest->gcp, &source->gcp, sizeof(source->gcp));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
+   }
+   if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_KMIP) {
+      memcpy(&dest->kmip, &source->kmip, sizeof(source->kmip));
+      dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
+   }
+   /* ensure all providers were copied */
+   BSON_ASSERT (!(source->configured_providers &~ dest->configured_providers));
+}
+
+
+void
 _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
-   bson_free (opts->kms_provider_aws.secret_access_key);
-   bson_free (opts->kms_provider_aws.access_key_id);
-   bson_free (opts->kms_provider_aws.session_token);
-   _mongocrypt_buffer_cleanup (&opts->kms_provider_local.key);
+   _mongocrypt_opts_kms_providers_cleanup (&opts->kms_providers);
    _mongocrypt_buffer_cleanup (&opts->schema_map);
-   _mongocrypt_opts_kms_provider_azure_cleanup (&opts->kms_provider_azure);
-   _mongocrypt_opts_kms_provider_gcp_cleanup (&opts->kms_provider_gcp);
-   _mongocrypt_endpoint_destroy (opts->kms_provider_kmip.endpoint);
    // Free any lib search paths added by the caller
    for (int i = 0; i < opts->n_cselib_search_paths; ++i) {
       mstr_free (opts->cselib_search_paths[i]);
@@ -69,30 +107,42 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 
 
 bool
-_mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
-                           mongocrypt_status_t *status)
+_mongocrypt_opts_kms_providers_validate (
+   _mongocrypt_opts_kms_providers_t *kms_providers,
+   mongocrypt_status_t *status)
 {
-   if (!opts->kms_providers) {
+   if (!kms_providers->configured_providers &&
+       !kms_providers->need_credentials) {
       CLIENT_ERR ("no kms provider set");
       return false;
    }
 
-   if (opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
-      if (!opts->kms_provider_aws.access_key_id ||
-          !opts->kms_provider_aws.secret_access_key) {
+   if (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
+      if (!kms_providers->aws.access_key_id ||
+          !kms_providers->aws.secret_access_key) {
          CLIENT_ERR ("aws credentials unset");
          return false;
       }
    }
 
-   if (opts->kms_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
-      if (_mongocrypt_buffer_empty (&opts->kms_provider_local.key)) {
+   if (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+      if (_mongocrypt_buffer_empty (&kms_providers->local.key)) {
          CLIENT_ERR ("local data key unset");
          return false;
       }
    }
 
    return true;
+}
+
+
+bool
+_mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
+                           mongocrypt_status_t *status)
+{
+   return _mongocrypt_opts_kms_providers_validate(
+      &opts->kms_providers,
+      status);
 }
 
 bool

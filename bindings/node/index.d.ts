@@ -192,6 +192,11 @@ export interface ClientEncryptionOptions {
   kmsProviders?: KMSProviders;
 
   /**
+   * Optional callback to override KMS providers per-context.
+   */
+  onKmsProviderRefresh?: () => Promise<KMSProviders>;
+
+  /**
    * Options for specifying a Socks5 proxy to use for connecting to the KMS.
    */
   proxyOptions?: ProxyOptions;

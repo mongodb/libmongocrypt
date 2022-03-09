@@ -201,6 +201,54 @@ _test_decrypt_empty_binary (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_decrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *bin;
+   _mongocrypt_buffer_t encrypted;
+
+   bin = mongocrypt_binary_new ();
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}"));
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+
+   /* Encrypt an empty binary value. */
+   mongocrypt_ctx_setopt_key_alt_name (
+      ctx, TEST_BSON ("{'keyAltName': 'keyDocumentName'}"));
+   mongocrypt_ctx_setopt_algorithm (
+      ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
+   mongocrypt_ctx_explicit_encrypt_init (
+      ctx,
+      TEST_BSON ("{'v': { '$binary': { 'base64': '', 'subType': '00' } } }"));
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+   ASSERT_OK (
+      mongocrypt_ctx_provide_kms_providers (ctx,
+         TEST_BSON ("{'aws':{'accessKeyId': 'example',"
+                            "'secretAccessKey': 'example'}}")), ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   mongocrypt_ctx_finalize (ctx, bin);
+   /* Copy the encrypted ciphertext since it is tied to the lifetime of ctx. */
+   _mongocrypt_buffer_copy_from_binary (&encrypted, bin);
+   mongocrypt_ctx_destroy (ctx);
+
+   /* Decrypt it back. */
+   ctx = mongocrypt_ctx_new (crypt);
+   mongocrypt_ctx_explicit_decrypt_init (
+      ctx, _mongocrypt_buffer_as_binary (&encrypted));
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+   mongocrypt_ctx_finalize (ctx, bin);
+
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_ctx_destroy (ctx);
+   _mongocrypt_buffer_cleanup (&encrypted);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
@@ -210,4 +258,5 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_decrypt_ready);
    INSTALL_TEST (_test_decrypt_empty_aws);
    INSTALL_TEST (_test_decrypt_empty_binary);
+   INSTALL_TEST (_test_decrypt_per_ctx_credentials);
 }

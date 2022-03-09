@@ -142,6 +142,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
 /* Add a key document. */
 bool
 _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
+                                _mongocrypt_opts_kms_providers_t *kms_providers,
                                 const _mongocrypt_buffer_t *doc)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
@@ -156,7 +157,9 @@ _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
 
 /* Indicate that all KMS requests are complete. */
 bool
-_mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb);
+_mongocrypt_key_broker_kms_done (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_opts_kms_providers_t* kms_providers);
 
 
 /* Get the final decrypted key material from a key by looking up with a key_id.

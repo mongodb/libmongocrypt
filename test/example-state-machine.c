@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2019-present MongoDB, Inc.
  *
@@ -218,6 +219,9 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
          mongocrypt_binary_destroy (input);
          bson_free (data);
          CHECK (mongocrypt_ctx_mongo_done (ctx));
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         BSON_ASSERT (0);
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          while ((kms = mongocrypt_ctx_next_kms_ctx (ctx))) {

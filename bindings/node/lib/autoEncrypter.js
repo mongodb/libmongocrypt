@@ -107,6 +107,7 @@ module.exports = function (modules) {
       this._metaDataClient = options.metadataClient || client;
       this._proxyOptions = options.proxyOptions || {};
       this._tlsOptions = options.tlsOptions || {};
+      this._onKmsProviderRefresh = options.onKmsProviderRefresh;
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
@@ -119,6 +120,8 @@ module.exports = function (modules) {
         mongoCryptOptions.kmsProviders = !Buffer.isBuffer(options.kmsProviders)
           ? this._bson.serialize(options.kmsProviders)
           : options.kmsProviders;
+      } else if (!options.onKmsProviderRefresh) {
+        throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
       }
 
       if (options.logger) {
@@ -257,6 +260,17 @@ module.exports = function (modules) {
         tlsOptions: this._tlsOptions
       });
       stateMachine.execute(this, context, callback);
+    }
+
+    /**
+     * Ask the user for KMS credentials.
+     *
+     * This returns anything that looks like the kmsProviders original input
+     * option. It can be empty, and any provider specified here will override
+     * the original ones.
+     */
+    async askForKMSCredentials() {
+      return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
     }
   }
 

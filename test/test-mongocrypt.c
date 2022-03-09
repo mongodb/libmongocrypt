@@ -334,6 +334,10 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          ASSERT_OR_PRINT (res, status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         bin = TEST_BSON ("{}");
+         mongocrypt_ctx_provide_kms_providers (ctx, bin);
+         break;
       case MONGOCRYPT_CTX_NEED_KMS:
          kms = mongocrypt_ctx_next_kms_ctx (ctx);
          while (kms) {
@@ -663,6 +667,12 @@ _test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{}")), crypt);
+   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "no kms provider set");
+   mongocrypt_destroy (crypt);
 }
 
 typedef struct {
@@ -691,7 +701,7 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "Invalid endpoint"},
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
       {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
-      {"{'aws': {}}", "expected UTF-8 aws.accessKeyId"},
+      {"{'aws': {}}", NULL},
       {"{'local': {'key': {'$binary': {'base64': '" EXAMPLE_LOCAL_MATERIAL
        "', 'subType': '00'}} }}",
        NULL},

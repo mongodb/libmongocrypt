@@ -412,6 +412,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
 
 bool
 _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
+                                _mongocrypt_opts_kms_providers_t *kms_providers,
                                 const _mongocrypt_buffer_t *doc)
 {
    bool ret = false;
@@ -464,7 +465,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 
    /* Check that the returned key doc's provider matches. */
    kek_provider = key_doc->kek.kms_provider;
-   if (0 == (kek_provider & kb->crypt->opts.kms_providers)) {
+   if (0 == (kek_provider & kms_providers->configured_providers)) {
       _key_broker_fail_w_msg (
          kb, "client not configured with KMS provider necessary to decrypt");
       goto done;
@@ -474,7 +475,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
     * HTTP KMS request. */
    if (kek_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
       if (!_mongocrypt_unwrap_key (kb->crypt->crypto,
-                                   &kb->crypt->opts.kms_provider_local.key,
+                                   &kms_providers->local.key,
                                    &key_returned->doc->key_material,
                                    &key_returned->decrypted_key_material,
                                    kb->status)) {
@@ -487,7 +488,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
       }
    } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       if (!_mongocrypt_kms_ctx_init_aws_decrypt (&key_returned->kms,
-                                                 &kb->crypt->opts,
+                                                 kms_providers,
                                                  key_doc,
                                                  &kb->crypt->log,
                                                  kb->crypt->crypto)) {
@@ -504,7 +505,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
             if (!_mongocrypt_kms_ctx_init_azure_auth (
                    &kb->auth_request_azure.kms,
                    &kb->crypt->log,
-                   &kb->crypt->opts,
+                   kms_providers,
                    /* The key vault endpoint is used to determine the scope. */
                    key_doc->kek.provider.azure.key_vault_endpoint)) {
                mongocrypt_kms_ctx_status (&kb->auth_request_azure.kms,
@@ -516,7 +517,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          }
       } else {
          if (!_mongocrypt_kms_ctx_init_azure_unwrapkey (&key_returned->kms,
-                                                        &kb->crypt->opts,
+                                                        kms_providers,
                                                         access_token,
                                                         key_doc,
                                                         &kb->crypt->log)) {
@@ -535,6 +536,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
                    &kb->auth_request_gcp.kms,
                    &kb->crypt->log,
                    &kb->crypt->opts,
+                   kms_providers,
                    key_doc->kek.provider.gcp.endpoint)) {
                mongocrypt_kms_ctx_status (&kb->auth_request_gcp.kms,
                                           kb->status);
@@ -545,7 +547,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          }
       } else {
          if (!_mongocrypt_kms_ctx_init_gcp_decrypt (&key_returned->kms,
-                                                    &kb->crypt->opts,
+                                                    kms_providers,
                                                     access_token,
                                                     key_doc,
                                                     &kb->crypt->log)) {
@@ -567,8 +569,8 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 
       if (key_returned->doc->kek.provider.kmip.endpoint) {
          endpoint = key_returned->doc->kek.provider.kmip.endpoint;
-      } else if (kb->crypt->opts.kms_provider_kmip.endpoint) {
-         endpoint = kb->crypt->opts.kms_provider_kmip.endpoint;
+      } else if (kms_providers->kmip.endpoint) {
+         endpoint = kms_providers->kmip.endpoint;
       } else {
          _key_broker_fail_w_msg (kb, "endpoint not set for KMIP request");
          goto done;
@@ -706,7 +708,9 @@ _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
 }
 
 bool
-_mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
+_mongocrypt_key_broker_kms_done (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_opts_kms_providers_t* kms_providers)
 {
    key_returned_t *key_returned;
 
@@ -772,7 +776,7 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
             }
 
             if (!_mongocrypt_kms_ctx_init_azure_unwrapkey (&key_returned->kms,
-                                                           &kb->crypt->opts,
+                                                           kms_providers,
                                                            access_token,
                                                            key_returned->doc,
                                                            &kb->crypt->log)) {
@@ -794,7 +798,7 @@ _mongocrypt_key_broker_kms_done (_mongocrypt_key_broker_t *kb)
             }
 
             if (!_mongocrypt_kms_ctx_init_gcp_decrypt (&key_returned->kms,
-                                                       &kb->crypt->opts,
+                                                       kms_providers,
                                                        access_token,
                                                        key_returned->doc,
                                                        &kb->crypt->log)) {

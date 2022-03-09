@@ -23,7 +23,9 @@ export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
 # locate cmake
 if [ "$OS" == "Windows_NT" ]; then
   CMAKE=/cygdrive/c/cmake/bin/cmake
-  ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
+  if [ "$WINDOWS_32BIT" != "ON" ]; then
+      ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
+  fi
 else
   chmod u+x ./.evergreen/find_cmake.sh
   IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find_cmake.sh

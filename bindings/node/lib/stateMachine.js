@@ -23,6 +23,7 @@ module.exports = function (modules) {
   const MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1;
   const MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2;
   const MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3;
+  const MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7;
   const MONGOCRYPT_CTX_NEED_KMS = 4;
   const MONGOCRYPT_CTX_READY = 5;
   const MONGOCRYPT_CTX_DONE = 6;
@@ -34,6 +35,7 @@ module.exports = function (modules) {
     [MONGOCRYPT_CTX_NEED_MONGO_COLLINFO, 'MONGOCRYPT_CTX_NEED_MONGO_COLLINFO'],
     [MONGOCRYPT_CTX_NEED_MONGO_MARKINGS, 'MONGOCRYPT_CTX_NEED_MONGO_MARKINGS'],
     [MONGOCRYPT_CTX_NEED_MONGO_KEYS, 'MONGOCRYPT_CTX_NEED_MONGO_KEYS'],
+    [MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS, 'MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS'],
     [MONGOCRYPT_CTX_NEED_KMS, 'MONGOCRYPT_CTX_NEED_KMS'],
     [MONGOCRYPT_CTX_READY, 'MONGOCRYPT_CTX_READY'],
     [MONGOCRYPT_CTX_DONE, 'MONGOCRYPT_CTX_DONE']
@@ -171,6 +173,22 @@ module.exports = function (modules) {
             context.finishMongoOperation();
             this.execute(autoEncrypter, context, callback);
           });
+
+          return;
+        }
+
+        case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS: {
+          autoEncrypter
+            .askForKMSCredentials()
+            .then(kmsProviders => {
+              context.provideKMSProviders(
+                !Buffer.isBuffer(kmsProviders) ? bson.serialize(kmsProviders) : kmsProviders
+              );
+              this.execute(autoEncrypter, context, callback);
+            })
+            .catch(err => {
+              callback(err, null);
+            });
 
           return;
         }

@@ -55,6 +55,7 @@ typedef struct {
    bool (*mongo_op_keys) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
    bool (*mongo_feed_keys) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in);
    bool (*mongo_done_keys) (mongocrypt_ctx_t *ctx);
+   bool (*after_kms_credentials_provided) (mongocrypt_ctx_t *ctx);
    mongocrypt_kms_ctx_t *(*next_kms_ctx) (mongocrypt_ctx_t *ctx);
    bool (*kms_done) (mongocrypt_ctx_t *ctx);
    bool (*finalize) (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
@@ -70,6 +71,9 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_key_broker_t kb;
    _mongocrypt_vtable_t vtable;
    _mongocrypt_ctx_opts_t opts;
+   _mongocrypt_opts_kms_providers_t per_ctx_kms_providers; /* owned */
+   _mongocrypt_opts_kms_providers_t
+      kms_providers; /* not owned, is merged from per-ctx / per-mongocrypt_t */
    bool initialized;
    bool
       nothing_to_do; /* set to true if no encryption/decryption is required. */
@@ -170,5 +174,10 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
 bool
 _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
    MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* Get the KMS providers for the current context, fall back to the ones
+ * from mongocrypt_t if none are provided for the context specifically. */
+_mongocrypt_opts_kms_providers_t *
+_mongocrypt_ctx_kms_providers(mongocrypt_ctx_t *ctx);
 
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */
