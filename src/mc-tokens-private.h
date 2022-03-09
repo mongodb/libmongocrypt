@@ -19,6 +19,35 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-crypto-private.h"
 
+/*
+ * ======================= Begin: FLE 2 Token Reference =======================
+ *
+ * v is a BSON value. It is the bytes after "e_name" in "element" in
+ * https://bsonspec.org/spec.html.
+ * u is a "contention factor" counter. It is a uint64_t.
+ * HMAC is the HMAC-SHA-256 function.
+ * Integers are represented as uint64_t in little-endian.
+ *
+ * CollectionsLevel1Token = HMAC(RootKey, 1)
+ * ClientUserDataEncryptionLevel1Token = HMAC(RootKey, 2)
+ * ServerDataEncryptionLevel1Token = HMAC(RootKey, 3)
+ *
+ * EDCToken = HMAC(CollectionsLevel1Token, 1)
+ * ESCToken = HMAC(CollectionsLevel1Token, 2)
+ * ECCToken = HMAC(CollectionsLevel1Token, 3)
+ * ECOCToken = HMAC(CollectionsLevel1Token, 4)
+ *
+ * EDCDerivedFromDataToken = HMAC(EDCToken, v)
+ * ESCDerivedFromDataToken = HMAC(ESCToken, v)
+ * ECCDerivedFromDataToken = HMAC(ECCToken, v)
+ *
+ * EDCDerivedFromDataTokenAndCounter = HMAC(EDCDerivedFromDataToken, u)
+ * ESCDerivedFromDataTokenAndCounter = HMAC(ESCDerivedFromDataToken, u)
+ * ECCDerivedFromDataTokenAndCounter = HMAC(ECCDerivedFromDataToken, u)
+ * ======================== End: FLE 2 Token Reference ========================
+ */
+
+
 typedef struct _mc_CollectionsLevel1Token_t mc_CollectionsLevel1Token_t;
 mc_CollectionsLevel1Token_t *
 mc_CollectionsLevel1Token_new (_mongocrypt_crypto_t *crypto,
