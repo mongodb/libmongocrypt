@@ -511,6 +511,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    /* Success. With key alt names. */
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    kms_providers = &crypt->opts.kms_providers;
+   _mongocrypt_key_broker_init (&key_broker, crypt);
    _key_broker_add_name (&key_broker, "Sharlene");
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
 
