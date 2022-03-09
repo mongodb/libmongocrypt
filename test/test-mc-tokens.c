@@ -15,9 +15,6 @@
  */
 #include "mc-tokens-private.h"
 #include "test-mongocrypt.h"
-#define ASSERT_CMPBUF(expected, actual) \
-   ASSERT_CMPBYTES (                    \
-      (expected).data, (expected).len, (actual).data, (actual).len)
 
 static void
 _test_mc_tokens (_mongocrypt_tester_t *tester)
