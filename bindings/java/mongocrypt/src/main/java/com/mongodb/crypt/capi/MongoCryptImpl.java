@@ -152,13 +152,11 @@ class MongoCryptImpl implements MongoCrypt {
             }
         }
 
-        if (options.getKmsProviderOptions() != null) {
-            if (options.isNeedsKmsCredentialsStateEnabled()) {
-                if (options.getKmsProviderOptions().values().stream().anyMatch(value -> value.asDocument().isEmpty())) {
-                    mongocrypt_setopt_use_need_kms_credentials_state(wrapped);
-                }
-            }
+        if (options.isNeedsKmsCredentialsStateEnabled()) {
+            mongocrypt_setopt_use_need_kms_credentials_state(wrapped);
+        }
 
+        if (options.getKmsProviderOptions() != null) {
             try (BinaryHolder binaryHolder = toBinary(options.getKmsProviderOptions())) {
                 success = mongocrypt_setopt_kms_providers(wrapped, binaryHolder.getBinary());
                 if (!success) {
