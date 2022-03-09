@@ -46,6 +46,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ServerDataEncryptionLevel1Token_t *ServerDataEncryptionLevel1Token =
       mc_ServerDataEncryptionLevel1Token_new (crypt->crypto, &RootKey, status);
    ASSERT_OR_PRINT (ServerDataEncryptionLevel1Token, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "d915ccc1eb81687fb5fc5b799f48c99fbe17e7a011a46a48901b9ae3d790656b");
@@ -56,6 +57,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_EDCToken_t *EDCToken =
       mc_EDCToken_new (crypt->crypto, CollectionsLevel1Token, status);
    ASSERT_OR_PRINT (EDCToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "167d2d2ff8e4144df37ff759db593fde0ecc7d9636f96d62dacad672eccad349");
@@ -64,6 +66,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ESCToken_t *ESCToken =
       mc_ESCToken_new (crypt->crypto, CollectionsLevel1Token, status);
    ASSERT_OR_PRINT (ESCToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "bfd480f1658f49f48985734737bc07d0bc36b88210277605c55ff3c9c3ef50b0");
@@ -72,6 +75,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ECCToken_t *ECCToken =
       mc_ECCToken_new (crypt->crypto, CollectionsLevel1Token, status);
    ASSERT_OR_PRINT (ECCToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "9d34f9c182d75a5a3347c2f903e3e647105c651d52cf9555c9420ba07ddd3aa2");
@@ -80,6 +84,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ECOCToken_t *ECOCToken =
       mc_ECOCToken_new (crypt->crypto, CollectionsLevel1Token, status);
    ASSERT_OR_PRINT (ECOCToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "e354e3b05e81e08b970ca061cb365163fd33dec2f982ddf9440e742ed288a8f8");
@@ -88,6 +93,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_EDCDerivedFromDataToken_t *EDCDerivedFromDataToken =
       mc_EDCDerivedFromDataToken_new (crypt->crypto, EDCToken, &v, status);
    ASSERT_OR_PRINT (EDCDerivedFromDataToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "53eaa4c23a3ff65e6b7c7dbc4b1389cf0a6151b1ede5383a0673ff9c67855ff9");
@@ -97,6 +103,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ESCDerivedFromDataToken_t *ESCDerivedFromDataToken =
       mc_ESCDerivedFromDataToken_new (crypt->crypto, ESCToken, &v, status);
    ASSERT_OR_PRINT (ESCDerivedFromDataToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "acb3fab332131bbeaf112814f29ae0f2b10e97dc94b62db56c594661248e7467");
@@ -106,6 +113,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ECCDerivedFromDataToken_t *ECCDerivedFromDataToken =
       mc_ECCDerivedFromDataToken_new (crypt->crypto, ECCToken, &v, status);
    ASSERT_OR_PRINT (ECCDerivedFromDataToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "826cfd35c35dcc7d4fbe13f33a3520749853bd1ea4c47919482252fba3a70cec");
@@ -116,6 +124,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
       mc_EDCDerivedFromDataTokenAndCounter_new (
          crypt->crypto, EDCDerivedFromDataToken, u, status);
    ASSERT_OR_PRINT (EDCDerivedFromDataTokenAndCounter, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "70fb9a3f760996f2f1438c5bf2a4d52bcba01b0badc3596276f49ffb2f0b136e");
@@ -127,6 +136,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
       mc_ESCDerivedFromDataTokenAndCounter_new (
          crypt->crypto, ESCDerivedFromDataToken, u, status);
    ASSERT_OR_PRINT (ESCDerivedFromDataTokenAndCounter, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "7076c7b05fb4be4fe585eed930b852a6d088a0c55f3c96b50069e8a26ebfb347");
@@ -138,6 +148,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
       mc_ECCDerivedFromDataTokenAndCounter_new (
          crypt->crypto, ECCDerivedFromDataToken, u, status);
    ASSERT_OR_PRINT (ECCDerivedFromDataTokenAndCounter, status);
+   _mongocrypt_buffer_cleanup (&expected);
    _mongocrypt_buffer_copy_from_hex (
       &expected,
       "6c6a349956c19f9c5e638e612011a71fbb71921edb540310c17cd0208b7f548b");
@@ -145,6 +156,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
                      ECCDerivedFromDataTokenAndCounter),
                   expected);
 
+   _mongocrypt_buffer_cleanup (&expected);
    mc_ECCDerivedFromDataTokenAndCounter_destroy (
       ECCDerivedFromDataTokenAndCounter);
    mc_ESCDerivedFromDataTokenAndCounter_destroy (
