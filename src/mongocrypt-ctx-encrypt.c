@@ -437,9 +437,6 @@ fail_create_cmd:
    }
 fail_lib_create:
    csfle.status_destroy (status);
-   if (!okay) {
-      return false;
-   }
    return okay;
 }
 
