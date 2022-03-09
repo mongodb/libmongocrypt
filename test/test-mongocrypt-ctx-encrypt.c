@@ -637,6 +637,30 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
 
 
 static void
+_test_encrypt_csfle_no_needs_markings (_mongocrypt_tester_t *tester)
+{
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+      fputs ("No 'real' csfle library is available. The "
+             "_test_encrypt_csfle_no_needs_markings test is a no-op.",
+             stderr);
+      return;
+   }
+
+   /* Success. */
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
 _test_encrypt_need_keys (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
@@ -1582,6 +1606,7 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_init);
    INSTALL_TEST (_test_encrypt_need_collinfo);
    INSTALL_TEST (_test_encrypt_need_markings);
+   INSTALL_TEST (_test_encrypt_csfle_no_needs_markings);
    INSTALL_TEST (_test_encrypt_need_keys);
    INSTALL_TEST (_test_encrypt_ready);
    INSTALL_TEST (_test_key_missing_region);
