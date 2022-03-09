@@ -534,13 +534,7 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
 }
 
 void _mongocrypt_buffer_copy_from_uint64 (_mongocrypt_buffer_t *buf, uint64_t value) {
-   int i;
-
    _mongocrypt_buffer_init (buf);
    _mongocrypt_buffer_resize (buf, 8);
-   for (i = 0; i < 8; i++) {
-      int bitshift = 8 * i;
-      uint64_t mask = ((uint64_t)0xFF) << bitshift;
-      buf->data[i] = (uint8_t) ((value & mask) >> bitshift);
-   }
+   memcpy (buf->data, &value, buf->len);
 }
