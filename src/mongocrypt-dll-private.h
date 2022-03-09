@@ -13,7 +13,8 @@
 #define MCR_DLL_SUFFIX ".so"
 #endif
 
-#define MCR_DLL_NULL ((mcr_dll){._native_handle = NULL, .error_string = NULL})
+#define MCR_DLL_NULL \
+   ((mcr_dll){._native_handle = NULL, .error_string = MSTR_NULL})
 
 /**
  * @brief A dynamically-loaded library i.e. returned by LoadLibrary() or
