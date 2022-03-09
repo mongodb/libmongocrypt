@@ -147,41 +147,61 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
 }
 
 
+/**
+ * @brief Create the server-side command that contains information for
+ * generating encryption markings via query analysis.
+ *
+ * @param ctx The encryption context.
+ * @param out The destination of the generate BSON document
+ * @return true On success
+ * @return false Otherwise. Sets a failing status message in this case.
+ */
+static bool
+_create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
+{
+   bson_t schema_bson = BSON_INITIALIZER;
+   bson_t cmd_bson = BSON_INITIALIZER;
+   bool okay = false;
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   /* first, get the original command. */
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
+      goto fail;
+   }
+
+   if (_mongocrypt_buffer_empty (&ectx->schema)) {
+      bson_init (&schema_bson);
+   } else if (!_mongocrypt_buffer_to_bson (&ectx->schema, &schema_bson)) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON schema");
+      goto fail;
+   }
+
+   bson_copy_to (&cmd_bson, out);
+   BSON_APPEND_DOCUMENT (out, "jsonSchema", &schema_bson);
+
+   /* if a local schema was not set, set isRemoteSchema=true */
+   BSON_APPEND_BOOL (out, "isRemoteSchema", !ectx->used_local_schema);
+   okay = true;
+
+fail:
+   bson_destroy (&cmd_bson);
+   bson_destroy (&schema_bson);
+   return okay;
+}
+
+
 static bool
 _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
-   bson_t cmd_bson, schema_bson, mongocryptd_cmd_bson;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
-      /* first, get the original command. */
-      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
+      bson_t cmd_bson;
+      if (!_create_markings_cmd_bson (ctx, &cmd_bson)) {
+         return false;
       }
-
-      if (_mongocrypt_buffer_empty (&ectx->schema)) {
-         bson_init (&schema_bson);
-      } else if (!_mongocrypt_buffer_to_bson (&ectx->schema, &schema_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON schema");
-      }
-
-      bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
-      BSON_APPEND_DOCUMENT (&mongocryptd_cmd_bson, "jsonSchema", &schema_bson);
-
-      // At present, a $db field is required on all command documents, even if
-      // mongocryptd/csfle don't make use of it. The reply from them will have
-      // the $db field stripped.
-      BSON_APPEND_UTF8 (&mongocryptd_cmd_bson, "$db", "admin");
-
-      /* if a local schema was not set, set isRemoteSchema=true */
-      BSON_APPEND_BOOL (
-         &mongocryptd_cmd_bson, "isRemoteSchema", !ectx->used_local_schema);
-      _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd,
-                                          &mongocryptd_cmd_bson);
-
-      bson_destroy (&cmd_bson);
-      bson_destroy (&schema_bson);
+      _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd, &cmd_bson);
    }
    out->data = ectx->mongocryptd_cmd.data;
    out->len = ectx->mongocryptd_cmd.len;
@@ -363,19 +383,23 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    CHECK_CSFLE_ERROR ("lib_create", fail_lib_create);
 
    // Obtain the OP_MSG for markings
-   mongocrypt_binary_t *op_msg = mongocrypt_binary_new ();
-   if (!_mongo_op_markings (ctx, op_msg)) {
-      _mongocrypt_ctx_fail_w_msg (ctx, "Generating the markings OP_MSG failed");
-      goto fail_op_markings;
+   bson_t cmd = BSON_INITIALIZER;
+   if (!_create_markings_cmd_bson (ctx, &cmd)) {
+      goto fail_create_cmd;
    }
+   BSON_APPEND_UTF8 (&cmd, "$db", "csfle");
 
    mongo_csfle_v1_query_analyzer *qa =
       csfle.query_analyzer_create (csfle_lib, status);
    CHECK_CSFLE_ERROR ("query_analyzer_create", fail_qa_create);
 
    uint32_t marked_bson_len = 0;
-   uint8_t *marked_bson = csfle.analyze_query (
-      qa, op_msg->data, ectx->ns, strlen (ectx->ns), &marked_bson_len, status);
+   uint8_t *marked_bson = csfle.analyze_query (qa,
+                                               bson_get_data (&cmd),
+                                               ectx->ns,
+                                               strlen (ectx->ns),
+                                               &marked_bson_len,
+                                               status);
    CHECK_CSFLE_ERROR ("analyze_query", analyze_failed);
 
    // Copy out the marked document.
@@ -399,8 +423,8 @@ feed_failed:
 analyze_failed:
    csfle.query_analyzer_destroy (qa);
 fail_qa_create:
-fail_op_markings:
-   mongocrypt_binary_destroy (op_msg);
+fail_create_cmd:
+   bson_destroy (&cmd);
    csfle.lib_destroy (csfle_lib, status);
    if (csfle.status_get_error (status)) {
       _mongocrypt_log (
