@@ -397,7 +397,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    uint8_t *marked_bson = csfle.analyze_query (qa,
                                                bson_get_data (&cmd),
                                                ectx->ns,
-                                               strlen (ectx->ns),
+                                               (uint32_t) strlen (ectx->ns),
                                                &marked_bson_len,
                                                status);
    CHECK_CSFLE_ERROR ("analyze_query", analyze_failed);
