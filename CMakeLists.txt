@@ -323,11 +323,9 @@ if (BUILD_TESTING)
          PREFIX ""
          OUTPUT_NAME "mongo_csfle_v1"
          )
-      target_include_directories (
-         stubbed-csfle
-         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
-         )
+      target_include_directories (stubbed-csfle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
       target_link_libraries (stubbed-csfle PRIVATE mongo::bson_static)
+      target_compile_features (stubbed-csfle PRIVATE cxx_std_11)
    endif ()
 endif ()
 

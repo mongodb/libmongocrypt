@@ -137,7 +137,7 @@ mongo_csfle_v1_analyze_query (query_analyzer_t *qa,
          "markedDocument": true
       })",
       -1,
-      nullptr);
+      NULL);
    BSON_APPEND_DOCUMENT (&doc, "result", &tmp_doc);
    uint8_t *buf = new uint8_t[doc.len];
    std::copy_n (bson_get_data (&doc), doc.len, buf);
