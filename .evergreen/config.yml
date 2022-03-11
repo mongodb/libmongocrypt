@@ -539,7 +539,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
+        remote_file: 'libmongocrypt/all/master/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-all.tar.gz'
@@ -548,7 +548,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
+        remote_file: 'libmongocrypt/all/master/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-all.tar.gz'
