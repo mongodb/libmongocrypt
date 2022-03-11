@@ -715,7 +715,7 @@ pre:
           REMOTE_SUFFIX="${revision}/${version_id}"
           REMOTE_SUFFIX_COPY="latest/${version_id}"
         elif [ "${branch}" = "master" ]; then
-          # waterfall build, no tag.
+          # waterfall build.
           REMOTE_SUFFIX="${revision}"
           REMOTE_SUFFIX_COPY="latest"
         else
