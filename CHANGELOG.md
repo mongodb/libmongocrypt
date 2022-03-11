@@ -1,5 +1,11 @@
 # ChangeLog
 
+## 1.4.0-alpha0
+### New Features
+- Support on-demand AWS credentials with `MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` state and `mongocrypt_ctx_provide_kms_providers`.
+### Fixed
+- Resolve 32 bit Windows compile errors.
+
 ## 1.3.1
 
 ### New Features
