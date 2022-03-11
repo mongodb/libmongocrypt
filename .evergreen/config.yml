@@ -714,10 +714,14 @@ pre:
           # patch build.
           REMOTE_SUFFIX="${revision}/${version_id}"
           REMOTE_SUFFIX_COPY="latest/${version_id}"
-        else
+        elif [ "${branch}" = "master" ]; then
           # waterfall build, no tag.
           REMOTE_SUFFIX="${revision}"
           REMOTE_SUFFIX_COPY="latest"
+        else
+          # waterfall build, not on master branch.
+          REMOTE_SUFFIX="${revision}"
+          REMOTE_SUFFIX_COPY="latest-${branch}"
         fi
 
         PROJECT_DIRECTORY="$(pwd)"
