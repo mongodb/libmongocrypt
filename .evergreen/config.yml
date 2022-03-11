@@ -190,6 +190,10 @@ functions:
           if [ "${is_patch}" = "true" ]; then
             echo "Patch build detected, skipping"
           fi
+          if [ "${branch}" != "master" ]; then
+            echo "publish snapshot is only run on master branch."
+            echo "Detected branch '${branch}', skipping."
+          fi
     - command: shell.exec
       params:
         silent: true
