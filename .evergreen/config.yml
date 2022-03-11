@@ -643,7 +643,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/windows-test/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        remote_file: 'libmongocrypt/windows-test/master/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
         bucket: mciuploads
         extract_to: libmongocrypt_download
     - command: shell.exec
