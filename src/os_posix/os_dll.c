@@ -17,8 +17,6 @@
 
 #include "../mongocrypt-dll-private.h"
 
-#include "./error.h"
-
 #ifndef _WIN32
 
 #include <assert.h>
