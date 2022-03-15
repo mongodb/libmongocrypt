@@ -635,6 +635,40 @@ _test_setopt_schema (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_setopt_encrypted_field_config_map (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+
+   /* Test success. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")), crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   mongocrypt_destroy (crypt);
+
+   /* Test double setting. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")), crypt);
+   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")), crypt, "already set encrypted_field_config_map");
+   mongocrypt_destroy (crypt);
+
+   /* Test NULL/empty input */
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, NULL), crypt, "passed null encrypted_field_config_map");
+   mongocrypt_destroy (crypt);
+
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (0)), crypt, "passed null encrypted_field_config_map");
+   mongocrypt_destroy (crypt);
+
+   /* Test malformed BSON */
+   mongocrypt_destroy (crypt);
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (10)), crypt, "invalid bson");
+   mongocrypt_destroy (crypt);
+}
+
+static void
 _test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
@@ -786,6 +820,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_traverse_util (&tester);
    _mongocrypt_tester_install (
       &tester, "_test_setopt_schema", _test_setopt_schema, CRYPTO_REQUIRED);
+   _mongocrypt_tester_install (&tester, "_test_setopt_encrypted_field_config_map", _test_setopt_encrypted_field_config_map, CRYPTO_OPTIONAL);
    _mongocrypt_tester_install (&tester,
                                "_test_setopt_invalid_kms_providers",
                                _test_setopt_invalid_kms_providers,

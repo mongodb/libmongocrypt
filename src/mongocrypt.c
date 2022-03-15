@@ -313,6 +313,14 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
    return true;
 }
 
+bool
+mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt, mongocrypt_binary_t *efc_map) {
+   mongocrypt_status_t *status;
+
+   status = crypt->status;
+   CLIENT_ERR ("mongocrypt_setopt_encrypted_field_config_map is not implemented");
+   return false;
+}
 
 bool
 mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
