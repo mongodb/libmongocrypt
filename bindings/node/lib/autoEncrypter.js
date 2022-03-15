@@ -93,14 +93,6 @@ module.exports = function (modules) {
       this._client = client;
       this._bson = options.bson || client.topology.bson;
       this._bypassEncryption = options.bypassAutoEncryption === true;
-      if (!this._bypassAutoEncryption) {
-        this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
-        this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-          serverSelectionTimeoutMS: 10000
-        });
-      }
 
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
       this._keyVaultClient = options.keyVaultClient || client;
@@ -128,9 +120,28 @@ module.exports = function (modules) {
         mongoCryptOptions.logger = options.logger;
       }
 
+      if (options.extraOptions && options.extraOptions.csflePath) {
+        mongoCryptOptions.csflePath = options.extraOptions.csflePath;
+      }
+
+      if (options.extraOptions && options.extraOptions.csfleSearchPaths) {
+        mongoCryptOptions.csfleSearchPaths = options.extraOptions.csfleSearchPaths;
+      }
+
       Object.assign(mongoCryptOptions, { cryptoCallbacks });
       this._mongocrypt = new mc.MongoCrypt(mongoCryptOptions);
       this._contextCounter = 0;
+
+      // Only instantiate mongocryptd manager/client once we know for sure
+      // that we are not using the CSFLE shared library.
+      if (!this._bypassAutoEncryption && !this.csfleVersionInfo) {
+        this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
+        this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+          serverSelectionTimeoutMS: 10000
+        });
+      }
     }
 
     /**
@@ -138,7 +149,7 @@ module.exports = function (modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
-      if (this._bypassEncryption) {
+      if (this._bypassEncryption || this.csfleVersionInfo) {
         return callback();
       }
       const _callback = (err, res) => {
@@ -271,6 +282,15 @@ module.exports = function (modules) {
      */
     async askForKMSCredentials() {
       return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
+    }
+
+    /**
+     * Return the current libmongocrypt's CSFLE shared library version
+     * as `{ version: bigint, versionStr: string }`, or `null` if no CSFLE
+     * shared library was loaded.
+     */
+    get csfleVersionInfo() {
+      return this._mongocrypt.csfleVersionInfo;
     }
   }
 
