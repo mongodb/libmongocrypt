@@ -560,7 +560,7 @@ typedef struct csfle_global_lib_state {
 csfle_global_lib_state g_csfle_state;
 
 static void
-init_csfle_state ()
+init_csfle_state (void)
 {
    _mongocrypt_mutex_init (&g_csfle_state.mtx);
 }
