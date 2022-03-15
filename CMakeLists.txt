@@ -22,7 +22,6 @@ endif ()
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
-
 # Enable a higher warning level and warnings-as-errors
 include (MongoC-Warnings)
 option (ENABLE_MORE_WARNINGS_AS_ERRORS "Enable extra warnings-as-errors in the build." OFF)
@@ -301,6 +300,19 @@ if (BUILD_TESTING)
       PREFIX ""
       )
 
+   # Create two stubbed csfle libraries
+   add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
+   add_library (stubbed-csfle-2 SHARED test/csfle-stub.cpp)
+
+   set_target_properties(stubbed-csfle stubbed-csfle-2 PROPERTIES
+      INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      LINK_LIBRARIES "mongo::bson_static"
+      COMPILE_FEATURES cxx_std_11
+      PREFIX ""
+      )
+
+   set_target_properties(stubbed-csfle-2 PROPERTIES SUFFIX ".dll")
+
    if (MONGOCRYPT_TESTING_CSFLE_FILE)
       # Generate a target that copies the CSFLE library into the binary directory of test-mongocrypt
       set (stamp "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1.copied.$<CONFIG>.stamp")
@@ -315,17 +327,13 @@ if (BUILD_TESTING)
          )
       add_custom_target (copy-csfle ALL DEPENDS "${stamp}")
    else ()
+      # The first stubbed csfle library will take the place of the actual csfle for testing
       message (STATUS "Generating a stubbed csfle dynamic library for use in testing.")
       message (STATUS "Provide a MONGOCRYPT_TESTING_CSFLE_FILE=<filepath> to provide a csfle for use in testing")
-      add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
       set_target_properties (stubbed-csfle PROPERTIES
          # Normalize the output name expected by libmongocrypt
-         PREFIX ""
          OUTPUT_NAME "mongo_csfle_v1"
          )
-      target_include_directories (stubbed-csfle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-      target_link_libraries (stubbed-csfle PRIVATE mongo::bson_static)
-      target_compile_features (stubbed-csfle PRIVATE cxx_std_11)
    endif ()
 endif ()
 

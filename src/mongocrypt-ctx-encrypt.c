@@ -349,13 +349,15 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    // We have a valid schema and just need to mark the fields for encryption
-   if (!mcr_dll_is_open (ctx->crypt->csfle_lib)) {
+   if (!ctx->crypt->csfle.okay) {
       // We don't have a csfle library to use to obtain the markings. It's up to
       // caller to resolve them.
       return true;
    }
 
-   _mcr_csfle_v1_vtable csfle = ctx->crypt->csfle_vtable;
+   _mcr_csfle_v1_vtable csfle = ctx->crypt->csfle;
+   mongo_csfle_v1_lib *csfle_lib = ctx->crypt->csfle_lib;
+   BSON_ASSERT (csfle_lib);
    bool okay = false;
 
 #define CHECK_CSFLE_ERROR(Func, FailLabel)                             \
@@ -377,10 +379,6 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
 
    mongo_csfle_v1_status *status = csfle.status_create ();
    BSON_ASSERT (status);
-
-   /// TODO: Must create one mongo_csfle_v1_lib for the whole application
-   mongo_csfle_v1_lib *csfle_lib = csfle.lib_create (status);
-   CHECK_CSFLE_ERROR ("lib_create", fail_lib_create);
 
    // Obtain the OP_MSG for markings
    bson_t cmd = BSON_INITIALIZER;

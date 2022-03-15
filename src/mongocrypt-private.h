@@ -112,8 +112,9 @@ typedef struct _mcr_csfle_v1_vtable {
    MONGOC_CSFLE_FUNCTIONS_X
 #undef X_FUNC
 
+   /// Whether the vtable is valid and complete
+   bool okay;
 } _mcr_csfle_v1_vtable;
-
 
 struct _mongocrypt_t {
    bool initialized;
@@ -129,9 +130,10 @@ struct _mongocrypt_t {
    uint32_t ctx_counter;
    _mongocrypt_cache_oauth_t *cache_oauth_azure;
    _mongocrypt_cache_oauth_t *cache_oauth_gcp;
-   /// A CSFLE DLL, initialized by mongocrypt_init
-   mcr_dll csfle_lib;
-   _mcr_csfle_v1_vtable csfle_vtable;
+   /// A CSFLE DLL vtable, initialized by mongocrypt_init
+   _mcr_csfle_v1_vtable csfle;
+   /// Pointer to the global csfle_lib object. Should not be freed directly.
+   mongo_csfle_v1_lib *csfle_lib;
 };
 
 typedef enum {
