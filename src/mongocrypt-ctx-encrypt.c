@@ -423,7 +423,6 @@ analyze_failed:
 fail_qa_create:
 fail_create_cmd:
    bson_destroy (&cmd);
-   csfle.lib_destroy (csfle_lib, status);
    if (csfle.status_get_error (status)) {
       _mongocrypt_log (
          &ctx->crypt->log,
@@ -433,7 +432,6 @@ fail_create_cmd:
          csfle.status_get_error (status),
          csfle.status_get_code (status));
    }
-fail_lib_create:
    csfle.status_destroy (status);
    return okay;
 }

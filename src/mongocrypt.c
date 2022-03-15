@@ -557,7 +557,7 @@ typedef struct csfle_global_lib_state {
    mongo_csfle_v1_lib *csfle_lib;
 } csfle_global_lib_state;
 
-csfle_global_lib_state g_csfle_state = {0};
+csfle_global_lib_state g_csfle_state;
 
 static void
 init_csfle_state ()
@@ -633,7 +633,7 @@ _csfle_drop_global_ref ()
    mlib_call_once (&g_csfle_init_flag, init_csfle_state);
 
    bool dropped_last_ref = false;
-   csfle_global_lib_state old_state = {0};
+   csfle_global_lib_state old_state = {.refcount = 0};
    MONGOCRYPT_WITH_MUTEX (g_csfle_state.mtx)
    {
       assert (g_csfle_state.refcount > 0);
