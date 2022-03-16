@@ -70,24 +70,36 @@ mcr_dll_path (mcr_dll dll)
 {
    // Clear the three low bits of the module handle:
    uintptr_t needle = ((uintptr_t) dll._native_handle & ~UINT64_C (0x3));
-   /// NOTE: Not thread safe. Is there a thread-safe way to do this?
-   const size_t n_libs = _dyld_image_count ();
    // Iterate each loaded dyld image
-   for (size_t idx = 0; idx < n_libs; ++idx) {
-      // The filepath:
+   /// NOTE: Not thread safe. Is there a thread-safe way to do this?
+   for (size_t idx = 0; idx < _dyld_image_count (); ++idx) {
+      // Get the filepath:
+      /// NOTE: Between here and `dlopen`, `dyld_name` could be invalidated by
+      /// a concurrent call to `dlclose()`. Is there a better way?
       const char *dyld_name = _dyld_get_image_name (idx);
       // Try and open it. This will return an equivalent pointer to the original
       // handle to the loaded image since they are deduplicated and reference
       // counted.
       void *try_handle = dlopen (dyld_name, RTLD_LAZY);
+      if (!dyld_name) {
+         // Ouch: `idx` was invalidated before we called _dyld_get_image_name.
+         // This will have caused `dlopen()` to return the default handle:
+         assert (try_handle == RTLD_DEFAULT);
+         continue;
+      }
+      // Copy the string before closing, to shrink the chance of `dyld_name`
+      // being used-after-freed.
+      mstr ret_name = mstr_copy_cstr (dyld_name);
       // Mask off the mode bits:
       uintptr_t cur = (uintptr_t) try_handle & ~UINT64_C (0x3);
       // Close our reference to the image. We only care about the handle value.
       dlclose (try_handle);
       if (needle == cur) {
          // We've found the handle
-         return (mcr_dll_path_result){.path = mstr_copy_cstr (dyld_name)};
+         return (mcr_dll_path_result){.path = ret_name};
       }
+      // Not this name.
+      mstr_free (ret_name);
    }
    return (mcr_dll_path_result){
       .error_string = mstr_copy_cstr ("Handle not found in loaded modules")};
