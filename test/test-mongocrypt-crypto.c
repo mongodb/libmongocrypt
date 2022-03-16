@@ -333,6 +333,141 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
    }
 }
 
+typedef struct {
+   const char *testname;
+   const char *key;
+   const char *input;
+   const char *expect;
+} hmac_sha_256_test_t;
+
+void
+_test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
+{
+   /* Test data generated with OpenSSL CLI:
+   $ echo -n "test" | openssl dgst -mac hmac -macopt \
+   hexkey:6bb2664e8d444377d3cd9566c005593b7ed8a35ab8eac9eb5ffa6e426854e5cc \
+   -sha256
+     d80a4d2271fdaa45ad4a1bf85d606fe465cb40176d1d83e69628a154c2c528ff
+
+   Hex representation of "test" is: 74657374
+   */
+   hmac_sha_256_test_t tests[] = {
+      {.testname = "String 'test'",
+       .key = "6bb2664e8d444377d3cd9566c005593b"
+              "7ed8a35ab8eac9eb5ffa6e426854e5cc",
+       .input = "74657374",
+       .expect = "d80a4d2271fdaa45ad4a1bf85d606fe4"
+                 "65cb40176d1d83e69628a154c2c528ff"},
+      {.testname = "Data larger than one block",
+       .key = "6bb2664e8d444377d3cd9566c005593b"
+              "7ed8a35ab8eac9eb5ffa6e426854e5cc",
+       .input = "fd2368de92202a33fcaf48f9b5807fc8"
+                "6b9837aa376beb6044d6db6b07347f7e"
+                "2af3eedfc968218f76b588fff9ae1c91"
+                "74cca2368389bf211270f0449771c260"
+                "689bb59a32f0c5ae40372ecb371ec2a7"
+                "2179bbe8d46260eef7d0e7c1ae679b71",
+       .expect = "1985743613238e3c8c05a0274be76fa6"
+                 "7821228f7b880e72dbd0f314fb63e63f"},
+      #include "./data/NIST-CAVP.cstructs"
+      {0}};
+   hmac_sha_256_test_t *test;
+   mongocrypt_t *crypt;
+
+   /* Create a mongocrypt_t to call _native_crypto_init(). */
+   crypt = mongocrypt_new ();
+
+   for (test = tests; test->testname != NULL; test++) {
+      bool ret;
+      _mongocrypt_buffer_t key;
+      _mongocrypt_buffer_t input;
+      _mongocrypt_buffer_t expect;
+      _mongocrypt_buffer_t got;
+      mongocrypt_status_t *status;
+
+
+      printf ("Begin test '%s'.\n", test->testname);
+
+      _mongocrypt_buffer_copy_from_hex (&key, test->key);
+      _mongocrypt_buffer_copy_from_hex (&input, test->input);
+      _mongocrypt_buffer_copy_from_hex (&expect, test->expect);
+      _mongocrypt_buffer_init (&got);
+      _mongocrypt_buffer_resize (&got, MONGOCRYPT_HMAC_SHA256_LEN);
+      status = mongocrypt_status_new ();
+
+      ret = _native_crypto_hmac_sha_256 (&key, &input, &got, status);
+      ASSERT_OR_PRINT (ret, status);
+      if (expect.len < got.len) {
+         /* Some NIST CAVP tests expect the output tag to be truncated. */
+         got.len = expect.len;
+      }
+      ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+
+      mongocrypt_status_destroy (status);
+      _mongocrypt_buffer_cleanup (&got);
+      _mongocrypt_buffer_cleanup (&expect);
+      _mongocrypt_buffer_cleanup (&input);
+      _mongocrypt_buffer_cleanup (&key);
+
+      printf ("End test '%s'.\n", test->testname);
+   }
+
+   mongocrypt_destroy (crypt);
+}
+
+static bool
+_hook_hmac_sha_256 (void *ctx,
+                    mongocrypt_binary_t *key,
+                    mongocrypt_binary_t *in,
+                    mongocrypt_binary_t *out,
+                    mongocrypt_status_t *status)
+{
+   const uint8_t *data_to_copy = (const uint8_t *) ctx;
+   uint8_t *outdata = mongocrypt_binary_data (out);
+   uint32_t outlen = mongocrypt_binary_len (out);
+
+   ASSERT_CMPINT ((int) outlen, ==, 32);
+   memcpy (outdata, data_to_copy, outlen);
+   return true;
+}
+
+static void
+_test_mongocrypt_hmac_sha_256_hook (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   _mongocrypt_crypto_t crypto = {0};
+   _mongocrypt_buffer_t key = {0};
+   _mongocrypt_buffer_t in = {0};
+   _mongocrypt_buffer_t expect;
+   _mongocrypt_buffer_t got;
+   mongocrypt_status_t *status;
+
+   /* Create a mongocrypt_t to call _native_crypto_init(). */
+   crypt = mongocrypt_new ();
+
+   status = mongocrypt_status_new ();
+   _mongocrypt_buffer_resize (&key, MONGOCRYPT_MAC_KEY_LEN);
+   _mongocrypt_buffer_copy_from_hex (&expect,
+                                     "000102030405060708090A0B0C0D0E0F"
+                                     "101112131415161718191A1B1C1D1E1F");
+   _mongocrypt_buffer_init (&got);
+   _mongocrypt_buffer_resize (&got, MONGOCRYPT_HMAC_SHA256_LEN);
+
+   crypto.hooks_enabled = true;
+   crypto.hmac_sha_256 = _hook_hmac_sha_256;
+   crypto.ctx = expect.data;
+
+   ASSERT_OR_PRINT (_mongocrypt_hmac_sha_256 (&crypto, &key, &in, &got, status),
+                    status);
+
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+
+   _mongocrypt_buffer_cleanup (&got);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&key);
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
+}
 
 void
 _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
@@ -340,4 +475,6 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_mcgrew);
    INSTALL_TEST (_test_roundtrip);
    INSTALL_TEST (_test_native_crypto_aes_256_ctr);
+   INSTALL_TEST (_test_native_crypto_hmac_sha_256);
+   INSTALL_TEST_CRYPTO (_test_mongocrypt_hmac_sha_256_hook, CRYPTO_OPTIONAL);
 }

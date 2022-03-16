@@ -22,6 +22,7 @@
 #include <bcrypt.h>
 
 static BCRYPT_ALG_HANDLE _algo_sha512_hmac = 0;
+static BCRYPT_ALG_HANDLE _algo_sha256_hmac = 0;
 static BCRYPT_ALG_HANDLE _algo_aes256 = 0;
 static DWORD _aes256_key_blob_length;
 
@@ -42,6 +43,14 @@ _native_crypto_init ()
     */
    nt_status = BCryptOpenAlgorithmProvider (&_algo_sha512_hmac,
                                             BCRYPT_SHA512_ALGORITHM,
+                                            MS_PRIMITIVE_PROVIDER,
+                                            BCRYPT_ALG_HANDLE_HMAC_FLAG);
+   if (nt_status != STATUS_SUCCESS) {
+      return;
+   }
+
+   nt_status = BCryptOpenAlgorithmProvider (&_algo_sha256_hmac,
+                                            BCRYPT_SHA256_ALGORITHM,
                                             MS_PRIMITIVE_PROVIDER,
                                             BCRYPT_ALG_HANDLE_HMAC_FLAG);
    if (nt_status != STATUS_SUCCESS) {
@@ -246,32 +255,35 @@ done:
    return ret;
 }
 
-
+/* _hmac_with_algorithm computes an HMAC of @in with the algorithm specified by
+ * @hAlgorithm.
+ * @key is the input key.
+ * @out is the output. @out must be allocated by the caller with
+ * the expected length @expect_out_len for the output.
+ * Returns false and sets @status on error. @status is required. */
 bool
-_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
-                             const _mongocrypt_buffer_t *in,
-                             _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status)
+_hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
+                      const _mongocrypt_buffer_t *key,
+                      const _mongocrypt_buffer_t *in,
+                      _mongocrypt_buffer_t *out,
+                      uint32_t expect_out_len,
+                      mongocrypt_status_t *status)
 {
    bool ret = false;
    BCRYPT_HASH_HANDLE hHash;
    NTSTATUS nt_status;
 
-   if (out->len != 64) {
-      CLIENT_ERR ("out does not contain 64 bytes");
+   if (out->len != expect_out_len) {
+      CLIENT_ERR ("out does not contain " PRIu32 " bytes", expect_out_len);
       return false;
    }
 
-   nt_status = BCryptCreateHash (_algo_sha512_hmac,
-                                 &hHash,
-                                 NULL,
-                                 0,
-                                 (PUCHAR) key->data,
-                                 (ULONG) key->len,
-                                 0);
+   nt_status = BCryptCreateHash (
+      hAlgorithm, &hHash, NULL, 0, (PUCHAR) key->data, (ULONG) key->len, 0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("error initializing hmac: 0x%x", (int) nt_status);
-      goto done;
+      /* Only call BCryptDestroyHash if BCryptCreateHash succeeded. */
+      return false;
    }
 
    nt_status = BCryptHashData (hHash, (PUCHAR) in->data, (ULONG) in->len, 0);
@@ -290,6 +302,16 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
 done:
    (void) BCryptDestroyHash (hHash);
    return ret;
+}
+
+bool
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_algorithm (
+      _algo_sha512_hmac, key, in, out, MONGOCRYPT_HMAC_SHA512_LEN, status);
 }
 
 
@@ -321,6 +343,16 @@ _native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
    mongocrypt_status_t *status = args.status;
    CLIENT_ERR ("_native_crypto_aes_256_ctr_decrypt not implemented for CNG");
    return false;
+}
+
+bool
+_native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_algorithm (
+      _algo_sha256_hmac, key, in, out, MONGOCRYPT_HMAC_SHA256_LEN, status);
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_CNG */
