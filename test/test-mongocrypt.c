@@ -241,7 +241,7 @@ _mongocrypt_tester_bin_from_json (_mongocrypt_tester_t *tester,
    va_end (ap);
    bson = &tester->test_bson[tester->bson_count++];
    if (!bson_init_from_json (bson, full_json, strlen (full_json), &error)) {
-      fprintf (stderr, "%s", error.message);
+      fprintf (stderr, "failed to parse JSON %s: %s", error.message, json);
       abort ();
    }
    bin = mongocrypt_binary_new ();
