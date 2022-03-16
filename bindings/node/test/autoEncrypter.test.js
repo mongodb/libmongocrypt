@@ -158,7 +158,7 @@ describe('AutoEncrypter', function () {
       mc.decrypt(input, (err, decrypted) => {
         if (err) return done(err);
         expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
-        expect(decrypted[Symbol.for('@@mdb.decryptedKeys')]).to.eql(undefined);
+        expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
         expect(decrypted.filter[Symbol.for('@@mdb.decryptedKeys')]).to.eql(['ssn']);
         done();
       });

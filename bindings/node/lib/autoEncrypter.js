@@ -263,8 +263,9 @@ module.exports = function (modules) {
       const decorateResult = this[Symbol.for('@@mdb.decorateDecryptionResult')];
       stateMachine.execute(this, context, function (err, result) {
         // Only for testing/internal usage
-        if (decorateResult) {
-          decorateDecryptionResult(result, response, bson);
+        if (!err && result && decorateResult) {
+          err = decorateDecryptionResult(result, response, bson);
+          if (err) return callback(err);
         }
         callback(err, result);
       });
@@ -285,7 +286,6 @@ module.exports = function (modules) {
   return { AutoEncrypter };
 };
 
-const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');
 /**
  * Recurse through the (identically-shaped) `decrypted` and `original`
  * objects and attach a `decryptedKeys` property on each sub-object that
@@ -293,13 +293,14 @@ const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');
  * we do not need to worry about circular references.
  */
 function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateCall = true) {
+  const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');
   if (isTopLevelDecorateCall) {
     // The original value can have been either a JS object or a BSON buffer
     if (Buffer.isBuffer(original)) {
       original = bson.deserialize(original);
     }
     if (Buffer.isBuffer(decrypted)) {
-      throw new Error('Expected result of decryption to be deserialize BSON object');
+      return new Error('Expected result of decryption to be deserialize BSON object');
     }
   }
 
@@ -309,11 +310,7 @@ function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateC
 
     // An object was decrypted by libmongocrypt if and only if it was
     // a BSON Binary object with subtype 6.
-    if (
-      originalValue &&
-      originalValue.constructor.name === 'Binary' &&
-      originalValue.sub_type === 6
-    ) {
+    if (originalValue && originalValue._bsontype === 'Binary' && originalValue.sub_type === 6) {
       if (!decrypted[decryptedKeys]) {
         Object.defineProperty(decrypted, decryptedKeys, {
           value: [],
