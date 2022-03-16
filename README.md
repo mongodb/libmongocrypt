@@ -119,7 +119,7 @@ We decided against the "have libmongocrypt do everything" approach because it co
 ### Releasing ###
 
 #### Version number scheme ####
-Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releases and 1.[0-9].[0-9]-rc[0-9] for release candidates.  This ensures that Linux distribution packages built from each commit are published to the correct location.
+Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releases and 1.[0-9].[0-9]-(alpha|beta|rc)[0-9] for pre-releases.  This ensures that Linux distribution packages built from each commit are published to the correct location.
 
 #### Steps to release ####
 Do the following when releasing:
