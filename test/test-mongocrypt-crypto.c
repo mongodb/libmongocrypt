@@ -369,6 +369,7 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
                 "2179bbe8d46260eef7d0e7c1ae679b71",
        .expect = "1985743613238e3c8c05a0274be76fa6"
                  "7821228f7b880e72dbd0f314fb63e63f"},
+      #include "./data/NIST-CAVP.cstructs"
       {0}};
    hmac_sha_256_test_t *test;
    mongocrypt_t *crypt;
@@ -396,6 +397,10 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
 
       ret = _native_crypto_hmac_sha_256 (&key, &input, &got, status);
       ASSERT_OR_PRINT (ret, status);
+      if (expect.len < got.len) {
+         /* Some NIST CAVP tests expect the output tag to be truncated. */
+         got.len = expect.len;
+      }
       ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
 
       mongocrypt_status_destroy (status);
