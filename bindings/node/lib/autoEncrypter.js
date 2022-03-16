@@ -303,8 +303,7 @@ function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateC
     }
   }
 
-  if (!decrypted || typeof decrypted !== 'object')
-    return;
+  if (!decrypted || typeof decrypted !== 'object') return;
   for (const k of Object.keys(decrypted)) {
     const originalValue = original[k];
 
