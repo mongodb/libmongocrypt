@@ -19,13 +19,23 @@ chai.use(require('sinon-chai'));
 
 const sharedLibrarySuffix =
   process.platform === 'win32' ? 'dll' : process.platform === 'darwin' ? 'dylib' : 'so';
-const sharedLibraryStub = path.resolve(
+let sharedLibraryStub = path.resolve(
   __dirname,
   '..',
   '..',
   '..',
   `mongo_csfle_v1.${sharedLibrarySuffix}`
 );
+if (!fs.existsSync(sharedLibraryStub)) {
+  sharedLibraryStub = path.resolve(
+    __dirname,
+    '..',
+    'deps',
+    'tmp',
+    'libmongocrypt-build',
+    `mongo_csfle_v1.${sharedLibrarySuffix}`
+  );
+}
 
 function readExtendedJsonToBuffer(path) {
   const ejson = EJSON.parse(fs.readFileSync(path, 'utf8'));
