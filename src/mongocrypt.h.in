@@ -1171,8 +1171,7 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  */
 bool
 mongocrypt_ctx_provide_kms_providers (
-   mongocrypt_ctx_t *ctx,
-   mongocrypt_binary_t *kms_providers_definition);
+   mongocrypt_ctx_t *ctx, mongocrypt_binary_t *kms_providers_definition);
 
 /**
  * Perform the final encryption or decryption.

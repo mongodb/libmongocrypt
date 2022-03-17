@@ -178,6 +178,6 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
 /* Get the KMS providers for the current context, fall back to the ones
  * from mongocrypt_t if none are provided for the context specifically. */
 _mongocrypt_opts_kms_providers_t *
-_mongocrypt_ctx_kms_providers(mongocrypt_ctx_t *ctx);
+_mongocrypt_ctx_kms_providers (mongocrypt_ctx_t *ctx);
 
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */

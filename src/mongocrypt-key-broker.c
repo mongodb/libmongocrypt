@@ -710,7 +710,7 @@ _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
 bool
 _mongocrypt_key_broker_kms_done (
    _mongocrypt_key_broker_t *kb,
-   _mongocrypt_opts_kms_providers_t* kms_providers)
+   _mongocrypt_opts_kms_providers_t *kms_providers)
 {
    key_returned_t *key_returned;
 
