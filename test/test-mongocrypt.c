@@ -662,7 +662,6 @@ _test_setopt_encrypted_field_config_map (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 
    /* Test malformed BSON */
-   mongocrypt_destroy (crypt);
    crypt = mongocrypt_new ();
    ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (10)), crypt, "invalid bson");
    mongocrypt_destroy (crypt);
@@ -688,7 +687,7 @@ _test_setopt_encrypted_field_config_map (_mongocrypt_tester_t *tester)
       "{'db.coll1': {}, 'db.coll3': {}}"
    )), crypt);
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
-   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "db.coll1 is present in both schema map and encrypted field config map");
+   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "db.coll1 is present in both schema_map and encrypted_field_config_map");
    mongocrypt_destroy (crypt);
 }
 
