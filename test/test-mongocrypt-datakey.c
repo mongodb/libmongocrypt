@@ -316,7 +316,9 @@ _test_datakey_kms_per_ctx_credentials_not_requested (
    mongocrypt_destroy (crypt);
 }
 
-#define TEST_LOCAL_KEK_BASE64 "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+#define TEST_LOCAL_KEK_BASE64                                                  \
+   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
+   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 /* Test creating a data key with "local" when "local" credentials are required.
  * Expect the context to enter the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS
@@ -348,8 +350,8 @@ _test_datakey_kms_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_provide_kms_providers (
          ctx,
          TEST_BSON (
-            "{'local':{'key': { '$binary': {'base64': " TEST_LOCAL_KEK_BASE64
-            ", 'subType': '00'}}}}")),
+            "{'local':{'key': { '$binary': {'base64': '" TEST_LOCAL_KEK_BASE64
+            "', 'subType': '00'}}}}")),
       ctx);
 
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);

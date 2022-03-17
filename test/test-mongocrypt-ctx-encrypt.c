@@ -1491,8 +1491,8 @@ _test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_provide_kms_providers (
          ctx,
          TEST_BSON (
-            "{'local':{'key': { '$binary': {'base64': " TEST_LOCAL_KEK_BASE64
-            ", 'subType': '00'}}}}")),
+            "{'local':{'key': { '$binary': {'base64': '" TEST_LOCAL_KEK_BASE64
+            "', 'subType': '00'}}}}")),
       ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (

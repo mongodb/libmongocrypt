@@ -724,13 +724,12 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'local': {'key': 'AAAA'}}", "local key must be 96 bytes"},
       /* KMIP test cases. */
       {"{'kmip': {'endpoint': '127.0.0.1:5696' }}", NULL},
-      {"{'kmip': {}}", "expected endpoint kmip.endpoint"},
       /* localhost is a valid endpoint for KMIP.
        * Unlike Azure, GCP, and AWS, applications run their own KMIP servers. */
       {"{'kmip': {'endpoint': 'localhost' }}", NULL},
       {"{'kmip': {'endpoint': '127.0.0.1:5696', 'extra': 'invalid' }}",
        "Unexpected field: 'extra'"},
-       /* Empty documents are OK for KMS credentials */
+       /* Empty documents are OK for on-demand KMS credentials */
       {"{'aws': {}}", NULL},
       {"{'azure': {}}", NULL},
       {"{'local': {}}", NULL},
