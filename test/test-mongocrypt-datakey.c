@@ -251,14 +251,14 @@ _test_datakey_kms_per_ctx_credentials (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_setopt_masterkey_aws_endpoint (ctx, "example.com", -1),
       ctx);
    ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
-   BSON_ASSERT (mongocrypt_ctx_state (ctx) ==
-                MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
-   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
-                 ctx,
-                 TEST_BSON ("{'aws':{'accessKeyId': 'example',"
-                            "'secretAccessKey': 'example'}}")),
-              ctx);
-   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   BSON_ASSERT (
+      mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+   ASSERT_OK (
+      mongocrypt_ctx_provide_kms_providers (ctx,
+         TEST_BSON ("{'aws':{'accessKeyId': 'example',"
+                            "'secretAccessKey': 'example'}}")), ctx);
+   BSON_ASSERT (
+      mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
    kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
    BSON_ASSERT (kms_ctx);
    ASSERT_OK (mongocrypt_kms_ctx_endpoint (kms_ctx, &endpoint), ctx);
