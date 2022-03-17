@@ -152,12 +152,61 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t cmd_bson, schema_bson, mongocryptd_cmd_bson;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
-      /* first, get the original command. */
-      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
+
+   if (!_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
+      /* mongocryptd_cmd was generated in a previous call. */
+      out->data = ectx->mongocryptd_cmd.data;
+      out->len = ectx->mongocryptd_cmd.len;
+      return true;
+   }
+
+   /* first, get the original command. */
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
+   }
+
+   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+      bson_t encrypted_field_config_bson;
+      bson_t encryption_information_bson;
+      bson_t schema_bson;
+
+      /* Use FLE 2.0. */
+      if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config, &encrypted_field_config_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert encrypted_field_config to BSON");
       }
 
+      bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
+      if (!BSON_APPEND_DOCUMENT_BEGIN (&mongocryptd_cmd_bson, "encryptionInformation", &encryption_information_bson)) {
+         bson_destroy (&mongocryptd_cmd_bson);
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to begin appending encryption_information_bson to mongocryptd_cmd_bson");
+      }
+      if (!BSON_APPEND_INT32 (&encryption_information_bson, "type", 1)) {
+         bson_destroy (&mongocryptd_cmd_bson);
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to append type to encryption_information_bson");
+      }
+      if (!BSON_APPEND_DOCUMENT_BEGIN (&encryption_information_bson, "schema", &schema_bson)) {
+         bson_destroy (&mongocryptd_cmd_bson);
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to begin appending schema_bson to encryption_information_bson");
+      }
+      if (!BSON_APPEND_DOCUMENT (&schema_bson, ectx->ns, &encrypted_field_config_bson)) {
+         bson_destroy (&mongocryptd_cmd_bson);
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to append encrypted_field_config_bson to schema_bson");
+      }
+      if (!bson_append_document_end (&encryption_information_bson, &schema_bson)) {
+         bson_destroy (&mongocryptd_cmd_bson);
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to end appending schema_bson to encryption_information_bson");
+      }
+      if (!bson_append_document_end (&mongocryptd_cmd_bson, &encryption_information_bson)) {
+         bson_destroy (&mongocryptd_cmd_bson);
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to end appending encryption_information_bson to mongocryptd_cmd_bson");
+      }
+      _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd, &mongocryptd_cmd_bson);
+   } else {
+      /* Use FLE 1.0. */
+
+      /* Q5: Is it possible to undergo automatic encryption with a NULL schema?
+       * This _mongocrypt_buffer_empty check suggests so.
+       * A: */
       if (_mongocrypt_buffer_empty (&ectx->schema)) {
          bson_init (&schema_bson);
       } else if (!_mongocrypt_buffer_to_bson (&ectx->schema, &schema_bson)) {
@@ -444,6 +493,7 @@ _cleanup (mongocrypt_ctx_t *ctx)
    bson_free (ectx->coll_name);
    _mongocrypt_buffer_cleanup (&ectx->list_collections_filter);
    _mongocrypt_buffer_cleanup (&ectx->schema);
+   _mongocrypt_buffer_cleanup (&ectx->encrypted_field_config);
    _mongocrypt_buffer_cleanup (&ectx->original_cmd);
    _mongocrypt_buffer_cleanup (&ectx->mongocryptd_cmd);
    _mongocrypt_buffer_cleanup (&ectx->marked_cmd);
@@ -480,6 +530,37 @@ _try_schema_from_schema_map (mongocrypt_ctx_t *ctx)
    }
 
    /* No schema found in map. */
+   return true;
+}
+
+static bool
+_try_schema_from_encrypted_field_config_map (mongocrypt_ctx_t *ctx)
+{
+   mongocrypt_t *crypt;
+   _mongocrypt_ctx_encrypt_t *ectx;
+   bson_t encrypted_field_config_map;
+   bson_iter_t iter;
+
+   crypt = ctx->crypt;
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   if (_mongocrypt_buffer_empty (&crypt->opts.encrypted_field_config_map)) {
+      /* No encrypted_field_config_map set. */
+      return true;
+   }
+
+   if (!_mongocrypt_buffer_to_bson (&crypt->opts.encrypted_field_config_map, &encrypted_field_config_map)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert encrypted_field_config_map to BSON");
+   }
+
+   if (bson_iter_init_find (&iter, &encrypted_field_config_map, ectx->ns)) {
+      if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->encrypted_field_config, &iter)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to copy encrypted_field_config from encrypted_field_config_map");
+      }
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+   }
+
+   /* No encrypted_field_config found in map. */
    return true;
 }
 
@@ -897,6 +978,14 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                        "cmd",
                        cmd_val);
       bson_free (cmd_val);
+   }
+
+   /* Check if there is an encrypted field config in encrypted_field_config_map */
+   if (!_try_schema_from_encrypted_field_config_map (ctx)) {
+      return false;
+   }
+   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+      return true;
    }
 
    /* Check if we have a local schema from schema_map */
