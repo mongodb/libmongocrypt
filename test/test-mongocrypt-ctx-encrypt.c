@@ -1472,6 +1472,8 @@ _test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
+   /* local_kek is the KEK used to encrypt the keyMaterial in
+    * ./test/data/key-document-local.json */
    const char *local_kek =
       "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
       "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
