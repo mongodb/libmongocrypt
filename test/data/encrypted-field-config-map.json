@@ -7,7 +7,7 @@
             {
                 "keyId": {
                     "$binary": {
-                        "base64": "KEY1_AAAAAAAAAAAAAAAA==",
+                        "base64": "KEY1+AAAAAAAAAAAAAAAAA==",
                         "subType": "04"
                     }
                 },
@@ -30,7 +30,7 @@
             {
                 "keyId": {
                     "$binary": {
-                        "base64": "KEY2_AAAAAAAAAAAAAAAA==",
+                        "base64": "KEY2+AAAAAAAAAAAAAAAAA==",
                         "subType": "04"
                     }
                 },
