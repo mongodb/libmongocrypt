@@ -1467,15 +1467,14 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-#define TEST_LOCAL_KEK_BASE64                                                  \
-   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
-   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-
 static void
 _test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
+   const char *local_kek =
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
    crypt = mongocrypt_new ();
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
@@ -1487,13 +1486,12 @@ _test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
               ctx);
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
-   ASSERT_OK (
-      mongocrypt_ctx_provide_kms_providers (
-         ctx,
-         TEST_BSON (
-            "{'local':{'key': { '$binary': {'base64': '" TEST_LOCAL_KEK_BASE64
-            "', 'subType': '00'}}}}")),
-      ctx);
+   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                 ctx,
+                 TEST_BSON ("{'local':{'key': { '$binary': {'base64': '%s', "
+                            "'subType': '00'}}}}",
+                            local_kek)),
+              ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/key-document-local.json")),

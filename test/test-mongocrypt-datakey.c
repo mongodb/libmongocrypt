@@ -316,10 +316,6 @@ _test_datakey_kms_per_ctx_credentials_not_requested (
    mongocrypt_destroy (crypt);
 }
 
-#define TEST_LOCAL_KEK_BASE64                                                  \
-   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
-   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-
 /* Test creating a data key with "local" when "local" credentials are required.
  * Expect the context to enter the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS
  * state. */
@@ -331,6 +327,9 @@ _test_datakey_kms_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *bin;
    bson_t key_bson;
    bson_iter_t iter;
+   const char *local_kek =
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
    crypt = mongocrypt_new ();
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
@@ -346,13 +345,12 @@ _test_datakey_kms_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
 
-   ASSERT_OK (
-      mongocrypt_ctx_provide_kms_providers (
-         ctx,
-         TEST_BSON (
-            "{'local':{'key': { '$binary': {'base64': '" TEST_LOCAL_KEK_BASE64
-            "', 'subType': '00'}}}}")),
-      ctx);
+   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                 ctx,
+                 TEST_BSON ("{'local':{'key': { '$binary': {'base64': '%s', "
+                            "'subType': '00'}}}}",
+                            local_kek)),
+              ctx);
 
    BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
 
