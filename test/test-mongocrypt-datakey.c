@@ -352,8 +352,6 @@ _test_datakey_kms_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
                             local_kek)),
               ctx);
 
-   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
-
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    bin = mongocrypt_binary_new ();
    ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
