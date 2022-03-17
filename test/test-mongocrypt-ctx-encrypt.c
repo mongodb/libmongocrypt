@@ -1468,6 +1468,43 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   /* local_kek is the KEK used to encrypt the keyMaterial in
+    * ./test/data/key-document-local.json */
+   const char *local_kek =
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'local': {}}"));
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                 ctx,
+                 TEST_BSON ("{'local':{'key': { '$binary': {'base64': '%s', "
+                            "'subType': '00'}}}}",
+                            local_kek)),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx, TEST_FILE ("./test/data/key-document-local.json")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
 _test_encrypt_with_aws_session_token (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
@@ -1595,4 +1632,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_caches_empty_collinfo);
    INSTALL_TEST (_test_encrypt_caches_collinfo_without_jsonschema);
    INSTALL_TEST (_test_encrypt_per_ctx_credentials);
+   INSTALL_TEST (_test_encrypt_per_ctx_credentials_local);
 }

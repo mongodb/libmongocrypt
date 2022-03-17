@@ -692,13 +692,11 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "Invalid endpoint"},
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
       {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
-      {"{'aws': {}}", NULL},
       {"{'local': {'key': {'$binary': {'base64': '" EXAMPLE_LOCAL_MATERIAL
        "', 'subType': '00'}} }}",
        NULL},
       {"{'local': {'key': '" EXAMPLE_LOCAL_MATERIAL "' }}", NULL},
       {"{'local': {'key': 'invalid base64' }}", "unable to parse base64"},
-      {"{'local': {}}", "expected UTF-8 or binary local.key"},
       /* either base64 string or binary is acceptable for privateKey */
       {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
        "'privateKey': 'AAAA' }}"},
@@ -726,12 +724,18 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'local': {'key': 'AAAA'}}", "local key must be 96 bytes"},
       /* KMIP test cases. */
       {"{'kmip': {'endpoint': '127.0.0.1:5696' }}", NULL},
-      {"{'kmip': {}}", "expected endpoint kmip.endpoint"},
       /* localhost is a valid endpoint for KMIP.
        * Unlike Azure, GCP, and AWS, applications run their own KMIP servers. */
       {"{'kmip': {'endpoint': 'localhost' }}", NULL},
       {"{'kmip': {'endpoint': '127.0.0.1:5696', 'extra': 'invalid' }}",
-       "Unexpected field: 'extra'"}};
+       "Unexpected field: 'extra'"},
+       /* Empty documents are OK for on-demand KMS credentials */
+      {"{'aws': {}}", NULL},
+      {"{'azure': {}}", NULL},
+      {"{'local': {}}", NULL},
+      {"{'gcp': {}}", NULL},
+      {"{'kmip': {}}", NULL}
+       };
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;
