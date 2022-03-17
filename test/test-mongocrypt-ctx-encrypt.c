@@ -1611,6 +1611,7 @@ static void _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t 
    crypt = mongocrypt_new ();
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
    ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")), crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
 
    /* Test encrypting a command on a collection present in the encrypted field config map. */
    ctx = mongocrypt_ctx_new (crypt);
