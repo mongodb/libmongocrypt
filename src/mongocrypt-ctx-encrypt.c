@@ -21,6 +21,37 @@
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-traverse-util-private.h"
 
+static bool _fle2_append_encryptionInformation (bson_t *dst, const char* ns, bson_t* encryptedFieldConfig, mongocrypt_status_t *status) {
+   bson_t encryption_information_bson;
+   bson_t schema_bson;
+
+   if (!BSON_APPEND_DOCUMENT_BEGIN (dst, "encryptionInformation", &encryption_information_bson)) {
+      CLIENT_ERR ("unable to begin appending 'encryptionInformation'");
+      return false;
+   }
+   if (!BSON_APPEND_INT32 (&encryption_information_bson, "type", 1)) {
+      CLIENT_ERR ("unable to append type to 'encryptionInformation'");
+      return false;
+   }
+   if (!BSON_APPEND_DOCUMENT_BEGIN (&encryption_information_bson, "schema", &schema_bson)) {
+      CLIENT_ERR ("unable to begin appending 'schema' to 'encryptionInformation'");
+      return false;
+   }
+   if (!BSON_APPEND_DOCUMENT (&schema_bson, ns, encryptedFieldConfig)) {
+      CLIENT_ERR ("unable to append 'encryptedFieldConfig' to 'encryptionInformation'.'schema'");
+      return false;
+   }
+   if (!bson_append_document_end (&encryption_information_bson, &schema_bson)) {
+      CLIENT_ERR ("unable to end appending 'schema' to 'encryptionInformation'");
+      return false;
+   }
+   if (!bson_append_document_end (dst, &encryption_information_bson)) {
+      CLIENT_ERR ("unable to end appending 'encryptionInformation'");
+      return false;
+   }
+   return true;
+}
+
 /* Construct the list collections command to send. */
 static bool
 _mongo_op_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
@@ -400,6 +431,57 @@ _replace_marking_with_ciphertext (void *ctx,
    return ret;
 }
 
+/* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is associated with the command. */
+static bool
+_fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
+   bson_t as_bson, converted;
+   _mongocrypt_ctx_encrypt_t *ectx;
+   mongocrypt_status_t *status;
+   bson_t encrypted_field_config_bson;
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   status = ctx->status;
+
+   BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
+   
+   if (ectx->explicit) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
+   }
+
+   if (!_mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson in marked_cmd");
+   }
+
+   if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config, &encrypted_field_config_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson in encrypted_field_config_bson");
+   }
+
+   /* If nothing_to_do is true, then the marked_cmd contained no markings. */
+   if (ctx->nothing_to_do) {
+      bson_t original_cmd_bson;
+
+      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &original_cmd_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson in original_cmd");
+      }
+
+      /* Append 'encryptionInformation' to the original command. */
+      bson_init (&converted);
+      bson_copy_to (&original_cmd_bson, &converted);
+      if (!_fle2_append_encryptionInformation (&converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
+         bson_destroy (&converted);
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   } else {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "FLE 2 markings not supported yet. See: MONGOCRYPT-397, MONGOCRYPT-398, and MONGOCRYPT-399");
+   }
+
+   _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
+   _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
+   ctx->state = MONGOCRYPT_CTX_DONE;
+
+   return true;
+}
+
 static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
@@ -409,6 +491,10 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bool res;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+      return _fle2_finalize (ctx, out);
+   }
 
    if (!ectx->explicit) {
       if (ctx->nothing_to_do) {
