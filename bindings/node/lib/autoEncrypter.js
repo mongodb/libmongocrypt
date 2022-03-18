@@ -295,12 +295,12 @@ module.exports = function (modules) {
 function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateCall = true) {
   const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');
   if (isTopLevelDecorateCall) {
-    // The original value can have been either a JS object or a BSON buffer
+    // The original value could have been either a JS object or a BSON buffer
     if (Buffer.isBuffer(original)) {
       original = bson.deserialize(original);
     }
     if (Buffer.isBuffer(decrypted)) {
-      return new Error('Expected result of decryption to be deserialize BSON object');
+      return new Error('Expected result of decryption to be deserialized BSON object');
     }
   }
 
