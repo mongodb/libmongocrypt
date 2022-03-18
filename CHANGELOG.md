@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 1.3.2
+### Fixed
+- Resolve 32 bit Windows compile errors.
+
 ## 1.3.1
 
 ### New Features
