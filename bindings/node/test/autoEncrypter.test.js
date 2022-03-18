@@ -162,9 +162,9 @@ describe('AutoEncrypter', function () {
         expect(decrypted.filter[Symbol.for('@@mdb.decryptedKeys')]).to.eql(['ssn']);
 
         // The same, but with an object containing different data types as the input
-        mc.decrypt({ a: [null, 1, {c: new BSON.Binary('foo', 1)}] }, (err, decrypted) => {
+        mc.decrypt({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] }, (err, decrypted) => {
           if (err) return done(err);
-          expect(decrypted).to.eql({ a: [null, 1, {c: new BSON.Binary('foo', 1)}] });
+          expect(decrypted).to.eql({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] });
           expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
           done();
         });
