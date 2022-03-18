@@ -139,7 +139,37 @@ describe('AutoEncrypter', function () {
       mc.decrypt(input, (err, decrypted) => {
         if (err) return done(err);
         expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+        expect(decrypted.filter).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
         done();
+      });
+    });
+
+    it('should decrypt mock data and mark decrypted items if enabled for testing', function (done) {
+      const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        }
+      });
+      mc[Symbol.for('@@mdb.decorateDecryptionResult')] = true;
+      mc.decrypt(input, (err, decrypted) => {
+        if (err) return done(err);
+        expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+        expect(decrypted.filter[Symbol.for('@@mdb.decryptedKeys')]).to.eql(['ssn']);
+
+        // The same, but with an object containing different data types as the input
+        mc.decrypt({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] }, (err, decrypted) => {
+          if (err) return done(err);
+          expect(decrypted).to.eql({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] });
+          expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+          done();
+        });
       });
     });
 
