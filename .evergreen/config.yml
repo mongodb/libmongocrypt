@@ -190,9 +190,9 @@ functions:
           if [ "${is_patch}" = "true" ]; then
             echo "Patch build detected, skipping"
           fi
-          if [ "${branch}" != "master" ]; then
+          if [ "${branch_name}" != "master" ]; then
             echo "publish snapshot is only run on master branch."
-            echo "Detected branch '${branch}', skipping."
+            echo "Detected branch '${branch_name}', skipping."
           fi
     - command: shell.exec
       params:
@@ -201,7 +201,7 @@ functions:
           if [ "${is_patch}" = "true" ]; then
             exit 0
           fi
-          if [ "${branch}" != "master" ]; then
+          if [ "${branch_name}" != "master" ]; then
             exit 0
           fi
           cd ./libmongocrypt/bindings/java/mongocrypt && PROJECT_DIRECTORY=${project_directory} NEXUS_USERNAME=${nexus_username} NEXUS_PASSWORD=${nexus_password} SIGNING_PASSWORD=${signing_password} SIGNING_KEY_ID=${signing_keyId} RING_FILE_GPG_BASE64=${ring_file_gpg_base64} ./.evergreen/publish.sh
@@ -717,14 +717,14 @@ pre:
           # patch build.
           REMOTE_SUFFIX="${revision}/${version_id}"
           REMOTE_SUFFIX_COPY="latest/${version_id}"
-        elif [ "${branch}" = "master" ]; then
+        elif [ "${branch_name}" = "master" ]; then
           # waterfall build.
           REMOTE_SUFFIX="${revision}"
           REMOTE_SUFFIX_COPY="latest"
         else
           # waterfall build, not on master branch.
           REMOTE_SUFFIX="${revision}"
-          REMOTE_SUFFIX_COPY="latest-${branch}"
+          REMOTE_SUFFIX_COPY="latest-${branch_name}"
         fi
 
         PROJECT_DIRECTORY="$(pwd)"
