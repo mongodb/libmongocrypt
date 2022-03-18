@@ -198,8 +198,6 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
       bson_t encrypted_field_config_bson;
-      bson_t encryption_information_bson;
-      bson_t schema_bson;
 
       /* Use FLE 2.0. */
       if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config, &encrypted_field_config_bson)) {
@@ -207,30 +205,10 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
 
       bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
-      if (!BSON_APPEND_DOCUMENT_BEGIN (&mongocryptd_cmd_bson, "encryptionInformation", &encryption_information_bson)) {
-         bson_destroy (&mongocryptd_cmd_bson);
-         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to begin appending encryption_information_bson to mongocryptd_cmd_bson");
+      if (!_fle2_append_encryptionInformation (&mongocryptd_cmd_bson, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
+         return _mongocrypt_ctx_fail (ctx);
       }
-      if (!BSON_APPEND_INT32 (&encryption_information_bson, "type", 1)) {
-         bson_destroy (&mongocryptd_cmd_bson);
-         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to append type to encryption_information_bson");
-      }
-      if (!BSON_APPEND_DOCUMENT_BEGIN (&encryption_information_bson, "schema", &schema_bson)) {
-         bson_destroy (&mongocryptd_cmd_bson);
-         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to begin appending schema_bson to encryption_information_bson");
-      }
-      if (!BSON_APPEND_DOCUMENT (&schema_bson, ectx->ns, &encrypted_field_config_bson)) {
-         bson_destroy (&mongocryptd_cmd_bson);
-         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to append encrypted_field_config_bson to schema_bson");
-      }
-      if (!bson_append_document_end (&encryption_information_bson, &schema_bson)) {
-         bson_destroy (&mongocryptd_cmd_bson);
-         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to end appending schema_bson to encryption_information_bson");
-      }
-      if (!bson_append_document_end (&mongocryptd_cmd_bson, &encryption_information_bson)) {
-         bson_destroy (&mongocryptd_cmd_bson);
-         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to end appending encryption_information_bson to mongocryptd_cmd_bson");
-      }
+
       _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd, &mongocryptd_cmd_bson);
    } else {
       /* Use FLE 1.0. */
