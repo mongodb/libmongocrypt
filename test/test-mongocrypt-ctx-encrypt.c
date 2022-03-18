@@ -1623,8 +1623,9 @@ static void _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t 
       cmd_to_mongocryptd = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
       ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON("{'find': 'coll', 'encryptionInformation': { 'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}}"), cmd_to_mongocryptd);
-      ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_BSON("{'find': 'coll', 'encryptionInformation': { 'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}, 'hasEncryptionPlaceholders': false}")), ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_BSON("{'result': {'find': 'coll', 'encryptionInformation': { 'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}}, 'hasEncryptionPlaceholders': false}")), ctx);
       mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
