@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Test mongocxx's Debian packaging scripts.
+# Test libmongocrypt's Debian packaging scripts.
 #
 # Supported/used environment variables:
 #   IS_PATCH    If "true", this is an Evergreen patch build.
