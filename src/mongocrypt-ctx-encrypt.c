@@ -181,6 +181,9 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
    bson_t cmd_bson, mongocryptd_cmd_bson, encrypted_field_config_bson;
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
+   BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
+
    if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert original_cmd to BSON");
    }
@@ -433,6 +436,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
    status = ctx->status;
 
    BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
+   BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_READY);
    
    if (ectx->explicit) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
