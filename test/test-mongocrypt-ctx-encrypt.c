@@ -1604,26 +1604,48 @@ _test_encrypt_caches_collinfo_without_jsonschema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-static void _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester) {
+static void
+_test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester)
+{
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
-   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")), crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                 crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")),
+              crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
 
-   /* Test encrypting a command on a collection present in the encrypted field config map. */
+   /* Test encrypting a command on a collection present in the encrypted field
+    * config map. */
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")), ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+              ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    {
       mongocrypt_binary_t *cmd_to_mongocryptd;
 
       cmd_to_mongocryptd = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
-      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON("{'find': 'coll', 'encryptionInformation': { 'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}}"), cmd_to_mongocryptd);
-      ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_BSON("{'result': {'find': 'coll', 'encryptionInformation': { 'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}}, 'hasEncryptionPlaceholders': false}")), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_BSON ("{'find': 'coll', 'encryptionInformation': { 'type': 1, "
+                    "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
+         cmd_to_mongocryptd);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_BSON ("{'result': {'find': 'coll', 'encryptionInformation': { "
+                       "'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}}, "
+                       "'hasEncryptionPlaceholders': false}")),
+         ctx);
       mongocrypt_binary_destroy (cmd_to_mongocryptd);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
@@ -1633,7 +1655,10 @@ static void _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t 
 
       cmd_to_mongod = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
-      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON("{'find': 'coll', 'encryptionInformation': { 'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}}"), cmd_to_mongod);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_BSON ("{'find': 'coll', 'encryptionInformation': { 'type': 1, "
+                    "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
+         cmd_to_mongod);
       mongocrypt_binary_destroy (cmd_to_mongod);
    }
 
@@ -1641,26 +1666,40 @@ static void _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t 
    mongocrypt_destroy (crypt);
 }
 
-/* Test encrypting a bypassed command on a collection present in the encrypted field config map. Expect no encryptionInformation. */
-static void _test_encrypt_with_encrypted_field_config_map_bypassed (_mongocrypt_tester_t *tester) {
+/* Test encrypting a bypassed command on a collection present in the encrypted
+ * field config map. Expect no encryptionInformation. */
+static void
+_test_encrypt_with_encrypted_field_config_map_bypassed (
+   _mongocrypt_tester_t *tester)
+{
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
-   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")), crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                 crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")),
+              crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
 
    ctx = mongocrypt_ctx_new (crypt);
    /* 'drop' is bypassed. Expect that no 'encryptionInformation' is appended. */
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "db", -1, TEST_BSON ("{'drop': 'coll'}")), ctx);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "db", -1, TEST_BSON ("{'drop': 'coll'}")),
+              ctx);
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
       mongocrypt_binary_t *cmd_to_mongod;
 
       cmd_to_mongod = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
-      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON("{'drop': 'coll'}"), cmd_to_mongod);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'drop': 'coll'}"),
+                                           cmd_to_mongod);
       mongocrypt_binary_destroy (cmd_to_mongod);
    }
 

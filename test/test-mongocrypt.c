@@ -641,53 +641,91 @@ _test_setopt_encrypted_field_config_map (_mongocrypt_tester_t *tester)
 
    /* Test success. */
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
-   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")), crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")),
+      crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    mongocrypt_destroy (crypt);
 
    /* Test double setting. */
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")), crypt);
-   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")), crypt, "already set encrypted_field_config_map");
+   ASSERT_OK (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")),
+      crypt);
+   ASSERT_FAILS (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")),
+      crypt,
+      "already set encrypted_field_config_map");
    mongocrypt_destroy (crypt);
 
    /* Test NULL/empty input */
    crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, NULL), crypt, "passed null encrypted_field_config_map");
+   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, NULL),
+                 crypt,
+                 "passed null encrypted_field_config_map");
    mongocrypt_destroy (crypt);
 
    crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (0)), crypt, "passed null encrypted_field_config_map");
+   ASSERT_FAILS (
+      mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (0)),
+      crypt,
+      "passed null encrypted_field_config_map");
    mongocrypt_destroy (crypt);
 
    /* Test malformed BSON */
    crypt = mongocrypt_new ();
-   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (10)), crypt, "invalid bson");
+   ASSERT_FAILS (
+      mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (10)),
+      crypt,
+      "invalid bson");
    mongocrypt_destroy (crypt);
 
-   /* Test that it is OK to set both the encrypted field config map and schema map if there are no intersecting collections. */
+   /* Test that it is OK to set both the encrypted field config map and schema
+    * map if there are no intersecting collections. */
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_schema_map (crypt, TEST_BSON (
-      "{'db.coll1': {}, 'db.coll2': {}}"
-   )), crypt);
-   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BSON (
-      "{'db.coll3': {}, 'db.coll3': {}}"
-   )), crypt);
-   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
+   ASSERT_OK (mongocrypt_setopt_schema_map (
+                 crypt, TEST_BSON ("{'db.coll1': {}, 'db.coll2': {}}")),
+              crypt);
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                 crypt, TEST_BSON ("{'db.coll3': {}, 'db.coll3': {}}")),
+              crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    mongocrypt_destroy (crypt);
 
-   /* Test that it is an error to set both the encrypted field config map and schema map referencing the same collection. */
+   /* Test that it is an error to set both the encrypted field config map and
+    * schema map referencing the same collection. */
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_schema_map (crypt, TEST_BSON (
-      "{'db.coll1': {}, 'db.coll2': {}}"
-   )), crypt);
-   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BSON (
-      "{'db.coll1': {}, 'db.coll3': {}}"
-   )), crypt);
-   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")), crypt);
-   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "db.coll1 is present in both schema_map and encrypted_field_config_map");
+   ASSERT_OK (mongocrypt_setopt_schema_map (
+                 crypt, TEST_BSON ("{'db.coll1': {}, 'db.coll2': {}}")),
+              crypt);
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                 crypt, TEST_BSON ("{'db.coll1': {}, 'db.coll3': {}}")),
+              crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
+   ASSERT_FAILS (
+      mongocrypt_init (crypt),
+      crypt,
+      "db.coll1 is present in both schema_map and encrypted_field_config_map");
    mongocrypt_destroy (crypt);
 }
 

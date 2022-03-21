@@ -21,11 +21,17 @@
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-traverse-util-private.h"
 
-static bool _fle2_append_encryptionInformation (bson_t *dst, const char* ns, bson_t* encryptedFieldConfig, mongocrypt_status_t *status) {
+static bool
+_fle2_append_encryptionInformation (bson_t *dst,
+                                    const char *ns,
+                                    bson_t *encryptedFieldConfig,
+                                    mongocrypt_status_t *status)
+{
    bson_t encryption_information_bson;
    bson_t schema_bson;
 
-   if (!BSON_APPEND_DOCUMENT_BEGIN (dst, "encryptionInformation", &encryption_information_bson)) {
+   if (!BSON_APPEND_DOCUMENT_BEGIN (
+          dst, "encryptionInformation", &encryption_information_bson)) {
       CLIENT_ERR ("unable to begin appending 'encryptionInformation'");
       return false;
    }
@@ -33,16 +39,20 @@ static bool _fle2_append_encryptionInformation (bson_t *dst, const char* ns, bso
       CLIENT_ERR ("unable to append type to 'encryptionInformation'");
       return false;
    }
-   if (!BSON_APPEND_DOCUMENT_BEGIN (&encryption_information_bson, "schema", &schema_bson)) {
-      CLIENT_ERR ("unable to begin appending 'schema' to 'encryptionInformation'");
+   if (!BSON_APPEND_DOCUMENT_BEGIN (
+          &encryption_information_bson, "schema", &schema_bson)) {
+      CLIENT_ERR (
+         "unable to begin appending 'schema' to 'encryptionInformation'");
       return false;
    }
    if (!BSON_APPEND_DOCUMENT (&schema_bson, ns, encryptedFieldConfig)) {
-      CLIENT_ERR ("unable to append 'encryptedFieldConfig' to 'encryptionInformation'.'schema'");
+      CLIENT_ERR ("unable to append 'encryptedFieldConfig' to "
+                  "'encryptionInformation'.'schema'");
       return false;
    }
    if (!bson_append_document_end (&encryption_information_bson, &schema_bson)) {
-      CLIENT_ERR ("unable to end appending 'schema' to 'encryptionInformation'");
+      CLIENT_ERR (
+         "unable to end appending 'schema' to 'encryptionInformation'");
       return false;
    }
    if (!bson_append_document_end (dst, &encryption_information_bson)) {
@@ -176,7 +186,8 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
 }
 
 static bool
-_fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
+_fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
+{
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t cmd_bson, mongocryptd_cmd_bson, encrypted_field_config_bson;
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
@@ -185,19 +196,26 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
    BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
 
    if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert original_cmd to BSON");
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "unable to convert original_cmd to BSON");
    }
 
-   if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config, &encrypted_field_config_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert encrypted_field_config to BSON");
+   if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config,
+                                    &encrypted_field_config_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "unable to convert encrypted_field_config to BSON");
    }
 
    bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
-   if (!_fle2_append_encryptionInformation (&mongocryptd_cmd_bson, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
+   if (!_fle2_append_encryptionInformation (&mongocryptd_cmd_bson,
+                                            ectx->ns,
+                                            &encrypted_field_config_bson,
+                                            ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd, &mongocryptd_cmd_bson);
+   _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd,
+                                       &mongocryptd_cmd_bson);
 
    out->data = ectx->mongocryptd_cmd.data;
    out->len = ectx->mongocryptd_cmd.len;
@@ -211,7 +229,8 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t cmd_bson, schema_bson, mongocryptd_cmd_bson;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config) && _mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
+   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config) &&
+       _mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
       return _fle2_mongo_op_markings (ctx, out);
    } else if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
       /* first, get the original command. */
@@ -412,9 +431,11 @@ _replace_marking_with_ciphertext (void *ctx,
    return ret;
 }
 
-/* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is associated with the command. */
+/* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
+ * associated with the command. */
 static bool
-_fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
+_fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
+{
    bson_t converted;
    _mongocrypt_ctx_encrypt_t *ectx;
    mongocrypt_status_t *status;
@@ -425,32 +446,41 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
    BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_READY);
-   
+
    if (ectx->explicit) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
    }
 
-   if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config, &encrypted_field_config_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson in encrypted_field_config_bson");
+   if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config,
+                                    &encrypted_field_config_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "malformed bson in encrypted_field_config_bson");
    }
 
    /* If nothing_to_do is true, then the marked_cmd contained no markings. */
    if (ctx->nothing_to_do) {
       bson_t original_cmd_bson;
 
-      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &original_cmd_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson in original_cmd");
+      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd,
+                                       &original_cmd_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx,
+                                            "malformed bson in original_cmd");
       }
 
       /* Append 'encryptionInformation' to the original command. */
       bson_init (&converted);
       bson_copy_to (&original_cmd_bson, &converted);
-      if (!_fle2_append_encryptionInformation (&converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
+      if (!_fle2_append_encryptionInformation (
+             &converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
          bson_destroy (&converted);
          return _mongocrypt_ctx_fail (ctx);
       }
    } else {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "FLE 2 markings not supported yet. See: MONGOCRYPT-397, MONGOCRYPT-398, and MONGOCRYPT-399");
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx,
+         "FLE 2 markings not supported yet. See: MONGOCRYPT-397, "
+         "MONGOCRYPT-398, and MONGOCRYPT-399");
    }
 
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
@@ -597,8 +627,10 @@ _try_schema_from_schema_map (mongocrypt_ctx_t *ctx)
    return true;
 }
 
-/* Check if the local encrypted field config map has an entry for this collection.
- * If an encrypted field config is found, the context transitions to MONGOCRYPT_CTX_NEED_MONGO_MARKINGS. */
+/* Check if the local encrypted field config map has an entry for this
+ * collection.
+ * If an encrypted field config is found, the context transitions to
+ * MONGOCRYPT_CTX_NEED_MONGO_MARKINGS. */
 static bool
 _fle2_try_encrypted_field_config_from_map (mongocrypt_ctx_t *ctx)
 {
@@ -615,13 +647,19 @@ _fle2_try_encrypted_field_config_from_map (mongocrypt_ctx_t *ctx)
       return true;
    }
 
-   if (!_mongocrypt_buffer_to_bson (&crypt->opts.encrypted_field_config_map, &encrypted_field_config_map)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert encrypted_field_config_map to BSON");
+   if (!_mongocrypt_buffer_to_bson (&crypt->opts.encrypted_field_config_map,
+                                    &encrypted_field_config_map)) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "unable to convert encrypted_field_config_map to BSON");
    }
 
    if (bson_iter_init_find (&iter, &encrypted_field_config_map, ectx->ns)) {
-      if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->encrypted_field_config, &iter)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "unable to copy encrypted_field_config from encrypted_field_config_map");
+      if (!_mongocrypt_buffer_copy_from_document_iter (
+             &ectx->encrypted_field_config, &iter)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx,
+            "unable to copy encrypted_field_config from "
+            "encrypted_field_config_map");
       }
       ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    }
@@ -1046,7 +1084,8 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       bson_free (cmd_val);
    }
 
-   /* Check if there is an encrypted field config in encrypted_field_config_map */
+   /* Check if there is an encrypted field config in encrypted_field_config_map
+    */
    if (!_fle2_try_encrypted_field_config_from_map (ctx)) {
       return false;
    }
