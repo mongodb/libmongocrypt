@@ -598,7 +598,7 @@ _try_schema_from_schema_map (mongocrypt_ctx_t *ctx)
 }
 
 static bool
-_try_schema_from_encrypted_field_config_map (mongocrypt_ctx_t *ctx)
+_fle2_try_schema_from_encrypted_field_config_map (mongocrypt_ctx_t *ctx)
 {
    mongocrypt_t *crypt;
    _mongocrypt_ctx_encrypt_t *ectx;
@@ -1045,7 +1045,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    /* Check if there is an encrypted field config in encrypted_field_config_map */
-   if (!_try_schema_from_encrypted_field_config_map (ctx)) {
+   if (!_fle2_try_schema_from_encrypted_field_config_map (ctx)) {
       return false;
    }
    if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
