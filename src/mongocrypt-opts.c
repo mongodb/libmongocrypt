@@ -135,10 +135,10 @@ _mongocrypt_opts_kms_providers_validate (
    return true;
 }
 
-/* _shares_bson_fields checks haystack contains any top-level fields from
- * needle. Returns false on error and sets @status. Returns true if no error
- * occurred. Sets @found to a string if haystack contains any top-level fields
- * from needle.
+/* _shares_bson_fields checks if haystack contains any top-level fields from
+ * @needle. Returns false on error and sets @status. Returns true if no error
+ * occurred. Sets @found to the first string from @needle found in @haystack.
+ * If no strings are found, @found is set to NULL.
  */
 static bool
 _shares_bson_fields (bson_t *haystack,
