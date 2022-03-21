@@ -438,11 +438,9 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    bson_t converted;
    _mongocrypt_ctx_encrypt_t *ectx;
-   mongocrypt_status_t *status;
    bson_t encrypted_field_config_bson;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   status = ctx->status;
 
    BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_READY);
