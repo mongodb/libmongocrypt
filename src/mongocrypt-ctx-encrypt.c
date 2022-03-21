@@ -597,8 +597,10 @@ _try_schema_from_schema_map (mongocrypt_ctx_t *ctx)
    return true;
 }
 
+/* Check if the local encrypted field config map has an entry for this collection.
+ * If an encrypted field config is found, the context transitions to MONGOCRYPT_CTX_NEED_MONGO_MARKINGS. */
 static bool
-_fle2_try_schema_from_encrypted_field_config_map (mongocrypt_ctx_t *ctx)
+_fle2_try_encrypted_field_config_from_map (mongocrypt_ctx_t *ctx)
 {
    mongocrypt_t *crypt;
    _mongocrypt_ctx_encrypt_t *ectx;
@@ -1045,7 +1047,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    /* Check if there is an encrypted field config in encrypted_field_config_map */
-   if (!_fle2_try_schema_from_encrypted_field_config_map (ctx)) {
+   if (!_fle2_try_encrypted_field_config_from_map (ctx)) {
       return false;
    }
    if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
