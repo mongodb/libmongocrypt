@@ -881,7 +881,10 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_traverse_util (&tester);
    _mongocrypt_tester_install (
       &tester, "_test_setopt_schema", _test_setopt_schema, CRYPTO_REQUIRED);
-   _mongocrypt_tester_install (&tester, "_test_setopt_encrypted_field_config_map", _test_setopt_encrypted_field_config_map, CRYPTO_OPTIONAL);
+   _mongocrypt_tester_install (&tester,
+                               "_test_setopt_encrypted_field_config_map",
+                               _test_setopt_encrypted_field_config_map,
+                               CRYPTO_REQUIRED);
    _mongocrypt_tester_install (&tester,
                                "_test_setopt_invalid_kms_providers",
                                _test_setopt_invalid_kms_providers,
