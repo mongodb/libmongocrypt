@@ -10,6 +10,9 @@
                abort ()),                             \
               0))
 
+#define test_predicate(Bool, Left, Pred, Right) \
+   MSTR_ASSERT (Bool, mstrv_lit (Left), Pred, mstrv_lit (Right))
+
 int
 main ()
 {
@@ -74,10 +77,50 @@ main ()
    CHECK (mstrv_view_cstr ("foo\000bar").len == 3);
    CHECK (mstrv_lit ("foo\000bar").len == 7);
 
+   str = mstr_new (0).mstr;
+   MSTR_ITER_SPLIT (part, mstrv_lit ("foo bar baz"), mstrv_lit (" "))
+   {
+      mstr_inplace_append (&str, part);
+      if (mstr_eq (part, mstrv_lit ("bar"))) {
+         break;
+      }
+   }
+   MSTR_ASSERT_EQ (str.view, mstrv_lit ("foobar"));
+   mstr_free (str);
+
    // rfind at the beginning of the string
    CHECK (mstr_rfind (mstrv_lit ("foobar"), mstrv_lit ("foo")) == 0);
 
    str = mstr_splice (mstrv_lit ("foobar"), 1, 2, MSTRV_NULL);
    MSTR_ASSERT_EQ (str.view, mstrv_lit ("fbar"));
    mstr_free (str);
+
+   test_predicate (true, "foo", contains, "o");
+   test_predicate (true, "foo", contains, "oo");
+   test_predicate (true, "foo", contains, "foo");
+   test_predicate (true, "foo", contains, "fo");
+   test_predicate (true, "foo", contains, "f");
+   test_predicate (true, "foo", contains, "");
+   test_predicate (false, "foo", contains, "fooo");
+   test_predicate (false, "foo", contains, "ofo");
+   test_predicate (false, "foo", contains, "of");
+   test_predicate (false, "foo", contains, "bar");
+
+   test_predicate (true, "foo", starts_with, "f");
+   test_predicate (true, "foo", starts_with, "fo");
+   test_predicate (true, "foo", starts_with, "foo");
+   test_predicate (true, "foo", starts_with, "");
+   test_predicate (false, "foo", starts_with, "o");
+   test_predicate (false, "foo", starts_with, "oo");
+   test_predicate (false, "foo", starts_with, "oof");
+   test_predicate (false, "foo", starts_with, "bar");
+
+   test_predicate (true, "foo", ends_with, "o");
+   test_predicate (true, "foo", ends_with, "oo");
+   test_predicate (true, "foo", ends_with, "foo");
+   test_predicate (true, "foo", ends_with, "");
+   test_predicate (false, "foo", ends_with, "f");
+   test_predicate (false, "foo", ends_with, "fo");
+   test_predicate (false, "foo", ends_with, "oof");
+   test_predicate (false, "foo", ends_with, "bar");
 }

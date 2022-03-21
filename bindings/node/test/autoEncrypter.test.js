@@ -139,6 +139,56 @@ describe('AutoEncrypter', function () {
       mc.decrypt(input, (err, decrypted) => {
         if (err) return done(err);
         expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+        expect(decrypted.filter).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+        done();
+      });
+    });
+
+    it('should decrypt mock data and mark decrypted items if enabled for testing', function (done) {
+      const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        }
+      });
+      mc[Symbol.for('@@mdb.decorateDecryptionResult')] = true;
+      mc.decrypt(input, (err, decrypted) => {
+        if (err) return done(err);
+        expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+        expect(decrypted.filter[Symbol.for('@@mdb.decryptedKeys')]).to.eql(['ssn']);
+
+        // The same, but with an object containing different data types as the input
+        mc.decrypt({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] }, (err, decrypted) => {
+          if (err) return done(err);
+          expect(decrypted).to.eql({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] });
+          expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+          done();
+        });
+      });
+    });
+
+    it('should decrypt mock data with per-context KMS credentials', function (done) {
+      const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: {}
+        },
+        async onKmsProviderRefresh() {
+          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
+        }
+      });
+      mc.decrypt(input, (err, decrypted) => {
+        if (err) return done(err);
+        expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
         done();
       });
     });
@@ -151,6 +201,41 @@ describe('AutoEncrypter', function () {
         kmsProviders: {
           aws: { accessKeyId: 'example', secretAccessKey: 'example' },
           local: { key: Buffer.alloc(96) }
+        }
+      });
+
+      mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
+        if (err) return done(err);
+        const expected = EJSON.parse(
+          JSON.stringify({
+            find: 'test',
+            filter: {
+              ssn: {
+                $binary: {
+                  base64:
+                    'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=',
+                  subType: '6'
+                }
+              }
+            }
+          })
+        );
+
+        expect(encrypted).to.containSubset(expected);
+        done();
+      });
+    });
+
+    it('should encrypt mock data with per-context KMS credentials', function (done) {
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: {}
+        },
+        async onKmsProviderRefresh() {
+          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
         }
       });
 

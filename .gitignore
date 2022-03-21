@@ -6,6 +6,7 @@ test/schema.json
 # Default build directories
 cmake-build
 cmake-build-nocrypto
+_build/
 
 # CMake generated files
 *.sln

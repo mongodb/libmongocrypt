@@ -119,19 +119,24 @@ We decided against the "have libmongocrypt do everything" approach because it co
 ### Releasing ###
 
 #### Version number scheme ####
-Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releases and 1.[0-9].[0-9]-rc[0-9] for release candidates.  This ensures that Linux distribution packages built from each commit are published to the correct location.
+Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releases and 1.[0-9].[0-9]-(alpha|beta|rc)[0-9] for pre-releases.  This ensures that Linux distribution packages built from each commit are published to the correct location.
 
 #### Steps to release ####
 Do the following when releasing:
 - Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
-- If releasing a new minor version (x.y.z where 'y' changes from the prior release), then update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
+- If this is a new minor release (e.g. `x.y.0`):
+   - Create a branch named `rx.y`.
+   - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project to set `Branch Name` to `rx.y`.
+   - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"`.
 - Commit, create a new git tag, like `1.0.0-rc123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
 - Commit and push.
+- Ensure the version on Evergreen with the tagged commit is scheduled. The upload-all task must run to complete the release. ([Example](https://evergreen.mongodb.com/task/libmongocrypt_publish_snapshot_upload_all_77eec777c14171956c69b60aaaa4f85931c957ba_22_03_02_13_51_38)).
 - Create the release from the GitHub releases page from the new tag.
-- Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb
-- File a DOCSP ticket to update the dependent version of bindings in the [CSFLE guide](https://github.com/mongodb-university/csfle-guides).
+- Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/135)).
+- File a DOCSP ticket to update the dependent version of bindings in the [CSFLE guide](https://github.com/mongodb-university/csfle-guides). ([Example](https://jira.mongodb.org/browse/DOCSP-19476))
+- Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 
 ## Installing libmongocrypt From Distribution Packages ##
 Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.

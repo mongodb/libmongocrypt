@@ -47,7 +47,9 @@ cd mongo-c-driver
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
 if [ "$OS" == "Windows_NT" ]; then
     CMAKE=/cygdrive/c/cmake/bin/cmake
-    ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
+    if [ "$WINDOWS_32BIT" != "ON" ]; then
+        ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
+    fi
 else
     chmod u+x ./.evergreen/find-cmake.sh
     # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore

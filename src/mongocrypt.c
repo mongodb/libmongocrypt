@@ -15,6 +15,8 @@
  */
 
 #include "mlib/thread.h"
+#include "mlib/path.h"
+#include "mlib/error.h"
 
 #include <kms_message/kms_message.h>
 #include <bson/bson.h>
@@ -28,6 +30,7 @@
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-status-private.h"
+#include "mongocrypt-util-private.h"
 
 /* Assert size for interop with wrapper purposes */
 BSON_STATIC_ASSERT (sizeof (mongocrypt_log_level_t) == 4);
@@ -126,6 +129,7 @@ mongocrypt_new (void)
    crypt->ctx_counter = 1;
    crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new ();
    crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new ();
+   crypt->csfle_lib = MCR_DLL_NULL;
 
    static mlib_once_flag init_flag = MLIB_ONCE_INITIALIZER;
 
@@ -169,6 +173,8 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     int32_t aws_secret_access_key_len)
 {
    mongocrypt_status_t *status;
+   _mongocrypt_opts_kms_providers_t *const kms_providers =
+      &crypt->opts.kms_providers;
 
    if (!crypt) {
       return false;
@@ -180,7 +186,8 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
       return false;
    }
 
-   if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
+   if (0 !=
+         (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
       CLIENT_ERR ("aws kms provider already set");
       return false;
    }
@@ -188,7 +195,7 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
    if (!_mongocrypt_validate_and_copy_string (
           aws_access_key_id,
           aws_access_key_id_len,
-          &crypt->opts.kms_provider_aws.access_key_id)) {
+          &kms_providers->aws.access_key_id)) {
       CLIENT_ERR ("invalid aws access key id");
       return false;
    }
@@ -196,7 +203,7 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
    if (!_mongocrypt_validate_and_copy_string (
           aws_secret_access_key,
           aws_secret_access_key_len,
-          &crypt->opts.kms_provider_aws.secret_access_key)) {
+          &kms_providers->aws.secret_access_key)) {
       CLIENT_ERR ("invalid aws secret access key");
       return false;
    }
@@ -207,15 +214,15 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                        "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
                        BSON_FUNC,
                        "aws_access_key_id",
-                       crypt->opts.kms_provider_aws.access_key_id,
+                       kms_providers->aws.access_key_id,
                        "aws_access_key_id_len",
                        aws_access_key_id_len,
                        "aws_secret_access_key",
-                       crypt->opts.kms_provider_aws.secret_access_key,
+                       kms_providers->aws.secret_access_key,
                        "aws_secret_access_key_len",
                        aws_secret_access_key_len);
    }
-   crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+   kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
    return true;
 }
 
@@ -312,6 +319,8 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
                                       mongocrypt_binary_t *key)
 {
    mongocrypt_status_t *status;
+   _mongocrypt_opts_kms_providers_t *const kms_providers =
+      &crypt->opts.kms_providers;
 
    if (!crypt) {
       return false;
@@ -323,7 +332,8 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
       return false;
    }
 
-   if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL)) {
+   if (0 !=
+         (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL)) {
       CLIENT_ERR ("local kms provider already set");
       return false;
    }
@@ -351,12 +361,134 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
       bson_free (key_val);
    }
 
-   _mongocrypt_buffer_copy_from_binary (&crypt->opts.kms_provider_local.key,
+   _mongocrypt_buffer_copy_from_binary (&kms_providers->local.key,
                                         key);
-   crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+   kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
    return true;
 }
 
+typedef struct {
+   /// Whether the load is successful
+   bool okay;
+   /// The DLL handle to the opened library.
+   mcr_dll lib;
+   /// A vtable for the functions in the DLL
+   _mcr_csfle_v1_vtable vtable;
+} _loaded_csfle;
+
+/**
+ * @brief Attempt to open the CSFLE dynamic library and initialize a vtable for
+ * it.
+ */
+static _loaded_csfle
+_try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
+{
+   // Try to open the dynamic lib
+   mcr_dll lib = mcr_dll_open (filepath);
+   // Check for errors, which are represented by strings
+   if (lib.error_string.data) {
+      // Error opening candidate
+      _mongocrypt_log (
+         log,
+         MONGOCRYPT_LOG_LEVEL_WARNING,
+         "Error while opening candidate for CSFLE dynamic library [%s]: %s",
+         filepath,
+         lib.error_string.data);
+      // Free resources, which will include the error string
+      mcr_dll_close (lib);
+      // Bad:
+      return (_loaded_csfle){.okay = false};
+   }
+
+   // Successfully opened DLL
+   _mongocrypt_log (log,
+                    MONGOCRYPT_LOG_LEVEL_TRACE,
+                    "Loading CSFLE dynamic library [%s]",
+                    filepath);
+
+   // Construct the library vtable
+   bool vtable_okay = true;
+   _mcr_csfle_v1_vtable vtable;
+#define X_FUNC(Name, RetType, ...)                                             \
+   {                                                                           \
+      /* Symbol names are qualified by the lib name and version: */            \
+      const char *symname = "mongo_csfle_v1_" #Name;                           \
+      vtable.Name = mcr_dll_sym (lib, symname);                                \
+      if (vtable.Name == NULL) {                                               \
+         /* The requested symbol is not present */                             \
+         _mongocrypt_log (                                                     \
+            log,                                                               \
+            MONGOCRYPT_LOG_LEVEL_ERROR,                                        \
+            "Missing required symbol '%s' from CSFLE dynamic library [%s]",    \
+            symname,                                                           \
+            filepath);                                                         \
+         /* Mark the vtable as broken, but keep trying to load more symbols to \
+          * produce error messages for all missing symbols */                  \
+         vtable_okay = false;                                                  \
+      }                                                                        \
+   }
+   MONGOC_CSFLE_FUNCTIONS_X
+#undef X_FUNC
+
+   if (!vtable_okay) {
+      mcr_dll_close (lib);
+      _mongocrypt_log (
+         log,
+         MONGOCRYPT_LOG_LEVEL_ERROR,
+         "One or more required symbols are missing from CSFLE dynamic library "
+         "[%s], so this dynamic library will not be used.",
+         filepath);
+      return (_loaded_csfle){.okay = false};
+   }
+
+   // Success!
+   _mongocrypt_log (log,
+                    MONGOCRYPT_LOG_LEVEL_INFO,
+                    "Opened CSFLE dynamic library [%s]",
+                    filepath);
+   return (_loaded_csfle){.okay = true, .lib = lib, .vtable = vtable};
+}
+
+/**
+ * @brief If the leading path element in `filepath` is $ORIGIN, replace that
+ * with the directory containing the current executing module.
+ *
+ * @return true If no error occurred and the path is valid
+ * @return false If there was an error and `filepath` cannot be processed
+ */
+bool
+_try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
+{
+   const mstr_view dollar_origin = mstrv_lit ("$ORIGIN");
+   if (!mstr_starts_with (filepath->view, dollar_origin)) {
+      // Nothing to replace
+      return true;
+   }
+   // Check that the next char is a path separator or end-of-string:
+   char peek = filepath->data[dollar_origin.len];
+   if (peek != 0 && !mpath_is_sep (peek, MPATH_NATIVE)) {
+      // Not a single path element
+      return true;
+   }
+   // Replace $ORIGIN with the directory of the current module
+   const current_module_result self_exe_r = current_module_path ();
+   if (self_exe_r.error) {
+      // Failed to get the current module to load replace $ORIGIN
+      mstr error = merror_system_error_string (self_exe_r.error);
+      _mongocrypt_log (log,
+                       MONGOCRYPT_LOG_LEVEL_WARNING,
+                       "Error while loading the executable module path for "
+                       "substitution of $ORIGIN in CSFLE search path [%s]: %s",
+                       filepath->data,
+                       error.data);
+      mstr_free (error);
+      return false;
+   }
+   const mstr_view self_dir = mpath_parent (self_exe_r.path.view, MPATH_NATIVE);
+   mstr_inplace_splice (filepath, 0, dollar_origin.len, self_dir);
+   mstr_free (self_exe_r.path);
+   return true;
+}
 
 bool
 mongocrypt_init (mongocrypt_t *crypt)
@@ -396,9 +528,75 @@ mongocrypt_init (mongocrypt_t *crypt)
       /* set default hooks. */
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
       BSON_ASSERT (crypt->crypto);
-
 #endif
    }
+
+   mcr_dll_close (crypt->csfle_lib);
+
+   mstr csfle_cand_filepath = MSTR_NULL;
+   if (crypt->opts.csfle_lib_override_path.data) {
+      // If an override path was specified, skip the library searching behavior
+      csfle_cand_filepath =
+         mstr_copy (crypt->opts.csfle_lib_override_path.view);
+      if (_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
+         // Succesfully substituted $ORIGIN
+         // Do not allow a plain filename to go through, as that will cause the
+         // DLL load to search the system.
+         mstr_assign (&csfle_cand_filepath,
+                      mpath_absolute (csfle_cand_filepath.view, MPATH_NATIVE));
+         _loaded_csfle candidate =
+            _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
+         if (candidate.okay) {
+            // Successfully loaded
+            crypt->csfle_vtable = candidate.vtable;
+            crypt->csfle_lib = candidate.lib;
+         }
+      }
+   } else {
+      // No override path was specified, so try to find it on the provided
+      // search paths.
+      for (int i = 0; i < crypt->opts.n_cselib_search_paths; ++i) {
+         mstr_view cand_dir = crypt->opts.cselib_search_paths[i].view;
+         mstr_view csfle_filename = mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX);
+         if (mstr_eq (cand_dir, mstrv_lit ("$SYSTEM"))) {
+            // Caller wants us to search for the library on the system's default
+            // library paths. Pass only the library's filename to cause dll_open
+            // to search on the library paths.
+            mstr_assign (&csfle_cand_filepath, mstr_copy (csfle_filename));
+         } else {
+            // Compose the candidate filepath:
+            mstr_assign (&csfle_cand_filepath,
+                         mpath_join (cand_dir, csfle_filename, MPATH_NATIVE));
+            if (!_try_replace_dollar_origin (&csfle_cand_filepath,
+                                             &crypt->log)) {
+               // Error while substituting $ORIGIN
+               continue;
+            }
+         }
+         // Try to load the file:
+         _loaded_csfle candidate =
+            _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
+         if (candidate.okay) {
+            // We got one:
+            crypt->csfle_vtable = candidate.vtable;
+            crypt->csfle_lib = candidate.lib;
+            // Stop searching:
+            break;
+         }
+      }
+   }
+   mstr_free (csfle_cand_filepath);
+
+   // If a CSFLE override path was specified, but we did not succeed in loading
+   // CSFLE, that is a hard-error.
+   if (crypt->opts.csfle_lib_override_path.data &&
+       !mcr_dll_is_open (crypt->csfle_lib)) {
+      CLIENT_ERR ("A CSFLE override path was specified [%s], but we failed to "
+                  "open a dynamic library at that location",
+                  crypt->opts.csfle_lib_override_path.data);
+      return false;
+   }
+
    return true;
 }
 
@@ -440,7 +638,43 @@ mongocrypt_destroy (mongocrypt_t *crypt)
    bson_free (crypt->crypto);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_azure);
    _mongocrypt_cache_oauth_destroy (crypt->cache_oauth_gcp);
+
+#ifndef __linux__
+   mcr_dll_close (crypt->csfle_lib);
+#else
+   /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in the
+   /// way ld-linux and GCC interact causes static destructors to not run during
+   /// dlclose(). Still, free the error string that may be non-null:
+   mstr_free (crypt->csfle_lib.error_string);
+#endif
+
    bson_free (crypt);
+}
+
+
+const char *
+mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len)
+{
+   if (!mcr_dll_is_open (crypt->csfle_lib)) {
+      if (len) {
+         *len = 0;
+      }
+      return NULL;
+   }
+   const char *version = crypt->csfle_vtable.get_version_str ();
+   if (len) {
+      *len = (uint32_t) (strlen (version));
+   }
+   return version;
+}
+
+uint64_t
+mongocrypt_csfle_version (const mongocrypt_t *crypt)
+{
+   if (!mcr_dll_is_open (crypt->csfle_lib)) {
+      return 0;
+   }
+   return crypt->csfle_vtable.get_version ();
 }
 
 
@@ -573,23 +807,36 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
 
 bool
 mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
-                                 mongocrypt_binary_t *kms_providers)
+                                 mongocrypt_binary_t *kms_providers_definition)
 {
-   mongocrypt_status_t *status;
-   bson_t as_bson;
-   bson_iter_t iter;
-
+   mongocrypt_status_t *const status = crypt->status;
    if (!crypt) {
       return false;
    }
-   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
       return false;
    }
 
-   if (!_mongocrypt_binary_to_bson (kms_providers, &as_bson) ||
+   return _mongocrypt_parse_kms_providers (
+      kms_providers_definition,
+      &crypt->opts.kms_providers,
+      crypt->status,
+      &crypt->log);
+}
+
+bool
+_mongocrypt_parse_kms_providers (
+   mongocrypt_binary_t *kms_providers_definition,
+   _mongocrypt_opts_kms_providers_t *kms_providers,
+   mongocrypt_status_t *status,
+   _mongocrypt_log_t *log)
+{
+   bson_t as_bson;
+   bson_iter_t iter;
+
+   if (!_mongocrypt_binary_to_bson (kms_providers_definition, &as_bson) ||
        !bson_iter_init (&iter, &as_bson)) {
       CLIENT_ERR ("invalid BSON");
       return false;
@@ -597,11 +844,25 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
 
    while (bson_iter_next (&iter)) {
       const char *field_name;
+      bson_t field_bson;
 
       field_name = bson_iter_key (&iter);
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         uint32_t len;
+         const uint8_t *data = NULL;
+         bson_iter_document (&iter, &len, &data);
+         bson_init_static (&field_bson, data, len);
+      } else {
+         CLIENT_ERR ("'%s' value must be a BSON document", field_name);
+         return false;
+      }
 
-      if (0 == strcmp (field_name, "azure")) {
-         if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_AZURE)) {
+      if (0 == strcmp (field_name, "azure") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+      } else if (0 == strcmp (field_name, "azure")) {
+         if (0 != (
+               kms_providers->configured_providers &
+               MONGOCRYPT_KMS_PROVIDER_AZURE)) {
             CLIENT_ERR ("azure KMS provider already set");
             return false;
          }
@@ -609,48 +870,52 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,
                 "azure.tenantId",
-                &crypt->opts.kms_provider_azure.tenant_id,
-                crypt->status)) {
+                &kms_providers->azure.tenant_id,
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,
                 "azure.clientId",
-                &crypt->opts.kms_provider_azure.client_id,
-                crypt->status)) {
+                &kms_providers->azure.client_id,
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,
                 "azure.clientSecret",
-                &crypt->opts.kms_provider_azure.client_secret,
-                crypt->status)) {
+                &kms_providers->azure.client_secret,
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_parse_optional_endpoint (
                 &as_bson,
                 "azure.identityPlatformEndpoint",
-                &crypt->opts.kms_provider_azure.identity_platform_endpoint,
+                &kms_providers->azure.identity_platform_endpoint,
                 NULL /* opts */,
-                crypt->status)) {
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_check_allowed_fields (&as_bson,
                                                 "azure",
-                                                crypt->status,
+                                                status,
                                                 "tenantId",
                                                 "clientId",
                                                 "clientSecret",
                                                 "identityPlatformEndpoint")) {
             return false;
          }
-         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+         kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+      } else if (0 == strcmp (field_name, "gcp") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_GCP;
       } else if (0 == strcmp (field_name, "gcp")) {
-         if (0 != (crypt->opts.kms_providers & MONGOCRYPT_KMS_PROVIDER_GCP)) {
+         if (0 != (
+               kms_providers->configured_providers &
+               MONGOCRYPT_KMS_PROVIDER_GCP)) {
             CLIENT_ERR ("gcp KMS provider already set");
             return false;
          }
@@ -658,89 +923,95 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,
                 "gcp.email",
-                &crypt->opts.kms_provider_gcp.email,
-                crypt->status)) {
+                &kms_providers->gcp.email,
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_parse_required_binary (
                 &as_bson,
                 "gcp.privateKey",
-                &crypt->opts.kms_provider_gcp.private_key,
-                crypt->status)) {
+                &kms_providers->gcp.private_key,
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_parse_optional_endpoint (
                 &as_bson,
                 "gcp.endpoint",
-                &crypt->opts.kms_provider_gcp.endpoint,
+                &kms_providers->gcp.endpoint,
                 NULL /* opts */,
-                crypt->status)) {
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_check_allowed_fields (&as_bson,
                                                 "gcp",
-                                                crypt->status,
+                                                status,
                                                 "email",
                                                 "privateKey",
                                                 "endpoint")) {
             return false;
          }
-         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
+         kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
+      } else if (0 == strcmp (field_name, "local") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
       } else if (0 == strcmp (field_name, "local")) {
          if (!_mongocrypt_parse_required_binary (
                 &as_bson,
                 "local.key",
-                &crypt->opts.kms_provider_local.key,
-                crypt->status)) {
+                &kms_providers->local.key,
+                status)) {
             return false;
          }
 
-         if (crypt->opts.kms_provider_local.key.len != MONGOCRYPT_KEY_LEN) {
+         if (kms_providers->local.key.len != MONGOCRYPT_KEY_LEN) {
             CLIENT_ERR ("local key must be %d bytes", MONGOCRYPT_KEY_LEN);
             return false;
          }
 
          if (!_mongocrypt_check_allowed_fields (
-                &as_bson, "local", crypt->status, "key")) {
+                &as_bson, "local", status, "key")) {
             return false;
          }
-         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+         kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
+      } else if (0 == strcmp (field_name, "aws") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AWS;
       } else if (0 == strcmp (field_name, "aws")) {
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,
                 "aws.accessKeyId",
-                &crypt->opts.kms_provider_aws.access_key_id,
-                crypt->status)) {
+                &kms_providers->aws.access_key_id,
+                status)) {
             return false;
          }
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson,
                 "aws.secretAccessKey",
-                &crypt->opts.kms_provider_aws.secret_access_key,
-                crypt->status)) {
+                &kms_providers->aws.secret_access_key,
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_parse_optional_utf8 (
                 &as_bson,
                 "aws.sessionToken",
-                &crypt->opts.kms_provider_aws.session_token,
-                crypt->status)) {
+                &kms_providers->aws.session_token,
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_check_allowed_fields (&as_bson,
                                                 "aws",
-                                                crypt->status,
+                                                status,
                                                 "accessKeyId",
                                                 "secretAccessKey",
                                                 "sessionToken")) {
             return false;
          }
-         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+         kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+      } else if (0 == strcmp (field_name, "kmip") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_KMIP;
       } else if (0 == strcmp (field_name, "kmip")) {
          _mongocrypt_endpoint_parse_opts_t opts = {0};
 
@@ -748,26 +1019,26 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
          if (!_mongocrypt_parse_required_endpoint (
                 &as_bson,
                 "kmip.endpoint",
-                &crypt->opts.kms_provider_kmip.endpoint,
+                &kms_providers->kmip.endpoint,
                 &opts,
-                crypt->status)) {
+                status)) {
             return false;
          }
 
          if (!_mongocrypt_check_allowed_fields (
-                &as_bson, "kmip", crypt->status, "endpoint")) {
+                &as_bson, "kmip", status, "endpoint")) {
             return false;
          }
-         crypt->opts.kms_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
+         kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
       } else {
          CLIENT_ERR ("unsupported KMS provider: %s", field_name);
          return false;
       }
    }
 
-   if (crypt->log.trace_enabled) {
+   if (log->trace_enabled) {
       char *as_str = bson_as_json (&as_bson, NULL);
-      _mongocrypt_log (&crypt->log,
+      _mongocrypt_log (log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
                        "%s (%s=\"%s\")",
                        BSON_FUNC,
@@ -777,4 +1048,58 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
    }
 
    return true;
+}
+
+
+void
+mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
+                                            const char *path)
+{
+   // Dup the path string for us to manage
+   mstr pathdup = mstr_copy_cstr (path);
+   // Increase array len
+   const int new_len = crypt->opts.n_cselib_search_paths + 1;
+   mstr *const new_array =
+      bson_realloc (crypt->opts.cselib_search_paths, sizeof (mstr) * new_len);
+   // Store the path
+   new_array[new_len - 1] = pathdup;
+   // Write back opts
+   crypt->opts.cselib_search_paths = new_array;
+   crypt->opts.n_cselib_search_paths = new_len;
+}
+
+
+void
+mongocrypt_setopt_use_need_kms_credentials_state (mongocrypt_t *crypt)
+{
+   crypt->opts.use_need_kms_credentials_state = true;
+}
+
+
+void
+mongocrypt_setopt_set_csfle_lib_path_override (mongocrypt_t *crypt,
+                                               const char *path)
+{
+   mstr_assign (&crypt->opts.csfle_lib_override_path, mstr_copy_cstr (path));
+}
+
+bool
+_mongocrypt_needs_credentials (mongocrypt_t *crypt)
+{
+   if (!crypt->opts.use_need_kms_credentials_state) {
+      return false;
+   }
+
+   return crypt->opts.kms_providers.need_credentials != 0;
+}
+
+bool
+_mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
+                               _mongocrypt_kms_provider_t provider)
+{
+   if (!crypt->opts.use_need_kms_credentials_state) {
+      return false;
+   }
+
+   return (crypt->opts.kms_providers.need_credentials & provider) != 0;
 }

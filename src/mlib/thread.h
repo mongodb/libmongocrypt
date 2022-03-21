@@ -4,7 +4,7 @@
 #include "./user-check.h"
 
 #ifdef _WIN32
-#include <windows.h>
+#include "./windows-lean.h"
 #else
 #include <pthread.h>
 #endif
@@ -48,8 +48,8 @@ typedef void (*mlib_init_once_fn_t) (void);
 /**
  * An indirection layer for mlib_once on Windows platforms. Do not use directly.
  */
-static inline BOOL
-_mlib_win32_once_callthru (INIT_ONCE *once, void *param, void *ctx)
+static inline BOOL WINAPI
+_mlib_win32_once_callthru (PINIT_ONCE once, PVOID param, PVOID *ctx)
 {
    (void) once;
    (void) ctx;

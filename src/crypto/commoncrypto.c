@@ -33,24 +33,20 @@ _native_crypto_init ()
 
 
 bool
-_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
 {
    bool ret = false;
    CCCryptorRef ctx = NULL;
    CCCryptorStatus cc_status;
    size_t intermediate_bytes_written;
+   mongocrypt_status_t *status = args.status;
 
    cc_status = CCCryptorCreate (kCCEncrypt,
                                 kCCAlgorithmAES,
                                 0 /* defaults to CBC w/ no padding */,
-                                key->data,
+                                args.key->data,
                                 kCCKeySizeAES256,
-                                iv->data,
+                                args.iv->data,
                                 &ctx);
 
    if (cc_status != kCCSuccess) {
@@ -58,22 +54,26 @@ _native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
       goto done;
    }
 
-   *bytes_written = 0;
+   *args.bytes_written = 0;
 
-   cc_status = CCCryptorUpdate (
-      ctx, in->data, in->len, out->data, out->len, &intermediate_bytes_written);
+   cc_status = CCCryptorUpdate (ctx,
+                                args.in->data,
+                                args.in->len,
+                                args.out->data,
+                                args.out->len,
+                                &intermediate_bytes_written);
    if (cc_status != kCCSuccess) {
       CLIENT_ERR ("error encrypting: %d", (int) cc_status);
       goto done;
    }
-   *bytes_written = intermediate_bytes_written;
+   *args.bytes_written = intermediate_bytes_written;
 
 
    cc_status = CCCryptorFinal (ctx,
-                               out->data + *bytes_written,
-                               out->len - *bytes_written,
+                               args.out->data + *args.bytes_written,
+                               args.out->len - *args.bytes_written,
                                &intermediate_bytes_written);
-   *bytes_written += intermediate_bytes_written;
+   *args.bytes_written += intermediate_bytes_written;
 
    if (cc_status != kCCSuccess) {
       CLIENT_ERR ("error finalizing: %d", (int) cc_status);
@@ -90,24 +90,20 @@ done:
 /* Note, the decrypt function is almost exactly the same as the encrypt
  * functions except for the kCCDecrypt and the error message. */
 bool
-_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 {
    bool ret = false;
    CCCryptorRef ctx = NULL;
    CCCryptorStatus cc_status;
    size_t intermediate_bytes_written;
+   mongocrypt_status_t *status = args.status;
 
    cc_status = CCCryptorCreate (kCCDecrypt,
                                 kCCAlgorithmAES,
                                 0 /* defaults to CBC w/ no padding */,
-                                key->data,
+                                args.key->data,
                                 kCCKeySizeAES256,
-                                iv->data,
+                                args.iv->data,
                                 &ctx);
 
    if (cc_status != kCCSuccess) {
@@ -115,20 +111,24 @@ _native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
       goto done;
    }
 
-   *bytes_written = 0;
-   cc_status = CCCryptorUpdate (
-      ctx, in->data, in->len, out->data, out->len, &intermediate_bytes_written);
+   *args.bytes_written = 0;
+   cc_status = CCCryptorUpdate (ctx,
+                                args.in->data,
+                                args.in->len,
+                                args.out->data,
+                                args.out->len,
+                                &intermediate_bytes_written);
    if (cc_status != kCCSuccess) {
       CLIENT_ERR ("error decrypting: %d", (int) cc_status);
       goto done;
    }
-   *bytes_written = intermediate_bytes_written;
+   *args.bytes_written = intermediate_bytes_written;
 
    cc_status = CCCryptorFinal (ctx,
-                               out->data + *bytes_written,
-                               out->len - *bytes_written,
+                               args.out->data + *args.bytes_written,
+                               args.out->len - *args.bytes_written,
                                &intermediate_bytes_written);
-   *bytes_written += intermediate_bytes_written;
+   *args.bytes_written += intermediate_bytes_written;
 
    if (cc_status != kCCSuccess) {
       CLIENT_ERR ("error finalizing: %d", (int) cc_status);
@@ -142,17 +142,24 @@ done:
 }
 
 
-/* CCHmac functions don't return errors. */
+/* _hmac_with_algorithm computes an HMAC of @in with the algorithm specified by
+ * @algorithm.
+ * @key is the input key.
+ * @out is the output. @out must be allocated by the caller with
+ * the expected length @expect_out_len for the output.
+ * Returns false and sets @status on error. @status is required. */
 bool
-_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
-                             const _mongocrypt_buffer_t *in,
-                             _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status)
+_hmac_with_algorithm (CCHmacAlgorithm algorithm,
+                      const _mongocrypt_buffer_t *key,
+                      const _mongocrypt_buffer_t *in,
+                      _mongocrypt_buffer_t *out,
+                      uint32_t expect_out_len,
+                      mongocrypt_status_t *status)
 {
    CCHmacContext *ctx;
 
-   if (out->len != MONGOCRYPT_HMAC_SHA512_LEN) {
-      CLIENT_ERR ("out does not contain %d bytes", MONGOCRYPT_HMAC_SHA512_LEN);
+   if (out->len != expect_out_len) {
+      CLIENT_ERR ("out does not contain %" PRIu32 " bytes", expect_out_len);
       return false;
    }
 
@@ -160,11 +167,21 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
    BSON_ASSERT (ctx);
 
 
-   CCHmacInit (ctx, kCCHmacAlgSHA512, key->data, key->len);
+   CCHmacInit (ctx, algorithm, key->data, key->len);
    CCHmacUpdate (ctx, in->data, in->len);
    CCHmacFinal (ctx, out->data);
    bson_free (ctx);
    return true;
+}
+
+bool
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_algorithm (
+      kCCHmacAlgSHA512, key, in, out, MONGOCRYPT_HMAC_SHA512_LEN, status);
 }
 
 
@@ -179,6 +196,34 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
       return false;
    }
    return true;
+}
+
+bool
+_native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
+{
+   mongocrypt_status_t *status = args.status;
+   CLIENT_ERR (
+      "_native_crypto_aes_256_ctr_encrypt not implemented for CommonCrypto");
+   return false;
+}
+
+bool
+_native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
+{
+   mongocrypt_status_t *status = args.status;
+   CLIENT_ERR (
+      "_native_crypto_aes_256_ctr_decrypt not implemented for CommonCrypto");
+   return false;
+}
+
+bool
+_native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_algorithm (
+      kCCHmacAlgSHA256, key, in, out, MONGOCRYPT_HMAC_SHA256_LEN, status);
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO */

@@ -22,6 +22,17 @@ endif ()
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
+
+# Enable a higher warning level and warnings-as-errors
+include (MongoC-Warnings)
+option (ENABLE_MORE_WARNINGS_AS_ERRORS "Enable extra warnings-as-errors in the build." OFF)
+if (ENABLE_MORE_WARNINGS_AS_ERRORS)
+   mongoc_add_platform_compile_options (
+      msvc:/W3 msvc:/WX msvc:/wd4996
+      gnu-like:-Wall gnu-like:-Werror
+      )
+endif ()
+
 # Attempt to find libbson by new package name.
 find_package (bson-1.0 1.11 QUIET)
 if (bson-1.0_FOUND)
@@ -57,7 +68,7 @@ add_subdirectory (bindings/cs)
 include (GenerateExportHeader)
 include (GNUInstallDirs)
 
-enable_testing ()
+include (CTest)
 
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-compat.h
@@ -94,24 +105,18 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt.c
    src/os_win/os_mutex.c
    src/os_posix/os_mutex.c
+   src/os_win/os_dll.c
+   src/os_posix/os_dll.c
    )
 
-if ( MSVC )
-   # W4996 - POSIX name for this item is deprecated
-   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4996 /D_CRT_SECURE_NO_WARNINGS")
-
-   # TODO: add support for clang-cl which is detected as MSVC
-else ()
-   # GNU, Clang, AppleClang
-   set (CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-missing-braces")
-endif ()
-
-# Choose a Crypto provider
-set (MONGOCRYPT_CRYPTO OpenSSL)
-if (APPLE)
-   set (MONGOCRYPT_CRYPTO CommonCrypto)
-elseif (WIN32)
-   set (MONGOCRYPT_CRYPTO CNG)
+# If MONGOCRYPT_CRYPTO is not set, choose a system default.
+if (NOT MONGOCRYPT_CRYPTO)
+   set (MONGOCRYPT_CRYPTO OpenSSL)
+   if (APPLE)
+      set (MONGOCRYPT_CRYPTO CommonCrypto)
+   elseif (WIN32)
+      set (MONGOCRYPT_CRYPTO CNG)
+   endif ()
 endif ()
 
 # Otherwise, override with crypto hooks.
@@ -162,8 +167,6 @@ add_library (mongo::mlib ALIAS _mongo-mlib)
 set_property(
    TARGET _mongo-mlib
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
-   $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
-   $<$<PLATFORM_ID:Windows>:NOMINMAX>
    MLIB_USER
    )
 
@@ -189,6 +192,8 @@ target_link_libraries (
       ${CMAKE_THREAD_LIBS_INIT}
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
+   PUBLIC
+      ${CMAKE_DL_LIBS}
    )
 
 if (NOT ENABLE_SHARED_BSON)
@@ -236,10 +241,15 @@ target_link_libraries (
       ${BSON_TARGET}
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
+   PUBLIC
       ${CMAKE_THREAD_LIBS_INIT}
+      ${CMAKE_DL_LIBS}
    )
 set (PKG_CONFIG_STATIC_LIBS "\${prefix}/${CMAKE_INSTALL_LIBDIR}/libmongocrypt-static.a")
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${CMAKE_THREAD_LIBS_INIT}")
+if (CMAKE_DL_LIBS)
+   string (APPEND PKG_CONFIG_STATIC_LIBS " -l${CMAKE_DL_LIBS}")
+endif ()
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libkms_message-static.a")
 if (ENABLE_BUILD_FOR_PPA)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
@@ -270,7 +280,6 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lssl -lcrypto")
 endif ()
 
-
 set_target_properties (mongocrypt PROPERTIES
    SOVERSION 0
    VERSION "0.0.0"
@@ -283,6 +292,41 @@ set_target_properties (mongocrypt_static PROPERTIES
    OUTPUT_NAME "mongocrypt-static"
 )
 
+if (BUILD_TESTING)
+   # Use C++ in the testing DLL to ensure we can load a library with the C++ runtime
+   enable_language (CXX)
+   add_library (test-dll MODULE test/test-dll.cpp)
+   set_target_properties (test-dll PROPERTIES
+      SUFFIX ".dll"
+      PREFIX ""
+      )
+
+   if (MONGOCRYPT_TESTING_CSFLE_FILE)
+      # Generate a target that copies the CSFLE library into the binary directory of test-mongocrypt
+      set (stamp "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1.copied.$<CONFIG>.stamp")
+      add_custom_command (
+         OUTPUT "${stamp}"
+         COMMAND "${CMAKE_COMMAND}" -E copy
+            "${MONGOCRYPT_TESTING_CSFLE_FILE}"
+            "$<TARGET_FILE_DIR:test-mongocrypt>/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}"
+         COMMAND "${CMAKE_COMMAND}" -E touch "${stamp}"
+         DEPENDS "${MONGOCRYPT_TESTING_CSFLE_FILE}"
+         COMMENT "Getting mongo_csfle library"
+         )
+      add_custom_target (copy-csfle ALL DEPENDS "${stamp}")
+   else ()
+      message (STATUS "Generating a stubbed csfle dynamic library for use in testing.")
+      message (STATUS "Provide a MONGOCRYPT_TESTING_CSFLE_FILE=<filepath> to provide a csfle for use in testing")
+      add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
+      set_target_properties (stubbed-csfle PROPERTIES
+         # Normalize the output name expected by libmongocrypt
+         PREFIX ""
+         OUTPUT_NAME "mongo_csfle_v1"
+         )
+      target_include_directories (stubbed-csfle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+   endif ()
+endif ()
+
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
@@ -291,10 +335,12 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-crypto-hooks.c
+   test/test-mongocrypt-csfle-lib.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
    test/test-mongocrypt-ctx-setopt.c
    test/test-mongocrypt-datakey.c
+   test/test-mongocrypt-dll.c
    test/test-mongocrypt-endpoint.c
    test/test-mongocrypt-kek.c
    test/test-mongocrypt-key.c
@@ -316,11 +362,21 @@ add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET})
+target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET} mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
-target_compile_definitions (test-mongocrypt PRIVATE ${BSON_DEFINITIONS})
+target_compile_definitions (test-mongocrypt PRIVATE
+   ${BSON_DEFINITIONS}
+   # Set a definition so that testcases can know where test-mongocrypt.exe was written to
+   "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
+   # Tell test-mongocrypt whether we have a real csfle library for testing
+   TEST_MONGOCRYPT_HAVE_REAL_CSFLE=$<BOOL:${MONGOCRYPT_TESTING_CSFLE_FILE}>
+   )
 
-add_test (mongocrypt test-mongocrypt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_test (
+   NAME mongocrypt
+   COMMAND test-mongocrypt
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+   )
 
 foreach (test IN ITEMS path str)
    add_executable (mlib.${test}.test src/mlib/${test}.test.c)

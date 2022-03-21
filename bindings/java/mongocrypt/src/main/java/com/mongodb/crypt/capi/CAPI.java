@@ -386,6 +386,18 @@ public class CAPI {
     mongocrypt_setopt_schema_map (mongocrypt_t crypt, mongocrypt_binary_t schema_map);
 
     /**
+     * Opt-into setting KMS providers before each KMS request.
+     *
+     * If set, before entering the MONGOCRYPT_CTX_NEED_KMS state,
+     * contexts will enter the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state
+     * and then wait for credentials to be supplied through @ref mongocrypt_ctx_provide_kms_providers.
+     *
+     * @param crypt The @ref mongocrypt_t object to update
+     */
+    public static native void
+    mongocrypt_setopt_use_need_kms_credentials_state (mongocrypt_t crypt);
+
+    /**
      * Initialize new @ref mongocrypt_t object.
      *
      * @param crypt The @ref mongocrypt_t object.
@@ -414,6 +426,23 @@ public class CAPI {
     public static native void
     mongocrypt_destroy(mongocrypt_t crypt);
 
+
+    /**
+     * Call in response to the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state
+     * to set per-context KMS provider settings. These follow the same format
+     * as @ref mongocrypt_setopt_kms_providers. If no keys are present in the
+     * BSON input, the KMS provider settings configured for the @ref mongocrypt_t
+     * at initialization are used.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param kms_providers A BSON document mapping the KMS provider names
+     * to credentials.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status.
+     */
+    public static native boolean
+    mongocrypt_ctx_provide_kms_providers (mongocrypt_ctx_t ctx,
+                                          mongocrypt_binary_t kms_providers);
 
     /**
      * Set the key id to use for explicit encryption.
@@ -635,7 +664,7 @@ public class CAPI {
     public static final int MONGOCRYPT_CTX_NEED_KMS = 4;
     public static final int MONGOCRYPT_CTX_READY = 5; /* ready for encryption/decryption */
     public static final int MONGOCRYPT_CTX_DONE = 6;
-
+    public static final int MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7; /* fetch/renew KMS credentials */
 
     /**
      * Get the current state of a context.

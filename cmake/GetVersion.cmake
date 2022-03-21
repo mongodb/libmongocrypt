@@ -68,7 +68,7 @@ function (GetVersion OUTVAR)
     if (VERSION_LENGTH GREATER 3)
         # The version we are starting with is already a pre-release of the next
         list (GET VERSION_PARTS 3 PRERELEASE_VERSION)
-        string (REGEX MATCHALL "(beta|rc|[0-9]+)" PRERELEASE_PARTS ${PRERELEASE_VERSION})
+        string (REGEX MATCHALL "(alpha|beta|rc|[0-9]+)" PRERELEASE_PARTS ${PRERELEASE_VERSION})
         list (LENGTH PRERELEASE_PARTS PRERELEASE_LENGTH)
         if (PRERELEASE_LENGTH EQUAL 2)
             list (GET PRERELEASE_PARTS 0 PRE_PT_ONE)

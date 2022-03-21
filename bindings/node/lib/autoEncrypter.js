@@ -107,6 +107,7 @@ module.exports = function (modules) {
       this._metaDataClient = options.metadataClient || client;
       this._proxyOptions = options.proxyOptions || {};
       this._tlsOptions = options.tlsOptions || {};
+      this._onKmsProviderRefresh = options.onKmsProviderRefresh;
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
@@ -119,6 +120,8 @@ module.exports = function (modules) {
         mongoCryptOptions.kmsProviders = !Buffer.isBuffer(options.kmsProviders)
           ? this._bson.serialize(options.kmsProviders)
           : options.kmsProviders;
+      } else if (!options.onKmsProviderRefresh) {
+        throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
       }
 
       if (options.logger) {
@@ -256,9 +259,69 @@ module.exports = function (modules) {
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });
-      stateMachine.execute(this, context, callback);
+
+      const decorateResult = this[Symbol.for('@@mdb.decorateDecryptionResult')];
+      stateMachine.execute(this, context, function (err, result) {
+        // Only for testing/internal usage
+        if (!err && result && decorateResult) {
+          err = decorateDecryptionResult(result, response, bson);
+          if (err) return callback(err);
+        }
+        callback(err, result);
+      });
+    }
+
+    /**
+     * Ask the user for KMS credentials.
+     *
+     * This returns anything that looks like the kmsProviders original input
+     * option. It can be empty, and any provider specified here will override
+     * the original ones.
+     */
+    async askForKMSCredentials() {
+      return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
     }
   }
 
   return { AutoEncrypter };
 };
+
+/**
+ * Recurse through the (identically-shaped) `decrypted` and `original`
+ * objects and attach a `decryptedKeys` property on each sub-object that
+ * contained encrypted fields. Because we only call this on BSON responses,
+ * we do not need to worry about circular references.
+ */
+function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateCall = true) {
+  const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');
+  if (isTopLevelDecorateCall) {
+    // The original value could have been either a JS object or a BSON buffer
+    if (Buffer.isBuffer(original)) {
+      original = bson.deserialize(original);
+    }
+    if (Buffer.isBuffer(decrypted)) {
+      return new Error('Expected result of decryption to be deserialized BSON object');
+    }
+  }
+
+  if (!decrypted || typeof decrypted !== 'object') return;
+  for (const k of Object.keys(decrypted)) {
+    const originalValue = original[k];
+
+    // An object was decrypted by libmongocrypt if and only if it was
+    // a BSON Binary object with subtype 6.
+    if (originalValue && originalValue._bsontype === 'Binary' && originalValue.sub_type === 6) {
+      if (!decrypted[decryptedKeys]) {
+        Object.defineProperty(decrypted, decryptedKeys, {
+          value: [],
+          configurable: true,
+          enumerable: false,
+          writable: false
+        });
+      }
+      decrypted[decryptedKeys].push(k);
+    }
+
+    decorateDecryptionResult(decrypted[k], originalValue, bson, false);
+  }
+}

@@ -35,26 +35,14 @@
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
    (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
-EVP_CIPHER_CTX *
-EVP_CIPHER_CTX_new (void)
-{
-   return bson_malloc0 (sizeof (EVP_CIPHER_CTX));
-}
 
-void
-EVP_CIPHER_CTX_free (EVP_CIPHER_CTX *ctx)
-{
-   EVP_CIPHER_CTX_cleanup (ctx);
-   bson_free (ctx);
-}
-
-HMAC_CTX *
+static HMAC_CTX *
 HMAC_CTX_new (void)
 {
    return bson_malloc0 (sizeof (HMAC_CTX));
 }
 
-void
+static void
 HMAC_CTX_free (HMAC_CTX *ctx)
 {
    HMAC_CTX_cleanup (ctx);
@@ -70,31 +58,31 @@ _native_crypto_init ()
    _native_crypto_initialized = true;
 }
 
-bool
-_native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+/* _encrypt_with_cipher encrypts @in with the OpenSSL cipher specified by
+ * @cipher.
+ * @key is the input key. @iv is the input IV.
+ * @out is the output ciphertext. @out must be allocated by the caller with
+ * enough room for the ciphertext.
+ * @bytes_written is the number of bytes that were written to @out.
+ * Returns false and sets @status on error. @status is required. */
+static bool
+_encrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 {
-   const EVP_CIPHER *cipher;
    EVP_CIPHER_CTX *ctx;
    bool ret = false;
    int intermediate_bytes_written;
+   mongocrypt_status_t *status = args.status;
 
    ctx = EVP_CIPHER_CTX_new ();
-   cipher = EVP_aes_256_cbc ();
 
    BSON_ASSERT (ctx);
    BSON_ASSERT (cipher);
-   BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == iv->len);
-   BSON_ASSERT (EVP_CIPHER_key_length (cipher) == key->len);
-   BSON_ASSERT (EVP_CIPHER_block_size (cipher) == 16);
+   BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == args.iv->len);
+   BSON_ASSERT (EVP_CIPHER_key_length (cipher) == args.key->len);
 
    if (!EVP_EncryptInit_ex (
-          ctx, cipher, NULL /* engine */, key->data, iv->data)) {
-      CLIENT_ERR ("error initializing cipher: %s",
+          ctx, cipher, NULL /* engine */, args.key->data, args.iv->data)) {
+      CLIENT_ERR ("error in EVP_EncryptInit_ex: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
@@ -102,23 +90,27 @@ _native_crypto_aes_256_cbc_encrypt (const _mongocrypt_buffer_t *key,
    /* Disable the default OpenSSL padding. */
    EVP_CIPHER_CTX_set_padding (ctx, 0);
 
-   *bytes_written = 0;
-   if (!EVP_EncryptUpdate (
-          ctx, out->data, &intermediate_bytes_written, in->data, in->len)) {
-      CLIENT_ERR ("error encrypting: %s",
+   *args.bytes_written = 0;
+   if (!EVP_EncryptUpdate (ctx,
+                           args.out->data,
+                           &intermediate_bytes_written,
+                           args.in->data,
+                           args.in->len)) {
+      CLIENT_ERR ("error in EVP_EncryptUpdate: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
-   *bytes_written = (uint32_t) intermediate_bytes_written;
+   *args.bytes_written = (uint32_t) intermediate_bytes_written;
 
-   if (!EVP_EncryptFinal_ex (ctx, out->data, &intermediate_bytes_written)) {
-      CLIENT_ERR ("error finalizing: %s",
+   if (!EVP_EncryptFinal_ex (
+          ctx, args.out->data, &intermediate_bytes_written)) {
+      CLIENT_ERR ("error in EVP_EncryptFinal_ex: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
-   *bytes_written += (uint32_t) intermediate_bytes_written;
+   *args.bytes_written += (uint32_t) intermediate_bytes_written;
 
    ret = true;
 done:
@@ -126,30 +118,29 @@ done:
    return ret;
 }
 
-
-bool
-_native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
-                                    const _mongocrypt_buffer_t *iv,
-                                    const _mongocrypt_buffer_t *in,
-                                    _mongocrypt_buffer_t *out,
-                                    uint32_t *bytes_written,
-                                    mongocrypt_status_t *status)
+/* _decrypt_with_cipher decrypts @in with the OpenSSL cipher specified by
+ * @cipher.
+ * @key is the input key. @iv is the input IV.
+ * @out is the output plaintext. @out must be allocated by the caller with
+ * enough room for the plaintext.
+ * @bytes_written is the number of bytes that were written to @out.
+ * Returns false and sets @status on error. @status is required. */
+static bool
+_decrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 {
-   const EVP_CIPHER *cipher;
    EVP_CIPHER_CTX *ctx;
    bool ret = false;
    int intermediate_bytes_written;
+   mongocrypt_status_t *status = args.status;
 
    ctx = EVP_CIPHER_CTX_new ();
-   cipher = EVP_aes_256_cbc ();
 
-   BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == iv->len);
-   BSON_ASSERT (EVP_CIPHER_key_length (cipher) == key->len);
-   BSON_ASSERT (EVP_CIPHER_block_size (cipher) == MONGOCRYPT_BLOCK_SIZE);
+   BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == args.iv->len);
+   BSON_ASSERT (EVP_CIPHER_key_length (cipher) == args.key->len);
 
    if (!EVP_DecryptInit_ex (
-          ctx, cipher, NULL /* engine */, key->data, iv->data)) {
-      CLIENT_ERR ("error initializing cipher: %s",
+          ctx, cipher, NULL /* engine */, args.key->data, args.iv->data)) {
+      CLIENT_ERR ("error in EVP_DecryptInit_ex: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
@@ -157,24 +148,28 @@ _native_crypto_aes_256_cbc_decrypt (const _mongocrypt_buffer_t *key,
    /* Disable padding. */
    EVP_CIPHER_CTX_set_padding (ctx, 0);
 
-   *bytes_written = 0;
+   *args.bytes_written = 0;
 
-   if (!EVP_DecryptUpdate (
-          ctx, out->data, &intermediate_bytes_written, in->data, in->len)) {
-      CLIENT_ERR ("error decrypting: %s",
+   if (!EVP_DecryptUpdate (ctx,
+                           args.out->data,
+                           &intermediate_bytes_written,
+                           args.in->data,
+                           args.in->len)) {
+      CLIENT_ERR ("error in EVP_DecryptUpdate: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
-   *bytes_written = intermediate_bytes_written;
+   *args.bytes_written = intermediate_bytes_written;
 
-   if (!EVP_DecryptFinal_ex (ctx, out->data, &intermediate_bytes_written)) {
-      CLIENT_ERR ("error decrypting: %s",
+   if (!EVP_DecryptFinal_ex (
+          ctx, args.out->data, &intermediate_bytes_written)) {
+      CLIENT_ERR ("error in EVP_DecryptFinal_ex: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
-   *bytes_written += intermediate_bytes_written;
+   *args.bytes_written += intermediate_bytes_written;
 
    ret = true;
 done:
@@ -182,21 +177,33 @@ done:
    return ret;
 }
 
+bool
+_native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
+{
+   return _encrypt_with_cipher (EVP_aes_256_cbc (), args);
+}
 
 bool
-_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
-                             const _mongocrypt_buffer_t *in,
-                             _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status)
+_native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 {
-   const EVP_MD *algo;
+   return _decrypt_with_cipher (EVP_aes_256_cbc (), args);
+}
 
-   algo = EVP_sha512 ();
-   BSON_ASSERT (EVP_MD_block_size (algo) == 128);
-   BSON_ASSERT (EVP_MD_size (algo) == MONGOCRYPT_HMAC_SHA512_LEN);
-
+/* _hmac_with_hash computes an HMAC of @in with the OpenSSL hash specified by
+ * @hash.
+ * @key is the input key.
+ * @out is the output. @out must be allocated by the caller with
+ * the exact length for the output. E.g. for HMAC 256, @out->len must be 32.
+ * Returns false and sets @status on error. @status is required. */
+bool
+_hmac_with_hash (const EVP_MD *hash,
+                 const _mongocrypt_buffer_t *key,
+                 const _mongocrypt_buffer_t *in,
+                 _mongocrypt_buffer_t *out,
+                 mongocrypt_status_t *status)
+{
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-   if (!HMAC (algo,
+   if (!HMAC (hash,
               key->data,
               key->len,
               in->data,
@@ -214,12 +221,12 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
 
    ctx = HMAC_CTX_new ();
 
-   if (out->len != MONGOCRYPT_HMAC_SHA512_LEN) {
-      CLIENT_ERR ("out does not contain %d bytes", MONGOCRYPT_HMAC_SHA512_LEN);
+   if (out->len != EVP_MD_size (hash)) {
+      CLIENT_ERR ("out does not contain %d bytes", EVP_MD_size (hash));
       return false;
    }
 
-   if (!HMAC_Init_ex (ctx, key->data, key->len, algo, NULL /* engine */)) {
+   if (!HMAC_Init_ex (ctx, key->data, key->len, hash, NULL /* engine */)) {
       CLIENT_ERR ("error initializing HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -244,6 +251,15 @@ done:
 #endif
 }
 
+bool
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_hash (EVP_sha512 (), key, in, out, status);
+}
+
 
 bool
 _native_crypto_random (_mongocrypt_buffer_t *out,
@@ -264,6 +280,27 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
       return false;
    }
    return true;
+}
+
+bool
+_native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
+{
+   return _encrypt_with_cipher (EVP_aes_256_ctr (), args);
+}
+
+bool
+_native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
+{
+   return _decrypt_with_cipher (EVP_aes_256_ctr (), args);
+}
+
+bool
+_native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_hash (EVP_sha256 (), key, in, out, status);
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO */

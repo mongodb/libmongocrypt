@@ -19,6 +19,8 @@
 
 #include <bson/bson.h>
 
+#include "mlib/str.h"
+
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-log-private.h"
@@ -53,20 +55,49 @@ typedef struct {
 } _mongocrypt_opts_kms_provider_kmip_t;
 
 typedef struct {
+   int configured_providers; /* A bit set of _mongocrypt_kms_provider_t */
+   int need_credentials; /* A bit set of _mongocrypt_kms_provider_t */
+   _mongocrypt_opts_kms_provider_local_t local;
+   _mongocrypt_opts_kms_provider_aws_t aws;
+   _mongocrypt_opts_kms_provider_azure_t azure;
+   _mongocrypt_opts_kms_provider_gcp_t gcp;
+   _mongocrypt_opts_kms_provider_kmip_t kmip;
+} _mongocrypt_opts_kms_providers_t;
+
+typedef struct {
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
    _mongocrypt_buffer_t schema_map;
 
-   int kms_providers; /* A bit set of _mongocrypt_kms_provider_t */
-   _mongocrypt_opts_kms_provider_local_t kms_provider_local;
-   _mongocrypt_opts_kms_provider_aws_t kms_provider_aws;
-   _mongocrypt_opts_kms_provider_azure_t kms_provider_azure;
-   _mongocrypt_opts_kms_provider_gcp_t kms_provider_gcp;
-   _mongocrypt_opts_kms_provider_kmip_t kms_provider_kmip;
+   _mongocrypt_opts_kms_providers_t kms_providers;
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;
    void *sign_ctx;
+
+   /// Keep an array of search paths for finding the CSFLE dynamic library
+   /// during mongocrypt_init()
+   int n_cselib_search_paths;
+   mstr *cselib_search_paths;
+   /// Optionally, a user may override the default search behavior by specifying
+   /// a specifiy path to the library. If this is set, this suppresses the
+   /// search behavior.
+   mstr csfle_lib_override_path;
+
+   bool use_need_kms_credentials_state;
 } _mongocrypt_opts_t;
 
+
+void
+_mongocrypt_opts_kms_providers_cleanup (
+   _mongocrypt_opts_kms_providers_t *kms_providers);
+
+
+/* Merge `source` into `dest`. Does not perform any memory ownership management;
+ * values in `dest` will be overwritten with values from `source` without
+ * being released. */
+void
+_mongocrypt_opts_merge_kms_providers (
+   _mongocrypt_opts_kms_providers_t* dest,
+   const _mongocrypt_opts_kms_providers_t* source);
 
 void
 _mongocrypt_opts_init (_mongocrypt_opts_t *opts);
@@ -80,6 +111,12 @@ bool
 _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
                            mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
+
+
+bool
+_mongocrypt_opts_kms_providers_validate (
+   _mongocrypt_opts_kms_providers_t *kms_providers,
+   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 /*
  * Parse an optional UTF-8 value from BSON.
@@ -111,7 +148,7 @@ _mongocrypt_parse_required_utf8 (const bson_t *bson,
  * Parse an optional endpoint UTF-8 from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
  * @*out is set to a new _mongocrypt_endpoint_t of the if found, NULL otherwise.
- * @*opts may be set to configure endpoint parsing. It is optional and may be NULL. 
+ * @*opts may be set to configure endpoint parsing. It is optional and may be NULL.
  * Caller must clean up with _mongocrypt_endpoint_destroy (*out).
  * Returns true if no error occured.
  */
@@ -126,7 +163,7 @@ _mongocrypt_parse_optional_endpoint (const bson_t *bson,
  * Parse a required endpoint UTF-8 from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
  * @*out is set to a new _mongocrypt_endpoint_t of the if found, NULL otherwise.
- * @*opts may be set to configure endpoint parsing. It is optional and may be NULL. 
+ * @*opts may be set to configure endpoint parsing. It is optional and may be NULL.
  * Caller must clean up with _mongocrypt_endpoint_destroy (*out).
  * Returns true if no error occured.
  */

@@ -226,6 +226,146 @@ _test_datakey_custom_endpoint (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_datakey_kms_per_ctx_credentials (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_kms_ctx_t *kms_ctx;
+   mongocrypt_binary_t *bin;
+   const char *endpoint;
+   bson_t key_bson;
+   bson_iter_t iter;
+
+   /* Success. */
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}")),
+      crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (
+      mongocrypt_ctx_setopt_masterkey_aws (ctx, "region", -1, "cmk", -1), ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_setopt_masterkey_aws_endpoint (ctx, "example.com", -1),
+      ctx);
+   ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+   BSON_ASSERT (
+      mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+   ASSERT_OK (
+      mongocrypt_ctx_provide_kms_providers (ctx,
+         TEST_BSON ("{'aws':{'accessKeyId': 'example',"
+                            "'secretAccessKey': 'example'}}")), ctx);
+   BSON_ASSERT (
+      mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
+   BSON_ASSERT (kms_ctx);
+   ASSERT_OK (mongocrypt_kms_ctx_endpoint (kms_ctx, &endpoint), ctx);
+   BSON_ASSERT (0 == strcmp ("example.com:443", endpoint));
+   bin = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_kms_ctx_message (kms_ctx, bin), ctx);
+   BSON_ASSERT (NULL != strstr ((char *) bin->data, "Host:example.com"));
+   ASSERT_OK (mongocrypt_kms_ctx_feed (
+                 kms_ctx, TEST_FILE ("./test/data/kms-encrypt-reply.txt")),
+              kms_ctx);
+   BSON_ASSERT (0 == mongocrypt_kms_ctx_bytes_needed (kms_ctx));
+   ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
+
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
+   /* Check the BSON document created. */
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &key_bson));
+   BSON_ASSERT (bson_iter_init (&iter, &key_bson));
+   BSON_ASSERT (bson_iter_find_descendant (&iter, "masterKey.endpoint", &iter));
+   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&iter, NULL), "example.com"));
+
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+/* Test creating a data key with "azure" when only "aws" credentials are needed.
+ * Expect the context not to enter the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS
+ * state. */
+static void
+_test_datakey_kms_per_ctx_credentials_not_requested (
+   _mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (mongocrypt_setopt_kms_providers (
+                 crypt,
+                 TEST_BSON ("{'aws': {}, 'azure': {'tenantId': '', 'clientId': "
+                            "'', 'clientSecret': '' }}")),
+              crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (
+                 ctx,
+                 TEST_BSON ("{'provider': 'azure', 'keyVaultEndpoint': "
+                            "'example.vault.azure.net', 'keyName': 'test'}")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+/* Test creating a data key with "local" when "local" credentials are required.
+ * Expect the context to enter the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS
+ * state. */
+static void
+_test_datakey_kms_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *bin;
+   bson_t key_bson;
+   bson_iter_t iter;
+   const char *local_kek =
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'local': {}}")),
+      crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (
+                 ctx, TEST_BSON ("{'provider': 'local' }")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+
+   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                 ctx,
+                 TEST_BSON ("{'local':{'key': { '$binary': {'base64': '%s', "
+                            "'subType': '00'}}}}",
+                            local_kek)),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   bin = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, bin), ctx);
+   /* Check the BSON document created. */
+   BSON_ASSERT (_mongocrypt_binary_to_bson (bin, &key_bson));
+   BSON_ASSERT (bson_iter_init (&iter, &key_bson));
+   BSON_ASSERT (bson_iter_find_descendant (&iter, "masterKey.provider", &iter));
+   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&iter, NULL), "local"));
+
+   mongocrypt_binary_destroy (bin);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 
 static void
 _test_datakey_custom_key_material (_mongocrypt_tester_t *tester)
@@ -301,7 +441,7 @@ _test_datakey_custom_key_material (_mongocrypt_tester_t *tester)
       mongocrypt_binary_t decrypted_dek;
 
       ASSERT (_mongocrypt_unwrap_key (crypt->crypto,
-                                      &crypt->opts.kms_provider_local.key,
+                                      &crypt->opts.kms_providers.local.key,
                                       &encrypted_dek_buf,
                                       &decrypted_dek_buf,
                                       crypt->status));
@@ -342,4 +482,7 @@ _mongocrypt_tester_install_data_key (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_create_data_key);
    INSTALL_TEST (_test_datakey_custom_endpoint);
    INSTALL_TEST (_test_datakey_custom_key_material);
+   INSTALL_TEST (_test_datakey_kms_per_ctx_credentials);
+   INSTALL_TEST (_test_datakey_kms_per_ctx_credentials_not_requested);
+   INSTALL_TEST (_test_datakey_kms_per_ctx_credentials_local);
 }
