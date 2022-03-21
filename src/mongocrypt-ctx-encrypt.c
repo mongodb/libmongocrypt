@@ -228,9 +228,6 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
    }
 
-   /* Q5: Is it possible to undergo automatic encryption with a NULL schema?
-      * This _mongocrypt_buffer_empty check suggests so.
-      * A: */
    if (_mongocrypt_buffer_empty (&ectx->schema)) {
       bson_init (&schema_bson);
    } else if (!_mongocrypt_buffer_to_bson (&ectx->schema, &schema_bson)) {
