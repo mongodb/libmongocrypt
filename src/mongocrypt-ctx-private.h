@@ -121,7 +121,7 @@ typedef struct {
    bool collinfo_has_siblings;
    /* encrypted_field_config is set when:
     * 1. <db_name>.<coll_name> is present in an encrypted_field_config_map.
-    * 2. (TODO MONGOCRYPT-???) The collection has encryptedFields in the response to listCollections.
+    * 2. (TODO MONGOCRYPT-414) The collection has encryptedFields in the response to listCollections.
     * encrypted_field_config is true if and only if encryption is using FLE 2.0. */
    _mongocrypt_buffer_t encrypted_field_config;
 } _mongocrypt_ctx_encrypt_t;
