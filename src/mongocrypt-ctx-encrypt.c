@@ -211,41 +211,32 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t cmd_bson, schema_bson, mongocryptd_cmd_bson;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-
-   if (!_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
-      /* mongocryptd_cmd was generated in a previous call. */
-      out->data = ectx->mongocryptd_cmd.data;
-      out->len = ectx->mongocryptd_cmd.len;
-      return true;
-   }
-
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config) && _mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
       return _fle2_mongo_op_markings (ctx, out);
+   } else if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
+      /* first, get the original command. */
+      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
+      }
+
+      if (_mongocrypt_buffer_empty (&ectx->schema)) {
+         bson_init (&schema_bson);
+      } else if (!_mongocrypt_buffer_to_bson (&ectx->schema, &schema_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON schema");
+      }
+
+      bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
+      BSON_APPEND_DOCUMENT (&mongocryptd_cmd_bson, "jsonSchema", &schema_bson);
+
+      /* if a local schema was not set, set isRemoteSchema=true */
+      BSON_APPEND_BOOL (
+         &mongocryptd_cmd_bson, "isRemoteSchema", !ectx->used_local_schema);
+      _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd,
+                                          &mongocryptd_cmd_bson);
+
+      bson_destroy (&cmd_bson);
+      bson_destroy (&schema_bson);
    }
-
-   /* first, get the original command. */
-   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
-   }
-
-   if (_mongocrypt_buffer_empty (&ectx->schema)) {
-      bson_init (&schema_bson);
-   } else if (!_mongocrypt_buffer_to_bson (&ectx->schema, &schema_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON schema");
-   }
-
-   bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
-   BSON_APPEND_DOCUMENT (&mongocryptd_cmd_bson, "jsonSchema", &schema_bson);
-
-   /* if a local schema was not set, set isRemoteSchema=true */
-   BSON_APPEND_BOOL (
-      &mongocryptd_cmd_bson, "isRemoteSchema", !ectx->used_local_schema);
-   _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd,
-                                       &mongocryptd_cmd_bson);
-
-   bson_destroy (&cmd_bson);
-   bson_destroy (&schema_bson);
-
    out->data = ectx->mongocryptd_cmd.data;
    out->len = ectx->mongocryptd_cmd.len;
    return true;
