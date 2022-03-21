@@ -415,7 +415,7 @@ _replace_marking_with_ciphertext (void *ctx,
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is associated with the command. */
 static bool
 _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
-   bson_t as_bson, converted;
+   bson_t converted;
    _mongocrypt_ctx_encrypt_t *ectx;
    mongocrypt_status_t *status;
    bson_t encrypted_field_config_bson;
@@ -428,10 +428,6 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
    
    if (ectx->explicit) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
-   }
-
-   if (!_mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson in marked_cmd");
    }
 
    if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config, &encrypted_field_config_bson)) {
