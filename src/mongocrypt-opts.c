@@ -135,36 +135,36 @@ _mongocrypt_opts_kms_providers_validate (
    return true;
 }
 
-/* _shares_bson_fields checks if haystack contains any top-level fields from
- * @needle. Returns false on error and sets @status. Returns true if no error
- * occurred. Sets @found to the first string from @needle found in @haystack.
- * If no strings are found, @found is set to NULL.
+/* _shares_bson_fields checks if @one or @two share any top-level field names.
+ * Returns false on error and sets @status. Returns true if no error
+ * occurred. Sets @found to the first shared field name found.
+ * If no shared field names are found, @found is set to NULL.
  */
 static bool
-_shares_bson_fields (bson_t *haystack,
-                     bson_t *needle,
+_shares_bson_fields (bson_t *one,
+                     bson_t *two,
                      const char **found,
                      mongocrypt_status_t *status)
 {
-   bson_iter_t niter;
-   bson_iter_t hiter;
+   bson_iter_t iter1;
+   bson_iter_t iter2;
 
    *found = NULL;
-   if (!bson_iter_init (&hiter, haystack)) {
-      CLIENT_ERR ("error iterating haystack BSON in _shares_bson_fields");
+   if (!bson_iter_init (&iter1, one)) {
+      CLIENT_ERR ("error iterating one BSON in _shares_bson_fields");
       return false;
    }
-   while (bson_iter_next (&hiter)) {
-      const char *hkey = bson_iter_key (&hiter);
+   while (bson_iter_next (&iter1)) {
+      const char *key1 = bson_iter_key (&iter1);
 
-      if (!bson_iter_init (&niter, needle)) {
-         CLIENT_ERR ("error iterating needle BSON in _shares_bson_fields");
+      if (!bson_iter_init (&iter2, two)) {
+         CLIENT_ERR ("error iterating two BSON in _shares_bson_fields");
          return false;
       }
-      while (bson_iter_next (&niter)) {
-         const char *nkey = bson_iter_key (&niter);
-         if (0 == strcmp (hkey, nkey)) {
-            *found = hkey;
+      while (bson_iter_next (&iter2)) {
+         const char *key2 = bson_iter_key (&iter2);
+         if (0 == strcmp (key1, key2)) {
+            *found = key1;
             return true;
          }
       }
@@ -204,16 +204,6 @@ _validate_encrypted_field_config_map_and_schema_map (
    }
    if (!_shares_bson_fields (
           &schema_map_bson, &encrypted_field_config_map_bson, &found, status)) {
-      return false;
-   }
-   if (found != NULL) {
-      CLIENT_ERR (
-         "%s is present in both schema_map and encrypted_field_config_map",
-         found);
-      return false;
-   }
-   if (!_shares_bson_fields (
-          &encrypted_field_config_map_bson, &schema_map_bson, &found, status)) {
       return false;
    }
    if (found != NULL) {
