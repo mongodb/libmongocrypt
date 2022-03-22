@@ -16,6 +16,7 @@
 
 #include <bson/bson.h>
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-endian-private.h"
 #include "mongocrypt-util-private.h"
 
 #define INT32_LEN 4
@@ -531,4 +532,13 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
    buf->data = (uint8_t *) str;
    buf->owned = true;
    return true;
+}
+
+void
+_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf, uint64_t value)
+{
+   uint64_t value_le = MONGOCRYPT_UINT64_TO_LE (value);
+   _mongocrypt_buffer_init (buf);
+   _mongocrypt_buffer_resize (buf, sizeof (value));
+   memcpy (buf->data, &value_le, buf->len);
 }

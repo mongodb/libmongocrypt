@@ -132,6 +132,10 @@
       free (_expected_hex);                                             \
    } while (0)
 
+#define ASSERT_CMPBUF(expected, actual) \
+   ASSERT_CMPBYTES (                    \
+      (expected).data, (expected).len, (actual).data, (actual).len)
+
 #define ASSERT_CMPINT(_a, _operator, _b)                                \
    do {                                                                 \
       int _a_int = _a;                                                  \
