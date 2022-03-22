@@ -539,6 +539,6 @@ _mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf, uint64_t valu
 {
    uint64_t value_le = MONGOCRYPT_UINT64_TO_LE (value);
    _mongocrypt_buffer_init (buf);
-   _mongocrypt_buffer_resize (buf, 8);
+   _mongocrypt_buffer_resize (buf, sizeof (value));
    memcpy (buf->data, &value_le, buf->len);
 }
