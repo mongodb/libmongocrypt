@@ -15,7 +15,6 @@
  */
 
 #include "mc-tokens-private.h"
-#include "mongocrypt-endian-private.h"
 
 /// Define a token type of the given name, with constructor parameters given as
 /// the remaining arguments. This macro usage should be followed by the
@@ -56,7 +55,7 @@ DEF_TOKEN_TYPE (mc_CollectionsLevel1Token, const _mongocrypt_buffer_t *RootKey)
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (1));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash, 1);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto, RootKey, &to_hash, &t->data, status)) {
@@ -77,7 +76,7 @@ DEF_TOKEN_TYPE (mc_ServerDataEncryptionLevel1Token,
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (3));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  3);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto, RootKey, &to_hash, &t->data, status)) {
@@ -97,7 +96,7 @@ DEF_TOKEN_TYPE (mc_EDCToken,
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (1));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  1);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto,
@@ -121,7 +120,7 @@ DEF_TOKEN_TYPE (mc_ESCToken,
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (2));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  2);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto,
@@ -145,7 +144,7 @@ DEF_TOKEN_TYPE (mc_ECCToken,
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (3));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  3);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto,
@@ -169,7 +168,7 @@ DEF_TOKEN_TYPE (mc_ECOCToken,
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
 
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (4));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  4);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto,
@@ -245,7 +244,7 @@ DEF_TOKEN_TYPE (mc_EDCDerivedFromDataTokenAndCounter,
    _mongocrypt_buffer_init (&t->data);
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (u));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  u);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto,
@@ -270,7 +269,7 @@ DEF_TOKEN_TYPE (mc_ESCDerivedFromDataTokenAndCounter,
    _mongocrypt_buffer_init (&t->data);
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (u));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  u);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto,
@@ -295,7 +294,7 @@ DEF_TOKEN_TYPE (mc_ECCDerivedFromDataTokenAndCounter,
    _mongocrypt_buffer_init (&t->data);
    _mongocrypt_buffer_resize (&t->data, MONGOCRYPT_HMAC_SHA256_LEN);
    _mongocrypt_buffer_t to_hash;
-   _mongocrypt_buffer_copy_from_uint64 (&to_hash, MONGOCRYPT_UINT64_TO_LE (u));
+   _mongocrypt_buffer_copy_from_uint64_le (&to_hash,  u);
 
    if (!_mongocrypt_hmac_sha_256 (
           crypto,
