@@ -53,8 +53,6 @@ typedef enum {
    /* Starting state. Accept requests for keys to be added (either by id or
       name) */
    KB_REQUESTING,
-   /* Accept requests for keys to be added without corresponding requests. */
-   KB_REQUESTING_ANY,
    /* Accept key documents fetched from the key vault collection. */
    KB_ADDING_DOCS,
    /* Accept any key document fetched from the key vault collection. */

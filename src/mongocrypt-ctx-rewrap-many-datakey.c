@@ -294,7 +294,6 @@ _kms_start_decrypt (mongocrypt_ctx_t *ctx)
    BSON_ASSERT_PARAM (ctx);
 
    return _mongocrypt_key_broker_request_any (&ctx->kb) &&
-          _mongocrypt_key_broker_requests_done (&ctx->kb) &&
           _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 

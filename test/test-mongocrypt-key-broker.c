@@ -916,7 +916,6 @@ _test_key_broker_request_any (_mongocrypt_tester_t *tester)
    /* Can switch to any mode before any keys are requested. */
    _mongocrypt_key_broker_init (&kb, crypt);
    ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
-   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
    _mongocrypt_key_broker_cleanup (&kb);
 
    /* If keys have already been requested, cannot switch to any mode.*/
@@ -945,7 +944,6 @@ _test_key_broker_add_any (_mongocrypt_tester_t *tester)
    /* Can add valid documents. */
    _mongocrypt_key_broker_init (&kb, crypt);
    ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
-   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
               &kb);
    ASSERT (_key_broker_num_satisfied (&kb) == 1);
@@ -955,7 +953,6 @@ _test_key_broker_add_any (_mongocrypt_tester_t *tester)
    /* Still validates no duplicate/incompatible keys. */
    _mongocrypt_key_broker_init (&kb, crypt);
    ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
-   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
               &kb);
    ASSERT (_key_broker_num_satisfied (&kb) == 1);
@@ -968,7 +965,6 @@ _test_key_broker_add_any (_mongocrypt_tester_t *tester)
    /* Still requests KMS as needed. */
    _mongocrypt_key_broker_init (&kb, crypt);
    ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
-   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
               &kb);
    ASSERT (_key_broker_num_satisfied (&kb) == 1);
@@ -985,7 +981,6 @@ _test_key_broker_add_any (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_cleanup (&kb);
    _mongocrypt_key_broker_init (&kb, crypt);
    ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
-   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
               &kb);
    ASSERT (_key_broker_num_satisfied (&kb) == 1);

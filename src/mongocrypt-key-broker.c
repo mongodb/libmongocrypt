@@ -300,7 +300,7 @@ _mongocrypt_key_broker_request_any (_mongocrypt_key_broker_t *kb)
          kb, "attempting to request any keys, but requests already made");
    }
 
-   kb->state = KB_REQUESTING_ANY;
+   kb->state = KB_ADDING_DOCS_ANY;
 
    return true;
 }
@@ -308,7 +308,7 @@ _mongocrypt_key_broker_request_any (_mongocrypt_key_broker_t *kb)
 bool
 _mongocrypt_key_broker_requests_done (_mongocrypt_key_broker_t *kb)
 {
-   if (kb->state != KB_REQUESTING && kb->state != KB_REQUESTING_ANY) {
+   if (kb->state != KB_REQUESTING) {
       return _key_broker_fail_w_msg (
          kb, "attempting to finish adding requests, but in wrong state");
    }
@@ -321,8 +321,6 @@ _mongocrypt_key_broker_requests_done (_mongocrypt_key_broker_t *kb)
       } else {
          kb->state = KB_ADDING_DOCS;
       }
-   } else if (kb->state == KB_REQUESTING_ANY) {
-      kb->state = KB_ADDING_DOCS_ANY;
    } else {
       kb->state = KB_DONE;
    }
