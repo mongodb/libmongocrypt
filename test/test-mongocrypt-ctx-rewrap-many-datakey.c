@@ -68,7 +68,7 @@ _find_key_id (mongocrypt_binary_t *key)
    ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
    ASSERT (_mongocrypt_buffer_from_binary_iter (&buf, &iter));
    ASSERT (buf.subtype == BSON_SUBTYPE_UUID);
-   ASSERT (buf.len > 0);
+   ASSERT (buf.len > 0u);
 
    return buf;
 }
@@ -81,7 +81,7 @@ _find_key_id_from_iter (bson_iter_t *iter)
    ASSERT (BSON_ITER_HOLDS_BINARY (iter));
    ASSERT (_mongocrypt_buffer_from_binary_iter (&buf, iter));
    ASSERT (buf.subtype == BSON_SUBTYPE_UUID);
-   ASSERT (buf.len > 0);
+   ASSERT (buf.len > 0u);
 
    return buf;
 }
