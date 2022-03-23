@@ -256,7 +256,7 @@ _test_rewrap_many_datakey_init (_mongocrypt_tester_t *tester)
    ASSERT_FAILS (mongocrypt_ctx_rewrap_many_datakey_init (ctx, NULL),
                  ctx,
                  "filter must not be null");
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
 
    /* Irrelevant options should trigger initialization error. */
@@ -268,7 +268,7 @@ _test_rewrap_many_datakey_init (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
       ctx,
       "key id and alt name prohibited");
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
 
    /* rewrapManyDataKeyOpts.newProvider and rewrapManyDataKeyOpts.newMasterKey
@@ -282,14 +282,16 @@ _test_rewrap_many_datakey_init (_mongocrypt_tester_t *tester)
               ctx);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
               ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    mongocrypt_ctx_destroy (ctx);
 
    /* Not providing rewrapManyDataKeyOpts is OK. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
               ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    mongocrypt_ctx_destroy (ctx);
 
    mongocrypt_destroy (crypt);
@@ -308,7 +310,8 @@ _test_rewrap_many_datakey_need_mongo_keys (_mongocrypt_tester_t *tester)
    /* Filter should be the same as what was provided in call to init. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    {
       mongocrypt_binary_t *const op = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, op), ctx);
@@ -320,15 +323,17 @@ _test_rewrap_many_datakey_need_mongo_keys (_mongocrypt_tester_t *tester)
    /* No key documents is OK, no work to be done. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_DONE);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
    mongocrypt_ctx_destroy (ctx);
 
    /* Any number of key documents can be given. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -336,13 +341,14 @@ _test_rewrap_many_datakey_need_mongo_keys (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    mongocrypt_ctx_destroy (ctx);
 
    /* Key documents must not have duplicate key ID or alt names. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (
       mongocrypt_ctx_mongo_feed (
          ctx, TEST_FILE ("./test/data/key-document-with-alt-name.json")),
@@ -354,7 +360,7 @@ _test_rewrap_many_datakey_need_mongo_keys (_mongocrypt_tester_t *tester)
             "./test/data/key-document-with-alt-name-duplicate-id.json")),
       ctx,
       "keys returned have duplicate keyAltNames or _id");
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
 
    mongocrypt_destroy (crypt);
@@ -374,12 +380,13 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* AWS */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/key-document-full.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_STREQUAL ("aws", mongocrypt_kms_ctx_get_kms_provider (kms, NULL));
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
@@ -392,12 +399,13 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* Azure */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/key-document-azure.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_STREQUAL ("azure", mongocrypt_kms_ctx_get_kms_provider (kms, NULL));
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
@@ -410,12 +418,13 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* GCP */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/key-document-gcp.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_STREQUAL ("gcp", mongocrypt_kms_ctx_get_kms_provider (kms, NULL));
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
@@ -428,12 +437,13 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* KMIP */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/key-document-kmip.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_STREQUAL ("kmip", mongocrypt_kms_ctx_get_kms_provider (kms, NULL));
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
@@ -446,12 +456,13 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* Local: no KMS required. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-local.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    mongocrypt_ctx_destroy (ctx);
 
    /* Clear key cache. */
@@ -461,7 +472,8 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* Number of KMS requests should match number of keys that require it. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -469,7 +481,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_STREQUAL ("aws", mongocrypt_kms_ctx_get_kms_provider (kms, NULL));
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
@@ -480,7 +492,8 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* Ensure keys that don't require KMS do not request it. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -491,7 +504,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-local.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_STREQUAL ("aws", mongocrypt_kms_ctx_get_kms_provider (kms, NULL));
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
@@ -506,7 +519,8 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* Ensure number of KMS requests matches number of keys that require it. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -514,7 +528,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    /* Implementation detail: decryption KMS requests are issued in reverse order
     * of provided key documents. */
@@ -531,7 +545,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    ASSERT (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
    ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    mongocrypt_ctx_destroy (ctx);
 
    /* Clear key cache. */
@@ -541,7 +555,8 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* Ensure all KMS requests have a corresponding KMS response. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -549,7 +564,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_OK (mongocrypt_kms_ctx_feed (
                  kms, TEST_FILE ("./test/data/rmd/kms-decrypt-reply-b.txt")),
@@ -559,7 +574,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    ASSERT (mongocrypt_kms_ctx_bytes_needed (kms) > 0); /* "Oops." */
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
    ASSERT_FAILS (mongocrypt_ctx_kms_done (ctx), ctx, "KMS response unfinished");
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
 
    /* Clear key cache. */
@@ -569,12 +584,13 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    /* Skip KMS for keys with cached decrypted key material. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    /* Cache decrypted key material for datakey B. */
    ASSERT_OK (mongocrypt_kms_ctx_feed (
@@ -585,7 +601,8 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -593,7 +610,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    /* Only datakey A should make a KMS request. */
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    _assert_aws_kms_endpoint (kms, "kms.us-east-1.amazonaws.com:443");
@@ -618,7 +635,8 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
     * each key. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -626,7 +644,7 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    /* These decrypt replies should cache key material used by later blocks. */
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_OK (mongocrypt_kms_ctx_feed (
@@ -640,7 +658,7 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
    ASSERT (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
    ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    /* Implementation detail: encryption KMS requests are issued in same order as
     * provided key documents. */
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
@@ -657,7 +675,7 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
    ASSERT (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
    ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    mongocrypt_ctx_destroy (ctx);
 
    /* If new provider is given, encryption should use new KMS provider for all
@@ -670,7 +688,8 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
                             " 'key': '" TEST_REWRAP_MASTER_KEY_ID_NEW "'}")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -679,7 +698,7 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    /* Skip decryption, key material should have been cached. */
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    _assert_aws_kms_endpoint (kms, "kms.us-east-2.amazonaws.com:443");
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
@@ -693,7 +712,8 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
                  ctx, TEST_BSON ("{'provider': 'local'}")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -702,7 +722,7 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    /* Skip decryption, key material should have been cached. */
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    mongocrypt_ctx_destroy (ctx);
 
    /* Ensure all KMS requests have a corresponding KMS response. */
@@ -714,7 +734,8 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
                             " 'key': '" TEST_REWRAP_MASTER_KEY_ID_NEW "'}")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -723,7 +744,7 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    /* Skip decryption, key material should have been cached. */
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    ASSERT_OK (mongocrypt_kms_ctx_feed (
                  kms, TEST_FILE ("./test/data/rmd/kms-encrypt-reply-a.txt")),
@@ -732,7 +753,7 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
    ASSERT (mongocrypt_kms_ctx_bytes_needed (kms) > 0); /* "Oops." */
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
    ASSERT_FAILS (mongocrypt_ctx_kms_done (ctx), ctx, "KMS response unfinished");
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
 
    mongocrypt_destroy (crypt);
@@ -767,7 +788,8 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
                             " 'key': '" TEST_REWRAP_MASTER_KEY_ID_NEW "'}")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
               ctx);
@@ -775,7 +797,7 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
                  ctx, TEST_FILE ("./test/data/rmd/key-document-b.json")),
               ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    _assert_aws_kms_request (kms);
    ASSERT_OK (mongocrypt_kms_ctx_feed (
@@ -791,7 +813,7 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
    ASSERT (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
    ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    ASSERT ((kms = mongocrypt_ctx_next_kms_ctx (ctx)));
    _assert_aws_kms_request (kms);
    ASSERT_OK (mongocrypt_kms_ctx_feed (
@@ -807,7 +829,7 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
    ASSERT (mongocrypt_kms_ctx_bytes_needed (kms) == 0);
    ASSERT_OK (!mongocrypt_ctx_next_kms_ctx (ctx), ctx);
    ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
 
    {
       mongocrypt_binary_t res;
@@ -935,7 +957,7 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
    }
 
    /* No more work to be done for RewrapManyDatakey. */
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_DONE);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
 
    _test_datakey_fields_destroy (fields_b);
    _test_datakey_fields_destroy (fields_a);
@@ -966,8 +988,8 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
          mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")), ctx);
 
       /* NEED_KMS_CREDENTIALS comes before NEED_MONGO_KEYS. */
-      ASSERT (mongocrypt_ctx_state (ctx) ==
-              MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
       ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
                     ctx,
                     TEST_BSON ("{'aws': {"
@@ -975,13 +997,14 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
                                "   'secretAccessKey': 'example'}}")),
                  ctx);
 
-      ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
       ASSERT_OK (mongocrypt_ctx_mongo_feed (
                     ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
 
-      ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
       {
          mongocrypt_kms_ctx_t *kms = NULL;
 
@@ -998,7 +1021,7 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
       }
 
       /* KMS credentials provided before decryption should be reused here. */
-      ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_KMS);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
       {
          mongocrypt_kms_ctx_t *kms = NULL;
 
@@ -1014,7 +1037,7 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
          ASSERT_OK (mongocrypt_ctx_kms_done (ctx), ctx);
       }
 
-      ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_READY);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
 
       {
          mongocrypt_binary_t res;
@@ -1029,7 +1052,7 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
                           bson_iter_utf8 (&iter, NULL));
       }
 
-      ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_DONE);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
 
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);
@@ -1047,13 +1070,14 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
    ASSERT_OK (ctx, crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
               ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_FAILS (
       mongocrypt_ctx_mongo_feed (
          ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
       ctx,
       "client not configured with KMS provider necessary to decrypt");
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_ERROR);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 
@@ -1072,7 +1096,8 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
    ASSERT_OK (ctx, crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
               ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 
@@ -1086,7 +1111,8 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
    ASSERT_OK (ctx, crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
               ctx);
-   ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
