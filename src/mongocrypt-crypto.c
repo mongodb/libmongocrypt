@@ -195,6 +195,15 @@ _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len)
    return 16 * ((plaintext_len / 16) + 2) + MONGOCRYPT_HMAC_LEN;
 }
 
+/* _mongocrypt_fle2_calculate_ciphertext_len returns the required length of
+ * the ciphertext for _mongocrypt_fle2_do_encryption. */
+uint32_t
+_mongocrypt_fle2_calculate_ciphertext_len (uint32_t plaintext_len)
+{
+   /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
+   return MONGOCRYPT_IV_LEN + plaintext_len + MONGOCRYPT_HMAC_LEN;
+}
+
 
 /* ----------------------------------------------------------------------------
  *
@@ -1015,4 +1024,29 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
          crypto->ctx, &key_bin, &in_bin, &out_bin, status);
    }
    return _native_crypto_hmac_sha_256 (key, in, out, status);
+}
+
+bool
+_mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
+                           const _mongocrypt_buffer_t *iv,
+                           const _mongocrypt_buffer_t *associated_data,
+                           const _mongocrypt_buffer_t *key,
+                           const _mongocrypt_buffer_t *plaintext,
+                           _mongocrypt_buffer_t *ciphertext,
+                           uint32_t *bytes_written,
+                           mongocrypt_status_t *status) {
+   CLIENT_ERR ("_mongocrypt_fle2_do_encryption not implemented");
+   return false;
+}
+
+bool
+_mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
+                           const _mongocrypt_buffer_t *associated_data,
+                           const _mongocrypt_buffer_t *key,
+                           const _mongocrypt_buffer_t *ciphertext,
+                           _mongocrypt_buffer_t *plaintext,
+                           uint32_t *bytes_written,
+                           mongocrypt_status_t *status) {
+   CLIENT_ERR ("_mongocrypt_fle2_do_decryption not implemented");
+   return false;
 }
