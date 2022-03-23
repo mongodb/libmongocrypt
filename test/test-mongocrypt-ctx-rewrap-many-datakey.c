@@ -631,8 +631,8 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_kms_ctx_t *kms = NULL;
 
-   /* If new provider is given, encryption should reuse current KMS provider for
-    * each key. */
+   /* If no new provider is given, encryption should reuse current KMS provider
+    * for each key. */
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter), ctx);
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
@@ -854,7 +854,7 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
          ASSERT (bson_iter_init (&a_iter, &bson));
          ASSERT (bson_iter_init (&b_iter, &bson));
 
-         /* Find keyDocumentA. */
+         /* Find first keyDocument. */
          ASSERT (bson_iter_init (&iter, &bson));
          ASSERT (bson_iter_find_descendant (&iter, "v.0._id", &iter));
          id = _find_key_id_from_iter (&iter);
@@ -868,7 +868,7 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
             ASSERT (bson_iter_recurse (&iter, &b_iter));
          }
 
-         /* Find keyDocumentB. */
+         /* Find second keyDocument. */
          ASSERT (bson_iter_init (&iter, &bson));
          ASSERT (bson_iter_find_descendant (&iter, "v.1._id", &iter));
          id = _find_key_id_from_iter (&iter);
