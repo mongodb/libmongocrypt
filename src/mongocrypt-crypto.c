@@ -1053,7 +1053,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
 
    if (ciphertext->len !=
        _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len)) {
-      CLIENT_ERR ("output ciphertext should have been allocated with %" PRIu32 " bytes",
+      CLIENT_ERR ("output ciphertext must be allocated with %" PRIu32 " bytes",
                   _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len));
       return false;
    }
@@ -1061,13 +1061,13 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
-      CLIENT_ERR ("IV should have length %d, but has length %" PRIu32,
+      CLIENT_ERR ("IV must be length %d, but is length %" PRIu32,
                   MONGOCRYPT_IV_LEN,
                   iv->len);
       return false;
    }
    if (MONGOCRYPT_KEY_LEN != key->len) {
-      CLIENT_ERR ("key should have length %d, but has length %" PRIu32,
+      CLIENT_ERR ("key must be length %d, but is length %" PRIu32,
                   MONGOCRYPT_KEY_LEN,
                   key->len);
       return false;
@@ -1082,7 +1082,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
     * For now, follow "AEAD with CTR" and use first 32 bytes for enc_key.
     */
 
-   /* M is plaintext. */
+   /* M is the input plaintext. */
    _mongocrypt_buffer_t M = {.data = plaintext->data, .len = plaintext->len};
    /* Ke is 32 byte Key for encryption. */
    _mongocrypt_buffer_t Ke = {.data = key->data, .len = MONGOCRYPT_ENC_KEY_LEN};
@@ -1092,7 +1092,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN, .len = MONGOCRYPT_MAC_KEY_LEN};
    /* AD is Associated Data. */
    _mongocrypt_buffer_t AD = {.data = associated_data->data, .len = associated_data->len};
-   /* C is the final result. */
+   /* C is the output ciphertext. */
    _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
    /* S is the output of the cipher. It is appended after IV in C. */
    _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN, .len = C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN};
