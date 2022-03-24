@@ -234,6 +234,7 @@ uint32_t
 _mongocrypt_fle2_calculate_plaintext_len (uint32_t ciphertext_len)
 {
    /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
+   BSON_ASSERT (ciphertext_len >= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
    return ciphertext_len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN;
 }
 
@@ -1144,6 +1145,11 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (ciphertext);
+
+   if (ciphertext->len <= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN) {
+      CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32 " bytes", MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
+      return false;
+   }
 
    if (plaintext->len !=
        _mongocrypt_fle2_calculate_plaintext_len (ciphertext->len)) {
