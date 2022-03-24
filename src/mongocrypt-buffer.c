@@ -540,7 +540,8 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
 }
 
 void
-_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf, uint64_t value)
+_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
+                                        uint64_t value)
 {
    uint64_t value_le = MONGOCRYPT_UINT64_TO_LE (value);
    _mongocrypt_buffer_init (buf);

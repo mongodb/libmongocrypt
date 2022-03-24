@@ -1037,14 +1037,14 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
 
 bool
 _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
-                           const _mongocrypt_buffer_t *iv,
-                           const _mongocrypt_buffer_t *associated_data,
-                           const _mongocrypt_buffer_t *key,
-                           const _mongocrypt_buffer_t *plaintext,
-                           _mongocrypt_buffer_t *ciphertext,
-                           uint32_t *bytes_written,
-                           mongocrypt_status_t *status) {
-
+                                const _mongocrypt_buffer_t *iv,
+                                const _mongocrypt_buffer_t *associated_data,
+                                const _mongocrypt_buffer_t *key,
+                                const _mongocrypt_buffer_t *plaintext,
+                                _mongocrypt_buffer_t *ciphertext,
+                                uint32_t *bytes_written,
+                                mongocrypt_status_t *status)
+{
    memset (ciphertext->data, 0, ciphertext->len);
 
    BSON_ASSERT_PARAM (iv);
@@ -1084,8 +1084,9 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
     * FLE 1 has first 32 bytes as mac_key.
     * FLE 2 proposes first 32 bytes as enc_key.
     * From "AEAD with CTR" document:
-    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
-    * For now, follow "AEAD with CTR" and use first 32 bytes for enc_key.
+    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC
+    * key Km is equal to the second 32 bytes of R." For now, follow "AEAD with
+    * CTR" and use first 32 bytes for enc_key.
     */
 
    /* M is the input plaintext. */
@@ -1095,17 +1096,22 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    /* IV is 16 byte IV. */
    _mongocrypt_buffer_t IV = {.data = iv->data, .len = iv->len};
    /* Km is 32 byte Key for HMAC. */
-   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN, .len = MONGOCRYPT_MAC_KEY_LEN};
+   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN,
+                              .len = MONGOCRYPT_MAC_KEY_LEN};
    /* AD is Associated Data. */
-   _mongocrypt_buffer_t AD = {.data = associated_data->data, .len = associated_data->len};
+   _mongocrypt_buffer_t AD = {.data = associated_data->data,
+                              .len = associated_data->len};
    /* C is the output ciphertext. */
    _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
    /* S is the output of the symmetric cipher. It is appended after IV in C. */
-   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN, .len = C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN};
+   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN,
+                             .len = C.len - MONGOCRYPT_IV_LEN -
+                                    MONGOCRYPT_HMAC_LEN};
    uint32_t S_bytes_written = 0;
    /* T is the output of the HMAC tag. It is appended after S in C. */
-   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN, .len = MONGOCRYPT_HMAC_LEN};
-   
+   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN,
+                             .len = MONGOCRYPT_HMAC_LEN};
+
    /* Compute S = AES-CTR.Enc(Ke, IV, M). */
    if (!_native_crypto_aes_256_ctr_encrypt (
           (aes_256_args_t){.key = &Ke,
@@ -1139,12 +1145,13 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
 
 bool
 _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
-                           const _mongocrypt_buffer_t *associated_data,
-                           const _mongocrypt_buffer_t *key,
-                           const _mongocrypt_buffer_t *ciphertext,
-                           _mongocrypt_buffer_t *plaintext,
-                           uint32_t *bytes_written,
-                           mongocrypt_status_t *status) {
+                                const _mongocrypt_buffer_t *associated_data,
+                                const _mongocrypt_buffer_t *key,
+                                const _mongocrypt_buffer_t *ciphertext,
+                                _mongocrypt_buffer_t *plaintext,
+                                uint32_t *bytes_written,
+                                mongocrypt_status_t *status)
+{
    memset (plaintext->data, 0, plaintext->len);
 
    BSON_ASSERT_PARAM (key);
@@ -1152,7 +1159,9 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (ciphertext);
 
    if (ciphertext->len <= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN) {
-      CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32 " bytes", MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
+      CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32
+                  " bytes",
+                  MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
       return false;
    }
 
@@ -1179,18 +1188,23 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
     * FLE 1 has first 32 bytes as mac_key.
     * FLE 2 proposes first 32 bytes as enc_key.
     * From "AEAD with CTR" document:
-    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
-    * For now, follow "AEAD with CTR" and use first 32 bytes for enc_key.
+    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC
+    * key Km is equal to the second 32 bytes of R." For now, follow "AEAD with
+    * CTR" and use first 32 bytes for enc_key.
     */
 
    /* C is the input ciphertext. */
    _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
    /* IV is 16 byte IV. It is the first part of C. */
-   _mongocrypt_buffer_t IV = {.data = ciphertext->data, .len = MONGOCRYPT_IV_LEN};
+   _mongocrypt_buffer_t IV = {.data = ciphertext->data,
+                              .len = MONGOCRYPT_IV_LEN};
    /* S is the symmetric cipher output from C. It is after the IV in C. */
-   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN, .len = C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN};
+   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN,
+                             .len = C.len - MONGOCRYPT_IV_LEN -
+                                    MONGOCRYPT_HMAC_LEN};
    /* T is the HMAC tag from C. It is after S in C. */
-   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN, .len = MONGOCRYPT_HMAC_LEN};
+   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN,
+                             .len = MONGOCRYPT_HMAC_LEN};
    /* Tp is the computed HMAC of the input. */
    _mongocrypt_buffer_t Tp = {0};
    /* M is the output plaintext. */
@@ -1198,11 +1212,14 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    /* Ke is 32 byte Key for encryption. */
    _mongocrypt_buffer_t Ke = {.data = key->data, .len = MONGOCRYPT_ENC_KEY_LEN};
    /* Km is 32 byte Key for HMAC. */
-   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN, .len = MONGOCRYPT_MAC_KEY_LEN};
+   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN,
+                              .len = MONGOCRYPT_MAC_KEY_LEN};
    /* AD is Associated Data. */
-   _mongocrypt_buffer_t AD = {.data = associated_data->data, .len = associated_data->len};
+   _mongocrypt_buffer_t AD = {.data = associated_data->data,
+                              .len = associated_data->len};
 
-   /* Compute Tp = HMAC-SHA256(Km, AD || IV || S). Check that it matches input ciphertext T. */
+   /* Compute Tp = HMAC-SHA256(Km, AD || IV || S). Check that it matches input
+    * ciphertext T. */
    {
       _mongocrypt_buffer_t hmac_inputs[] = {AD, IV, S};
       _mongocrypt_buffer_t hmac_input = {0};
@@ -1222,7 +1239,7 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_cleanup (&hmac_input);
       _mongocrypt_buffer_cleanup (&Tp);
    }
-   
+
    /* Compute and output M = AES-CTR.Dec(Ke, S) */
    if (!_native_crypto_aes_256_ctr_decrypt (
           (aes_256_args_t){.key = &Ke,

@@ -78,26 +78,26 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
  * It follows the construction described in the "AEAD with CTR" document:
  * https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/edit#
  * Attempting to encrypt a 0 length plaintext is an error.
- */ 
+ */
 bool
 _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
-                           const _mongocrypt_buffer_t *iv,
-                           const _mongocrypt_buffer_t *associated_data,
-                           const _mongocrypt_buffer_t *key,
-                           const _mongocrypt_buffer_t *plaintext,
-                           _mongocrypt_buffer_t *ciphertext,
-                           uint32_t *bytes_written,
-                           mongocrypt_status_t *status)
+                                const _mongocrypt_buffer_t *iv,
+                                const _mongocrypt_buffer_t *associated_data,
+                                const _mongocrypt_buffer_t *key,
+                                const _mongocrypt_buffer_t *plaintext,
+                                _mongocrypt_buffer_t *ciphertext,
+                                uint32_t *bytes_written,
+                                mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
 _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
-                           const _mongocrypt_buffer_t *associated_data,
-                           const _mongocrypt_buffer_t *key,
-                           const _mongocrypt_buffer_t *ciphertext,
-                           _mongocrypt_buffer_t *plaintext,
-                           uint32_t *bytes_written,
-                           mongocrypt_status_t *status)
+                                const _mongocrypt_buffer_t *associated_data,
+                                const _mongocrypt_buffer_t *key,
+                                const _mongocrypt_buffer_t *ciphertext,
+                                _mongocrypt_buffer_t *plaintext,
+                                uint32_t *bytes_written,
+                                mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool

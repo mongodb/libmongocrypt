@@ -369,7 +369,7 @@ _test_native_crypto_hmac_sha_256 (_mongocrypt_tester_t *tester)
                 "2179bbe8d46260eef7d0e7c1ae679b71",
        .expect = "1985743613238e3c8c05a0274be76fa6"
                  "7821228f7b880e72dbd0f314fb63e63f"},
-      #include "./data/NIST-CAVP.cstructs"
+#include "./data/NIST-CAVP.cstructs"
       {0}};
    hmac_sha_256_test_t *test;
    mongocrypt_t *crypt;
@@ -474,8 +474,9 @@ typedef struct {
    const char *iv;
    const char *associated_data;
    // key is a 96 byte Data Encryption Key (DEK).
-   // The first 32 bytes are the encryption key. The second 32 bytes are the mac key. The last 32 bytes are unused.
-   // See the "AEAD with CTR" document for a reference.
+   // The first 32 bytes are the encryption key. The second 32 bytes are the mac
+   // key. The last 32 bytes are unused. See the "AEAD with CTR" document for a
+   // reference.
    const char *key;
    const char *plaintext;
    const char *ciphertext;
@@ -492,40 +493,48 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
       {.testname = "Plaintext is 'test1'",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
+       .key =
+          "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ec"
+          "c9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a00000000"
+          "00000000000000000000000000000000000000000000000000000000",
        .plaintext = "74657374310a",
-       .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b081ee0cbfe7265dd57a84f6c331421b7fe6a9c8375748b46acbed1ec7a1b998387c",
-       .bytes_written_expected = 54
-       },
+       .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b081ee0cbfe7265dd"
+                     "57a84f6c331421b7fe6a9c8375748b46acbed1ec7a1b998387c",
+       .bytes_written_expected = 54},
 
       {.testname = "Plaintext is one byte",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
+       .key =
+          "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ec"
+          "c9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a00000000"
+          "00000000000000000000000000000000000000000000000000000000",
        .plaintext = "00",
-       .ciphertext = "918ab83c8966995dfb528a0020d9bb1004b2f319e0ec466bc9d265cbf0ae6b895d4d1db028502bb4e2293780d7196af635",
-       .bytes_written_expected = 49
-       },
-       {.testname = "Plaintext is zero bytes",
+       .ciphertext = "918ab83c8966995dfb528a0020d9bb1004b2f319e0ec466bc9d265cbf"
+                     "0ae6b895d4d1db028502bb4e2293780d7196af635",
+       .bytes_written_expected = 49},
+      {.testname = "Plaintext is zero bytes",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
+       .key =
+          "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ec"
+          "c9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a00000000"
+          "00000000000000000000000000000000000000000000000000000000",
        .plaintext = "",
        .ciphertext = "",
-       .expect_encrypt_error = "input plaintext too small"
-       },
+       .expect_encrypt_error = "input plaintext too small"},
 #include "data/fle2-aead.cstructs"
       {0}};
    fle2_aead_roundtrip_test_t *test;
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-              "remove.");
-      return;
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+           "remove.");
+   return;
 #endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
-      return;
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+   return;
 #endif
 
    crypt = _mongocrypt_tester_mongocrypt ();
@@ -545,7 +554,8 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
       printf ("Begin test '%s'.\n", test->testname);
 
       _mongocrypt_buffer_copy_from_hex (&iv, test->iv);
-      _mongocrypt_buffer_copy_from_hex (&associated_data, test->associated_data);
+      _mongocrypt_buffer_copy_from_hex (&associated_data,
+                                        test->associated_data);
       _mongocrypt_buffer_copy_from_hex (&key, test->key);
       _mongocrypt_buffer_copy_from_hex (&plaintext, test->plaintext);
       _mongocrypt_buffer_copy_from_hex (&ciphertext, test->ciphertext);
@@ -554,11 +564,20 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
          _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
       }
       _mongocrypt_buffer_init (&ciphertext_got);
-      _mongocrypt_buffer_resize (&ciphertext_got, _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+      _mongocrypt_buffer_resize (
+         &ciphertext_got,
+         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
       status = mongocrypt_status_new ();
 
       /* Test encrypt. */
-      ret = _mongocrypt_fle2_do_encryption (crypt->crypto, &iv, &associated_data, &key, &plaintext, &ciphertext_got, &bytes_written, status);
+      ret = _mongocrypt_fle2_do_encryption (crypt->crypto,
+                                            &iv,
+                                            &associated_data,
+                                            &key,
+                                            &plaintext,
+                                            &ciphertext_got,
+                                            &bytes_written,
+                                            status);
 
       if (NULL == test->expect_encrypt_error) {
          ASSERT_OR_PRINT (ret, status);
@@ -605,8 +624,9 @@ typedef struct {
    const char *testname;
    const char *associated_data;
    // key is a 96 byte Data Encryption Key (DEK).
-   // The first 32 bytes are the encryption key. The second 32 bytes are the mac key. The last 32 bytes are unused.
-   // See the "AEAD with CTR" document for a reference.
+   // The first 32 bytes are the encryption key. The second 32 bytes are the mac
+   // key. The last 32 bytes are unused. See the "AEAD with CTR" document for a
+   // reference.
    const char *key;
    const char *plaintext;
    const char *ciphertext;
@@ -621,36 +641,44 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
    fle2_aead_decrypt_test_t tests[] = {
       {.testname = "Mismatched HMAC",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
+       .key =
+          "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ec"
+          "c9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a00000000"
+          "00000000000000000000000000000000000000000000000000000000",
        .plaintext = "74657374310a",
-       .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b081ee0cbfe7265dd57a84f6c331421b7fe6a9c8375748b46acbed1ec7a1b9983800",
-       .expect_error = "decryption error"
-       },
+       .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b081ee0cbfe7265dd"
+                     "57a84f6c331421b7fe6a9c8375748b46acbed1ec7a1b9983800",
+       .expect_error = "decryption error"},
       {.testname = "Ciphertext too small",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
+       .key =
+          "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ec"
+          "c9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a00000000"
+          "00000000000000000000000000000000000000000000000000000000",
        .plaintext = "",
        .ciphertext = "00",
-       .expect_error = "input ciphertext too small"
-       },
-       {.testname = "Ciphertext symmetric cipher output is 0 bytes",
+       .expect_error = "input ciphertext too small"},
+      {.testname = "Ciphertext symmetric cipher output is 0 bytes",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
+       .key =
+          "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ec"
+          "c9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a00000000"
+          "00000000000000000000000000000000000000000000000000000000",
        .plaintext = "",
-       .ciphertext = "74c1b6102bbcb96436795ccbf2703af61703e0e33de37f148490c7ed7989f31720c4ed6a24ecc01cc3622f90ed2b5500",
-       .expect_error = "input ciphertext too small"
-       },
+       .ciphertext = "74c1b6102bbcb96436795ccbf2703af61703e0e33de37f148490c7ed7"
+                     "989f31720c4ed6a24ecc01cc3622f90ed2b5500",
+       .expect_error = "input ciphertext too small"},
       {0}};
    fle2_aead_decrypt_test_t *test;
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-              "remove.");
-      return;
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+           "remove.");
+   return;
 #endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
-      return;
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+   return;
 #endif
 
    crypt = _mongocrypt_tester_mongocrypt ();
@@ -667,7 +695,8 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
 
       printf ("Begin test '%s'.\n", test->testname);
 
-      _mongocrypt_buffer_copy_from_hex (&associated_data, test->associated_data);
+      _mongocrypt_buffer_copy_from_hex (&associated_data,
+                                        test->associated_data);
       _mongocrypt_buffer_copy_from_hex (&key, test->key);
       _mongocrypt_buffer_copy_from_hex (&plaintext, test->plaintext);
       _mongocrypt_buffer_copy_from_hex (&ciphertext, test->ciphertext);
@@ -677,11 +706,19 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       }
       status = mongocrypt_status_new ();
 
-      ret = _mongocrypt_fle2_do_decryption (crypt->crypto, &associated_data, &key, &ciphertext, &plaintext, &bytes_written, status);
+      ret = _mongocrypt_fle2_do_decryption (crypt->crypto,
+                                            &associated_data,
+                                            &key,
+                                            &ciphertext,
+                                            &plaintext,
+                                            &bytes_written,
+                                            status);
       if (test->expect_error == NULL) {
          ASSERT_OR_PRINT (ret, status);
-         ASSERT_CMPBYTES (
-            plaintext.data, plaintext.len, plaintext_got.data, plaintext_got.len);
+         ASSERT_CMPBYTES (plaintext.data,
+                          plaintext.len,
+                          plaintext_got.data,
+                          plaintext_got.len);
          ASSERT_CMPINT ((int) bytes_written, ==, (int) plaintext.len);
       } else {
          ASSERT_FAILS_STATUS (ret, status, test->expect_error);
