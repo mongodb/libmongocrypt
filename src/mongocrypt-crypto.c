@@ -1094,7 +1094,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t AD = {.data = associated_data->data, .len = associated_data->len};
    /* C is the output ciphertext. */
    _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
-   /* S is the output of the cipher. It is appended after IV in C. */
+   /* S is the output of the symmetric cipher. It is appended after IV in C. */
    _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN, .len = C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN};
    uint32_t S_bytes_written = 0;
    /* T is the output of the HMAC tag. It is appended after S in C. */
@@ -1176,7 +1176,7 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
    /* IV is 16 byte IV. It is the first part of C. */
    _mongocrypt_buffer_t IV = {.data = ciphertext->data, .len = MONGOCRYPT_IV_LEN};
-   /* S is the input cipher from C. It is after the IV in C. */
+   /* S is the symmetric cipher output from C. It is after the IV in C. */
    _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN, .len = C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN};
    /* T is the HMAC tag from C. It is after S in C. */
    _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN, .len = MONGOCRYPT_HMAC_LEN};
