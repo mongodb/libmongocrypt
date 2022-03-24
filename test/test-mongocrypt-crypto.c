@@ -514,6 +514,7 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
        .ciphertext = "",
        .expect_encrypt_error = "input plaintext too small"
        },
+#include "data/fle2-aead.cstructs"
       {0}};
    fle2_aead_roundtrip_test_t *test;
 
