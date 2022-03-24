@@ -195,8 +195,6 @@ _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len)
    return 16 * ((plaintext_len / 16) + 2) + MONGOCRYPT_HMAC_LEN;
 }
 
-/* _mongocrypt_fle2_calculate_ciphertext_len returns the required length of
- * the ciphertext for _mongocrypt_fle2_do_encryption. */
 uint32_t
 _mongocrypt_fle2_calculate_ciphertext_len (uint32_t plaintext_len)
 {
@@ -228,8 +226,6 @@ _mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len)
    return ciphertext_len - (MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
 }
 
-/* _mongocrypt_fle2_calculate_plaintext_len returns the required length of
- * the plaintext for _mongocrypt_fle2_do_decryption. */
 uint32_t
 _mongocrypt_fle2_calculate_plaintext_len (uint32_t ciphertext_len)
 {
@@ -1045,12 +1041,14 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
                                 uint32_t *bytes_written,
                                 mongocrypt_status_t *status)
 {
-   memset (ciphertext->data, 0, ciphertext->len);
-
+   BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iv);
+   BSON_ASSERT_PARAM (associated_data);
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (bytes_written);
+   BSON_ASSERT_PARAM (status);
 
    if (ciphertext->len !=
        _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len)) {
@@ -1064,8 +1062,6 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   *bytes_written = 0;
-
    if (MONGOCRYPT_IV_LEN != iv->len) {
       CLIENT_ERR ("IV must be length %d, but is length %" PRIu32,
                   MONGOCRYPT_IV_LEN,
@@ -1078,6 +1074,9 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
                   key->len);
       return false;
    }
+
+   memset (ciphertext->data, 0, ciphertext->len);
+   *bytes_written = 0;
 
    /* Declare variable names matching [AEAD with
     * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
@@ -1145,11 +1144,13 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
                                 uint32_t *bytes_written,
                                 mongocrypt_status_t *status)
 {
-   memset (plaintext->data, 0, plaintext->len);
-
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (associated_data);
    BSON_ASSERT_PARAM (key);
-   BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (bytes_written);
+   BSON_ASSERT_PARAM (status);
 
    if (ciphertext->len <= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN) {
       CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32
@@ -1165,14 +1166,15 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   *bytes_written = 0;
-
    if (MONGOCRYPT_KEY_LEN != key->len) {
       CLIENT_ERR ("key must be length %d, but is length %" PRIu32,
                   MONGOCRYPT_KEY_LEN,
                   key->len);
       return false;
    }
+
+   memset (plaintext->data, 0, plaintext->len);
+   *bytes_written = 0;
 
    /* Declare variable names matching [AEAD with
     * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
