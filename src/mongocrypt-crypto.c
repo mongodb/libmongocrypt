@@ -1035,8 +1035,92 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
                            _mongocrypt_buffer_t *ciphertext,
                            uint32_t *bytes_written,
                            mongocrypt_status_t *status) {
-   CLIENT_ERR ("_mongocrypt_fle2_do_encryption not implemented");
-   return false;
+
+   memset (ciphertext->data, 0, ciphertext->len);
+
+   BSON_ASSERT_PARAM (iv);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (ciphertext);
+
+   if (ciphertext->len !=
+       _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len)) {
+      CLIENT_ERR ("output ciphertext should have been allocated with %" PRIu32 " bytes",
+                  _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len));
+      return false;
+   }
+
+   *bytes_written = 0;
+
+   if (MONGOCRYPT_IV_LEN != iv->len) {
+      CLIENT_ERR ("IV should have length %d, but has length %" PRIu32,
+                  MONGOCRYPT_IV_LEN,
+                  iv->len);
+      return false;
+   }
+   if (MONGOCRYPT_KEY_LEN != key->len) {
+      CLIENT_ERR ("key should have length %d, but has length %" PRIu32,
+                  MONGOCRYPT_KEY_LEN,
+                  key->len);
+      return false;
+   }
+
+   /* Use variable names matching "AEAD with CTR" document. */
+   /* TODO: This is a possible discrepency.
+    * FLE 1 has first 32 bytes as mac_key.
+    * FLE 2 proposes first 32 bytes as enc_key.
+    * From "AEAD with CTR" document:
+    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
+    * For now, follow "AEAD with CTR" and use first 32 bytes for enc_key.
+    */
+
+   /* M is plaintext. */
+   _mongocrypt_buffer_t M = {.data = plaintext->data, .len = plaintext->len};
+   /* Ke is 32 byte Key for encryption. */
+   _mongocrypt_buffer_t Ke = {.data = key->data, .len = MONGOCRYPT_ENC_KEY_LEN};
+   /* IV is 16 byte IV. */
+   _mongocrypt_buffer_t IV = {.data = iv->data, .len = iv->len};
+   /* Km is 32 byte Key for HMAC. */
+   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN, .len = MONGOCRYPT_MAC_KEY_LEN};
+   /* AD is Associated Data. */
+   _mongocrypt_buffer_t AD = {.data = associated_data->data, .len = associated_data->len};
+   /* C is the final result. */
+   _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
+   /* S is the output of the cipher. It is appended after IV in C. */
+   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN, .len = C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN};
+   uint32_t S_bytes_written = 0;
+   /* T is the output of the HMAC tag. It is appended after S in C. */
+   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN, .len = MONGOCRYPT_HMAC_LEN};
+   
+   /* Compute S = AES-CTR.Enc(Ke, IV, M). */
+   if (!_native_crypto_aes_256_ctr_encrypt (
+          (aes_256_args_t){.key = &Ke,
+                           .iv = &IV,
+                           .in = &M,
+                           .out = &S,
+                           .bytes_written = &S_bytes_written,
+                           .status = status})) {
+      return false;
+   }
+
+   /* Compute T = HMAC-SHA256(Km, AD || IV || S). */
+   {
+      _mongocrypt_buffer_t hmac_inputs[] = {AD, IV, S};
+      _mongocrypt_buffer_t hmac_input = {0};
+      _mongocrypt_buffer_concat (&hmac_input, hmac_inputs, 3);
+      if (!_native_crypto_hmac_sha_256 (&Km, &hmac_input, &T, status)) {
+         _mongocrypt_buffer_cleanup (&hmac_input);
+         return false;
+      }
+      _mongocrypt_buffer_cleanup (&hmac_input);
+   }
+
+   /* Output C = IV || S || T. */
+   /* S and T are already in C. Prepend IV. */
+   memcpy (C.data, IV.data, MONGOCRYPT_IV_LEN);
+
+   *bytes_written = MONGOCRYPT_IV_LEN + S_bytes_written + MONGOCRYPT_HMAC_LEN;
+   return true;
 }
 
 bool
