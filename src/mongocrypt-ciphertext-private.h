@@ -17,12 +17,23 @@
 #ifndef MONGOCRYPT_CIPHERTEXT_PRIVATE_H
 #define MONGOCRYPT_CIPHERTEXT_PRIVATE_H
 
+#include "mc-fle-blob-subtype-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt.h"
 
+/**
+ * Produced by mongocrypt-marking.c from _mongocrypt_marking_t
+ * as encrypted payloads for blob_subtypes:
+ *   FLE1DeterministicEncryptedValue(1)
+ *   FLE1RandomEncryptedValue(2)
+ *   FLE2InsertUpdatePayload(4)
+ *
+ * Note that only FLE2InsertUpdatePayload(4) uses the user_key_id field.
+ */
 typedef struct {
    _mongocrypt_buffer_t key_id;
-   uint8_t blob_subtype;
+   _mongocrypt_buffer_t user_key_id;
+   mc_fle_blob_subtype_t blob_subtype;
    uint8_t original_bson_type;
    _mongocrypt_buffer_t data;
 } _mongocrypt_ciphertext_t;

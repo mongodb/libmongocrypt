@@ -1954,6 +1954,74 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
 }
 
 void
+_test_fle2_insert_update_payload (bson_iter_t *iter,
+                                  mongocrypt_status_t *status)
+{
+   mc_FLE2InsertUpdatePayload_t payload;
+   bson_subtype_t subtype;
+   const uint8_t *data;
+   uint32_t len;
+   bson_t as_bson;
+
+   ASSERT (bson_iter_type (iter) == BSON_TYPE_BINARY);
+   bson_iter_binary (iter, &subtype, &len, &data);
+   ASSERT (subtype == 6); /* BinData(6) == FLE Payload */
+   ASSERT (len >= 6);     /* Minimum BSON size (5) plus subsubtype(1) */
+   ASSERT (data[0] == MC_SUBTYPE_FLE2InsertUpdatePayload);
+
+   ASSERT (bson_init_static (&as_bson, data + 1, len - 1));
+   ASSERT_OK_STATUS (
+      mc_FLE2InsertUpdatePayload_parse (&payload, &as_bson, status), status);
+   mc_FLE2InsertUpdatePayload_cleanup (&payload);
+}
+
+
+static void
+_test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   tester->paths.collection_info =
+      "./test/data/fle2-insert/collection-info.json";
+   tester->paths.mongocryptd_reply =
+      "./test/data/fle2-insert/mongocryptd-reply.json";
+   tester->paths.key_file = "./test/data/fle2-insert/key-document.json";
+
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "db", -1, TEST_FILE ("./test/data/fle2-insert/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_READY);
+
+   {
+      mongocrypt_binary_t *cmd = mongocrypt_binary_new ();
+      bson_t as_bson;
+      bson_iter_t iter;
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd), ctx);
+      BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_DONE);
+
+      BSON_ASSERT (_mongocrypt_binary_to_bson (cmd, &as_bson));
+
+      printf ("encrypted doc: %s", tmp_json (&as_bson));
+      // The output of the encryption phase is non-deterministic
+      // because the IV values are random on each invocation.
+      // Just look for valid structure to the data.
+      ASSERT (bson_iter_init_find (&iter, &as_bson, "documents"));
+      ASSERT (bson_iter_recurse (&iter, &iter));
+      ASSERT (bson_iter_find (&iter, "_id"));
+      ASSERT (bson_iter_find (&iter, "ssn"));
+      _test_fle2_insert_update_payload (&iter, ctx->status);
+      ASSERT (bson_iter_find (&iter, "billing.cc"));
+      _test_fle2_insert_update_payload (&iter, ctx->status);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_explicit_encrypt_init);
@@ -1988,4 +2056,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_no_schema);
    INSTALL_TEST (_test_encrypt_remote_encryptedfields);
    INSTALL_TEST (_test_encrypt_with_bypassqueryanalysis);
+   INSTALL_TEST (_test_encrypt_fle2_insert_payload);
 }

@@ -1,0 +1,60 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "documents": {
+            "_id": 1,
+            "ssn": {
+                "$binary": {
+                    "base64": "A2QAAAAQdAABAAAAEGEAAQAAAAVraQAQAAAABGFhYWFhYWFhYWFhYWFhYWEFa3UAEAAAAARhYWFhYWFhYWFhYWFhYWFhAnYADAAAADEyMy00NS02Nzg5ABJjbQAAAAAAAAAAAAA=",
+                    "subType": "06"
+                }
+            },
+            "billing.cc": {
+                "$binary": {
+                    "base64": "A2kAAAAQdAABAAAAEGEAAQAAAAVraQAQAAAABGFhYWFhYWFhYWFhYWFhYWEFa3UAEAAAAARhYWFhYWFhYWFhYWFhYWFhAnYAEQAAADAxMjM0NTY3MDEyMzQ1NjcAEmNtAAAAAAAAAAAAAA==",
+                    "subType": "06"
+                }
+            }
+        },
+        "encryptedFields": {
+            "escCollection" : "fle2.testColl.esc",
+            "eccCollection" : "fle2.testColl.ecc",
+            "ecocCollection" : "fle2.testColl.ecoc",
+            "fields": [
+                {
+                    "keyId": {
+                        "$binary": {
+                            "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                            "subType": "04"
+                        }
+                    },
+                    "path": "ssn",
+                    "bsonType": "string",
+                    "queries": {
+                        "queryType": "equality",
+                        "contention": 0
+                    }
+                },
+                {
+                    "keyId": {
+                        "$binary": {
+                            "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                            "subType": "04"
+                        }
+                    },
+                    "path": "billing.cc",
+                    "bsonType": "string",
+                    "queries": {
+                        "queryType": "equality",
+                        "contention": 0
+                    }
+                }
+            ]
+        },
+        "insert": "test",
+        "$db": "test"
+    },
+    "hasEncryptedPlaceholders": true
+}

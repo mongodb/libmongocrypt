@@ -142,6 +142,15 @@ typedef enum {
    MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM = 2
 } mongocrypt_encryption_algorithm_t;
 
+typedef enum {
+   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT = 1,
+   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND = 2
+} mongocrypt_fle2_placeholder_type_t;
+
+typedef enum {
+   MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED = 1,
+   MONGOCRYPT_FLE2_ALGORITHM_EQUALITY = 2
+} mongocrypt_fle2_encryption_algorithm_t;
 
 bool
 _mongocrypt_validate_and_copy_string (const char *in,

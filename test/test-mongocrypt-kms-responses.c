@@ -64,7 +64,7 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
       } else if (0 == strcmp ("decrypt", ctx_type)) {
          mongocrypt_binary_destroy (bin);
          bin = _mongocrypt_tester_encrypted_doc (tester);
-         tester->key_file_path = "./test/example/key-document.json";
+         tester->paths.key_file = "./test/example/key-document.json";
          ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
       } else if (0 == strcmp ("azure_oauth_datakey", ctx_type)) {
          mongocrypt_ctx_setopt_key_encryption_key (
@@ -74,7 +74,7 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
          ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
       } else if (0 == strcmp ("azure_oauth_decrypt", ctx_type)) {
          bin = _mongocrypt_tester_encrypted_doc (tester);
-         tester->key_file_path = "./test/data/key-document-azure.json";
+         tester->paths.key_file = "./test/data/key-document-azure.json";
          ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
       } else if (0 == strcmp ("gcp_oauth_datakey", ctx_type)) {
          mongocrypt_ctx_setopt_key_encryption_key (
@@ -84,7 +84,7 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
          ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
       } else if (0 == strcmp ("gcp_oauth_decrypt", ctx_type)) {
          bin = _mongocrypt_tester_encrypted_doc (tester);
-         tester->key_file_path = "./test/data/key-document-gcp.json";
+         tester->paths.key_file = "./test/data/key-document-gcp.json";
          ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
       } else {
          fprintf (stderr, "unsupported ctx type: %s\n", ctx_type);

@@ -321,10 +321,14 @@ _collect_key_from_marking (void *ctx,
       return false;
    }
 
-   if (marking.has_alt_name) {
-      res = _mongocrypt_key_broker_request_name (kb, &marking.key_alt_name);
-   } else {
+   if (marking.type == MONGOCRYPT_MARKING_FLE1_BY_ID) {
       res = _mongocrypt_key_broker_request_id (kb, &marking.key_id);
+   } else if (marking.type == MONGOCRYPT_MARKING_FLE1_BY_ALTNAME) {
+      res = _mongocrypt_key_broker_request_name (kb, &marking.key_alt_name);
+   } else if (marking.type == MONGOCRYPT_MARKING_FLE2_INSERT_UPDATE) {
+      res =
+         _mongocrypt_key_broker_request_id (kb, &marking.fle2.index_key_id) &&
+         _mongocrypt_key_broker_request_id (kb, &marking.fle2.user_key_id);
    }
 
    if (!res) {
@@ -551,8 +555,18 @@ _marking_to_bson_value (void *ctx,
       goto fail;
    }
 
-   if (!_mongocrypt_serialize_ciphertext (&ciphertext,
-                                          &serialized_ciphertext)) {
+   if (ciphertext.blob_subtype == MC_SUBTYPE_FLE2InsertUpdatePayload) {
+      /* ciphertext_data is already a BSON object, just need to prepend
+       * blob_subtype */
+      _mongocrypt_buffer_init_size (&serialized_ciphertext,
+                                    ciphertext.data.len + 1);
+      serialized_ciphertext.data[0] = ciphertext.blob_subtype;
+      memcpy (serialized_ciphertext.data + 1,
+              ciphertext.data.data,
+              ciphertext.data.len);
+
+   } else if (!_mongocrypt_serialize_ciphertext (&ciphertext,
+                                                 &serialized_ciphertext)) {
       CLIENT_ERR ("malformed ciphertext");
       goto fail;
    };
@@ -638,10 +652,24 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
          return _mongocrypt_ctx_fail (ctx);
       }
    } else {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx,
-         "FLE 2 markings not supported yet. See: MONGOCRYPT-397, "
-         "MONGOCRYPT-398, and MONGOCRYPT-399");
+      bson_t as_bson;
+      bson_iter_t iter;
+
+      if (!_mongocrypt_buffer_to_bson (&ectx->marked_cmd, &as_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+      }
+
+      bson_iter_init (&iter, &as_bson);
+      bson_init (&converted);
+      if (!_mongocrypt_transform_binary_in_bson (
+             _replace_marking_with_ciphertext,
+             &ctx->kb,
+             TRAVERSE_MATCH_MARKING,
+             &iter,
+             &converted,
+             ctx->status)) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
    }
 
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
@@ -711,7 +739,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       if (ctx->opts.key_alt_names) {
          bson_value_copy (&ctx->opts.key_alt_names->value,
                           &marking.key_alt_name);
-         marking.has_alt_name = true;
+         marking.type = MONGOCRYPT_MARKING_FLE1_BY_ALTNAME;
       }
 
       bson_init (&converted);
