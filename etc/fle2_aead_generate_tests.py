@@ -17,13 +17,13 @@ tmpl = """{{
     .bytes_written_expected = {bytes_written_expected}
 }},"""
 
-for (AD_len, M_len) in itertools.product (AD_lens, M_lens):
-    M = os.urandom (M_len)
-    AD = os.urandom (AD_len)
-    IV = os.urandom (16)
-    Ke = os.urandom (32)
-    Km = os.urandom (32)
-    C = fle2_aead.encrypt (M=M, Ke=Ke, IV=IV, Km=Km, AD=AD)
+for (AD_len, M_len) in itertools.product(AD_lens, M_lens):
+    M = os.urandom(M_len)
+    AD = os.urandom(AD_len)
+    IV = os.urandom(16)
+    Ke = os.urandom(32)
+    Km = os.urandom(32)
+    C = fle2_aead.encrypt(M=M, Ke=Ke, IV=IV, Km=Km, AD=AD)
 
     # Create the 96 byte data encryption key. The last 32 are unused.
     key = Ke + Km + (b"\x00" * 32)
@@ -37,6 +37,4 @@ for (AD_len, M_len) in itertools.product (AD_lens, M_lens):
         "bytes_written_expected": len(C)
     }
     testcase = tmpl.format(**args)
-    print (testcase)
-
-    
+    print(testcase)
