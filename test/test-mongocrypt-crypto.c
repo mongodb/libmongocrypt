@@ -473,17 +473,17 @@ typedef struct {
    const char *testname;
    const char *iv;
    const char *associated_data;
-   // key is a 96 byte Data Encryption Key (DEK).
-   // The first 32 bytes are the encryption key. The second 32 bytes are the mac
-   // key. The last 32 bytes are unused. See the "AEAD with CTR" document for a
-   // reference.
+   /* key is a 96 byte Data Encryption Key (DEK).
+    * The first 32 bytes are the encryption key. The second 32 bytes are the mac
+    * key. The last 32 bytes are unused. See [AEAD with
+    * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
+    */
    const char *key;
    const char *plaintext;
    const char *ciphertext;
    uint32_t bytes_written_expected;
    const char *expect_encrypt_error;
 } fle2_aead_roundtrip_test_t;
-/* TODO: rename to fle2_aead_roundtrip_test_t. */
 
 void
 _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
@@ -623,10 +623,11 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
 typedef struct {
    const char *testname;
    const char *associated_data;
-   // key is a 96 byte Data Encryption Key (DEK).
-   // The first 32 bytes are the encryption key. The second 32 bytes are the mac
-   // key. The last 32 bytes are unused. See the "AEAD with CTR" document for a
-   // reference.
+   /* key is a 96 byte Data Encryption Key (DEK).
+    * The first 32 bytes are the encryption key. The second 32 bytes are the mac
+    * key. The last 32 bytes are unused. See [AEAD with
+    * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
+    */
    const char *key;
    const char *plaintext;
    const char *ciphertext;
