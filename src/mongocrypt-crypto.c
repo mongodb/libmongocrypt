@@ -228,6 +228,14 @@ _mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len)
    return ciphertext_len - (MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
 }
 
+/* _mongocrypt_fle2_calculate_plaintext_len returns the required length of
+ * the plaintext for _mongocrypt_fle2_do_decryption. */
+uint32_t
+_mongocrypt_fle2_calculate_plaintext_len (uint32_t ciphertext_len)
+{
+   /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
+   return ciphertext_len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN;
+}
 
 /* ----------------------------------------------------------------------------
  *
