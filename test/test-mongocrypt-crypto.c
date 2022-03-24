@@ -481,6 +481,7 @@ typedef struct {
    const char *ciphertext;
    uint32_t bytes_written_expected;
 } fle2_aead_test_t;
+/* TODO: rename to fle2_aead_roundtrip_test_t. */
 
 void
 _test_fle2_aead (_mongocrypt_tester_t *tester)
@@ -547,7 +548,7 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
       ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
 
       /* Test decrypt. */
-      ret = _mongocrypt_fle2_do_decryption (crypt->crypto, &associated_data, &key, &ciphertext, &plaintext, &bytes_written, status);
+      ret = _mongocrypt_fle2_do_decryption (crypt->crypto, &associated_data, &key, &ciphertext, &plaintext_got, &bytes_written, status);
       ASSERT_OR_PRINT (ret, status);
       ASSERT_CMPBYTES (
          plaintext.data, plaintext.len, plaintext_got.data, plaintext_got.len);
@@ -559,6 +560,7 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_cleanup (&ciphertext);
       _mongocrypt_buffer_cleanup (&plaintext);
       _mongocrypt_buffer_cleanup (&iv);
+      _mongocrypt_buffer_cleanup (&associated_data);
       _mongocrypt_buffer_cleanup (&key);
 
       printf ("End test '%s'.\n", test->testname);
