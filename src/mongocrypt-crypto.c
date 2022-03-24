@@ -1059,6 +1059,11 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   if (plaintext->len <= 0) {
+      CLIENT_ERR ("input plaintext too small. Must be more than zero bytes.");
+      return false;
+   }
+
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
