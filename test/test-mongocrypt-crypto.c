@@ -480,6 +480,7 @@ typedef struct {
    const char *plaintext;
    const char *ciphertext;
    uint32_t bytes_written_expected;
+   const char *expect_encrypt_error;
 } fle2_aead_roundtrip_test_t;
 /* TODO: rename to fle2_aead_roundtrip_test_t. */
 
@@ -488,7 +489,7 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    fle2_aead_roundtrip_test_t tests[] = {
-      {.testname = "Test case 'test1'",
+      {.testname = "Plaintext is 'test1'",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
@@ -497,13 +498,21 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
        .bytes_written_expected = 54
        },
 
-      {.testname = "Input one byte",
+      {.testname = "Plaintext is one byte",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
        .plaintext = "00",
        .ciphertext = "918ab83c8966995dfb528a0020d9bb1004b2f319e0ec466bc9d265cbf0ae6b895d4d1db028502bb4e2293780d7196af635",
        .bytes_written_expected = 49
+       },
+       {.testname = "Plaintext is zero bytes",
+       .iv = "918ab83c8966995dfb528a0020d9bb10",
+       .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
+       .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
+       .plaintext = "",
+       .ciphertext = "",
+       .expect_encrypt_error = "input plaintext too small"
        },
       {0}};
    fle2_aead_roundtrip_test_t *test;
@@ -540,26 +549,41 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_copy_from_hex (&plaintext, test->plaintext);
       _mongocrypt_buffer_copy_from_hex (&ciphertext, test->ciphertext);
       _mongocrypt_buffer_init (&plaintext_got);
-      _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
+      if (plaintext.len > 0) {
+         _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
+      }
       _mongocrypt_buffer_init (&ciphertext_got);
       _mongocrypt_buffer_resize (&ciphertext_got, _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
       status = mongocrypt_status_new ();
 
       /* Test encrypt. */
       ret = _mongocrypt_fle2_do_encryption (crypt->crypto, &iv, &associated_data, &key, &plaintext, &ciphertext_got, &bytes_written, status);
-      ASSERT_OR_PRINT (ret, status);
-      ASSERT_CMPBYTES (ciphertext.data,
-                       ciphertext.len,
-                       ciphertext_got.data,
-                       ciphertext_got.len);
-      ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
 
-      /* Test decrypt. */
-      ret = _mongocrypt_fle2_do_decryption (crypt->crypto, &associated_data, &key, &ciphertext, &plaintext_got, &bytes_written, status);
-      ASSERT_OR_PRINT (ret, status);
-      ASSERT_CMPBYTES (
-         plaintext.data, plaintext.len, plaintext_got.data, plaintext_got.len);
-      ASSERT_CMPINT ((int) bytes_written, ==, (int) plaintext.len);
+      if (NULL == test->expect_encrypt_error) {
+         ASSERT_OR_PRINT (ret, status);
+         ASSERT_CMPBYTES (ciphertext.data,
+                          ciphertext.len,
+                          ciphertext_got.data,
+                          ciphertext_got.len);
+         ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
+
+         /* Test decrypt. */
+         ret = _mongocrypt_fle2_do_decryption (crypt->crypto,
+                                               &associated_data,
+                                               &key,
+                                               &ciphertext,
+                                               &plaintext_got,
+                                               &bytes_written,
+                                               status);
+         ASSERT_OR_PRINT (ret, status);
+         ASSERT_CMPBYTES (plaintext.data,
+                          plaintext.len,
+                          plaintext_got.data,
+                          plaintext_got.len);
+         ASSERT_CMPINT ((int) bytes_written, ==, (int) plaintext.len);
+      } else {
+         ASSERT_FAILS_STATUS (ret, status, test->expect_encrypt_error);
+      }
 
       mongocrypt_status_destroy (status);
       _mongocrypt_buffer_cleanup (&ciphertext_got);
@@ -604,14 +628,14 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       {.testname = "Ciphertext too small",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
-       .plaintext = "00",
+       .plaintext = "",
        .ciphertext = "00",
        .expect_error = "input ciphertext too small"
        },
-       {.testname = "Ciphertext is 0 bytes",
+       {.testname = "Ciphertext symmetric cipher output is 0 bytes",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
-       .plaintext = "00",
+       .plaintext = "",
        .ciphertext = "74c1b6102bbcb96436795ccbf2703af61703e0e33de37f148490c7ed7989f31720c4ed6a24ecc01cc3622f90ed2b5500",
        .expect_error = "input ciphertext too small"
        },
@@ -647,7 +671,9 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_copy_from_hex (&plaintext, test->plaintext);
       _mongocrypt_buffer_copy_from_hex (&ciphertext, test->ciphertext);
       _mongocrypt_buffer_init (&plaintext_got);
-      _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
+      if (plaintext.len > 0) {
+         _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
+      }
       status = mongocrypt_status_new ();
 
       ret = _mongocrypt_fle2_do_decryption (crypt->crypto, &associated_data, &key, &ciphertext, &plaintext, &bytes_written, status);
