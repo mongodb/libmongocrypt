@@ -1100,21 +1100,6 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
                        MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
-
-   /* Non-AWS KMS provider should not prompt NEED_KMS_CREDENTIALS state. */
-   crypt = mongocrypt_new ();
-   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
-   mongocrypt_setopt_kms_providers (
-      crypt, TEST_BSON ("{'gcp': {'email': 'test', 'privateKey': 'AAAA' }}"));
-   ASSERT_OK (mongocrypt_init (crypt), crypt);
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (ctx, crypt);
-   ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
-              ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-   mongocrypt_ctx_destroy (ctx);
-   mongocrypt_destroy (crypt);
 }
 
 
