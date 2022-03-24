@@ -480,14 +480,14 @@ typedef struct {
    const char *plaintext;
    const char *ciphertext;
    uint32_t bytes_written_expected;
-} fle2_aead_test_t;
+} fle2_aead_roundtrip_test_t;
 /* TODO: rename to fle2_aead_roundtrip_test_t. */
 
 void
-_test_fle2_aead (_mongocrypt_tester_t *tester)
+_test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
-   fle2_aead_test_t tests[] = {
+   fle2_aead_roundtrip_test_t tests[] = {
       {.testname = "Test case 'test1'",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
@@ -506,7 +506,7 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
        .bytes_written_expected = 49
        },
       {0}};
-   fle2_aead_test_t *test;
+   fle2_aead_roundtrip_test_t *test;
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
       printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
@@ -681,6 +681,6 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_native_crypto_aes_256_ctr);
    INSTALL_TEST (_test_native_crypto_hmac_sha_256);
    INSTALL_TEST_CRYPTO (_test_mongocrypt_hmac_sha_256_hook, CRYPTO_OPTIONAL);
-   INSTALL_TEST (_test_fle2_aead);
+   INSTALL_TEST (_test_fle2_aead_roundtrip);
    INSTALL_TEST (_test_fle2_aead_decrypt);
 }
