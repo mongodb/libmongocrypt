@@ -501,6 +501,16 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
       {0}};
    fle2_aead_test_t *test;
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+              "remove.");
+      return;
+#endif
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+      return;
+#endif
+
    crypt = _mongocrypt_tester_mongocrypt ();
 
    for (test = tests; test->testname != NULL; test++) {
@@ -514,16 +524,6 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_t ciphertext_got;
       mongocrypt_status_t *status;
       uint32_t bytes_written;
-
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-              "remove.");
-      return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
-      return;
-#endif
 
       printf ("Begin test '%s'.\n", test->testname);
 
@@ -596,6 +596,16 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       {0}};
    fle2_aead_decrypt_test_t *test;
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+              "remove.");
+      return;
+#endif
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+      return;
+#endif
+
    crypt = _mongocrypt_tester_mongocrypt ();
 
    for (test = tests; test->testname != NULL; test++) {
@@ -607,16 +617,6 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_t plaintext_got;
       mongocrypt_status_t *status;
       uint32_t bytes_written;
-
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-              "remove.");
-      return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
-      return;
-#endif
 
       printf ("Begin test '%s'.\n", test->testname);
 
