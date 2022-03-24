@@ -473,10 +473,10 @@ typedef struct {
    const char *testname;
    const char *iv;
    const char *associated_data;
+   // key is a 96 byte Data Encryption Key (DEK).
+   // The first 32 bytes are the encryption key. The second 32 bytes are the mac key. The last 32 bytes are unused.
+   // See the "AEAD with CTR" document for a reference.
    const char *key;
-   // TODO: consider splitting key into the following
-   // const char *key_encryption;
-   // const char *key_mac;
    const char *plaintext;
    const char *ciphertext;
    uint32_t bytes_written_expected;
@@ -491,8 +491,6 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
       {.testname = "Test case 'test1'",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       // From "AEAD with CTR" document:
-       // "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
        .plaintext = "74657374310a",
        .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b081ee0cbfe7265dd57a84f6c331421b7fe6a9c8375748b46acbed1ec7a1b998387c",
@@ -502,8 +500,6 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
       {.testname = "Input one byte",
        .iv = "918ab83c8966995dfb528a0020d9bb10",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       // From "AEAD with CTR" document:
-       // "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
        .plaintext = "00",
        .ciphertext = "918ab83c8966995dfb528a0020d9bb1004b2f319e0ec466bc9d265cbf0ae6b895d4d1db028502bb4e2293780d7196af635",
@@ -583,6 +579,9 @@ _test_fle2_aead (_mongocrypt_tester_t *tester)
 typedef struct {
    const char *testname;
    const char *associated_data;
+   // key is a 96 byte Data Encryption Key (DEK).
+   // The first 32 bytes are the encryption key. The second 32 bytes are the mac key. The last 32 bytes are unused.
+   // See the "AEAD with CTR" document for a reference.
    const char *key;
    const char *plaintext;
    const char *ciphertext;
@@ -597,8 +596,6 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
    fle2_aead_decrypt_test_t tests[] = {
       {.testname = "Mismatched HMAC",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       // From "AEAD with CTR" document:
-       // "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
        .plaintext = "74657374310a",
        .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b081ee0cbfe7265dd57a84f6c331421b7fe6a9c8375748b46acbed1ec7a1b9983800",
@@ -606,8 +603,6 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
        },
       {.testname = "Ciphertext too small",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       // From "AEAD with CTR" document:
-       // "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
        .plaintext = "00",
        .ciphertext = "00",
@@ -615,8 +610,6 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
        },
        {.testname = "Ciphertext is 0 bytes",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
-       // From "AEAD with CTR" document:
-       // "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
        .key = "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e50ecc9c6c1a6277ad951f729b3cc6446e21b4024345088a0edda82231a46ca9a0000000000000000000000000000000000000000000000000000000000000000",
        .plaintext = "00",
        .ciphertext = "74c1b6102bbcb96436795ccbf2703af61703e0e33de37f148490c7ed7989f31720c4ed6a24ecc01cc3622f90ed2b5500",
