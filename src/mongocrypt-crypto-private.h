@@ -75,9 +75,15 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 /* _mongocrypt_fle2_do_encryption does AEAD encryption.
- * It follows the construction described in the "AEAD with CTR" document:
- * https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/edit#
- * Attempting to encrypt a 0 length plaintext is an error.
+ * It follows the construction described in the [AEAD with
+ * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/)
+ *
+ * Note: The 96 byte key is split differently for FLE 2.
+ * - FLE 1 uses first 32 bytes as the mac key, and the second 32 bytes as the
+ *   encryption key.
+ * - FLE 2 uses first 32 bytes as encryption key, and the
+ *   second 32 bytes as the mac key.
+ * Note: Attempting to encrypt a 0 length plaintext is an error.
  */
 bool
 _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,

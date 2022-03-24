@@ -1079,16 +1079,9 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   /* Use variable names matching "AEAD with CTR" document. */
-   /* TODO: This is a possible discrepency.
-    * FLE 1 has first 32 bytes as mac_key.
-    * FLE 2 proposes first 32 bytes as enc_key.
-    * From "AEAD with CTR" document:
-    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC
-    * key Km is equal to the second 32 bytes of R." For now, follow "AEAD with
-    * CTR" and use first 32 bytes for enc_key.
+   /* Declare variable names matching [AEAD with
+    * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
     */
-
    /* M is the input plaintext. */
    _mongocrypt_buffer_t M = {.data = plaintext->data, .len = plaintext->len};
    /* Ke is 32 byte Key for encryption. */
@@ -1181,18 +1174,9 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   /* TODO: assert ciphertext is sufficiently large. Otherwise error. */
-
-   /* Use variable names matching "AEAD with CTR" document. */
-   /* TODO: This is a possible discrepency.
-    * FLE 1 has first 32 bytes as mac_key.
-    * FLE 2 proposes first 32 bytes as enc_key.
-    * From "AEAD with CTR" document:
-    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC
-    * key Km is equal to the second 32 bytes of R." For now, follow "AEAD with
-    * CTR" and use first 32 bytes for enc_key.
+   /* Declare variable names matching [AEAD with
+    * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
     */
-
    /* C is the input ciphertext. */
    _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
    /* IV is 16 byte IV. It is the first part of C. */
