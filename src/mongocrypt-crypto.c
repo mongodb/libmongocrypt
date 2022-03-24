@@ -1203,10 +1203,10 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
          return false;
       }
       if (0 != _mongocrypt_buffer_cmp (&T, &Tp)) {
-         // CLIENT_ERR ("decryption error");
-         // _mongocrypt_buffer_cleanup (&hmac_input);
-         // _mongocrypt_buffer_cleanup (&Tp);
-         // return false;
+         CLIENT_ERR ("decryption error");
+         _mongocrypt_buffer_cleanup (&hmac_input);
+         _mongocrypt_buffer_cleanup (&Tp);
+         return false;
       }
       _mongocrypt_buffer_cleanup (&hmac_input);
       _mongocrypt_buffer_cleanup (&Tp);
