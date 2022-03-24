@@ -1139,6 +1139,89 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
                            _mongocrypt_buffer_t *plaintext,
                            uint32_t *bytes_written,
                            mongocrypt_status_t *status) {
-   CLIENT_ERR ("_mongocrypt_fle2_do_decryption not implemented");
-   return false;
+   memset (plaintext->data, 0, plaintext->len);
+
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (ciphertext);
+
+   if (plaintext->len !=
+       _mongocrypt_fle2_calculate_plaintext_len (ciphertext->len)) {
+      CLIENT_ERR ("output plaintext must be allocated with %" PRIu32 " bytes",
+                  _mongocrypt_fle2_calculate_plaintext_len (ciphertext->len));
+      return false;
+   }
+
+   *bytes_written = 0;
+
+   if (MONGOCRYPT_KEY_LEN != key->len) {
+      CLIENT_ERR ("key must be length %d, but is length %" PRIu32,
+                  MONGOCRYPT_KEY_LEN,
+                  key->len);
+      return false;
+   }
+
+   /* TODO: assert ciphertext is sufficiently large. Otherwise error. */
+
+   /* Use variable names matching "AEAD with CTR" document. */
+   /* TODO: This is a possible discrepency.
+    * FLE 1 has first 32 bytes as mac_key.
+    * FLE 2 proposes first 32 bytes as enc_key.
+    * From "AEAD with CTR" document:
+    * "The encryption key Ke is equal to the first 32 bytes of R while the MAC key Km is equal to the second 32 bytes of R."
+    * For now, follow "AEAD with CTR" and use first 32 bytes for enc_key.
+    */
+
+   /* C is the input ciphertext. */
+   _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
+   /* IV is 16 byte IV. It is the first part of C. */
+   _mongocrypt_buffer_t IV = {.data = ciphertext->data, .len = MONGOCRYPT_IV_LEN};
+   /* S is the input cipher from C. It is after the IV in C. */
+   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN, .len = C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN};
+   /* T is the HMAC tag from C. It is after S in C. */
+   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN, .len = MONGOCRYPT_HMAC_LEN};
+   /* Tp is the computed HMAC of the input. */
+   _mongocrypt_buffer_t Tp = {0};
+   /* M is the output plaintext. */
+   _mongocrypt_buffer_t M = {.data = plaintext->data, .len = plaintext->len};
+   /* Ke is 32 byte Key for encryption. */
+   _mongocrypt_buffer_t Ke = {.data = key->data, .len = MONGOCRYPT_ENC_KEY_LEN};
+   /* Km is 32 byte Key for HMAC. */
+   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN, .len = MONGOCRYPT_MAC_KEY_LEN};
+   /* AD is Associated Data. */
+   _mongocrypt_buffer_t AD = {.data = associated_data->data, .len = associated_data->len};
+
+   /* Compute Tp = HMAC-SHA256(Km, AD || IV || S). Check that it matches input ciphertext T. */
+   {
+      _mongocrypt_buffer_t hmac_inputs[] = {AD, IV, S};
+      _mongocrypt_buffer_t hmac_input = {0};
+      _mongocrypt_buffer_concat (&hmac_input, hmac_inputs, 3);
+      _mongocrypt_buffer_resize (&Tp, MONGOCRYPT_HMAC_LEN);
+      if (!_native_crypto_hmac_sha_256 (&Km, &hmac_input, &Tp, status)) {
+         _mongocrypt_buffer_cleanup (&hmac_input);
+         _mongocrypt_buffer_cleanup (&Tp);
+         return false;
+      }
+      if (0 != _mongocrypt_buffer_cmp (&T, &Tp)) {
+         // CLIENT_ERR ("decryption error");
+         // _mongocrypt_buffer_cleanup (&hmac_input);
+         // _mongocrypt_buffer_cleanup (&Tp);
+         // return false;
+      }
+      _mongocrypt_buffer_cleanup (&hmac_input);
+      _mongocrypt_buffer_cleanup (&Tp);
+   }
+   
+   /* Compute and output M = AES-CTR.Dec(Ke, S) */
+   if (!_native_crypto_aes_256_ctr_decrypt (
+          (aes_256_args_t){.key = &Ke,
+                           .iv = &IV,
+                           .in = &S,
+                           .out = &M,
+                           .bytes_written = bytes_written,
+                           .status = status})) {
+      return false;
+   }
+
+   return true;
 }
