@@ -418,6 +418,11 @@ _mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex)
 {
    uint32_t i;
 
+   if (strlen (hex) == 0) {
+      _mongocrypt_buffer_init (buf);
+      return;
+   }
+
    buf->len = (uint32_t) strlen (hex) / 2;
    buf->data = bson_malloc (buf->len);
    BSON_ASSERT (buf->data);
