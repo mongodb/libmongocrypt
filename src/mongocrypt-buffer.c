@@ -266,6 +266,9 @@ _mongocrypt_buffer_cmp (const _mongocrypt_buffer_t *a,
    if (a->len != b->len) {
       return a->len - b->len;
    }
+   if (0 == a->len) {
+      return 0;
+   }
    return memcmp (a->data, b->data, a->len);
 }
 
