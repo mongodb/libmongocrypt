@@ -1,8 +1,9 @@
-# Used to generate the test file ./test/data/fle2-aead.cstructs
+# fle2_aead_generate_tests.py is used to generate the test file: ./test/data/fle2-aead.cstructs
 import os
 import itertools
-import payloads
+import fle2_aead
 
+# Generate test cases by taking the cross-product of AD (associated data) and plaintext (M) lengths.
 AD_lens = [5, 10, 20]
 M_lens = [1, 16, 64, 100]
 
@@ -22,7 +23,7 @@ for (AD_len, M_len) in itertools.product (AD_lens, M_lens):
     IV = os.urandom (16)
     Ke = os.urandom (32)
     Km = os.urandom (32)
-    C = payloads.fle2_aead_encrypt (M=M, Ke=Ke, IV=IV, Km=Km, AD=AD)
+    C = fle2_aead.encrypt (M=M, Ke=Ke, IV=IV, Km=Km, AD=AD)
 
     # Create the 96 byte data encryption key. The last 32 are unused.
     key = Ke + Km + (b"\x00" * 32)

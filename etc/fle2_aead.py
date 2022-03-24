@@ -1,3 +1,6 @@
+# fle2_aead.py implements the Encrypt and Decrypt primitives in [AEAD with CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/edit#)
+# It is only meant for generating test data.
+
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.hashes import SHA256
@@ -6,7 +9,7 @@ from cryptography.hazmat.primitives.hmac import HMAC
 HMAC_SHA256_TAG_LENGTH = 32
 IV_LENGTH = 16
 
-def fle2_aead_encrypt (M, Ke, IV, Km, AD):
+def encrypt (M, Ke, IV, Km, AD):
     """
     Do FLE 2 AEAD encryption.
     See [AEAD with CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/edit#heading=h.35kjadvlcbty)
@@ -32,7 +35,7 @@ def fle2_aead_encrypt (M, Ke, IV, Km, AD):
     C = IV + S + T
     return C
 
-def fle2_aead_decrypt (C, Km, AD, Ke):
+def decrypt (C, Km, AD, Ke):
     global HMAC_SHA256_TAG_LENGTH
 
     assert (len(Ke) == 32)
