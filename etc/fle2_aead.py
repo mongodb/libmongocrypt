@@ -24,14 +24,12 @@ def encrypt (M, Ke, IV, Km, AD):
     encryptor = cipher.encryptor ()
     S = encryptor.update(M) + encryptor.finalize()
 
-    # T = HMAC-SHA256(Km, AD || S)
-    # This is a discrepency with "AEAD with CTR".
+    # T = HMAC-SHA256(Km, AD || IV || S)
     hmac = HMAC (Km, SHA256(), default_backend())
     hmac.update (AD + IV + S)
     T = hmac.finalize()
 
-    # C = AD || S || T
-    # This is a discrepency with "AEAD with CTR".
+    # C = IV || S || T
     C = IV + S + T
     return C
 
@@ -42,14 +40,12 @@ def decrypt (C, Km, AD, Ke):
     assert (len(C) > HMAC_SHA256_TAG_LENGTH + IV_LENGTH)
     assert (len(Km) == 32)
 
-    # Parse C as AD || S || T
-    # This is a discrepency with "AEAD with CTR".
+    # Parse C as IV || S || T
     IV = C[0:16]
     S = C[16:-32]
     T = C[-32:]
 
-    # Compute T; = HMAC-SHA256(Km, AD || S)
-    # This is a discrepency with "AEAD with CTR".
+    # Compute T' = HMAC-SHA256(Km, AD || IV || S)
     hmac = HMAC (Km, SHA256(), default_backend())
     hmac.update (AD + IV + S)
     Tp = hmac.finalize()
