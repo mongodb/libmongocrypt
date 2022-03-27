@@ -209,4 +209,12 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf,
 void
 _mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf, uint64_t value);
 
+/* _mongocrypt_buffer_view initializes @out as a writable view of the data from
+ * @in. Returns false on error. */
+bool
+_mongocrypt_buffer_view (_mongocrypt_buffer_t *out,
+                         const _mongocrypt_buffer_t *in,
+                         uint32_t offset,
+                         uint32_t len) MONGOCRYPT_WARN_UNUSED_RESULT;
+
 #endif /* MONGOCRYPT_BUFFER_H */

@@ -551,3 +551,21 @@ _mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
    _mongocrypt_buffer_resize (buf, sizeof (value));
    memcpy (buf->data, &value_le, buf->len);
 }
+
+bool
+_mongocrypt_buffer_view (_mongocrypt_buffer_t *out,
+                         const _mongocrypt_buffer_t *in,
+                         uint32_t offset,
+                         uint32_t len)
+{
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (in);
+
+   _mongocrypt_buffer_init (out);
+   if (offset + len > in->len) {
+      return false;
+   }
+   out->data = in->data + offset;
+   out->len = len;
+   return true;
+}
