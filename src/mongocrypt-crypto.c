@@ -1082,27 +1082,54 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
     * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
     */
    /* M is the input plaintext. */
-   _mongocrypt_buffer_t M = {.data = plaintext->data, .len = plaintext->len};
+   _mongocrypt_buffer_t M;
+   if (!_mongocrypt_buffer_view (&M, plaintext, 0, plaintext->len)) {
+      CLIENT_ERR ("unable to create M view from plaintext");
+      return false;
+   }
    /* Ke is 32 byte Key for encryption. */
-   _mongocrypt_buffer_t Ke = {.data = key->data, .len = MONGOCRYPT_ENC_KEY_LEN};
+   _mongocrypt_buffer_t Ke;
+   if (!_mongocrypt_buffer_view (&Ke, key, 0, MONGOCRYPT_ENC_KEY_LEN)) {
+      CLIENT_ERR ("unable to create Ke view from key");
+      return false;
+   }
    /* IV is 16 byte IV. */
-   _mongocrypt_buffer_t IV = {.data = iv->data, .len = iv->len};
+   _mongocrypt_buffer_t IV;
+   if (!_mongocrypt_buffer_view (&IV, iv, 0, iv->len)) {
+      CLIENT_ERR ("unable to create IV view from iv");
+      return false;
+   }
    /* Km is 32 byte Key for HMAC. */
-   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN,
-                              .len = MONGOCRYPT_MAC_KEY_LEN};
+   _mongocrypt_buffer_t Km;
+   if (!_mongocrypt_buffer_view (&Km, key, MONGOCRYPT_ENC_KEY_LEN, MONGOCRYPT_MAC_KEY_LEN)) {
+      CLIENT_ERR ("unable to create Km view from key");
+      return false;
+   }
    /* AD is Associated Data. */
-   _mongocrypt_buffer_t AD = {.data = associated_data->data,
-                              .len = associated_data->len};
+   _mongocrypt_buffer_t AD;
+   if (!_mongocrypt_buffer_view (&AD, associated_data, 0, associated_data->len)) {
+      CLIENT_ERR ("unable to create AD view from associated_data");
+      return false;
+   }
    /* C is the output ciphertext. */
-   _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
+   _mongocrypt_buffer_t C;
+   if (!_mongocrypt_buffer_view (&C, ciphertext, 0, ciphertext->len)) {
+      CLIENT_ERR ("unable to create C view from ciphertext");
+      return false;
+   }
    /* S is the output of the symmetric cipher. It is appended after IV in C. */
-   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN,
-                             .len = C.len - MONGOCRYPT_IV_LEN -
-                                    MONGOCRYPT_HMAC_LEN};
+   _mongocrypt_buffer_t S;
+   if (!_mongocrypt_buffer_view (&S, &C, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN)) {
+      CLIENT_ERR ("unable to create S view from C");
+      return false;
+   }
    uint32_t S_bytes_written = 0;
    /* T is the output of the HMAC tag. It is appended after S in C. */
-   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN,
-                             .len = MONGOCRYPT_HMAC_LEN};
+   _mongocrypt_buffer_t T;
+   if (!_mongocrypt_buffer_view (&T, &C, C.len - MONGOCRYPT_HMAC_LEN, MONGOCRYPT_HMAC_LEN)) {
+      CLIENT_ERR ("unable to create T view from C");
+      return false;
+   }
 
    /* Compute S = AES-CTR.Enc(Ke, IV, M). */
    if (!_native_crypto_aes_256_ctr_encrypt (
@@ -1180,29 +1207,55 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
     * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
     */
    /* C is the input ciphertext. */
-   _mongocrypt_buffer_t C = {.data = ciphertext->data, .len = ciphertext->len};
+   _mongocrypt_buffer_t C;
+   if (!_mongocrypt_buffer_view (&C, ciphertext, 0, ciphertext->len)) {
+      CLIENT_ERR ("unable to create C view from ciphertext");
+      return false;
+   }
    /* IV is 16 byte IV. It is the first part of C. */
-   _mongocrypt_buffer_t IV = {.data = ciphertext->data,
-                              .len = MONGOCRYPT_IV_LEN};
+   _mongocrypt_buffer_t IV;
+   if (!_mongocrypt_buffer_view (&IV, ciphertext, 0, MONGOCRYPT_IV_LEN)) {
+      CLIENT_ERR ("unable to create IV view from ciphertext");
+      return false;
+   }
    /* S is the symmetric cipher output from C. It is after the IV in C. */
-   _mongocrypt_buffer_t S = {.data = C.data + MONGOCRYPT_IV_LEN,
-                             .len = C.len - MONGOCRYPT_IV_LEN -
-                                    MONGOCRYPT_HMAC_LEN};
+   _mongocrypt_buffer_t S;
+   if (!_mongocrypt_buffer_view (&S, ciphertext, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN)) {
+      CLIENT_ERR ("unable to create S view from C");
+      return false;
+   }
    /* T is the HMAC tag from C. It is after S in C. */
-   _mongocrypt_buffer_t T = {.data = C.data + C.len - MONGOCRYPT_HMAC_LEN,
-                             .len = MONGOCRYPT_HMAC_LEN};
+   _mongocrypt_buffer_t T;
+   if (!_mongocrypt_buffer_view (&T, &C, C.len - MONGOCRYPT_HMAC_LEN, MONGOCRYPT_HMAC_LEN)) {
+      CLIENT_ERR ("unable to create T view from C");
+      return false;
+   }
    /* Tp is the computed HMAC of the input. */
    _mongocrypt_buffer_t Tp = {0};
    /* M is the output plaintext. */
-   _mongocrypt_buffer_t M = {.data = plaintext->data, .len = plaintext->len};
+   _mongocrypt_buffer_t M;
+   if (!_mongocrypt_buffer_view (&M, plaintext, 0, plaintext->len)) {
+      CLIENT_ERR ("unable to create M view from plaintext");
+      return false;
+   }
    /* Ke is 32 byte Key for encryption. */
-   _mongocrypt_buffer_t Ke = {.data = key->data, .len = MONGOCRYPT_ENC_KEY_LEN};
+   _mongocrypt_buffer_t Ke;
+   if (!_mongocrypt_buffer_view (&Ke, key, 0, MONGOCRYPT_ENC_KEY_LEN)) {
+      CLIENT_ERR ("unable to create Ke view from key");
+      return false;
+   }
    /* Km is 32 byte Key for HMAC. */
-   _mongocrypt_buffer_t Km = {.data = key->data + MONGOCRYPT_MAC_KEY_LEN,
-                              .len = MONGOCRYPT_MAC_KEY_LEN};
+   _mongocrypt_buffer_t Km;
+   if (!_mongocrypt_buffer_view (&Km, key, MONGOCRYPT_ENC_KEY_LEN, MONGOCRYPT_MAC_KEY_LEN)) {
+      CLIENT_ERR ("unable to create Km view from key");
+      return false;
+   }
    /* AD is Associated Data. */
-   _mongocrypt_buffer_t AD = {.data = associated_data->data,
-                              .len = associated_data->len};
+   _mongocrypt_buffer_t AD;
+   if (!_mongocrypt_buffer_view (&AD, associated_data, 0, associated_data->len)) {
+      CLIENT_ERR ("unable to create AD view from associated_data");
+      return false;
+   }
 
    /* Compute Tp = HMAC-SHA256(Km, AD || IV || S). Check that it matches input
     * ciphertext T. */
