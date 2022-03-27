@@ -566,18 +566,18 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_init (&ciphertext_got);
       _mongocrypt_buffer_resize (
          &ciphertext_got,
-         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext.len));
       status = mongocrypt_status_new ();
 
       /* Test encrypt. */
-      ret = _mongocrypt_fle2_do_encryption (crypt->crypto,
-                                            &iv,
-                                            &associated_data,
-                                            &key,
-                                            &plaintext,
-                                            &ciphertext_got,
-                                            &bytes_written,
-                                            status);
+      ret = _mongocrypt_fle2aead_do_encryption (crypt->crypto,
+                                                &iv,
+                                                &associated_data,
+                                                &key,
+                                                &plaintext,
+                                                &ciphertext_got,
+                                                &bytes_written,
+                                                status);
 
       if (NULL == test->expect_encrypt_error) {
          ASSERT_OR_PRINT (ret, status);
@@ -588,13 +588,13 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
          ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
 
          /* Test decrypt. */
-         ret = _mongocrypt_fle2_do_decryption (crypt->crypto,
-                                               &associated_data,
-                                               &key,
-                                               &ciphertext,
-                                               &plaintext_got,
-                                               &bytes_written,
-                                               status);
+         ret = _mongocrypt_fle2aead_do_decryption (crypt->crypto,
+                                                   &associated_data,
+                                                   &key,
+                                                   &ciphertext,
+                                                   &plaintext_got,
+                                                   &bytes_written,
+                                                   status);
          ASSERT_OR_PRINT (ret, status);
          ASSERT_CMPBYTES (plaintext.data,
                           plaintext.len,
@@ -707,13 +707,13 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       }
       status = mongocrypt_status_new ();
 
-      ret = _mongocrypt_fle2_do_decryption (crypt->crypto,
-                                            &associated_data,
-                                            &key,
-                                            &ciphertext,
-                                            &plaintext,
-                                            &bytes_written,
-                                            status);
+      ret = _mongocrypt_fle2aead_do_decryption (crypt->crypto,
+                                                &associated_data,
+                                                &key,
+                                                &ciphertext,
+                                                &plaintext,
+                                                &bytes_written,
+                                                status);
       if (test->expect_error == NULL) {
          ASSERT_OR_PRINT (ret, status);
          ASSERT_CMPBYTES (plaintext.data,

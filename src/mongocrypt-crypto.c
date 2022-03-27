@@ -196,7 +196,7 @@ _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len)
 }
 
 uint32_t
-_mongocrypt_fle2_calculate_ciphertext_len (uint32_t plaintext_len)
+_mongocrypt_fle2aead_calculate_ciphertext_len (uint32_t plaintext_len)
 {
    /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
    return MONGOCRYPT_IV_LEN + plaintext_len + MONGOCRYPT_HMAC_LEN;
@@ -227,7 +227,7 @@ _mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len)
 }
 
 uint32_t
-_mongocrypt_fle2_calculate_plaintext_len (uint32_t ciphertext_len)
+_mongocrypt_fle2aead_calculate_plaintext_len (uint32_t ciphertext_len)
 {
    /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
    BSON_ASSERT (ciphertext_len >= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
@@ -1032,7 +1032,7 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
 }
 
 bool
-_mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
+_mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
                                 const _mongocrypt_buffer_t *iv,
                                 const _mongocrypt_buffer_t *associated_data,
                                 const _mongocrypt_buffer_t *key,
@@ -1051,9 +1051,9 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (status);
 
    if (ciphertext->len !=
-       _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len)) {
+       _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len)) {
       CLIENT_ERR ("output ciphertext must be allocated with %" PRIu32 " bytes",
-                  _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len));
+                  _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len));
       return false;
    }
 
@@ -1136,7 +1136,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
 }
 
 bool
-_mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
+_mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
                                 const _mongocrypt_buffer_t *associated_data,
                                 const _mongocrypt_buffer_t *key,
                                 const _mongocrypt_buffer_t *ciphertext,
@@ -1160,9 +1160,9 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    }
 
    if (plaintext->len !=
-       _mongocrypt_fle2_calculate_plaintext_len (ciphertext->len)) {
+       _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext->len)) {
       CLIENT_ERR ("output plaintext must be allocated with %" PRIu32 " bytes",
-                  _mongocrypt_fle2_calculate_plaintext_len (ciphertext->len));
+                  _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext->len));
       return false;
    }
 
