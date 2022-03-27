@@ -249,9 +249,7 @@ _test_mongocrypt_buffer_view (_mongocrypt_tester_t *tester) {
    _mongocrypt_buffer_cleanup (&input);
 
    _mongocrypt_buffer_copy_from_hex (&input, "010203");
-   _mongocrypt_buffer_copy_from_hex (&expect, "010203");
    ASSERT (!_mongocrypt_buffer_view (&got, &input, 0, 4));
-   _mongocrypt_buffer_cleanup (&expect);
    _mongocrypt_buffer_cleanup (&input);
 }
 
