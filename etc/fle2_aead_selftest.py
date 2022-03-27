@@ -1,4 +1,4 @@
-# payloads_test.py is a self-test of payloads.py.
+# fle2_aead_test.py is a self-test of fle2_aead.py.
 import unittest
 import fle2_aead
 
