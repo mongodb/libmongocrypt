@@ -68,6 +68,7 @@ typedef struct {
    mongocrypt_log_fn_t log_fn;
    void *log_ctx;
    _mongocrypt_buffer_t schema_map;
+   _mongocrypt_buffer_t encrypted_field_config_map;
 
    _mongocrypt_opts_kms_providers_t kms_providers;
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;

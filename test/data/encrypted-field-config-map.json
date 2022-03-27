@@ -1,0 +1,48 @@
+{
+    "test.test": {
+        "escCollection": "fle2.basic.esc",
+        "eccCollection": "fle2.basic.ecc",
+        "ecocCollection": "fle2.basic.ecoc",
+        "fields": [
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "KEY1+AAAAAAAAAAAAAAAAA==",
+                        "subType": "04"
+                    }
+                },
+                "path": "firstName",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": {
+                        "$numberLong": "0"
+                    }
+                }
+            }
+        ]
+    },
+    "test.test2": {
+        "escCollection": "fle2.basic.esc",
+        "eccCollection": "fle2.basic.ecc",
+        "ecocCollection": "fle2.basic.ecoc",
+        "fields": [
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "KEY2+AAAAAAAAAAAAAAAAA==",
+                        "subType": "04"
+                    }
+                },
+                "path": "firstName",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": {
+                        "$numberLong": "0"
+                    }
+                }
+            }
+        ]
+    }
+}

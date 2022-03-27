@@ -64,31 +64,31 @@ _mongocrypt_opts_kms_providers_cleanup (
 
 void
 _mongocrypt_opts_merge_kms_providers (
-   _mongocrypt_opts_kms_providers_t* dest,
-   const _mongocrypt_opts_kms_providers_t* source)
+   _mongocrypt_opts_kms_providers_t *dest,
+   const _mongocrypt_opts_kms_providers_t *source)
 {
    if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
-      memcpy(&dest->aws, &source->aws, sizeof(source->aws));
+      memcpy (&dest->aws, &source->aws, sizeof (source->aws));
       dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
    }
    if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
-      memcpy(&dest->local, &source->local, sizeof(source->local));
+      memcpy (&dest->local, &source->local, sizeof (source->local));
       dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
    }
    if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AZURE) {
-      memcpy(&dest->azure, &source->azure, sizeof(source->azure));
+      memcpy (&dest->azure, &source->azure, sizeof (source->azure));
       dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
    }
    if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_GCP) {
-      memcpy(&dest->gcp, &source->gcp, sizeof(source->gcp));
+      memcpy (&dest->gcp, &source->gcp, sizeof (source->gcp));
       dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
    }
    if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_KMIP) {
-      memcpy(&dest->kmip, &source->kmip, sizeof(source->kmip));
+      memcpy (&dest->kmip, &source->kmip, sizeof (source->kmip));
       dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
    }
    /* ensure all providers were copied */
-   BSON_ASSERT (!(source->configured_providers &~ dest->configured_providers));
+   BSON_ASSERT (!(source->configured_providers & ~dest->configured_providers));
 }
 
 
@@ -97,6 +97,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
    _mongocrypt_opts_kms_providers_cleanup (&opts->kms_providers);
    _mongocrypt_buffer_cleanup (&opts->schema_map);
+   _mongocrypt_buffer_cleanup (&opts->encrypted_field_config_map);
    // Free any lib search paths added by the caller
    for (int i = 0; i < opts->n_cselib_search_paths; ++i) {
       mstr_free (opts->cselib_search_paths[i]);
@@ -108,8 +109,7 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 
 bool
 _mongocrypt_opts_kms_providers_validate (
-   _mongocrypt_opts_kms_providers_t *kms_providers,
-   mongocrypt_status_t *status)
+   _mongocrypt_opts_kms_providers_t *kms_providers, mongocrypt_status_t *status)
 {
    if (!kms_providers->configured_providers &&
        !kms_providers->need_credentials) {
@@ -135,14 +135,97 @@ _mongocrypt_opts_kms_providers_validate (
    return true;
 }
 
+/* _shares_bson_fields checks if @one or @two share any top-level field names.
+ * Returns false on error and sets @status. Returns true if no error
+ * occurred. Sets @found to the first shared field name found.
+ * If no shared field names are found, @found is set to NULL.
+ */
+static bool
+_shares_bson_fields (bson_t *one,
+                     bson_t *two,
+                     const char **found,
+                     mongocrypt_status_t *status)
+{
+   bson_iter_t iter1;
+   bson_iter_t iter2;
+
+   *found = NULL;
+   if (!bson_iter_init (&iter1, one)) {
+      CLIENT_ERR ("error iterating one BSON in _shares_bson_fields");
+      return false;
+   }
+   while (bson_iter_next (&iter1)) {
+      const char *key1 = bson_iter_key (&iter1);
+
+      if (!bson_iter_init (&iter2, two)) {
+         CLIENT_ERR ("error iterating two BSON in _shares_bson_fields");
+         return false;
+      }
+      while (bson_iter_next (&iter2)) {
+         const char *key2 = bson_iter_key (&iter2);
+         if (0 == strcmp (key1, key2)) {
+            *found = key1;
+            return true;
+         }
+      }
+   }
+   return true;
+}
+
+/* _validate_encrypted_field_config_map_and_schema_map validates that the same
+ * namespace is not both in encrypted_field_config_map and schema_map. */
+bool
+_validate_encrypted_field_config_map_and_schema_map (
+   _mongocrypt_buffer_t *encrypted_field_config_map,
+   _mongocrypt_buffer_t *schema_map,
+   mongocrypt_status_t *status)
+{
+   const char *found;
+   bson_t schema_map_bson;
+   bson_t encrypted_field_config_map_bson;
+
+   /* If either map is unset, there is nothing to validate. Return true to
+    * signal no error. */
+   if (_mongocrypt_buffer_empty (encrypted_field_config_map)) {
+      return true;
+   }
+   if (_mongocrypt_buffer_empty (schema_map)) {
+      return true;
+   }
+
+   if (!_mongocrypt_buffer_to_bson (schema_map, &schema_map_bson)) {
+      CLIENT_ERR ("error converting schema_map to BSON");
+      return false;
+   }
+   if (!_mongocrypt_buffer_to_bson (encrypted_field_config_map,
+                                    &encrypted_field_config_map_bson)) {
+      CLIENT_ERR ("error converting encrypted_field_config_map to BSON");
+      return false;
+   }
+   if (!_shares_bson_fields (
+          &schema_map_bson, &encrypted_field_config_map_bson, &found, status)) {
+      return false;
+   }
+   if (found != NULL) {
+      CLIENT_ERR (
+         "%s is present in both schema_map and encrypted_field_config_map",
+         found);
+      return false;
+   }
+   return true;
+}
+
 
 bool
 _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
                            mongocrypt_status_t *status)
 {
-   return _mongocrypt_opts_kms_providers_validate(
-      &opts->kms_providers,
-      status);
+   if (!_validate_encrypted_field_config_map_and_schema_map (
+          &opts->encrypted_field_config_map, &opts->schema_map, status)) {
+      return false;
+   }
+   return _mongocrypt_opts_kms_providers_validate (&opts->kms_providers,
+                                                   status);
 }
 
 bool
