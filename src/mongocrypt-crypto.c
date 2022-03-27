@@ -1033,13 +1033,13 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
 
 bool
 _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
-                                const _mongocrypt_buffer_t *iv,
-                                const _mongocrypt_buffer_t *associated_data,
-                                const _mongocrypt_buffer_t *key,
-                                const _mongocrypt_buffer_t *plaintext,
-                                _mongocrypt_buffer_t *ciphertext,
-                                uint32_t *bytes_written,
-                                mongocrypt_status_t *status)
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *associated_data,
+                                    const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *plaintext,
+                                    _mongocrypt_buffer_t *ciphertext,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iv);
@@ -1052,8 +1052,9 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
 
    if (ciphertext->len !=
        _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len)) {
-      CLIENT_ERR ("output ciphertext must be allocated with %" PRIu32 " bytes",
-                  _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len));
+      CLIENT_ERR (
+         "output ciphertext must be allocated with %" PRIu32 " bytes",
+         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len));
       return false;
    }
 
@@ -1101,13 +1102,15 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
    }
    /* Km is 32 byte Key for HMAC. */
    _mongocrypt_buffer_t Km;
-   if (!_mongocrypt_buffer_view (&Km, key, MONGOCRYPT_ENC_KEY_LEN, MONGOCRYPT_MAC_KEY_LEN)) {
+   if (!_mongocrypt_buffer_view (
+          &Km, key, MONGOCRYPT_ENC_KEY_LEN, MONGOCRYPT_MAC_KEY_LEN)) {
       CLIENT_ERR ("unable to create Km view from key");
       return false;
    }
    /* AD is Associated Data. */
    _mongocrypt_buffer_t AD;
-   if (!_mongocrypt_buffer_view (&AD, associated_data, 0, associated_data->len)) {
+   if (!_mongocrypt_buffer_view (
+          &AD, associated_data, 0, associated_data->len)) {
       CLIENT_ERR ("unable to create AD view from associated_data");
       return false;
    }
@@ -1119,14 +1122,19 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
    }
    /* S is the output of the symmetric cipher. It is appended after IV in C. */
    _mongocrypt_buffer_t S;
-   if (!_mongocrypt_buffer_view (&S, &C, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN)) {
+   if (!_mongocrypt_buffer_view (&S,
+                                 &C,
+                                 MONGOCRYPT_IV_LEN,
+                                 C.len - MONGOCRYPT_IV_LEN -
+                                    MONGOCRYPT_HMAC_LEN)) {
       CLIENT_ERR ("unable to create S view from C");
       return false;
    }
    uint32_t S_bytes_written = 0;
    /* T is the output of the HMAC tag. It is appended after S in C. */
    _mongocrypt_buffer_t T;
-   if (!_mongocrypt_buffer_view (&T, &C, C.len - MONGOCRYPT_HMAC_LEN, MONGOCRYPT_HMAC_LEN)) {
+   if (!_mongocrypt_buffer_view (
+          &T, &C, C.len - MONGOCRYPT_HMAC_LEN, MONGOCRYPT_HMAC_LEN)) {
       CLIENT_ERR ("unable to create T view from C");
       return false;
    }
@@ -1164,12 +1172,12 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
 
 bool
 _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
-                                const _mongocrypt_buffer_t *associated_data,
-                                const _mongocrypt_buffer_t *key,
-                                const _mongocrypt_buffer_t *ciphertext,
-                                _mongocrypt_buffer_t *plaintext,
-                                uint32_t *bytes_written,
-                                mongocrypt_status_t *status)
+                                    const _mongocrypt_buffer_t *associated_data,
+                                    const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *ciphertext,
+                                    _mongocrypt_buffer_t *plaintext,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (associated_data);
@@ -1188,8 +1196,9 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
 
    if (plaintext->len !=
        _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext->len)) {
-      CLIENT_ERR ("output plaintext must be allocated with %" PRIu32 " bytes",
-                  _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext->len));
+      CLIENT_ERR (
+         "output plaintext must be allocated with %" PRIu32 " bytes",
+         _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext->len));
       return false;
    }
 
@@ -1220,13 +1229,18 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
    }
    /* S is the symmetric cipher output from C. It is after the IV in C. */
    _mongocrypt_buffer_t S;
-   if (!_mongocrypt_buffer_view (&S, ciphertext, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN)) {
+   if (!_mongocrypt_buffer_view (&S,
+                                 ciphertext,
+                                 MONGOCRYPT_IV_LEN,
+                                 C.len - MONGOCRYPT_IV_LEN -
+                                    MONGOCRYPT_HMAC_LEN)) {
       CLIENT_ERR ("unable to create S view from C");
       return false;
    }
    /* T is the HMAC tag from C. It is after S in C. */
    _mongocrypt_buffer_t T;
-   if (!_mongocrypt_buffer_view (&T, &C, C.len - MONGOCRYPT_HMAC_LEN, MONGOCRYPT_HMAC_LEN)) {
+   if (!_mongocrypt_buffer_view (
+          &T, &C, C.len - MONGOCRYPT_HMAC_LEN, MONGOCRYPT_HMAC_LEN)) {
       CLIENT_ERR ("unable to create T view from C");
       return false;
    }
@@ -1246,13 +1260,15 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
    }
    /* Km is 32 byte Key for HMAC. */
    _mongocrypt_buffer_t Km;
-   if (!_mongocrypt_buffer_view (&Km, key, MONGOCRYPT_ENC_KEY_LEN, MONGOCRYPT_MAC_KEY_LEN)) {
+   if (!_mongocrypt_buffer_view (
+          &Km, key, MONGOCRYPT_ENC_KEY_LEN, MONGOCRYPT_MAC_KEY_LEN)) {
       CLIENT_ERR ("unable to create Km view from key");
       return false;
    }
    /* AD is Associated Data. */
    _mongocrypt_buffer_t AD;
-   if (!_mongocrypt_buffer_view (&AD, associated_data, 0, associated_data->len)) {
+   if (!_mongocrypt_buffer_view (
+          &AD, associated_data, 0, associated_data->len)) {
       CLIENT_ERR ("unable to create AD view from associated_data");
       return false;
    }
