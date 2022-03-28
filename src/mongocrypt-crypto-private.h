@@ -44,8 +44,18 @@ typedef struct {
 uint32_t
 _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len);
 
+/* _mongocrypt_fle2aead_calculate_ciphertext_len returns the required length of
+ * the ciphertext for _mongocrypt_fle2aead_do_encryption. */
+uint32_t
+_mongocrypt_fle2aead_calculate_ciphertext_len (uint32_t plaintext_len);
+
 uint32_t
 _mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len);
+
+/* _mongocrypt_fle2aead_calculate_plaintext_len returns the required length of
+ * the plaintext for _mongocrypt_fle2aead_do_decryption. */
+uint32_t
+_mongocrypt_fle2aead_calculate_plaintext_len (uint32_t ciphertext_len);
 
 bool
 _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
@@ -66,6 +76,38 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
                            _mongocrypt_buffer_t *plaintext,
                            uint32_t *bytes_written,
                            mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* _mongocrypt_fle2aead_do_encryption does AEAD encryption.
+ * It follows the construction described in the [AEAD with
+ * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/)
+ *
+ * Note: The 96 byte key is split differently for FLE 2.
+ * - FLE 1 uses first 32 bytes as the mac key, and the second 32 bytes as the
+ *   encryption key.
+ * - FLE 2 uses first 32 bytes as encryption key, and the
+ *   second 32 bytes as the mac key.
+ * Note: Attempting to encrypt a 0 length plaintext is an error.
+ */
+bool
+_mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *associated_data,
+                                    const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *plaintext,
+                                    _mongocrypt_buffer_t *ciphertext,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
+                                    const _mongocrypt_buffer_t *associated_data,
+                                    const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *ciphertext,
+                                    _mongocrypt_buffer_t *plaintext,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
