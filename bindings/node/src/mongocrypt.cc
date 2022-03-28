@@ -93,7 +93,8 @@ Function MongoCrypt::Init(Napi::Env env) {
                     InstanceMethod("makeDecryptionContext", &MongoCrypt::MakeDecryptionContext),
                     InstanceMethod("makeExplicitDecryptionContext", &MongoCrypt::MakeExplicitDecryptionContext),
                     InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
-                    InstanceAccessor("status", &MongoCrypt::Status, nullptr)
+                    InstanceAccessor("status", &MongoCrypt::Status, nullptr),
+                    InstanceAccessor("csfleVersionInfo", &MongoCrypt::CSFLEVersionInfo, nullptr)
                   });
 }
 
@@ -418,13 +419,44 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
+    if (options.Has("csfleSearchPaths")) {
+        Napi::Value search_paths_v = options["csfleSearchPaths"];
+        if (!search_paths_v.IsArray()) {
+            throw TypeError::New(Env(), "Option `csfleSearchPaths` must be an array");
+        }
+        Array search_paths = search_paths_v.As<Array>();
+        for (uint32_t i = 0; i < search_paths.Length(); i++) {
+            mongocrypt_setopt_append_csfle_search_path(
+                _mongo_crypt.get(),
+                search_paths.Get(i).ToString().Utf8Value().c_str());
+        }
+    }
+
+    if (options.Has("csflePath")) {
+        mongocrypt_setopt_set_csfle_lib_path_override(
+            _mongo_crypt.get(),
+            options.Get("csflePath").ToString().Utf8Value().c_str());
+    }
+
     mongocrypt_setopt_use_need_kms_credentials_state(_mongo_crypt.get());
 
-    // initialize afer all options are set, but after `MongoCrypt` instance is created so we can
-    // optionally pass the instance to the logging function.
+    // Initialize after all options are set.
     if (!mongocrypt_init(_mongo_crypt.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
     }
+}
+
+Value MongoCrypt::CSFLEVersionInfo(const CallbackInfo& info) {
+    uint64_t version_numeric = mongocrypt_csfle_version(_mongo_crypt.get());
+    const char* version_string = mongocrypt_csfle_version_string(_mongo_crypt.get(), nullptr);
+    if (version_string == nullptr) {
+        return Env().Null();
+    }
+
+    Object ret = Object::New(Env());
+    ret["version"] = BigInt::New(Env(), version_numeric);
+    ret["versionStr"] = String::New(Env(), version_string);
+    return ret;
 }
 
 Value MongoCrypt::Status(const CallbackInfo& info) {
