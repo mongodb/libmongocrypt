@@ -270,8 +270,8 @@ describe('AutoEncrypter', function () {
         }
       });
 
-      expect(mc._mongocryptdManager).to.equal(undefined);
-      expect(mc._mongocryptdClient).to.equal(undefined);
+      expect(mc).to.not.have.property('_mongocryptdManager');
+      expect(mc).to.not.have.property('_mongocryptdClient');
 
       mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
         if (err) return done(err);
@@ -365,7 +365,7 @@ describe('AutoEncrypter', function () {
         }
       });
 
-      expect(this.mc.csfleVersionInfo).to.equal(null);
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       sandbox.spy(localMcdm, 'spawn');
@@ -398,7 +398,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc.csfleVersionInfo).to.equal(null);
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -435,7 +435,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc.csfleVersionInfo).to.equal(null);
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -472,7 +472,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc.csfleVersionInfo).to.equal(null);
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -501,7 +501,7 @@ describe('AutoEncrypter', function () {
           mongocryptdURI: 'mongodb://something.invalid:27020/'
         }
       });
-      expect(this.mc.csfleVersionInfo).to.equal(null);
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       sandbox.stub(MongocryptdManager.prototype, 'spawn').callsFake(callback => {
         callback();
@@ -624,9 +624,9 @@ describe('AutoEncrypter', function () {
         }
       });
 
-      expect(this.mc._mongocryptdManager).to.equal(undefined);
-      expect(this.mc._mongocryptdClient).to.equal(undefined);
-      expect(this.mc.csfleVersionInfo).to.deep.equal({
+      expect(this.mc).to.not.have.property('_mongocryptdManager');
+      expect(this.mc).to.not.have.property('_mongocryptdClient');
+      expect(this.mc).to.have.deep.property('csfleVersionInfo', {
         // eslint-disable-next-line no-undef
         version: BigInt(0x000600020001000),
         versionStr: 'stubbed-mongo_csfle'
@@ -647,9 +647,9 @@ describe('AutoEncrypter', function () {
         }
       });
 
-      expect(this.mc._mongocryptdManager).to.equal(undefined);
-      expect(this.mc._mongocryptdClient).to.equal(undefined);
-      expect(this.mc.csfleVersionInfo).to.deep.equal({
+      expect(this.mc).to.not.have.property('_mongocryptdManager');
+      expect(this.mc).to.not.have.property('_mongocryptdClient');
+      expect(this.mc).to.have.deep.property('csfleVersionInfo', {
         // eslint-disable-next-line no-undef
         version: BigInt(0x000600020001000),
         versionStr: 'stubbed-mongo_csfle'
