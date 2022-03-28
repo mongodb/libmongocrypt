@@ -222,7 +222,8 @@ _test_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_tester_t *tester)
 }
 
 static void
-_test_mongocrypt_buffer_from_subrange (_mongocrypt_tester_t *tester) {
+_test_mongocrypt_buffer_from_subrange (_mongocrypt_tester_t *tester)
+{
    _mongocrypt_buffer_t input;
    _mongocrypt_buffer_t expect;
    _mongocrypt_buffer_t got;
