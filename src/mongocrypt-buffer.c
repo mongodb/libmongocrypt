@@ -553,10 +553,10 @@ _mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
 }
 
 bool
-_mongocrypt_buffer_view (_mongocrypt_buffer_t *out,
-                         const _mongocrypt_buffer_t *in,
-                         uint32_t offset,
-                         uint32_t len)
+_mongocrypt_buffer_from_subrange (_mongocrypt_buffer_t *out,
+                                  const _mongocrypt_buffer_t *in,
+                                  uint32_t offset,
+                                  uint32_t len)
 {
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (in);
