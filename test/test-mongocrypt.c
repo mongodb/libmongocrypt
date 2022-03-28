@@ -866,6 +866,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_data_key (&tester);
    _mongocrypt_tester_install_ctx_encrypt (&tester);
    _mongocrypt_tester_install_ctx_decrypt (&tester);
+   _mongocrypt_tester_install_ctx_rewrap_many_datakey (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);
    _mongocrypt_tester_install_key_broker (&tester);
    _mongocrypt_tester_install (&tester,

@@ -1,0 +1,37 @@
+{
+    "_id": {
+        "$binary": {
+            "base64": "YmJiYmJiYmJiYmJiYmJiYg==",
+            "subType": "04"
+        }
+    },
+    "keyAltNames": [
+        "bbbbbbbbbbbbbbbb",
+        "additionalAltName"
+    ],
+    "keyMaterial": {
+        "$binary": {
+            "base64": "AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gEGkNTybTc7Eyif0f+qqE0lAAAAwjCBvwYJKoZIhvcNAQcGoIGxMIGuAgEAMIGoBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDB2j78AeuIQxcRh8cQIBEIB7vj9buHEaT7XHFIsKBJiyzZRmNnjvqMK5LSdzonKdx97jlqauvPvTDXSsdQDcspUs5oLrGmAXpbFResscxmbwZoKgUtWiuIOpeAcYuszCiMKt15s1WIMLDXUhYtfCmhRhekvgHnRAaK4HJMlGE+lKJXYI84E0b86Cd/g+",
+            "subType": "00"
+        }
+    },
+    "creationDate": {
+        "$date": {
+            "$numberLong": "1641020400000"
+        }
+    },
+    "updateDate": {
+        "$date": {
+            "$numberLong": "1641020460000"
+        }
+    },
+    "status": {
+        "$numberInt": "1"
+    },
+    "masterKey": {
+        "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
+        "region": "us-east-1",
+        "provider": "aws",
+        "endpoint": "example.com"
+    }
+}

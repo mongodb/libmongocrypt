@@ -153,7 +153,7 @@ _try_satisfying_from_cache (_mongocrypt_key_broker_t *kb, key_request_t *req)
    _mongocrypt_cache_key_value_t *value = NULL;
    bool ret = false;
 
-   if (kb->state != KB_REQUESTING) {
+   if (kb->state != KB_REQUESTING && kb->state != KB_ADDING_DOCS_ANY) {
       _key_broker_fail_w_msg (
          kb, "trying to retrieve key from cache in invalid state");
       goto cleanup;
@@ -284,6 +284,24 @@ _mongocrypt_key_broker_request_name (_mongocrypt_key_broker_t *kb,
    if (!_try_satisfying_from_cache (kb, req)) {
       return false;
    }
+   return true;
+}
+
+bool
+_mongocrypt_key_broker_request_any (_mongocrypt_key_broker_t *kb)
+{
+   if (kb->state != KB_REQUESTING) {
+      return _key_broker_fail_w_msg (
+         kb, "attempting to request any keys, but in wrong state");
+   }
+
+   if (kb->key_requests) {
+      return _key_broker_fail_w_msg (
+         kb, "attempting to request any keys, but requests already made");
+   }
+
+   kb->state = KB_ADDING_DOCS_ANY;
+
    return true;
 }
 
@@ -423,7 +441,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    _mongocrypt_kms_provider_t kek_provider;
    char *access_token = NULL;
 
-   if (kb->state != KB_ADDING_DOCS) {
+   if (kb->state != KB_ADDING_DOCS && kb->state != KB_ADDING_DOCS_ANY) {
       _key_broker_fail_w_msg (
          kb, "attempting to add a key doc, but in wrong state");
       goto done;
@@ -445,11 +463,37 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
       goto done;
    }
 
-   /* Ensure that this document matches at least one request. */
    if (!_key_request_find_one (kb, &key_doc->id, key_doc->key_alt_names)) {
-      _key_broker_fail_w_msg (
-         kb, "unexpected key returned, does not match any requests");
-      goto done;
+      /* If in normal mode, ensure that this document matches at least one
+       * existing request. */
+      if (kb->state == KB_ADDING_DOCS) {
+         _key_broker_fail_w_msg (
+            kb, "unexpected key returned, does not match any requests");
+         goto done;
+      }
+
+      /* If in any mode, add request for provided document now. */
+      if (kb->state == KB_ADDING_DOCS_ANY) {
+         key_request_t *const req = bson_malloc0 (sizeof (key_request_t));
+
+         BSON_ASSERT (req);
+
+         _mongocrypt_buffer_copy_to (&key_doc->id, &req->id);
+         req->alt_name =
+            _mongocrypt_key_alt_name_copy_all (key_doc->key_alt_names);
+         req->next = kb->key_requests;
+         kb->key_requests = req;
+
+         if (!_try_satisfying_from_cache (kb, req)) {
+            goto done;
+         }
+
+         /* Key is already cached; no work to be done. */
+         if (req->satisfied) {
+            ret = true;
+            goto done;
+         }
+      }
    }
 
    /* Check if there are other keys_returned with intersecting altnames or
@@ -615,7 +659,7 @@ _mongocrypt_key_broker_docs_done (_mongocrypt_key_broker_t *kb)
    bool needs_decryption;
    bool needs_auth;
 
-   if (kb->state != KB_ADDING_DOCS) {
+   if (kb->state != KB_ADDING_DOCS && kb->state != KB_ADDING_DOCS_ANY) {
       return _key_broker_fail_w_msg (
          kb, "attempting to finish adding docs, but in wrong state");
    }
@@ -710,7 +754,7 @@ _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
 bool
 _mongocrypt_key_broker_kms_done (
    _mongocrypt_key_broker_t *kb,
-   _mongocrypt_opts_kms_providers_t* kms_providers)
+   _mongocrypt_opts_kms_providers_t *kms_providers)
 {
    key_returned_t *key_returned;
 

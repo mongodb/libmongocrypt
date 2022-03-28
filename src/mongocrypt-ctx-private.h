@@ -29,6 +29,7 @@ typedef enum {
    _MONGOCRYPT_TYPE_ENCRYPT,
    _MONGOCRYPT_TYPE_DECRYPT,
    _MONGOCRYPT_TYPE_CREATE_DATA_KEY,
+   _MONGOCRYPT_TYPE_REWRAP_MANY_DATAKEY,
 } _mongocrypt_ctx_type_t;
 
 /* Option values are validated when set.
@@ -156,12 +157,31 @@ typedef struct {
 } _mongocrypt_ctx_datakey_t;
 
 
+typedef struct _mongocrypt_ctx_rmd_datakey_t _mongocrypt_ctx_rmd_datakey_t;
+
+struct _mongocrypt_ctx_rmd_datakey_t {
+   _mongocrypt_ctx_rmd_datakey_t *next;
+   mongocrypt_ctx_t *dkctx;
+   _mongocrypt_key_doc_t *doc;
+};
+
+typedef struct {
+   mongocrypt_ctx_t parent;
+   _mongocrypt_buffer_t filter;
+   mongocrypt_kms_ctx_t kms;
+   _mongocrypt_ctx_rmd_datakey_t *datakeys;
+   _mongocrypt_ctx_rmd_datakey_t *datakeys_iter;
+   _mongocrypt_buffer_t results;
+} _mongocrypt_ctx_rewrap_many_datakey_t;
+
+
 /* Used for option validation. True means required. False means prohibited. */
 typedef enum {
    OPT_PROHIBITED = 0,
    OPT_REQUIRED,
    OPT_OPTIONAL
 } _mongocrypt_ctx_opt_spec_t;
+
 typedef struct {
    _mongocrypt_ctx_opt_spec_t kek;
    _mongocrypt_ctx_opt_spec_t schema;

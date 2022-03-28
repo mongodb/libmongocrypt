@@ -135,6 +135,11 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester);
 
 
 void
+_mongocrypt_tester_install_ctx_rewrap_many_datakey (
+   _mongocrypt_tester_t *tester);
+
+
+void
 _mongocrypt_tester_install_ciphertext (_mongocrypt_tester_t *tester);
 
 void

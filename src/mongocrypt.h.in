@@ -787,7 +787,8 @@ bool
 mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
 
 /**
- * Set key encryption key document for creating a data key.
+ * Set key encryption key document for creating a data key or for rewrapping
+ * datakeys.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] bin BSON representing the key encryption key document with
@@ -940,6 +941,24 @@ MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg);
+
+
+/**
+ * @brief Initialize a context to rewrap datakeys.
+ *
+ * Associated options:
+ * - @ref mongocrypt_ctx_setopt_key_encryption_key
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] filter The filter to use for the find command on the key vault
+ * collection to retrieve datakeys to rewrap.
+ * @return A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_rewrap_many_datakey_init (mongocrypt_ctx_t *ctx,
+                                         mongocrypt_binary_t *filter);
 
 
 /**
@@ -1187,8 +1206,7 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  */
 bool
 mongocrypt_ctx_provide_kms_providers (
-   mongocrypt_ctx_t *ctx,
-   mongocrypt_binary_t *kms_providers_definition);
+   mongocrypt_ctx_t *ctx, mongocrypt_binary_t *kms_providers_definition);
 
 /**
  * Perform the final encryption or decryption.
@@ -1215,6 +1233,11 @@ mongocrypt_ctx_provide_kms_providers (
  * If @p ctx was initialized with @ref mongocrypt_ctx_datakey_init, then
  * this BSON is the document containing the new data key to be inserted into
  * the key vault collection.
+ *
+ * If @p ctx was initialized with @ref mongocrypt_ctx_rewrap_many_datakey, then
+ * this BSON has the form { "v": [(BSON document), ...] } where each BSON
+ * document in the array is a document containing a rewrapped datakey to be
+ * bulk-updated into the key vault collection.
  *
  * @returns a bool indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status

@@ -348,16 +348,12 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    ASSERT_OK (_mongocrypt_key_broker_request_id (&key_broker, &key_id2),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_doc2),
-              &key_broker);
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_doc1),
-              &key_broker);
+   ASSERT_OK (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_doc2),
+      &key_broker);
+   ASSERT_OK (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_doc1),
+      &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_docs_done (&key_broker), &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
 
@@ -369,9 +365,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
       TEST_FILE ("./test/data/key-document-with-alt-name.json"));
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_doc_names),
+                 &key_broker, kms_providers, &key_doc_names),
               &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
 
@@ -383,9 +377,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
    _mongocrypt_buffer_from_bson (&malformed_buf, malformed);
    ASSERT_FAILS (_mongocrypt_key_broker_add_doc (
-                    &key_broker,
-                    kms_providers,
-                    &malformed_buf),
+                    &key_broker, kms_providers, &malformed_buf),
                  &key_broker,
                  "unrecognized field");
    _mongocrypt_key_broker_cleanup (&key_broker);
@@ -395,12 +387,10 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_init (&key_broker, crypt);
    BSON_ASSERT (_mongocrypt_key_broker_request_id (&key_broker, &key_id1));
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
-   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (
-                    &key_broker,
-                    kms_providers,
-                    NULL),
-                 &key_broker,
-                 "invalid key");
+   ASSERT_FAILS (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, NULL),
+      &key_broker,
+      "invalid key");
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Unmatched key document. */
@@ -408,12 +398,10 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    ASSERT_OK (_mongocrypt_key_broker_request_id (&key_broker, &key_id1),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
-   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (
-                    &key_broker,
-                    kms_providers,
-                    &key_doc2),
-                 &key_broker,
-                 "unexpected key returned");
+   ASSERT_FAILS (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_doc2),
+      &key_broker,
+      "unexpected key returned");
    _mongocrypt_key_broker_cleanup (&key_broker);
 
    /* Two key documents with the same keyAltName and
@@ -444,19 +432,15 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
 
    /* Add { id : Y, name : "Sharlene" }, should pass. */
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_buf_y),
-              &key_broker);
+   ASSERT_OK (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_buf_y),
+      &key_broker);
 
    /* Add { id : X, name : "Sharlene" }, should fail, it shares an alt name. */
-   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (
-                    &key_broker,
-                    kms_providers,
-                    &key_buf_x),
-                 &key_broker,
-                 "duplicate keyAltNames");
+   ASSERT_FAILS (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_buf_x),
+      &key_broker,
+      "duplicate keyAltNames");
 
    _mongocrypt_key_broker_cleanup (&key_broker);
 
@@ -505,16 +489,12 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    ASSERT_OK (_mongocrypt_key_broker_request_id (&key_broker, &key_id2),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_doc2),
-              &key_broker);
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_doc1),
-              &key_broker);
+   ASSERT_OK (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_doc2),
+      &key_broker);
+   ASSERT_OK (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_doc1),
+      &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_docs_done (&key_broker), &key_broker);
    kms = _mongocrypt_key_broker_next_kms (&key_broker);
    BSON_ASSERT (kms);
@@ -523,9 +503,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    BSON_ASSERT (kms);
    _mongocrypt_tester_satisfy_kms (tester, kms);
    BSON_ASSERT (!_mongocrypt_key_broker_next_kms (&key_broker));
-   ASSERT_OK (_mongocrypt_key_broker_kms_done (
-                 &key_broker,
-                 kms_providers),
+   ASSERT_OK (_mongocrypt_key_broker_kms_done (&key_broker, kms_providers),
               &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
    mongocrypt_destroy (crypt); /* destroy crypt to reset cache. */
@@ -541,9 +519,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
       &key_doc_names,
       TEST_FILE ("./test/data/key-document-with-alt-name.json"));
    ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_doc_names),
+                 &key_broker, kms_providers, &key_doc_names),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_docs_done (&key_broker), &key_broker);
    kms = _mongocrypt_key_broker_next_kms (&key_broker);
@@ -551,9 +527,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
 
    _mongocrypt_tester_satisfy_kms (tester, kms);
    BSON_ASSERT (!_mongocrypt_key_broker_next_kms (&key_broker));
-   ASSERT_OK (_mongocrypt_key_broker_kms_done (
-                 &key_broker,
-                 kms_providers),
+   ASSERT_OK (_mongocrypt_key_broker_kms_done (&key_broker, kms_providers),
               &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
    mongocrypt_destroy (crypt); /* destroy crypt to reset cache. */
@@ -573,18 +547,14 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    _key_broker_add_name (&key_broker, "Kasey");
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&key_broker), &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &key_broker,
-                 kms_providers,
-                 &key_doc_names),
+                 &key_broker, kms_providers, &key_doc_names),
               &key_broker);
    ASSERT_OK (_mongocrypt_key_broker_docs_done (&key_broker), &key_broker);
    kms = _mongocrypt_key_broker_next_kms (&key_broker);
    BSON_ASSERT (kms);
    _mongocrypt_tester_satisfy_kms (tester, kms);
    BSON_ASSERT (!_mongocrypt_key_broker_next_kms (&key_broker));
-   ASSERT_OK (_mongocrypt_key_broker_kms_done (
-                 &key_broker,
-                 kms_providers),
+   ASSERT_OK (_mongocrypt_key_broker_kms_done (&key_broker, kms_providers),
               &key_broker);
    _mongocrypt_key_broker_cleanup (&key_broker);
 
@@ -655,17 +625,13 @@ _test_key_broker_multi_match (_mongocrypt_tester_t *tester)
    BSON_ASSERT (0 == _key_broker_num_satisfied (&key_broker));
 
    /* Add one doc, should satisfy two requests. */
-   BSON_ASSERT (_mongocrypt_key_broker_add_doc (
-                   &key_broker,
-                   kms_providers,
-                   &key_doc1));
+   BSON_ASSERT (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_doc1));
    BSON_ASSERT (2 == _key_broker_num_satisfied (&key_broker));
 
    /* Add other doc, should satisfy all. */
-   BSON_ASSERT (_mongocrypt_key_broker_add_doc (
-                   &key_broker,
-                   kms_providers,
-                   &key_doc2));
+   BSON_ASSERT (
+      _mongocrypt_key_broker_add_doc (&key_broker, kms_providers, &key_doc2));
    BSON_ASSERT (4 == _key_broker_num_satisfied (&key_broker));
 
    _mongocrypt_buffer_cleanup (&key_id1);
@@ -810,10 +776,7 @@ _test_key_broker_kmip (_mongocrypt_tester_t *tester)
 
    /* Add the key document. */
    _mongocrypt_buffer_from_bson (&keydoc, &keydoc_bson);
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &kb,
-                 kms_providers,
-                 &keydoc),
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &keydoc),
               &kb);
    ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
 
@@ -913,10 +876,7 @@ _test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
 
    /* Add the key document. */
    _mongocrypt_buffer_from_bson (&keydoc, &keydoc_bson);
-   ASSERT_OK (_mongocrypt_key_broker_add_doc (
-                 &kb,
-                 kms_providers,
-                 &keydoc),
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &keydoc),
               &kb);
    ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
 
@@ -946,6 +906,96 @@ _test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+
+static void
+_test_key_broker_request_any (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   _mongocrypt_key_broker_t kb;
+
+   /* Can switch to any mode before any keys are requested. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   /* If keys have already been requested, cannot switch to any mode.*/
+   _mongocrypt_key_broker_init (&kb, crypt);
+   _key_broker_add_name (&kb, "test");
+   ASSERT_FAILS (_mongocrypt_key_broker_request_any (&kb),
+                 &kb,
+                 "attempting to request any keys, but requests already made");
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_test_key_broker_add_any (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   _mongocrypt_opts_kms_providers_t *const kms_providers =
+      &crypt->opts.kms_providers;
+   _mongocrypt_key_broker_t kb;
+   _mongocrypt_buffer_t key_id, key_doc;
+
+   _gen_uuid_and_key (tester, 1, &key_id, &key_doc);
+
+   /* Can add valid documents. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   /* Still validates no duplicate/incompatible keys. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+                 &kb,
+                 "keys returned have duplicate keyAltNames or _id");
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   /* Still requests KMS as needed. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+   {
+      mongocrypt_kms_ctx_t *kms;
+      kms = _mongocrypt_key_broker_next_kms (&kb);
+      ASSERT_OK (kms, &kb);
+      /* Key material should should be cached here. */
+      _mongocrypt_tester_satisfy_kms (tester, kms);
+      ASSERT_OK (!_mongocrypt_key_broker_next_kms (&kb), &kb);
+      ASSERT_OK (_mongocrypt_key_broker_kms_done (&kb, kms_providers), &kb);
+   }
+   _mongocrypt_key_broker_cleanup (&kb);
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+   /* Cached key material, should skip straight to done. */
+   ASSERT (kb.state == KB_DONE);
+
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   _mongocrypt_buffer_cleanup (&key_doc);
+   _mongocrypt_buffer_cleanup (&key_id);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
 {
@@ -956,4 +1006,6 @@ _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_key_broker_multi_match);
    INSTALL_TEST (_test_key_broker_kmip);
    INSTALL_TEST (_test_key_broker_kmip_notfound);
+   INSTALL_TEST (_test_key_broker_request_any);
+   INSTALL_TEST (_test_key_broker_add_any);
 }

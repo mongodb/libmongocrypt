@@ -333,6 +333,8 @@ _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
    bson_destroy (&dst->bson);
    bson_copy_to (&src->bson, &dst->bson);
    _mongocrypt_kek_copy_to (&src->kek, &dst->kek);
+   dst->creation_date = src->creation_date;
+   dst->update_date = src->update_date;
 }
 
 _mongocrypt_key_alt_name_t *
