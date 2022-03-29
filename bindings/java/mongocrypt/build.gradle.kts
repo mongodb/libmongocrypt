@@ -135,7 +135,7 @@ val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
         LibMongoCryptS3Data("rhel-67-s390x", "linux-s390x"),
         LibMongoCryptS3Data("ubuntu1604-arm64", "linux-aarch64"),
         LibMongoCryptS3Data("windows-test", "win32-x86-64"),
-        LibMongoCryptS3Data("macos_x86_64", "darwin")
+        LibMongoCryptS3Data("macos", "darwin")
 )
 
 jnaMappingList.forEach {
