@@ -333,7 +333,7 @@ _mongo_done_markings (mongocrypt_ctx_t *ctx)
  * marked command document based on the caller's schema. If successful, the
  * state will be changed via @ref _mongo_done_markings().
  *
- * The purporse of this function is to short-circuit the phase of encryption
+ * The purpose of this function is to short-circuit the phase of encryption
  * wherein we would normally return to the driver and give them the opportunity
  * to generate the markings by passing a special command to a mongocryptd daemon
  * process. Instead, we'll do it ourselves here, if possible.
@@ -380,7 +380,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    mongo_csfle_v1_status *status = csfle.status_create ();
    BSON_ASSERT (status);
 
-   // Obtain the OP_MSG for markings
+   // Obtain the command for markings
    bson_t cmd = BSON_INITIALIZER;
    if (!_create_markings_cmd_bson (ctx, &cmd)) {
       goto fail_create_cmd;

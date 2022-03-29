@@ -599,15 +599,16 @@ _validate_csfle_singleton (mongocrypt_t *crypt, _loaded_csfle found)
    } else {
       // Get the path to what we found:
       mcr_dll_path_result found_path = mcr_dll_path (found.lib);
-      assert (found_path.path.data && "Failed to get the DLL path of the "
-                                      "library that we just barely found");
+      assert (found_path.path.data &&
+              "Failed to get the dynamic library filepath of the library that "
+              "was loaded for csfle");
       if (!mstr_eq (found_path.path.view, existing_path)) {
          // Our find-result should only ever find the existing same library.
          // Error:
          CLIENT_ERR (
-            "An existing CSFLE library is loaded by the application "
-            "at [%s], but the current call to mongocrypt_init() attempted to "
-            "load a second CSFLE library from [%s]. This is not allowed.",
+            "An existing CSFLE library is loaded by the application at [%s], "
+            "but the current call to mongocrypt_init() attempted to load a "
+            "second CSFLE library from [%s]. This is not allowed.",
             existing_path.data,
             found_path.path.data);
          okay = false;
