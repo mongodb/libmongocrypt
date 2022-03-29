@@ -93,14 +93,6 @@ module.exports = function (modules) {
       this._client = client;
       this._bson = options.bson || client.topology.bson;
       this._bypassEncryption = options.bypassAutoEncryption === true;
-      if (!this._bypassAutoEncryption) {
-        this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
-        this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-          serverSelectionTimeoutMS: 10000
-        });
-      }
 
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
       this._keyVaultClient = options.keyVaultClient || client;
@@ -128,9 +120,28 @@ module.exports = function (modules) {
         mongoCryptOptions.logger = options.logger;
       }
 
+      if (options.extraOptions && options.extraOptions.csflePath) {
+        mongoCryptOptions.csflePath = options.extraOptions.csflePath;
+      }
+
+      if (options.extraOptions && options.extraOptions.csfleSearchPaths) {
+        mongoCryptOptions.csfleSearchPaths = options.extraOptions.csfleSearchPaths;
+      }
+
       Object.assign(mongoCryptOptions, { cryptoCallbacks });
       this._mongocrypt = new mc.MongoCrypt(mongoCryptOptions);
       this._contextCounter = 0;
+
+      // Only instantiate mongocryptd manager/client once we know for sure
+      // that we are not using the CSFLE shared library.
+      if (!this._bypassAutoEncryption && !this.csfleVersionInfo) {
+        this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
+        this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+          serverSelectionTimeoutMS: 10000
+        });
+      }
     }
 
     /**
@@ -138,7 +149,7 @@ module.exports = function (modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
-      if (this._bypassEncryption) {
+      if (this._bypassEncryption || this.csfleVersionInfo) {
         return callback();
       }
       const _callback = (err, res) => {
@@ -259,7 +270,16 @@ module.exports = function (modules) {
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });
-      stateMachine.execute(this, context, callback);
+
+      const decorateResult = this[Symbol.for('@@mdb.decorateDecryptionResult')];
+      stateMachine.execute(this, context, function (err, result) {
+        // Only for testing/internal usage
+        if (!err && result && decorateResult) {
+          err = decorateDecryptionResult(result, response, bson);
+          if (err) return callback(err);
+        }
+        callback(err, result);
+      });
     }
 
     /**
@@ -272,7 +292,56 @@ module.exports = function (modules) {
     async askForKMSCredentials() {
       return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
     }
+
+    /**
+     * Return the current libmongocrypt's CSFLE shared library version
+     * as `{ version: bigint, versionStr: string }`, or `null` if no CSFLE
+     * shared library was loaded.
+     */
+    get csfleVersionInfo() {
+      return this._mongocrypt.csfleVersionInfo;
+    }
   }
 
   return { AutoEncrypter };
 };
+
+/**
+ * Recurse through the (identically-shaped) `decrypted` and `original`
+ * objects and attach a `decryptedKeys` property on each sub-object that
+ * contained encrypted fields. Because we only call this on BSON responses,
+ * we do not need to worry about circular references.
+ */
+function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateCall = true) {
+  const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');
+  if (isTopLevelDecorateCall) {
+    // The original value could have been either a JS object or a BSON buffer
+    if (Buffer.isBuffer(original)) {
+      original = bson.deserialize(original);
+    }
+    if (Buffer.isBuffer(decrypted)) {
+      return new Error('Expected result of decryption to be deserialized BSON object');
+    }
+  }
+
+  if (!decrypted || typeof decrypted !== 'object') return;
+  for (const k of Object.keys(decrypted)) {
+    const originalValue = original[k];
+
+    // An object was decrypted by libmongocrypt if and only if it was
+    // a BSON Binary object with subtype 6.
+    if (originalValue && originalValue._bsontype === 'Binary' && originalValue.sub_type === 6) {
+      if (!decrypted[decryptedKeys]) {
+        Object.defineProperty(decrypted, decryptedKeys, {
+          value: [],
+          configurable: true,
+          enumerable: false,
+          writable: false
+        });
+      }
+      decrypted[decryptedKeys].push(k);
+    }
+
+    decorateDecryptionResult(decrypted[k], originalValue, bson, false);
+  }
+}

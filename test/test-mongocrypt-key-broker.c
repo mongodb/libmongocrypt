@@ -906,6 +906,98 @@ _test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+
+static void
+_test_key_broker_request_any (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   _mongocrypt_key_broker_t kb;
+
+   /* Can switch to any mode before any keys are requested. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   /* If keys have already been requested, cannot switch to any mode.*/
+   _mongocrypt_key_broker_init (&kb, crypt);
+   _key_broker_add_name (&kb, "test");
+   ASSERT_FAILS (_mongocrypt_key_broker_request_any (&kb),
+                 &kb,
+                 "attempting to request any keys, but requests already made");
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_test_key_broker_add_any (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   _mongocrypt_opts_kms_providers_t *const kms_providers =
+      &crypt->opts.kms_providers;
+   _mongocrypt_key_broker_t kb;
+   _mongocrypt_buffer_t key_id, key_doc;
+
+   _gen_uuid_and_key (tester, 1, &key_id, &key_doc);
+
+   /* Can add valid documents. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   /* Still validates no duplicate/incompatible keys. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_FAILS (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+                 &kb,
+                 "keys returned have duplicate keyAltNames or _id");
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   /* Still requests KMS as needed. */
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+   {
+      mongocrypt_kms_ctx_t *kms;
+      kms = _mongocrypt_key_broker_next_kms (&kb);
+      ASSERT_OK (kms, &kb);
+      /* Key material should should be cached here. */
+      _mongocrypt_tester_satisfy_kms (tester, kms);
+      ASSERT_OK (!_mongocrypt_key_broker_next_kms (&kb), &kb);
+      ASSERT_OK (_mongocrypt_key_broker_kms_done (&kb, kms_providers), &kb);
+   }
+   _mongocrypt_key_broker_cleanup (&kb);
+   _mongocrypt_key_broker_init (&kb, crypt);
+   ASSERT_OK (_mongocrypt_key_broker_request_any (&kb), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc),
+              &kb);
+   ASSERT (_key_broker_num_satisfied (&kb) == 1);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+   /* Cached key material, should skip straight to done. */
+   ASSERT (kb.state == KB_DONE);
+
+   _mongocrypt_key_broker_cleanup (&kb);
+
+   _mongocrypt_buffer_cleanup (&key_doc);
+   _mongocrypt_buffer_cleanup (&key_id);
+   mongocrypt_destroy (crypt);
+}
+
+
 void
 _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
 {
@@ -916,4 +1008,6 @@ _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_key_broker_multi_match);
    INSTALL_TEST (_test_key_broker_kmip);
    INSTALL_TEST (_test_key_broker_kmip_notfound);
+   INSTALL_TEST (_test_key_broker_request_any);
+   INSTALL_TEST (_test_key_broker_add_any);
 }

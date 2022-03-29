@@ -16,6 +16,7 @@
 
 #include <bson/bson.h>
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-endian-private.h"
 #include "mongocrypt-util-private.h"
 
 #define INT32_LEN 4
@@ -265,6 +266,9 @@ _mongocrypt_buffer_cmp (const _mongocrypt_buffer_t *a,
    if (a->len != b->len) {
       return a->len - b->len;
    }
+   if (0 == a->len) {
+      return 0;
+   }
    return memcmp (a->data, b->data, a->len);
 }
 
@@ -417,6 +421,11 @@ _mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex)
 {
    uint32_t i;
 
+   if (strlen (hex) == 0) {
+      _mongocrypt_buffer_init (buf);
+      return;
+   }
+
    buf->len = (uint32_t) strlen (hex) / 2;
    buf->data = bson_malloc (buf->len);
    BSON_ASSERT (buf->data);
@@ -530,5 +539,33 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
    }
    buf->data = (uint8_t *) str;
    buf->owned = true;
+   return true;
+}
+
+void
+_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
+                                        uint64_t value)
+{
+   uint64_t value_le = MONGOCRYPT_UINT64_TO_LE (value);
+   _mongocrypt_buffer_init (buf);
+   _mongocrypt_buffer_resize (buf, sizeof (value));
+   memcpy (buf->data, &value_le, buf->len);
+}
+
+bool
+_mongocrypt_buffer_from_subrange (_mongocrypt_buffer_t *out,
+                                  const _mongocrypt_buffer_t *in,
+                                  uint32_t offset,
+                                  uint32_t len)
+{
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (in);
+
+   _mongocrypt_buffer_init (out);
+   if (offset + len > in->len) {
+      return false;
+   }
+   out->data = in->data + offset;
+   out->len = len;
    return true;
 }

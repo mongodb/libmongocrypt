@@ -28,6 +28,7 @@
 #define MONGOCRYPT_HMAC_SHA512_LEN 64
 #define MONGOCRYPT_HMAC_LEN 32
 #define MONGOCRYPT_BLOCK_SIZE 16
+#define MONGOCRYPT_HMAC_SHA256_LEN 32
 
 typedef struct {
    int hooks_enabled;
@@ -43,8 +44,18 @@ typedef struct {
 uint32_t
 _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len);
 
+/* _mongocrypt_fle2aead_calculate_ciphertext_len returns the required length of
+ * the ciphertext for _mongocrypt_fle2aead_do_encryption. */
+uint32_t
+_mongocrypt_fle2aead_calculate_ciphertext_len (uint32_t plaintext_len);
+
 uint32_t
 _mongocrypt_calculate_plaintext_len (uint32_t ciphertext_len);
+
+/* _mongocrypt_fle2aead_calculate_plaintext_len returns the required length of
+ * the plaintext for _mongocrypt_fle2aead_do_decryption. */
+uint32_t
+_mongocrypt_fle2aead_calculate_plaintext_len (uint32_t ciphertext_len);
 
 bool
 _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
@@ -65,6 +76,38 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
                            _mongocrypt_buffer_t *plaintext,
                            uint32_t *bytes_written,
                            mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* _mongocrypt_fle2aead_do_encryption does AEAD encryption.
+ * It follows the construction described in the [AEAD with
+ * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/)
+ *
+ * Note: The 96 byte key is split differently for FLE 2.
+ * - FLE 1 uses first 32 bytes as the mac key, and the second 32 bytes as the
+ *   encryption key.
+ * - FLE 2 uses first 32 bytes as encryption key, and the
+ *   second 32 bytes as the mac key.
+ * Note: Attempting to encrypt a 0 length plaintext is an error.
+ */
+bool
+_mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
+                                    const _mongocrypt_buffer_t *iv,
+                                    const _mongocrypt_buffer_t *associated_data,
+                                    const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *plaintext,
+                                    _mongocrypt_buffer_t *ciphertext,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
+                                    const _mongocrypt_buffer_t *associated_data,
+                                    const _mongocrypt_buffer_t *key,
+                                    const _mongocrypt_buffer_t *ciphertext,
+                                    _mongocrypt_buffer_t *plaintext,
+                                    uint32_t *bytes_written,
+                                    mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool
@@ -123,6 +166,24 @@ _mongocrypt_calculate_deterministic_iv (
    _mongocrypt_buffer_t *out,
    mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
+/*
+ * _mongocrypt_hmac_sha_256 computes the HMAC SHA-256.
+ *
+ * Uses the hmac_sha_256 hook set on @crypto if set, and otherwise
+ * calls the native implementation.
+ *
+ * @out must have length 32 bytes.
+ *
+ * Returns true if no error occurred.
+ * Returns false sets @status if an error occurred.
+ */
+bool
+_mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
+                          const _mongocrypt_buffer_t *key,
+                          const _mongocrypt_buffer_t *in,
+                          _mongocrypt_buffer_t *out,
+                          mongocrypt_status_t *status);
+
 /* Crypto implementations must implement these functions. */
 
 /* This variable must be defined in implementation
@@ -169,6 +230,13 @@ _native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
 
 bool
 _native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool
+_native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_CRYPTO_PRIVATE_H */

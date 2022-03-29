@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const BSON = require('bson');
 const EJSON = require('bson').EJSON;
 const sinon = require('sinon');
@@ -16,13 +17,34 @@ const expect = chai.expect;
 chai.use(require('chai-subset'));
 chai.use(require('sinon-chai'));
 
+const sharedLibrarySuffix =
+  process.platform === 'win32' ? 'dll' : process.platform === 'darwin' ? 'dylib' : 'so';
+let sharedLibraryStub = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  `mongo_csfle_v1.${sharedLibrarySuffix}`
+);
+if (!fs.existsSync(sharedLibraryStub)) {
+  sharedLibraryStub = path.resolve(
+    __dirname,
+    '..',
+    'deps',
+    'tmp',
+    'libmongocrypt-build',
+    ...(process.platform === 'win32' ? ['RelWithDebInfo'] : []),
+    `mongo_csfle_v1.${sharedLibrarySuffix}`
+  );
+}
+
 function readExtendedJsonToBuffer(path) {
   const ejson = EJSON.parse(fs.readFileSync(path, 'utf8'));
   return BSON.serialize(ejson);
 }
 
 function readHttpResponse(path) {
-  let data = fs.readFileSync(path, 'utf8').toString();
+  let data = fs.readFileSync(path, 'utf8');
   data = data.split('\n').join('\r\n');
   return Buffer.from(data, 'utf8');
 }
@@ -139,7 +161,37 @@ describe('AutoEncrypter', function () {
       mc.decrypt(input, (err, decrypted) => {
         if (err) return done(err);
         expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+        expect(decrypted.filter).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
         done();
+      });
+    });
+
+    it('should decrypt mock data and mark decrypted items if enabled for testing', function (done) {
+      const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        }
+      });
+      mc[Symbol.for('@@mdb.decorateDecryptionResult')] = true;
+      mc.decrypt(input, (err, decrypted) => {
+        if (err) return done(err);
+        expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+        expect(decrypted.filter[Symbol.for('@@mdb.decryptedKeys')]).to.eql(['ssn']);
+
+        // The same, but with an object containing different data types as the input
+        mc.decrypt({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] }, (err, decrypted) => {
+          if (err) return done(err);
+          expect(decrypted).to.eql({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] });
+          expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+          done();
+        });
       });
     });
 
@@ -208,6 +260,48 @@ describe('AutoEncrypter', function () {
           return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
         }
       });
+
+      mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
+        if (err) return done(err);
+        const expected = EJSON.parse(
+          JSON.stringify({
+            find: 'test',
+            filter: {
+              ssn: {
+                $binary: {
+                  base64:
+                    'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=',
+                  subType: '6'
+                }
+              }
+            }
+          })
+        );
+
+        expect(encrypted).to.containSubset(expected);
+        done();
+      });
+    });
+
+    // TODO(NODE-4089): Enable test once https://github.com/mongodb/libmongocrypt/pull/263 is done
+    it.skip('should encrypt mock data when using the CSFLE shared library', function (done) {
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: {}
+        },
+        async onKmsProviderRefresh() {
+          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
+        },
+        extraOptions: {
+          csflePath: sharedLibraryStub
+        }
+      });
+
+      expect(mc).to.not.have.property('_mongocryptdManager');
+      expect(mc).to.not.have.property('_mongocryptdClient');
 
       mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
         if (err) return done(err);
@@ -301,6 +395,8 @@ describe('AutoEncrypter', function () {
         }
       });
 
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
+
       const localMcdm = this.mc._mongocryptdManager;
       sandbox.spy(localMcdm, 'spawn');
 
@@ -332,6 +428,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -368,6 +465,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -404,6 +502,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -432,6 +531,7 @@ describe('AutoEncrypter', function () {
           mongocryptdURI: 'mongodb://something.invalid:27020/'
         }
       });
+      expect(this.mc).to.have.property('csfleVersionInfo', null);
 
       sandbox.stub(MongocryptdManager.prototype, 'spawn').callsFake(callback => {
         callback();
@@ -535,6 +635,54 @@ describe('AutoEncrypter', function () {
             done();
           });
         });
+      });
+    });
+  });
+
+  describe('CSFLE shared library', function () {
+    it('should load a shared library by specifying its path', function () {
+      const client = new MockClient();
+      this.mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        },
+        extraOptions: {
+          csflePath: sharedLibraryStub
+        }
+      });
+
+      expect(this.mc).to.not.have.property('_mongocryptdManager');
+      expect(this.mc).to.not.have.property('_mongocryptdClient');
+      expect(this.mc).to.have.deep.property('csfleVersionInfo', {
+        // eslint-disable-next-line no-undef
+        version: BigInt(0x000600020001000),
+        versionStr: 'stubbed-mongo_csfle'
+      });
+    });
+
+    it('should load a shared library by specifying a search path', function () {
+      const client = new MockClient();
+      this.mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        },
+        extraOptions: {
+          csfleSearchPaths: [path.dirname(sharedLibraryStub)]
+        }
+      });
+
+      expect(this.mc).to.not.have.property('_mongocryptdManager');
+      expect(this.mc).to.not.have.property('_mongocryptdClient');
+      expect(this.mc).to.have.deep.property('csfleVersionInfo', {
+        // eslint-disable-next-line no-undef
+        version: BigInt(0x000600020001000),
+        versionStr: 'stubbed-mongo_csfle'
       });
     });
   });

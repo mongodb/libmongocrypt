@@ -1,10 +1,10 @@
 # Code Owners will automatically be added as reviewers on PRs
 
 # NodeJS Bindings
-bindings/node @nbbeeken @emadum @durran
+bindings/node @nbbeeken @durran @baileympearson @dariakp @addaleax
 
 # Python Bindings
-bindings/python @ShaneHarvey @prashantmital
+bindings/python @ShaneHarvey @blink1073 @juliusgeo
 
 # Java Bindings
 bindings/java @jyemin @rozza

@@ -60,6 +60,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_providers;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_log_handler;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_schema_map;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_use_need_kms_credentials_state;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
@@ -149,6 +150,10 @@ class MongoCryptImpl implements MongoCrypt {
             if (!success) {
                 throwExceptionFromStatus();
             }
+        }
+
+        if (options.isNeedsKmsCredentialsStateEnabled()) {
+            mongocrypt_setopt_use_need_kms_credentials_state(wrapped);
         }
 
         if (options.getKmsProviderOptions() != null) {

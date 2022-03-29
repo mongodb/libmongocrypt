@@ -189,21 +189,21 @@ _native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
    return _decrypt_with_cipher (EVP_aes_256_cbc (), args);
 }
 
-
+/* _hmac_with_hash computes an HMAC of @in with the OpenSSL hash specified by
+ * @hash.
+ * @key is the input key.
+ * @out is the output. @out must be allocated by the caller with
+ * the exact length for the output. E.g. for HMAC 256, @out->len must be 32.
+ * Returns false and sets @status on error. @status is required. */
 bool
-_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
-                             const _mongocrypt_buffer_t *in,
-                             _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status)
+_hmac_with_hash (const EVP_MD *hash,
+                 const _mongocrypt_buffer_t *key,
+                 const _mongocrypt_buffer_t *in,
+                 _mongocrypt_buffer_t *out,
+                 mongocrypt_status_t *status)
 {
-   const EVP_MD *algo;
-
-   algo = EVP_sha512 ();
-   BSON_ASSERT (EVP_MD_block_size (algo) == 128);
-   BSON_ASSERT (EVP_MD_size (algo) == MONGOCRYPT_HMAC_SHA512_LEN);
-
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-   if (!HMAC (algo,
+   if (!HMAC (hash,
               key->data,
               key->len,
               in->data,
@@ -221,12 +221,12 @@ _native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
 
    ctx = HMAC_CTX_new ();
 
-   if (out->len != MONGOCRYPT_HMAC_SHA512_LEN) {
-      CLIENT_ERR ("out does not contain %d bytes", MONGOCRYPT_HMAC_SHA512_LEN);
+   if (out->len != EVP_MD_size (hash)) {
+      CLIENT_ERR ("out does not contain %d bytes", EVP_MD_size (hash));
       return false;
    }
 
-   if (!HMAC_Init_ex (ctx, key->data, key->len, algo, NULL /* engine */)) {
+   if (!HMAC_Init_ex (ctx, key->data, key->len, hash, NULL /* engine */)) {
       CLIENT_ERR ("error initializing HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -249,6 +249,15 @@ done:
    HMAC_CTX_free (ctx);
    return ret;
 #endif
+}
+
+bool
+_native_crypto_hmac_sha_512 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_hash (EVP_sha512 (), key, in, out, status);
 }
 
 
@@ -283,6 +292,15 @@ bool
 _native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
 {
    return _decrypt_with_cipher (EVP_aes_256_ctr (), args);
+}
+
+bool
+_native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
+                             const _mongocrypt_buffer_t *in,
+                             _mongocrypt_buffer_t *out,
+                             mongocrypt_status_t *status)
+{
+   return _hmac_with_hash (EVP_sha256 (), key, in, out, status);
 }
 
 #endif /* MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO */

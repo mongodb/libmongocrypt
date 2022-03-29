@@ -29,6 +29,7 @@ typedef enum {
    _MONGOCRYPT_TYPE_ENCRYPT,
    _MONGOCRYPT_TYPE_DECRYPT,
    _MONGOCRYPT_TYPE_CREATE_DATA_KEY,
+   _MONGOCRYPT_TYPE_REWRAP_MANY_DATAKEY,
 } _mongocrypt_ctx_type_t;
 
 /* Option values are validated when set.
@@ -119,6 +120,13 @@ typedef struct {
    /* collinfo_has_siblings is true if the schema came from a remote JSON
     * schema, and there were siblings. */
    bool collinfo_has_siblings;
+   /* encrypted_field_config is set when:
+    * 1. <db_name>.<coll_name> is present in an encrypted_field_config_map.
+    * 2. (TODO MONGOCRYPT-414) The collection has encryptedFields in the
+    * response to listCollections. encrypted_field_config is true if and only if
+    * encryption is using FLE 2.0.
+    */
+   _mongocrypt_buffer_t encrypted_field_config;
 } _mongocrypt_ctx_encrypt_t;
 
 
@@ -149,12 +157,31 @@ typedef struct {
 } _mongocrypt_ctx_datakey_t;
 
 
+typedef struct _mongocrypt_ctx_rmd_datakey_t _mongocrypt_ctx_rmd_datakey_t;
+
+struct _mongocrypt_ctx_rmd_datakey_t {
+   _mongocrypt_ctx_rmd_datakey_t *next;
+   mongocrypt_ctx_t *dkctx;
+   _mongocrypt_key_doc_t *doc;
+};
+
+typedef struct {
+   mongocrypt_ctx_t parent;
+   _mongocrypt_buffer_t filter;
+   mongocrypt_kms_ctx_t kms;
+   _mongocrypt_ctx_rmd_datakey_t *datakeys;
+   _mongocrypt_ctx_rmd_datakey_t *datakeys_iter;
+   _mongocrypt_buffer_t results;
+} _mongocrypt_ctx_rewrap_many_datakey_t;
+
+
 /* Used for option validation. True means required. False means prohibited. */
 typedef enum {
    OPT_PROHIBITED = 0,
    OPT_REQUIRED,
    OPT_OPTIONAL
 } _mongocrypt_ctx_opt_spec_t;
+
 typedef struct {
    _mongocrypt_ctx_opt_spec_t kek;
    _mongocrypt_ctx_opt_spec_t schema;
@@ -178,6 +205,6 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
 /* Get the KMS providers for the current context, fall back to the ones
  * from mongocrypt_t if none are provided for the context specifically. */
 _mongocrypt_opts_kms_providers_t *
-_mongocrypt_ctx_kms_providers(mongocrypt_ctx_t *ctx);
+_mongocrypt_ctx_kms_providers (mongocrypt_ctx_t *ctx);
 
 #endif /* MONGOCRYPT_CTX_PRIVATE_H */

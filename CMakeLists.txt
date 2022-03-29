@@ -78,6 +78,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/commoncrypto.c
    src/crypto/libcrypto.c
    src/crypto/none.c
+   src/mc-tokens.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
    src/mongocrypt-cache.c
@@ -89,6 +90,7 @@ set (MONGOCRYPT_SOURCES
    src/mongocrypt-ctx-datakey.c
    src/mongocrypt-ctx-decrypt.c
    src/mongocrypt-ctx-encrypt.c
+   src/mongocrypt-ctx-rewrap-many-datakey.c
    src/mongocrypt-ctx.c
    src/mongocrypt-endpoint.c
    src/mongocrypt-kek.c
@@ -183,7 +185,16 @@ target_include_directories (
    PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
    )
-target_compile_definitions (mongocrypt PRIVATE ${BSON_DEFINITIONS})
+include (TestBigEndian)
+TEST_BIG_ENDIAN (MONGOCRYPT_BIG_ENDIAN)
+if (MONGOCRYPT_BIG_ENDIAN)
+   message ("Detected byte order: big endian")
+   list (APPEND MONGOCRYPT_DEFINITIONS MONGOCRYPT_BIG_ENDIAN)
+else ()
+   message ("Detected byte order: little endian")
+   list (APPEND MONGOCRYPT_DEFINITIONS MONGOCRYPT_LITTLE_ENDIAN)
+endif ()
+target_compile_definitions (mongocrypt PRIVATE ${BSON_DEFINITIONS} ${MONGOCRYPT_DEFINITIONS})
 target_link_libraries (
    mongocrypt
    PRIVATE
@@ -230,6 +241,7 @@ target_compile_definitions (
    mongocrypt_static
    PRIVATE
       ${BSON_DEFINITIONS}
+      ${MONGOCRYPT_DEFINITIONS}
    PUBLIC
       MONGOCRYPT_STATIC_DEFINE
       KMS_MSG_STATIC
@@ -338,6 +350,7 @@ if (BUILD_TESTING)
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
+   test/test-mc-tokens.c
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
    test/test-mongocrypt-cache.c
@@ -348,6 +361,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-csfle-lib.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
+   test/test-mongocrypt-ctx-rewrap-many-datakey.c
    test/test-mongocrypt-ctx-setopt.c
    test/test-mongocrypt-datakey.c
    test/test-mongocrypt-dll.c
@@ -376,6 +390,7 @@ target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET} mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE
    ${BSON_DEFINITIONS}
+   ${MONGOCRYPT_DEFINITIONS}
    # Set a definition so that testcases can know where test-mongocrypt.exe was written to
    "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
    # Tell test-mongocrypt whether we have a real csfle library for testing

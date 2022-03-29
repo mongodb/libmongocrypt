@@ -19,6 +19,8 @@
 #include "test-mongocrypt.h"
 #include "test-mongocrypt-assert.h"
 
+#include "mongocrypt-endian-private.h"
+
 #define TEST_STRING "?????" /* 3F 3F 3F 3F 3F */
 #define TEST_INT 5555555    /* 54 C5 63 */
 
@@ -198,6 +200,60 @@ _test_mongocrypt_buffer_steal_from_string (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&buf);
 }
 
+static void
+_test_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t expect;
+   _mongocrypt_buffer_t got;
+
+   _mongocrypt_buffer_copy_from_hex (&expect, "0100000000000000");
+   _mongocrypt_buffer_copy_from_uint64_le (
+      &got, 0x0000000000000001ULL);
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&got);
+
+   _mongocrypt_buffer_copy_from_hex (&expect, "1122334455667788");
+   _mongocrypt_buffer_copy_from_uint64_le (
+      &got, 0x8877665544332211ULL);
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&got);
+}
+
+static void
+_test_mongocrypt_buffer_from_subrange (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t input;
+   _mongocrypt_buffer_t expect;
+   _mongocrypt_buffer_t got;
+
+   _mongocrypt_buffer_copy_from_hex (&input, "010203");
+   _mongocrypt_buffer_copy_from_hex (&expect, "01");
+   ASSERT (_mongocrypt_buffer_from_subrange (&got, &input, 0, 1));
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&input);
+
+   _mongocrypt_buffer_copy_from_hex (&input, "010203");
+   _mongocrypt_buffer_copy_from_hex (&expect, "010203");
+   ASSERT (_mongocrypt_buffer_from_subrange (&got, &input, 0, 3));
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&input);
+
+   _mongocrypt_buffer_copy_from_hex (&input, "010203");
+   _mongocrypt_buffer_copy_from_hex (&expect, "0203");
+   ASSERT (_mongocrypt_buffer_from_subrange (&got, &input, 1, 2));
+   ASSERT_CMPBYTES (expect.data, expect.len, got.data, got.len);
+   _mongocrypt_buffer_cleanup (&expect);
+   _mongocrypt_buffer_cleanup (&input);
+
+   _mongocrypt_buffer_copy_from_hex (&input, "010203");
+   ASSERT (!_mongocrypt_buffer_from_subrange (&got, &input, 0, 4));
+   _mongocrypt_buffer_cleanup (&input);
+}
+
 void
 _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester)
 {
@@ -205,4 +261,6 @@ _mongocrypt_tester_install_buffer (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_mongocrypt_buffer_copy_from_data_and_size);
    INSTALL_TEST (_test_mongocrypt_buffer_steal_from_data_and_size);
    INSTALL_TEST (_test_mongocrypt_buffer_steal_from_string);
+   INSTALL_TEST (_test_mongocrypt_buffer_copy_from_uint64_le);
+   INSTALL_TEST (_test_mongocrypt_buffer_from_subrange);
 }

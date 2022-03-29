@@ -190,11 +190,18 @@ functions:
           if [ "${is_patch}" = "true" ]; then
             echo "Patch build detected, skipping"
           fi
+          if [ "${branch_name}" != "master" ]; then
+            echo "publish snapshot is only run on master branch."
+            echo "Detected branch '${branch_name}', skipping."
+          fi
     - command: shell.exec
       params:
         silent: true
         script: |-
           if [ "${is_patch}" = "true" ]; then
+            exit 0
+          fi
+          if [ "${branch_name}" != "master" ]; then
             exit 0
           fi
           cd ./libmongocrypt/bindings/java/mongocrypt && PROJECT_DIRECTORY=${project_directory} NEXUS_USERNAME=${nexus_username} NEXUS_PASSWORD=${nexus_password} SIGNING_PASSWORD=${signing_password} SIGNING_KEY_ID=${signing_keyId} RING_FILE_GPG_BASE64=${ring_file_gpg_base64} ./.evergreen/publish.sh
@@ -422,14 +429,18 @@ tasks:
       name: prep-c-driver-source
     - variant: rhel-62-64-bit
       name: build-and-test-java
+    - variant: rhel-62-64-bit
+      name: build-and-test-and-upload
     - variant: rhel-67-s390x
       name: build-and-test-and-upload
     - variant: ubuntu1604-arm64
       name: build-and-test-java
-    # JAVA-4445 use the "macos" univeral build instead of the "macos_x86_64" build.
-    # Currently the variant named "macos" does not run the build-and-test-java task.
+    - variant: ubuntu1604-arm64
+      name: build-and-test-and-upload
     - variant: macos_x86_64
       name: build-and-test-java
+    - variant: macos
+      name: build-and-test-and-upload
     - variant: windows-test
       name: build-and-test-and-upload # Todo update once java build passing on windows
   commands:
@@ -539,7 +550,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
+        remote_file: 'libmongocrypt/all/master/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-all.tar.gz'
@@ -548,7 +559,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
+        remote_file: 'libmongocrypt/all/master/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-all.tar.gz'
@@ -667,7 +678,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
+        remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt_upload.tar.gz'
@@ -710,10 +721,14 @@ pre:
           # patch build.
           REMOTE_SUFFIX="${revision}/${version_id}"
           REMOTE_SUFFIX_COPY="latest/${version_id}"
-        else
-          # waterfall build, no tag.
+        elif [ "${branch_name}" = "master" ]; then
+          # waterfall build.
           REMOTE_SUFFIX="${revision}"
           REMOTE_SUFFIX_COPY="latest"
+        else
+          # waterfall build, not on master branch.
+          REMOTE_SUFFIX="${revision}"
+          REMOTE_SUFFIX_COPY="latest-${branch_name}"
         fi
 
         PROJECT_DIRECTORY="$(pwd)"

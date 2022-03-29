@@ -241,7 +241,7 @@ _mongocrypt_tester_bin_from_json (_mongocrypt_tester_t *tester,
    va_end (ap);
    bson = &tester->test_bson[tester->bson_count++];
    if (!bson_init_from_json (bson, full_json, strlen (full_json), &error)) {
-      fprintf (stderr, "%s", error.message);
+      fprintf (stderr, "failed to parse JSON %s: %s", error.message, json);
       abort ();
    }
    bin = mongocrypt_binary_new ();
@@ -644,6 +644,101 @@ _test_setopt_schema (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_setopt_encrypted_field_config_map (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+
+   /* Test success. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")),
+      crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   mongocrypt_destroy (crypt);
+
+   /* Test double setting. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")),
+      crypt);
+   ASSERT_FAILS (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt, TEST_FILE ("./test/data/encrypted-field-config-map.json")),
+      crypt,
+      "already set encrypted_field_config_map");
+   mongocrypt_destroy (crypt);
+
+   /* Test NULL/empty input */
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (mongocrypt_setopt_encrypted_field_config_map (crypt, NULL),
+                 crypt,
+                 "passed null encrypted_field_config_map");
+   mongocrypt_destroy (crypt);
+
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (
+      mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (0)),
+      crypt,
+      "passed null encrypted_field_config_map");
+   mongocrypt_destroy (crypt);
+
+   /* Test malformed BSON */
+   crypt = mongocrypt_new ();
+   ASSERT_FAILS (
+      mongocrypt_setopt_encrypted_field_config_map (crypt, TEST_BIN (10)),
+      crypt,
+      "invalid bson");
+   mongocrypt_destroy (crypt);
+
+   /* Test that it is OK to set both the encrypted field config map and schema
+    * map if there are no intersecting collections. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_schema_map (
+                 crypt, TEST_BSON ("{'db.coll1': {}, 'db.coll2': {}}")),
+              crypt);
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                 crypt, TEST_BSON ("{'db.coll3': {}, 'db.coll3': {}}")),
+              crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   mongocrypt_destroy (crypt);
+
+   /* Test that it is an error to set both the encrypted field config map and
+    * schema map referencing the same collection. */
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_schema_map (
+                 crypt, TEST_BSON ("{'db.coll1': {}, 'db.coll2': {}}")),
+              crypt);
+   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                 crypt, TEST_BSON ("{'db.coll1': {}, 'db.coll3': {}}")),
+              crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (
+         crypt,
+         TEST_BSON (
+            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+      crypt);
+   ASSERT_FAILS (
+      mongocrypt_init (crypt),
+      crypt,
+      "db.coll1 is present in both schema_map and encrypted_field_config_map");
+   mongocrypt_destroy (crypt);
+}
+
+static void
 _test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
@@ -701,13 +796,11 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
        "Invalid endpoint"},
       {"{'azure': {'tenantId': '', 'clientSecret': '' }}", "clientId"},
       {"{'aws': {'accessKeyId': 'abc', 'secretAccessKey': 'def'}}", NULL},
-      {"{'aws': {}}", NULL},
       {"{'local': {'key': {'$binary': {'base64': '" EXAMPLE_LOCAL_MATERIAL
        "', 'subType': '00'}} }}",
        NULL},
       {"{'local': {'key': '" EXAMPLE_LOCAL_MATERIAL "' }}", NULL},
       {"{'local': {'key': 'invalid base64' }}", "unable to parse base64"},
-      {"{'local': {}}", "expected UTF-8 or binary local.key"},
       /* either base64 string or binary is acceptable for privateKey */
       {"{'gcp': {'endpoint': 'oauth2.googleapis.com', 'email': 'test', "
        "'privateKey': 'AAAA' }}"},
@@ -735,12 +828,18 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'local': {'key': 'AAAA'}}", "local key must be 96 bytes"},
       /* KMIP test cases. */
       {"{'kmip': {'endpoint': '127.0.0.1:5696' }}", NULL},
-      {"{'kmip': {}}", "expected endpoint kmip.endpoint"},
       /* localhost is a valid endpoint for KMIP.
        * Unlike Azure, GCP, and AWS, applications run their own KMIP servers. */
       {"{'kmip': {'endpoint': 'localhost' }}", NULL},
       {"{'kmip': {'endpoint': '127.0.0.1:5696', 'extra': 'invalid' }}",
-       "Unexpected field: 'extra'"}};
+       "Unexpected field: 'extra'"},
+       /* Empty documents are OK for on-demand KMS credentials */
+      {"{'aws': {}}", NULL},
+      {"{'azure': {}}", NULL},
+      {"{'local': {}}", NULL},
+      {"{'gcp': {}}", NULL},
+      {"{'kmip': {}}", NULL}
+       };
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;
@@ -776,6 +875,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_data_key (&tester);
    _mongocrypt_tester_install_ctx_encrypt (&tester);
    _mongocrypt_tester_install_ctx_decrypt (&tester);
+   _mongocrypt_tester_install_ctx_rewrap_many_datakey (&tester);
    _mongocrypt_tester_install_ciphertext (&tester);
    _mongocrypt_tester_install_key_broker (&tester);
    _mongocrypt_tester_install (&tester,
@@ -791,6 +891,10 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_traverse_util (&tester);
    _mongocrypt_tester_install (
       &tester, "_test_setopt_schema", _test_setopt_schema, CRYPTO_REQUIRED);
+   _mongocrypt_tester_install (&tester,
+                               "_test_setopt_encrypted_field_config_map",
+                               _test_setopt_encrypted_field_config_map,
+                               CRYPTO_REQUIRED);
    _mongocrypt_tester_install (&tester,
                                "_test_setopt_invalid_kms_providers",
                                _test_setopt_invalid_kms_providers,
@@ -809,6 +913,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_kms_ctx (&tester);
    _mongocrypt_tester_install_csfle_lib (&tester);
    _mongocrypt_tester_install_dll (&tester);
+   _mongocrypt_tester_install_mc_tokens (&tester);
 
 
    printf ("Running tests...\n");

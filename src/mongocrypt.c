@@ -314,6 +314,47 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
    return true;
 }
 
+bool
+mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt, mongocrypt_binary_t *efc_map) {
+   mongocrypt_status_t *status;
+   bson_t as_bson;
+   bson_error_t bson_err;
+
+   if (!crypt) {
+      return false;
+   }
+   status = crypt->status;
+
+   if (crypt->initialized) {
+      CLIENT_ERR ("options cannot be set after initialization");
+      return false;
+   }
+
+   if (!efc_map || !mongocrypt_binary_data (efc_map)) {
+      CLIENT_ERR ("passed null encrypted_field_config_map");
+      return false;
+   }
+
+   if (!_mongocrypt_buffer_empty (&crypt->opts.encrypted_field_config_map)) {
+      CLIENT_ERR ("already set encrypted_field_config_map");
+      return false;
+   }
+
+   _mongocrypt_buffer_copy_from_binary (&crypt->opts.encrypted_field_config_map, efc_map);
+
+   /* validate bson */
+   if (!_mongocrypt_buffer_to_bson (&crypt->opts.encrypted_field_config_map, &as_bson)) {
+      CLIENT_ERR ("invalid bson");
+      return false;
+   }
+
+   if (!bson_validate_with_error (&as_bson, BSON_VALIDATE_NONE, &bson_err)) {
+      CLIENT_ERR (bson_err.message);
+      return false;
+   }
+
+   return true;
+}
 
 bool
 mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
@@ -1184,7 +1225,9 @@ _mongocrypt_parse_kms_providers (
          return false;
       }
 
-      if (0 == strcmp (field_name, "azure")) {
+      if (0 == strcmp (field_name, "azure") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+      } else if (0 == strcmp (field_name, "azure")) {
          if (0 != (
                kms_providers->configured_providers &
                MONGOCRYPT_KMS_PROVIDER_AZURE)) {
@@ -1235,6 +1278,8 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
          kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
+      } else if (0 == strcmp (field_name, "gcp") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_GCP;
       } else if (0 == strcmp (field_name, "gcp")) {
          if (0 != (
                kms_providers->configured_providers &
@@ -1277,6 +1322,8 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
          kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
+      } else if (0 == strcmp (field_name, "local") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
       } else if (0 == strcmp (field_name, "local")) {
          if (!_mongocrypt_parse_required_binary (
                 &as_bson,
@@ -1331,6 +1378,8 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
          kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+      } else if (0 == strcmp (field_name, "kmip") && bson_empty (&field_bson)) {
+         kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_KMIP;
       } else if (0 == strcmp (field_name, "kmip")) {
          _mongocrypt_endpoint_parse_opts_t opts = {0};
 

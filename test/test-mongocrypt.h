@@ -143,6 +143,11 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester);
 
 
 void
+_mongocrypt_tester_install_ctx_rewrap_many_datakey (
+   _mongocrypt_tester_t *tester);
+
+
+void
 _mongocrypt_tester_install_ciphertext (_mongocrypt_tester_t *tester);
 
 void
@@ -198,6 +203,9 @@ _mongocrypt_tester_install_cache_oauth (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_kms_ctx (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_mc_tokens (_mongocrypt_tester_t *tester);
 
 /* Conveniences for getting test data. */
 
