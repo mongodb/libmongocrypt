@@ -52,7 +52,7 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
       const char *expect;
 
       status = mongocrypt_status_new ();
-      crypt = _mongocrypt_tester_mongocrypt ();
+      crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
       ctx = mongocrypt_ctx_new (crypt);
 
       /* Test both contexts for creating a data key and automatic decryption

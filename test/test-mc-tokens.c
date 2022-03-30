@@ -27,7 +27,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    uint64_t u = 1234567890;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    _mongocrypt_buffer_copy_from_hex (
       &RootKey,
       "6eda88c8496ec990f5d5518dd2ad6f3d9c33b6055904b120f12de82911fbd933");
@@ -186,7 +186,7 @@ _test_mc_tokens_error (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t RootKey;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    /* RootKey is incorrect length. */
    _mongocrypt_buffer_copy_from_hex (&RootKey, "AAAA");
 

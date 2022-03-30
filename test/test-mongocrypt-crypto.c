@@ -29,7 +29,7 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    uint32_t bytes_written;
    bool ret;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    plaintext.data = (uint8_t *) "test";
    plaintext.len = 5; /* include NULL. */
 
@@ -199,7 +199,7 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
    ciphertext_actual.owned = true;
 
    /* Force the crypto stack to initialize with mongocrypt_new */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    status = mongocrypt_status_new ();
    ret = _mongocrypt_do_encryption (crypt->crypto,
                                     &iv,
@@ -537,7 +537,7 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
    return;
 #endif
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    for (test = tests; test->testname != NULL; test++) {
       bool ret;
@@ -682,7 +682,7 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
    return;
 #endif
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    for (test = tests; test->testname != NULL; test++) {
       bool ret;

@@ -160,6 +160,8 @@ _mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    return true;
 }
 
+static bool
+_try_run_csfle_marking (mongocrypt_ctx_t *ctx);
 
 static bool
 _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
@@ -182,14 +184,16 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
    }
 
    ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-   return true;
+   return _try_run_csfle_marking (ctx);
 }
 
+
 static bool
-_fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
+_fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
-   bson_t cmd_bson, mongocryptd_cmd_bson, encrypted_field_config_bson;
+   bson_t cmd_bson = BSON_INITIALIZER,
+          encrypted_field_config_bson = BSON_INITIALIZER;
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
@@ -199,6 +203,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "unable to convert original_cmd to BSON");
    }
+   bson_copy_to (&cmd_bson, out);
 
    if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config,
                                     &encrypted_field_config_bson)) {
@@ -206,56 +211,77 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
          ctx, "unable to convert encrypted_field_config to BSON");
    }
 
-   bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
-   if (!_fle2_append_encryptionInformation (&mongocryptd_cmd_bson,
-                                            ectx->ns,
-                                            &encrypted_field_config_bson,
-                                            ctx->status)) {
+   if (!_fle2_append_encryptionInformation (
+          out, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd,
-                                       &mongocryptd_cmd_bson);
-
-   out->data = ectx->mongocryptd_cmd.data;
-   out->len = ectx->mongocryptd_cmd.len;
    return true;
 }
+
+
+/**
+ * @brief Create the server-side command that contains information for
+ * generating encryption markings via query analysis.
+ *
+ * @param ctx The encryption context.
+ * @param out The destination of the generate BSON document
+ * @return true On success
+ * @return false Otherwise. Sets a failing status message in this case.
+ */
+static bool
+_create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+      // Defer to FLE2 to generate the markings command
+      return _fle2_mongo_op_markings (ctx, out);
+   }
+
+   // For FLE1:
+   // Get the original command document
+   bson_t bson_view = BSON_INITIALIZER;
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &bson_view)) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
+      return false;
+   }
+   // Copy the command to the output
+   bson_copy_to (&bson_view, out);
+
+   if (!_mongocrypt_buffer_empty (&ectx->schema)) {
+      // We have a schema buffer. View it as BSON:
+      if (!_mongocrypt_buffer_to_bson (&ectx->schema, &bson_view)) {
+         _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON schema");
+         return false;
+      }
+      // Append the jsonSchema to the output command
+      BSON_APPEND_DOCUMENT (out, "jsonSchema", &bson_view);
+   }
+
+   // if a local schema was not set, set isRemoteSchema=true
+   BSON_APPEND_BOOL (out, "isRemoteSchema", !ectx->used_local_schema);
+   return true;
+}
+
 
 static bool
 _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
-   _mongocrypt_ctx_encrypt_t *ectx;
-   bson_t cmd_bson, schema_bson, mongocryptd_cmd_bson;
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
-   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config) &&
-       _mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
-      return _fle2_mongo_op_markings (ctx, out);
-   } else if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
-      /* first, get the original command. */
-      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
+   if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
+      // We need to generate the command document
+      bson_t cmd_bson = BSON_INITIALIZER;
+      if (!_create_markings_cmd_bson (ctx, &cmd_bson)) {
+         // Failed
+         bson_destroy (&cmd_bson);
+         return false;
       }
-
-      if (_mongocrypt_buffer_empty (&ectx->schema)) {
-         bson_init (&schema_bson);
-      } else if (!_mongocrypt_buffer_to_bson (&ectx->schema, &schema_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON schema");
-      }
-
-      bson_copy_to (&cmd_bson, &mongocryptd_cmd_bson);
-      BSON_APPEND_DOCUMENT (&mongocryptd_cmd_bson, "jsonSchema", &schema_bson);
-
-      /* if a local schema was not set, set isRemoteSchema=true */
-      BSON_APPEND_BOOL (
-         &mongocryptd_cmd_bson, "isRemoteSchema", !ectx->used_local_schema);
-      _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd,
-                                          &mongocryptd_cmd_bson);
-
-      bson_destroy (&cmd_bson);
-      bson_destroy (&schema_bson);
+      // Store the generated command:
+      _mongocrypt_buffer_steal_from_bson (&ectx->mongocryptd_cmd, &cmd_bson);
    }
+
+   // If we reach here, we have a valid mongocrypt_cmd
    out->data = ectx->mongocryptd_cmd.data;
    out->len = ectx->mongocryptd_cmd.len;
    return true;
@@ -367,6 +393,126 @@ _mongo_done_markings (mongocrypt_ctx_t *ctx)
 {
    (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
+}
+
+
+/**
+ * @brief Attempt to generate csfle markings using a csfle dynamic library.
+ *
+ * @param ctx A context which has state NEED_MONGO_MARKINGS
+ * @return true On success
+ * @return false On error.
+ *
+ * This should be called only when we are ready for markings in the command
+ * document. This function will only do anything if the csfle dynamic library
+ * is loaded, otherwise it returns success immediately and leaves the state
+ * as NEED_MONGO_MARKINGS.
+ *
+ * If csfle is loaded, this function will request the csfle library generate a
+ * marked command document based on the caller's schema. If successful, the
+ * state will be changed via @ref _mongo_done_markings().
+ *
+ * The purpose of this function is to short-circuit the phase of encryption
+ * wherein we would normally return to the driver and give them the opportunity
+ * to generate the markings by passing a special command to a mongocryptd daemon
+ * process. Instead, we'll do it ourselves here, if possible.
+ */
+static bool
+_try_run_csfle_marking (mongocrypt_ctx_t *ctx)
+{
+   BSON_ASSERT (
+      ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS &&
+      "_try_run_csfle_marking() should only be called when mongocrypt is "
+      "ready for markings");
+
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   // We have a valid schema and just need to mark the fields for encryption
+   if (!ctx->crypt->csfle.okay) {
+      // We don't have a csfle library to use to obtain the markings. It's up to
+      // caller to resolve them.
+      return true;
+   }
+
+   _mcr_csfle_v1_vtable csfle = ctx->crypt->csfle;
+   mongo_csfle_v1_lib *csfle_lib = ctx->crypt->csfle_lib;
+   BSON_ASSERT (csfle_lib);
+   bool okay = false;
+
+#define CHECK_CSFLE_ERROR(Func, FailLabel)                             \
+   if (1) {                                                            \
+      if (csfle.status_get_error (status)) {                           \
+         _mongocrypt_set_error (ctx->status,                           \
+                                MONGOCRYPT_STATUS_ERROR_CSFLE,         \
+                                MONGOCRYPT_GENERIC_ERROR_CODE,         \
+                                "csfle " #Func                         \
+                                " failed: %s [Error %d, code %d]",     \
+                                csfle.status_get_explanation (status), \
+                                csfle.status_get_error (status),       \
+                                csfle.status_get_code (status));       \
+         _mongocrypt_ctx_fail (ctx);                                   \
+         goto FailLabel;                                               \
+      }                                                                \
+   } else                                                              \
+      ((void) 0)
+
+   mongo_csfle_v1_status *status = csfle.status_create ();
+   BSON_ASSERT (status);
+
+   // Obtain the command for markings
+   bson_t cmd = BSON_INITIALIZER;
+   if (!_create_markings_cmd_bson (ctx, &cmd)) {
+      goto fail_create_cmd;
+   }
+   BSON_APPEND_UTF8 (&cmd, "$db", "csfle");
+
+   mongo_csfle_v1_query_analyzer *qa =
+      csfle.query_analyzer_create (csfle_lib, status);
+   CHECK_CSFLE_ERROR ("query_analyzer_create", fail_qa_create);
+
+   uint32_t marked_bson_len = 0;
+   uint8_t *marked_bson = csfle.analyze_query (qa,
+                                               bson_get_data (&cmd),
+                                               ectx->ns,
+                                               (uint32_t) strlen (ectx->ns),
+                                               &marked_bson_len,
+                                               status);
+   CHECK_CSFLE_ERROR ("analyze_query", analyze_failed);
+
+   // Copy out the marked document.
+   mongocrypt_binary_t *marked =
+      mongocrypt_binary_new_from_data (marked_bson, marked_bson_len);
+   if (!_mongo_feed_markings (ctx, marked)) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "Consuming the generated csfle markings failed");
+      goto feed_failed;
+   }
+
+   okay = _mongo_done_markings (ctx);
+   if (!okay) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "Finalizing the generated csfle markings failed");
+   }
+
+feed_failed:
+   mongocrypt_binary_destroy (marked);
+   csfle.bson_free (marked_bson);
+analyze_failed:
+   csfle.query_analyzer_destroy (qa);
+fail_qa_create:
+fail_create_cmd:
+   bson_destroy (&cmd);
+   if (csfle.status_get_error (status)) {
+      _mongocrypt_log (
+         &ctx->crypt->log,
+         MONGOCRYPT_LOG_LEVEL_WARNING,
+         "Error while shutting down csfle library: %s [Error %d, code %d]",
+         csfle.status_get_explanation (status),
+         csfle.status_get_error (status),
+         csfle.status_get_code (status));
+   }
+   csfle.status_destroy (status);
+   return okay;
 }
 
 
@@ -1107,5 +1253,12 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (_mongocrypt_buffer_empty (&ectx->schema)) {
       ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
    }
-   return true;
+
+   if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
+      // We're ready for markings. Try to generate them ourself.
+      return _try_run_csfle_marking (ctx);
+   } else {
+      // Other state, return to caller.
+      return true;
+   }
 }

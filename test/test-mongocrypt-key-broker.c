@@ -117,7 +117,7 @@ _test_key_broker_get_key_filter (_mongocrypt_tester_t *tester)
    bson_t *expected;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    _gen_uuid (1, &key_id1);
    _gen_uuid (2, &key_id2);
 
@@ -336,7 +336,7 @@ _test_key_broker_add_key (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_t key_broker;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    kms_providers = &crypt->opts.kms_providers;
    _gen_uuid_and_key (tester, 1, &key_id1, &key_doc1);
    _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
@@ -481,7 +481,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
 
    /* Success. With key ids. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&key_broker, crypt);
    ASSERT_OK (_mongocrypt_key_broker_request_id (&key_broker, &key_id1),
@@ -509,7 +509,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* destroy crypt to reset cache. */
 
    /* Success. With key alt names. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&key_broker, crypt);
    _key_broker_add_name (&key_broker, "Sharlene");
@@ -533,7 +533,7 @@ _test_key_broker_add_decrypted_key (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* destroy crypt to reset cache. */
 
    /* With both key ids and key alt names, some referring to the same key */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&key_broker, crypt);
    BSON_ASSERT (
@@ -578,7 +578,7 @@ _test_key_broker_wrong_subtype (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_t key_broker;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    _gen_uuid_and_key (tester, 1, &key_id, &key_doc);
 
    /* Valid key documents. */
@@ -610,7 +610,7 @@ _test_key_broker_multi_match (_mongocrypt_tester_t *tester)
    _gen_uuid_and_key_and_altname (tester, "alt2", 2, &key_id2, &key_doc2);
 
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&key_broker, crypt);
 
@@ -762,7 +762,7 @@ _test_key_broker_kmip (_mongocrypt_tester_t *tester)
    _mongocrypt_opts_kms_providers_t *kms_providers;
    _mongocrypt_buffer_t secretdata;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    status = mongocrypt_status_new ();
    kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&kb, crypt);
@@ -862,7 +862,7 @@ _test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
    _mongocrypt_opts_kms_providers_t *kms_providers;
    mongocrypt_binary_t *msg;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    status = mongocrypt_status_new ();
    kms_providers = &crypt->opts.kms_providers;
    _mongocrypt_key_broker_init (&kb, crypt);
@@ -910,7 +910,8 @@ _test_key_broker_kmip_notfound (_mongocrypt_tester_t *tester)
 static void
 _test_key_broker_request_any (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    _mongocrypt_key_broker_t kb;
 
    /* Can switch to any mode before any keys are requested. */
@@ -933,7 +934,8 @@ _test_key_broker_request_any (_mongocrypt_tester_t *tester)
 static void
 _test_key_broker_add_any (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       &crypt->opts.kms_providers;
    _mongocrypt_key_broker_t kb;

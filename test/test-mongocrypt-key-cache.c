@@ -72,9 +72,10 @@ gen_key (_mongocrypt_tester_t *tester,
    } else {
       BSON_APPEND_UTF8 (&masterkey, "provider", "aws");
       BSON_APPEND_UTF8 (&masterkey, "region", "us-east-1");
-      BSON_APPEND_UTF8 (
-         &masterkey, "key", "arn:aws:kms:us-east-1:579766882180:key/"
-                            "89fcc2c4-08b0-4bd9-9f25-e30687b580d0");
+      BSON_APPEND_UTF8 (&masterkey,
+                        "key",
+                        "arn:aws:kms:us-east-1:579766882180:key/"
+                        "89fcc2c4-08b0-4bd9-9f25-e30687b580d0");
    }
    bson_append_document_end (&key, &masterkey);
 
@@ -102,12 +103,13 @@ gen_key (_mongocrypt_tester_t *tester,
    /* Append a keyMaterial that is decryptable by the local KMS masterkey. For
     * AWS it gets ignored since it is dictated by KMS response. */
    _mongocrypt_buffer_copy_from_hex (
-      &key_material, "75bdbbaec862a8ae09aa16f6c67c0ae117dd15bf49b8a7947bac6de5a"
-                     "610178a3adad4bbe5bec1e30c55378f7d80d0fd5152d46e954aa32528"
-                     "69901e03cf7938434fdf7e5bf27f0ec1c85c4c5a92e38b7e3f7ce686d"
-                     "7985102c85905da220a27ee01202de25b6831e64974baffb35b7c30c5"
-                     "941dfb37b04fff6871d7208e4cde8d1bff0cd69a70dcb613dc27cfe84"
-                     "7d7544b6d0d8b4f6c9a5b6fb9c1565c43ef");
+      &key_material,
+      "75bdbbaec862a8ae09aa16f6c67c0ae117dd15bf49b8a7947bac6de5a"
+      "610178a3adad4bbe5bec1e30c55378f7d80d0fd5152d46e954aa32528"
+      "69901e03cf7938434fdf7e5bf27f0ec1c85c4c5a92e38b7e3f7ce686d"
+      "7985102c85905da220a27ee01202de25b6831e64974baffb35b7c30c5"
+      "941dfb37b04fff6871d7208e4cde8d1bff0cd69a70dcb613dc27cfe84"
+      "7d7544b6d0d8b4f6c9a5b6fb9c1565c43ef");
    key_material.subtype = BSON_SUBTYPE_BINARY;
    BSON_ASSERT (
       _mongocrypt_buffer_append (&key_material, &key, "keyMaterial", -1));
@@ -450,7 +452,7 @@ _test_key_cache (_mongocrypt_tester_t *tester)
    _load_json_as_bson ("./test/data/cache-tests.json", &test_file);
    for (bson_iter_init (&iter, &test_file); bson_iter_next (&iter);) {
       bson_t test;
-      crypt = _mongocrypt_tester_mongocrypt ();
+      crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
       ctx = mongocrypt_ctx_new (crypt);
 
       bson_iter_bson (&iter, &test);

@@ -155,7 +155,7 @@
       _expected_str = bson_as_canonical_extended_json (&_expected_bson, NULL); \
       _actual_str = bson_as_canonical_extended_json (&_actual_bson, NULL);     \
       if (!bson_equal (&_expected_bson, &_actual_bson)) {                      \
-         TEST_ERROR ("BSON unequal.\nExpected: %s\nGot: %s",                   \
+         TEST_ERROR ("BSON unequal.\nExpected: %s\n     Got: %s",              \
                      _expected_str,                                            \
                      _actual_str);                                             \
       }                                                                        \

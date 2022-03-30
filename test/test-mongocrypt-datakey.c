@@ -40,7 +40,7 @@ _test_random_generator (_mongocrypt_tester_t *tester)
    int mid = TEST_COUNT / 2;
    char zero[TEST_COUNT];
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* _mongocrypt_random handles the case where the count size is greater
     * than the buffer by throwing an error. Because of that, no additional tests
@@ -88,7 +88,7 @@ _test_create_data_key_with_provider (_mongocrypt_tester_t *tester,
    const int64_t one_hundred_years_ms =
       (int64_t) 1000ll * 60ll * 60ll * 24ll * 365ll * 100ll;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    if (provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       ASSERT_OK (
@@ -191,7 +191,7 @@ _test_datakey_custom_endpoint (_mongocrypt_tester_t *tester)
    bson_iter_t iter;
 
    /* Success. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (
       mongocrypt_ctx_setopt_masterkey_aws (ctx, "region", -1, "cmk", -1), ctx);
@@ -377,7 +377,8 @@ _test_datakey_custom_key_material (_mongocrypt_tester_t *tester)
                                                     "0123456789abcdef"
                                                     "0123456789abcdef";
 
-   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    _mongocrypt_buffer_t encrypted_dek_buf;
 

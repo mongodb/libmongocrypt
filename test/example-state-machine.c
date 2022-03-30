@@ -23,6 +23,32 @@
 #include <mongocrypt.h>
 
 static void
+_log_to_stderr (mongocrypt_log_level_t level,
+                const char *message,
+                uint32_t message_len,
+                void *ctx)
+{
+   switch (level) {
+   case MONGOCRYPT_LOG_LEVEL_FATAL:
+      fprintf (stderr, "FATAL");
+      break;
+   case MONGOCRYPT_LOG_LEVEL_ERROR:
+      fprintf (stderr, "ERROR");
+      break;
+   case MONGOCRYPT_LOG_LEVEL_WARNING:
+      fprintf (stderr, "WARNING");
+      break;
+   case MONGOCRYPT_LOG_LEVEL_INFO:
+      fprintf (stderr, "INFO");
+      break;
+   case MONGOCRYPT_LOG_LEVEL_TRACE:
+      fprintf (stderr, "TRACE");
+      break;
+   }
+   fprintf (stderr, " %s\n", message);
+}
+
+static void
 _load_json_as_bson (const char *path, bson_t *as_bson)
 {
    bson_error_t error;
@@ -271,6 +297,7 @@ main ()
    printf ("******* ENCRYPTION *******\n\n");
    crypt = mongocrypt_new ();
    mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1);
+   mongocrypt_setopt_log_handler (crypt, _log_to_stderr, NULL);
    if (!mongocrypt_init (crypt)) {
       fprintf (stderr, "failed to initialize");
       abort ();

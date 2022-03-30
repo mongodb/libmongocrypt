@@ -245,7 +245,8 @@ _assert_aws_kms_endpoint (mongocrypt_kms_ctx_t *kms, const char *expected)
 static void
 _test_rewrap_many_datakey_init (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_ctx_t *ctx = NULL;
 
    /* No context, nothing to init. */
@@ -304,7 +305,8 @@ _test_rewrap_many_datakey_need_mongo_keys (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *const filter =
       TEST_BSON ("{'keyAltName': {'$in': ['keyDocumentA', 'keyDocumentB']}}");
 
-   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_ctx_t *ctx = NULL;
 
    /* Filter should be the same as what was provided in call to init. */
@@ -373,7 +375,8 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *const filter =
       TEST_BSON ("{'keyAltName': {'$in': ['keyDocumentA', 'keyDocumentB']}}");
 
-   mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_kms_ctx_t *kms = NULL;
 
@@ -394,7 +397,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Azure */
    ctx = mongocrypt_ctx_new (crypt);
@@ -413,7 +416,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* GCP */
    ctx = mongocrypt_ctx_new (crypt);
@@ -432,7 +435,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* KMIP */
    ctx = mongocrypt_ctx_new (crypt);
@@ -451,7 +454,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Local: no KMS required. */
    ctx = mongocrypt_ctx_new (crypt);
@@ -467,7 +470,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Number of KMS requests should match number of keys that require it. */
    ctx = mongocrypt_ctx_new (crypt);
@@ -514,7 +517,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Ensure number of KMS requests matches number of keys that require it. */
    ctx = mongocrypt_ctx_new (crypt);
@@ -550,7 +553,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Ensure all KMS requests have a corresponding KMS response. */
    ctx = mongocrypt_ctx_new (crypt);
@@ -579,7 +582,7 @@ _test_rewrap_many_datakey_need_kms_decrypt (_mongocrypt_tester_t *tester)
 
    /* Clear key cache. */
    mongocrypt_destroy (crypt);
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Skip KMS for keys with cached decrypted key material. */
    ctx = mongocrypt_ctx_new (crypt);
@@ -627,7 +630,8 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *const filter =
       TEST_BSON ("{'keyAltName': {'$in': ['keyDocumentA', 'keyDocumentB']}}");
 
-   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_ctx_t *ctx = NULL;
    mongocrypt_kms_ctx_t *kms = NULL;
 
@@ -763,7 +767,8 @@ _test_rewrap_many_datakey_need_kms_encrypt (_mongocrypt_tester_t *tester)
 static void
 _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt ();
+   mongocrypt_t *const crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_ctx_t *const ctx = mongocrypt_ctx_new (crypt);
 
    mongocrypt_binary_t *const filter =

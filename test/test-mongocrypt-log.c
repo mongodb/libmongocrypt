@@ -50,7 +50,7 @@ _test_log (_mongocrypt_tester_t *tester)
    mongocrypt_status_t *status;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    /* Test logging with a custom handler messages. */
    _mongocrypt_log_set_fn (&crypt->log, _test_log_fn, &log_ctx);
    log_ctx.message = "test";

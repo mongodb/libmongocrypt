@@ -60,7 +60,7 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    key_id = mongocrypt_binary_new_from_data (
       MONGOCRYPT_DATA_AND_LEN ("2395340598345034"));
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Initting with no options will fail (need key_id). */
    ctx = mongocrypt_ctx_new (crypt);
@@ -375,7 +375,7 @@ _test_encrypt_init (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Success. */
    ctx = mongocrypt_ctx_new (crypt);
@@ -433,7 +433,7 @@ _test_encrypt_need_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
 
    /* Success. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -450,7 +450,7 @@ _test_encrypt_need_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Coll info with no schema. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -463,7 +463,7 @@ _test_encrypt_need_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
    /* Coll info with NULL schema. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -476,7 +476,7 @@ _test_encrypt_need_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* No coll info. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -491,7 +491,7 @@ _test_encrypt_need_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Wrong state. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -517,7 +517,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    bin = mongocrypt_binary_new ();
 
    /* Success. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -525,7 +525,8 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    mongocrypt_ctx_mongo_op (ctx, bin);
-   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE ("./test/data/mongocryptd-cmd.json"), bin);
+   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+      TEST_FILE ("./test/data/mongocryptd-cmd.json"), bin);
 
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
                  ctx, TEST_FILE ("./test/example/mongocryptd-reply.json")),
@@ -536,7 +537,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Key alt name. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -553,7 +554,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* No placeholders. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -570,7 +571,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* No encryption in schema. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -588,7 +589,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Invalid marking. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -605,7 +606,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* NULL markings. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -618,7 +619,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Wrong state. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -636,13 +637,37 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
 
 
 static void
+_test_encrypt_csfle_no_needs_markings (_mongocrypt_tester_t *tester)
+{
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+      fputs ("No 'real' csfle library is available. The "
+             "_test_encrypt_csfle_no_needs_markings test is a no-op.",
+             stderr);
+      return;
+   }
+
+   /* Success. */
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   BSON_ASSERT (mongocrypt_ctx_state (ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
 _test_encrypt_need_keys (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
    /* Success. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -657,7 +682,7 @@ _test_encrypt_need_keys (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt); /* recreate crypt because of caching. */
 
    /* Did not provide all keys. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -686,7 +711,7 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    mongocrypt_status_t *status;
 
    status = mongocrypt_status_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    encrypted_cmd = mongocrypt_binary_new ();
 
    ASSERT_OR_PRINT (crypt, status);
@@ -712,7 +737,8 @@ _test_encrypt_ready (_mongocrypt_tester_t *tester)
    ASSERT_OR_PRINT (ret, status);
 
    /* check that encrypted command matches. */
-   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE ("./test/data/encrypted-cmd.json"), encrypted_cmd);
+   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+      TEST_FILE ("./test/data/encrypted-cmd.json"), encrypted_cmd);
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_binary_destroy (encrypted_cmd);
@@ -727,7 +753,7 @@ _test_key_missing_region (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -751,7 +777,7 @@ _test_view (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -875,7 +901,7 @@ _test_encrypt_caches_collinfo (_mongocrypt_tester_t *tester)
    bson_t *cached_collinfo;
    mongocrypt_status_t *status;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    status = mongocrypt_status_new ();
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
@@ -916,7 +942,7 @@ _test_encrypt_caches_keys (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -948,7 +974,7 @@ _test_encrypt_caches_keys_by_alt_name (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -1017,7 +1043,7 @@ _test_encrypt_random (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -1046,7 +1072,7 @@ _test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)
    bin = mongocrypt_binary_new ();
 
    /* isRemoteSchema = true for a remote schema. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -1091,7 +1117,7 @@ _init_fails (_mongocrypt_tester_t *tester, const char *json, const char *msg)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_FAILS (
       mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
@@ -1109,7 +1135,7 @@ _init_ok (_mongocrypt_tester_t *tester, const char *json)
    mongocrypt_ctx_t *ctx;
    mongocrypt_binary_t *filter;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
 
    ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
@@ -1136,7 +1162,7 @@ _init_bypass (_mongocrypt_tester_t *tester, const char *json)
    mongocrypt_binary_t *bin;
 
    bin = mongocrypt_binary_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
               ctx);
@@ -1217,7 +1243,7 @@ _test_encrypt_invalid_siblings (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -1248,7 +1274,7 @@ _test_encrypt_dupe_jsonschema (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -1279,7 +1305,7 @@ _test_encrypting_with_explicit_encryption (_mongocrypt_tester_t *tester)
    bson_iter_t iter;
    bson_t tmp;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -1314,7 +1340,7 @@ _test_explicit_encryption (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *bin, *key_id;
    char *deterministic = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic";
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    ctx = mongocrypt_ctx_new (crypt);
    key_id = mongocrypt_binary_new_from_data (
@@ -1398,7 +1424,7 @@ _test_encrypt_custom_endpoint (_mongocrypt_tester_t *tester)
    const char *endpoint;
 
    /* Success. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -1515,9 +1541,10 @@ _test_encrypt_with_aws_session_token (_mongocrypt_tester_t *tester)
 
    crypt = mongocrypt_new ();
    ASSERT_OK (mongocrypt_setopt_kms_providers (
-                 crypt, TEST_BSON ("{'aws': {'sessionToken': 'mySessionToken', "
-                                   "'accessKeyId': 'myAccessKeyId', "
-                                   "'secretAccessKey': 'mySecretAccessKey'}}")),
+                 crypt,
+                 TEST_BSON ("{'aws': {'sessionToken': 'mySessionToken', "
+                            "'accessKeyId': 'myAccessKeyId', "
+                            "'secretAccessKey': 'mySecretAccessKey'}}")),
               crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
 
@@ -1546,12 +1573,13 @@ _test_encrypt_caches_empty_collinfo (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
    /* Do not feed anything for collinfo. */
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
@@ -1563,7 +1591,8 @@ _test_encrypt_caches_empty_collinfo (_mongocrypt_tester_t *tester)
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
    mongocrypt_ctx_destroy (ctx);
 
@@ -1576,18 +1605,20 @@ _test_encrypt_caches_collinfo_without_jsonschema (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
    ASSERT_OK (
       mongocrypt_ctx_mongo_feed (
          ctx, TEST_FILE ("./test/data/collection-info-no-validator.json")),
       ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
    mongocrypt_ctx_destroy (ctx);
 
@@ -1597,7 +1628,8 @@ _test_encrypt_caches_collinfo_without_jsonschema (_mongocrypt_tester_t *tester)
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
               ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_DONE);
    mongocrypt_ctx_destroy (ctx);
 
@@ -1714,6 +1746,7 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_init);
    INSTALL_TEST (_test_encrypt_need_collinfo);
    INSTALL_TEST (_test_encrypt_need_markings);
+   INSTALL_TEST (_test_encrypt_csfle_no_needs_markings);
    INSTALL_TEST (_test_encrypt_need_keys);
    INSTALL_TEST (_test_encrypt_ready);
    INSTALL_TEST (_test_key_missing_region);

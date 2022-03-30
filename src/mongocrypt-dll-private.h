@@ -2,6 +2,7 @@
 #define MONGOCRYPT_DLL_PRIVATE_H
 
 #include <mlib/str.h>
+#include <mlib/error.h>
 
 #include <stdlib.h>
 
@@ -75,5 +76,22 @@ mcr_dll_is_open (mcr_dll dll)
 {
    return dll._native_handle != NULL;
 }
+
+typedef struct mcr_dll_path_result {
+   mstr path;
+   mstr error_string;
+} mcr_dll_path_result;
+
+/**
+ * @brief Obtain a filepath to the given loaded DLL
+ *
+ * @param dll The library loaded to inspect
+ * @return mcr_dll_path_result A result containing the absolute path to a
+ * library, or an error string.
+ *
+ * @note Caller must free both `retval.path` and `retval.error_string`.
+ */
+mcr_dll_path_result
+mcr_dll_path (mcr_dll dll);
 
 #endif // MONGOCRYPT_DLL_PRIVATE_H

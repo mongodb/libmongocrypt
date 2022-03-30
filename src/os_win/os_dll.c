@@ -57,4 +57,34 @@ mcr_dll_sym (mcr_dll dll, const char *sym)
    return GetProcAddress (dll._native_handle, sym);
 }
 
+mcr_dll_path_result
+mcr_dll_path (mcr_dll dll)
+{
+   mstr ret_str = MSTR_NULL;
+   int ret_error = 0;
+   DWORD acc_size = 512;
+   while (!ret_str.data && !ret_error) {
+      // Loop until we allocate a large enough buffer or get an error
+      wchar_t *path = calloc (acc_size + 1, sizeof (wchar_t));
+      SetLastError (0);
+      GetModuleFileNameW (dll._native_handle, path, acc_size);
+      if (GetLastError () == ERROR_INSUFFICIENT_BUFFER) {
+         // Try again with more buffer
+         acc_size *= 2;
+      } else if (GetLastError () != 0) {
+         ret_error = GetLastError ();
+      } else {
+         mstr_narrow_result narrow = mstr_win32_narrow (path);
+         // GetModuleFileNameW should never return invalid Unicode:
+         assert (narrow.error == 0);
+         ret_str = narrow.string;
+      }
+      free (path);
+   }
+   return (mcr_dll_path_result){
+      .path = ret_str,
+      .error_string = merror_system_error_string (ret_error),
+   };
+}
+
 #endif

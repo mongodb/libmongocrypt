@@ -24,7 +24,7 @@ _test_explicit_decrypt_init (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
    mongocrypt_binary_t *msg;
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    msg = TEST_BSON ("{ 'v': { '$binary': { 'subType': '06', 'base64': "
                     "'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs"
@@ -56,7 +56,7 @@ _test_decrypt_init (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
    mongocrypt_binary_t *encrypted;
 
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
 
@@ -87,7 +87,7 @@ _test_decrypt_need_keys (_mongocrypt_tester_t *tester)
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
 
    /* Success. */
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, encrypted), ctx);
    ASSERT_OK (mongocrypt_ctx_mongo_feed (
@@ -116,7 +116,7 @@ _test_decrypt_ready (_mongocrypt_tester_t *tester)
 
    encrypted = _mongocrypt_tester_encrypted_doc (tester);
    decrypted = mongocrypt_binary_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    /* Success. */
    ctx = mongocrypt_ctx_new (crypt);
@@ -171,7 +171,7 @@ _test_decrypt_empty_binary (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t encrypted;
 
    bin = mongocrypt_binary_new ();
-   crypt = _mongocrypt_tester_mongocrypt ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
 
    /* Encrypt an empty binary value. */
