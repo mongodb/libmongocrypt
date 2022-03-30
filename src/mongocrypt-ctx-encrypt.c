@@ -271,9 +271,10 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
       // We need to generate the command document
-      bson_t cmd_bson;
+      bson_t cmd_bson = BSON_INITIALIZER;
       if (!_create_markings_cmd_bson (ctx, &cmd_bson)) {
          // Failed
+         bson_destroy (&cmd_bson);
          return false;
       }
       // Store the generated command:
