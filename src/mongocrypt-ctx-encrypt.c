@@ -256,6 +256,9 @@ _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
       }
       // Append the jsonSchema to the output command
       BSON_APPEND_DOCUMENT (out, "jsonSchema", &bson_view);
+   } else {
+      bson_t empty = BSON_INITIALIZER;
+      BSON_APPEND_DOCUMENT (out, "jsonSchema", &empty);
    }
 
    // if a local schema was not set, set isRemoteSchema=true
