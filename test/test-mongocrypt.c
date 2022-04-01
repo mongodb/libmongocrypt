@@ -914,6 +914,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_csfle_lib (&tester);
    _mongocrypt_tester_install_dll (&tester);
    _mongocrypt_tester_install_mc_tokens (&tester);
+   _mongocrypt_tester_install_fle2_payloads (&tester);
 
 
    printf ("Running tests...\n");
