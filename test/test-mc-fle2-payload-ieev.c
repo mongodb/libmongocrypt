@@ -144,6 +144,16 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t expect_client_value;
    mongocrypt_t *crypt;
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+           "remove.");
+   return;
+#endif
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+   return;
+#endif
+
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    _mongocrypt_buffer_copy_from_hex (
