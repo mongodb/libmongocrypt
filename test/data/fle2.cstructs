@@ -1,0 +1,32 @@
+{
+    .testname = "generated test. M length=1",
+    .iv = "63ed652b9faebce0400d46a9417847c0",
+    .key = "541cc49749e2b1fedc7cf272cb75f463422776084fcc76f93535bb0971a3c8a2",
+    .plaintext = "43",
+    .ciphertext = "63ed652b9faebce0400d46a9417847c01c",
+    .bytes_written_expected = 17
+},
+{
+    .testname = "generated test. M length=16",
+    .iv = "64069c2fa25afe61078289b48943a45c",
+    .key = "45ef0de8343a4fedb3908ce909ea5607f3d3a407d25d145cb7507ed1a406fdc9",
+    .plaintext = "cf65546e1b2ab4d25642d1f820b6af7a",
+    .ciphertext = "64069c2fa25afe61078289b48943a45c3e995b90d4aca2b2dc9aab55c9dbedbb",
+    .bytes_written_expected = 32
+},
+{
+    .testname = "generated test. M length=64",
+    .iv = "2bd4b3b7c0db2a57cbba261c61ab1e20",
+    .key = "1d0c6a14e24ce7aa2aeb4f28c10a05ac0fa89cec2713780a51178b0b380715cf",
+    .plaintext = "a6ad48b728428f92dd0325156630a5fc5c8a378474f9296fd7111cdf21ce5c00af55c77167684482cce47b660dfc582f000d5e71f1671995aa1982c94acb49d1",
+    .ciphertext = "2bd4b3b7c0db2a57cbba261c61ab1e205b52b8c1b1a42ff9e3440676839520021a3d2720c42aa1dede4f51a8f4a2b2cb0526a7ca45aab7219e7075fa4805f95e0f38916f2ae3a2afce64b01069088fb6",
+    .bytes_written_expected = 80
+},
+{
+    .testname = "generated test. M length=100",
+    .iv = "8ba95afa7df2cbc977f1060317419eee",
+    .key = "007fee4bdc655d10f4a198f43e56abb65b1d1aad9b291fe92ce8d5f418e0ff2f",
+    .plaintext = "def82350c88cc32f15d28a275a30b559dc2ddaf17853aa9f69d18af2d6845d3fe27f33203b9d61164eaaf0415d7a86e448c8ece9fc3f9af59fefd741ff11244d1078dd730de6a6723dd469c1cb892c06101b7e87a051791d72f89eb1b1be263aeb870079",
+    .ciphertext = "8ba95afa7df2cbc977f1060317419eee91c88069dcbdf1b8425a73531f398a2b0bd42d457faea04c32dcd5e398ae44a19fa029d2303f723660783524a3638983a689f527bf222f928ba820002bb3c5419540378bf68f03f0a3607d0f07f2e6cd00c9f7d38cc07cda84dfc6dce37dfd6e34af22af",
+    .bytes_written_expected = 116
+},
