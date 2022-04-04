@@ -64,7 +64,7 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
       ASSERT_FAILS_STATUS (
          mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
          status,
-         "expected byte length: 17 got: 7");
+         "expected byte length >= 17 got: 7");
       mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
       _mongocrypt_buffer_cleanup (&input);
       mongocrypt_status_destroy (status);
