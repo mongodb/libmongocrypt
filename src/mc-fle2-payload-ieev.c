@@ -54,7 +54,7 @@ mc_FLE2IndexedEqualityEncryptedValue_parse (
    /* Read fle_blob_subtype. */
    if (offset + 1 > buf->len) {
       CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse expected byte "
-                  "length: %" PRIu32 " got: %" PRIu32,
+                  "length >= %" PRIu32 " got: %" PRIu32,
                   offset + 1,
                   buf->len);
       return false;
@@ -71,7 +71,7 @@ mc_FLE2IndexedEqualityEncryptedValue_parse (
    /* Read S_KeyId. */
    if (offset + 16 > buf->len) {
       CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse expected byte "
-                  "length: %" PRIu32 " got: %" PRIu32,
+                  "length >= %" PRIu32 " got: %" PRIu32,
                   offset + 16,
                   buf->len);
       return false;
@@ -88,7 +88,7 @@ mc_FLE2IndexedEqualityEncryptedValue_parse (
    /* Read original_bson_type. */
    if (offset + 1 > buf->len) {
       CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse expected byte "
-                  "length: %" PRIu32 " got: %" PRIu32,
+                  "length >= %" PRIu32 " got: %" PRIu32,
                   offset + 1,
                   buf->len);
       return false;
@@ -198,7 +198,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
    /* Read uint64_t length. */
    if (offset + 8 > ieev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key expected "
-                  "Inner byte length: %" PRIu32 " got: %" PRIu32,
+                  "Inner byte length >= %" PRIu32 " got: %" PRIu32,
                   offset + 8,
                   ieev->Inner.len);
       return false;
@@ -212,7 +212,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
    /* Read K_KeyId. */
    if (offset + 16 > ieev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key expected "
-                  "Inner byte length: %" PRIu32 " got: %" PRIu32,
+                  "Inner byte length >= %" PRIu32 " got: %" PRIu32,
                   offset + 16,
                   ieev->Inner.len);
       return false;
@@ -229,7 +229,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
    /* Read ClientEncryptedValue. */
    if (offset + (length - 16) > ieev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key expected "
-                  "Inner byte length: %" PRIu32 " got: %" PRIu32,
+                  "Inner byte length >= %" PRIu32 " got: %" PRIu32,
                   offset + (length - 16),
                   ieev->Inner.len);
       return false;
