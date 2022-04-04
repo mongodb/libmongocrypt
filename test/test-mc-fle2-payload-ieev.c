@@ -146,11 +146,12 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
    printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove.");
+           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete.");
    return;
 #endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
+           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
    return;
 #endif
 
