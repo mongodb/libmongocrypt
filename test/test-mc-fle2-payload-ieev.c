@@ -229,7 +229,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       ASSERT_OK_STATUS (
          mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
          status);
-      /* Since S_Key is used for non-AEAD encryption. Decryption does not return
+      /* Since S_Key is used for non-AEAD encryption, decryption does not return
        * an error. The output is garbled. It fails to parse the decrypted Inner
        * struct. */
       ASSERT_FAILS_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
