@@ -79,6 +79,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/libcrypto.c
    src/crypto/none.c
    src/mc-fle2-payload-ieev.c
+   src/mc-fle2-payload-uev.c
    src/mc-tokens.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
@@ -352,6 +353,7 @@ endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-fle2-payload-ieev.c
+   test/test-mc-fle2-payload-uev.c
    test/test-mc-tokens.c
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
