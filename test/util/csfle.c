@@ -158,6 +158,27 @@ fn_createdatakey (bson_t *args)
 
    kms_provider = bson_req_utf8 (args, "kms_provider");
 
+   if (bson_has_field (args, "key_material")) {
+      const char *key_material_base64 =
+         bson_get_utf8 (args, "key_material", NULL);
+      uint8_t key_material[512];
+
+      int len = kms_message_b64_pton (
+         key_material_base64, key_material, sizeof (key_material));
+      if (len < 0) {
+         ERREXIT ("Could not base64 decode: %s", key_material_base64);
+      }
+
+      bson_t *key_material_bson = BCON_NEW (
+         "keyMaterial", BCON_BIN (BSON_SUBTYPE_BINARY, key_material, len));
+      mongocrypt_binary_t *key_material_bin = mongocrypt_binary_new_from_data (
+         (uint8_t *) bson_get_data (key_material_bson), key_material_bson->len);
+      if (!mongocrypt_ctx_setopt_key_material (ctx, key_material_bin)) {
+         ERREXIT_CTX (ctx);
+      }
+      bson_destroy (key_material_bson);
+   }
+
    /* Set the key encryption key (KEK). */
    if (0 == strcmp ("aws", kms_provider)) {
       bson_t aws_kek = BSON_INITIALIZER;
