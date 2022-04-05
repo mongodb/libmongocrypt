@@ -1376,30 +1376,13 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
     * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
     */
    /* M is the input plaintext. */
-   _mongocrypt_buffer_t M;
-   if (!_mongocrypt_buffer_from_subrange (&M, plaintext, 0, plaintext->len)) {
-      CLIENT_ERR ("unable to create M view from plaintext");
-      return false;
-   }
+   _mongocrypt_buffer_t M = *plaintext;
    /* Ke is 32 byte Key for encryption. */
-   _mongocrypt_buffer_t Ke;
-   if (!_mongocrypt_buffer_from_subrange (
-          &Ke, key, 0, MONGOCRYPT_ENC_KEY_LEN)) {
-      CLIENT_ERR ("unable to create Ke view from key");
-      return false;
-   }
+   _mongocrypt_buffer_t Ke = *key;
    /* IV is 16 byte IV. */
-   _mongocrypt_buffer_t IV;
-   if (!_mongocrypt_buffer_from_subrange (&IV, iv, 0, iv->len)) {
-      CLIENT_ERR ("unable to create IV view from iv");
-      return false;
-   }
+   _mongocrypt_buffer_t IV = *iv;
    /* C is the output ciphertext. */
-   _mongocrypt_buffer_t C;
-   if (!_mongocrypt_buffer_from_subrange (&C, ciphertext, 0, ciphertext->len)) {
-      CLIENT_ERR ("unable to create C view from ciphertext");
-      return false;
-   }
+   _mongocrypt_buffer_t C = *ciphertext;
    /* S is the output of the symmetric cipher. It is appended after IV in C. */
    _mongocrypt_buffer_t S;
    if (!_mongocrypt_buffer_from_subrange (
@@ -1478,11 +1461,7 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
     * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
     */
    /* C is the input ciphertext. */
-   _mongocrypt_buffer_t C;
-   if (!_mongocrypt_buffer_from_subrange (&C, ciphertext, 0, ciphertext->len)) {
-      CLIENT_ERR ("unable to create C view from ciphertext");
-      return false;
-   }
+   _mongocrypt_buffer_t C = *ciphertext;
    /* IV is 16 byte IV. It is the first part of C. */
    _mongocrypt_buffer_t IV;
    if (!_mongocrypt_buffer_from_subrange (
@@ -1498,18 +1477,9 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
    /* M is the output plaintext. */
-   _mongocrypt_buffer_t M;
-   if (!_mongocrypt_buffer_from_subrange (&M, plaintext, 0, plaintext->len)) {
-      CLIENT_ERR ("unable to create M view from plaintext");
-      return false;
-   }
+   _mongocrypt_buffer_t M = *plaintext;
    /* Ke is 32 byte Key for encryption. */
-   _mongocrypt_buffer_t Ke;
-   if (!_mongocrypt_buffer_from_subrange (
-          &Ke, key, 0, MONGOCRYPT_ENC_KEY_LEN)) {
-      CLIENT_ERR ("unable to create Ke view from key");
-      return false;
-   }
+   _mongocrypt_buffer_t Ke = *key;
 
    /* Compute and output M = AES-CTR.Dec(Ke, S) */
    if (!_native_crypto_aes_256_ctr_decrypt (
