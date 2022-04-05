@@ -16,9 +16,7 @@
 
 #include "mc-fle2-payload-uev-private.h"
 #include "mongocrypt-private.h"
-
-/* TODO: remove after rebasing. */
-#define MC_SUBTYPE_FLE2UnindexedEncryptedValue 6
+#include "mc-fle-blob-subtype-private.h"
 
 struct _mc_FLE2UnindexedEncryptedValue_t {
    _mongocrypt_buffer_t key_uuid;
