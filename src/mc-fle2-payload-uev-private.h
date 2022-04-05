@@ -69,23 +69,14 @@ mc_FLE2UnindexedEncryptedValue_get_key_uuid (
    const mc_FLE2UnindexedEncryptedValue_t *uev,
    mongocrypt_status_t *status);
 
-/* mc_FLE2UnindexedEncryptedValue_add_key decrypts ciphertext.
- * Returns false and sets @status on error. It is an error to call before
+/* mc_FLE2UnindexedEncryptedValue_decrypt decrypts ciphertext.
+ * Returns NULL and sets @status on error. It is an error to call before
  * mc_FLE2UnindexedEncryptedValue_parse. */
-bool
-mc_FLE2UnindexedEncryptedValue_add_key (
+const _mongocrypt_buffer_t *
+mc_FLE2UnindexedEncryptedValue_decrypt (
    _mongocrypt_crypto_t *crypto,
    mc_FLE2UnindexedEncryptedValue_t *uev,
    const _mongocrypt_buffer_t *key,
-   mongocrypt_status_t *status);
-
-/* mc_FLE2UnindexedEncryptedValue_get_plaintext returns the decrypted
- * ciphertext. Returns NULL and sets @status on error.
- * It is an error to call before mc_FLE2UnindexedEncryptedValue_add_K_Key.
- */
-const _mongocrypt_buffer_t *
-mc_FLE2UnindexedEncryptedValue_get_plaintext (
-   const mc_FLE2UnindexedEncryptedValue_t *uev,
    mongocrypt_status_t *status);
 
 void

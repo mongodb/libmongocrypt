@@ -58,7 +58,7 @@ test_FLE2UnindexedEncryptedValue_parse (_mongocrypt_tester_t *tester)
       ASSERT_FAILS_STATUS (
          mc_FLE2UnindexedEncryptedValue_parse (uev, &input, status),
          status,
-         "expected byte length: 17 got: 7");
+         "expected byte length >= 17 got: 7");
       mc_FLE2UnindexedEncryptedValue_destroy (uev);
       _mongocrypt_buffer_cleanup (&input);
       mongocrypt_status_destroy (status);
@@ -159,11 +159,8 @@ test_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       ASSERT_OR_PRINT (got != NULL, status);
       ASSERT_CMPBUF (expect_key_uuid, *got);
 
-      ASSERT_OK_STATUS (mc_FLE2UnindexedEncryptedValue_add_key (
-                           crypt->crypto, uev, &correct_key, status),
-                        status);
-
-      got = mc_FLE2UnindexedEncryptedValue_get_plaintext (uev, status);
+      got = mc_FLE2UnindexedEncryptedValue_decrypt (crypt->crypto, uev, &correct_key, status);
+      ASSERT_OK_STATUS (got != NULL, status);
       ASSERT_CMPBUF (expect_plaintext, *got);
       mc_FLE2UnindexedEncryptedValue_destroy (uev);
       mongocrypt_status_destroy (status);
@@ -183,10 +180,8 @@ test_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       ASSERT_OK_STATUS (
          mc_FLE2UnindexedEncryptedValue_parse (uev, &input, status),
          status);
-      ASSERT_FAILS_STATUS (mc_FLE2UnindexedEncryptedValue_add_key (
-                              crypt->crypto, uev, &incorrect_key, status),
-                           status,
-                           "foo bar");
+      const _mongocrypt_buffer_t *got = mc_FLE2UnindexedEncryptedValue_decrypt (crypt->crypto, uev, &incorrect_key, status);
+      ASSERT_FAILS_STATUS (got != NULL, status, "decryption error");
       mc_FLE2UnindexedEncryptedValue_destroy (uev);
       _mongocrypt_buffer_cleanup (&incorrect_key);
       mongocrypt_status_destroy (status);
