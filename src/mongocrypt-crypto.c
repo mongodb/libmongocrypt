@@ -1420,6 +1420,13 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   if (S_bytes_written != M.len) {
+      CLIENT_ERR ("expected S_bytes_written=%" PRIu32 " got %" PRIu32,
+                  M.len,
+                  S_bytes_written);
+      return false;
+   }
+
    /* Output C = IV || S. */
    /* S is already in C. Prepend IV. */
    memcpy (C.data, IV.data, MONGOCRYPT_IV_LEN);
@@ -1512,6 +1519,13 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
                            .out = &M,
                            .bytes_written = bytes_written,
                            .status = status})) {
+      return false;
+   }
+
+   if (*bytes_written != S.len) {
+      CLIENT_ERR ("expected bytes_written=%" PRIu32 " got %" PRIu32,
+                  S.len,
+                  *bytes_written);
       return false;
    }
 
