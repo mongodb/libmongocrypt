@@ -21,6 +21,7 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
 #include "mongocrypt-traverse-util-private.h"
+#include "mc-fle-blob-subtype-private.h"
 
 typedef struct {
    void *ctx;
@@ -37,15 +38,13 @@ typedef struct {
 static bool
 _check_first_byte (uint8_t byte, traversal_match_t match)
 {
-#define FIRST_BYTE_MARKING 0
-#define FIRST_BYTE_DETERMINISTIC 1
-#define FIRST_BYTE_RANDOMIZED 2
-
    switch (match) {
    case TRAVERSE_MATCH_MARKING:
-      return byte == FIRST_BYTE_MARKING;
+      return byte == MC_SUBTYPE_FLE1EncryptionPlaceholder;
    case TRAVERSE_MATCH_CIPHERTEXT:
-      return byte == FIRST_BYTE_DETERMINISTIC || byte == FIRST_BYTE_RANDOMIZED;
+      return byte == MC_SUBTYPE_FLE1DeterministicEncryptedValue ||
+             byte == MC_SUBTYPE_FLE1RandomEncryptedValue ||
+             byte == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue;
    }
    return false;
 }
