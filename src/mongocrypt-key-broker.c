@@ -314,8 +314,6 @@ _mongocrypt_key_broker_requests_done (_mongocrypt_key_broker_t *kb)
    }
 
    if (kb->key_requests) {
-      /* If all were satisfied from the cache, then we're done since those all
-       * have decrypted material */
       if (_all_key_requests_satisfied (kb)) {
          kb->state = KB_DONE;
       } else {
@@ -873,10 +871,9 @@ _mongocrypt_key_broker_kms_done (
              MONGOCRYPT_KMS_PROVIDER_AZURE ||
           key_returned->doc->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
          if (key_returned->decrypted) {
-            return _key_broker_fail_w_msg (
-               kb,
-               "unexpected, returned keys should not be "
-               "decrypted before KMS completion");
+            /* Non-local keys may have been decrypted previously if the key
+             * broker has been restarted. */
+            continue;
          }
 
          if (!key_returned->kms.req) {
@@ -972,7 +969,7 @@ _mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
                                             const _mongocrypt_buffer_t *key_id,
                                             _mongocrypt_buffer_t *out)
 {
-   if (kb->state != KB_DONE) {
+   if (kb->state != KB_DONE && kb->state != KB_REQUESTING) {
       return _key_broker_fail_w_msg (
          kb, "attempting retrieve decrypted key material, but in wrong state");
    }
@@ -1085,4 +1082,16 @@ _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
    _mongocrypt_key_destroy (key_doc);
    /* Hijack state and move directly to DONE. */
    kb->state = KB_DONE;
+}
+
+
+bool
+_mongocrypt_key_broker_restart (_mongocrypt_key_broker_t *kb)
+{
+   if (kb->state != KB_DONE) {
+      return _key_broker_fail_w_msg (
+         kb, "_mongocrypt_key_broker_restart called in wrong state");
+   }
+   kb->state = KB_REQUESTING;
+   return true;
 }

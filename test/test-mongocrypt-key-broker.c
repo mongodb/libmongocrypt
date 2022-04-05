@@ -998,6 +998,126 @@ _test_key_broker_add_any (_mongocrypt_tester_t *tester)
 }
 
 
+/* Test that key requests can be added again after transitioning to DONE and
+ * calling _mongocrypt_key_broker_restart. */
+static void
+_test_key_broker_restart (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+   _mongocrypt_buffer_t key_id1, key_id2, key_doc1, key_doc2;
+   _mongocrypt_key_broker_t kb;
+   _mongocrypt_opts_kms_providers_t *kms_providers;
+   mongocrypt_kms_ctx_t *kms;
+
+   status = mongocrypt_status_new ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   kms_providers = &crypt->opts.kms_providers;
+   _gen_uuid_and_key (tester, 1, &key_id1, &key_doc1);
+   _gen_uuid_and_key (tester, 2, &key_id2, &key_doc2);
+   _mongocrypt_key_broker_init (&kb, crypt);
+
+   ASSERT (kb.state == KB_REQUESTING);
+   ASSERT_OK (_mongocrypt_key_broker_request_id (&kb, &key_id1), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
+
+   ASSERT (kb.state == KB_ADDING_DOCS);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc1),
+              &kb);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+
+   ASSERT (kb.state == KB_DECRYPTING_KEY_MATERIAL);
+   kms = _mongocrypt_key_broker_next_kms (&kb);
+   ASSERT (kms);
+   _mongocrypt_tester_satisfy_kms (tester, kms);
+   ASSERT_OK (_mongocrypt_key_broker_kms_done (&kb, kms_providers), &kb);
+
+   /* Restart, and add request for key_id2. */
+   ASSERT (kb.state == KB_DONE);
+   ASSERT_OK (_mongocrypt_key_broker_restart (&kb), &kb);
+
+   ASSERT (kb.state == KB_REQUESTING);
+   ASSERT_OK (_mongocrypt_key_broker_request_id (&kb, &key_id2), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
+
+   ASSERT (kb.state == KB_ADDING_DOCS);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc2),
+              &kb);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+
+   ASSERT (kb.state == KB_DECRYPTING_KEY_MATERIAL);
+   kms = _mongocrypt_key_broker_next_kms (&kb);
+   ASSERT (kms);
+   _mongocrypt_tester_satisfy_kms (tester, kms);
+   ASSERT_OK (_mongocrypt_key_broker_kms_done (&kb, kms_providers), &kb);
+   ASSERT (kb.state == KB_DONE);
+
+   _mongocrypt_key_broker_cleanup (&kb);
+   _mongocrypt_buffer_cleanup (&key_doc2);
+   _mongocrypt_buffer_cleanup (&key_id2);
+   _mongocrypt_buffer_cleanup (&key_doc1);
+   _mongocrypt_buffer_cleanup (&key_id1);
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
+/* Test that a decrypted key can be returned while in the KB_REQUESTING state.
+ */
+static void
+_test_key_broker_get_decrypted_key_while_requesting (
+   _mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+   _mongocrypt_buffer_t key_id1, key_doc1, key_decrypted1, key_decrypted1_copy;
+   _mongocrypt_key_broker_t kb;
+   _mongocrypt_opts_kms_providers_t *kms_providers;
+   mongocrypt_kms_ctx_t *kms;
+
+   status = mongocrypt_status_new ();
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   kms_providers = &crypt->opts.kms_providers;
+   _gen_uuid_and_key (tester, 1, &key_id1, &key_doc1);
+   _mongocrypt_key_broker_init (&kb, crypt);
+
+   ASSERT (kb.state == KB_REQUESTING);
+   ASSERT_OK (_mongocrypt_key_broker_request_id (&kb, &key_id1), &kb);
+   ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
+
+   ASSERT (kb.state == KB_ADDING_DOCS);
+   ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc1),
+              &kb);
+   ASSERT_OK (_mongocrypt_key_broker_docs_done (&kb), &kb);
+
+   ASSERT (kb.state == KB_DECRYPTING_KEY_MATERIAL);
+   kms = _mongocrypt_key_broker_next_kms (&kb);
+   ASSERT (kms);
+   _mongocrypt_tester_satisfy_kms (tester, kms);
+   ASSERT_OK (_mongocrypt_key_broker_kms_done (&kb, kms_providers), &kb);
+
+   ASSERT (kb.state == KB_DONE);
+   ASSERT_OK (_mongocrypt_key_broker_decrypted_key_by_id (
+                 &kb, &key_id1, &key_decrypted1),
+              &kb);
+
+   /* Restart. */
+   ASSERT_OK (_mongocrypt_key_broker_restart (&kb), &kb);
+   ASSERT (kb.state == KB_REQUESTING);
+   ASSERT_OK (_mongocrypt_key_broker_decrypted_key_by_id (
+                 &kb, &key_id1, &key_decrypted1_copy),
+              &kb);
+
+   ASSERT_CMPBUF (key_decrypted1, key_decrypted1_copy);
+
+   _mongocrypt_buffer_cleanup (&key_decrypted1_copy);
+   _mongocrypt_buffer_cleanup (&key_decrypted1);
+   _mongocrypt_key_broker_cleanup (&kb);
+   _mongocrypt_buffer_cleanup (&key_doc1);
+   _mongocrypt_buffer_cleanup (&key_id1);
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
 void
 _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
 {
@@ -1010,4 +1130,6 @@ _mongocrypt_tester_install_key_broker (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_key_broker_kmip_notfound);
    INSTALL_TEST (_test_key_broker_request_any);
    INSTALL_TEST (_test_key_broker_add_any);
+   INSTALL_TEST (_test_key_broker_restart);
+   INSTALL_TEST (_test_key_broker_get_decrypted_key_while_requesting);
 }
