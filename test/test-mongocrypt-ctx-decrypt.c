@@ -711,13 +711,11 @@ _test_decrypt_fle2_uev (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t key_uuid;
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove.");
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
    return;
 #endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
-   return;
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
 #endif
 
 #define TEST_UEV_BASE64                                                        \
