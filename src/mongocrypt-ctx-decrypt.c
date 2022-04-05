@@ -20,6 +20,7 @@
 #include "mongocrypt-traverse-util-private.h"
 #include "mc-fle2-payload-ieev-private.h"
 #include "mc-fle-blob-subtype-private.h"
+#include "mc-fle2-payload-uev-private.h"
 
 static bool
 _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
@@ -101,6 +102,59 @@ fail:
 }
 
 static bool
+_replace_FLE2UnindexedEncryptedValue_with_plaintext (
+   void *ctx,
+   _mongocrypt_buffer_t *in,
+   bson_value_t *out,
+   mongocrypt_status_t *status)
+{
+   bool ret = false;
+   _mongocrypt_key_broker_t *kb = ctx;
+   mc_FLE2UnindexedEncryptedValue_t *uev =
+      mc_FLE2UnindexedEncryptedValue_new ();
+   _mongocrypt_buffer_t key = {0};
+
+   if (!mc_FLE2UnindexedEncryptedValue_parse (uev, in, status)) {
+      goto fail;
+   }
+
+   const _mongocrypt_buffer_t *key_uuid =
+      mc_FLE2UnindexedEncryptedValue_get_key_uuid (uev, status);
+   if (!key_uuid) {
+      goto fail;
+   }
+
+   if (!_mongocrypt_key_broker_decrypted_key_by_id (kb, key_uuid, &key)) {
+      _mongocrypt_key_broker_status (kb, status);
+      goto fail;
+   }
+
+   /* Decrypt ciphertext. */
+   const _mongocrypt_buffer_t *plaintext = mc_FLE2UnindexedEncryptedValue_decrypt (kb->crypt->crypto, uev, &key, status);
+   if (!plaintext) {
+      goto fail;
+   }
+
+   uint8_t original_bson_type =
+      mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev,
+                                                                   status);
+   if (0 == original_bson_type) {
+      goto fail;
+   }
+
+   if (!_mongocrypt_buffer_to_bson_value ((_mongocrypt_buffer_t *) plaintext, original_bson_type, out)) {
+      CLIENT_ERR ("decrypted plaintext is not valid BSON");
+      goto fail;
+   }
+
+   ret = true;
+fail:
+   _mongocrypt_buffer_cleanup (&key);
+   mc_FLE2UnindexedEncryptedValue_destroy (uev);
+   return ret;
+}
+
+static bool
 _replace_ciphertext_with_plaintext (void *ctx,
                                     _mongocrypt_buffer_t *in,
                                     bson_value_t *out,
@@ -121,6 +175,10 @@ _replace_ciphertext_with_plaintext (void *ctx,
    if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
       return _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
          ctx, in, out, status);
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
+      return _replace_FLE2UnindexedEncryptedValue_with_plaintext (ctx, in, out, status);
    }
 
    _mongocrypt_buffer_init (&plaintext);
@@ -366,6 +424,35 @@ _check_for_K_KeyId (mongocrypt_ctx_t *ctx)
    return true;
 }
 
+static bool _collect_key_uuid_from_FLE2UnindexedEncryptedValue (void *ctx, _mongocrypt_buffer_t *in, mongocrypt_status_t *status)
+{
+   bool ret = false;
+   _mongocrypt_key_broker_t *kb = ctx;
+   mc_FLE2UnindexedEncryptedValue_t *uev;
+
+   uev = mc_FLE2UnindexedEncryptedValue_new ();
+
+   if (!mc_FLE2UnindexedEncryptedValue_parse (uev, in, status)) {
+      goto fail;
+   }
+
+   const _mongocrypt_buffer_t *key_uuid =
+      mc_FLE2UnindexedEncryptedValue_get_key_uuid (uev, status);
+   if (!key_uuid) {
+      goto fail;
+   }
+
+   if (!_mongocrypt_key_broker_request_id (kb, key_uuid)) {
+      _mongocrypt_key_broker_status (kb, status);
+      goto fail;
+   }
+
+   ret = true;
+fail:
+   mc_FLE2UnindexedEncryptedValue_destroy (uev);
+   return ret;
+}
+
 static bool
 _collect_key_from_ciphertext (void *ctx,
                               _mongocrypt_buffer_t *in,
@@ -382,6 +469,10 @@ _collect_key_from_ciphertext (void *ctx,
    if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
       return _collect_S_KeyID_from_FLE2IndexedEqualityEncryptedValue (
          ctx, in, status);
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
+      return _collect_key_uuid_from_FLE2UnindexedEncryptedValue (ctx, in, status);
    }
 
    if (!_mongocrypt_ciphertext_parse_unowned (in, &ciphertext, status)) {
