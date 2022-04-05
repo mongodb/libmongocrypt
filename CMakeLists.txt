@@ -78,6 +78,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/commoncrypto.c
    src/crypto/libcrypto.c
    src/crypto/none.c
+   src/mc-fle2-payload-ieev.c
    src/mc-tokens.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
@@ -350,6 +351,7 @@ if (BUILD_TESTING)
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
+   test/test-mc-fle2-payload-ieev.c
    test/test-mc-tokens.c
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
