@@ -205,7 +205,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
    }
    uint64_t
       length; /* length is sizeof(K_KeyId) + ClientEncryptedValue_length. */
-   memcpy (&length, ieev->Inner.data, 8);
+   memcpy (&length, ieev->Inner.data, sizeof (uint64_t));
    length = BSON_UINT64_FROM_LE (length);
    offset += 8;
 
