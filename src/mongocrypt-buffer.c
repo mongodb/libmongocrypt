@@ -387,7 +387,7 @@ _mongocrypt_buffer_from_uuid_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
    if (subtype != BSON_SUBTYPE_UUID) {
       return false;
    }
-   if (len != 16) {
+   if (len != UUID_LEN) {
       return false;
    }
    _mongocrypt_buffer_init (buf);
@@ -413,7 +413,7 @@ _mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
 bool
 _mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf)
 {
-   return buf->len == 16 && buf->subtype == BSON_SUBTYPE_UUID;
+   return buf->len == UUID_LEN && buf->subtype == BSON_SUBTYPE_UUID;
 }
 
 void

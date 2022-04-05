@@ -21,6 +21,8 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-compat.h"
 
+#define UUID_LEN 16
+
 struct _mongocrypt_binary_t;
 
 /* An internal struct to make working with binary values more convenient.

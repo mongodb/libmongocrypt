@@ -358,7 +358,6 @@ static bool
 _append_id (mongocrypt_t *crypt, bson_t *bson, mongocrypt_status_t *status)
 {
    _mongocrypt_buffer_t uuid;
-#define UUID_LEN 16
 
    _mongocrypt_buffer_init (&uuid);
    uuid.data = bson_malloc (UUID_LEN);
