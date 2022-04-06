@@ -397,18 +397,12 @@ bool
 mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
 {
-   _mongocrypt_ctx_decrypt_t *dctx;
    bson_iter_t iter;
    bson_t as_bson;
-   _mongocrypt_ctx_opts_spec_t opts_spec;
 
    if (!ctx) {
       return false;
    }
-   memset (&opts_spec, 0, sizeof (opts_spec));
-   // if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
-   //    return false;
-   // }
 
    if (!msg || !msg->data) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg");
@@ -427,12 +421,6 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       bson_free (msg_val);
    }
 
-   dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
-   dctx->explicit = true;
-   ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
-   ctx->vtable.finalize = _finalize;
-   ctx->vtable.cleanup = _cleanup;
-
    /* Expect msg to be the BSON a document of the form:
       { "v" : (BSON BINARY value of subtype 6) }
    */
@@ -448,23 +436,6 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "invalid msg, 'v' must contain a binary");
    }
-
-
-   /* We expect these to be round-tripped from explicit encrypt,
-      so they must be wrapped like { "v" : "encrypted thing" } */
-   // _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, msg);
-   // if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
-   //    return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
-   // }
-
-   // /* Parse out our one key id */
-   // if (!_collect_key_from_ciphertext (
-   //        &ctx->kb, &dctx->unwrapped_doc, ctx->status)) {
-   //    return _mongocrypt_ctx_fail (ctx);
-   // }
-
-   // (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
-   // return _mongocrypt_ctx_state_from_key_broker (ctx);
 
    if (!mongocrypt_ctx_decrypt_init (ctx, msg)) {
       return false;
