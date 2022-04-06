@@ -935,7 +935,7 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
  * Pass the binary encoding of a BSON document containing the BSON value to
  * encrypt like the following:
  *
- *   { "v" : (BSON value to encrypt) }
+ *   { "v" : (BSON BINARY value of subtype 6) }
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the encrypted BSON. The viewed data
