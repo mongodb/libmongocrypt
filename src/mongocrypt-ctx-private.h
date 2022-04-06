@@ -138,7 +138,6 @@ typedef struct {
     * <ciphertext>} doc.
     * */
    _mongocrypt_buffer_t original_doc;
-   _mongocrypt_buffer_t unwrapped_doc; /* explicit only */
    _mongocrypt_buffer_t decrypted_doc;
 } _mongocrypt_ctx_decrypt_t;
 
