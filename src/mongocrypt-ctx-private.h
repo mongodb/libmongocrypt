@@ -132,7 +132,6 @@ typedef struct {
 
 typedef struct {
    mongocrypt_ctx_t parent;
-   bool explicit;
    /* TODO CDRIVER-3150: audit + rename these buffers.
     * Unlike ctx_encrypt, unwrapped_doc holds the binary value of the {v:
     * <ciphertext>} doc.
