@@ -237,6 +237,7 @@ _start_kms_encrypt (mongocrypt_ctx_t *ctx)
    /* Skip to READY state if no KMS requests are required. */
    if (!rmdctx->datakeys_iter) {
       ctx->state = MONGOCRYPT_CTX_READY;
+      ctx->vtable.finalize = _finalize;
       return true;
    }
 
