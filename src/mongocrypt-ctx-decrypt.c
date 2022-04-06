@@ -420,9 +420,9 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       return false;
    }
    memset (&opts_spec, 0, sizeof (opts_spec));
-   if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
-      return false;
-   }
+   // if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
+   //    return false;
+   // }
 
    if (!msg || !msg->data) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg");
@@ -447,13 +447,12 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    ctx->vtable.finalize = _finalize;
    ctx->vtable.cleanup = _cleanup;
 
-
-   /* We expect these to be round-tripped from explicit encrypt,
-      so they must be wrapped like { "v" : "encrypted thing" } */
-   _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, msg);
-   if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
-   }
+   /* Expect msg to be the BSON a document of the form:
+      { "v" : (BSON BINARY value of subtype 6) }
+   */
+  if (!_mongocrypt_binary_to_bson (msg, &as_bson)) {
+     return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+  }
 
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
@@ -464,14 +463,27 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "invalid msg, 'v' must contain a binary");
    }
 
-   /* Parse out our one key id */
-   if (!_collect_key_from_ciphertext (
-          &ctx->kb, &dctx->unwrapped_doc, ctx->status)) {
-      return _mongocrypt_ctx_fail (ctx);
-   }
 
-   (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
-   return _mongocrypt_ctx_state_from_key_broker (ctx);
+   /* We expect these to be round-tripped from explicit encrypt,
+      so they must be wrapped like { "v" : "encrypted thing" } */
+   // _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, msg);
+   // if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
+   //    return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+   // }
+
+   // /* Parse out our one key id */
+   // if (!_collect_key_from_ciphertext (
+   //        &ctx->kb, &dctx->unwrapped_doc, ctx->status)) {
+   //    return _mongocrypt_ctx_fail (ctx);
+   // }
+
+   // (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
+   // return _mongocrypt_ctx_state_from_key_broker (ctx);
+
+   if (!mongocrypt_ctx_decrypt_init (ctx, msg)) {
+      return false;
+   }
+   return true;
 }
 
 static bool
