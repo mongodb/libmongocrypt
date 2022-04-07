@@ -419,17 +419,13 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
-    if (options.Has("csfleSearchPaths")) {
-        Napi::Value search_paths_v = options["csfleSearchPaths"];
-        if (!search_paths_v.IsArray()) {
-            throw TypeError::New(Env(), "Option `csfleSearchPaths` must be an array");
+    if (options.Has("csfleDisabled")) {
+        Napi::Value is_disabled_v = options["csfleDisabled"];
+        if (!is_disabled_v.IsBoolean()) {
+            throw TypeError::New(Env(), "Option `csfleDisabled` must be a boolean");
         }
-        Array search_paths = search_paths_v.As<Array>();
-        for (uint32_t i = 0; i < search_paths.Length(); i++) {
-            mongocrypt_setopt_append_csfle_search_path(
-                _mongo_crypt.get(),
-                search_paths.Get(i).ToString().Utf8Value().c_str());
-        }
+        bool is_disabled = is_disabled_v.As<Boolean>().Value();
+        mongocrypt_setopt_set_csfle_disabled(_mongo_crypt.get(), is_disabled);
     }
 
     if (options.Has("csflePath")) {

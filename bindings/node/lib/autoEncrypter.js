@@ -124,8 +124,8 @@ module.exports = function (modules) {
         mongoCryptOptions.csflePath = options.extraOptions.csflePath;
       }
 
-      if (options.extraOptions && options.extraOptions.csfleSearchPaths) {
-        mongoCryptOptions.csfleSearchPaths = options.extraOptions.csfleSearchPaths;
+      if (options.extraOptions && options.extraOptions.csfleDisabled) {
+        mongoCryptOptions.csfleDisabled = options.extraOptions.csfleDisabled;
       }
 
       Object.assign(mongoCryptOptions, { cryptoCallbacks });

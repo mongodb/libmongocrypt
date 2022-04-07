@@ -663,7 +663,7 @@ describe('AutoEncrypter', function () {
       });
     });
 
-    it('should load a shared library by specifying a search path', function () {
+    it('should not load a shared library when csfle is disabled', function () {
       const client = new MockClient();
       this.mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -673,17 +673,14 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         },
         extraOptions: {
-          csfleSearchPaths: [path.dirname(sharedLibraryStub)]
+          csflePath: sharedLibraryStub,
+          csfleDisabled: true,
         }
       });
 
-      expect(this.mc).to.not.have.property('_mongocryptdManager');
-      expect(this.mc).to.not.have.property('_mongocryptdClient');
-      expect(this.mc).to.have.deep.property('csfleVersionInfo', {
-        // eslint-disable-next-line no-undef
-        version: BigInt(0x000600020001000),
-        versionStr: 'stubbed-mongo_csfle'
-      });
+      expect(this.mc).to.have.property('_mongocryptdManager');
+      expect(this.mc).to.have.property('_mongocryptdClient');
+      expect(this.mc).to.have.deep.property('csfleVersionInfo', null);
     });
   });
 });
