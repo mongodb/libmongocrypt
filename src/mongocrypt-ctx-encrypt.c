@@ -111,9 +111,7 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
       }
    }
 
-   if (!bson_iter_init (&iter, collinfo)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
-   }
+   BSON_ASSERT (bson_iter_init (&iter, collinfo));
 
    if (bson_iter_find_descendant (&iter, "options.validator", &iter) &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
