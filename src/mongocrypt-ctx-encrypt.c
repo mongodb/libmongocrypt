@@ -99,6 +99,22 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
       return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
    }
 
+   if (bson_iter_find_descendant (&iter, "options.encryptedFields", &iter)) {
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "options.encryptedFields is not a BSON document");
+      }
+      if (!_mongocrypt_buffer_copy_from_document_iter (
+             &ectx->encrypted_field_config, &iter)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to copy options.encryptedFields");
+      }
+   }
+
+   if (!bson_iter_init (&iter, collinfo)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "BSON malformed");
+   }
+
    if (bson_iter_find_descendant (&iter, "options.validator", &iter) &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       if (!bson_iter_recurse (&iter, &iter)) {

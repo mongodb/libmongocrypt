@@ -1865,6 +1865,16 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
 
    /* Test that "encryptedFields" is preferred over "$jsonSchema". */
    {
+      /* Recreate crypt to clear cache. */
+      mongocrypt_destroy (crypt);
+      crypt = mongocrypt_new ();
+      ASSERT_OK (
+         mongocrypt_setopt_kms_providers (
+            crypt,
+            TEST_BSON (
+               "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+         crypt);
+      ASSERT_OK (mongocrypt_init (crypt), crypt);
       ctx = mongocrypt_ctx_new (crypt);
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
                     ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
