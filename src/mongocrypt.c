@@ -421,32 +421,47 @@ typedef struct {
 /**
  * @brief Attempt to open the CSFLE dynamic library and initialize a vtable for
  * it.
+ *
+ * @param dll_name The name of the library, or a path to the library.
  */
 static _loaded_csfle
-_try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
+_try_load_csfle (const char *dll_name_, _mongocrypt_log_t *log)
 {
    // Try to open the dynamic lib
-   mcr_dll lib = mcr_dll_open (filepath);
+   mstr dll_name = mstr_copy_cstr (dll_name_);
+   mcr_dll lib = mcr_dll_open (dll_name.data);
    // Check for errors, which are represented by strings
    if (lib.error_string.data) {
       // Error opening candidate
-      _mongocrypt_log (
-         log,
-         MONGOCRYPT_LOG_LEVEL_WARNING,
-         "Error while opening candidate for CSFLE dynamic library [%s]: %s",
-         filepath,
-         lib.error_string.data);
+      if (mpath_is_absolute (dll_name.view, MPATH_NATIVE)) {
+         _mongocrypt_log (
+            log,
+            MONGOCRYPT_LOG_LEVEL_WARNING,
+            "Error while opening candidate for CSFLE dynamic library [%s]: %s",
+            dll_name.data,
+            lib.error_string.data);
+      }
       // Free resources, which will include the error string
       mcr_dll_close (lib);
       // Bad:
+      mstr_free (dll_name);
       return (_loaded_csfle){.okay = false};
    }
+
+   // Check what we found, for better logging
+   mcr_dll_path_result dll_path = mcr_dll_path (lib);
+   if (!dll_path.error_string.data) {
+      mstr_assign (&dll_name, dll_path.path);
+      dll_path.path = MSTR_NULL;
+   }
+   mstr_free (dll_path.error_string);
+   mstr_free (dll_path.path);
 
    // Successfully opened DLL
    _mongocrypt_log (log,
                     MONGOCRYPT_LOG_LEVEL_TRACE,
                     "Loading CSFLE dynamic library [%s]",
-                    filepath);
+                    dll_name.data);
 
    // Construct the library vtable
    _mcr_csfle_v1_vtable vtable = {.okay = true};
@@ -462,7 +477,7 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
             MONGOCRYPT_LOG_LEVEL_ERROR,                                        \
             "Missing required symbol '%s' from CSFLE dynamic library [%s]",    \
             symname,                                                           \
-            filepath);                                                         \
+            dll_name.data);                                                    \
          /* Mark the vtable as broken, but keep trying to load more symbols to \
           * produce error messages for all missing symbols */                  \
          vtable.okay = false;                                                  \
@@ -478,7 +493,8 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
          MONGOCRYPT_LOG_LEVEL_ERROR,
          "One or more required symbols are missing from CSFLE dynamic library "
          "[%s], so this dynamic library will not be used.",
-         filepath);
+         dll_name.data);
+      mstr_free (dll_name);
       return (_loaded_csfle){.okay = false};
    }
 
@@ -486,7 +502,8 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
    _mongocrypt_log (log,
                     MONGOCRYPT_LOG_LEVEL_INFO,
                     "Opened CSFLE dynamic library [%s]",
-                    filepath);
+                    dll_name.data);
+   mstr_free (dll_name);
    return (_loaded_csfle){.okay = true, .lib = lib, .vtable = vtable};
 }
 
@@ -535,52 +552,27 @@ _loaded_csfle
 _try_find_csfle (mongocrypt_t *crypt)
 {
    _loaded_csfle candidate_csfle = {0};
-   mstr csfle_cand_filepath = MSTR_NULL;
+   mstr csfle_search_name = MSTR_NULL;
    if (crypt->opts.csfle_lib_override_path.data) {
       // If an override path was specified, skip the library searching behavior
-      csfle_cand_filepath =
-         mstr_copy (crypt->opts.csfle_lib_override_path.view);
-      if (_try_replace_dollar_origin (&csfle_cand_filepath, &crypt->log)) {
+      csfle_search_name = mstr_copy (crypt->opts.csfle_lib_override_path.view);
+      if (_try_replace_dollar_origin (&csfle_search_name, &crypt->log)) {
          // Succesfully substituted $ORIGIN
          // Do not allow a plain filename to go through, as that will cause the
          // DLL load to search the system.
-         mstr_assign (&csfle_cand_filepath,
-                      mpath_absolute (csfle_cand_filepath.view, MPATH_NATIVE));
-         candidate_csfle =
-            _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
+         mstr_assign (&csfle_search_name,
+                      mpath_absolute (csfle_search_name.view, MPATH_NATIVE));
       }
    } else {
-      // No override path was specified, so try to find it on the provided
-      // search paths.
-      for (int i = 0; i < crypt->opts.n_cselib_search_paths; ++i) {
-         mstr_view cand_dir = crypt->opts.cselib_search_paths[i].view;
-         mstr_view csfle_filename = mstrv_lit ("mongo_csfle_v1" MCR_DLL_SUFFIX);
-         if (mstr_eq (cand_dir, mstrv_lit ("$SYSTEM"))) {
-            // Caller wants us to search for the library on the system's default
-            // library paths. Pass only the library's filename to cause dll_open
-            // to search on the library paths.
-            mstr_assign (&csfle_cand_filepath, mstr_copy (csfle_filename));
-         } else {
-            // Compose the candidate filepath:
-            mstr_assign (&csfle_cand_filepath,
-                         mpath_join (cand_dir, csfle_filename, MPATH_NATIVE));
-            if (!_try_replace_dollar_origin (&csfle_cand_filepath,
-                                             &crypt->log)) {
-               // Error while substituting $ORIGIN
-               continue;
-            }
-         }
-         // Try to load the file:
-         candidate_csfle =
-            _try_load_csfle (csfle_cand_filepath.data, &crypt->log);
-         if (candidate_csfle.okay) {
-            // Stop searching:
-            break;
-         }
-      }
+      // No override path was specified, so try to find it on the system's
+      // default library paths. Pass only the library's filename to cause
+      // dll_open to search on the library paths.
+      csfle_search_name = mstr_copy_cstr ("mongo_csfle_v1");
    }
 
-   mstr_free (csfle_cand_filepath);
+   candidate_csfle = _try_load_csfle (csfle_search_name.data, &crypt->log);
+
+   mstr_free (csfle_search_name);
    return candidate_csfle;
 }
 
@@ -877,8 +869,7 @@ _csfle_replace_or_take_validate_singleton (mongocrypt_t *crypt,
 static bool
 _wants_csfle (mongocrypt_t *c)
 {
-   return c->opts.n_cselib_search_paths != 0 ||
-          c->opts.csfle_lib_override_path.data != NULL;
+   return !c->opts.csfle_disabled;
 }
 
 /**
@@ -1187,11 +1178,10 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
       return false;
    }
 
-   return _mongocrypt_parse_kms_providers (
-      kms_providers_definition,
-      &crypt->opts.kms_providers,
-      crypt->status,
-      &crypt->log);
+   return _mongocrypt_parse_kms_providers (kms_providers_definition,
+                                           &crypt->opts.kms_providers,
+                                           crypt->status,
+                                           &crypt->log);
 }
 
 bool
@@ -1420,24 +1410,6 @@ _mongocrypt_parse_kms_providers (
 
 
 void
-mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
-                                            const char *path)
-{
-   // Dup the path string for us to manage
-   mstr pathdup = mstr_copy_cstr (path);
-   // Increase array len
-   const int new_len = crypt->opts.n_cselib_search_paths + 1;
-   mstr *const new_array =
-      bson_realloc (crypt->opts.cselib_search_paths, sizeof (mstr) * new_len);
-   // Store the path
-   new_array[new_len - 1] = pathdup;
-   // Write back opts
-   crypt->opts.cselib_search_paths = new_array;
-   crypt->opts.n_cselib_search_paths = new_len;
-}
-
-
-void
 mongocrypt_setopt_use_need_kms_credentials_state (mongocrypt_t *crypt)
 {
    crypt->opts.use_need_kms_credentials_state = true;
@@ -1449,6 +1421,12 @@ mongocrypt_setopt_set_csfle_lib_path_override (mongocrypt_t *crypt,
                                                const char *path)
 {
    mstr_assign (&crypt->opts.csfle_lib_override_path, mstr_copy_cstr (path));
+}
+
+void
+mongocrypt_setopt_set_csfle_disabled (mongocrypt_t *crypt, bool is_disabled)
+{
+   crypt->opts.csfle_disabled = is_disabled;
 }
 
 bool

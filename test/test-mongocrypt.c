@@ -520,7 +520,8 @@ _mongocrypt_tester_mongocrypt (tester_mongocrypt_flags flags)
    bson_destroy (kms_providers);
    mongocrypt_binary_destroy (bin);
    if (flags & TESTER_MONGOCRYPT_WITH_CSFLE_LIB) {
-      mongocrypt_setopt_append_csfle_search_path (crypt, "$ORIGIN");
+      mongocrypt_setopt_set_csfle_lib_path_override (
+         crypt, "$ORIGIN/mongo_csfle_v1" MCR_DLL_SUFFIX);
    }
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    if (flags & TESTER_MONGOCRYPT_WITH_CSFLE_LIB) {
