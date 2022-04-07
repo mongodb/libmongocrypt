@@ -1844,9 +1844,7 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
       {
-         mongocrypt_binary_t *cmd_to_mongocryptd;
-
-         cmd_to_mongocryptd = mongocrypt_binary_new ();
+         mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
          ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
          /* "encryptionInformation.schema" must be the document from
           * "encryptedFields" fed from MONGOCRYPT_CTX_NEED_MONGO_COLLINFO. */
