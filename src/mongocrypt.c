@@ -877,6 +877,9 @@ _csfle_replace_or_take_validate_singleton (mongocrypt_t *crypt,
 static bool
 _wants_csfle (mongocrypt_t *c)
 {
+   if (c->opts.bypass_query_analysis) {
+      return false;
+   }
    return c->opts.n_cselib_search_paths != 0 ||
           c->opts.csfle_lib_override_path.data != NULL;
 }
@@ -1474,5 +1477,5 @@ _mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
 
 void
 mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt) {
-   return;
+   crypt->opts.bypass_query_analysis = true;
 }
