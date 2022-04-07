@@ -1471,3 +1471,8 @@ _mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
 
    return (crypt->opts.kms_providers.need_credentials & provider) != 0;
 }
+
+void
+mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt) {
+   return;
+}

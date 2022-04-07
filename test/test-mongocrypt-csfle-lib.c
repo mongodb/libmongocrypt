@@ -177,6 +177,18 @@ _test_cur_exe_path (_mongocrypt_tester_t *tester)
    mstr_free (self.path);
 }
 
+static void
+_test_csfle_not_loaded_with_bypassqueryanalysis (_mongocrypt_tester_t *tester) {
+   mongocrypt_t *const crypt = get_test_mongocrypt (tester);
+   mongocrypt_setopt_append_csfle_search_path (crypt, "$ORIGIN");
+   mongocrypt_setopt_bypass_query_analysis (crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   BSON_ASSERT (mongocrypt_csfle_version_string (crypt, NULL) == NULL);
+   BSON_ASSERT (mongocrypt_csfle_version (crypt) == 0);
+
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_csfle_lib (_mongocrypt_tester_t *tester)
 {
@@ -188,4 +200,5 @@ _mongocrypt_tester_install_csfle_lib (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_csfle_path_override_okay);
    INSTALL_TEST (_test_csfle_path_override_fail);
    INSTALL_TEST (_test_cur_exe_path);
+   INSTALL_TEST (_test_csfle_not_loaded_with_bypassqueryanalysis);
 }
