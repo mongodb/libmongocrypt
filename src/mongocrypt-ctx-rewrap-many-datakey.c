@@ -104,6 +104,21 @@ _kms_done_encrypt (mongocrypt_ctx_t *ctx)
       }
    }
 
+   /* Some providers may require multiple rounds of KMS requests. Reiterate
+    * through datakey contexts to verify if more work needs to be done. */
+   rmdctx->datakeys_iter = rmdctx->datakeys;
+
+   while (rmdctx->datakeys_iter &&
+          rmdctx->datakeys_iter->dkctx->state != MONGOCRYPT_CTX_NEED_KMS) {
+      rmdctx->datakeys_iter = rmdctx->datakeys_iter->next;
+   }
+
+   if (rmdctx->datakeys_iter) {
+      /* More work to be done, remain in MONGOCRYPT_CTX_NEED_KMS state. */
+      return true;
+   }
+
+   /* All datakeys have been encrypted and are ready to be finalized. */
    ctx->state = MONGOCRYPT_CTX_READY;
    ctx->vtable.finalize = _finalize;
 
@@ -237,6 +252,7 @@ _start_kms_encrypt (mongocrypt_ctx_t *ctx)
    /* Skip to READY state if no KMS requests are required. */
    if (!rmdctx->datakeys_iter) {
       ctx->state = MONGOCRYPT_CTX_READY;
+      ctx->vtable.finalize = _finalize;
       return true;
    }
 

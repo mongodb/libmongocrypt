@@ -202,6 +202,13 @@ _mongocrypt_fle2aead_calculate_ciphertext_len (uint32_t plaintext_len)
    return MONGOCRYPT_IV_LEN + plaintext_len + MONGOCRYPT_HMAC_LEN;
 }
 
+uint32_t
+_mongocrypt_fle2_calculate_ciphertext_len (uint32_t plaintext_len)
+{
+   /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
+   return MONGOCRYPT_IV_LEN + plaintext_len;
+}
+
 
 /* ----------------------------------------------------------------------------
  *
@@ -232,6 +239,14 @@ _mongocrypt_fle2aead_calculate_plaintext_len (uint32_t ciphertext_len)
    /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
    BSON_ASSERT (ciphertext_len >= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
    return ciphertext_len - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN;
+}
+
+uint32_t
+_mongocrypt_fle2_calculate_plaintext_len (uint32_t ciphertext_len)
+{
+   /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
+   BSON_ASSERT (ciphertext_len >= MONGOCRYPT_IV_LEN);
+   return ciphertext_len - MONGOCRYPT_IV_LEN;
 }
 
 /* ----------------------------------------------------------------------------
@@ -1306,6 +1321,181 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
                            .out = &M,
                            .bytes_written = bytes_written,
                            .status = status})) {
+      return false;
+   }
+
+   return true;
+}
+
+bool
+_mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
+                                const _mongocrypt_buffer_t *iv,
+                                const _mongocrypt_buffer_t *key,
+                                const _mongocrypt_buffer_t *plaintext,
+                                _mongocrypt_buffer_t *ciphertext,
+                                uint32_t *bytes_written,
+                                mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (iv);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (bytes_written);
+   BSON_ASSERT_PARAM (status);
+
+   if (ciphertext->len !=
+       _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len)) {
+      CLIENT_ERR ("output ciphertext must be allocated with %" PRIu32 " bytes",
+                  _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len));
+      return false;
+   }
+
+   if (plaintext->len <= 0) {
+      CLIENT_ERR ("input plaintext too small. Must be more than zero bytes.");
+      return false;
+   }
+
+   if (MONGOCRYPT_IV_LEN != iv->len) {
+      CLIENT_ERR ("IV must be length %d, but is length %" PRIu32,
+                  MONGOCRYPT_IV_LEN,
+                  iv->len);
+      return false;
+   }
+   if (MONGOCRYPT_ENC_KEY_LEN != key->len) {
+      CLIENT_ERR ("key must be length %d, but is length %" PRIu32,
+                  MONGOCRYPT_ENC_KEY_LEN,
+                  key->len);
+      return false;
+   }
+
+   memset (ciphertext->data, 0, ciphertext->len);
+   *bytes_written = 0;
+
+   /* Declare variable names matching [AEAD with
+    * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
+    */
+   /* M is the input plaintext. */
+   _mongocrypt_buffer_t M = *plaintext;
+   /* Ke is 32 byte Key for encryption. */
+   _mongocrypt_buffer_t Ke = *key;
+   /* IV is 16 byte IV. */
+   _mongocrypt_buffer_t IV = *iv;
+   /* C is the output ciphertext. */
+   _mongocrypt_buffer_t C = *ciphertext;
+   /* S is the output of the symmetric cipher. It is appended after IV in C. */
+   _mongocrypt_buffer_t S;
+   if (!_mongocrypt_buffer_from_subrange (
+          &S, &C, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN)) {
+      CLIENT_ERR ("unable to create S view from C");
+      return false;
+   }
+   uint32_t S_bytes_written = 0;
+
+   /* Compute S = AES-CTR.Enc(Ke, IV, M). */
+   if (!_native_crypto_aes_256_ctr_encrypt (
+          (aes_256_args_t){.key = &Ke,
+                           .iv = &IV,
+                           .in = &M,
+                           .out = &S,
+                           .bytes_written = &S_bytes_written,
+                           .status = status})) {
+      return false;
+   }
+
+   if (S_bytes_written != M.len) {
+      CLIENT_ERR ("expected S_bytes_written=%" PRIu32 " got %" PRIu32,
+                  M.len,
+                  S_bytes_written);
+      return false;
+   }
+
+   /* Output C = IV || S. */
+   /* S is already in C. Prepend IV. */
+   memcpy (C.data, IV.data, MONGOCRYPT_IV_LEN);
+
+   *bytes_written = MONGOCRYPT_IV_LEN + S_bytes_written;
+   return true;
+}
+
+bool
+_mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
+                                const _mongocrypt_buffer_t *key,
+                                const _mongocrypt_buffer_t *ciphertext,
+                                _mongocrypt_buffer_t *plaintext,
+                                uint32_t *bytes_written,
+                                mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (bytes_written);
+   BSON_ASSERT_PARAM (status);
+
+   if (ciphertext->len <= MONGOCRYPT_IV_LEN) {
+      CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32
+                  " bytes",
+                  MONGOCRYPT_IV_LEN);
+      return false;
+   }
+
+   if (plaintext->len !=
+       _mongocrypt_fle2_calculate_plaintext_len (ciphertext->len)) {
+      CLIENT_ERR ("output plaintext must be allocated with %" PRIu32 " bytes",
+                  _mongocrypt_fle2_calculate_plaintext_len (ciphertext->len));
+      return false;
+   }
+
+   if (MONGOCRYPT_ENC_KEY_LEN != key->len) {
+      CLIENT_ERR ("key must be length %d, but is length %" PRIu32,
+                  MONGOCRYPT_ENC_KEY_LEN,
+                  key->len);
+      return false;
+   }
+
+   memset (plaintext->data, 0, plaintext->len);
+   *bytes_written = 0;
+
+   /* Declare variable names matching [AEAD with
+    * CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/).
+    */
+   /* C is the input ciphertext. */
+   _mongocrypt_buffer_t C = *ciphertext;
+   /* IV is 16 byte IV. It is the first part of C. */
+   _mongocrypt_buffer_t IV;
+   if (!_mongocrypt_buffer_from_subrange (
+          &IV, ciphertext, 0, MONGOCRYPT_IV_LEN)) {
+      CLIENT_ERR ("unable to create IV view from ciphertext");
+      return false;
+   }
+   /* S is the symmetric cipher output from C. It is after the IV in C. */
+   _mongocrypt_buffer_t S;
+   if (!_mongocrypt_buffer_from_subrange (
+          &S, ciphertext, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN)) {
+      CLIENT_ERR ("unable to create S view from C");
+      return false;
+   }
+   /* M is the output plaintext. */
+   _mongocrypt_buffer_t M = *plaintext;
+   /* Ke is 32 byte Key for encryption. */
+   _mongocrypt_buffer_t Ke = *key;
+
+   /* Compute and output M = AES-CTR.Dec(Ke, S) */
+   if (!_native_crypto_aes_256_ctr_decrypt (
+          (aes_256_args_t){.key = &Ke,
+                           .iv = &IV,
+                           .in = &S,
+                           .out = &M,
+                           .bytes_written = bytes_written,
+                           .status = status})) {
+      return false;
+   }
+
+   if (*bytes_written != S.len) {
+      CLIENT_ERR ("expected bytes_written=%" PRIu32 " got %" PRIu32,
+                  S.len,
+                  *bytes_written);
       return false;
    }
 

@@ -271,11 +271,12 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
       printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-              "remove.");
+              "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
       return;
 #endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove "
+              "once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
       return;
 #endif
 
@@ -529,11 +530,12 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
    printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove.");
+           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
    return;
 #endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
+           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
    return;
 #endif
 
@@ -674,11 +676,12 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
    printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove.");
+           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
    return;
 #endif
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove");
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
+           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
    return;
 #endif
 
@@ -738,6 +741,121 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+typedef struct {
+   const char *testname;
+   const char *iv;
+   /* key is a 32 encryption key. */
+   const char *key;
+   const char *plaintext;
+   const char *ciphertext;
+   uint32_t bytes_written_expected;
+   const char *expect_encrypt_error;
+} fle2_encrypt_roundtrip_test_t;
+
+void
+_test_fle2_roundtrip (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   fle2_aead_roundtrip_test_t tests[] = {
+      {.testname = "Plaintext is 'test1'",
+       .iv = "918ab83c8966995dfb528a0020d9bb10",
+       .key =
+          "c0b091fd93dfbb2422e53553f971d8127f3731058ba67f32b1549c53fce4120e",
+       .plaintext = "7465737431",
+       .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b0",
+       .bytes_written_expected = 22},
+#include "data/fle2.cstructs"
+      {0}};
+   fle2_aead_roundtrip_test_t *test;
+
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+   return;
+#endif
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
+           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+   return;
+#endif
+
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+
+   for (test = tests; test->testname != NULL; test++) {
+      bool ret;
+      _mongocrypt_buffer_t iv;
+      _mongocrypt_buffer_t key;
+      _mongocrypt_buffer_t plaintext;
+      _mongocrypt_buffer_t ciphertext;
+      _mongocrypt_buffer_t plaintext_got;
+      _mongocrypt_buffer_t ciphertext_got;
+      mongocrypt_status_t *status;
+      uint32_t bytes_written;
+
+      printf ("Begin test '%s'.\n", test->testname);
+
+      _mongocrypt_buffer_copy_from_hex (&iv, test->iv);
+      _mongocrypt_buffer_copy_from_hex (&key, test->key);
+      _mongocrypt_buffer_copy_from_hex (&plaintext, test->plaintext);
+      _mongocrypt_buffer_copy_from_hex (&ciphertext, test->ciphertext);
+      _mongocrypt_buffer_init (&plaintext_got);
+      if (plaintext.len > 0) {
+         _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
+      }
+      _mongocrypt_buffer_init (&ciphertext_got);
+      _mongocrypt_buffer_resize (
+         &ciphertext_got,
+         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+      status = mongocrypt_status_new ();
+
+      /* Test encrypt. */
+      ret = _mongocrypt_fle2_do_encryption (crypt->crypto,
+                                            &iv,
+                                            &key,
+                                            &plaintext,
+                                            &ciphertext_got,
+                                            &bytes_written,
+                                            status);
+
+      if (NULL == test->expect_encrypt_error) {
+         ASSERT_OR_PRINT (ret, status);
+         ASSERT_CMPBYTES (ciphertext.data,
+                          ciphertext.len,
+                          ciphertext_got.data,
+                          ciphertext_got.len);
+         ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
+
+         /* Test decrypt. */
+         ret = _mongocrypt_fle2_do_decryption (crypt->crypto,
+                                               &key,
+                                               &ciphertext,
+                                               &plaintext_got,
+                                               &bytes_written,
+                                               status);
+         ASSERT_OR_PRINT (ret, status);
+         ASSERT_CMPBYTES (plaintext.data,
+                          plaintext.len,
+                          plaintext_got.data,
+                          plaintext_got.len);
+         ASSERT_CMPINT ((int) bytes_written, ==, (int) plaintext.len);
+      } else {
+         ASSERT_FAILS_STATUS (ret, status, test->expect_encrypt_error);
+      }
+
+      mongocrypt_status_destroy (status);
+      _mongocrypt_buffer_cleanup (&ciphertext_got);
+      _mongocrypt_buffer_cleanup (&plaintext_got);
+      _mongocrypt_buffer_cleanup (&ciphertext);
+      _mongocrypt_buffer_cleanup (&plaintext);
+      _mongocrypt_buffer_cleanup (&iv);
+      _mongocrypt_buffer_cleanup (&key);
+
+      printf ("End test '%s'.\n", test->testname);
+   }
+
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
 {
@@ -748,4 +866,5 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST_CRYPTO (_test_mongocrypt_hmac_sha_256_hook, CRYPTO_OPTIONAL);
    INSTALL_TEST (_test_fle2_aead_roundtrip);
    INSTALL_TEST (_test_fle2_aead_decrypt);
+   INSTALL_TEST (_test_fle2_roundtrip);
 }
