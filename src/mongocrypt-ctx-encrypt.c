@@ -1269,6 +1269,12 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       }
    }
 
+   if (ctx->crypt->opts.bypass_query_analysis) {
+      ctx->nothing_to_do = true;
+      ctx->state = MONGOCRYPT_CTX_READY;
+      return true;
+   }
+
    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
       // We're ready for markings. Try to generate them ourself.
       return _try_run_csfle_marking (ctx);

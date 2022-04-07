@@ -1947,7 +1947,6 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
                     "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
          cmd_to_mongod);
       mongocrypt_binary_destroy (cmd_to_mongod);
-      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
    mongocrypt_ctx_destroy (ctx);
