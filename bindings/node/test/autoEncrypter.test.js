@@ -673,7 +673,6 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         },
         extraOptions: {
-          csflePath: sharedLibraryStub,
           csfleDisabled: true
         }
       });
