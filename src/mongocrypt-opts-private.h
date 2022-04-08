@@ -84,6 +84,7 @@ typedef struct {
    mstr csfle_lib_override_path;
 
    bool use_need_kms_credentials_state;
+   bool bypass_query_analysis;
 } _mongocrypt_opts_t;
 
 

@@ -1250,25 +1250,29 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (!_fle2_try_encrypted_field_config_from_map (ctx)) {
       return false;
    }
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
-      return true;
-   }
-
-   /* Check if we have a local schema from schema_map */
-   if (!_try_schema_from_schema_map (ctx)) {
-      return false;
-   }
-
-   /* If we didn't have a local schema, try the cache. */
-   if (_mongocrypt_buffer_empty (&ectx->schema)) {
-      if (!_try_schema_from_cache (ctx)) {
+   if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+      /* Check if we have a local schema from schema_map */
+      if (!_try_schema_from_schema_map (ctx)) {
          return false;
+      }
+
+      /* If we didn't have a local schema, try the cache. */
+      if (_mongocrypt_buffer_empty (&ectx->schema)) {
+         if (!_try_schema_from_cache (ctx)) {
+            return false;
+         }
+      }
+
+      /* Otherwise, we need the the driver to fetch the schema. */
+      if (_mongocrypt_buffer_empty (&ectx->schema)) {
+         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
       }
    }
 
-   /* Otherwise, we need the the driver to fetch the schema. */
-   if (_mongocrypt_buffer_empty (&ectx->schema)) {
-      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
+   if (ctx->crypt->opts.bypass_query_analysis) {
+      ctx->nothing_to_do = true;
+      ctx->state = MONGOCRYPT_CTX_READY;
+      return true;
    }
 
    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
