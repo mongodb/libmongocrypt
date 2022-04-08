@@ -674,7 +674,7 @@ describe('AutoEncrypter', function () {
         },
         extraOptions: {
           csflePath: sharedLibraryStub,
-          csfleDisabled: true,
+          csfleDisabled: true
         }
       });
 
