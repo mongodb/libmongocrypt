@@ -51,6 +51,22 @@ _test_csfle_path_override_okay (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_csfle_path_override_disable_conflict (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *const crypt = get_test_mongocrypt (tester);
+   // Set to the absolute path to the DLL we use for testing:
+   mongocrypt_setopt_set_csfle_lib_path_override (
+      crypt, "$ORIGIN/mongo_csfle_v1" MCR_DLL_SUFFIX);
+   // But also disable csfle:
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
+   ASSERT_FAILS (
+      mongocrypt_init (crypt),
+      crypt,
+      "Setting a csfle library path conflicts with also disabling csfle");
+   mongocrypt_destroy (crypt);
+}
+
+static void
 _test_csfle_path_override_fail (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *const crypt = get_test_mongocrypt (tester);
@@ -113,5 +129,6 @@ _mongocrypt_tester_install_csfle_lib (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_csfle_load_twice_fail);
    INSTALL_TEST (_test_csfle_path_override_okay);
    INSTALL_TEST (_test_csfle_path_override_fail);
+   INSTALL_TEST (_test_csfle_path_override_disable_conflict);
    INSTALL_TEST (_test_cur_exe_path);
 }

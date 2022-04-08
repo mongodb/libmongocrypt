@@ -567,7 +567,7 @@ _try_find_csfle (mongocrypt_t *crypt)
       // No override path was specified, so try to find it on the system's
       // default library paths. Pass only the library's filename to cause
       // dll_open to search on the library paths.
-      csfle_search_name = mstr_copy_cstr ("mongo_csfle_v1");
+      csfle_search_name = mstr_copy_cstr ("mongo_csfle_v1" MCR_DLL_SUFFIX);
    }
 
    candidate_csfle = _try_load_csfle (csfle_search_name.data, &crypt->log);
@@ -860,19 +860,6 @@ _csfle_replace_or_take_validate_singleton (mongocrypt_t *crypt,
 }
 
 /**
- * @return true If the given mongocrypt wants csfle
- * @return false Otherwise
- *
- * @note "Requesting csfle" means that it has set at least one search path OR
- * has set the override path
- */
-static bool
-_wants_csfle (mongocrypt_t *c)
-{
-   return !c->opts.csfle_disabled;
-}
-
-/**
  * @brief Try to enable csfle for the given mongocrypt
  *
  * @param crypt The crypt object for which we should enable csfle
@@ -954,12 +941,20 @@ mongocrypt_init (mongocrypt_t *crypt)
 #endif
    }
 
-   if (!_wants_csfle (crypt)) {
-      // User does not want csfle. Just succeed.
+   if (crypt->opts.csfle_disabled) {
+      // User does not want csfle
+      if (crypt->opts.csfle_lib_override_path.data) {
+         // But the user also set a library path to csfle. This is probably a
+         // mistake.
+         CLIENT_ERR (
+            "Setting a csfle library path conflicts with also disabling csfle");
+         return false;
+      }
+      // Succeed without loading a csfle library
       return true;
-   }
-
+   } else {
    return _try_enable_csfle (crypt);
+}
 }
 
 
