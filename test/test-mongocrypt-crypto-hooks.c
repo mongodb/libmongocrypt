@@ -251,6 +251,7 @@ _create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
    bool ret;
 
    mongocrypt_t *crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    ASSERT_OK (
       mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
       crypt);

@@ -833,6 +833,7 @@ _test_local_schema (_mongocrypt_tester_t *tester)
    mongocrypt_binary_t *schema_map, *mongocryptd_cmd;
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    schema_map = TEST_FILE ("./test/data/schema-map.json");
    ASSERT_OK (
       mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
@@ -1088,6 +1089,7 @@ _test_encrypt_is_remote_schema (_mongocrypt_tester_t *tester)
 
    /* isRemoteSchema = false for a local schema. */
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    ASSERT_OK (
       mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
       crypt);
@@ -1396,6 +1398,7 @@ _test_encrypt_empty_aws (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    ASSERT_OK (mongocrypt_setopt_kms_provider_aws (crypt, "", -1, "", -1),
               crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
@@ -1460,6 +1463,7 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
 
    /* Success. */
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
    mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}"));
    ASSERT_OK (mongocrypt_init (crypt), crypt);
@@ -1505,6 +1509,7 @@ _test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
       "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
    mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'local': {}}"));
    ASSERT_OK (mongocrypt_init (crypt), crypt);
@@ -1540,6 +1545,7 @@ _test_encrypt_with_aws_session_token (_mongocrypt_tester_t *tester)
    char *http_req;
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    ASSERT_OK (mongocrypt_setopt_kms_providers (
                  crypt,
                  TEST_BSON ("{'aws': {'sessionToken': 'mySessionToken', "
@@ -1643,6 +1649,7 @@ _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    ASSERT_OK (
       mongocrypt_setopt_kms_providers (
          crypt,
@@ -1708,6 +1715,7 @@ _test_encrypt_with_encrypted_field_config_map_bypassed (
    mongocrypt_ctx_t *ctx;
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    ASSERT_OK (
       mongocrypt_setopt_kms_providers (
          crypt,
@@ -1790,6 +1798,7 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
 
    crypt = mongocrypt_new ();
+   mongocrypt_setopt_set_csfle_disabled (crypt, true);
    ASSERT_OK (
       mongocrypt_setopt_kms_providers (
          crypt,
@@ -1864,6 +1873,7 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
       /* Recreate crypt to clear cache. */
       mongocrypt_destroy (crypt);
       crypt = mongocrypt_new ();
+      mongocrypt_setopt_set_csfle_disabled (crypt, true);
       ASSERT_OK (
          mongocrypt_setopt_kms_providers (
             crypt,
