@@ -952,9 +952,12 @@ mongocrypt_init (mongocrypt_t *crypt)
       }
       // Succeed without loading a csfle library
       return true;
+   } else if (!crypt->opts.bypass_query_analysis) {
+      return _try_enable_csfle (crypt);
    } else {
-   return _try_enable_csfle (crypt);
-}
+      // We are not going to do query analysis, so we don't need csfle
+      return true;
+   }
 }
 
 
@@ -1443,4 +1446,9 @@ _mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
    }
 
    return (crypt->opts.kms_providers.need_credentials & provider) != 0;
+}
+
+void
+mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt) {
+   crypt->opts.bypass_query_analysis = true;
 }

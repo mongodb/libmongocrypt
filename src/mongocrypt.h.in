@@ -1355,4 +1355,17 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
    void *sign_ctx);
 
+/**
+ * @brief Opt-into skipping query analysis.
+ *
+ * If opted in:
+ * - The csfle shared library will not attempt to be loaded.
+ * - A mongocrypt_ctx_t will never enter the MONGOCRYPT_CTX_NEED_MARKINGS state.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object to update
+ */
+MONGOCRYPT_EXPORT
+void
+mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt);
+
 #endif /* MONGOCRYPT_H */
