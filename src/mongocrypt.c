@@ -551,7 +551,7 @@ _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
 _loaded_csfle
 _try_find_csfle (mongocrypt_t *crypt)
 {
-   _loaded_csfle candidate_csfle = {0};
+   _loaded_csfle candidate_csfle;
    mstr csfle_search_name = MSTR_NULL;
    if (crypt->opts.csfle_lib_override_path.data) {
       // If an override path was specified, skip the library searching behavior
