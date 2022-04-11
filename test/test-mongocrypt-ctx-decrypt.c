@@ -718,6 +718,7 @@ _test_decrypt_fle2_uev (_mongocrypt_tester_t *tester)
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
    printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
            "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+   return;
 #endif
 
 #define TEST_UEV_BASE64                                                        \
