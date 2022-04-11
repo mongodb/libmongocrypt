@@ -22,9 +22,8 @@
 #include "mongocrypt-crypto-private.h"
 
 /**
- * FLE2UnindexedEncryptedValue represents an FLE2 unindexed encrypted value. It
- * is
- * created client side.
+ * FLE2UnindexedEncryptedValue represents an FLE2 unindexed encrypted value.
+ * It is created client side.
  */
 
 /* clang-format off */

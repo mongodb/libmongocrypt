@@ -175,8 +175,7 @@ test_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_init (&incorrect_key);
       _mongocrypt_buffer_copy_to (&correct_key, &incorrect_key);
       /* The middle 32 bytes of key are used to generate the mac. Change first
-       * byte to make S_Key
-       * incorrect. */
+       * byte to make S_Key incorrect. */
       incorrect_key.data[32] = 0;
       uev = mc_FLE2UnindexedEncryptedValue_new ();
       ASSERT_OK_STATUS (
