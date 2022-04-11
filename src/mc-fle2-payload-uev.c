@@ -27,16 +27,18 @@ struct _mc_FLE2UnindexedEncryptedValue_t {
 };
 
 mc_FLE2UnindexedEncryptedValue_t *
-mc_FLE2UnindexedEncryptedValue_new (void) {
-   mc_FLE2UnindexedEncryptedValue_t *uev = bson_malloc0 (sizeof (mc_FLE2UnindexedEncryptedValue_t));
+mc_FLE2UnindexedEncryptedValue_new (void)
+{
+   mc_FLE2UnindexedEncryptedValue_t *uev =
+      bson_malloc0 (sizeof (mc_FLE2UnindexedEncryptedValue_t));
    return uev;
 }
 
 bool
-mc_FLE2UnindexedEncryptedValue_parse (
-   mc_FLE2UnindexedEncryptedValue_t *uev,
-   const _mongocrypt_buffer_t *buf,
-   mongocrypt_status_t *status) {
+mc_FLE2UnindexedEncryptedValue_parse (mc_FLE2UnindexedEncryptedValue_t *uev,
+                                      const _mongocrypt_buffer_t *buf,
+                                      mongocrypt_status_t *status)
+{
    if (uev->parsed) {
       CLIENT_ERR (
          "mc_FLE2UnindexedEncryptedValue_parse must not be called twice");
@@ -93,9 +95,7 @@ mc_FLE2UnindexedEncryptedValue_parse (
 
    /* Read ciphertext. */
    if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &uev->ciphertext,
-          buf->data + offset,
-          (size_t) (buf->len - offset))) {
+          &uev->ciphertext, buf->data + offset, (size_t) (buf->len - offset))) {
       CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_parse failed to copy "
                   "data for ciphertext");
       return false;
@@ -107,11 +107,12 @@ mc_FLE2UnindexedEncryptedValue_parse (
 
 bson_type_t
 mc_FLE2UnindexedEncryptedValue_get_original_bson_type (
-   const mc_FLE2UnindexedEncryptedValue_t *uev,
-   mongocrypt_status_t *status) {
+   const mc_FLE2UnindexedEncryptedValue_t *uev, mongocrypt_status_t *status)
+{
    if (!uev->parsed) {
-      CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_get_original_bson_type must be "
-                  "called after mc_FLE2UnindexedEncryptedValue_parse");
+      CLIENT_ERR (
+         "mc_FLE2UnindexedEncryptedValue_get_original_bson_type must be "
+         "called after mc_FLE2UnindexedEncryptedValue_parse");
       return 0;
    }
    return uev->original_bson_type;
@@ -119,8 +120,8 @@ mc_FLE2UnindexedEncryptedValue_get_original_bson_type (
 
 const _mongocrypt_buffer_t *
 mc_FLE2UnindexedEncryptedValue_get_key_uuid (
-   const mc_FLE2UnindexedEncryptedValue_t *uev,
-   mongocrypt_status_t *status) {
+   const mc_FLE2UnindexedEncryptedValue_t *uev, mongocrypt_status_t *status)
+{
    if (!uev->parsed) {
       CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_get_key_uuid must be "
                   "called after mc_FLE2UnindexedEncryptedValue_parse");
@@ -130,18 +131,19 @@ mc_FLE2UnindexedEncryptedValue_get_key_uuid (
 }
 
 const _mongocrypt_buffer_t *
-mc_FLE2UnindexedEncryptedValue_decrypt (
-   _mongocrypt_crypto_t *crypto,
-   mc_FLE2UnindexedEncryptedValue_t *uev,
-   const _mongocrypt_buffer_t *key,
-   mongocrypt_status_t *status) {
+mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
+                                        mc_FLE2UnindexedEncryptedValue_t *uev,
+                                        const _mongocrypt_buffer_t *key,
+                                        mongocrypt_status_t *status)
+{
    if (!uev->parsed) {
       CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_decrypt must be "
                   "called after mc_FLE2UnindexedEncryptedValue_parse");
       return NULL;
    }
-   
-   /* Serialize associated data: fle_blob_subtype || key_uuid || original_bson_type */
+
+   /* Serialize associated data: fle_blob_subtype || key_uuid ||
+    * original_bson_type */
    _mongocrypt_buffer_t AD;
    _mongocrypt_buffer_init (&AD);
    _mongocrypt_buffer_resize (&AD, 1 + uev->key_uuid.len + 1);
@@ -149,11 +151,19 @@ mc_FLE2UnindexedEncryptedValue_decrypt (
    AD.data[0] = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
    memcpy (AD.data + 1, uev->key_uuid.data, uev->key_uuid.len);
    AD.data[1 + uev->key_uuid.len] = uev->original_bson_type;
-   _mongocrypt_buffer_resize (&uev->plaintext, _mongocrypt_fle2aead_calculate_plaintext_len (uev->ciphertext.len));
+   _mongocrypt_buffer_resize (
+      &uev->plaintext,
+      _mongocrypt_fle2aead_calculate_plaintext_len (uev->ciphertext.len));
 
    uint32_t bytes_written;
 
-   if (!_mongocrypt_fle2aead_do_decryption (crypto, &AD, key, &uev->ciphertext, &uev->plaintext, &bytes_written, status)) {
+   if (!_mongocrypt_fle2aead_do_decryption (crypto,
+                                            &AD,
+                                            key,
+                                            &uev->ciphertext,
+                                            &uev->plaintext,
+                                            &bytes_written,
+                                            status)) {
       _mongocrypt_buffer_cleanup (&AD);
       return NULL;
    }
@@ -163,8 +173,8 @@ mc_FLE2UnindexedEncryptedValue_decrypt (
 }
 
 void
-mc_FLE2UnindexedEncryptedValue_destroy (
-   mc_FLE2UnindexedEncryptedValue_t *uev) {
+mc_FLE2UnindexedEncryptedValue_destroy (mc_FLE2UnindexedEncryptedValue_t *uev)
+{
    if (NULL == uev) {
       return;
    }
