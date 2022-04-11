@@ -48,7 +48,7 @@
  * _id, and that is not an error)
  */
 
-/* The state of the key broker. Transitions are only forward. */
+/* The state of the key broker. */
 typedef enum {
    /* Starting state. Accept requests for keys to be added (either by id or
       name) */
@@ -200,5 +200,10 @@ _mongocrypt_key_broker_cleanup (_mongocrypt_key_broker_t *kb);
 void
 _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
                                      const _mongocrypt_buffer_t *key_id);
+
+/* _mongocrypt_key_broker_restart is used to request additional keys. It must
+ * only be called in the KB_DONE state. */
+bool
+_mongocrypt_key_broker_restart (_mongocrypt_key_broker_t *kb);
 
 #endif /* MONGOCRYPT_KEY_BROKER_PRIVATE_H */

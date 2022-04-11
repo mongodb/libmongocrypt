@@ -717,7 +717,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          }
 
          read_ret = mongoc_stream_read (
-            tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
+            tls_stream, buf, bytes_needed, 0 /* min_bytes. */, sockettimeout);
          if (read_ret == -1) {
             bson_set_error (error,
                             MONGOC_ERROR_STREAM,

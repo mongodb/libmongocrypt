@@ -30,6 +30,7 @@ Global options
 csfle create_datakey
     --kms_provider <string>
     --key_alt_names <comma separated strings>
+    --key_material <base64 string>
 
     AWS options.
     --aws_kek_region <string>
