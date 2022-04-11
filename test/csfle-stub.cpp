@@ -144,6 +144,7 @@ mongo_csfle_v1_analyze_query (query_analyzer_t *qa,
    *bson_len_out = doc.len;
    bson_destroy (given);
    bson_destroy (&tmp_doc);
+   bson_destroy (&doc);
    return buf;
 }
 
