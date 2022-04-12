@@ -2014,6 +2014,8 @@ _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
       _test_fle2_insert_update_payload (&iter, ctx->status);
       ASSERT (bson_iter_find (&iter, "billing.cc"));
       _test_fle2_insert_update_payload (&iter, ctx->status);
+
+      mongocrypt_binary_destroy (cmd);
    }
 
    mongocrypt_ctx_destroy (ctx);
