@@ -428,10 +428,18 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
                                &payload.indexKeyId); // u
    payload.encryptedType = placeholder->type;        // t
 
-   // v := EncryptAEAD(UserKey, value)
-   if (!_fle2_placeholder_aead_encrypt (
-          kb, &placeholder->user_key_id, &value, &payload.value, status)) {
-      goto fail;
+   // v := UserKeyId + EncryptAEAD(UserKey, value)
+   {
+      _mongocrypt_buffer_t tmp[2] = {placeholder->user_key_id,{0}};
+      if (!_fle2_placeholder_aead_encrypt (
+             kb, &placeholder->user_key_id, &value, &tmp[1], status)) {
+         goto fail;
+      }
+      res = _mongocrypt_buffer_concat (&payload.value, tmp, 2);
+      _mongocrypt_buffer_cleanup (&tmp[1]);
+      if (!res) {
+         goto fail;
+      }
    }
 
    // e := collectionLevel1Token
