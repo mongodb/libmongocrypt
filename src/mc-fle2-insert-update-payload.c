@@ -33,6 +33,7 @@ mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload)
    _mongocrypt_buffer_cleanup (&payload->escDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->eccDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->encryptedTokens);
+   _mongocrypt_buffer_cleanup (&payload->indexKeyId);
    _mongocrypt_buffer_cleanup (&payload->value);
    _mongocrypt_buffer_cleanup (&payload->serverEncryptionToken);
 }
