@@ -40,16 +40,15 @@
    }
 
 void
-mc_FLE2EncryptionPlaceholder_init (
-   mc_FLE2EncryptionPlaceholder_t *placeholder)
+mc_FLE2EncryptionPlaceholder_init (mc_FLE2EncryptionPlaceholder_t *placeholder)
 {
    memset (placeholder, 0, sizeof (mc_FLE2EncryptionPlaceholder_t));
 }
 
 bool
 mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
-                                      const bson_t *in,
-                                      mongocrypt_status_t *status)
+                                    const bson_t *in,
+                                    mongocrypt_status_t *status)
 {
    bson_iter_t iter;
    bool has_t = false, has_a = false, has_v = false, has_cm = false;

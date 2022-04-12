@@ -256,7 +256,8 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
 {
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv;
-   const uint32_t cipherlen = _mongocrypt_fle2_calculate_ciphertext_len (in->len);
+   const uint32_t cipherlen =
+      _mongocrypt_fle2_calculate_ciphertext_len (in->len);
    uint32_t written = 0;
 
    _mongocrypt_buffer_init_size (out, cipherlen);
@@ -267,7 +268,8 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
       return false;
    }
 
-   if (!_mongocrypt_fle2_do_encryption (crypto, &iv, key, in, out, &written, status)) {
+   if (!_mongocrypt_fle2_do_encryption (
+          crypto, &iv, key, in, out, &written, status)) {
       _mongocrypt_buffer_cleanup (out);
       _mongocrypt_buffer_init (out);
       return false;
@@ -430,7 +432,7 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
 
    // v := UserKeyId + EncryptAEAD(UserKey, value)
    {
-      _mongocrypt_buffer_t tmp[2] = {placeholder->user_key_id,{0}};
+      _mongocrypt_buffer_t tmp[2] = {placeholder->user_key_id, {0}};
       if (!_fle2_placeholder_aead_encrypt (
              kb, &placeholder->user_key_id, &value, &tmp[1], status)) {
          goto fail;

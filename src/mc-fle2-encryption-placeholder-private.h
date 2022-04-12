@@ -32,13 +32,12 @@ typedef struct {
 } mc_FLE2EncryptionPlaceholder_t;
 
 void
-mc_FLE2EncryptionPlaceholder_init (
-   mc_FLE2EncryptionPlaceholder_t *placeholder);
+mc_FLE2EncryptionPlaceholder_init (mc_FLE2EncryptionPlaceholder_t *placeholder);
 
 bool
 mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
-                                      const bson_t *in,
-                                      mongocrypt_status_t *status);
+                                    const bson_t *in,
+                                    mongocrypt_status_t *status);
 
 void
 mc_FLE2EncryptionPlaceholder_cleanup (
