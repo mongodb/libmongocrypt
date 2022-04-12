@@ -1,0 +1,40 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "documents": [{
+            "_id": 1,
+            "ssn": {
+                "$binary": {
+                    "base64": "A2EAAAAQdAACAAAAEGEAAgAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASAnYACQAAAHZhbHVlMTIzABJjbQAAAAAAAAAAAAA=",
+                    "subType": "06"
+                }
+            }
+        }],
+        "encryptedFields": {
+            "escCollection" : "fle2.test.esc",
+            "eccCollection" : "fle2.test.ecc",
+            "ecocCollection" : "fle2.test.ecoc",
+            "fields": [
+                {
+                    "keyId": {
+                        "$binary": {
+                            "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                            "subType": "04"
+                        }
+                    },
+                    "path": "ssn",
+                    "bsonType": "string",
+                    "queries": {
+                        "queryType": "equality",
+                        "contention": 0
+                    }
+                }
+            ]
+        },
+        "find": "test",
+        "$db": "test"
+    },
+    "hasEncryptedPlaceholders": true
+}

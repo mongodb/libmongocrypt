@@ -18,7 +18,6 @@
 #define MONGOCRYPT_MARKING_PRIVATE_H
 
 #include "mc-fle2-encryption-placeholder-private.h"
-#include "mc-fle2-insert-update-payload-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 

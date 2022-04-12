@@ -15,8 +15,9 @@
  */
 
 #include "mc-fle-blob-subtype-private.h"
-#include "mc-fle2-insert-update-payload-private.h"
 #include "mc-fle2-encryption-placeholder-private.h"
+#include "mc-fle2-find-equality-payload-private.h"
+#include "mc-fle2-insert-update-payload-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
@@ -317,30 +318,41 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
 }
 
 
+// Field derivations shared by both INSERT and FIND payloads.
+typedef struct {
+   _mongocrypt_buffer_t tokenKey;
+   mc_CollectionsLevel1Token_t *collectionsLevel1Token;
+   _mongocrypt_buffer_t edcDerivedToken;
+   _mongocrypt_buffer_t escDerivedToken;
+   _mongocrypt_buffer_t eccDerivedToken;
+} _FLE2EncryptedPayloadCommon_t;
+
+static void
+_FLE2EncryptedPayloadCommon_cleanup (_FLE2EncryptedPayloadCommon_t *common)
+{
+   _mongocrypt_buffer_cleanup (&common->tokenKey);
+   mc_CollectionsLevel1Token_destroy (common->collectionsLevel1Token);
+   _mongocrypt_buffer_cleanup (&common->edcDerivedToken);
+   _mongocrypt_buffer_cleanup (&common->escDerivedToken);
+   _mongocrypt_buffer_cleanup (&common->eccDerivedToken);
+   memset (common, 0, sizeof (*common));
+}
+
+
 static bool
-_mongocrypt_fle2_placeholder_to_ciphertext (
-   _mongocrypt_key_broker_t *kb,
-   _mongocrypt_marking_t *marking,
-   _mongocrypt_ciphertext_t *ciphertext,
-   mongocrypt_status_t *status)
+_mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
+                                     _FLE2EncryptedPayloadCommon_t *ret,
+                                     const _mongocrypt_buffer_t *indexKeyId,
+                                     const _mongocrypt_buffer_t *value,
+                                     int32_t maxContentionCounter,
+                                     mongocrypt_status_t *status)
 {
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t indexKey = {0};
-   _mongocrypt_buffer_t tokenKey = {0};
-   _mongocrypt_buffer_t value = {0};
-   mc_CollectionsLevel1Token_t *collectionsLevel1Token = NULL;
-   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
-   mc_FLE2InsertUpdatePayload_t payload;
-   bool res = false;
-
-   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
-   _mongocrypt_ciphertext_init (ciphertext);
-   _mongocrypt_buffer_init (&indexKey);
-   _mongocrypt_buffer_init (&value);
-   mc_FLE2InsertUpdatePayload_init (&payload);
+   memset (ret, 0, sizeof (*ret));
 
    if (!_mongocrypt_key_broker_decrypted_key_by_id (
-          kb, &placeholder->index_key_id, &indexKey)) {
+          kb, indexKeyId, &indexKey)) {
       CLIENT_ERR ("unable to retreive key");
       goto fail;
    }
@@ -355,49 +367,93 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
 
    // indexKey is 3 equal sized keys: [Ke][Km][TokenKey]
    BSON_ASSERT (MONGOCRYPT_KEY_LEN == (3 * MONGOCRYPT_TOKEN_KEY_LEN));
-   BSON_ASSERT (_mongocrypt_buffer_from_subrange (&tokenKey,
-                                                  &indexKey,
-                                                  2 * MONGOCRYPT_TOKEN_KEY_LEN,
-                                                  MONGOCRYPT_TOKEN_KEY_LEN));
+   if (!_mongocrypt_buffer_copy_from_data_and_size (
+          &ret->tokenKey,
+          indexKey.data + (2 * MONGOCRYPT_TOKEN_KEY_LEN),
+          MONGOCRYPT_TOKEN_KEY_LEN)) {
+      CLIENT_ERR ("failed allocating memory for token key");
+      goto fail;
+   }
 
-   collectionsLevel1Token =
-      mc_CollectionsLevel1Token_new (crypto, &tokenKey, status);
-   if (!collectionsLevel1Token) {
+   ret->collectionsLevel1Token =
+      mc_CollectionsLevel1Token_new (crypto, &ret->tokenKey, status);
+   if (!ret->collectionsLevel1Token) {
       CLIENT_ERR ("unable to derive collectionLevel1Token");
       goto fail;
    }
 
+   if (!_fle2_derive_EDC_token (crypto,
+                                &ret->edcDerivedToken,
+                                ret->collectionsLevel1Token,
+                                value,
+                                maxContentionCounter,
+                                status)) {
+      goto fail;
+   }
+
+   if (!_fle2_derive_ESC_token (crypto,
+                                &ret->escDerivedToken,
+                                ret->collectionsLevel1Token,
+                                value,
+                                maxContentionCounter,
+                                status)) {
+      goto fail;
+   }
+
+   if (!_fle2_derive_ECC_token (crypto,
+                                &ret->eccDerivedToken,
+                                ret->collectionsLevel1Token,
+                                value,
+                                maxContentionCounter,
+                                status)) {
+      goto fail;
+   }
+
+   return true;
+fail:
+   _FLE2EncryptedPayloadCommon_cleanup (ret);
+   _mongocrypt_buffer_cleanup (&indexKey);
+   return false;
+}
+
+
+static bool
+_mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
+   _FLE2EncryptedPayloadCommon_t common = {{0}};
+   _mongocrypt_buffer_t value = {0};
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+   mc_FLE2InsertUpdatePayload_t payload;
+   bool res = false;
+
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
+   _mongocrypt_ciphertext_init (ciphertext);
+   _mongocrypt_buffer_init (&value);
+   mc_FLE2InsertUpdatePayload_init (&payload);
+
    _mongocrypt_buffer_from_iter (&value, &placeholder->v_iter);
 
+   if (!_mongocrypt_fle2_placeholder_common (kb,
+                                             &common,
+                                             &placeholder->index_key_id,
+                                             &value,
+                                             placeholder->maxContentionCounter,
+                                             status)) {
+      goto fail;
+   }
+
    // d := EDCDerivedToken
-   if (!_fle2_derive_EDC_token (crypto,
-                                &payload.edcDerivedToken,
-                                collectionsLevel1Token,
-                                &value,
-                                placeholder->maxContentionCounter,
-                                status)) {
-      goto fail;
-   }
-
+   _mongocrypt_buffer_steal (&payload.edcDerivedToken, &common.edcDerivedToken);
    // s := ESCDerivedToken
-   if (!_fle2_derive_ESC_token (crypto,
-                                &payload.escDerivedToken,
-                                collectionsLevel1Token,
-                                &value,
-                                placeholder->maxContentionCounter,
-                                status)) {
-      goto fail;
-   }
-
+   _mongocrypt_buffer_steal (&payload.escDerivedToken, &common.escDerivedToken);
    // c := ECCDerivedToken
-   if (!_fle2_derive_ECC_token (crypto,
-                                &payload.eccDerivedToken,
-                                collectionsLevel1Token,
-                                &value,
-                                placeholder->maxContentionCounter,
-                                status)) {
-      goto fail;
-   }
+   _mongocrypt_buffer_steal (&payload.eccDerivedToken, &common.eccDerivedToken);
 
    // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndCounter ||
    // ECCDerivedFromDataTokenAndCounter)
@@ -407,7 +463,7 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
       _mongocrypt_buffer_t p;
       _mongocrypt_buffer_concat (&p, tokens, 2);
       mc_ECOCToken_t *ecocToken =
-         mc_ECOCToken_new (crypto, collectionsLevel1Token, status);
+         mc_ECOCToken_new (crypto, common.collectionsLevel1Token, status);
       if (!ecocToken) {
          _mongocrypt_buffer_cleanup (&p);
          goto fail;
@@ -445,7 +501,8 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
    // e := collectionLevel1Token
    {
       mc_ServerDataEncryptionLevel1Token_t *serverToken =
-         mc_ServerDataEncryptionLevel1Token_new (crypto, &tokenKey, status);
+         mc_ServerDataEncryptionLevel1Token_new (
+            crypto, &common.tokenKey, status);
       if (!serverToken) {
          goto fail;
       }
@@ -470,12 +527,70 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
 fail:
    mc_FLE2InsertUpdatePayload_cleanup (&payload);
    _mongocrypt_buffer_cleanup (&value);
-   mc_CollectionsLevel1Token_destroy (collectionsLevel1Token);
-   _mongocrypt_buffer_cleanup (&indexKey);
+   _FLE2EncryptedPayloadCommon_cleanup (&common);
 
    return res;
 }
 
+
+static bool
+_mongocrypt_fle2_placeholder_to_find_ciphertext (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   _FLE2EncryptedPayloadCommon_t common = {{0}};
+   _mongocrypt_buffer_t value = {0};
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+   mc_FLE2FindEqualityPayload_t payload;
+   bool res = false;
+
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+   _mongocrypt_ciphertext_init (ciphertext);
+   _mongocrypt_buffer_init (&value);
+   mc_FLE2FindEqualityPayload_init (&payload);
+
+   _mongocrypt_buffer_from_iter (&value, &placeholder->v_iter);
+
+   if (!_mongocrypt_fle2_placeholder_common (kb,
+                                             &common,
+                                             &placeholder->index_key_id,
+                                             &value,
+                                             placeholder->maxContentionCounter,
+                                             status)) {
+      goto fail;
+   }
+
+   // d := EDCDerivedToken
+   _mongocrypt_buffer_steal (&payload.edcDerivedToken, &common.edcDerivedToken);
+   // s := ESCDerivedToken
+   _mongocrypt_buffer_steal (&payload.escDerivedToken, &common.escDerivedToken);
+   // c := ECCDerivedToken
+   _mongocrypt_buffer_steal (&payload.eccDerivedToken, &common.eccDerivedToken);
+
+   payload.maxContentionCounter = placeholder->maxContentionCounter;
+
+   {
+      bson_t out;
+      bson_init (&out);
+      mc_FLE2FindEqualityPayload_serialize (&out, &payload);
+      _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
+   }
+   _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->index_key_id);
+   ciphertext->original_bson_type =
+      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindEqualityPayload;
+
+   res = true;
+fail:
+   mc_FLE2FindEqualityPayload_cleanup (&payload);
+   _mongocrypt_buffer_cleanup (&value);
+   _FLE2EncryptedPayloadCommon_cleanup (&common);
+
+   return res;
+}
 
 static bool
 _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
@@ -524,7 +639,8 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
    if (marking->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
       ciphertext->blob_subtype = MC_SUBTYPE_FLE1DeterministicEncryptedValue;
    } else {
-      BSON_ASSERT (marking->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
+      BSON_ASSERT (marking->algorithm ==
+                   MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
       ciphertext->blob_subtype = MC_SUBTYPE_FLE1RandomEncryptedValue;
    }
    _mongocrypt_buffer_copy_to (&key_id, &ciphertext->key_id);
@@ -617,8 +733,15 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    BSON_ASSERT (ctx);
 
    if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
-      return _mongocrypt_fle2_placeholder_to_ciphertext (
-         kb, marking, ciphertext, status);
+      if (marking->fle2.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
+         return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
+            kb, marking, ciphertext, status);
+      } else {
+         BSON_ASSERT (marking->fle2.type ==
+                      MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+         return _mongocrypt_fle2_placeholder_to_find_ciphertext (
+            kb, marking, ciphertext, status);
+      }
    } else {
       return _mongocrypt_fle1_marking_to_ciphertext (
          kb, marking, ciphertext, status);

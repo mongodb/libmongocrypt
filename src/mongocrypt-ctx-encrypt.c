@@ -556,7 +556,8 @@ _marking_to_bson_value (void *ctx,
       goto fail;
    }
 
-   if (ciphertext.blob_subtype == MC_SUBTYPE_FLE2InsertUpdatePayload) {
+   if ((ciphertext.blob_subtype == MC_SUBTYPE_FLE2InsertUpdatePayload) ||
+       (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindEqualityPayload)) {
       /* ciphertext_data is already a BSON object, just need to prepend
        * blob_subtype */
       _mongocrypt_buffer_init_size (&serialized_ciphertext,

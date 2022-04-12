@@ -1,0 +1,15 @@
+{
+   "documents": [
+      {
+         "_id": 1,
+         "ssn": {
+            "$binary": {
+               "base64": "BYkAAAAFZAAgAAAAAHb62aV7+mqmaGcotPLdG3KP7S8diFwWMLM/5rYtqLrEBXMAIAAAAAAVJ6OWHRv3OtCozHpt3ZzfBhaxZirLv3B+G8PuaaO4EgVjACAAAAAAsZXWOWA+UiCBbrJNB6bHflB/cn7pWSvwWN2jw4FPeIUSY20AAAAAAAAAAAAA",
+               "subType": "06"
+            }
+         }
+      }
+   ],
+   "find": "test",
+   "$db": "test"
+}

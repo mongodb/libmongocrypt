@@ -80,6 +80,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/none.c
    src/mc-fle2-insert-update-payload.c
    src/mc-fle2-encryption-placeholder.c
+   src/mc-fle2-find-equality-payload.c
    src/mc-fle2-payload-ieev.c
    src/mc-tokens.c
    src/mongocrypt-binary.c
