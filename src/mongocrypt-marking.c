@@ -450,7 +450,7 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
                                &placeholder->user_key_id);
    ciphertext->original_bson_type =
       (uint8_t) bson_iter_type (&placeholder->v_iter);
-   ciphertext->blob_subtype = MC_SUBTYPE_FLE2EncryptionPlaceholder;
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;
 
    res = true;
 fail:
