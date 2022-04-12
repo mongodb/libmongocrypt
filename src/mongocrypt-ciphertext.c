@@ -174,9 +174,9 @@ _mongocrypt_ciphertext_serialize_associated_data (
       return false;
    }
 
-   if (ciphertext->blob_subtype !=
-          MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
-       ciphertext->blob_subtype != MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM) {
+   if ((ciphertext->blob_subtype !=
+        MC_SUBTYPE_FLE1DeterministicEncryptedValue) &&
+       (ciphertext->blob_subtype != MC_SUBTYPE_FLE1RandomEncryptedValue)) {
       return false;
    }
 
