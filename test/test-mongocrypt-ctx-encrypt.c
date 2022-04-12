@@ -2004,7 +2004,6 @@ _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
 
       BSON_ASSERT (_mongocrypt_binary_to_bson (cmd, &as_bson));
 
-      printf ("encrypted doc: %s", tmp_json (&as_bson));
       // The output of the encryption phase is non-deterministic
       // because the IV values are random on each invocation.
       // Just look for valid structure to the data.
