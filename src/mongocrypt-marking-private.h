@@ -17,15 +17,15 @@
 #ifndef MONGOCRYPT_MARKING_PRIVATE_H
 #define MONGOCRYPT_MARKING_PRIVATE_H
 
+#include "mc-fle2-encryption-placeholder-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
-#include "mc-fle2-insert-update-placeholder-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 
 typedef enum {
    MONGOCRYPT_MARKING_FLE1_BY_ID,
    MONGOCRYPT_MARKING_FLE1_BY_ALTNAME,
-   MONGOCRYPT_MARKING_FLE2_INSERT_UPDATE,
+   MONGOCRYPT_MARKING_FLE2_ENCRYPTION,
 } mongocrypt_marking_type_t;
 
 typedef struct {
@@ -41,7 +41,7 @@ typedef struct {
          bson_value_t key_alt_name;
       };
 
-      mc_FLE2InsertUpdatePlaceholder_t fle2;
+      mc_FLE2EncryptionPlaceholder_t fle2;
    };
 } _mongocrypt_marking_t;
 

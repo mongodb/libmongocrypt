@@ -326,7 +326,7 @@ _collect_key_from_marking (void *ctx,
    } else if (marking.type == MONGOCRYPT_MARKING_FLE1_BY_ALTNAME) {
       res = _mongocrypt_key_broker_request_name (kb, &marking.key_alt_name);
    } else {
-      BSON_ASSERT (marking.type == MONGOCRYPT_MARKING_FLE2_INSERT_UPDATE);
+      BSON_ASSERT (marking.type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
       res =
          _mongocrypt_key_broker_request_id (kb, &marking.fle2.index_key_id) &&
          _mongocrypt_key_broker_request_id (kb, &marking.fle2.user_key_id);

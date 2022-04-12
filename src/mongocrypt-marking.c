@@ -15,8 +15,8 @@
  */
 
 #include "mc-fle-blob-subtype-private.h"
-#include "mc-fle2-insert-update-placeholder-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
+#include "mc-fle2-encryption-placeholder-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
@@ -131,8 +131,8 @@ _mongocrypt_marking_parse_fle2_placeholder (const bson_t *in,
                                             _mongocrypt_marking_t *out,
                                             mongocrypt_status_t *status)
 {
-   out->type = MONGOCRYPT_MARKING_FLE2_INSERT_UPDATE;
-   return mc_FLE2InsertUpdatePlaceholder_parse (&out->fle2, in, status);
+   out->type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
+   return mc_FLE2EncryptionPlaceholder_parse (&out->fle2, in, status);
 }
 
 bool
@@ -175,8 +175,8 @@ _mongocrypt_marking_init (_mongocrypt_marking_t *marking)
 void
 _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 {
-   if (marking->type == MONGOCRYPT_MARKING_FLE2_INSERT_UPDATE) {
-      mc_FLE2InsertUpdatePlaceholder_cleanup (&marking->fle2);
+   if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
+      mc_FLE2EncryptionPlaceholder_cleanup (&marking->fle2);
       return;
    }
 
@@ -330,11 +330,11 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
    _mongocrypt_buffer_t tokenKey = {0};
    _mongocrypt_buffer_t value = {0};
    mc_CollectionsLevel1Token_t *collectionsLevel1Token = NULL;
-   mc_FLE2InsertUpdatePlaceholder_t *placeholder = &marking->fle2;
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
    mc_FLE2InsertUpdatePayload_t payload = {0};
    bool res = false;
 
-   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_INSERT_UPDATE);
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    _mongocrypt_ciphertext_init (ciphertext);
    _mongocrypt_buffer_init (&indexKey);
    _mongocrypt_buffer_init (&value);
@@ -450,7 +450,7 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
                                &placeholder->user_key_id);
    ciphertext->original_bson_type =
       (uint8_t) bson_iter_type (&placeholder->v_iter);
-   ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2EncryptionPlaceholder;
 
    res = true;
 fail:
@@ -597,7 +597,7 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    BSON_ASSERT (status);
    BSON_ASSERT (ctx);
 
-   if (marking->type == MONGOCRYPT_MARKING_FLE2_INSERT_UPDATE) {
+   if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
       return _mongocrypt_fle2_placeholder_to_ciphertext (
          kb, marking, ciphertext, status);
    } else {

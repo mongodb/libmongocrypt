@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MC_FLE2_INSERT_UPDATE_PLACEHOLDER_PRIVATE_H
-#define MC_FLE2_INSERT_UPDATE_PLACEHOLDER_PRIVATE_H
+#ifndef MC_FLE2_ENCRYPTION_PLACEHOLDER_PRIVATE_H
+#define MC_FLE2_ENCRYPTION_PLACEHOLDER_PRIVATE_H
 
 #include <bson.h>
 
@@ -29,19 +29,19 @@ typedef struct {
    _mongocrypt_buffer_t index_key_id;
    _mongocrypt_buffer_t user_key_id;
    int64_t maxContentionCounter;
-} mc_FLE2InsertUpdatePlaceholder_t;
+} mc_FLE2EncryptionPlaceholder_t;
 
 void
-mc_FLE2InsertUpdatePlaceholder_init (
-   mc_FLE2InsertUpdatePlaceholder_t *placeholder);
+mc_FLE2EncryptionPlaceholder_init (
+   mc_FLE2EncryptionPlaceholder_t *placeholder);
 
 bool
-mc_FLE2InsertUpdatePlaceholder_parse (mc_FLE2InsertUpdatePlaceholder_t *out,
+mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
                                       const bson_t *in,
                                       mongocrypt_status_t *status);
 
 void
-mc_FLE2InsertUpdatePlaceholder_cleanup (
-   mc_FLE2InsertUpdatePlaceholder_t *placeholder);
+mc_FLE2EncryptionPlaceholder_cleanup (
+   mc_FLE2EncryptionPlaceholder_t *placeholder);
 
-#endif /* MC_FLE2_INSERT_UPDATE_PLACEHOLDER_PRIVATE_H */
+#endif /* MC_FLE2_ENCRYPTION_PLACEHOLDER_PRIVATE_H */

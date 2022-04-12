@@ -16,7 +16,7 @@
 
 #include <bson.h>
 
-#include "mc-fle2-insert-update-placeholder-private.h"
+#include "mc-fle2-encryption-placeholder-private.h"
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
 
@@ -40,14 +40,14 @@
    }
 
 void
-mc_FLE2InsertUpdatePlaceholder_init (
-   mc_FLE2InsertUpdatePlaceholder_t *placeholder)
+mc_FLE2EncryptionPlaceholder_init (
+   mc_FLE2EncryptionPlaceholder_t *placeholder)
 {
-   memset (placeholder, 0, sizeof (mc_FLE2InsertUpdatePlaceholder_t));
+   memset (placeholder, 0, sizeof (mc_FLE2EncryptionPlaceholder_t));
 }
 
 bool
-mc_FLE2InsertUpdatePlaceholder_parse (mc_FLE2InsertUpdatePlaceholder_t *out,
+mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
                                       const bson_t *in,
                                       mongocrypt_status_t *status)
 {
@@ -55,7 +55,7 @@ mc_FLE2InsertUpdatePlaceholder_parse (mc_FLE2InsertUpdatePlaceholder_t *out,
    bool has_t = false, has_a = false, has_v = false, has_cm = false;
    bool has_ki = false, has_ku = false;
 
-   mc_FLE2InsertUpdatePlaceholder_init (out);
+   mc_FLE2EncryptionPlaceholder_init (out);
    if (!bson_validate (in, BSON_VALIDATE_NONE, NULL) ||
        !bson_iter_init (&iter, in)) {
       CLIENT_ERR ("invalid BSON");
@@ -144,15 +144,15 @@ mc_FLE2InsertUpdatePlaceholder_parse (mc_FLE2InsertUpdatePlaceholder_t *out,
    return true;
 
 fail:
-   mc_FLE2InsertUpdatePlaceholder_cleanup (out);
+   mc_FLE2EncryptionPlaceholder_cleanup (out);
    return false;
 }
 
 void
-mc_FLE2InsertUpdatePlaceholder_cleanup (
-   mc_FLE2InsertUpdatePlaceholder_t *placeholder)
+mc_FLE2EncryptionPlaceholder_cleanup (
+   mc_FLE2EncryptionPlaceholder_t *placeholder)
 {
    _mongocrypt_buffer_cleanup (&placeholder->index_key_id);
    _mongocrypt_buffer_cleanup (&placeholder->user_key_id);
-   mc_FLE2InsertUpdatePlaceholder_init (placeholder);
+   mc_FLE2EncryptionPlaceholder_init (placeholder);
 }
