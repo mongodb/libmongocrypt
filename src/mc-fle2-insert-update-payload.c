@@ -71,7 +71,7 @@ mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload)
       }                                                                    \
       if (!_mongocrypt_buffer_copy_from_binary_iter (&out->Dest, &iter)) { \
          CLIENT_ERR ("Unable to create mongocrypt buffer for BSON binary " \
-                     "file in '" #Name "'");                               \
+                     "field in '" #Name "'");                              \
          goto fail;                                                        \
       }                                                                    \
    }                                                                       \
@@ -113,18 +113,16 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
       PARSE_BINDATA (u, BSON_SUBTYPE_UUID, indexKeyId)
       IF_FIELD (t)
       {
-         int32_t type;
+         int32_t type = bson_iter_int32 (&iter);
          if (!BSON_ITER_HOLDS_INT32 (&iter)) {
             CLIENT_ERR ("Field 't' expected to hold an int32");
             goto fail;
          }
-         type = bson_iter_int32 (&iter);
-         if ((type != MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) &&
-             (type != MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND)) {
-            CLIENT_ERR ("Field 't' must be either type INSERT or type FIND");
+         if ((type < 0) || (type > 0xFF)) {
+            CLIENT_ERR ("Field 't' must be a valid BSON type, got: %d", type);
             goto fail;
          }
-         out->encryptedType = (mongocrypt_fle2_placeholder_type_t) type;
+         out->valueType = (bson_type_t) type;
       }
       END_IF_FIELD
       PARSE_BINARY (v, value)
@@ -161,7 +159,7 @@ mc_FLE2InsertUpdatePayload_serialize (
    IUPS_APPEND_BINDATA ("c", BSON_SUBTYPE_BINARY, payload->eccDerivedToken);
    IUPS_APPEND_BINDATA ("p", BSON_SUBTYPE_BINARY, payload->encryptedTokens);
    IUPS_APPEND_BINDATA ("u", BSON_SUBTYPE_UUID, payload->indexKeyId);
-   if (!bson_append_int32 (out, "t", strlen ("t"), payload->encryptedType)) {
+   if (!BSON_APPEND_INT32 (out, "t", payload->valueType)) {
       return false;
    }
    IUPS_APPEND_BINDATA ("v", BSON_SUBTYPE_BINARY, payload->value);

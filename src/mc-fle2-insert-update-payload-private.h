@@ -17,19 +17,21 @@
 #ifndef MC_FLE2_INSERT_UPDATE_PAYLOAD_PRIVATE_H
 #define MC_FLE2_INSERT_UPDATE_PAYLOAD_PRIVATE_H
 
+#include <bson.h>
+
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-buffer-private.h"
 
 typedef struct {
-   _mongocrypt_buffer_t edcDerivedToken;             // d
-   _mongocrypt_buffer_t escDerivedToken;             // s
-   _mongocrypt_buffer_t eccDerivedToken;             // c
-   _mongocrypt_buffer_t encryptedTokens;             // p
-   _mongocrypt_buffer_t indexKeyId;                  // u
-   mongocrypt_fle2_placeholder_type_t encryptedType; // t
-   _mongocrypt_buffer_t value;                       // v
-   _mongocrypt_buffer_t serverEncryptionToken;       // e
+   _mongocrypt_buffer_t edcDerivedToken;       // d
+   _mongocrypt_buffer_t escDerivedToken;       // s
+   _mongocrypt_buffer_t eccDerivedToken;       // c
+   _mongocrypt_buffer_t encryptedTokens;       // p
+   _mongocrypt_buffer_t indexKeyId;            // u
+   bson_type_t valueType;                      // t
+   _mongocrypt_buffer_t value;                 // v
+   _mongocrypt_buffer_t serverEncryptionToken; // e
 } mc_FLE2InsertUpdatePayload_t;
 
 void

@@ -306,7 +306,7 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_buffer_init_size (out, cipherlen);
    res = _mongocrypt_fle2aead_do_encryption (
-      crypto, keyId, &iv, &key, in, out, &written, status);
+      crypto, &iv, keyId, &key, in, out, &written, status);
    _mongocrypt_buffer_cleanup (&key);
    _mongocrypt_buffer_cleanup (&iv);
 
@@ -412,6 +412,7 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
       mc_ECOCToken_t *ecocToken =
          mc_ECOCToken_new (crypto, collectionsLevel1Token, status);
       if (!ecocToken) {
+         _mongocrypt_buffer_cleanup (&p);
          goto fail;
       }
       res = _fle2_placeholder_aes_ctr_encrypt (kb,
@@ -427,8 +428,8 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
    }
 
    _mongocrypt_buffer_copy_to (&placeholder->index_key_id,
-                               &payload.indexKeyId); // u
-   payload.encryptedType = placeholder->type;        // t
+                               &payload.indexKeyId);          // u
+   payload.valueType = bson_iter_type (&placeholder->v_iter); // t
 
    // v := UserKeyId + EncryptAEAD(UserKey, value)
    {
@@ -445,9 +446,17 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
    }
 
    // e := collectionLevel1Token
-   _mongocrypt_buffer_copy_to (
-      mc_CollectionsLevel1Token_get (collectionsLevel1Token),
-      &payload.serverEncryptionToken);
+   {
+      mc_ServerDataEncryptionLevel1Token_t *serverToken =
+         mc_ServerDataEncryptionLevel1Token_new (crypto, &tokenKey, status);
+      if (!serverToken) {
+         goto fail;
+      }
+      _mongocrypt_buffer_copy_to (
+         mc_ServerDataEncryptionLevel1Token_get (serverToken),
+         &payload.serverEncryptionToken);
+      mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
+   }
 
    {
       bson_t out;
