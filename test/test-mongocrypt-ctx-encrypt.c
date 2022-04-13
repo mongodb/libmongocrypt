@@ -1957,7 +1957,7 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
 
 
 static void
-_test_FLE2InsertUpdatePayload_parse (_mongocrypt_tester_t *tester)
+_test_FLE2EncryptionPlaceholder_parse (_mongocrypt_tester_t *tester)
 {
    mc_FLE2EncryptionPlaceholder_t placeholder;
    bson_t as_bson;
@@ -2039,7 +2039,7 @@ static void
 _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
-   int random_call_count;
+   int random_call_count = 0;
 
 #define TEST_PATH "./test/data/fle2-insert/"
    /* Create crypt with custom hooks. */
