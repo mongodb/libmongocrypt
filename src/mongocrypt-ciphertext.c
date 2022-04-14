@@ -157,7 +157,7 @@ bool
 _mongocrypt_ciphertext_serialize_associated_data (
    _mongocrypt_ciphertext_t *ciphertext, _mongocrypt_buffer_t *out)
 {
-   int32_t bytes_written;
+   int32_t bytes_written = 0;
 
    if (!out) {
       return false;
