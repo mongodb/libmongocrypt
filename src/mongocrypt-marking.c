@@ -521,7 +521,7 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_ciphertext_init (ciphertext);
    ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
-   ciphertext->blob_subtype = marking->algorithm;
+   ciphertext->blob_subtype = (mc_fle_blob_subtype_t) marking->algorithm;
    _mongocrypt_buffer_copy_to (&key_id, &ciphertext->key_id);
    if (!_mongocrypt_ciphertext_serialize_associated_data (ciphertext,
                                                           &associated_data)) {
