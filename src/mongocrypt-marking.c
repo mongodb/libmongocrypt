@@ -330,7 +330,7 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
    _mongocrypt_buffer_t value = {0};
    mc_CollectionsLevel1Token_t *collectionsLevel1Token = NULL;
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
-   mc_FLE2InsertUpdatePayload_t payload = {0};
+   mc_FLE2InsertUpdatePayload_t payload;
    bool res = false;
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
