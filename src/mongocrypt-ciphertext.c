@@ -182,14 +182,14 @@ _mongocrypt_ciphertext_serialize_associated_data (
    out->len = 1 + ciphertext->key_id.len + 1;
    out->data = bson_malloc (out->len);
    BSON_ASSERT (out->data);
-
    out->owned = true;
-   memcpy (out->data, &ciphertext->blob_subtype, 1);
-   bytes_written = 1;
+
+   out->data[bytes_written++] = (uint8_t) ciphertext->blob_subtype;
    memcpy (out->data + bytes_written,
            ciphertext->key_id.data,
            ciphertext->key_id.len);
    bytes_written += ciphertext->key_id.len;
-   memcpy (out->data + bytes_written, &ciphertext->original_bson_type, 1);
+   out->data[bytes_written++] = (uint8_t) ciphertext->original_bson_type;
+
    return true;
 }
