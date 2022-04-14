@@ -521,7 +521,12 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_ciphertext_init (ciphertext);
    ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
-   ciphertext->blob_subtype = (mc_fle_blob_subtype_t) marking->algorithm;
+   if (marking->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
+      ciphertext->blob_subtype = MC_SUBTYPE_FLE1DeterministicEncryptedValue;
+   } else {
+      BSON_ASSERT (marking->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
+      ciphertext->blob_subtype = MC_SUBTYPE_FLE1RandomEncryptedValue;
+   }
    _mongocrypt_buffer_copy_to (&key_id, &ciphertext->key_id);
    if (!_mongocrypt_ciphertext_serialize_associated_data (ciphertext,
                                                           &associated_data)) {
