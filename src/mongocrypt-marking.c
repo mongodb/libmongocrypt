@@ -462,8 +462,6 @@ _mongocrypt_fle2_placeholder_to_ciphertext (
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
    _mongocrypt_buffer_steal (&ciphertext->key_id, &payload.indexKeyId);
-   _mongocrypt_buffer_copy_to (&ciphertext->user_key_id,
-                               &placeholder->user_key_id);
    ciphertext->original_bson_type =
       (uint8_t) bson_iter_type (&placeholder->v_iter);
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;

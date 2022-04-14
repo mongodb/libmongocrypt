@@ -27,12 +27,9 @@
  *   FLE1DeterministicEncryptedValue(1)
  *   FLE1RandomEncryptedValue(2)
  *   FLE2InsertUpdatePayload(4)
- *
- * Note that only FLE2InsertUpdatePayload(4) uses the user_key_id field.
  */
 typedef struct {
    _mongocrypt_buffer_t key_id;
-   _mongocrypt_buffer_t user_key_id;
    mc_fle_blob_subtype_t blob_subtype;
    uint8_t original_bson_type;
    _mongocrypt_buffer_t data;

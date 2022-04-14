@@ -28,7 +28,6 @@ void
 _mongocrypt_ciphertext_cleanup (_mongocrypt_ciphertext_t *ciphertext)
 {
    _mongocrypt_buffer_cleanup (&ciphertext->key_id);
-   _mongocrypt_buffer_cleanup (&ciphertext->user_key_id);
    _mongocrypt_buffer_cleanup (&ciphertext->data);
 }
 
