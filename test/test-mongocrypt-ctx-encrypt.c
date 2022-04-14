@@ -2161,6 +2161,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_no_schema);
    INSTALL_TEST (_test_encrypt_remote_encryptedfields);
    INSTALL_TEST (_test_encrypt_with_bypassqueryanalysis);
-   INSTALL_TEST (_test_FLE2InsertUpdatePayload_parse);
+   INSTALL_TEST (_test_FLE2EncryptionPlaceholder_parse);
    INSTALL_TEST (_test_encrypt_fle2_insert_payload);
 }
