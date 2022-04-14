@@ -33,7 +33,7 @@ _mongocrypt_marking_parse_fle1_placeholder (const bson_t *in,
    bson_iter_t iter;
    bool has_ki = false, has_ka = false, has_a = false, has_v = false;
 
-   _mongocrypt_marking_init (out);
+   out->type = MONGOCRYPT_MARKING_FLE1_BY_ID;
 
    if (!bson_iter_init (&iter, in)) {
       CLIENT_ERR ("invalid BSON");
@@ -68,6 +68,7 @@ _mongocrypt_marking_parse_fle1_placeholder (const bson_t *in,
          /* CDRIVER-3100 We must make a copy of this value; the result of
           * bson_iter_value is ephemeral. */
          bson_value_copy (value, &out->key_alt_name);
+         out->type = MONGOCRYPT_MARKING_FLE1_BY_ALTNAME;
          continue;
       }
 
@@ -120,9 +121,6 @@ _mongocrypt_marking_parse_fle1_placeholder (const bson_t *in,
       return false;
    }
 
-   out->type = has_ki ? MONGOCRYPT_MARKING_FLE1_BY_ID
-                      : MONGOCRYPT_MARKING_FLE1_BY_ALTNAME;
-
    return true;
 }
 
@@ -142,6 +140,7 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
 {
    bson_t bson;
 
+   _mongocrypt_marking_init (out);
    /* 5 for minimal BSON object, plus one for blob subtype */
    if (in->len < 6) {
       CLIENT_ERR ("invalid marking, length < 6");
@@ -182,9 +181,7 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 
    // else FLE1
    _mongocrypt_buffer_cleanup (&marking->key_id);
-   if (marking->type == MONGOCRYPT_MARKING_FLE1_BY_ALTNAME) {
-      bson_value_destroy (&marking->key_alt_name);
-   }
+   bson_value_destroy (&marking->key_alt_name);
 }
 
 
