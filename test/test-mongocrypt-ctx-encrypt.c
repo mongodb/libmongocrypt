@@ -2001,6 +2001,17 @@ _test_FLE2EncryptionPlaceholder_parse (_mongocrypt_tester_t *tester)
 }
 
 
+#if defined(MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO) || \
+   defined(MONGOCRYPT_ENABLE_CRYPTO_CNG)
+static void
+_test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
+{
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+   return;
+}
+#else
+
 static bool
 _test_rng_insert_payload (void *ctx,
                           mongocrypt_binary_t *out,
@@ -2033,7 +2044,6 @@ _test_rng_insert_payload (void *ctx,
 
    return true;
 }
-
 
 static void
 _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
@@ -2125,6 +2135,7 @@ _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
+#endif
 
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
