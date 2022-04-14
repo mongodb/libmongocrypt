@@ -237,7 +237,7 @@ _test_ciphertext_serialize_associated_data (_mongocrypt_tester_t *tester)
    ciphertext.key_id.subtype = BSON_SUBTYPE_UUID;
 
    ciphertext.original_bson_type = BSON_TYPE_UTF8;
-   ciphertext.blob_subtype = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
+   ciphertext.blob_subtype = MC_SUBTYPE_FLE1DeterministicEncryptedValue;
 
    BSON_ASSERT (_mongocrypt_ciphertext_serialize_associated_data (&ciphertext,
                                                                   &serialized));
