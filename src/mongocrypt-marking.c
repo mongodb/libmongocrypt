@@ -409,7 +409,9 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
       goto fail;
    }
 
+   _mongocrypt_buffer_cleanup (&indexKey);
    return true;
+
 fail:
    _FLE2EncryptedPayloadCommon_cleanup (ret);
    _mongocrypt_buffer_cleanup (&indexKey);
