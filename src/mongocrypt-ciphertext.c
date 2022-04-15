@@ -157,7 +157,7 @@ bool
 _mongocrypt_ciphertext_serialize_associated_data (
    _mongocrypt_ciphertext_t *ciphertext, _mongocrypt_buffer_t *out)
 {
-   int32_t bytes_written;
+   int32_t bytes_written = 0;
 
    if (!out) {
       return false;
@@ -173,23 +173,23 @@ _mongocrypt_ciphertext_serialize_associated_data (
       return false;
    }
 
-   if (ciphertext->blob_subtype !=
-          MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC &&
-       ciphertext->blob_subtype != MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM) {
+   if ((ciphertext->blob_subtype !=
+        MC_SUBTYPE_FLE1DeterministicEncryptedValue) &&
+       (ciphertext->blob_subtype != MC_SUBTYPE_FLE1RandomEncryptedValue)) {
       return false;
    }
 
    out->len = 1 + ciphertext->key_id.len + 1;
    out->data = bson_malloc (out->len);
    BSON_ASSERT (out->data);
-
    out->owned = true;
-   memcpy (out->data, &ciphertext->blob_subtype, 1);
-   bytes_written = 1;
+
+   out->data[bytes_written++] = (uint8_t) ciphertext->blob_subtype;
    memcpy (out->data + bytes_written,
            ciphertext->key_id.data,
            ciphertext->key_id.len);
    bytes_written += ciphertext->key_id.len;
-   memcpy (out->data + bytes_written, &ciphertext->original_bson_type, 1);
+   out->data[bytes_written++] = (uint8_t) ciphertext->original_bson_type;
+
    return true;
 }

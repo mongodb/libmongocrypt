@@ -17,16 +17,32 @@
 #ifndef MONGOCRYPT_MARKING_PRIVATE_H
 #define MONGOCRYPT_MARKING_PRIVATE_H
 
+#include "mc-fle2-encryption-placeholder-private.h"
+#include "mc-fle2-insert-update-payload-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 
+typedef enum {
+   MONGOCRYPT_MARKING_FLE1_BY_ID,
+   MONGOCRYPT_MARKING_FLE1_BY_ALTNAME,
+   MONGOCRYPT_MARKING_FLE2_ENCRYPTION,
+} mongocrypt_marking_type_t;
+
 typedef struct {
-   mongocrypt_encryption_algorithm_t algorithm;
-   bson_iter_t v_iter;
-   /* one of the following is zeroed, and the other is set. */
-   _mongocrypt_buffer_t key_id;
-   bson_value_t key_alt_name;
-   bool has_alt_name;
+   mongocrypt_marking_type_t type;
+
+   union {
+      struct {
+         // Markings used by FLE1
+         mongocrypt_encryption_algorithm_t algorithm;
+         bson_iter_t v_iter;
+
+         _mongocrypt_buffer_t key_id;
+         bson_value_t key_alt_name;
+      };
+
+      mc_FLE2EncryptionPlaceholder_t fle2;
+   };
 } _mongocrypt_marking_t;
 
 

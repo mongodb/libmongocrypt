@@ -82,11 +82,11 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&marking_buf);
    _mongocrypt_marking_cleanup (&marking);
 
-   /* buffer < 5 bytes */
+   /* buffer < 6 bytes */
    marking_buf.data = (uint8_t *) "abc";
    marking_buf.len = 3;
    marking_buf.owned = false;
-   _parse_fails (&marking_buf, "invalid marking, length < 5", &marking);
+   _parse_fails (&marking_buf, "invalid marking, length < 6", &marking);
    _mongocrypt_buffer_cleanup (&marking_buf);
    _mongocrypt_marking_cleanup (&marking);
 
