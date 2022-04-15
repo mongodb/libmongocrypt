@@ -1180,7 +1180,7 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
 
    /* Output C = IV || S || T. */
    /* S and T are already in C. Prepend IV. */
-   memcpy (C.data, IV.data, MONGOCRYPT_IV_LEN);
+   memmove (C.data, IV.data, MONGOCRYPT_IV_LEN);
 
    *bytes_written = MONGOCRYPT_IV_LEN + S_bytes_written + MONGOCRYPT_HMAC_LEN;
    return true;
@@ -1369,7 +1369,9 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   memset (ciphertext->data, 0, ciphertext->len);
+   memset (ciphertext->data + MONGOCRYPT_IV_LEN,
+           0,
+           ciphertext->len - MONGOCRYPT_IV_LEN);
    *bytes_written = 0;
 
    /* Declare variable names matching [AEAD with
@@ -1412,7 +1414,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
 
    /* Output C = IV || S. */
    /* S is already in C. Prepend IV. */
-   memcpy (C.data, IV.data, MONGOCRYPT_IV_LEN);
+   memmove (C.data, IV.data, MONGOCRYPT_IV_LEN);
 
    *bytes_written = MONGOCRYPT_IV_LEN + S_bytes_written;
    return true;

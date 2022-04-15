@@ -62,7 +62,12 @@ typedef struct __mongocrypt_tester_t {
    int blob_count;
    uint8_t *test_blob[TEST_DATA_COUNT];
 
-   char *key_file_path;
+   // Overides used in run_ctx_to
+   struct {
+      char *collection_info;
+      char *mongocryptd_reply;
+      char *key_file;
+   } paths;
 
    /* Example encrypted doc. */
    _mongocrypt_buffer_t encrypted_doc;

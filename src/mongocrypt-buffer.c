@@ -36,10 +36,14 @@ _make_owned (_mongocrypt_buffer_t *buf)
       return;
    }
    tmp = buf->data;
-   buf->data = bson_malloc (buf->len);
-   BSON_ASSERT (buf->data);
+   if (buf->len > 0) {
+      buf->data = bson_malloc (buf->len);
+      BSON_ASSERT (buf->data);
+      memcpy (buf->data, tmp, buf->len);
+   } else {
+      buf->data = NULL;
+   }
 
-   memcpy (buf->data, tmp, buf->len);
    buf->owned = true;
 }
 
@@ -71,6 +75,14 @@ _mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len)
 
    buf->len = len;
    buf->owned = true;
+}
+
+
+void
+_mongocrypt_buffer_init_size (_mongocrypt_buffer_t *buf, uint32_t len)
+{
+   _mongocrypt_buffer_init (buf);
+   _mongocrypt_buffer_resize (buf, len);
 }
 
 

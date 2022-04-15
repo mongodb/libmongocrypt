@@ -310,22 +310,30 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
    while (state != stop_state) {
       switch (state) {
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+         if (tester->paths.collection_info) {
+            bin = TEST_FILE (tester->paths.collection_info);
+         } else {
+            bin = TEST_FILE ("./test/example/collection-info.json");
+         }
          BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
-         BSON_ASSERT (mongocrypt_ctx_mongo_feed (
-            ctx, TEST_FILE ("./test/example/collection-info.json")));
+         BSON_ASSERT (mongocrypt_ctx_mongo_feed (ctx, bin));
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+         if (tester->paths.mongocryptd_reply) {
+            bin = TEST_FILE (tester->paths.mongocryptd_reply);
+         } else {
+            bin = TEST_FILE ("./test/example/mongocryptd-reply.json");
+         }
          BSON_ASSERT (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT);
-         res = mongocrypt_ctx_mongo_feed (
-            ctx, TEST_FILE ("./test/example/mongocryptd-reply.json"));
+         res = mongocrypt_ctx_mongo_feed (ctx, bin);
          mongocrypt_ctx_status (ctx, status);
          ASSERT_OR_PRINT (res, status);
          BSON_ASSERT (mongocrypt_ctx_mongo_done (ctx));
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
-         if (tester->key_file_path) {
-            bin = TEST_FILE (tester->key_file_path);
+         if (tester->paths.key_file) {
+            bin = TEST_FILE (tester->paths.key_file);
          } else {
             bin = TEST_FILE ("./test/example/key-document.json");
          }
@@ -937,7 +945,7 @@ main (int argc, char **argv)
       printf ("  begin %s\n", tester.test_names[i]);
       tester.test_fns[i](&tester);
       /* Clear state. */
-      tester.key_file_path = NULL;
+      memset (&tester.paths, 0, sizeof (tester.paths));
       printf ("  end %s\n", tester.test_names[i]);
    }
    printf ("... done running tests\n");
