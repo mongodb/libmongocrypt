@@ -73,7 +73,8 @@ mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
             goto fail;
          }
          type = bson_iter_int32 (&iter);
-         if (type != MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
+         if ((type != MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) &&
+             (type != MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND)) {
             CLIENT_ERR ("invalid placeholder type value: %d", type);
             goto fail;
          }
