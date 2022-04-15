@@ -2044,7 +2044,7 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
                                            _test_rng_data_source *rng_source)
 {
    mongocrypt_t *crypt;
-   char pathbuf[PATH_MAX];
+   char pathbuf[2048];
 
 #define MAKE_PATH(path)                                                       \
    ASSERT (snprintf (                                                         \
