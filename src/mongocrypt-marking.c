@@ -344,7 +344,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                      _FLE2EncryptedPayloadCommon_t *ret,
                                      const _mongocrypt_buffer_t *indexKeyId,
                                      const _mongocrypt_buffer_t *value,
-                                     int32_t maxContentionCounter,
+                                     int64_t maxContentionCounter,
                                      mongocrypt_status_t *status)
 {
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
