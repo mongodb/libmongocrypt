@@ -144,10 +144,10 @@ fail:
    return false;
 }
 
-#define IUPS_APPEND_BINDATA(name, subtype, value)                      \
-   if (!bson_append_binary (                                           \
-          out, name, strlen (name), subtype, value.data, value.len)) { \
-      return false;                                                    \
+#define IUPS_APPEND_BINDATA(name, subtype, value)           \
+   if (!_mongocrypt_buffer_append (                         \
+          &(value), out, name, (uint32_t) strlen (name))) { \
+      return false;                                         \
    }
 
 bool
