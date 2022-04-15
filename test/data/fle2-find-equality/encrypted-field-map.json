@@ -6,13 +6,13 @@
       "fields": [
           {
               "keyId": {
-                         "$binary": {
+                  "$binary": {
                       "base64": "EjRWeBI0mHYSNBI0VniQEg==",
                       "subType": "04"
                   }
               },
-              "path": "ssn",
-              "bsonType": "string",
+              "path": "value",
+              "bsonType": "int32",
               "queries": {
                   "queryType": "equality",
                   "contention": 0

@@ -2157,7 +2157,7 @@ static void
 _test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-find", &source);
+   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-find-equality", &source);
 }
 
 void
