@@ -205,6 +205,7 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
       _mongocrypt_buffer_t *out,                                               \
       const mc_CollectionsLevel1Token_t *level1Token,                          \
       const _mongocrypt_buffer_t *value,                                       \
+      bool useCounter,                                                         \
       int64_t counter,                                                         \
       mongocrypt_status_t *status)                                             \
    {                                                                           \
@@ -223,6 +224,16 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
          return false;                                                         \
       }                                                                        \
                                                                                \
+      if (!useCounter) {                                                       \
+         /* FindEqualityPayload uses *fromDataToken */                         \
+         _mongocrypt_buffer_copy_to (                                          \
+            mc_##Name##DerivedFromDataToken_get (fromDataToken),               \
+            out);                                                              \
+         mc_##Name##DerivedFromDataToken_destroy (fromDataToken);              \
+         return true;                                                          \
+      }                                                                        \
+                                                                               \
+      /* InsertUpdatePayload continues through *fromDataTokenAndCounter */     \
       mc_##Name##DerivedFromDataTokenAndCounter_t *fromTokenAndCounter =       \
          mc_##Name##DerivedFromDataTokenAndCounter_new (                       \
             crypto, fromDataToken, counter, status);                           \
@@ -344,6 +355,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                      _FLE2EncryptedPayloadCommon_t *ret,
                                      const _mongocrypt_buffer_t *indexKeyId,
                                      const _mongocrypt_buffer_t *value,
+                                     bool useCounter,
                                      int64_t maxContentionCounter,
                                      mongocrypt_status_t *status)
 {
@@ -386,6 +398,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                 &ret->edcDerivedToken,
                                 ret->collectionsLevel1Token,
                                 value,
+                                useCounter,
                                 maxContentionCounter,
                                 status)) {
       goto fail;
@@ -395,6 +408,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                 &ret->escDerivedToken,
                                 ret->collectionsLevel1Token,
                                 value,
+                                useCounter,
                                 maxContentionCounter,
                                 status)) {
       goto fail;
@@ -404,6 +418,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                 &ret->eccDerivedToken,
                                 ret->collectionsLevel1Token,
                                 value,
+                                useCounter,
                                 maxContentionCounter,
                                 status)) {
       goto fail;
@@ -445,6 +460,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
                                              &common,
                                              &placeholder->index_key_id,
                                              &value,
+                                             true, /* derive tokens using counter */
                                              placeholder->maxContentionCounter,
                                              status)) {
       goto fail;
@@ -560,6 +576,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
                                              &common,
                                              &placeholder->index_key_id,
                                              &value,
+                                             false, /* derive tokens without counter */
                                              placeholder->maxContentionCounter,
                                              status)) {
       goto fail;
