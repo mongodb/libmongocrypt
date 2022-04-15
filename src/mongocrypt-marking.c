@@ -204,7 +204,7 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
       _mongocrypt_buffer_t *out,                                               \
       const mc_CollectionsLevel1Token_t *level1Token,                          \
       const _mongocrypt_buffer_t *value,                                       \
-      int32_t counter,                                                         \
+      int64_t counter,                                                         \
       mongocrypt_status_t *status)                                             \
    {                                                                           \
       _mongocrypt_buffer_init (out);                                           \
