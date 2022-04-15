@@ -136,8 +136,7 @@ mc_FLE2FindEqualityPayload_serialize (
    IUPS_APPEND_BINDATA ("d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
    IUPS_APPEND_BINDATA ("s", BSON_SUBTYPE_BINARY, payload->escDerivedToken);
    IUPS_APPEND_BINDATA ("c", BSON_SUBTYPE_BINARY, payload->eccDerivedToken);
-   if (!bson_append_int64 (
-          out, "cm", strlen ("cm"), payload->maxContentionCounter)) {
+   if (!BSON_APPEND_INT64 (out, "cm", payload->maxContentionCounter)) {
       return false;
    }
    return true;
