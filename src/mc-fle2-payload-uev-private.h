@@ -24,22 +24,22 @@
 /**
  * FLE2UnindexedEncryptedValue represents an FLE2 unindexed encrypted value.
  * It is created client side.
- */
-
-/* clang-format off */
-/*
+ *
  * FLE2UnindexedEncryptedValue has the following data layout:
- *   
+ *
  * struct {
  *   uint8_t fle_blob_subtype = 6;
  *   uint8_t key_uuid[16];
  *   uint8_t original_bson_type;
  *   uint8_t ciphertext[ciphertext_length];
  * } FLE2UnindexedEncryptedValue;
- * 
- * ciphertext is the output of: EncryptAEAD(key=K_Key, plaintext=ClientValue, associated_data=(fle_blob_subtype || key_uuid || original_bson_type))
+ *
+ * ciphertext is the output of:
+ *    EncryptAEAD(
+ *       key=K_Key,
+ *       plaintext=ClientValue,
+ *       associated_data=(fle_blob_subtype || key_uuid || original_bson_type))
  */
-/* clang-format on */
 
 typedef struct _mc_FLE2UnindexedEncryptedValue_t
    mc_FLE2UnindexedEncryptedValue_t;
