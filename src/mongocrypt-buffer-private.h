@@ -45,6 +45,8 @@ _mongocrypt_buffer_init (_mongocrypt_buffer_t *buf);
 void
 _mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len);
 
+void
+_mongocrypt_buffer_init_size (_mongocrypt_buffer_t *buf, uint32_t len);
 
 void
 _mongocrypt_buffer_steal (_mongocrypt_buffer_t *buf, _mongocrypt_buffer_t *src);

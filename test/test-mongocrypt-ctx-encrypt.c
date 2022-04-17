@@ -16,7 +16,9 @@
 
 #include <mongocrypt-marking-private.h>
 
+#include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt.h"
+#include "test-mongocrypt-crypto-std-hooks.h"
 
 
 static void
@@ -1953,6 +1955,211 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+
+static void
+_test_FLE2EncryptionPlaceholder_parse (_mongocrypt_tester_t *tester)
+{
+   mc_FLE2EncryptionPlaceholder_t placeholder;
+   bson_t as_bson;
+   mongocrypt_status_t *status;
+   _mongocrypt_buffer_t buf;
+
+   status = mongocrypt_status_new ();
+   _mongocrypt_buffer_copy_from_hex (
+      &buf,
+      "03610000001074000100000010610002000000056b690010000000041234567812349876"
+      "1234123456789012056b75001000000004abcdefab123498761234123456789012027600"
+      "0900000076616c75653132330012636d00000000000000000000");
+   ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+   mc_FLE2EncryptionPlaceholder_init (&placeholder);
+   ASSERT_OK_STATUS (
+      mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+      status);
+
+   ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
+   ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_EQUALITY);
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&placeholder.v_iter));
+   ASSERT_STREQUAL (bson_iter_utf8 (&placeholder.v_iter, NULL), "value123");
+
+   _mongocrypt_buffer_t expect_index_key_id;
+   _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                     "12345678123498761234123456789012");
+   ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+   _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+   _mongocrypt_buffer_t expect_user_key_id;
+   _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                     "abcdefab123498761234123456789012");
+   ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+   _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+   ASSERT (placeholder.maxContentionCounter == 0);
+
+   mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+   _mongocrypt_buffer_cleanup (&buf);
+   mongocrypt_status_destroy (status);
+}
+
+
+// Shared implementation for insert and find tests
+typedef struct {
+   _mongocrypt_buffer_t buf;
+   int pos;
+} _test_rng_data_source;
+
+#if defined(MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO) || \
+   defined(MONGOCRYPT_ENABLE_CRYPTO_CNG)
+static void
+_test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
+                                           const char *data_path,
+                                           _test_rng_data_source *rng_source)
+{
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+   return;
+}
+#else
+
+static bool
+_test_rng_source (void *ctx,
+                  mongocrypt_binary_t *out,
+                  uint32_t count,
+                  mongocrypt_status_t *status)
+{
+   _test_rng_data_source *source = (_test_rng_data_source *) ctx;
+
+   if ((source->pos + count) > source->buf.len) {
+      TEST_ERROR ("Out of random data, wanted: %" PRIu32, count);
+      return false;
+   }
+
+   memcpy (out->data, source->buf.data + source->pos, count);
+   source->pos += count;
+   return true;
+}
+
+static void
+_test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
+                                           const char *data_path,
+                                           _test_rng_data_source *rng_source)
+{
+   mongocrypt_t *crypt;
+   char pathbuf[2048];
+
+#define MAKE_PATH(path)                                                       \
+   ASSERT (snprintf (                                                         \
+              pathbuf, sizeof (pathbuf), "./test/data/%s/" path, data_path) < \
+           sizeof (pathbuf))
+
+   /* Create crypt with custom hooks. */
+   {
+      /* localkey_data is the KEK used to encrypt the keyMaterial
+       * in ./test/data/keys/ */
+      char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
+      mongocrypt_binary_t *localkey;
+
+      crypt = mongocrypt_new ();
+      mongocrypt_setopt_log_handler (crypt, _mongocrypt_stdout_log_fn, NULL);
+      localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
+                                                  sizeof localkey_data);
+      ASSERT_OK (mongocrypt_setopt_kms_provider_local (crypt, localkey), crypt);
+      ASSERT_OK (mongocrypt_setopt_crypto_hooks (
+                    crypt,
+                    _std_hook_native_crypto_aes_256_cbc_encrypt,
+                    _std_hook_native_crypto_aes_256_cbc_decrypt,
+                    _test_rng_source,
+                    _std_hook_native_hmac_sha512,
+                    _std_hook_native_hmac_sha256,
+                    _error_hook_native_sha256,
+                    rng_source /* ctx */),
+                 crypt);
+
+      MAKE_PATH ("encrypted-field-map.json");
+      ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                    crypt, TEST_FILE (pathbuf)),
+                 crypt);
+      mongocrypt_binary_destroy (localkey);
+      ASSERT_OK (mongocrypt_init (crypt), crypt);
+   }
+
+   /* Create encryption context. */
+   mongocrypt_ctx_t *ctx;
+   {
+      ctx = mongocrypt_ctx_new (crypt);
+      MAKE_PATH ("cmd.json");
+      ASSERT_OK (
+         mongocrypt_ctx_encrypt_init (ctx, "db", -1, TEST_FILE (pathbuf)), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      /* Use a FLE2EncryptionPlaceholder obtained from
+       * https://gist.github.com/kevinAlbs/cba611fe0d120b3f67c6bee3195d4ce6. */
+      MAKE_PATH ("mongocryptd-reply.json");
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_FILE (pathbuf)), ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+#define TEST_KEY_FILE(name)            \
+   TEST_FILE ("./test/data/keys/" name \
+              "123498761234123456789012-local-document.json")
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_KEY_FILE ("12345678")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_KEY_FILE ("ABCDEFAB")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+#undef TEST_KEY_FILE
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out;
+      bson_t out_bson, expect_bson;
+
+      out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+      MAKE_PATH ("encrypted-payload.json");
+      ASSERT (_mongocrypt_binary_to_bson (TEST_FILE (pathbuf), &expect_bson));
+      _assert_match_bson (&out_bson, &expect_bson);
+      mongocrypt_binary_destroy (out);
+   }
+#undef MAKE_PATH
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+#endif
+
+
+/* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
+ * Second 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
+ */
+#define RNG_DATA                                                      \
+   "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
+   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
+static void
+_test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t*)RNG_DATA, .len = sizeof (RNG_DATA)}};
+   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-insert", &source);
+}
+#undef RNG_DATA
+
+// FLE2FindEqualityPayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-find-equality", &source);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -1988,4 +2195,7 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_no_schema);
    INSTALL_TEST (_test_encrypt_remote_encryptedfields);
    INSTALL_TEST (_test_encrypt_with_bypassqueryanalysis);
+   INSTALL_TEST (_test_FLE2EncryptionPlaceholder_parse);
+   INSTALL_TEST (_test_encrypt_fle2_insert_payload);
+   INSTALL_TEST (_test_encrypt_fle2_find_payload);
 }

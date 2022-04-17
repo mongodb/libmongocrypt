@@ -257,41 +257,27 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
 
-   if (!dctx->explicit) {
-      if (ctx->nothing_to_do) {
-         _mongocrypt_buffer_to_binary (&dctx->original_doc, out);
-         ctx->state = MONGOCRYPT_CTX_DONE;
-         return true;
-      }
+   if (ctx->nothing_to_do) {
+      _mongocrypt_buffer_to_binary (&dctx->original_doc, out);
+      ctx->state = MONGOCRYPT_CTX_DONE;
+      return true;
+   }
 
-      if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
-      }
+   if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+   }
 
-      bson_iter_init (&iter, &as_bson);
-      bson_init (&final_bson);
-      res = _mongocrypt_transform_binary_in_bson (
-         _replace_ciphertext_with_plaintext,
-         &ctx->kb,
-         TRAVERSE_MATCH_CIPHERTEXT,
-         &iter,
-         &final_bson,
-         ctx->status);
-      if (!res) {
-         return _mongocrypt_ctx_fail (ctx);
-      }
-   } else {
-      /* For explicit decryption, we just have a single value */
-      bson_value_t value;
-
-      if (!_replace_ciphertext_with_plaintext (
-             &ctx->kb, &dctx->unwrapped_doc, &value, ctx->status)) {
-         return _mongocrypt_ctx_fail (ctx);
-      }
-
-      bson_init (&final_bson);
-      bson_append_value (&final_bson, MONGOCRYPT_STR_AND_LEN ("v"), &value);
-      bson_value_destroy (&value);
+   bson_iter_init (&iter, &as_bson);
+   bson_init (&final_bson);
+   res = _mongocrypt_transform_binary_in_bson (
+      _replace_ciphertext_with_plaintext,
+      &ctx->kb,
+      TRAVERSE_MATCH_CIPHERTEXT,
+      &iter,
+      &final_bson,
+      ctx->status);
+   if (!res) {
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    _mongocrypt_buffer_steal_from_bson (&dctx->decrypted_doc, &final_bson);
@@ -510,16 +496,10 @@ bool
 mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg)
 {
-   _mongocrypt_ctx_decrypt_t *dctx;
    bson_iter_t iter;
    bson_t as_bson;
-   _mongocrypt_ctx_opts_spec_t opts_spec;
 
    if (!ctx) {
-      return false;
-   }
-   memset (&opts_spec, 0, sizeof (opts_spec));
-   if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
    }
 
@@ -540,37 +520,26 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
       bson_free (msg_val);
    }
 
-   dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
-   dctx->explicit = true;
-   ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
-   ctx->vtable.finalize = _finalize;
-   ctx->vtable.cleanup = _cleanup;
-
-
-   /* We expect these to be round-tripped from explicit encrypt,
-      so they must be wrapped like { "v" : "encrypted thing" } */
-   _mongocrypt_buffer_copy_from_binary (&dctx->original_doc, msg);
-   if (!_mongocrypt_buffer_to_bson (&dctx->original_doc, &as_bson)) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
-   }
+   /* Expect msg to be the BSON a document of the form:
+      { "v" : (BSON BINARY value of subtype 6) }
+   */
+  if (!_mongocrypt_binary_to_bson (msg, &as_bson)) {
+     return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+  }
 
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");
    }
 
-   if (!_mongocrypt_buffer_from_binary_iter (&dctx->unwrapped_doc, &iter)) {
+   if (!BSON_ITER_HOLDS_BINARY (&iter)) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "invalid msg, 'v' must contain a binary");
    }
 
-   /* Parse out our one key id */
-   if (!_collect_key_from_ciphertext (
-          &ctx->kb, &dctx->unwrapped_doc, ctx->status)) {
-      return _mongocrypt_ctx_fail (ctx);
+   if (!mongocrypt_ctx_decrypt_init (ctx, msg)) {
+      return false;
    }
-
-   (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
-   return _mongocrypt_ctx_state_from_key_broker (ctx);
+   return true;
 }
 
 static bool

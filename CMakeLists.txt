@@ -78,6 +78,9 @@ set (MONGOCRYPT_SOURCES
    src/crypto/commoncrypto.c
    src/crypto/libcrypto.c
    src/crypto/none.c
+   src/mc-fle2-insert-update-payload.c
+   src/mc-fle2-encryption-placeholder.c
+   src/mc-fle2-find-equality-payload.c
    src/mc-fle2-payload-ieev.c
    src/mc-fle2-payload-uev.c
    src/mc-tokens.c
@@ -362,6 +365,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-ciphertext.c
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-crypto-hooks.c
+   test/test-mongocrypt-crypto-std-hooks.c
    test/test-mongocrypt-csfle-lib.c
    test/test-mongocrypt-ctx-decrypt.c
    test/test-mongocrypt-ctx-encrypt.c
