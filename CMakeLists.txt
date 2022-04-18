@@ -164,13 +164,7 @@ configure_file (
 
 # Define the mlib target, which is private and header-only. It is not exported
 # nor are its headers installed.
-add_library (_mongo-mlib INTERFACE)
-add_library (mongo::mlib ALIAS _mongo-mlib)
-set_property(
-   TARGET _mongo-mlib
-   APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
-   MLIB_USER
-   )
+include (./src/mlib/mlib.cmake)
 
 # kms-message
 add_subdirectory (kms-message)
@@ -405,12 +399,6 @@ add_test (
    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
    )
 
-foreach (test IN ITEMS path str)
-   add_executable (mlib.${test}.test src/mlib/${test}.test.c)
-   add_test (mlib.${test} mlib.${test}.test)
-   target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
-endforeach ()
-
 # Exclude example-state-machine since it requires native crypto.
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    # Define example-state-machine
@@ -452,10 +440,6 @@ install (
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-
-# This export set is not installed, and is only to allow export() of the mlib-using targets
-install (TARGETS _mongo-mlib EXPORT _exports_for_export)
-export (EXPORT _exports_for_export)
 
 install (
    FILES
