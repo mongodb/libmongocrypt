@@ -752,7 +752,11 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    BSON_ASSERT (ctx);
 
    if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
-      if (marking->fle2.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
+      if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED) {
+         CLIENT_ERR ("encrypting to UnindexedEncryptedPayload not supported\n");
+         return false;
+      }
+      else if (marking->fle2.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
          return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
             kb, marking, ciphertext, status);
       } else {
