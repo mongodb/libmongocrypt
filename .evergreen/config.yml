@@ -1092,7 +1092,7 @@ buildvariants:
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
   expansions:
-    compile_env: MACOS_UNIVERSAL=ON
+    compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
     test_env: MACOS_UNIVERSAL=ON
   tasks:
   - build-and-test-and-upload
