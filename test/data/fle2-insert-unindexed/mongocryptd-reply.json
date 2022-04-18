@@ -3,16 +3,23 @@
         "$numberInt": "1"
     },
     "result": {
-        "documents": [{
-            "plainText":"sample",
-            "encrypted":{"$binary":{"base64":"A2EAAAAQdAABAAAAEGEAAQAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASAnYACQAAAHZhbHVlMTIzABJjbQAAAAAAAAAAAAA=","subType":"6"}}
-        }],
+        "documents": [
+            {
+                "plainText": "sample",
+                "encrypted": {
+                    "$binary": {
+                        "base64": "A2EAAAAQdAABAAAAEGEAAQAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASAnYACQAAAHZhbHVlMTIzABJjbQAAAAAAAAAAAAA=",
+                        "subType": "6"
+                    }
+                }
+            }
+        ],
         "insert": "test",
         "$db": "test",
         "encryptedFields": {
-            "escCollection" : "fle2.test.esc",
-            "eccCollection" : "fle2.test.ecc",
-            "ecocCollection" : "fle2.test.ecoc",
+            "escCollection": "fle2.test.esc",
+            "eccCollection": "fle2.test.ecc",
+            "ecocCollection": "fle2.test.ecoc",
             "fields": [
                 {
                     "keyId": {
@@ -29,9 +36,7 @@
                     }
                 }
             ]
-        },
-        "insert": "test",
-        "$db": "test"
+        }
     },
     "hasEncryptedPlaceholders": true
 }
