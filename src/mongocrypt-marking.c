@@ -625,7 +625,7 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    bool res = false;
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
-   BSON_ASSERT (marking->algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED);
+   BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED);
    _mongocrypt_ciphertext_init (ciphertext);
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_buffer_from_iter (&plaintext, &placeholder->v_iter);
