@@ -182,14 +182,13 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
                                         mongocrypt_status_t *status)
 {
    _mongocrypt_buffer_t iv = {0};
+   _mongocrypt_buffer_t AD = {0};
    bool res = false;
 
    _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
    if (!_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
       goto fail;
    }
-
-   _mongocrypt_buffer_t AD = {0};
 
    /* Serialize associated data: fle_blob_subtype || key_uuid ||
     * original_bson_type */
