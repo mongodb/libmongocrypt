@@ -30,8 +30,12 @@
     // Give a pretty definition for intellisense readers
     #define mlib_inline_def inline
 #elif defined(_WIN32)
-    // On MSVC/Windows, inline functions are implicitly in COMDAT, even in C
-    #define mlib_inline_def extern mlib_inline
+    #ifdef __GNUC__
+        #define mlib_inline_def extern __attribute__((weak, visibility("hidden")))
+    #else
+        // On MSVC/Windows, inline functions are implicitly in COMDAT, even in C
+        #define mlib_inline_def extern mlib_inline
+    #endif
 #else
     // On other platforms, declare the symbol "weak" to cause symbol merging,
     // and "hidden" to disable the ability for the symbol to be overridden via
