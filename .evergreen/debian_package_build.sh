@@ -45,6 +45,7 @@ sudo -E ./debootstrap.git/debootstrap unstable ./unstable-chroot/ http://cdn-aws
 cp -a libmongocrypt ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
   apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake curl ca-certificates libssl-dev pkg-config libbson-dev && \
+  chown -R root:root /tmp/libmongocrypt && \
   cd /tmp/libmongocrypt && \
   git clean -fdx && \
   git reset --hard HEAD && \
