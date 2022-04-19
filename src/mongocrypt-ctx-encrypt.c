@@ -461,6 +461,17 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    BSON_ASSERT (csfle_lib);
    bool okay = false;
 
+   // Obtain the command for markings
+   bson_t cmd = BSON_INITIALIZER;
+   if (!_create_markings_cmd_bson (ctx, &cmd)) {
+      goto fail_create_cmd;
+   }
+
+   bson_iter_t it;
+   if (!bson_iter_init_find (&it, &cmd, "$db")) {
+      BSON_APPEND_UTF8 (&cmd, "$db", "csfle");
+   }
+
 #define CHECK_CSFLE_ERROR(Func, FailLabel)                             \
    if (1) {                                                            \
       if (csfle.status_get_error (status)) {                           \
@@ -481,13 +492,6 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    mongo_csfle_v1_status *status = csfle.status_create ();
    BSON_ASSERT (status);
 
-   // Obtain the command for markings
-   bson_t cmd = BSON_INITIALIZER;
-   if (!_create_markings_cmd_bson (ctx, &cmd)) {
-      goto fail_create_cmd;
-   }
-   BSON_APPEND_UTF8 (&cmd, "$db", "csfle");
-
    mongo_csfle_v1_query_analyzer *qa =
       csfle.query_analyzer_create (csfle_lib, status);
    CHECK_CSFLE_ERROR ("query_analyzer_create", fail_qa_create);
@@ -499,7 +503,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
                                                (uint32_t) strlen (ectx->ns),
                                                &marked_bson_len,
                                                status);
-   CHECK_CSFLE_ERROR ("analyze_query", analyze_failed);
+   CHECK_CSFLE_ERROR ("analyze_query", fail_analyze_query);
 
    // Copy out the marked document.
    mongocrypt_binary_t *marked =
@@ -507,7 +511,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    if (!_mongo_feed_markings (ctx, marked)) {
       _mongocrypt_ctx_fail_w_msg (
          ctx, "Consuming the generated csfle markings failed");
-      goto feed_failed;
+      goto fail_feed_markings;
    }
 
    okay = _mongo_done_markings (ctx);
@@ -516,24 +520,15 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
          ctx, "Finalizing the generated csfle markings failed");
    }
 
-feed_failed:
+fail_feed_markings:
    mongocrypt_binary_destroy (marked);
    csfle.bson_free (marked_bson);
-analyze_failed:
+fail_analyze_query:
    csfle.query_analyzer_destroy (qa);
 fail_qa_create:
+   csfle.status_destroy (status);
 fail_create_cmd:
    bson_destroy (&cmd);
-   if (csfle.status_get_error (status)) {
-      _mongocrypt_log (
-         &ctx->crypt->log,
-         MONGOCRYPT_LOG_LEVEL_WARNING,
-         "Error while shutting down csfle library: %s [Error %d, code %d]",
-         csfle.status_get_explanation (status),
-         csfle.status_get_error (status),
-         csfle.status_get_code (status));
-   }
-   csfle.status_destroy (status);
    return okay;
 }
 
