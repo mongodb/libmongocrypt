@@ -125,16 +125,23 @@ module.exports = function (modules) {
       }
 
       if (options.extraOptions && options.extraOptions.csfleSearchPaths) {
+        // Only for driver testing
         mongoCryptOptions.csfleSearchPaths = options.extraOptions.csfleSearchPaths;
+      } else if (!this._bypassEncryption) {
+        mongoCryptOptions.csfleSearchPaths = ['$SYSTEM'];
       }
 
       Object.assign(mongoCryptOptions, { cryptoCallbacks });
       this._mongocrypt = new mc.MongoCrypt(mongoCryptOptions);
       this._contextCounter = 0;
 
+      if (options.extraOptions && options.extraOptions.csfleRequired && !this.csfleVersionInfo) {
+        throw new MongoError('`csfleRequired` set but no csfle shared library loaded');
+      }
+
       // Only instantiate mongocryptd manager/client once we know for sure
       // that we are not using the CSFLE shared library.
-      if (!this._bypassAutoEncryption && !this.csfleVersionInfo) {
+      if (!this._bypassEncryption && !this.csfleVersionInfo) {
         this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
         this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
           useNewUrlParser: true,
@@ -181,7 +188,11 @@ module.exports = function (modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully disconnects or errors
      */
     teardown(force, callback) {
-      this._mongocryptdClient.close(force, callback);
+      if (this._mongocryptdClient) {
+        this._mongocryptdClient.close(force, callback);
+      } else {
+        callback();
+      }
     }
 
     /**
