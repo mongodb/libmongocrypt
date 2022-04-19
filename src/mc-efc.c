@@ -31,13 +31,13 @@ _parse_field (mc_EncryptedFieldConfig_t *efc,
       return false;
    }
    if (!BSON_ITER_HOLDS_BINARY (&field_iter)) {
-      CLIENT_ERR ("expected 'fields[].keyId' to be type binary, got: %d",
+      CLIENT_ERR ("expected 'fields.keyId' to be type binary, got: %d",
                   bson_iter_type (&field_iter));
       return false;
    }
    _mongocrypt_buffer_t field_keyid;
    if (!_mongocrypt_buffer_from_uuid_iter (&field_keyid, &field_iter)) {
-      CLIENT_ERR ("unable to parse uuid key from 'fields[].keyId'");
+      CLIENT_ERR ("unable to parse uuid key from 'fields.keyId'");
       return false;
    }
 
@@ -47,7 +47,7 @@ _parse_field (mc_EncryptedFieldConfig_t *efc,
       return false;
    }
    if (!BSON_ITER_HOLDS_UTF8 (&field_iter)) {
-      CLIENT_ERR ("expected 'fields[].path' to be type UTF-8, got: %d",
+      CLIENT_ERR ("expected 'fields.path' to be type UTF-8, got: %d",
                   bson_iter_type (&field_iter));
       return false;
    }
@@ -85,7 +85,7 @@ mc_EncryptedFieldConfig_parse (mc_EncryptedFieldConfig_t *efc,
    }
    while (bson_iter_next (&iter)) {
       if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         CLIENT_ERR ("expected 'fields[]' to be type document, got: %d",
+         CLIENT_ERR ("expected 'fields' to be type document, got: %d",
                      bson_iter_type (&iter));
          return false;
       }
@@ -94,7 +94,7 @@ mc_EncryptedFieldConfig_parse (mc_EncryptedFieldConfig_t *efc,
       uint32_t field_len;
       bson_iter_document (&iter, &field_len, &field_data);
       if (!bson_init_static (&field, field_data, field_len)) {
-         CLIENT_ERR ("unable to initialize 'fields[]' value as document");
+         CLIENT_ERR ("unable to initialize 'fields' value as document");
          return false;
       }
       if (!_parse_field (efc, &field, status)) {
