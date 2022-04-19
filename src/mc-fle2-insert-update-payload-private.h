@@ -32,6 +32,8 @@ typedef struct {
    bson_type_t valueType;                      // t
    _mongocrypt_buffer_t value;                 // v
    _mongocrypt_buffer_t serverEncryptionToken; // e
+   _mongocrypt_buffer_t plaintext;
+   _mongocrypt_buffer_t userKeyId;
 } mc_FLE2InsertUpdatePayload_t;
 
 void
@@ -41,6 +43,15 @@ bool
 mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
                                   const bson_t *in,
                                   mongocrypt_status_t *status);
+
+/* mc_FLE2UnindexedEncryptedValue_decrypt decrypts ciphertext.
+ * Returns NULL and sets @status on error. It is an error to call before
+ * mc_FLE2UnindexedEncryptedValue_parse. */
+const _mongocrypt_buffer_t *
+mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
+                                    mc_FLE2InsertUpdatePayload_t *iup,
+                                    const _mongocrypt_buffer_t *user_key,
+                                    mongocrypt_status_t *status);
 
 bool
 mc_FLE2InsertUpdatePayload_serialize (

@@ -359,6 +359,7 @@ endif ()
 set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-efc.c
    test/test-mc-fle2-payload-ieev.c
+   test/test-mc-fle2-payload-iup.c
    test/test-mc-fle2-payload-uev.c
    test/test-mc-tokens.c
    test/test-mongocrypt-assert-match-bson.c
