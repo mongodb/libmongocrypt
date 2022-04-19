@@ -216,6 +216,12 @@ void
 _mongocrypt_tester_install_fle2_payloads (_mongocrypt_tester_t *tester);
 
 void
+_mongocrypt_tester_install_efc (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_ctx_compact (_mongocrypt_tester_t *tester);
+
+void
 _mongocrypt_tester_install_fle2_payload_uev (_mongocrypt_tester_t *tester);
 
 /* Conveniences for getting test data. */
