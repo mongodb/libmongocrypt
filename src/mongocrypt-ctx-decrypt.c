@@ -21,6 +21,7 @@
 #include "mc-fle2-payload-ieev-private.h"
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-uev-private.h"
+#include "mc-fle2-insert-update-payload-private.h"
 
 static bool
 _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
@@ -157,6 +158,50 @@ fail:
 }
 
 static bool
+_replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
+                                                 _mongocrypt_buffer_t *in,
+                                                 bson_value_t *out,
+                                                 mongocrypt_status_t *status)
+{
+   bool ret = false;
+   _mongocrypt_key_broker_t *kb = ctx;
+   mc_FLE2InsertUpdatePayload_t iup;
+   _mongocrypt_buffer_t key = {0};
+
+   mc_FLE2InsertUpdatePayload_init (&iup);
+
+   if (!mc_FLE2InsertUpdatePayload_parse (&iup, in, status)) {
+      goto fail;
+   }
+
+   if (!_mongocrypt_key_broker_decrypted_key_by_id (kb, &iup.userKeyId, &key)) {
+      _mongocrypt_key_broker_status (kb, status);
+      goto fail;
+   }
+
+   /* Decrypt ciphertext. */
+   const _mongocrypt_buffer_t *plaintext = mc_FLE2InsertUpdatePayload_decrypt (
+      kb->crypt->crypto, &iup, &key, status);
+   if (!plaintext) {
+      goto fail;
+   }
+
+   uint8_t original_bson_type = (uint8_t) iup.valueType;
+
+   if (!_mongocrypt_buffer_to_bson_value (
+          (_mongocrypt_buffer_t *) plaintext, original_bson_type, out)) {
+      CLIENT_ERR ("decrypted plaintext is not valid BSON");
+      goto fail;
+   }
+
+   ret = true;
+fail:
+   _mongocrypt_buffer_cleanup (&key);
+   mc_FLE2InsertUpdatePayload_cleanup (&iup);
+   return ret;
+}
+
+static bool
 _replace_ciphertext_with_plaintext (void *ctx,
                                     _mongocrypt_buffer_t *in,
                                     bson_value_t *out,
@@ -181,6 +226,11 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
       return _replace_FLE2UnindexedEncryptedValue_with_plaintext (
+         ctx, in, out, status);
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2InsertUpdatePayload) {
+      return _replace_FLE2InsertUpdatePayload_with_plaintext (
          ctx, in, out, status);
    }
 
@@ -447,6 +497,32 @@ fail:
 }
 
 static bool
+_collect_key_uuid_from_FLE2InsertUpdatePayload (void *ctx,
+                                                _mongocrypt_buffer_t *in,
+                                                mongocrypt_status_t *status)
+{
+   bool ret = false;
+   _mongocrypt_key_broker_t *kb = ctx;
+   mc_FLE2InsertUpdatePayload_t iup;
+
+   mc_FLE2InsertUpdatePayload_init (&iup);
+
+   if (!mc_FLE2InsertUpdatePayload_parse (&iup, in, status)) {
+      goto fail;
+   }
+
+   if (!_mongocrypt_key_broker_request_id (kb, &iup.userKeyId)) {
+      _mongocrypt_key_broker_status (kb, status);
+      goto fail;
+   }
+
+   ret = true;
+fail:
+   mc_FLE2InsertUpdatePayload_cleanup (&iup);
+   return ret;
+}
+
+static bool
 _collect_key_from_ciphertext (void *ctx,
                               _mongocrypt_buffer_t *in,
                               mongocrypt_status_t *status)
@@ -467,6 +543,10 @@ _collect_key_from_ciphertext (void *ctx,
    if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
       return _collect_key_uuid_from_FLE2UnindexedEncryptedValue (
          ctx, in, status);
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2InsertUpdatePayload) {
+      return _collect_key_uuid_from_FLE2InsertUpdatePayload (ctx, in, status);
    }
 
    if (!_mongocrypt_ciphertext_parse_unowned (in, &ciphertext, status)) {
@@ -523,9 +603,9 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    /* Expect msg to be the BSON a document of the form:
       { "v" : (BSON BINARY value of subtype 6) }
    */
-  if (!_mongocrypt_binary_to_bson (msg, &as_bson)) {
-     return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
-  }
+   if (!_mongocrypt_binary_to_bson (msg, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+   }
 
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");

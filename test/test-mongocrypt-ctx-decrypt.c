@@ -785,6 +785,71 @@ static void _test_explicit_decrypt_fle2_ieev (_mongocrypt_tester_t *tester) {
 #undef TEST_IEEV_BASE64
 }
 
+#define TEST_IUP_BASE64                                                        \
+   "BHEBAAAFZAAgAAAAAHb62aV7+mqmaGcotPLdG3KP7S8diFwWMLM/"                      \
+   "5rYtqLrEBXMAIAAAAAAVJ6OWHRv3OtCozHpt3ZzfBhaxZirLv3B+"                      \
+   "G8PuaaO4EgVjACAAAAAAsZXWOWA+UiCBbrJNB6bHflB/"                              \
+   "cn7pWSvwWN2jw4FPeIUFcABQAAAAAMdD1nV2nqeI1eXEQNskDflCy8I7/"                 \
+   "HvvqDKJ6XxjhrPQWdLqjz+8GosGUsB7A8ee/uG9/"                                  \
+   "guENuL25XD+"                                                               \
+   "Fxxkv1LLXtavHOlLF7iW0u9yabqqBXUAEAAAAAQSNFZ4EjSYdhI0EjRWeJASEHQAAgAAAAV2A" \
+   "E0AAAAAq83vqxI0mHYSNBI0VniQEkzZZBBDgeZh+h+gXEmOrSFtVvkUcnHWj/"             \
+   "rfPW7iJ0G3UJ8zpuBmUM/VjOMJCY4+eDqdTiPIwX+/vNXegc8FZQAgAAAAAOuac/"          \
+   "eRLYakKX6B0vZ1r3QodOQFfjqJD+xlGiPu4/PsAA=="
+
+static void
+_test_decrypt_fle2_iup (_mongocrypt_tester_t *tester)
+{
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
+           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+   return;
+#endif
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
+   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
+           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+   return;
+#endif
+
+   /* Test success with an FLE2InsertUpdatePayload. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx;
+      mongocrypt_binary_t *out;
+      bson_t out_bson;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (
+         mongocrypt_ctx_decrypt_init (
+            ctx,
+            TEST_BSON ("{'plainText':'sample','encrypted':{'$binary':{'base64':"
+                       "'" TEST_IUP_BASE64 "','subType':'6'}}}")),
+         ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+      _assert_match_bson (
+         &out_bson,
+         TMP_BSON ("{'plainText': 'sample', 'encrypted': 'value123'}"));
+      mongocrypt_binary_destroy (out);
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+}
+#undef TEST_IUP_BASE64
+
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
@@ -798,4 +863,5 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_decrypt_per_ctx_credentials_local);
    INSTALL_TEST (_test_decrypt_fle2);
    INSTALL_TEST (_test_explicit_decrypt_fle2_ieev);
+   INSTALL_TEST (_test_decrypt_fle2_iup);
 }
