@@ -178,7 +178,8 @@ _test_cur_exe_path (_mongocrypt_tester_t *tester)
 }
 
 static void
-_test_csfle_not_loaded_with_bypassqueryanalysis (_mongocrypt_tester_t *tester) {
+_test_csfle_not_loaded_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
+{
    mongocrypt_t *const crypt = get_test_mongocrypt (tester);
    mongocrypt_setopt_append_csfle_search_path (crypt, "$ORIGIN");
    mongocrypt_setopt_bypass_query_analysis (crypt);
