@@ -143,6 +143,7 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
       CLIENT_ERR ("failed to create userKeyId buffer");
       goto fail;
    }
+   out->userKeyId.subtype = BSON_SUBTYPE_UUID;
 
    return true;
 fail:
