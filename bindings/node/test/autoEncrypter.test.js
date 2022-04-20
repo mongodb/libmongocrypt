@@ -8,6 +8,7 @@ const sinon = require('sinon');
 const mongodb = require('mongodb');
 const requirements = require('./requirements.helper');
 const MongoNetworkTimeoutError = mongodb.MongoNetworkTimeoutError || mongodb.MongoTimeoutError;
+const MongoError = mongodb.MongoError;
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
 const MongocryptdManager = require('../lib/mongocryptdManager').MongocryptdManager;
@@ -539,7 +540,7 @@ describe('AutoEncrypter', function () {
 
       this.mc.init(err => {
         expect(err).to.exist;
-        expect(err).to.match(/Unable to connect to `mongocryptd`/);
+        expect(err).to.be.instanceOf(MongoError);
         done();
       });
     });
