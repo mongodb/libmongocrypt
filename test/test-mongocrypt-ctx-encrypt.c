@@ -2160,6 +2160,17 @@ _test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
    _test_encrypt_fle2_encryption_placeholder (tester, "fle2-find-equality", &source);
 }
 
+/* 16 bytes of random data are used for IV. This IV produces the expected test ciphertext. */
+#define RNG_DATA "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
+static void
+_test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester) {
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t*)RNG_DATA, .len = sizeof (RNG_DATA)}
+   };
+   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-insert-unindexed", &source);
+}
+#undef RNG_DATA
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -2198,4 +2209,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_FLE2EncryptionPlaceholder_parse);
    INSTALL_TEST (_test_encrypt_fle2_insert_payload);
    INSTALL_TEST (_test_encrypt_fle2_find_payload);
+   INSTALL_TEST (_test_encrypt_fle2_unindexed_encrypted_payload);
 }

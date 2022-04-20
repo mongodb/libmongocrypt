@@ -75,6 +75,18 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
                                         const _mongocrypt_buffer_t *key,
                                         mongocrypt_status_t *status);
 
+/* mc_FLE2UnindexedEncryptedValue_encrypt outputs the ciphertext field of
+ * FLEUnindexedEncryptedValue into @out. Returns false and sets @status on
+ * error. */
+bool
+mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
+                                        const _mongocrypt_buffer_t *key_uuid,
+                                        bson_type_t original_bson_type,
+                                        const _mongocrypt_buffer_t *plaintext,
+                                        const _mongocrypt_buffer_t *key,
+                                        _mongocrypt_buffer_t *out,
+                                        mongocrypt_status_t *status);
+
 void
 mc_FLE2UnindexedEncryptedValue_destroy (mc_FLE2UnindexedEncryptedValue_t *uev);
 

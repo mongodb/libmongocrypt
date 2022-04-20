@@ -172,6 +172,51 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
    return &uev->plaintext;
 }
 
+bool
+mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
+                                        const _mongocrypt_buffer_t *key_uuid,
+                                        bson_type_t original_bson_type,
+                                        const _mongocrypt_buffer_t *plaintext,
+                                        const _mongocrypt_buffer_t *key,
+                                        _mongocrypt_buffer_t *out,
+                                        mongocrypt_status_t *status)
+{
+   _mongocrypt_buffer_t iv = {0};
+   _mongocrypt_buffer_t AD = {0};
+   bool res = false;
+
+   _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
+   if (!_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
+      goto fail;
+   }
+
+   /* Serialize associated data: fle_blob_subtype || key_uuid ||
+    * original_bson_type */
+   {
+      _mongocrypt_buffer_resize (&AD, 1 + key_uuid->len + 1);
+      AD.data[0] = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
+      memcpy (AD.data + 1, key_uuid->data, key_uuid->len);
+      AD.data[1 + key_uuid->len] = (uint8_t) original_bson_type;
+   }
+
+   /* Encrypt. */
+   {
+      _mongocrypt_buffer_resize (
+         out, _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len));
+      uint32_t bytes_written; /* unused. */
+      if (!_mongocrypt_fle2aead_do_encryption (
+             crypto, &iv, &AD, key, plaintext, out, &bytes_written, status)) {
+         goto fail;
+      }
+   }
+
+   res = true;
+fail:
+   _mongocrypt_buffer_cleanup (&AD);
+   _mongocrypt_buffer_cleanup (&iv);
+   return res;
+}
+
 void
 mc_FLE2UnindexedEncryptedValue_destroy (mc_FLE2UnindexedEncryptedValue_t *uev)
 {
