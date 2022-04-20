@@ -165,7 +165,7 @@ _replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
-   mc_FLE2InsertUpdatePayload_t iup = {0};
+   mc_FLE2InsertUpdatePayload_t iup;
    _mongocrypt_buffer_t key = {0};
 
    mc_FLE2InsertUpdatePayload_init (&iup);
@@ -503,7 +503,7 @@ _collect_key_uuid_from_FLE2InsertUpdatePayload (void *ctx,
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
-   mc_FLE2InsertUpdatePayload_t iup = {0};
+   mc_FLE2InsertUpdatePayload_t iup;
 
    mc_FLE2InsertUpdatePayload_init (&iup);
 
