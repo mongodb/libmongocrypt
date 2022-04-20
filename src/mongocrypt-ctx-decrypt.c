@@ -158,11 +158,10 @@ fail:
 }
 
 static bool
-_replace_FLE2InsertUpdatePayload_with_plaintext (
-   void *ctx,
-   _mongocrypt_buffer_t *in,
-   bson_value_t *out,
-   mongocrypt_status_t *status)
+_replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
+                                                 _mongocrypt_buffer_t *in,
+                                                 bson_value_t *out,
+                                                 mongocrypt_status_t *status)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
@@ -181,8 +180,8 @@ _replace_FLE2InsertUpdatePayload_with_plaintext (
    }
 
    /* Decrypt ciphertext. */
-   const _mongocrypt_buffer_t *plaintext =
-      mc_FLE2InsertUpdatePayload_decrypt (kb->crypt->crypto, &iup, &key, status);
+   const _mongocrypt_buffer_t *plaintext = mc_FLE2InsertUpdatePayload_decrypt (
+      kb->crypt->crypto, &iup, &key, status);
    if (!plaintext) {
       goto fail;
    }
@@ -547,8 +546,7 @@ _collect_key_from_ciphertext (void *ctx,
    }
 
    if (in->data[0] == MC_SUBTYPE_FLE2InsertUpdatePayload) {
-      return _collect_key_uuid_from_FLE2InsertUpdatePayload (
-         ctx, in, status);
+      return _collect_key_uuid_from_FLE2InsertUpdatePayload (ctx, in, status);
    }
 
    if (!_mongocrypt_ciphertext_parse_unowned (in, &ciphertext, status)) {
@@ -605,9 +603,9 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
    /* Expect msg to be the BSON a document of the form:
       { "v" : (BSON BINARY value of subtype 6) }
    */
-  if (!_mongocrypt_binary_to_bson (msg, &as_bson)) {
-     return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
-  }
+   if (!_mongocrypt_binary_to_bson (msg, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson");
+   }
 
    if (!bson_iter_init_find (&iter, &as_bson, "v")) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid msg, must contain 'v'");

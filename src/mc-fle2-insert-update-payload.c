@@ -150,7 +150,8 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
    CHECK_HAS (v);
    CHECK_HAS (e);
 
-   if (!_mongocrypt_buffer_from_subrange (&out->userKeyId, &out->value, 0, UUID_LEN)) {
+   if (!_mongocrypt_buffer_from_subrange (
+          &out->userKeyId, &out->value, 0, UUID_LEN)) {
       CLIENT_ERR ("failed to create userKeyId buffer");
       goto fail;
    }
@@ -199,15 +200,24 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
    }
 
    _mongocrypt_buffer_t ciphertext;
-   if (!_mongocrypt_buffer_from_subrange (&ciphertext, &iup->value, UUID_LEN, iup->value.len - UUID_LEN)) {
+   if (!_mongocrypt_buffer_from_subrange (
+          &ciphertext, &iup->value, UUID_LEN, iup->value.len - UUID_LEN)) {
       CLIENT_ERR ("Failed to create ciphertext buffer");
       return NULL;
    }
 
-   _mongocrypt_buffer_resize (&iup->plaintext, _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext.len));
+   _mongocrypt_buffer_resize (
+      &iup->plaintext,
+      _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext.len));
    uint32_t bytes_written; /* ignored */
 
-   if (!_mongocrypt_fle2aead_do_decryption (crypto, &iup->userKeyId, user_key, &ciphertext, &iup->plaintext, &bytes_written, status)) {
+   if (!_mongocrypt_fle2aead_do_decryption (crypto,
+                                            &iup->userKeyId,
+                                            user_key,
+                                            &ciphertext,
+                                            &iup->plaintext,
+                                            &bytes_written,
+                                            status)) {
       return NULL;
    }
    return &iup->plaintext;
