@@ -498,7 +498,9 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
    _mongocrypt_buffer_resize (dst, total);
    offset = 0;
    for (i = 0; i < num_srcs; i++) {
-      memcpy (dst->data + offset, srcs[i].data, srcs[i].len);
+      if (srcs[i].len) {
+         memcpy (dst->data + offset, srcs[i].data, srcs[i].len);
+      }
       offset += srcs[i].len;
    }
    return true;
