@@ -88,17 +88,28 @@ mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload)
 
 bool
 mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
-                                  const bson_t *in,
+                                  const _mongocrypt_buffer_t *in,
                                   mongocrypt_status_t *status)
 {
    bson_iter_t iter;
    bool has_d = false, has_s = false, has_c = false;
    bool has_p = false, has_u = false, has_t = false;
    bool has_v = false, has_e = false;
+   bson_t in_bson;
+
+   if (in->len < 1) {
+      CLIENT_ERR ("FLE2InsertUpdatePayload_parse got too short input");
+      return false;
+   }
+
+   if (!bson_init_static (&in_bson, in->data + 1, in->len - 1)) {
+      CLIENT_ERR ("FLE2InsertUpdatePayload_parse got invalid BSON");
+      return false;
+   }
 
    mc_FLE2InsertUpdatePayload_init (out);
-   if (!bson_validate (in, BSON_VALIDATE_NONE, NULL) ||
-       !bson_iter_init (&iter, in)) {
+   if (!bson_validate (&in_bson, BSON_VALIDATE_NONE, NULL) ||
+       !bson_iter_init (&iter, &in_bson)) {
       CLIENT_ERR ("invalid BSON");
       return false;
    }

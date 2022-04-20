@@ -167,22 +167,11 @@ _replace_FLE2InsertUpdatePayload_with_plaintext (
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2InsertUpdatePayload_t iup = {0};
-   bson_t as_bson;
    _mongocrypt_buffer_t key = {0};
 
    mc_FLE2InsertUpdatePayload_init (&iup);
 
-   if (in->len < 1) {
-      CLIENT_ERR ("FLE2InsertUpdatePayload is too short");
-      goto fail;
-   }
-
-   if (!bson_init_static (&as_bson, in->data + 1, in->len - 1)) {
-      CLIENT_ERR ("unable to read BSON from FLE2InsertUpdatePayload");
-      goto fail;
-   }
-
-   if (!mc_FLE2InsertUpdatePayload_parse (&iup, &as_bson, status)) {
+   if (!mc_FLE2InsertUpdatePayload_parse (&iup, in, status)) {
       goto fail;
    }
 
@@ -516,21 +505,10 @@ _collect_key_uuid_from_FLE2InsertUpdatePayload (void *ctx,
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2InsertUpdatePayload_t iup = {0};
-   bson_t as_bson;
 
    mc_FLE2InsertUpdatePayload_init (&iup);
 
-   if (in->len < 1) {
-      CLIENT_ERR ("FLE2InsertUpdatePayload is too short");
-      goto fail;
-   }
-
-   if (!bson_init_static (&as_bson, in->data + 1, in->len - 1)) {
-      CLIENT_ERR ("unable to read BSON from FLE2InsertUpdatePayload");
-      goto fail;
-   }
-
-   if (!mc_FLE2InsertUpdatePayload_parse (&iup, &as_bson, status)) {
+   if (!mc_FLE2InsertUpdatePayload_parse (&iup, in, status)) {
       goto fail;
    }
 

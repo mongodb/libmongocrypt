@@ -78,11 +78,8 @@ test_FLE2InsertUpdatePayload_parse (_mongocrypt_tester_t *tester)
       mongocrypt_status_t *status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (&input, TEST_IUP_HEX);
       mc_FLE2InsertUpdatePayload_init (&iup);
-      bson_t input_bson;
-      /* Skip first byte and read BSON. */
-      bson_init_static (&input_bson, input.data + 1, input.len - 1);
       ASSERT_OK_STATUS (
-         mc_FLE2InsertUpdatePayload_parse (&iup, &input_bson, status), status);
+         mc_FLE2InsertUpdatePayload_parse (&iup, &input, status), status);
       ASSERT_CMPBUF (expect_edcDerivedToken, iup.edcDerivedToken);
       ASSERT_CMPBUF (expect_escDerivedToken, iup.escDerivedToken);
       ASSERT_CMPBUF (expect_eccDerivedToken, iup.eccDerivedToken);
@@ -142,11 +139,8 @@ test_FLE2InsertUpdatePayload_decrypt (_mongocrypt_tester_t *tester)
       mongocrypt_status_t *status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (&input, TEST_IUP_HEX);
       mc_FLE2InsertUpdatePayload_init (&iup);
-      bson_t input_bson;
-      /* Skip first byte and read BSON. */
-      bson_init_static (&input_bson, input.data + 1, input.len - 1);
       ASSERT_OK_STATUS (
-         mc_FLE2InsertUpdatePayload_parse (&iup, &input_bson, status), status);
+         mc_FLE2InsertUpdatePayload_parse (&iup, &input, status), status);
       const _mongocrypt_buffer_t *got = mc_FLE2InsertUpdatePayload_decrypt (
          crypt->crypto, &iup, &correct_key, status);
       ASSERT_OK_STATUS (got != NULL, status);
@@ -170,11 +164,8 @@ test_FLE2InsertUpdatePayload_decrypt (_mongocrypt_tester_t *tester)
       mongocrypt_status_t *status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (&input, TEST_IUP_HEX);
       mc_FLE2InsertUpdatePayload_init (&iup);
-      bson_t input_bson;
-      /* Skip first byte and read BSON. */
-      bson_init_static (&input_bson, input.data + 1, input.len - 1);
       ASSERT_OK_STATUS (
-         mc_FLE2InsertUpdatePayload_parse (&iup, &input_bson, status), status);
+         mc_FLE2InsertUpdatePayload_parse (&iup, &input, status), status);
       const _mongocrypt_buffer_t *got = mc_FLE2InsertUpdatePayload_decrypt (
          crypt->crypto, &iup, &incorrect_key, status);
       ASSERT_FAILS_STATUS (got != NULL, status, "decryption error");

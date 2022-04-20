@@ -41,7 +41,7 @@ mc_FLE2InsertUpdatePayload_init (mc_FLE2InsertUpdatePayload_t *payload);
 
 bool
 mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
-                                  const bson_t *in,
+                                  const _mongocrypt_buffer_t *in,
                                   mongocrypt_status_t *status);
 
 /* mc_FLE2UnindexedEncryptedValue_decrypt decrypts ciphertext.
