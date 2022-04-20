@@ -44,9 +44,9 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
                                   const _mongocrypt_buffer_t *in,
                                   mongocrypt_status_t *status);
 
-/* mc_FLE2UnindexedEncryptedValue_decrypt decrypts ciphertext.
+/* mc_FLE2InsertUpdatePayload_decrypt decrypts ciphertext.
  * Returns NULL and sets @status on error. It is an error to call before
- * mc_FLE2UnindexedEncryptedValue_parse. */
+ * mc_FLE2InsertUpdatePayload_parse. */
 const _mongocrypt_buffer_t *
 mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
                                     mc_FLE2InsertUpdatePayload_t *iup,
