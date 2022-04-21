@@ -585,7 +585,7 @@ describe('AutoEncrypter', function () {
         const client = new MockClient();
         this.mc = new AutoEncrypter(client, encryptionOptions);
 
-        const localMcdm = this.mc._mongocryptdManager;
+        const localMcdm = this.mc._mongocryptdManager || { spawn: () => {} };
         sandbox.spy(localMcdm, 'spawn');
 
         this.mc.init(err => {
@@ -640,7 +640,30 @@ describe('AutoEncrypter', function () {
   });
 
   describe('CSFLE shared library', function () {
-    it('should load a shared library by specifying its path', function () {
+    it('should fail if no library can be found in the search path and csfleRequired is set', function () {
+      // NB: This test has to be run before the tests/without having previously
+      // loaded a CSFLE shared library below to get the right error path.
+      const client = new MockClient();
+      try {
+        new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          },
+          extraOptions: {
+            csfleSearchPaths: ['/nonexistent'],
+            csfleRequired: true
+          }
+        });
+        expect.fail('missed exception');
+      } catch (err) {
+        expect(err.message).to.include('`csfleRequired` set but no csfle shared library loaded');
+      }
+    });
+
+    it('should load a shared library by specifying its path', function (done) {
       const client = new MockClient();
       this.mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -661,9 +684,11 @@ describe('AutoEncrypter', function () {
         version: BigInt(0x000600020001000),
         versionStr: 'stubbed-mongo_csfle'
       });
+
+      this.mc.teardown(true, done);
     });
 
-    it('should load a shared library by specifying a search path', function () {
+    it('should load a shared library by specifying a search path', function (done) {
       const client = new MockClient();
       this.mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -684,6 +709,8 @@ describe('AutoEncrypter', function () {
         version: BigInt(0x000600020001000),
         versionStr: 'stubbed-mongo_csfle'
       });
+
+      this.mc.teardown(true, done);
     });
   });
 });

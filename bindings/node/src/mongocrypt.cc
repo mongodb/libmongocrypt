@@ -395,6 +395,20 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
+    if (options.Has("encryptedFieldsMap")) {
+        Napi::Value encryptedFieldsMapBuffer = options["encryptedFieldsMap"];
+
+        if (!encryptedFieldsMapBuffer.IsBuffer()) {
+            throw TypeError::New(Env(), "Option `encryptedFieldsMap` must be a Buffer");
+        }
+
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> encryptedFieldsMapBinary(
+            BufferToBinary(encryptedFieldsMapBuffer.As<Uint8Array>()));
+        if (!mongocrypt_setopt_encrypted_field_config_map(_mongo_crypt.get(), encryptedFieldsMapBinary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
+        }
+    }
+
     if (options.Has("logger")) {
         SetCallback("logger", options["logger"]);
         if (!mongocrypt_setopt_log_handler(
@@ -436,6 +450,10 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         mongocrypt_setopt_set_csfle_lib_path_override(
             _mongo_crypt.get(),
             options.Get("csflePath").ToString().Utf8Value().c_str());
+    }
+
+    if (options.Get("bypassQueryAnalysis").ToBoolean()) {
+        mongocrypt_setopt_bypass_query_analysis(_mongo_crypt.get());
     }
 
     mongocrypt_setopt_use_need_kms_credentials_state(_mongo_crypt.get());
