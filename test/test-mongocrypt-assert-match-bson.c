@@ -16,6 +16,7 @@
 
 #include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt-assert.h"
+#include "test-mongocrypt.h"
 
 #ifndef _WIN32
 #define MONGOCRYPT_PRINTF_FORMAT(a, b) __attribute__ ((format (__printf__, a, b)))
@@ -1080,4 +1081,14 @@ _assert_match_bson (const bson_t *doc, const bson_t *pattern)
       bson_free (doc_str);
       bson_free (pattern_str);
    }
+}
+
+void
+_test_assert_match_bson_dot_field (_mongocrypt_tester_t *tester) {
+   _assert_match_bson (TMP_BSON ("{'a.b': 1}"), TMP_BSON ("{'a.b': 1}"));
+}
+
+void
+_mongocrypt_tester_install_match_bson (_mongocrypt_tester_t *tester) {
+   INSTALL_TEST (_test_assert_match_bson_dot_field);
 }
