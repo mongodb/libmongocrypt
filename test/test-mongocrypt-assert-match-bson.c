@@ -1064,6 +1064,7 @@ _assert_match_bson (const bson_t *doc, const bson_t *pattern)
    match_ctx_t ctx;
 
    memset (&ctx, 0, sizeof (match_ctx_t));
+   ctx.retain_dots_in_keys = true;
    if (!match_bson_with_ctx (doc, pattern, &ctx)) {
       char *doc_str = doc ? bson_as_json (doc, NULL) : NULL;
       char *pattern_str = bson_as_json (pattern, NULL);

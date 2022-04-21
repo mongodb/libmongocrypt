@@ -643,11 +643,6 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       /* Append 'encryptionInformation' to the original command. */
       bson_init (&converted);
       bson_copy_to (&original_cmd_bson, &converted);
-      if (!_fle2_append_encryptionInformation (
-             &converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
-         bson_destroy (&converted);
-         return _mongocrypt_ctx_fail (ctx);
-      }
    } else {
       bson_t as_bson;
       bson_iter_t iter;
@@ -667,6 +662,12 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
              ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
+   }
+
+   if (!_fle2_append_encryptionInformation (
+            &converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
+      bson_destroy (&converted);
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
