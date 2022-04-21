@@ -1471,10 +1471,11 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
               ctx);
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
-   ASSERT_OK (
-      mongocrypt_ctx_provide_kms_providers (ctx,
-         TEST_BSON ("{'aws':{'accessKeyId': 'example',"
-                            "'secretAccessKey': 'example'}}")), ctx);
+   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                 ctx,
+                 TEST_BSON ("{'aws':{'accessKeyId': 'example',"
+                            "'secretAccessKey': 'example'}}")),
+              ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (
       mongocrypt_ctx_mongo_feed (
@@ -2007,15 +2008,14 @@ typedef struct {
    int pos;
 } _test_rng_data_source;
 
-#if defined(MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO) || \
-   defined(MONGOCRYPT_ENABLE_CRYPTO_CNG)
+#if defined(MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO)
 static void
 _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
                                            const char *data_path,
                                            _test_rng_data_source *rng_source)
 {
    printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
+           "remove once MONGOCRYPT-385 is complete");
    return;
 }
 #else
@@ -2147,7 +2147,7 @@ static void
 _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {
-      .buf = {.data = (uint8_t*)RNG_DATA, .len = sizeof (RNG_DATA)}};
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
    _test_encrypt_fle2_encryption_placeholder (tester, "fle2-insert", &source);
 }
 #undef RNG_DATA
@@ -2157,7 +2157,8 @@ static void
 _test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-find-equality", &source);
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-equality", &source);
 }
 
 /* 16 bytes of random data are used for IV. This IV produces the expected test ciphertext. */
