@@ -108,6 +108,12 @@ module.exports = function (modules) {
           : this._bson.serialize(options.schemaMap);
       }
 
+      if (options.encryptedFieldsMap) {
+        mongoCryptOptions.encryptedFieldsMap = Buffer.isBuffer(options.encryptedFieldsMap)
+          ? options.encryptedFieldsMap
+          : this._bson.serialize(options.encryptedFieldsMap);
+      }
+
       if (options.kmsProviders) {
         mongoCryptOptions.kmsProviders = !Buffer.isBuffer(options.kmsProviders)
           ? this._bson.serialize(options.kmsProviders)
@@ -129,6 +135,10 @@ module.exports = function (modules) {
         mongoCryptOptions.csfleSearchPaths = options.extraOptions.csfleSearchPaths;
       } else if (!this._bypassEncryption) {
         mongoCryptOptions.csfleSearchPaths = ['$SYSTEM'];
+      }
+
+      if (options.bypassQueryAnalysis) {
+        mongoCryptOptions.bypassQueryAnalysis = options.bypassQueryAnalysis;
       }
 
       Object.assign(mongoCryptOptions, { cryptoCallbacks });
