@@ -1,0 +1,6 @@
+{
+   "delete": "test",
+   "deletes": [
+      { "q": { }, "limit": 1}
+   ]
+}

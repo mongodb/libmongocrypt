@@ -1,0 +1,6 @@
+{
+   "delete": "test",
+   "deletes": [
+      { "q": { "value": 123456 }, "limit": 1}
+   ]
+}

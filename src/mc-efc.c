@@ -25,6 +25,7 @@ _parse_field (mc_EncryptedFieldConfig_t *efc,
               bson_t *field,
               mongocrypt_status_t *status)
 {
+   bool has_queries = false;
    bson_iter_t field_iter;
    if (!bson_iter_init_find (&field_iter, field, "keyId")) {
       CLIENT_ERR ("unable to find 'keyId' in 'field' document");
@@ -53,11 +54,16 @@ _parse_field (mc_EncryptedFieldConfig_t *efc,
    }
    field_path = bson_iter_utf8 (&field_iter, NULL /* length */);
 
+   if (bson_iter_init_find (&field_iter, field, "queries")) {
+      has_queries = true;
+   }
+
    /* Prepend a new mc_EncryptedField_t */
    mc_EncryptedField_t *ef = bson_malloc0 (sizeof (mc_EncryptedField_t));
    _mongocrypt_buffer_copy_to (&field_keyid, &ef->keyId);
    ef->path = bson_strdup (field_path);
    ef->next = efc->fields;
+   ef->has_queries = has_queries;
    efc->fields = ef;
 
    return true;
