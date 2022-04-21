@@ -2008,18 +2008,6 @@ typedef struct {
    int pos;
 } _test_rng_data_source;
 
-#if defined(MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO)
-static void
-_test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
-                                           const char *data_path,
-                                           _test_rng_data_source *rng_source)
-{
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 is complete");
-   return;
-}
-#else
-
 static bool
 _test_rng_source (void *ctx,
                   mongocrypt_binary_t *out,
@@ -2050,6 +2038,11 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
    ASSERT (snprintf (                                                         \
               pathbuf, sizeof (pathbuf), "./test/data/%s/" path, data_path) < \
            sizeof (pathbuf))
+
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    /* Create crypt with custom hooks. */
    {
@@ -2134,8 +2127,6 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
-#endif
-
 
 /* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
  * Second 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
@@ -2161,14 +2152,17 @@ _test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
       tester, "fle2-find-equality", &source);
 }
 
-/* 16 bytes of random data are used for IV. This IV produces the expected test ciphertext. */
-#define RNG_DATA "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
+/* 16 bytes of random data are used for IV. This IV produces the expected test
+ * ciphertext. */
+#define RNG_DATA \
+   "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
 static void
-_test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester) {
+_test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
+{
    _test_rng_data_source source = {
-      .buf = {.data = (uint8_t*)RNG_DATA, .len = sizeof (RNG_DATA)}
-   };
-   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-insert-unindexed", &source);
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-unindexed", &source);
 }
 #undef RNG_DATA
 

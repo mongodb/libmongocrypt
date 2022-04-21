@@ -112,16 +112,10 @@ test_FLE2InsertUpdatePayload_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t correct_key;
    mongocrypt_t *crypt;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
-           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 

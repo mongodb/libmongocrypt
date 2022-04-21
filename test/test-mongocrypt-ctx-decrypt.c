@@ -323,11 +323,10 @@ _test_decrypt_fle2 (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t S_KeyId;
    _mongocrypt_buffer_t K_KeyId;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 is complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
 #define TEST_IEEV_BASE64                                                       \
    "BxI0VngSNJh2EjQSNFZ4kBICQ7uhTd9C2oI8M1afRon0ZaYG0s6oTmt0aBZ9kO4S4mm5vId01" \
@@ -706,11 +705,10 @@ _test_explicit_decrypt_fle2_ieev (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t S_KeyId;
    _mongocrypt_buffer_t K_KeyId;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 is complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
 #define TEST_IEEV_BASE64                                                       \
    "BxI0VngSNJh2EjQSNFZ4kBICQ7uhTd9C2oI8M1afRon0ZaYG0s6oTmt0aBZ9kO4S4mm5vId01" \
@@ -790,16 +788,10 @@ _test_explicit_decrypt_fle2_ieev (_mongocrypt_tester_t *tester)
 static void
 _test_decrypt_fle2_iup (_mongocrypt_tester_t *tester)
 {
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
-           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    /* Test success with an FLE2InsertUpdatePayload. */
    {

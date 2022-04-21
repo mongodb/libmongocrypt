@@ -262,5 +262,6 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 void
 _load_json_as_bson (const char *path, bson_t *out);
 
+extern bool _aes_ctr_is_supported_by_os;
 
 #endif

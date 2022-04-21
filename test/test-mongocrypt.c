@@ -25,6 +25,9 @@
 #include "mongocrypt-marking-private.h"
 #include "test-mongocrypt.h"
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+#include <sys/sysctl.h>
+#endif
 
 /* Return a repeated character with no null terminator. */
 char *
@@ -841,13 +844,12 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'kmip': {'endpoint': 'localhost' }}", NULL},
       {"{'kmip': {'endpoint': '127.0.0.1:5696', 'extra': 'invalid' }}",
        "Unexpected field: 'extra'"},
-       /* Empty documents are OK for on-demand KMS credentials */
+      /* Empty documents are OK for on-demand KMS credentials */
       {"{'aws': {}}", NULL},
       {"{'azure': {}}", NULL},
       {"{'local': {}}", NULL},
       {"{'gcp': {}}", NULL},
-      {"{'kmip': {}}", NULL}
-       };
+      {"{'kmip': {}}", NULL}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;
@@ -867,6 +869,8 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       mongocrypt_destroy (crypt);
    }
 }
+
+bool _aes_ctr_is_supported_by_os = true;
 
 int
 main (int argc, char **argv)
@@ -928,6 +932,32 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_fle2_payload_uev (&tester);
    _mongocrypt_tester_install_fle2_payload_iup (&tester);
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
+   char osversion[32];
+   size_t osversion_len = sizeof (osversion) - 1;
+   int osversion_name[] = {CTL_KERN, KERN_OSRELEASE};
+
+   _aes_ctr_is_supported_by_os = false;
+
+   if (sysctl (osversion_name, 2, osversion, &osversion_len, NULL, 0) == -1) {
+      goto get_os_version_failed;
+   }
+
+   uint32_t major, minor;
+   if (sscanf (osversion, "%u.%u", &major, &minor) != 2) {
+      goto get_os_version_failed;
+   }
+
+   if (major >= 20) {
+      // macOS 11 and newer
+      _aes_ctr_is_supported_by_os = true;
+   } else {
+      major -= 4;
+      // macOS 10.1.1 and newer. CTR unsupported in 10.14 and earlier
+      _aes_ctr_is_supported_by_os = major > 14;
+   }
+get_os_version_failed:
+#endif
 
    printf ("Running tests...\n");
    for (i = 0; tester.test_names[i]; i++) {
