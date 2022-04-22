@@ -927,7 +927,6 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_ctx_compact (&tester);
    _mongocrypt_tester_install_fle2_payload_uev (&tester);
    _mongocrypt_tester_install_fle2_payload_iup (&tester);
-   _mongocrypt_tester_install_match_bson (&tester);
 
 
    printf ("Running tests...\n");
