@@ -2,7 +2,7 @@
    "insert": "test",
    "documents": [
       {
-         "plainText":"sample",
+         "plainText": "sample",
          "encrypted": {
             "$binary": {
                "base64": "BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjcdSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ==",
@@ -11,5 +11,30 @@
          }
       }
    ],
-   "$db": "test"
+   "encryptionInformation": {
+      "type": 1,
+      "schema": {
+         "db.test": {
+            "escCollection": "fle2.test.esc",
+            "eccCollection": "fle2.test.ecc",
+            "ecocCollection": "fle2.test.ecoc",
+            "fields": [
+               {
+                  "keyId": {
+                     "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                        "subType": "04"
+                     }
+                  },
+                  "path": "ssn",
+                  "bsonType": "string",
+                  "queries": {
+                     "queryType": "equality",
+                     "contention": 0
+                  }
+               }
+            ]
+         }
+      }
+   }
 }

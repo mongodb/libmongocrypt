@@ -3,6 +3,7 @@
         "$numberInt": "1"
     },
     "result": {
+        "insert": "test",
         "documents": [
             {
                 "plainText": "sample",
@@ -14,28 +15,31 @@
                 }
             }
         ],
-        "insert": "test",
-        "$db": "test",
-        "encryptedFields": {
-            "escCollection": "fle2.test.esc",
-            "eccCollection": "fle2.test.ecc",
-            "ecocCollection": "fle2.test.ecoc",
-            "fields": [
-                {
-                    "keyId": {
-                        "$binary": {
-                            "base64": "EjRWeBI0mHYSNBI0VniQEg==",
-                            "subType": "04"
+        "encryptionInformation": {
+            "type": 1,
+            "schema": {
+                "db.test": {
+                    "escCollection": "fle2.test.esc",
+                    "eccCollection": "fle2.test.ecc",
+                    "ecocCollection": "fle2.test.ecoc",
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "ssn",
+                            "bsonType": "string",
+                            "queries": {
+                                "queryType": "equality",
+                                "contention": 0
+                            }
                         }
-                    },
-                    "path": "ssn",
-                    "bsonType": "string",
-                    "queries": {
-                        "queryType": "equality",
-                        "contention": 0
-                    }
+                    ]
                 }
-            ]
+            }
         }
     },
     "hasEncryptedPlaceholders": true
