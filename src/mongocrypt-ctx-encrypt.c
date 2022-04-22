@@ -664,6 +664,20 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
+   /* Remove the 'encryptionInformation' field. It is appended in the response
+    * from mongocryptd. */
+   bson_iter_t iter;
+   if (bson_iter_init_find (&iter, &converted, "encryptionInformation")) {
+      bson_t no_encryptionInformation = BSON_INITIALIZER;
+      bson_copy_to_excluding_noinit (
+         &converted, &no_encryptionInformation, "encryptionInformation", NULL);
+      bson_destroy (&converted);
+      if (!bson_steal (&converted, &no_encryptionInformation)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "failed to steal BSON without encryptionInformation");
+      }
+   }
+   /* Append a new 'encryptionInformation'. */
    if (!_fle2_append_encryptionInformation (
             &converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
       bson_destroy (&converted);
