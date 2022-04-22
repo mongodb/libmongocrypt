@@ -1,24 +1,23 @@
 {
-   "db.test": {
-      "escCollection" : "fle2.test.esc",
-      "eccCollection" : "fle2.test.ecc",
-      "ecocCollection" : "fle2.test.ecoc",
-      "fields": [
-          {
-              "keyId": {
-                  "$binary": {
-                      "base64": "EjRWeBI0mHYSNBI0VniQEg==",
-                      "subType": "04"
-                  }
-              },
-              "path": "value",
-              "bsonType": "int32",
-              "queries": {
-                  "queryType": "equality",
-                  "contention": 0
-              }
-           }
+    "db.test": {
+        "escCollection": "fle2.test.esc",
+        "eccCollection": "fle2.test.ecc",
+        "ecocCollection": "fle2.test.ecoc",
+        "fields": [
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                        "subType": "04"
+                    }
+                },
+                "path": "value",
+                "bsonType": "int32",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 0
+                }
+            }
         ]
-     }
-  }
+    }
 }
