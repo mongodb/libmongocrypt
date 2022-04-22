@@ -2119,14 +2119,11 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
       mongocrypt_binary_t *out;
-      bson_t out_bson, expect_bson;
 
       out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
-      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
       MAKE_PATH ("encrypted-payload.json");
-      ASSERT (_mongocrypt_binary_to_bson (TEST_FILE (pathbuf), &expect_bson));
-      _assert_match_bson (&out_bson, &expect_bson);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE (pathbuf), out);
       mongocrypt_binary_destroy (out);
    }
 #undef MAKE_PATH
