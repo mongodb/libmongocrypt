@@ -1075,3 +1075,15 @@ mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
    return _set_binary_opt (
       ctx, key_id, &ctx->opts.index_key_id, BSON_SUBTYPE_UUID);
 }
+
+bool
+mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
+                                  mongocrypt_query_type_t query_type)
+{
+   if (!ctx) {
+      return false;
+   }
+   ctx->opts.query_type.value = query_type;
+   ctx->opts.query_type.set = true;
+   return true;
+}

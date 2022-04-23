@@ -53,6 +53,10 @@ typedef struct __mongocrypt_ctx_opts_t {
       int64_t value;
       bool set;
    } contention_factor;
+   struct {
+      mongocrypt_query_type_t value;
+      bool set;
+   } query_type;
 } _mongocrypt_ctx_opts_t;
 
 

@@ -1075,6 +1075,10 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
             return _mongocrypt_ctx_fail_w_msg (
                ctx, "cannot set both key alt name and contention factor");
          }
+         if (ctx->opts.query_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and query type");
+         }
       }
       /* algorithm is FLE 1 only. */
       if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
@@ -1090,6 +1094,10 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
             return _mongocrypt_ctx_fail_w_msg (
                ctx, "cannot set both algorithm and contention factor");
          }
+         if (ctx->opts.query_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and query type");
+         }
       }
    }
 
@@ -1103,6 +1111,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
        ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "cannot set contention factor with no index type");
+   }
+
+   if (ctx->opts.query_type.set && ctx->opts.index_type.set &&
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "cannot set query type with no index type");
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
