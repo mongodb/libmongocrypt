@@ -2273,11 +2273,79 @@ static void _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester) {
    }
    /* Test Indexed with non-zero ContentionFactor. */
    {
+/* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
+ * Second 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
+ */
+#define RNG_DATA                                                      \
+   "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
+   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
+      _test_rng_data_source source = {
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+#undef RNG_DATA
+      mongocrypt_t *crypt = _crypt_with_rng (&source);
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+      
+      ASSERT_OK (mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, _mongocrypt_buffer_as_binary (&user_key_id)), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (ctx, _mongocrypt_buffer_as_binary (&index_key_id)), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
+      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, TEST_BSON ("{'v': 'value123'}")), ctx);
 
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_FILE ("./test/data/keys/12345678123498761234123456789012-local-document.json")), ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-local-document.json")), ctx);  
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *got = mongocrypt_binary_new ();
+
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'v': { '$binary': { 'base64': 'BHEBAAAFZAAgAAAAAK8vKf5uqsCsWXfVhVEn9Jg0vWDIh4wtGqtUkG5wKE/CBXMAIAAAAACckqDJyQ9Po3BPcRqUNT2F2wlvLVpSmQrIeIF/PhJC5QVjACAAAAAACe05KaFoHY+MNKXhrwzY6xvrBt7G/Y/JHvkF7KfHeh0FcABQAAAAAMdD1nV2nqeI1eXEQNskDfnLfsFkKG9XMZJuVByabhKKhM00xE8lPPGwMYLqVHZkCVnFERtFYK1Z6Crpu7TOoMeAyqIPM03vLv6ydMBU4bgyBXUAEAAAAAQSNFZ4EjSYdhI0EjRWeJASEHQAAgAAAAV2AE0AAAAAq83vqxI0mHYSNBI0VniQEkzZZBBDgeZh+h+gXEmOrSFtVvkUcnHWj/rfPW7iJ0G3UJ8zpuBmUM/VjOMJCY4+eDqdTiPIwX+/vNXegc8FZQAgAAAAAOuac/eRLYakKX6B0vZ1r3QodOQFfjqJD+xlGiPu4/PsAA==', 'subType': '06' } }}"), got);
+         mongocrypt_binary_destroy (got);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
    }
    /* Test that omitted index_key_id defaults to using user_key_id. */
    {
+/* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
+ * Second 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
+ */
+#define RNG_DATA                                                      \
+   "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
+   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
+      _test_rng_data_source source = {
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+#undef RNG_DATA
+      mongocrypt_t *crypt = _crypt_with_rng (&source);
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+      
+      ASSERT_OK (mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, _mongocrypt_buffer_as_binary (&user_key_id)), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
+      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, TEST_BSON ("{'v': 'value123'}")), ctx);
 
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-local-document.json")), ctx);  
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *got = mongocrypt_binary_new ();
+
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'v': { '$binary': { 'base64': 'BHEBAAAFZAAgAAAAAIjYfxmTuzhhHi5NiSRh9icmv6H42DavsxhdgsOdxU3BBXMAIAAAAACGD6m347ggYk2rRt6/LA8Ght9WcezXCY8Cz066FJpLLQVjACAAAAAAOmik5aQ6xRa2AnDMLbexxyLm31CxNneYxKOhbxWxFuAFcABQAAAAAMdD1nV2nqeI1eXEQNskDfkZ6RXjBnMo6KOLITR9ncfAgtUSrz6A9EJ7nvH0/kVjT6pJuy3TCE76ay9SkV6Y/YQtO+g5pFs4uAFAxRlAInmTBXUAEAAAAASrze+rEjSYdhI0EjRWeJASEHQAAgAAAAV2AE0AAAAAq83vqxI0mHYSNBI0VniQEkzZZBBDgeZh+h+gXEmOrSFtVvkUcnHWj/rfPW7iJ0G3UJ8zpuBmUM/VjOMJCY4+eDqdTiPIwX+/vNXegc8FZQAgAAAAAL7iv5ju6p02+CadotQZUkgqtSIYD2HaywGsizUpIBYMAA==', 'subType': '06' } }}"), got);
+         mongocrypt_binary_destroy (got);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
    }
 
    _mongocrypt_buffer_cleanup (&user_key_id);
