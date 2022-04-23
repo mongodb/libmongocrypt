@@ -976,10 +976,50 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    }
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.key_descriptor = OPT_REQUIRED;
-   opts_spec.algorithm = OPT_REQUIRED;
+   opts_spec.algorithm = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
+   }
+
+   /* Error if any mutually exclusive FLE 1 and FLE 2 options are set. */
+   {
+      /* key_alt_names is FLE 1 only. */
+      if (ctx->opts.key_alt_names != NULL) {
+         if (ctx->opts.index_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and index type");
+         }
+         if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and index key id");
+         }
+         if (ctx->opts.contention_factor.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and contention factor");
+         }
+      }
+      /* algorithm is FLE 1 only. */
+      if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+         if (ctx->opts.index_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and index type");
+         }
+         if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and index key id");
+         }
+         if (ctx->opts.contention_factor.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and contention factor");
+         }
+      }
+   }
+
+   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE &&
+       !ctx->opts.index_type.set) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "algorithm or index type required");
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;

@@ -660,7 +660,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 
    REFRESH;
    KEY_ID_OK (uuid);
-   EX_ENCRYPT_INIT_FAILS (bson, "algorithm required");
+   EX_ENCRYPT_INIT_FAILS (bson, "algorithm or index type required");
 
    REFRESH;
    ALGORITHM_OK (RAND, -1);
@@ -696,6 +696,71 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    KEY_ID_OK (uuid);
    ALGORITHM_FAILS ("bad-algo", -1, "unsupported algorithm");
    EX_ENCRYPT_INIT_FAILS (bson, "unsupported algorithm");
+
+   /* It is an error test set the FLE 1 keyAltName option with any of the FLE 2
+    * options (index_type, index_key_id, or contention_factor). */
+   {
+      REFRESH
+      KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
+         ctx);
+      EX_ENCRYPT_INIT_FAILS (bson,
+                             "cannot set both key alt name and index type");
+
+      REFRESH
+      KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (ctx, uuid), ctx);
+      EX_ENCRYPT_INIT_FAILS (bson,
+                             "cannot set both key alt name and index key id");
+
+      REFRESH
+      KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 123), ctx);
+      EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both key alt name and contention factor");
+   }
+
+   /* It is an error test set the FLE 1 algorithm option with any of the FLE 2
+    * options (index_type, index_key_id, or contention_factor). */
+   {
+      REFRESH
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      KEY_ID_OK (uuid);
+      ALGORITHM_OK (RAND, -1);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
+         ctx);
+      EX_ENCRYPT_INIT_FAILS (bson, "cannot set both algorithm and index type");
+
+      REFRESH
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      KEY_ID_OK (uuid);
+      ALGORITHM_OK (RAND, -1);
+      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (ctx, uuid), ctx);
+      EX_ENCRYPT_INIT_FAILS (bson,
+                             "cannot set both algorithm and index key id");
+
+      REFRESH
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      KEY_ID_OK (uuid);
+      ALGORITHM_OK (RAND, -1);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 123), ctx);
+      EX_ENCRYPT_INIT_FAILS (bson,
+                             "cannot set both algorithm and contention factor");
+   }
+
+   /* Require either index_type or algorithm */
+   {
+      REFRESH
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      KEY_ID_OK (uuid);
+      EX_ENCRYPT_INIT_FAILS (bson, "algorithm or index type required");
+   }
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
