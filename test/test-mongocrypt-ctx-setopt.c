@@ -762,6 +762,21 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       EX_ENCRYPT_INIT_FAILS (bson, "algorithm or index type required");
    }
 
+   /* It is an error to set contention_factor with index_type ==
+    * MONGOCRYPT_INDEX_TYPE_NONE */
+   {
+      REFRESH
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
+         ctx);
+      EX_ENCRYPT_INIT_FAILS (bson,
+                             "cannot set contention factor with no index type");
+   }
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }

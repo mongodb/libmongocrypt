@@ -1022,6 +1022,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
                                          "algorithm or index type required");
    }
 
+   if (ctx->opts.contention_factor.set && ctx->opts.index_type.set &&
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "cannot set contention factor with no index type");
+   }
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->explicit = true;
