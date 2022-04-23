@@ -1038,3 +1038,18 @@ _mongocrypt_ctx_kms_providers (mongocrypt_ctx_t *ctx)
              ? &ctx->kms_providers
              : &ctx->crypt->opts.kms_providers;
 }
+
+bool
+mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx, mongocrypt_index_type_t index_type) {
+   return _mongocrypt_ctx_fail_w_msg (ctx, "mongocrypt_ctx_setopt_index_type not implemented");
+}
+
+bool
+mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx, int64_t contention_factor) {
+   return _mongocrypt_ctx_fail_w_msg (ctx, "mongocrypt_ctx_setopt_contention_factor not implemented");
+}
+
+bool
+mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id) {
+   return _mongocrypt_ctx_fail_w_msg (ctx, "mongocrypt_ctx_setopt_index_key_id not implemented");
+}

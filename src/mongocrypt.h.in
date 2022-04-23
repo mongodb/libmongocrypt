@@ -893,10 +893,16 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * This method expects the passed-in BSON to be of the form:
  * { "v" : BSON value to encrypt }
  *
- * Associated options:
+ * Associated options for FLE 1:
  * - @ref mongocrypt_ctx_setopt_key_id
  * - @ref mongocrypt_ctx_setopt_key_alt_name
  * - @ref mongocrypt_ctx_setopt_algorithm
+ * 
+ * Associated options for FLE 2:
+ * - @ref mongocrypt_ctx_setopt_index_type
+ * - @ref mongocrypt_ctx_setopt_key_id
+ * - @ref mongocrypt_ctx_setopt_index_key_id
+ * - @ref mongocrypt_ctx_setopt_contention_factor
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value. The
@@ -1417,5 +1423,58 @@ MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_compact_init (mongocrypt_ctx_t *ctx,
                              mongocrypt_binary_t *encrypted_field_config);
+
+typedef enum {
+   MONGOCRYPT_INDEX_TYPE_NONE = 0,
+   MONGOCRYPT_INDEX_TYPE_EQUALITY = 1
+} mongocrypt_index_type_t;
+
+/**
+ * Set the index type used for explicit encryption.
+ * The index type is only used for FLE 2 encryption.
+ * It is an error to set index type and the FLE 1 algorithm.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] index_type
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx, mongocrypt_index_type_t index_type);
+
+/**
+ * Set the contention factor used for explicit encryption.
+ * The contention factor is only used for indexed FLE 2 encryption.
+ * It is an error to set index type and the FLE 1 algorithm.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] contention_factor
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status.
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx, int64_t contention_factor);
+
+/**
+ * Set the index key id to use for FLE 2 explicit encryption.
+ * 
+ * If the index key id not set, the key id from @ref mongocrypt_ctx_setopt_key_id is used.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] key_id The binary corresponding to the _id (a UUID) of the data
+ * key to use from the key vault collection. Note, the UUID must be encoded with
+ * RFC-4122 byte order. The viewed data is copied. It is valid to destroy
+ * @p key_id with @ref mongocrypt_binary_destroy immediately after.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id);
 
 #endif /* MONGOCRYPT_H */
