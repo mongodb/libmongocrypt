@@ -77,7 +77,7 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
    ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, msg),
                  ctx,
-                 "algorithm required");
+                 "algorithm or index type required");
    mongocrypt_ctx_destroy (ctx);
 
    /* Test null msg input. */
