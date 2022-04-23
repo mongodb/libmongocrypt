@@ -2195,6 +2195,11 @@ static void _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester) {
    _mongocrypt_buffer_t user_key_id;
    _mongocrypt_buffer_t index_key_id;
 
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
+
    _mongocrypt_buffer_copy_from_hex (&user_key_id, "ABCDEFAB123498761234123456789012");
    _mongocrypt_buffer_copy_from_hex (&index_key_id, "12345678123498761234123456789012");
 
