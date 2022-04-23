@@ -702,7 +702,15 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    _mongocrypt_marking_init (&marking);
    marking.type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
-   marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT;
+   if (ctx->opts.query_type.set) {
+      switch (ctx->opts.query_type.value) {
+         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
+         marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND;
+      }
+   } else {
+      marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT;
+   }
+   
    switch (ctx->opts.index_type.value) {
    case MONGOCRYPT_INDEX_TYPE_EQUALITY:
       marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_EQUALITY;
