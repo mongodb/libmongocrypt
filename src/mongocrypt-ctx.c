@@ -1041,7 +1041,9 @@ _mongocrypt_ctx_kms_providers (mongocrypt_ctx_t *ctx)
 }
 
 bool
-mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx, mongocrypt_index_type_t index_type) {
+mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx,
+                                  mongocrypt_index_type_t index_type)
+{
    if (!ctx) {
       return false;
    }
@@ -1051,7 +1053,9 @@ mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx, mongocrypt_index_type_t
 }
 
 bool
-mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx, int64_t contention_factor) {
+mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx,
+                                         int64_t contention_factor)
+{
    if (!ctx) {
       return false;
    }
@@ -1061,10 +1065,13 @@ mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx, int64_t contenti
 }
 
 bool
-mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id) {
+mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
+                                    mongocrypt_binary_t *key_id)
+{
    if (!ctx) {
       return false;
    }
 
-   return _set_binary_opt (ctx, key_id, &ctx->opts.index_key_id, BSON_SUBTYPE_UUID);
+   return _set_binary_opt (
+      ctx, key_id, &ctx->opts.index_key_id, BSON_SUBTYPE_UUID);
 }
