@@ -697,7 +697,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    ALGORITHM_FAILS ("bad-algo", -1, "unsupported algorithm");
    EX_ENCRYPT_INIT_FAILS (bson, "unsupported algorithm");
 
-   /* It is an error test set the FLE 1 keyAltName option with any of the FLE 2
+   /* It is an error to set the FLE 1 keyAltName option with any of the FLE 2
     * options (index_type, index_key_id, or contention_factor). */
    {
       REFRESH
@@ -721,7 +721,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
          bson, "cannot set both key alt name and contention factor");
    }
 
-   /* It is an error test set the FLE 1 algorithm option with any of the FLE 2
+   /* It is an error to set the FLE 1 algorithm option with any of the FLE 2
     * options (index_type, index_key_id, or contention_factor). */
    {
       REFRESH
