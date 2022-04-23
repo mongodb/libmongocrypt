@@ -1425,8 +1425,8 @@ mongocrypt_ctx_compact_init (mongocrypt_ctx_t *ctx,
                              mongocrypt_binary_t *encrypted_field_config);
 
 typedef enum {
-   MONGOCRYPT_INDEX_TYPE_NONE = 0,
-   MONGOCRYPT_INDEX_TYPE_EQUALITY = 1
+   MONGOCRYPT_INDEX_TYPE_NONE = 1,
+   MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
 } mongocrypt_index_type_t;
 
 /**
