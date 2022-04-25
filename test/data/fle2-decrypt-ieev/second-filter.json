@@ -1,0 +1,21 @@
+{
+    "$or": [
+        {
+            "_id": {
+                "$in": [
+                    {
+                        "$binary": {
+                            "base64": "q83vqxI0mHYSNBI0VniQEg==",
+                            "subType": "04"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "keyAltNames": {
+                "$in": []
+            }
+        }
+    ]
+}
