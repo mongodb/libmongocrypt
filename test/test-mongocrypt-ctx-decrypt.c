@@ -359,12 +359,14 @@ _test_decrypt_fle2 (_mongocrypt_tester_t *tester)
        */
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-                          {
-      mongocrypt_binary_t *filter = mongocrypt_binary_new ();
-      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
-      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE("./test/data/fle2-decrypt-ieev/first-filter.json"), filter);
-      mongocrypt_binary_destroy (filter);
-   }
+      {
+         mongocrypt_binary_t *filter = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-decrypt-ieev/first-filter.json"),
+            filter);
+         mongocrypt_binary_destroy (filter);
+      }
       ASSERT_OK (mongocrypt_ctx_mongo_feed (
                     ctx,
                     TEST_FILE ("./test/data/keys/"
@@ -376,12 +378,14 @@ _test_decrypt_fle2 (_mongocrypt_tester_t *tester)
        */
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-                          {
-      mongocrypt_binary_t *filter = mongocrypt_binary_new ();
-      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
-      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE("./test/data/fle2-decrypt-ieev/second-filter.json"), filter);
-      mongocrypt_binary_destroy (filter);
-   }
+      {
+         mongocrypt_binary_t *filter = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-decrypt-ieev/second-filter.json"),
+            filter);
+         mongocrypt_binary_destroy (filter);
+      }
       ASSERT_OK (mongocrypt_ctx_mongo_feed (
                     ctx,
                     TEST_FILE ("./test/data/keys/"
