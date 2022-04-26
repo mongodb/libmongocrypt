@@ -960,11 +960,6 @@ _check_for_payload_requiring_encryptionInformation (void *ctx,
       return true;
    }
 
-   if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
-      *out = true;
-      return true;
-   }
-
    return true;
 }
 
