@@ -1374,7 +1374,7 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] aes_256_ctr_encrypt The crypto callback function for encrypt
  * operation.
- * @param[in] aes_256_ctr_encrypt The crypto callback function for decrypt
+ * @param[in] aes_256_ctr_decrypt The crypto callback function for decrypt
  * operation.
  * @param[in] sign_ctx A context passed as an argument to the crypto callback
  * every invocation.
