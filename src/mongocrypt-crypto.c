@@ -67,6 +67,40 @@ _crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
    return _native_crypto_aes_256_cbc_encrypt (args);
 }
 
+static bool
+_crypto_aes_256_ctr_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
+{
+   mongocrypt_status_t *status = args.status;
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
+      CLIENT_ERR ("invalid encryption key length");
+      return false;
+   }
+
+   if (args.iv->len != MONGOCRYPT_IV_LEN) {
+      CLIENT_ERR ("invalid iv length");
+      return false;
+   }
+
+   if (crypto->aes_256_ctr_encrypt) {
+      mongocrypt_binary_t enc_key_bin, iv_bin, out_bin, in_bin;
+      bool ret;
+
+      _mongocrypt_buffer_to_binary (args.key, &enc_key_bin);
+      _mongocrypt_buffer_to_binary (args.iv, &iv_bin);
+      _mongocrypt_buffer_to_binary (args.out, &out_bin);
+      _mongocrypt_buffer_to_binary (args.in, &in_bin);
+
+      ret = crypto->aes_256_ctr_encrypt (crypto->ctx,
+                                         &enc_key_bin,
+                                         &iv_bin,
+                                         &in_bin,
+                                         &out_bin,
+                                         args.bytes_written,
+                                         status);
+      return ret;
+   }
+   return _native_crypto_aes_256_ctr_encrypt (args);
+}
 
 static bool
 _crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
@@ -98,6 +132,35 @@ _crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
    return _native_crypto_aes_256_cbc_decrypt (args);
 }
 
+static bool
+_crypto_aes_256_ctr_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
+{
+   mongocrypt_status_t *status = args.status;
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
+      CLIENT_ERR ("invalid encryption key length");
+      return false;
+   }
+
+   if (crypto->aes_256_ctr_decrypt) {
+      mongocrypt_binary_t enc_key_bin, iv_bin, out_bin, in_bin;
+      bool ret;
+
+      _mongocrypt_buffer_to_binary (args.key, &enc_key_bin);
+      _mongocrypt_buffer_to_binary (args.iv, &iv_bin);
+      _mongocrypt_buffer_to_binary (args.out, &out_bin);
+      _mongocrypt_buffer_to_binary (args.in, &in_bin);
+
+      ret = crypto->aes_256_ctr_decrypt (crypto->ctx,
+                                         &enc_key_bin,
+                                         &iv_bin,
+                                         &in_bin,
+                                         &out_bin,
+                                         args.bytes_written,
+                                         status);
+      return ret;
+   }
+   return _native_crypto_aes_256_ctr_decrypt (args);
+}
 
 static bool
 _crypto_hmac_sha_512 (_mongocrypt_crypto_t *crypto,
@@ -1156,7 +1219,8 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
    }
 
    /* Compute S = AES-CTR.Enc(Ke, IV, M). */
-   if (!_native_crypto_aes_256_ctr_encrypt (
+   if (!_crypto_aes_256_ctr_encrypt (
+          crypto,
           (aes_256_args_t){.key = &Ke,
                            .iv = &IV,
                            .in = &M,
@@ -1314,7 +1378,8 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
    }
 
    /* Compute and output M = AES-CTR.Dec(Ke, S) */
-   if (!_native_crypto_aes_256_ctr_decrypt (
+   if (!_crypto_aes_256_ctr_decrypt (
+          crypto,
           (aes_256_args_t){.key = &Ke,
                            .iv = &IV,
                            .in = &S,
@@ -1395,7 +1460,8 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    uint32_t S_bytes_written = 0;
 
    /* Compute S = AES-CTR.Enc(Ke, IV, M). */
-   if (!_native_crypto_aes_256_ctr_encrypt (
+   if (!_crypto_aes_256_ctr_encrypt (
+          crypto,
           (aes_256_args_t){.key = &Ke,
                            .iv = &IV,
                            .in = &M,
@@ -1484,7 +1550,8 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t Ke = *key;
 
    /* Compute and output M = AES-CTR.Dec(Ke, S) */
-   if (!_native_crypto_aes_256_ctr_decrypt (
+   if (!_crypto_aes_256_ctr_decrypt (
+          crypto,
           (aes_256_args_t){.key = &Ke,
                            .iv = &IV,
                            .in = &S,
