@@ -698,7 +698,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    EX_ENCRYPT_INIT_FAILS (bson, "unsupported algorithm");
 
    /* It is an error to set the FLE 1 keyAltName option with any of the FLE 2
-    * options (index_type, index_key_id, or contention_factor). */
+    * options (index_type, index_key_id, contention_factor, or query_type). */
    {
       REFRESH
       KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));

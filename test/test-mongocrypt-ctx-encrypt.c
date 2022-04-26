@@ -2236,14 +2236,16 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
       {
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_FILE ("./test/data/keys/"
-                                       "12345678123498761234123456789012-local-"
-                                       "document.json")),
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "12345678123498761234123456789012-local-"
+                                  "document.json")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_FILE ("./test/data/keys/"
-                                       "ABCDEFAB123498761234123456789012-local-"
-                                       "document.json")),
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "ABCDEFAB123498761234123456789012-local-"
+                                  "document.json")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -2335,6 +2337,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);
    }
+
    /* Test Indexed with non-zero ContentionFactor. */
    {
 /* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
@@ -2404,6 +2407,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);
    }
+
    /* Test that omitted index_key_id defaults to using user_key_id. */
    {
 /* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
