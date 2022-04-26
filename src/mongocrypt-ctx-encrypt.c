@@ -1000,7 +1000,7 @@ must_omit_encryptionInformation (const char *command_name,
    if (!_mongocrypt_traverse_binary_in_bson (
           _check_for_payload_requiring_encryptionInformation,
           &has_payload_requiring_encryptionInformation,
-          TRAVERSE_MATCH_CIPHERTEXT,
+          TRAVERSE_MATCH_SUBTYPE6,
           &iter,
           status)) {
       return false;

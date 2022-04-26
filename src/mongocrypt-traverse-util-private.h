@@ -22,7 +22,8 @@
 
 typedef enum {
    TRAVERSE_MATCH_CIPHERTEXT,
-   TRAVERSE_MATCH_MARKING
+   TRAVERSE_MATCH_MARKING,
+   TRAVERSE_MATCH_SUBTYPE6,
 } traversal_match_t;
 
 typedef bool (*_mongocrypt_traverse_callback_t) (void *ctx,
