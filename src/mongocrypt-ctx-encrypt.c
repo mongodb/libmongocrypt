@@ -938,6 +938,80 @@ fail:
    return out;
 }
 
+static bool
+_check_for_payload_requiring_encryptionInformation (void *ctx,
+                                                    _mongocrypt_buffer_t *in,
+                                                    mongocrypt_status_t *status)
+{
+   bool *out = (bool *) ctx;
+
+   if (in->len < 1) {
+      CLIENT_ERR ("unexpected empty FLE payload");
+      return false;
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2InsertUpdatePayload) {
+      *out = true;
+      return true;
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2FindEqualityPayload) {
+      *out = true;
+      return true;
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
+      *out = true;
+      return true;
+   }
+
+   return true;
+}
+
+static bool
+must_omit_encryptionInformation (const char *command_name,
+                                 const bson_t *command,
+                                 bool *must_omit /* out */,
+                                 mongocrypt_status_t *status)
+{
+   const char *eligible_commands[] = {
+      "find", "aggregate", "distinct", "count", "insert"};
+   size_t i;
+   bool found = false;
+
+   *must_omit = false;
+   for (i = 0; i < sizeof (eligible_commands) / sizeof (eligible_commands[0]);
+        i++) {
+      if (0 == strcmp (eligible_commands[i], command_name)) {
+         found = true;
+         break;
+      }
+   }
+   if (!found) {
+      return true;
+   }
+
+   bool has_payload_requiring_encryptionInformation = false;
+   bson_iter_t iter;
+   if (!bson_iter_init (&iter, command)) {
+      CLIENT_ERR ("unable to iterate command");
+      return false;
+   }
+   if (!_mongocrypt_traverse_binary_in_bson (
+          _check_for_payload_requiring_encryptionInformation,
+          &has_payload_requiring_encryptionInformation,
+          TRAVERSE_MATCH_CIPHERTEXT,
+          &iter,
+          status)) {
+      return false;
+   }
+
+   if (!has_payload_requiring_encryptionInformation) {
+      *must_omit = true;
+   }
+   return true;
+}
+
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
  * associated with the command. */
 static bool
@@ -1028,8 +1102,14 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
+   bool must_omit;
+   if (!must_omit_encryptionInformation (
+          command_name, &converted, &must_omit, ctx->status)) {
+      return false;
+   }
+
    /* Append a new 'encryptionInformation'. */
-   if (!_fle2_append_encryptionInformation (&converted,
+   if (!must_omit && !_fle2_append_encryptionInformation (&converted,
                                             ectx->ns,
                                             &encrypted_field_config_bson,
                                             deleteTokens,

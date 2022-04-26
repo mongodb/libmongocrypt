@@ -3073,6 +3073,104 @@ _test_encrypt_fle2_delete (_mongocrypt_tester_t *tester)
    }
 }
 
+/* Test that "encryptionInformation" is omitted when no values are encrypted for eligible commands.
+ * See MONGOCRYPT-423. */
+static void _test_encrypt_fle2_omits_encryptionInformation (_mongocrypt_tester_t *tester) {
+   /* 'find' does not include 'encryptionInformation' if no fields are encrypted. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (
+         mongocrypt_ctx_encrypt_init (ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+         ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                       ctx,
+                       TEST_BSON ("{'name': 'coll', 'options': {'encryptedFields': {'fields': []}}}")),
+                    ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+      
+      /* Check that command to mongocryptd includes "encryptionInformation". */
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+      {
+         mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+            cmd_to_mongocryptd);
+         mongocrypt_binary_destroy (cmd_to_mongocryptd);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *cmd_to_mongod;
+
+         cmd_to_mongod = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'find': 'coll'}"), cmd_to_mongod);
+         mongocrypt_binary_destroy (cmd_to_mongod);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+
+   /* 'find' includes encryptionInformation if the initial command includes an explicitly encrypted payload. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (
+         mongocrypt_ctx_encrypt_init (ctx, "db", -1, TEST_FILE ("./test/data/fle2-omit-encryptionInformation/explicit/cmd.json")),
+         ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                       ctx,
+                       TEST_BSON ("{'name': 'coll', 'options': {'encryptedFields': {'fields': []}}}")),
+                    ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+      
+      /* Check that command to mongocryptd includes "encryptionInformation". */
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+      {
+         mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-omit-encryptionInformation/explicit/cmd-to-mongocryptd.json"),
+            cmd_to_mongocryptd);
+         mongocrypt_binary_destroy (cmd_to_mongocryptd);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *cmd_to_mongod;
+
+         cmd_to_mongod = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE ("./test/data/fle2-omit-encryptionInformation/explicit/cmd-to-mongod.json"), cmd_to_mongod);
+         mongocrypt_binary_destroy (cmd_to_mongod);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -3115,4 +3213,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_fle2_explicit);
    INSTALL_TEST (_test_encrypt_applies_default_state_collections);
    INSTALL_TEST (_test_encrypt_fle2_delete);
+   INSTALL_TEST (_test_encrypt_fle2_omits_encryptionInformation);
 }
