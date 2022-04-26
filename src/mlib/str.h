@@ -815,7 +815,7 @@ mstr_win32_narrow (const wchar_t *wstring)
 {
    // Some older versions of MinGW fail to include the WC_ERR_INVALID_CHARS
    // flag, so we will specify it manually:
-   DWORD wcflags = 0x08; // WC_ERR_INVALID_CHARS
+   DWORD wcflags = 0x80; // WC_ERR_INVALID_CHARS
    int length = WideCharToMultiByte (CP_UTF8,
                                      wcflags,
                                      wstring,
