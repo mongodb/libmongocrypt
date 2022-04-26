@@ -123,4 +123,15 @@ main ()
    test_predicate (false, "foo", ends_with, "fo");
    test_predicate (false, "foo", ends_with, "oof");
    test_predicate (false, "foo", ends_with, "bar");
+
+#ifdef _WIN32
+   const wchar_t *wide = L"🕴️";
+   mstr_narrow_result narrow = mstr_win32_narrow (wide);
+   CHECK (narrow.error == 0);
+   MSTR_ASSERT_EQ (
+      narrow.string.view,
+      mstrv_lit (
+         "\xc3\xb0\xc5\xb8\xe2\x80\xa2\xc2\xb4\xc3\xaf\xc2\xb8\xc2\x8f"));
+   mstr_free (narrow.string);
+#endif
 }

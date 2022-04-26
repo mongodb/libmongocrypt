@@ -813,8 +813,11 @@ typedef struct mstr_narrow_result {
 static inline mstr_narrow_result
 mstr_win32_narrow (const wchar_t *wstring)
 {
+   // Some older versions of MinGW fail to include the WC_ERR_INVALID_CHARS
+   // flag, so we will specify it manually:
+   DWORD wcflags = 0x80; // WC_ERR_INVALID_CHARS
    int length = WideCharToMultiByte (CP_UTF8,
-                                     WC_ERR_INVALID_CHARS,
+                                     wcflags,
                                      wstring,
                                      -1 /* wstring is null-terminated */,
                                      NULL,
@@ -825,13 +828,15 @@ mstr_win32_narrow (const wchar_t *wstring)
       return (mstr_narrow_result){.string = MSTR_NULL,
                                   .error = GetLastError ()};
    }
-   mstr_mut ret = mstr_new ((size_t) length);
+   // Allocate a new string, not including the null terminator
+   mstr_mut ret = mstr_new ((size_t) (length - 1));
    int got_len = WideCharToMultiByte (CP_UTF8,
-                                      WC_ERR_INVALID_CHARS,
+                                      wcflags,
                                       wstring,
                                       -1,
                                       ret.data,
-                                      (int) ret.len,
+                                      // Plus one byte for the NUL
+                                      (int) (ret.len + 1),
                                       NULL,
                                       NULL);
    assert (length == got_len);
