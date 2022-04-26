@@ -1109,7 +1109,8 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    }
 
    /* Append a new 'encryptionInformation'. */
-   if (!must_omit && !_fle2_append_encryptionInformation (&converted,
+   if (!must_omit &&
+       !_fle2_append_encryptionInformation (&converted,
                                             ectx->ns,
                                             &encrypted_field_config_bson,
                                             deleteTokens,
@@ -1141,13 +1142,13 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    marking.type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
    if (ctx->opts.query_type.set) {
       switch (ctx->opts.query_type.value) {
-         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
+      case MONGOCRYPT_QUERY_TYPE_EQUALITY:
          marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND;
       }
    } else {
       marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT;
    }
-   
+
    switch (ctx->opts.index_type.value) {
    case MONGOCRYPT_INDEX_TYPE_EQUALITY:
       marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_EQUALITY;
@@ -1598,7 +1599,8 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
-      if (!_mongocrypt_key_broker_request_id (&ctx->kb, &ctx->opts.index_key_id)) {
+      if (!_mongocrypt_key_broker_request_id (&ctx->kb,
+                                              &ctx->opts.index_key_id)) {
          return _mongocrypt_ctx_fail (ctx);
       }
    }
