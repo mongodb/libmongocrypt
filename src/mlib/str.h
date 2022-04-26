@@ -833,7 +833,7 @@ mstr_win32_narrow (const wchar_t *wstring)
    int got_len = WideCharToMultiByte (CP_UTF8,
                                       wcflags,
                                       wstring,
-                                      length,
+                                      -1,
                                       ret.data,
                                       // Plus one byte for the NUL
                                       (int) (ret.len + 1),
