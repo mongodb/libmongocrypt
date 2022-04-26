@@ -274,7 +274,7 @@ _create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
    ASSERT_OK (ret, crypt);
    ret = mongocrypt_setopt_aes_256_ctr (crypt,
                                         _mock_aes_256_xxx_encrypt,
-                                        _mock_aes_256_xxx_encrypt,
+                                        _mock_aes_256_xxx_decrypt,
                                         (void *) error_on);
    ASSERT_OK (ret, crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
