@@ -21,9 +21,9 @@
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-traverse-util-private.h"
 
-/* _add_state_collections copies encryptedFieldConfig and applies default state
- * collection names for escCollection, eccCollection, and ecocCollection if
- * required. */
+/* _fle2_append_encryptedFieldConfig copies encryptedFieldConfig and applies
+ * default state collection names for escCollection, eccCollection, and
+ * ecocCollection if required. */
 static bool
 _fle2_append_encryptedFieldConfig (bson_t *dst,
                                    bson_t *encryptedFieldConfig,
@@ -57,7 +57,6 @@ _fle2_append_encryptedFieldConfig (bson_t *dst,
       }
    }
 
-   /* TODO */
    if (!has_escCollection) {
       char *default_escCollection =
          bson_strdup_printf ("enxcol_.%s.esc", coll_name);
@@ -120,7 +119,7 @@ _fle2_append_encryptionInformation (bson_t *dst,
 
    if (!BSON_APPEND_DOCUMENT_BEGIN (
           &schema_bson, ns, &encrypted_field_config_bson)) {
-      CLIENT_ERR ("unable to begin appendind 'encryptedFieldConfig' to "
+      CLIENT_ERR ("unable to begin appending 'encryptedFieldConfig' to "
                   "'encryptionInformation'.'schema'");
       return false;
    }
@@ -133,11 +132,10 @@ _fle2_append_encryptionInformation (bson_t *dst,
    }
 
    if (!bson_append_document_end (&schema_bson, &encrypted_field_config_bson)) {
-      CLIENT_ERR ("unable to end appendind 'encryptedFieldConfig' to "
+      CLIENT_ERR ("unable to end appending 'encryptedFieldConfig' to "
                   "'encryptionInformation'.'schema'");
       return false;
    }
-
    if (!bson_append_document_end (&encryption_information_bson, &schema_bson)) {
       CLIENT_ERR (
          "unable to end appending 'schema' to 'encryptionInformation'");
