@@ -1,0 +1,66 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "delete": "test",
+        "deletes": [
+            {
+                "q": {},
+                "limit": 1
+            }
+        ],
+        "$db": "test"
+    },
+    "hasEncryptedPlaceholders": false,
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+           "db.test": {
+              "escCollection": "esc",
+              "eccCollection": "ecc",
+              "ecocCollection": "ecoc",
+              "fields": [
+                 {
+                    "keyId": {
+                       "$binary": {
+                          "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                          "subType": "04"
+                       }
+                    },
+                    "path": "encrypted",
+                    "bsonType": "string",
+                    "queries": {
+                       "queryType": "equality",
+                       "contention": 0
+                    }
+                 },
+                 {
+                    "keyId": {
+                       "$binary": {
+                          "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                          "subType": "04"
+                       }
+                    },
+                    "path": "nested.encrypted",
+                    "bsonType": "string",
+                    "queries": {
+                       "queryType": "equality",
+                       "contention": 0
+                    }
+                 },
+                 {
+                    "keyId": {
+                       "$binary": {
+                          "base64": "EjRWeBI0mHYSNBI0VniQFA==",
+                          "subType": "04"
+                       }
+                    },
+                    "path": "nested.notindexed",
+                    "bsonType": "string"
+                 }
+              ]
+           }
+        }
+     }
+}

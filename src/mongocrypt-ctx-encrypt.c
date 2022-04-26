@@ -20,6 +20,7 @@
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-traverse-util-private.h"
+#include "mc-tokens-private.h"
 
 /* _fle2_append_encryptedFieldConfig copies encryptedFieldConfig and applies
  * default state collection names for escCollection, eccCollection, and
@@ -94,6 +95,7 @@ static bool
 _fle2_append_encryptionInformation (bson_t *dst,
                                     const char *ns,
                                     bson_t *encryptedFieldConfig,
+                                    bson_t *deleteTokens,
                                     const char *coll_name,
                                     mongocrypt_status_t *status)
 {
@@ -141,6 +143,28 @@ _fle2_append_encryptionInformation (bson_t *dst,
          "unable to end appending 'schema' to 'encryptionInformation'");
       return false;
    }
+
+   if (deleteTokens != NULL) {
+      bson_t delete_tokens_bson;
+      if (!BSON_APPEND_DOCUMENT_BEGIN (&encryption_information_bson,
+                                       "deleteTokens",
+                                       &delete_tokens_bson)) {
+         CLIENT_ERR ("unable to begin appending 'deleteTokens' to "
+                     "'encryptionInformation'");
+         return false;
+      }
+      if (!BSON_APPEND_DOCUMENT (&delete_tokens_bson, ns, deleteTokens)) {
+         CLIENT_ERR ("unable to append '%s' to 'deleteTokens'", ns);
+         return false;
+      }
+      if (!bson_append_document_end (&encryption_information_bson,
+                                     &delete_tokens_bson)) {
+         CLIENT_ERR ("unable to end appending 'deleteTokens' to "
+                     "'encryptionInformation'");
+         return false;
+      }
+   }
+
    if (!bson_append_document_end (dst, &encryption_information_bson)) {
       CLIENT_ERR ("unable to end appending 'encryptionInformation'");
       return false;
@@ -195,6 +219,16 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "unable to copy options.encryptedFields");
       }
+      bson_t efc_bson;
+      if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config,
+                                       &efc_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to create BSON from encrypted_field_config");
+      }
+      if (!mc_EncryptedFieldConfig_parse (&ectx->efc, &efc_bson, ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         return false;
+      }
    }
 
    BSON_ASSERT (bson_iter_init (&iter, collinfo));
@@ -232,6 +266,94 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
    }
 
 
+   return true;
+}
+
+/* get_command_name returns the name of a command. The command name is the first
+ * field. For example, the command name of: {"find": "foo", "filter": {"bar":
+ * 1}} is "find". */
+const char *
+get_command_name (_mongocrypt_buffer_t *cmd, mongocrypt_status_t *status)
+{
+   bson_t cmd_bson;
+   bson_iter_t iter;
+   const char *cmd_name;
+
+   if (!_mongocrypt_buffer_to_bson (cmd, &cmd_bson)) {
+      CLIENT_ERR ("unable to convert command buffer to BSON");
+      return NULL;
+   }
+
+   if (!bson_iter_init (&iter, &cmd_bson)) {
+      CLIENT_ERR ("unable to iterate over command BSON");
+      return NULL;
+   }
+
+   /* The command name is the first key. */
+   if (!bson_iter_next (&iter)) {
+      CLIENT_ERR ("unexpected empty BSON for command");
+      return NULL;
+   }
+
+   cmd_name = bson_iter_key (&iter);
+   if (!cmd_name) {
+      CLIENT_ERR ("unable to get command name from BSON");
+      return NULL;
+   }
+   return cmd_name;
+}
+
+static bool
+command_needs_deleteTokens (const char *command_name)
+{
+   const char *cmds_needing_deleteTokens[] = {
+      "delete", "update", "findAndModify"};
+
+   size_t i;
+   for (i = 0; i < sizeof (cmds_needing_deleteTokens) /
+                      sizeof (cmds_needing_deleteTokens[0]);
+        i++) {
+      if (0 == strcmp (cmds_needing_deleteTokens[i], command_name)) {
+         return true;
+      }
+   }
+   return false;
+}
+/* _fle2_collect_keys_for_deleteTokens requests keys required to produce
+ * deleteTokens. deleteTokens is only applicable to FLE 2. */
+static bool
+_fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+
+   /* deleteTokens are only appended for FLE 2. */
+   if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+      return true;
+   }
+
+   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (!cmd_name) {
+      _mongocrypt_ctx_fail (ctx);
+      return false;
+   }
+
+   if (!command_needs_deleteTokens (cmd_name)) {
+      /* Command does not require deleteTokens. */
+      return true;
+   }
+
+   mc_EncryptedField_t *field;
+
+   for (field = ectx->efc.fields; field != NULL; field = field->next) {
+      if (field->has_queries) {
+         if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
+            _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
+            _mongocrypt_ctx_fail (ctx);
+            return false;
+         }
+      }
+   }
    return true;
 }
 
@@ -283,10 +405,14 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
       bson_destroy (&empty_collinfo);
    }
 
+   if (!_fle2_collect_keys_for_deleteTokens (ctx)) {
+      return false;
+   }
+
    if (ctx->crypt->opts.bypass_query_analysis) {
-      ctx->nothing_to_do = true;
-      ctx->state = MONGOCRYPT_CTX_READY;
-      return true;
+      /* Keys may have been requested for deleteTokens. Finish key requests. */
+      _mongocrypt_key_broker_requests_done (&ctx->kb);
+      return _mongocrypt_ctx_state_from_key_broker (ctx);
    }
    ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    return _try_run_csfle_marking (ctx);
@@ -319,6 +445,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
    if (!_fle2_append_encryptionInformation (out,
                                             ectx->ns,
                                             &encrypted_field_config_bson,
+                                            NULL /* deleteTokens */,
                                             ectx->coll_name,
                                             ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
@@ -699,6 +826,118 @@ _replace_marking_with_ciphertext (void *ctx,
    return ret;
 }
 
+
+/* generate_delete_tokens generates the 'deleteTokens' document to be appended
+ * to 'encryptionInformation'. */
+static bson_t *
+generate_delete_tokens (_mongocrypt_crypto_t *crypto,
+                        _mongocrypt_key_broker_t *kb,
+                        mc_EncryptedFieldConfig_t *efc,
+                        mongocrypt_status_t *status)
+{
+   bool ret = false;
+   bson_t *out = bson_new ();
+   mc_EncryptedField_t *ef;
+
+   for (ef = efc->fields; ef != NULL; ef = ef->next) {
+      _mongocrypt_buffer_t IndexKey = {0};
+      _mongocrypt_buffer_t TokenKey = {0};
+      mc_ServerDataEncryptionLevel1Token_t *sdel1t = NULL;
+      mc_CollectionsLevel1Token_t *cl1t = NULL;
+      mc_ECOCToken_t *ecoc = NULL;
+      bool loop_ok = false;
+      /* deleteTokens are only necessary for indexed fields. */
+      if (!ef->has_queries) {
+         goto loop_continue;
+      }
+
+      if (!_mongocrypt_key_broker_decrypted_key_by_id (
+             kb, &ef->keyId, &IndexKey)) {
+         _mongocrypt_key_broker_status (kb, status);
+         goto loop_fail;
+      }
+
+      /* Get the TokenKey from the last 32 bytes of IndexKey */
+      if (!_mongocrypt_buffer_from_subrange (&TokenKey,
+                                             &IndexKey,
+                                             IndexKey.len -
+                                                MONGOCRYPT_TOKEN_KEY_LEN,
+                                             MONGOCRYPT_TOKEN_KEY_LEN)) {
+         CLIENT_ERR (
+            "generate_delete_tokens unable to parse TokenKey from IndexKey");
+         goto loop_fail;
+      }
+
+      sdel1t =
+         mc_ServerDataEncryptionLevel1Token_new (crypto, &TokenKey, status);
+      if (!sdel1t) {
+         goto loop_fail;
+      }
+
+      cl1t = mc_CollectionsLevel1Token_new (crypto, &TokenKey, status);
+      if (!cl1t) {
+         goto loop_fail;
+      }
+
+      ecoc = mc_ECOCToken_new (crypto, cl1t, status);
+      if (!ecoc) {
+         goto loop_fail;
+      }
+
+      bson_t field_bson;
+      if (!BSON_APPEND_DOCUMENT_BEGIN (out, ef->path, &field_bson)) {
+         CLIENT_ERR ("failed to begin document for 'deleteTokens.%s'",
+                     ef->path);
+         goto loop_fail;
+      }
+
+      if (!BSON_APPEND_BINARY (
+             &field_bson,
+             "e",
+             BSON_SUBTYPE_BINARY,
+             mc_ServerDataEncryptionLevel1Token_get (sdel1t)->data,
+             mc_ServerDataEncryptionLevel1Token_get (sdel1t)->len)) {
+         CLIENT_ERR ("failed to append ServerDataEncryptionLevel1Token for %s",
+                     ef->path);
+         goto loop_fail;
+      }
+
+      if (!BSON_APPEND_BINARY (&field_bson,
+                               "o",
+                               BSON_SUBTYPE_BINARY,
+                               mc_ECOCToken_get (ecoc)->data,
+                               mc_ECOCToken_get (ecoc)->len)) {
+         CLIENT_ERR ("failed to append ECOCToken for %s", ef->path);
+         goto loop_fail;
+      }
+
+      if (!bson_append_document_end (out, &field_bson)) {
+         CLIENT_ERR ("failed to end document for 'deleteTokens.%s'", ef->path);
+         goto loop_fail;
+      }
+
+   loop_continue:
+      loop_ok = true;
+   loop_fail:
+      _mongocrypt_buffer_cleanup (&IndexKey);
+      _mongocrypt_buffer_cleanup (&TokenKey);
+      mc_ServerDataEncryptionLevel1Token_destroy (sdel1t);
+      mc_CollectionsLevel1Token_destroy (cl1t);
+      mc_ECOCToken_destroy (ecoc);
+      if (!loop_ok) {
+         goto fail;
+      }
+   }
+
+   ret = true;
+fail:
+   if (!ret) {
+      bson_destroy (out);
+      return NULL;
+   }
+   return out;
+}
+
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
  * associated with the command. */
 static bool
@@ -724,8 +963,8 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
          ctx, "malformed bson in encrypted_field_config_bson");
    }
 
-   /* If nothing_to_do is true, then the marked_cmd contained no markings. */
-   if (ctx->nothing_to_do) {
+   /* If marked_cmd buffer is empty, there are no markings to encrypt. */
+   if (_mongocrypt_buffer_empty (&ectx->marked_cmd)) {
       bson_t original_cmd_bson;
 
       if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd,
@@ -771,15 +1010,36 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
             ctx, "failed to steal BSON without encryptionInformation");
       }
    }
+
+   const char *command_name =
+      get_command_name (&ectx->original_cmd, ctx->status);
+   if (NULL == command_name) {
+      bson_destroy (&converted);
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   bson_t *deleteTokens = NULL;
+   if (command_needs_deleteTokens (command_name)) {
+      deleteTokens = generate_delete_tokens (
+         ctx->crypt->crypto, &ctx->kb, &ectx->efc, ctx->status);
+      if (!deleteTokens) {
+         bson_destroy (&converted);
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   }
+
    /* Append a new 'encryptionInformation'. */
    if (!_fle2_append_encryptionInformation (&converted,
                                             ectx->ns,
                                             &encrypted_field_config_bson,
+                                            deleteTokens,
                                             ectx->coll_name,
                                             ctx->status)) {
       bson_destroy (&converted);
+      bson_destroy (deleteTokens);
       return _mongocrypt_ctx_fail (ctx);
    }
+   bson_destroy (deleteTokens);
 
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
    _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
@@ -975,6 +1235,7 @@ _cleanup (mongocrypt_ctx_t *ctx)
    _mongocrypt_buffer_cleanup (&ectx->mongocryptd_cmd);
    _mongocrypt_buffer_cleanup (&ectx->marked_cmd);
    _mongocrypt_buffer_cleanup (&ectx->encrypted_cmd);
+   mc_EncryptedFieldConfig_cleanup (&ectx->efc);
 }
 
 
@@ -1043,6 +1304,16 @@ _fle2_try_encrypted_field_config_from_map (mongocrypt_ctx_t *ctx)
             ctx,
             "unable to copy encrypted_field_config from "
             "encrypted_field_config_map");
+      }
+      bson_t efc_bson;
+      if (!_mongocrypt_buffer_to_bson (&ectx->encrypted_field_config,
+                                       &efc_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to create BSON from encrypted_field_config");
+      }
+      if (!mc_EncryptedFieldConfig_parse (&ectx->efc, &efc_bson, ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         return false;
       }
       ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    }
@@ -1557,11 +1828,18 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       }
    }
 
+   /* If an encrypted_field_config was set, check if keys are required for
+    * delete tokens. */
+   if (!_fle2_collect_keys_for_deleteTokens (ctx)) {
+      return false;
+   }
+
    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
       if (ctx->crypt->opts.bypass_query_analysis) {
-         ctx->nothing_to_do = true;
-         ctx->state = MONGOCRYPT_CTX_READY;
-         return true;
+         /* Keys may have been requested for deleteTokens. Finish key requests.
+          */
+         _mongocrypt_key_broker_requests_done (&ctx->kb);
+         return _mongocrypt_ctx_state_from_key_broker (ctx);
       }
       // We're ready for markings. Try to generate them ourself.
       return _try_run_csfle_marking (ctx);

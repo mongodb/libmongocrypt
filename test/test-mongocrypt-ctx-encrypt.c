@@ -1653,7 +1653,7 @@ _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester)
             "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
       crypt);
    ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
-                 crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")),
+                 crypt, TEST_BSON ("{'db.coll': {'fields': []}}")),
               crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
 
@@ -1677,7 +1677,7 @@ _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester)
          mongocrypt_ctx_mongo_feed (
             ctx,
             TEST_BSON ("{'result': {'find': 'coll', 'encryptionInformation': { "
-                       "'type': 1, 'schema': { 'db.coll': {'foo': 'bar'}}}}, "
+                       "'type': 1, 'schema': { 'db.coll': {'fields': []}}}}, "
                        "'hasEncryptionPlaceholders': false}")),
          ctx);
       mongocrypt_binary_destroy (cmd_to_mongocryptd);
@@ -1716,7 +1716,7 @@ _test_encrypt_with_encrypted_field_config_map_bypassed (
             "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
       crypt);
    ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
-                 crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")),
+                 crypt, TEST_BSON ("{'db.coll': {'fields': []}}")),
               crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
 
@@ -1810,7 +1810,7 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
                        ctx,
                        TEST_BSON ("{'name': 'coll', 'options': "
-                                  "{'encryptedFields': {'foo': 'bar'}}}")),
+                                  "{'encryptedFields': {'fields': []}}}")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -1882,7 +1882,7 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
                ctx,
                TEST_BSON (
                   "{'name': 'coll', 'options': { 'validator': { '$jsonSchema': "
-                  "{'baz': 'qux' }}, 'encryptedFields': {'foo': 'bar'}}}")),
+                  "{'baz': 'qux' }}, 'encryptedFields': {'fields': []}}}")),
             ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -1926,7 +1926,7 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
                "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
          crypt);
       ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
-                    crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")),
+                    crypt, TEST_BSON ("{'db.coll': {'fields': []}}")),
                  crypt);
       mongocrypt_setopt_bypass_query_analysis (crypt);
       ASSERT_OK (mongocrypt_init (crypt), crypt);
@@ -1975,7 +1975,7 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
          ASSERT_OK (
             mongocrypt_ctx_mongo_feed (
                ctx,
-               TEST_BSON ("{'options': {'encryptedFields': {'foo': 'bar'}}}")),
+               TEST_BSON ("{'options': {'encryptedFields': {'fields': []}}}")),
             ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -2703,6 +2703,376 @@ _test_encrypt_applies_default_state_collections (_mongocrypt_tester_t *tester)
    }
 }
 
+/* Test encrypting an empty 'delete' command without values to be encrypted.
+ * Expect deleteTokens to be applied. */
+static void
+_test_encrypt_fle2_delete (_mongocrypt_tester_t *tester)
+{
+   /* Test success. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-delete/success/cmd.json")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE ("./test/data/fle2-delete/success/collinfo.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/fle2-delete/success/mongocryptd-reply.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "ABCDEFAB123498761234123456789012-local-document.json")),
+            ctx);
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789012-local-document.json")),
+            ctx);
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789013-local-document.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *out = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE (
+               "./test/data/fle2-delete/success/encrypted-payload.json"),
+            out);
+         mongocrypt_binary_destroy (out);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+   /* Test with no encrypted values. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-delete/empty/cmd.json")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx, TEST_FILE ("./test/data/fle2-delete/empty/collinfo.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/fle2-delete/empty/mongocryptd-reply.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789012-local-document.json")),
+            ctx);
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789013-local-document.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *out = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-delete/empty/encrypted-payload.json"),
+            out);
+         mongocrypt_binary_destroy (out);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+
+   /* deleteTokens are appended when bypassQueryAnalysis is true. */
+   {
+      mongocrypt_t *crypt = mongocrypt_new ();
+      /* Configure crypt. */
+      {
+         char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
+         mongocrypt_binary_t *localkey;
+         localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
+                                                     sizeof localkey_data);
+         ASSERT_OK (mongocrypt_setopt_kms_provider_local (crypt, localkey),
+                    crypt);
+         mongocrypt_binary_destroy (localkey);
+         mongocrypt_setopt_bypass_query_analysis (crypt);
+         ASSERT_OK (mongocrypt_init (crypt), crypt);
+      }
+
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-delete/empty/cmd.json")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx, TEST_FILE ("./test/data/fle2-delete/empty/collinfo.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789012-local-document.json")),
+            ctx);
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789013-local-document.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *out = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-delete/empty/encrypted-payload.json"),
+            out);
+         mongocrypt_binary_destroy (out);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+
+   /* Test that deleteTokens are appended when using an
+    * encrypted_field_config_map. */
+   {
+      mongocrypt_t *crypt = mongocrypt_new ();
+      /* Configure crypt. */
+      {
+         char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
+         mongocrypt_binary_t *localkey;
+         localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
+                                                     sizeof localkey_data);
+         ASSERT_OK (mongocrypt_setopt_kms_provider_local (crypt, localkey),
+                    crypt);
+         mongocrypt_binary_destroy (localkey);
+         ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                       crypt,
+                       TEST_FILE ("./test/data/fle2-delete/success/"
+                                  "encrypted-field-config-map.json")),
+                    crypt);
+         ASSERT_OK (mongocrypt_init (crypt), crypt);
+      }
+
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-delete/success/cmd.json")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/fle2-delete/success/mongocryptd-reply.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "ABCDEFAB123498761234123456789012-local-document.json")),
+            ctx);
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789012-local-document.json")),
+            ctx);
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789013-local-document.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *out = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE (
+               "./test/data/fle2-delete/success/encrypted-payload.json"),
+            out);
+         mongocrypt_binary_destroy (out);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+
+   /* Test that deleteTokens are appended when using an
+    * encrypted_field_config_map and bypass_query_analysis. */
+   {
+      mongocrypt_t *crypt = mongocrypt_new ();
+      /* Configure crypt. */
+      {
+         char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
+         mongocrypt_binary_t *localkey;
+         localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
+                                                     sizeof localkey_data);
+         ASSERT_OK (mongocrypt_setopt_kms_provider_local (crypt, localkey),
+                    crypt);
+         mongocrypt_binary_destroy (localkey);
+         ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                       crypt,
+                       TEST_FILE ("./test/data/fle2-delete/empty/"
+                                  "encrypted-field-config-map.json")),
+                    crypt);
+         mongocrypt_setopt_bypass_query_analysis (crypt);
+         ASSERT_OK (mongocrypt_init (crypt), crypt);
+      }
+
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-delete/empty/cmd.json")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789012-local-document.json")),
+            ctx);
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_FILE (
+                  "./test/data/keys/"
+                  "12345678123498761234123456789013-local-document.json")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *out = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-delete/empty/encrypted-payload.json"),
+            out);
+         mongocrypt_binary_destroy (out);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -2744,4 +3114,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_fle2_unindexed_encrypted_payload);
    INSTALL_TEST (_test_encrypt_fle2_explicit);
    INSTALL_TEST (_test_encrypt_applies_default_state_collections);
+   INSTALL_TEST (_test_encrypt_fle2_delete);
 }

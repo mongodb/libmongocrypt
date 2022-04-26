@@ -20,6 +20,7 @@
 #include <bson/bson.h>
 
 typedef struct _mc_EncryptedField_t {
+   bool has_queries;
    _mongocrypt_buffer_t keyId;
    const char *path;
    struct _mc_EncryptedField_t *next;

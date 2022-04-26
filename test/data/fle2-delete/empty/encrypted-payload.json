@@ -1,0 +1,91 @@
+{
+   "delete": "test",
+   "deletes": [
+      {
+         "q": {},
+         "limit": 1
+      }
+   ],
+   "encryptionInformation": {
+      "type": 1,
+      "schema": {
+         "db.test": {
+            "escCollection": "esc",
+            "eccCollection": "ecc",
+            "ecocCollection": "ecoc",
+            "fields": [
+               {
+                  "keyId": {
+                     "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                        "subType": "04"
+                     }
+                  },
+                  "path": "encrypted",
+                  "bsonType": "string",
+                  "queries": {
+                     "queryType": "equality",
+                     "contention": 0
+                  }
+               },
+               {
+                  "keyId": {
+                     "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                        "subType": "04"
+                     }
+                  },
+                  "path": "nested.encrypted",
+                  "bsonType": "string",
+                  "queries": {
+                     "queryType": "equality",
+                     "contention": 0
+                  }
+               },
+               {
+                  "keyId": {
+                     "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQFA==",
+                        "subType": "04"
+                     }
+                  },
+                  "path": "nested.notindexed",
+                  "bsonType": "string"
+               }
+            ]
+         }
+      },
+      "deleteTokens": {
+         "db.test": {
+            "nested.encrypted": {
+               "e": {
+                  "$binary": {
+                     "base64": "vtmZa9S/cT2lpsvFf4d2y1Febe7MuAQnAaB+1PzM8zI=",
+                     "subType": "00"
+                  }
+               },
+               "o": {
+                  "$binary": {
+                     "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
+                     "subType": "00"
+                  }
+               }
+            },
+            "encrypted": {
+               "e": {
+                  "$binary": {
+                     "base64": "65pz95EthqQpfoHS9nWvdCh05AV+OokP7GUaI+7j8+w=",
+                     "subType": "00"
+                  }
+               },
+               "o": {
+                  "$binary": {
+                     "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
+                     "subType": "00"
+                  }
+               }
+            }
+         }
+      }
+   }
+}

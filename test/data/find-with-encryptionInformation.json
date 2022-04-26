@@ -6,7 +6,7 @@
         },
         "schema": {
             "db.coll": {
-                "foo": "bar",
+                "fields": [],
                 "escCollection": "enxcol_.coll.esc",
                 "eccCollection": "enxcol_.coll.ecc",
                 "ecocCollection": "enxcol_.coll.ecoc"

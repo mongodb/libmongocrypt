@@ -91,8 +91,13 @@ struct _mongocrypt_ctx_t {
    _mongocrypt_opts_kms_providers_t
       kms_providers; /* not owned, is merged from per-ctx / per-mongocrypt_t */
    bool initialized;
-   bool
-      nothing_to_do; /* set to true if no encryption/decryption is required. */
+   /* nothing_to_do is set to true under these conditions:
+    * 1. No keys are requested
+    * 2. The command is bypassed for automatic encryption (e.g. ping).
+    * 3. bypass_query_analysis is true.
+    * TODO (MONGOCRYPT-422) replace nothing_to_do.
+    */
+   bool nothing_to_do;
 };
 
 
@@ -142,6 +147,7 @@ typedef struct {
     * encryption is using FLE 2.0.
     */
    _mongocrypt_buffer_t encrypted_field_config;
+   mc_EncryptedFieldConfig_t efc;
 } _mongocrypt_ctx_encrypt_t;
 
 
