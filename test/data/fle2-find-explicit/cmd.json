@@ -1,0 +1,11 @@
+{
+    "find": "coll",
+    "filter": {
+        "encryptedUnindexed": {
+            "$binary": {
+                "base64": "BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjcdSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ==",
+                "subType": "06"
+            }
+        }
+    }
+}

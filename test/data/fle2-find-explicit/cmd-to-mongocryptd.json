@@ -1,0 +1,24 @@
+{
+    "find": "coll",
+    "filter": {
+        "encryptedUnindexed": {
+            "$binary": {
+                "base64": "BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjcdSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ==",
+                "subType": "06"
+            }
+        }
+    },
+    "encryptionInformation": {
+        "type": {
+            "$numberInt": "1"
+        },
+        "schema": {
+            "db.coll": {
+                "fields": [],
+                "escCollection": "enxcol_.coll.esc",
+                "eccCollection": "enxcol_.coll.ecc",
+                "ecocCollection": "enxcol_.coll.ecoc"
+            }
+        }
+    }
+}
