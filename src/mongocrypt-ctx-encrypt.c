@@ -21,9 +21,15 @@
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-traverse-util-private.h"
 
-/* _add_state_collections copies encryptedFieldConfig and applies default state collection names for escCollection, eccCollection, and ecocCollection if required. */
+/* _add_state_collections copies encryptedFieldConfig and applies default state
+ * collection names for escCollection, eccCollection, and ecocCollection if
+ * required. */
 static bool
-_fle2_append_encryptedFieldConfig (bson_t *dst, bson_t *encryptedFieldConfig, const char* coll_name, mongocrypt_status_t *status) {
+_fle2_append_encryptedFieldConfig (bson_t *dst,
+                                   bson_t *encryptedFieldConfig,
+                                   const char *coll_name,
+                                   mongocrypt_status_t *status)
+{
    bson_iter_t iter;
    bool has_escCollection = false;
    bool has_eccCollection = false;
@@ -44,15 +50,17 @@ _fle2_append_encryptedFieldConfig (bson_t *dst, bson_t *encryptedFieldConfig, co
       if (strcmp (bson_iter_key (&iter), "ecocCollection") == 0) {
          has_ecocCollection = true;
       }
-      if (!BSON_APPEND_VALUE (dst, bson_iter_key (&iter), bson_iter_value (&iter))) {
+      if (!BSON_APPEND_VALUE (
+             dst, bson_iter_key (&iter), bson_iter_value (&iter))) {
          CLIENT_ERR ("unable to append field: %s", bson_iter_key (&iter));
-         return false;  
+         return false;
       }
    }
 
    /* TODO */
    if (!has_escCollection) {
-      char *default_escCollection = bson_strdup_printf ("enxcol_.%s.esc", coll_name);
+      char *default_escCollection =
+         bson_strdup_printf ("enxcol_.%s.esc", coll_name);
       if (!BSON_APPEND_UTF8 (dst, "escCollection", default_escCollection)) {
          CLIENT_ERR ("unable to append escCollection");
          bson_free (default_escCollection);
@@ -61,7 +69,8 @@ _fle2_append_encryptedFieldConfig (bson_t *dst, bson_t *encryptedFieldConfig, co
       bson_free (default_escCollection);
    }
    if (!has_eccCollection) {
-      char *default_eccCollection = bson_strdup_printf ("enxcol_.%s.ecc", coll_name);
+      char *default_eccCollection =
+         bson_strdup_printf ("enxcol_.%s.ecc", coll_name);
       if (!BSON_APPEND_UTF8 (dst, "eccCollection", default_eccCollection)) {
          CLIENT_ERR ("unable to append eccCollection");
          bson_free (default_eccCollection);
@@ -70,7 +79,8 @@ _fle2_append_encryptedFieldConfig (bson_t *dst, bson_t *encryptedFieldConfig, co
       bson_free (default_eccCollection);
    }
    if (!has_ecocCollection) {
-      char *default_ecocCollection = bson_strdup_printf ("enxcol_.%s.ecoc", coll_name);
+      char *default_ecocCollection =
+         bson_strdup_printf ("enxcol_.%s.ecoc", coll_name);
       if (!BSON_APPEND_UTF8 (dst, "ecocCollection", default_ecocCollection)) {
          CLIENT_ERR ("unable to append ecocCollection");
          bson_free (default_ecocCollection);
@@ -85,7 +95,7 @@ static bool
 _fle2_append_encryptionInformation (bson_t *dst,
                                     const char *ns,
                                     bson_t *encryptedFieldConfig,
-                                    const char* coll_name,
+                                    const char *coll_name,
                                     mongocrypt_status_t *status)
 {
    bson_t encryption_information_bson;
@@ -107,18 +117,24 @@ _fle2_append_encryptionInformation (bson_t *dst,
          "unable to begin appending 'schema' to 'encryptionInformation'");
       return false;
    }
-   
-   if (!BSON_APPEND_DOCUMENT_BEGIN (&schema_bson, ns, &encrypted_field_config_bson)) {
-      CLIENT_ERR ("unable to begin appendind 'encryptedFieldConfig' to 'encryptionInformation'.'schema'");
+
+   if (!BSON_APPEND_DOCUMENT_BEGIN (
+          &schema_bson, ns, &encrypted_field_config_bson)) {
+      CLIENT_ERR ("unable to begin appendind 'encryptedFieldConfig' to "
+                  "'encryptionInformation'.'schema'");
       return false;
    }
 
-   if (!_fle2_append_encryptedFieldConfig (&encrypted_field_config_bson, encryptedFieldConfig, coll_name, status)) {
+   if (!_fle2_append_encryptedFieldConfig (&encrypted_field_config_bson,
+                                           encryptedFieldConfig,
+                                           coll_name,
+                                           status)) {
       return false;
    }
 
    if (!bson_append_document_end (&schema_bson, &encrypted_field_config_bson)) {
-      CLIENT_ERR ("unable to end appendind 'encryptedFieldConfig' to 'encryptionInformation'.'schema'");
+      CLIENT_ERR ("unable to end appendind 'encryptedFieldConfig' to "
+                  "'encryptionInformation'.'schema'");
       return false;
    }
 
@@ -302,8 +318,11 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
          ctx, "unable to convert encrypted_field_config to BSON");
    }
 
-   if (!_fle2_append_encryptionInformation (
-          out, ectx->ns, &encrypted_field_config_bson, ectx->coll_name, ctx->status)) {
+   if (!_fle2_append_encryptionInformation (out,
+                                            ectx->ns,
+                                            &encrypted_field_config_bson,
+                                            ectx->coll_name,
+                                            ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
 
@@ -755,8 +774,11 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
    /* Append a new 'encryptionInformation'. */
-   if (!_fle2_append_encryptionInformation (
-            &converted, ectx->ns, &encrypted_field_config_bson, ectx->coll_name, ctx->status)) {
+   if (!_fle2_append_encryptionInformation (&converted,
+                                            ectx->ns,
+                                            &encrypted_field_config_bson,
+                                            ectx->coll_name,
+                                            ctx->status)) {
       bson_destroy (&converted);
       return _mongocrypt_ctx_fail (ctx);
    }
