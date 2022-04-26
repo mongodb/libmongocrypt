@@ -697,6 +697,89 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 }
 
 static bool
+_fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
+{
+   bool ret = false;
+   _mongocrypt_marking_t marking;
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   BSON_ASSERT (ctx->opts.index_type.set);
+
+   _mongocrypt_marking_init (&marking);
+   marking.type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
+   if (ctx->opts.query_type.set) {
+      switch (ctx->opts.query_type.value) {
+         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
+         marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND;
+      }
+   } else {
+      marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT;
+   }
+   
+   switch (ctx->opts.index_type.value) {
+   case MONGOCRYPT_INDEX_TYPE_EQUALITY:
+      marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_EQUALITY;
+      break;
+   case MONGOCRYPT_INDEX_TYPE_NONE:
+      marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED;
+      break;
+   }
+
+   /* Get iterator to input 'v' BSON value. */
+   {
+      bson_t as_bson;
+
+      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson)) {
+         _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert input to BSON");
+         goto fail;
+      }
+
+      if (!bson_iter_init_find (&marking.v_iter, &as_bson, "v")) {
+         _mongocrypt_ctx_fail_w_msg (ctx,
+                                     "invalid input BSON, must contain 'v'");
+         goto fail;
+      }
+   }
+
+   _mongocrypt_buffer_copy_to (&ctx->opts.key_id, &marking.fle2.user_key_id);
+   if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
+      _mongocrypt_buffer_copy_to (&ctx->opts.index_key_id,
+                                  &marking.fle2.index_key_id);
+   } else {
+      _mongocrypt_buffer_copy_to (&ctx->opts.key_id,
+                                  &marking.fle2.index_key_id);
+   }
+
+   if (ctx->opts.contention_factor.set) {
+      marking.fle2.maxContentionCounter = ctx->opts.contention_factor.value;
+   }
+
+   /* Convert marking to ciphertext. */
+   {
+      bson_value_t v_out;
+      /* v_wrapped is the BSON document { 'v': <v_out> }. */
+      bson_t v_wrapped = BSON_INITIALIZER;
+
+      if (!_marking_to_bson_value (&ctx->kb, &marking, &v_out, ctx->status)) {
+         bson_destroy (&v_wrapped);
+         _mongocrypt_ctx_fail (ctx);
+         goto fail;
+      }
+
+      bson_append_value (&v_wrapped, MONGOCRYPT_STR_AND_LEN ("v"), &v_out);
+      _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &v_wrapped);
+      _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
+      ctx->state = MONGOCRYPT_CTX_DONE;
+      bson_value_destroy (&v_out);
+   }
+
+   ret = true;
+fail:
+   _mongocrypt_marking_cleanup (&marking);
+   return ret;
+}
+
+static bool
 _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    bson_t as_bson, converted;
@@ -708,6 +791,8 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
       return _fle2_finalize (ctx, out);
+   } else if (ctx->opts.index_type.set) {
+      return _fle2_finalize_explicit (ctx, out);
    }
 
    if (!ectx->explicit) {
@@ -981,10 +1066,70 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    }
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.key_descriptor = OPT_REQUIRED;
-   opts_spec.algorithm = OPT_REQUIRED;
+   opts_spec.algorithm = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
+   }
+
+   /* Error if any mutually exclusive FLE 1 and FLE 2 options are set. */
+   {
+      /* key_alt_names is FLE 1 only. */
+      if (ctx->opts.key_alt_names != NULL) {
+         if (ctx->opts.index_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and index type");
+         }
+         if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and index key id");
+         }
+         if (ctx->opts.contention_factor.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and contention factor");
+         }
+         if (ctx->opts.query_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and query type");
+         }
+      }
+      /* algorithm is FLE 1 only. */
+      if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+         if (ctx->opts.index_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and index type");
+         }
+         if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and index key id");
+         }
+         if (ctx->opts.contention_factor.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and contention factor");
+         }
+         if (ctx->opts.query_type.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and query type");
+         }
+      }
+   }
+
+   if (ctx->opts.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE &&
+       !ctx->opts.index_type.set) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "algorithm or index type required");
+   }
+
+   if (ctx->opts.contention_factor.set && ctx->opts.index_type.set &&
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "cannot set contention factor with no index type");
+   }
+
+   if (ctx->opts.query_type.set && ctx->opts.index_type.set &&
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "cannot set query type with no index type");
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
@@ -1005,6 +1150,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       }
    } else {
       if (!_mongocrypt_key_broker_request_id (&ctx->kb, &ctx->opts.key_id)) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   }
+
+   if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
+      if (!_mongocrypt_key_broker_request_id (&ctx->kb, &ctx->opts.index_key_id)) {
          return _mongocrypt_ctx_fail (ctx);
       }
    }

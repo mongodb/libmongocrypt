@@ -44,6 +44,19 @@ typedef struct __mongocrypt_ctx_opts_t {
    _mongocrypt_buffer_t key_material;
    mongocrypt_encryption_algorithm_t algorithm;
    _mongocrypt_kek_t kek;
+   struct {
+      mongocrypt_index_type_t value;
+      bool set;
+   } index_type;
+   _mongocrypt_buffer_t index_key_id;
+   struct {
+      int64_t value;
+      bool set;
+   } contention_factor;
+   struct {
+      mongocrypt_query_type_t value;
+      bool set;
+   } query_type;
 } _mongocrypt_ctx_opts_t;
 
 
