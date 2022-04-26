@@ -2135,7 +2135,7 @@ static void
 _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {
-      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
    _test_encrypt_fle2_encryption_placeholder (tester, "fle2-insert", &source);
 }
 #undef RNG_DATA
@@ -2157,7 +2157,7 @@ static void
 _test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {
-      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
    _test_encrypt_fle2_encryption_placeholder (
       tester, "fle2-insert-unindexed", &source);
 }
@@ -2214,7 +2214,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 #define RNG_DATA \
    "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
       _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
@@ -2277,7 +2277,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
       _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
@@ -2347,7 +2347,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
       _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
@@ -2417,7 +2417,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
       _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
