@@ -1376,7 +1376,7 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
  * operation.
  * @param[in] aes_256_ctr_decrypt The crypto callback function for decrypt
  * operation.
- * @param[in] sign_ctx A context passed as an argument to the crypto callback
+ * @param[in] ctx A context passed as an argument to the crypto callback
  * every invocation.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
