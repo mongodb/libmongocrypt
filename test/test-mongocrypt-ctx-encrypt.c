@@ -1943,8 +1943,7 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
          /* "encryptionInformation" must be present. */
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_BSON ("{'find': 'coll', 'encryptionInformation': { 'type': 1, "
-                       "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
+            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
             cmd_to_mongod);
          mongocrypt_binary_destroy (cmd_to_mongod);
       }
@@ -1987,8 +1986,7 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
          /* "encryptionInformation" must be present. */
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_BSON ("{'find': 'coll', 'encryptionInformation': { 'type': 1, "
-                       "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
+            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
             cmd_to_mongod);
          mongocrypt_binary_destroy (cmd_to_mongod);
       }
