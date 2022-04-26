@@ -197,6 +197,11 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
       bson_destroy (&empty_collinfo);
    }
 
+   if (ctx->crypt->opts.bypass_query_analysis) {
+      ctx->nothing_to_do = true;
+      ctx->state = MONGOCRYPT_CTX_READY;
+      return true;
+   }
    ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    return _try_run_csfle_marking (ctx);
 }
@@ -643,11 +648,6 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       /* Append 'encryptionInformation' to the original command. */
       bson_init (&converted);
       bson_copy_to (&original_cmd_bson, &converted);
-      if (!_fle2_append_encryptionInformation (
-             &converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
-         bson_destroy (&converted);
-         return _mongocrypt_ctx_fail (ctx);
-      }
    } else {
       bson_t as_bson;
       bson_iter_t iter;
@@ -667,6 +667,26 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
              ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
       }
+   }
+
+   /* Remove the 'encryptionInformation' field. It is appended in the response
+    * from mongocryptd. */
+   bson_iter_t iter;
+   if (bson_iter_init_find (&iter, &converted, "encryptionInformation")) {
+      bson_t no_encryptionInformation = BSON_INITIALIZER;
+      bson_copy_to_excluding_noinit (
+         &converted, &no_encryptionInformation, "encryptionInformation", NULL);
+      bson_destroy (&converted);
+      if (!bson_steal (&converted, &no_encryptionInformation)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "failed to steal BSON without encryptionInformation");
+      }
+   }
+   /* Append a new 'encryptionInformation'. */
+   if (!_fle2_append_encryptionInformation (
+            &converted, ectx->ns, &encrypted_field_config_bson, ctx->status)) {
+      bson_destroy (&converted);
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
@@ -1294,13 +1314,12 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       }
    }
 
-   if (ctx->crypt->opts.bypass_query_analysis) {
-      ctx->nothing_to_do = true;
-      ctx->state = MONGOCRYPT_CTX_READY;
-      return true;
-   }
-
    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
+      if (ctx->crypt->opts.bypass_query_analysis) {
+         ctx->nothing_to_do = true;
+         ctx->state = MONGOCRYPT_CTX_READY;
+         return true;
+      }
       // We're ready for markings. Try to generate them ourself.
       return _try_run_csfle_marking (ctx);
    } else {

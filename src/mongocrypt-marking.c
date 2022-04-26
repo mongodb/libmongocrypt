@@ -18,6 +18,7 @@
 #include "mc-fle2-encryption-placeholder-private.h"
 #include "mc-fle2-find-equality-payload-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
+#include "mc-fle2-payload-uev-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
@@ -612,6 +613,52 @@ fail:
 }
 
 static bool
+_mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   _mongocrypt_buffer_t plaintext = {0};
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+   _mongocrypt_buffer_t user_key = {0};
+   bool res = false;
+
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED);
+   _mongocrypt_ciphertext_init (ciphertext);
+   _mongocrypt_buffer_from_iter (&plaintext, &placeholder->v_iter);
+
+   if (!_mongocrypt_key_broker_decrypted_key_by_id (
+          kb, &placeholder->user_key_id, &user_key)) {
+      CLIENT_ERR ("unable to retreive key");
+      goto fail;
+   }
+
+   if (!mc_FLE2UnindexedEncryptedValue_encrypt (
+          kb->crypt->crypto,
+          &placeholder->user_key_id,
+          bson_iter_type (&placeholder->v_iter),
+          &plaintext,
+          &user_key,
+          &ciphertext->data,
+          status)) {
+      goto fail;
+   }
+
+   _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->user_key_id);
+   ciphertext->original_bson_type =
+      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
+   res = true;
+fail:
+   _mongocrypt_buffer_cleanup (&plaintext);
+   _mongocrypt_buffer_cleanup (&user_key);
+
+   return res;
+}
+
+static bool
 _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
                                         _mongocrypt_marking_t *marking,
                                         _mongocrypt_ciphertext_t *ciphertext,
@@ -752,7 +799,11 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    BSON_ASSERT (ctx);
 
    if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
-      if (marking->fle2.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
+      if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED) {
+         return _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
+            kb, marking, ciphertext, status);
+      } else if (marking->fle2.type ==
+                 MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
          return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
             kb, marking, ciphertext, status);
       } else {

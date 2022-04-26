@@ -2,10 +2,10 @@
    "insert": "test",
    "documents": [
       {
-         "_id": 1,
-         "ssn": {
+         "plainText": "sample",
+         "encrypted": {
             "$binary": {
-               "base64": "BHEBAAAFZAAgAAAAAHb62aV7+mqmaGcotPLdG3KP7S8diFwWMLM/5rYtqLrEBXMAIAAAAAAVJ6OWHRv3OtCozHpt3ZzfBhaxZirLv3B+G8PuaaO4EgVjACAAAAAAsZXWOWA+UiCBbrJNB6bHflB/cn7pWSvwWN2jw4FPeIUFcABQAAAAAMdD1nV2nqeI1eXEQNskDflCy8I7/HvvqDKJ6XxjhrPQWdLqjz+8GosGUsB7A8ee/uG9/guENuL25XD+Fxxkv1LLXtavHOlLF7iW0u9yabqqBXUAEAAAAAQSNFZ4EjSYdhI0EjRWeJASEHQAAgAAAAV2AE0AAAAAq83vqxI0mHYSNBI0VniQEkzZZBBDgeZh+h+gXEmOrSFtVvkUcnHWj/rfPW7iJ0G3UJ8zpuBmUM/VjOMJCY4+eDqdTiPIwX+/vNXegc8FZQAgAAAAAOuac/eRLYakKX6B0vZ1r3QodOQFfjqJD+xlGiPu4/PsAA==",
+               "base64": "BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjcdSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ==",
                "subType": "06"
             }
          }

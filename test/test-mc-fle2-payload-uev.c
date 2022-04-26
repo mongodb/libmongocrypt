@@ -69,9 +69,10 @@ test_FLE2UnindexedEncryptedValue_parse (_mongocrypt_tester_t *tester)
    {
       mongocrypt_status_t *status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (
-         &input, "05abcdefab123498761234123456789012024d069564f5a05e9e3523b98f5"
-                 "75acb153b70d6d5f38dc752132c6928aaae8e5928e537a2ce407d847434d3"
-                 "d755635f9f80888371e7e1f9e42b9b70a485");
+         &input,
+         "05abcdefab123498761234123456789012024d069564f5a05e9e3523b98f5"
+         "75acb153b70d6d5f38dc752132c6928aaae8e5928e537a2ce407d847434d3"
+         "d755635f9f80888371e7e1f9e42b9b70a485");
       uev = mc_FLE2UnindexedEncryptedValue_new ();
       ASSERT_FAILS_STATUS (
          mc_FLE2UnindexedEncryptedValue_parse (uev, &input, status),
@@ -123,16 +124,10 @@ test_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t expect_plaintext;
    mongocrypt_t *crypt;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
-           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 

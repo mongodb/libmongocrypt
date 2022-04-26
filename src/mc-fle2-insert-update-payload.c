@@ -36,6 +36,7 @@ mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload)
    _mongocrypt_buffer_cleanup (&payload->indexKeyId);
    _mongocrypt_buffer_cleanup (&payload->value);
    _mongocrypt_buffer_cleanup (&payload->serverEncryptionToken);
+   _mongocrypt_buffer_cleanup (&payload->plaintext);
 }
 
 #define IF_FIELD(Name)                                               \
@@ -87,17 +88,28 @@ mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload)
 
 bool
 mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
-                                  const bson_t *in,
+                                  const _mongocrypt_buffer_t *in,
                                   mongocrypt_status_t *status)
 {
    bson_iter_t iter;
    bool has_d = false, has_s = false, has_c = false;
    bool has_p = false, has_u = false, has_t = false;
    bool has_v = false, has_e = false;
+   bson_t in_bson;
+
+   if (in->len < 1) {
+      CLIENT_ERR ("FLE2InsertUpdatePayload_parse got too short input");
+      return false;
+   }
+
+   if (!bson_init_static (&in_bson, in->data + 1, in->len - 1)) {
+      CLIENT_ERR ("FLE2InsertUpdatePayload_parse got invalid BSON");
+      return false;
+   }
 
    mc_FLE2InsertUpdatePayload_init (out);
-   if (!bson_validate (in, BSON_VALIDATE_NONE, NULL) ||
-       !bson_iter_init (&iter, in)) {
+   if (!bson_validate (&in_bson, BSON_VALIDATE_NONE, NULL) ||
+       !bson_iter_init (&iter, &in_bson)) {
       CLIENT_ERR ("invalid BSON");
       return false;
    }
@@ -138,6 +150,13 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
    CHECK_HAS (v);
    CHECK_HAS (e);
 
+   if (!_mongocrypt_buffer_from_subrange (
+          &out->userKeyId, &out->value, 0, UUID_LEN)) {
+      CLIENT_ERR ("failed to create userKeyId buffer");
+      goto fail;
+   }
+   out->userKeyId.subtype = BSON_SUBTYPE_UUID;
+
    return true;
 fail:
    mc_FLE2InsertUpdatePayload_cleanup (out);
@@ -168,3 +187,38 @@ mc_FLE2InsertUpdatePayload_serialize (
    return true;
 }
 #undef IUPS_APPEND_BINDATA
+
+const _mongocrypt_buffer_t *
+mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
+                                    mc_FLE2InsertUpdatePayload_t *iup,
+                                    const _mongocrypt_buffer_t *user_key,
+                                    mongocrypt_status_t *status)
+{
+   if (iup->value.len == 0) {
+      CLIENT_ERR ("FLE2InsertUpdatePayload value not parsed");
+      return NULL;
+   }
+
+   _mongocrypt_buffer_t ciphertext;
+   if (!_mongocrypt_buffer_from_subrange (
+          &ciphertext, &iup->value, UUID_LEN, iup->value.len - UUID_LEN)) {
+      CLIENT_ERR ("Failed to create ciphertext buffer");
+      return NULL;
+   }
+
+   _mongocrypt_buffer_resize (
+      &iup->plaintext,
+      _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext.len));
+   uint32_t bytes_written; /* ignored */
+
+   if (!_mongocrypt_fle2aead_do_decryption (crypto,
+                                            &iup->userKeyId,
+                                            user_key,
+                                            &ciphertext,
+                                            &iup->plaintext,
+                                            &bytes_written,
+                                            status)) {
+      return NULL;
+   }
+   return &iup->plaintext;
+}

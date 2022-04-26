@@ -11,8 +11,8 @@
                         "subType": "04"
                     }
                 },
-                "path": "value",
-                "bsonType": "int32",
+                "path": "ssn",
+                "bsonType": "string",
                 "queries": {
                     "queryType": "equality",
                     "contention": 0

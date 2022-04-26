@@ -23,6 +23,7 @@
 #include <CommonCrypto/CommonHMAC.h>
 #include <CommonCrypto/CommonRandom.h>
 
+
 bool _native_crypto_initialized = false;
 
 void
@@ -33,7 +34,7 @@ _native_crypto_init ()
 
 
 bool
-_native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
+_native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
    bool ret = false;
    CCCryptorRef ctx = NULL;
@@ -41,13 +42,18 @@ _native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
    size_t intermediate_bytes_written;
    mongocrypt_status_t *status = args.status;
 
-   cc_status = CCCryptorCreate (kCCEncrypt,
-                                kCCAlgorithmAES,
-                                0 /* defaults to CBC w/ no padding */,
-                                args.key->data,
-                                kCCKeySizeAES256,
-                                args.iv->data,
-                                &ctx);
+   cc_status = CCCryptorCreateWithMode (kCCEncrypt,
+                                        mode,
+                                        kCCAlgorithmAES,
+                                        0 /* defaults to CBC w/ no padding */,
+                                        args.iv->data,
+                                        args.key->data,
+                                        kCCKeySizeAES256,
+                                        NULL,
+                                        0,
+                                        0,
+                                        0,
+                                        &ctx);
 
    if (cc_status != kCCSuccess) {
       CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
@@ -86,11 +92,22 @@ done:
    return ret;
 }
 
+bool
+_native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
+{
+   return _native_crypto_aes_256_cbc_encrypt_with_mode (args, kCCModeCBC);
+}
+
+bool
+_native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
+{
+   return _native_crypto_aes_256_cbc_encrypt_with_mode (args, kCCModeCTR);
+}
 
 /* Note, the decrypt function is almost exactly the same as the encrypt
  * functions except for the kCCDecrypt and the error message. */
 bool
-_native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
+_native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
    bool ret = false;
    CCCryptorRef ctx = NULL;
@@ -98,13 +115,18 @@ _native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
    size_t intermediate_bytes_written;
    mongocrypt_status_t *status = args.status;
 
-   cc_status = CCCryptorCreate (kCCDecrypt,
-                                kCCAlgorithmAES,
-                                0 /* defaults to CBC w/ no padding */,
-                                args.key->data,
-                                kCCKeySizeAES256,
-                                args.iv->data,
-                                &ctx);
+   cc_status = CCCryptorCreateWithMode (kCCDecrypt,
+                                        mode,
+                                        kCCAlgorithmAES,
+                                        0 /* defaults to CBC w/ no padding */,
+                                        args.iv->data,
+                                        args.key->data,
+                                        kCCKeySizeAES256,
+                                        NULL,
+                                        0,
+                                        0,
+                                        0,
+                                        &ctx);
 
    if (cc_status != kCCSuccess) {
       CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
@@ -139,6 +161,18 @@ _native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 done:
    CCCryptorRelease (ctx);
    return ret;
+}
+
+bool
+_native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
+{
+   return _native_crypto_aes_256_cbc_decrypt_with_mode (args, kCCModeCBC);
+}
+
+bool
+_native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
+{
+   return _native_crypto_aes_256_cbc_decrypt_with_mode (args, kCCModeCTR);
 }
 
 
@@ -196,24 +230,6 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
       return false;
    }
    return true;
-}
-
-bool
-_native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
-{
-   mongocrypt_status_t *status = args.status;
-   CLIENT_ERR (
-      "_native_crypto_aes_256_ctr_encrypt not implemented for CommonCrypto");
-   return false;
-}
-
-bool
-_native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
-{
-   mongocrypt_status_t *status = args.status;
-   CLIENT_ERR (
-      "_native_crypto_aes_256_ctr_decrypt not implemented for CommonCrypto");
-   return false;
 }
 
 bool

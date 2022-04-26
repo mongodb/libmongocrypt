@@ -255,8 +255,12 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
        .iv = "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
        .plaintext = "AAAA",
        .ciphertext = "A175"},
+#include <data/aes-ctr.cstructs>
       {0}};
    aes_256_ctr_test_t *test;
+
+   mongocrypt_t *crypt;
+   crypt = mongocrypt_new ();
 
    for (test = tests; test->testname != NULL; test++) {
       bool ret;
@@ -269,16 +273,10 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
       mongocrypt_status_t *status;
       uint32_t bytes_written;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-      printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-              "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-      return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-      printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove "
-              "once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-      return;
-#endif
+      if (!_aes_ctr_is_supported_by_os) {
+         printf ("Common Crypto with no CTR support detected. Skipping.");
+         return;
+      }
 
       printf ("Begin test '%s'.\n", test->testname);
 
@@ -332,6 +330,8 @@ _test_native_crypto_aes_256_ctr (_mongocrypt_tester_t *tester)
 
       printf ("End test '%s'.\n", test->testname);
    }
+
+   mongocrypt_destroy (crypt);
 }
 
 typedef struct {
@@ -528,16 +528,10 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
       {0}};
    fle2_aead_roundtrip_test_t *test;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
-           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
@@ -674,16 +668,10 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       {0}};
    fle2_aead_decrypt_test_t *test;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
-           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
@@ -768,16 +756,10 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
       {0}};
    fle2_aead_roundtrip_test_t *test;
 
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
-#ifdef MONGOCRYPT_ENABLE_CRYPTO_CNG
-   printf ("Test requires OpenSSL. Detected CNG. Skipping. TODO: remove once "
-           "MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-#endif
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 

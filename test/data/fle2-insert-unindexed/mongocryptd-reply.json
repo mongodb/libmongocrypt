@@ -6,19 +6,17 @@
         "insert": "test",
         "documents": [
             {
-                "_id": 1,
-                "ssn": {
+                "plainText": "sample",
+                "encrypted": {
                     "$binary": {
-                        "base64": "A2EAAAAQdAABAAAAEGEAAgAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASAnYACQAAAHZhbHVlMTIzABJjbQAAAAAAAAAAAAA=",
-                        "subType": "06"
+                        "base64": "A2EAAAAQdAABAAAAEGEAAQAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASAnYACQAAAHZhbHVlMTIzABJjbQAAAAAAAAAAAAA=",
+                        "subType": "6"
                     }
                 }
             }
         ],
         "encryptionInformation": {
-            "type": {
-                "$numberInt": "1"
-            },
+            "type": 1,
             "schema": {
                 "db.test": {
                     "escCollection": "fle2.test.esc",
@@ -36,9 +34,7 @@
                             "bsonType": "string",
                             "queries": {
                                 "queryType": "equality",
-                                "contention": {
-                                    "$numberInt": "0"
-                                }
+                                "contention": 0
                             }
                         }
                     ]

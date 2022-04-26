@@ -224,6 +224,9 @@ _mongocrypt_tester_install_ctx_compact (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_fle2_payload_uev (_mongocrypt_tester_t *tester);
 
+void
+_mongocrypt_tester_install_fle2_payload_iup (_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
@@ -259,5 +262,6 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path);
 void
 _load_json_as_bson (const char *path, bson_t *out);
 
+extern bool _aes_ctr_is_supported_by_os;
 
 #endif

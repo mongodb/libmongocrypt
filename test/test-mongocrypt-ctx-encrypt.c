@@ -1471,10 +1471,11 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
               ctx);
    _mongocrypt_tester_run_ctx_to (
       tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
-   ASSERT_OK (
-      mongocrypt_ctx_provide_kms_providers (ctx,
-         TEST_BSON ("{'aws':{'accessKeyId': 'example',"
-                            "'secretAccessKey': 'example'}}")), ctx);
+   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                 ctx,
+                 TEST_BSON ("{'aws':{'accessKeyId': 'example',"
+                            "'secretAccessKey': 'example'}}")),
+              ctx);
    _mongocrypt_tester_run_ctx_to (tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    ASSERT_OK (
       mongocrypt_ctx_mongo_feed (
@@ -1920,39 +1921,86 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
-   crypt = mongocrypt_new ();
-   ASSERT_OK (
-      mongocrypt_setopt_kms_providers (
-         crypt,
-         TEST_BSON (
-            "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
-      crypt);
-   ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
-                 crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")),
-              crypt);
-   mongocrypt_setopt_bypass_query_analysis (crypt);
-   ASSERT_OK (mongocrypt_init (crypt), crypt);
-
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                 ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
-              ctx);
-
-   /* Should transition directly to ready. */
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   /* Test with EncryptedFieldConfig from map. */
    {
-      mongocrypt_binary_t *cmd_to_mongod = mongocrypt_binary_new ();
-      ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
-      /* "encryptionInformation" must be present. */
-      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-         TEST_BSON ("{'find': 'coll', 'encryptionInformation': { 'type': 1, "
-                    "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
-         cmd_to_mongod);
-      mongocrypt_binary_destroy (cmd_to_mongod);
+      crypt = mongocrypt_new ();
+      ASSERT_OK (
+         mongocrypt_setopt_kms_providers (
+            crypt,
+            TEST_BSON (
+               "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+         crypt);
+      ASSERT_OK (mongocrypt_setopt_encrypted_field_config_map (
+                    crypt, TEST_BSON ("{'db.coll': {'foo': 'bar'}}")),
+                 crypt);
+      mongocrypt_setopt_bypass_query_analysis (crypt);
+      ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                 ctx);
+
+      /* Should transition directly to ready. */
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *cmd_to_mongod = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
+         /* "encryptionInformation" must be present. */
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_BSON ("{'find': 'coll', 'encryptionInformation': { 'type': 1, "
+                       "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
+            cmd_to_mongod);
+         mongocrypt_binary_destroy (cmd_to_mongod);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
    }
 
-   mongocrypt_ctx_destroy (ctx);
-   mongocrypt_destroy (crypt);
+   /* Test with EncryptedFieldConfig from listCollections. */
+   {
+      crypt = mongocrypt_new ();
+      ASSERT_OK (
+         mongocrypt_setopt_kms_providers (
+            crypt,
+            TEST_BSON (
+               "{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
+         crypt);
+      mongocrypt_setopt_bypass_query_analysis (crypt);
+      ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (
+            mongocrypt_ctx_mongo_feed (
+               ctx,
+               TEST_BSON ("{'options': {'encryptedFields': {'foo': 'bar'}}}")),
+            ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *cmd_to_mongod = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
+         /* "encryptionInformation" must be present. */
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_BSON ("{'find': 'coll', 'encryptionInformation': { 'type': 1, "
+                       "'schema': { 'db.coll': {'foo': 'bar'}}}}"),
+            cmd_to_mongod);
+         mongocrypt_binary_destroy (cmd_to_mongod);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
 }
 
 
@@ -2007,19 +2055,6 @@ typedef struct {
    int pos;
 } _test_rng_data_source;
 
-#if defined(MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO) || \
-   defined(MONGOCRYPT_ENABLE_CRYPTO_CNG)
-static void
-_test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
-                                           const char *data_path,
-                                           _test_rng_data_source *rng_source)
-{
-   printf ("Test requires OpenSSL. Detected Common Crypto. Skipping. TODO: "
-           "remove once MONGOCRYPT-385 and MONGOCRYPT-386 are complete");
-   return;
-}
-#else
-
 static bool
 _test_rng_source (void *ctx,
                   mongocrypt_binary_t *out,
@@ -2050,6 +2085,11 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
    ASSERT (snprintf (                                                         \
               pathbuf, sizeof (pathbuf), "./test/data/%s/" path, data_path) < \
            sizeof (pathbuf))
+
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    /* Create crypt with custom hooks. */
    {
@@ -2119,14 +2159,11 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
       mongocrypt_binary_t *out;
-      bson_t out_bson, expect_bson;
 
       out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
-      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
       MAKE_PATH ("encrypted-payload.json");
-      ASSERT (_mongocrypt_binary_to_bson (TEST_FILE (pathbuf), &expect_bson));
-      _assert_match_bson (&out_bson, &expect_bson);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE (pathbuf), out);
       mongocrypt_binary_destroy (out);
    }
 #undef MAKE_PATH
@@ -2134,8 +2171,6 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
-#endif
-
 
 /* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
  * Second 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
@@ -2147,7 +2182,7 @@ static void
 _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {
-      .buf = {.data = (uint8_t*)RNG_DATA, .len = sizeof (RNG_DATA)}};
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
    _test_encrypt_fle2_encryption_placeholder (tester, "fle2-insert", &source);
 }
 #undef RNG_DATA
@@ -2157,8 +2192,23 @@ static void
 _test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   _test_encrypt_fle2_encryption_placeholder (tester, "fle2-find-equality", &source);
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-equality", &source);
 }
+
+/* 16 bytes of random data are used for IV. This IV produces the expected test
+ * ciphertext. */
+#define RNG_DATA \
+   "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
+static void
+_test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA)}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-unindexed", &source);
+}
+#undef RNG_DATA
 
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
@@ -2198,4 +2248,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_FLE2EncryptionPlaceholder_parse);
    INSTALL_TEST (_test_encrypt_fle2_insert_payload);
    INSTALL_TEST (_test_encrypt_fle2_find_payload);
+   INSTALL_TEST (_test_encrypt_fle2_unindexed_encrypted_payload);
 }
