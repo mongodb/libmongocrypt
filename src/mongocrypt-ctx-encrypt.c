@@ -963,10 +963,14 @@ _check_for_payload_requiring_encryptionInformation (void *ctx,
    return true;
 }
 
-static bool
+typedef struct {
+   bool must_omit;
+   bool ok;
+} moe_result;
+
+static moe_result
 must_omit_encryptionInformation (const char *command_name,
                                  const bson_t *command,
-                                 bool *must_omit /* out */,
                                  mongocrypt_status_t *status)
 {
    const char *eligible_commands[] = {
@@ -974,7 +978,6 @@ must_omit_encryptionInformation (const char *command_name,
    size_t i;
    bool found = false;
 
-   *must_omit = false;
    for (i = 0; i < sizeof (eligible_commands) / sizeof (eligible_commands[0]);
         i++) {
       if (0 == strcmp (eligible_commands[i], command_name)) {
@@ -983,14 +986,14 @@ must_omit_encryptionInformation (const char *command_name,
       }
    }
    if (!found) {
-      return true;
+      return (moe_result) { .ok = true };
    }
 
    bool has_payload_requiring_encryptionInformation = false;
    bson_iter_t iter;
    if (!bson_iter_init (&iter, command)) {
       CLIENT_ERR ("unable to iterate command");
-      return false;
+      return (moe_result) { .ok = false };
    }
    if (!_mongocrypt_traverse_binary_in_bson (
           _check_for_payload_requiring_encryptionInformation,
@@ -998,13 +1001,13 @@ must_omit_encryptionInformation (const char *command_name,
           TRAVERSE_MATCH_SUBTYPE6,
           &iter,
           status)) {
-      return false;
+      return (moe_result) { .ok = false };
    }
 
    if (!has_payload_requiring_encryptionInformation) {
-      *must_omit = true;
+      return (moe_result) { .ok = true, .must_omit = true };
    }
-   return true;
+   return (moe_result) { .ok = true, .must_omit = false };
 }
 
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
@@ -1097,14 +1100,13 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
-   bool must_omit;
-   if (!must_omit_encryptionInformation (
-          command_name, &converted, &must_omit, ctx->status)) {
+   moe_result result = must_omit_encryptionInformation (command_name, &converted, ctx->status);
+   if (!result.ok) {
       return false;
    }
 
    /* Append a new 'encryptionInformation'. */
-   if (!must_omit &&
+   if (!result.must_omit &&
        !_fle2_append_encryptionInformation (&converted,
                                             ectx->ns,
                                             &encrypted_field_config_bson,
