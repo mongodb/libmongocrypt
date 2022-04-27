@@ -62,7 +62,8 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                              &key,
                                              key.len - MONGOCRYPT_TOKEN_KEY_LEN,
                                              MONGOCRYPT_TOKEN_KEY_LEN)) {
-         _mongocrypt_ctx_fail_w_msg (ctx, "unable to get TokenKey from Data Encryption Key");
+         _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to get TokenKey from Data Encryption Key");
          goto ecoc_fail;
       }
       cl1t =

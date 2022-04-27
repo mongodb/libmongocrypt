@@ -130,10 +130,9 @@ _test_compact_init (_mongocrypt_tester_t *tester)
    /* Test success. */
    {
       ctx = mongocrypt_ctx_new (crypt);
-      ASSERT_OK (
-         mongocrypt_ctx_compact_init (
-            ctx, TEST_FILE ("./test/data/efc/efc-oneField.json")),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_compact_init (
+                    ctx, TEST_FILE ("./test/data/efc/efc-oneField.json")),
+                 ctx);
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
       mongocrypt_ctx_destroy (ctx);
