@@ -1660,9 +1660,10 @@ _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester)
    /* Test encrypting a command on a collection present in the encrypted field
     * config map. */
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                 ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
-              ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/fle2-find-explicit/cmd.json")),
+      ctx);
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
    {
@@ -1671,14 +1672,13 @@ _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester)
       cmd_to_mongocryptd = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
       ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-         TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+         TEST_FILE ("./test/data/fle2-find-explicit/cmd-to-mongocryptd.json"),
          cmd_to_mongocryptd);
       ASSERT_OK (
          mongocrypt_ctx_mongo_feed (
             ctx,
-            TEST_BSON ("{'result': {'find': 'coll', 'encryptionInformation': { "
-                       "'type': 1, 'schema': { 'db.coll': {'fields': []}}}}, "
-                       "'hasEncryptionPlaceholders': false}")),
+            TEST_FILE (
+               "./test/data/fle2-find-explicit/reply-from-mongocryptd.json")),
          ctx);
       mongocrypt_binary_destroy (cmd_to_mongocryptd);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
@@ -1690,7 +1690,7 @@ _test_encrypt_with_encrypted_field_config_map (_mongocrypt_tester_t *tester)
       cmd_to_mongod = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
       ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-         TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+         TEST_FILE ("./test/data/fle2-find-explicit/cmd-to-mongod.json"),
          cmd_to_mongod);
       mongocrypt_binary_destroy (cmd_to_mongod);
    }
@@ -1802,7 +1802,10 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
    {
       ctx = mongocrypt_ctx_new (crypt);
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-find-explicit/cmd.json")),
                  ctx);
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
@@ -1824,7 +1827,8 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
          /* "encryptionInformation.schema" must be the document from
           * "encryptedFields" fed from MONGOCRYPT_CTX_NEED_MONGO_COLLINFO. */
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+            TEST_FILE (
+               "./test/data/fle2-find-explicit/cmd-to-mongocryptd.json"),
             cmd_to_mongocryptd);
          mongocrypt_binary_destroy (cmd_to_mongocryptd);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
@@ -1837,7 +1841,10 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
    {
       ctx = mongocrypt_ctx_new (crypt);
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-find-explicit/cmd.json")),
                  ctx);
 
       /* Check that command to mongocryptd includes "encryptionInformation". */
@@ -1849,7 +1856,8 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
          /* "encryptionInformation.schema" must be the document from
           * "encryptedFields" fed from MONGOCRYPT_CTX_NEED_MONGO_COLLINFO. */
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+            TEST_FILE (
+               "./test/data/fle2-find-explicit/cmd-to-mongocryptd.json"),
             cmd_to_mongocryptd);
          mongocrypt_binary_destroy (cmd_to_mongocryptd);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
@@ -1872,7 +1880,10 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_init (crypt), crypt);
       ctx = mongocrypt_ctx_new (crypt);
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-find-explicit/cmd.json")),
                  ctx);
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
@@ -1898,7 +1909,8 @@ _test_encrypt_remote_encryptedfields (_mongocrypt_tester_t *tester)
          /* "encryptionInformation.schema" must be the document from
           * "encryptedFields" fed from MONGOCRYPT_CTX_NEED_MONGO_COLLINFO. */
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+            TEST_FILE (
+               "./test/data/fle2-find-explicit/cmd-to-mongocryptd.json"),
             cmd_to_mongocryptd);
          mongocrypt_binary_destroy (cmd_to_mongocryptd);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
@@ -1933,7 +1945,10 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
 
       ctx = mongocrypt_ctx_new (crypt);
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-find-explicit/cmd.json")),
                  ctx);
 
       /* Should transition directly to ready. */
@@ -1943,7 +1958,7 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
          /* "encryptionInformation" must be present. */
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+            TEST_FILE ("./test/data/fle2-find-explicit/cmd-to-mongod.json"),
             cmd_to_mongod);
          mongocrypt_binary_destroy (cmd_to_mongod);
       }
@@ -1966,7 +1981,10 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
 
       ctx = mongocrypt_ctx_new (crypt);
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
-                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-find-explicit/cmd.json")),
                  ctx);
 
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
@@ -1986,7 +2004,7 @@ _test_encrypt_with_bypassqueryanalysis (_mongocrypt_tester_t *tester)
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
          /* "encryptionInformation" must be present. */
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+            TEST_FILE ("./test/data/fle2-find-explicit/cmd-to-mongod.json"),
             cmd_to_mongod);
          mongocrypt_binary_destroy (cmd_to_mongod);
       }
@@ -2340,14 +2358,16 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
       {
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_FILE ("./test/data/keys/"
-                                       "12345678123498761234123456789012-local-"
-                                       "document.json")),
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "12345678123498761234123456789012-local-"
+                                  "document.json")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_FILE ("./test/data/keys/"
-                                       "ABCDEFAB123498761234123456789012-local-"
-                                       "document.json")),
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "ABCDEFAB123498761234123456789012-local-"
+                                  "document.json")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -2411,14 +2431,16 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
       {
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_FILE ("./test/data/keys/"
-                                       "12345678123498761234123456789012-local-"
-                                       "document.json")),
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "12345678123498761234123456789012-local-"
+                                  "document.json")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_FILE ("./test/data/keys/"
-                                       "ABCDEFAB123498761234123456789012-local-"
-                                       "document.json")),
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "ABCDEFAB123498761234123456789012-local-"
+                                  "document.json")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -2478,9 +2500,10 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
       {
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_FILE ("./test/data/keys/"
-                                       "ABCDEFAB123498761234123456789012-local-"
-                                       "document.json")),
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "ABCDEFAB123498761234123456789012-local-"
+                                  "document.json")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -2672,8 +2695,9 @@ _test_encrypt_applies_default_state_collections (_mongocrypt_tester_t *tester)
          crypt);
       ASSERT_OK (
          mongocrypt_setopt_encrypted_field_config_map (
-            crypt, TEST_BSON ("{'fields': [], 'db.coll': {'escCollection': "
-                              "'esc', 'eccCollection': 'ecc', 'fields': []}}")),
+            crypt,
+            TEST_BSON ("{'fields': [], 'db.coll': {'escCollection': "
+                       "'esc', 'eccCollection': 'ecc', 'fields': []}}")),
          crypt);
       ASSERT_OK (mongocrypt_init (crypt), crypt);
       ctx = mongocrypt_ctx_new (crypt);
@@ -3073,6 +3097,117 @@ _test_encrypt_fle2_delete (_mongocrypt_tester_t *tester)
    }
 }
 
+/* Test behavior introduced in MONGOCRYPT-423: "encryptionInformation" is
+ * omitted when no values are encrypted for eligible commands.*/
+static void
+_test_encrypt_fle2_omits_encryptionInformation (_mongocrypt_tester_t *tester)
+{
+   /* 'find' does not include 'encryptionInformation' if no fields are
+    * encrypted. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx, "db", -1, TEST_BSON ("{'find': 'coll'}")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                       ctx, TEST_BSON ("{'name': 'coll', 'options': "
+                                       "{'encryptedFields': {'fields': []}}}")),
+                    ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      /* Check that command to mongocryptd includes "encryptionInformation". */
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+      {
+         mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/find-with-encryptionInformation.json"),
+            cmd_to_mongocryptd);
+         mongocrypt_binary_destroy (cmd_to_mongocryptd);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *cmd_to_mongod;
+
+         cmd_to_mongod = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'find': 'coll'}"),
+                                              cmd_to_mongod);
+         mongocrypt_binary_destroy (cmd_to_mongod);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+
+   /* 'find' includes encryptionInformation if the initial command includes an
+    * explicitly encrypted payload. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                    ctx,
+                    "db",
+                    -1,
+                    TEST_FILE ("./test/data/fle2-find-explicit/cmd.json")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+      {
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                       ctx, TEST_BSON ("{'name': 'coll', 'options': "
+                                       "{'encryptedFields': {'fields': []}}}")),
+                    ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      /* Check that command to mongocryptd includes "encryptionInformation". */
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+      {
+         mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE (
+               "./test/data/fle2-find-explicit/cmd-to-mongocryptd.json"),
+            cmd_to_mongocryptd);
+         mongocrypt_binary_destroy (cmd_to_mongocryptd);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *cmd_to_mongod;
+
+         cmd_to_mongod = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, cmd_to_mongod), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-find-explicit/cmd-to-mongod.json"),
+            cmd_to_mongod);
+         mongocrypt_binary_destroy (cmd_to_mongod);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -3115,4 +3250,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_fle2_explicit);
    INSTALL_TEST (_test_encrypt_applies_default_state_collections);
    INSTALL_TEST (_test_encrypt_fle2_delete);
+   INSTALL_TEST (_test_encrypt_fle2_omits_encryptionInformation);
 }

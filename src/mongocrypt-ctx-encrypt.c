@@ -938,6 +938,78 @@ fail:
    return out;
 }
 
+static bool
+_check_for_payload_requiring_encryptionInformation (void *ctx,
+                                                    _mongocrypt_buffer_t *in,
+                                                    mongocrypt_status_t *status)
+{
+   bool *out = (bool *) ctx;
+
+   if (in->len < 1) {
+      CLIENT_ERR ("unexpected empty FLE payload");
+      return false;
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2InsertUpdatePayload) {
+      *out = true;
+      return true;
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2FindEqualityPayload) {
+      *out = true;
+      return true;
+   }
+
+   return true;
+}
+
+typedef struct {
+   bool must_omit;
+   bool ok;
+} moe_result;
+
+static moe_result
+must_omit_encryptionInformation (const char *command_name,
+                                 const bson_t *command,
+                                 mongocrypt_status_t *status)
+{
+   const char *eligible_commands[] = {
+      "find", "aggregate", "distinct", "count", "insert"};
+   size_t i;
+   bool found = false;
+
+   for (i = 0; i < sizeof (eligible_commands) / sizeof (eligible_commands[0]);
+        i++) {
+      if (0 == strcmp (eligible_commands[i], command_name)) {
+         found = true;
+         break;
+      }
+   }
+   if (!found) {
+      return (moe_result) { .ok = true };
+   }
+
+   bool has_payload_requiring_encryptionInformation = false;
+   bson_iter_t iter;
+   if (!bson_iter_init (&iter, command)) {
+      CLIENT_ERR ("unable to iterate command");
+      return (moe_result) { .ok = false };
+   }
+   if (!_mongocrypt_traverse_binary_in_bson (
+          _check_for_payload_requiring_encryptionInformation,
+          &has_payload_requiring_encryptionInformation,
+          TRAVERSE_MATCH_SUBTYPE6,
+          &iter,
+          status)) {
+      return (moe_result) { .ok = false };
+   }
+
+   if (!has_payload_requiring_encryptionInformation) {
+      return (moe_result) { .ok = true, .must_omit = true };
+   }
+   return (moe_result) { .ok = true, .must_omit = false };
+}
+
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
  * associated with the command. */
 static bool
@@ -1028,8 +1100,14 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
+   moe_result result = must_omit_encryptionInformation (command_name, &converted, ctx->status);
+   if (!result.ok) {
+      return false;
+   }
+
    /* Append a new 'encryptionInformation'. */
-   if (!_fle2_append_encryptionInformation (&converted,
+   if (!result.must_omit &&
+       !_fle2_append_encryptionInformation (&converted,
                                             ectx->ns,
                                             &encrypted_field_config_bson,
                                             deleteTokens,
@@ -1061,13 +1139,13 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    marking.type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
    if (ctx->opts.query_type.set) {
       switch (ctx->opts.query_type.value) {
-         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
+      case MONGOCRYPT_QUERY_TYPE_EQUALITY:
          marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND;
       }
    } else {
       marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT;
    }
-   
+
    switch (ctx->opts.index_type.value) {
    case MONGOCRYPT_INDEX_TYPE_EQUALITY:
       marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_EQUALITY;
@@ -1518,7 +1596,8 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
-      if (!_mongocrypt_key_broker_request_id (&ctx->kb, &ctx->opts.index_key_id)) {
+      if (!_mongocrypt_key_broker_request_id (&ctx->kb,
+                                              &ctx->opts.index_key_id)) {
          return _mongocrypt_ctx_fail (ctx);
       }
    }
