@@ -1093,5 +1093,7 @@ _mongocrypt_key_broker_restart (_mongocrypt_key_broker_t *kb)
          kb, "_mongocrypt_key_broker_restart called in wrong state");
    }
    kb->state = KB_REQUESTING;
+   _mongocrypt_buffer_cleanup (&kb->filter);
+   _mongocrypt_buffer_init (&kb->filter);
    return true;
 }

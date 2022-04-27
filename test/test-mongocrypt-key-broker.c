@@ -997,6 +997,34 @@ _test_key_broker_add_any (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* assert_filter_requests_id asserts that filter contains exactly one request
+ * for a key ID of expect. */
+static void
+assert_filter_requests_id (mongocrypt_binary_t *filter,
+                           const _mongocrypt_buffer_t *expect)
+{
+   bson_t filter_bson;
+   ASSERT (_mongocrypt_binary_to_bson (filter, &filter_bson));
+   bson_iter_t iter;
+   ASSERT (bson_iter_init (&iter, &filter_bson));
+   ASSERT (bson_iter_find_descendant (&iter, "$or.0._id.$in", &iter));
+   ASSERT (bson_iter_recurse (&iter, &iter));
+   ASSERT (bson_iter_next (&iter));
+   ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
+
+   _mongocrypt_buffer_t actual;
+   ASSERT (_mongocrypt_buffer_from_binary_iter (&actual, &iter));
+   ASSERT_CMPBUF (*expect, actual);
+
+   /* Check that there are no additional _id's requested. */
+   ASSERT (!bson_iter_next (&iter));
+
+   /* Check that there are no keyAltName requests. */
+   ASSERT (bson_iter_init (&iter, &filter_bson));
+   ASSERT (bson_iter_find_descendant (&iter, "$or.1.keyAltNames.$in", &iter));
+   ASSERT (bson_iter_recurse (&iter, &iter));
+   ASSERT (!bson_iter_next (&iter));
+}
 
 /* Test that key requests can be added again after transitioning to DONE and
  * calling _mongocrypt_key_broker_restart. */
@@ -1009,6 +1037,7 @@ _test_key_broker_restart (_mongocrypt_tester_t *tester)
    _mongocrypt_key_broker_t kb;
    _mongocrypt_opts_kms_providers_t *kms_providers;
    mongocrypt_kms_ctx_t *kms;
+   mongocrypt_binary_t *filter;
 
    status = mongocrypt_status_new ();
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
@@ -1020,6 +1049,11 @@ _test_key_broker_restart (_mongocrypt_tester_t *tester)
    ASSERT (kb.state == KB_REQUESTING);
    ASSERT_OK (_mongocrypt_key_broker_request_id (&kb, &key_id1), &kb);
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
+
+   filter = mongocrypt_binary_new ();
+   ASSERT_OK (_mongocrypt_key_broker_filter (&kb, filter), &kb);
+   assert_filter_requests_id (filter, &key_id1);
+   mongocrypt_binary_destroy (filter);
 
    ASSERT (kb.state == KB_ADDING_DOCS);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc1),
@@ -1039,6 +1073,11 @@ _test_key_broker_restart (_mongocrypt_tester_t *tester)
    ASSERT (kb.state == KB_REQUESTING);
    ASSERT_OK (_mongocrypt_key_broker_request_id (&kb, &key_id2), &kb);
    ASSERT_OK (_mongocrypt_key_broker_requests_done (&kb), &kb);
+
+   filter = mongocrypt_binary_new ();
+   ASSERT_OK (_mongocrypt_key_broker_filter (&kb, filter), &kb);
+   assert_filter_requests_id (filter, &key_id2);
+   mongocrypt_binary_destroy (filter);
 
    ASSERT (kb.state == KB_ADDING_DOCS);
    ASSERT_OK (_mongocrypt_key_broker_add_doc (&kb, kms_providers, &key_doc2),
