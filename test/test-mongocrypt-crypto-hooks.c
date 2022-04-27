@@ -59,15 +59,14 @@ _append_bin (const char *name, mongocrypt_binary_t *bin)
    _mongocrypt_buffer_cleanup (&tmp);
 }
 
-
 static bool
-_aes_256_cbc_encrypt (void *ctx,
-                      mongocrypt_binary_t *key,
-                      mongocrypt_binary_t *iv,
-                      mongocrypt_binary_t *in,
-                      mongocrypt_binary_t *out,
-                      uint32_t *bytes_written,
-                      mongocrypt_status_t *status)
+_mock_aes_256_xxx_encrypt (void *ctx,
+                           mongocrypt_binary_t *key,
+                           mongocrypt_binary_t *iv,
+                           mongocrypt_binary_t *in,
+                           mongocrypt_binary_t *out,
+                           uint32_t *bytes_written,
+                           mongocrypt_status_t *status)
 {
    BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
@@ -78,7 +77,8 @@ _aes_256_cbc_encrypt (void *ctx,
    memcpy (out->data + *bytes_written, in->data, in->len);
    *bytes_written += in->len;
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
-   if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_encrypt")) {
+   if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_encrypt") ||
+       0 == strcmp ((char *) ctx, "error_on:aes_256_ctr_encrypt")) {
       mongocrypt_status_set (
          status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
@@ -87,13 +87,13 @@ _aes_256_cbc_encrypt (void *ctx,
 }
 
 static bool
-_aes_256_cbc_decrypt (void *ctx,
-                      mongocrypt_binary_t *key,
-                      mongocrypt_binary_t *iv,
-                      mongocrypt_binary_t *in,
-                      mongocrypt_binary_t *out,
-                      uint32_t *bytes_written,
-                      mongocrypt_status_t *status)
+_mock_aes_256_xxx_decrypt (void *ctx,
+                           mongocrypt_binary_t *key,
+                           mongocrypt_binary_t *iv,
+                           mongocrypt_binary_t *in,
+                           mongocrypt_binary_t *out,
+                           uint32_t *bytes_written,
+                           mongocrypt_status_t *status)
 {
    BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
@@ -104,7 +104,8 @@ _aes_256_cbc_decrypt (void *ctx,
    memcpy (out->data + *bytes_written, in->data, in->len);
    *bytes_written += in->len;
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
-   if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_decrypt")) {
+   if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_decrypt") ||
+       0 == strcmp ((char *) ctx, "error_on:aes_256_ctr_decrypt")) {
       mongocrypt_status_set (
          status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
@@ -260,8 +261,8 @@ _create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
          TEST_BSON ("{'gcp': { 'email': 'test', 'privateKey': 'AAAA'}}")),
       crypt);
    ret = mongocrypt_setopt_crypto_hooks (crypt,
-                                         _aes_256_cbc_encrypt,
-                                         _aes_256_cbc_decrypt,
+                                         _mock_aes_256_xxx_encrypt,
+                                         _mock_aes_256_xxx_decrypt,
                                          _random,
                                          _hmac_sha_512,
                                          _hmac_sha_256,
@@ -270,6 +271,11 @@ _create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
    ASSERT_OK (ret, crypt);
    ret = mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
       crypt, _sign_rsaes_pkcs1_v1_5, (void *) error_on);
+   ASSERT_OK (ret, crypt);
+   ret = mongocrypt_setopt_aes_256_ctr (crypt,
+                                        _mock_aes_256_xxx_encrypt,
+                                        _mock_aes_256_xxx_decrypt,
+                                        (void *) error_on);
    ASSERT_OK (ret, crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    return crypt;
@@ -286,11 +292,11 @@ _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
    mongocrypt_status_t *status;
    _mongocrypt_buffer_t iv, associated_data, key, plaintext, ciphertext;
    const char *expected_call_history =
-      "call:_aes_256_cbc_encrypt\n"
+      "call:_mock_aes_256_xxx_encrypt\n"
       "key:" ENCRYPTION_KEY_HEX "\n"
       "iv:" IV_HEX "\n"
       "in:BBBB0E0E0E0E0E0E0E0E0E0E0E0E0E0E\n"
-      "ret:_aes_256_cbc_encrypt\n"
+      "ret:_mock_aes_256_xxx_encrypt\n"
       "call:_hmac_sha_512\n"
       "key:CCD3836C8F24AC5FAAFAAA630C5C6C5D210FD03934EA1440CD67E0DCDE3F8EA6\n"
       "in:AAAA" IV_HEX "BBBB0E0E0E0E0E0E0E0E0E0E0E0E0E0E0000000000000010\n"
@@ -357,6 +363,8 @@ _test_crypto_hooks_encryption (_mongocrypt_tester_t *tester)
    _test_crypto_hooks_encryption_helper (tester, "error_on:none");
    _test_crypto_hooks_encryption_helper (tester,
                                          "error_on:aes_256_cbc_encrypt");
+   _test_crypto_hooks_encryption_helper (tester,
+                                         "error_on:aes_256_ctr_encrypt");
    _test_crypto_hooks_encryption_helper (tester, "error_on:hmac_sha512");
 }
 
@@ -375,11 +383,11 @@ _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
       "key:" HMAC_KEY_HEX "\n"
       "in:AAAA" IV_HEX "BBBB0E0E0E0E0E0E0E0E0E0E0E0E0E0E0000000000000010\n"
       "ret:_hmac_sha_512\n"
-      "call:_aes_256_cbc_decrypt\n"
+      "call:_mock_aes_256_xxx_decrypt\n"
       "key:" ENCRYPTION_KEY_HEX "\n"
       "iv:" IV_HEX "\n"
       "in:BBBB0E0E0E0E0E0E0E0E0E0E0E0E0E0E\n"
-      "ret:_aes_256_cbc_decrypt\n";
+      "ret:_mock_aes_256_xxx_decrypt\n";
 
    status = mongocrypt_status_new ();
    crypt = _create_mongocrypt (tester, error_on);
@@ -431,6 +439,8 @@ _test_crypto_hooks_decryption (_mongocrypt_tester_t *tester)
    _test_crypto_hooks_decryption_helper (tester, "error_on:none");
    _test_crypto_hooks_decryption_helper (tester,
                                          "error_on:aes_256_cbc_decrypt");
+   _test_crypto_hooks_decryption_helper (tester,
+                                         "error_on:aes_256_ctr_decrypt");
    _test_crypto_hooks_decryption_helper (tester, "error_on:hmac_sha512");
 }
 

@@ -381,8 +381,8 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] kms_providers A BSON document mapping the KMS provider names
- * to credentials. Set a KMS provider value to an empty document to supply credentials
- * on-demand with @ref mongocrypt_ctx_provide_kms_providers.
+ * to credentials. Set a KMS provider value to an empty document to supply
+ * credentials on-demand with @ref mongocrypt_ctx_provide_kms_providers.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -413,17 +413,18 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
  * Set a local EncryptedFieldConfigMap for encryption.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
- * @param[in] efc_map A BSON document representing the EncryptedFieldConfigMap supplied by
- * the user. The keys are collection namespaces and values are EncryptedFieldConfigMap documents. The
- * viewed data copied. It is valid to destroy @p efc_map with @ref
- * mongocrypt_binary_destroy immediately after.
+ * @param[in] efc_map A BSON document representing the EncryptedFieldConfigMap
+ * supplied by the user. The keys are collection namespaces and values are
+ * EncryptedFieldConfigMap documents. The viewed data copied. It is valid to
+ * destroy @p efc_map with @ref mongocrypt_binary_destroy immediately after.
  * @pre @p crypt has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt, mongocrypt_binary_t *efc_map);
+mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
+                                              mongocrypt_binary_t *efc_map);
 
 
 /**
@@ -1375,6 +1376,28 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hmac_fn hmac_sha_256,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx);
+
+/**
+ * Set a crypto hook for the AES256-CTR operations.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] aes_256_ctr_encrypt The crypto callback function for encrypt
+ * operation.
+ * @param[in] aes_256_ctr_decrypt The crypto callback function for decrypt
+ * operation.
+ * @param[in] ctx A context passed as an argument to the crypto callback
+ * every invocation.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ *
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
+                               mongocrypt_crypto_fn aes_256_ctr_encrypt,
+                               mongocrypt_crypto_fn aes_256_ctr_decrypt,
+                               void *ctx);
 
 /**
  * Set a crypto hook for the RSASSA-PKCS1-v1_5 algorithm with a SHA-256 hash.
