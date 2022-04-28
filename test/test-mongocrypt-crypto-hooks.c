@@ -656,7 +656,7 @@ _test_crypto_hooks_unset (_mongocrypt_tester_t *tester)
 
    crypt = mongocrypt_new ();
    mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1);
-   ASSERT_FAILS (mongocrypt_init (crypt), crypt, "crypto hooks required");
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
    mongocrypt_destroy (crypt);
 }
 
