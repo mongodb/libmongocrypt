@@ -1236,7 +1236,7 @@ _test_encrypt_init_each_cmd (_mongocrypt_tester_t *tester)
    _init_bypass (tester, "{'killSessions': 1}");
    _init_bypass (tester, "{'killAllSessionsByPattern': 1}");
    _init_bypass (tester, "{'refreshSessions': 1}");
-   _init_bypass (tester, "{'compactStructuredEncryptionData': 'coll'}");
+   _init_ok (tester, "{'compactStructuredEncryptionData': 'coll'}");
 }
 
 

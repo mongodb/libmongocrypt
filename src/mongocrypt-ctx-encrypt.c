@@ -1761,7 +1761,7 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    } else if (0 == strcmp (cmd_name, "refreshSessions")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "compactStructuredEncryptionData")) {
-      *bypass = true;
+      eligible = true;
    }
 
    /* database/client commands are ineligible. */
