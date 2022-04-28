@@ -1023,6 +1023,10 @@ must_omit_encryptionInformation (const char *command_name,
    size_t i;
    bool found = false;
 
+   if (0 == strcmp (command_name, "compactStructuredEncryptionData")) {
+      return (moe_result){.must_omit = true, .ok = true};
+   }
+
    for (i = 0; i < sizeof (eligible_commands) / sizeof (eligible_commands[0]);
         i++) {
       if (0 == strcmp (eligible_commands[i], command_name)) {
