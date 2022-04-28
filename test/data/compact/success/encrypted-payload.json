@@ -1,19 +1,13 @@
 {
-   "compactStructuredEncryptedData": "coll",
+   "compactStructuredEncryptionData": "test",
    "compactionTokens": {
-      "encrypted": {
-         "$binary": {
-            "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
-            "subType": "00"
-         }
-      },
       "nested.encrypted": {
          "$binary": {
-            "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
+            "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
             "subType": "00"
          }
       },
-      "nested.notindexed": {
+      "encrypted": {
          "$binary": {
             "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
             "subType": "00"

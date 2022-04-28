@@ -3248,12 +3248,6 @@ _test_encrypt_compact (_mongocrypt_tester_t *tester)
             TEST_FILE ("./test/data/keys/"
                        "12345678123498761234123456789013-local-document.json")),
          ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_mongo_feed (
-            ctx,
-            TEST_FILE ("./test/data/keys/"
-                       "12345678123498761234123456789014-local-document.json")),
-         ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
@@ -3262,7 +3256,7 @@ _test_encrypt_compact (_mongocrypt_tester_t *tester)
       mongocrypt_binary_t *out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
       ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-         out, TEST_FILE ("./test/data/compact/success/encrypted-payload.json"));
+         TEST_FILE ("./test/data/compact/success/encrypted-payload.json"), out);
       mongocrypt_binary_destroy (out);
    }
 
