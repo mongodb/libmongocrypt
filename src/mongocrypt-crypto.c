@@ -37,7 +37,7 @@
  */
 
 static bool
-_crypto_aes_256_ctr_encrypt_decrypt_cbc (
+_crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
    void *ctx,
    mongocrypt_crypto_fn aes_256_ecb_encrypt,
    aes_256_args_t args,
@@ -177,7 +177,7 @@ _crypto_aes_256_ctr_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
    }
 
    if (crypto->aes_256_ecb_encrypt) {
-      return _crypto_aes_256_ctr_encrypt_decrypt_cbc (
+      return _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
          crypto->ctx, crypto->aes_256_ecb_encrypt, args, status);
    }
 
@@ -243,7 +243,7 @@ _crypto_aes_256_ctr_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
    }
 
    if (crypto->aes_256_ecb_encrypt) {
-      return _crypto_aes_256_ctr_encrypt_decrypt_cbc (
+      return _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
          crypto->ctx, crypto->aes_256_ecb_encrypt, args, status);
    }
 
