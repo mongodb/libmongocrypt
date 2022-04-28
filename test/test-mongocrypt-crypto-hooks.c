@@ -882,6 +882,12 @@ _test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
 
    ASSERT (0 == _mongocrypt_buffer_cmp (&plaintext, &plaintext_ecb));
 
+   _mongocrypt_buffer_cleanup (&key);
+   _mongocrypt_buffer_cleanup (&iv);
+   _mongocrypt_buffer_cleanup (&plaintext);
+   _mongocrypt_buffer_cleanup (&ciphertext_reg);
+   _mongocrypt_buffer_cleanup (&ciphertext_ecb);
+   _mongocrypt_buffer_cleanup (&plaintext_ecb);
    mongocrypt_destroy (crypt_reg);
    mongocrypt_destroy (crypt_ecb);
    mongocrypt_status_destroy (status);
