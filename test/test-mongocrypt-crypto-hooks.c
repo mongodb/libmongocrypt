@@ -71,14 +71,17 @@ _mock_aes_256_xxx_encrypt (void *ctx,
    BSON_ASSERT (0 == strncmp ("error_on:", (char *) ctx, strlen ("error_on:")));
    bson_string_append_printf (call_history, "call:%s\n", BSON_FUNC);
    _append_bin ("key", key);
-   _append_bin ("iv", iv);
+   if (NULL != iv) {
+      _append_bin ("iv", iv);
+   }
    _append_bin ("in", in);
    /* append it directly, don't encrypt. */
    memcpy (out->data + *bytes_written, in->data, in->len);
    *bytes_written += in->len;
    bson_string_append_printf (call_history, "ret:%s\n", BSON_FUNC);
    if (0 == strcmp ((char *) ctx, "error_on:aes_256_cbc_encrypt") ||
-       0 == strcmp ((char *) ctx, "error_on:aes_256_ctr_encrypt")) {
+       0 == strcmp ((char *) ctx, "error_on:aes_256_ctr_encrypt") ||
+       0 == strcmp ((char *) ctx, "error_on:aes_256_ecb_encrypt")) {
       mongocrypt_status_set (
          status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, (char *) ctx, -1);
       return false;
@@ -247,7 +250,10 @@ _sign_rsaes_pkcs1_v1_5 (void *ctx,
 }
 
 static mongocrypt_t *
-_create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
+_create_mongocrypt_and_hooks (_mongocrypt_tester_t *tester,
+                              const char *error_on,
+                              bool ctr_hook,
+                              bool ecb_hook)
 {
    bool ret;
 
@@ -272,19 +278,33 @@ _create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
    ret = mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
       crypt, _sign_rsaes_pkcs1_v1_5, (void *) error_on);
    ASSERT_OK (ret, crypt);
-   ret = mongocrypt_setopt_aes_256_ctr (crypt,
-                                        _mock_aes_256_xxx_encrypt,
-                                        _mock_aes_256_xxx_decrypt,
-                                        (void *) error_on);
-   ASSERT_OK (ret, crypt);
+   if (ctr_hook) {
+      ret = mongocrypt_setopt_aes_256_ctr (crypt,
+                                           _mock_aes_256_xxx_encrypt,
+                                           _mock_aes_256_xxx_decrypt,
+                                           (void *) error_on);
+      ASSERT_OK (ret, crypt);
+   }
+   if (ecb_hook) {
+      ret = mongocrypt_setopt_aes_256_ecb (
+         crypt, _mock_aes_256_xxx_encrypt, (void *) error_on);
+      ASSERT_OK (ret, crypt);
+   }
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    return crypt;
 }
 
+static mongocrypt_t *
+_create_mongocrypt (_mongocrypt_tester_t *tester, const char *error_on)
+{
+   return _create_mongocrypt_and_hooks (tester, error_on, false, false);
+}
 
 static void
 _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
-                                      const char *error_on)
+                                      const char *error_on,
+                                      bool ctr_hook,
+                                      bool ecb_hook)
 {
    mongocrypt_t *crypt;
    bool ret;
@@ -303,27 +323,41 @@ _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
       "ret:_hmac_sha_512\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt (tester, error_on);
+   crypt = _create_mongocrypt_and_hooks (tester, error_on, ctr_hook, ecb_hook);
 
    _mongocrypt_buffer_copy_from_hex (&iv, IV_HEX);
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
-   _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
    _mongocrypt_buffer_copy_from_hex (&plaintext, "BBBB");
-
-   _mongocrypt_buffer_init (&ciphertext);
-   _mongocrypt_buffer_resize (
-      &ciphertext, _mongocrypt_calculate_ciphertext_len (plaintext.len));
 
    call_history = bson_string_new (NULL);
 
-   ret = _mongocrypt_do_encryption (crypt->crypto,
-                                    &iv,
-                                    &associated_data,
-                                    &key,
-                                    &plaintext,
-                                    &ciphertext,
-                                    &bytes_written,
-                                    status);
+   if (ctr_hook || ecb_hook) {
+      _mongocrypt_buffer_copy_from_hex (&key, ENCRYPTION_KEY_HEX);
+      _mongocrypt_buffer_init (&ciphertext);
+      _mongocrypt_buffer_resize (
+         &ciphertext,
+         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+      ret = _mongocrypt_fle2_do_encryption (crypt->crypto,
+                                            &iv,
+                                            &key,
+                                            &plaintext,
+                                            &ciphertext,
+                                            &bytes_written,
+                                            status);
+   } else {
+      _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
+      _mongocrypt_buffer_init (&ciphertext);
+      _mongocrypt_buffer_resize (
+         &ciphertext, _mongocrypt_calculate_ciphertext_len (plaintext.len));
+      ret = _mongocrypt_do_encryption (crypt->crypto,
+                                       &iv,
+                                       &associated_data,
+                                       &key,
+                                       &plaintext,
+                                       &ciphertext,
+                                       &bytes_written,
+                                       status);
+   }
 
    if (0 == strcmp (error_on, "error_on:none")) {
       ASSERT_OK_STATUS (ret, status);
@@ -360,18 +394,23 @@ _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
 static void
 _test_crypto_hooks_encryption (_mongocrypt_tester_t *tester)
 {
-   _test_crypto_hooks_encryption_helper (tester, "error_on:none");
-   _test_crypto_hooks_encryption_helper (tester,
-                                         "error_on:aes_256_cbc_encrypt");
-   _test_crypto_hooks_encryption_helper (tester,
-                                         "error_on:aes_256_ctr_encrypt");
-   _test_crypto_hooks_encryption_helper (tester, "error_on:hmac_sha512");
+   _test_crypto_hooks_encryption_helper (tester, "error_on:none", false, false);
+   _test_crypto_hooks_encryption_helper (
+      tester, "error_on:aes_256_cbc_encrypt", false, false);
+   _test_crypto_hooks_encryption_helper (
+      tester, "error_on:aes_256_ctr_encrypt", true, false);
+   _test_crypto_hooks_encryption_helper (
+      tester, "error_on:aes_256_ecb_encrypt", false, true);
+   _test_crypto_hooks_encryption_helper (
+      tester, "error_on:hmac_sha512", false, false);
 }
 
 
 static void
 _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
-                                      const char *error_on)
+                                      const char *error_on,
+                                      bool ctr_hook,
+                                      bool ecb_hook)
 {
    mongocrypt_t *crypt;
    bool ret;
@@ -390,26 +429,36 @@ _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
       "ret:_mock_aes_256_xxx_decrypt\n";
 
    status = mongocrypt_status_new ();
-   crypt = _create_mongocrypt (tester, error_on);
+   crypt = _create_mongocrypt_and_hooks (tester, error_on, ctr_hook, ecb_hook);
 
    _mongocrypt_buffer_copy_from_hex (&associated_data, "AAAA");
-   _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
    _mongocrypt_buffer_copy_from_hex (
       &ciphertext, IV_HEX "BBBB0E0E0E0E0E0E0E0E0E0E0E0E0E0E" HMAC_HEX_TAG);
 
-   _mongocrypt_buffer_init (&plaintext);
-   _mongocrypt_buffer_resize (
-      &plaintext, _mongocrypt_calculate_plaintext_len (ciphertext.len));
-
    call_history = bson_string_new (NULL);
 
-   ret = _mongocrypt_do_decryption (crypt->crypto,
-                                    &associated_data,
-                                    &key,
-                                    &ciphertext,
-                                    &plaintext,
-                                    &bytes_written,
-                                    status);
+   if (ctr_hook || ecb_hook) {
+      _mongocrypt_buffer_copy_from_hex (&key, ENCRYPTION_KEY_HEX);
+      _mongocrypt_buffer_init (&plaintext);
+      _mongocrypt_buffer_resize (
+         &plaintext, _mongocrypt_fle2_calculate_plaintext_len (ciphertext.len));
+
+      ret = _mongocrypt_fle2_do_decryption (
+         crypt->crypto, &key, &ciphertext, &plaintext, &bytes_written, status);
+   } else {
+      _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
+      _mongocrypt_buffer_init (&plaintext);
+      _mongocrypt_buffer_resize (
+         &plaintext, _mongocrypt_calculate_plaintext_len (ciphertext.len));
+
+      ret = _mongocrypt_do_decryption (crypt->crypto,
+                                       &associated_data,
+                                       &key,
+                                       &ciphertext,
+                                       &plaintext,
+                                       &bytes_written,
+                                       status);
+   }
 
    if (0 == strcmp (error_on, "error_on:none")) {
       ASSERT_OK_STATUS (ret, status);
@@ -436,12 +485,15 @@ _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
 static void
 _test_crypto_hooks_decryption (_mongocrypt_tester_t *tester)
 {
-   _test_crypto_hooks_decryption_helper (tester, "error_on:none");
-   _test_crypto_hooks_decryption_helper (tester,
-                                         "error_on:aes_256_cbc_decrypt");
-   _test_crypto_hooks_decryption_helper (tester,
-                                         "error_on:aes_256_ctr_decrypt");
-   _test_crypto_hooks_decryption_helper (tester, "error_on:hmac_sha512");
+   _test_crypto_hooks_decryption_helper (tester, "error_on:none", false, false);
+   _test_crypto_hooks_decryption_helper (
+      tester, "error_on:aes_256_cbc_decrypt", false, false);
+   _test_crypto_hooks_decryption_helper (
+      tester, "error_on:aes_256_ctr_decrypt", true, false);
+   _test_crypto_hooks_decryption_helper (
+      tester, "error_on:aes_256_ecb_encrypt", false, true);
+   _test_crypto_hooks_decryption_helper (
+      tester, "error_on:hmac_sha512", false, false);
 }
 
 static void
@@ -730,6 +782,112 @@ _test_crypto_hook_sign_rsaes_pkcs1_v1_5 (_mongocrypt_tester_t *tester)
    bson_string_free (call_history, true);
 }
 
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO
+bool
+_native_crypto_aes_256_ecb_encrypt (aes_256_args_t args);
+
+static bool
+_aes_256_ecb_encrypt (void *ctx,
+                      mongocrypt_binary_t *key,
+                      mongocrypt_binary_t *iv,
+                      mongocrypt_binary_t *in,
+                      mongocrypt_binary_t *out,
+                      uint32_t *bytes_written,
+                      mongocrypt_status_t *status)
+{
+   _mongocrypt_buffer_t key_buf;
+   _mongocrypt_buffer_from_binary (&key_buf, key);
+   if (iv) {
+      CLIENT_ERR ("IV expected to be NULL in this mode");
+      return false;
+   }
+   _mongocrypt_buffer_t in_buf;
+   _mongocrypt_buffer_from_binary (&in_buf, in);
+   _mongocrypt_buffer_t out_buf;
+   _mongocrypt_buffer_from_binary (&out_buf, out);
+
+   aes_256_args_t args = {
+      &key_buf, NULL, &in_buf, &out_buf, bytes_written, status};
+
+   return _native_crypto_aes_256_ecb_encrypt (args);
+}
+
+
+void
+_test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
+{
+   bool ret;
+   _mongocrypt_buffer_t key;
+   _mongocrypt_buffer_t iv;
+   _mongocrypt_buffer_t plaintext;
+   _mongocrypt_buffer_t ciphertext_reg;
+   _mongocrypt_buffer_t ciphertext_ecb;
+   _mongocrypt_buffer_t plaintext_ecb;
+   uint32_t bytes_written;
+   mongocrypt_status_t *status = mongocrypt_status_new ();
+
+   _mongocrypt_buffer_copy_from_hex (&iv, IV_HEX);
+   _mongocrypt_buffer_copy_from_hex (
+      &plaintext,
+      "4f6c64204d63446f6e616c64206861642061206661726d2e20456965696f0a");
+   _mongocrypt_buffer_copy_from_hex (&key, ENCRYPTION_KEY_HEX);
+
+   /* Encrypt data using native CTR and ECB-hook and compare */
+
+   mongocrypt_t *crypt_reg = mongocrypt_new ();
+   _mongocrypt_buffer_init (&ciphertext_reg);
+   _mongocrypt_buffer_resize (
+      &ciphertext_reg,
+      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+   ret = _mongocrypt_fle2_do_encryption (crypt_reg->crypto,
+                                         &iv,
+                                         &key,
+                                         &plaintext,
+                                         &ciphertext_reg,
+                                         &bytes_written,
+                                         status);
+   ASSERT_OK (ret, crypt_reg);
+
+   mongocrypt_t *crypt_ecb = mongocrypt_new ();
+   ret = mongocrypt_setopt_aes_256_ecb (crypt_ecb, _aes_256_ecb_encrypt, NULL);
+   ASSERT_OK (ret, crypt_ecb);
+   _mongocrypt_buffer_init (&ciphertext_ecb);
+   _mongocrypt_buffer_resize (
+      &ciphertext_ecb,
+      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+   ret = _mongocrypt_fle2_do_encryption (crypt_ecb->crypto,
+                                         &iv,
+                                         &key,
+                                         &plaintext,
+                                         &ciphertext_ecb,
+                                         &bytes_written,
+                                         status);
+   ASSERT_OK (ret, crypt_ecb);
+
+   ASSERT (0 == _mongocrypt_buffer_cmp (&ciphertext_reg, &ciphertext_ecb));
+
+   /* Decrypt data using ECB-hook and compare to original */
+
+   _mongocrypt_buffer_init (&plaintext_ecb);
+   _mongocrypt_buffer_resize (
+      &plaintext_ecb,
+      _mongocrypt_fle2_calculate_plaintext_len (ciphertext_ecb.len));
+   ret = _mongocrypt_fle2_do_decryption (crypt_ecb->crypto,
+                                         &key,
+                                         &ciphertext_ecb,
+                                         &plaintext_ecb,
+                                         &bytes_written,
+                                         status);
+   ASSERT_OK (ret, crypt_ecb);
+
+   ASSERT (0 == _mongocrypt_buffer_cmp (&plaintext, &plaintext_ecb));
+
+   mongocrypt_destroy (crypt_reg);
+   mongocrypt_destroy (crypt_ecb);
+   mongocrypt_status_destroy (status);
+}
+#endif
+
 void
 _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
 {
@@ -744,4 +902,7 @@ _mongocrypt_tester_install_crypto_hooks (_mongocrypt_tester_t *tester)
                         CRYPTO_OPTIONAL);
    INSTALL_TEST_CRYPTO (_test_crypto_hook_sign_rsaes_pkcs1_v1_5,
                         CRYPTO_OPTIONAL);
+#ifdef MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO
+   INSTALL_TEST (_test_fle2_crypto_via_ecb_hook);
+#endif
 }
