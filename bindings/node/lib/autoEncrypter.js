@@ -252,6 +252,8 @@ module.exports = function (modules) {
       const stateMachine = new StateMachine({
         bson,
         ...options,
+        promoteValues: false,
+        promoteLongs: false,
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });
