@@ -1059,6 +1059,85 @@ must_omit_encryptionInformation (const char *command_name,
    return (moe_result) { .ok = true, .must_omit = false };
 }
 
+/* _fle2_append_compactionTokens appends compactionTokens if command_name is
+ * "compactStructuredEncryptionData" */
+static bool
+_fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
+                               _mongocrypt_key_broker_t *kb,
+                               mc_EncryptedFieldConfig_t *efc,
+                               const char *command_name,
+                               bson_t *out,
+                               mongocrypt_status_t *status)
+{
+   bson_t result_compactionTokens;
+   bool ret = false;
+
+   if (0 != strcmp (command_name, "compactStructuredEncryptionData")) {
+      return true;
+   }
+
+   BSON_APPEND_DOCUMENT_BEGIN (
+      out, "compactionTokens", &result_compactionTokens);
+
+   mc_EncryptedField_t *ptr;
+   for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
+      if (!ptr->has_queries) {
+         continue;
+      }
+      /* Append ECOC token. */
+      _mongocrypt_buffer_t key = {0};
+      _mongocrypt_buffer_t tokenkey = {0};
+      mc_CollectionsLevel1Token_t *cl1t = NULL;
+      mc_ECOCToken_t *ecoct = NULL;
+      bool ecoc_ok = false;
+
+      if (!_mongocrypt_key_broker_decrypted_key_by_id (kb, &ptr->keyId, &key)) {
+         _mongocrypt_key_broker_status (kb, status);
+         goto ecoc_fail;
+      }
+      /* The last 32 bytes of the user key are the token key. */
+      if (!_mongocrypt_buffer_from_subrange (&tokenkey,
+                                             &key,
+                                             key.len - MONGOCRYPT_TOKEN_KEY_LEN,
+                                             MONGOCRYPT_TOKEN_KEY_LEN)) {
+         CLIENT_ERR ("unable to get TokenKey from Data Encryption Key");
+         goto ecoc_fail;
+      }
+      cl1t = mc_CollectionsLevel1Token_new (crypto, &tokenkey, status);
+      if (!cl1t) {
+         goto ecoc_fail;
+      }
+
+      ecoct = mc_ECOCToken_new (crypto, cl1t, status);
+      if (!ecoct) {
+         goto ecoc_fail;
+      }
+
+      const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get (ecoct);
+
+      BSON_APPEND_BINARY (&result_compactionTokens,
+                          ptr->path,
+                          BSON_SUBTYPE_BINARY,
+                          ecoct_buf->data,
+                          ecoct_buf->len);
+
+      ecoc_ok = true;
+   ecoc_fail:
+      mc_ECOCToken_destroy (ecoct);
+      mc_CollectionsLevel1Token_destroy (cl1t);
+      _mongocrypt_buffer_cleanup (&key);
+      if (!ecoc_ok) {
+         goto fail;
+      }
+   }
+
+   bson_append_document_end (out, &result_compactionTokens);
+
+   ret = true;
+fail:
+   return ret;
+}
+
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
  * associated with the command. */
 static bool
@@ -1167,6 +1246,16 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       return _mongocrypt_ctx_fail (ctx);
    }
    bson_destroy (deleteTokens);
+
+   if (!_fle2_append_compactionTokens (ctx->crypt->crypto,
+                                       &ctx->kb,
+                                       &ectx->efc,
+                                       command_name,
+                                       &converted,
+                                       ctx->status)) {
+      bson_destroy (&converted);
+      return _mongocrypt_ctx_fail (ctx);
+   }
 
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
    _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
