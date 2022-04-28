@@ -409,7 +409,7 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
       return false;
    }
 
-   if (ctx->crypt->opts.bypass_query_analysis) {
+   if (ectx->bypass_query_analysis) {
       /* Keys may have been requested for deleteTokens. Finish key requests. */
       _mongocrypt_key_broker_requests_done (&ctx->kb);
       return _mongocrypt_ctx_state_from_key_broker (ctx);
@@ -1820,6 +1820,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
    ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
    ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+   ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
 
 
    if (!cmd || !cmd->data) {
@@ -1916,7 +1917,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
-      if (ctx->crypt->opts.bypass_query_analysis) {
+      if (ectx->bypass_query_analysis) {
          /* Keys may have been requested for deleteTokens. Finish key requests.
           */
          _mongocrypt_key_broker_requests_done (&ctx->kb);

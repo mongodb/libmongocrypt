@@ -148,6 +148,9 @@ typedef struct {
     */
    _mongocrypt_buffer_t encrypted_field_config;
    mc_EncryptedFieldConfig_t efc;
+   /* bypass_query_analysis is set to true to skip the
+    * MONGOCRYPT_CTX_NEED_MONGO_MARKINGS state. */
+   bool bypass_query_analysis;
 } _mongocrypt_ctx_encrypt_t;
 
 
