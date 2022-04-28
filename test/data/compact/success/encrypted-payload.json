@@ -1,0 +1,23 @@
+{
+   "compactStructuredEncryptedData": "coll",
+   "compactionTokens": {
+      "encrypted": {
+         "$binary": {
+            "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
+            "subType": "00"
+         }
+      },
+      "nested.encrypted": {
+         "$binary": {
+            "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
+            "subType": "00"
+         }
+      },
+      "nested.notindexed": {
+         "$binary": {
+            "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
+            "subType": "00"
+         }
+      }
+   }
+}
