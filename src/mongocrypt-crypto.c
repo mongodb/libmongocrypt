@@ -1235,7 +1235,7 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_t hmac_inputs[] = {AD, IV, S};
       _mongocrypt_buffer_t hmac_input = {0};
       _mongocrypt_buffer_concat (&hmac_input, hmac_inputs, 3);
-      if (!_native_crypto_hmac_sha_256 (&Km, &hmac_input, &T, status)) {
+      if (!_mongocrypt_hmac_sha_256 (crypto, &Km, &hmac_input, &T, status)) {
          _mongocrypt_buffer_cleanup (&hmac_input);
          return false;
       }
@@ -1362,7 +1362,7 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_t hmac_input = {0};
       _mongocrypt_buffer_concat (&hmac_input, hmac_inputs, 3);
       _mongocrypt_buffer_resize (&Tp, MONGOCRYPT_HMAC_LEN);
-      if (!_native_crypto_hmac_sha_256 (&Km, &hmac_input, &Tp, status)) {
+      if (!_mongocrypt_hmac_sha_256 (crypto, &Km, &hmac_input, &Tp, status)) {
          _mongocrypt_buffer_cleanup (&hmac_input);
          _mongocrypt_buffer_cleanup (&Tp);
          return false;
