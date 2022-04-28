@@ -357,6 +357,46 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
    return true;
 }
 
+/* _fle2_collect_keys_for_compact requests keys required to produce
+ * compactionTokens. compactionTokens is only applicable to FLE 2. */
+static bool
+_fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+
+   /* deleteTokens are only appended for FLE 2. */
+   if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+      return true;
+   }
+
+   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (!cmd_name) {
+      _mongocrypt_ctx_fail (ctx);
+      return false;
+   }
+
+   if (0 != strcmp (cmd_name, "compactStructuredEncryptionData")) {
+      return true;
+   }
+
+   /* compactStructuredEncryptionData must not be sent to mongocryptd. */
+   ectx->bypass_query_analysis = true;
+
+   mc_EncryptedField_t *field;
+
+   for (field = ectx->efc.fields; field != NULL; field = field->next) {
+      if (field->has_queries) {
+         if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
+            _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
+            _mongocrypt_ctx_fail (ctx);
+            return false;
+         }
+      }
+   }
+   return true;
+}
+
 static bool
 _mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 {
@@ -409,8 +449,13 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
       return false;
    }
 
+   if (!_fle2_collect_keys_for_compact (ctx)) {
+      return false;
+   }
+
    if (ectx->bypass_query_analysis) {
-      /* Keys may have been requested for deleteTokens. Finish key requests. */
+      /* Keys may have been requested for deleteTokens or compactionTokens.
+       * Finish key requests. */
       _mongocrypt_key_broker_requests_done (&ctx->kb);
       return _mongocrypt_ctx_state_from_key_broker (ctx);
    }
@@ -1916,9 +1961,14 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       return false;
    }
 
+   if (!_fle2_collect_keys_for_compact (ctx)) {
+      return false;
+   }
+
    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
       if (ectx->bypass_query_analysis) {
-         /* Keys may have been requested for deleteTokens. Finish key requests.
+         /* Keys may have been requested for deleteTokens or compactionTokens.
+          * Finish key requests.
           */
          _mongocrypt_key_broker_requests_done (&ctx->kb);
          return _mongocrypt_ctx_state_from_key_broker (ctx);
