@@ -53,6 +53,8 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
       if (!_mongocrypt_key_broker_decrypted_key_by_id (
              &ctx->kb, &ptr->keyId, &key)) {
+         _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
          goto ecoc_fail;
       }
       /* The last 32 bytes of the user key are the token key. */
@@ -60,17 +62,20 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                              &key,
                                              key.len - MONGOCRYPT_TOKEN_KEY_LEN,
                                              MONGOCRYPT_TOKEN_KEY_LEN)) {
-         CLIENT_ERR ("unable to get TokenKey from Data Encryption Key");
+         _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to get TokenKey from Data Encryption Key");
          goto ecoc_fail;
       }
       cl1t =
          mc_CollectionsLevel1Token_new (ctx->crypt->crypto, &tokenkey, status);
       if (!cl1t) {
+         _mongocrypt_ctx_fail (ctx);
          goto ecoc_fail;
       }
 
       ecoct = mc_ECOCToken_new (ctx->crypt->crypto, cl1t, status);
       if (!ecoct) {
+         _mongocrypt_ctx_fail (ctx);
          goto ecoc_fail;
       }
 
@@ -97,6 +102,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    _mongocrypt_buffer_steal_from_bson (&cctx->result, &result_bson);
    _mongocrypt_buffer_to_binary (&cctx->result, out);
    ret = true;
+   ctx->state = MONGOCRYPT_CTX_DONE;
 fail:
    if (!ret) {
       bson_destroy (&result_bson);

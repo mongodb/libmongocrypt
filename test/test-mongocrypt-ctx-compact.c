@@ -55,6 +55,8 @@ _test_compact_success (_mongocrypt_tester_t *tester)
       mongocrypt_binary_destroy (out);
    }
 
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
@@ -111,6 +113,8 @@ _test_compact_nonlocal_kms (_mongocrypt_tester_t *tester)
       mongocrypt_binary_destroy (out);
    }
 
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
@@ -126,10 +130,9 @@ _test_compact_init (_mongocrypt_tester_t *tester)
    /* Test success. */
    {
       ctx = mongocrypt_ctx_new (crypt);
-      ASSERT_OK (
-         mongocrypt_ctx_compact_init (
-            ctx, TEST_FILE ("./test/data/efc/efc-oneField.json")),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_compact_init (
+                    ctx, TEST_FILE ("./test/data/efc/efc-oneField.json")),
+                 ctx);
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
       mongocrypt_ctx_destroy (ctx);
@@ -143,6 +146,7 @@ _test_compact_init (_mongocrypt_tester_t *tester)
             ctx, TEST_FILE ("./test/data/efc/efc-missingKeyId.json")),
          ctx,
          "unable to find 'keyId' in 'field' document");
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
       mongocrypt_ctx_destroy (ctx);
    }
 
@@ -157,6 +161,7 @@ _test_compact_init (_mongocrypt_tester_t *tester)
             ctx, TEST_FILE ("./test/data/efc/efc-missingKeyId.json")),
          ctx,
          "algorithm prohibited");
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
       mongocrypt_ctx_destroy (ctx);
    }
 
@@ -180,6 +185,7 @@ _test_compact_key_not_provided (_mongocrypt_tester_t *tester)
    ASSERT_FAILS (mongocrypt_ctx_mongo_done (ctx),
                  ctx,
                  "not all keys requested were satisfied");
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -255,6 +261,7 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
       mongocrypt_binary_destroy (out);
    }
 
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -284,6 +291,8 @@ _test_compact_no_fields (_mongocrypt_tester_t *tester)
       _assert_match_bson (&out_bson, TMP_BSON ("{'compactionTokens': {}}"));
       mongocrypt_binary_destroy (out);
    }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
