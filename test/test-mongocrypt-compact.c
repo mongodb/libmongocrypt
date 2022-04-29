@@ -115,7 +115,8 @@ _test_compact_nonlocal_kms (_mongocrypt_tester_t *tester)
       ASSERT_OK (
          mongocrypt_ctx_mongo_feed (
             ctx,
-            TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-aws-document.json")),
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-aws-document.json")),
          ctx);
       ASSERT_OK (
          mongocrypt_ctx_mongo_feed (
@@ -190,8 +191,10 @@ _test_compact_missing_key_id (_mongocrypt_tester_t *tester)
    {
       ASSERT_FAILS (
          mongocrypt_ctx_mongo_feed (
-            ctx, TEST_FILE ("./test/data/compact/missing-key-id/collinfo.json")),
-         ctx, "unable to find 'keyId' in 'field' document");
+            ctx,
+            TEST_FILE ("./test/data/compact/missing-key-id/collinfo.json")),
+         ctx,
+         "unable to find 'keyId' in 'field' document");
    }
 
    mongocrypt_ctx_destroy (ctx);
@@ -231,7 +234,9 @@ _test_compact_key_not_provided (_mongocrypt_tester_t *tester)
             TEST_FILE ("./test/data/keys/"
                        "12345678123498761234123456789012-local-document.json")),
          ctx);
-      ASSERT_FAILS (mongocrypt_ctx_mongo_done (ctx), ctx, "not all keys requested were satisfied");
+      ASSERT_FAILS (mongocrypt_ctx_mongo_done (ctx),
+                    ctx,
+                    "not all keys requested were satisfied");
    }
 
    mongocrypt_ctx_destroy (ctx);
@@ -292,7 +297,8 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
       ASSERT_OK (
          mongocrypt_ctx_mongo_feed (
             ctx,
-            TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-aws-document.json")),
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-aws-document.json")),
          ctx);
       ASSERT_OK (
          mongocrypt_ctx_mongo_feed (
@@ -377,7 +383,8 @@ _test_compact_no_fields (_mongocrypt_tester_t *tester)
       mongocrypt_binary_t *out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
       ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-         TEST_FILE ("./test/data/compact/no-fields/encrypted-payload.json"), out);
+         TEST_FILE ("./test/data/compact/no-fields/encrypted-payload.json"),
+         out);
       mongocrypt_binary_destroy (out);
    }
 
