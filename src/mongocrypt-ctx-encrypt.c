@@ -364,8 +364,7 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
-
-   /* deleteTokens are only appended for FLE 2. */
+   /* compactionTokens are only appended for FLE 2. */
    if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
       return true;
    }
