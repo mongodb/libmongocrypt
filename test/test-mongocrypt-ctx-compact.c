@@ -56,7 +56,7 @@ _test_compact_success (_mongocrypt_tester_t *tester)
          mongocrypt_ctx_mongo_feed (
             ctx,
             TEST_FILE ("./test/data/keys/"
-                       "12345678123498761234123456789013-local-document.json")),
+                       "ABCDEFAB123498761234123456789012-local-document.json")),
          ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
@@ -81,13 +81,25 @@ _test_compact_nonlocal_kms (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *efc;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
-   efc = TEST_FILE ("./test/data/efc/efc-oneField.json");
 
-   ASSERT_OK (mongocrypt_ctx_compact_init (ctx, efc), ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/compact/success/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/compact/success/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    {
@@ -97,12 +109,25 @@ _test_compact_nonlocal_kms (_mongocrypt_tester_t *tester)
             TEST_FILE ("./test/data/keys/"
                        "12345678123498761234123456789012-aws-document.json")),
          ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-aws-document.json")),
+         ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    {
       mongocrypt_kms_ctx_t *kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
+      ASSERT (kms_ctx);
+      ASSERT_OK (
+         mongocrypt_kms_ctx_feed (kms_ctx,
+                                  TEST_FILE ("./test/data/keys/"
+                                             "ABCDEFAB123498761234123456789012-"
+                                             "aws-decrypt-reply.txt")),
+         kms_ctx);
+      kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
       ASSERT (kms_ctx);
       ASSERT_OK (
          mongocrypt_kms_ctx_feed (kms_ctx,
@@ -116,15 +141,10 @@ _test_compact_nonlocal_kms (_mongocrypt_tester_t *tester)
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
-      bson_t out_bson;
       mongocrypt_binary_t *out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
-      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
-      _assert_match_bson (
-         &out_bson,
-         TMP_BSON ("{'compactionTokens': {'firstName': {'$binary': {'base64': "
-                   "'noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=','subType': "
-                   "'0'}}}}"));
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/compact/success/encrypted-payload.json"), out);
       mongocrypt_binary_destroy (out);
    }
 
@@ -135,51 +155,29 @@ _test_compact_nonlocal_kms (_mongocrypt_tester_t *tester)
 }
 
 static void
-_test_compact_init (_mongocrypt_tester_t *tester)
+_test_compact_missing_key_id (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   ctx = mongocrypt_ctx_new (crypt);
 
-   /* Test success. */
-   {
-      ctx = mongocrypt_ctx_new (crypt);
-      ASSERT_OK (mongocrypt_ctx_compact_init (
-                    ctx, TEST_FILE ("./test/data/efc/efc-oneField.json")),
-                 ctx);
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      mongocrypt_ctx_destroy (ctx);
-   }
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/compact/success/cmd.json")),
+      ctx);
 
-   /* Test bad EncryptedFieldConfig. */
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
    {
-      ctx = mongocrypt_ctx_new (crypt);
       ASSERT_FAILS (
-         mongocrypt_ctx_compact_init (
-            ctx, TEST_FILE ("./test/data/efc/efc-missingKeyId.json")),
-         ctx,
-         "unable to find 'keyId' in 'field' document");
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
-      mongocrypt_ctx_destroy (ctx);
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/compact/missing-key-id/collinfo.json")),
+         ctx, "unable to find 'keyId' in 'field' document");
    }
 
-   /* Test incorrect option. */
-   {
-      ctx = mongocrypt_ctx_new (crypt);
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1),
-                 ctx);
-      ASSERT_FAILS (
-         mongocrypt_ctx_compact_init (
-            ctx, TEST_FILE ("./test/data/efc/efc-missingKeyId.json")),
-         ctx,
-         "algorithm prohibited");
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
-      mongocrypt_ctx_destroy (ctx);
-   }
-
+   mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
 
@@ -188,19 +186,36 @@ _test_compact_key_not_provided (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *efc;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
-   efc = TEST_FILE ("./test/data/efc/efc-oneField.json");
 
-   ASSERT_OK (mongocrypt_ctx_compact_init (ctx, efc), ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/compact/success/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/compact/success/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-   ASSERT_FAILS (mongocrypt_ctx_mongo_done (ctx),
-                 ctx,
-                 "not all keys requested were satisfied");
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_FAILS (mongocrypt_ctx_mongo_done (ctx), ctx, "not all keys requested were satisfied");
+   }
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -211,7 +226,6 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *efc;
 
    crypt = mongocrypt_new ();
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
@@ -221,10 +235,22 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
 
-   efc = TEST_FILE ("./test/data/efc/efc-oneField.json");
-
    ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (mongocrypt_ctx_compact_init (ctx, efc), ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/compact/success/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/compact/success/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
    {
@@ -236,6 +262,7 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
                  ctx);
    }
 
+
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    {
@@ -245,12 +272,25 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
             TEST_FILE ("./test/data/keys/"
                        "12345678123498761234123456789012-aws-document.json")),
          ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-aws-document.json")),
+         ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    {
       mongocrypt_kms_ctx_t *kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
+      ASSERT (kms_ctx);
+      ASSERT_OK (
+         mongocrypt_kms_ctx_feed (kms_ctx,
+                                  TEST_FILE ("./test/data/keys/"
+                                             "ABCDEFAB123498761234123456789012-"
+                                             "aws-decrypt-reply.txt")),
+         kms_ctx);
+      kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
       ASSERT (kms_ctx);
       ASSERT_OK (
          mongocrypt_kms_ctx_feed (kms_ctx,
@@ -264,15 +304,10 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
-      bson_t out_bson;
       mongocrypt_binary_t *out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
-      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
-      _assert_match_bson (
-         &out_bson,
-         TMP_BSON ("{'compactionTokens': {'firstName': {'$binary': {'base64': "
-                   "'noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=','subType': "
-                   "'0'}}}}"));
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/compact/success/encrypted-payload.json"), out);
       mongocrypt_binary_destroy (out);
    }
 
@@ -287,23 +322,96 @@ _test_compact_no_fields (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *efc;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
 
-   efc = TEST_BSON ("{'escCollection': 'esc', 'eccCollection': 'ecc', "
-                    "'ecocCollection': 'ecoc', 'fields': []}");
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/compact/success/cmd.json")),
+      ctx);
 
-   ASSERT_OK (mongocrypt_ctx_compact_init (ctx, efc), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/compact/no-fields/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
-      bson_t out_bson;
       mongocrypt_binary_t *out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
-      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
-      _assert_match_bson (&out_bson, TMP_BSON ("{'compactionTokens': {}}"));
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/compact/no-fields/encrypted-payload.json"), out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_DONE);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_compact_from_encrypted_field_config_map (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   /* Initialize crypt with encrypted_field_config_map */
+   {
+      char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
+      mongocrypt_binary_t *localkey;
+
+      crypt = mongocrypt_new ();
+      mongocrypt_setopt_log_handler (crypt, _mongocrypt_stdout_log_fn, NULL);
+      localkey = mongocrypt_binary_new_from_data ((uint8_t *) localkey_data,
+                                                  sizeof localkey_data);
+      mongocrypt_setopt_kms_provider_local (crypt, localkey);
+      mongocrypt_binary_destroy (localkey);
+      ASSERT_OK (
+         mongocrypt_setopt_encrypted_field_config_map (
+            crypt,
+            TEST_FILE (
+               "./test/data/compact/success/encrypted-field-config-map.json")),
+         crypt);
+      ASSERT_OK (mongocrypt_init (crypt), crypt);
+   }
+   ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/compact/success/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/compact/success/encrypted-payload.json"), out);
       mongocrypt_binary_destroy (out);
    }
 
@@ -318,8 +426,9 @@ _mongocrypt_tester_install_ctx_compact (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_compact_success);
    INSTALL_TEST (_test_compact_nonlocal_kms);
-   INSTALL_TEST (_test_compact_init);
+   INSTALL_TEST (_test_compact_missing_key_id);
    INSTALL_TEST (_test_compact_key_not_provided);
    INSTALL_TEST (_test_compact_need_kms_credentials);
    INSTALL_TEST (_test_compact_no_fields);
+   INSTALL_TEST (_test_compact_from_encrypted_field_config_map);
 }

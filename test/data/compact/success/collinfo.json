@@ -22,7 +22,7 @@
                 {
                     "keyId": {
                         "$binary": {
-                            "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                            "base64": "q83vqxI0mHYSNBI0VniQEg==",
                             "subType": "04"
                         }
                     },

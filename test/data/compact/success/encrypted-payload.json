@@ -3,7 +3,7 @@
    "compactionTokens": {
       "nested.encrypted": {
          "$binary": {
-            "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
+            "base64": "SWO8WEoZ2r2Kx/muQKb7+COizy85nIIUFiHh4K9kcvA=",
             "subType": "00"
          }
       },
