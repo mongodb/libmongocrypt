@@ -17,18 +17,32 @@
 #include "test-mongocrypt.h"
 #include "test-mongocrypt-assert-match-bson.h"
 
+/* TODO: rename this file to: test-mongocrypt-compact.c */
+
 static void
 _test_compact_success (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *efc;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
-   efc = TEST_FILE ("./test/data/efc/efc-oneField.json");
 
-   ASSERT_OK (mongocrypt_ctx_compact_init (ctx, efc), ctx);
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/compact/success/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/compact/success/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_MONGO_KEYS);
    {
@@ -38,20 +52,21 @@ _test_compact_success (_mongocrypt_tester_t *tester)
             TEST_FILE ("./test/data/keys/"
                        "12345678123498761234123456789012-local-document.json")),
          ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789013-local-document.json")),
+         ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
    {
-      bson_t out_bson;
       mongocrypt_binary_t *out = mongocrypt_binary_new ();
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
-      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
-      _assert_match_bson (
-         &out_bson,
-         TMP_BSON ("{'compactionTokens': {'firstName': {'$binary': {'base64': "
-                   "'noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=','subType': "
-                   "'0'}}}}"));
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/compact/success/encrypted-payload.json"), out);
       mongocrypt_binary_destroy (out);
    }
 
