@@ -120,6 +120,8 @@ mongocrypt_new (void)
 
    crypt = bson_malloc0 (sizeof (mongocrypt_t));
    BSON_ASSERT (crypt);
+   crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+   BSON_ASSERT (crypt->crypto);
 
    _mongocrypt_mutex_init (&crypt->mutex);
    _mongocrypt_cache_collinfo_init (&crypt->cache_collinfo);
@@ -1100,13 +1102,10 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
       return false;
    }
 
-   if (crypt->crypto) {
-      CLIENT_ERR ("crypto_hooks already set");
-      return false;
+   if (!crypt->crypto) {
+      crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+      BSON_ASSERT (crypt->crypto);
    }
-
-   crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
-   BSON_ASSERT (crypt->crypto);
 
    crypt->crypto->hooks_enabled = true;
    crypt->crypto->ctx = ctx;
@@ -1191,6 +1190,11 @@ mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
       return false;
    }
 
+   if (!crypt->crypto) {
+      crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+      BSON_ASSERT (crypt->crypto);
+   }
+
    status = crypt->status;
 
    if (crypt->initialized) {
@@ -1210,6 +1214,39 @@ mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
 
    crypt->crypto->aes_256_ctr_encrypt = aes_256_ctr_encrypt;
    crypt->crypto->aes_256_ctr_decrypt = aes_256_ctr_decrypt;
+
+   return true;
+}
+
+bool
+mongocrypt_setopt_aes_256_ecb (mongocrypt_t *crypt,
+                               mongocrypt_crypto_fn aes_256_ecb_encrypt,
+                               void *ctx)
+{
+   mongocrypt_status_t *status;
+
+   if (!crypt) {
+      return false;
+   }
+
+   if (!crypt->crypto) {
+      crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
+      BSON_ASSERT (crypt->crypto);
+   }
+
+   status = crypt->status;
+
+   if (crypt->initialized) {
+      CLIENT_ERR ("options cannot be set after initialization");
+      return false;
+   }
+
+   if (!aes_256_ecb_encrypt) {
+      CLIENT_ERR ("aes_256_ecb_encrypt not set");
+      return false;
+   }
+
+   crypt->crypto->aes_256_ecb_encrypt = aes_256_ecb_encrypt;
 
    return true;
 }

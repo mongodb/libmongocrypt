@@ -77,11 +77,15 @@ _encrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 
    BSON_ASSERT (ctx);
    BSON_ASSERT (cipher);
-   BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == args.iv->len);
+   BSON_ASSERT (NULL == args.iv ||
+                EVP_CIPHER_iv_length (cipher) == args.iv->len);
    BSON_ASSERT (EVP_CIPHER_key_length (cipher) == args.key->len);
 
-   if (!EVP_EncryptInit_ex (
-          ctx, cipher, NULL /* engine */, args.key->data, args.iv->data)) {
+   if (!EVP_EncryptInit_ex (ctx,
+                            cipher,
+                            NULL /* engine */,
+                            args.key->data,
+                            NULL == args.iv ? NULL : args.iv->data)) {
       CLIENT_ERR ("error in EVP_EncryptInit_ex: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -188,6 +192,13 @@ _native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 {
    return _decrypt_with_cipher (EVP_aes_256_cbc (), args);
 }
+
+bool
+_native_crypto_aes_256_ecb_encrypt (aes_256_args_t args)
+{
+   return _encrypt_with_cipher (EVP_aes_256_ecb (), args);
+}
+
 
 /* _hmac_with_hash computes an HMAC of @in with the OpenSSL hash specified by
  * @hash.

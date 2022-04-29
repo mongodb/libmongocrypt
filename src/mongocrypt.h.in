@@ -1400,6 +1400,27 @@ mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
                                void *ctx);
 
 /**
+ * Set an AES256-ECB crypto hook for the AES256-CTR operations. If CTR hook was
+ * configured using @ref mongocrypt_setopt_aes_256_ctr, ECB hook will be
+ * ignored.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] aes_256_ecb_encrypt The crypto callback function for encrypt
+ * operation.
+ * @param[in] ctx A context passed as an argument to the crypto callback
+ * every invocation.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ *
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_setopt_aes_256_ecb (mongocrypt_t *crypt,
+                               mongocrypt_crypto_fn aes_256_ecb_encrypt,
+                               void *ctx);
+
+/**
  * Set a crypto hook for the RSASSA-PKCS1-v1_5 algorithm with a SHA-256 hash.
  *
  * See: https://tools.ietf.org/html/rfc3447#section-8.2
@@ -1467,7 +1488,8 @@ typedef enum {
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx, mongocrypt_index_type_t index_type);
+mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx,
+                                  mongocrypt_index_type_t index_type);
 
 /**
  * Set the contention factor used for explicit encryption.
@@ -1481,12 +1503,14 @@ mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx, mongocrypt_index_type_t
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx, int64_t contention_factor);
+mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx,
+                                         int64_t contention_factor);
 
 /**
  * Set the index key id to use for FLE 2 explicit encryption.
- * 
- * If the index key id not set, the key id from @ref mongocrypt_ctx_setopt_key_id is used.
+ *
+ * If the index key id not set, the key id from @ref
+ * mongocrypt_ctx_setopt_key_id is used.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] key_id The binary corresponding to the _id (a UUID) of the data
@@ -1499,7 +1523,8 @@ mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx, int64_t contenti
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id);
+mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
+                                    mongocrypt_binary_t *key_id);
 
 typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
 

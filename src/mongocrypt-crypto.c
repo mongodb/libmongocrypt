@@ -30,6 +30,82 @@
 
 #include <inttypes.h>
 
+/* This function uses ECB callback to simulate CTR encrypt and decrypt
+ *
+ * Note: the same function performs both encrypt and decrypt using same ECB
+ * encryption function
+ */
+
+static bool
+_crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
+   void *ctx,
+   mongocrypt_crypto_fn aes_256_ecb_encrypt,
+   aes_256_args_t args,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT (args.iv && args.iv->len);
+   BSON_ASSERT (args.out);
+
+   if (args.out->len < args.in->len) {
+      CLIENT_ERR ("output buffer too small");
+      return false;
+   }
+
+   _mongocrypt_buffer_t ctr, tmp;
+   mongocrypt_binary_t key_bin, out_bin, in_bin, ctr_bin, tmp_bin;
+   bool ret;
+
+   _mongocrypt_buffer_to_binary (args.key, &key_bin);
+   _mongocrypt_buffer_init (&ctr);
+   _mongocrypt_buffer_copy_to (args.iv, &ctr);
+   _mongocrypt_buffer_to_binary (&ctr, &ctr_bin);
+   _mongocrypt_buffer_to_binary (args.out, &out_bin);
+   _mongocrypt_buffer_to_binary (args.in, &in_bin);
+   _mongocrypt_buffer_init_size (&tmp, args.iv->len);
+   _mongocrypt_buffer_to_binary (&tmp, &tmp_bin);
+
+   for (uint32_t ptr = 0; ptr < args.in->len;) {
+      /* Encrypt value in CTR buffer */
+      uint32_t bytes_written = 0;
+      if (!aes_256_ecb_encrypt (
+             ctx, &key_bin, NULL, &ctr_bin, &tmp_bin, &bytes_written, status)) {
+         ret = false;
+         goto cleanup;
+      }
+
+      if (bytes_written != tmp_bin.len) {
+         CLIENT_ERR ("encryption hook returned unexpected length");
+         ret = false;
+         goto cleanup;
+      }
+
+      /* XOR resulting stream with original data */
+      for (uint32_t i = 0; i < bytes_written && ptr < args.in->len;
+           i++, ptr++) {
+         out_bin.data[ptr] = in_bin.data[ptr] ^ tmp_bin.data[i];
+      }
+
+      /* Increment value in CTR buffer */
+      uint32_t carry = 1;
+      for (int i = ctr_bin.len - 1; i >= 0 && carry != 0; --i) {
+         uint32_t bpp = carry + ctr_bin.data[i];
+         carry = bpp >> 8;
+         ctr_bin.data[i] = bpp & 0xFF;
+      }
+   }
+
+   if (args.bytes_written) {
+      *args.bytes_written = args.in->len;
+   }
+
+   ret = true;
+
+cleanup:
+   _mongocrypt_buffer_cleanup (&ctr);
+   _mongocrypt_buffer_cleanup (&tmp);
+   return ret;
+}
+
 /* Crypto primitives. These either call the native built in crypto primitives or
  * user supplied hooks. */
 static bool
@@ -99,6 +175,12 @@ _crypto_aes_256_ctr_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
                                          status);
       return ret;
    }
+
+   if (crypto->aes_256_ecb_encrypt) {
+      return _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
+         crypto->ctx, crypto->aes_256_ecb_encrypt, args, status);
+   }
+
    return _native_crypto_aes_256_ctr_encrypt (args);
 }
 
@@ -159,6 +241,12 @@ _crypto_aes_256_ctr_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
                                          status);
       return ret;
    }
+
+   if (crypto->aes_256_ecb_encrypt) {
+      return _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
+         crypto->ctx, crypto->aes_256_ecb_encrypt, args, status);
+   }
+
    return _native_crypto_aes_256_ctr_decrypt (args);
 }
 
