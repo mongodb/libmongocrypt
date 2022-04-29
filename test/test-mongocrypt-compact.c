@@ -55,6 +55,12 @@ _test_compact_success (_mongocrypt_tester_t *tester)
             TEST_FILE ("./test/data/keys/"
                        "ABCDEFAB123498761234123456789012-local-document.json")),
          ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789013-local-document.json")),
+         ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
@@ -111,12 +117,26 @@ _test_compact_nonlocal_kms (_mongocrypt_tester_t *tester)
             ctx,
             TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-aws-document.json")),
          ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789013-aws-document.json")),
+         ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    {
       mongocrypt_kms_ctx_t *kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
+      ASSERT (kms_ctx);
+      ASSERT_OK (
+         mongocrypt_kms_ctx_feed (kms_ctx,
+                                  TEST_FILE ("./test/data/keys/"
+                                             "12345678123498761234123456789013-"
+                                             "aws-decrypt-reply.txt")),
+         kms_ctx);
+      kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
       ASSERT (kms_ctx);
       ASSERT_OK (
          mongocrypt_kms_ctx_feed (kms_ctx,
@@ -274,12 +294,26 @@ _test_compact_need_kms_credentials (_mongocrypt_tester_t *tester)
             ctx,
             TEST_FILE ("./test/data/keys/ABCDEFAB123498761234123456789012-aws-document.json")),
          ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789013-aws-document.json")),
+         ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_KMS);
    {
       mongocrypt_kms_ctx_t *kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
+      ASSERT (kms_ctx);
+      ASSERT_OK (
+         mongocrypt_kms_ctx_feed (kms_ctx,
+                                  TEST_FILE ("./test/data/keys/"
+                                             "12345678123498761234123456789013-"
+                                             "aws-decrypt-reply.txt")),
+         kms_ctx);
+      kms_ctx = mongocrypt_ctx_next_kms_ctx (ctx);
       ASSERT (kms_ctx);
       ASSERT_OK (
          mongocrypt_kms_ctx_feed (kms_ctx,
@@ -399,6 +433,12 @@ _test_compact_from_encrypted_field_config_map (_mongocrypt_tester_t *tester)
             ctx,
             TEST_FILE ("./test/data/keys/"
                        "ABCDEFAB123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789013-local-document.json")),
          ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
    }

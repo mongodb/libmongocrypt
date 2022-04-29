@@ -386,12 +386,10 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
    mc_EncryptedField_t *field;
 
    for (field = ectx->efc.fields; field != NULL; field = field->next) {
-      if (field->has_queries) {
-         if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
-            _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
-            _mongocrypt_ctx_fail (ctx);
-            return false;
-         }
+      if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
+         _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
+         return false;
       }
    }
    return true;
@@ -1081,9 +1079,6 @@ _fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
 
    mc_EncryptedField_t *ptr;
    for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
-      if (!ptr->has_queries) {
-         continue;
-      }
       /* Append ECOC token. */
       _mongocrypt_buffer_t key = {0};
       _mongocrypt_buffer_t tokenkey = {0};
