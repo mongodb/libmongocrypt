@@ -15,9 +15,6 @@
  */
 
 #include "test-mongocrypt.h"
-#include "test-mongocrypt-assert-match-bson.h"
-
-/* TODO: rename this file to: test-mongocrypt-compact.c */
 
 static void
 _test_compact_success (_mongocrypt_tester_t *tester)
@@ -422,7 +419,7 @@ _test_compact_from_encrypted_field_config_map (_mongocrypt_tester_t *tester)
 }
 
 void
-_mongocrypt_tester_install_ctx_compact (_mongocrypt_tester_t *tester)
+_mongocrypt_tester_install_compact (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_compact_success);
    INSTALL_TEST (_test_compact_nonlocal_kms);
