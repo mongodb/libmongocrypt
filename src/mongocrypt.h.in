@@ -1254,16 +1254,6 @@ mongocrypt_ctx_provide_kms_providers (
  * document in the array is a document containing a rewrapped datakey to be
  * bulk-updated into the key vault collection.
  *
- * If @p ctx was initialized with @ref mongocrypt_ctx_compact_init,
- * then this BSON has the form:
- * {
- *    "compactionTokens": {
- *       "<field1>": (BSON binary),
- *       "<field2>": (BSON binary),
- *       ...
- *    }
- * }
- *
  * @returns a bool indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
@@ -1435,20 +1425,6 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
 MONGOCRYPT_EXPORT
 void
 mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt);
-
-/**
- * Initialize a context for the compact helper.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] encrypted_field_config The EncryptedFieldConfig BSON document of
- * the target collection.
- * @return A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status.
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_compact_init (mongocrypt_ctx_t *ctx,
-                             mongocrypt_binary_t *encrypted_field_config);
 
 typedef enum {
    MONGOCRYPT_INDEX_TYPE_NONE = 1,
