@@ -2625,11 +2625,57 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_BSON ("{'v': { '$binary': { 'base64': "
-                       "'BYkAAAAFZAAgAAAAAE8KGPgq7h3n9nH5lfHcia8wtOTLwGkZNLBesb"
-                       "6PULqbBXMAIAAAAACq0558QyD3c3jkR5k0Zc9UpQK8ByhXhtn2d1xVQ"
-                       "nuJ3AVjACAAAAAA1003zUWGwD4zVZ0KeihnZOthS3V6CEHUfnJZcIYH"
-                       "efISY20AAAAAAAAAAAAA', 'subType': '06' } }}"),
+
+   /* Test with query type and non-zero contention factor. */
+   {
+      _test_rng_data_source source = {{0}};
+      mongocrypt_t *crypt = _crypt_with_rng (&source);
+      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
+         ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
+         ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
+                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
+                    ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
+                    ctx, TEST_BSON ("{'v': 123456}")),
+                 ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "ABCDEFAB123498761234123456789012-local-"
+                                  "document.json")),
+                    ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                       ctx,
+                       TEST_FILE ("./test/data/keys/"
+                                  "12345678123498761234123456789012-local-"
+                                  "document.json")),
+                    ctx);
+         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      }
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      {
+         mongocrypt_binary_t *got = mongocrypt_binary_new ();
+
+         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE (
+               "./test/data/fle2-explicit/find-indexed-contentionFactor1.json"),
             got);
          mongocrypt_binary_destroy (got);
       }
