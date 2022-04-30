@@ -2543,7 +2543,6 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
       ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
                     ctx, TEST_BSON ("{'v': 'value123'}")),
                  ctx);
@@ -2566,19 +2565,8 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_BSON (
-               "{'v': { '$binary': { 'base64': "
-               "'BHEBAAAFZAAgAAAAAIjYfxmTuzhhHi5NiSRh9icmv6H42DavsxhdgsOdxU3BBX"
-               "MAIAAAAACGD6m347ggYk2rRt6/"
-               "LA8Ght9WcezXCY8Cz066FJpLLQVjACAAAAAAOmik5aQ6xRa2AnDMLbexxyLm31C"
-               "xNneYxKOhbxWxFuAFcABQAAAAAMdD1nV2nqeI1eXEQNskDfkZ6RXjBnMo6KOLIT"
-               "R9ncfAgtUSrz6A9EJ7nvH0/kVjT6pJuy3TCE76ay9SkV6Y/"
-               "YQtO+g5pFs4uAFAxRlAInmTBXUAEAAAAASrze+"
-               "rEjSYdhI0EjRWeJASEHQAAgAAAAV2AE0AAAAAq83vqxI0mHYSNBI0VniQEkzZZB"
-               "BDgeZh+h+gXEmOrSFtVvkUcnHWj/rfPW7iJ0G3UJ8zpuBmUM/"
-               "VjOMJCY4+eDqdTiPIwX+/"
-               "vNXegc8FZQAgAAAAAL7iv5ju6p02+CadotQZUkgqtSIYD2HaywGsizUpIBYMAA="
-               "=', 'subType': '06' } }}"),
+            TEST_FILE ("./test/data/fle2-explicit/"
+                       "insert-indexed-same-user-and-index-key.json"),
             got);
          mongocrypt_binary_destroy (got);
       }
