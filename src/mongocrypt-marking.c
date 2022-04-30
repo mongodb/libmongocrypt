@@ -457,13 +457,26 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
 
    _mongocrypt_buffer_from_iter (&value, &placeholder->v_iter);
 
-   if (!_mongocrypt_fle2_placeholder_common (kb,
-                                             &common,
-                                             &placeholder->index_key_id,
-                                             &value,
-                                             true, /* derive tokens using counter */
-                                             placeholder->maxContentionCounter,
-                                             status)) {
+   int64_t contentionFactor = 0;
+   if (placeholder->maxContentionCounter > 0) {
+      /* Choose a random contentionFactor in the inclusive range [0,
+       * placeholder->maxContentionCounter] */
+      if (!_mongocrypt_random_int64 (crypto,
+                                     placeholder->maxContentionCounter + 1,
+                                     &contentionFactor,
+                                     status)) {
+         goto fail;
+      }
+   }
+
+   if (!_mongocrypt_fle2_placeholder_common (
+          kb,
+          &common,
+          &placeholder->index_key_id,
+          &value,
+          true, /* derive tokens using counter */
+          contentionFactor,
+          status)) {
       goto fail;
    }
 
