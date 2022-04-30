@@ -458,6 +458,11 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    _mongocrypt_buffer_from_iter (&value, &placeholder->v_iter);
 
    int64_t contentionFactor = 0;
+   if (placeholder->maxContentionCounter < 0) {
+      CLIENT_ERR ("maxContentionCounter must be non-negative, got: %" PRId64,
+                  placeholder->maxContentionCounter);
+      goto fail;
+   }
    if (placeholder->maxContentionCounter > 0) {
       /* Choose a random contentionFactor in the inclusive range [0,
        * placeholder->maxContentionCounter] */
