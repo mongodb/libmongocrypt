@@ -155,7 +155,7 @@ _mongocrypt_random (_mongocrypt_crypto_t *crypto,
                     uint32_t count,
                     mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
-/* Returns a random number in the range [0, exclusive_upper_bound). */
+/* Generates a random number in the range [0, exclusive_upper_bound) in out. */
 bool
 _mongocrypt_random_int64 (_mongocrypt_crypto_t *crypto,
                           int64_t exclusive_upper_bound,
