@@ -155,6 +155,14 @@ _mongocrypt_random (_mongocrypt_crypto_t *crypto,
                     uint32_t count,
                     mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
+/* Returns a random number in the range [0, exclusive_upper_bound). */
+bool
+_mongocrypt_random_int64 (_mongocrypt_crypto_t *crypto,
+                          int64_t exclusive_upper_bound,
+                          int64_t *out,
+                          mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
 /* Returns 0 if equal, non-zero otherwise */
 int
 _mongocrypt_memequal (const void *const b1, const void *const b2, size_t len);

@@ -1658,3 +1658,35 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
 
    return true;
 }
+
+bool
+_mongocrypt_random_int64 (_mongocrypt_crypto_t *crypto,
+                          int64_t exclusive_upper_bound,
+                          int64_t *out,
+                          mongocrypt_status_t *status)
+{
+   if (exclusive_upper_bound <= 0) {
+      CLIENT_ERR ("Expected exclusive_upper_bound >= 0");
+      return false;
+   }
+
+   _mongocrypt_buffer_t rand_i64_buf;
+   _mongocrypt_buffer_init (&rand_i64_buf);
+   _mongocrypt_buffer_resize (&rand_i64_buf, (uint32_t) sizeof (int64_t));
+
+   if (!_mongocrypt_random (crypto, &rand_i64_buf, rand_i64_buf.len, status)) {
+      _mongocrypt_buffer_cleanup (&rand_i64_buf);
+      return false;
+   }
+
+   int64_t rand_i64;
+   memcpy (&rand_i64, rand_i64_buf.data, rand_i64_buf.len);
+
+   /* Zero the leading bit to ensure rand_i64 is non-negative. */
+   rand_i64 &= (~(1ull << 63));
+
+   *out = rand_i64 % exclusive_upper_bound;
+
+   _mongocrypt_buffer_cleanup (&rand_i64_buf);
+   return true;
+}
