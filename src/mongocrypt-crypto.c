@@ -1666,7 +1666,7 @@ _mongocrypt_random_int64 (_mongocrypt_crypto_t *crypto,
                           mongocrypt_status_t *status)
 {
    if (exclusive_upper_bound <= 0) {
-      CLIENT_ERR ("Expected exclusive_upper_bound >= 0");
+      CLIENT_ERR ("Expected exclusive_upper_bound > 0");
       return false;
    }
 
