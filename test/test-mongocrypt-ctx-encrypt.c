@@ -2379,6 +2379,14 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json"),
+            got);
+         mongocrypt_binary_destroy (got);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
 
    /* Test Indexed with non-zero ContentionFactor. Random number chosen is 0 */
    {
@@ -2625,6 +2633,14 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-explicit/find-indexed.json"),
+            got);
+         mongocrypt_binary_destroy (got);
+      }
+
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
 
    /* Test with query type and non-zero contention factor. */
    {
