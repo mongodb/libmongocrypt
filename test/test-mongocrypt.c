@@ -928,7 +928,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_mc_tokens (&tester);
    _mongocrypt_tester_install_fle2_payloads (&tester);
    _mongocrypt_tester_install_efc (&tester);
-   _mongocrypt_tester_install_ctx_compact (&tester);
+   _mongocrypt_tester_install_compact (&tester);
    _mongocrypt_tester_install_fle2_payload_uev (&tester);
    _mongocrypt_tester_install_fle2_payload_iup (&tester);
 

@@ -319,6 +319,16 @@ command_needs_deleteTokens (const char *command_name)
    }
    return false;
 }
+
+/* context_uses_fle2 returns true if the context uses FLE 2 behavior.
+ * If a collection has an encryptedFields document, it uses FLE 2.
+ */
+static bool context_uses_fle2 (mongocrypt_ctx_t *ctx) {
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   return !_mongocrypt_buffer_empty (&ectx->encrypted_field_config);
+}
+
 /* _fle2_collect_keys_for_deleteTokens requests keys required to produce
  * deleteTokens. deleteTokens is only applicable to FLE 2. */
 static bool
@@ -328,7 +338,7 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
 
 
    /* deleteTokens are only appended for FLE 2. */
-   if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (!context_uses_fle2 (ctx)) {
       return true;
    }
 
@@ -352,6 +362,43 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
             _mongocrypt_ctx_fail (ctx);
             return false;
          }
+      }
+   }
+   return true;
+}
+
+/* _fle2_collect_keys_for_compact requests keys required to produce
+ * compactionTokens. compactionTokens is only applicable to FLE 2. */
+static bool
+_fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   /* compactionTokens are only appended for FLE 2. */
+   if (!context_uses_fle2 (ctx)) {
+      return true;
+   }
+
+   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (!cmd_name) {
+      _mongocrypt_ctx_fail (ctx);
+      return false;
+   }
+
+   if (0 != strcmp (cmd_name, "compactStructuredEncryptionData")) {
+      return true;
+   }
+
+   /* compactStructuredEncryptionData must not be sent to mongocryptd. */
+   ectx->bypass_query_analysis = true;
+
+   mc_EncryptedField_t *field;
+
+   for (field = ectx->efc.fields; field != NULL; field = field->next) {
+      if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
+         _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
+         _mongocrypt_ctx_fail (ctx);
+         return false;
       }
    }
    return true;
@@ -409,8 +456,13 @@ _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
       return false;
    }
 
-   if (ctx->crypt->opts.bypass_query_analysis) {
-      /* Keys may have been requested for deleteTokens. Finish key requests. */
+   if (!_fle2_collect_keys_for_compact (ctx)) {
+      return false;
+   }
+
+   if (ectx->bypass_query_analysis) {
+      /* Keys may have been requested for deleteTokens or compactionTokens.
+       * Finish key requests. */
       _mongocrypt_key_broker_requests_done (&ctx->kb);
       return _mongocrypt_ctx_state_from_key_broker (ctx);
    }
@@ -428,7 +480,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-   BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
+   BSON_ASSERT (context_uses_fle2 (ctx));
 
    if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
       return _mongocrypt_ctx_fail_w_msg (
@@ -468,7 +520,7 @@ static bool
 _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (context_uses_fle2 (ctx)) {
       // Defer to FLE2 to generate the markings command
       return _fle2_mongo_op_markings (ctx, out);
    }
@@ -978,6 +1030,10 @@ must_omit_encryptionInformation (const char *command_name,
    size_t i;
    bool found = false;
 
+   if (0 == strcmp (command_name, "compactStructuredEncryptionData")) {
+      return (moe_result){.must_omit = true, .ok = true};
+   }
+
    for (i = 0; i < sizeof (eligible_commands) / sizeof (eligible_commands[0]);
         i++) {
       if (0 == strcmp (eligible_commands[i], command_name)) {
@@ -1010,6 +1066,82 @@ must_omit_encryptionInformation (const char *command_name,
    return (moe_result) { .ok = true, .must_omit = false };
 }
 
+/* _fle2_append_compactionTokens appends compactionTokens if command_name is
+ * "compactStructuredEncryptionData" */
+static bool
+_fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
+                               _mongocrypt_key_broker_t *kb,
+                               mc_EncryptedFieldConfig_t *efc,
+                               const char *command_name,
+                               bson_t *out,
+                               mongocrypt_status_t *status)
+{
+   bson_t result_compactionTokens;
+   bool ret = false;
+
+   if (0 != strcmp (command_name, "compactStructuredEncryptionData")) {
+      return true;
+   }
+
+   BSON_APPEND_DOCUMENT_BEGIN (
+      out, "compactionTokens", &result_compactionTokens);
+
+   mc_EncryptedField_t *ptr;
+   for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
+      /* Append ECOC token. */
+      _mongocrypt_buffer_t key = {0};
+      _mongocrypt_buffer_t tokenkey = {0};
+      mc_CollectionsLevel1Token_t *cl1t = NULL;
+      mc_ECOCToken_t *ecoct = NULL;
+      bool ecoc_ok = false;
+
+      if (!_mongocrypt_key_broker_decrypted_key_by_id (kb, &ptr->keyId, &key)) {
+         _mongocrypt_key_broker_status (kb, status);
+         goto ecoc_fail;
+      }
+      /* The last 32 bytes of the user key are the token key. */
+      if (!_mongocrypt_buffer_from_subrange (&tokenkey,
+                                             &key,
+                                             key.len - MONGOCRYPT_TOKEN_KEY_LEN,
+                                             MONGOCRYPT_TOKEN_KEY_LEN)) {
+         CLIENT_ERR ("unable to get TokenKey from Data Encryption Key");
+         goto ecoc_fail;
+      }
+      cl1t = mc_CollectionsLevel1Token_new (crypto, &tokenkey, status);
+      if (!cl1t) {
+         goto ecoc_fail;
+      }
+
+      ecoct = mc_ECOCToken_new (crypto, cl1t, status);
+      if (!ecoct) {
+         goto ecoc_fail;
+      }
+
+      const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get (ecoct);
+
+      BSON_APPEND_BINARY (&result_compactionTokens,
+                          ptr->path,
+                          BSON_SUBTYPE_BINARY,
+                          ecoct_buf->data,
+                          ecoct_buf->len);
+
+      ecoc_ok = true;
+   ecoc_fail:
+      mc_ECOCToken_destroy (ecoct);
+      mc_CollectionsLevel1Token_destroy (cl1t);
+      _mongocrypt_buffer_cleanup (&key);
+      if (!ecoc_ok) {
+         goto fail;
+      }
+   }
+
+   bson_append_document_end (out, &result_compactionTokens);
+
+   ret = true;
+fail:
+   return ret;
+}
+
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
  * associated with the command. */
 static bool
@@ -1021,7 +1153,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
-   BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
+   BSON_ASSERT (context_uses_fle2 (ctx));
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_READY);
 
    if (ectx->explicit) {
@@ -1118,6 +1250,16 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       return _mongocrypt_ctx_fail (ctx);
    }
    bson_destroy (deleteTokens);
+
+   if (!_fle2_append_compactionTokens (ctx->crypt->crypto,
+                                       &ctx->kb,
+                                       &ectx->efc,
+                                       command_name,
+                                       &converted,
+                                       ctx->status)) {
+      bson_destroy (&converted);
+      return _mongocrypt_ctx_fail (ctx);
+   }
 
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
    _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
@@ -1219,7 +1361,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (context_uses_fle2 (ctx)) {
       return _fle2_finalize (ctx, out);
    } else if (ctx->opts.index_type.set) {
       return _fle2_finalize_explicit (ctx, out);
@@ -1761,7 +1903,7 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    } else if (0 == strcmp (cmd_name, "refreshSessions")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "compactStructuredEncryptionData")) {
-      *bypass = true;
+      eligible = true;
    }
 
    /* database/client commands are ineligible. */
@@ -1820,6 +1962,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
    ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
    ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+   ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
 
 
    if (!cmd || !cmd->data) {
@@ -1915,9 +2058,14 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       return false;
    }
 
+   if (!_fle2_collect_keys_for_compact (ctx)) {
+      return false;
+   }
+
    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
-      if (ctx->crypt->opts.bypass_query_analysis) {
-         /* Keys may have been requested for deleteTokens. Finish key requests.
+      if (ectx->bypass_query_analysis) {
+         /* Keys may have been requested for deleteTokens or compactionTokens.
+          * Finish key requests.
           */
          _mongocrypt_key_broker_requests_done (&ctx->kb);
          return _mongocrypt_ctx_state_from_key_broker (ctx);
