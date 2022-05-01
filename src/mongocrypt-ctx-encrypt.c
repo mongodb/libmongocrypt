@@ -319,6 +319,16 @@ command_needs_deleteTokens (const char *command_name)
    }
    return false;
 }
+
+/* context_uses_fle2 returns true if the context uses FLE 2 behavior.
+ * If a collection has an encryptedFields document, it uses FLE 2.
+ */
+static bool context_uses_fle2 (mongocrypt_ctx_t *ctx) {
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   return !_mongocrypt_buffer_empty (&ectx->encrypted_field_config);
+}
+
 /* _fle2_collect_keys_for_deleteTokens requests keys required to produce
  * deleteTokens. deleteTokens is only applicable to FLE 2. */
 static bool
@@ -328,7 +338,7 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
 
 
    /* deleteTokens are only appended for FLE 2. */
-   if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (!context_uses_fle2 (ctx)) {
       return true;
    }
 
@@ -365,7 +375,7 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    /* compactionTokens are only appended for FLE 2. */
-   if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (!context_uses_fle2 (ctx)) {
       return true;
    }
 
@@ -470,7 +480,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-   BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
+   BSON_ASSERT (context_uses_fle2 (ctx));
 
    if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
       return _mongocrypt_ctx_fail_w_msg (
@@ -510,7 +520,7 @@ static bool
 _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (context_uses_fle2 (ctx)) {
       // Defer to FLE2 to generate the markings command
       return _fle2_mongo_op_markings (ctx, out);
    }
@@ -1143,7 +1153,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
-   BSON_ASSERT (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config));
+   BSON_ASSERT (context_uses_fle2 (ctx));
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_READY);
 
    if (ectx->explicit) {
@@ -1351,7 +1361,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
-   if (!_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
+   if (context_uses_fle2 (ctx)) {
       return _fle2_finalize (ctx, out);
    } else if (ctx->opts.index_type.set) {
       return _fle2_finalize_explicit (ctx, out);
