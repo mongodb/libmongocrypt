@@ -1,4 +1,10 @@
 # ChangeLog
+## 1.5.0-alpha0
+### New Features
+- Support FLE 2.0.
+- Support FLE 1.0 Shared Library.
+- Support Key Management API.
+
 ## 1.4.0
 ### New Features
 - Support on-demand credentials with `MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` state and `mongocrypt_ctx_provide_kms_providers`.
