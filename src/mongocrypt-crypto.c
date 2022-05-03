@@ -1676,7 +1676,7 @@ _mongocrypt_random_uint64 (_mongocrypt_crypto_t *crypto,
    }
 
    /* 2**64 % x == (2**64 - x) % x */
-   uint64_t min = -exclusive_upper_bound % exclusive_upper_bound;
+   uint64_t min = (0 - exclusive_upper_bound) % exclusive_upper_bound;
 
    _mongocrypt_buffer_t rand_u64_buf;
    _mongocrypt_buffer_init (&rand_u64_buf);
