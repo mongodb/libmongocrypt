@@ -130,6 +130,9 @@ mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
             goto fail;
          }
          out->maxContentionCounter = bson_iter_int64 (&iter);
+         if (!mc_validate_contention (out->maxContentionCounter, status)) {
+            goto fail;
+         }
       }
       END_IF_FIELD
    }
@@ -155,4 +158,18 @@ mc_FLE2EncryptionPlaceholder_cleanup (
    _mongocrypt_buffer_cleanup (&placeholder->index_key_id);
    _mongocrypt_buffer_cleanup (&placeholder->user_key_id);
    mc_FLE2EncryptionPlaceholder_init (placeholder);
+}
+
+bool
+mc_validate_contention (int64_t contention, mongocrypt_status_t *status)
+{
+   if (contention < 0) {
+      CLIENT_ERR ("contention must be non-negative, got: %" PRId64, contention);
+      return false;
+   }
+   if (contention == INT64_MAX) {
+      CLIENT_ERR ("contention must be < INT64_MAX, got: %" PRId64, contention);
+      return false;
+   }
+   return true;
 }

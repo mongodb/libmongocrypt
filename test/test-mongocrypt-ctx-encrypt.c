@@ -2701,31 +2701,10 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 123456}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_FAILS (mongocrypt_ctx_finalize (ctx, got),
-                       ctx,
-                       "maxContentionCounter must be non-negative");
-         mongocrypt_binary_destroy (got);
-      }
+      ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (
+                       ctx, TEST_BSON ("{'v': 123456}")),
+                    ctx,
+                    "contention must be non-negative");
 
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);
@@ -2744,31 +2723,10 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 123456}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_FAILS (mongocrypt_ctx_finalize (ctx, got),
-                       ctx,
-                       "Expected maxContentionFactor < INT64_MAX");
-         mongocrypt_binary_destroy (got);
-      }
+      ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (
+                       ctx, TEST_BSON ("{'v': 123456}")),
+                    ctx,
+                    "contention must be < INT64_MAX");
 
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);
