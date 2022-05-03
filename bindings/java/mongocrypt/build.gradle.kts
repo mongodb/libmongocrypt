@@ -125,7 +125,7 @@ val revision: String = System.getProperty("gitRevision", if (gitVersion == versi
 
 data class LibMongoCryptS3Data(val evergreenName: String, val osArch: String) {
     fun downloadUrl(): String {
-        return "https://s3.amazonaws.com/mciuploads/libmongocrypt/$evergreenName/master/$revision/libmongocrypt.tar.gz"
+        return "https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$evergreenName/r1.4/$revision/libmongocrypt.tar.gz"
     }
 }
 
