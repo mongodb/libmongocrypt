@@ -43,7 +43,7 @@ void
 mc_FLE2EncryptionPlaceholder_cleanup (
    mc_FLE2EncryptionPlaceholder_t *placeholder);
 
-/* mc_validate_contention is used to check that contention_counter is a valid
+/* mc_validate_contention is used to check that contention is a valid
  * value. contention may come from the 'cm' field in FLE2EncryptionPlaceholder
  * or from mongocrypt_ctx_setopt_contention_factor. */
 bool
