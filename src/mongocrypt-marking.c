@@ -464,6 +464,14 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
       goto fail;
    }
    if (placeholder->maxContentionCounter > 0) {
+      if (placeholder->maxContentionCounter < 0) {
+         CLIENT_ERR ("Expected maxContentionFactor >= 0");
+         return false;
+      }
+      if (placeholder->maxContentionCounter == INT64_MAX) {
+         CLIENT_ERR ("Expected maxContentionFactor < INT64_MAX");
+         return false;
+      }
       /* Choose a random contentionFactor in the inclusive range [0,
        * placeholder->maxContentionCounter] */
       if (!_mongocrypt_random_int64 (crypto,
