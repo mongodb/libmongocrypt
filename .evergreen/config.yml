@@ -1081,8 +1081,8 @@ buildvariants:
   display_name: "Publish"
   run_on: ubuntu1804-test
   tasks:
-    - name: "publish-snapshot"
     - name: "upload-all"
+    - name: "publish-snapshot"
 - name: packaging
   display_name: "Linux Distro Packaging"
   run_on: ubuntu2004-small
