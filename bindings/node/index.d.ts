@@ -305,17 +305,26 @@ export interface ClientEncryptionEncryptOptions {
   /**
    * The algorithm to use for encryption.
    */
-  algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' | 'AEAD_AES_256_CBC_HMAC_SHA_512-Random';
+  algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' | 'AEAD_AES_256_CBC_HMAC_SHA_512-Random' | 'Indexed' | 'Unindexed';
 
   /**
    * The id of the Binary dataKey to use for encryption
    */
-  keyId?: Binary | undefined;
+  keyId?: Binary;
 
   /**
    * A unique string name corresponding to an already existing dataKey.
    */
-  keyAltName?: string | undefined;
+  keyAltName?: string;
+
+  /** @experimental */
+  indexKeyId?: Binary;
+
+  /** @experimental */
+  contentionFactor?: bigint | number;
+
+  /** @experimental */
+  queryType?: 'Equality';
 }
 
 /**
