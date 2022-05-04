@@ -1715,6 +1715,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "cannot set query type with no index type");
    }
 
+   if (ctx->opts.contention_factor.set &&
+       !mc_validate_contention (ctx->opts.contention_factor.value,
+                                ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    ctx->type = _MONGOCRYPT_TYPE_ENCRYPT;
    ectx->explicit = true;

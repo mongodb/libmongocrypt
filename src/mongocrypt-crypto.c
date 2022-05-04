@@ -1658,3 +1658,71 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
 
    return true;
 }
+
+/* This implementation avoids modulo bias. It is based on arc4random_uniform:
+https://github.com/openbsd/src/blob/2207c4325726fdc5c4bcd0011af0fdf7d3dab137/lib/libc/crypt/arc4random_uniform.c#L33
+*/
+bool
+_mongocrypt_random_uint64 (_mongocrypt_crypto_t *crypto,
+                           uint64_t exclusive_upper_bound,
+                           uint64_t *out,
+                           mongocrypt_status_t *status)
+{
+   *out = 0;
+
+   if (exclusive_upper_bound < 2) {
+      *out = 0;
+      return true;
+   }
+
+   /* 2**64 % x == (2**64 - x) % x */
+   uint64_t min = (0 - exclusive_upper_bound) % exclusive_upper_bound;
+
+   _mongocrypt_buffer_t rand_u64_buf;
+   _mongocrypt_buffer_init (&rand_u64_buf);
+   _mongocrypt_buffer_resize (&rand_u64_buf, (uint32_t) sizeof (uint64_t));
+
+   uint64_t rand_u64;
+   for (;;) {
+      if (!_mongocrypt_random (
+             crypto, &rand_u64_buf, rand_u64_buf.len, status)) {
+         _mongocrypt_buffer_cleanup (&rand_u64_buf);
+         return false;
+      }
+
+      memcpy (&rand_u64, rand_u64_buf.data, rand_u64_buf.len);
+
+      if (rand_u64 >= min) {
+         break;
+      }
+   }
+
+   *out = rand_u64 % exclusive_upper_bound;
+
+   _mongocrypt_buffer_cleanup (&rand_u64_buf);
+   return true;
+}
+
+bool
+_mongocrypt_random_int64 (_mongocrypt_crypto_t *crypto,
+                          int64_t exclusive_upper_bound,
+                          int64_t *out,
+                          mongocrypt_status_t *status)
+{
+   if (exclusive_upper_bound <= 0) {
+      CLIENT_ERR ("Expected exclusive_upper_bound > 0");
+      return false;
+   }
+
+   uint64_t u64_exclusive_upper_bound = (uint64_t) exclusive_upper_bound;
+   uint64_t u64_out;
+
+   if (!_mongocrypt_random_uint64 (crypto, u64_exclusive_upper_bound, &u64_out, status)) {
+      return false;
+   }
+
+   /* Zero the leading bit to ensure rand_i64 is non-negative. */
+   u64_out &= (~(1ull << 63));
+   *out = (int64_t) u64_out;
+   return true;
+}

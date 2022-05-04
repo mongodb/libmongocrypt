@@ -838,6 +838,47 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_random_int64 (_mongocrypt_tester_t *tester)
+{
+   bool got0 = false, got1 = false, got2 = false;
+   int trial;
+   const int max_trials = 1000;
+   mongocrypt_t *crypt;
+   mongocrypt_status_t *status;
+
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   status = mongocrypt_status_new ();
+
+   for (trial = 0; trial < max_trials; trial++) {
+      int64_t got;
+
+      ASSERT_OR_PRINT (
+         _mongocrypt_random_int64 (crypt->crypto, 3, &got, status), status);
+      switch (got) {
+      case 0:
+         got0 = true;
+         break;
+      case 1:
+         got1 = true;
+         break;
+      case 2:
+         got2 = true;
+         break;
+      default:
+         TEST_ERROR (
+            "Expected random number to be in range [0,3), got: %" PRId64, got);
+      }
+   }
+
+   ASSERT (got0);
+   ASSERT (got1);
+   ASSERT (got2);
+
+   mongocrypt_status_destroy (status);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
 {
@@ -849,4 +890,5 @@ _mongocrypt_tester_install_crypto (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_fle2_aead_roundtrip);
    INSTALL_TEST (_test_fle2_aead_decrypt);
    INSTALL_TEST (_test_fle2_roundtrip);
+   INSTALL_TEST (_test_random_int64);
 }
