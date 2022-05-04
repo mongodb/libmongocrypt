@@ -403,7 +403,7 @@ describe('ClientEncryption', function () {
     });
 
     // This exactly matches _test_encrypt_fle2_explicit from the C tests
-    it.only('should explicitly encrypt and decrypt with the "local" KMS provider (FLE2, exact result)', function () {
+    it('should explicitly encrypt and decrypt with the "local" KMS provider (FLE2, exact result)', function () {
       const encryption = new ClientEncryption(new MockClient(), {
         keyVaultNamespace: 'client.encryption',
         kmsProviders: { local: { key: Buffer.alloc(96) } }
