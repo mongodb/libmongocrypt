@@ -22,28 +22,33 @@ import org.bson.BsonBinary;
 import org.bson.BsonBinarySubType;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
+import org.bson.BsonValue;
 import org.bson.RawBsonDocument;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.DecoderContext;
 import org.bson.json.JsonReader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 @SuppressWarnings("SameParameterValue")
 public class MongoCryptTest {
@@ -147,14 +152,18 @@ public class MongoCryptTest {
         MongoCryptContext dataKeyContext = mongoCrypt.createDataKeyContext("local",
                 MongoDataKeyOptions.builder().masterKey(new BsonDocument())
                         .keyAltNames(keyAltNames)
-                        .build());                               
+                        .build());
         assertEquals(State.READY, dataKeyContext.getState());
 
         RawBsonDocument dataKeyDocument = dataKeyContext.finish();
         assertEquals(State.DONE, dataKeyContext.getState());
         assertNotNull(dataKeyDocument);
 
-        dataKeyDocument.getArray("keyAltNames").containsAll(keyAltNames);
+        List<String> actualKeyAltNames = dataKeyDocument.getArray("keyAltNames").stream()
+                .map(bsonValue -> bsonValue.asString().getValue())
+                .sorted()
+                .collect(Collectors.toList());
+        assertIterableEquals(keyAltNames, actualKeyAltNames);
         dataKeyContext.close();
         mongoCrypt.close();
     }
@@ -283,14 +292,17 @@ public class MongoCryptTest {
 
     private static ByteBuffer getHttpResourceAsByteBuffer(final String fileName) throws URISyntaxException, IOException {
         URL resource = MongoCryptTest.class.getResource("/" + fileName);
+        if (resource == null) {
+            throw new RuntimeException("Could not find file " + fileName);
+        }
         File resourceFile = new File(resource.toURI());
-        return ByteBuffer.wrap(getFileAsString(resourceFile, "\r\n").getBytes(Charset.forName("UTF-8")));
+        return ByteBuffer.wrap(getFileAsString(resourceFile, "\r\n").getBytes(StandardCharsets.UTF_8));
     }
 
     private static String getFileAsString(final File file, String lineSeparator) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         String line;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8))) {
             boolean first = true;
             while ((line = reader.readLine()) != null) {
                 if (!first) {
