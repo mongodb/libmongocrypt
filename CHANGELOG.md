@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.5.0-alpha1
+### Fixed
+- Pick a random contention factor on FLE 2.0 insert.
+
 ## 1.5.0-alpha0
 ### New Features
 - Support FLE 2.0.
