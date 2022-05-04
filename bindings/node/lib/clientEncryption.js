@@ -285,6 +285,9 @@ module.exports = function (modules) {
       if (options.keyId) {
         contextOptions.keyId = options.keyId.buffer;
       }
+      if (options.indexKeyId) {
+        contextOptions.indexKeyId = options.indexKeyId.buffer;
+      }
       if (options.keyAltName) {
         const keyAltName = options.keyAltName;
         if (options.keyId) {
@@ -298,6 +301,14 @@ module.exports = function (modules) {
         }
 
         contextOptions.keyAltName = bson.serialize({ keyAltName });
+      }
+      if (options.algorithm === 'Indexed') {
+        delete contextOptions.algorithm;
+        contextOptions.indexType = 'Equality';
+      }
+      if (options.algorithm === 'Unindexed') {
+        delete contextOptions.algorithm;
+        contextOptions.indexType = 'None';
       }
 
       const stateMachine = new StateMachine({

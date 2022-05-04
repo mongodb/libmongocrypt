@@ -198,6 +198,48 @@ describe('cryptoCallbacks', function () {
       });
     });
 
+    // AES-256-CTR is used specifically with FLE2 only
+    ['aes256CtrEncryptHook', 'aes256CtrDecryptHook'].forEach(hookName => {
+      it(`should properly propagate an error when ${hookName} fails`, function (done) {
+        const error = new Error('some random error text');
+        this.sinon.stub(cryptoCallbacks, hookName).returns(error);
+
+        const encryption = new ClientEncryption(this.client, {
+          keyVaultNamespace: 'test.encryption',
+          kmsProviders
+        });
+
+        function finish(err) {
+          try {
+            expect(err, 'Expected an error to exist').to.exist;
+            expect(err).to.have.property('message', error.message);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        }
+
+        try {
+          encryption.createDataKey('aws', dataKeyOptions, (err, dataKey) => {
+            if (err) return finish(err);
+
+            const encryptOptions = {
+              keyId: dataKey,
+              indexKeyId: dataKey,
+              algorithm: 'Indexed'
+            };
+
+            encryption.encrypt('hello', encryptOptions, (err, encryptedValue) => {
+              if (err) return finish(err);
+              encryption.decrypt(encryptedValue, err => finish(err));
+            });
+          });
+        } catch (e) {
+          done(new Error('We should not be here'));
+        }
+      });
+    });
+
     // These ones will fail with an error, but that error will get overridden
     // with "failed to create KMS message" in mongocrypt-kms-ctx.c
     ['hmacSha256Hook', 'sha256Hook'].forEach(hookName => {
