@@ -16,19 +16,16 @@
  */
 
 import de.undercouch.gradle.tasks.download.Download
-import groovy.util.Node
-import groovy.util.NodeList
 import java.io.ByteArrayOutputStream
 import java.net.URI
 
-
 buildscript {
     repositories {
-        jcenter()
         mavenCentral()
+        google()
     }
     dependencies {
-        "classpath"(group = "net.java.dev.jna", name = "jna", version = "4.5.2")
+        "classpath"(group = "net.java.dev.jna", name = "jna", version = "5.11.0")
     }
 }
 
@@ -36,13 +33,13 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("de.undercouch.download").version("3.4.3")
-    id("biz.aQute.bnd.builder").version("4.3.1")
+    id("de.undercouch.download") version "5.0.5"
+    id("biz.aQute.bnd.builder") version "6.2.0"
 }
 
 repositories {
+    mavenCentral()
     google()
-    jcenter()
 }
 
 group = "org.mongodb"
@@ -57,12 +54,23 @@ java {
 val bsonRangeVersion = "[3.10,5.0)"
 dependencies {
     api("org.mongodb:bson:$bsonRangeVersion")
-    api("net.java.dev.jna:jna:5.6.0")
-    implementation("org.slf4j:slf4j-api:1.7.6")
+    api("net.java.dev.jna:jna:5.11.0")
+    implementation("org.slf4j:slf4j-api:1.7.36")
 
     // Tests
-    testImplementation("junit:junit:4.12")
-    testRuntime("ch.qos.logback:logback-classic:1.1.1")
+    testImplementation(platform("org.junit:junit-bom:5.8.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.2.11")
+}
+
+tasks.test {
+    @Suppress("UNCHECKED_CAST")
+    systemProperties((System.getProperties().toMap() as Map<String, Any>).filter { it.key.startsWith("jna.") })
+
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }
 
 /*
