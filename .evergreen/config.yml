@@ -151,11 +151,10 @@ functions:
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
 
-  "build and test java":
+  "test java":
     - command: "shell.exec"
       params:
         script: |-
-          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/test.sh
 
   "test python":
@@ -362,15 +361,14 @@ tasks:
     vars:
       test_env: VALGRIND="valgrind --leak-check=full --error-exitcode=1"
 
-- name: build-and-test-java
+- name: test-java
   depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
+    - variant: ubuntu2004-64
+      name: upload-java
   commands:
     - func: "fetch source"
-    - func: "build and test java"
-      vars:
-        test_env: PROJECT_DIRECTORY=${project_directory}
+    - func: "test java"
+      vars: { variant_name: "${build_variant}" }
 
 - name: test-python
   depends_on:
@@ -424,28 +422,53 @@ tasks:
     - func: "attach node xunit results"
 
 - name: publish-snapshot
+  commands:
+    - func: "publish snapshot"
+
+- name: upload-java
   depends_on:
-    - variant: ubuntu2004-64
-      name: prep-c-driver-source
-    - variant: rhel-62-64-bit
-      name: build-and-test-java
     - variant: rhel-62-64-bit
       name: build-and-test-and-upload
     - variant: rhel-67-s390x
       name: build-and-test-and-upload
     - variant: ubuntu1604-arm64
-      name: build-and-test-java
-    - variant: ubuntu1604-arm64
-      name: build-and-test-and-upload
-    - variant: macos_x86_64
-      name: build-and-test-java
-    - variant: macos
       name: build-and-test-and-upload
     - variant: windows-test
-      name: build-and-test-and-upload # Todo update once java build passing on windows
+      name: build-and-test-and-upload
+    - variant: macos
+      name: build-and-test-and-upload
+    - variant: macos_x86_64
+      name: build-and-test-and-upload
   commands:
-    - func: "fetch source"
-    - func: "publish snapshot"
+    - command: shell.exec
+      params:
+        script: mkdir all
+    - func: "download tarball"
+      vars: { variant_name: "rhel-62-64-bit" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-67-s390x" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu1604-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "windows-test" }
+    - func: "download tarball"
+      vars: { variant_name: "macos" }
+    - func: "download tarball"
+      vars: { variant_name: "macos_x86_64" }
+    - command: archive.targz_pack
+      params:
+        target: libmongocrypt-java.tar.gz
+        source_dir: all
+        include: [./**]
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: 'libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt-java.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
 
 - name: upload-all
   depends_on:
@@ -763,8 +786,8 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-valgrind
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -775,10 +798,10 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan-mac
-  - build-and-test-java
   - build-and-test-node
   - build-and-test-csharp
   - test-python
+  - test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
@@ -789,7 +812,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-java
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -807,6 +830,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-csharp
   - build-and-test-node
+  - test-java
   - windows-upload-check
 - name: windows-test-python
   display_name: "Windows Python"
@@ -823,8 +847,8 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -839,8 +863,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -870,8 +894,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -886,8 +910,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -901,8 +925,8 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-java
   - test-python
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -929,8 +953,8 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -944,7 +968,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-java
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -958,8 +982,8 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -974,8 +998,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -990,8 +1014,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1006,8 +1030,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1022,9 +1046,9 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
   - build-and-test-csharp
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1039,8 +1063,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1057,9 +1081,10 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
   - build-and-test-csharp
+  - test-java
+  - upload-java
   - publish-packages
 - name: ubuntu2004-arm64
   display_name: "Ubuntu 20.04 arm64"
@@ -1072,8 +1097,8 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-java
   - build-and-test-node
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1081,7 +1106,7 @@ buildvariants:
   display_name: "Publish"
   run_on: ubuntu1804-test
   tasks:
-    - name: "upload-all"
+    - name: "upload-java"
     - name: "publish-snapshot"
 - name: packaging
   display_name: "Linux Distro Packaging"
@@ -1097,6 +1122,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
+  - test-java
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"
