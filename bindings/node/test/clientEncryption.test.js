@@ -2,12 +2,13 @@
 const fs = require('fs');
 const expect = require('chai').expect;
 const sinon = require('sinon');
-const { Binary, EJSON, deserialize } = require('bson');
+const BSON = require('bson');
 const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
 const cryptoCallbacks = require('../lib/cryptoCallbacks');
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
+const { Binary, EJSON, deserialize } = BSON;
 
 function readHttpResponse(path) {
   let data = fs.readFileSync(path, 'utf8').toString();
@@ -19,6 +20,14 @@ const ClientEncryption = require('../lib/clientEncryption')({
   mongodb,
   stateMachine
 }).ClientEncryption;
+
+class MockClient {
+  constructor() {
+    this.topology = {
+      bson: BSON
+    };
+  }
+}
 
 const requirements = require('./requirements.helper');
 
@@ -365,7 +374,6 @@ describe('ClientEncryption', function () {
 
     afterEach(() => {
       sandbox.restore();
-      return teardown();
     });
     beforeEach(() => {
       const rndData = Buffer.from(
@@ -392,13 +400,11 @@ describe('ClientEncryption', function () {
         const contents = fileNames.map(filename => EJSON.parse(fs.readFileSync(filename)));
         cb(null, contents);
       });
-
-      return setup();
     });
 
     // This exactly matches _test_encrypt_fle2_explicit from the C tests
-    it('should explicitly encrypt and decrypt with the "local" KMS provider (FLE2, exact result)', function () {
-      const encryption = new ClientEncryption(client, {
+    it.only('should explicitly encrypt and decrypt with the "local" KMS provider (FLE2, exact result)', function () {
+      const encryption = new ClientEncryption(new MockClient(), {
         keyVaultNamespace: 'client.encryption',
         kmsProviders: { local: { key: Buffer.alloc(96) } }
       });
