@@ -146,66 +146,57 @@ static void MaybeSetCryptoHookErrorStatus(Value result, mongocrypt_status_t *sta
     );
 }
 
+static bool aes_256_generic_hook (MongoCrypt* mongoCrypt, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status, Function hook) {
+    Env env = mongoCrypt->Env();
+    HandleScope scope(env);
+
+    Uint8Array keyBuffer = BufferFromBinary(env, key);
+    Uint8Array ivBuffer = BufferFromBinary(env, iv);
+    Uint8Array inBuffer = BufferFromBinary(env, in);
+    Uint8Array outBuffer = BufferWithLengthOf(env, out);
+
+    Value result;
+    try {
+        result = hook.Call(std::initializer_list<napi_value>
+            { keyBuffer, ivBuffer, inBuffer, outBuffer });
+    } catch (...) {
+        return false;
+    }
+
+    if (!result.IsNumber()) {
+        MaybeSetCryptoHookErrorStatus(result, status);
+        return false;
+    }
+
+    *bytes_written = result.ToNumber().Uint32Value();
+    CopyBufferData(out, outBuffer, *bytes_written);
+    return true;
+}
+
 bool MongoCrypt::setupCryptoHooks() {
     auto aes_256_cbc_encrypt =
         [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
-            Napi::Env env = mongoCrypt->Env();
-            HandleScope scope(env);
-            Function hook = mongoCrypt->GetCallback("aes256CbcEncryptHook");
-
-            Uint8Array keyBuffer = BufferFromBinary(env, key);
-            Uint8Array ivBuffer = BufferFromBinary(env, iv);
-            Uint8Array inBuffer = BufferFromBinary(env, in);
-            Uint8Array outBuffer = BufferWithLengthOf(env, out);
-
-            Napi::Value result;
-            try {
-                result = hook.Call(std::initializer_list<napi_value>
-                    { keyBuffer, ivBuffer, inBuffer, outBuffer });
-            } catch (...) {
-                return false;
-            }
-
-            if (!result.IsNumber()) {
-                MaybeSetCryptoHookErrorStatus(result, status);
-                return false;
-            }
-
-            *bytes_written = result.ToNumber().Uint32Value();
-            CopyBufferData(out, outBuffer, *bytes_written);
-            return true;
-        };
+        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
+        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CbcEncryptHook"));
+    };
 
     auto aes_256_cbc_decrypt =
         [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
-            Napi::Env env = mongoCrypt->Env();
-            HandleScope scope(env);
-            Function hook = mongoCrypt->GetCallback("aes256CbcDecryptHook");
+        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
+        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CbcDecryptHook"));
+    };
 
-            Uint8Array keyBuffer = BufferFromBinary(env, key);
-            Uint8Array ivBuffer = BufferFromBinary(env, iv);
-            Uint8Array inBuffer = BufferFromBinary(env, in);
-            Uint8Array outBuffer = BufferWithLengthOf(env, out);
+    auto aes_256_ctr_encrypt =
+        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
+        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
+        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CtrEncryptHook"));
+    };
 
-            Napi::Value result;
-            try {
-                result = hook.Call(std::initializer_list<napi_value>
-                    { keyBuffer, ivBuffer, inBuffer, outBuffer });
-            } catch (...) {
-                return false;
-            }
-
-            if (!result.IsNumber()) {
-                MaybeSetCryptoHookErrorStatus(result, status);
-                return false;
-            }
-
-            *bytes_written = result.ToNumber().Uint32Value();
-            CopyBufferData(out, outBuffer, *bytes_written);
-            return true;
-        };
+    auto aes_256_ctr_decrypt =
+        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
+        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
+        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CtrDecryptHook"));
+    };
 
     auto random =
         [](void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) -> bool {
@@ -343,20 +334,27 @@ bool MongoCrypt::setupCryptoHooks() {
             return true;
         };
 
-    // Added after `mongocrypt_setopt_crypto_hooks`, they should be treated as the same during configuration
-    if (!mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(_mongo_crypt.get(), sign_rsa_sha256, this)) {
-        return false;
-    }
-
-    return mongocrypt_setopt_crypto_hooks(_mongo_crypt.get(),
+    if (!mongocrypt_setopt_crypto_hooks(_mongo_crypt.get(),
         aes_256_cbc_encrypt,
         aes_256_cbc_decrypt,
         random,
         hmac_sha_512,
         hmac_sha_256,
         sha_256,
-        this
-    );
+        this)) {
+        return false;
+    }
+
+    // Added after `mongocrypt_setopt_crypto_hooks`, they should be treated as the same during configuration
+    if (!mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(_mongo_crypt.get(), sign_rsa_sha256, this)) {
+        return false;
+    }
+
+    if (!mongocrypt_setopt_aes_256_ctr(_mongo_crypt.get(), aes_256_ctr_encrypt, aes_256_ctr_decrypt, this)) {
+        return false;
+    }
+
+    return true;
 }
 
 MongoCrypt::MongoCrypt(const CallbackInfo& info)
@@ -422,6 +420,8 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
 
         SetCallback("aes256CbcEncryptHook", cryptoCallbacks["aes256CbcEncryptHook"]);
         SetCallback("aes256CbcDecryptHook", cryptoCallbacks["aes256CbcDecryptHook"]);
+        SetCallback("aes256CtrEncryptHook", cryptoCallbacks["aes256CtrEncryptHook"]);
+        SetCallback("aes256CtrDecryptHook", cryptoCallbacks["aes256CtrDecryptHook"]);
         SetCallback("randomHook", cryptoCallbacks["randomHook"]);
         SetCallback("hmacSha512Hook", cryptoCallbacks["hmacSha512Hook"]);
         SetCallback("hmacSha256Hook", cryptoCallbacks["hmacSha256Hook"]);

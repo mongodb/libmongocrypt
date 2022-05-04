@@ -404,7 +404,7 @@ module.exports = function (modules) {
 
       client
         .db(dbName)
-        .listCollections(filter)
+        .listCollections(filter, { promoteLongs: false, promoteValues: false })
         .toArray((err, collections) => {
           if (err) {
             callback(err, null);
