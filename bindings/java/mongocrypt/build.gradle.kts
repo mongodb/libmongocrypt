@@ -63,16 +63,6 @@ dependencies {
     testRuntimeOnly("ch.qos.logback:logback-classic:1.2.11")
 }
 
-tasks.test {
-    @Suppress("UNCHECKED_CAST")
-    systemProperties((System.getProperties().toMap() as Map<String, Any>).filter { it.key.startsWith("jna.") })
-
-    useJUnitPlatform()
-    testLogging {
-        events("passed", "skipped", "failed")
-    }
-}
-
 /*
  * Git version information
  */
@@ -98,56 +88,33 @@ val gitHash: String by lazy {
 /*
  * Jna copy or download resources
  */
-val jnaLibsPath: String = System.getProperty("jnaLibsPath", "")
-val jnaResources: String = System.getProperty("jna.libary.path", jnaLibsPath)
 val jnaDownloadsDir = "$buildDir/jnaLibsDownloads/"
 val jnaResourcesBuildDir = "$buildDir/jnaLibs/"
-
-// Copy resources to jnaResourcesBuildDir
-tasks.register<Copy>("copyResources") {
-    val cmakeBuildPath = "../../../cmake-build-nocrypto"
-    destinationDir = file(jnaResourcesBuildDir)
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    if (jnaResources.isNotEmpty()) {
-        from(jnaResources)
-        include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
-    } else if (file(cmakeBuildPath).exists()){
-        val jnaMapping = mapOf(
-            "libmongocrypt.so" to "linux-" + com.sun.jna.Platform.ARCH,
-            "mongocrypt.dll" to "win32-" + com.sun.jna.Platform.ARCH,
-            "libmongocrypt.dylib" to "darwin")
-
-        val copySpecs = jnaMapping.mapTo(mutableListOf()) {
-            copySpec {
-                from(cmakeBuildPath)
-                include(it.key)
-                into(it.value)
-            }
-        }.toTypedArray()
-        with(*copySpecs)
-    }
-}
+val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesBuildDir}${com.sun.jna.Platform.RESOURCE_PREFIX}")
+val jnaResources: String = System.getProperty("jna.library.path", jnaLibsPath)
 
 // Download jnaLibs that match the git to jnaResourcesBuildDir
 val revision: String = System.getProperty("gitRevision", if (gitVersion == version) gitVersion else gitHash)
-val downloadUrl: String = "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/$revision/libmongocrypt-all.tar.gz"
+val downloadUrl: String = "https://mciuploads.s3.amazonaws.com/libmongocrypt/java/$revision/libmongocrypt-java.tar.gz"
 
 val jnaMapping: Map<String, String> = mapOf(
     "rhel-62-64-bit" to "linux-x86-64",
     "rhel-67-s390x" to "linux-s390x",
     "ubuntu1604-arm64" to "linux-aarch64",
     "windows-test" to "win32-x86-64",
+    "macos_x86_64" to "darwin-x86-64",
     "macos" to "darwin"
 )
 
-tasks.register<Download>("downloadAll") {
+tasks.register<Download>("downloadJava") {
     src(downloadUrl)
-    dest("${jnaDownloadsDir}/libmongocrypt-all.tar.gz")
+    dest("${jnaDownloadsDir}/libmongocrypt-java.tar.gz")
     overwrite(true)
 }
 
-tasks.register<Copy>("unzipAll") {
-    from(tarTree(resources.gzip("${jnaDownloadsDir}/libmongocrypt-all.tar.gz")))
+tasks.register<Copy>("unzipJava") {
+    outputs.upToDateWhen { false }
+    from(tarTree(resources.gzip("${jnaDownloadsDir}/libmongocrypt-java.tar.gz")))
     include(jnaMapping.keys.flatMap {
         listOf("${it}/nocrypto/**/libmongocrypt.so", "${it}/nocrypto/**/libmongocrypt.dylib", "${it}/nocrypto/**/mongocrypt.dll" )
     })
@@ -155,10 +122,20 @@ tasks.register<Copy>("unzipAll") {
         path = "${jnaMapping.get(path.substringBefore("/"))}/${name}"
     }
     into(jnaResourcesBuildDir)
-    mustRunAfter("downloadAll")
+    mustRunAfter("downloadJava")
 }
+
 tasks.register("downloadJnaLibs") {
-    dependsOn("downloadAll", "unzipAll")
+    dependsOn("downloadJava", "unzipJava")
+}
+
+tasks.test {
+    systemProperty("jna.debug_load", "true")
+    systemProperty("jna.library.path", jnaResources)
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }
 
 tasks.withType<AbstractPublishToMaven> {
@@ -173,10 +150,6 @@ tasks.withType<AbstractPublishToMaven> {
 
 tasks.withType<PublishToMavenRepository> {
     sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
-}
-
-tasks.withType<PublishToMavenLocal> {
-    dependsOn("copyResources")
 }
 
 /*
