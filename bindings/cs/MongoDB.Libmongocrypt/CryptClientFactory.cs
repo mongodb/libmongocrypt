@@ -66,7 +66,6 @@ namespace MongoDB.Libmongocrypt
                         __signRsaesPkcs1HmacCallback,
                         IntPtr.Zero));
 
-                // windows?
                 handle.Check(
                     status,
                     Library.mongocrypt_setopt_aes_256_ecb(
@@ -82,12 +81,12 @@ namespace MongoDB.Libmongocrypt
 
             if (options.Schema != null)
             {
-                HandleMap(handle, options.Schema, status, (h, pb) =>Library.mongocrypt_setopt_schema_map(h, pb));
+                HandleMap(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
             }
 
             if (options.EncryptedFieldsMap != null)
             {
-                HandleMap(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
+                HandleMap(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
             }
 
             if (options.BypassQueryAnalysis)

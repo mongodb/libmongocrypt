@@ -105,7 +105,6 @@ namespace MongoDB.Libmongocrypt
                     string path = Path.Combine(basePath, suffix, library);
                     if (File.Exists(path))
                     {
-                        // TODO - .NET Standard 2.0
                         return path;
                     }
                     candidates.Add(path);
