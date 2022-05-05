@@ -421,6 +421,13 @@ foreach (test IN ITEMS path str)
    target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
 endforeach ()
 
+get_cmake_property (cxx_features CMAKE_CXX_KNOWN_FEATURES)
+if ("cxx_std_14" IN_LIST cxx_features)
+   add_executable (csfle-markup src/csfle-markup.cpp)
+   target_link_libraries (csfle-markup PRIVATE mongocrypt_static ${BSON_TARGET} mongo::mlib)
+   target_compile_features (csfle-markup PRIVATE cxx_std_14)
+endif ()
+
 # Exclude example-state-machine since it requires native crypto.
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    # Define example-state-machine
