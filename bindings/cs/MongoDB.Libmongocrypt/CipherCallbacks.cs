@@ -27,7 +27,7 @@ namespace MongoDB.Libmongocrypt
 
     internal static class CipherCallbacks
     {
-        public static bool Encrypt(
+        public static bool EncryptCbc(
             IntPtr ctx,
             IntPtr key,
             IntPtr iv,
@@ -49,7 +49,7 @@ namespace MongoDB.Libmongocrypt
                     byte[] ivBytes = ivBinary.ToArray();
                     byte[] inputBytes = inputBinary.ToArray();
 
-                    var outputBytes = AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Encrypt);
+                    var outputBytes = AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Encrypt, CipherMode.CBC);
                     bytes_written = (uint)outputBytes.Length;
                     outputBinary.WriteBytes(outputBytes);
                     return true;
@@ -62,7 +62,7 @@ namespace MongoDB.Libmongocrypt
             }
         }
 
-        public static bool Decrypt(
+        public static bool DecryptCbc(
             IntPtr ctx,
             IntPtr key,
             IntPtr iv,
@@ -84,7 +84,7 @@ namespace MongoDB.Libmongocrypt
                     byte[] ivBytes = ivBinary.ToArray();
                     byte[] inputBytes = inputBinary.ToArray();
 
-                    var outputBytes = AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Decrypt);
+                    var outputBytes = AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Decrypt, CipherMode.CBC);
                     bytes_written = (uint)outputBytes.Length;
                     outputBinary.WriteBytes(outputBytes);
 
@@ -98,11 +98,46 @@ namespace MongoDB.Libmongocrypt
             }
         }
 
-        public static byte[] AesCrypt(byte[] keyBytes, byte[] ivBytes, byte[] inputBytes, CryptMode cryptMode)
+        public static bool EncryptEcb(
+            IntPtr ctx,
+            IntPtr key,
+            IntPtr iv,
+            IntPtr @in,
+            IntPtr @out,
+            ref uint bytes_written,
+            IntPtr statusPtr)
+        {
+            using (var status = new Status(StatusSafeHandle.FromIntPtr(statusPtr)))
+            {
+                try
+                {
+                    var keyBinary = new Binary(BinarySafeHandle.FromIntPtr(key));
+                    var inputBinary = new Binary(BinarySafeHandle.FromIntPtr(@in));
+                    var outputBinary = new Binary(BinarySafeHandle.FromIntPtr(@out));
+                    var ivBinary = new Binary(BinarySafeHandle.FromIntPtr(iv));
+
+                    byte[] keyBytes = keyBinary.ToArray();
+                    byte[] ivBytes = ivBinary.ToArray();
+                    byte[] inputBytes = inputBinary.ToArray();
+
+                    var outputBytes = AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Encrypt, CipherMode.ECB);
+                    bytes_written = (uint)outputBytes.Length;
+                    outputBinary.WriteBytes(outputBytes);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    status.SetStatus(1, e.Message);
+                    return false;
+                }
+            }
+        }
+
+        public static byte[] AesCrypt(byte[] keyBytes, byte[] ivBytes, byte[] inputBytes, CryptMode cryptMode, CipherMode cipherMode)
         {
             using (var aes = new RijndaelManaged())
             {
-                aes.Mode = CipherMode.CBC;
+                aes.Mode = cipherMode;
 
                 aes.Key = keyBytes;
                 aes.IV = ivBytes;

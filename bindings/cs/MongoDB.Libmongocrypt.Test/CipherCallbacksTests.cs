@@ -15,6 +15,7 @@
  */
 
 using FluentAssertions;
+using System.Security.Cryptography;
 using Xunit;
 
 namespace MongoDB.Libmongocrypt.Test
@@ -33,10 +34,10 @@ namespace MongoDB.Libmongocrypt.Test
             var ivBytes = CallbackUtils.GetBytesFromHex(ivHex);
             var inputBytes = CallbackUtils.GetBytesFromHex(inputHex); // decryptedBytes
             var expectedEncryptedBytes = CallbackUtils.GetBytesFromHex(expectedHex);
-            var encryptedBytes = CipherCallbacks.AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Encrypt);
+            var encryptedBytes = CipherCallbacks.AesCrypt(keyBytes, ivBytes, inputBytes, CryptMode.Encrypt, CipherMode.CBC);
             encryptedBytes.Should().Equal(expectedEncryptedBytes);
 
-            var decryptedBytes = CipherCallbacks.AesCrypt(keyBytes, ivBytes, encryptedBytes, CryptMode.Decrypt);
+            var decryptedBytes = CipherCallbacks.AesCrypt(keyBytes, ivBytes, encryptedBytes, CryptMode.Decrypt, CipherMode.CBC);
             decryptedBytes.Should().Equal(inputBytes);
         }
     }

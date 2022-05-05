@@ -25,8 +25,9 @@ namespace MongoDB.Libmongocrypt
     {
         // MUST be static fields since otherwise these callbacks can be collected via the garbage collector
         // regardless they're used by mongocrypt level or no
-        private static Library.Delegates.CryptoCallback __crypto256DecryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.Decrypt);
-        private static Library.Delegates.CryptoCallback __crypto256EncryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.Encrypt);
+        private static Library.Delegates.CryptoCallback __cryptoAes256EcbEncryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.EncryptEcb);
+        private static Library.Delegates.CryptoCallback __cryptoAes256CbcDecryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.DecryptCbc);
+        private static Library.Delegates.CryptoCallback __cryptoAes256CbcEncryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.EncryptCbc);
         private static Library.Delegates.HashCallback __cryptoHashCallback = new Library.Delegates.HashCallback(HashCallback.Hash);
         private static Library.Delegates.CryptoHmacCallback __cryptoHmacSha256Callback = new Library.Delegates.CryptoHmacCallback(HmacShaCallbacks.HmacSha256);
         private static Library.Delegates.CryptoHmacCallback __cryptoHmacSha512Callback = new Library.Delegates.CryptoHmacCallback(HmacShaCallbacks.HmacSha512);
@@ -50,8 +51,8 @@ namespace MongoDB.Libmongocrypt
                     status,
                     Library.mongocrypt_setopt_crypto_hooks(
                         handle,
-                        __crypto256EncryptCallback,
-                        __crypto256DecryptCallback,
+                        __cryptoAes256CbcDecryptCallback,
+                        __cryptoAes256CbcEncryptCallback,
                         __randomCallback,
                         __cryptoHmacSha512Callback,
                         __cryptoHmacSha256Callback,
@@ -62,7 +63,15 @@ namespace MongoDB.Libmongocrypt
                     status,
                     Library.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
                         handle,
-                        __signRsaesPkcs1HmacCallback, 
+                        __signRsaesPkcs1HmacCallback,
+                        IntPtr.Zero));
+
+                // windows?
+                handle.Check(
+                    status,
+                    Library.mongocrypt_setopt_aes_256_ecb(
+                        handle,
+                        __cryptoAes256EcbEncryptCallback,
                         IntPtr.Zero));
             }
 
@@ -73,21 +82,38 @@ namespace MongoDB.Libmongocrypt
 
             if (options.Schema != null)
             {
-                unsafe
-                {
-                    fixed (byte* schema = options.Schema)
-                    {
-                        var schemaPtr = (IntPtr)schema;
-                        using (var pinnedSchema = new PinnedBinary(schemaPtr, (uint)options.Schema.Length))
-                        {
-                            handle.Check(status, Library.mongocrypt_setopt_schema_map(handle, schema: pinnedSchema.Handle));
-                        }
-                    }
-                }
+                HandleMap(handle, options.Schema, status, (h, pb) =>Library.mongocrypt_setopt_schema_map(h, pb));
             }
+
+            if (options.EncryptedFieldsMap != null)
+            {
+                HandleMap(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
+            }
+
+            if (options.BypassQueryAnalysis)
+            {
+                Library.mongocrypt_setopt_bypass_query_analysis(handle);
+            }
+
             Library.mongocrypt_init(handle);
 
             return new CryptClient(handle, status);
+        }
+
+        // private methods
+        private static void HandleMap(MongoCryptSafeHandle handle, byte[] mapBytes, Status status, Func<MongoCryptSafeHandle, BinarySafeHandle, bool> handleFunc)
+        {
+            unsafe
+            {
+                fixed (byte* map = mapBytes)
+                {
+                    var schemaPtr = (IntPtr)map;
+                    using (var pinnedSchema = new PinnedBinary(schemaPtr, (uint)mapBytes.Length))
+                    {
+                        handle.Check(status, handleFunc(handle, pinnedSchema.Handle));
+                    }
+                }
+            }
         }
     }
 }

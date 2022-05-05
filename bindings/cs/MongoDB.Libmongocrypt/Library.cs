@@ -48,9 +48,9 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_key_encryption_key>(
                     ("mongocrypt_ctx_setopt_key_encryption_key")), true);
 
-            _mongocrypt_setopt_aes_256_ctr = new Lazy<Delegates.mongocrypt_setopt_aes_256_ctr>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_aes_256_ctr>(
-                    ("mongocrypt_setopt_aes_256_ctr")), true);
+            _mongocrypt_setopt_aes_256_ecb = new Lazy<Delegates.mongocrypt_setopt_aes_256_ecb>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_aes_256_ecb>(
+                    ("mongocrypt_setopt_aes_256_ecb")), true);
             _mongocrypt_setopt_bypass_query_analysis = new Lazy<Delegates.mongocrypt_setopt_bypass_query_analysis>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_bypass_query_analysis>(
                     ("mongocrypt_setopt_bypass_query_analysis")), true);
@@ -197,7 +197,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_setopt_kms_providers mongocrypt_setopt_kms_providers => _mongocrypt_setopt_kms_providers.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_encryption_key mongocrypt_ctx_setopt_key_encryption_key => _mongocrypt_ctx_setopt_key_encryption_key.Value;
 
-        internal static Delegates.mongocrypt_setopt_aes_256_ctr mongocrypt_setopt_aes_256_ctr => _mongocrypt_setopt_aes_256_ctr.Value;
+        internal static Delegates.mongocrypt_setopt_aes_256_ecb mongocrypt_setopt_aes_256_ecb => _mongocrypt_setopt_aes_256_ecb.Value;
         internal static Delegates.mongocrypt_setopt_bypass_query_analysis mongocrypt_setopt_bypass_query_analysis => _mongocrypt_setopt_bypass_query_analysis.Value;
         internal static Delegates.mongocrypt_setopt_crypto_hooks mongocrypt_setopt_crypto_hooks => _mongocrypt_setopt_crypto_hooks.Value;
         internal static Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 => _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5.Value;
@@ -263,7 +263,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_setopt_kms_providers> _mongocrypt_setopt_kms_providers;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_encryption_key> _mongocrypt_ctx_setopt_key_encryption_key;
 
-        private static readonly Lazy<Delegates.mongocrypt_setopt_aes_256_ctr> _mongocrypt_setopt_aes_256_ctr;
+        private static readonly Lazy<Delegates.mongocrypt_setopt_aes_256_ecb> _mongocrypt_setopt_aes_256_ecb;
         private static readonly Lazy<Delegates.mongocrypt_setopt_bypass_query_analysis> _mongocrypt_setopt_bypass_query_analysis;
         private static readonly Lazy<Delegates.mongocrypt_setopt_crypto_hooks> _mongocrypt_setopt_crypto_hooks;
         private static readonly Lazy<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5> _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
@@ -390,10 +390,9 @@ namespace MongoDB.Libmongocrypt
                 IntPtr statusPtr);
 
             [return: MarshalAs(UnmanagedType.I1)]
-            public delegate bool mongocrypt_setopt_aes_256_ctr(
+            public delegate bool mongocrypt_setopt_aes_256_ecb(
                 MongoCryptSafeHandle handle,
-                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback aes_256_ctr_encrypt,
-                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback aes_256_ctr_decrypt,
+                [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback aes_256_ecb_encrypt,
                 IntPtr ctx);
             public delegate void mongocrypt_setopt_bypass_query_analysis(MongoCryptSafeHandle handle);
             [return: MarshalAs(UnmanagedType.I1)]
