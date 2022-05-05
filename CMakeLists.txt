@@ -179,6 +179,11 @@ set_property(
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
    MLIB_USER
    )
+set_property(
+   TARGET _mongo-mlib
+   APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+   )
 
 # kms-message
 add_subdirectory (kms-message)
