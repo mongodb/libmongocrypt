@@ -31,6 +31,9 @@ namespace MongoDB.Libmongocrypt
 
             _mongocrypt_new = new Lazy<Delegates.mongocrypt_new>(
                     () => __loader.Value.GetFunction<Delegates.mongocrypt_new>(("mongocrypt_new")), true);
+            _mongocrypt_setopt_log_handler = new Lazy<Delegates.mongocrypt_setopt_log_handler>(
+                    () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_log_handler>(
+                        ("mongocrypt_setopt_log_handler")), true);
             _mongocrypt_init = new Lazy<Delegates.mongocrypt_init>(
                     () => __loader.Value.GetFunction<Delegates.mongocrypt_init>(("mongocrypt_init")), true);
             _mongocrypt_destroy = new Lazy<Delegates.mongocrypt_destroy>(
@@ -45,17 +48,18 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_key_encryption_key>(
                     ("mongocrypt_ctx_setopt_key_encryption_key")), true);
 
+            _mongocrypt_setopt_bypass_query_analysis = new Lazy<Delegates.mongocrypt_setopt_bypass_query_analysis>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_bypass_query_analysis>(
+                    ("mongocrypt_setopt_bypass_query_analysis")), true);
             _mongocrypt_setopt_crypto_hooks = new Lazy<Delegates.mongocrypt_setopt_crypto_hooks>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_crypto_hooks>(
                     ("mongocrypt_setopt_crypto_hooks")), true);
-
             _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 = new Lazy<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5>(
                     ("mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5")), true);
-
-            _mongocrypt_setopt_log_handler = new Lazy<Delegates.mongocrypt_setopt_log_handler>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_log_handler>(
-                    ("mongocrypt_setopt_log_handler")), true);
+            _mongocrypt_setopt_encrypted_field_config_map = new Lazy<Delegates.mongocrypt_setopt_encrypted_field_config_map>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_encrypted_field_config_map>(
+                    ("mongocrypt_setopt_encrypted_field_config_map")), true);
             _mongocrypt_setopt_schema_map = new Lazy<Delegates.mongocrypt_setopt_schema_map>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_schema_map>(
                     ("mongocrypt_setopt_schema_map")), true);
@@ -190,8 +194,10 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_setopt_kms_providers mongocrypt_setopt_kms_providers => _mongocrypt_setopt_kms_providers.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_encryption_key mongocrypt_ctx_setopt_key_encryption_key => _mongocrypt_ctx_setopt_key_encryption_key.Value;
 
+        internal static Delegates.mongocrypt_setopt_bypass_query_analysis mongocrypt_setopt_bypass_query_analysis => _mongocrypt_setopt_bypass_query_analysis.Value;
         internal static Delegates.mongocrypt_setopt_crypto_hooks mongocrypt_setopt_crypto_hooks => _mongocrypt_setopt_crypto_hooks.Value;
         internal static Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 => _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5.Value;
+        internal static Delegates.mongocrypt_setopt_encrypted_field_config_map mongocrypt_setopt_encrypted_field_config_map => _mongocrypt_setopt_encrypted_field_config_map.Value;
         internal static Delegates.mongocrypt_setopt_schema_map mongocrypt_setopt_schema_map => _mongocrypt_setopt_schema_map.Value;
 
         internal static Delegates.mongocrypt_init mongocrypt_init => _mongocrypt_init.Value;
@@ -253,9 +259,10 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_setopt_kms_providers> _mongocrypt_setopt_kms_providers;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_encryption_key> _mongocrypt_ctx_setopt_key_encryption_key;
 
+        private static readonly Lazy<Delegates.mongocrypt_setopt_bypass_query_analysis> _mongocrypt_setopt_bypass_query_analysis;
         private static readonly Lazy<Delegates.mongocrypt_setopt_crypto_hooks> _mongocrypt_setopt_crypto_hooks;
         private static readonly Lazy<Delegates.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5> _mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
-
+        private static readonly Lazy<Delegates.mongocrypt_setopt_encrypted_field_config_map> _mongocrypt_setopt_encrypted_field_config_map;
         private static readonly Lazy<Delegates.mongocrypt_setopt_schema_map> _mongocrypt_setopt_schema_map;
 
         private static readonly Lazy<Delegates.mongocrypt_init> _mongocrypt_init;
@@ -377,6 +384,7 @@ namespace MongoDB.Libmongocrypt
                 uint count,
                 IntPtr statusPtr);
 
+            public delegate void mongocrypt_setopt_bypass_query_analysis(MongoCryptSafeHandle handle);
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_crypto_hooks(
                 MongoCryptSafeHandle handle,
@@ -387,13 +395,13 @@ namespace MongoDB.Libmongocrypt
                 [MarshalAs(UnmanagedType.FunctionPtr)] CryptoHmacCallback hmac_sha_256,
                 [MarshalAs(UnmanagedType.FunctionPtr)] HashCallback mongocrypt_hash_fn,
                 IntPtr ctx);
-
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
                 MongoCryptSafeHandle handle,
                 [MarshalAs(UnmanagedType.FunctionPtr)] CryptoHmacCallback sign_rsaes_pkcs1_v1_5,
                 IntPtr sign_ctx);
-
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_setopt_encrypted_field_config_map(MongoCryptSafeHandle handle, BinarySafeHandle efc_map);
             [return: MarshalAs(UnmanagedType.I1),]
             public delegate bool mongocrypt_setopt_schema_map(MongoCryptSafeHandle handle, BinarySafeHandle schema);
 
