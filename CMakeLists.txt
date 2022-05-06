@@ -2,6 +2,9 @@ cmake_minimum_required (VERSION 3.5)
 
 if (CMAKE_VERSION VERSION_EQUAL 3.12 OR CMAKE_VERSION VERSION_GREATER 3.12)
    project (mongocrypt C)
+
+   # Used for the csfle-markup util:
+   enable_language (CXX OPTIONAL)
 else ()
    # GenerateExportHeader only works with C with 3.12 - https://gitlab.kitware.com/cmake/cmake/commit/de348a9638bd51af4523f36c68884b901d4aff18
    project (mongocrypt C CXX)
@@ -175,6 +178,11 @@ set_property(
    TARGET _mongo-mlib
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
    MLIB_USER
+   )
+set_property(
+   TARGET _mongo-mlib
+   APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
    )
 
 # kms-message
@@ -420,6 +428,12 @@ foreach (test IN ITEMS path str)
    add_test (mlib.${test} mlib.${test}.test)
    target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
 endforeach ()
+
+if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+   add_executable (csfle-markup src/csfle-markup.cpp)
+   target_link_libraries (csfle-markup PRIVATE mongocrypt_static ${BSON_TARGET} mongo::mlib)
+   target_compile_features (csfle-markup PRIVATE cxx_std_20)
+endif ()
 
 # Exclude example-state-machine since it requires native crypto.
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
