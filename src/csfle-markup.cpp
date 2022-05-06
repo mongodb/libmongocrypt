@@ -206,7 +206,7 @@ do_main (int argc, const char *const *argv)
 
    bson_t *output = bson_new_from_data (data_ptr, data_len);
    assert (output);
-   auto del_output = DEFER ({ bson_free (output); });
+   auto del_output = DEFER ({ bson_destroy (output); });
 
    auto s = bson_as_canonical_extended_json (output, nullptr);
    fputs (s, stdout);
