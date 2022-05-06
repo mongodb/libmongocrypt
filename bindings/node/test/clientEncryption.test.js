@@ -32,26 +32,26 @@ class MockClient {
 const requirements = require('./requirements.helper');
 
 describe('ClientEncryption', function () {
+  this.timeout(12000);
   let client;
 
-  function setup() {
+  function throwIfNotNsNotFoundError(err) {
+    if (!err.message.match(/ns not found/)) {
+      throw err;
+    }
+  }
+
+  async function setup() {
     client = new MongoClient('mongodb://localhost:27017/test', {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    return client.connect().then(() =>
-      client
-        .db('client')
-        .collection('encryption')
-        .drop()
-        .catch(err => {
-          if (err.message.match(/ns not found/)) {
-            return;
-          }
-
-          throw err;
-        })
-    );
+    await client.connect();
+    try {
+      await client.db('client').collection('encryption').drop();
+    } catch (err) {
+      throwIfNotNsNotFoundError(err);
+    }
   }
 
   function teardown() {
@@ -429,6 +429,204 @@ describe('ClientEncryption', function () {
         .then(decrypted => {
           expect(decrypted).to.equal('value123');
         });
+    });
+  });
+
+  context('FLE2 explicit encryption spec tests', function () {
+    // cf. https://github.com/mongodb/specifications/blob/078ed5ff4d9216cbb906bec0002693c90878afd1/source/client-side-encryption/tests/README.rst#explicit-encryption
+
+    const ENCRYPTED_FIELDS = EJSON.parse(
+      fs.readFileSync(`${__dirname}/data/encryptedFields.json`),
+      { relaxed: false }
+    );
+    const KEY1_DOCUMENT = EJSON.parse(fs.readFileSync(`${__dirname}/data/key1-document.json`), {
+      relaxed: false
+    });
+    const KEY1_ID = KEY1_DOCUMENT._id;
+    const LOCAL_MASTERKEY =
+      'Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6NmdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZGJkTXVyZG9uSjFk';
+
+    let keyVaultClient;
+    let encryptedClient;
+    let clientEncryption;
+
+    async function setup() {
+      const url = 'mongodb://localhost:27017/test';
+      client = await MongoClient.connect(url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      });
+      try {
+        await client
+          .db('db')
+          .collection('explicit_encryption')
+          .drop({ encryptedFields: ENCRYPTED_FIELDS });
+      } catch (err) {
+        throwIfNotNsNotFoundError(err);
+      }
+
+      await client
+        .db('db')
+        .createCollection('explicit_encryption', { encryptedFields: ENCRYPTED_FIELDS });
+
+      try {
+        await client.db('keyvault').collection('datakeys').drop();
+      } catch (err) {
+        throwIfNotNsNotFoundError(err);
+      }
+
+      await client.db('keyvault').collection('datakeys').insertOne(KEY1_DOCUMENT);
+
+      keyVaultClient = client;
+      clientEncryption = new ClientEncryption(client, {
+        keyVaultClient,
+        keyVaultNamespace: 'keyvault.datakeys',
+        kmsProviders: { local: { key: LOCAL_MASTERKEY } }
+      });
+      encryptedClient = await MongoClient.connect(url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        autoEncryption: {
+          keyVaultNamespace: 'keyvault.datakeys',
+          kmsProviders: { local: { key: LOCAL_MASTERKEY } },
+          bypassQueryAnalysis: true
+        }
+      });
+      await encryptedClient.connect();
+    }
+
+    function teardown() {
+      if (requirements.SKIP_LIVE_TESTS) {
+        return Promise.resolve();
+      }
+
+      return Promise.all([client.close(), encryptedClient.close()]);
+    }
+
+    beforeEach(setup);
+    afterEach(teardown);
+
+    it('Case 1: can insert encrypted indexed and find', async function () {
+      const coll = encryptedClient.db('db').collection('explicit_encryption');
+      const insertPayload = await clientEncryption.encrypt('encrypted indexed value', {
+        keyId: KEY1_ID,
+        algorithm: 'Indexed'
+      });
+      await coll.insertOne({
+        encryptedIndexed: insertPayload
+      });
+
+      const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
+        keyId: KEY1_ID,
+        algorithm: 'Indexed',
+        queryType: 'Equality'
+      });
+      const findResult = await coll
+        .find({
+          encryptedIndexed: findPayload
+        })
+        .project({
+          _id: 0,
+          __safeContent__: 0
+        })
+        .toArray();
+      expect(findResult).to.deep.equal([{ encryptedIndexed: 'encrypted indexed value' }]);
+    });
+
+    it('Case 2: can insert encrypted indexed and find with non-zero contention', async function () {
+      const coll = encryptedClient.db('db').collection('explicit_encryption');
+      for (let i = 0; i < 10; i++) {
+        const insertPayload = await clientEncryption.encrypt('encrypted indexed value', {
+          keyId: KEY1_ID,
+          algorithm: 'Indexed',
+          contentionFactor: 10
+        });
+        await coll.insertOne({
+          encryptedIndexed: insertPayload
+        });
+      }
+
+      const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
+        keyId: KEY1_ID,
+        algorithm: 'Indexed',
+        queryType: 'Equality'
+      });
+      const findResult = await coll
+        .find({
+          encryptedIndexed: findPayload
+        })
+        .project({
+          _id: 0,
+          __safeContent__: 0
+        })
+        .toArray();
+      expect(findResult.length).to.be.lessThan(10);
+      for (const doc of findResult) {
+        expect(doc).to.deep.equal({ encryptedIndexed: 'encrypted indexed value' });
+      }
+
+      const findPayload2 = await clientEncryption.encrypt('encrypted indexed value', {
+        keyId: KEY1_ID,
+        algorithm: 'Indexed',
+        queryType: 'Equality',
+        contentionFactor: 10
+      });
+      const findResult2 = await coll
+        .find({
+          encryptedIndexed: findPayload2
+        })
+        .project({
+          _id: 0,
+          __safeContent__: 0
+        })
+        .toArray();
+      expect(findResult2).to.have.lengthOf(10);
+      for (const doc of findResult) {
+        expect(doc).to.deep.equal({ encryptedIndexed: 'encrypted indexed value' });
+      }
+    });
+
+    it('Case 3: can insert encrypted unindexed', async function () {
+      const coll = encryptedClient.db('db').collection('explicit_encryption');
+      const insertPayload = await clientEncryption.encrypt('encrypted indexed value', {
+        keyId: KEY1_ID,
+        algorithm: 'Unindexed'
+      });
+      await coll.insertOne({
+        _id: 1,
+        encryptedIndexed: insertPayload
+      });
+      const findResult = await coll
+        .find({
+          _id: 1
+        })
+        .project({
+          _id: 0,
+          __safeContent__: 0
+        })
+        .toArray();
+
+      expect(findResult).to.deep.equal([{ encryptedIndexed: 'encrypted indexed value' }]);
+    });
+
+    it('Case 4: can roundtrip encrypted indexed', async function () {
+      const payload = await clientEncryption.encrypt('encrypted indexed value', {
+        keyId: KEY1_ID,
+        algorithm: 'Indexed'
+      });
+      const decrypted = await clientEncryption.decrypt(payload);
+
+      expect(decrypted).to.deep.equal('encrypted indexed value');
+    });
+
+    it('Case 5: can roundtrip encrypted unindexed', async function () {
+      const payload = await clientEncryption.encrypt('encrypted indexed value', {
+        keyId: KEY1_ID,
+        algorithm: 'Unindexed'
+      });
+      const decrypted = await clientEncryption.decrypt(payload);
+
+      expect(decrypted).to.deep.equal('encrypted indexed value');
     });
   });
 });
