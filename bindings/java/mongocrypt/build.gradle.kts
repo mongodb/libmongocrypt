@@ -88,9 +88,9 @@ val gitHash: String by lazy {
 /*
  * Jna copy or download resources
  */
-val jnaDownloadsDir = "$buildDir/jnaLibsDownloads/"
-val jnaResourcesBuildDir = "$buildDir/jnaLibs/"
-val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesBuildDir}${com.sun.jna.Platform.RESOURCE_PREFIX}")
+val jnaDownloadsDir = "$buildDir/jnaLibs/downloads/"
+val jnaResourcesDir = "$buildDir/jnaLibs/resources/"
+val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesDir}${com.sun.jna.Platform.RESOURCE_PREFIX}")
 val jnaResources: String = System.getProperty("jna.library.path", jnaLibsPath)
 
 // Download jnaLibs that match the git to jnaResourcesBuildDir
@@ -121,8 +121,12 @@ tasks.register<Copy>("unzipJava") {
     eachFile {
         path = "${jnaMapping.get(path.substringBefore("/"))}/${name}"
     }
-    into(jnaResourcesBuildDir)
+    into(jnaResourcesDir)
     mustRunAfter("downloadJava")
+
+    doLast {
+        println("jna.library.path contents: \n  ${fileTree(jnaResourcesDir).files.joinToString(",\n  ")}")
+    }
 }
 
 tasks.register("downloadJnaLibs") {
@@ -138,8 +142,9 @@ tasks.test {
     }
 
     doFirst {
-        println("jna.library.path contents: ${fileTree(jnaResources).files.joinToString(", ")}")
+        println("jna.library.path contents: \n  ${fileTree(jnaResourcesDir).files.joinToString(",\n  ")}")
     }
+    mustRunAfter("downloadJnaLibs", "downloadJava", "unzipJava")
 }
 
 tasks.withType<AbstractPublishToMaven> {
@@ -153,7 +158,7 @@ tasks.withType<AbstractPublishToMaven> {
 }
 
 tasks.withType<PublishToMavenRepository> {
-    sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
+    sourceSets["main"].resources.srcDirs("resources", jnaResourcesDir)
 }
 
 /*
