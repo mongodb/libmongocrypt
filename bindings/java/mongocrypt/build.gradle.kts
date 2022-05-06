@@ -136,6 +136,10 @@ tasks.test {
     testLogging {
         events("passed", "skipped", "failed")
     }
+
+    doFirst {
+        println("jna.library.path contents: ${fileTree(jnaResources).files.joinToString(", ")}")
+    }
 }
 
 tasks.withType<AbstractPublishToMaven> {
