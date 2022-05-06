@@ -503,8 +503,19 @@ describe('ClientEncryption', function () {
       return Promise.all([client.close(), encryptedClient.close()]);
     }
 
-    beforeEach(setup);
-    afterEach(teardown);
+    beforeEach(function () {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.test.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.test.skip();
+        return;
+      }
+
+      return setup();
+    });
+
+    afterEach(function () {
+      return teardown();
+    });
 
     it('Case 1: can insert encrypted indexed and find', async function () {
       const coll = encryptedClient.db('db').collection('explicit_encryption');
