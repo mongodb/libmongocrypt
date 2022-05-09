@@ -631,13 +631,13 @@ describe('ClientEncryption', function () {
     });
 
     it('Case 5: can roundtrip encrypted unindexed', async function () {
-      const payload = await clientEncryption.encrypt('encrypted indexed value', {
+      const payload = await clientEncryption.encrypt('encrypted unindexed value', {
         keyId: KEY1_ID,
         algorithm: 'Unindexed'
       });
       const decrypted = await clientEncryption.decrypt(payload);
 
-      expect(decrypted).to.deep.equal('encrypted indexed value');
+      expect(decrypted).to.deep.equal('encrypted unindexed value');
     });
   });
 });
