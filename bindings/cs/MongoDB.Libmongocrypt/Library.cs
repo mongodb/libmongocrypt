@@ -114,10 +114,19 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_ctx_setopt_key_id = new Lazy<Delegates.mongocrypt_ctx_setopt_key_id>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_key_id>(
                     ("mongocrypt_ctx_setopt_key_id")), true);
-
             _mongocrypt_ctx_setopt_algorithm = new Lazy<Delegates.mongocrypt_ctx_setopt_algorithm>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_algorithm>(
                     ("mongocrypt_ctx_setopt_algorithm")), true);
+            _mongocrypt_ctx_setopt_contention_factor = new Lazy<Delegates.mongocrypt_ctx_setopt_contention_factor>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_contention_factor>(
+                    ("mongocrypt_ctx_setopt_contention_factor")), true);
+            _mongocrypt_ctx_setopt_index_type = new Lazy<Delegates.mongocrypt_ctx_setopt_index_type>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_index_type>(
+                    ("mongocrypt_ctx_setopt_index_type")), true);
+            _mongocrypt_ctx_setopt_query_type = new Lazy<Delegates.mongocrypt_ctx_setopt_query_type>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_query_type>(
+                    ("mongocrypt_ctx_setopt_query_type")), true);
+
             _mongocrypt_ctx_status = new Lazy<Delegates.mongocrypt_ctx_status>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_status>(("mongocrypt_ctx_status")), true);
             _mongocrypt_ctx_encrypt_init = new Lazy<Delegates.mongocrypt_ctx_encrypt_init>(
@@ -237,6 +246,9 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_ctx_setopt_key_id mongocrypt_ctx_setopt_key_id => _mongocrypt_ctx_setopt_key_id.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_alt_name mongocrypt_ctx_setopt_key_alt_name => _mongocrypt_ctx_setopt_key_alt_name.Value;
         internal static Delegates.mongocrypt_ctx_setopt_algorithm mongocrypt_ctx_setopt_algorithm => _mongocrypt_ctx_setopt_algorithm.Value;
+        internal static Delegates.mongocrypt_ctx_setopt_contention_factor mongocrypt_ctx_setopt_contention_factor => _mongocrypt_ctx_setopt_contention_factor.Value;
+        internal static Delegates.mongocrypt_ctx_setopt_index_type mongocrypt_ctx_setopt_index_type => _mongocrypt_ctx_setopt_index_type.Value;
+        internal static Delegates.mongocrypt_ctx_setopt_query_type mongocrypt_ctx_setopt_query_type => _mongocrypt_ctx_setopt_query_type.Value;
 
         internal static Delegates.mongocrypt_ctx_state mongocrypt_ctx_state => _mongocrypt_ctx_state.Value;
         internal static Delegates.mongocrypt_ctx_mongo_op mongocrypt_ctx_mongo_op => _mongocrypt_ctx_mongo_op.Value;
@@ -310,6 +322,9 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_id> _mongocrypt_ctx_setopt_key_id;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_alt_name> _mongocrypt_ctx_setopt_key_alt_name;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_algorithm> _mongocrypt_ctx_setopt_algorithm;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_contention_factor> _mongocrypt_ctx_setopt_contention_factor;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_index_type> _mongocrypt_ctx_setopt_index_type;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_query_type> _mongocrypt_ctx_setopt_query_type;
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_state> _mongocrypt_ctx_state;
         private static readonly Lazy<Delegates.mongocrypt_ctx_mongo_op> _mongocrypt_ctx_mongo_op;
@@ -327,11 +342,23 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_destroy> _mongocrypt_ctx_destroy;
         private static readonly Lazy<Delegates.mongocrypt_kms_ctx_get_kms_provider> _mongocrypt_kms_ctx_get_kms_provider;
 
+        // nested types
         internal enum StatusType
         {
             MONGOCRYPT_STATUS_OK = 0,
             MONGOCRYPT_STATUS_ERROR_CLIENT,
             MONGOCRYPT_STATUS_ERROR_KMS
+        }
+
+        internal enum mongocrypt_index_type_t
+        {
+            MONGOCRYPT_INDEX_TYPE_NONE = 1,
+            MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
+        }
+
+        internal enum mongocrypt_query_type_t
+        {
+            MONGOCRYPT_QUERY_TYPE_EQUALITY = 1
         }
 
         internal class Delegates
@@ -493,8 +520,13 @@ namespace MongoDB.Libmongocrypt
             public delegate bool mongocrypt_ctx_setopt_key_id(ContextSafeHandle handle, BinarySafeHandle binary);
 
             [return: MarshalAs(UnmanagedType.I1)]
-            public delegate bool mongocrypt_ctx_setopt_algorithm(ContextSafeHandle handle,
-                [MarshalAs(UnmanagedType.LPStr)] string algorithm, int length);
+            public delegate bool mongocrypt_ctx_setopt_algorithm(ContextSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string algorithm, int length);
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_setopt_contention_factor(ContextSafeHandle ctx, ref long contention_factor);
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_setopt_index_type(ContextSafeHandle ctx, mongocrypt_index_type_t index_type);
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_setopt_query_type(ContextSafeHandle ctx, mongocrypt_query_type_t query_type);
 
             public delegate CryptContext.StateCode mongocrypt_ctx_state(ContextSafeHandle handle);
 
