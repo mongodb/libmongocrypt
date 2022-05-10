@@ -51,8 +51,8 @@ namespace MongoDB.Libmongocrypt
                     status,
                     Library.mongocrypt_setopt_crypto_hooks(
                         handle,
-                        __cryptoAes256CbcDecryptCallback,
                         __cryptoAes256CbcEncryptCallback,
+                        __cryptoAes256CbcDecryptCallback,
                         __randomCallback,
                         __cryptoHmacSha512Callback,
                         __cryptoHmacSha256Callback,
