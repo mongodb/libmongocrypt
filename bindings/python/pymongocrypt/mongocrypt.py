@@ -25,6 +25,8 @@ from pymongocrypt.state_machine import MongoCryptCallback
 
 from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  aes_256_cbc_decrypt,
+                                 aes_256_ctr_decrypt,
+                                 aes_256_ctr_encrypt,
                                  hmac_sha_256,
                                  hmac_sha_512,
                                  sha_256,
@@ -200,6 +202,10 @@ class MongoCrypt(object):
 
         if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
                 self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
+            self.__raise_from_status()
+
+        if not lib.mongocrypt_setopt_aes_256_ctr(
+                self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
             self.__raise_from_status()
 
         if not lib.mongocrypt_init(self.__crypt):
