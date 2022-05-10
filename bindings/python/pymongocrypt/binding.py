@@ -1098,6 +1098,109 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
    mongocrypt_t *crypt,
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
    void *sign_ctx);
+
+/**
+ * Obtain a nul-terminated version string of the loaded csfle dynamic library,
+ * if available.
+ *
+ * If no csfle was successfully loaded, this function returns NULL.
+ *
+ * @param[in] crypt The mongocrypt_t object after a successful call to
+ * mongocrypt_init.
+ * @param[out] len An optional output parameter to which the length of the
+ * returned string is written. If provided and no csfle library was loaded, zero
+ * is written to *len.
+ *
+ * @return A nul-terminated string of the dynamically loaded csfle library.
+ *
+ * @note For a numeric value that can be compared against, use
+ * @ref mongocrypt_csfle_version.
+ */
+const char *
+mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len);
+
+/**
+ * @brief Obtain a 64-bit constant encoding the version of the loaded csfle
+ * library, if available.
+ *
+ * @param[in] crypt The mongocrypt_t object after a successul call to
+ * mongocrypt_init.
+ *
+ * @return A 64-bit encoded version number, with the version encoded as four
+ * sixteen-bit integers, or zero if no csfle library was loaded.
+ *
+ * The version is encoded as four 16-bit numbers, from high to low:
+ *
+ * - Major version
+ * - Minor version
+ * - Revision
+ * - Reserved
+ *
+ * For example, version 6.2.1 would be encoded as: 0x0006'0002'0001'0000
+ */
+uint64_t
+mongocrypt_csfle_version (const mongocrypt_t *crypt);
+
+
+/**
+ * @brief Append an additional search directory to the search path for loading
+ * the CSFLE dynamic library.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object to update
+ * @param[in] path A null-terminated sequence of bytes for the search path. On
+ * some filesystems, this may be arbitrary bytes. On other filesystems, this may
+ * be required to be a valid UTF-8 code unit sequence. If the leading element of
+ * the path is the literal string "$ORIGIN", that substring will be replaced
+ * with the directory path containing the executable libmongocrypt module. If
+ * the path string is literal "$SYSTEM", then libmongocrypt will defer to the
+ * system's library resolution mechanism to find the CSFLE library.
+ *
+ * @note If no CSFLE dynamic library is found in any of the directories
+ * specified by the search paths loaded here, @ref mongocrypt_init() will still
+ * succeed and continue to operate without CSFLE.
+ *
+ * @note The search paths are searched in the order that they are appended. This
+ * allows one to provide a precedence in how the library will be discovered. For
+ * example, appending known directories before appending "$SYSTEM" will allow
+ * one to supersede the system's installed library, but still fall-back to it if
+ * the library wasn't found otherwise. If one does not ever append "$SYSTEM",
+ * then the system's library-search mechanism will never be consulted.
+ *
+ * @note If an absolute path to the library is specified using
+ * @ref mongocrypt_setopt_set_csfle_lib_path_override, then paths appended here
+ * will have no effect.
+ */
+
+void
+mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
+                                            const char *path);
+
+/**
+ * @brief Set a single override path for loading the CSFLE dynamic library.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object to update
+ * @param[in] path A null-terminated sequence of bytes for a path to the CSFLE
+ * dynamic library. On some filesystems, this may be arbitrary bytes. On other
+ * filesystems, this may be required to be a valid UTF-8 code unit sequence. If
+ * the leading element of the path is the literal string `$ORIGIN`, that
+ * substring will be replaced with the directory path containing the executable
+ * libmongocrypt module.
+ *
+ * @note This function will do no IO nor path validation. All validation will
+ * occur during the call to @ref mongocrypt_init.
+ *
+ * @note If a CSFLE library path override is specified here, then no paths given
+ * to @ref mongocrypt_setopt_append_csfle_search_path will be consulted when
+ * opening the CSFLE library.
+ *
+ * @note If a path is provided via this API and @ref mongocrypt_init fails to
+ * initialize a valid CSFLE library instance for the path specified, then
+ * the initialization of mongocrypt_t will fail with an error.
+ */
+
+void
+mongocrypt_setopt_set_csfle_lib_path_override (mongocrypt_t *crypt,
+                                               const char *path);
 """)
 
 

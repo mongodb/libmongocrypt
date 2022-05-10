@@ -30,7 +30,7 @@ from bson.son import SON
 sys.path[0:0] = [""]
 
 from pymongocrypt.auto_encrypter import AutoEncrypter
-from pymongocrypt.binding import lib
+from pymongocrypt.binding import lib, ffi
 from pymongocrypt.compat import unicode_type, PY3
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter
@@ -333,6 +333,13 @@ class TestMongoCryptCallback(unittest.TestCase):
         return MongoCryptOptions({
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
             'local': {'key': b'\x00'*96}})
+
+    def test_csfle(self):
+        encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
+            csfle_path="/Users/julius/csfle/lib/mongo_csfle_v1.dylib")
+        self.addCleanup(encrypter.close)
+        ref = lib.mongocrypt_csfle_version(encrypter.mongocrypt.crypt)
+        self.assertGreater(int(ffi.cast("intptr_t", ref)), 0)
 
     def test_encrypt(self):
         encrypter = AutoEncrypter(MockCallback(
