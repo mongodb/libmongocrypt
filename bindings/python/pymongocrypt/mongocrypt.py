@@ -35,7 +35,8 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
 
 
 class MongoCryptOptions(object):
-    def __init__(self, kms_providers, schema_map=None):
+    def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
+                 bypass_query_analysis=False):
         """Options for :class:`MongoCrypt`.
 
         :Parameters:
@@ -65,6 +66,11 @@ class MongoCryptOptions(object):
             automatic encryption for client side encryption. Other validation
             rules in the JSON schema will not be enforced by the driver and
             will result in an error.
+          - `encrypted_fields_map`: Optional map encoded to BSON `bytes`.
+          - `bypass_query_analysis`: If ``True``, disable automatic analysis of
+            outgoing commands. Set `bypass_query_analysis` to use explicit
+            encryption on indexed fields without the MongoDB Enterprise Advanced
+            licensed csfle shared library.
 
         .. versionadded:: 1.1
            Support for "azure" and "gcp" kms_providers.
@@ -135,8 +141,13 @@ class MongoCryptOptions(object):
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
 
+        if encrypted_fields_map is not None and not isinstance(encrypted_fields_map, bytes):
+            raise TypeError("encrypted_fields_map must be bytes or None")
+
         self.kms_providers = kms_providers
         self.schema_map = schema_map
+        self.encrypted_fields_map = encrypted_fields_map
+        self.bypass_query_analysis = bypass_query_analysis
 
 
 class MongoCrypt(object):
@@ -194,6 +205,17 @@ class MongoCrypt(object):
                 if not lib.mongocrypt_setopt_schema_map(
                         self.__crypt, binary_schema_map.bin):
                     self.__raise_from_status()
+
+        encrypted_fields_map = self.__opts.encrypted_fields_map
+        if encrypted_fields_map is not None:
+            with MongoCryptBinaryIn(encrypted_fields_map) as binary_encrypted_fields_map:
+                if not lib.mongocrypt_setopt_encrypted_field_config_map(
+                        self.__crypt, binary_encrypted_fields_map.bin):
+                    self.__raise_from_status()
+
+        if self.__opts.bypass_query_analysis:
+            if not lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt):
+                self.__raise_from_status()
 
         if not lib.mongocrypt_setopt_crypto_hooks(
                 self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
