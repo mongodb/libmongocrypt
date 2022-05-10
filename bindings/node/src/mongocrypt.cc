@@ -81,6 +81,21 @@ std::string errorStringFromStatus(mongocrypt_ctx_t* context) {
     return errorMessage;
 }
 
+template<typename E>
+E strToEnumValue(
+    Env env,
+    const std::string& str,
+    const char* option_name,
+    const std::initializer_list<std::pair<const char*, E>>& values) {
+    for (const auto& candidate : values) {
+        if (candidate.first == str) {
+            return candidate.second;
+        }
+    }
+    throw Error::New(env,
+        std::string("invalid enum value: '") + str + "' for " + option_name);
+}
+
 }  // anonymous namespace
 
 Function MongoCrypt::Init(Napi::Env env) {
@@ -546,6 +561,50 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
             if (!mongocrypt_ctx_setopt_algorithm(
                     context.get(), const_cast<char*>(algorithm.c_str()), algorithm.size())) {
 
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+            }
+        }
+
+        if (options.Has("indexType")) {
+            std::string index_type_str = options.Get("indexType").ToString();
+            mongocrypt_index_type_t index_type = strToEnumValue<mongocrypt_index_type_t>(
+                Env(), index_type_str, "indexType",
+                {{"None", MONGOCRYPT_INDEX_TYPE_NONE},
+                 {"Equality", MONGOCRYPT_INDEX_TYPE_EQUALITY}});
+            if (!mongocrypt_ctx_setopt_index_type(context.get(), index_type)) {
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+            }
+        }
+
+        if (options.Has("contentionFactor")) {
+            Napi::Value contention_factor_value = options["contentionFactor"];
+            int64_t contention_factor = contention_factor_value.IsBigInt() ?
+                contention_factor_value.As<BigInt>().Int64Value(nullptr) :
+                contention_factor_value.ToNumber().Int64Value();
+            if (!mongocrypt_ctx_setopt_contention_factor(context.get(), contention_factor)) {
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+            }
+        }
+
+        if (options.Has("queryType")) {
+            std::string query_type_str = options.Get("queryType").ToString();
+            mongocrypt_query_type_t query_type = strToEnumValue<mongocrypt_query_type_t>(
+                Env(), query_type_str, "queryType",
+                {{"Equality", MONGOCRYPT_QUERY_TYPE_EQUALITY}});
+            if (!mongocrypt_ctx_setopt_query_type(context.get(), query_type)) {
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+            }
+        }
+
+        if (options.Has("indexKeyId")) {
+            Napi::Value indexKeyId = options["indexKeyId"];
+
+            if (!indexKeyId.IsBuffer()) {
+                throw TypeError::New(Env(), "`indexKeyId` must be a Buffer");
+            }
+
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(indexKeyId.As<Uint8Array>()));
+            if (!mongocrypt_ctx_setopt_index_key_id(context.get(), binary.get())) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }
