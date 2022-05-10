@@ -140,7 +140,10 @@ namespace MongoDB.Libmongocrypt
                 aes.Mode = cipherMode;
 
                 aes.Key = keyBytes;
-                aes.IV = ivBytes;
+                if (ivBytes.Length > 0)
+                {
+                    aes.IV = ivBytes;
+                }
 
                 aes.Padding = PaddingMode.None; // mongocrypt level is responsible for padding
 

@@ -68,7 +68,10 @@ namespace MongoDB.Libmongocrypt
         public byte[] ToArray()
         {
             byte[] arr = new byte[Length];
-            Marshal.Copy(Data, arr, 0, arr.Length);
+            if (Length > 0)
+            {
+                Marshal.Copy(Data, arr, 0, arr.Length);
+            }
             return arr;
         }
 
