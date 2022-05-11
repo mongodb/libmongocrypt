@@ -47,12 +47,10 @@ namespace MongoDB.Libmongocrypt
             IEnumerable<KmsCredentials> credentials,
             byte[] encryptedFieldsMap,
             byte[] schema,
-            bool bypassQueryAnalysis)
+            bool bypassQueryAnalysis) : this(credentials, schema)
         {
             BypassQueryAnalysis = bypassQueryAnalysis;
             EncryptedFieldsMap = encryptedFieldsMap;
-            KmsCredentials = new ReadOnlyCollection<KmsCredentials>((credentials ?? throw new ArgumentNullException(nameof(credentials))).ToList());
-            Schema = schema;
         }
 
         // TODO: - add configurable logging support
