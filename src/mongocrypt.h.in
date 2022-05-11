@@ -1169,6 +1169,7 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
  */
+MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_provide_kms_providers (
    mongocrypt_ctx_t *ctx,
