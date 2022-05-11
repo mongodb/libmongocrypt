@@ -202,8 +202,16 @@ module.exports = function (modules) {
         });
       }
 
+      let keyMaterial = undefined;
+      if (options.keyMaterial) {
+        keyMaterial = bson.serialize({ keyMaterial: options.keyMaterial });
+      }
+
       const dataKeyBson = bson.serialize(dataKey);
-      const context = this._mongoCrypt.makeDataKeyContext(dataKeyBson, { keyAltNames });
+      const context = this._mongoCrypt.makeDataKeyContext(dataKeyBson, {
+        keyAltNames,
+        keyMaterial
+      });
       const stateMachine = new StateMachine({
         bson,
         proxyOptions: this._proxyOptions,
@@ -230,6 +238,63 @@ module.exports = function (modules) {
               }
 
               cb(null, result.insertedId);
+            });
+        });
+      });
+    }
+
+    rewrapManyDataKey(filter, options, callback) {
+      if (typeof options === 'function') {
+        callback = options;
+        options = {};
+      }
+
+      const bson = this._bson;
+
+      let keyEncryptionKeyBson = undefined;
+      if (options) {
+        const keyEncryptionKey = Object.assign({ provider: options.provider }, options.masterKey);
+        keyEncryptionKeyBson = bson.serialize(keyEncryptionKey);
+      }
+      const filterBson = bson.serialize(filter);
+      const context = this._mongoCrypt.makeRewrapManyDataKeyContext(
+        filterBson,
+        keyEncryptionKeyBson
+      );
+      const stateMachine = new StateMachine({
+        bson,
+        proxyOptions: this._proxyOptions,
+        tlsOptions: this._tlsOptions
+      });
+
+      return promiseOrCallback(callback, cb => {
+        stateMachine.execute(this, context, (err, dataKey) => {
+          if (err) {
+            cb(err, null);
+            return;
+          }
+
+          const dbName = databaseNamespace(this._keyVaultNamespace);
+          const collectionName = collectionNamespace(this._keyVaultNamespace);
+          const replacements = dataKey.v.map(key => ({
+            replaceOne: {
+              filter: { _id: key._id },
+              replacement: key
+            }
+          }));
+
+          this._keyVaultClient
+            .db(dbName)
+            .collection(collectionName)
+            .bulkWrite(replacements, { writeConcern: { w: 'majority' } }, (err, result) => {
+              if (err) {
+                cb(err, null);
+                return;
+              }
+
+              cb(null, {
+                bulkWriteResult: result
+              });
             });
         });
       });

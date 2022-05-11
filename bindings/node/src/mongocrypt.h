@@ -45,6 +45,7 @@ class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
     Napi::Value MakeDecryptionContext(const Napi::CallbackInfo& info);
     Napi::Value MakeExplicitDecryptionContext(const Napi::CallbackInfo& info);
     Napi::Value MakeDataKeyContext(const Napi::CallbackInfo& info);
+    Napi::Value MakeRewrapManyDataKeyContext(const Napi::CallbackInfo& info);
 
     Napi::Value Status(const Napi::CallbackInfo& info);
     Napi::Value CSFLEVersionInfo(const Napi::CallbackInfo& info);

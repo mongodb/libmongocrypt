@@ -1,5 +1,5 @@
 import type { Binary } from 'bson';
-import type { MongoClient } from 'mongodb';
+import type { MongoClient, BulkWriteResult } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
 
@@ -296,6 +296,25 @@ export interface ClientEncryptionCreateDataKeyProviderOptions {
    * If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
    */
   keyAltNames?: string[] | undefined;
+
+  /** @experimental */
+  keyMaterial?: Buffer | Binary;
+}
+
+/** @experimental */
+export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
+  provider?: ClientEncryptionDataKeyProvider;
+  masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
+}
+
+/** @experimental */
+export interface ClientEncryptionRewrapManyDataKeyResult {
+  bulkWriteResult: BulkWriteResult;
+}
+
+/** @experimental */
+export interface ClientEncryptionRewrapManyDataKeyCallback {
+  (error?: Error, result?: ClientEncryptionRewrapManyDataKeyResult): void;
 }
 
 /**
@@ -376,6 +395,30 @@ export class ClientEncryption {
     provider: ClientEncryptionDataKeyProvider,
     options: ClientEncryptionCreateDataKeyProviderOptions,
     callback: ClientEncryptionCreateDataKeyCallback
+  ): void;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document
+  ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document,
+    options: ClientEncryptionRewrapManyDataKeyProviderOptions
+  ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document,
+    callback: ClientEncryptionRewrapManyDataKeyCallback
+  ): void;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document,
+    options: ClientEncryptionRewrapManyDataKeyProviderOptions,
+    callback: ClientEncryptionRewrapManyDataKeyCallback
   ): void;
 
   /**

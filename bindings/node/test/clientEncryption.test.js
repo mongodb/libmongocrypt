@@ -124,6 +124,52 @@ describe('ClientEncryption', function () {
             });
         });
       });
+
+      it(`should create a data key with the "${providerTest.name}" KMS provider (fixed key material)`, function (done) {
+        const providerName = providerTest.name;
+        const encryption = new ClientEncryption(client, {
+          keyVaultNamespace: 'client.encryption',
+          kmsProviders: providerTest.kmsProviders
+        });
+
+        const dataKeyOptions = {
+          ...providerTest.options,
+          keyMaterial: new BSON.Binary(Buffer.alloc(96))
+        };
+        encryption.createDataKey(providerName, dataKeyOptions, (err, dataKey) => {
+          expect(err).to.not.exist;
+          expect(dataKey._bsontype).to.equal('Binary');
+
+          client
+            .db('client')
+            .collection('encryption')
+            .findOne({ _id: dataKey }, (err, doc) => {
+              expect(err).to.not.exist;
+              expect(doc).to.have.property('masterKey');
+              expect(doc.masterKey).to.have.property('provider');
+              expect(doc.masterKey.provider).to.eql(providerName);
+              done();
+            });
+        });
+      });
+    });
+
+    it('should fail to create a data key if keyMaterial is wrong', function (done) {
+      const encryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: { local: { key: 'A'.repeat(128) } }
+      });
+
+      const dataKeyOptions = {
+        keyMaterial: new BSON.Binary(Buffer.alloc(97))
+      };
+      try {
+        encryption.createDataKey('local', dataKeyOptions);
+        expect.fail('missed exception');
+      } catch (err) {
+        expect(err.message).to.equal('keyMaterial should have length 96, but has length 97');
+        done();
+      }
     });
 
     it('should explicitly encrypt and decrypt with the "local" KMS provider', function (done) {
@@ -181,13 +227,18 @@ describe('ClientEncryption', function () {
         });
     });
 
-    it('should explicitly encrypt and decrypt with the "local" KMS provider (FLE2)', function () {
-      const encryption = new ClientEncryption(client, {
-        keyVaultNamespace: 'client.encryption',
-        kmsProviders: { local: { key: Buffer.alloc(96) } }
-      });
+    it('should explicitly encrypt and decrypt with a re-wrapped local key', function () {
+      // Create new ClientEncryption instances to make sure
+      // that we are actually using the rewrapped keys and not
+      // something that has been cached.
+      const newClientEncryption = () =>
+        new ClientEncryption(client, {
+          keyVaultNamespace: 'client.encryption',
+          kmsProviders: { local: { key: 'A'.repeat(128) } }
+        });
+      let encrypted;
 
-      return encryption
+      return newClientEncryption()
         .createDataKey('local')
         .then(dataKey => {
           const encryptOptions = {
@@ -195,13 +246,19 @@ describe('ClientEncryption', function () {
             algorithm: 'Indexed'
           };
 
-          return encryption.encrypt('hello', encryptOptions);
+          return newClientEncryption().encrypt('hello', encryptOptions);
         })
-        .then(encrypted => {
+        .then(_encrypted => {
+          encrypted = _encrypted;
           expect(encrypted._bsontype).to.equal('Binary');
           expect(encrypted.sub_type).to.equal(6);
-
-          return encryption.decrypt(encrypted);
+        })
+        .then(() => {
+          return newClientEncryption().rewrapManyDataKey({});
+        })
+        .then(rewrapManyDataKeyResult => {
+          expect(rewrapManyDataKeyResult.bulkWriteResult.result.nModified).to.equal(1);
+          return newClientEncryption().decrypt(encrypted);
         })
         .then(decrypted => {
           expect(decrypted).to.equal('hello');
