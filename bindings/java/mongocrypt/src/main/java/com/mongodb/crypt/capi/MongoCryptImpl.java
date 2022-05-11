@@ -29,7 +29,6 @@ import org.bson.BsonString;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
@@ -53,8 +52,11 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_new;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_aes_256_ctr;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_bypass_query_analysis;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hooks;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_encrypted_field_config_map;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_providers;
@@ -81,6 +83,10 @@ class MongoCryptImpl implements MongoCrypt {
     private final CipherCallback aesCBC256EncryptCallback;
     @SuppressWarnings("FieldCanBeLocal")
     private final CipherCallback aesCBC256DecryptCallback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final CipherCallback aesCTR256EncryptCallback;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final CipherCallback aesCTR256DecryptCallback;
     @SuppressWarnings("FieldCanBeLocal")
     private final MacCallback hmacSha512Callback;
     @SuppressWarnings("FieldCanBeLocal")
@@ -112,10 +118,10 @@ class MongoCryptImpl implements MongoCrypt {
 
         // We specify NoPadding here because the underlying C library is responsible for padding prior
         // to executing the callback
-        aesCBC256EncryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding",
-                Cipher.ENCRYPT_MODE);
-        aesCBC256DecryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding",
-                Cipher.DECRYPT_MODE);
+        aesCBC256EncryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding", Cipher.ENCRYPT_MODE);
+        aesCBC256DecryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding", Cipher.DECRYPT_MODE);
+        aesCTR256EncryptCallback = new CipherCallback("AES", "AES/CTR/NoPadding", Cipher.ENCRYPT_MODE);
+        aesCTR256DecryptCallback = new CipherCallback("AES", "AES/CTR/NoPadding", Cipher.DECRYPT_MODE);
 
         hmacSha512Callback = new MacCallback("HmacSHA512");
         hmacSha256Callback = new MacCallback("HmacSHA256");
@@ -130,6 +136,11 @@ class MongoCryptImpl implements MongoCrypt {
 
         signingRSAESPKCSCallback = new SigningRSAESPKCSCallback();
         success = mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(wrapped, signingRSAESPKCSCallback, null);
+        if (!success) {
+            throwExceptionFromStatus();
+        }
+
+        success = mongocrypt_setopt_aes_256_ctr(wrapped, aesCTR256EncryptCallback, aesCTR256DecryptCallback, null);
         if (!success) {
             throwExceptionFromStatus();
         }
@@ -167,12 +178,26 @@ class MongoCryptImpl implements MongoCrypt {
 
         if (options.getLocalSchemaMap() != null) {
             BsonDocument localSchemaMapDocument = new BsonDocument();
-            for (Map.Entry<String, BsonDocument> cur: options.getLocalSchemaMap().entrySet()) {
-                localSchemaMapDocument.put(cur.getKey(), cur.getValue());
-            }
+            localSchemaMapDocument.putAll(options.getLocalSchemaMap());
 
             try (BinaryHolder localSchemaMapBinaryHolder = toBinary(localSchemaMapDocument)) {
                 success = mongocrypt_setopt_schema_map(wrapped, localSchemaMapBinaryHolder.getBinary());
+                if (!success) {
+                    throwExceptionFromStatus();
+                }
+            }
+        }
+
+        if (options.isBypassQueryAnalysis()) {
+            mongocrypt_setopt_bypass_query_analysis(wrapped);
+        }
+
+        if (options.getEncryptedFieldsMap() != null) {
+            BsonDocument localEncryptedFieldsMap = new BsonDocument();
+            localEncryptedFieldsMap.putAll(options.getEncryptedFieldsMap());
+
+            try (BinaryHolder localEncryptedFieldsMapHolder = toBinary(localEncryptedFieldsMap)) {
+                success = mongocrypt_setopt_encrypted_field_config_map(wrapped, localEncryptedFieldsMapHolder.getBinary());
                 if (!success) {
                     throwExceptionFromStatus();
                 }
@@ -244,7 +269,9 @@ class MongoCryptImpl implements MongoCrypt {
         } else {
             BsonDocument masterKey = options.getMasterKey().clone();
             masterKey.put("provider", new BsonString(kmsProvider));
-            success = mongocrypt_ctx_setopt_key_encryption_key(context, toBinary(masterKey).getBinary());
+            try (BinaryHolder masterKeyHolder = toBinary(masterKey)) {
+                success = mongocrypt_ctx_setopt_key_encryption_key(context, masterKeyHolder.getBinary());
+            }
         }
 
         if (!success) {

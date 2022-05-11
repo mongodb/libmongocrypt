@@ -31,9 +31,10 @@ public class MongoCryptOptions {
     private final MongoAwsKmsProviderOptions awsKmsProviderOptions;
     private final MongoLocalKmsProviderOptions localKmsProviderOptions;
     private final BsonDocument kmsProviderOptions;
-
     private final Map<String, BsonDocument> localSchemaMap;
     private final boolean needsKmsCredentialsStateEnabled;
+    private final Map<String, BsonDocument> encryptedFieldsMap;
+    private final boolean bypassQueryAnalysis;
 
     /**
      * Construct a builder for the options
@@ -92,6 +93,26 @@ public class MongoCryptOptions {
     }
 
     /**
+     * Gets the encrypted fields map.
+     *
+     * @since 1.5
+     * @return the encrypted fields map
+     */
+    public Map<String, BsonDocument> getEncryptedFieldsMap() {
+        return encryptedFieldsMap;
+    }
+
+    /**
+     * Gets whether automatic analysis of outgoing commands should be disabled.
+     *
+     * @since  1.5
+     * @return true if bypassing query analysis
+     */
+    public boolean isBypassQueryAnalysis() {
+        return bypassQueryAnalysis;
+    }
+
+    /**
      * The builder for the options
      */
     public static class Builder {
@@ -100,6 +121,8 @@ public class MongoCryptOptions {
         private BsonDocument kmsProviderOptions = null;
         private Map<String, BsonDocument> localSchemaMap = null;
         private boolean needsKmsCredentialsStateEnabled;
+        private Map<String, BsonDocument> encryptedFieldsMap  = null;
+        private boolean bypassQueryAnalysis;
 
         private Builder() {
         }
@@ -162,6 +185,33 @@ public class MongoCryptOptions {
         }
 
         /**
+         * Sets the encrypted fields map.
+         *
+         * @param encryptedFieldsMap the encrypted fields map
+         * @since 1.5
+         * @return this
+         */
+        public Builder encryptedFieldsMap(final Map<String, BsonDocument> encryptedFieldsMap) {
+            this.encryptedFieldsMap = encryptedFieldsMap;
+            return this;
+        }
+
+        /**
+         * Sets whether automatic analysis of outgoing commands should be disabled.
+         *
+         * <p>Set bypassQueryAnalysis to true to use explicit encryption on indexed fields
+         * without the MongoDB Enterprise Advanced licensed csfle shared library.</p>
+         *
+         * @param bypassQueryAnalysis whether the analysis of outgoing commands should be disabled.
+         * @since  1.5
+         * @return  this
+         */
+        public Builder bypassQueryAnalysis(final boolean bypassQueryAnalysis) {
+            this.bypassQueryAnalysis = bypassQueryAnalysis;
+            return this;
+        }
+
+        /**
          * Build the options.
          *
          * @return the options
@@ -180,5 +230,7 @@ public class MongoCryptOptions {
         this.kmsProviderOptions = builder.kmsProviderOptions;
         this.localSchemaMap = builder.localSchemaMap;
         this.needsKmsCredentialsStateEnabled = builder.needsKmsCredentialsStateEnabled;
+        this.encryptedFieldsMap = builder.encryptedFieldsMap;
+        this.bypassQueryAnalysis = builder.bypassQueryAnalysis;
     }
 }
