@@ -336,7 +336,9 @@ class TestMongoCryptCallback(unittest.TestCase):
 
     def test_csfle(self):
         encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
-            csfle_path="/Users/julius/csfle/lib/mongo_csfle_v1.dylib")
+            csfle_path=os.path.expanduser("~/csfle/lib/mongo_csfle_v1.dylib",),
+            csfle_required=True,
+            )
         self.addCleanup(encrypter.close)
         ref = lib.mongocrypt_csfle_version(encrypter.mongocrypt.crypt)
         self.assertGreater(int(ffi.cast("intptr_t", ref)), 0)

@@ -14,7 +14,7 @@
 
 from abc import abstractmethod
 
-from pymongocrypt.binding import lib
+from pymongocrypt.binding import lib, ffi
 from pymongocrypt.compat import ABC
 from pymongocrypt.errors import MongoCryptError
 

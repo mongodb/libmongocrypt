@@ -221,10 +221,10 @@ class MongoCrypt(object):
 
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
-        ref = lib.mongocrypt_csfle_version(self.__crypt)
-        print(int(ffi.cast("intptr_t", ref)))
-        if csfle_required is True and lib.mongocrypt_csfle_version_string(self.__crypt) \
-                is not ffi.NULL:
+
+        if csfle_required is True and lib.mongocrypt_csfle_version_string(self.__crypt,
+                                                                          ffi.new("uint32_t*")) \
+                == ffi.NULL:
             raise Exception("Could not load CSFLE library!")
 
     def __raise_from_status(self):
