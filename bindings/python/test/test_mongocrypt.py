@@ -146,6 +146,7 @@ class TestMongoCryptOptions(unittest.TestCase):
 
 
 class TestMongoCrypt(unittest.TestCase):
+    maxDiff = None
 
     def test_mongocrypt(self):
         kms_providers = {
@@ -268,6 +269,8 @@ class TestMongoCrypt(unittest.TestCase):
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS)
 
             mongocryptd_cmd = ctx.mongo_operation()
+            self.assertEqual(bson.decode(mongocryptd_cmd, OPTS),
+                             json_data('mongocryptd-command.json'))
             self.assertEqual(mongocryptd_cmd,
                              bson_data('mongocryptd-command.json'))
 
@@ -493,7 +496,11 @@ def read(filename, **kwargs):
 OPTS = CodecOptions(uuid_representation=UuidRepresentation.UNSPECIFIED)
 
 # Use SON to preserve the order of fields while parsing json.
-JSON_OPTS = JSONOptions(document_class=SON,
+if sys.version_info[:2] < (3, 6):
+    document_class = SON
+else:
+    document_class = dict
+JSON_OPTS = JSONOptions(document_class=document_class,
                         uuid_representation=UuidRepresentation.UNSPECIFIED)
 
 
