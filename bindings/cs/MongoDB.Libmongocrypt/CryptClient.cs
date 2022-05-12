@@ -37,6 +37,13 @@ namespace MongoDB.Libmongocrypt
         }
 
         /// <summary>
+        /// Gets the CSFLE version.
+        /// </summary>
+        /// <returns>CSFLE version</returns>
+        public string GetCsFleVersion() =>
+            Library.mongocrypt_csfle_version_string(_handle, IntPtr.Zero);
+
+        /// <summary>
         /// Starts the create data key context.
         /// </summary>
         /// <param name="keyId">The key identifier.</param>
@@ -216,7 +223,6 @@ namespace MongoDB.Libmongocrypt
 
             return new CryptContext(handle);
         }
-
 
         void IStatus.Check(Status status)
         {

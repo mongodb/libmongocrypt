@@ -94,6 +94,16 @@ namespace MongoDB.Libmongocrypt
                 Library.mongocrypt_setopt_bypass_query_analysis(handle);
             }
 
+            if (options.CsfleLibPath != null)
+            {
+                Library.mongocrypt_setopt_set_csfle_lib_path_override(handle, options.CsfleLibPath);
+            }
+
+            if (options.CsfleSearchPath != null)
+            {
+                Library.mongocrypt_setopt_append_csfle_search_path(handle, options.CsfleSearchPath);
+            }
+
             Library.mongocrypt_init(handle);
 
             return new CryptClient(handle, status);
