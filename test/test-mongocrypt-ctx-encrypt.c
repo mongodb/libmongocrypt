@@ -2379,8 +2379,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json"),
-            got);
+            TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json"), got);
          mongocrypt_binary_destroy (got);
       }
 
@@ -2395,10 +2394,10 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
  * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
  */
 #define RNG_DATA                                                      \
-   "\x00\x00\x00\x00\x00\x00\x00\x00" \
+   "\x00\x00\x00\x00\x00\x00\x00\x00"                                 \
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
-   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21" \
-   
+   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
+
       _test_rng_data_source source = {
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
@@ -2443,8 +2442,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json"),
-            got);
+            TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json"), got);
          mongocrypt_binary_destroy (got);
       }
 
@@ -2460,14 +2458,14 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
  */
 #ifdef MONGOCRYPT_LITTLE_ENDIAN
 #define RNG_DATA                                                      \
-   "\x01\x00\x00\x00\x00\x00\x00\x00" \
+   "\x01\x00\x00\x00\x00\x00\x00\x00"                                 \
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
-   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21" 
+   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
 #else
 #define RNG_DATA                                                      \
-   "\x00\x00\x00\x00\x00\x00\x00\x01" \
+   "\x00\x00\x00\x00\x00\x00\x00\x01"                                 \
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
-   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21" 
+   "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
 #endif /* MONGOCRYPT_LITTLE_ENDIAN */
 
       _test_rng_data_source source = {
@@ -2514,7 +2512,8 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/insert-indexed-contentionFactor1.json"),
+            TEST_FILE ("./test/data/fle2-explicit/"
+                       "insert-indexed-contentionFactor1.json"),
             got);
          mongocrypt_binary_destroy (got);
       }
@@ -2621,8 +2620,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
          ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/find-indexed.json"),
-            got);
+            TEST_FILE ("./test/data/fle2-explicit/find-indexed.json"), got);
          mongocrypt_binary_destroy (got);
       }
 
@@ -2642,8 +2640,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (
          mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
          ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -3256,8 +3253,9 @@ _test_encrypt_fle2_omits_encryptionInformation (_mongocrypt_tester_t *tester)
                           MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
       {
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_BSON ("{'name': 'coll', 'options': "
-                                       "{'encryptedFields': {'fields': []}}}")),
+                       ctx,
+                       TEST_BSON ("{'name': 'coll', 'options': "
+                                  "{'encryptedFields': {'fields': []}}}")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }
@@ -3309,8 +3307,9 @@ _test_encrypt_fle2_omits_encryptionInformation (_mongocrypt_tester_t *tester)
                           MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
       {
          ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx, TEST_BSON ("{'name': 'coll', 'options': "
-                                       "{'encryptedFields': {'fields': []}}}")),
+                       ctx,
+                       TEST_BSON ("{'name': 'coll', 'options': "
+                                  "{'encryptedFields': {'fields': []}}}")),
                     ctx);
          ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
       }

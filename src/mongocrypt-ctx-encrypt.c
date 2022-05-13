@@ -323,7 +323,9 @@ command_needs_deleteTokens (const char *command_name)
 /* context_uses_fle2 returns true if the context uses FLE 2 behavior.
  * If a collection has an encryptedFields document, it uses FLE 2.
  */
-static bool context_uses_fle2 (mongocrypt_ctx_t *ctx) {
+static bool
+context_uses_fle2 (mongocrypt_ctx_t *ctx)
+{
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    return !_mongocrypt_buffer_empty (&ectx->encrypted_field_config);
@@ -1042,14 +1044,14 @@ must_omit_encryptionInformation (const char *command_name,
       }
    }
    if (!found) {
-      return (moe_result) { .ok = true };
+      return (moe_result){.ok = true};
    }
 
    bool has_payload_requiring_encryptionInformation = false;
    bson_iter_t iter;
    if (!bson_iter_init (&iter, command)) {
       CLIENT_ERR ("unable to iterate command");
-      return (moe_result) { .ok = false };
+      return (moe_result){.ok = false};
    }
    if (!_mongocrypt_traverse_binary_in_bson (
           _check_for_payload_requiring_encryptionInformation,
@@ -1057,13 +1059,13 @@ must_omit_encryptionInformation (const char *command_name,
           TRAVERSE_MATCH_SUBTYPE6,
           &iter,
           status)) {
-      return (moe_result) { .ok = false };
+      return (moe_result){.ok = false};
    }
 
    if (!has_payload_requiring_encryptionInformation) {
-      return (moe_result) { .ok = true, .must_omit = true };
+      return (moe_result){.ok = true, .must_omit = true};
    }
-   return (moe_result) { .ok = true, .must_omit = false };
+   return (moe_result){.ok = true, .must_omit = false};
 }
 
 /* _fle2_append_compactionTokens appends compactionTokens if command_name is
@@ -1232,7 +1234,8 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
-   moe_result result = must_omit_encryptionInformation (command_name, &converted, ctx->status);
+   moe_result result =
+      must_omit_encryptionInformation (command_name, &converted, ctx->status);
    if (!result.ok) {
       return false;
    }
