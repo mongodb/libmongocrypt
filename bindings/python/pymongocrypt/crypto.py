@@ -44,6 +44,24 @@ def _callback_error_handler(exception, exc_value, tb):
     return False
 
 
+def _aes_256_encrypt(key, mode, input, output, bytes_written):
+    cipher = Cipher(algorithms.AES(_to_bytes(key)), mode,
+                    backend=default_backend())
+    encryptor = cipher.encryptor()
+    data = encryptor.update(_to_bytes(input)) + encryptor.finalize()
+    _write_bytes(output, data)
+    bytes_written[0] = len(data)
+
+
+def _aes_256_decrypt(key, mode, input, output, bytes_written):
+    cipher = Cipher(algorithms.AES(_to_bytes(key)), mode,
+                    backend=default_backend())
+    decryptor = cipher.decryptor()
+    data = decryptor.update(_to_bytes(input)) + decryptor.finalize()
+    _write_bytes(output, data)
+    bytes_written[0] = len(data)
+
+
 @ffi.callback(
     "bool(void *, mongocrypt_binary_t *, mongocrypt_binary_t *,"
     "     mongocrypt_binary_t *, mongocrypt_binary_t *, uint32_t *,"
@@ -51,12 +69,7 @@ def _callback_error_handler(exception, exc_value, tb):
     onerror=_callback_error_handler)
 def aes_256_cbc_encrypt(ctx, key, iv, input, output, bytes_written, status):
     # Note that libmongocrypt pads the input before calling this method.
-    cipher = Cipher(algorithms.AES(_to_bytes(key)), modes.CBC(_to_bytes(iv)),
-                    backend=default_backend())
-    encryptor = cipher.encryptor()
-    data = encryptor.update(_to_bytes(input)) + encryptor.finalize()
-    _write_bytes(output, data)
-    bytes_written[0] = len(data)
+    _aes_256_encrypt(key, modes.CBC(_to_bytes(iv)), input, output, bytes_written)
     return True
 
 
@@ -67,12 +80,27 @@ def aes_256_cbc_encrypt(ctx, key, iv, input, output, bytes_written, status):
     onerror=_callback_error_handler)
 def aes_256_cbc_decrypt(ctx, key, iv, input, output, bytes_written, status):
     # Note that libmongocrypt pads the input before calling this method.
-    cipher = Cipher(algorithms.AES(_to_bytes(key)), modes.CBC(_to_bytes(iv)),
-                    backend=default_backend())
-    decryptor = cipher.decryptor()
-    data = decryptor.update(_to_bytes(input)) + decryptor.finalize()
-    _write_bytes(output, data)
-    bytes_written[0] = len(data)
+    _aes_256_decrypt(key, modes.CBC(_to_bytes(iv)), input, output, bytes_written)
+    return True
+
+
+@ffi.callback(
+    "bool(void *, mongocrypt_binary_t *, mongocrypt_binary_t *,"
+    "     mongocrypt_binary_t *, mongocrypt_binary_t *, uint32_t *,"
+    "     mongocrypt_status_t *)",
+    onerror=_callback_error_handler)
+def aes_256_ctr_encrypt(ctx, key, iv, input, output, bytes_written, status):
+    _aes_256_encrypt(key, modes.CTR(_to_bytes(iv)), input, output, bytes_written)
+    return True
+
+
+@ffi.callback(
+    "bool(void *, mongocrypt_binary_t *, mongocrypt_binary_t *,"
+    "     mongocrypt_binary_t *, mongocrypt_binary_t *, uint32_t *,"
+    "     mongocrypt_status_t *)",
+    onerror=_callback_error_handler)
+def aes_256_ctr_decrypt(ctx, key, iv, input, output, bytes_written, status):
+    _aes_256_decrypt(key, modes.CTR(_to_bytes(iv)), input, output, bytes_written)
     return True
 
 

@@ -249,7 +249,7 @@ module.exports = function (modules) {
      * @param {object} options
      * @param {ClientEncryption~dataKeyId} [options.keyId] The id of the Binary dataKey to use for encryption
      * @param {string} [options.keyAltName] A unique string name corresponding to an already existing dataKey.
-     * @param {} options.algorithm The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'` or `AEAD_AES_256_CBC_HMAC_SHA_512-Random'`
+     * @param {} [options.algorithm] The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'`
      * @param {ClientEncryption~encryptCallback} [callback] Optional callback to invoke when value is encrypted
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.
      *
@@ -285,6 +285,9 @@ module.exports = function (modules) {
       if (options.keyId) {
         contextOptions.keyId = options.keyId.buffer;
       }
+      if (options.indexKeyId) {
+        contextOptions.indexKeyId = options.indexKeyId.buffer;
+      }
       if (options.keyAltName) {
         const keyAltName = options.keyAltName;
         if (options.keyId) {
@@ -298,6 +301,14 @@ module.exports = function (modules) {
         }
 
         contextOptions.keyAltName = bson.serialize({ keyAltName });
+      }
+      if (options.algorithm === 'Indexed') {
+        delete contextOptions.algorithm;
+        contextOptions.indexType = 'Equality';
+      }
+      if (options.algorithm === 'Unindexed') {
+        delete contextOptions.algorithm;
+        contextOptions.indexType = 'None';
       }
 
       const stateMachine = new StateMachine({

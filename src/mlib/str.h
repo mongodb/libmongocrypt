@@ -145,7 +145,7 @@ static inline mstr_mut
 mstr_new (size_t len)
 {
 #ifndef __clang_analyzer__
-   return (mstr_mut){{{.data = calloc (1, len + 1), .len = len}}};
+   return (mstr_mut){{{.data = (char *) calloc (1, len + 1), .len = len}}};
 #else
    // Clang-analyzer is smart enough to see the calloc(), but not smart enough
    // to link it to the free() in mstr_free()
@@ -249,7 +249,7 @@ mstrm_resize (mstr_mut *s, size_t new_len)
 #ifndef __clang_analyzer__
       // Clang-analyzer is smart enough to see the calloc(), but not smart
       // enough to link it to the free() in mstr_free()
-      s->data = realloc ((char *) s->data, new_len + 1);
+      s->data = (char *) realloc ((char *) s->data, new_len + 1);
 #endif
       s->len = new_len;
       memset (s->data + old_len, 0, new_len - old_len);

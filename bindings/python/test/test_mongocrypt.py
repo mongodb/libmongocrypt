@@ -104,6 +104,14 @@ class TestMongoCryptOptions(unittest.TestCase):
             opts = MongoCryptOptions(kms_providers, schema_map)
             self.assertEqual(opts.kms_providers, kms_providers, msg=kms_providers)
             self.assertEqual(opts.schema_map, schema_map)
+            self.assertIsNone(opts.encrypted_fields_map)
+            self.assertFalse(opts.bypass_query_analysis)
+
+        encrypted_fields_map = bson_data('encrypted-field-config-map.json')
+        opts = MongoCryptOptions(valid[0][0], schema_map, encrypted_fields_map=encrypted_fields_map,
+                                 bypass_query_analysis=True)
+        self.assertEqual(opts.encrypted_fields_map, encrypted_fields_map)
+        self.assertTrue(opts.bypass_query_analysis)
 
     def test_mongocrypt_options_validation(self):
         with self.assertRaisesRegex(
@@ -132,8 +140,13 @@ class TestMongoCryptOptions(unittest.TestCase):
                 TypeError, "schema_map must be bytes or None"):
             MongoCryptOptions(valid_kms, schema_map={})
 
+        with self.assertRaisesRegex(
+                TypeError, "encrypted_fields_map must be bytes or None"):
+            MongoCryptOptions(valid_kms, encrypted_fields_map={})
+
 
 class TestMongoCrypt(unittest.TestCase):
+    maxDiff = None
 
     def test_mongocrypt(self):
         kms_providers = {
@@ -215,10 +228,10 @@ class TestMongoCrypt(unittest.TestCase):
             MongoCrypt(options, callback)
 
     @staticmethod
-    def create_mongocrypt():
+    def create_mongocrypt(**kwargs):
         return MongoCrypt(MongoCryptOptions({
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
-            'local': {'key': b'\x00'*96}}), MockCallback())
+            'local': {'key': b'\x00'*96}}, **kwargs), MockCallback())
 
     def _test_kms_context(self, ctx):
         key_filter = ctx.mongo_operation()
@@ -256,6 +269,8 @@ class TestMongoCrypt(unittest.TestCase):
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS)
 
             mongocryptd_cmd = ctx.mongo_operation()
+            self.assertEqual(bson.decode(mongocryptd_cmd, OPTS),
+                             json_data('mongocryptd-command.json'))
             self.assertEqual(mongocryptd_cmd,
                              bson_data('mongocryptd-command.json'))
 
@@ -288,6 +303,34 @@ class TestMongoCrypt(unittest.TestCase):
             self.assertEqual(bson.decode(encrypted, OPTS),
                              json_data('command-reply.json'))
             self.assertEqual(encrypted, bson_data('command-reply.json'))
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
+
+    def test_encrypt_encrypted_fields_map(self):
+        encrypted_fields_map = bson_data('compact/success/encrypted-field-config-map.json')
+        mc = self.create_mongocrypt(encrypted_fields_map=encrypted_fields_map)
+        self.addCleanup(mc.close)
+        with mc.encryption_context('db', bson_data('compact/success/cmd.json')) as ctx:
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
+
+            ctx.mongo_operation()
+            ctx.add_mongo_operation_result(bson_data(
+                'keys/12345678123498761234123456789012-local-document.json'))
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
+            ctx.mongo_operation()
+            ctx.add_mongo_operation_result(bson_data(
+                'keys/ABCDEFAB123498761234123456789012-local-document.json'))
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
+            ctx.mongo_operation()
+            ctx.add_mongo_operation_result(bson_data(
+                'keys/12345678123498761234123456789013-local-document.json'))
+            ctx.complete_mongo_operation()
+
+            self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_READY)
+
+            encrypted = ctx.finish()
+            self.assertEqual(bson.decode(encrypted, OPTS),
+                             json_data('compact/success/encrypted-payload.json'))
+            self.assertEqual(encrypted, bson_data('compact/success/encrypted-payload.json'))
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
 
 
@@ -462,7 +505,11 @@ def read(filename, **kwargs):
 OPTS = CodecOptions(uuid_representation=UuidRepresentation.UNSPECIFIED)
 
 # Use SON to preserve the order of fields while parsing json.
-JSON_OPTS = JSONOptions(document_class=SON,
+if sys.version_info[:2] < (3, 6):
+    document_class = SON
+else:
+    document_class = dict
+JSON_OPTS = JSONOptions(document_class=document_class,
                         uuid_representation=UuidRepresentation.UNSPECIFIED)
 
 
