@@ -1,0 +1,14 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "explain": {
+            "find": "test",
+            "filter": {
+                "value": 123456
+            }
+        }
+    },
+    "hasEncryptedPlaceholders": false
+}
