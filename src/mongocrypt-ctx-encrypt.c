@@ -608,8 +608,59 @@ _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
       _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
       return false;
    }
-   // Copy the command to the output
-   bson_copy_to (&bson_view, out);
+
+   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (NULL == cmd_name) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   // The 'explain' command is a special case.
+   // If using csfle, '$db' is expected to be inside 'explain' and match the
+   // top-level '$db'. Example:
+   // {
+   //    "explain": {
+   //       "find": "coll",
+   //       "$db": "db"
+   //    },
+   //    "$db": "db"
+   // }
+   if (0 == strcmp (cmd_name, "explain") && ctx->crypt->csfle.okay) {
+      bson_iter_t iter;
+      bson_t explain;
+
+      BSON_ASSERT (bson_iter_init_find (&iter, &bson_view, "explain"));
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "expected 'explain' to be document");
+      }
+
+      {
+         bson_t tmp;
+         const uint8_t *data;
+         uint32_t len;
+         bson_iter_document (&iter, &len, &data);
+         bson_init_static (&tmp, data, (size_t) len);
+         bson_copy_to (&tmp, &explain);
+      }
+
+      if (!BSON_APPEND_UTF8 (&explain, "$db", ectx->db_name)) {
+         bson_destroy (&explain);
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to append '$db' to 'explain'");
+      }
+
+      bson_init (out);
+      if (!BSON_APPEND_DOCUMENT (out, "explain", &explain)) {
+         bson_destroy (&explain);
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to append 'explain' document");
+      }
+      bson_destroy (&explain);
+      bson_copy_to_excluding_noinit (&bson_view, out, "explain", NULL);
+   } else {
+      // Copy the command to the output
+      bson_copy_to (&bson_view, out);
+   }
 
    if (!_mongocrypt_buffer_empty (&ectx->schema)) {
       // We have a schema buffer. View it as BSON:
