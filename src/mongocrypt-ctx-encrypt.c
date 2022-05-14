@@ -172,6 +172,132 @@ _fle2_append_encryptionInformation (bson_t *dst,
    return true;
 }
 
+typedef enum { MC_TO_CSFLE, MC_TO_MONGOCRYPTD, MC_TO_MONGOD } mc_cmd_target_t;
+
+/**
+ * @brief Add "encryptionInformation" to a command.
+ *
+ * @param cmd_name The name of the command.
+ * @param cmd The command being rewritten. It is an input and output.
+ * @param ns The <db>.<collection> namespace for the command.
+ * @param encryptedFieldConfig The "encryptedFields" document for the
+ * collection.
+ * @param deleteTokens Delete tokens to append to "encryptionInformation". May
+ * be NULL.
+ * @param coll_name The collection name.
+ * @param db_name The database name.
+ * @param cmd_target The intended destination of the command. csfle,
+ * mongocryptd, and mongod have different requirements for the location of
+ * "encryptionInformation" and presence of a "$db" field.
+ * @param status Output status.
+ * @return true On success
+ * @return false Otherwise. Sets a failing status message in this case.
+ */
+static bool
+_fle2_insert_encryptionInformation (const char *cmd_name,
+                                    bson_t *cmd /* in and out */,
+                                    const char *ns,
+                                    bson_t *encryptedFieldConfig,
+                                    bson_t *deleteTokens,
+                                    const char *coll_name,
+                                    const char *db_name,
+                                    mc_cmd_target_t cmd_target,
+                                    mongocrypt_status_t *status)
+{
+   bson_t out = BSON_INITIALIZER;
+   bson_t explain = BSON_INITIALIZER;
+   bson_iter_t iter;
+   bool ok = false;
+
+   if (0 != strcmp (cmd_name, "explain") || cmd_target == MC_TO_MONGOCRYPTD) {
+      // All commands except "explain" expect "encryptionInformation"
+      // at top-level. "explain" sent to mongocryptd expects
+      // "encryptionInformation" at top-level.
+      if (!_fle2_append_encryptionInformation (
+             cmd, ns, encryptedFieldConfig, deleteTokens, coll_name, status)) {
+         goto fail;
+      }
+      goto success;
+   }
+
+   // The "explain" command for csfle is a special case.
+   // mongocryptd expects "encryptionInformation" to be a sibling of the
+   // "explain" document. Example:
+   // {
+   //    "explain": { "find": "to-mongocryptd" },
+   //    "encryptionInformation": {}
+   // }
+   // csfle expects "encryptionInformation" to be nested in the
+   // "explain" document. csfle also expects the "$db" field nested in
+   // "explain". Example:
+   // {
+   //    "explain": {
+   //       "find": "to-csfle"
+   //       "encryptionInformation": {},
+   //       "$db": "db"
+   //    }
+   // }
+   // mongod expects "encryptionInformation" to be nested in the "explain"
+   // document. mongod prohibits the "$db" field nested in "explain". Example:
+   // {
+   //    "explain": {
+   //       "find": "to-csfle"
+   //       "encryptionInformation": {}
+   //    }
+   // }
+   BSON_ASSERT (bson_iter_init_find (&iter, cmd, "explain"));
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      CLIENT_ERR ("expected 'explain' to be document");
+      goto fail;
+   }
+
+   {
+      bson_t tmp;
+      const uint8_t *data;
+      uint32_t len;
+      bson_iter_document (&iter, &len, &data);
+      bson_init_static (&tmp, data, (size_t) len);
+      bson_copy_to (&tmp, &explain);
+   }
+
+   if (!_fle2_append_encryptionInformation (&explain,
+                                            ns,
+                                            encryptedFieldConfig,
+                                            deleteTokens,
+                                            coll_name,
+                                            status)) {
+      goto fail;
+   }
+
+   if (cmd_target == MC_TO_CSFLE) {
+      if (!BSON_APPEND_UTF8 (&explain, "$db", db_name)) {
+         CLIENT_ERR ("unable to append '$db' to document");
+         goto fail;
+      }
+   }
+
+   if (!BSON_APPEND_DOCUMENT (&out, "explain", &explain)) {
+      CLIENT_ERR ("unable to append 'explain' document");
+      goto fail;
+   }
+
+   bson_copy_to_excluding_noinit (cmd, &out, "explain", NULL);
+   bson_destroy (cmd);
+   if (!bson_steal (cmd, &out)) {
+      CLIENT_ERR ("failed to steal BSON without encryptionInformation");
+      goto fail;
+   }
+
+success:
+   ok = true;
+fail:
+   bson_destroy (&explain);
+   if (!ok) {
+      bson_destroy (&out);
+   }
+   return ok;
+}
+
 /* Construct the list collections command to send. */
 static bool
 _mongo_op_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
@@ -500,85 +626,19 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   if (0 == strcmp (cmd_name, "explain")) {
-      // The "explain" command is a special case.
-      // mongocryptd expects "encryptionInformation" to be a sibling of the
-      // "explain" document. Example:
-      // {
-      //    "explain": { "find": "to-mongocryptd" },
-      //    "encryptionInformation": {}
-      // }
-      // csfle expects "encryptionInformation" to be nested in the
-      // "explain" document. csfle also expects the "$db" field nested in
-      // "explain". Example:
-      // {
-      //    "explain": {
-      //       "find": "to-csfle"
-      //       "encryptionInformation": {},
-      //       "$db": "db"
-      //    }
-      // }
-      if (ctx->crypt->csfle.okay) {
-         bson_iter_t iter;
-         bson_t explain;
-
-         BSON_ASSERT (bson_iter_init_find (&iter, &cmd_bson, "explain"));
-         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            return _mongocrypt_ctx_fail_w_msg (
-               ctx, "expected 'explain' to be document");
-         }
-
-         {
-            bson_t tmp;
-            const uint8_t *data;
-            uint32_t len;
-            bson_iter_document (&iter, &len, &data);
-            bson_init_static (&tmp, data, (size_t) len);
-            bson_copy_to (&tmp, &explain);
-         }
-
-         if (!BSON_APPEND_UTF8 (&explain, "$db", ectx->db_name)) {
-            bson_destroy (&explain);
-            return _mongocrypt_ctx_fail_w_msg (
-               ctx, "unable to append '$db' to 'explain'");
-         }
-
-         if (!_fle2_append_encryptionInformation (&explain,
-                                                  ectx->ns,
-                                                  &encrypted_field_config_bson,
-                                                  NULL /* deleteTokens */,
-                                                  ectx->coll_name,
-                                                  ctx->status)) {
-            bson_destroy (&explain);
-            return _mongocrypt_ctx_fail (ctx);
-         }
-
-         bson_init (out);
-         if (!BSON_APPEND_DOCUMENT (out, "explain", &explain)) {
-            bson_destroy (&explain);
-            return _mongocrypt_ctx_fail_w_msg (ctx,
-                                               "unable to append 'explain'");
-         }
-         bson_destroy (&explain);
-
-         bson_copy_to_excluding_noinit (out, &cmd_bson, "explain", NULL);
-         return true;
-      }
-      // Otherwise, the command is intended for mongocryptd. Fall through to
-      // append encryptionInformation as a sibling.
-   }
-
    bson_copy_to (&cmd_bson, out);
-
-   if (!_fle2_append_encryptionInformation (out,
-                                            ectx->ns,
-                                            &encrypted_field_config_bson,
-                                            NULL /* deleteTokens */,
-                                            ectx->coll_name,
-                                            ctx->status)) {
+   if (!_fle2_insert_encryptionInformation (
+          cmd_name,
+          out,
+          ectx->ns,
+          &encrypted_field_config_bson,
+          NULL /* deleteTokens */,
+          ectx->coll_name,
+          ectx->db_name,
+          ctx->crypt->csfle.okay ? MC_TO_CSFLE : MC_TO_MONGOCRYPTD,
+          ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
    }
-
    return true;
 }
 
@@ -1430,74 +1490,15 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    /* Append a new 'encryptionInformation'. */
    if (!result.must_omit) {
-      // The 'explain' command is a special case.
-      // 'encryptionInformation' is expected to be nested
-      // inside 'explain'. Example:
-      // {
-      //    "explain": {
-      //       "find": "coll"
-      //       "encryptionInformation": {}
-      //    }
-      // }
-      if (0 == strcmp (command_name, "explain")) {
-         bson_t out = BSON_INITIALIZER;
-         bson_t explain;
-         bson_iter_t iter;
-
-         BSON_ASSERT (bson_iter_init_find (&iter, &converted, "explain"));
-         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            bson_destroy (&converted);
-            return _mongocrypt_ctx_fail_w_msg (
-               ctx, "expected 'explain' to be document");
-         }
-
-         {
-            bson_t tmp;
-            const uint8_t *data;
-            uint32_t len;
-            bson_iter_document (&iter, &len, &data);
-            bson_init_static (&tmp, data, (size_t) len);
-            bson_copy_to (&tmp, &explain);
-         }
-
-         if (!_fle2_append_encryptionInformation (&explain,
-                                                  ectx->ns,
-                                                  &encrypted_field_config_bson,
-                                                  deleteTokens,
-                                                  ectx->coll_name,
-                                                  ctx->status)) {
-            bson_destroy (&out);
-            bson_destroy (&explain);
-            bson_destroy (&converted);
-            bson_destroy (deleteTokens);
-            return _mongocrypt_ctx_fail (ctx);
-         }
-
-         if (!BSON_APPEND_DOCUMENT (&out, "explain", &explain)) {
-            bson_destroy (&out);
-            bson_destroy (&explain);
-            bson_destroy (&converted);
-            bson_destroy (deleteTokens);
-            return _mongocrypt_ctx_fail_w_msg (
-               ctx, "unable to append 'explain' document");
-         }
-         bson_destroy (&explain);
-
-         bson_copy_to_excluding_noinit (&converted, &out, "explain", NULL);
-         bson_destroy (&converted);
-         if (!bson_steal (&converted, &out)) {
-            bson_destroy (&out);
-            bson_destroy (deleteTokens);
-            return _mongocrypt_ctx_fail_w_msg (
-               ctx, "failed to steal BSON without encryptionInformation");
-         }
-      } else if (!_fle2_append_encryptionInformation (
-                    &converted,
-                    ectx->ns,
-                    &encrypted_field_config_bson,
-                    deleteTokens,
-                    ectx->coll_name,
-                    ctx->status)) {
+      if (!_fle2_insert_encryptionInformation (command_name,
+                                               &converted,
+                                               ectx->ns,
+                                               &encrypted_field_config_bson,
+                                               deleteTokens,
+                                               ectx->coll_name,
+                                               ectx->db_name,
+                                               MC_TO_MONGOD,
+                                               ctx->status)) {
          bson_destroy (&converted);
          bson_destroy (deleteTokens);
          return _mongocrypt_ctx_fail (ctx);
