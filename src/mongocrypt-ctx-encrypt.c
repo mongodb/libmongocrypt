@@ -185,10 +185,9 @@ typedef enum { MC_TO_CSFLE, MC_TO_MONGOCRYPTD, MC_TO_MONGOD } mc_cmd_target_t;
  * @param deleteTokens Delete tokens to append to "encryptionInformation". May
  * be NULL.
  * @param coll_name The collection name.
- * @param db_name The database name.
  * @param cmd_target The intended destination of the command. csfle,
  * mongocryptd, and mongod have different requirements for the location of
- * "encryptionInformation" and presence of a "$db" field.
+ * "encryptionInformation".
  * @param status Output status.
  * @return true On success
  * @return false Otherwise. Sets a failing status message in this case.
@@ -200,7 +199,6 @@ _fle2_insert_encryptionInformation (const char *cmd_name,
                                     bson_t *encryptedFieldConfig,
                                     bson_t *deleteTokens,
                                     const char *coll_name,
-                                    const char *db_name,
                                     mc_cmd_target_t cmd_target,
                                     mongocrypt_status_t *status)
 {
@@ -227,21 +225,11 @@ _fle2_insert_encryptionInformation (const char *cmd_name,
    //    "explain": { "find": "to-mongocryptd" },
    //    "encryptionInformation": {}
    // }
-   // csfle expects "encryptionInformation" to be nested in the
-   // "explain" document. csfle also expects the "$db" field nested in
-   // "explain". Example:
+   // csfle and mongod expect "encryptionInformation" to be nested in the
+   // "explain" document. Example:
    // {
    //    "explain": {
-   //       "find": "to-csfle"
-   //       "encryptionInformation": {},
-   //       "$db": "db"
-   //    }
-   // }
-   // mongod expects "encryptionInformation" to be nested in the "explain"
-   // document. mongod prohibits the "$db" field nested in "explain". Example:
-   // {
-   //    "explain": {
-   //       "find": "to-csfle"
+   //       "find": "to-csfle-or-mongod"
    //       "encryptionInformation": {}
    //    }
    // }
@@ -267,13 +255,6 @@ _fle2_insert_encryptionInformation (const char *cmd_name,
                                             coll_name,
                                             status)) {
       goto fail;
-   }
-
-   if (cmd_target == MC_TO_CSFLE) {
-      if (!BSON_APPEND_UTF8 (&explain, "$db", db_name)) {
-         CLIENT_ERR ("unable to append '$db' to document");
-         goto fail;
-      }
    }
 
    if (!BSON_APPEND_DOCUMENT (&out, "explain", &explain)) {
@@ -634,7 +615,6 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
           &encrypted_field_config_bson,
           NULL /* deleteTokens */,
           ectx->coll_name,
-          ectx->db_name,
           ctx->crypt->csfle.okay ? MC_TO_CSFLE : MC_TO_MONGOCRYPTD,
           ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
@@ -674,53 +654,8 @@ _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   // The 'explain' command is a special case.
-   // If using csfle, '$db' is expected to be inside 'explain' and match the
-   // top-level '$db'. Example:
-   // {
-   //    "explain": {
-   //       "find": "coll",
-   //       "$db": "db"
-   //    },
-   //    "$db": "db"
-   // }
-   if (0 == strcmp (cmd_name, "explain") && ctx->crypt->csfle.okay) {
-      bson_iter_t iter;
-      bson_t explain;
-
-      BSON_ASSERT (bson_iter_init_find (&iter, &bson_view, "explain"));
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "expected 'explain' to be document");
-      }
-
-      {
-         bson_t tmp;
-         const uint8_t *data;
-         uint32_t len;
-         bson_iter_document (&iter, &len, &data);
-         bson_init_static (&tmp, data, (size_t) len);
-         bson_copy_to (&tmp, &explain);
-      }
-
-      if (!BSON_APPEND_UTF8 (&explain, "$db", ectx->db_name)) {
-         bson_destroy (&explain);
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "unable to append '$db' to 'explain'");
-      }
-
-      bson_init (out);
-      if (!BSON_APPEND_DOCUMENT (out, "explain", &explain)) {
-         bson_destroy (&explain);
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "unable to append 'explain' document");
-      }
-      bson_destroy (&explain);
-      bson_copy_to_excluding_noinit (&bson_view, out, "explain", NULL);
-   } else {
-      // Copy the command to the output
-      bson_copy_to (&bson_view, out);
-   }
+   // Copy the command to the output
+   bson_copy_to (&bson_view, out);
 
    if (!_mongocrypt_buffer_empty (&ectx->schema)) {
       // We have a schema buffer. View it as BSON:
@@ -877,6 +812,82 @@ _mongo_done_markings (mongocrypt_ctx_t *ctx)
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
 
+/**
+ * @brief Append $db to a command being passed to csfle.
+ */
+static bool
+_add_dollar_db (const char *cmd_name,
+                bson_t *cmd,
+                const char *db_name,
+                mongocrypt_status_t *status)
+{
+   bson_t out = BSON_INITIALIZER;
+   bson_t explain = BSON_INITIALIZER;
+   bson_iter_t iter;
+   bool ok = false;
+
+   if (!bson_iter_init_find (&iter, cmd, "$db")) {
+      if (!BSON_APPEND_UTF8 (cmd, "$db", db_name)) {
+         CLIENT_ERR ("failed to append '$db'");
+         goto fail;
+      }
+   }
+
+   if (0 != strcmp (cmd_name, "explain")) {
+      goto success;
+   }
+
+   // The "explain" command for csfle is a special case.
+   // csfle expects "$db" to be nested in the "explain" document and match the
+   // top-level "$db". Example:
+   // {
+   //    "explain": {
+   //       "find": "to-csfle"
+   //       "$db": "db"
+   //    }
+   //    "$db": "db"
+   // }
+   BSON_ASSERT (bson_iter_init_find (&iter, cmd, "explain"));
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      CLIENT_ERR ("expected 'explain' to be document");
+      goto fail;
+   }
+
+   {
+      bson_t tmp;
+      const uint8_t *data;
+      uint32_t len;
+      bson_iter_document (&iter, &len, &data);
+      bson_init_static (&tmp, data, (size_t) len);
+      bson_copy_to (&tmp, &explain);
+   }
+
+   if (!BSON_APPEND_UTF8 (&explain, "$db", db_name)) {
+      CLIENT_ERR ("failed to append '$db'");
+      goto fail;
+   }
+
+   if (!BSON_APPEND_DOCUMENT (&out, "explain", &explain)) {
+      CLIENT_ERR ("unable to append 'explain' document");
+      goto fail;
+   }
+
+   bson_copy_to_excluding_noinit (cmd, &out, "explain", NULL);
+   bson_destroy (cmd);
+   if (!bson_steal (cmd, &out)) {
+      CLIENT_ERR ("failed to steal BSON without encryptionInformation");
+      goto fail;
+   }
+
+success:
+   ok = true;
+fail:
+   bson_destroy (&explain);
+   if (!ok) {
+      bson_destroy (&out);
+   }
+   return ok;
+}
 
 /**
  * @brief Attempt to generate csfle markings using a csfle dynamic library.
@@ -927,9 +938,15 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
       goto fail_create_cmd;
    }
 
-   bson_iter_t it;
-   if (!bson_iter_init_find (&it, &cmd, "$db")) {
-      BSON_APPEND_UTF8 (&cmd, "$db", ectx->db_name);
+   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (!cmd_name) {
+      _mongocrypt_ctx_fail (ctx);
+      goto fail_create_cmd;
+   }
+
+   if (!_add_dollar_db (cmd_name, &cmd, ectx->db_name, ctx->status)) {
+      _mongocrypt_ctx_fail (ctx);
+      goto fail_create_cmd;
    }
 
 #define CHECK_CSFLE_ERROR(Func, FailLabel)                             \
@@ -1496,7 +1513,6 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                                &encrypted_field_config_bson,
                                                deleteTokens,
                                                ectx->coll_name,
-                                               ectx->db_name,
                                                MC_TO_MONGOD,
                                                ctx->status)) {
          bson_destroy (&converted);
