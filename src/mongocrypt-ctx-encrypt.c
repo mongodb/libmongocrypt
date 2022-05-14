@@ -1269,6 +1269,75 @@ fail:
    return ret;
 }
 
+
+/**
+ * @brief Removes "encryptionInformation" from cmd.
+ */
+static bool
+_fle2_strip_encryptionInformation (const char *cmd_name,
+                                   bson_t *cmd /* in and out */,
+                                   mongocrypt_status_t *status)
+{
+   bson_t stripped = BSON_INITIALIZER;
+   bool ok = false;
+
+   if (0 != strcmp (cmd_name, "explain")) {
+      bson_copy_to_excluding_noinit (
+         cmd, &stripped, "encryptionInformation", NULL);
+      goto success;
+   }
+
+   // The 'explain' command is a special case.
+   // 'encryptionInformation' is returned from mongocryptd and csfle nested
+   // inside 'explain'. Example:
+   // {
+   //    "explain": {
+   //       "find": "coll"
+   //       "encryptionInformation": {}
+   //    }
+   // }
+   bson_iter_t iter;
+   bson_t explain;
+
+   BSON_ASSERT (bson_iter_init_find (&iter, cmd, "explain"));
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      CLIENT_ERR ("expected 'explain' to be document");
+      goto fail;
+   }
+
+   {
+      bson_t tmp;
+      const uint8_t *data;
+      uint32_t len;
+      bson_iter_document (&iter, &len, &data);
+      bson_init_static (&tmp, data, (size_t) len);
+      bson_init (&explain);
+      bson_copy_to_excluding_noinit (
+         &tmp, &explain, "encryptionInformation", NULL);
+   }
+
+   if (!BSON_APPEND_DOCUMENT (&stripped, "explain", &explain)) {
+      bson_destroy (&explain);
+      CLIENT_ERR ("unable to append 'explain'");
+      goto fail;
+   }
+   bson_destroy (&explain);
+   bson_copy_to_excluding_noinit (cmd, &stripped, "explain", NULL);
+
+success:
+   bson_destroy (cmd);
+   if (!bson_steal (cmd, &stripped)) {
+      CLIENT_ERR ("failed to steal BSON without encryptionInformation");
+      goto fail;
+   }
+   ok = true;
+fail:
+   if (!ok) {
+      bson_destroy (&stripped);
+   }
+   return ok;
+}
+
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
  * associated with the command. */
 static bool
@@ -1328,20 +1397,6 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
-   /* Remove the 'encryptionInformation' field. It is appended in the response
-    * from mongocryptd or csfle. */
-   bson_iter_t iter;
-   if (bson_iter_init_find (&iter, &converted, "encryptionInformation")) {
-      bson_t no_encryptionInformation = BSON_INITIALIZER;
-      bson_copy_to_excluding_noinit (
-         &converted, &no_encryptionInformation, "encryptionInformation", NULL);
-      bson_destroy (&converted);
-      if (!bson_steal (&converted, &no_encryptionInformation)) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "failed to steal BSON without encryptionInformation");
-      }
-   }
-
    const char *command_name =
       get_command_name (&ectx->original_cmd, ctx->status);
    if (NULL == command_name) {
@@ -1349,53 +1404,12 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       return _mongocrypt_ctx_fail (ctx);
    }
 
-   // The 'explain' command is a special case.
-   // 'encryptionInformation' is returned from mongocryptd and csfle nested
-   // inside 'explain'. Example:
-   // {
-   //    "explain": {
-   //       "find": "coll"
-   //       "encryptionInformation": {}
-   //    }
-   // }
-   if (0 == strcmp (command_name, "explain")) {
-      bson_t explain;
-      bson_t no_encryptionInformation;
-
-      BSON_ASSERT (bson_iter_init_find (&iter, &converted, "explain"));
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_destroy (&converted);
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "expected 'explain' to be document");
-      }
-
-      {
-         bson_t tmp;
-         const uint8_t *data;
-         uint32_t len;
-         bson_iter_document (&iter, &len, &data);
-         bson_init_static (&tmp, data, (size_t) len);
-         bson_init (&explain);
-         bson_copy_to_excluding_noinit (
-            &tmp, &explain, "encryptionInformation", NULL);
-      }
-
-      bson_init (&no_encryptionInformation);
-      if (!BSON_APPEND_DOCUMENT (
-             &no_encryptionInformation, "explain", &explain)) {
-         bson_destroy (&explain);
-         bson_destroy (&converted);
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "unable to append 'no_encryptionInformation'");
-      }
-      bson_destroy (&explain);
-      bson_copy_to_excluding_noinit (
-         &converted, &no_encryptionInformation, "explain", NULL);
+   /* Remove the 'encryptionInformation' field. It is appended in the response
+    * from mongocryptd or csfle. */
+   if (!_fle2_strip_encryptionInformation (
+          command_name, &converted, ctx->status)) {
       bson_destroy (&converted);
-      if (!bson_steal (&converted, &no_encryptionInformation)) {
-         return _mongocrypt_ctx_fail_w_msg (
-            ctx, "failed to steal BSON without encryptionInformation");
-      }
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    bson_t *deleteTokens = NULL;
@@ -1428,6 +1442,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       if (0 == strcmp (command_name, "explain")) {
          bson_t out = BSON_INITIALIZER;
          bson_t explain;
+         bson_iter_t iter;
 
          BSON_ASSERT (bson_iter_init_find (&iter, &converted, "explain"));
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
