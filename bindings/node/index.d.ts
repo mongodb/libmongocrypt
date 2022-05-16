@@ -303,7 +303,7 @@ export interface ClientEncryptionCreateDataKeyProviderOptions {
 
 /** @experimental */
 export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
-  provider?: ClientEncryptionDataKeyProvider;
+  provider: ClientEncryptionDataKeyProvider;
   masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
 }
 
