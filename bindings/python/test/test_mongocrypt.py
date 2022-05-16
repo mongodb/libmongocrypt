@@ -370,6 +370,7 @@ class MockCallback(MongoCryptCallback):
 
 
 class TestMongoCryptCallback(unittest.TestCase):
+    maxDiff = None
 
     @staticmethod
     def mongo_crypt_opts():
