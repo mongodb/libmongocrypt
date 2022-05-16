@@ -27,11 +27,11 @@ namespace MongoDB.Libmongocrypt
     public class CryptOptions
     {
         public bool BypassQueryAnalysis { get; }
+        public string CsfleLibPath { get; }
+        public string CsfleSearchPath { get; }
         public byte[] EncryptedFieldsMap { get; }
         public IReadOnlyList<KmsCredentials> KmsCredentials { get; }
         public byte[] Schema { get; }
-        public string CsfleLibPath { get; }
-        public string CsfleSearchPath { get; }
 
         public CryptOptions(IEnumerable<KmsCredentials> credentials) : this(credentials, null)
         {
@@ -48,15 +48,15 @@ namespace MongoDB.Libmongocrypt
             byte[] encryptedFieldsMap,
             byte[] schema,
             bool bypassQueryAnalysis,
-            string csFleLibPath,
-            string csFleSearchPath)
+            string csfleLibPath,
+            string csfleSearchPath)
         {
+            BypassQueryAnalysis = bypassQueryAnalysis;
+            CsfleLibPath = csfleLibPath;
+            CsfleSearchPath = csfleSearchPath;
+            EncryptedFieldsMap = encryptedFieldsMap;
             KmsCredentials = new ReadOnlyCollection<KmsCredentials>((credentials ?? throw new ArgumentNullException(nameof(credentials))).ToList());
             Schema = schema;
-            BypassQueryAnalysis = bypassQueryAnalysis;
-            EncryptedFieldsMap = encryptedFieldsMap;
-            CsfleLibPath = csFleLibPath;
-            CsfleSearchPath = csFleSearchPath;
         }
 
         // TODO: - add configurable logging support
