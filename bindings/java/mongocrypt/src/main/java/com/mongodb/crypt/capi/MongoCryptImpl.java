@@ -30,7 +30,11 @@ import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_INDEX_TYPE_EQUALITY;
+import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_INDEX_TYPE_NONE;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_INFO;
@@ -43,12 +47,15 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_contention_factor;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_index_type;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_encryption_key;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws_endpoint;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_query_type;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_new;
@@ -72,6 +79,8 @@ import static org.bson.assertions.Assertions.notNull;
 
 class MongoCryptImpl implements MongoCrypt {
     private static final Logger LOGGER = Loggers.getLogger();
+    private static final String INDEXED = "Indexed";
+    private static final String UNINDEXED = "Unindexed";
 
     private final mongocrypt_t wrapped;
 
@@ -107,14 +116,9 @@ class MongoCryptImpl implements MongoCrypt {
             throw new MongoCryptException("Unable to create new mongocrypt object");
         }
 
-        boolean success;
-
         logCallback = new LogCallback();
 
-        success = mongocrypt_setopt_log_handler(wrapped, logCallback, null);
-        if (!success) {
-            throwExceptionFromStatus();
-        }
+        configure(() -> mongocrypt_setopt_log_handler(wrapped, logCallback, null));
 
         // We specify NoPadding here because the underlying C library is responsible for padding prior
         // to executing the callback
@@ -128,39 +132,24 @@ class MongoCryptImpl implements MongoCrypt {
         sha256Callback = new MessageDigestCallback("SHA-256");
         secureRandomCallback = new SecureRandomCallback(new SecureRandom());
 
-        success = mongocrypt_setopt_crypto_hooks(wrapped, aesCBC256EncryptCallback, aesCBC256DecryptCallback, secureRandomCallback,
-                hmacSha512Callback, hmacSha256Callback, sha256Callback, null);
-        if (!success) {
-            throwExceptionFromStatus();
-        }
+        configure(() -> mongocrypt_setopt_crypto_hooks(wrapped, aesCBC256EncryptCallback, aesCBC256DecryptCallback,
+                                                        secureRandomCallback, hmacSha512Callback, hmacSha256Callback,
+                                                        sha256Callback, null));
 
         signingRSAESPKCSCallback = new SigningRSAESPKCSCallback();
-        success = mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(wrapped, signingRSAESPKCSCallback, null);
-        if (!success) {
-            throwExceptionFromStatus();
-        }
-
-        success = mongocrypt_setopt_aes_256_ctr(wrapped, aesCTR256EncryptCallback, aesCTR256DecryptCallback, null);
-        if (!success) {
-            throwExceptionFromStatus();
-        }
+        configure(() -> mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(wrapped, signingRSAESPKCSCallback, null));
+        configure(() -> mongocrypt_setopt_aes_256_ctr(wrapped, aesCTR256EncryptCallback, aesCTR256DecryptCallback, null));
 
         if (options.getLocalKmsProviderOptions() != null) {
             try (BinaryHolder localMasterKeyBinaryHolder = toBinary(options.getLocalKmsProviderOptions().getLocalMasterKey())) {
-                success = mongocrypt_setopt_kms_provider_local(wrapped, localMasterKeyBinaryHolder.getBinary());
-                if (!success) {
-                    throwExceptionFromStatus();
-                }
+                configure(() -> mongocrypt_setopt_kms_provider_local(wrapped, localMasterKeyBinaryHolder.getBinary()));
             }
         }
 
         if (options.getAwsKmsProviderOptions() != null) {
-            success = mongocrypt_setopt_kms_provider_aws(wrapped,
-                    new cstring(options.getAwsKmsProviderOptions().getAccessKeyId()), -1,
-                    new cstring(options.getAwsKmsProviderOptions().getSecretAccessKey()), -1);
-            if (!success) {
-                throwExceptionFromStatus();
-            }
+            configure(() -> mongocrypt_setopt_kms_provider_aws(wrapped,
+                                                                new cstring(options.getAwsKmsProviderOptions().getAccessKeyId()), -1,
+                                                                new cstring(options.getAwsKmsProviderOptions().getSecretAccessKey()), -1));
         }
 
         if (options.isNeedsKmsCredentialsStateEnabled()) {
@@ -169,10 +158,7 @@ class MongoCryptImpl implements MongoCrypt {
 
         if (options.getKmsProviderOptions() != null) {
             try (BinaryHolder binaryHolder = toBinary(options.getKmsProviderOptions())) {
-                success = mongocrypt_setopt_kms_providers(wrapped, binaryHolder.getBinary());
-                if (!success) {
-                    throwExceptionFromStatus();
-                }
+                configure(() -> mongocrypt_setopt_kms_providers(wrapped, binaryHolder.getBinary()));
             }
         }
 
@@ -181,10 +167,7 @@ class MongoCryptImpl implements MongoCrypt {
             localSchemaMapDocument.putAll(options.getLocalSchemaMap());
 
             try (BinaryHolder localSchemaMapBinaryHolder = toBinary(localSchemaMapDocument)) {
-                success = mongocrypt_setopt_schema_map(wrapped, localSchemaMapBinaryHolder.getBinary());
-                if (!success) {
-                    throwExceptionFromStatus();
-                }
+                configure(() -> mongocrypt_setopt_schema_map(wrapped, localSchemaMapBinaryHolder.getBinary()));
             }
         }
 
@@ -197,17 +180,11 @@ class MongoCryptImpl implements MongoCrypt {
             localEncryptedFieldsMap.putAll(options.getEncryptedFieldsMap());
 
             try (BinaryHolder localEncryptedFieldsMapHolder = toBinary(localEncryptedFieldsMap)) {
-                success = mongocrypt_setopt_encrypted_field_config_map(wrapped, localEncryptedFieldsMapHolder.getBinary());
-                if (!success) {
-                    throwExceptionFromStatus();
-                }
+                configure(() -> mongocrypt_setopt_encrypted_field_config_map(wrapped, localEncryptedFieldsMapHolder.getBinary()));
             }
         }
 
-        success = mongocrypt_init(wrapped);
-        if (!success) {
-            throwExceptionFromStatus();
-        }
+        configure(() -> mongocrypt_init(wrapped));
     }
 
     @Override
@@ -221,12 +198,8 @@ class MongoCryptImpl implements MongoCrypt {
         }
 
         try (BinaryHolder commandDocumentBinaryHolder = toBinary(commandDocument)) {
-            boolean success = mongocrypt_ctx_encrypt_init(context, new cstring(database), -1,
-                    commandDocumentBinaryHolder.getBinary());
-
-            if (!success) {
-                MongoCryptContextImpl.throwExceptionFromStatus(context);
-            }
+            configure(() -> mongocrypt_ctx_encrypt_init(context, new cstring(database), -1,
+                                                         commandDocumentBinaryHolder.getBinary()), context);
             return new MongoCryptContextImpl(context);
         }
     }
@@ -239,10 +212,7 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
         try (BinaryHolder documentBinaryHolder = toBinary(document)){
-            boolean success = mongocrypt_ctx_decrypt_init(context, documentBinaryHolder.getBinary());
-            if (!success) {
-                MongoCryptContextImpl.throwExceptionFromStatus(context);
-            }
+            configure(() -> mongocrypt_ctx_decrypt_init(context, documentBinaryHolder.getBinary()), context);
         }
         return new MongoCryptContextImpl(context);
     }
@@ -255,36 +225,28 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
 
-        boolean success;
         if (kmsProvider.equals("aws")) {
-            success = mongocrypt_ctx_setopt_masterkey_aws(context,
-                    new cstring(options.getMasterKey().getString("region").getValue()), -1,
-                    new cstring(options.getMasterKey().getString("key").getValue()), -1);
-            if (success && options.getMasterKey().containsKey("endpoint")) {
-                success = mongocrypt_ctx_setopt_masterkey_aws_endpoint(context,
-                        new cstring(options.getMasterKey().getString("endpoint").getValue()), -1);
+            configure(() -> mongocrypt_ctx_setopt_masterkey_aws(context,
+                                                                 new cstring(options.getMasterKey().getString("region").getValue()), -1,
+                                                                 new cstring(options.getMasterKey().getString("key").getValue()), -1), context);
+            if (options.getMasterKey().containsKey("endpoint")) {
+                configure(() -> mongocrypt_ctx_setopt_masterkey_aws_endpoint(context,
+                                                                              new cstring(options.getMasterKey().getString("endpoint").getValue()), -1), context);
             }
         } else if (kmsProvider.equals("local")) {
-            success = mongocrypt_ctx_setopt_masterkey_local(context);
+            configure(() -> mongocrypt_ctx_setopt_masterkey_local(context), context);
         } else {
             BsonDocument masterKey = options.getMasterKey().clone();
             masterKey.put("provider", new BsonString(kmsProvider));
             try (BinaryHolder masterKeyHolder = toBinary(masterKey)) {
-                success = mongocrypt_ctx_setopt_key_encryption_key(context, masterKeyHolder.getBinary());
+                configure(() -> mongocrypt_ctx_setopt_key_encryption_key(context, masterKeyHolder.getBinary()), context);
             }
-        }
-
-        if (!success) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
 
         if (options.getKeyAltNames() != null) {
             for (String cur : options.getKeyAltNames()) {
                 try (BinaryHolder keyAltNameBinaryHolder = toBinary(new BsonDocument("keyAltName", new BsonString(cur)))) {
-                    success = mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary());
-                    if (!success) {
-                        MongoCryptContextImpl.throwExceptionFromStatus(context);
-                    }
+                    configure(() -> mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary()), context);
                 }
             }
         }
@@ -292,7 +254,6 @@ class MongoCryptImpl implements MongoCrypt {
         if (!mongocrypt_ctx_datakey_init(context)) {
             MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
-
         return new MongoCryptContextImpl(context);
     }
 
@@ -304,34 +265,32 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
 
-        boolean success;
-
         if (options.getKeyId() != null) {
             try (BinaryHolder keyIdBinaryHolder = toBinary(ByteBuffer.wrap(options.getKeyId().getData()))) {
-                success = mongocrypt_ctx_setopt_key_id(context, keyIdBinaryHolder.getBinary());
-                if (!success) {
-                    MongoCryptContextImpl.throwExceptionFromStatus(context);
-                }
+                configure(() -> mongocrypt_ctx_setopt_key_id(context, keyIdBinaryHolder.getBinary()), context);
             }
         } else if (options.getKeyAltName() != null) {
             try (BinaryHolder keyAltNameBinaryHolder = toBinary(new BsonDocument("keyAltName", new BsonString(options.getKeyAltName())))) {
-                success = mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary());
-                if (!success) {
-                    MongoCryptContextImpl.throwExceptionFromStatus(context);
-                }
+                configure(() -> mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary()), context);
             }
         }
 
-        success = mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1);
-        if (!success) {
-            MongoCryptContextImpl.throwExceptionFromStatus(context);
+        if (INDEXED.equalsIgnoreCase(options.getAlgorithm())) {
+            configure(() -> mongocrypt_ctx_setopt_index_type(context, MONGOCRYPT_INDEX_TYPE_EQUALITY), context);
+            if (options.getQueryType() != null) {
+                configure(() -> mongocrypt_ctx_setopt_query_type(context, options.getQueryType().getQueryType()), context);
+            }
+            if (options.getContentionFactor() != null) {
+                configure(() -> mongocrypt_ctx_setopt_contention_factor(context, options.getContentionFactor()), context);
+            }
+        } else if (options.getAlgorithm().equalsIgnoreCase(UNINDEXED)) {
+            configure(() -> mongocrypt_ctx_setopt_index_type(context, MONGOCRYPT_INDEX_TYPE_NONE), context);
+        } else {
+            configure(() -> mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1), context);
         }
 
         try (BinaryHolder documentBinaryHolder = toBinary(document)) {
-            success = mongocrypt_ctx_explicit_encrypt_init(context, documentBinaryHolder.getBinary());
-            if (!success) {
-                MongoCryptContextImpl.throwExceptionFromStatus(context);
-            }
+            configure(() -> mongocrypt_ctx_explicit_encrypt_init(context, documentBinaryHolder.getBinary()), context);
         }
 
         return new MongoCryptContextImpl(context);
@@ -345,10 +304,7 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
         try (BinaryHolder binaryHolder = toBinary(document)) {
-            boolean success = mongocrypt_ctx_explicit_decrypt_init(context, binaryHolder.getBinary());
-            if (!success) {
-                MongoCryptContextImpl.throwExceptionFromStatus(context);
-            }
+            configure(() -> mongocrypt_ctx_explicit_decrypt_init(context, binaryHolder.getBinary()), context);
         }
         return new MongoCryptContextImpl(context);
     }
@@ -357,6 +313,18 @@ class MongoCryptImpl implements MongoCrypt {
     public void close() {
         if (!closed.getAndSet(true)) {
             mongocrypt_destroy(wrapped);
+        }
+    }
+
+    private void configure(final Supplier<Boolean> successSupplier) {
+        if (!successSupplier.get()) {
+            throwExceptionFromStatus();
+        }
+    }
+
+    private void configure(final Supplier<Boolean> successSupplier, final mongocrypt_ctx_t context) {
+        if (!successSupplier.get()) {
+            MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
     }
 

@@ -464,6 +464,59 @@ public class CAPI {
     mongocrypt_setopt_bypass_query_analysis (mongocrypt_t crypt);
 
     /**
+     * Set the index type used for explicit encryption.
+     * The index type is only used for FLE 2 encryption.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param index_type
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status.
+     * @since 1.5
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t ctx, int index_type);
+
+    /**
+     * Set the contention factor used for explicit encryption.
+     * The contention factor is only used for indexed FLE 2 encryption.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param contention_factor
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status.
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t ctx, long contention_factor);
+
+    /**
+     * Set the index key id to use for FLE 2 explicit encryption.
+     *
+     * If the index key id not set, the key id from @ref mongocrypt_ctx_setopt_key_id is used.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param key_id The binary corresponding to the _id (a UUID) of the data key to use from
+     *               the key vault collection. Note, the UUID must be encoded with RFC-4122 byte order.
+     *               The viewed data is copied. It is valid to destroy key_id with @ref mongocrypt_binary_destroy immediately after.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t ctx, mongocrypt_binary_t key_id);
+
+    /**
+     * Set the query type to use for FLE 2 explicit encryption.
+     * The query type is only used for indexed FLE 2 encryption.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param query_type
+     * @pre @p ctx has not been initialized.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, int query_type);
+
+    /**
      * Initialize new @ref mongocrypt_t object.
      *
      * @param crypt The @ref mongocrypt_t object.
@@ -731,6 +784,10 @@ public class CAPI {
     public static final int MONGOCRYPT_CTX_READY = 5; /* ready for encryption/decryption */
     public static final int MONGOCRYPT_CTX_DONE = 6;
     public static final int MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7; /* fetch/renew KMS credentials */
+
+    public static final int MONGOCRYPT_INDEX_TYPE_NONE = 1;
+    public static final int MONGOCRYPT_INDEX_TYPE_EQUALITY = 2;
+    public static final int MONGOCRYPT_QUERY_TYPE_EQUALITY = 1;
 
     /**
      * Get the current state of a context.
