@@ -393,7 +393,7 @@ class TestMongoCryptCallback(unittest.TestCase):
             key_docs=[bson_data('key-document.json')],
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
-        encrypted = encrypter.encrypt('text', bson_data('command.json'))
+        encrypted = encrypter.encrypt('test', bson_data('command.json'))
         self.assertEqual(bson.decode(encrypted, OPTS),
                          json_data('encrypted-command.json'))
         self.assertEqual(encrypted, bson_data('encrypted-command.json'))

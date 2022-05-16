@@ -4,15 +4,17 @@
         "$numberInt": "1"
     },
     "result": {
+        "find": "test",
         "filter": {
             "ssn": {
-                "$binary": {
-                    "base64": "ADgAAAAQYQABAAAABWtpABAAAAAEYWFhYWFhYWFhYWFhYWFhYQJ2AAwAAAA0NTctNTUtNTQ2MgAA",
-                    "subType": "06"
+                "$eq": {
+                    "$binary": {
+                        "base64": "ADgAAAAQYQABAAAABWtpABAAAAAEYWFhYWFhYWFhYWFhYWFhYQJ2AAwAAAA0NTctNTUtNTQ2MgAA",
+                        "subType": "06"
+                    }
                 }
             }
-        },
-        "find": "test"
+        }
     },
     "hasEncryptedPlaceholders": true
 }

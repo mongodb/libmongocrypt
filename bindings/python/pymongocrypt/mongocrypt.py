@@ -151,8 +151,7 @@ class MongoCryptOptions(object):
 
 
 class MongoCrypt(object):
-    def __init__(self, options, callback, csfle_path=None, csfle_required=False,
-                 bypass_encryption=False):
+    def __init__(self, options, callback):
         """Abstracts libmongocrypt's mongocrypt_t type.
 
         :Parameters:
@@ -174,20 +173,13 @@ class MongoCrypt(object):
             raise MongoCryptError("unable to create new mongocrypt object")
 
         try:
-            self.__init(csfle_path=csfle_path,
-                                     csfle_required=csfle_required,
-                 bypass_encryption=bypass_encryption)
+            self.__init()
         except Exception:
             # Destroy the mongocrypt object on error.
             self.close()
             raise
 
-    @property
-    def crypt(self):
-        return self.__crypt
-
-    def __init(self, csfle_path=None, csfle_required=False,
-                 bypass_encryption=False):
+    def __init(self):
         """Internal init helper."""
         kms_providers = self.__opts.kms_providers
 
@@ -233,15 +225,6 @@ class MongoCrypt(object):
         if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
                 self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
             self.__raise_from_status()
-        if csfle_path is not None:
-            lib.mongocrypt_setopt_set_csfle_lib_path_override(self.__crypt,
-                                                              ffi.new("char[]", csfle_path.encode(
-                                                                  "UTF-8"))
-                                                              )
-        if bypass_encryption is False:
-            lib.mongocrypt_setopt_append_csfle_search_path(self.__crypt,
-                                                           ffi.new("char[]", "$SYSTEM".encode(
-                                                               "UTF-8")))
 
         if not lib.mongocrypt_setopt_aes_256_ctr(
                 self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
@@ -249,11 +232,6 @@ class MongoCrypt(object):
 
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
-
-        if csfle_required is True and lib.mongocrypt_csfle_version_string(self.__crypt,
-                                                                          ffi.new("uint32_t*")) \
-                == ffi.NULL:
-            raise Exception("Could not load CSFLE library!")
 
     def __raise_from_status(self):
         status = lib.mongocrypt_status_new()
