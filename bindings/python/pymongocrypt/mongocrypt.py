@@ -151,6 +151,8 @@ class MongoCryptOptions(object):
 
 
 class MongoCrypt(object):
+    maxDiff = None
+
     def __init__(self, options, callback, csfle_path=None, csfle_required=False,
                  bypass_encryption=False):
         """Abstracts libmongocrypt's mongocrypt_t type.

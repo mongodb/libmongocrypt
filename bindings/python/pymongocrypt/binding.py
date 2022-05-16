@@ -1427,7 +1427,6 @@ typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
 bool
 mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
                                   mongocrypt_query_type_t query_type);
-
 """)
 
 
