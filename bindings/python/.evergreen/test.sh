@@ -42,7 +42,7 @@ else
              "/opt/python/3.6/bin/python3"
              "/opt/python/pypy/bin/pypy"
              "/opt/python/pypy3.6/bin/pypy3")
-
+fi
 git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
 python drivers-evergreen-tools/.evergreen/mongodl.py --component csfle --version 6.0.0-rc4 --out ~/csfle/
 
