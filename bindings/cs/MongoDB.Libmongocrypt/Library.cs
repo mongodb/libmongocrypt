@@ -231,7 +231,6 @@ namespace MongoDB.Libmongocrypt
 
         internal static Delegates.mongocrypt_init mongocrypt_init => _mongocrypt_init.Value;
         internal static Delegates.mongocrypt_destroy mongocrypt_destroy => _mongocrypt_destroy.Value;
-
         internal static Delegates.mongocrypt_status mongocrypt_status => _mongocrypt_status.Value;
         internal static Delegates.mongocrypt_status_new mongocrypt_status_new => _mongocrypt_status_new.Value;
         internal static Delegates.mongocrypt_status_destroy mongocrypt_status_destroy => _mongocrypt_status_destroy.Value;

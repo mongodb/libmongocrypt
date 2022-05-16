@@ -39,7 +39,7 @@ namespace MongoDB.Libmongocrypt
         /// <summary>
         /// Gets the CSFLE version.
         /// </summary>
-        /// <returns>CSFLE version</returns>
+        /// <returns>CSFLE version.</returns>
         public string CsfleVersion => Library.mongocrypt_csfle_version_string(_handle, out _);
 
         /// <summary>
