@@ -44,7 +44,7 @@ else
              "/opt/python/pypy3.6/bin/pypy3")
 fi
 git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
-python drivers-evergreen-tools/.evergreen/mongodl.py --component csfle --version 6.0.0-rc4 --out ~/csfle/
+python3 drivers-evergreen-tools/.evergreen/mongodl.py --component csfle --version 6.0.0-rc4 --out ~/csfle/
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
