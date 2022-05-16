@@ -34,6 +34,7 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_setopt_log_handler = new Lazy<Delegates.mongocrypt_setopt_log_handler>(
                     () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_log_handler>(
                         ("mongocrypt_setopt_log_handler")), true);
+
             _mongocrypt_init = new Lazy<Delegates.mongocrypt_init>(
                     () => __loader.Value.GetFunction<Delegates.mongocrypt_init>(("mongocrypt_init")), true);
             _mongocrypt_destroy = new Lazy<Delegates.mongocrypt_destroy>(
@@ -67,11 +68,21 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_schema_map>(
                     ("mongocrypt_setopt_schema_map")), true);
 
+            _mongocrypt_setopt_append_csfle_search_path = new Lazy<Delegates.mongocrypt_setopt_append_csfle_search_path>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_append_csfle_search_path>(("mongocrypt_setopt_append_csfle_search_path")), true);
+            _mongocrypt_setopt_set_csfle_lib_path_override = new Lazy<Delegates.mongocrypt_setopt_set_csfle_lib_path_override>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_set_csfle_lib_path_override>(("mongocrypt_setopt_set_csfle_lib_path_override")), true);
+            _mongocrypt_csfle_version_string = new Lazy<Delegates.mongocrypt_csfle_version_string>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_csfle_version_string>(("mongocrypt_csfle_version_string")), true);
+            _mongocrypt_csfle_version = new Lazy<Delegates.mongocrypt_csfle_version>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_csfle_version>(("mongocrypt_csfle_version")), true);
+
             _mongocrypt_status_new = new Lazy<Delegates.mongocrypt_status_new>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_status_new>(("mongocrypt_status_new")), true);
             _mongocrypt_status_destroy = new Lazy<Delegates.mongocrypt_status_destroy>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_status_destroy>(("mongocrypt_status_destroy")),
                 true);
+
             _mongocrypt_status_type = new Lazy<Delegates.mongocrypt_status_type>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_status_type>(("mongocrypt_status_type")), true);
             _mongocrypt_status_code = new Lazy<Delegates.mongocrypt_status_code>(
@@ -213,11 +224,14 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_setopt_encrypted_field_config_map mongocrypt_setopt_encrypted_field_config_map => _mongocrypt_setopt_encrypted_field_config_map.Value;
         internal static Delegates.mongocrypt_setopt_schema_map mongocrypt_setopt_schema_map => _mongocrypt_setopt_schema_map.Value;
 
+        internal static Delegates.mongocrypt_setopt_append_csfle_search_path mongocrypt_setopt_append_csfle_search_path => _mongocrypt_setopt_append_csfle_search_path.Value;
+        internal static Delegates.mongocrypt_setopt_set_csfle_lib_path_override mongocrypt_setopt_set_csfle_lib_path_override => _mongocrypt_setopt_set_csfle_lib_path_override.Value;
+        internal static Delegates.mongocrypt_csfle_version_string mongocrypt_csfle_version_string => _mongocrypt_csfle_version_string.Value;
+        internal static Delegates.mongocrypt_csfle_version mongocrypt_csfle_version => _mongocrypt_csfle_version.Value;
+
         internal static Delegates.mongocrypt_init mongocrypt_init => _mongocrypt_init.Value;
         internal static Delegates.mongocrypt_destroy mongocrypt_destroy => _mongocrypt_destroy.Value;
         internal static Delegates.mongocrypt_status mongocrypt_status => _mongocrypt_status.Value;
-
-
         internal static Delegates.mongocrypt_status_new mongocrypt_status_new => _mongocrypt_status_new.Value;
         internal static Delegates.mongocrypt_status_destroy mongocrypt_status_destroy => _mongocrypt_status_destroy.Value;
 
@@ -282,14 +296,18 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_setopt_encrypted_field_config_map> _mongocrypt_setopt_encrypted_field_config_map;
         private static readonly Lazy<Delegates.mongocrypt_setopt_schema_map> _mongocrypt_setopt_schema_map;
 
+        private static readonly Lazy<Delegates.mongocrypt_setopt_append_csfle_search_path> _mongocrypt_setopt_append_csfle_search_path;
+        private static readonly Lazy<Delegates.mongocrypt_setopt_set_csfle_lib_path_override> _mongocrypt_setopt_set_csfle_lib_path_override;
+        private static readonly Lazy<Delegates.mongocrypt_csfle_version_string> _mongocrypt_csfle_version_string;
+        private static readonly Lazy<Delegates.mongocrypt_csfle_version> _mongocrypt_csfle_version;
+
         private static readonly Lazy<Delegates.mongocrypt_init> _mongocrypt_init;
         private static readonly Lazy<Delegates.mongocrypt_destroy> _mongocrypt_destroy;
-        private static readonly Lazy<Delegates.mongocrypt_status> _mongocrypt_status;
 
+        private static readonly Lazy<Delegates.mongocrypt_status> _mongocrypt_status;
 
         private static readonly Lazy<Delegates.mongocrypt_status_new> _mongocrypt_status_new;
         private static readonly Lazy<Delegates.mongocrypt_status_destroy> _mongocrypt_status_destroy;
-
         private static readonly Lazy<Delegates.mongocrypt_status_type> _mongocrypt_status_type;
         private static readonly Lazy<Delegates.mongocrypt_status_code> _mongocrypt_status_code;
         private static readonly Lazy<Delegates.mongocrypt_status_message> _mongocrypt_status_message;
@@ -441,6 +459,14 @@ namespace MongoDB.Libmongocrypt
             public delegate bool mongocrypt_setopt_encrypted_field_config_map(MongoCryptSafeHandle handle, BinarySafeHandle efc_map);
             [return: MarshalAs(UnmanagedType.I1),]
             public delegate bool mongocrypt_setopt_schema_map(MongoCryptSafeHandle handle, BinarySafeHandle schema);
+
+            public delegate void mongocrypt_setopt_append_csfle_search_path(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
+
+            public delegate void mongocrypt_setopt_set_csfle_lib_path_override(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
+            [return: MarshalAs(UnmanagedType.LPStr)]
+            public delegate string mongocrypt_csfle_version_string(MongoCryptSafeHandle handle, out uint length);
+
+            public delegate ulong mongocrypt_csfle_version(MongoCryptSafeHandle handle);
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_init(MongoCryptSafeHandle handle);
