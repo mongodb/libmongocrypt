@@ -1,5 +1,5 @@
-/*
- * Copyright 2019–present MongoDB, Inc.
+﻿/*
+ * Copyright 2010–present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+using System;
 using System.Runtime.ConstrainedExecution;
+using System.Runtime.InteropServices;
 
 namespace MongoDB.Libmongocrypt
 {
@@ -22,27 +24,23 @@ namespace MongoDB.Libmongocrypt
     /// SafeHandle to manage the lifetime of a mongocrypt_ctx_t.
     /// </summary>
     /// <seealso cref="System.Runtime.InteropServices.SafeHandle" />
-    internal class ContextSafeHandle : CheckableSafeHandle
+    internal abstract class CheckableSafeHandle : SafeHandle
     {
-        private ContextSafeHandle() : base()
+        internal CheckableSafeHandle() : base(IntPtr.Zero, true)
         {
         }
 
-        public override void Check(Status status, bool success)
+        public override bool IsInvalid
         {
-            if (!success)
+            get
             {
-                Library.mongocrypt_ctx_status(this, status.Handle);
-                status.ThrowExceptionIfNeeded();
+                return handle == IntPtr.Zero;
             }
         }
 
+        public abstract void Check(Status status, bool success);
+
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
-        protected override bool ReleaseHandle()
-        {
-            // Here, we must obey all rules for constrained execution regions.
-            Library.mongocrypt_ctx_destroy(handle);
-            return true;
-        }
+        protected abstract override bool ReleaseHandle();
     }
 }

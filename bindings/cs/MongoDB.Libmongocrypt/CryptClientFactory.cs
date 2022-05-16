@@ -81,12 +81,12 @@ namespace MongoDB.Libmongocrypt
 
             if (options.Schema != null)
             {
-                HandleMap(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
+                PinnedBinary.HandleAsPinnedBinary(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
             }
 
             if (options.EncryptedFieldsMap != null)
             {
-                HandleMap(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
+                PinnedBinary.HandleAsPinnedBinary(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
             }
 
             if (options.BypassQueryAnalysis)
@@ -107,22 +107,6 @@ namespace MongoDB.Libmongocrypt
             Library.mongocrypt_init(handle);
 
             return new CryptClient(handle, status);
-        }
-
-        // private methods
-        private static void HandleMap(MongoCryptSafeHandle handle, byte[] mapBytes, Status status, Func<MongoCryptSafeHandle, BinarySafeHandle, bool> handleFunc)
-        {
-            unsafe
-            {
-                fixed (byte* map = mapBytes)
-                {
-                    var schemaPtr = (IntPtr)map;
-                    using (var pinnedSchema = new PinnedBinary(schemaPtr, (uint)mapBytes.Length))
-                    {
-                        handle.Check(status, handleFunc(handle, pinnedSchema.Handle));
-                    }
-                }
-            }
         }
     }
 }

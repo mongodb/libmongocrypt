@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-using System;
 using System.Runtime.ConstrainedExecution;
-using System.Runtime.InteropServices;
 
 namespace MongoDB.Libmongocrypt
 {
@@ -24,27 +22,18 @@ namespace MongoDB.Libmongocrypt
     /// SafeHandle to manage the lifetime of a mongocrypt_t.
     /// </summary>
     /// <seealso cref="System.Runtime.InteropServices.SafeHandle" />
-    internal class MongoCryptSafeHandle : SafeHandle
+    internal class MongoCryptSafeHandle : CheckableSafeHandle
     {
-        private MongoCryptSafeHandle()
-            : base(IntPtr.Zero, true)
+        private MongoCryptSafeHandle() : base()
         {
         }
 
-        public void Check(Status status, bool success)
+        public override void Check(Status status, bool success)
         {
             if (!success)
             {
                 Library.mongocrypt_status(this, status.Handle);
                 status.ThrowExceptionIfNeeded();
-            }
-        }
-
-        public override bool IsInvalid
-        {
-            get
-            {
-                return handle == IntPtr.Zero;
             }
         }
 
