@@ -218,6 +218,7 @@ public class MongoExplicitEncryptOptions {
                 ", keyAltName='" + keyAltName + '\'' +
                 ", algorithm='" + algorithm + '\'' +
                 ", contentionFactor=" + contentionFactor +
+                ", queryType=" + queryType +
                 '}';
     }
 }
