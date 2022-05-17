@@ -280,8 +280,8 @@ class MongoCryptImpl implements MongoCrypt {
             if (options.getQueryType() != null) {
                 configure(() -> mongocrypt_ctx_setopt_query_type(context, options.getQueryType().getQueryType()), context);
             }
-            if (options.getContentFactor() != null) {
-                configure(() -> mongocrypt_ctx_setopt_contention_factor(context, options.getContentFactor()), context);
+            if (options.getContentionFactor() != null) {
+                configure(() -> mongocrypt_ctx_setopt_contention_factor(context, options.getContentionFactor()), context);
             }
         } else if (options.getAlgorithm().equalsIgnoreCase(UNINDEXED)) {
             configure(() -> mongocrypt_ctx_setopt_index_type(context, MONGOCRYPT_INDEX_TYPE_NONE), context);

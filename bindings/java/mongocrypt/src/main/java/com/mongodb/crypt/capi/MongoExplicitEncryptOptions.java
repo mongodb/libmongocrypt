@@ -28,7 +28,7 @@ public class MongoExplicitEncryptOptions {
     private final BsonBinary keyId;
     private final String keyAltName;
     private final String algorithm;
-    private final Long contentFactor;
+    private final Long contentionFactor;
     private final QueryType queryType;
 
     /**
@@ -65,7 +65,7 @@ public class MongoExplicitEncryptOptions {
         private BsonBinary keyId;
         private String keyAltName;
         private String algorithm;
-        private Long contentFactor;
+        private Long contentionFactor;
         private QueryType queryType;
 
         private Builder() {
@@ -112,12 +112,12 @@ public class MongoExplicitEncryptOptions {
          * The contention factor.
          *
          * <p>It is an error to set contentionFactor when algorithm is not "Indexed".
-         * @param contentFactor the content factor
+         * @param contentionFactor the contention factor
          * @return this
          * @since 1.5
          */
-        public Builder contentFactor(final Long contentFactor) {
-            this.contentFactor = contentFactor;
+        public Builder contentionFactor(final Long contentionFactor) {
+            this.contentionFactor = contentionFactor;
             return this;
         }
 
@@ -179,12 +179,12 @@ public class MongoExplicitEncryptOptions {
     }
 
     /**
-     * Gets the content factor
-     * @return the content factor
+     * Gets the contention factor
+     * @return the contention factor
      * @since 1.5
      */
-    public Long getContentFactor() {
-        return contentFactor;
+    public Long getContentionFactor() {
+        return contentionFactor;
     }
 
     /**
@@ -200,11 +200,11 @@ public class MongoExplicitEncryptOptions {
         this.keyId = builder.keyId;
         this.keyAltName = builder.keyAltName;
         this.algorithm = builder.algorithm;
-        this.contentFactor = builder.contentFactor;
+        this.contentionFactor = builder.contentionFactor;
         this.queryType = builder.queryType;
         if (!Objects.equals(algorithm, "Indexed")) {
-            if (contentFactor != null) {
-                throw new IllegalStateException("Invalid configuration, contentFactor can only be set if algorithm is 'Indexed'");
+            if (contentionFactor != null) {
+                throw new IllegalStateException("Invalid configuration, contentionFactor can only be set if algorithm is 'Indexed'");
             } else if (queryType != null) {
                 throw new IllegalStateException("Invalid configuration, queryType can only be set if algorithm is 'Indexed'");
             }
@@ -217,7 +217,7 @@ public class MongoExplicitEncryptOptions {
                 "keyId=" + keyId +
                 ", keyAltName='" + keyAltName + '\'' +
                 ", algorithm='" + algorithm + '\'' +
-                ", contentFactor=" + contentFactor +
+                ", contentionFactor=" + contentionFactor +
                 '}';
     }
 }
