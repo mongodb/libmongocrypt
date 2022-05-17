@@ -380,7 +380,7 @@ export class ClientEncryption {
    * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    * @param callback Callback to invoke when key is created
    */
-  createDataKey(
+  createKey(
     provider: ClientEncryptionDataKeyProvider,
     callback: ClientEncryptionCreateDataKeyCallback
   ): void;
@@ -391,6 +391,19 @@ export class ClientEncryption {
    * @param options Options for creating the data key
    * @param callback Callback to invoke when key is created
    */
+  createKey(
+    provider: ClientEncryptionDataKeyProvider,
+    options: ClientEncryptionCreateDataKeyProviderOptions,
+    callback: ClientEncryptionCreateDataKeyCallback
+  ): void;
+
+  /** @deprecated Alias for createKey. */
+  createDataKey(
+    provider: ClientEncryptionDataKeyProvider,
+    callback: ClientEncryptionCreateDataKeyCallback
+  ): void;
+
+  /** @deprecated Alias for createKey. */
   createDataKey(
     provider: ClientEncryptionDataKeyProvider,
     options: ClientEncryptionCreateDataKeyProviderOptions,

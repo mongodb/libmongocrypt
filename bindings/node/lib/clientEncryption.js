@@ -170,6 +170,10 @@ module.exports = function (modules) {
      *   keyAltNames: [ 'mySpecialKey' ]
      * });
      */
+    createKey(provider, options, callback) {
+      return this.createDataKey(provider, options, callback);
+    }
+
     createDataKey(provider, options, callback) {
       if (typeof options === 'function') {
         callback = options;

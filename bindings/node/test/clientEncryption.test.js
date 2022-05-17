@@ -154,6 +154,44 @@ describe('ClientEncryption', function () {
       });
     });
 
+    it(`should create a data key with the local KMS provider (fixed key material, fixed key UUID)`, async function () {
+      // 'Custom Key Material Test' prose spec test:
+      const keyVaultColl = client.db('client').collection('encryption');
+      const encryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: {
+          local: {
+            key: 'A'.repeat(128) // the value here is not actually relevant
+          }
+        }
+      });
+
+      const dataKeyOptions = {
+        keyMaterial: new BSON.Binary(
+          Buffer.from(
+            'xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5',
+            'base64'
+          )
+        )
+      };
+      const dataKey = await encryption.createDataKey('local', dataKeyOptions);
+      expect(dataKey._bsontype).to.equal('Binary');
+
+      // Remove and re-insert with a fixed UUID to guarantee consistent output
+      const doc = (await keyVaultColl.findOneAndDelete({ _id: dataKey })).value;
+      doc._id = new BSON.Binary(Buffer.alloc(16), 4);
+      await keyVaultColl.insertOne(doc);
+
+      const encrypted = await encryption.encrypt('test', {
+        keyId: doc._id,
+        algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'
+      });
+      expect(encrypted._bsontype).to.equal('Binary');
+      expect(encrypted.toString('base64')).to.equal(
+        'AQAAAAAAAAAAAAAAAAAAAAACz0ZOLuuhEYi807ZXTdhbqhLaS2/t9wLifJnnNYwiw79d75QYIZ6M/aYC1h9nCzCjZ7pGUpAuNnkUhnIXM3PjrA=='
+      );
+    });
+
     it('should fail to create a data key if keyMaterial is wrong', function (done) {
       const encryption = new ClientEncryption(client, {
         keyVaultNamespace: 'client.encryption',
