@@ -316,14 +316,14 @@ class MongoCryptImpl implements MongoCrypt {
         }
     }
 
-    private void configure(final Supplier<Boolean> successfulConfiguration) {
-        if (!successfulConfiguration.get()) {
+    private void configure(final Supplier<Boolean> successSupplier) {
+        if (!successSupplier.get()) {
             throwExceptionFromStatus();
         }
     }
 
-    private void configure(final Supplier<Boolean> successfulConfiguration, final mongocrypt_ctx_t context) {
-        if (!successfulConfiguration.get()) {
+    private void configure(final Supplier<Boolean> successSupplier, final mongocrypt_ctx_t context) {
+        if (!successSupplier.get()) {
             MongoCryptContextImpl.throwExceptionFromStatus(context);
         }
     }
