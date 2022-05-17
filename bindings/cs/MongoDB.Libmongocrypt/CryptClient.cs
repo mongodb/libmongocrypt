@@ -102,7 +102,7 @@ namespace MongoDB.Libmongocrypt
         /// <returns>A encryption context. </returns>
         public CryptContext StartExplicitEncryptionContextWithKeyId(byte[] keyId, string encryptionAlgorithm, byte[] message)
         {
-            return StartExplicitEncryptionContext(keyId, keyAltName: null, queryType: null, contentFactor: null, encryptionAlgorithm, message);
+            return StartExplicitEncryptionContext(keyId, keyAltName: null, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
         }
 
         /// <summary>
@@ -114,7 +114,56 @@ namespace MongoDB.Libmongocrypt
         /// <returns>A encryption context. </returns>
         public CryptContext StartExplicitEncryptionContextWithKeyAltName(byte[] keyAltName, string encryptionAlgorithm, byte[] message)
         {
-            return StartExplicitEncryptionContext(keyId: null, keyAltName, queryType: null, contentFactor: null, encryptionAlgorithm, message);
+            return StartExplicitEncryptionContext(keyId: null, keyAltName, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
+        }
+
+        /// <summary>
+        /// Starts an explicit encryption context.
+        /// </summary>
+        /// <param name="key">The key id.</param>
+        /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
+        /// <param name="message">The BSON message.</param>
+        /// <returns>A encryption context. </returns>
+        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, int? queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
+        {
+            var handle = Library.mongocrypt_ctx_new(_handle);
+
+            if (keyId != null)
+            {
+                PinnedBinary.HandleAsPinnedBinary(handle, keyId, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_id(h, pb));
+            }
+            else if (keyAltName != null)
+            {
+                PinnedBinary.HandleAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
+            }
+
+            switch (encryptionAlgorithm)
+            {
+                case "Indexed":
+                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_EQUALITY));
+                    break;
+                case "Unindexed":
+                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_NONE));
+                    break;
+                default:
+                    handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
+                    break;
+            }
+
+            if (queryType.HasValue)
+            {
+                handle.Check(_status, Library.mongocrypt_ctx_setopt_query_type(handle, (Library.mongocrypt_query_type_t)queryType.Value));
+            }
+
+            if (contentionFactor.HasValue)
+            {
+                var contentionFactorInt = contentionFactor.Value;
+                handle.Check(_status, Library.mongocrypt_ctx_setopt_contention_factor(handle, ref contentionFactorInt));
+            }
+
+            PinnedBinary.HandleAsPinnedBinary(handle, message, _status, (h, pb) => Library.mongocrypt_ctx_explicit_encrypt_init(h, pb));
+
+            return new CryptContext(handle);
         }
 
         /// <summary>
@@ -198,48 +247,6 @@ namespace MongoDB.Libmongocrypt
             {
                 _status.Check(this);
             }
-        }
-
-        private CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, int? queryType, long? contentFactor, string encryptionAlgorithm, byte[] message)
-        {
-            var handle = Library.mongocrypt_ctx_new(_handle);
-
-            if (keyId != null)
-            {
-                PinnedBinary.HandleAsPinnedBinary(handle, keyId, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_id(h, pb));
-            }
-            else if (keyAltName != null)
-            {
-                PinnedBinary.HandleAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
-            }
-
-            switch (encryptionAlgorithm)
-            {
-                case "Indexed":
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_EQUALITY));
-                    break;
-                case "Unindexed":
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_NONE));
-                    break;
-                default:
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
-                    break;
-            }
-
-            if (queryType.HasValue)
-            {
-                handle.Check(_status, Library.mongocrypt_ctx_setopt_query_type(handle, (Library.mongocrypt_query_type_t)queryType.Value));
-            }
-
-            if (contentFactor.HasValue)
-            {
-                var contentFactorInt = contentFactor.Value;
-                handle.Check(_status, Library.mongocrypt_ctx_setopt_contention_factor(handle, ref contentFactorInt));
-            }
-
-            PinnedBinary.HandleAsPinnedBinary(handle, message, _status, (h, pb) => Library.mongocrypt_ctx_explicit_encrypt_init(h, pb));
-
-            return new CryptContext(handle);
         }
     }
 }
