@@ -451,7 +451,7 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "rhel-67-s390x" }
     - func: "download tarball"
-      vars: { variant_name: rhel-71-ppc64el" }
+      vars: { variant_name: "rhel-71-ppc64el" }
     - func: "download tarball"
       vars: { variant_name: "ubuntu1604-arm64" }
     - func: "download tarball"
