@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <bson.h>
+#include <bson/bson.h>
 
 #include "mc-fle2-insert-update-payload-private.h"
 #include "mongocrypt.h"
