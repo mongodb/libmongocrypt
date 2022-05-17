@@ -1,5 +1,5 @@
 import type { Binary } from 'bson';
-import type { MongoClient, BulkWriteResult } from 'mongodb';
+import type { MongoClient, BulkWriteResult, ClientSession } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
 
@@ -305,6 +305,7 @@ export interface ClientEncryptionCreateDataKeyProviderOptions {
 export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
   provider: ClientEncryptionDataKeyProvider;
   masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
+  session?: ClientSession;
 }
 
 /** @experimental */

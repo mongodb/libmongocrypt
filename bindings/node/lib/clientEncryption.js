@@ -259,6 +259,9 @@ module.exports = function (modules) {
       if (options) {
         const keyEncryptionKey = Object.assign({ provider: options.provider }, options.masterKey);
         keyEncryptionKeyBson = bson.serialize(keyEncryptionKey);
+      } else {
+        // Always make sure `options` is an object below.
+        options = {};
       }
       const filterBson = bson.serialize(filter);
       const context = this._mongoCrypt.makeRewrapManyDataKeyContext(
@@ -268,7 +271,8 @@ module.exports = function (modules) {
       const stateMachine = new StateMachine({
         bson,
         proxyOptions: this._proxyOptions,
-        tlsOptions: this._tlsOptions
+        tlsOptions: this._tlsOptions,
+        session: options.session
       });
 
       return promiseOrCallback(callback, cb => {
@@ -290,16 +294,23 @@ module.exports = function (modules) {
           this._keyVaultClient
             .db(dbName)
             .collection(collectionName)
-            .bulkWrite(replacements, { writeConcern: { w: 'majority' } }, (err, result) => {
-              if (err) {
-                cb(err, null);
-                return;
-              }
+            .bulkWrite(
+              replacements,
+              {
+                writeConcern: { w: 'majority' },
+                session: options.session
+              },
+              (err, result) => {
+                if (err) {
+                  cb(err, null);
+                  return;
+                }
 
-              cb(null, {
-                bulkWriteResult: result
-              });
-            });
+                cb(null, {
+                  bulkWriteResult: result
+                });
+              }
+            );
         });
       });
     }

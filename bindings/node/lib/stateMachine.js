@@ -404,7 +404,11 @@ module.exports = function (modules) {
 
       client
         .db(dbName)
-        .listCollections(filter, { promoteLongs: false, promoteValues: false })
+        .listCollections(filter, {
+          promoteLongs: false,
+          promoteValues: false,
+          session: this.options.session
+        })
         .toArray((err, collections) => {
           if (err) {
             callback(err, null);
@@ -460,7 +464,7 @@ module.exports = function (modules) {
       client
         .db(dbName)
         .collection(collectionName, { readConcern: { level: 'majority' } })
-        .find(filter)
+        .find(filter, { session: this.options.session })
         .toArray((err, keys) => {
           if (err) {
             callback(err, null);
