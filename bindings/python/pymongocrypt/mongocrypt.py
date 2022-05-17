@@ -14,6 +14,7 @@
 
 import base64
 import copy
+import os
 
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)

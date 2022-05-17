@@ -257,6 +257,9 @@ class TestMongoCrypt(unittest.TestCase):
     def test_encrypt(self):
         mc = self.create_mongocrypt()
         self.addCleanup(mc.close)
+        if lib.mongocrypt_csfle_version_string(mc.crypt, ffi.new("uint32_t*")) \
+                != ffi.NULL:
+            self.skipTest("This test's assumptions about the state of mongocrypt do not hold when CSFLE is loaded")
         with mc.encryption_context('text', bson_data('command.json')) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO)
 
@@ -379,13 +382,24 @@ class TestMongoCryptCallback(unittest.TestCase):
             'local': {'key': b'\x00'*96}})
 
     def test_csfle(self):
+        # Test that we can pick up CSFLE automatically
+        encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
+                                  bypass_encryption=False,
+                                  csfle_required=True,
+                                  )
+        self.addCleanup(encrypter.close)
         encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
             csfle_path=os.path.expanduser("~/csfle/lib/mongo_csfle_v1.dylib",),
             csfle_required=True,
             )
         self.addCleanup(encrypter.close)
-        ref = lib.mongocrypt_csfle_version(encrypter.mongocrypt.crypt)
-        self.assertGreater(int(ffi.cast("intptr_t", ref)), 0)
+        with self.assertRaises(Exception):
+            AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
+            csfle_path=os.path.expanduser("/doesnotexist",),
+                                      csfle_required=True,
+                                      )
+
+
 
     def test_encrypt(self):
         encrypter = AutoEncrypter(MockCallback(

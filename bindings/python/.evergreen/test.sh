@@ -44,14 +44,15 @@ else
              "/opt/python/pypy3.6/bin/pypy3")
 fi
 git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
-python3 drivers-evergreen-tools/.evergreen/mongodl.py --component csfle --version 6.0.0-rc4 --out ~/csfle/
+${PYTHONS[-1]} drivers-evergreen-tools/.evergreen/mongodl.py --component csfle --version 6.0.0-rc4 --out ~/csfle/
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
-    python setup.py test
+    DYLD_FALLBACK_LIBRARY_PATH=~/csfle/lib/:$DYLD_FALLBACK_LIBRARY_PATH LD_LIBRARY_PATH=~/csfle/lib/:LD_LIBRARY_PATH PATH=~/csfle/lib/:PATH python setup.py test
+    python setup.py test -s test.test_mongocrypt.TestMongoCrypt
     deactivate
     rm -rf .venv
 done
