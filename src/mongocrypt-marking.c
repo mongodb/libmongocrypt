@@ -776,6 +776,7 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
                                        &bytes_written,
                                        status);
       break;
+   case MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE:
    default:
       /* Error. */
       CLIENT_ERR ("Unsupported value for encryption algorithm");

@@ -425,6 +425,10 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       CHECK_AND_CALL (mongo_op_keys, ctx, out);
    case MONGOCRYPT_CTX_ERROR:
       return false;
+   case MONGOCRYPT_CTX_DONE:
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+   case MONGOCRYPT_CTX_NEED_KMS:
+   case MONGOCRYPT_CTX_READY:
    default:
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
@@ -467,6 +471,10 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
       CHECK_AND_CALL (mongo_feed_keys, ctx, in);
    case MONGOCRYPT_CTX_ERROR:
       return false;
+   case MONGOCRYPT_CTX_DONE:
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+   case MONGOCRYPT_CTX_NEED_KMS:
+   case MONGOCRYPT_CTX_READY:
    default:
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
@@ -492,6 +500,10 @@ mongocrypt_ctx_mongo_done (mongocrypt_ctx_t *ctx)
       CHECK_AND_CALL (mongo_done_keys, ctx);
    case MONGOCRYPT_CTX_ERROR:
       return false;
+   case MONGOCRYPT_CTX_DONE:
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+   case MONGOCRYPT_CTX_NEED_KMS:
+   case MONGOCRYPT_CTX_READY:
    default:
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
@@ -534,6 +546,12 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx)
       return ctx->vtable.next_kms_ctx (ctx);
    case MONGOCRYPT_CTX_ERROR:
       return NULL;
+   case MONGOCRYPT_CTX_DONE:
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+   case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+   case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+   case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+   case MONGOCRYPT_CTX_READY:
    default:
       _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
       return NULL;
@@ -609,6 +627,12 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx)
       return ctx->vtable.kms_done (ctx);
    case MONGOCRYPT_CTX_ERROR:
       return false;
+   case MONGOCRYPT_CTX_DONE:
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+   case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+   case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+   case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+   case MONGOCRYPT_CTX_READY:
    default:
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
@@ -638,6 +662,12 @@ mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       return ctx->vtable.finalize (ctx, out);
    case MONGOCRYPT_CTX_ERROR:
       return false;
+   case MONGOCRYPT_CTX_DONE:
+   case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+   case MONGOCRYPT_CTX_NEED_KMS:
+   case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+   case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+   case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
    default:
       return _mongocrypt_ctx_fail_w_msg (ctx, "wrong state");
    }
