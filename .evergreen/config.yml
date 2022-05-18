@@ -1130,7 +1130,8 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
-  - test-java
+  # Needs: BUILD-14976 
+  # - test-java
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"
