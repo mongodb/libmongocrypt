@@ -1135,22 +1135,30 @@ _init_ok (_mongocrypt_tester_t *tester, const char *json)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
-   mongocrypt_binary_t *filter;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    ctx = mongocrypt_ctx_new (crypt);
 
    ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, "test", -1, TEST_BSON (json)),
               ctx);
-   /* verify the collection in the filter is 'coll' */
-   BSON_ASSERT (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO ==
-                mongocrypt_ctx_state (ctx));
 
-   filter = mongocrypt_binary_new ();
-   ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
-   ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'name': 'coll'}"), filter);
+   if (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO == mongocrypt_ctx_state (ctx)) {
+      mongocrypt_binary_t *filter;
+      /* verify the collection in the filter is 'coll' */
+      filter = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_BSON ("{'name': 'coll'}"),
+                                           filter);
 
-   mongocrypt_binary_destroy (filter);
+      mongocrypt_binary_destroy (filter);
+   } else {
+      // The "create" command transitions directly to
+      // MONGOCRYPT_CTX_NEED_MONGO_MARKINGS.
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   }
+
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }

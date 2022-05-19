@@ -1856,6 +1856,31 @@ _try_schema_from_cache (mongocrypt_ctx_t *ctx)
    return true;
 }
 
+/* _try_empty_schema_for_create uses an empty JSON schema for the create
+ * command. This is to avoid an unnecessary 'listCollections' command for
+ * create. */
+static bool
+_try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx;
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   /* As a special case, use an empty schema for the 'create' command. */
+   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (!cmd_name) {
+      return false;
+   }
+
+   if (0 != strcmp (cmd_name, "create")) {
+      return true;
+   }
+
+   bson_t empty = BSON_INITIALIZER;
+   _mongocrypt_buffer_steal_from_bson (&ectx->schema, &empty);
+   ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+   return true;
+}
+
 static bool
 _permitted_for_encryption (bson_iter_t *iter,
                            mongocrypt_encryption_algorithm_t algo,
@@ -2335,6 +2360,14 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
          if (!_try_schema_from_cache (ctx)) {
             return false;
          }
+      }
+
+      /* If we did not have a local or cached schema, check if this is a
+       * "create" command. If it is a "create" command, do not run
+       * "listCollections" to get a server-side schema. */
+      if (_mongocrypt_buffer_empty (&ectx->schema) &&
+          !_try_empty_schema_for_create (ctx)) {
+         return false;
       }
 
       /* Otherwise, we need the the driver to fetch the schema. */
