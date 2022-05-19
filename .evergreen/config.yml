@@ -902,7 +902,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-java
-  - test-python
   - name: publish-packages
     distros:
     - rhel70-small
@@ -931,6 +930,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-java
   - build-and-test-node
+  - test-python
   - name: publish-packages
     distros:
     - rhel70-small

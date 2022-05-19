@@ -382,16 +382,22 @@ class TestMongoCryptCallback(unittest.TestCase):
             'local': {'key': b'\x00'*96}})
 
     def test_csfle(self):
+        import sys
+        extension = {'win32': "~/csfle/bin/mongo_csfle_v1.dll",
+                     'darwin': "~/csfle/lib/mongo_csfle_v1.dylib"}
+        encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
+            csfle_path=os.path.expanduser(extension.get(
+                sys.platform, "~/csfle/lib/mongo_csfle_v1.so")),
+            csfle_required=True,
+            )
+        print(os.path.expanduser(extension.get(
+                sys.platform, "~/csfle/lib/mongo_csfle_v1.so")))
+        self.addCleanup(encrypter.close)
         # Test that we can pick up CSFLE automatically
         encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
                                   bypass_encryption=False,
                                   csfle_required=True,
                                   )
-        self.addCleanup(encrypter.close)
-        encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
-            csfle_path=os.path.expanduser("~/csfle/lib/mongo_csfle_v1.dylib",),
-            csfle_required=True,
-            )
         self.addCleanup(encrypter.close)
         with self.assertRaises(Exception):
             AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
