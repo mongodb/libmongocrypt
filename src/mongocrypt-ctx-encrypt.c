@@ -1571,6 +1571,12 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    case MONGOCRYPT_INDEX_TYPE_NONE:
       marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED;
       break;
+   default:
+      // This might be unreachable because of other validation. Better safe than
+      // sorry.
+      _mongocrypt_ctx_fail_w_msg (ctx,
+                                  "Invalid value for EncryptOpts.indexType");
+      goto fail;
    }
 
    /* Get iterator to input 'v' BSON value. */

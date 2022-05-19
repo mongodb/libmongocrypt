@@ -70,6 +70,8 @@ kms_response_parser_wants_bytes (kms_response_parser_t *parser, int32_t max)
       KMS_ASSERT (parser->content_length != -1);
       return parser->content_length -
              ((int) parser->raw_response->len - parser->start);
+   default:
+      KMS_ASSERT (false && "Invalid kms_response_parser HTTP state");
    }
    return -1;
 }
@@ -333,6 +335,8 @@ kms_response_parser_feed (kms_response_parser_t *parser,
       case PARSING_DONE:
          KMS_ERROR (parser, "Unexpected extra HTTP content");
          return false;
+      default:
+         KMS_ASSERT (false && "Invalid kms_response_parser HTTP state");
       }
    }
 
@@ -351,7 +355,7 @@ kms_response_parser_get_response (kms_response_parser_t *parser)
    if (parser->kmip) {
       return kms_kmip_response_parser_get_response (parser->kmip);
    }
-   
+
    response = parser->response;
 
    parser->response = NULL;
@@ -367,12 +371,12 @@ kms_response_parser_status (kms_response_parser_t *parser)
    if (!parser) {
       return 0;
    }
-   
+
    if (parser->kmip) {
       KMS_ERROR (parser, "kms_response_parser_status not applicable to KMIP");
       return 0;
    }
-   
+
    if (!parser->response) {
       return 0;
    }

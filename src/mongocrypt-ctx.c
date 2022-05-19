@@ -967,6 +967,7 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
    /* As currently implemented, we do not expect to ever be in KB_REQUESTING
     * or KB_REQUESTING_ANY state when calling this function. */
    case KB_REQUESTING:
+   default:
       CLIENT_ERR ("key broker in unexpected state");
       new_state = MONGOCRYPT_CTX_ERROR;
       ret = false;

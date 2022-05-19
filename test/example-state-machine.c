@@ -44,6 +44,9 @@ _log_to_stderr (mongocrypt_log_level_t level,
    case MONGOCRYPT_LOG_LEVEL_TRACE:
       fprintf (stderr, "TRACE");
       break;
+   default:
+      fprintf (stderr, "UNKNOWN");
+      break;
    }
    fprintf (stderr, " %s\n", message);
 }
@@ -220,9 +223,6 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
          bson_free (data);
          CHECK (mongocrypt_ctx_mongo_done (ctx));
          break;
-      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
-         BSON_ASSERT (0);
-         break;
       case MONGOCRYPT_CTX_NEED_KMS:
          while ((kms = mongocrypt_ctx_next_kms_ctx (ctx))) {
             output = mongocrypt_binary_new ();
@@ -260,6 +260,12 @@ _run_state_machine (mongocrypt_ctx_t *ctx, bson_t *result)
          mongocrypt_ctx_status (ctx, status);
          printf ("\ngot error: %s\n", mongocrypt_status_message (status, NULL));
          abort ();
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         // We don't handle KMS credentials
+         // fallthrough
+      default:
+         BSON_ASSERT (0);
          break;
       }
    }
