@@ -1224,18 +1224,30 @@ typedef struct {
    bool ok;
 } moe_result;
 
+// must_omit_encryptionInformation returns true if the command
+// must omit the "encryptionInformation" field when sent to mongod / mongos.
 static moe_result
 must_omit_encryptionInformation (const char *command_name,
                                  const bson_t *command,
                                  mongocrypt_status_t *status)
 {
+   // eligible_commands may omit encryptionInformation if the command does not
+   // contain payloads requiring encryption.
    const char *eligible_commands[] = {
       "find", "aggregate", "distinct", "count", "insert"};
    size_t i;
    bool found = false;
 
-   if (0 == strcmp (command_name, "compactStructuredEncryptionData")) {
-      return (moe_result){.must_omit = true, .ok = true};
+   // prohibited_commands prohibit encryptionInformation on mongod / mongos.
+   const char *prohibited_commands[] = {
+      "compactStructuredEncryptionData", "create", "collMod", "createIndexes"};
+
+   for (i = 0;
+        i < sizeof (prohibited_commands) / sizeof (prohibited_commands[0]);
+        i++) {
+      if (0 == strcmp (prohibited_commands[i], command_name)) {
+         return (moe_result){.ok = true, .must_omit = true};
+      }
    }
 
    for (i = 0; i < sizeof (eligible_commands) / sizeof (eligible_commands[0]);
@@ -2144,9 +2156,9 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    } else if (0 == strcmp (cmd_name, "startSession")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "create")) {
-      *bypass = true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "createIndexes")) {
-      *bypass = true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "drop")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "dropDatabase")) {
@@ -2180,6 +2192,8 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    } else if (0 == strcmp (cmd_name, "refreshSessions")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "compactStructuredEncryptionData")) {
+      eligible = true;
+   } else if (0 == strcmp (cmd_name, "collMod")) {
       eligible = true;
    }
 

@@ -1204,8 +1204,8 @@ _test_encrypt_init_each_cmd (_mongocrypt_tester_t *tester)
    _init_bypass (tester, "{'commitTransaction': 1}");
    _init_bypass (tester, "{'endSessions': 1}");
    _init_bypass (tester, "{'startSession': 1}");
-   _init_bypass (tester, "{'create': 1}");
-   _init_bypass (tester, "{'createIndexes': 1}");
+   _init_ok (tester, "{'create': 'coll'}");
+   _init_ok (tester, "{'createIndexes': 'coll'}");
    _init_bypass (tester, "{'drop': 1}");
    _init_bypass (tester, "{'dropDatabase': 1}");
    _init_bypass (tester, "{'killCursors': 1}");
@@ -1237,6 +1237,7 @@ _test_encrypt_init_each_cmd (_mongocrypt_tester_t *tester)
    _init_bypass (tester, "{'killAllSessionsByPattern': 1}");
    _init_bypass (tester, "{'refreshSessions': 1}");
    _init_ok (tester, "{'compactStructuredEncryptionData': 'coll'}");
+   _init_ok (tester, "{'collMod': 'coll'}");
 }
 
 
