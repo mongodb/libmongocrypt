@@ -40,7 +40,16 @@ namespace MongoDB.Libmongocrypt
         /// Gets the CSFLE version.
         /// </summary>
         /// <returns>CSFLE version.</returns>
-        public string CsfleVersion => Library.mongocrypt_csfle_version_string(_handle, out _);
+        public string CsfleVersion
+        {
+            get
+            {
+                var versionPtr = Library.mongocrypt_csfle_version_string(_handle, out _);
+                var result = Marshal.PtrToStringAnsi(versionPtr);
+
+                return result;
+            }
+        }
 
         /// <summary>
         /// Starts the create data key context.
