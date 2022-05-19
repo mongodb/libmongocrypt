@@ -32,6 +32,7 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
    mongoc_add_platform_compile_options (
       msvc:/W3 msvc:/WX msvc:/wd4996 msvc:/wd4359
       gnu-like:-Wall gnu-like:-Werror
+      gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
       )
 endif ()
 

@@ -61,6 +61,9 @@ _mongocrypt_stdout_log_fn (mongocrypt_log_level_t level,
    case MONGOCRYPT_LOG_LEVEL_TRACE:
       printf ("TRACE");
       break;
+   default:
+      printf ("UNKNOWN");
+      break;
    }
    printf (" %s\n", message);
 }
