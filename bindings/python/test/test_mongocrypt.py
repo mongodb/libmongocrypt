@@ -383,12 +383,6 @@ class TestMongoCryptCallback(unittest.TestCase):
 
     def test_csfle(self):
         # Test that we can pick up CSFLE automatically
-        try:
-            # Workaround for Python 3.8+ on Windows
-            os.add_dll_directory(os.path.expanduser("~/csfle/bin/"))
-        except:
-            pass
-
         encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
                                   bypass_encryption=False,
                                   csfle_required=True,

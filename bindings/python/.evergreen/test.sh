@@ -47,7 +47,6 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     REQUESTS_CA_BUNDLE=drivers-evergreen-tools/.evergreen/x509gen/ca.pem sudo \
     ${PYTHONS[${#PYTHONS[@]}-3]} drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
     --version 6.0.0-rc4 --out ~/csfle/
-    ls ~/csfle/
 
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
@@ -63,7 +62,7 @@ else
     SSL_CERT_FILE=drivers-evergreen-tools/.evergreen/x509gen/server.pem \
     REQUESTS_CA_BUNDLE=drivers-evergreen-tools/.evergreen/x509gen/ca.pem \
     sudo ${PYTHONS[${#PYTHONS[@]}-3]} drivers-evergreen-tools/.evergreen/mongodl.py --component \
-    csfle --version 6.0.0-rc4 --out ~/csfle/ --target rhel70
+    csfle --version 6.0.0-rc4 --out ~/csfle/
 fi
 
 
