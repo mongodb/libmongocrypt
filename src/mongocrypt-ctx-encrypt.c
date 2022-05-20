@@ -2253,6 +2253,17 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    return false;
 }
 
+static bool
+needs_ismaster_check (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   // The "create" and "createIndexes" command require an isMaster check when
+   // using mongocryptd. See MONGOCRYPT-429.
+   return !ctx->crypt->csfle.okay &&
+          (0 == strcmp (ectx->cmd_name, "create") ||
+           0 == strcmp (ectx->cmd_name, "createIndexes"));
+}
+
 bool
 mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                              const char *db,
@@ -2360,19 +2371,12 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
 
    /* The "create" and "createIndexes" command require sending an isMaster
     * request to mongocryptd. */
-   {
-      const char *cmd_name =
-         get_command_name (&ectx->original_cmd, ctx->status);
-      if (0 == strcmp (cmd_name, "create") ||
-          0 == strcmp (cmd_name, "createIndexes")) {
-         if (!ctx->crypt->csfle.okay) {
-            /* We are using mongocryptd. We need to ensure that mongocryptd
-             * maxWireVersion >= 17. */
-            ectx->ismaster.needed = true;
-            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-            return true;
-         }
-      }
+   if (needs_ismaster_check (ctx)) {
+      /* We are using mongocryptd. We need to ensure that mongocryptd
+       * maxWireVersion >= 17. */
+      ectx->ismaster.needed = true;
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+      return true;
    }
 
    return mongocrypt_ctx_encrypt_ismaster_done (ctx);
@@ -2392,19 +2396,12 @@ mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx)
 
    /* The "create" and "createIndexes" command require bypassing on mongocryptd
     * older than version 6.0. */
-   {
-      const char *cmd_name =
-         get_command_name (&ectx->original_cmd, ctx->status);
-      if (0 == strcmp (cmd_name, "create") ||
-          0 == strcmp (cmd_name, "createIndexes")) {
-         if (!ctx->crypt->csfle.okay) {
-            if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_6) {
-               /* Bypass. */
-               ctx->nothing_to_do = true;
-               ctx->state = MONGOCRYPT_CTX_READY;
-               return true;
-            }
-         }
+   if (needs_ismaster_check (ctx)) {
+      if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_6) {
+         /* Bypass. */
+         ctx->nothing_to_do = true;
+         ctx->state = MONGOCRYPT_CTX_READY;
+         return true;
       }
    }
 
