@@ -16,19 +16,16 @@
  */
 
 import de.undercouch.gradle.tasks.download.Download
-import groovy.util.Node
-import groovy.util.NodeList
 import java.io.ByteArrayOutputStream
 import java.net.URI
 
-
 buildscript {
     repositories {
-        jcenter()
         mavenCentral()
+        google()
     }
     dependencies {
-        "classpath"(group = "net.java.dev.jna", name = "jna", version = "4.5.2")
+        "classpath"(group = "net.java.dev.jna", name = "jna", version = "5.11.0")
     }
 }
 
@@ -36,13 +33,13 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("de.undercouch.download").version("3.4.3")
-    id("biz.aQute.bnd.builder").version("4.3.1")
+    id("de.undercouch.download") version "5.0.5"
+    id("biz.aQute.bnd.builder") version "6.2.0"
 }
 
 repositories {
+    mavenCentral()
     google()
-    jcenter()
 }
 
 group = "org.mongodb"
@@ -57,12 +54,13 @@ java {
 val bsonRangeVersion = "[3.10,5.0)"
 dependencies {
     api("org.mongodb:bson:$bsonRangeVersion")
-    api("net.java.dev.jna:jna:5.6.0")
-    implementation("org.slf4j:slf4j-api:1.7.6")
+    api("net.java.dev.jna:jna:5.11.0")
+    implementation("org.slf4j:slf4j-api:1.7.36")
 
     // Tests
-    testImplementation("junit:junit:4.12")
-    testRuntime("ch.qos.logback:logback-classic:1.1.1")
+    testImplementation(platform("org.junit:junit-bom:5.8.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.2.11")
 }
 
 /*
@@ -90,79 +88,67 @@ val gitHash: String by lazy {
 /*
  * Jna copy or download resources
  */
-val jnaLibsPath: String = System.getProperty("jnaLibsPath", "")
-val jnaResources: String = System.getProperty("jna.libary.path", jnaLibsPath)
-val jnaDownloadsDir = "$buildDir/jnaLibsDownloads/"
-val jnaResourcesBuildDir = "$buildDir/jnaLibs/"
-
-// Copy resources to jnaResourcesBuildDir
-val copyResources by tasks.register<Copy>("copyResources") {
-    val cmakeBuildPath = "../../../cmake-build-nocrypto"
-    destinationDir = file(jnaResourcesBuildDir)
-    if (jnaResources.isNotEmpty()) {
-        from(jnaResources)
-        include("**/libmongocrypt.so", "**/libmongocrypt.dylib", "**/mongocrypt.dll")
-    } else if (file(cmakeBuildPath).exists()){
-        val jnaMapping = mapOf(
-                "libmongocrypt.so" to "linux-" + com.sun.jna.Platform.ARCH,
-                "mongocrypt.dll" to "win32-" + com.sun.jna.Platform.ARCH,
-                "libmongocrypt.dylib" to "darwin")
-
-        val copySpecs = jnaMapping.mapTo(mutableListOf(), {
-            copySpec {
-                from(cmakeBuildPath)
-                include(it.key)
-                into(it.value)
-            }
-        }).toTypedArray()
-        with(*copySpecs)
-    }
-}
+val jnaDownloadsDir = "$buildDir/jnaLibs/downloads/"
+val jnaResourcesDir = "$buildDir/jnaLibs/resources/"
+val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesDir}${com.sun.jna.Platform.RESOURCE_PREFIX}")
+val jnaResources: String = System.getProperty("jna.library.path", jnaLibsPath)
 
 // Download jnaLibs that match the git to jnaResourcesBuildDir
-val downloadJnaLibs by tasks.register<DefaultTask>("downloadJnaLibs")
 val revision: String = System.getProperty("gitRevision", if (gitVersion == version) gitVersion else gitHash)
+val downloadUrl: String = "https://mciuploads.s3.amazonaws.com/libmongocrypt/java/$revision/libmongocrypt-java.tar.gz"
 
-data class LibMongoCryptS3Data(val evergreenName: String, val osArch: String) {
-    fun downloadUrl(): String {
-        return "https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$evergreenName/r1.4/$revision/libmongocrypt.tar.gz"
+val jnaMapping: Map<String, String> = mapOf(
+    "rhel-62-64-bit" to "linux-x86-64",
+    "rhel-67-s390x" to "linux-s390x",
+    "rhel-71-ppc64el" to "linux-ppc64le",
+    "ubuntu1604-arm64" to "linux-aarch64",
+    "windows-test" to "win32-x86-64",
+    "macos_x86_64" to "darwin-x86-64",
+    "macos" to "darwin"
+)
+
+tasks.register<Download>("downloadJava") {
+    src(downloadUrl)
+    dest("${jnaDownloadsDir}/libmongocrypt-java.tar.gz")
+    overwrite(true)
+}
+
+tasks.register<Copy>("unzipJava") {
+    outputs.upToDateWhen { false }
+    from(tarTree(resources.gzip("${jnaDownloadsDir}/libmongocrypt-java.tar.gz")))
+    include(jnaMapping.keys.flatMap {
+        listOf("${it}/nocrypto/**/libmongocrypt.so", "${it}/nocrypto/**/libmongocrypt.dylib", "${it}/nocrypto/**/mongocrypt.dll" )
+    })
+    eachFile {
+        path = "${jnaMapping.get(path.substringBefore("/"))}/${name}"
+    }
+    into(jnaResourcesDir)
+    mustRunAfter("downloadJava")
+
+    doLast {
+        println("jna.library.path contents: \n  ${fileTree(jnaResourcesDir).files.joinToString(",\n  ")}")
     }
 }
 
-// If updating this list remember to also update the Publish Snapshots `depends_on` in the main evergreen config.yml
-val jnaMappingList: List<LibMongoCryptS3Data> = listOf(
-        LibMongoCryptS3Data("rhel-62-64-bit", "linux-x86-64"),
-        LibMongoCryptS3Data("rhel-67-s390x", "linux-s390x"),
-        LibMongoCryptS3Data("ubuntu1604-arm64", "linux-aarch64"),
-        LibMongoCryptS3Data("windows-test", "win32-x86-64"),
-        LibMongoCryptS3Data("macos", "darwin")
-)
+tasks.register("downloadJnaLibs") {
+    dependsOn("downloadJava", "unzipJava")
+}
 
-jnaMappingList.forEach {
-    tasks {
-        val download by register<Download>("download-${it.osArch}") {
-            src(it.downloadUrl())
-            dest("${jnaDownloadsDir}zips/${it.osArch}.tgz")
-            overwrite(true)
-        }
-
-        val unzip by register<Copy>("unzip-${it.osArch}") {
-            from(tarTree(resources.gzip("${jnaDownloadsDir}zips/${it.osArch}.tgz")))
-            include("nocrypto/**/libmongocrypt.so", "nocrypto/**/libmongocrypt.dylib", "nocrypto/**/mongocrypt.dll")
-            eachFile {
-                path = name
-            }
-            into("$jnaDownloadsDir${it.evergreenName}/${it.osArch}")
-        }
-        unzip.dependsOn(download)
-
-        val addDefaultLibToMainPackage by register<Copy>("default-${it.osArch}") {
-            from("$jnaDownloadsDir${it.evergreenName}/")
-            into(jnaResourcesBuildDir)
-        }
-        addDefaultLibToMainPackage.dependsOn(unzip)
-        downloadJnaLibs.dependsOn(addDefaultLibToMainPackage)
+tasks.test {
+    systemProperty("jna.debug_load", "true")
+    systemProperty("jna.library.path", jnaResources)
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
     }
+
+    doFirst {
+        println("jna.library.path contents:")
+        println(fileTree(jnaResources)  {
+            this.setIncludes(listOf("*.*"))
+        }.files.joinToString(",\n  ", "  "))
+    }
+    mustRunAfter("downloadJnaLibs", "downloadJava", "unzipJava")
 }
 
 tasks.withType<AbstractPublishToMaven> {
@@ -176,20 +162,7 @@ tasks.withType<AbstractPublishToMaven> {
 }
 
 tasks.withType<PublishToMavenRepository> {
-    sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
-}
-
-tasks.withType<PublishToMavenLocal> {
-    dependsOn(copyResources)
-    sourceSets["main"].resources.srcDirs("resources", jnaResourcesBuildDir)
-}
-
-tasks.withType<Test> {
-    @Suppress("UNCHECKED_CAST")
-    systemProperties((System.getProperties().toMap() as Map<String, Any>).filter { it.key.startsWith("jna.") })
-
-    dependsOn(copyResources)
-    sourceSets["test"].resources.srcDirs("resources", jnaResourcesBuildDir)
+    sourceSets["main"].resources.srcDirs("resources", jnaResourcesDir)
 }
 
 /*
@@ -285,7 +258,7 @@ tasks.register("publishSnapshots") {
     group = "publishing"
     description = "Publishes snapshots to Sonatype"
     if (version.toString().endsWith("-SNAPSHOT")) {
-        dependsOn(downloadJnaLibs)
+        dependsOn("downloadJnaLibs")
         dependsOn(tasks.withType<PublishToMavenRepository>())
     }
 }

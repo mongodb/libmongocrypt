@@ -5,8 +5,6 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-export JAVA_HOME="/opt/java/jdk8"
-
 if [ "Windows_NT" = "$OS" ]; then
    export JAVA_HOME=/cygdrive/c/java/jdk8
 else
@@ -14,5 +12,4 @@ else
 fi
 
 ./gradlew -version
-
-./gradlew clean check --info -Djna.debug_load=true -Djna.library.path=${PROJECT_DIRECTORY}/install/libmongocrypt/lib/
+./gradlew clean downloadJnaLibs check --info

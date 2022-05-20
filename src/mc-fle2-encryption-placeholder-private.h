@@ -17,7 +17,7 @@
 #ifndef MC_FLE2_ENCRYPTION_PLACEHOLDER_PRIVATE_H
 #define MC_FLE2_ENCRYPTION_PLACEHOLDER_PRIVATE_H
 
-#include <bson.h>
+#include <bson/bson.h>
 
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"

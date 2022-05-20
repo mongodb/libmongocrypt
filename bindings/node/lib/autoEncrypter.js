@@ -130,15 +130,17 @@ module.exports = function (modules) {
         mongoCryptOptions.csflePath = options.extraOptions.csflePath;
       }
 
+      if (options.bypassQueryAnalysis) {
+        mongoCryptOptions.bypassQueryAnalysis = options.bypassQueryAnalysis;
+      }
+
+      this._bypassMongocryptdAndCSFLE = this._bypassEncryption || options.bypassQueryAnalysis;
+
       if (options.extraOptions && options.extraOptions.csfleSearchPaths) {
         // Only for driver testing
         mongoCryptOptions.csfleSearchPaths = options.extraOptions.csfleSearchPaths;
-      } else if (!this._bypassEncryption) {
+      } else if (!this._bypassMongocryptdAndCSFLE) {
         mongoCryptOptions.csfleSearchPaths = ['$SYSTEM'];
-      }
-
-      if (options.bypassQueryAnalysis) {
-        mongoCryptOptions.bypassQueryAnalysis = options.bypassQueryAnalysis;
       }
 
       Object.assign(mongoCryptOptions, { cryptoCallbacks });
@@ -151,7 +153,7 @@ module.exports = function (modules) {
 
       // Only instantiate mongocryptd manager/client once we know for sure
       // that we are not using the CSFLE shared library.
-      if (!this._bypassEncryption && !this.csfleVersionInfo) {
+      if (!this._bypassMongocryptdAndCSFLE && !this.csfleVersionInfo) {
         this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
         this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
           useNewUrlParser: true,
@@ -166,7 +168,7 @@ module.exports = function (modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
-      if (this._bypassEncryption || this.csfleVersionInfo) {
+      if (this._bypassMongocryptdAndCSFLE || this.csfleVersionInfo) {
         return callback();
       }
       const _callback = (err, res) => {

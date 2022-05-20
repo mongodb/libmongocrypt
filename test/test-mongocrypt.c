@@ -378,6 +378,8 @@ _mongocrypt_tester_run_ctx_to (_mongocrypt_tester_t *tester,
          ASSERT_STATE_EQUAL (state, stop_state);
          mongocrypt_status_destroy (status);
          return;
+      default:
+         BSON_ASSERT (false && "Invalid state");
       }
       state = mongocrypt_ctx_state (ctx);
    }

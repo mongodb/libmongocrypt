@@ -33,3 +33,7 @@ local.properties
 
 # jenv
 .java-version
+
+# bin
+./bin
+

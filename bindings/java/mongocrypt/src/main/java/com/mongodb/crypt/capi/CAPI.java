@@ -321,6 +321,41 @@ public class CAPI {
                                    mongocrypt_hash_fn sha_256,
                                    Pointer ctx);
 
+    /**
+     * Set a crypto hook for the AES256-CTR operations.
+     *
+     * @param crypt The @ref mongocrypt_t object.
+     * @param aes_256_ctr_encrypt The crypto callback function for encrypt
+     * operation.
+     * @param aes_256_ctr_decrypt The crypto callback function for decrypt
+     * operation.
+     * @param ctx A context passed as an argument to the crypto callback
+     * every invocation.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_status
+     *
+     */
+    public static native boolean
+    mongocrypt_setopt_aes_256_ctr (mongocrypt_t crypt,
+            mongocrypt_crypto_fn aes_256_ctr_encrypt,
+            mongocrypt_crypto_fn aes_256_ctr_decrypt,
+            Pointer ctx);
+
+    /**
+     * Set a crypto hook for the RSASSA-PKCS1-v1_5 algorithm with a SHA-256 hash.
+     *
+     * <p>See: https://tools.ietf.org/html/rfc3447#section-8.2</p>
+     *
+     * <p>Note: this function has the wrong name. It should be:
+     * mongocrypt_setopt_crypto_hook_sign_rsassa_pkcs1_v1_5</p>
+     *
+     * @param crypt The @ref mongocrypt_t object.
+     * @param sign_rsaes_pkcs1_v1_5 The crypto callback function.
+     * @param sign_ctx A context passed as an argument to the crypto callback
+     * every invocation.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_status
+     */
     public static native boolean
     mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
             mongocrypt_t crypt,
@@ -396,6 +431,90 @@ public class CAPI {
      */
     public static native void
     mongocrypt_setopt_use_need_kms_credentials_state (mongocrypt_t crypt);
+
+
+    /**
+     * Set a local EncryptedFieldConfigMap for encryption.
+     *
+     * @param crypt The @ref mongocrypt_t object.
+     * @param encryptedFieldConfigMap A BSON document representing the EncryptedFieldConfigMap
+     * supplied by the user. The keys are collection namespaces and values are
+     * EncryptedFieldConfigMap documents. The viewed data copied. It is valid to
+     * destroy @p efc_map with @ref mongocrypt_binary_destroy immediately after.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_status
+     */
+    public static native boolean
+    mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t crypt, mongocrypt_binary_t encryptedFieldConfigMap);
+
+    /**
+     * Opt-into skipping query analysis.
+     *
+     * <p>If opted in:
+     * <ul>
+     *     <li>The csfle shared library will not attempt to be loaded.</li>
+     *     <li>A mongocrypt_ctx_t will never enter the MONGOCRYPT_CTX_NEED_MARKINGS state.</li>
+     * </ul>
+     * </p>
+     *
+     * @param crypt The @ref mongocrypt_t object to update
+     * @since 1.5
+     */
+    public static native void
+    mongocrypt_setopt_bypass_query_analysis (mongocrypt_t crypt);
+
+    /**
+     * Set the index type used for explicit encryption.
+     * The index type is only used for FLE 2 encryption.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param index_type
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status.
+     * @since 1.5
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t ctx, int index_type);
+
+    /**
+     * Set the contention factor used for explicit encryption.
+     * The contention factor is only used for indexed FLE 2 encryption.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param contention_factor
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status.
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t ctx, long contention_factor);
+
+    /**
+     * Set the index key id to use for FLE 2 explicit encryption.
+     *
+     * If the index key id not set, the key id from @ref mongocrypt_ctx_setopt_key_id is used.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param key_id The binary corresponding to the _id (a UUID) of the data key to use from
+     *               the key vault collection. Note, the UUID must be encoded with RFC-4122 byte order.
+     *               The viewed data is copied. It is valid to destroy key_id with @ref mongocrypt_binary_destroy immediately after.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t ctx, mongocrypt_binary_t key_id);
+
+    /**
+     * Set the query type to use for FLE 2 explicit encryption.
+     * The query type is only used for indexed FLE 2 encryption.
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param query_type
+     * @pre @p ctx has not been initialized.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, int query_type);
 
     /**
      * Initialize new @ref mongocrypt_t object.
@@ -665,6 +784,10 @@ public class CAPI {
     public static final int MONGOCRYPT_CTX_READY = 5; /* ready for encryption/decryption */
     public static final int MONGOCRYPT_CTX_DONE = 6;
     public static final int MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7; /* fetch/renew KMS credentials */
+
+    public static final int MONGOCRYPT_INDEX_TYPE_NONE = 1;
+    public static final int MONGOCRYPT_INDEX_TYPE_EQUALITY = 2;
+    public static final int MONGOCRYPT_QUERY_TYPE_EQUALITY = 1;
 
     /**
      * Get the current state of a context.

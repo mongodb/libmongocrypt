@@ -50,6 +50,8 @@ _check_first_byte (uint8_t byte, traversal_match_t match)
              byte == MC_SUBTYPE_FLE2InsertUpdatePayload;
    case TRAVERSE_MATCH_SUBTYPE6:
       return true;
+   default:
+      break;
    }
    return false;
 }

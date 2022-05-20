@@ -1,0 +1,10 @@
+{
+    "explain": {
+        "find": "test",
+        "filter": {
+            "value": 123456
+        }
+    },
+    "jsonSchema": {},
+    "isRemoteSchema": true
+}

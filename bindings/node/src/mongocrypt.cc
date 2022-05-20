@@ -108,6 +108,7 @@ Function MongoCrypt::Init(Napi::Env env) {
                     InstanceMethod("makeDecryptionContext", &MongoCrypt::MakeDecryptionContext),
                     InstanceMethod("makeExplicitDecryptionContext", &MongoCrypt::MakeExplicitDecryptionContext),
                     InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
+                    InstanceMethod("makeRewrapManyDataKeyContext", &MongoCrypt::MakeRewrapManyDataKeyContext),
                     InstanceAccessor("status", &MongoCrypt::Status, nullptr),
                     InstanceAccessor("csfleVersionInfo", &MongoCrypt::CSFLEVersionInfo, nullptr)
                   });
@@ -692,7 +693,51 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo& info) {
         }
     }
 
+    if (options.Has("keyMaterial")) {
+        Napi::Value keyMaterial = options["keyMaterial"];
+
+        if (!keyMaterial.IsUndefined()) {
+            if (!keyMaterial.IsBuffer()) {
+                // We should never get here
+                throw TypeError::New(Env(), "Serialized keyMaterial must be a Buffer");
+            }
+
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
+                BufferToBinary(keyMaterial.As<Uint8Array>()));
+            if (!mongocrypt_ctx_setopt_key_material(context.get(), binary.get())) {
+                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+            }
+        }
+    }
+
     if (!mongocrypt_ctx_datakey_init(context.get())) {
+        throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+    }
+
+    return MongoCryptContext::NewInstance(Env(), std::move(context));
+}
+
+Value MongoCrypt::MakeRewrapManyDataKeyContext(const CallbackInfo& info) {
+    Napi::Value filter_buffer = info[0];
+    if (!filter_buffer.IsBuffer()) {
+        throw TypeError::New(Env(), "Parameter `options` must be a Buffer");
+    }
+
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
+        mongocrypt_ctx_new(_mongo_crypt.get()));
+
+    Napi::Value key_encryption_key = info[1];
+    if (key_encryption_key.IsBuffer()) {
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> key_binary(
+            BufferToBinary(key_encryption_key.As<Uint8Array>()));
+        if (!mongocrypt_ctx_setopt_key_encryption_key(context.get(), key_binary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+        }
+    }
+
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> filter_binary(
+        BufferToBinary(filter_buffer.As<Uint8Array>()));
+    if (!mongocrypt_ctx_rewrap_many_datakey_init(context.get(), filter_binary.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 

@@ -1,0 +1,47 @@
+{
+   "ok": {
+      "$numberInt": "1"
+   },
+   "result": {
+      "explain": {
+         "find": "test",
+         "filter": {
+            "value": {
+               "$binary": {
+                  "base64": "A1gAAAAQdAACAAAAEGEAAgAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASEHYAQOIBABJjbQAAAAAAAAAAAAA=",
+                  "subType": "06"
+               }
+            }
+         },
+         "encryptionInformation": {
+            "type": 1,
+            "schema": {
+               "db.test": {
+                  "escCollection": "esc",
+                  "eccCollection": "ecc",
+                  "ecocCollection": "ecoc",
+                  "fields": [
+                     {
+                        "keyId": {
+                           "$binary": {
+                              "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                              "subType": "04"
+                           }
+                        },
+                        "path": "value",
+                        "bsonType": "int",
+                        "queries": {
+                           "queryType": "equality",
+                           "contention": {
+                              "$numberLong": "0"
+                           }
+                        }
+                     }
+                  ]
+               }
+            }
+         }
+      }
+   },
+   "hasEncryptedPlaceholders": true
+}

@@ -1,5 +1,5 @@
 import type { Binary } from 'bson';
-import type { MongoClient } from 'mongodb';
+import type { MongoClient, BulkWriteResult, ClientSession } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
 
@@ -296,6 +296,26 @@ export interface ClientEncryptionCreateDataKeyProviderOptions {
    * If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
    */
   keyAltNames?: string[] | undefined;
+
+  /** @experimental */
+  keyMaterial?: Buffer | Binary;
+}
+
+/** @experimental */
+export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
+  provider: ClientEncryptionDataKeyProvider;
+  masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
+  session?: ClientSession;
+}
+
+/** @experimental */
+export interface ClientEncryptionRewrapManyDataKeyResult {
+  bulkWriteResult: BulkWriteResult;
+}
+
+/** @experimental */
+export interface ClientEncryptionRewrapManyDataKeyCallback {
+  (error?: Error, result?: ClientEncryptionRewrapManyDataKeyResult): void;
 }
 
 /**
@@ -356,6 +376,19 @@ export class ClientEncryption {
     options: ClientEncryptionCreateDataKeyProviderOptions
   ): Promise<Binary>;
 
+  /** Alias for @see createDataKey. */
+  createKey(
+    provider: ClientEncryptionDataKeyProvider,
+    callback: ClientEncryptionCreateDataKeyCallback
+  ): void;
+
+  /** Alias for @see createDataKey. */
+  createKey(
+    provider: ClientEncryptionDataKeyProvider,
+    options: ClientEncryptionCreateDataKeyProviderOptions,
+    callback: ClientEncryptionCreateDataKeyCallback
+  ): void;
+
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
    * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
@@ -376,6 +409,30 @@ export class ClientEncryption {
     provider: ClientEncryptionDataKeyProvider,
     options: ClientEncryptionCreateDataKeyProviderOptions,
     callback: ClientEncryptionCreateDataKeyCallback
+  ): void;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document
+  ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document,
+    options: ClientEncryptionRewrapManyDataKeyProviderOptions
+  ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document,
+    callback: ClientEncryptionRewrapManyDataKeyCallback
+  ): void;
+
+  /** @experimental */
+  rewrapManyDataKey(
+    filter: Document,
+    options: ClientEncryptionRewrapManyDataKeyProviderOptions,
+    callback: ClientEncryptionRewrapManyDataKeyCallback
   ): void;
 
   /**

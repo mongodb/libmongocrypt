@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <bson.h>
+#include <bson/bson.h>
 
 #include "mc-fle2-find-equality-payload-private.h"
 #include "mongocrypt.h"
