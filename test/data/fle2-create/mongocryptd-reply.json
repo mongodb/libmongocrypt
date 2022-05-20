@@ -1,0 +1,9 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "create": "coll"
+    },
+    "hasEncryptedPlaceholders": false
+}

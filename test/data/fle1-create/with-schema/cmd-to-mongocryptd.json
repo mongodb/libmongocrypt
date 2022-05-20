@@ -1,0 +1,7 @@
+{
+    "create": "coll",
+    "jsonSchema": {
+        "bsonType": "object"
+    },
+    "isRemoteSchema": false
+}

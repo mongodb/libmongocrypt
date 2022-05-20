@@ -1,0 +1,14 @@
+{
+    "create": "coll",
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+            "db.coll": {
+                "escCollection": "esc",
+                "eccCollection": "ecc",
+                "ecocCollection": "ecoc",
+                "fields": []
+            }
+        }
+    }
+}
