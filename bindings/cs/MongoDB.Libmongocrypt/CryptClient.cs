@@ -158,7 +158,7 @@ namespace MongoDB.Libmongocrypt
             if (contentionFactor.HasValue)
             {
                 var contentionFactorInt = contentionFactor.Value;
-                handle.Check(_status, Library.mongocrypt_ctx_setopt_contention_factor(handle, ref contentionFactorInt));
+                handle.Check(_status, Library.mongocrypt_ctx_setopt_contention_factor(handle, contentionFactorInt));
             }
 
             PinnedBinary.HandleAsPinnedBinary(handle, message, _status, (h, pb) => Library.mongocrypt_ctx_explicit_encrypt_init(h, pb));
