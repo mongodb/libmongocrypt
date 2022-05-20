@@ -417,6 +417,16 @@ namespace MongoDB.Libmongocrypt
                 IntPtr @out,
                 IntPtr status);
 
+            /// <summary>
+            /// typedef bool (*mongocrypt_crypto_fn) (
+            ///     void *ctx,
+            //      mongocrypt_binary_t* key,
+            //      mongocrypt_binary_t *iv,
+            //      mongocrypt_binary_t*in,
+            //      mongocrypt_binary_t*out,
+            //      uint32_t* bytes_written,
+            //      mongocrypt_status_t *status);
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool CryptoCallback(
                 IntPtr ctx,
@@ -434,11 +444,18 @@ namespace MongoDB.Libmongocrypt
                 uint count,
                 IntPtr statusPtr);
 
+            /// <summary>
+            /// bool mongocrypt_setopt_aes_256_ecb(mongocrypt_t* crypt, mongocrypt_crypto_fn aes_256_ecb_encrypt, void* ctx);
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_aes_256_ecb(
                 MongoCryptSafeHandle handle,
                 [MarshalAs(UnmanagedType.FunctionPtr)] CryptoCallback aes_256_ecb_encrypt,
                 IntPtr ctx);
+
+            /// <summary>
+            /// void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t* crypt);
+            /// </summary>
             public delegate void mongocrypt_setopt_bypass_query_analysis(MongoCryptSafeHandle handle);
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_crypto_hooks(
@@ -455,17 +472,29 @@ namespace MongoDB.Libmongocrypt
                 MongoCryptSafeHandle handle,
                 [MarshalAs(UnmanagedType.FunctionPtr)] CryptoHmacCallback sign_rsaes_pkcs1_v1_5,
                 IntPtr sign_ctx);
+            /// <summary>
+            /// bool mongocrypt_setopt_encrypted_field_config_map(mongocrypt_t* crypt, mongocrypt_binary_t* efc_map)
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_encrypted_field_config_map(MongoCryptSafeHandle handle, BinarySafeHandle efc_map);
             [return: MarshalAs(UnmanagedType.I1),]
             public delegate bool mongocrypt_setopt_schema_map(MongoCryptSafeHandle handle, BinarySafeHandle schema);
-
+            /// <summary>
+            /// void mongocrypt_setopt_append_csfle_search_path(mongocrypt_t* crypt, const char* path);
+            /// </summary>
             public delegate void mongocrypt_setopt_append_csfle_search_path(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
-
+            /// <summary>
+            /// void mongocrypt_setopt_set_csfle_lib_path_override(mongocrypt_t* crypt, const char* path);
+            /// </summary>
             public delegate void mongocrypt_setopt_set_csfle_lib_path_override(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
+            /// <summary>
+            /// const char * mongocrypt_csfle_version_string(const mongocrypt_t* crypt, uint32_t *len);
+            /// </summary>
             [return: MarshalAs(UnmanagedType.LPStr)]
             public delegate string mongocrypt_csfle_version_string(MongoCryptSafeHandle handle, out uint length);
-
+            /// <summary>
+            /// uint64_t mongocrypt_csfle_version(const mongocrypt_t* crypt);
+            /// </summary>
             public delegate ulong mongocrypt_csfle_version(MongoCryptSafeHandle handle);
 
             [return: MarshalAs(UnmanagedType.I1)]
@@ -545,12 +574,24 @@ namespace MongoDB.Libmongocrypt
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_key_id(ContextSafeHandle handle, BinarySafeHandle binary);
 
+            /// <summary>
+            /// bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t* ctx, const char* algorithm, int len);
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_algorithm(ContextSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string algorithm, int length);
+            /// <summary>
+            /// bool mongocrypt_ctx_setopt_contention_factor(mongocrypt_ctx_t* ctx, int64_t contention_factor);
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_contention_factor(ContextSafeHandle ctx, long contention_factor);
+            /// <summary>
+            /// bool mongocrypt_ctx_setopt_index_type(mongocrypt_ctx_t* ctx, mongocrypt_index_type_t index_type)
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_index_type(ContextSafeHandle ctx, mongocrypt_index_type_t index_type);
+            /// <summary>
+            /// bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t* ctx, mongocrypt_query_type_t query_type)
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_query_type(ContextSafeHandle ctx, mongocrypt_query_type_t query_type);
 
