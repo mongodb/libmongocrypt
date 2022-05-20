@@ -65,6 +65,13 @@ _load_json_as_bson (const char *path, bson_t *out)
    bson_json_reader_destroy (reader);
 }
 
+#define TEST_DATA_COUNT_INC(var)                                               \
+   (var)++;                                                                    \
+   if ((var) >= TEST_DATA_COUNT) {                                             \
+      TEST_ERROR (                                                             \
+         "TEST_DATA_COUNT exceeded for %s. Increment TEST_DATA_COUNT.", #var); \
+   }
+
 static void
 _load_json (_mongocrypt_tester_t *tester, const char *path)
 {
@@ -76,7 +83,7 @@ _load_json (_mongocrypt_tester_t *tester, const char *path)
    buf = &tester->file_bufs[tester->file_count];
    _mongocrypt_buffer_steal_from_bson (buf, &as_bson);
    tester->file_paths[tester->file_count] = bson_strdup (path);
-   tester->file_count++;
+   TEST_DATA_COUNT_INC (tester->file_count);
 }
 
 
@@ -126,7 +133,7 @@ _load_http (_mongocrypt_tester_t *tester, const char *path)
 
    bson_free (contents);
    tester->file_paths[tester->file_count] = bson_strdup (path);
-   tester->file_count++;
+   TEST_DATA_COUNT_INC (tester->file_count);
 }
 
 
@@ -156,7 +163,7 @@ _mongocrypt_tester_install (_mongocrypt_tester_t *tester,
 
    tester->test_fns[tester->test_count] = fn;
    tester->test_names[tester->test_count] = bson_strdup (name);
-   tester->test_count++;
+   TEST_DATA_COUNT_INC (tester->test_count);
 }
 
 
@@ -167,7 +174,8 @@ _mongocrypt_tester_file (_mongocrypt_tester_t *tester, const char *path)
    mongocrypt_binary_t *to_return;
 
    to_return = mongocrypt_binary_new ();
-   tester->test_bin[tester->bin_count++] = to_return;
+   tester->test_bin[tester->bin_count] = to_return;
+   TEST_DATA_COUNT_INC (tester->bin_count);
 
    for (i = 0; i < tester->file_count; i++) {
       if (0 == strcmp (tester->file_paths[i], path)) {
@@ -210,7 +218,8 @@ _mongocrypt_tester_bson_from_json (_mongocrypt_tester_t *tester,
    }
 
    va_end (ap);
-   bson = &tester->test_bson[tester->bson_count++];
+   bson = &tester->test_bson[tester->bson_count];
+   TEST_DATA_COUNT_INC (tester->bson_count);
    if (!bson_init_from_json (bson, full_json, strlen (full_json), &error)) {
       fprintf (stderr, "%s", error.message);
       abort ();
@@ -242,13 +251,15 @@ _mongocrypt_tester_bin_from_json (_mongocrypt_tester_t *tester,
    }
 
    va_end (ap);
-   bson = &tester->test_bson[tester->bson_count++];
+   bson = &tester->test_bson[tester->bson_count];
+   TEST_DATA_COUNT_INC (tester->bson_count);
    if (!bson_init_from_json (bson, full_json, strlen (full_json), &error)) {
       fprintf (stderr, "failed to parse JSON %s: %s", error.message, json);
       abort ();
    }
    bin = mongocrypt_binary_new ();
-   tester->test_bin[tester->bin_count++] = bin;
+   tester->test_bin[tester->bin_count] = bin;
+   TEST_DATA_COUNT_INC (tester->bin_count);
    bin->data = (uint8_t *) bson_get_data (bson);
    bin->len = bson->len;
    bson_free (full_json);
@@ -275,8 +286,10 @@ _mongocrypt_tester_bin (_mongocrypt_tester_t *tester, int size)
 
    bin = mongocrypt_binary_new_from_data (blob, size);
 
-   tester->test_blob[tester->blob_count++] = blob;
-   tester->test_bin[tester->bin_count++] = bin;
+   tester->test_blob[tester->blob_count] = blob;
+   TEST_DATA_COUNT_INC (tester->blob_count);
+   tester->test_bin[tester->bin_count] = bin;
+   TEST_DATA_COUNT_INC (tester->bin_count);
    return bin;
 }
 

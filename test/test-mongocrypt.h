@@ -41,9 +41,9 @@ typedef enum tester_mongocrypt_flags {
    TESTER_MONGOCRYPT_WITH_CSFLE_LIB = 1 << 0,
 } tester_mongocrypt_flags;
 
-/* Arbitrary max of 1024 instances of temporary test data. Increase as needed.
+/* Arbitrary max of 2048 instances of temporary test data. Increase as needed.
  */
-#define TEST_DATA_COUNT 1024
+#define TEST_DATA_COUNT 2048
 typedef struct __mongocrypt_tester_t {
    int test_count;
    char *test_names[TEST_DATA_COUNT];
