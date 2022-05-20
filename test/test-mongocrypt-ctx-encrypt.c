@@ -1237,7 +1237,7 @@ _test_encrypt_init_each_cmd (_mongocrypt_tester_t *tester)
       tester,
       "{'insert': 1}",
       "non-collection command not supported for auto encryption: insert");
-   _init_fails (tester, "{}", "invalid empty BSON");
+   _init_fails (tester, "{}", "unexpected empty BSON for command");
    _init_bypass (tester, "{'isMaster': 1}");
    _init_bypass (tester, "{'ismaster': 1}");
    _init_bypass (tester, "{'killAllSessions': 1}");

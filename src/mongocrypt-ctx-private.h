@@ -156,6 +156,8 @@ typedef struct {
       _mongocrypt_buffer_t cmd;
       int32_t maxwireversion;
    } ismaster;
+   // cmd_name is the first BSON field in original_cmd for auto encryption.
+   const char *cmd_name;
 } _mongocrypt_ctx_encrypt_t;
 
 

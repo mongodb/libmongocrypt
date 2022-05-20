@@ -451,11 +451,7 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
       return true;
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (!cmd_name) {
-      _mongocrypt_ctx_fail (ctx);
-      return false;
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    if (!command_needs_deleteTokens (cmd_name)) {
       /* Command does not require deleteTokens. */
@@ -488,11 +484,7 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
       return true;
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (!cmd_name) {
-      _mongocrypt_ctx_fail (ctx);
-      return false;
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    if (0 != strcmp (cmd_name, "compactStructuredEncryptionData")) {
       return true;
@@ -602,10 +594,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
          ctx, "unable to convert encrypted_field_config to BSON");
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (cmd_name == NULL) {
-      return _mongocrypt_ctx_fail (ctx);
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    bson_copy_to (&cmd_bson, out);
    if (!_fle2_insert_encryptionInformation (
@@ -647,11 +636,6 @@ _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
    if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &bson_view)) {
       _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON cmd");
       return false;
-   }
-
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (NULL == cmd_name) {
-      return _mongocrypt_ctx_fail (ctx);
    }
 
    // Copy the command to the output
@@ -974,11 +958,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
       goto fail_create_cmd;
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (!cmd_name) {
-      _mongocrypt_ctx_fail (ctx);
-      goto fail_create_cmd;
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    if (!_add_dollar_db (cmd_name, &cmd, ectx->db_name, ctx->status)) {
       _mongocrypt_ctx_fail (ctx);
@@ -1522,12 +1502,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
-   const char *command_name =
-      get_command_name (&ectx->original_cmd, ctx->status);
-   if (NULL == command_name) {
-      bson_destroy (&converted);
-      return _mongocrypt_ctx_fail (ctx);
-   }
+   const char *command_name = ectx->cmd_name;
 
    /* Remove the 'encryptionInformation' field. It is appended in the response
     * from mongocryptd or csfle. */
@@ -1903,10 +1878,7 @@ _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    /* As a special case, use an empty schema for the 'create' command. */
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (!cmd_name) {
-      return false;
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    if (0 != strcmp (cmd_name, "create")) {
       return true;
@@ -2323,6 +2295,11 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, cmd);
+
+   ectx->cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (!ectx->cmd_name) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
 
    if (!_check_cmd_for_auto_encrypt (
           cmd, &bypass, &ectx->coll_name, ctx->status)) {
