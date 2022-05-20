@@ -24,9 +24,6 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python38/python.exe"
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe")
-    SSL_CERT_DIR=drivers-evergreen-tools/.evergreen/x509gen/ \
-    SSL_CERT_FILE=drivers-evergreen-tools/.evergreen/x509gen/server.pem \
-    REQUESTS_CA_BUNDLE=drivers-evergreen-tools/.evergreen/x509gen/ca.pem \
     ${PYTHONS[${#PYTHONS[@]}-3]} drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
     --version 6.0.0-rc4 --out $(cygpath -m ~/csfle/)
 elif [ "Darwin" = "$(uname -s)" ]; then
@@ -42,9 +39,6 @@ elif [ "Darwin" = "$(uname -s)" ]; then
              "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3")
     sudo ${PYTHONS[${#PYTHONS[@]}-3]} fix_ssl.py || true
-    SSL_CERT_DIR=drivers-evergreen-tools/.evergreen/x509gen/ \
-    SSL_CERT_FILE=drivers-evergreen-tools/.evergreen/x509gen/server.pem \
-    REQUESTS_CA_BUNDLE=drivers-evergreen-tools/.evergreen/x509gen/ca.pem sudo \
     ${PYTHONS[${#PYTHONS[@]}-3]} drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
     --version 6.0.0-rc4 --out ~/csfle/
 
@@ -56,13 +50,9 @@ else
              "/opt/python/3.6/bin/python3"
              "/opt/python/pypy/bin/pypy"
              "/opt/python/pypy3.6/bin/pypy3")
-    ls /opt/python
-    sudo ${PYTHONS[${#PYTHONS[@]}-3]} fix_ssl.py || true
-    SSL_CERT_DIR=drivers-evergreen-tools/.evergreen/x509gen/ \
-    SSL_CERT_FILE=drivers-evergreen-tools/.evergreen/x509gen/server.pem \
-    REQUESTS_CA_BUNDLE=drivers-evergreen-tools/.evergreen/x509gen/ca.pem \
-    sudo ${PYTHONS[${#PYTHONS[@]}-3]} drivers-evergreen-tools/.evergreen/mongodl.py --component \
-    csfle --version 6.0.0-rc4 --out ~/csfle/
+
+    ${PYTHONS[${#PYTHONS[@]}-3]} drivers-evergreen-tools/.evergreen/mongodl.py --component \
+    csfle --version 6.0.0-rc4 --out ~/csfle/ --target rhel70
 fi
 
 
@@ -79,3 +69,4 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     deactivate
     rm -rf .venv
 done
+rm -rf ~/csfle/
