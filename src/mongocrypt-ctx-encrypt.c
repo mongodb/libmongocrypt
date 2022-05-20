@@ -681,6 +681,20 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
+   if (ectx->ismaster.needed) {
+      if (_mongocrypt_buffer_empty (&ectx->ismaster.cmd)) {
+         bson_t ismaster_cmd = BSON_INITIALIZER;
+         // Store the generated command:
+         BSON_APPEND_INT32 (&ismaster_cmd, "isMaster", 1);
+         _mongocrypt_buffer_steal_from_bson (&ectx->ismaster.cmd,
+                                             &ismaster_cmd);
+      }
+
+      out->data = ectx->ismaster.cmd.data;
+      out->len = ectx->ismaster.cmd.len;
+      return true;
+   }
+
    if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
       // We need to generate the command document
       bson_t cmd_bson = BSON_INITIALIZER;
@@ -752,6 +766,22 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
       return _mongocrypt_ctx_fail_w_msg (ctx, "malformed BSON");
    }
 
+   if (ectx->ismaster.needed) {
+      /* This is a response to the 'isMaster' command. */
+      if (!bson_iter_init_find (&iter, &as_bson, "maxWireVersion")) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx,
+            "expected to find 'maxWireVersion' in isMaster response, but did "
+            "not.");
+      }
+      if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "expected 'maxWireVersion' to be int32.");
+      }
+      ectx->ismaster.maxwireversion = bson_iter_int32 (&iter);
+      return true;
+   }
+
    if (bson_iter_init_find (&iter, &as_bson, "schemaRequiresEncryption") &&
        !bson_iter_as_bool (&iter)) {
       /* TODO: update cache: this schema does not require encryption. */
@@ -804,10 +834,16 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    return true;
 }
 
+static bool
+mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx);
 
 static bool
 _mongo_done_markings (mongocrypt_ctx_t *ctx)
 {
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   if (ectx->ismaster.needed) {
+      return mongocrypt_ctx_encrypt_ismaster_done (ctx);
+   }
    (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
@@ -1738,6 +1774,7 @@ _cleanup (mongocrypt_ctx_t *ctx)
    _mongocrypt_buffer_cleanup (&ectx->mongocryptd_cmd);
    _mongocrypt_buffer_cleanup (&ectx->marked_cmd);
    _mongocrypt_buffer_cleanup (&ectx->encrypted_cmd);
+   _mongocrypt_buffer_cleanup (&ectx->ismaster.cmd);
    mc_EncryptedFieldConfig_cleanup (&ectx->efc);
 }
 
@@ -2342,6 +2379,56 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
                        "cmd",
                        cmd_val);
       bson_free (cmd_val);
+   }
+
+   /* The "create" and "createIndexes" command require sending an isMaster
+    * request to mongocryptd. */
+   {
+      const char *cmd_name =
+         get_command_name (&ectx->original_cmd, ctx->status);
+      if (0 == strcmp (cmd_name, "create") ||
+          0 == strcmp (cmd_name, "createIndexes")) {
+         if (!ctx->crypt->csfle.okay) {
+            /* We are using mongocryptd. We need to ensure that mongocryptd
+             * maxWireVersion >= 17. */
+            ectx->ismaster.needed = true;
+            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+            return true;
+         }
+      }
+   }
+
+   return mongocrypt_ctx_encrypt_ismaster_done (ctx);
+}
+
+#define WIRE_VERSION_SERVER_6 17
+/* mongocrypt_ctx_encrypt_ismaster_done is called when:
+ * 1. The max wire version of mongocryptd is known.
+ * 2. The max wire version of mongocryptd is not required for the command.
+ */
+static bool
+mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   ectx->ismaster.needed = false;
+
+   /* The "create" and "createIndexes" command require bypassing on mongocryptd
+    * older than version 6.0. */
+   {
+      const char *cmd_name =
+         get_command_name (&ectx->original_cmd, ctx->status);
+      if (0 == strcmp (cmd_name, "create") ||
+          0 == strcmp (cmd_name, "createIndexes")) {
+         if (!ctx->crypt->csfle.okay) {
+            if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_6) {
+               /* Bypass. */
+               ctx->nothing_to_do = true;
+               ctx->state = MONGOCRYPT_CTX_READY;
+               return true;
+            }
+         }
+      }
    }
 
    /* Check if there is an encrypted field config in encrypted_field_config_map
