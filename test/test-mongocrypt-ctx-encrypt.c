@@ -3812,6 +3812,42 @@ _test_fle1_create_old_mongocryptd (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_fle1_create_with_csfle (_mongocrypt_tester_t *tester)
+{
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+      fputs ("No 'real' csfle library is available. The "
+             "_test_fle1_create_with_csfle test is a no-op.",
+             stderr);
+      return;
+   }
+
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx,
+                 "db",
+                 -1,
+                 TEST_FILE ("./test/data/fle1-create/with-schema/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-schema/encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
 _test_fle2_create (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt = mongocrypt_new ();
@@ -3931,5 +3967,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_fle1_create_without_schema);
    INSTALL_TEST (_test_fle1_create_with_schema);
    INSTALL_TEST (_test_fle1_create_old_mongocryptd);
+   INSTALL_TEST (_test_fle1_create_with_csfle);
    INSTALL_TEST (_test_fle2_create);
 }
