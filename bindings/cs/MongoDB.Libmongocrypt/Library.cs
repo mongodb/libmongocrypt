@@ -490,8 +490,7 @@ namespace MongoDB.Libmongocrypt
             /// <summary>
             /// const char * mongocrypt_csfle_version_string(const mongocrypt_t* crypt, uint32_t *len);
             /// </summary>
-            [return: MarshalAs(UnmanagedType.LPStr)]
-            public delegate string mongocrypt_csfle_version_string(MongoCryptSafeHandle handle, out uint length);
+            public delegate IntPtr mongocrypt_csfle_version_string(MongoCryptSafeHandle handle, out uint length);
             /// <summary>
             /// uint64_t mongocrypt_csfle_version(const mongocrypt_t* crypt);
             /// </summary>
