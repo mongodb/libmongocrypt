@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.mongocrypt import MongoCrypt, MongoCryptError
+from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.state_machine import run_state_machine
-from pymongocrypt.binding import lib, ffi
-import ctypes
+
 
 class AutoEncrypter(object):
-    def __init__(self, callback, mongo_crypt_opts, csfle_path=None, csfle_required=False,
-                 bypass_encryption=False):
+    def __init__(self, callback, mongo_crypt_opts):
         """Encrypts and decrypts MongoDB commands.
 
         This class is used by a driver to support automatic encryption and
@@ -30,11 +28,7 @@ class AutoEncrypter(object):
           - `mongo_crypt_opts`: A :class:`MongoCryptOptions`.
         """
         self.callback = callback
-        self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback, csfle_path=csfle_path,
-                                     csfle_required=csfle_required,
-                 bypass_encryption=bypass_encryption)
-
-
+        self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
     def encrypt(self, database, cmd):
         """Encrypt a MongoDB command.

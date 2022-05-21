@@ -257,8 +257,7 @@ class TestMongoCrypt(unittest.TestCase):
     def test_encrypt(self):
         mc = self.create_mongocrypt()
         self.addCleanup(mc.close)
-        if lib.mongocrypt_csfle_version_string(mc.crypt, ffi.new("uint32_t*")) \
-                != ffi.NULL:
+        if mc.csfle_version != ffi.NULL:
             self.skipTest("This test's assumptions about the state of mongocrypt do not hold when CSFLE is loaded")
         with mc.encryption_context('text', bson_data('command.json')) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO)
@@ -383,27 +382,27 @@ class TestMongoCryptCallback(unittest.TestCase):
 
     def test_csfle(self):
         # Test that we can pick up CSFLE automatically
-        encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
+        encrypter = AutoEncrypter(MockCallback(), MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00'*96}},
                                   bypass_encryption=False,
-                                  csfle_required=True,
-                                  )
+                                  csfle_required=True))
         self.addCleanup(encrypter.close)
-        import sys
-        extension = {'win32': "C:\\cygwin\\home\\mci-exec/csfle/bin/mongo_csfle_v1.dll",
-                     'darwin': "~/csfle/lib/mongo_csfle_v1.dylib"}
-        encrypter = AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
-            csfle_path=os.path.expanduser(extension.get(
-                sys.platform, "~/csfle/lib/mongo_csfle_v1.so")),
-            csfle_required=True,
-            )
+        encrypter = AutoEncrypter(MockCallback(),
+                                  MongoCryptOptions({
+                                      'aws': {'accessKeyId': 'example',
+                                              'secretAccessKey': 'example'},
+                                      'local': {'key': b'\x00' * 96}},
+                                  csfle_path=os.path.expanduser(os.environ["CSFLE_PATH"]),
+                                  csfle_required=True))
         self.addCleanup(encrypter.close)
-        with self.assertRaises(Exception):
-            AutoEncrypter(MockCallback(), self.mongo_crypt_opts(),
-            csfle_path=os.path.expanduser("/doesnotexist",),
-                                      csfle_required=True,
-                                      )
-
-
+        with self.assertRaises(MongoCryptError):
+            AutoEncrypter(MockCallback(),MongoCryptOptions({
+                                      'aws': {'accessKeyId': 'example',
+                                              'secretAccessKey': 'example'},
+                                      'local': {'key': b'\x00' * 96}},
+                                  csfle_path="/doesnotexist",
+                                  csfle_required=True))
 
     def test_encrypt(self):
         encrypter = AutoEncrypter(MockCallback(

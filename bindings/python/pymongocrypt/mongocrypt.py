@@ -14,7 +14,6 @@
 
 import base64
 import copy
-import os
 
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
@@ -37,7 +36,8 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
 
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
-                 bypass_query_analysis=False):
+                 bypass_query_analysis=False, csfle_path=None, csfle_required=False,
+                 bypass_encryption=False):
         """Options for :class:`MongoCrypt`.
 
         :Parameters:
@@ -149,12 +149,14 @@ class MongoCryptOptions(object):
         self.schema_map = schema_map
         self.encrypted_fields_map = encrypted_fields_map
         self.bypass_query_analysis = bypass_query_analysis
+        self.csfle_path = csfle_path
+        self.csfle_required = csfle_required
+        self.bypass_encryption = bypass_encryption
 
 
 class MongoCrypt(object):
 
-    def __init__(self, options, callback, csfle_path=None, csfle_required=False,
-                 bypass_encryption=False):
+    def __init__(self, options, callback):
         """Abstracts libmongocrypt's mongocrypt_t type.
 
         :Parameters:
@@ -176,17 +178,11 @@ class MongoCrypt(object):
             raise MongoCryptError("unable to create new mongocrypt object")
 
         try:
-            self.__init(csfle_path=csfle_path,
-                        csfle_required=csfle_required,
-                        bypass_encryption=bypass_encryption)
+            self.__init()
         except Exception:
             # Destroy the mongocrypt object on error.
             self.close()
             raise
-
-    @property
-    def crypt(self):
-        return self.__crypt
 
     def __init(self, csfle_path=None, csfle_required=False,
                bypass_encryption=False):
@@ -240,22 +236,22 @@ class MongoCrypt(object):
                 self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
             self.__raise_from_status()
 
-        if csfle_path is not None:
-             lib.mongocrypt_setopt_set_csfle_lib_path_override(self.__crypt,
-                                                               ffi.new("char[]", csfle_path.encode(
-                                                                   "UTF-8"))
-                                                               )
-        if bypass_encryption is False:
+        if self.__opts.csfle_path is not None:
+            lib.mongocrypt_setopt_set_csfle_lib_path_override(self.__crypt,
+                                                               ffi.new("char[]",
+                                                                       self.__opts.csfle_path.encode(
+                                                                   "UTF-8")))
+        if not self.__opts.bypass_encryption:
             lib.mongocrypt_setopt_append_csfle_search_path(self.__crypt,
                                                         ffi.new("char[]", "$SYSTEM".encode(
                                                             "UTF-8")))
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
 
-        if csfle_required is True and lib.mongocrypt_csfle_version_string(self.__crypt, ffi.new("uint32_t*")) \
-                 == ffi.NULL:
-            raise Exception("Could not load CSFLE library!")
-
+        if self.__opts.csfle_required and self.csfle_version == ffi.NULL:
+            raise MongoCryptError("CSFLE library could not be loaded from either the override "
+                                  "path specified or from your operating system's "
+                                  "dynamic library locator")
 
     def __raise_from_status(self):
         status = lib.mongocrypt_status_new()
@@ -265,6 +261,10 @@ class MongoCrypt(object):
         finally:
             lib.mongocrypt_status_destroy(status)
         raise exc
+
+    @property
+    def csfle_version(self):
+        return lib.mongocrypt_csfle_version_string(self.__crypt, ffi.NULL)
 
     def close(self):
         """Cleanup resources."""
