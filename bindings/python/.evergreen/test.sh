@@ -25,9 +25,9 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe")
 
-    export CSFLE_PATH="C:\\cygwin\\home\\mci-exec/csfle/bin/mongo_csfle_v1.dll"
+    export CSFLE_PATH=../csfle/bin/mongo_csfle_v1.dll
     C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
-    --version 6.0.0-rc4 --out $(cygpath -m ~/csfle/)
+    --version 6.0.0-rc4 --out $(cygpath -m ../csfle/)
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     PYTHONS=("python"   # Python 2.7 from brew
@@ -40,9 +40,9 @@ elif [ "Darwin" = "$(uname -s)" ]; then
              "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3")
-    export CSFLE_PATH="~/csfle/lib/mongo_csfle_v1.dylib"
+    export CSFLE_PATH="../csfle/lib/mongo_csfle_v1.dylib"
     python3 drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
-    --version 6.0.0-rc4 --out ~/csfle/
+    --version 6.0.0-rc4 --out ../csfle/
 
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
@@ -52,9 +52,9 @@ else
              "/opt/python/3.6/bin/python3"
              "/opt/python/pypy/bin/pypy"
              "/opt/python/pypy3.6/bin/pypy3")
-    export CSFLE_PATH="~/csfle/lib/mongo_csfle_v1.so"
-    python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
-    csfle --version 6.0.0-rc4 --out ~/csfle/ --target rhel70
+    export CSFLE_PATH="../csfle/lib/mongo_csfle_v1.so"
+    /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
+    csfle --version 6.0.0-rc4 --out ../csfle/ --target rhel70
 fi
 
 
@@ -63,12 +63,11 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
-    DYLD_FALLBACK_LIBRARY_PATH=~/csfle/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
-    LD_LIBRARY_PATH=~/csfle/lib:$LD_LIBRARY_PATH \
-    PATH=~/csfle/bin:$PATH \
+    DYLD_FALLBACK_LIBRARY_PATH=../csfle/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
+    LD_LIBRARY_PATH=../csfle/lib:$LD_LIBRARY_PATH \
+    PATH=../csfle/bin:$PATH \
     python setup.py test
     python setup.py test -s test.test_mongocrypt.TestMongoCrypt
     deactivate
     rm -rf .venv
 done
-rm -rf ~/csfle/
