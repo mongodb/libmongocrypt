@@ -381,7 +381,9 @@ class TestMongoCryptCallback(unittest.TestCase):
             'local': {'key': b'\x00'*96}})
 
     def test_csfle(self):
-        mc = self.create_mongocrypt()
+        mc = MongoCrypt(MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00'*96}}), MockCallback())
         if mc.csfle_version is None:
             self.skipTest("This test requires CSFLE.")
         # Test that we can pick up CSFLE automatically
