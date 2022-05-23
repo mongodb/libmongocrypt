@@ -465,7 +465,7 @@ public class CAPI {
 
     /**
      * Set the index type used for explicit encryption.
-     * The index type is only used for FLE 2 encryption.
+     * The index type is only used for Queryable Encryption.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
      * @param index_type
@@ -478,7 +478,7 @@ public class CAPI {
 
     /**
      * Set the contention factor used for explicit encryption.
-     * The contention factor is only used for indexed FLE 2 encryption.
+     * The contention factor is only used for indexed Queryable Encryption.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
      * @param contention_factor
@@ -489,7 +489,7 @@ public class CAPI {
     mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t ctx, long contention_factor);
 
     /**
-     * Set the index key id to use for FLE 2 explicit encryption.
+     * Set the index key id to use for Queryable Encryption explicit encryption.
      *
      * If the index key id not set, the key id from @ref mongocrypt_ctx_setopt_key_id is used.
      *
@@ -504,8 +504,8 @@ public class CAPI {
     mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t ctx, mongocrypt_binary_t key_id);
 
     /**
-     * Set the query type to use for FLE 2 explicit encryption.
-     * The query type is only used for indexed FLE 2 encryption.
+     * Set the query type to use for Queryable Encryption explicit encryption.
+     * The query type is only used for indexed Queryable Encryption.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
      * @param query_type
