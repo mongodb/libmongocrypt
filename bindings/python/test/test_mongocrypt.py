@@ -257,7 +257,7 @@ class TestMongoCrypt(unittest.TestCase):
     def test_encrypt(self):
         mc = self.create_mongocrypt()
         self.addCleanup(mc.close)
-        if mc.csfle_version != ffi.NULL:
+        if mc.csfle_version != None:
             self.skipTest("This test's assumptions about the state of mongocrypt do not hold when CSFLE is loaded")
         with mc.encryption_context('text', bson_data('command.json')) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO)
@@ -381,6 +381,9 @@ class TestMongoCryptCallback(unittest.TestCase):
             'local': {'key': b'\x00'*96}})
 
     def test_csfle(self):
+        mc = self.create_mongocrypt()
+        if mc.csfle_version is None:
+            self.skipTest("This test requires CSFLE.")
         # Test that we can pick up CSFLE automatically
         encrypter = AutoEncrypter(MockCallback(), MongoCryptOptions({
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
