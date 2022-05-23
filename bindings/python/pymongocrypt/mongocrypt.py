@@ -238,7 +238,7 @@ class MongoCrypt(object):
         if self.__opts.csfle_path is not None:
             lib.mongocrypt_setopt_set_csfle_lib_path_override(self.__crypt,
                                                               self.__opts.csfle_path.encode(
-                                                                  "ascii"))
+                                                                  "utf-8"))
 
         if not self.__opts.bypass_encryption:
             lib.mongocrypt_setopt_append_csfle_search_path(self.__crypt, b"$SYSTEM")
@@ -246,10 +246,9 @@ class MongoCrypt(object):
             self.__raise_from_status()
 
         if self.__opts.csfle_required and self.csfle_version is None:
-            raise MongoCryptError(f"CSFLE library could not be loaded from either the override "
-                                  f"path specified {self.__opts.csfle_path} or from your "
-                                  f"operating system's "
-                                  f"dynamic library locator")
+            raise MongoCryptError("""CSFLE library could not be loaded from either the override 
+                                  path specified {} or from your 
+                                  operating system's dynamic library locator""".format(self.__opts.csfle_path))
 
     def __raise_from_status(self):
         status = lib.mongocrypt_status_new()

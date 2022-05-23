@@ -24,7 +24,6 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python38/python.exe"
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe")
-
     export CSFLE_PATH=../csfle/bin/mongo_csfle_v1.dll
     C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
       --version latest --out ../csfle/
@@ -43,7 +42,6 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     export CSFLE_PATH="../csfle/lib/mongo_csfle_v1.dylib"
     python3 drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
       --version latest --out ../csfle/
-
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
     PYTHONS=("/opt/python/2.7/bin/python"
