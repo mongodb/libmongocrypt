@@ -2192,6 +2192,14 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "compactStructuredEncryptionData")) {
       eligible = true;
+   } else if (0 == strcmp (cmd_name, "hello")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "buildInfo")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "getCmdLineOpts")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "getLog")) {
+      *bypass = true;
    }
 
    /* database/client commands are ineligible. */
