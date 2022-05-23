@@ -1,0 +1,14 @@
+{
+   "find": "test",
+   "filter": {
+      "value": {
+         "$eq": {
+            "$binary": {
+               "base64": "ARI0VngSNJh2EjQSNFZ4kBIQl2bQhMRGH/FbUJH1jGuUSHGQS6UYOSv5kqZrzd4hKx1erD8rDjS/c50CQ6nQb1S2WKlgWL3SeoyT23g//BNWfA==",
+               "subType": "06"
+            }
+         }
+      }
+   },
+   "$db": "db"
+}

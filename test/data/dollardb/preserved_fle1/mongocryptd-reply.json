@@ -1,0 +1,15 @@
+{
+    "hasEncryptionPlaceholders": true,
+    "schemaRequiresEncryption": true,
+    "result": {
+        "find": "test",
+        "filter": {
+            "value": {
+                "$eq": {
+                    "$binary": "ACwAAAAQYQABAAAABWtpABAAAAAEEjRWeBI0mHYSNBI0VniQEhB2AEDiAQAA",
+                    "$type": "06"
+                }
+            }
+        }
+    }
+}
