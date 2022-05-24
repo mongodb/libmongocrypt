@@ -11,7 +11,6 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
-sed -i 's/deterministic=True//g' drivers-evergreen-tools/.evergreen/mongodl.py || true
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
@@ -62,6 +61,7 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
     python setup.py test
+    print "Running tests with CSFLE on dynamic library path..."
     DYLD_FALLBACK_LIBRARY_PATH=../csfle/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
       LD_LIBRARY_PATH=../csfle/lib:$LD_LIBRARY_PATH \
       PATH=../csfle/bin:$PATH \

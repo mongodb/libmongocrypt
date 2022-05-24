@@ -246,9 +246,10 @@ class MongoCrypt(object):
             self.__raise_from_status()
 
         if self.__opts.csfle_required and self.csfle_version is None:
-            raise MongoCryptError("""CSFLE library could not be loaded from either the override 
-                                  path specified {} or from your 
-                                  operating system's dynamic library locator""".format(self.__opts.csfle_path))
+            raise MongoCryptError(
+                "csfle_required=True but the csfle library could not be loaded from"
+                " csfle_path={}".format(self.__opts.csfle_path) +
+                " or the operating system's dynamic library search path")
 
     def __raise_from_status(self):
         status = lib.mongocrypt_status_new()
