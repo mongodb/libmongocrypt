@@ -182,7 +182,7 @@ describe('ClientEncryption', function () {
         await keyVaultColl.findOneAndDelete({ _id: dataKey }, { writeConcern: { w: 'majority' } })
       ).value;
       doc._id = new BSON.Binary(Buffer.alloc(16), 4);
-      await keyVaultColl.insertOne(doc);
+      await keyVaultColl.insertOne(doc, { writeConcern: { w: 'majority' } });
 
       const encrypted = await encryption.encrypt('test', {
         keyId: doc._id,
