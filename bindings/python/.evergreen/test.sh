@@ -61,7 +61,7 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
     python setup.py test
-    printf "Running tests with CSFLE on dynamic library path..."
+    echo "Running tests with CSFLE on dynamic library path..."
     DYLD_FALLBACK_LIBRARY_PATH=../csfle/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
       LD_LIBRARY_PATH=../csfle/lib:$LD_LIBRARY_PATH \
       PATH=../csfle/bin:$PATH \
