@@ -401,7 +401,7 @@ class TestMongoCryptCallback(unittest.TestCase):
                                   csfle_path=os.environ["CSFLE_PATH"],
                                   csfle_required=True))
         self.addCleanup(encrypter.close)
-        with self.assertRaises(MongoCryptError):
+        with self.assertRaisesRegex(MongoCryptError, "/doesnotexist"):
             AutoEncrypter(MockCallback(),MongoCryptOptions({
                                       'aws': {'accessKeyId': 'example',
                                               'secretAccessKey': 'example'},
