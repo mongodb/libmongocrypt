@@ -178,7 +178,9 @@ describe('ClientEncryption', function () {
       expect(dataKey._bsontype).to.equal('Binary');
 
       // Remove and re-insert with a fixed UUID to guarantee consistent output
-      const doc = (await keyVaultColl.findOneAndDelete({ _id: dataKey })).value;
+      const doc = (
+        await keyVaultColl.findOneAndDelete({ _id: dataKey }, { writeConcern: { w: 'majority' } })
+      ).value;
       doc._id = new BSON.Binary(Buffer.alloc(16), 4);
       await keyVaultColl.insertOne(doc);
 
@@ -622,7 +624,12 @@ describe('ClientEncryption', function () {
         throwIfNotNsNotFoundError(err);
       }
 
-      await client.db('keyvault').collection('datakeys').insertOne(KEY1_DOCUMENT);
+      await client
+        .db('keyvault')
+        .collection('datakeys')
+        .insertOne(KEY1_DOCUMENT, {
+          writeConcern: { w: 'majority' }
+        });
 
       keyVaultClient = client;
       clientEncryption = new ClientEncryption(client, {
