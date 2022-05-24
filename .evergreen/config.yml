@@ -155,6 +155,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
+          export GITREVISION="${revision}"
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/test.sh
 
   "test python":
