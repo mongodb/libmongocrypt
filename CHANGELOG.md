@@ -1,4 +1,12 @@
 # ChangeLog
+## 1.5.0-alpha2
+## New Features
+- Fix explain when using csfle shared library.
+- Do not bypass "create" or "createIndexes" commands. Support "collMod".
+- Bypass "hello", "buildInfo", "getCmdLineOpts", and "getLog" commands.
+## Fixed
+- Preserve $db in output command.
+- Add missing MONGOCRYPT_EXPORT to mongocrypt_ctx_provide_kms_providers
 ## 1.5.0-alpha1
 ### Fixed
 - Pick a random contention factor on FLE 2.0 insert.
