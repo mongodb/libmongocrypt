@@ -451,11 +451,7 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
       return true;
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (!cmd_name) {
-      _mongocrypt_ctx_fail (ctx);
-      return false;
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    if (!command_needs_deleteTokens (cmd_name)) {
       /* Command does not require deleteTokens. */
@@ -488,11 +484,7 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
       return true;
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (!cmd_name) {
-      _mongocrypt_ctx_fail (ctx);
-      return false;
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    if (0 != strcmp (cmd_name, "compactStructuredEncryptionData")) {
       return true;
@@ -602,10 +594,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
          ctx, "unable to convert encrypted_field_config to BSON");
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (cmd_name == NULL) {
-      return _mongocrypt_ctx_fail (ctx);
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    // If input command included $db, do not include it in the command to
    // mongocryptd. Drivers are expected to append $db in the RunCommand helper
@@ -653,11 +642,6 @@ _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
       return false;
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (NULL == cmd_name) {
-      return _mongocrypt_ctx_fail (ctx);
-   }
-
    // Copy the command to the output
    // If input command included $db, do not include it in the command to
    // mongocryptd. Drivers are expected to append $db in the RunCommand helper
@@ -688,6 +672,20 @@ static bool
 _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   if (ectx->ismaster.needed) {
+      if (_mongocrypt_buffer_empty (&ectx->ismaster.cmd)) {
+         bson_t ismaster_cmd = BSON_INITIALIZER;
+         // Store the generated command:
+         BSON_APPEND_INT32 (&ismaster_cmd, "isMaster", 1);
+         _mongocrypt_buffer_steal_from_bson (&ectx->ismaster.cmd,
+                                             &ismaster_cmd);
+      }
+
+      out->data = ectx->ismaster.cmd.data;
+      out->len = ectx->ismaster.cmd.len;
+      return true;
+   }
 
    if (_mongocrypt_buffer_empty (&ectx->mongocryptd_cmd)) {
       // We need to generate the command document
@@ -760,6 +758,22 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
       return _mongocrypt_ctx_fail_w_msg (ctx, "malformed BSON");
    }
 
+   if (ectx->ismaster.needed) {
+      /* This is a response to the 'isMaster' command. */
+      if (!bson_iter_init_find (&iter, &as_bson, "maxWireVersion")) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx,
+            "expected to find 'maxWireVersion' in isMaster response, but did "
+            "not.");
+      }
+      if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "expected 'maxWireVersion' to be int32.");
+      }
+      ectx->ismaster.maxwireversion = bson_iter_int32 (&iter);
+      return true;
+   }
+
    if (bson_iter_init_find (&iter, &as_bson, "schemaRequiresEncryption") &&
        !bson_iter_as_bool (&iter)) {
       /* TODO: update cache: this schema does not require encryption. */
@@ -812,10 +826,16 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    return true;
 }
 
+static bool
+mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx);
 
 static bool
 _mongo_done_markings (mongocrypt_ctx_t *ctx)
 {
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   if (ectx->ismaster.needed) {
+      return mongocrypt_ctx_encrypt_ismaster_done (ctx);
+   }
    (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
@@ -946,11 +966,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
       goto fail_create_cmd;
    }
 
-   const char *cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
-   if (!cmd_name) {
-      _mongocrypt_ctx_fail (ctx);
-      goto fail_create_cmd;
-   }
+   const char *cmd_name = ectx->cmd_name;
 
    if (!_add_dollar_db (cmd_name, &cmd, ectx->db_name, ctx->status)) {
       _mongocrypt_ctx_fail (ctx);
@@ -1232,18 +1248,30 @@ typedef struct {
    bool ok;
 } moe_result;
 
+// must_omit_encryptionInformation returns true if the command
+// must omit the "encryptionInformation" field when sent to mongod / mongos.
 static moe_result
 must_omit_encryptionInformation (const char *command_name,
                                  const bson_t *command,
                                  mongocrypt_status_t *status)
 {
+   // eligible_commands may omit encryptionInformation if the command does not
+   // contain payloads requiring encryption.
    const char *eligible_commands[] = {
       "find", "aggregate", "distinct", "count", "insert"};
    size_t i;
    bool found = false;
 
-   if (0 == strcmp (command_name, "compactStructuredEncryptionData")) {
-      return (moe_result){.must_omit = true, .ok = true};
+   // prohibited_commands prohibit encryptionInformation on mongod / mongos.
+   const char *prohibited_commands[] = {
+      "compactStructuredEncryptionData", "create", "collMod", "createIndexes"};
+
+   for (i = 0;
+        i < sizeof (prohibited_commands) / sizeof (prohibited_commands[0]);
+        i++) {
+      if (0 == strcmp (prohibited_commands[i], command_name)) {
+         return (moe_result){.ok = true, .must_omit = true};
+      }
    }
 
    for (i = 0; i < sizeof (eligible_commands) / sizeof (eligible_commands[0]);
@@ -1479,12 +1507,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       }
    }
 
-   const char *command_name =
-      get_command_name (&ectx->original_cmd, ctx->status);
-   if (NULL == command_name) {
-      bson_destroy (&converted);
-      return _mongocrypt_ctx_fail (ctx);
-   }
+   const char *command_name = ectx->cmd_name;
 
    /* Remove the 'encryptionInformation' field. It is appended in the response
     * from mongocryptd or csfle. */
@@ -1765,6 +1788,7 @@ _cleanup (mongocrypt_ctx_t *ctx)
    _mongocrypt_buffer_cleanup (&ectx->mongocryptd_cmd);
    _mongocrypt_buffer_cleanup (&ectx->marked_cmd);
    _mongocrypt_buffer_cleanup (&ectx->encrypted_cmd);
+   _mongocrypt_buffer_cleanup (&ectx->ismaster.cmd);
    mc_EncryptedFieldConfig_cleanup (&ectx->efc);
 }
 
@@ -1880,6 +1904,28 @@ _try_schema_from_cache (mongocrypt_ctx_t *ctx)
    }
 
    bson_destroy (collinfo);
+   return true;
+}
+
+/* _try_empty_schema_for_create uses an empty JSON schema for the create
+ * command. This is to avoid an unnecessary 'listCollections' command for
+ * create. */
+static bool
+_try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx;
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   /* As a special case, use an empty schema for the 'create' command. */
+   const char *cmd_name = ectx->cmd_name;
+
+   if (0 != strcmp (cmd_name, "create")) {
+      return true;
+   }
+
+   bson_t empty = BSON_INITIALIZER;
+   _mongocrypt_buffer_steal_from_bson (&ectx->schema, &empty);
+   ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
    return true;
 }
 
@@ -2183,9 +2229,9 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    } else if (0 == strcmp (cmd_name, "startSession")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "create")) {
-      *bypass = true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "createIndexes")) {
-      *bypass = true;
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "drop")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "dropDatabase")) {
@@ -2220,6 +2266,8 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "compactStructuredEncryptionData")) {
       eligible = true;
+   } else if (0 == strcmp (cmd_name, "collMod")) {
+      eligible = true;
    } else if (0 == strcmp (cmd_name, "hello")) {
       *bypass = true;
    } else if (0 == strcmp (cmd_name, "buildInfo")) {
@@ -2250,6 +2298,17 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
 
    CLIENT_ERR ("command not supported for auto encryption: %s", cmd_name);
    return false;
+}
+
+static bool
+needs_ismaster_check (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   // The "create" and "createIndexes" command require an isMaster check when
+   // using mongocryptd. See MONGOCRYPT-429.
+   return !ctx->crypt->csfle.okay &&
+          (0 == strcmp (ectx->cmd_name, "create") ||
+           0 == strcmp (ectx->cmd_name, "createIndexes"));
 }
 
 bool
@@ -2294,6 +2353,11 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    _mongocrypt_buffer_copy_from_binary (&ectx->original_cmd, cmd);
+
+   ectx->cmd_name = get_command_name (&ectx->original_cmd, ctx->status);
+   if (!ectx->cmd_name) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
 
    if (!_check_cmd_for_auto_encrypt (
           cmd, &bypass, &ectx->coll_name, ctx->status)) {
@@ -2352,6 +2416,42 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
       bson_free (cmd_val);
    }
 
+   /* The "create" and "createIndexes" command require sending an isMaster
+    * request to mongocryptd. */
+   if (needs_ismaster_check (ctx)) {
+      /* We are using mongocryptd. We need to ensure that mongocryptd
+       * maxWireVersion >= 17. */
+      ectx->ismaster.needed = true;
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+      return true;
+   }
+
+   return mongocrypt_ctx_encrypt_ismaster_done (ctx);
+}
+
+#define WIRE_VERSION_SERVER_6 17
+/* mongocrypt_ctx_encrypt_ismaster_done is called when:
+ * 1. The max wire version of mongocryptd is known.
+ * 2. The max wire version of mongocryptd is not required for the command.
+ */
+static bool
+mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   ectx->ismaster.needed = false;
+
+   /* The "create" and "createIndexes" command require bypassing on mongocryptd
+    * older than version 6.0. */
+   if (needs_ismaster_check (ctx)) {
+      if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_6) {
+         /* Bypass. */
+         ctx->nothing_to_do = true;
+         ctx->state = MONGOCRYPT_CTX_READY;
+         return true;
+      }
+   }
+
    /* Check if there is an encrypted field config in encrypted_field_config_map
     */
    if (!_fle2_try_encrypted_field_config_from_map (ctx)) {
@@ -2368,6 +2468,14 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
          if (!_try_schema_from_cache (ctx)) {
             return false;
          }
+      }
+
+      /* If we did not have a local or cached schema, check if this is a
+       * "create" command. If it is a "create" command, do not run
+       * "listCollections" to get a server-side schema. */
+      if (_mongocrypt_buffer_empty (&ectx->schema) &&
+          !_try_empty_schema_for_create (ctx)) {
+         return false;
       }
 
       /* Otherwise, we need the the driver to fetch the schema. */

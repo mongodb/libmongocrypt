@@ -151,6 +151,13 @@ typedef struct {
    /* bypass_query_analysis is set to true to skip the
     * MONGOCRYPT_CTX_NEED_MONGO_MARKINGS state. */
    bool bypass_query_analysis;
+   struct {
+      bool needed;
+      _mongocrypt_buffer_t cmd;
+      int32_t maxwireversion;
+   } ismaster;
+   // cmd_name is the first BSON field in original_cmd for auto encryption.
+   const char *cmd_name;
 } _mongocrypt_ctx_encrypt_t;
 
 
