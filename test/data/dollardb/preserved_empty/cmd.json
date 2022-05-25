@@ -1,0 +1,7 @@
+{
+   "find": "test",
+   "filter": {
+      "value": 123456
+   },
+   "$db": "db"
+}

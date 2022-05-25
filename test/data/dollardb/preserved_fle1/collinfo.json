@@ -1,0 +1,25 @@
+{
+    "options": {
+        "validator": {
+            "$jsonSchema": {
+                "properties": {
+                    "value": {
+                        "encrypt": {
+                            "keyId": [
+                                {
+                                    "$binary": {
+                                        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                        "subType": "04"
+                                    }
+                                }
+                            ],
+                            "bsonType": "int",
+                            "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                        }
+                    }
+                },
+                "bsonType": "object"
+            }
+        }
+    }
+}

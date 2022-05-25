@@ -1245,6 +1245,10 @@ _test_encrypt_init_each_cmd (_mongocrypt_tester_t *tester)
    _init_bypass (tester, "{'killAllSessionsByPattern': 1}");
    _init_bypass (tester, "{'refreshSessions': 1}");
    _init_ok (tester, "{'compactStructuredEncryptionData': 'coll'}");
+   _init_bypass (tester, "{'hello': 1}");
+   _init_bypass (tester, "{'buildInfo': 1}");
+   _init_bypass (tester, "{'getCmdLineOpts': 1}");
+   _init_bypass (tester, "{'getLog': 1}");
    _init_ok (tester, "{'collMod': 'coll'}");
 }
 
@@ -3618,6 +3622,595 @@ _test_encrypt_fle1_explain_with_csfle (_mongocrypt_tester_t *tester)
    }
 }
 
+// Test that an input command with $db preserves $db in the output.
+static void
+_test_dollardb_preserved (_mongocrypt_tester_t *tester)
+{
+   /* Test with an encrypted value. */
+
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/dollardb/preserved/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/dollardb/preserved/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/preserved/"
+                    "cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (ctx,
+                                    TEST_FILE ("./test/data/dollardb/preserved/"
+                                               "mongocryptd-reply.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/preserved/"
+                    "encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+// Test that an input command with $db preserves $db in the output, when no
+// values are encrypted.
+static void
+_test_dollardb_preserved_empty (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx,
+                 "db",
+                 -1,
+                 TEST_FILE ("./test/data/dollardb/preserved_empty/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/dollardb/preserved_empty/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/preserved_empty/"
+                    "cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/dollardb/preserved_empty/"
+                               "mongocryptd-reply.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/preserved_empty/"
+                    "encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+// Test that an input command with no $db does not include $db in the output.
+static void
+_test_dollardb_omitted (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/dollardb/omitted/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/dollardb/omitted/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/omitted/"
+                    "cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (ctx,
+                                    TEST_FILE ("./test/data/dollardb/omitted/"
+                                               "mongocryptd-reply.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/omitted/"
+                    "encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+// Test that an input command with $db does includes $db in the output for FLE1.
+static void
+_test_dollardb_preserved_fle1 (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx,
+                 "db",
+                 -1,
+                 TEST_FILE ("./test/data/dollardb/preserved_fle1/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/dollardb/preserved_fle1/collinfo.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/preserved_fle1/"
+                    "cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/dollardb/preserved_fle1/"
+                               "mongocryptd-reply.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "12345678123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/dollardb/preserved_fle1/"
+                    "encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
+static void
+_test_fle1_create_without_schema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx,
+                 "db",
+                 -1,
+                 TEST_FILE ("./test/data/fle1-create/without-schema/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle1-create/without-schema/"
+                    "ismaster-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/without-schema/"
+                               "mongocryptd-ismaster.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/without-schema/cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/without-schema/"
+                               "mongocryptd-reply.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/without-schema/encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_fle1_create_with_schema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt = mongocrypt_new ();
+
+   ASSERT_OK (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_schema_map (
+         crypt,
+         TEST_FILE ("./test/data/fle1-create/with-schema/schema-map.json")),
+      crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx,
+                 "db",
+                 -1,
+                 TEST_FILE ("./test/data/fle1-create/with-schema/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle1-create/without-schema/"
+                    "ismaster-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/without-schema/"
+                               "mongocryptd-ismaster.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-schema/cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/with-schema/"
+                               "mongocryptd-reply.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-schema/encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_fle1_create_old_mongocryptd (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx,
+         "db",
+         -1,
+         TEST_FILE ("./test/data/fle1-create/old-mongocryptd/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle1-create/old-mongocryptd/"
+                    "ismaster-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/old-mongocryptd/"
+                               "mongocryptd-ismaster.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/old-mongocryptd/encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_fle1_create_with_csfle (_mongocrypt_tester_t *tester)
+{
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+      fputs ("No 'real' csfle library is available. The "
+             "_test_fle1_create_with_csfle test is a no-op.",
+             stderr);
+      return;
+   }
+
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx,
+                 "db",
+                 -1,
+                 TEST_FILE ("./test/data/fle1-create/with-schema/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-schema/encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_fle2_create (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt = mongocrypt_new ();
+
+   ASSERT_OK (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt,
+         TEST_FILE ("./test/data/fle2-create/encrypted-field-config-map.json")),
+      crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "db", -1, TEST_FILE ("./test/data/fle2-create/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle1-create/without-schema/"
+                    "ismaster-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/without-schema/"
+                               "mongocryptd-ismaster.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle2-create/cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/fle2-create/mongocryptd-reply.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle2-create/encrypted-payload.json"), out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -3665,9 +4258,13 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_fle2_explain_with_csfle);
    INSTALL_TEST (_test_encrypt_fle1_explain_with_mongocryptd);
    INSTALL_TEST (_test_encrypt_fle1_explain_with_csfle);
-   // INSTALL_TEST (_test_fle1_create_without_schema);
-   // INSTALL_TEST (_test_fle1_create_with_schema);
-   // INSTALL_TEST (_test_fle1_create_old_mongocryptd);
-   // INSTALL_TEST (_test_fle1_create_with_csfle);
-   // INSTALL_TEST (_test_fle2_create);
+   INSTALL_TEST (_test_dollardb_preserved);
+   INSTALL_TEST (_test_dollardb_preserved_empty);
+   INSTALL_TEST (_test_dollardb_omitted);
+   INSTALL_TEST (_test_dollardb_preserved_fle1);
+   INSTALL_TEST (_test_fle1_create_without_schema);
+   INSTALL_TEST (_test_fle1_create_with_schema);
+   INSTALL_TEST (_test_fle1_create_old_mongocryptd);
+   INSTALL_TEST (_test_fle1_create_with_csfle);
+   INSTALL_TEST (_test_fle2_create);
 }

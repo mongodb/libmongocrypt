@@ -596,7 +596,11 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
 
    const char *cmd_name = ectx->cmd_name;
 
-   bson_copy_to (&cmd_bson, out);
+   // If input command included $db, do not include it in the command to
+   // mongocryptd. Drivers are expected to append $db in the RunCommand helper
+   // used to send the command.
+   bson_init (out);
+   bson_copy_to_excluding_noinit (&cmd_bson, out, "$db", NULL);
    if (!_fle2_insert_encryptionInformation (
           cmd_name,
           out,
@@ -639,7 +643,11 @@ _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
    }
 
    // Copy the command to the output
-   bson_copy_to (&bson_view, out);
+   // If input command included $db, do not include it in the command to
+   // mongocryptd. Drivers are expected to append $db in the RunCommand helper
+   // used to send the command.
+   bson_init (out);
+   bson_copy_to_excluding_noinit (&bson_view, out, "$db", NULL);
 
    if (!_mongocrypt_buffer_empty (&ectx->schema)) {
       // We have a schema buffer. View it as BSON:
@@ -1451,6 +1459,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t converted;
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t encrypted_field_config_bson;
+   bson_t original_cmd_bson;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
@@ -1468,16 +1477,12 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
          ctx, "malformed bson in encrypted_field_config_bson");
    }
 
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &original_cmd_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "malformed bson in original_cmd");
+   }
+
    /* If marked_cmd buffer is empty, there are no markings to encrypt. */
    if (_mongocrypt_buffer_empty (&ectx->marked_cmd)) {
-      bson_t original_cmd_bson;
-
-      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd,
-                                       &original_cmd_bson)) {
-         return _mongocrypt_ctx_fail_w_msg (ctx,
-                                            "malformed bson in original_cmd");
-      }
-
       /* Append 'encryptionInformation' to the original command. */
       bson_init (&converted);
       bson_copy_to (&original_cmd_bson, &converted);
@@ -1555,6 +1560,14 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       return _mongocrypt_ctx_fail (ctx);
    }
 
+   // If input command has $db, ensure output command has $db.
+   bson_iter_t iter;
+   if (bson_iter_init_find (&iter, &original_cmd_bson, "$db")) {
+      if (!bson_iter_init_find (&iter, &converted, "$db")) {
+         BSON_APPEND_UTF8 (&converted, "$db", ectx->db_name);
+      }
+   }
+
    _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &converted);
    _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
    ctx->state = MONGOCRYPT_CTX_DONE;
@@ -1577,6 +1590,11 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       switch (ctx->opts.query_type.value) {
       case MONGOCRYPT_QUERY_TYPE_EQUALITY:
          marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND;
+         break;
+      default:
+         _mongocrypt_ctx_fail_w_msg (ctx,
+                                     "Invalid value for EncryptOpts.queryType");
+         goto fail;
       }
    } else {
       marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT;
@@ -1589,6 +1607,12 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    case MONGOCRYPT_INDEX_TYPE_NONE:
       marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED;
       break;
+   default:
+      // This might be unreachable because of other validation. Better safe than
+      // sorry.
+      _mongocrypt_ctx_fail_w_msg (ctx,
+                                  "Invalid value for EncryptOpts.indexType");
+      goto fail;
    }
 
    /* Get iterator to input 'v' BSON value. */
@@ -1681,6 +1705,21 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
              &converted,
              ctx->status)) {
          return _mongocrypt_ctx_fail (ctx);
+      }
+
+      bson_t original_cmd_bson;
+      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd,
+                                       &original_cmd_bson)) {
+         return _mongocrypt_ctx_fail_w_msg (ctx,
+                                            "malformed bson in original_cmd");
+      }
+
+      // If input command has $db, ensure output command has $db.
+      bson_iter_t iter;
+      if (bson_iter_init_find (&iter, &original_cmd_bson, "$db")) {
+         if (!bson_iter_init_find (&iter, &converted, "$db")) {
+            BSON_APPEND_UTF8 (&converted, "$db", ectx->db_name);
+         }
       }
    } else {
       /* For explicit encryption, we have no marking, but we can fake one */
@@ -2229,6 +2268,14 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
       eligible = true;
    } else if (0 == strcmp (cmd_name, "collMod")) {
       eligible = true;
+   } else if (0 == strcmp (cmd_name, "hello")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "buildInfo")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "getCmdLineOpts")) {
+      *bypass = true;
+   } else if (0 == strcmp (cmd_name, "getLog")) {
+      *bypass = true;
    }
 
    /* database/client commands are ineligible. */

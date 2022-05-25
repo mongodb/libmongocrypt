@@ -1,0 +1,23 @@
+{
+   "ok": {
+      "$numberInt": "1"
+   },
+   "result": {
+      "find": "test",
+      "filter": {
+         "value": 123456
+      },
+      "encryptionInformation": {
+         "type": 1,
+         "schema": {
+            "db.test": {
+               "escCollection": "esc",
+               "eccCollection": "ecc",
+               "ecocCollection": "ecoc",
+               "fields": []
+            }
+         }
+      }
+   },
+   "hasEncryptedPlaceholders": false
+}
