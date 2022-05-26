@@ -36,7 +36,8 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
 
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
-                 bypass_query_analysis=False):
+                 bypass_query_analysis=False, csfle_path=None, csfle_required=False,
+                 bypass_encryption=False):
         """Options for :class:`MongoCrypt`.
 
         :Parameters:
@@ -148,9 +149,13 @@ class MongoCryptOptions(object):
         self.schema_map = schema_map
         self.encrypted_fields_map = encrypted_fields_map
         self.bypass_query_analysis = bypass_query_analysis
+        self.csfle_path = csfle_path
+        self.csfle_required = csfle_required
+        self.bypass_encryption = bypass_encryption
 
 
 class MongoCrypt(object):
+
     def __init__(self, options, callback):
         """Abstracts libmongocrypt's mongocrypt_t type.
 
@@ -230,8 +235,21 @@ class MongoCrypt(object):
                 self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
             self.__raise_from_status()
 
+        if self.__opts.csfle_path is not None:
+            lib.mongocrypt_setopt_set_csfle_lib_path_override(self.__crypt,
+                                                              self.__opts.csfle_path.encode(
+                                                                  "utf-8"))
+
+        if not self.__opts.bypass_encryption:
+            lib.mongocrypt_setopt_append_csfle_search_path(self.__crypt, b"$SYSTEM")
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
+
+        if self.__opts.csfle_required and self.csfle_version is None:
+            raise MongoCryptError(
+                "csfle_required=True but the csfle library could not be loaded from"
+                " csfle_path={}".format(self.__opts.csfle_path) +
+                " or the operating system's dynamic library search path")
 
     def __raise_from_status(self):
         status = lib.mongocrypt_status_new()
@@ -241,6 +259,13 @@ class MongoCrypt(object):
         finally:
             lib.mongocrypt_status_destroy(status)
         raise exc
+
+    @property
+    def csfle_version(self):
+        ver = lib.mongocrypt_csfle_version_string(self.__crypt, ffi.NULL)
+        if ver == ffi.NULL:
+            return None
+        return ver
 
     def close(self):
         """Cleanup resources."""

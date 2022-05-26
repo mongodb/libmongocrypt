@@ -257,6 +257,8 @@ class TestMongoCrypt(unittest.TestCase):
     def test_encrypt(self):
         mc = self.create_mongocrypt()
         self.addCleanup(mc.close)
+        if mc.csfle_version != None:
+            self.skipTest("This test's assumptions about the state of mongocrypt do not hold when CSFLE is loaded")
         with mc.encryption_context('text', bson_data('command.json')) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO)
 
@@ -370,12 +372,42 @@ class MockCallback(MongoCryptCallback):
 
 
 class TestMongoCryptCallback(unittest.TestCase):
+    maxDiff = None
 
     @staticmethod
     def mongo_crypt_opts():
         return MongoCryptOptions({
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
             'local': {'key': b'\x00'*96}})
+
+    def test_csfle(self):
+        mc = MongoCrypt(MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00'*96}}), MockCallback())
+        if mc.csfle_version is None:
+            self.skipTest("This test requires CSFLE.")
+        # Test that we can pick up CSFLE automatically
+        encrypter = AutoEncrypter(MockCallback(), MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00'*96}},
+                                  bypass_encryption=False,
+                                  csfle_required=True))
+        self.addCleanup(encrypter.close)
+        encrypter = AutoEncrypter(MockCallback(),
+                                  MongoCryptOptions({
+                                      'aws': {'accessKeyId': 'example',
+                                              'secretAccessKey': 'example'},
+                                      'local': {'key': b'\x00' * 96}},
+                                  csfle_path=os.environ["CSFLE_PATH"],
+                                  csfle_required=True))
+        self.addCleanup(encrypter.close)
+        with self.assertRaisesRegex(MongoCryptError, "/doesnotexist"):
+            AutoEncrypter(MockCallback(),MongoCryptOptions({
+                                      'aws': {'accessKeyId': 'example',
+                                              'secretAccessKey': 'example'},
+                                      'local': {'key': b'\x00' * 96}},
+                                  csfle_path="/doesnotexist",
+                                  csfle_required=True))
 
     def test_encrypt(self):
         encrypter = AutoEncrypter(MockCallback(
@@ -384,7 +416,7 @@ class TestMongoCryptCallback(unittest.TestCase):
             key_docs=[bson_data('key-document.json')],
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
-        encrypted = encrypter.encrypt('text', bson_data('command.json'))
+        encrypted = encrypter.encrypt('test', bson_data('command.json'))
         self.assertEqual(bson.decode(encrypted, OPTS),
                          json_data('encrypted-command.json'))
         self.assertEqual(encrypted, bson_data('encrypted-command.json'))
