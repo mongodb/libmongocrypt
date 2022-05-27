@@ -530,7 +530,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
       }
    }
 
-   // e := collectionLevel1Token
+   // e := ServerDataEncryptionLevel1Token
    {
       mc_ServerDataEncryptionLevel1Token_t *serverToken =
          mc_ServerDataEncryptionLevel1Token_new (
@@ -602,6 +602,20 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    _mongocrypt_buffer_steal (&payload.escDerivedToken, &common.escDerivedToken);
    // c := ECCDerivedToken
    _mongocrypt_buffer_steal (&payload.eccDerivedToken, &common.eccDerivedToken);
+
+   // e := ServerDataEncryptionLevel1Token
+   {
+      mc_ServerDataEncryptionLevel1Token_t *serverToken =
+         mc_ServerDataEncryptionLevel1Token_new (
+            kb->crypt->crypto, &common.tokenKey, status);
+      if (!serverToken) {
+         goto fail;
+      }
+      _mongocrypt_buffer_copy_to (
+         mc_ServerDataEncryptionLevel1Token_get (serverToken),
+         &payload.serverEncryptionToken);
+      mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
+   }
 
    payload.maxContentionCounter = placeholder->maxContentionCounter;
 
