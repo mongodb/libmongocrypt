@@ -40,71 +40,78 @@ namespace MongoDB.Libmongocrypt
         public static CryptClient Create(CryptOptions options)
         {
             var handle = Library.mongocrypt_new();
-
             var status = new Status();
 
-            // The below code can be avoided on Windows. So, we don't call it on this system 
-            // to avoid restrictions on target frameworks that present in some of below
-            if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
+            try
             {
-                handle.Check(
-                    status,
-                    Library.mongocrypt_setopt_crypto_hooks(
-                        handle,
-                        __cryptoAes256CbcEncryptCallback,
-                        __cryptoAes256CbcDecryptCallback,
-                        __randomCallback,
-                        __cryptoHmacSha512Callback,
-                        __cryptoHmacSha256Callback,
-                        __cryptoHashCallback,
-                        IntPtr.Zero));
+                // The below code can be avoided on Windows. So, we don't call it on this system 
+                // to avoid restrictions on target frameworks that present in some of below
+                if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
+                {
+                    handle.Check(
+                        status,
+                        Library.mongocrypt_setopt_crypto_hooks(
+                            handle,
+                            __cryptoAes256CbcEncryptCallback,
+                            __cryptoAes256CbcDecryptCallback,
+                            __randomCallback,
+                            __cryptoHmacSha512Callback,
+                            __cryptoHmacSha256Callback,
+                            __cryptoHashCallback,
+                            IntPtr.Zero));
 
-                handle.Check(
-                    status,
-                    Library.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
-                        handle,
-                        __signRsaesPkcs1HmacCallback,
-                        IntPtr.Zero));
+                    handle.Check(
+                        status,
+                        Library.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+                            handle,
+                            __signRsaesPkcs1HmacCallback,
+                            IntPtr.Zero));
 
-                handle.Check(
-                    status,
-                    Library.mongocrypt_setopt_aes_256_ecb(
-                        handle,
-                        __cryptoAes256EcbEncryptCallback,
-                        IntPtr.Zero));
+                    handle.Check(
+                        status,
+                        Library.mongocrypt_setopt_aes_256_ecb(
+                            handle,
+                            __cryptoAes256EcbEncryptCallback,
+                            IntPtr.Zero));
+                }
+
+                foreach (var kmsCredentials in options.KmsCredentials)
+                {
+                    kmsCredentials.SetCredentials(handle, status);
+                }
+
+                if (options.Schema != null)
+                {
+                    PinnedBinary.HandleAsPinnedBinary(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
+                }
+
+                if (options.EncryptedFieldsMap != null)
+                {
+                    PinnedBinary.HandleAsPinnedBinary(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
+                }
+
+                if (options.BypassQueryAnalysis)
+                {
+                    Library.mongocrypt_setopt_bypass_query_analysis(handle);
+                }
+
+                if (options.CsfleLibPath != null)
+                {
+                    Library.mongocrypt_setopt_set_csfle_lib_path_override(handle, options.CsfleLibPath);
+                }
+
+                if (options.CsfleSearchPath != null)
+                {
+                    Library.mongocrypt_setopt_append_csfle_search_path(handle, options.CsfleSearchPath);
+                }
+
+                Library.mongocrypt_init(handle);
             }
-
-            foreach (var kmsCredentials in options.KmsCredentials)
+            catch (Exception)
             {
-                kmsCredentials.SetCredentials(handle, status);
+                handle.Dispose();
+                throw;
             }
-
-            if (options.Schema != null)
-            {
-                PinnedBinary.HandleAsPinnedBinary(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
-            }
-
-            if (options.EncryptedFieldsMap != null)
-            {
-                PinnedBinary.HandleAsPinnedBinary(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
-            }
-
-            if (options.BypassQueryAnalysis)
-            {
-                Library.mongocrypt_setopt_bypass_query_analysis(handle);
-            }
-
-            if (options.CsfleLibPath != null)
-            {
-                Library.mongocrypt_setopt_set_csfle_lib_path_override(handle, options.CsfleLibPath);
-            }
-
-            if (options.CsfleSearchPath != null)
-            {
-                Library.mongocrypt_setopt_append_csfle_search_path(handle, options.CsfleSearchPath);
-            }
-
-            Library.mongocrypt_init(handle);
 
             return new CryptClient(handle, status);
         }
