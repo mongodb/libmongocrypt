@@ -39,11 +39,14 @@ namespace MongoDB.Libmongocrypt
         /// <returns>A CryptClient</returns>
         public static CryptClient Create(CryptOptions options)
         {
-            var handle = Library.mongocrypt_new();
-            var status = new Status();
+            MongoCryptSafeHandle handle = null;
+            Status status = null;
 
             try
             {
+                handle = Library.mongocrypt_new();
+                status = new Status();
+
                 // The below code can be avoided on Windows. So, we don't call it on this system 
                 // to avoid restrictions on target frameworks that present in some of below
                 if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
@@ -109,7 +112,8 @@ namespace MongoDB.Libmongocrypt
             }
             catch (Exception)
             {
-                handle.Dispose();
+                handle?.Dispose();
+                status?.Dispose();
                 throw;
             }
 

@@ -32,8 +32,8 @@ namespace MongoDB.Libmongocrypt
 
         internal CryptClient(MongoCryptSafeHandle handle, Status status)
         {
-            _handle = handle;
-            _status = status;
+            _handle = handle ?? throw new ArgumentNullException(paramName: nameof(handle)); 
+            _status = status ?? throw new ArgumentNullException(paramName: nameof(status));
         }
 
         /// <summary>
@@ -246,6 +246,9 @@ namespace MongoDB.Libmongocrypt
                 // Free the handle
                 _handle.Dispose();
             }
+
+            // Free the status
+            _status.Dispose();
         }
         #endregion
 
