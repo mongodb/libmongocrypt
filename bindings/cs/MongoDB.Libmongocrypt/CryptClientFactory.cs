@@ -109,8 +109,17 @@ namespace MongoDB.Libmongocrypt
                 }
 
                 Library.mongocrypt_init(handle);
+
+                if (options.IsCsfleRequired)
+                {
+                    var versionPtr = Library.mongocrypt_csfle_version_string(handle, out _);
+                    if (versionPtr == IntPtr.Zero)
+                    {
+                        throw new CryptException(Library.StatusType.MONGOCRYPT_STATUS_ERROR_CLIENT, uint.MaxValue, "CSFLE is required, but was not found.");
+                    }
+                }
             }
-            catch (Exception)
+            catch
             {
                 handle?.Dispose();
                 status?.Dispose();
