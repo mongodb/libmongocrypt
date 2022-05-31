@@ -22,4 +22,4 @@ echo "Publishing snapshot with jdk8"
 export JAVA_HOME="/opt/java/jdk8"
 
 ./gradlew -version
-./gradlew publishSnapshots
+./gradlew publishSnapshots -DgitRevision=${GIT_REVISION}
