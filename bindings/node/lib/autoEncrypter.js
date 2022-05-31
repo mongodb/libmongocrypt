@@ -138,7 +138,8 @@ module.exports = function (modules) {
 
       if (options.extraOptions && options.extraOptions.cryptSharedLibSearchPaths) {
         // Only for driver testing
-        mongoCryptOptions.cryptSharedLibSearchPaths = options.extraOptions.cryptSharedLibSearchPaths;
+        mongoCryptOptions.cryptSharedLibSearchPaths =
+          options.extraOptions.cryptSharedLibSearchPaths;
       } else if (!this._bypassMongocryptdAndCryptShared) {
         mongoCryptOptions.cryptSharedLibSearchPaths = ['$SYSTEM'];
       }
@@ -147,7 +148,11 @@ module.exports = function (modules) {
       this._mongocrypt = new mc.MongoCrypt(mongoCryptOptions);
       this._contextCounter = 0;
 
-      if (options.extraOptions && options.extraOptions.cryptSharedLibRequired && !this.cryptSharedLibVersionInfo) {
+      if (
+        options.extraOptions &&
+        options.extraOptions.cryptSharedLibRequired &&
+        !this.cryptSharedLibVersionInfo
+      ) {
         throw new MongoError('`cryptSharedLibRequired` set but no crypt_shared library loaded');
       }
 
