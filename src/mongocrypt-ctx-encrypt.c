@@ -955,8 +955,8 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
       return true;
    }
 
-   _mcr_csfle_v1_vtable csfle = ctx->crypt->csfle;
-   mongo_csfle_v1_lib *csfle_lib = ctx->crypt->csfle_lib;
+   _mongo_crypt_v1_vtable csfle = ctx->crypt->csfle;
+   mongo_crypt_v1_lib *csfle_lib = ctx->crypt->csfle_lib;
    BSON_ASSERT (csfle_lib);
    bool okay = false;
 
@@ -990,10 +990,10 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    } else                                                              \
       ((void) 0)
 
-   mongo_csfle_v1_status *status = csfle.status_create ();
+   mongo_crypt_v1_status *status = csfle.status_create ();
    BSON_ASSERT (status);
 
-   mongo_csfle_v1_query_analyzer *qa =
+   mongo_crypt_v1_query_analyzer *qa =
       csfle.query_analyzer_create (csfle_lib, status);
    CHECK_CSFLE_ERROR ("query_analyzer_create", fail_qa_create);
 

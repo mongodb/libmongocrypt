@@ -545,14 +545,15 @@ _mongocrypt_tester_mongocrypt (tester_mongocrypt_flags flags)
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);
    bson_destroy (kms_providers);
    mongocrypt_binary_destroy (bin);
-   if (flags & TESTER_MONGOCRYPT_WITH_CSFLE_LIB) {
-      mongocrypt_setopt_append_csfle_search_path (crypt, "$ORIGIN");
+   if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
+      mongocrypt_setopt_append_crypt_shared_lib_search_path (crypt, "$ORIGIN");
    }
    ASSERT_OK (mongocrypt_init (crypt), crypt);
-   if (flags & TESTER_MONGOCRYPT_WITH_CSFLE_LIB) {
+   if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
       if (mongocrypt_csfle_version (crypt) == 0) {
-         BSON_ASSERT (!"tester mongocrypt requested WITH_CSFLE_LIB, but not "
-                       "csfle library was loaded by mongocrypt_init");
+         BSON_ASSERT (
+            !"tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but no "
+             "crypt_shared library was loaded by mongocrypt_init");
       }
    }
    return crypt;

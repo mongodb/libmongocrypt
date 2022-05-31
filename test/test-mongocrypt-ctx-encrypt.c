@@ -641,7 +641,7 @@ _test_encrypt_need_markings (_mongocrypt_tester_t *tester)
 static void
 _test_encrypt_csfle_no_needs_markings (_mongocrypt_tester_t *tester)
 {
-   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
       fputs ("No 'real' csfle library is available. The "
              "_test_encrypt_csfle_no_needs_markings test is a no-op.",
              stderr);
@@ -650,7 +650,7 @@ _test_encrypt_csfle_no_needs_markings (_mongocrypt_tester_t *tester)
 
    /* Success. */
    mongocrypt_t *crypt =
-      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
                  ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
@@ -3447,7 +3447,7 @@ _test_encrypt_fle2_explain_with_mongocryptd (_mongocrypt_tester_t *tester)
 static void
 _test_encrypt_fle2_explain_with_csfle (_mongocrypt_tester_t *tester)
 {
-   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
       fputs ("No 'real' csfle library is available. The "
              "_test_encrypt_fle2_explain_with_csfle test is a no-op.",
              stderr);
@@ -3457,8 +3457,8 @@ _test_encrypt_fle2_explain_with_csfle (_mongocrypt_tester_t *tester)
    /* Test with an encrypted value. Otherwise 'encryptionInformation' is not
     * appended. */
    {
-      mongocrypt_t *crypt =
-         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+      mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt (
+         TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
@@ -3576,7 +3576,7 @@ _test_encrypt_fle1_explain_with_mongocryptd (_mongocrypt_tester_t *tester)
 static void
 _test_encrypt_fle1_explain_with_csfle (_mongocrypt_tester_t *tester)
 {
-   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
       fputs ("No 'real' csfle library is available. The "
              "_test_encrypt_fle1_explain_with_csfle test is a no-op.",
              stderr);
@@ -3584,8 +3584,8 @@ _test_encrypt_fle1_explain_with_csfle (_mongocrypt_tester_t *tester)
    }
 
    {
-      mongocrypt_t *crypt =
-         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+      mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt (
+         TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
       ASSERT_OK (mongocrypt_ctx_encrypt_init (
@@ -4108,7 +4108,7 @@ _test_fle1_create_old_mongocryptd (_mongocrypt_tester_t *tester)
 static void
 _test_fle1_create_with_csfle (_mongocrypt_tester_t *tester)
 {
-   if (!TEST_MONGOCRYPT_HAVE_REAL_CSFLE) {
+   if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
       fputs ("No 'real' csfle library is available. The "
              "_test_fle1_create_with_csfle test is a no-op.",
              stderr);
@@ -4116,7 +4116,7 @@ _test_fle1_create_with_csfle (_mongocrypt_tester_t *tester)
    }
 
    mongocrypt_t *crypt =
-      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CSFLE_LIB);
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
    ASSERT_OK (mongocrypt_ctx_encrypt_init (
