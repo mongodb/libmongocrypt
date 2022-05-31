@@ -481,8 +481,8 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
 }
 
 Value MongoCrypt::CryptSharedLibVersionInfo(const CallbackInfo& info) {
-    uint64_t version_numeric = mongocrypt_csfle_version(_mongo_crypt.get());
-    const char* version_string = mongocrypt_csfle_version_string(_mongo_crypt.get(), nullptr);
+    uint64_t version_numeric = mongocrypt_crypt_shared_lib_version(_mongo_crypt.get());
+    const char* version_string = mongocrypt_crypt_shared_lib_version_string(_mongo_crypt.get(), nullptr);
     if (version_string == nullptr) {
         return Env().Null();
     }

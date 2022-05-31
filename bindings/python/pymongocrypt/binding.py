@@ -541,10 +541,11 @@ mongocrypt_destroy (mongocrypt_t *crypt);
  * @return A nul-terminated string of the dynamically loaded csfle library.
  *
  * @note For a numeric value that can be compared against, use
- * @ref mongocrypt_csfle_version.
+ * @ref mongocrypt_crypt_shared_lib_version.
  */
 const char *
-mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len);
+mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
+                                            uint32_t *len);
 
 /**
  * @brief Obtain a 64-bit constant encoding the version of the loaded csfle
@@ -566,7 +567,7 @@ mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len);
  * For example, version 6.2.1 would be encoded as: 0x0006'0002'0001'0000
  */
 uint64_t
-mongocrypt_csfle_version (const mongocrypt_t *crypt);
+mongocrypt_crypt_shared_lib_version (const mongocrypt_t *crypt);
 
 /**
  * Manages the state machine for encryption or decryption.

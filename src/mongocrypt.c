@@ -1030,7 +1030,8 @@ mongocrypt_destroy (mongocrypt_t *crypt)
 
 
 const char *
-mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len)
+mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
+                                            uint32_t *len)
 {
    if (!crypt->csfle.okay) {
       if (len) {
@@ -1046,7 +1047,7 @@ mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len)
 }
 
 uint64_t
-mongocrypt_csfle_version (const mongocrypt_t *crypt)
+mongocrypt_crypt_shared_lib_version (const mongocrypt_t *crypt)
 {
    if (!crypt->csfle.okay) {
       return 0;

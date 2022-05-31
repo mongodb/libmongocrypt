@@ -262,7 +262,7 @@ class MongoCrypt(object):
 
     @property
     def crypt_shared_lib_version(self):
-        ver = lib.mongocrypt_csfle_version_string(self.__crypt, ffi.NULL)
+        ver = lib.mongocrypt_crypt_shared_lib_version_string(self.__crypt, ffi.NULL)
         if ver == ffi.NULL:
             return None
         return ver
