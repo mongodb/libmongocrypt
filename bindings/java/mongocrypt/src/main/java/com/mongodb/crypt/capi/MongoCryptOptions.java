@@ -145,7 +145,7 @@ public class MongoCryptOptions {
         private boolean needsKmsCredentialsStateEnabled;
         private Map<String, BsonDocument> encryptedFieldsMap  = null;
         private boolean bypassQueryAnalysis;
-        private BsonDocument extraOptions = null;
+        private BsonDocument extraOptions = new BsonDocument();
         private List<String> searchPaths = emptyList();
 
         private Builder() {
