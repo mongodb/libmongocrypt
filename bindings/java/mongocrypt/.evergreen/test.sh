@@ -12,4 +12,4 @@ else
 fi
 
 ./gradlew -version
-./gradlew -DgitRevision=${GITREVISION} clean downloadJnaLibs check --info
+./gradlew clean downloadJnaLibs check --info -DgitRevision=${GIT_REVISION}

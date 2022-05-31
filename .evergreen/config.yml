@@ -155,7 +155,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          export GITREVISION="${revision}"
+          export GIT_REVISION="${revision}"
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/test.sh
 
   "test python":
@@ -184,27 +184,34 @@ functions:
         file: ./libmongocrypt/bindings/node/xunit.xml
 
   "publish snapshot":
+    - command: git.get_project
+      params: {directory: libmongocrypt}
+    - command: shell.exec
+      params:
+        script: |-
+          set -o errexit
+          chmod u+x libmongocrypt/.evergreen/*.sh
+          ./libmongocrypt/.evergreen/print-env-info.sh
     - command: shell.exec
       params:
         script: |-
           if [ "${is_patch}" = "true" ]; then
             echo "Patch build detected, skipping"
+            exit 0
           fi
           if [ "${branch_name}" != "master" ]; then
             echo "publish snapshot is only run on master branch."
             echo "Detected branch '${branch_name}', skipping."
-          fi
-    - command: shell.exec
-      params:
-        silent: true
-        script: |-
-          if [ "${is_patch}" = "true" ]; then
             exit 0
           fi
-          if [ "${branch_name}" != "master" ]; then
-            exit 0
-          fi
-          cd ./libmongocrypt/bindings/java/mongocrypt && PROJECT_DIRECTORY=${project_directory} NEXUS_USERNAME=${nexus_username} NEXUS_PASSWORD=${nexus_password} SIGNING_PASSWORD=${signing_password} SIGNING_KEY_ID=${signing_keyId} RING_FILE_GPG_BASE64=${ring_file_gpg_base64} ./.evergreen/publish.sh
+          export PROJECT_DIRECTORY=${project_directory}
+          export NEXUS_USERNAME=${nexus_username}
+          export NEXUS_PASSWORD=${nexus_password}
+          export SIGNING_PASSWORD=${signing_password}
+          export SIGNING_KEY_ID=${signing_keyId}
+          export RING_FILE_GPG_BASE64=${ring_file_gpg_base64}
+          export GIT_REVISION=${revision} 
+          cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/publish.sh
 
   "download tarball":
     - command: s3.get
@@ -423,6 +430,8 @@ tasks:
     - func: "attach node xunit results"
 
 - name: publish-snapshot
+  depends_on:
+    - name: upload-java
   commands:
     - func: "publish snapshot"
 
