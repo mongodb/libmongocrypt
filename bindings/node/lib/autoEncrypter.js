@@ -126,34 +126,34 @@ module.exports = function (modules) {
         mongoCryptOptions.logger = options.logger;
       }
 
-      if (options.extraOptions && options.extraOptions.csflePath) {
-        mongoCryptOptions.csflePath = options.extraOptions.csflePath;
+      if (options.extraOptions && options.extraOptions.cryptSharedLibPath) {
+        mongoCryptOptions.cryptSharedLibPath = options.extraOptions.cryptSharedLibPath;
       }
 
       if (options.bypassQueryAnalysis) {
         mongoCryptOptions.bypassQueryAnalysis = options.bypassQueryAnalysis;
       }
 
-      this._bypassMongocryptdAndCSFLE = this._bypassEncryption || options.bypassQueryAnalysis;
+      this._bypassMongocryptdAndCryptShared = this._bypassEncryption || options.bypassQueryAnalysis;
 
-      if (options.extraOptions && options.extraOptions.csfleSearchPaths) {
+      if (options.extraOptions && options.extraOptions.cryptSharedLibSearchPaths) {
         // Only for driver testing
-        mongoCryptOptions.csfleSearchPaths = options.extraOptions.csfleSearchPaths;
-      } else if (!this._bypassMongocryptdAndCSFLE) {
-        mongoCryptOptions.csfleSearchPaths = ['$SYSTEM'];
+        mongoCryptOptions.cryptSharedLibSearchPaths = options.extraOptions.cryptSharedLibSearchPaths;
+      } else if (!this._bypassMongocryptdAndCryptShared) {
+        mongoCryptOptions.cryptSharedLibSearchPaths = ['$SYSTEM'];
       }
 
       Object.assign(mongoCryptOptions, { cryptoCallbacks });
       this._mongocrypt = new mc.MongoCrypt(mongoCryptOptions);
       this._contextCounter = 0;
 
-      if (options.extraOptions && options.extraOptions.csfleRequired && !this.csfleVersionInfo) {
-        throw new MongoError('`csfleRequired` set but no csfle shared library loaded');
+      if (options.extraOptions && options.extraOptions.cryptSharedLibRequired && !this.cryptSharedLibVersionInfo) {
+        throw new MongoError('`cryptSharedLibRequired` set but no crypt_shared library loaded');
       }
 
       // Only instantiate mongocryptd manager/client once we know for sure
       // that we are not using the CSFLE shared library.
-      if (!this._bypassMongocryptdAndCSFLE && !this.csfleVersionInfo) {
+      if (!this._bypassMongocryptdAndCryptShared && !this.cryptSharedLibVersionInfo) {
         this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
         this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
           useNewUrlParser: true,
@@ -168,7 +168,7 @@ module.exports = function (modules) {
      * @param {Function} callback Invoked when the mongocryptd client either successfully connects or errors
      */
     init(callback) {
-      if (this._bypassMongocryptdAndCSFLE || this.csfleVersionInfo) {
+      if (this._bypassMongocryptdAndCryptShared || this.cryptSharedLibVersionInfo) {
         return callback();
       }
       const _callback = (err, res) => {
@@ -323,8 +323,8 @@ module.exports = function (modules) {
      * as `{ version: bigint, versionStr: string }`, or `null` if no CSFLE
      * shared library was loaded.
      */
-    get csfleVersionInfo() {
-      return this._mongocrypt.csfleVersionInfo;
+    get cryptSharedLibVersionInfo() {
+      return this._mongocrypt.cryptSharedLibVersionInfo;
     }
   }
 
