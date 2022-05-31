@@ -18,9 +18,10 @@
 package com.mongodb.crypt.capi;
 
 import org.bson.BsonDocument;
-
+import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static org.bson.assertions.Assertions.isTrue;
 
 /**
@@ -34,7 +35,10 @@ public class MongoCryptOptions {
     private final Map<String, BsonDocument> localSchemaMap;
     private final boolean needsKmsCredentialsStateEnabled;
     private final Map<String, BsonDocument> encryptedFieldsMap;
+    private final BsonDocument extraOptions;
     private final boolean bypassQueryAnalysis;
+    private final List<String> searchPaths;
+
 
     /**
      * Construct a builder for the options
@@ -113,6 +117,24 @@ public class MongoCryptOptions {
     }
 
     /**
+     * The extraOptions that relate to the mongocryptd process or shared library.
+     * @return the extra options
+     * @since 1.5
+     */
+    public BsonDocument getExtraOptions() {
+        return extraOptions;
+    }
+
+    /**
+     * Gets the search paths
+     * @return this
+     * @since 1.5
+     */
+    public List<String> getSearchPaths() {
+        return searchPaths;
+    }
+
+    /**
      * The builder for the options
      */
     public static class Builder {
@@ -123,6 +145,8 @@ public class MongoCryptOptions {
         private boolean needsKmsCredentialsStateEnabled;
         private Map<String, BsonDocument> encryptedFieldsMap  = null;
         private boolean bypassQueryAnalysis;
+        private BsonDocument extraOptions = null;
+        private List<String> searchPaths = emptyList();
 
         private Builder() {
         }
@@ -212,6 +236,28 @@ public class MongoCryptOptions {
         }
 
         /**
+         * The extraOptions that relate to the mongocryptd process or shared library.
+         * @param extraOptions the extraOptions
+         * @return this
+         * @since 1.5
+         */
+        public Builder extraOptions(final BsonDocument extraOptions) {
+            this.extraOptions = extraOptions;
+            return this;
+        }
+
+        /**
+         * Sets search paths
+         * @param searchPaths sets search path
+         * @return this
+         * @since 1.5
+         */
+        public Builder searchPaths(final List<String> searchPaths) {
+            this.searchPaths = searchPaths;
+            return this;
+        }
+
+        /**
          * Build the options.
          *
          * @return the options
@@ -232,5 +278,7 @@ public class MongoCryptOptions {
         this.needsKmsCredentialsStateEnabled = builder.needsKmsCredentialsStateEnabled;
         this.encryptedFieldsMap = builder.encryptedFieldsMap;
         this.bypassQueryAnalysis = builder.bypassQueryAnalysis;
+        this.extraOptions = builder.extraOptions;
+        this.searchPaths = builder.searchPaths;
     }
 }

@@ -102,11 +102,10 @@ public class CAPI {
     public static class mongocrypt_kms_ctx_t extends PointerType {
     }
 
-
     /**
      * Returns the version string x.y.z for libmongocrypt.
      *
-     * @param len, an optional length of the returned string. May be NULL.
+     * @param len an optional length of the returned string. May be NULL.
      * @return the version string x.y.z for libmongocrypt.
      */
     public static native cstring
@@ -227,7 +226,7 @@ public class CAPI {
      * Get the error message associated with a status, or an empty string.
      *
      * @param status The status object.
-     * @param len, an optional length of the returned string. May be NULL.
+     * @param len an optional length of the returned string. May be NULL.
      * @return An error message or an empty string.
      */
     public static native cstring
@@ -484,6 +483,7 @@ public class CAPI {
      * @param contention_factor
      * @return A boolean indicating success. If false, an error status is set.
      * Retrieve it with @ref mongocrypt_ctx_status.
+     * @since 1.5
      */
     public static native boolean
     mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t ctx, long contention_factor);
@@ -499,17 +499,71 @@ public class CAPI {
      *               The viewed data is copied. It is valid to destroy key_id with @ref mongocrypt_binary_destroy immediately after.
      * @return A boolean indicating success. If false, an error status is set.
      * Retrieve it with @ref mongocrypt_ctx_status
+     * @since 1.5
      */
     public static native boolean
     mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t ctx, mongocrypt_binary_t key_id);
+
+    /**
+     * Append an additional search directory to the search path for loading
+     * the CSFLE dynamic library.
+     *
+     * @param crypt The @ref mongocrypt_t object to update
+     * @param path A null-terminated sequence of bytes for the search path. On
+     * some filesystems, this may be arbitrary bytes. On other filesystems, this may
+     * be required to be a valid UTF-8 code unit sequence. If the leading element of
+     * the path is the literal string "$ORIGIN", that substring will be replaced
+     * with the directory path containing the executable libmongocrypt module. If
+     * the path string is literal "$SYSTEM", then libmongocrypt will defer to the
+     * system's library resolution mechanism to find the CSFLE library.
+     *
+     * <p>If no CSFLE dynamic library is found in any of the directories
+     * specified by the search paths loaded here, @ref mongocrypt_init() will still
+     * succeed and continue to operate without CSFLE.</p>
+     *
+     * <p>The search paths are searched in the order that they are appended. This
+     * allows one to provide a precedence in how the library will be discovered. For
+     * example, appending known directories before appending "$SYSTEM" will allow
+     * one to supersede the system's installed library, but still fall-back to it if
+     * the library wasn't found otherwise. If one does not ever append "$SYSTEM",
+     * then the system's library-search mechanism will never be consulted.</p>
+     *
+     * <p>If an absolute path to the library is specified using @ref mongocrypt_setopt_set_csfle_lib_path_override,
+     * then paths appended here will have no effect.</p>
+     * @since 1.5
+     */
+    public static native void
+    mongocrypt_setopt_append_csfle_search_path (mongocrypt_t crypt, cstring path);
+
+    /**
+     * Set a single override path for loading the CSFLE dynamic library.
+     * @param crypt The @ref mongocrypt_t object to update
+     * @param path A null-terminated sequence of bytes for a path to the CSFLE
+     * dynamic library. On some filesystems, this may be arbitrary bytes. On other
+     * filesystems, this may be required to be a valid UTF-8 code unit sequence. If
+     * the leading element of the path is the literal string `$ORIGIN`, that
+     * substring will be replaced with the directory path containing the executable
+     * libmongocrypt module.
+     *
+     * <p>This function will do no IO nor path validation. All validation will
+     * occur during the call to @ref mongocrypt_init.</p>
+     * <p>If a CSFLE library path override is specified here, then no paths given
+     * to @ref mongocrypt_setopt_append_csfle_search_path will be consulted when
+     * opening the CSFLE library.</p>
+     * <p>If a path is provided via this API and @ref mongocrypt_init fails to
+     * initialize a valid CSFLE library instance for the path specified, then
+     * the initialization of mongocrypt_t will fail with an error.</p>
+     * @since 1.5
+     */
+    public static native void
+    mongocrypt_setopt_set_csfle_lib_path_override(mongocrypt_t crypt, cstring path);
 
     /**
      * Set the query type to use for Queryable Encryption explicit encryption.
      * The query type is only used for indexed Queryable Encryption.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
-     * @param query_type
-     * @pre @p ctx has not been initialized.
+     * @param query_type the query type
      * @return A boolean indicating success. If false, an error status is set.
      * Retrieve it with @ref mongocrypt_ctx_status
      */
@@ -545,6 +599,44 @@ public class CAPI {
     public static native void
     mongocrypt_destroy(mongocrypt_t crypt);
 
+    /**
+     * Obtain a nul-terminated version string of the loaded csfle dynamic library,
+     * if available.
+     *
+     * If no csfle was successfully loaded, this function returns NULL.
+     *
+     * @param crypt The mongocrypt_t object after a successful call to mongocrypt_init.
+     * @param len an optional length of the returned string. May be NULL.
+     *
+     * @return A nul-terminated string of the dynamically loaded csfle library.
+     * @since 1.5
+     */
+    public static native cstring
+    mongocrypt_csfle_version_string(mongocrypt_t crypt, Pointer len);
+
+    /**
+     * Obtain a 64-bit constant encoding the version of the loaded csfle
+     * library, if available.
+     *
+     * <p>The version is encoded as four 16-bit numbers, from high to low:
+     * <ol>
+     *   <li>Major version</li>
+     *   <li>Minor version</li>
+     *   <li>Revision</li>
+     *   <li>Reserved</li>
+     * </ol>
+     * For example, version {@code 6.2.1} would be encoded as: {@code 0x0006'0002'0001'0000}
+     * </p>
+     *
+     * @param  crypt The mongocrypt_t object after a successful call to
+     * mongocrypt_init.
+     *
+     * @return A 64-bit encoded version number, with the version encoded as four
+     * sixteen-bit integers, or zero if no csfle library was loaded.
+     * @since 1.5
+     */
+    public static native long
+    mongocrypt_csfle_version(mongocrypt_t crypt);
 
     /**
      * Call in response to the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state

@@ -51,11 +51,11 @@ public interface MongoCrypt extends Closeable {
      * @return the context
      */
     MongoCryptContext createDataKeyContext(String kmsProvider, MongoDataKeyOptions options);
-    
+
     /**
      * Create a context to use for encryption
      *
-     * @param document the document to encrypt, which must be in the form { "v" : BSON value to encrypt }}
+     * @param document the document to encrypt, which must be in the form { "v" : BSON value to encrypt }
      * @param options  the explicit encryption options
      * @return the context
      */
@@ -68,6 +68,12 @@ public interface MongoCrypt extends Closeable {
      * @return the context
      */
     MongoCryptContext createExplicitDecryptionContext(BsonDocument document);
+
+    /**
+     * @return the version string of the loaded csfle dynamic library if available or null
+     * @since 1.5
+     */
+    String getVersionString();
 
     @Override
     void close();
