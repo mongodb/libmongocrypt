@@ -1,4 +1,4 @@
-import type { Binary } from 'bson';
+import type { Document, Binary } from 'bson';
 import type { MongoClient, BulkWriteResult, ClientSession } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
