@@ -32,8 +32,23 @@ namespace MongoDB.Libmongocrypt
 
         internal CryptClient(MongoCryptSafeHandle handle, Status status)
         {
-            _handle = handle;
-            _status = status;
+            _handle = handle ?? throw new ArgumentNullException(paramName: nameof(handle)); 
+            _status = status ?? throw new ArgumentNullException(paramName: nameof(status));
+        }
+
+        /// <summary>
+        /// Gets the crypt shared library version.
+        /// </summary>
+        /// <returns>A crypt shared library version.</returns>
+        public string CryptSharedLibraryVersion
+        {
+            get
+            {
+                var versionPtr = Library.mongocrypt_crypt_shared_lib_version_string(_handle, out _);
+                var result = Marshal.PtrToStringAnsi(versionPtr);
+
+                return result;
+            }
         }
 
         /// <summary>
@@ -96,35 +111,7 @@ namespace MongoDB.Libmongocrypt
         /// <returns>A encryption context. </returns>
         public CryptContext StartExplicitEncryptionContextWithKeyId(byte[] keyId, string encryptionAlgorithm, byte[] message)
         {
-            ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
-
-            unsafe
-            {
-                fixed (byte* p = keyId)
-                {
-                    IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)keyId.Length))
-                    {
-                        handle.Check(_status, Library.mongocrypt_ctx_setopt_key_id(handle, pinned.Handle));
-                    }
-                }
-            }
-
-            handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
-
-            unsafe
-            {
-                fixed (byte* p = message)
-                {
-                    IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)message.Length))
-                    {
-                        handle.Check(_status, Library.mongocrypt_ctx_explicit_encrypt_init(handle, pinned.Handle));
-                    }
-                }
-            }
-
-            return new CryptContext(handle);
+            return StartExplicitEncryptionContext(keyId, keyAltName: null, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
         }
 
         /// <summary>
@@ -136,32 +123,54 @@ namespace MongoDB.Libmongocrypt
         /// <returns>A encryption context. </returns>
         public CryptContext StartExplicitEncryptionContextWithKeyAltName(byte[] keyAltName, string encryptionAlgorithm, byte[] message)
         {
-            ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
-            unsafe
+            return StartExplicitEncryptionContext(keyId: null, keyAltName, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
+        }
+
+        /// <summary>
+        /// Starts an explicit encryption context.
+        /// </summary>
+        /// <param name="key">The key id.</param>
+        /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
+        /// <param name="message">The BSON message.</param>
+        /// <returns>A encryption context. </returns>
+        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, int? queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
+        {
+            var handle = Library.mongocrypt_ctx_new(_handle);
+
+            if (keyId != null)
             {
-                fixed (byte* p = keyAltName)
-                {
-                    IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)keyAltName.Length))
-                    {
-                        handle.Check(_status, Library.mongocrypt_ctx_setopt_key_alt_name(handle, pinned.Handle));
-                    }
-                }
+                PinnedBinary.RunAsPinnedBinary(handle, keyId, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_id(h, pb));
+            }
+            else if (keyAltName != null)
+            {
+                PinnedBinary.RunAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
             }
 
-            handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
-
-            unsafe
+            switch (encryptionAlgorithm)
             {
-                fixed (byte* p = message)
-                {
-                    IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)message.Length))
-                    {
-                        handle.Check(_status, Library.mongocrypt_ctx_explicit_encrypt_init(handle, pinned.Handle));
-                    }
-                }
+                case "Indexed":
+                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_EQUALITY));
+                    break;
+                case "Unindexed":
+                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_NONE));
+                    break;
+                default:
+                    handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
+                    break;
             }
+
+            if (queryType.HasValue)
+            {
+                handle.Check(_status, Library.mongocrypt_ctx_setopt_query_type(handle, (Library.mongocrypt_query_type_t)queryType.Value));
+            }
+
+            if (contentionFactor.HasValue)
+            {
+                var contentionFactorInt = contentionFactor.Value;
+                handle.Check(_status, Library.mongocrypt_ctx_setopt_contention_factor(handle, contentionFactorInt));
+            }
+
+            PinnedBinary.RunAsPinnedBinary(handle, message, _status, (h, pb) => Library.mongocrypt_ctx_explicit_encrypt_init(h, pb));
 
             return new CryptContext(handle);
         }
@@ -217,7 +226,6 @@ namespace MongoDB.Libmongocrypt
             return new CryptContext(handle);
         }
 
-
         void IStatus.Check(Status status)
         {
             Library.mongocrypt_status(_handle, status.Handle);
@@ -238,9 +246,13 @@ namespace MongoDB.Libmongocrypt
                 // Free the handle
                 _handle.Dispose();
             }
+
+            // Free the status
+            _status.Dispose();
         }
         #endregion
 
+        // private methods
         private void Check(bool success)
         {
             if (!success)

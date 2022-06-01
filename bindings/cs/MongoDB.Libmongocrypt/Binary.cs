@@ -26,6 +26,8 @@ namespace MongoDB.Libmongocrypt
     /// <seealso cref="System.IDisposable" />
     public class Binary : IDisposable
     {
+        private static readonly byte[] __empty = new byte[0];
+
         private BinarySafeHandle _handle;
 
         internal Binary()
@@ -67,9 +69,16 @@ namespace MongoDB.Libmongocrypt
         /// </summary>
         public byte[] ToArray()
         {
-            byte[] arr = new byte[Length];
-            Marshal.Copy(Data, arr, 0, arr.Length);
-            return arr;
+            if (Length > 0)
+            {
+                byte[] arr = new byte[Length];
+                Marshal.Copy(Data, arr, 0, arr.Length);
+                return arr;
+            }
+            else
+            {
+                return __empty;
+            }
         }
 
         /// <summary>

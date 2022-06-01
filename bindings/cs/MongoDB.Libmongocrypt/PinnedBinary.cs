@@ -24,6 +24,23 @@ namespace MongoDB.Libmongocrypt
     /// <seealso cref="Binary" />
     internal class PinnedBinary : Binary
     {
+        #region static
+        internal static void RunAsPinnedBinary<THandle>(THandle handle, byte[] bytes, Status status, Func<THandle, BinarySafeHandle, bool> handleFunc) where THandle : CheckableSafeHandle
+        {
+            unsafe
+            {
+                fixed (byte* map = bytes)
+                {
+                    var ptr = (IntPtr)map;
+                    using (var pinned = new PinnedBinary(ptr, (uint)bytes.Length))
+                    {
+                        handle.Check(status, handleFunc(handle, pinned.Handle));
+                    }
+                }
+            }
+        }
+        #endregion
+
         internal PinnedBinary(IntPtr ptr, uint len)
             : base(Library.mongocrypt_binary_new_from_data(ptr, len))
         {

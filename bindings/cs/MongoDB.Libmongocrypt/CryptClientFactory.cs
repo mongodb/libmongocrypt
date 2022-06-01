@@ -25,8 +25,9 @@ namespace MongoDB.Libmongocrypt
     {
         // MUST be static fields since otherwise these callbacks can be collected via the garbage collector
         // regardless they're used by mongocrypt level or no
-        private static Library.Delegates.CryptoCallback __crypto256DecryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.Decrypt);
-        private static Library.Delegates.CryptoCallback __crypto256EncryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.Encrypt);
+        private static Library.Delegates.CryptoCallback __cryptoAes256EcbEncryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.EncryptEcb);
+        private static Library.Delegates.CryptoCallback __cryptoAes256CbcDecryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.DecryptCbc);
+        private static Library.Delegates.CryptoCallback __cryptoAes256CbcEncryptCallback = new Library.Delegates.CryptoCallback(CipherCallbacks.EncryptCbc);
         private static Library.Delegates.HashCallback __cryptoHashCallback = new Library.Delegates.HashCallback(HashCallback.Hash);
         private static Library.Delegates.CryptoHmacCallback __cryptoHmacSha256Callback = new Library.Delegates.CryptoHmacCallback(HmacShaCallbacks.HmacSha256);
         private static Library.Delegates.CryptoHmacCallback __cryptoHmacSha512Callback = new Library.Delegates.CryptoHmacCallback(HmacShaCallbacks.HmacSha512);
@@ -38,54 +39,92 @@ namespace MongoDB.Libmongocrypt
         /// <returns>A CryptClient</returns>
         public static CryptClient Create(CryptOptions options)
         {
-            var handle = Library.mongocrypt_new();
+            MongoCryptSafeHandle handle = null;
+            Status status = null;
 
-            var status = new Status();
-
-            // The below code can be avoided on Windows. So, we don't call it on this system 
-            // to avoid restrictions on target frameworks that present in some of below
-            if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
+            try
             {
-                handle.Check(
-                    status,
-                    Library.mongocrypt_setopt_crypto_hooks(
-                        handle,
-                        __crypto256EncryptCallback,
-                        __crypto256DecryptCallback,
-                        __randomCallback,
-                        __cryptoHmacSha512Callback,
-                        __cryptoHmacSha256Callback,
-                        __cryptoHashCallback,
-                        IntPtr.Zero));
+                handle = Library.mongocrypt_new();
+                status = new Status();
 
-                handle.Check(
-                    status,
-                    Library.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
-                        handle,
-                        __signRsaesPkcs1HmacCallback, 
-                        IntPtr.Zero));
-            }
-
-            foreach (var kmsCredentials in options.KmsCredentials)
-            {
-                kmsCredentials.SetCredentials(handle, status);
-            }
-
-            if (options.Schema != null)
-            {
-                unsafe
+                // The below code can be avoided on Windows. So, we don't call it on this system 
+                // to avoid restrictions on target frameworks that present in some of below
+                if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
                 {
-                    fixed (byte* schema = options.Schema)
+                    handle.Check(
+                        status,
+                        Library.mongocrypt_setopt_crypto_hooks(
+                            handle,
+                            __cryptoAes256CbcEncryptCallback,
+                            __cryptoAes256CbcDecryptCallback,
+                            __randomCallback,
+                            __cryptoHmacSha512Callback,
+                            __cryptoHmacSha256Callback,
+                            __cryptoHashCallback,
+                            IntPtr.Zero));
+
+                    handle.Check(
+                        status,
+                        Library.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+                            handle,
+                            __signRsaesPkcs1HmacCallback,
+                            IntPtr.Zero));
+
+                    handle.Check(
+                        status,
+                        Library.mongocrypt_setopt_aes_256_ecb(
+                            handle,
+                            __cryptoAes256EcbEncryptCallback,
+                            IntPtr.Zero));
+                }
+
+                foreach (var kmsCredentials in options.KmsCredentials)
+                {
+                    kmsCredentials.SetCredentials(handle, status);
+                }
+
+                if (options.Schema != null)
+                {
+                    PinnedBinary.RunAsPinnedBinary(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
+                }
+
+                if (options.EncryptedFieldsMap != null)
+                {
+                    PinnedBinary.RunAsPinnedBinary(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
+                }
+
+                if (options.BypassQueryAnalysis)
+                {
+                    Library.mongocrypt_setopt_bypass_query_analysis(handle);
+                }
+
+                if (options.CryptSharedLibPath != null)
+                {
+                    Library.mongocrypt_setopt_append_crypt_shared_lib_search_path(handle, options.CryptSharedLibPath);
+                }
+
+                if (options.CryptSharedLibSearchPath != null)
+                {
+                    Library.mongocrypt_setopt_append_crypt_shared_lib_search_path(handle, options.CryptSharedLibSearchPath);
+                }
+
+                Library.mongocrypt_init(handle);
+
+                if (options.IsCryptSharedLibRequired)
+                {
+                    var versionPtr = Library.mongocrypt_crypt_shared_lib_version_string(handle, out _);
+                    if (versionPtr == IntPtr.Zero)
                     {
-                        var schemaPtr = (IntPtr)schema;
-                        using (var pinnedSchema = new PinnedBinary(schemaPtr, (uint)options.Schema.Length))
-                        {
-                            handle.Check(status, Library.mongocrypt_setopt_schema_map(handle, schema: pinnedSchema.Handle));
-                        }
+                        throw new CryptException(Library.StatusType.MONGOCRYPT_STATUS_ERROR_CLIENT, uint.MaxValue, "CryptSharedLib is required, but was not found or not loaded.");
                     }
                 }
             }
-            Library.mongocrypt_init(handle);
+            catch
+            {
+                handle?.Dispose();
+                status?.Dispose();
+                throw;
+            }
 
             return new CryptClient(handle, status);
         }
