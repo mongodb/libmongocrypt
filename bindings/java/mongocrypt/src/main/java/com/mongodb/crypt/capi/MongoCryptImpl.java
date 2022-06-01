@@ -30,7 +30,6 @@ import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_INDEX_TYPE_EQUALITY;
@@ -40,7 +39,7 @@ import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_INFO;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_TRACE;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_WARNING;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_csfle_version_string;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_crypt_shared_lib_version_string;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
@@ -61,7 +60,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_aes_256_ctr;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_append_csfle_search_path;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_append_crypt_shared_lib_search_path;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_bypass_query_analysis;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hooks;
@@ -71,12 +70,11 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_providers;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_log_handler;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_schema_map;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_set_csfle_lib_path_override;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_set_crypt_shared_lib_path_override;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_use_need_kms_credentials_state;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_version;
 import static com.mongodb.crypt.capi.CAPIHelper.toBinary;
 import static org.bson.assertions.Assertions.isTrue;
 import static org.bson.assertions.Assertions.notNull;
@@ -188,9 +186,9 @@ class MongoCryptImpl implements MongoCrypt {
             }
         }
 
-        options.getSearchPaths().forEach(p -> mongocrypt_setopt_append_csfle_search_path(wrapped, new cstring(p)));
-        if (options.getExtraOptions().containsKey("csflePath")) {
-            mongocrypt_setopt_set_csfle_lib_path_override(wrapped, new cstring(options.getExtraOptions().getString("csflePath").getValue()));
+        options.getSearchPaths().forEach(p -> mongocrypt_setopt_append_crypt_shared_lib_search_path(wrapped, new cstring(p)));
+        if (options.getExtraOptions().containsKey("cryptSharedLibPath")) {
+            mongocrypt_setopt_set_crypt_shared_lib_path_override(wrapped, new cstring(options.getExtraOptions().getString("cryptSharedLibPath").getValue()));
         }
 
         configure(() -> mongocrypt_init(wrapped));
@@ -319,8 +317,8 @@ class MongoCryptImpl implements MongoCrypt {
     }
 
     @Override
-    public String getVersionString() {
-        cstring versionString = mongocrypt_csfle_version_string(wrapped, null);
+    public String getCryptSharedLibVersionString() {
+        cstring versionString = mongocrypt_crypt_shared_lib_version_string(wrapped, null);
         return versionString == null ? null : versionString.toString();
     }
 

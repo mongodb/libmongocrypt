@@ -70,10 +70,10 @@ public interface MongoCrypt extends Closeable {
     MongoCryptContext createExplicitDecryptionContext(BsonDocument document);
 
     /**
-     * @return the version string of the loaded csfle dynamic library if available or null
+     * @return the version string of the loaded crypt shared dynamic library if available or null
      * @since 1.5
      */
-    String getVersionString();
+    String getCryptSharedLibVersionString();
 
     @Override
     void close();

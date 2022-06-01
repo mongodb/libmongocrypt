@@ -224,7 +224,7 @@ public class MongoCryptOptions {
          * Sets whether automatic analysis of outgoing commands should be disabled.
          *
          * <p>Set bypassQueryAnalysis to true to use explicit encryption on indexed fields
-         * without the MongoDB Enterprise Advanced licensed csfle shared library.</p>
+         * without the MongoDB Enterprise Advanced licensed crypt shared library.</p>
          *
          * @param bypassQueryAnalysis whether the analysis of outgoing commands should be disabled.
          * @since  1.5

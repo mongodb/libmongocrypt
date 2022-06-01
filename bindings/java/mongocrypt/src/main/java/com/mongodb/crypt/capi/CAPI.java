@@ -451,7 +451,7 @@ public class CAPI {
      *
      * <p>If opted in:
      * <ul>
-     *     <li>The csfle shared library will not attempt to be loaded.</li>
+     *     <li>The crypt_shared shared library will not attempt to be loaded.</li>
      *     <li>A mongocrypt_ctx_t will never enter the MONGOCRYPT_CTX_NEED_MARKINGS state.</li>
      * </ul>
      * </p>
@@ -506,7 +506,7 @@ public class CAPI {
 
     /**
      * Append an additional search directory to the search path for loading
-     * the CSFLE dynamic library.
+     * the crypt_shared dynamic library.
      *
      * @param crypt The @ref mongocrypt_t object to update
      * @param path A null-terminated sequence of bytes for the search path. On
@@ -515,11 +515,11 @@ public class CAPI {
      * the path is the literal string "$ORIGIN", that substring will be replaced
      * with the directory path containing the executable libmongocrypt module. If
      * the path string is literal "$SYSTEM", then libmongocrypt will defer to the
-     * system's library resolution mechanism to find the CSFLE library.
+     * system's library resolution mechanism to find the crypt_shared library.
      *
-     * <p>If no CSFLE dynamic library is found in any of the directories
+     * <p>If no crypt_shared dynamic library is found in any of the directories
      * specified by the search paths loaded here, @ref mongocrypt_init() will still
-     * succeed and continue to operate without CSFLE.</p>
+     * succeed and continue to operate without crypt_shared.</p>
      *
      * <p>The search paths are searched in the order that they are appended. This
      * allows one to provide a precedence in how the library will be discovered. For
@@ -528,17 +528,17 @@ public class CAPI {
      * the library wasn't found otherwise. If one does not ever append "$SYSTEM",
      * then the system's library-search mechanism will never be consulted.</p>
      *
-     * <p>If an absolute path to the library is specified using @ref mongocrypt_setopt_set_csfle_lib_path_override,
+     * <p>If an absolute path to the library is specified using @ref mongocrypt_setopt_set_crypt_shared_lib_path_override,
      * then paths appended here will have no effect.</p>
      * @since 1.5
      */
     public static native void
-    mongocrypt_setopt_append_csfle_search_path (mongocrypt_t crypt, cstring path);
+    mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t crypt, cstring path);
 
     /**
-     * Set a single override path for loading the CSFLE dynamic library.
+     * Set a single override path for loading the crypt_shared dynamic library.
      * @param crypt The @ref mongocrypt_t object to update
-     * @param path A null-terminated sequence of bytes for a path to the CSFLE
+     * @param path A null-terminated sequence of bytes for a path to the crypt_shared
      * dynamic library. On some filesystems, this may be arbitrary bytes. On other
      * filesystems, this may be required to be a valid UTF-8 code unit sequence. If
      * the leading element of the path is the literal string `$ORIGIN`, that
@@ -547,16 +547,16 @@ public class CAPI {
      *
      * <p>This function will do no IO nor path validation. All validation will
      * occur during the call to @ref mongocrypt_init.</p>
-     * <p>If a CSFLE library path override is specified here, then no paths given
-     * to @ref mongocrypt_setopt_append_csfle_search_path will be consulted when
-     * opening the CSFLE library.</p>
+     * <p>If a crypt_shared library path override is specified here, then no paths given
+     * to @ref mongocrypt_setopt_append_crypt_shared_lib_search_path will be consulted when
+     * opening the crypt_shared library.</p>
      * <p>If a path is provided via this API and @ref mongocrypt_init fails to
-     * initialize a valid CSFLE library instance for the path specified, then
+     * initialize a valid crypt_shared library instance for the path specified, then
      * the initialization of mongocrypt_t will fail with an error.</p>
      * @since 1.5
      */
     public static native void
-    mongocrypt_setopt_set_csfle_lib_path_override(mongocrypt_t crypt, cstring path);
+    mongocrypt_setopt_set_crypt_shared_lib_path_override(mongocrypt_t crypt, cstring path);
 
     /**
      * Set the query type to use for Queryable Encryption explicit encryption.
@@ -600,19 +600,19 @@ public class CAPI {
     mongocrypt_destroy(mongocrypt_t crypt);
 
     /**
-     * Obtain a nul-terminated version string of the loaded csfle dynamic library,
+     * Obtain a nul-terminated version string of the loaded crypt_shared dynamic library,
      * if available.
      *
-     * If no csfle was successfully loaded, this function returns NULL.
+     * If no crypt_shared was successfully loaded, this function returns NULL.
      *
      * @param crypt The mongocrypt_t object after a successful call to mongocrypt_init.
      * @param len an optional length of the returned string. May be NULL.
      *
-     * @return A nul-terminated string of the dynamically loaded csfle library.
+     * @return A nul-terminated string of the dynamically loaded crypt_shared library.
      * @since 1.5
      */
     public static native cstring
-    mongocrypt_csfle_version_string(mongocrypt_t crypt, Pointer len);
+    mongocrypt_crypt_shared_lib_version_string (mongocrypt_t crypt, Pointer len);
 
     /**
      * Call in response to the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state
