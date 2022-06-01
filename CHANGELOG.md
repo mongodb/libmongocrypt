@@ -1,4 +1,9 @@
 # ChangeLog
+## 1.5.0-rc0
+## Fixed
+- Account for shared library rename.
+- Update to use new payload for FLE 2.0 find. 
+
 ## 1.5.0-alpha2
 ## New Features
 - Fix explain when using csfle shared library.
