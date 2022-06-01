@@ -23,9 +23,9 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python38/python.exe"
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe")
-    export CSFLE_PATH=../csfle/bin/mongo_csfle_v1.dll
-    C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
-      --version latest --out ../csfle/
+    export CSFLE_PATH=../crypt_shared/bin/mongo_crypt_v1.dll
+    C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
+      --version latest --out ../crypt_shared/
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     PYTHONS=("python"   # Python 2.7 from brew
@@ -38,9 +38,9 @@ elif [ "Darwin" = "$(uname -s)" ]; then
              "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3")
-    export CSFLE_PATH="../csfle/lib/mongo_csfle_v1.dylib"
-    python3 drivers-evergreen-tools/.evergreen/mongodl.py --component csfle \
-      --version latest --out ../csfle/
+    export CSFLE_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
+    python3 drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
+      --version latest --out ../crypt_shared/
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
     PYTHONS=("/opt/python/2.7/bin/python"
@@ -49,9 +49,9 @@ else
              "/opt/python/3.6/bin/python3"
              "/opt/python/pypy/bin/pypy"
              "/opt/python/pypy3.6/bin/pypy3")
-    export CSFLE_PATH="../csfle/lib/mongo_csfle_v1.so"
+    export CSFLE_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
-      csfle --version latest --out ../csfle/ --target rhel70
+      crypt_shared --version latest --out ../crypt_shared/ --target rhel70
 fi
 
 

@@ -31,7 +31,7 @@
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-cache-oauth-private.h"
 
-#include "mongo_csfle-v1.h"
+#include "mongo_crypt-v1.h"
 
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
@@ -72,37 +72,37 @@ _mongocrypt_set_error (mongocrypt_status_t *status,
                        const char *format,
                        ...);
 
-typedef struct _mcr_csfle_v1_vtable {
+typedef struct _mongo_crypt_v1_vtable {
 #define MONGOC_CSFLE_FUNCTIONS_X                                             \
    /* status methods */                                                      \
-   X_FUNC (status_create, mongo_csfle_v1_status *, void)                     \
-   X_FUNC (status_destroy, void, mongo_csfle_v1_status *status)              \
-   X_FUNC (status_get_error, int, const mongo_csfle_v1_status *status)       \
+   X_FUNC (status_create, mongo_crypt_v1_status *, void)                     \
+   X_FUNC (status_destroy, void, mongo_crypt_v1_status *status)              \
+   X_FUNC (status_get_error, int, const mongo_crypt_v1_status *status)       \
    X_FUNC (status_get_explanation,                                           \
            const char *,                                                     \
-           const mongo_csfle_v1_status *status)                              \
-   X_FUNC (status_get_code, int, const mongo_csfle_v1_status *status)        \
+           const mongo_crypt_v1_status *status)                              \
+   X_FUNC (status_get_code, int, const mongo_crypt_v1_status *status)        \
    /* lib methods */                                                         \
-   X_FUNC (lib_create, mongo_csfle_v1_lib *, mongo_csfle_v1_status *status)  \
+   X_FUNC (lib_create, mongo_crypt_v1_lib *, mongo_crypt_v1_status *status)  \
    X_FUNC (lib_destroy,                                                      \
            int,                                                              \
-           mongo_csfle_v1_lib *lib,                                          \
-           mongo_csfle_v1_status *status)                                    \
+           mongo_crypt_v1_lib *lib,                                          \
+           mongo_crypt_v1_status *status)                                    \
    /* query_analyzer methods */                                              \
    X_FUNC (query_analyzer_create,                                            \
-           mongo_csfle_v1_query_analyzer *,                                  \
-           mongo_csfle_v1_lib *lib,                                          \
-           mongo_csfle_v1_status *status)                                    \
+           mongo_crypt_v1_query_analyzer *,                                  \
+           mongo_crypt_v1_lib *lib,                                          \
+           mongo_crypt_v1_status *status)                                    \
    X_FUNC (                                                                  \
-      query_analyzer_destroy, void, mongo_csfle_v1_query_analyzer *analyzer) \
+      query_analyzer_destroy, void, mongo_crypt_v1_query_analyzer *analyzer) \
    X_FUNC (analyze_query,                                                    \
            uint8_t *,                                                        \
-           mongo_csfle_v1_query_analyzer *analyer,                           \
+           mongo_crypt_v1_query_analyzer *analyer,                           \
            const uint8_t *documentBSON,                                      \
            const char *ns_str,                                               \
            uint32_t ns_len,                                                  \
            uint32_t *bson_len,                                               \
-           mongo_csfle_v1_status *status)                                    \
+           mongo_crypt_v1_status *status)                                    \
    X_FUNC (get_version, uint64_t, void)                                      \
    X_FUNC (get_version_str, const char *, void)                              \
    /* Free bson data created by csfle */                                     \
@@ -114,7 +114,7 @@ typedef struct _mcr_csfle_v1_vtable {
 
    /// Whether the vtable is valid and complete
    bool okay;
-} _mcr_csfle_v1_vtable;
+} _mongo_crypt_v1_vtable;
 
 struct _mongocrypt_t {
    bool initialized;
@@ -131,9 +131,9 @@ struct _mongocrypt_t {
    _mongocrypt_cache_oauth_t *cache_oauth_azure;
    _mongocrypt_cache_oauth_t *cache_oauth_gcp;
    /// A CSFLE DLL vtable, initialized by mongocrypt_init
-   _mcr_csfle_v1_vtable csfle;
+   _mongo_crypt_v1_vtable csfle;
    /// Pointer to the global csfle_lib object. Should not be freed directly.
-   mongo_csfle_v1_lib *csfle_lib;
+   mongo_crypt_v1_lib *csfle_lib;
 };
 
 typedef enum {
