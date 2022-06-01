@@ -27,10 +27,10 @@ namespace MongoDB.Libmongocrypt
     public class CryptOptions
     {
         public bool BypassQueryAnalysis { get; }
-        public string CsfleLibPath { get; }
-        public string CsfleSearchPath { get; }
+        public string CryptSharedLibPath { get; }
+        public string CryptSharedLibSearchPath { get; }
         public byte[] EncryptedFieldsMap { get; }
-        public bool IsCsfleRequired { get; }
+        public bool IsCryptSharedLibRequired { get; }
         public IReadOnlyList<KmsCredentials> KmsCredentials { get; }
         public byte[] Schema { get; }
 
@@ -49,14 +49,14 @@ namespace MongoDB.Libmongocrypt
             byte[] encryptedFieldsMap,
             byte[] schema,
             bool bypassQueryAnalysis,
-            string csfleLibPath,
-            string csfleSearchPath,
-            bool isCsfleRequired)
+            string cryptSharedLibPath,
+            string cryptSharedLibSearchPath,
+            bool isCryptSharedLibRequired)
         {
             BypassQueryAnalysis = bypassQueryAnalysis;
-            CsfleLibPath = csfleLibPath;
-            CsfleSearchPath = csfleSearchPath;
-            IsCsfleRequired = isCsfleRequired;
+            CryptSharedLibPath = cryptSharedLibPath;
+            CryptSharedLibSearchPath = cryptSharedLibSearchPath;
+            IsCryptSharedLibRequired = isCryptSharedLibRequired;
             EncryptedFieldsMap = encryptedFieldsMap;
             KmsCredentials = new ReadOnlyCollection<KmsCredentials>((credentials ?? throw new ArgumentNullException(nameof(credentials))).ToList());
             Schema = schema;

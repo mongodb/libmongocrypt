@@ -18,8 +18,8 @@ var localReleaseVersion = "local-0.0.0";
 var releaseVersion = GetSettingValue("releaseVersion", localReleaseVersion);
 var fork = GetSettingValue("fork", "https://github.com/mongodb/libmongocrypt.git");
 var branch = GetSettingValue("branch", "master"); 
-// release 1.5.0-alpha2
-var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/c447bd40512ecbfc198972dee97bb312ead063cd/libmongocrypt-all.tar.gz");
+// release 1.5.0-rc0
+var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/75dff76f3268c43ad7213bb8303688461aaabb96/libmongocrypt-all.tar.gz");
 var csharpBindingsGitTagName = $"csharp-v{releaseVersion}";
 var csharpBindingsDirectory = buildDirectory.Combine(csharpBindingsGitTagName);
 var libmongocryptRelWithDebInfoDirectory = csharpBindingsDirectory.Combine("cmake-build").Combine("RelWithDebInfo");

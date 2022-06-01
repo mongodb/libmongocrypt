@@ -37,14 +37,14 @@ namespace MongoDB.Libmongocrypt
         }
 
         /// <summary>
-        /// Gets the CSFLE version.
+        /// Gets the crypt shared library version.
         /// </summary>
         /// <returns>CSFLE version.</returns>
-        public string CsfleVersion
+        public string CryptSharedLibraryVersion
         {
             get
             {
-                var versionPtr = Library.mongocrypt_csfle_version_string(_handle, out _);
+                var versionPtr = Library.mongocrypt_crypt_shared_lib_version_string(_handle, out _);
                 var result = Marshal.PtrToStringAnsi(versionPtr);
 
                 return result;
