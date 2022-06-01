@@ -85,12 +85,12 @@ namespace MongoDB.Libmongocrypt
 
                 if (options.Schema != null)
                 {
-                    PinnedBinary.HandleAsPinnedBinary(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
+                    PinnedBinary.RunAsPinnedBinary(handle, options.Schema, status, (h, pb) => Library.mongocrypt_setopt_schema_map(h, pb));
                 }
 
                 if (options.EncryptedFieldsMap != null)
                 {
-                    PinnedBinary.HandleAsPinnedBinary(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
+                    PinnedBinary.RunAsPinnedBinary(handle, options.EncryptedFieldsMap, status, (h, pb) => Library.mongocrypt_setopt_encrypted_field_config_map(h, pb));
                 }
 
                 if (options.BypassQueryAnalysis)

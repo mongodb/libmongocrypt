@@ -139,11 +139,11 @@ namespace MongoDB.Libmongocrypt
 
             if (keyId != null)
             {
-                PinnedBinary.HandleAsPinnedBinary(handle, keyId, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_id(h, pb));
+                PinnedBinary.RunAsPinnedBinary(handle, keyId, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_id(h, pb));
             }
             else if (keyAltName != null)
             {
-                PinnedBinary.HandleAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
+                PinnedBinary.RunAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
             }
 
             switch (encryptionAlgorithm)
@@ -170,7 +170,7 @@ namespace MongoDB.Libmongocrypt
                 handle.Check(_status, Library.mongocrypt_ctx_setopt_contention_factor(handle, contentionFactorInt));
             }
 
-            PinnedBinary.HandleAsPinnedBinary(handle, message, _status, (h, pb) => Library.mongocrypt_ctx_explicit_encrypt_init(h, pb));
+            PinnedBinary.RunAsPinnedBinary(handle, message, _status, (h, pb) => Library.mongocrypt_ctx_explicit_encrypt_init(h, pb));
 
             return new CryptContext(handle);
         }

@@ -25,7 +25,7 @@ namespace MongoDB.Libmongocrypt
     internal class PinnedBinary : Binary
     {
         #region static
-        internal static void HandleAsPinnedBinary<THandle>(THandle handle, byte[] bytes, Status status, Func<THandle, BinarySafeHandle, bool> handleFunc) where THandle : CheckableSafeHandle
+        internal static void RunAsPinnedBinary<THandle>(THandle handle, byte[] bytes, Status status, Func<THandle, BinarySafeHandle, bool> handleFunc) where THandle : CheckableSafeHandle
         {
             unsafe
             {
