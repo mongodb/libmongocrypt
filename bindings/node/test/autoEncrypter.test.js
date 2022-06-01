@@ -396,7 +396,7 @@ describe('AutoEncrypter', function () {
         }
       });
 
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       sandbox.spy(localMcdm, 'spawn');
@@ -429,7 +429,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -466,7 +466,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -503,7 +503,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -532,7 +532,7 @@ describe('AutoEncrypter', function () {
           mongocryptdURI: 'mongodb://something.invalid:27020/'
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       sandbox.stub(MongocryptdManager.prototype, 'spawn').callsFake(callback => {
         callback();
@@ -661,7 +661,9 @@ describe('AutoEncrypter', function () {
         });
         expect.fail('missed exception');
       } catch (err) {
-        expect(err.message).to.include('`cryptSharedLibRequired` set but no crypt_shared library loaded');
+        expect(err.message).to.include(
+          '`cryptSharedLibRequired` set but no crypt_shared library loaded'
+        );
       }
     });
 
