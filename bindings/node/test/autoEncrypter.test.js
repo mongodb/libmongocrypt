@@ -170,6 +170,9 @@ describe('AutoEncrypter', function () {
 
     it('should decrypt mock data and mark decrypted items if enabled for testing', function (done) {
       const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+      const nestedInput = readExtendedJsonToBuffer(
+        `${__dirname}/data/encrypted-document-nested.json`
+      );
       const client = new MockClient();
       const mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -191,7 +194,17 @@ describe('AutoEncrypter', function () {
           if (err) return done(err);
           expect(decrypted).to.eql({ a: [null, 1, { c: new BSON.Binary('foo', 1) }] });
           expect(decrypted).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
-          done();
+
+          // The same, but with nested data inside the decrypted input
+          mc.decrypt(nestedInput, (err, decrypted) => {
+            if (err) return done(err);
+            expect(decrypted).to.eql({ nested: { x: { y: 1234 } } });
+            expect(decrypted[Symbol.for('@@mdb.decryptedKeys')]).to.eql(['nested']);
+            expect(decrypted.nested).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+            expect(decrypted.nested.x).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+            expect(decrypted.nested.x.y).to.not.have.property(Symbol.for('@@mdb.decryptedKeys'));
+            done();
+          });
         });
       });
     });

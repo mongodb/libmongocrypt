@@ -370,6 +370,9 @@ function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateC
         });
       }
       decrypted[decryptedKeys].push(k);
+      // Do not recurse into this decrypted value. It could be a subdocument/array,
+      // in which case there is no original value associated with its subfields.
+      continue;
     }
 
     decorateDecryptionResult(decrypted[k], originalValue, bson, false);
