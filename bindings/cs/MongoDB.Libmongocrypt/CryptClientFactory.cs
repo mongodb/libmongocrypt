@@ -98,21 +98,21 @@ namespace MongoDB.Libmongocrypt
                     Library.mongocrypt_setopt_bypass_query_analysis(handle);
                 }
 
-                if (options.CsfleLibPath != null)
+                if (options.CryptSharedLibPath != null)
                 {
-                    Library.mongocrypt_setopt_set_csfle_lib_path_override(handle, options.CsfleLibPath);
+                    Library.mongocrypt_setopt_append_crypt_shared_lib_search_path(handle, options.CryptSharedLibPath);
                 }
 
-                if (options.CsfleSearchPath != null)
+                if (options.CryptSharedLibSearchPath != null)
                 {
-                    Library.mongocrypt_setopt_append_csfle_search_path(handle, options.CsfleSearchPath);
+                    Library.mongocrypt_setopt_append_crypt_shared_lib_search_path(handle, options.CryptSharedLibSearchPath);
                 }
 
                 Library.mongocrypt_init(handle);
 
-                if (options.IsCsfleRequired)
+                if (options.IsCryptSharedLibRequired)
                 {
-                    var versionPtr = Library.mongocrypt_csfle_version_string(handle, out _);
+                    var versionPtr = Library.mongocrypt_crypt_shared_lib_version_string(handle, out _);
                     if (versionPtr == IntPtr.Zero)
                     {
                         throw new CryptException(Library.StatusType.MONGOCRYPT_STATUS_ERROR_CLIENT, uint.MaxValue, "CSFLE is required, but was not found.");

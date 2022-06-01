@@ -68,14 +68,14 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_schema_map>(
                     ("mongocrypt_setopt_schema_map")), true);
 
-            _mongocrypt_setopt_append_csfle_search_path = new Lazy<Delegates.mongocrypt_setopt_append_csfle_search_path>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_append_csfle_search_path>(("mongocrypt_setopt_append_csfle_search_path")), true);
-            _mongocrypt_setopt_set_csfle_lib_path_override = new Lazy<Delegates.mongocrypt_setopt_set_csfle_lib_path_override>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_set_csfle_lib_path_override>(("mongocrypt_setopt_set_csfle_lib_path_override")), true);
-            _mongocrypt_csfle_version_string = new Lazy<Delegates.mongocrypt_csfle_version_string>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_csfle_version_string>(("mongocrypt_csfle_version_string")), true);
-            _mongocrypt_csfle_version = new Lazy<Delegates.mongocrypt_csfle_version>(
-                () => __loader.Value.GetFunction<Delegates.mongocrypt_csfle_version>(("mongocrypt_csfle_version")), true);
+            _mongocrypt_setopt_append_crypt_shared_lib_search_path = new Lazy<Delegates.mongocrypt_setopt_append_crypt_shared_lib_search_path>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_append_crypt_shared_lib_search_path>(("mongocrypt_setopt_append_crypt_shared_lib_search_path")), true);
+            _mongocrypt_setopt_set_crypt_shared_lib_path_override = new Lazy<Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override>(("mongocrypt_setopt_set_crypt_shared_lib_path_override")), true);
+            _mongocrypt_crypt_shared_lib_version_string = new Lazy<Delegates.mongocrypt_crypt_shared_lib_version_string>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_crypt_shared_lib_version_string>(("mongocrypt_crypt_shared_lib_version_string")), true);
+            _mongocrypt_crypt_shared_lib_version = new Lazy<Delegates.mongocrypt_crypt_shared_lib_version>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_crypt_shared_lib_version>(("mongocrypt_crypt_shared_lib_version")), true);
 
             _mongocrypt_status_new = new Lazy<Delegates.mongocrypt_status_new>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_status_new>(("mongocrypt_status_new")), true);
@@ -224,10 +224,10 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_setopt_encrypted_field_config_map mongocrypt_setopt_encrypted_field_config_map => _mongocrypt_setopt_encrypted_field_config_map.Value;
         internal static Delegates.mongocrypt_setopt_schema_map mongocrypt_setopt_schema_map => _mongocrypt_setopt_schema_map.Value;
 
-        internal static Delegates.mongocrypt_setopt_append_csfle_search_path mongocrypt_setopt_append_csfle_search_path => _mongocrypt_setopt_append_csfle_search_path.Value;
-        internal static Delegates.mongocrypt_setopt_set_csfle_lib_path_override mongocrypt_setopt_set_csfle_lib_path_override => _mongocrypt_setopt_set_csfle_lib_path_override.Value;
-        internal static Delegates.mongocrypt_csfle_version_string mongocrypt_csfle_version_string => _mongocrypt_csfle_version_string.Value;
-        internal static Delegates.mongocrypt_csfle_version mongocrypt_csfle_version => _mongocrypt_csfle_version.Value;
+        internal static Delegates.mongocrypt_setopt_append_crypt_shared_lib_search_path mongocrypt_setopt_append_crypt_shared_lib_search_path => _mongocrypt_setopt_append_crypt_shared_lib_search_path.Value;
+        internal static Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override mongocrypt_setopt_set_crypt_shared_lib_path_override => _mongocrypt_setopt_set_crypt_shared_lib_path_override.Value;
+        internal static Delegates.mongocrypt_crypt_shared_lib_version_string mongocrypt_crypt_shared_lib_version_string => _mongocrypt_crypt_shared_lib_version_string.Value;
+        internal static Delegates.mongocrypt_crypt_shared_lib_version mongocrypt_crypt_shared_lib_version => _mongocrypt_crypt_shared_lib_version.Value;
 
         internal static Delegates.mongocrypt_init mongocrypt_init => _mongocrypt_init.Value;
         internal static Delegates.mongocrypt_destroy mongocrypt_destroy => _mongocrypt_destroy.Value;
@@ -296,10 +296,10 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_setopt_encrypted_field_config_map> _mongocrypt_setopt_encrypted_field_config_map;
         private static readonly Lazy<Delegates.mongocrypt_setopt_schema_map> _mongocrypt_setopt_schema_map;
 
-        private static readonly Lazy<Delegates.mongocrypt_setopt_append_csfle_search_path> _mongocrypt_setopt_append_csfle_search_path;
-        private static readonly Lazy<Delegates.mongocrypt_setopt_set_csfle_lib_path_override> _mongocrypt_setopt_set_csfle_lib_path_override;
-        private static readonly Lazy<Delegates.mongocrypt_csfle_version_string> _mongocrypt_csfle_version_string;
-        private static readonly Lazy<Delegates.mongocrypt_csfle_version> _mongocrypt_csfle_version;
+        private static readonly Lazy<Delegates.mongocrypt_setopt_append_crypt_shared_lib_search_path> _mongocrypt_setopt_append_crypt_shared_lib_search_path;
+        private static readonly Lazy<Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override> _mongocrypt_setopt_set_crypt_shared_lib_path_override;
+        private static readonly Lazy<Delegates.mongocrypt_crypt_shared_lib_version_string> _mongocrypt_crypt_shared_lib_version_string;
+        private static readonly Lazy<Delegates.mongocrypt_crypt_shared_lib_version> _mongocrypt_crypt_shared_lib_version;
 
         private static readonly Lazy<Delegates.mongocrypt_init> _mongocrypt_init;
         private static readonly Lazy<Delegates.mongocrypt_destroy> _mongocrypt_destroy;
@@ -480,21 +480,21 @@ namespace MongoDB.Libmongocrypt
             [return: MarshalAs(UnmanagedType.I1),]
             public delegate bool mongocrypt_setopt_schema_map(MongoCryptSafeHandle handle, BinarySafeHandle schema);
             /// <summary>
-            /// void mongocrypt_setopt_append_csfle_search_path(mongocrypt_t* crypt, const char* path);
+            /// void mongocrypt_setopt_append_crypt_shared_lib_search_path(mongocrypt_t* crypt, const char* path);
             /// </summary>
-            public delegate void mongocrypt_setopt_append_csfle_search_path(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
+            public delegate void mongocrypt_setopt_append_crypt_shared_lib_search_path(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
             /// <summary>
-            /// void mongocrypt_setopt_set_csfle_lib_path_override(mongocrypt_t* crypt, const char* path);
+            /// void mongocrypt_setopt_set_crypt_shared_lib_path_override(mongocrypt_t* crypt, const char* path);
             /// </summary>
-            public delegate void mongocrypt_setopt_set_csfle_lib_path_override(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
+            public delegate void mongocrypt_setopt_set_crypt_shared_lib_path_override(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
             /// <summary>
-            /// const char * mongocrypt_csfle_version_string(const mongocrypt_t* crypt, uint32_t *len);
+            /// const char * mongocrypt_crypt_shared_lib_version_string(const mongocrypt_t* crypt, uint32_t *len);
             /// </summary>
-            public delegate IntPtr mongocrypt_csfle_version_string(MongoCryptSafeHandle handle, out uint length);
+            public delegate IntPtr mongocrypt_crypt_shared_lib_version_string(MongoCryptSafeHandle handle, out uint length);
             /// <summary>
-            /// uint64_t mongocrypt_csfle_version(const mongocrypt_t* crypt);
+            /// uint64_t mongocrypt_crypt_shared_lib_version(const mongocrypt_t* crypt);
             /// </summary>
-            public delegate ulong mongocrypt_csfle_version(MongoCryptSafeHandle handle);
+            public delegate ulong mongocrypt_crypt_shared_lib_version(MongoCryptSafeHandle handle);
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_init(MongoCryptSafeHandle handle);
