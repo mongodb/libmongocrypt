@@ -36,8 +36,8 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
 
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
-                 bypass_query_analysis=False, csfle_path=None, csfle_required=False,
-                 bypass_encryption=False):
+                 bypass_query_analysis=False, crypt_shared_lib_path=None,
+                 crypt_shared_lib_required=False, bypass_encryption=False):
         """Options for :class:`MongoCrypt`.
 
         :Parameters:
@@ -71,7 +71,7 @@ class MongoCryptOptions(object):
           - `bypass_query_analysis`: If ``True``, disable automatic analysis of
             outgoing commands. Set `bypass_query_analysis` to use explicit
             encryption on indexed fields without the MongoDB Enterprise Advanced
-            licensed csfle shared library.
+            licensed crypt_shared library.
 
         .. versionadded:: 1.1
            Support for "azure" and "gcp" kms_providers.
@@ -149,8 +149,8 @@ class MongoCryptOptions(object):
         self.schema_map = schema_map
         self.encrypted_fields_map = encrypted_fields_map
         self.bypass_query_analysis = bypass_query_analysis
-        self.csfle_path = csfle_path
-        self.csfle_required = csfle_required
+        self.crypt_shared_lib_path = crypt_shared_lib_path
+        self.crypt_shared_lib_required = crypt_shared_lib_required
         self.bypass_encryption = bypass_encryption
 
 
@@ -163,7 +163,7 @@ class MongoCrypt(object):
           - `options`: A :class:`MongoCryptOptions`.
           - `callback`: A :class:`MongoCryptCallback`.
         """
-        self.__opts = options
+        self.__opts = options  # type: MongoCryptOptions
         self.__callback = callback
         self.__crypt = None
 
@@ -235,20 +235,20 @@ class MongoCrypt(object):
                 self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
             self.__raise_from_status()
 
-        if self.__opts.csfle_path is not None:
-            lib.mongocrypt_setopt_set_csfle_lib_path_override(self.__crypt,
-                                                              self.__opts.csfle_path.encode(
-                                                                  "utf-8"))
+        if self.__opts.crypt_shared_lib_path is not None:
+            lib.mongocrypt_setopt_set_crypt_shared_lib_path_override(
+                self.__crypt, self.__opts.crypt_shared_lib_path.encode("utf-8"))
 
         if not self.__opts.bypass_encryption:
-            lib.mongocrypt_setopt_append_csfle_search_path(self.__crypt, b"$SYSTEM")
+            lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
 
-        if self.__opts.csfle_required and self.csfle_version is None:
+        if self.__opts.crypt_shared_lib_required and self.crypt_shared_lib_version is None:
             raise MongoCryptError(
-                "csfle_required=True but the csfle library could not be loaded from"
-                " csfle_path={}".format(self.__opts.csfle_path) +
+                "crypt_shared_lib_required=True but the crypt_shared library could not be loaded "
+                "from crypt_shared_lib_path={}".format(
+                    self.__opts.crypt_shared_lib_path) +
                 " or the operating system's dynamic library search path")
 
     def __raise_from_status(self):
@@ -261,8 +261,8 @@ class MongoCrypt(object):
         raise exc
 
     @property
-    def csfle_version(self):
-        ver = lib.mongocrypt_csfle_version_string(self.__crypt, ffi.NULL)
+    def crypt_shared_lib_version(self):
+        ver = lib.mongocrypt_crypt_shared_lib_version_string(self.__crypt, ffi.NULL)
         if ver == ffi.NULL:
             return None
         return ver

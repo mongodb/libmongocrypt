@@ -110,7 +110,7 @@ Function MongoCrypt::Init(Napi::Env env) {
                     InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
                     InstanceMethod("makeRewrapManyDataKeyContext", &MongoCrypt::MakeRewrapManyDataKeyContext),
                     InstanceAccessor("status", &MongoCrypt::Status, nullptr),
-                    InstanceAccessor("csfleVersionInfo", &MongoCrypt::CSFLEVersionInfo, nullptr)
+                    InstanceAccessor("cryptSharedLibVersionInfo", &MongoCrypt::CryptSharedLibVersionInfo, nullptr)
                   });
 }
 
@@ -449,23 +449,23 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
-    if (options.Has("csfleSearchPaths")) {
-        Napi::Value search_paths_v = options["csfleSearchPaths"];
+    if (options.Has("cryptSharedLibSearchPaths")) {
+        Napi::Value search_paths_v = options["cryptSharedLibSearchPaths"];
         if (!search_paths_v.IsArray()) {
-            throw TypeError::New(Env(), "Option `csfleSearchPaths` must be an array");
+            throw TypeError::New(Env(), "Option `cryptSharedLibSearchPaths` must be an array");
         }
         Array search_paths = search_paths_v.As<Array>();
         for (uint32_t i = 0; i < search_paths.Length(); i++) {
-            mongocrypt_setopt_append_csfle_search_path(
+            mongocrypt_setopt_append_crypt_shared_lib_search_path(
                 _mongo_crypt.get(),
                 search_paths.Get(i).ToString().Utf8Value().c_str());
         }
     }
 
-    if (options.Has("csflePath")) {
-        mongocrypt_setopt_set_csfle_lib_path_override(
+    if (options.Has("cryptSharedLibPath")) {
+        mongocrypt_setopt_set_crypt_shared_lib_path_override(
             _mongo_crypt.get(),
-            options.Get("csflePath").ToString().Utf8Value().c_str());
+            options.Get("cryptSharedLibPath").ToString().Utf8Value().c_str());
     }
 
     if (options.Get("bypassQueryAnalysis").ToBoolean()) {
@@ -480,9 +480,9 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
     }
 }
 
-Value MongoCrypt::CSFLEVersionInfo(const CallbackInfo& info) {
-    uint64_t version_numeric = mongocrypt_csfle_version(_mongo_crypt.get());
-    const char* version_string = mongocrypt_csfle_version_string(_mongo_crypt.get(), nullptr);
+Value MongoCrypt::CryptSharedLibVersionInfo(const CallbackInfo& info) {
+    uint64_t version_numeric = mongocrypt_crypt_shared_lib_version(_mongo_crypt.get());
+    const char* version_string = mongocrypt_crypt_shared_lib_version_string(_mongo_crypt.get(), nullptr);
     if (version_string == nullptr) {
         return Env().Null();
     }

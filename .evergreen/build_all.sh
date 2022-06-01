@@ -38,8 +38,8 @@ mkdir cmake-build
 cd cmake-build
 
 for suffix in "dll" "dylib" "so"; do
-    if test -f "mongo_csfle_v1.$suffix"; then
-        ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DMONGOCRYPT_TESTING_CSFLE_FILE=$PWD/mongo_csfle_v1.$suffix"
+    if test -f "mongo_crypt_v1.$suffix"; then
+        ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DMONGOCRYPT_TESTING_CRYPT_SHARED_FILE=$PWD/mongo_crypt_v1.$suffix"
     fi
 done
 

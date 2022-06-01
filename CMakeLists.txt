@@ -327,39 +327,39 @@ if (BUILD_TESTING)
       PREFIX ""
       )
 
-   # Create two stubbed csfle libraries
-   add_library (stubbed-csfle SHARED test/csfle-stub.cpp)
-   add_library (stubbed-csfle-2 SHARED test/csfle-stub.cpp)
+   # Create two stubbed crypt_shared libraries
+   add_library (stubbed-crypt_shared SHARED test/crypt_shared-stub.cpp)
+   add_library (stubbed-crypt_shared-2 SHARED test/crypt_shared-stub.cpp)
 
-   set_target_properties(stubbed-csfle stubbed-csfle-2 PROPERTIES
+   set_target_properties(stubbed-crypt_shared stubbed-crypt_shared-2 PROPERTIES
       INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src"
       LINK_LIBRARIES "mongo::bson_static"
       COMPILE_FEATURES cxx_std_11
       PREFIX ""
       )
 
-   set_target_properties(stubbed-csfle-2 PROPERTIES SUFFIX ".dll")
+   set_target_properties(stubbed-crypt_shared-2 PROPERTIES SUFFIX ".dll")
 
-   if (MONGOCRYPT_TESTING_CSFLE_FILE)
+   if (MONGOCRYPT_TESTING_CRYPT_SHARED_FILE)
       # Generate a target that copies the CSFLE library into the binary directory of test-mongocrypt
-      set (stamp "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1.copied.$<CONFIG>.stamp")
+      set (stamp "${CMAKE_CURRENT_BINARY_DIR}/mongo_crypt_v1.copied.$<CONFIG>.stamp")
       add_custom_command (
          OUTPUT "${stamp}"
          COMMAND "${CMAKE_COMMAND}" -E copy
-            "${MONGOCRYPT_TESTING_CSFLE_FILE}"
-            "$<TARGET_FILE_DIR:test-mongocrypt>/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            "${MONGOCRYPT_TESTING_CRYPT_SHARED_FILE}"
+            "$<TARGET_FILE_DIR:test-mongocrypt>/mongo_crypt_v1${CMAKE_SHARED_LIBRARY_SUFFIX}"
          COMMAND "${CMAKE_COMMAND}" -E touch "${stamp}"
-         DEPENDS "${MONGOCRYPT_TESTING_CSFLE_FILE}"
-         COMMENT "Getting mongo_csfle library"
+         DEPENDS "${MONGOCRYPT_TESTING_CRYPT_SHARED_FILE}"
+         COMMENT "Getting mongo_crypt library"
          )
-      add_custom_target (copy-csfle ALL DEPENDS "${stamp}")
+      add_custom_target (copy-crypt_shared ALL DEPENDS "${stamp}")
    else ()
-      # The first stubbed csfle library will take the place of the actual csfle for testing
-      message (STATUS "Generating a stubbed csfle dynamic library for use in testing.")
-      message (STATUS "Provide a MONGOCRYPT_TESTING_CSFLE_FILE=<filepath> to provide a csfle for use in testing")
-      set_target_properties (stubbed-csfle PROPERTIES
+      # The first stubbed crypt_shared library will take the place of the actual crypt_shared for testing
+      message (STATUS "Generating a stubbed crypt_shared dynamic library for use in testing.")
+      message (STATUS "Provide a MONGOCRYPT_TESTING_CRYPT_SHARED_FILE=<filepath> to provide a crypt_shared for use in testing")
+      set_target_properties (stubbed-crypt_shared PROPERTIES
          # Normalize the output name expected by libmongocrypt
-         OUTPUT_NAME "mongo_csfle_v1"
+         OUTPUT_NAME "mongo_crypt_v1"
          )
    endif ()
 endif ()
@@ -415,7 +415,7 @@ target_compile_definitions (test-mongocrypt PRIVATE
    # Set a definition so that testcases can know where test-mongocrypt.exe was written to
    "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
    # Tell test-mongocrypt whether we have a real csfle library for testing
-   TEST_MONGOCRYPT_HAVE_REAL_CSFLE=$<BOOL:${MONGOCRYPT_TESTING_CSFLE_FILE}>
+   TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB=$<BOOL:${MONGOCRYPT_TESTING_CRYPT_SHARED_FILE}>
    )
 
 add_test (

@@ -13,7 +13,7 @@ extern "C" {
 #include <fstream>
 #include <string>
 
-#include <mongo_csfle-v1.h>
+#include <mongo_crypt-v1.h>
 
 namespace
 {
@@ -132,21 +132,21 @@ do_main (int argc, const char *const *argv)
    }                                                                         \
    static_assert (true, "")
 
-   LOAD_SYM (mongo_csfle_v1_status_create);
-   LOAD_SYM (mongo_csfle_v1_status_destroy);
-   LOAD_SYM (mongo_csfle_v1_status_get_explanation);
-   LOAD_SYM (mongo_csfle_v1_lib_create);
-   LOAD_SYM (mongo_csfle_v1_lib_destroy);
-   LOAD_SYM (mongo_csfle_v1_get_version_str);
-   LOAD_SYM (mongo_csfle_v1_query_analyzer_create);
-   LOAD_SYM (mongo_csfle_v1_query_analyzer_destroy);
-   LOAD_SYM (mongo_csfle_v1_analyze_query);
-   LOAD_SYM (mongo_csfle_v1_bson_free);
+   LOAD_SYM (mongo_crypt_v1_status_create);
+   LOAD_SYM (mongo_crypt_v1_status_destroy);
+   LOAD_SYM (mongo_crypt_v1_status_get_explanation);
+   LOAD_SYM (mongo_crypt_v1_lib_create);
+   LOAD_SYM (mongo_crypt_v1_lib_destroy);
+   LOAD_SYM (mongo_crypt_v1_get_version_str);
+   LOAD_SYM (mongo_crypt_v1_query_analyzer_create);
+   LOAD_SYM (mongo_crypt_v1_query_analyzer_destroy);
+   LOAD_SYM (mongo_crypt_v1_analyze_query);
+   LOAD_SYM (mongo_crypt_v1_bson_free);
 
    fprintf (stderr,
             "Loaded csfle library [%s]: %s\n",
             csfle_path,
-            mongo_csfle_v1_get_version_str ());
+            mongo_crypt_v1_get_version_str ());
 
    // Read from stdin
    std::stringstream strm;
@@ -172,37 +172,37 @@ do_main (int argc, const char *const *argv)
       BSON_APPEND_UTF8 (input, "$db", "unspecified");
    }
 
-   auto status = mongo_csfle_v1_status_create ();
-   auto del_status = DEFER ({ mongo_csfle_v1_status_destroy (status); });
+   auto status = mongo_crypt_v1_status_create ();
+   auto del_status = DEFER ({ mongo_crypt_v1_status_destroy (status); });
 
-   auto lib = mongo_csfle_v1_lib_create (status);
+   auto lib = mongo_crypt_v1_lib_create (status);
    if (!lib) {
       fprintf (stderr,
                "Failed to lib_create for csfle: %s\n",
-               mongo_csfle_v1_status_get_explanation (status));
+               mongo_crypt_v1_status_get_explanation (status));
       return 6;
    }
-   auto del_lib = DEFER ({ mongo_csfle_v1_lib_destroy (lib, nullptr); });
+   auto del_lib = DEFER ({ mongo_crypt_v1_lib_destroy (lib, nullptr); });
 
-   auto qa = mongo_csfle_v1_query_analyzer_create (lib, status);
+   auto qa = mongo_crypt_v1_query_analyzer_create (lib, status);
    if (!qa) {
       fprintf (stderr,
                "Failed to create a query analyzer for csfle: %s\n",
-               mongo_csfle_v1_status_get_explanation (status));
+               mongo_crypt_v1_status_get_explanation (status));
       return 7;
    }
-   auto del_qa = DEFER ({ mongo_csfle_v1_query_analyzer_destroy (qa); });
+   auto del_qa = DEFER ({ mongo_crypt_v1_query_analyzer_destroy (qa); });
 
    uint32_t data_len = input->len;
-   uint8_t *data_ptr = mongo_csfle_v1_analyze_query (
+   uint8_t *data_ptr = mongo_crypt_v1_analyze_query (
       qa, bson_get_data (input), doc_ns, strlen (doc_ns), &data_len, status);
    if (!data_ptr) {
       fprintf (stderr,
                "Failed to analyze the given query: %s\n",
-               mongo_csfle_v1_status_get_explanation (status));
+               mongo_crypt_v1_status_get_explanation (status));
       return 8;
    }
-   auto del_data = DEFER ({ mongo_csfle_v1_bson_free (data_ptr); });
+   auto del_data = DEFER ({ mongo_crypt_v1_bson_free (data_ptr); });
 
    bson_t *output = bson_new_from_data (data_ptr, data_len);
    assert (output);

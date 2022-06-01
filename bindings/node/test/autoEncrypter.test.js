@@ -25,7 +25,7 @@ let sharedLibraryStub = path.resolve(
   '..',
   '..',
   '..',
-  `mongo_csfle_v1.${sharedLibrarySuffix}`
+  `mongo_crypt_v1.${sharedLibrarySuffix}`
 );
 if (!fs.existsSync(sharedLibraryStub)) {
   sharedLibraryStub = path.resolve(
@@ -35,7 +35,7 @@ if (!fs.existsSync(sharedLibraryStub)) {
     'tmp',
     'libmongocrypt-build',
     ...(process.platform === 'win32' ? ['RelWithDebInfo'] : []),
-    `mongo_csfle_v1.${sharedLibrarySuffix}`
+    `mongo_crypt_v1.${sharedLibrarySuffix}`
   );
 }
 
@@ -285,7 +285,7 @@ describe('AutoEncrypter', function () {
     });
 
     // TODO(NODE-4089): Enable test once https://github.com/mongodb/libmongocrypt/pull/263 is done
-    it.skip('should encrypt mock data when using the CSFLE shared library', function (done) {
+    it.skip('should encrypt mock data when using the crypt_shared library', function (done) {
       const client = new MockClient();
       const mc = new AutoEncrypter(client, {
         keyVaultNamespace: 'admin.datakeys',
@@ -297,7 +297,7 @@ describe('AutoEncrypter', function () {
           return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
         },
         extraOptions: {
-          csflePath: sharedLibraryStub
+          cryptSharedLibPath: sharedLibraryStub
         }
       });
 
@@ -396,7 +396,7 @@ describe('AutoEncrypter', function () {
         }
       });
 
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       sandbox.spy(localMcdm, 'spawn');
@@ -429,7 +429,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -466,7 +466,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -503,7 +503,7 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       const localMcdm = this.mc._mongocryptdManager;
       this.mc.init(err => {
@@ -532,7 +532,7 @@ describe('AutoEncrypter', function () {
           mongocryptdURI: 'mongodb://something.invalid:27020/'
         }
       });
-      expect(this.mc).to.have.property('csfleVersionInfo', null);
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
 
       sandbox.stub(MongocryptdManager.prototype, 'spawn').callsFake(callback => {
         callback();
@@ -641,8 +641,8 @@ describe('AutoEncrypter', function () {
     });
   });
 
-  describe('CSFLE shared library', function () {
-    it('should fail if no library can be found in the search path and csfleRequired is set', function () {
+  describe('crypt_shared library', function () {
+    it('should fail if no library can be found in the search path and cryptSharedLibRequired is set', function () {
       // NB: This test has to be run before the tests/without having previously
       // loaded a CSFLE shared library below to get the right error path.
       const client = new MockClient();
@@ -655,13 +655,15 @@ describe('AutoEncrypter', function () {
             local: { key: Buffer.alloc(96) }
           },
           extraOptions: {
-            csfleSearchPaths: ['/nonexistent'],
-            csfleRequired: true
+            cryptSharedLibSearchPaths: ['/nonexistent'],
+            cryptSharedLibRequired: true
           }
         });
         expect.fail('missed exception');
       } catch (err) {
-        expect(err.message).to.include('`csfleRequired` set but no csfle shared library loaded');
+        expect(err.message).to.include(
+          '`cryptSharedLibRequired` set but no crypt_shared library loaded'
+        );
       }
     });
 
@@ -675,16 +677,16 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         },
         extraOptions: {
-          csflePath: sharedLibraryStub
+          cryptSharedLibPath: sharedLibraryStub
         }
       });
 
       expect(this.mc).to.not.have.property('_mongocryptdManager');
       expect(this.mc).to.not.have.property('_mongocryptdClient');
-      expect(this.mc).to.have.deep.property('csfleVersionInfo', {
+      expect(this.mc).to.have.deep.property('cryptSharedLibVersionInfo', {
         // eslint-disable-next-line no-undef
         version: BigInt(0x000600020001000),
-        versionStr: 'stubbed-mongo_csfle'
+        versionStr: 'stubbed-crypt_shared'
       });
 
       this.mc.teardown(true, done);
@@ -700,16 +702,16 @@ describe('AutoEncrypter', function () {
           local: { key: Buffer.alloc(96) }
         },
         extraOptions: {
-          csfleSearchPaths: [path.dirname(sharedLibraryStub)]
+          cryptSharedLibSearchPaths: [path.dirname(sharedLibraryStub)]
         }
       });
 
       expect(this.mc).to.not.have.property('_mongocryptdManager');
       expect(this.mc).to.not.have.property('_mongocryptdClient');
-      expect(this.mc).to.have.deep.property('csfleVersionInfo', {
+      expect(this.mc).to.have.deep.property('cryptSharedLibVersionInfo', {
         // eslint-disable-next-line no-undef
         version: BigInt(0x000600020001000),
-        versionStr: 'stubbed-mongo_csfle'
+        versionStr: 'stubbed-crypt_shared'
       });
 
       this.mc.teardown(true, done);

@@ -56,7 +56,7 @@ typedef struct {
 
 typedef struct {
    int configured_providers; /* A bit set of _mongocrypt_kms_provider_t */
-   int need_credentials; /* A bit set of _mongocrypt_kms_provider_t */
+   int need_credentials;     /* A bit set of _mongocrypt_kms_provider_t */
    _mongocrypt_opts_kms_provider_local_t local;
    _mongocrypt_opts_kms_provider_aws_t aws;
    _mongocrypt_opts_kms_provider_azure_t azure;
@@ -74,14 +74,14 @@ typedef struct {
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;
    void *sign_ctx;
 
-   /// Keep an array of search paths for finding the CSFLE dynamic library
+   /// Keep an array of search paths for finding the crypt_shared library
    /// during mongocrypt_init()
-   int n_cselib_search_paths;
-   mstr *cselib_search_paths;
+   int n_crypt_shared_lib_search_paths;
+   mstr *crypt_shared_lib_search_paths;
    /// Optionally, a user may override the default search behavior by specifying
    /// a specifiy path to the library. If this is set, this suppresses the
    /// search behavior.
-   mstr csfle_lib_override_path;
+   mstr crypt_shared_lib_override_path;
 
    bool use_need_kms_credentials_state;
    bool bypass_query_analysis;
@@ -98,8 +98,8 @@ _mongocrypt_opts_kms_providers_cleanup (
  * being released. */
 void
 _mongocrypt_opts_merge_kms_providers (
-   _mongocrypt_opts_kms_providers_t* dest,
-   const _mongocrypt_opts_kms_providers_t* source);
+   _mongocrypt_opts_kms_providers_t *dest,
+   const _mongocrypt_opts_kms_providers_t *source);
 
 void
 _mongocrypt_opts_init (_mongocrypt_opts_t *opts);
@@ -150,9 +150,9 @@ _mongocrypt_parse_required_utf8 (const bson_t *bson,
  * Parse an optional endpoint UTF-8 from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
  * @*out is set to a new _mongocrypt_endpoint_t of the if found, NULL otherwise.
- * @*opts may be set to configure endpoint parsing. It is optional and may be NULL.
- * Caller must clean up with _mongocrypt_endpoint_destroy (*out).
- * Returns true if no error occured.
+ * @*opts may be set to configure endpoint parsing. It is optional and may be
+ * NULL. Caller must clean up with _mongocrypt_endpoint_destroy (*out). Returns
+ * true if no error occured.
  */
 bool
 _mongocrypt_parse_optional_endpoint (const bson_t *bson,
@@ -165,9 +165,9 @@ _mongocrypt_parse_optional_endpoint (const bson_t *bson,
  * Parse a required endpoint UTF-8 from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
  * @*out is set to a new _mongocrypt_endpoint_t of the if found, NULL otherwise.
- * @*opts may be set to configure endpoint parsing. It is optional and may be NULL.
- * Caller must clean up with _mongocrypt_endpoint_destroy (*out).
- * Returns true if no error occured.
+ * @*opts may be set to configure endpoint parsing. It is optional and may be
+ * NULL. Caller must clean up with _mongocrypt_endpoint_destroy (*out). Returns
+ * true if no error occured.
  */
 bool
 _mongocrypt_parse_required_endpoint (const bson_t *bson,

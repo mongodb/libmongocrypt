@@ -12,9 +12,9 @@
 #define EXPORT_API __attribute__ ((visibility ("default")))
 #endif
 
-#define CSFLE_SUPPORT_COMPILING
+#define MONGO_CRYPT_SUPPORT_COMPILING
 
-#include <mongo_csfle-v1.h>
+#include <mongo_crypt-v1.h>
 
 #include <bson/bson.h>
 
@@ -29,61 +29,61 @@
 #define MONGO_API_EXPORT __attribute__ ((used, visibility ("default")))
 #endif
 
-struct mongo_csfle_v1_status {
+struct mongo_crypt_v1_status {
 };
 
-typedef mongo_csfle_v1_status status_t;
+typedef mongo_crypt_v1_status status_t;
 
 status_t *
-mongo_csfle_v1_status_create (void)
+mongo_crypt_v1_status_create (void)
 {
    return new status_t;
 }
 
 void
-mongo_csfle_v1_status_destroy (status_t *st)
+mongo_crypt_v1_status_destroy (status_t *st)
 {
    delete st;
 }
 
 int
-mongo_csfle_v1_status_get_error (const status_t *)
+mongo_crypt_v1_status_get_error (const status_t *)
 {
    return 0;
 }
 
 const char *
-mongo_csfle_v1_status_get_explanation (const status_t *)
+mongo_crypt_v1_status_get_explanation (const status_t *)
 {
    return "nothing here";
 }
 
 int
-mongo_csfle_v1_status_get_code (const status_t *)
+mongo_crypt_v1_status_get_code (const status_t *)
 {
    return 0;
 }
 
-struct mongo_csfle_v1_lib {
+struct mongo_crypt_v1_lib {
 };
 
-typedef mongo_csfle_v1_lib lib_t;
+typedef mongo_crypt_v1_lib lib_t;
 
 lib_t *
-mongo_csfle_v1_lib_create (status_t *)
+mongo_crypt_v1_lib_create (status_t *)
 {
    return new lib_t;
 }
 
 int
-mongo_csfle_v1_lib_destroy (lib_t *lib, status_t *)
+mongo_crypt_v1_lib_destroy (lib_t *lib, status_t *)
 {
    delete lib;
-   return MONGO_CSFLE_V1_SUCCESS;
+   return MONGO_CRYPT_V1_SUCCESS;
 }
 
 uint64_t
-mongo_csfle_v1_get_version (void)
+mongo_crypt_v1_get_version (void)
 {
 #ifdef UINT64_C
    return UINT64_C (0x000600020001000);
@@ -94,30 +94,30 @@ mongo_csfle_v1_get_version (void)
 
 
 const char *
-mongo_csfle_v1_get_version_str (void)
+mongo_crypt_v1_get_version_str (void)
 {
-   return "stubbed-mongo_csfle";
+   return "stubbed-crypt_shared";
 }
 
-struct mongo_csfle_v1_query_analyzer {
+struct mongo_crypt_v1_query_analyzer {
 };
 
-typedef mongo_csfle_v1_query_analyzer query_analyzer_t;
+typedef mongo_crypt_v1_query_analyzer query_analyzer_t;
 
 query_analyzer_t *
-mongo_csfle_v1_query_analyzer_create (lib_t *, status_t *)
+mongo_crypt_v1_query_analyzer_create (lib_t *, status_t *)
 {
    return new query_analyzer_t;
 }
 
 void
-mongo_csfle_v1_query_analyzer_destroy (query_analyzer_t *qa)
+mongo_crypt_v1_query_analyzer_destroy (query_analyzer_t *qa)
 {
    delete qa;
 }
 
 uint8_t *
-mongo_csfle_v1_analyze_query (query_analyzer_t *qa,
+mongo_crypt_v1_analyze_query (query_analyzer_t *qa,
                               const uint8_t *doc_bson,
                               const char *ns_str,
                               uint32_t ns_len,
@@ -148,7 +148,7 @@ mongo_csfle_v1_analyze_query (query_analyzer_t *qa,
 }
 
 void
-mongo_csfle_v1_bson_free (uint8_t *bson)
+mongo_crypt_v1_bson_free (uint8_t *bson)
 {
    delete[] bson;
 }

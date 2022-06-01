@@ -440,12 +440,12 @@ mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
  * then the system's library-search mechanism will never be consulted.
  *
  * @note If an absolute path to the library is specified using
- * @ref mongocrypt_setopt_set_csfle_lib_path_override, then paths appended here
- * will have no effect.
+ * @ref mongocrypt_setopt_set_crypt_shared_lib_path_override, then paths
+ * appended here will have no effect.
  */
 void
-mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
-                                            const char *path);
+mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
+                                                       const char *path);
 
 /**
  * @brief Set a single override path for loading the CSFLE dynamic library.
@@ -462,16 +462,16 @@ mongocrypt_setopt_append_csfle_search_path (mongocrypt_t *crypt,
  * occur during the call to @ref mongocrypt_init.
  *
  * @note If a CSFLE library path override is specified here, then no paths given
- * to @ref mongocrypt_setopt_append_csfle_search_path will be consulted when
- * opening the CSFLE library.
+ * to @ref mongocrypt_setopt_append_crypt_shared_lib_search_path will be
+ * consulted when opening the CSFLE library.
  *
  * @note If a path is provided via this API and @ref mongocrypt_init fails to
  * initialize a valid CSFLE library instance for the path specified, then
  * the initialization of mongocrypt_t will fail with an error.
  */
 void
-mongocrypt_setopt_set_csfle_lib_path_override (mongocrypt_t *crypt,
-                                               const char *path);
+mongocrypt_setopt_set_crypt_shared_lib_path_override (mongocrypt_t *crypt,
+                                                      const char *path);
 
 /**
  * @brief Opt-into handling the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state.
@@ -541,10 +541,11 @@ mongocrypt_destroy (mongocrypt_t *crypt);
  * @return A nul-terminated string of the dynamically loaded csfle library.
  *
  * @note For a numeric value that can be compared against, use
- * @ref mongocrypt_csfle_version.
+ * @ref mongocrypt_crypt_shared_lib_version.
  */
 const char *
-mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len);
+mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
+                                            uint32_t *len);
 
 /**
  * @brief Obtain a 64-bit constant encoding the version of the loaded csfle
@@ -566,7 +567,7 @@ mongocrypt_csfle_version_string (const mongocrypt_t *crypt, uint32_t *len);
  * For example, version 6.2.1 would be encoded as: 0x0006'0002'0001'0000
  */
 uint64_t
-mongocrypt_csfle_version (const mongocrypt_t *crypt);
+mongocrypt_crypt_shared_lib_version (const mongocrypt_t *crypt);
 
 /**
  * Manages the state machine for encryption or decryption.
