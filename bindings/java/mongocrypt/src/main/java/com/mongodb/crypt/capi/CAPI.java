@@ -615,30 +615,6 @@ public class CAPI {
     mongocrypt_csfle_version_string(mongocrypt_t crypt, Pointer len);
 
     /**
-     * Obtain a 64-bit constant encoding the version of the loaded csfle
-     * library, if available.
-     *
-     * <p>The version is encoded as four 16-bit numbers, from high to low:
-     * <ol>
-     *   <li>Major version</li>
-     *   <li>Minor version</li>
-     *   <li>Revision</li>
-     *   <li>Reserved</li>
-     * </ol>
-     * For example, version {@code 6.2.1} would be encoded as: {@code 0x0006'0002'0001'0000}
-     * </p>
-     *
-     * @param  crypt The mongocrypt_t object after a successful call to
-     * mongocrypt_init.
-     *
-     * @return A 64-bit encoded version number, with the version encoded as four
-     * sixteen-bit integers, or zero if no csfle library was loaded.
-     * @since 1.5
-     */
-    public static native long
-    mongocrypt_csfle_version(mongocrypt_t crypt);
-
-    /**
      * Call in response to the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state
      * to set per-context KMS provider settings. These follow the same format
      * as @ref mongocrypt_setopt_kms_providers. If no keys are present in the
