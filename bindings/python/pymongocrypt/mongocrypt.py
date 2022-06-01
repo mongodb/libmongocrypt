@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
 import copy
 
 from pymongocrypt.binary import (MongoCryptBinaryIn,
@@ -491,9 +490,17 @@ class ExplicitEncryptionContext(MongoCryptContext):
         """
         super(ExplicitEncryptionContext, self).__init__(ctx)
         try:
-            algorithm = str_to_bytes(opts.algorithm)
-            if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
-                self._raise_from_status()
+            if opts.algorithm == 'Indexed':
+                if not lib.mongocrypt_ctx_setopt_index_type(
+                        ctx, lib.MONGOCRYPT_INDEX_TYPE_EQUALITY):
+                    self._raise_from_status()
+            elif opts.algorithm == 'Unindexed':
+                if not lib.mongocrypt_ctx_setopt_index_type(ctx, lib.MONGOCRYPT_INDEX_TYPE_NONE):
+                    self._raise_from_status()
+            else:
+                algorithm = str_to_bytes(opts.algorithm)
+                if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
+                    self._raise_from_status()
 
             if opts.key_id is not None:
                 with MongoCryptBinaryIn(opts.key_id) as binary:
@@ -502,13 +509,24 @@ class ExplicitEncryptionContext(MongoCryptContext):
 
             if opts.key_alt_name is not None:
                 with MongoCryptBinaryIn(opts.key_alt_name) as binary:
-                    if not lib.mongocrypt_ctx_setopt_key_alt_name(ctx,
-                                                                  binary.bin):
+                    if not lib.mongocrypt_ctx_setopt_key_alt_name(ctx, binary.bin):
                         self._raise_from_status()
 
+            if opts.index_key_id is not None:
+                with MongoCryptBinaryIn(opts.index_key_id) as binary:
+                    if not lib.mongocrypt_ctx_setopt_index_key_id(ctx, binary.bin):
+                        self._raise_from_status()
+
+            if opts.query_type is not None:
+                if not lib.mongocrypt_ctx_setopt_query_type(ctx, opts.query_type):
+                    self._raise_from_status()
+
+            if opts.contention_factor is not None:
+                if not lib.mongocrypt_ctx_setopt_contention_factor(ctx, opts.contention_factor):
+                    self._raise_from_status()
+
             with MongoCryptBinaryIn(value) as binary:
-                if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx,
-                                                                binary.bin):
+                if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx, binary.bin):
                     self._raise_from_status()
         except Exception:
             # Destroy the context on error.
