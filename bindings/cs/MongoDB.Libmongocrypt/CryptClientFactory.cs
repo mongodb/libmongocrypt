@@ -115,7 +115,7 @@ namespace MongoDB.Libmongocrypt
                     var versionPtr = Library.mongocrypt_crypt_shared_lib_version_string(handle, out _);
                     if (versionPtr == IntPtr.Zero)
                     {
-                        throw new CryptException(Library.StatusType.MONGOCRYPT_STATUS_ERROR_CLIENT, uint.MaxValue, "CSFLE is required, but was not found.");
+                        throw new CryptException(Library.StatusType.MONGOCRYPT_STATUS_ERROR_CLIENT, uint.MaxValue, "CryptSharedLib is required, but was not found or not loaded.");
                     }
                 }
             }

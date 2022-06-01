@@ -39,7 +39,7 @@ namespace MongoDB.Libmongocrypt
         /// <summary>
         /// Gets the crypt shared library version.
         /// </summary>
-        /// <returns>CSFLE version.</returns>
+        /// <returns>A crypt shared library version.</returns>
         public string CryptSharedLibraryVersion
         {
             get
