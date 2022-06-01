@@ -4211,6 +4211,42 @@ _test_fle2_create (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Regression test for MONGOCRYPT-??? */
+static void
+_test_fle2_create_bypass_query_analysis (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt = mongocrypt_new ();
+
+   ASSERT_OK (
+      mongocrypt_setopt_kms_provider_aws (crypt, "example", -1, "example", -1),
+      crypt);
+   ASSERT_OK (
+      mongocrypt_setopt_encrypted_field_config_map (
+         crypt,
+         TEST_FILE ("./test/data/fle2-create/encrypted-field-config-map.json")),
+      crypt);
+   mongocrypt_setopt_bypass_query_analysis (crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "db", -1, TEST_FILE ("./test/data/fle2-create/cmd.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle2-create/cmd.json"), out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -4267,4 +4303,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_fle1_create_old_mongocryptd);
    INSTALL_TEST (_test_fle1_create_with_csfle);
    INSTALL_TEST (_test_fle2_create);
+   INSTALL_TEST (_test_fle2_create_bypass_query_analysis);
 }
