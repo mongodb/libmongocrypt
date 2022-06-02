@@ -219,8 +219,7 @@ class MongoCrypt(object):
                     self.__raise_from_status()
 
         if self.__opts.bypass_query_analysis:
-            if not lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt):
-                self.__raise_from_status()
+            lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt)
 
         if not lib.mongocrypt_setopt_crypto_hooks(
                 self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
@@ -241,6 +240,7 @@ class MongoCrypt(object):
 
         if not self.__opts.bypass_encryption:
             lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
+
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
 
