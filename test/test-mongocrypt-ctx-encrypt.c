@@ -4211,7 +4211,7 @@ _test_fle2_create (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-/* Regression test for MONGOCRYPT-??? */
+/* Regression test for MONGOCRYPT-435 */
 static void
 _test_fle2_create_bypass_query_analysis (_mongocrypt_tester_t *tester)
 {
