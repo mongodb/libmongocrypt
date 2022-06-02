@@ -2304,11 +2304,12 @@ static bool
 needs_ismaster_check (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   bool using_mongocryptd =
+      !ectx->bypass_query_analysis && !ctx->crypt->csfle.okay;
    // The "create" and "createIndexes" command require an isMaster check when
    // using mongocryptd. See MONGOCRYPT-429.
-   return !ctx->crypt->csfle.okay &&
-          (0 == strcmp (ectx->cmd_name, "create") ||
-           0 == strcmp (ectx->cmd_name, "createIndexes"));
+   return using_mongocryptd && (0 == strcmp (ectx->cmd_name, "create") ||
+                                0 == strcmp (ectx->cmd_name, "createIndexes"));
 }
 
 bool
