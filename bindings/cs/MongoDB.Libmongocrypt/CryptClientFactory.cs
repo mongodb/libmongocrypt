@@ -100,7 +100,7 @@ namespace MongoDB.Libmongocrypt
 
                 if (options.CryptSharedLibPath != null)
                 {
-                    Library.mongocrypt_setopt_append_crypt_shared_lib_search_path(handle, options.CryptSharedLibPath);
+                    Library.mongocrypt_setopt_set_crypt_shared_lib_path_override(handle, options.CryptSharedLibPath);
                 }
 
                 if (options.CryptSharedLibSearchPath != null)
