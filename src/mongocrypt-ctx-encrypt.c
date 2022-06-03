@@ -1503,6 +1503,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
              &iter,
              &converted,
              ctx->status)) {
+         bson_destroy (&converted);
          return _mongocrypt_ctx_fail (ctx);
       }
    }
@@ -1704,6 +1705,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
              &iter,
              &converted,
              ctx->status)) {
+         bson_destroy (&converted);
          return _mongocrypt_ctx_fail (ctx);
       }
 

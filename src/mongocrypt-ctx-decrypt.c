@@ -327,6 +327,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       &final_bson,
       ctx->status);
    if (!res) {
+      bson_destroy (&final_bson);
       return _mongocrypt_ctx_fail (ctx);
    }
 
