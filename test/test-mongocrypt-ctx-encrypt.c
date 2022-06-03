@@ -3979,6 +3979,7 @@ _test_fle1_create_without_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Test encrypting a "create" command with a schema from the schema map. */
 static void
 _test_fle1_create_with_schema (_mongocrypt_tester_t *tester)
 {
@@ -4056,6 +4057,78 @@ _test_fle1_create_with_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Test encrypting a "create" command with a schema included in the "create"
+ * command. This is a regression test for MONGOCRYPT-436. */
+static void
+_test_fle1_create_with_cmd_schema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx,
+         "db",
+         -1,
+         TEST_FILE ("./test/data/fle1-create/with-cmd-schema/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle1-create/with-cmd-schema/"
+                    "ismaster-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/with-cmd-schema/"
+                               "mongocryptd-ismaster.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-cmd-schema/cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/with-cmd-schema/"
+                               "mongocryptd-reply.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-cmd-schema/encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+/* Test encrypting the "create" command with mongocryptd version < 6.0.0.
+ * Expect the "create" command not to be sent to mongocryptd. */
 static void
 _test_fle1_create_old_mongocryptd (_mongocrypt_tester_t *tester)
 {
@@ -4300,6 +4373,7 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_dollardb_preserved_fle1);
    INSTALL_TEST (_test_fle1_create_without_schema);
    INSTALL_TEST (_test_fle1_create_with_schema);
+   INSTALL_TEST (_test_fle1_create_with_cmd_schema);
    INSTALL_TEST (_test_fle1_create_old_mongocryptd);
    INSTALL_TEST (_test_fle1_create_with_csfle);
    INSTALL_TEST (_test_fle2_create);
