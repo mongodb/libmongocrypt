@@ -1,4 +1,9 @@
 # ChangeLog
+## 1.5.0-rc1
+## Fixed
+- Revert new payload for FLE 2.0 find.
+- Do not send "create" and "createIndexes" to mongocryptd when bypassing query analysis.
+
 ## 1.5.0-rc0
 ## Fixed
 - Account for shared library rename.
