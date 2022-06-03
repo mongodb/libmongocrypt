@@ -17,19 +17,37 @@ from pymongocrypt.state_machine import run_state_machine
 
 
 class ExplicitEncryptOpts(object):
-    def __init__(self, algorithm, key_id=None, key_alt_name=None):
+    def __init__(self, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
+                 query_type=None, contention_factor=None):
         """Options for explicit encryption.
 
         :Parameters:
-          - `algorithm`: The algorithm to use.
+          - `algorithm` (str): The algorithm to use.
           - `key_id`: The data key _id.
           - `key_alt_name` (bytes): Identifies a key vault document by
             'keyAltName'. Must be BSON encoded document in the form:
             { "keyAltName" : (BSON UTF8 value) }
+          - `index_key_id` (bytes): the index key id to use for Queryable Encryption.
+          - `query_type` (int): The query type to execute.
+          - `contention_factor` (int): The contention factor to use
+            when the algorithm is "Indexed".
+
+        .. versionchanged:: 1.3
+           Added the `index_key_id`, `query_type`, and `contention_factor` parameters.
         """
         self.algorithm = algorithm
         self.key_id = key_id
         self.key_alt_name = key_alt_name
+        self.index_key_id = index_key_id
+        if query_type is not None:
+            if not isinstance(query_type, int):
+                raise TypeError(
+                    'query_type must be an int or None, not: %r' % (type(query_type),))
+        self.query_type = query_type
+        if contention_factor is not None and not isinstance(contention_factor, int):
+            raise TypeError(
+                'contention_factor must be an int or None, not: %r' % (type(contention_factor),))
+        self.contention_factor = contention_factor
 
 
 class DataKeyOpts(object):
@@ -134,7 +152,8 @@ class ExplicitEncrypter(object):
             key = run_state_machine(ctx, self.callback)
         return self.callback.insert_data_key(key)
 
-    def encrypt(self, value, algorithm, key_id=None, key_alt_name=None):
+    def encrypt(self, value, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
+                query_type=None, contention_factor=None):
         """Encrypts a BSON value.
 
         Note that exactly one of ``key_id`` or  ``key_alt_name`` must be
@@ -148,15 +167,23 @@ class ExplicitEncrypter(object):
             key. For example, ``uuid.bytes`` or ``bytes(bson_binary)``.
           - `key_alt_name` (string): Identifies a key vault document by
             'keyAltName'.
+          - `index_key_id` (bytes): the index key id to use for Queryable Encryption.
+          - `query_type` (int): The query type to execute.
+          - `contention_factor` (int): The contention factor to use
+            when the algorithm is "Indexed".
 
         :Returns:
           The encrypted BSON value.
+
+        .. versionchanged:: 1.3
+           Added the `index_key_id`, `query_type`, and `contention_factor` parameters.
         """
         # CDRIVER-3275 key_alt_name needs to be wrapped in a bson document.
         if key_alt_name is not None:
             key_alt_name = self.callback.bson_encode(
                 {'keyAltName': key_alt_name})
-        opts = ExplicitEncryptOpts(algorithm, key_id, key_alt_name)
+        opts = ExplicitEncryptOpts(
+            algorithm, key_id, key_alt_name, index_key_id, query_type, contention_factor)
         with self.mongocrypt.explicit_encryption_context(value, opts) as ctx:
             return run_state_machine(ctx, self.callback)
 
