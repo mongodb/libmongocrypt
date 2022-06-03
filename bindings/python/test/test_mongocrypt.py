@@ -501,10 +501,10 @@ class TestExplicitEncryption(unittest.TestCase):
             encrypter.encrypt(encoded_val, "Indexed", key_id, index_key_id=b'1234')
         # Invalid query_type type.
         with self.assertRaisesRegex(TypeError, "query_type"):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type='not a int')
+            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type='not an int')
         # Invalid contention_factor type.
         with self.assertRaisesRegex(TypeError, "contention_factor"):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor='not a int')
+            encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor='not an int')
         with self.assertRaisesRegex(MongoCryptError, "contention"):
             encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor=-1)
         # Invalid: Unindexed + query_type is an error.
