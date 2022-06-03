@@ -22,11 +22,10 @@
 #include "mongocrypt-buffer-private.h"
 
 typedef struct {
-   _mongocrypt_buffer_t edcDerivedToken;       // d
-   _mongocrypt_buffer_t escDerivedToken;       // s
-   _mongocrypt_buffer_t eccDerivedToken;       // c
-   _mongocrypt_buffer_t serverEncryptionToken; // e
-   int64_t maxContentionCounter;               // cm
+   _mongocrypt_buffer_t edcDerivedToken; // d
+   _mongocrypt_buffer_t escDerivedToken; // s
+   _mongocrypt_buffer_t eccDerivedToken; // c
+   int64_t maxContentionCounter;         // cm
 } mc_FLE2FindEqualityPayload_t;
 
 void
