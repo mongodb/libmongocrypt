@@ -4010,13 +4010,13 @@ _test_fle1_create_with_schema (_mongocrypt_tester_t *tester)
 
       ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
       ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-         TEST_FILE ("./test/data/fle1-create/without-schema/"
+         TEST_FILE ("./test/data/fle1-create/with-schema/"
                     "ismaster-to-mongocryptd.json"),
          cmd_to_mongocryptd);
       mongocrypt_binary_destroy (cmd_to_mongocryptd);
       ASSERT_OK (mongocrypt_ctx_mongo_feed (
                     ctx,
-                    TEST_FILE ("./test/data/fle1-create/without-schema/"
+                    TEST_FILE ("./test/data/fle1-create/with-schema/"
                                "mongocryptd-ismaster.json")),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
