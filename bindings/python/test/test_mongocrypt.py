@@ -257,8 +257,8 @@ class TestMongoCrypt(unittest.TestCase):
     def test_encrypt(self):
         mc = self.create_mongocrypt()
         self.addCleanup(mc.close)
-        if mc.crypt_shared_lib_version != None:
-            self.skipTest("This test's assumptions about the state of mongocrypt do not hold when CSFLE is loaded")
+        if mc.crypt_shared_lib_version is not None:
+            self.skipTest("this test must be skipped when crypt_shared is loaded")
         with mc.encryption_context('text', bson_data('command.json')) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO)
 
@@ -380,34 +380,30 @@ class TestMongoCryptCallback(unittest.TestCase):
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
             'local': {'key': b'\x00'*96}})
 
-    def test_csfle(self):
-        mc = MongoCrypt(MongoCryptOptions({
+    @unittest.skipUnless(os.getenv("TEST_CRYPT_SHARED"), "this test requires TEST_CRYPT_SHARED=1")
+    def test_crypt_shared(self):
+        kms_providers = {
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
-            'local': {'key': b'\x00'*96}}), MockCallback())
-        if mc.crypt_shared_lib_version is None:
-            self.skipTest("This test requires CSFLE.")
-        # Test that we can pick up CSFLE automatically
-        encrypter = AutoEncrypter(MockCallback(), MongoCryptOptions({
-            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
-            'local': {'key': b'\x00'*96}},
-                                  bypass_encryption=False,
-                                  crypt_shared_lib_required=True))
+            'local': {'key': b'\x00'*96}}
+        mc = MongoCrypt(MongoCryptOptions(kms_providers), MockCallback())
+        self.addCleanup(mc.close)
+        self.assertIsNotNone(mc.crypt_shared_lib_version)
+        # Test that we can pick up crypt_shared automatically
+        encrypter = AutoEncrypter(MockCallback(), MongoCryptOptions(
+            kms_providers,
+            bypass_encryption=False,
+            crypt_shared_lib_required=True))
         self.addCleanup(encrypter.close)
-        encrypter = AutoEncrypter(MockCallback(),
-                                  MongoCryptOptions({
-                                      'aws': {'accessKeyId': 'example',
-                                              'secretAccessKey': 'example'},
-                                      'local': {'key': b'\x00' * 96}},
-                                  crypt_shared_lib_path=os.environ["CSFLE_PATH"],
-                                  crypt_shared_lib_required=True))
+        encrypter = AutoEncrypter(MockCallback(), MongoCryptOptions(
+            kms_providers,
+            crypt_shared_lib_path=os.environ["CRYPT_SHARED_PATH"],
+            crypt_shared_lib_required=True))
         self.addCleanup(encrypter.close)
         with self.assertRaisesRegex(MongoCryptError, "/doesnotexist"):
-            AutoEncrypter(MockCallback(),MongoCryptOptions({
-                                      'aws': {'accessKeyId': 'example',
-                                              'secretAccessKey': 'example'},
-                                      'local': {'key': b'\x00' * 96}},
-                                  crypt_shared_lib_path="/doesnotexist",
-                                  crypt_shared_lib_required=True))
+            AutoEncrypter(MockCallback(), MongoCryptOptions(
+                kms_providers,
+                crypt_shared_lib_path="/doesnotexist",
+                crypt_shared_lib_required=True))
 
     def test_encrypt(self):
         encrypter = AutoEncrypter(MockCallback(
