@@ -528,8 +528,7 @@ class TestExplicitEncryption(unittest.TestCase):
         encoded_val = bson.encode(val)
         for kwargs in [
             dict(algorithm='Indexed'),
-            # TODO: This case fails to decrypt.
-            # dict(algorithm='Indexed', query_type=1),
+            dict(algorithm='Indexed', query_type=1),
             dict(algorithm='Indexed', contention_factor=100),
             dict(algorithm='Unindexed'),
         ]:
@@ -540,9 +539,11 @@ class TestExplicitEncryption(unittest.TestCase):
             self.assertIsInstance(encrypted_val, Binary)
             self.assertEqual(encrypted_val.subtype, 6)
 
-            decrypted = encrypter.decrypt(encrypted)
-            self.assertEqual(bson.decode(decrypted, OPTS), val)
-            self.assertEqual(encoded_val, decrypted)
+            # Queryable Encryption find payloads cannot be round-tripped.
+            if 'query_type' not in kwargs:
+                decrypted = encrypter.decrypt(encrypted)
+                self.assertEqual(bson.decode(decrypted, OPTS), val)
+                self.assertEqual(encoded_val, decrypted)
 
     def test_data_key_creation(self):
         mock_key_vault = KeyVaultCallback(
