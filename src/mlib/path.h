@@ -4,6 +4,7 @@
 #include "./user-check.h"
 
 #include "./str.h"
+#include "./error.h"
 
 #include <inttypes.h>
 
@@ -77,7 +78,13 @@ mpath_current_path ()
       }
       mstr_narrow_result nar = mstr_win32_narrow (wstr);
       free (wstr);
-      assert (nar.error == 0);
+      if (nar.error) {
+         mstr error = merror_system_error_string (nar.error);
+         fprintf (
+            stderr, "Error getting current working directory: %s", error.data);
+         mstr_free (error);
+         return nar.string;
+      }
       return nar.string;
    }
 #else
