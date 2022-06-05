@@ -1,0 +1,20 @@
+{
+    "create": "coll",
+    "validator": {
+        "$jsonSchema": {
+            "properties": {
+                "a": {
+                    "bsonType": "number"
+                }
+            }
+        }
+    },
+    "jsonSchema": {
+        "properties": {
+            "a": {
+                "bsonType": "number"
+            }
+        }
+    },
+    "isRemoteSchema": true
+}

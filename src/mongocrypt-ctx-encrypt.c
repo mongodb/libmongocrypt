@@ -1931,6 +1931,62 @@ _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
    return true;
 }
 
+/* _try_schema_from_create_cmd tries to find a JSON schema included in a create
+ * command by checking for "validator.$jsonSchema". Example:
+ * {
+ *     "create" : "coll",
+ *     "validator" : {
+ *         "$jsonSchema" : {
+ *             "properties" : { "a" : { "bsonType" : "number" } }
+ *          }
+ *     }
+ * }
+ * If the "create" command does not include a JSON schema, an empty JSON schema
+ * is returned. This is to avoid an unnecessary 'listCollections' command for
+ * create. */
+static bool
+_try_schema_from_create_cmd (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx;
+   mongocrypt_status_t *status = ctx->status;
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   /* As a special case, use an empty schema for the 'create' command. */
+   const char *cmd_name = ectx->cmd_name;
+
+   if (0 != strcmp (cmd_name, "create")) {
+      return true;
+   }
+
+   bson_t cmd_bson;
+   bson_iter_t iter;
+
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
+      CLIENT_ERR ("unable to convert command buffer to BSON");
+      _mongocrypt_ctx_fail (ctx);
+      return false;
+   }
+
+   if (!bson_iter_init (&iter, &cmd_bson)) {
+      CLIENT_ERR ("unable to iterate over command BSON");
+      _mongocrypt_ctx_fail (ctx);
+      return false;
+   }
+
+   if (bson_iter_find_descendant (&iter, "validator.$jsonSchema", &iter)) {
+      if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter)) {
+         CLIENT_ERR (
+            "failed to parse BSON document from create validator.$jsonSchema");
+         _mongocrypt_ctx_fail (ctx);
+         return false;
+      }
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+      return true;
+   }
+
+   return true;
+}
+
 static bool
 _permitted_for_encryption (bson_iter_t *iter,
                            mongocrypt_encryption_algorithm_t algo,
@@ -2461,9 +2517,15 @@ mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx)
       return false;
    }
    if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
-      /* Check if we have a local schema from schema_map */
-      if (!_try_schema_from_schema_map (ctx)) {
+      if (!_try_schema_from_create_cmd (ctx)) {
          return false;
+      }
+
+      /* Check if we have a local schema from schema_map */
+      if (_mongocrypt_buffer_empty (&ectx->schema)) {
+         if (!_try_schema_from_schema_map (ctx)) {
+            return false;
+         }
       }
 
       /* If we didn't have a local schema, try the cache. */
