@@ -432,15 +432,16 @@ module.exports = function (modules) {
      */
     markCommand(client, ns, command, callback) {
       const bson = this.bson;
+      const options = { promoteLongs: false };
       const dbName = databaseNamespace(ns);
-      const rawCommand = bson.deserialize(command, { promoteLongs: false, promoteValues: false });
+      const rawCommand = bson.deserialize(command, options);
 
-      client.db(dbName).command(rawCommand, (err, response) => {
+      const commandOpts = rawCommand.encryptedFields ? options : {};
+      client.db(dbName).command(rawCommand, commandOpts, (err, response) => {
         if (err) {
           callback(err, null);
           return;
         }
-
         callback(err, bson.serialize(response, this.options));
       });
     }
