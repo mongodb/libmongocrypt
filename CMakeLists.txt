@@ -205,7 +205,7 @@ target_compile_definitions (mongocrypt PRIVATE ${MONGOCRYPT_DEFINITIONS})
 target_link_libraries (
    mongocrypt
    PRIVATE
-      _mongocrypt::libbson
+      _mongocrypt::libbson_for_shared
       Threads::Threads
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
@@ -254,7 +254,7 @@ target_compile_definitions (
 target_link_libraries (
    mongocrypt_static
    PRIVATE
-      _mongocrypt::libbson
+      _mongocrypt::libbson_for_shared
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
@@ -323,7 +323,7 @@ if (BUILD_TESTING)
 
    set_target_properties(stubbed-crypt_shared stubbed-crypt_shared-2 PROPERTIES
       INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src"
-      LINK_LIBRARIES _mongocrypt::libbson
+      LINK_LIBRARIES _mongocrypt::libbson_for_static
       COMPILE_FEATURES cxx_std_11
       PREFIX ""
       )
@@ -397,7 +397,7 @@ add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
 target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson mongo::mlib)
+target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE
    ${BSON_DEFINITIONS}
@@ -422,7 +422,7 @@ endforeach ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable (csfle-markup src/csfle-markup.cpp)
-   target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson mongo::mlib)
+   target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson_for_static mongo::mlib)
    target_compile_features (csfle-markup PRIVATE cxx_std_20)
 endif ()
 
@@ -430,12 +430,12 @@ endif ()
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    # Define example-state-machine
    add_executable (example-state-machine test/example-state-machine.c)
-   target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson)
+   target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_static)
    target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 
    # Define example-state-machine-static
    add_executable (example-state-machine-static test/example-state-machine.c)
-   target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static _mongocrypt::libbson)
+   target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static _mongocrypt::libbson_for_static)
    target_include_directories (example-state-machine-static PRIVATE ./src)
 
    find_package (mongoc-1.0)
