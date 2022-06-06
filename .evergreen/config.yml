@@ -324,7 +324,7 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DENABLE_SHARED_BSON=ON"
+      compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
 
 - name: build-and-test-asan
   depends_on:
