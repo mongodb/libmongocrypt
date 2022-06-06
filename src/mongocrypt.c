@@ -846,14 +846,14 @@ _csfle_replace_or_take_validate_singleton (mongocrypt_t *crypt,
       if (!message.data) {
          // We failed to obtain a message about the failure
          _mongocrypt_set_error (crypt->status,
-                                MONGOCRYPT_STATUS_ERROR_CSFLE,
+                                MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,
                                 MONGOCRYPT_GENERIC_ERROR_CODE,
                                 "csfle lib_create() failed");
       } else {
          // Record the message, error, and code from csfle about the failure
          _mongocrypt_set_error (
             crypt->status,
-            MONGOCRYPT_STATUS_ERROR_CSFLE,
+            MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,
             MONGOCRYPT_GENERIC_ERROR_CODE,
             "csfle lib_create() failed: %s [Error %d, code %d]",
             message.data,

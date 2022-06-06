@@ -977,7 +977,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    if (1) {                                                            \
       if (csfle.status_get_error (status)) {                           \
          _mongocrypt_set_error (ctx->status,                           \
-                                MONGOCRYPT_STATUS_ERROR_CSFLE,         \
+                                MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,  \
                                 MONGOCRYPT_GENERIC_ERROR_CODE,         \
                                 "csfle " #Func                         \
                                 " failed: %s [Error %d, code %d]",     \
