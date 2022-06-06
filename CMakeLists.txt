@@ -529,14 +529,9 @@ write_basic_package_version_file (
    COMPATIBILITY AnyNewerVersion
 )
 
-export (EXPORT mongocrypt_targets
-   NAMESPACE mongo::
-   FILE "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt_targets.cmake"
-)
-
 configure_file (cmake/mongocrypt-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config.cmake"
-   COPYONLY
+   @ONLY
 )
 
 install (EXPORT mongocrypt_targets
@@ -547,7 +542,7 @@ install (EXPORT mongocrypt_targets
 
 install (
    FILES
-      cmake/mongocrypt-config.cmake
+      "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config.cmake"
       "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config-version.cmake"
    DESTINATION
       ${CMAKE_INSTALL_LIBDIR}/cmake/mongocrypt

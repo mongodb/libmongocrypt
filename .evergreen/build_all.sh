@@ -18,6 +18,23 @@ evergreen_root="$(pwd)"
 
 . ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
 
+# Use C driver helper script to find cmake binary, stored in $CMAKE.
+if [ "$OS" == "Windows_NT" ]; then
+    CMAKE=/cygdrive/c/cmake/bin/cmake
+    if [ "$WINDOWS_32BIT" != "ON" ]; then
+        ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
+    fi
+else
+    # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
+    IGNORE_SYSTEM_CMAKE=1 . ${evergreen_root}/libmongocrypt/.evergreen/find-cmake.sh
+    # Check if on macOS with arm64. Use system cmake. See BUILD-14565.
+    OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
+    MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
+    if [ "darwin" = "$OS_NAME" -a "arm64" = "$MARCH" ]; then
+        CMAKE=cmake
+    fi
+fi
+
 if [ "$PPA_BUILD_ONLY" ]; then
     # Clean-up from previous build iteration
     cd $evergreen_root
@@ -25,12 +42,7 @@ if [ "$PPA_BUILD_ONLY" ]; then
     ADDITIONAL_CMAKE_FLAGS="${ADDITIONAL_CMAKE_FLAGS} -DENABLE_BUILD_FOR_PPA=ON"
 fi
 
-. ${evergreen_root}/libmongocrypt/.evergreen/build_install_bson.sh
-
 cd $evergreen_root
-
-# CMAKE should be set in build_install_bson.sh; this error should not occur
-command -v $CMAKE || (echo "CMake could not be found...aborting!"; exit 1)
 
 # Build and install libmongocrypt.
 cd libmongocrypt

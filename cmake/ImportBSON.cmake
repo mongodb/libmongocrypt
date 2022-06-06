@@ -10,21 +10,12 @@
    link against the external libbson.
 ]]
 
-option (USE_SYSTEM_LIBBSON "Use a libbson from find_library() and find_path() rather than building against a subproject" OFF)
 set (init OFF)
 if (DEFINED ENABLED_SHARED_BSON)
    message (STATUS "ENABLE_SHARED_BSON is now named USE_SHARED_LIBBSON")
    set (init "${ENABLE_SHARED_BSON}")
 endif ()
 option (USE_SHARED_LIBBSON "Dynamically link libbson (default is static)" ${init})
-
-if (USE_SYSTEM_LIBBSON)
-   message (FATAL_ERROR "Implement me")
-endif ()
-
-if (USE_SHARED_LIBBSON)
-   message (FATAL_ERROR "USE_SHARED_LIBBSON requires USE_SYSTEM_LIBBSON")
-endif ()
 
 # Obtain a copy of libmongoc for libbson that we will use in libmongocrypt, and
 # libmongoc for the csfle tests.
@@ -96,5 +87,5 @@ if (ENABLE_STATIC)
    # part of "all", and install the archive alongside the rest of our static libraries.
    # (Useful for some users for convenience of static-linking libmongocrypt: CDRIVER-3187)
    set_property (TARGET bson_static PROPERTY EXCLUDE_FROM_ALL FALSE)
-   install (TARGETS bson_static ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+   install (FILES $<TARGET_FILE:bson_static> DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 endif ()

@@ -34,8 +34,6 @@ if [ "$OS" == "Windows_NT" ]; then
   export BSON_EXTRA_CMAKE_FLAGS="${BSON_EXTRA_CMAKE_FLAGS} -DCMAKE_C_FLAGS_RELWITHDEBINFO=\"/MT\""
 fi
 
-. ${TOP_DIR}/libmongocrypt/.evergreen/build_install_bson.sh
-
 popd #./deps/tmp
 
 # build and install libmongocrypt
