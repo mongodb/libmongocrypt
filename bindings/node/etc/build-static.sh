@@ -6,38 +6,12 @@ LIBMONGOCRYPT_DIR="$(pwd)/../../"
 TOP_DIR="$(pwd)/../../../"
 
 if [[ -z $CMAKE ]]; then
-  CMAKE=`which cmake`
+  CMAKE=`type -P cmake`
 fi
-
-# create relevant folders
-mkdir -p $DEPS_PREFIX
-mkdir -p $BUILD_DIR
-mkdir -p $BUILD_DIR/libmongocrypt-build
-
-export BSON_INSTALL_PREFIX=$DEPS_PREFIX
-export MONGOCRYPT_INSTALL_PREFIX=$DEPS_PREFIX
-
-pushd $DEPS_PREFIX #./deps
-pushd $BUILD_DIR #./deps/tmp
-
-pushd $TOP_DIR
-# build and install bson
-
-# NOTE: we are setting -DCMAKE_INSTALL_LIBDIR=lib to ensure that the built
-# files are always installed to lib instead of alternate directories like
-# lib64.
-# NOTE: On OSX, -DCMAKE_OSX_DEPLOYMENT_TARGET can be set to an OSX version
-# to suppress build warnings. However, doing that tends to break some
-# of the versions that can be built
-export BSON_EXTRA_CMAKE_FLAGS="-DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_OSX_DEPLOYMENT_TARGET=\"10.12\""
-if [ "$OS" == "Windows_NT" ]; then
-  export BSON_EXTRA_CMAKE_FLAGS="${BSON_EXTRA_CMAKE_FLAGS} -DCMAKE_C_FLAGS_RELWITHDEBINFO=\"/MT\""
-fi
-
-popd #./deps/tmp
 
 # build and install libmongocrypt
-pushd libmongocrypt-build #./deps/tmp/libmongocrypt-build
+mkdir -p $BUILD_DIR/libmongocrypt-build
+pushd $BUILD_DIR/libmongocrypt-build  #./deps/tmp/libmongocrypt-build
 
 CMAKE_FLAGS="-DDISABLE_NATIVE_CRYPTO=1 -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_MORE_WARNINGS_AS_ERRORS=ON"
 if [ "$OS" == "Windows_NT" ]; then
@@ -53,9 +27,6 @@ fi
 
 $CMAKE --build . --target install --config RelWithDebInfo
 
-popd #./deps/tmp
-
-popd #./deps
 popd #./
 
 # build the `mongodb-client-encryption` addon

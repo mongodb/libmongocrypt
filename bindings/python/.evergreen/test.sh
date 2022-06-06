@@ -10,7 +10,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
-git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
+git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
