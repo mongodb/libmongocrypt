@@ -454,7 +454,6 @@ public class CAPI {
      *     <li>The crypt_shared shared library will not attempt to be loaded.</li>
      *     <li>A mongocrypt_ctx_t will never enter the MONGOCRYPT_CTX_NEED_MARKINGS state.</li>
      * </ul>
-     * </p>
      *
      * @param crypt The @ref mongocrypt_t object to update
      * @since 1.5
@@ -467,7 +466,7 @@ public class CAPI {
      * The index type is only used for Queryable Encryption.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
-     * @param index_type
+     * @param index_type the index type
      * @return A boolean indicating success. If false, an error status is set.
      * Retrieve it with @ref mongocrypt_ctx_status.
      * @since 1.5
@@ -480,7 +479,7 @@ public class CAPI {
      * The contention factor is only used for indexed Queryable Encryption.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
-     * @param contention_factor
+     * @param contention_factor the contention factor
      * @return A boolean indicating success. If false, an error status is set.
      * Retrieve it with @ref mongocrypt_ctx_status.
      * @since 1.5
