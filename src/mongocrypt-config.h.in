@@ -17,6 +17,15 @@
 #ifndef MONGOCRYPT_CONFIG_H
 #define MONGOCRYPT_CONFIG_H
 
+/* clang-format off */
+
+/**
+ * @def MONGOCRYPT_VERSION
+ * @brief The version string describing libmongocrypt.
+ * Has the form x.y.z-<pre>+<date>+git<sha>.
+ */
+#define MONGOCRYPT_VERSION "@MONGOCRYPT_VERSION@"
+
 /*
  * MONGOCRYPT_ENABLE_CRYPTO_CNG is set from configure to determine if we are
  * compiled with Native Crypto support on Windows
@@ -72,5 +81,7 @@
 #if MONGOCRYPT_ENABLE_TRACE != 1
 #  undef MONGOCRYPT_ENABLE_TRACE
 #endif
+
+/* clang-format on */
 
 #endif /* MONGOCRYPT_CONFIG_H */
