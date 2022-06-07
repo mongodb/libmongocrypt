@@ -45,7 +45,10 @@ else()
     elseif (TARGET mongo::bson_shared)
         set(_shared mongo::bson_shared)
     else ()
-        find_library (_MONGOCRYPT_FOUND_SHARED_LIBBSON bson-1.0 DOC "The libbson dynamic library that will be used for linking with mongo::mongocrypt")
+        find_library (
+            _MONGOCRYPT_LIBBSON_SHARED_LIB_PATH bson-1.0
+            DOC "The libbson dynamic library that will be used for linking with mongo::mongocrypt"
+        )
         set (_shared "${_MONGOCRYPT_LIBBSON_SHARED_LIB_PATH}")
     endif ()
     set_property(

@@ -1,17 +1,23 @@
 #[[
    This file defines, exports, and installs two INTERFACE targets: '_mongocrypt::libbson_for_static'
    and '_mongocrypt::libbson_for_shared', that are used to link libbson correctly for the build
-   configuration of libmongocrypt.
+   configuration of libmongocrypt. At find_package() time, we can resolve these interface targets
+   to link to the appropriate libbson based on the build configurations of libmongocrypt.
 
    mongo::mongocrypt must link to _mongocrypt::libbson_for_shared, and mongo::mongocrypt_static must
    link to _mongocrypt::libbson_for_static.
 
-   These target will create BUILD_INTERFACE-only usage requirements appropriate for libmongocrypt to
-   build against a libbson. The installed version of these targets will be manipulated in
-   mongocrypt-config.cmake based on user settings and build configuration options.
+   At configure+build time, these target will create BUILD_INTERFACE-only usage requirements
+   appropriate for libmongocrypt to build against a libbson. Once these targets are installed,
+   they retain no usage requirements defined here.
+
+   Instead, the installed version of these targets will be manipulated in mongocrypt-config.cmake
+   based on user settings and build configuration options of the installed libmongocrypt in order
+   to ensure that users have satisfied the linking requirements of libmongocrypt.
+   Refer to mongocrypt-config.cmake for more information
 
    This file calls add_subdirectory(EXCLUDE_FROM_ALL) on a mongo-c-driver project directory. This
-   will expose a bson_static target that we then link into _mongocrypt::libbson_*.
+   will expose libbson targets that we can link and use for the libmongocrypt build.
 
    The boolean option USE_SHARED_LIBBSON controls the behavior of libbson_for_shared:
 
@@ -35,7 +41,7 @@
      library, which must be resolved at runtime by consumers. The translation units from the
      MONGOCRYPT_MONGOC_DIR *will not* be included in the mongo::mongocrypt library.
    - The installed libbson_for_shared will dynamically link to a libbson on the user's system by
-     using a find library.
+     using a find_library() call.
 
    In both of the above cases, libbson_for_static will require that the final consumer
    provide their own definitions of the libbson symbols, regardless of the value
@@ -73,7 +79,6 @@ function (_import_bson_add_subdir)
    set (ENABLE_STATIC BUILD_ONLY)
    # Disable over-alignment of bson types
    set (ENABLE_EXTRA_ALIGNMENT OFF)
-
    # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
    add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
 endfunction ()
@@ -81,7 +86,8 @@ endfunction ()
 # Do the add_subdirectory() in a function to isolate variable scope
 _import_bson_add_subdir ()
 
-# Define an interface target to be used to pivot the used libbson at build and import time
+# Define interface targets to be used to control the libbson used at both build and import time.
+# Refer to mongocrypt-config.cmake to see how these targets are used by consumers
 add_library (_mongocrypt-libbson_for_static INTERFACE)
 add_library (_mongocrypt-libbson_for_shared INTERFACE)
 add_library (_mongocrypt::libbson_for_static ALIAS _mongocrypt-libbson_for_static)
@@ -99,6 +105,7 @@ if (USE_SHARED_LIBBSON)
 else ()
    target_link_libraries (_mongocrypt-libbson_for_shared INTERFACE $<BUILD_INTERFACE:bson_static>)
 endif ()
+# libbson_for_static always links to the static libbson:
 target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_static>)
 
 # And an alias to the mongoc target for use in some test cases
