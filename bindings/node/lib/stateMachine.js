@@ -432,11 +432,11 @@ module.exports = function (modules) {
      */
     markCommand(client, ns, command, callback) {
       const bson = this.bson;
-      const options = { promoteLongs: false };
+      const options = { promoteLongs: false, promoteValues: false };
       const dbName = databaseNamespace(ns);
       const rawCommand = bson.deserialize(command, options);
 
-      const commandOpts = rawCommand.encryptedFields ? options : {};
+      const commandOpts = rawCommand.encryptedFields ? { promoteLongs: false } : {};
       client.db(dbName).command(rawCommand, commandOpts, (err, response) => {
         if (err) {
           callback(err, null);
