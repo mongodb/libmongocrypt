@@ -57,11 +57,8 @@ ffi.cdef("""
  * See all public API documentation in: @ref mongocrypt.h
  */
 
-/**
- * @def MONGOCRYPT_VERSION
- * The version string describing libmongocrypt.
- * Has the form x.y.z-<pre>+<date>+git<sha>.
- */
+/* clang-format off */
+/* clang-format on */
 
 /**
  * Returns the version string for libmongocrypt.

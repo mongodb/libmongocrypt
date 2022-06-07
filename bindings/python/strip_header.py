@@ -20,7 +20,7 @@ Usage (on macOS):: python strip_header.py ../../src/mongocrypt.h.in | pbcopy
 import re
 import sys
 
-HEADER_RE = re.compile(r'^(#|MONGOCRYPT_EXPORT)')
+HEADER_RE = re.compile(r'^\s*(#|MONGOCRYPT_EXPORT)')
 BLANK_RE = re.compile(r'^\s*$')
 
 
