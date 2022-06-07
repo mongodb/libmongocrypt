@@ -1,9 +1,10 @@
 /**
  * This file does not contain test cases.
  *
- * This file defines the minimum APIs for csfle to be successfully loaded (but
- * not necessarily fully used) by libmongocrypt. This is only used to test the
- * loading and un-loading of the csfle dynamic library file by libmongocrypt.
+ * This file defines the minimum APIs for crypt_shared to be successfully loaded
+ * (but not necessarily fully used) by libmongocrypt. This is only used to test
+ * the loading and un-loading of the crypt_shared dynamic library file by
+ * libmongocrypt.
  */
 
 #ifdef _WIN32
