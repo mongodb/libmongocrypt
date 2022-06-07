@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Changes in Version 1.3.0
+------------------------
+
+- Add support for Queryable Encryption with MongoDB 6.0.
+- Add support for the crypt_shared library which can be used instead
+  of mongocryptd.
+- **Remove support for libmongocrypt 1.3, libmongocrypt >=1.5 is now
+  required.** Note this is only relevant for users that install from
+  source or use the ``PYMONGOCRYPT_LIB`` environment variable.
+
 Changes in Version 1.2.0
 ------------------------
 
