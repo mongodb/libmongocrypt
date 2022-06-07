@@ -36,6 +36,54 @@ describe('StateMachine', function () {
     }
   }
 
+  describe('#markCommand', function () {
+    let runCommandStub;
+    let dbStub;
+    let clientStub;
+
+    beforeEach(function () {
+      this.sinon = sinon.createSandbox();
+      runCommandStub = this.sinon.stub();
+      dbStub = this.sinon.createStubInstance(mongodb.Db, {
+        command: runCommandStub
+      });
+      clientStub = this.sinon.createStubInstance(mongodb.MongoClient, {
+        db: dbStub
+      });
+    });
+
+    context('when encryptedFields is in the command', function () {
+      const command = {
+        encryptedFields: {},
+        a: new BSON.Long('0')
+      };
+      const serializedCommand = BSON.serialize(command);
+      const stateMachine = new StateMachine({ bson: BSON });
+      const callback = () => {};
+
+      context('when executing the command', function () {
+        it('does not promote longs', function () {
+          stateMachine.markCommand(clientStub, 'test.coll', serializedCommand, callback);
+          expect(runCommandStub.calledWith(command, { promoteLongs: false })).to.be.true;
+        });
+      });
+    });
+
+    context('when encryptedFields is not in the command', function () {
+      const command = { a: new BSON.Long('0') };
+      const serializedCommand = BSON.serialize(command);
+      const stateMachine = new StateMachine({ bson: BSON });
+      const callback = () => {};
+
+      context('when executing the command', function () {
+        it('promotes longs', function () {
+          stateMachine.markCommand(clientStub, 'test.coll', serializedCommand, callback);
+          expect(runCommandStub.calledWith(command, {})).to.be.true;
+        });
+      });
+    });
+  });
+
   describe('kmsRequest', function () {
     class MockSocket extends EventEmitter {
       constructor(callback) {
