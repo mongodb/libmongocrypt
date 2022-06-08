@@ -18,9 +18,14 @@ evergreen_root="$(pwd)"
 
 . ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
 
+# We may need some more C++ flags
+_cxxflags=""
+
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
 if [ "$OS" == "Windows_NT" ]; then
-    CMAKE=/cygdrive/c/cmake/bin/cmake
+    : "${CMAKE:=/cygdrive/c/cmake/bin/cmake}"
+    # Enable exception handling for MSVC
+    _cxxflags="-EHsc"
     if [ "$WINDOWS_32BIT" != "ON" ]; then
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
@@ -57,7 +62,7 @@ done
 
 ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DENABLE_MORE_WARNINGS_AS_ERRORS=ON"
 
-$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${BSON_INSTALL_PREFIX}" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
+$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
 
 if [ "$CONFIGURE_ONLY" ]; then
     echo "Only running cmake";
@@ -65,9 +70,6 @@ if [ "$CONFIGURE_ONLY" ]; then
 fi
 echo "Installing libmongocrypt"
 $CMAKE --build . --target install --config RelWithDebInfo
-# CDRIVER-3187, ensure the final distributed tarball contains the libbson static
-# library to support consumers that static link to libmongocrypt
-find ${BSON_INSTALL_PREFIX} \( -name libbson-static-1.0.a -o -name bson-1.0.lib -o -name bson-static-1.0.lib \) -execdir cp {} $(dirname $(find ${MONGOCRYPT_INSTALL_PREFIX} -name libmongocrypt-static.a -o -name mongocrypt-static.lib)) \;
 $CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
 $CMAKE --build . --target test_kms_request --config RelWithDebInfo
 cd $evergreen_root
@@ -93,7 +95,7 @@ fi
 cd libmongocrypt
 mkdir cmake-build-nocrypto
 cd cmake-build-nocrypto
-$CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${BSON_INSTALL_PREFIX}" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/nocrypto" ../
+$CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/nocrypto" ../
 echo "Installing libmongocrypt with no crypto"
 $CMAKE --build . --target install --config RelWithDebInfo
 echo "Building test-mongocrypt with no crypto"
@@ -104,6 +106,6 @@ cd $evergreen_root
 cd libmongocrypt
 mkdir cmake-build-sharedbson
 cd cmake-build-sharedbson
-$CMAKE -DUSE_SHARED_LIBBSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_PREFIX_PATH="${BSON_INSTALL_PREFIX}" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/sharedbson" ../
+$CMAKE -DUSE_SHARED_LIBBSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/sharedbson" ../
 echo "Installing libmongocrypt with shared libbson"
 $CMAKE --build . --target install  --config RelWithDebInfo
