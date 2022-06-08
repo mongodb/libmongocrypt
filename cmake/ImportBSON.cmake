@@ -78,7 +78,7 @@ function (_import_bson_add_subdir)
    # Disable install() for the libbson static library. We'll do it ourselves
    set (ENABLE_STATIC BUILD_ONLY)
    # Disable over-alignment of bson types
-   set (ENABLE_EXTRA_ALIGNMENT OFF)
+   set (ENABLE_EXTRA_ALIGNMENT OFF CACHE BOOL "Toggle extra alignment of bson_t (Default disabled by libmongocrypt)")
    # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
    add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
 endfunction ()
