@@ -436,8 +436,7 @@ module.exports = function (modules) {
       const dbName = databaseNamespace(ns);
       const rawCommand = bson.deserialize(command, options);
 
-      const commandOpts = rawCommand.encryptedFields ? { promoteLongs: false } : {};
-      client.db(dbName).command(rawCommand, commandOpts, (err, response) => {
+      client.db(dbName).command(rawCommand, options, (err, response) => {
         if (err) {
           callback(err, null);
           return;
