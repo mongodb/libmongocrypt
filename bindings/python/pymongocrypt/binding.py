@@ -162,7 +162,8 @@ typedef enum {
    MONGOCRYPT_STATUS_OK = 0,
    MONGOCRYPT_STATUS_ERROR_CLIENT = 1,
    MONGOCRYPT_STATUS_ERROR_KMS = 2,
-   MONGOCRYPT_STATUS_ERROR_CSFLE = 3,
+   MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED = 3,
+   MONGOCRYPT_STATUS_ERROR_CSFLE = MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,
 } mongocrypt_status_type_t;
 
 /**
@@ -414,7 +415,7 @@ mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
 
 /**
  * @brief Append an additional search directory to the search path for loading
- * the CSFLE dynamic library.
+ * the crypt_shared dynamic library.
  *
  * @param[in] crypt The @ref mongocrypt_t object to update
  * @param[in] path A null-terminated sequence of bytes for the search path. On
@@ -423,11 +424,11 @@ mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
  * the path is the literal string "$ORIGIN", that substring will be replaced
  * with the directory path containing the executable libmongocrypt module. If
  * the path string is literal "$SYSTEM", then libmongocrypt will defer to the
- * system's library resolution mechanism to find the CSFLE library.
+ * system's library resolution mechanism to find the crypt_shared library.
  *
- * @note If no CSFLE dynamic library is found in any of the directories
+ * @note If no crypt_shared dynamic library is found in any of the directories
  * specified by the search paths loaded here, @ref mongocrypt_init() will still
- * succeed and continue to operate without CSFLE.
+ * succeed and continue to operate without crypt_shared.
  *
  * @note The search paths are searched in the order that they are appended. This
  * allows one to provide a precedence in how the library will be discovered. For
@@ -445,25 +446,26 @@ mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
                                                        const char *path);
 
 /**
- * @brief Set a single override path for loading the CSFLE dynamic library.
+ * @brief Set a single override path for loading the crypt_shared dynamic
+ * library.
  *
  * @param[in] crypt The @ref mongocrypt_t object to update
- * @param[in] path A null-terminated sequence of bytes for a path to the CSFLE
- * dynamic library. On some filesystems, this may be arbitrary bytes. On other
- * filesystems, this may be required to be a valid UTF-8 code unit sequence. If
- * the leading element of the path is the literal string `$ORIGIN`, that
- * substring will be replaced with the directory path containing the executable
- * libmongocrypt module.
+ * @param[in] path A null-terminated sequence of bytes for a path to the
+ * crypt_shared dynamic library. On some filesystems, this may be arbitrary
+ * bytes. On other filesystems, this may be required to be a valid UTF-8 code
+ * unit sequence. If the leading element of the path is the literal string
+ * `$ORIGIN`, that substring will be replaced with the directory path containing
+ * the executable libmongocrypt module.
  *
  * @note This function will do no IO nor path validation. All validation will
  * occur during the call to @ref mongocrypt_init.
  *
- * @note If a CSFLE library path override is specified here, then no paths given
- * to @ref mongocrypt_setopt_append_crypt_shared_lib_search_path will be
- * consulted when opening the CSFLE library.
+ * @note If a crypt_shared library path override is specified here, then no
+ * paths given to @ref mongocrypt_setopt_append_crypt_shared_lib_search_path
+ * will be consulted when opening the crypt_shared library.
  *
  * @note If a path is provided via this API and @ref mongocrypt_init fails to
- * initialize a valid CSFLE library instance for the path specified, then
+ * initialize a valid crypt_shared library instance for the path specified, then
  * the initialization of mongocrypt_t will fail with an error.
  */
 void
@@ -524,18 +526,19 @@ void
 mongocrypt_destroy (mongocrypt_t *crypt);
 
 /**
- * Obtain a nul-terminated version string of the loaded csfle dynamic library,
- * if available.
+ * Obtain a nul-terminated version string of the loaded crypt_shared dynamic
+ * library, if available.
  *
- * If no csfle was successfully loaded, this function returns NULL.
+ * If no crypt_shared was successfully loaded, this function returns NULL.
  *
  * @param[in] crypt The mongocrypt_t object after a successful call to
  * mongocrypt_init.
  * @param[out] len An optional output parameter to which the length of the
- * returned string is written. If provided and no csfle library was loaded, zero
- * is written to *len.
+ * returned string is written. If provided and no crypt_shared library was
+ * loaded, zero is written to *len.
  *
- * @return A nul-terminated string of the dynamically loaded csfle library.
+ * @return A nul-terminated string of the dynamically loaded crypt_shared
+ * library.
  *
  * @note For a numeric value that can be compared against, use
  * @ref mongocrypt_crypt_shared_lib_version.
@@ -545,14 +548,14 @@ mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
                                             uint32_t *len);
 
 /**
- * @brief Obtain a 64-bit constant encoding the version of the loaded csfle
- * library, if available.
+ * @brief Obtain a 64-bit constant encoding the version of the loaded
+ * crypt_shared library, if available.
  *
  * @param[in] crypt The mongocrypt_t object after a successul call to
  * mongocrypt_init.
  *
  * @return A 64-bit encoded version number, with the version encoded as four
- * sixteen-bit integers, or zero if no csfle library was loaded.
+ * sixteen-bit integers, or zero if no crypt_shared library was loaded.
  *
  * The version is encoded as four 16-bit numbers, from high to low:
  *
@@ -852,14 +855,15 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_key_alt_name
  * - @ref mongocrypt_ctx_setopt_algorithm
  *
- * Associated options for FLE 2:
+ * Associated options for Queryable Encryption:
  * - @ref mongocrypt_ctx_setopt_index_type
  * - @ref mongocrypt_ctx_setopt_key_id
  * - @ref mongocrypt_ctx_setopt_index_key_id
  * - @ref mongocrypt_ctx_setopt_contention_factor
  * - @ref mongocrypt_ctx_setopt_query_type
  *
- * An error is returned if FLE 1 and FLE 2 incompatible options are set.
+ * An error is returned if FLE 1 and Queryable Encryption incompatible options
+ * are set.
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value. The
@@ -1350,7 +1354,7 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
  * @brief Opt-into skipping query analysis.
  *
  * If opted in:
- * - The csfle shared library will not attempt to be loaded.
+ * - The crypt_shared library will not attempt to be loaded.
  * - A mongocrypt_ctx_t will never enter the MONGOCRYPT_CTX_NEED_MARKINGS state.
  *
  * @param[in] crypt The @ref mongocrypt_t object to update
@@ -1365,7 +1369,7 @@ typedef enum {
 
 /**
  * Set the index type used for explicit encryption.
- * The index type is only used for FLE 2 encryption.
+ * The index type is only used for Queryable Encryption.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] index_type
@@ -1379,7 +1383,7 @@ mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx,
 
 /**
  * Set the contention factor used for explicit encryption.
- * The contention factor is only used for indexed FLE 2 encryption.
+ * The contention factor is only used for indexed Queryable Encryption.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] contention_factor
@@ -1392,7 +1396,7 @@ mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx,
                                          int64_t contention_factor);
 
 /**
- * Set the index key id to use for FLE 2 explicit encryption.
+ * Set the index key id to use for explicit Queryable Encryption.
  *
  * If the index key id not set, the key id from @ref
  * mongocrypt_ctx_setopt_key_id is used.
@@ -1413,8 +1417,7 @@ mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
 typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
 
 /**
- * Set the query type to use for FLE 2 explicit encryption.
- * The query type is only used for indexed FLE 2 encryption.
+ * Set the query type to use for explicit Queryable Encryption.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] query_type
