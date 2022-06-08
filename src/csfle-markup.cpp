@@ -195,7 +195,12 @@ do_main (int argc, const char *const *argv)
 
    uint32_t data_len = input->len;
    uint8_t *data_ptr = mongo_crypt_v1_analyze_query (
-      qa, bson_get_data (input), doc_ns, strlen (doc_ns), &data_len, status);
+      qa,
+      bson_get_data (input),
+      doc_ns,
+      static_cast<std::uint32_t> (strlen (doc_ns)),
+      &data_len,
+      status);
    if (!data_ptr) {
       fprintf (stderr,
                "Failed to analyze the given query: %s\n",
