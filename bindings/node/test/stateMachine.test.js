@@ -55,7 +55,7 @@ describe('StateMachine', function () {
     const command = {
       encryptedFields: {},
       a: new BSON.Long('0'),
-      b: new BSON.Int32(0),
+      b: new BSON.Int32(0)
     };
     const options = { promoteLongs: false, promoteValues: false };
     const serializedCommand = BSON.serialize(command);
