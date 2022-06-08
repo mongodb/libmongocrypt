@@ -117,6 +117,10 @@ target_include_directories (mongoc_shared
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
    )
 
+# Put the libbson dynamic library into the current binary directory (plus possible config suffix).
+# This ensures that libbson DLL will resolve on Windows when it searches during tests
+set_property(TARGET bson_shared PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
 if (ENABLE_STATIC)
    # We are going to build a static libmongocrypt.
    # We want the static libbson target from the embedded mongoc. Enable the static library as
