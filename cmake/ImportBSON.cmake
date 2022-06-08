@@ -48,6 +48,42 @@
    of USE_SHARED_LIBBSON.
 ]]
 
+include(CheckCSourceCompiles)
+include(CMakePushCheckState)
+
+cmake_push_check_state ()
+   # Even though we aren't going to use the system's libbson, try to detect whether it has
+   # extra-alignment enabled. We want to match that setting as our default, for convenience
+   # purposes only.
+   find_path(SYSTEM_BSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+   if (SYSTEM_BSON_INCLUDE_DIR AND NOT DEFINED ENABLE_EXTRA_ALIGNMENT)
+      set(CMAKE_REQUIRED_INCLUDES "${SYSTEM_BSON_INCLUDE_DIR}")
+      set (_extra_alignment_default OFF)
+      check_c_source_compiles([[
+         #include <bson/bson.h>
+
+         int main() { }
+      ]] HAVE_SYSTEM_LIBBSON)
+
+      if (HAVE_SYSTEM_LIBBSON)
+         # We have a libbson, check for extra alignment
+         check_c_source_compiles([[
+            #include <bson/bson.h>
+
+            #ifndef BSON_EXTRA_ALIGN
+            #error "Not extra-aligned"
+            #endif
+
+            int main() {}
+         ]] SYSTEM_LIBBSON_IS_EXTRA_ALIGNED)
+         if (SYSTEM_LIBBSON_IS_EXTRA_ALIGNED)
+            # Extra aligned! We'll use extra alignment by default.
+            set (_extra_alignment_default ON)
+         endif ()
+      endif ()
+   endif ()
+cmake_pop_check_state()
+
 set (init OFF)
 if (DEFINED ENABLED_SHARED_BSON)
    message (STATUS "ENABLE_SHARED_BSON is now named USE_SHARED_LIBBSON")
@@ -78,7 +114,7 @@ function (_import_bson_add_subdir)
    # Disable install() for the libbson static library. We'll do it ourselves
    set (ENABLE_STATIC BUILD_ONLY)
    # Disable over-alignment of bson types
-   set (ENABLE_EXTRA_ALIGNMENT OFF CACHE BOOL "Toggle extra alignment of bson_t (Default disabled by libmongocrypt)")
+   set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
    # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
    add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
 endfunction ()
