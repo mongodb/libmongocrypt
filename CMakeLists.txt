@@ -75,6 +75,7 @@ include (CTest)
 
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-compat.h
+   src/mongocrypt.h
 )
 
 set (MONGOCRYPT_SOURCES
@@ -165,6 +166,24 @@ if (ENABLE_TRACE)
    message (WARNING "Building with trace logging. This is highly insecure. Do not use in a production environment")
    set (MONGOCRYPT_ENABLE_TRACE 1)
 endif ()
+
+set (BUILD_VERSION "0.0.0" CACHE STRING "Library version")
+if (BUILD_VERSION STREQUAL "0.0.0")
+   if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
+      file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
+      message (STATUS "File VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
+   else ()
+      include (GetVersion)
+      GetVersion (BUILD_VERSION)
+      message (STATUS "Storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
+      file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
+   endif ()
+else ()
+   message (STATUS "Storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
+   file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
+endif ()
+
+set (MONGOCRYPT_BUILD_VERSION ${BUILD_VERSION})
 
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongocrypt-config.h.in"
@@ -485,33 +504,11 @@ export (EXPORT _exports_for_export)
 install (
    FILES
       ${MONGOCRYPT_PUBLIC_HEADERS}
-      ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt.h
       ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-config.h
       ${CMAKE_CURRENT_BINARY_DIR}/src/mongocrypt-export.h
    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt
    COMPONENT Devel
 )
-
-set (BUILD_VERSION "0.0.0" CACHE STRING "Library version")
-
-if (BUILD_VERSION STREQUAL "0.0.0")
-   if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
-      file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
-      message ("file VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
-   else ()
-      include (GetVersion)
-      GetVersion (BUILD_VERSION)
-      message ("storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
-      file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
-   endif ()
-else ()
-   message ("storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
-   file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
-endif ()
-
-message ("Configuring libmongocrypt version ${BUILD_VERSION}")
-set (MONGOCRYPT_BUILD_VERSION ${BUILD_VERSION})
-configure_file (src/mongocrypt.h.in src/mongocrypt.h)
 
 set (PROJECT_VERSION "${BUILD_VERSION}")
 set (PROJECT_DESCRIPTION "The libmongocrypt client-side field level encryption library.")

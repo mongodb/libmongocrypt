@@ -25,14 +25,19 @@
 
 #include "mongocrypt-export.h"
 #include "mongocrypt-compat.h"
-#include "mongocrypt-config.h"
 
-/**
- * @def MONGOCRYPT_VERSION
- * The version string describing libmongocrypt.
- * Has the form x.y.z-<pre>+<date>+git<sha>.
- */
-#define MONGOCRYPT_VERSION "@MONGOCRYPT_BUILD_VERSION@"
+/* clang-format off */
+#ifndef __has_include
+   #include "mongocrypt-config.h"
+#else
+   #if __has_include("mongocrypt-config.h")
+      #include "mongocrypt-config.h"
+   #else
+      #error No "mongocrypt-config.h" header is available. That file must \
+             be generated in order to use libmongocrypt.
+   #endif
+#endif
+/* clang-format on */
 
 /**
  * Returns the version string for libmongocrypt.

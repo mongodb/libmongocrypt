@@ -12,7 +12,7 @@ If you have encountered a bug, or would like to see a new feature in libmongocry
 ## Documentation ##
 See [The Integration Guide](integrating.md) to integrate with your driver.
 
-See [mongocrypt.h.in](src/mongocrypt.h.in) for the public API reference.
+See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
 The documentation can be rendered into HTML with doxygen. Run `doxygen ./doc/Doxygen`, then open `./doc/html/index.html`.
 
 ## Building libmongocrypt ##
@@ -28,7 +28,7 @@ First build the following dependencies:
    make -j8 install
    ```
    This installs the library and includes into /path/to/bson-install. The prefix can be omitted if you prefer installing in /usr/local.
-   
+
 2. OpenSSL (if on Linux).
 
 Then build libmongocrypt:
@@ -101,7 +101,7 @@ libmongocrypt is [continuously built and published on evergreen](https://evergre
 The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
 
 ### Troubleshooting ###
-If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt. 
+If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt.
 
 If there are errors with cmake configuration, send the set of steps you performed to the maintainers of this project.
 
