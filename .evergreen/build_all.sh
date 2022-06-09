@@ -47,6 +47,10 @@ if [ "$PPA_BUILD_ONLY" ]; then
     ADDITIONAL_CMAKE_FLAGS="${ADDITIONAL_CMAKE_FLAGS} -DENABLE_BUILD_FOR_PPA=ON"
 fi
 
+if [ "$MACOS_UNIVERSAL" = "ON" ]; then
+    ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
+fi
+
 cd $evergreen_root
 
 # Build and install libmongocrypt.
