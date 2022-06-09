@@ -445,7 +445,7 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
       target_include_directories (csfle PRIVATE ${CMAKE_BINARY_DIR}/src)
       target_include_directories (csfle PRIVATE ./src)
       target_include_directories (csfle PRIVATE ./kms-message/src)
-      target_link_libraries (csfle PRIVATE mongoc_shared)
+      target_link_libraries (csfle PRIVATE _mongocrypt::mongoc)
    endif ()
 endif ()
 

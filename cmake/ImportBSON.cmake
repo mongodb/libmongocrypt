@@ -110,7 +110,7 @@ message (STATUS "Using [${MONGOCRYPT_MONGOC_DIR}] as a sub-project for libbson")
 
 function (_import_bson_add_subdir)
    # Disable AWS_AUTH, to prevent it from building the kms-message symbols, which we build ourselves
-   set (ENABLE_MONGODB_AWS_AUTH OFF)
+   set (ENABLE_MONGODB_AWS_AUTH OFF CACHE BOOL "Disable kms-message content in mongoc for libmongocrypt" FORCE)
    # Disable install() for the libbson static library. We'll do it ourselves
    set (ENABLE_STATIC BUILD_ONLY)
    # Disable over-alignment of bson types
@@ -145,9 +145,9 @@ endif ()
 target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_static>)
 
 # And an alias to the mongoc target for use in some test cases
-add_library (_mongocrypt::mongoc ALIAS mongoc_shared)
-# Workaround: Embedded mongoc_shared does not set its INCLUDE_DIRECTORIES for user targets
-target_include_directories (mongoc_shared
+add_library (_mongocrypt::mongoc ALIAS mongoc_static)
+# Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
+target_include_directories (mongoc_static
    PUBLIC
       "$<BUILD_INTERFACE:${MONGOCRYPT_MONGOC_DIR}/src/libmongoc/src>"
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
