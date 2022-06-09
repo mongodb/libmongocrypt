@@ -87,6 +87,9 @@ _log_to_stdout (mongocrypt_log_level_t level,
    case MONGOCRYPT_LOG_LEVEL_TRACE:
       printf ("TRACE");
       break;
+   default:
+      printf ("?????");
+      break;
    }
    printf (" %s\n", message);
 }
@@ -634,12 +637,11 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
 }
 
 static bool
-_state_need_kms_credentials (
-   _state_machine_t *state_machine,
-   bson_error_t *error)
+_state_need_kms_credentials (_state_machine_t *state_machine,
+                             bson_error_t *error)
 {
    bson_t empty = BSON_INITIALIZER;
-   mongocrypt_binary_t* bin = util_bson_to_bin (&empty);
+   mongocrypt_binary_t *bin = util_bson_to_bin (&empty);
    mongocrypt_ctx_provide_kms_providers (state_machine->ctx, bin);
    mongocrypt_binary_destroy (bin);
    return true;
