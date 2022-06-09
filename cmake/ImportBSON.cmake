@@ -162,6 +162,9 @@ if (ENABLE_STATIC)
    # We want the static libbson target from the embedded mongoc. Enable the static library as
    # part of "all", and install the archive alongside the rest of our static libraries.
    # (Useful for some users for convenience of static-linking libmongocrypt: CDRIVER-3187)
-   set_property (TARGET bson_static PROPERTY EXCLUDE_FROM_ALL FALSE)
+   set_target_properties(bson_static PROPERTIES
+      EXCLUDE_FROM_ALL FALSE
+      OUTPUT_NAME bson-static-for-libmongocrypt
+      )
    install (FILES $<TARGET_FILE:bson_static> DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 endif ()
