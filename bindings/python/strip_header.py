@@ -17,38 +17,32 @@
 Usage (on macOS):: python strip_header.py ../../src/mongocrypt.h | pbcopy
 """
 
+import itertools
 import re
 import sys
 
-HEADER_RE = re.compile(r'^\s*(#|MONGOCRYPT_EXPORT)')
-BLANK_RE = re.compile(r'^\s*$')
+DROP_RE = re.compile(r'^\s*(#|MONGOCRYPT_EXPORT)')
 
 
-def strip_file(fp, out):
-    for line in fp:
-        if not HEADER_RE.match(line):
-            out.append(line)
+def strip_file(content):
+    fold = content.replace('\\\n', ' ')
+    all_lines = fold.split('\n') + ['']
+    keep_lines = (line for line in all_lines if not DROP_RE.match(line))
+    fin = ''
+    for line, peek in itertools.pairwise(keep_lines):
+        if peek == '' and line == '':
+            # Drop adjacent empty lines
+            continue
+        yield line
+        fin = peek
+    yield fin
+
 
 
 def strip(hdr):
-    out = []
     with open(hdr) as fp:
-        strip_file(fp, out)
-
-    # Strip consecutive blank lines
-    last_blank = True
-    new = []
-    for line in out:
-        if BLANK_RE.match(line):
-            if last_blank:
-                continue
-            last_blank = True
-        else:
-            last_blank = False
-        new.append(line)
-
-    if new:
-        print(''.join(new))
+        out = strip_file(fp.read())
+        print('\n'.join(out))
 
 
 if __name__ == "__main__":

@@ -33,7 +33,8 @@
    #if __has_include("mongocrypt-config.h")
       #include "mongocrypt-config.h"
    #else
-      #error "No 'mongocrypt-config.h' header is available. This must be generated in order to use libmongocrypt"
+      #error No "mongocrypt-config.h" header is available. That file must \
+             be generated in order to use libmongocrypt.
    #endif
 #endif
 /* clang-format on */
