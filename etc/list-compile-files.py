@@ -13,7 +13,8 @@ if len(sys.argv) != 2:
 
 compile_db = json.load(open(sys.argv[1] + "compile_commands.json", "r"))
 for entry in compile_db:
-    fname = os.path.basename(entry)
+    fpath = entry['file']
+    fname = os.path.basename(fpath)
     if fnmatch(fname, 'mc-*') or fnmatch(fname, 'mongocrypt-*'):
-        print(entry["file"])
+        print(fpath)
 print("")
