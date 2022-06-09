@@ -82,7 +82,7 @@ if [ "$MACOS_UNIVERSAL" = "ON" ]; then
         echo "Checking if libmongocrypt.dylib contains both x86_64 and arm64 architectures... OK"
     else
         echo "Checking if libmongocrypt.dylib contains both x86_64 and arm64 architectures... ERROR. Got: $ARCHS"
-        exit
+        exit 1
     fi
 fi
 
