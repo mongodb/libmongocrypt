@@ -181,7 +181,7 @@ namespace MongoDB.Libmongocrypt.Test
 
             byte[] encryptedBytes;
             using (var cryptClient = CryptClientFactory.Create(CreateOptions()))
-            using (var context = cryptClient.StartExplicitEncryptionContextWithKeyId(keyId, AEAD_AES_256_CBC_HMAC_SHA_512_Random, testData))
+            using (var context = StartExplicitEncryptionContextWithKeyId(cryptClient, keyId, AEAD_AES_256_CBC_HMAC_SHA_512_Random, testData))
             {
                 var (encryptedBinary, encryptedDocument) = ProcessContextToCompletion(context);
                 encryptedBytes = encryptedBinary.ToArray(); // need to copy bytes out before the context gets destroyed
@@ -209,7 +209,8 @@ namespace MongoDB.Libmongocrypt.Test
             using (var cryptClient = CryptClientFactory.Create(CreateOptions()))
             {
                 byte[] encryptedResult;
-                using (var context = cryptClient.StartExplicitEncryptionContextWithKeyId(
+                using (var context = StartExplicitEncryptionContextWithKeyId(
+                    cryptClient,
                     keyId: keyId,
                     encryptionAlgorithm: AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
                     message: testData))
@@ -674,6 +675,11 @@ namespace MongoDB.Libmongocrypt.Test
             }
 
             throw new NotImplementedException();
+        }
+
+        public CryptContext StartExplicitEncryptionContextWithKeyId(CryptClient client, byte[] keyId, string encryptionAlgorithm, byte[] message)
+        {
+            return client.StartExplicitEncryptionContext(keyId, keyAltName: null, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
         }
 
         static IEnumerable<string> FindTestDirectories()

@@ -110,6 +110,9 @@ namespace MongoDB.Libmongocrypt
 
             _mongocrypt_ctx_new = new Lazy<Delegates.mongocrypt_ctx_new>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_new>(("mongocrypt_ctx_new")), true);
+            _mongocrypt_ctx_setopt_key_material = new Lazy<Delegates.mongocrypt_ctx_setopt_key_material>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_key_material>(
+                    ("mongocrypt_ctx_setopt_key_material")), true);
             _mongocrypt_ctx_setopt_masterkey_aws = new Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_aws>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_masterkey_aws>(
                     ("mongocrypt_ctx_setopt_masterkey_aws")), true);
@@ -166,6 +169,9 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_ctx_next_kms_ctx = new Lazy<Delegates.mongocrypt_ctx_next_kms_ctx>(
                 () => __loader.Value
                     .GetFunction<Delegates.mongocrypt_ctx_next_kms_ctx>(("mongocrypt_ctx_next_kms_ctx")), true);
+            _mongocrypt_ctx_rewrap_many_datakey_init = new Lazy<Delegates.mongocrypt_ctx_rewrap_many_datakey_init>(
+                () => __loader.Value
+                    .GetFunction<Delegates.mongocrypt_ctx_rewrap_many_datakey_init>(("mongocrypt_ctx_rewrap_many_datakey_init")), true);
             _mongocrypt_kms_ctx_endpoint = new Lazy<Delegates.mongocrypt_kms_ctx_endpoint>(
                 () => __loader.Value
                     .GetFunction<Delegates.mongocrypt_kms_ctx_endpoint>(("mongocrypt_kms_ctx_endpoint")), true);
@@ -245,6 +251,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_binary_len mongocrypt_binary_len => _mongocrypt_binary_len.Value;
 
         internal static Delegates.mongocrypt_ctx_new mongocrypt_ctx_new => _mongocrypt_ctx_new.Value;
+        internal static Delegates.mongocrypt_ctx_setopt_key_material mongocrypt_ctx_setopt_key_material => _mongocrypt_ctx_setopt_key_material.Value;
         internal static Delegates.mongocrypt_ctx_setopt_masterkey_aws mongocrypt_ctx_setopt_masterkey_aws => _mongocrypt_ctx_setopt_masterkey_aws.Value;
         internal static Delegates.mongocrypt_ctx_setopt_masterkey_aws_endpoint mongocrypt_ctx_setopt_masterkey_aws_endpoint => _mongocrypt_ctx_setopt_masterkey_aws_endpoint.Value;
         internal static Delegates.mongocrypt_ctx_status mongocrypt_ctx_status => _mongocrypt_ctx_status.Value;
@@ -266,6 +273,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_ctx_mongo_done mongocrypt_ctx_mongo_done => _mongocrypt_ctx_mongo_done.Value;
 
         internal static Delegates.mongocrypt_ctx_next_kms_ctx mongocrypt_ctx_next_kms_ctx => _mongocrypt_ctx_next_kms_ctx.Value;
+        internal static Delegates.mongocrypt_ctx_rewrap_many_datakey_init mongocrypt_ctx_rewrap_many_datakey_init => _mongocrypt_ctx_rewrap_many_datakey_init.Value;
         internal static Delegates.mongocrypt_kms_ctx_endpoint mongocrypt_kms_ctx_endpoint => _mongocrypt_kms_ctx_endpoint.Value;
         internal static Delegates.mongocrypt_kms_ctx_message mongocrypt_kms_ctx_message => _mongocrypt_kms_ctx_message.Value;
         internal static Delegates.mongocrypt_kms_ctx_bytes_needed mongocrypt_kms_ctx_bytes_needed => _mongocrypt_kms_ctx_bytes_needed.Value;
@@ -318,6 +326,7 @@ namespace MongoDB.Libmongocrypt
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_new> _mongocrypt_ctx_new;
 
+        private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_material> _mongocrypt_ctx_setopt_key_material;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_aws> _mongocrypt_ctx_setopt_masterkey_aws;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_aws_endpoint> _mongocrypt_ctx_setopt_masterkey_aws_endpoint;
 
@@ -345,6 +354,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_mongo_done> _mongocrypt_ctx_mongo_done;
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_next_kms_ctx> _mongocrypt_ctx_next_kms_ctx;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_rewrap_many_datakey_init> _mongocrypt_ctx_rewrap_many_datakey_init;
         private static readonly Lazy<Delegates.mongocrypt_kms_ctx_endpoint> _mongocrypt_kms_ctx_endpoint;
         private static readonly Lazy<Delegates.mongocrypt_kms_ctx_message> _mongocrypt_kms_ctx_message;
         private static readonly Lazy<Delegates.mongocrypt_kms_ctx_bytes_needed> _mongocrypt_kms_ctx_bytes_needed;
@@ -514,16 +524,20 @@ namespace MongoDB.Libmongocrypt
             public delegate uint mongocrypt_binary_len(BinarySafeHandle handle);
 
             public delegate ContextSafeHandle mongocrypt_ctx_new(MongoCryptSafeHandle handle);
+            /// <summary>
+            /// bool mongocrypt_ctx_setopt_key_material(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* key_material)
+            /// </summary>
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_setopt_key_material(ContextSafeHandle handle, BinarySafeHandle key_material);
 
-            [return: MarshalAs(UnmanagedType.I1),]
+            [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_masterkey_aws(ContextSafeHandle handle, IntPtr region,
                 int region_len, IntPtr cmk, int cmk_len);
-            [return: MarshalAs(UnmanagedType.I1),]
+            [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_masterkey_aws_endpoint(
                 ContextSafeHandle handle,
                 IntPtr endpoint,
                 int endpoint_len);
-
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_status(ContextSafeHandle handle, StatusSafeHandle status);
 
@@ -585,6 +599,12 @@ namespace MongoDB.Libmongocrypt
             public delegate bool mongocrypt_ctx_mongo_done(ContextSafeHandle handle);
 
             public delegate IntPtr mongocrypt_ctx_next_kms_ctx(ContextSafeHandle handle);
+
+            /// <summary>
+            /// bool mongocrypt_ctx_rewrap_many_datakey_init(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* filter);
+            /// </summary>
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_rewrap_many_datakey_init(ContextSafeHandle handle, BinarySafeHandle filter);
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_kms_ctx_endpoint(IntPtr handle, ref IntPtr endpoint);
