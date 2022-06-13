@@ -1111,3 +1111,41 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
    ctx->opts.query_type.set = true;
    return true;
 }
+
+bool
+mongocrypt_ctx_setopt_query_type_v2 (mongocrypt_ctx_t *ctx,
+                                     const char *query_type,
+                                     int len)
+{
+   if (!ctx) {
+      return false;
+   }
+
+   if (ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "Cannot set options after init");
+   }
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+   if (len < -1) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "Invalid query_type string length");
+   }
+   if (!query_type) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "Invalid null query_type string");
+   }
+
+   const size_t calc_len = len == -1 ? strlen (query_type) : (size_t) len;
+   mstr_view qt_str = mstrv_view_data (query_type, calc_len);
+   if (mstr_eq (qt_str, mstrv_lit ("equality"))) {
+      ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_EQUALITY;
+      ctx->opts.query_type.set = true;
+   } else {
+      char *error = bson_strdup_printf (
+         "Unsupported query_type \"%.*s\"", (int) qt_str.len, qt_str.data);
+      _mongocrypt_ctx_fail_w_msg (ctx, error);
+      bson_free (error);
+      return false;
+   }
+   return true;
+}
