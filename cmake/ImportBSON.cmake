@@ -48,18 +48,18 @@
    of USE_SHARED_LIBBSON.
 ]]
 
-include(CheckCSourceCompiles)
-include(CMakePushCheckState)
+include (CheckCSourceCompiles)
+include (CMakePushCheckState)
 
 cmake_push_check_state ()
    # Even though we aren't going to use the system's libbson, try to detect whether it has
    # extra-alignment enabled. We want to match that setting as our default, for convenience
    # purposes only.
-   find_path(SYSTEM_BSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+   find_path (SYSTEM_BSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
    if (SYSTEM_BSON_INCLUDE_DIR AND NOT DEFINED ENABLE_EXTRA_ALIGNMENT)
-      set(CMAKE_REQUIRED_INCLUDES "${SYSTEM_BSON_INCLUDE_DIR}")
+      set (CMAKE_REQUIRED_INCLUDES "${SYSTEM_BSON_INCLUDE_DIR}")
       set (_extra_alignment_default OFF)
-      check_c_source_compiles([[
+      check_c_source_compiles ([[
          #include <bson/bson.h>
 
          int main() { }
@@ -67,7 +67,7 @@ cmake_push_check_state ()
 
       if (HAVE_SYSTEM_LIBBSON)
          # We have a libbson, check for extra alignment
-         check_c_source_compiles([[
+         check_c_source_compiles ([[
             #include <bson/bson.h>
 
             #ifndef BSON_EXTRA_ALIGN
@@ -82,7 +82,7 @@ cmake_push_check_state ()
          endif ()
       endif ()
    endif ()
-cmake_pop_check_state()
+cmake_pop_check_state ()
 
 set (init OFF)
 if (DEFINED ENABLED_SHARED_BSON)
@@ -113,6 +113,8 @@ function (_import_bson_add_subdir)
    set (ENABLE_MONGODB_AWS_AUTH OFF CACHE BOOL "Disable kms-message content in mongoc for libmongocrypt" FORCE)
    # Disable install() for the libbson static library. We'll do it ourselves
    set (ENABLE_STATIC BUILD_ONLY)
+   # Disable libzstd, which isn't necessary for libmongocrypt and isn't necessarily available.
+   set (ENABLE_ZSTD OFF CACHE BOOL "Toggle libzstd for the mongoc subproject (not required by libmongocrypt)")
    # Disable over-alignment of bson types. (May be overridden by the user)
    set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
    # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
@@ -155,14 +157,14 @@ target_include_directories (mongoc_static
 
 # Put the libbson dynamic library into the current binary directory (plus possible config suffix).
 # This ensures that libbson DLL will resolve on Windows when it searches during tests
-set_property(TARGET bson_shared PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+set_property (TARGET bson_shared PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 if (ENABLE_STATIC)
    # We are going to build a static libmongocrypt.
    # We want the static libbson target from the embedded mongoc. Enable the static library as
    # part of "all", and install the archive alongside the rest of our static libraries.
    # (Useful for some users for convenience of static-linking libmongocrypt: CDRIVER-3187)
-   set_target_properties(bson_static PROPERTIES
+   set_target_properties (bson_static PROPERTIES
       EXCLUDE_FROM_ALL FALSE
       OUTPUT_NAME bson-static-for-libmongocrypt
       )

@@ -9,7 +9,7 @@ FetchContent_Declare (
     URL "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/${MONGOC_FETCH_TAG_FOR_LIBBSON}.tar.gz"
     )
 # Populate it:
-FetchContent_GetProperties(embedded_mcd)
+FetchContent_GetProperties (embedded_mcd)
 if (NOT embedded_mcd_POPULATED)
     message (STATUS "Downloading mongo-c-driver ${MONGOC_FETCH_TAG_FOR_LIBBSON} for libbson")
     FetchContent_Populate (embedded_mcd)
