@@ -26,7 +26,7 @@
    - libbson_for_shared will transitively link the static libbson from the MONGOCRYPT_MONGOC_DIR.
    - The result is that mongo::mongocrypt (which is a SHARED library) will have the translation
      units of libbson directly embedded into the resulting binary.
-   - The symbols from libbson that are merged into mongo::mongocrypt will be supressed using
+   - The symbols from libbson that are merged into mongo::mongocrypt will be suppressed using
      linker scripts such that consumers of mongo::mongocrypt will not see the libbson symbols that
      were statically linked into the shared library. This allows consumers to link against a
      completely independent libbson without interfering with the libbson symbols that were merged
