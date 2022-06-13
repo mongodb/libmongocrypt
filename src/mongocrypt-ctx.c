@@ -251,8 +251,6 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                                  const char *algorithm,
                                  int len)
 {
-   size_t calculated_len;
-
    if (!ctx) {
       return false;
    }
@@ -277,7 +275,7 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "passed null algorithm");
    }
 
-   calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
+   const size_t calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
    if (ctx->crypt->log.trace_enabled) {
       _mongocrypt_log (&ctx->crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
@@ -288,21 +286,27 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                        algorithm);
    }
 
-   if (calculated_len == ALGORITHM_DETERMINISTIC_LEN &&
-       strncmp (algorithm,
-                ALGORITHM_DETERMINISTIC,
-                ALGORITHM_DETERMINISTIC_LEN) == 0) {
+   mstr_view algo_str = mstrv_view_data (algorithm, calculated_len);
+   if (mstr_eq (algo_str, mstrv_lit (ALGORITHM_DETERMINISTIC))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
-      return true;
-   }
-
-   if (calculated_len == ALGORITHM_RANDOM_LEN &&
-       strncmp (algorithm, ALGORITHM_RANDOM, ALGORITHM_RANDOM_LEN) == 0) {
+   } else if (mstr_eq (algo_str, mstrv_lit (ALGORITHM_RANDOM))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
-      return true;
+   } else if (mstr_eq (algo_str, mstrv_lit ("Indexed"))) {
+      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_EQUALITY;
+      ctx->opts.index_type.set = true;
+   } else if (mstr_eq (algo_str, mstrv_lit ("Unindexed"))) {
+      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_NONE;
+      ctx->opts.index_type.set = true;
+   } else {
+      char *error = bson_strdup_printf ("unsupported algorithm string \"%.*s\"",
+                                        (int) algo_str.len,
+                                        algo_str.data);
+      _mongocrypt_ctx_fail_w_msg (ctx, error);
+      bson_free (error);
+      return false;
    }
 
-   return _mongocrypt_ctx_fail_w_msg (ctx, "unsupported algorithm");
+   return true;
 }
 
 
