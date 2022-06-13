@@ -103,7 +103,7 @@ if (NOT DEFINED MONGOCRYPT_MONGOC_DIR)
             "for libmongocrypt to find a libbson to use and link against).")
    endif ()
    include (FetchMongoC)
-   # The FetchMongoC module defines a MONGOCRYPT_MONGOC_DIR for use to use
+   # The FetchMongoC module defines a MONGOCRYPT_MONGOC_DIR for us to use
 endif ()
 
 message (STATUS "Using [${MONGOCRYPT_MONGOC_DIR}] as a sub-project for libbson")
