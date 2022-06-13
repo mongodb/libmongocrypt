@@ -1,7 +1,7 @@
 include (FetchContent)
 
 # Set the tag that we will fetch.
-set (MONGOC_FETCH_TAG_FOR_LIBBSON "1.17.3" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
+set (MONGOC_FETCH_TAG_FOR_LIBBSON "1.17.7" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
 
 # Fetch the source archive for the requested tag from GitHub
 FetchContent_Declare (
