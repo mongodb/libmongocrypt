@@ -34,6 +34,11 @@ typedef enum {
    _MONGOCRYPT_TYPE_COMPACT,
 } _mongocrypt_ctx_type_t;
 
+typedef enum {
+   MONGOCRYPT_INDEX_TYPE_NONE = 1,
+   MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
+} mongocrypt_index_type_t;
+
 /* Option values are validated when set.
  * Different contexts accept/require different options,
  * validated when a context is initialized.

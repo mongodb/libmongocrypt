@@ -263,7 +263,8 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       return false;
    }
 
-   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE ||
+       ctx->opts.index_type.set) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "already set algorithm");
    }
 
@@ -1073,18 +1074,6 @@ _mongocrypt_ctx_kms_providers (mongocrypt_ctx_t *ctx)
    return ctx->kms_providers.configured_providers
              ? &ctx->kms_providers
              : &ctx->crypt->opts.kms_providers;
-}
-
-bool
-mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_index_type_t index_type)
-{
-   if (!ctx) {
-      return false;
-   }
-   ctx->opts.index_type.value = index_type;
-   ctx->opts.index_type.set = true;
-   return true;
 }
 
 bool

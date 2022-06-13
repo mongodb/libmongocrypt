@@ -856,7 +856,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_algorithm
  *
  * Associated options for Queryable Encryption:
- * - @ref mongocrypt_ctx_setopt_index_type
  * - @ref mongocrypt_ctx_setopt_key_id
  * - @ref mongocrypt_ctx_setopt_index_key_id
  * - @ref mongocrypt_ctx_setopt_contention_factor
@@ -1361,25 +1360,6 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
  */
 void
 mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt);
-
-typedef enum {
-   MONGOCRYPT_INDEX_TYPE_NONE = 1,
-   MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
-} mongocrypt_index_type_t;
-
-/**
- * Set the index type used for explicit encryption.
- * The index type is only used for Queryable Encryption.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] index_type
- * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status.
- */
-bool
-mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_index_type_t index_type);
 
 /**
  * Set the contention factor used for explicit encryption.

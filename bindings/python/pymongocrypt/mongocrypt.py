@@ -490,17 +490,9 @@ class ExplicitEncryptionContext(MongoCryptContext):
         """
         super(ExplicitEncryptionContext, self).__init__(ctx)
         try:
-            if opts.algorithm == 'Indexed':
-                if not lib.mongocrypt_ctx_setopt_index_type(
-                        ctx, lib.MONGOCRYPT_INDEX_TYPE_EQUALITY):
-                    self._raise_from_status()
-            elif opts.algorithm == 'Unindexed':
-                if not lib.mongocrypt_ctx_setopt_index_type(ctx, lib.MONGOCRYPT_INDEX_TYPE_NONE):
-                    self._raise_from_status()
-            else:
-                algorithm = str_to_bytes(opts.algorithm)
-                if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
-                    self._raise_from_status()
+            algorithm = str_to_bytes(opts.algorithm)
+            if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
+                self._raise_from_status()
 
             if opts.key_id is not None:
                 with MongoCryptBinaryIn(opts.key_id) as binary:

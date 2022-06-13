@@ -2292,9 +2292,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Unindexed", -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2355,9 +2353,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2417,9 +2413,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2487,9 +2481,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2549,9 +2541,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2593,9 +2583,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (
          mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
          ctx);
@@ -2647,9 +2635,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (
          mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
          ctx);
@@ -2704,9 +2690,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
@@ -2726,9 +2710,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Indexed", -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, INT64_MAX), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),

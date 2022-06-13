@@ -146,18 +146,7 @@ namespace MongoDB.Libmongocrypt
                 PinnedBinary.RunAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
             }
 
-            switch (encryptionAlgorithm)
-            {
-                case "Indexed":
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_EQUALITY));
-                    break;
-                case "Unindexed":
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_NONE));
-                    break;
-                default:
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
-                    break;
-            }
+            handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
 
             if (queryType.HasValue)
             {

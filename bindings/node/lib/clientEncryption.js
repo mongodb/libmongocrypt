@@ -382,14 +382,6 @@ module.exports = function (modules) {
 
         contextOptions.keyAltName = bson.serialize({ keyAltName });
       }
-      if (options.algorithm === 'Indexed') {
-        delete contextOptions.algorithm;
-        contextOptions.indexType = 'Equality';
-      }
-      if (options.algorithm === 'Unindexed') {
-        delete contextOptions.algorithm;
-        contextOptions.indexType = 'None';
-      }
 
       const stateMachine = new StateMachine({
         bson,

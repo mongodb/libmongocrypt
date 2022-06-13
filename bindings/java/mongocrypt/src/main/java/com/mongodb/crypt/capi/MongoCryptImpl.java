@@ -48,7 +48,6 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_contention_factor;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_index_type;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_encryption_key;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
@@ -282,18 +281,12 @@ class MongoCryptImpl implements MongoCrypt {
             }
         }
 
-        if (INDEXED.equalsIgnoreCase(options.getAlgorithm())) {
-            configure(() -> mongocrypt_ctx_setopt_index_type(context, MONGOCRYPT_INDEX_TYPE_EQUALITY), context);
-            if (options.getQueryType() != null) {
-                configure(() -> mongocrypt_ctx_setopt_query_type(context, options.getQueryType().getQueryType()), context);
-            }
-            if (options.getContentionFactor() != null) {
-                configure(() -> mongocrypt_ctx_setopt_contention_factor(context, options.getContentionFactor()), context);
-            }
-        } else if (options.getAlgorithm().equalsIgnoreCase(UNINDEXED)) {
-            configure(() -> mongocrypt_ctx_setopt_index_type(context, MONGOCRYPT_INDEX_TYPE_NONE), context);
-        } else {
-            configure(() -> mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1), context);
+        configure(() -> mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1), context);
+        if (options.getQueryType() != null) {
+            configure(() -> mongocrypt_ctx_setopt_query_type(context, options.getQueryType().getQueryType()), context);
+        }
+        if (options.getContentionFactor() != null) {
+            configure(() -> mongocrypt_ctx_setopt_contention_factor(context, options.getContentionFactor()), context);
         }
 
         try (BinaryHolder documentBinaryHolder = toBinary(document)) {

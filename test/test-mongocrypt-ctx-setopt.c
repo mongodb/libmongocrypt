@@ -704,9 +704,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    {
       REFRESH;
       KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Unindexed", -1), ctx);
       EX_ENCRYPT_INIT_FAILS (bson,
                              "cannot set both key alt name and index type");
 
@@ -734,16 +732,6 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    /* It is an error to set the FLE 1 algorithm option with any of the FLE 2
     * options (index_type, index_key_id, contention_factor, or query_type). */
    {
-      REFRESH;
-      /* Set key ID to get past the 'either key id or key alt name required'
-       * error */
-      KEY_ID_OK (uuid);
-      ALGORITHM_OK (RAND, -1);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
-         ctx);
-      EX_ENCRYPT_INIT_FAILS (bson, "cannot set both algorithm and index type");
-
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
@@ -789,9 +777,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
        * error */
       KEY_ID_OK (uuid);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Unindexed", -1), ctx);
       EX_ENCRYPT_INIT_FAILS (bson,
                              "cannot set contention factor with no index type");
    }
@@ -806,9 +792,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       ASSERT_OK (
          mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
          ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, "Unindexed", -1), ctx);
       EX_ENCRYPT_INIT_FAILS (bson, "cannot set query type with no index type");
    }
 
