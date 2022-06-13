@@ -113,7 +113,7 @@ function (_import_bson_add_subdir)
    set (ENABLE_MONGODB_AWS_AUTH OFF CACHE BOOL "Disable kms-message content in mongoc for libmongocrypt" FORCE)
    # Disable install() for the libbson static library. We'll do it ourselves
    set (ENABLE_STATIC BUILD_ONLY)
-   # Disable over-alignment of bson types
+   # Disable over-alignment of bson types. (May be overridden by the user)
    set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
    # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
    add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
