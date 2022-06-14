@@ -4320,6 +4320,60 @@ _test_fle2_create_bypass_query_analysis (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+// Test the error message returned on macOS versions that do not support AES-CTR
+// mode. This tests behavior changed in MONGOCRYPT-440.
+static void
+_test_encrypt_macos_no_ctr (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t key_id;
+
+   if (_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with CTR support detected. Skipping.");
+      return;
+   }
+
+   _mongocrypt_buffer_copy_from_hex (&key_id,
+                                     "ABCDEFAB123498761234123456789012");
+
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (
+                 ctx, _mongocrypt_buffer_as_binary (&key_id)),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
+                 ctx, TEST_BSON ("{'v': 'value123'}")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/keys/"
+                               "ABCDEFAB123498761234123456789012-local-"
+                               "document.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *got = mongocrypt_binary_new ();
+
+      ASSERT_FAILS (mongocrypt_ctx_finalize (ctx, got),
+                    ctx,
+                    "CTR mode is only supported on macOS 10.15+");
+      mongocrypt_binary_destroy (got);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -4378,4 +4432,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_fle1_create_with_csfle);
    INSTALL_TEST (_test_fle2_create);
    INSTALL_TEST (_test_fle2_create_bypass_query_analysis);
+   INSTALL_TEST (_test_encrypt_macos_no_ctr);
 }

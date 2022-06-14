@@ -56,7 +56,13 @@ _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
                                         &ctx);
 
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
+      if (cc_status == kCCUnimplemented && mode == kCCModeCTR) {
+         CLIENT_ERR ("error initializing cipher: %d. CTR mode is only "
+                     "supported on macOS 10.15+",
+                     (int) cc_status);
+      } else {
+         CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
+      }
       goto done;
    }
 
@@ -129,7 +135,13 @@ _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
                                         &ctx);
 
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
+      if (cc_status == kCCUnimplemented && mode == kCCModeCTR) {
+         CLIENT_ERR ("error initializing cipher: %d. CTR mode is only "
+                     "supported on macOS 10.15+",
+                     (int) cc_status);
+      } else {
+         CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
+      }
       goto done;
    }
 
