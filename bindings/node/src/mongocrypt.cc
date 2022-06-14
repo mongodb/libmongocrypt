@@ -577,10 +577,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
 
         if (options.Has("queryType")) {
             std::string query_type_str = options.Get("queryType").ToString();
-            mongocrypt_query_type_t query_type = strToEnumValue<mongocrypt_query_type_t>(
-                Env(), query_type_str, "queryType",
-                {{"Equality", MONGOCRYPT_QUERY_TYPE_EQUALITY}});
-            if (!mongocrypt_ctx_setopt_query_type(context.get(), query_type)) {
+            if (!mongocrypt_ctx_setopt_query_type(context.get(), query_type_str.data(), -1)) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }

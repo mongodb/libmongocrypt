@@ -554,7 +554,7 @@ public class CAPI {
      * Retrieve it with @ref mongocrypt_ctx_status
      */
     public static native boolean
-    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, int query_type);
+    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, cstring query_type, int len);
 
     /**
      * Initialize new @ref mongocrypt_t object.

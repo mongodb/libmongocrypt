@@ -510,7 +510,8 @@ class ExplicitEncryptionContext(MongoCryptContext):
                         self._raise_from_status()
 
             if opts.query_type is not None:
-                if not lib.mongocrypt_ctx_setopt_query_type(ctx, opts.query_type):
+                qt = str_to_bytes(opts.query_type)
+                if not lib.mongocrypt_ctx_setopt_query_type(ctx, qt, -1):
                     self._raise_from_status()
 
             if opts.contention_factor is not None:

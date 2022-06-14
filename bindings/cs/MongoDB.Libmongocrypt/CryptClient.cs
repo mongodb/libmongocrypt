@@ -133,7 +133,7 @@ namespace MongoDB.Libmongocrypt
         /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
         /// <param name="message">The BSON message.</param>
         /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, int? queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
+        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, string? queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
         {
             var handle = Library.mongocrypt_ctx_new(_handle);
 
@@ -150,7 +150,7 @@ namespace MongoDB.Libmongocrypt
 
             if (queryType.HasValue)
             {
-                handle.Check(_status, Library.mongocrypt_ctx_setopt_query_type(handle, (Library.mongocrypt_query_type_t)queryType.Value));
+                handle.Check(_status, Library.mongocrypt_ctx_setopt_query_type(handle, queryType, -1));
             }
 
             if (contentionFactor.HasValue)

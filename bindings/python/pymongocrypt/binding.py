@@ -33,8 +33,7 @@ except ImportError:
 ffi = cffi.FFI()
 
 # Generated with strip_header.py
-ffi.cdef("""
-/*
+ffi.cdef("""/*
  * Copyright 2019-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -163,7 +162,6 @@ typedef enum {
    MONGOCRYPT_STATUS_ERROR_CLIENT = 1,
    MONGOCRYPT_STATUS_ERROR_KMS = 2,
    MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED = 3,
-   MONGOCRYPT_STATUS_ERROR_CSFLE = MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,
 } mongocrypt_status_type_t;
 
 /**
@@ -687,6 +685,11 @@ bool
 mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                                  const char *algorithm,
                                  int len);
+
+/// String constant for setopt_algorithm "Deterministic" encryption
+/// String constant for setopt_algorithm "Random" encryption
+/// String constant for setopt_algorithm "Indexed" explicit encryption
+/// String constant for setopt_algorithm "Unindexed" explicit encryption
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -1394,22 +1397,23 @@ bool
 mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
                                     mongocrypt_binary_t *key_id);
 
-typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
-
 /**
  * Set the query type to use for explicit Queryable Encryption.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] query_type
+ * @param[in] query_type The query type string
+ * @param[in] len The length of query_type, or -1 for automatic
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
 bool
 mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_query_type_t query_type);
-""")
+                                  const char *query_type,
+                                  int len);
 
+/// String constant for setopt_query_type_v2, "equality" query type
+""")
 
 if PY3:
     def _to_string(cdata):

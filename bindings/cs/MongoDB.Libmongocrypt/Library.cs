@@ -363,17 +363,6 @@ namespace MongoDB.Libmongocrypt
             MONGOCRYPT_STATUS_ERROR_KMS
         }
 
-        internal enum mongocrypt_index_type_t
-        {
-            MONGOCRYPT_INDEX_TYPE_NONE = 1,
-            MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
-        }
-
-        internal enum mongocrypt_query_type_t
-        {
-            MONGOCRYPT_QUERY_TYPE_EQUALITY = 1
-        }
-
         internal class Delegates
         {
             // NOTE: Bool is expected to be 4 bytes during marshalling so we need to overwite it
@@ -579,10 +568,10 @@ namespace MongoDB.Libmongocrypt
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_contention_factor(ContextSafeHandle ctx, long contention_factor);
             /// <summary>
-            /// bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t* ctx, mongocrypt_query_type_t query_type)
+            /// bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t* ctx, const char* query_type, int len)
             /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
-            public delegate bool mongocrypt_ctx_setopt_query_type(ContextSafeHandle ctx, mongocrypt_query_type_t query_type);
+            public delegate bool mongocrypt_ctx_setopt_query_type(ContextSafeHandle ctx [MarshalAs(UnmanagedType.LPStr)] string query_type, int length);
 
             public delegate CryptContext.StateCode mongocrypt_ctx_state(ContextSafeHandle handle);
 

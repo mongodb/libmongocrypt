@@ -29,34 +29,7 @@ public class MongoExplicitEncryptOptions {
     private final String keyAltName;
     private final String algorithm;
     private final Long contentionFactor;
-    private final QueryType queryType;
-
-    /**
-     * The QueryType to use for "Indexed" queries
-     *
-     * @since 1.5
-     */
-    public enum QueryType {
-        EQUALITY(CAPI.MONGOCRYPT_QUERY_TYPE_EQUALITY);
-
-        private final int queryType;
-        QueryType(final int queryType) {
-            this.queryType = queryType;
-        }
-
-        public int getQueryType() {
-            return queryType;
-        }
-
-        public static QueryType fromInteger(final int queryType) {
-            for (QueryType value : QueryType.values()) {
-                if (value.queryType == queryType) {
-                    return value;
-                }
-            }
-            throw new MongoCryptException("Unknown context queryType " + queryType);
-        }
-    }
+    private final String queryType;
 
     /**
      * The builder for the options
@@ -130,7 +103,7 @@ public class MongoExplicitEncryptOptions {
          * @return this
          * @since 1.5
          */
-        public Builder queryType(final QueryType queryType) {
+        public Builder queryType(final String queryType) {
             this.queryType = queryType;
             return this;
         }
@@ -192,7 +165,7 @@ public class MongoExplicitEncryptOptions {
      * @return the query type
      * @since 1.5
      */
-    public QueryType getQueryType() {
+    public String getQueryType() {
         return queryType;
     }
 
