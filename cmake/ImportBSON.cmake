@@ -106,23 +106,49 @@ if (NOT DEFINED MONGOCRYPT_MONGOC_DIR)
    # The FetchMongoC module defines a MONGOCRYPT_MONGOC_DIR for us to use
 endif ()
 
-message (STATUS "Using [${MONGOCRYPT_MONGOC_DIR}] as a sub-project for libbson")
-
-function (_import_bson_add_subdir)
-   # Disable AWS_AUTH, to prevent it from building the kms-message symbols, which we build ourselves
-   set (ENABLE_MONGODB_AWS_AUTH OFF CACHE BOOL "Disable kms-message content in mongoc for libmongocrypt" FORCE)
-   # Disable install() for the libbson static library. We'll do it ourselves
-   set (ENABLE_STATIC BUILD_ONLY)
-   # Disable libzstd, which isn't necessary for libmongocrypt and isn't necessarily available.
-   set (ENABLE_ZSTD OFF CACHE BOOL "Toggle libzstd for the mongoc subproject (not required by libmongocrypt)")
-   # Disable over-alignment of bson types. (May be overridden by the user)
-   set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
-   # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
-   add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
+function (_import_bson)
+   if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" AND USE_SHARED_LIBBSON)
+      message (STATUS "NOTE: Using system-wide libbson library. This is intended for package maintainers.")
+      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      find_path (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+      add_library (bson_shared SHARED IMPORTED)
+      add_library (bson_static STATIC IMPORTED)
+      set_target_properties (bson_shared bson_static PROPERTIES
+         IMPORTED_CONFIGURATIONS "Release"
+         INTERFACE_INCLUDE_DIRECTORIES "${_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR}"
+         )
+      set_property (TARGET bson_shared PROPERTY IMPORTED_LOCATION "${_MONGOCRYPT_SYSTEM_LIBBSON_SHARED}")
+      set_property (TARGET bson_static PROPERTY IMPORTED_LOCATION "${_MONGOCRYPT_SYSTEM_LIBBSON_STATIC}")
+      set_property (
+         CACHE _MONGOCRYPT_SYSTEM_LIBBSON_SHARED
+               _MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR
+         PROPERTY ADVANCED
+         TRUE
+      )
+   else ()
+      message (STATUS "Using [${MONGOCRYPT_MONGOC_DIR}] as a sub-project for libbson")
+      # Disable AWS_AUTH, to prevent it from building the kms-message symbols, which we build ourselves
+      set (ENABLE_MONGODB_AWS_AUTH OFF CACHE BOOL "Disable kms-message content in mongoc for libmongocrypt" FORCE)
+      # Disable install() for the libbson static library. We'll do it ourselves
+      set (ENABLE_STATIC BUILD_ONLY)
+      # Disable libzstd, which isn't necessary for libmongocrypt and isn't necessarily available.
+      set (ENABLE_ZSTD OFF CACHE BOOL "Toggle libzstd for the mongoc subproject (not required by libmongocrypt)")
+      # Disable over-alignment of bson types. (May be overridden by the user)
+      set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
+      # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
+      add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
+      # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
+      target_include_directories (mongoc_static
+         PUBLIC
+            "$<BUILD_INTERFACE:${MONGOCRYPT_MONGOC_DIR}/src/libmongoc/src>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
+         )
+   endif ()
 endfunction ()
 
-# Do the add_subdirectory() in a function to isolate variable scope
-_import_bson_add_subdir ()
+# Do the import in a function to isolate variable scope
+_import_bson ()
 
 # Define interface targets to be used to control the libbson used at both build and import time.
 # Refer to mongocrypt-config.cmake to see how these targets are used by consumers
@@ -146,14 +172,10 @@ endif ()
 # libbson_for_static always links to the static libbson:
 target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_static>)
 
-# And an alias to the mongoc target for use in some test cases
-add_library (_mongocrypt::mongoc ALIAS mongoc_static)
-# Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
-target_include_directories (mongoc_static
-   PUBLIC
-      "$<BUILD_INTERFACE:${MONGOCRYPT_MONGOC_DIR}/src/libmongoc/src>"
-      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
-   )
+if (TARGET mongoc_static)
+   # And an alias to the mongoc target for use in some test cases
+   add_library (_mongocrypt::mongoc ALIAS mongoc_static)
+endif ()
 
 # Put the libbson dynamic library into the current binary directory (plus possible config suffix).
 # This ensures that libbson DLL will resolve on Windows when it searches during tests
