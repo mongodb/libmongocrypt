@@ -179,7 +179,7 @@ _test_decrypt_empty_binary (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_setopt_key_alt_name (
       ctx, TEST_BSON ("{'keyAltName': 'keyDocumentName'}"));
    mongocrypt_ctx_setopt_algorithm (
-      ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
+      ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1);
    mongocrypt_ctx_explicit_encrypt_init (
       ctx,
       TEST_BSON ("{'v': { '$binary': { 'base64': '', 'subType': '00' } } }"));
@@ -221,7 +221,7 @@ _test_decrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_setopt_key_alt_name (
       ctx, TEST_BSON ("{'keyAltName': 'keyDocumentName'}"));
    mongocrypt_ctx_setopt_algorithm (
-      ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
+      ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1);
    mongocrypt_ctx_explicit_encrypt_init (
       ctx,
       TEST_BSON ("{'v': { '$binary': { 'base64': '', 'subType': '00' } } }"));
@@ -280,7 +280,7 @@ _test_decrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_setopt_key_id (
       ctx, _mongocrypt_buffer_as_binary (&local_uuid_buf));
    mongocrypt_ctx_setopt_algorithm (
-      ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
+      ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1);
    mongocrypt_ctx_explicit_encrypt_init (
       ctx,
       TEST_BSON ("{'v': { '$binary': { 'base64': '', 'subType': '00' } } }"));

@@ -19,11 +19,6 @@
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 
-#define ALGORITHM_DETERMINISTIC "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-#define ALGORITHM_DETERMINISTIC_LEN 43
-#define ALGORITHM_RANDOM "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
-#define ALGORITHM_RANDOM_LEN 36
-
 bool
 _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
 {
@@ -288,14 +283,16 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
    }
 
    mstr_view algo_str = mstrv_view_data (algorithm, calculated_len);
-   if (mstr_eq (algo_str, mstrv_lit (ALGORITHM_DETERMINISTIC))) {
+   if (mstr_eq (algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
-   } else if (mstr_eq (algo_str, mstrv_lit (ALGORITHM_RANDOM))) {
+   } else if (mstr_eq (algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANDOM_STR))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
-   } else if (mstr_eq (algo_str, mstrv_lit ("Indexed"))) {
+   } else if (mstr_eq (algo_str,
+                       mstrv_lit (MONGOCRYPT_ALGORITHM_INDEXED_STR))) {
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_EQUALITY;
       ctx->opts.index_type.set = true;
-   } else if (mstr_eq (algo_str, mstrv_lit ("Unindexed"))) {
+   } else if (mstr_eq (algo_str,
+                       mstrv_lit (MONGOCRYPT_ALGORITHM_UNINDEXED_STR))) {
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_NONE;
       ctx->opts.index_type.set = true;
    } else {
@@ -1137,7 +1134,7 @@ mongocrypt_ctx_setopt_query_type_v2 (mongocrypt_ctx_t *ctx,
 
    const size_t calc_len = len == -1 ? strlen (query_type) : (size_t) len;
    mstr_view qt_str = mstrv_view_data (query_type, calc_len);
-   if (mstr_eq (qt_str, mstrv_lit ("equality"))) {
+   if (mstr_eq (qt_str, mstrv_lit (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR))) {
       ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_EQUALITY;
       ctx->opts.query_type.set = true;
    } else {

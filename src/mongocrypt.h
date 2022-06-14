@@ -731,6 +731,16 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                                  const char *algorithm,
                                  int len);
 
+/// String constant for setopt_algorithm "Deterministic" encryption
+#define MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR \
+   "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+/// String constant for setopt_algorithm "Random" encryption
+#define MONGOCRYPT_ALGORITHM_RANDOM_STR "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
+/// String constant for setopt_algorithm "Indexed" explicit encryption
+#define MONGOCRYPT_ALGORITHM_INDEXED_STR "Indexed"
+/// String constant for setopt_algorithm "Unindexed" explicit encryption
+#define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
+
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -1522,5 +1532,8 @@ bool
 mongocrypt_ctx_setopt_query_type_v2 (mongocrypt_ctx_t *ctx,
                                      const char *query_type,
                                      int len);
+
+/// String constant for setopt_query_type_v2, "equality" query type
+#define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
 
 #endif /* MONGOCRYPT_H */
