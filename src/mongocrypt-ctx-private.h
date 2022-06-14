@@ -39,6 +39,8 @@ typedef enum {
    MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
 } mongocrypt_index_type_t;
 
+typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
+
 /* Option values are validated when set.
  * Different contexts accept/require different options,
  * validated when a context is initialized.

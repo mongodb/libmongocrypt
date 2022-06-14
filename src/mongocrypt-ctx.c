@@ -1099,20 +1099,8 @@ mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
 
 bool
 mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_query_type_t query_type)
-{
-   if (!ctx) {
-      return false;
-   }
-   ctx->opts.query_type.value = query_type;
-   ctx->opts.query_type.set = true;
-   return true;
-}
-
-bool
-mongocrypt_ctx_setopt_query_type_v2 (mongocrypt_ctx_t *ctx,
-                                     const char *query_type,
-                                     int len)
+                                  const char *query_type,
+                                  int len)
 {
    if (!ctx) {
       return false;

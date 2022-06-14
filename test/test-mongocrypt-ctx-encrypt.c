@@ -2596,9 +2596,9 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
                  ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
+                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2650,9 +2650,9 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
                  ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
+                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),

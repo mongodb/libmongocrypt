@@ -1501,21 +1501,6 @@ bool
 mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
                                     mongocrypt_binary_t *key_id);
 
-typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
-
-/**
- * Set the query type to use for explicit Queryable Encryption.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] query_type
- * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_query_type_t query_type);
 
 /**
  * Set the query type to use for explicit Queryable Encryption.
@@ -1529,9 +1514,9 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_ctx_setopt_query_type_v2 (mongocrypt_ctx_t *ctx,
-                                     const char *query_type,
-                                     int len);
+mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
+                                  const char *query_type,
+                                  int len);
 
 /// String constant for setopt_query_type_v2, "equality" query type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"

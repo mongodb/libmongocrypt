@@ -724,9 +724,9 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 
       REFRESH;
       KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
+                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
+                 ctx);
       EX_ENCRYPT_INIT_FAILS (bson,
                              "cannot set both key alt name and query type");
    }
@@ -756,9 +756,9 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
        * error */
       KEY_ID_OK (uuid);
       ALGORITHM_OK (RAND, -1);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
+                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
+                 ctx);
       EX_ENCRYPT_INIT_FAILS (bson, "cannot set both algorithm and query type");
    }
 
@@ -793,9 +793,9 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
       KEY_ID_OK (uuid);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
+                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
                  ctx);
