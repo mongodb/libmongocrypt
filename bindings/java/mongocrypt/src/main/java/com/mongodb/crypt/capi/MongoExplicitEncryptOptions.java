@@ -39,7 +39,7 @@ public class MongoExplicitEncryptOptions {
         private String keyAltName;
         private String algorithm;
         private Long contentionFactor;
-        private QueryType queryType;
+        private String queryType;
 
         private Builder() {
         }
