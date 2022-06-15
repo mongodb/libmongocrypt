@@ -571,7 +571,7 @@ namespace MongoDB.Libmongocrypt
             /// bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t* ctx, const char* query_type, int len)
             /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
-            public delegate bool mongocrypt_ctx_setopt_query_type(ContextSafeHandle ctx [MarshalAs(UnmanagedType.LPStr)] string query_type, int length);
+            public delegate bool mongocrypt_ctx_setopt_query_type(ContextSafeHandle ctx, [MarshalAs(UnmanagedType.LPStr)] string query_type, int length);
 
             public delegate CryptContext.StateCode mongocrypt_ctx_state(ContextSafeHandle handle);
 
