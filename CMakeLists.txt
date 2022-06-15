@@ -21,6 +21,8 @@ option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OF
 
 list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+include (GNUInstallDirs)
+
 include (ImportBSON)
 
 if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
@@ -43,7 +45,6 @@ find_package (Threads REQUIRED)
 add_subdirectory (bindings/cs)
 
 include (GenerateExportHeader)
-include (GNUInstallDirs)
 
 include (CTest)
 
