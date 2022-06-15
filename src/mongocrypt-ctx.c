@@ -825,6 +825,12 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
 {
    bool has_id = false, has_alt_name = false, has_multiple_alt_names = false;
 
+   // This condition is guarded in setopt_algorithm:
+   BSON_ASSERT (
+      !(ctx->opts.index_type.set &&
+        ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) &&
+      "Both an encryption algorithm and an index_type were set.");
+
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot double initialize");
    }
