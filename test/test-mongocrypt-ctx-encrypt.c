@@ -4339,8 +4339,9 @@ _test_encrypt_macos_no_ctr (_mongocrypt_tester_t *tester)
       _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-   ASSERT_OK (
-      mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE), ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                 ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
+              ctx);
    ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                  ctx, _mongocrypt_buffer_as_binary (&key_id)),
               ctx);
