@@ -768,83 +768,26 @@ class RewrapManyDataKeyContext(MongoCryptContext):
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
-          - `filter`: The KMS provider.
+          - `filter`: A document used to filter the data keys.
           - `opts`: An optional :class:`RewrapManyDataKeyOpts`.
           - `callback`: A :class:`MongoCryptCallback`.
         """
         key_encryption_key_bson = None
         if opts is not None:
-            key_encryption_key_bson = callback.bson_encode({ 'provider': opts.provider })
-            # Always make sure `options` is an object below.
-            opts = {}
+            data = dict(provider=opts.provider)
+            if opts.master_key:
+                data.update(opts.master_key)
+            key_encryption_key_bson = callback.bson_encode(data)
 
-        if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, key_encryption_key_bson):
-            self._raise_from_status()
+        try:
+            if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, key_encryption_key_bson):
+                self._raise_from_status()
 
-        filter_bson = callback.bson_encode(filter)
+            filter_bson = callback.bson_encode(filter)
 
-        if not lib.mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter_bson):
-            self._raise_from_status()
-
-
-    #   const bson = this._bson;
-
-    #   let keyEncryptionKeyBson = undefined;
-    #   if (options) {
-    #     const keyEncryptionKey = Object.assign({ provider: options.provider }, options.masterKey);
-    #     keyEncryptionKeyBson = bson.serialize(keyEncryptionKey);
-    #   } else {
-
-    #     options = {};
-    #   }
-    #   const filterBson = bson.serialize(filter);
-    #   const context = this._mongoCrypt.makeRewrapManyDataKeyContext(
-    #     filterBson,
-    #     keyEncryptionKeyBson
-    #   );
-    #   const stateMachine = new StateMachine({
-    #     bson,
-    #     proxyOptions: this._proxyOptions,
-    #     tlsOptions: this._tlsOptions,
-    #     session: options.session
-    #   });
-
-    #   return promiseOrCallback(callback, cb => {
-    #     stateMachine.execute(this, context, (err, dataKey) => {
-    #       if (err) {
-    #         cb(err, null);
-    #         return;
-    #       }
-
-    #       const dbName = databaseNamespace(this._keyVaultNamespace);
-    #       const collectionName = collectionNamespace(this._keyVaultNamespace);
-    #       const replacements = dataKey.v.map(key => ({
-    #         replaceOne: {
-    #           filter: { _id: key._id },
-    #           replacement: key
-    #         }
-    #       }));
-
-    #       this._keyVaultClient
-    #         .db(dbName)
-    #         .collection(collectionName)
-    #         .bulkWrite(
-    #           replacements,
-    #           {
-    #             writeConcern: { w: 'majority' },
-    #             session: options.session
-    #           },
-    #           (err, result) => {
-    #             if (err) {
-    #               cb(err, null);
-    #               return;
-    #             }
-
-    #             cb(null, {
-    #               bulkWriteResult: result
-    #             });
-    #           }
-    #         );
-    #     });
-    #   });
-    # }
+            if not lib.mongocrypt_ctx_rewrap_many_datakey_init(ctx, filter_bson):
+                self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
