@@ -731,6 +731,16 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                                  const char *algorithm,
                                  int len);
 
+/// String constant for setopt_algorithm "Deterministic" encryption
+#define MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR \
+   "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+/// String constant for setopt_algorithm "Random" encryption
+#define MONGOCRYPT_ALGORITHM_RANDOM_STR "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
+/// String constant for setopt_algorithm "Indexed" explicit encryption
+#define MONGOCRYPT_ALGORITHM_INDEXED_STR "Indexed"
+/// String constant for setopt_algorithm "Unindexed" explicit encryption
+#define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
+
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -908,7 +918,6 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_algorithm
  *
  * Associated options for Queryable Encryption:
- * - @ref mongocrypt_ctx_setopt_index_type
  * - @ref mongocrypt_ctx_setopt_key_id
  * - @ref mongocrypt_ctx_setopt_index_key_id
  * - @ref mongocrypt_ctx_setopt_contention_factor
@@ -1457,26 +1466,6 @@ MONGOCRYPT_EXPORT
 void
 mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt);
 
-typedef enum {
-   MONGOCRYPT_INDEX_TYPE_NONE = 1,
-   MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
-} mongocrypt_index_type_t;
-
-/**
- * Set the index type used for explicit encryption.
- * The index type is only used for Queryable Encryption.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] index_type
- * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status.
- */
-MONGOCRYPT_EXPORT
-bool
-mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_index_type_t index_type);
-
 /**
  * Set the contention factor used for explicit encryption.
  * The contention factor is only used for indexed Queryable Encryption.
@@ -1512,13 +1501,13 @@ bool
 mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
                                     mongocrypt_binary_t *key_id);
 
-typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
 
 /**
  * Set the query type to use for explicit Queryable Encryption.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] query_type
+ * @param[in] query_type The query type string
+ * @param[in] len The length of query_type, or -1 for automatic
  * @pre @p ctx has not been initialized.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -1526,6 +1515,10 @@ typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
 MONGOCRYPT_EXPORT
 bool
 mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_query_type_t query_type);
+                                  const char *query_type,
+                                  int len);
+
+/// String constant for setopt_query_type_v2, "equality" query type
+#define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
 
 #endif /* MONGOCRYPT_H */

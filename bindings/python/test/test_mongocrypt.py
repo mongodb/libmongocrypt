@@ -497,7 +497,10 @@ class TestExplicitEncryption(unittest.TestCase):
             encrypter.encrypt(encoded_val, "Indexed", key_id, index_key_id=b'1234')
         # Invalid query_type type.
         with self.assertRaisesRegex(TypeError, "query_type"):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type='not an int')
+            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type=42)
+        # Invalid query_type string.
+        with self.assertRaisesRegex(MongoCryptError, "query_type"):
+            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type='invalid query type string')
         # Invalid contention_factor type.
         with self.assertRaisesRegex(TypeError, "contention_factor"):
             encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor='not an int')
@@ -505,7 +508,7 @@ class TestExplicitEncryption(unittest.TestCase):
             encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor=-1)
         # Invalid: Unindexed + query_type is an error.
         with self.assertRaisesRegex(MongoCryptError, "query"):
-            encrypter.encrypt(encoded_val, "Unindexed", key_id, query_type=1)
+            encrypter.encrypt(encoded_val, "Unindexed", key_id, query_type='equality')
         # Invalid: Unindexed + contention_factor is an error.
         with self.assertRaisesRegex(MongoCryptError, "contention"):
             encrypter.encrypt(encoded_val, "Unindexed", key_id, contention_factor=1)
@@ -524,7 +527,7 @@ class TestExplicitEncryption(unittest.TestCase):
         encoded_val = bson.encode(val)
         for kwargs in [
             dict(algorithm='Indexed'),
-            dict(algorithm='Indexed', query_type=1),
+            dict(algorithm='Indexed', query_type='equality'),
             dict(algorithm='Indexed', contention_factor=100),
             dict(algorithm='Unindexed'),
         ]:

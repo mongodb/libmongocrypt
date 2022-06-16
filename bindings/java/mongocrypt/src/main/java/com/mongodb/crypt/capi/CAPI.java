@@ -462,19 +462,6 @@ public class CAPI {
     mongocrypt_setopt_bypass_query_analysis (mongocrypt_t crypt);
 
     /**
-     * Set the index type used for explicit encryption.
-     * The index type is only used for Queryable Encryption.
-     *
-     * @param ctx The @ref mongocrypt_ctx_t object.
-     * @param index_type the index type
-     * @return A boolean indicating success. If false, an error status is set.
-     * Retrieve it with @ref mongocrypt_ctx_status.
-     * @since 1.5
-     */
-    public static native boolean
-    mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t ctx, int index_type);
-
-    /**
      * Set the contention factor used for explicit encryption.
      * The contention factor is only used for indexed Queryable Encryption.
      *
@@ -567,7 +554,7 @@ public class CAPI {
      * Retrieve it with @ref mongocrypt_ctx_status
      */
     public static native boolean
-    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, int query_type);
+    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, cstring query_type, int len);
 
     /**
      * Initialize new @ref mongocrypt_t object.

@@ -133,7 +133,7 @@ namespace MongoDB.Libmongocrypt
         /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
         /// <param name="message">The BSON message.</param>
         /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, int? queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
+        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, string queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
         {
             var handle = Library.mongocrypt_ctx_new(_handle);
 
@@ -146,22 +146,11 @@ namespace MongoDB.Libmongocrypt
                 PinnedBinary.RunAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
             }
 
-            switch (encryptionAlgorithm)
-            {
-                case "Indexed":
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_EQUALITY));
-                    break;
-                case "Unindexed":
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_index_type(handle, Library.mongocrypt_index_type_t.MONGOCRYPT_INDEX_TYPE_NONE));
-                    break;
-                default:
-                    handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
-                    break;
-            }
+            handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
 
-            if (queryType.HasValue)
+            if (queryType != null)
             {
-                handle.Check(_status, Library.mongocrypt_ctx_setopt_query_type(handle, (Library.mongocrypt_query_type_t)queryType.Value));
+                handle.Check(_status, Library.mongocrypt_ctx_setopt_query_type(handle, queryType, -1));
             }
 
             if (contentionFactor.HasValue)

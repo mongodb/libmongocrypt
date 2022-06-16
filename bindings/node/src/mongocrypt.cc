@@ -560,19 +560,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
         if (options.Has("algorithm")) {
             std::string algorithm = options.Get("algorithm").ToString();
             if (!mongocrypt_ctx_setopt_algorithm(
-                    context.get(), const_cast<char*>(algorithm.c_str()), algorithm.size())) {
-
-                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
-            }
-        }
-
-        if (options.Has("indexType")) {
-            std::string index_type_str = options.Get("indexType").ToString();
-            mongocrypt_index_type_t index_type = strToEnumValue<mongocrypt_index_type_t>(
-                Env(), index_type_str, "indexType",
-                {{"None", MONGOCRYPT_INDEX_TYPE_NONE},
-                 {"Equality", MONGOCRYPT_INDEX_TYPE_EQUALITY}});
-            if (!mongocrypt_ctx_setopt_index_type(context.get(), index_type)) {
+                    context.get(), algorithm.c_str(), algorithm.size())) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }
@@ -589,10 +577,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
 
         if (options.Has("queryType")) {
             std::string query_type_str = options.Get("queryType").ToString();
-            mongocrypt_query_type_t query_type = strToEnumValue<mongocrypt_query_type_t>(
-                Env(), query_type_str, "queryType",
-                {{"Equality", MONGOCRYPT_QUERY_TYPE_EQUALITY}});
-            if (!mongocrypt_ctx_setopt_query_type(context.get(), query_type)) {
+            if (!mongocrypt_ctx_setopt_query_type(context.get(), query_type_str.data(), -1)) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }

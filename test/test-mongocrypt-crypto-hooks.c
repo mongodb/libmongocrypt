@@ -669,7 +669,7 @@ _test_crypto_hooks_explicit_err (_mongocrypt_tester_t *tester)
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
    mongocrypt_binary_t *bin, *key_id;
-   char *deterministic = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic";
+   const char *deterministic = MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR;
 
    call_history = bson_string_new (NULL);
 
