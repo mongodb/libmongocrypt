@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.mongocrypt import MongoCrypt
+from pymongocrypt.mongocrypt import MongoCrypt, RewrapManyDataKeyResult
 from pymongocrypt.state_machine import run_state_machine
 
 
@@ -51,12 +51,11 @@ class ExplicitEncryptOpts(object):
 
 
 class DataKeyOpts(object):
-    def __init__(self, master_key=None, key_alt_names=None):
+    def __init__(self, master_key=None, key_alt_names=None, key_material=None):
         """Options for creating encryption keys.
 
         :Parameters:
-          - `master_key`: Identifies a KMS-specific key used to encrypt the
-            new data key. If the kmsProvider is "local" the `master_key` is
+          - `master_key`: åIf the kmsProvider is "local" the `master_key` is
             not applicable and may be omitted.
 
             If the `kms_provider` is "aws" it is required and has the
@@ -102,9 +101,12 @@ class DataKeyOpts(object):
           - `key_alt_names`: An optional list of bytes suitable to be passed to
             mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON
             encoded document in the form: { "keyAltName" : (BSON UTF8 value) }
+
+          - `key_material`: **Experimental** An optional BinData of 96 bytes to use as custom key material for the data key being created. If key_material is given, the custom key material is used for encrypting and decrypting data. Otherwise, the key material for the new data key is generated from a cryptographically secure random device.
         """
         self.master_key = master_key
         self.key_alt_names = key_alt_names
+        self.key_material = key_material
 
 
 class ExplicitEncrypter(object):
@@ -124,7 +126,7 @@ class ExplicitEncrypter(object):
         self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
     def create_data_key(self, kms_provider, master_key=None,
-                        key_alt_names=None):
+                        key_alt_names=None, key_material=None):
         """Creates a data key used for explicit encryption.
 
         :Parameters:
@@ -135,6 +137,7 @@ class ExplicitEncrypter(object):
             names used to reference a key. If a key is created with alternate
             names, then encryption may refer to the key by the unique
             alternate name instead of by ``_id``.
+          - `key_material`: (optional) See DataKeyOpts.
 
         :Returns:
           The _id of the created data key document.
@@ -147,10 +150,22 @@ class ExplicitEncrypter(object):
                 encoded_names.append(
                     self.callback.bson_encode({'keyAltName': name}))
 
-        opts = DataKeyOpts(master_key, encoded_names)
+        if key_material is not None:
+            key_material = self.callback.bson_encode({'keyMaterial': key_material})
+
+        opts = DataKeyOpts(master_key, encoded_names, key_material)
         with self.mongocrypt.data_key_context(kms_provider, opts) as ctx:
             key = run_state_machine(ctx, self.callback)
         return self.callback.insert_data_key(key)
+
+    def create_key(self, kms_provider, master_key=None,
+                        key_alt_names=None, key_material=None):
+        """Creates a data key used for explicit encryption.
+
+        Alias of :meth:`ExplicitEncrypter.create_data_key`.
+        """
+        return self.create_data_key(kms_provider, master_key=master_key,
+            key_alt_names=key_alt_names, key_material=key_material)
 
     def encrypt(self, value, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
                 query_type=None, contention_factor=None):
@@ -198,6 +213,19 @@ class ExplicitEncrypter(object):
           The decrypted BSON value.
         """
         with self.mongocrypt.explicit_decryption_context(value) as ctx:
+            return run_state_machine(ctx, self.callback)
+
+    def rewrap_many_data_key(self, filter, opts=None):
+        """**Experimental** Decrypts multiple data keys and (re-)encrypts them with a new master_key, or with their current master_key if a new one is not given.
+
+        :Parameters:
+          - `filter`: A document used to filter the data keys.
+          - `opts`: (optional) :class:`RewrapManyDataKeyOpts`.
+
+        :Returns:
+          A :class:`RewrapManyDataKeyResult`.
+        """
+        with self.mongocrypt.rewrap_many_data_key_context(filter, opts) as ctx:
             return run_state_machine(ctx, self.callback)
 
     def close(self):

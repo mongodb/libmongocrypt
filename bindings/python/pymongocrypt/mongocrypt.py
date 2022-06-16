@@ -32,7 +32,6 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  secure_random,
                                  sign_rsaes_pkcs1_v1_5)
 
-
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
                  bypass_query_analysis=False, crypt_shared_lib_path=None,
@@ -266,6 +265,15 @@ class MongoCrypt(object):
             return None
         return ver
 
+    def get_key(self, key_id):
+        if self.__crypt is None:
+            return
+        return
+
+    def get_keys(self):
+        if self.__crypt is None:
+            return []
+
     def close(self):
         """Cleanup resources."""
         if self.__crypt is None:
@@ -343,6 +351,19 @@ class MongoCrypt(object):
         """
         return DataKeyContext(self._create_context(), kms_provider, opts,
                               self.__callback)
+
+    def rewrap_many_data_key_context(self, filter, opts=None):
+        """**Experimental** Creates a context to use for rewrapping many data keys.
+
+        :Parameters:
+          - `filter`: A document used to filter the data keys.
+          - `opts`: (optional) dictionary with an optional "provider" that is the name of a different kms provider, and an optional "master_key" document for the given provider.
+          The master_key document MUST have the fields corresponding to the given provider as specified in master_key. master_key MUST NOT be given if it is not applicable for the given provider.
+
+        :Returns:
+          A :class:`RewrapManyDataKeyContext`.
+        """
+        return RewrapManyDataKeyContext(self._create_context(), filter, opts, self.__callback)
 
 
 class MongoCryptContext(object):
@@ -621,6 +642,12 @@ class DataKeyContext(MongoCryptContext):
                                 ctx, binary.bin):
                             self._raise_from_status()
 
+            if opts.key_material:
+                with MongoCryptBinaryIn(opts.key_material) as binary:
+                    if not lib.mongocrypt_ctx_setopt_key_material(
+                            ctx, binary.bin):
+                        self._raise_from_status()
+
             if not lib.mongocrypt_ctx_datakey_init(ctx):
                 self._raise_from_status()
         except Exception:
@@ -705,3 +732,119 @@ class MongoCryptKmsContext(object):
         finally:
             lib.mongocrypt_status_destroy(status)
         raise exc
+
+
+class RewrapManyDataKeyOpts:
+
+    def __init__(self, provider, master_key=None):
+        """Options given to a `rewrap_many_data_keys` operation.
+
+        :Parameters:
+        `provider`: The name of the ``kms_provider``.
+        ``master_key``: Identifies a KMS-specific key used to encrypt the
+            new data key. The master_key document MUST have the fields corresponding to the given provider as specified in master_key. master_key MUST NOT be given if it is not applicable for the given provider.
+        """
+        self.provider = provider
+        self.master_key = master_key
+
+
+class RewrapManyDataKeyResult:
+
+    def __init__(self, bulk_write_result):
+        """Result object returned by a `rewrap_many_data_keys` operation.
+
+        :Parameters:
+        `bulk_write_result`: the result of the bulk write operation used to update the key vault collection with rewrapped data keys.
+        """
+        self.bulk_write_result = bulk_write_result
+
+
+class RewrapManyDataKeyContext(MongoCryptContext):
+    __slots__ = ()
+
+    def __init__(self, ctx, filter, opts, callback):
+        """Abstracts libmongocrypt's mongocrypt_ctx_t type.
+
+        :Parameters:
+          - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
+            of the underlying mongocrypt_ctx_t.
+          - `filter`: The KMS provider.
+          - `opts`: An optional :class:`RewrapManyDataKeyOpts`.
+          - `callback`: A :class:`MongoCryptCallback`.
+        """
+        key_encryption_key_bson = None
+        if opts is not None:
+            key_encryption_key_bson = callback.bson_encode({ 'provider': opts.provider })
+            # Always make sure `options` is an object below.
+            opts = {}
+
+        if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, key_encryption_key_bson):
+            self._raise_from_status()
+
+        filter_bson = callback.bson_encode(filter)
+
+        if not lib.mongocrypt_ctx_rewrap_many_datakey_init (ctx, filter_bson):
+            self._raise_from_status()
+
+
+    #   const bson = this._bson;
+
+    #   let keyEncryptionKeyBson = undefined;
+    #   if (options) {
+    #     const keyEncryptionKey = Object.assign({ provider: options.provider }, options.masterKey);
+    #     keyEncryptionKeyBson = bson.serialize(keyEncryptionKey);
+    #   } else {
+
+    #     options = {};
+    #   }
+    #   const filterBson = bson.serialize(filter);
+    #   const context = this._mongoCrypt.makeRewrapManyDataKeyContext(
+    #     filterBson,
+    #     keyEncryptionKeyBson
+    #   );
+    #   const stateMachine = new StateMachine({
+    #     bson,
+    #     proxyOptions: this._proxyOptions,
+    #     tlsOptions: this._tlsOptions,
+    #     session: options.session
+    #   });
+
+    #   return promiseOrCallback(callback, cb => {
+    #     stateMachine.execute(this, context, (err, dataKey) => {
+    #       if (err) {
+    #         cb(err, null);
+    #         return;
+    #       }
+
+    #       const dbName = databaseNamespace(this._keyVaultNamespace);
+    #       const collectionName = collectionNamespace(this._keyVaultNamespace);
+    #       const replacements = dataKey.v.map(key => ({
+    #         replaceOne: {
+    #           filter: { _id: key._id },
+    #           replacement: key
+    #         }
+    #       }));
+
+    #       this._keyVaultClient
+    #         .db(dbName)
+    #         .collection(collectionName)
+    #         .bulkWrite(
+    #           replacements,
+    #           {
+    #             writeConcern: { w: 'majority' },
+    #             session: options.session
+    #           },
+    #           (err, result) => {
+    #             if (err) {
+    #               cb(err, null);
+    #               return;
+    #             }
+
+    #             cb(null, {
+    #               bulkWriteResult: result
+    #             });
+    #           }
+    #         );
+    #     });
+    #   });
+    # }
