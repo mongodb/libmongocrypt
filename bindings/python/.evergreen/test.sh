@@ -39,7 +39,9 @@ elif [ "Darwin" = "$(uname -s)" ]; then
              "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3")
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
-    python3 drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
+    ls /opt/mongodbtoolchain/
+    /opt/mongodbtoolchain/v4/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py \
+      --component crypt_shared \
       --version latest --out ../crypt_shared/
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
