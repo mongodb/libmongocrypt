@@ -3,6 +3,8 @@
 ### Fixed
 - Fix handling of create command with $jsonSchema.
 - Fix leak on encrypt or decrypt error.
+## Improved
+- Accept string values for QueryType and IndexType.
 
 ## 1.4.1
 ### Fixed
