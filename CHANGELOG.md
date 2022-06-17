@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.4.1
+### Fixed
+- Add missing MONGOCRYPT_EXPORT to mongocrypt_ctx_provide_kms_providers
 ## 1.5.0-rc1
 ## Fixed
 - Revert new payload for FLE 2.0 find.
