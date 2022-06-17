@@ -1,4 +1,9 @@
 # ChangeLog
+## 1.5.0-rc2
+### Fixed
+- Fix handling of create command with $jsonSchema.
+- Fix leak on encrypt or decrypt error.
+
 ## 1.4.1
 ### Fixed
 - Add missing MONGOCRYPT_EXPORT to mongocrypt_ctx_provide_kms_providers
