@@ -18,6 +18,7 @@ option (ENABLE_PIC
    ON
 )
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
+option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
 
 list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -438,7 +439,6 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static _mongocrypt::libbson_for_static)
    target_include_directories (example-state-machine-static PRIVATE ./src)
 
-   option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
    if (ENABLE_ONLINE_TESTS)
       message ("compiling utilities")
       add_executable (csfle test/util/csfle.c test/util/util.c)
