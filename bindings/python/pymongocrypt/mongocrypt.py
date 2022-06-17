@@ -84,11 +84,14 @@ class MongoCryptOptions(object):
         if not kms_providers:
             raise ValueError('at least one KMS provider must be configured')
 
+        # From https://github.com/mongodb/specifications/blob/cb58ded938146fcbce2b04a91d09f72d66832603/source/unified-test-format/unified-test-format.rst#id24
+        # If a KMS provider is given as an empty document (e.g. kmsProviders: { aws: {} }), drivers MUST configure the KMS provider without credentials to permit testing conditions where KMS credentials are needed.
+
         if 'aws' in kms_providers:
             aws = kms_providers["aws"]
             if not isinstance(aws, dict):
                 raise ValueError("kms_providers['aws'] must be a dict")
-            if "accessKeyId" not in aws or "secretAccessKey" not in aws:
+            if len(aws) and ("accessKeyId" not in aws or "secretAccessKey" not in aws):
                 raise ValueError("kms_providers['aws'] must contain "
                                  "'accessKeyId' and 'secretAccessKey'")
 
@@ -96,7 +99,7 @@ class MongoCryptOptions(object):
             azure = kms_providers["azure"]
             if not isinstance(azure, dict):
                 raise ValueError("kms_providers['azure'] must be a dict")
-            if 'clientId' not in azure or 'clientSecret' not in azure:
+            if len(azure) and ('clientId' not in azure or 'clientSecret' not in azure):
                 raise ValueError("kms_providers['azure'] must contain "
                                  "'clientId' and 'clientSecret'")
 
@@ -104,7 +107,7 @@ class MongoCryptOptions(object):
             gcp = kms_providers['gcp']
             if not isinstance(gcp, dict):
                 raise ValueError("kms_providers['gcp'] must be a dict")
-            if 'email' not in gcp or 'privateKey' not in gcp:
+            if len(gcp) and ('email' not in gcp or 'privateKey' not in gcp):
                 raise ValueError("kms_providers['gcp'] must contain "
                                  "'email' and 'privateKey'")
             if not isinstance(kms_providers['gcp']['privateKey'],
@@ -117,7 +120,7 @@ class MongoCryptOptions(object):
             kmip = kms_providers['kmip']
             if not isinstance(kmip, dict):
                 raise ValueError("kms_providers['kmip'] must be a dict")
-            if 'endpoint' not in kmip:
+            if len(kmip) and 'endpoint' not in kmip:
                 raise ValueError("kms_providers['kmip'] must contain "
                                  "'endpoint'")
             if not isinstance(kms_providers['kmip']['endpoint'],
@@ -129,13 +132,15 @@ class MongoCryptOptions(object):
             local = kms_providers['local']
             if not isinstance(local, dict):
                 raise ValueError("kms_providers['local'] must be a dict")
-            if 'key' not in local:
-                raise ValueError("kms_providers['local'] must contain 'key'")
-            if not isinstance(kms_providers['local']['key'],
-                              (bytes, unicode_type)):
-                raise TypeError("kms_providers['local']['key'] must be an "
-                                "instance of bytes or str (unicode in "
-                                "Python 2)")
+
+            if len(local):
+                if 'key' not in local:
+                    raise ValueError("kms_providers['local'] must contain 'key'")
+                if not isinstance(kms_providers['local']['key'],
+                                  (bytes, unicode_type)):
+                    raise TypeError("kms_providers['local']['key'] must be an "
+                                    "instance of bytes or str (unicode in "
+                                    "Python 2)")
 
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
