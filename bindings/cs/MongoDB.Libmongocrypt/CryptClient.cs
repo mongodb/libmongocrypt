@@ -173,8 +173,6 @@ namespace MongoDB.Libmongocrypt
         {
             ContextSafeHandle handle = Library.mongocrypt_ctx_new(_handle);
 
-            GCHandle gch = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-
             unsafe
             {
                 fixed (byte* p = buffer)
