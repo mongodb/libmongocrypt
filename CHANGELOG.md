@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.4.1
+### Fixed
+- Add missing MONGOCRYPT_EXPORT to mongocrypt_ctx_provide_kms_providers
 ## 1.4.0
 ### New Features
 - Support on-demand credentials with `MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` state and `mongocrypt_ctx_provide_kms_providers`.
