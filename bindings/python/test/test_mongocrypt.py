@@ -26,6 +26,7 @@ from bson.binary import Binary, UuidRepresentation
 from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
+from pymongo.results import BulkWriteResult
 
 sys.path[0:0] = [""]
 
@@ -37,7 +38,8 @@ from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryIn,
                                      MongoCryptBinaryOut,
-                                     MongoCryptOptions)
+                                     MongoCryptOptions,
+                                     RewrapManyDataKeyResult)
 from pymongocrypt.state_machine import MongoCryptCallback
 
 from test import unittest
@@ -364,6 +366,9 @@ class MockCallback(MongoCryptCallback):
     def insert_data_key(self, data_key):
         raise NotImplementedError
 
+    def rewrap_many_data_key(self, data_keys):
+        raise NotImplementedError
+
     def bson_encode(self, doc):
         return bson.encode(doc)
 
@@ -442,6 +447,14 @@ class KeyVaultCallback(MockCallback):
     def insert_data_key(self, data_key):
         self.data_key = data_key
         return bson.decode(data_key, OPTS)['_id']
+
+
+class RewrapMoreDataKeyCallback(MockCallback):
+
+    def rewrap_many_data_key(self, data_keys):
+        keys = bson.decode(data_keys)['v']
+        result = BulkWriteResult({"nModified": len(keys)}, True)
+        return RewrapManyDataKeyResult(result)
 
 
 class TestExplicitEncryption(unittest.TestCase):
@@ -576,6 +589,50 @@ class TestExplicitEncryption(unittest.TestCase):
         encrypter.create_data_key("aws", master_key=master_key)
         self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
+    def test_key_creation(self):
+        mock_key_vault = KeyVaultCallback(
+            kms_reply=http_data('kms-encrypt-reply.txt'))
+        encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        valid_args = [
+            ('local', None, ['first', 'second']),
+            ('aws', {'region': 'region', 'key': 'cmk'}, ['third', 'forth']),
+            # Unicode region and key
+            ('aws', {'region': u'region-unicode', 'key': u'cmk-unicode'}, []),
+            # Endpoint
+            ('aws', {'region': 'region', 'key': 'cmk',
+                     'endpoint': 'kms.us-east-1.amazonaws.com:443'}, []),
+        ]
+        for kms_provider, master_key, key_alt_names in valid_args:
+            key_id = encrypter.create_key(
+                kms_provider, master_key=master_key,
+                key_alt_names=key_alt_names)
+            self.assertIsInstance(key_id, Binary)
+            self.assertEqual(key_id.subtype, 4)
+            data_key = bson.decode(mock_key_vault.data_key, OPTS)
+            # CDRIVER-3277 The order of key_alt_names is not maintained.
+            for name in key_alt_names:
+                self.assertIn(name, data_key['keyAltNames'])
+
+        # Assert that the custom endpoint is passed to libmongocrypt.
+        master_key = {
+            "region": "region",
+            "key": "key",
+            "endpoint": "example.com"
+        }
+        encrypter.create_key("aws", master_key=master_key)
+        self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
+
+    def test_rewrap_many_data_key(self):
+        key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+        index_key_path = 'keys/12345678123498761234123456789012-local-document.json'
+        encrypter = ExplicitEncrypter(RewrapMoreDataKeyCallback(
+            key_docs=[bson_data(key_path), bson_data(index_key_path)]), self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        result = encrypter.rewrap_many_data_key({})
+        assert result.bulk_write_result.modified_count == 2
 
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:

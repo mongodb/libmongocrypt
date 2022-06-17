@@ -772,6 +772,7 @@ class RewrapManyDataKeyContext(MongoCryptContext):
           - `opts`: An optional :class:`RewrapManyDataKeyOpts`.
           - `callback`: A :class:`MongoCryptCallback`.
         """
+        super(RewrapManyDataKeyContext, self).__init__(ctx)
         key_encryption_key_bson = None
         if opts is not None:
             data = dict(provider=opts.provider)
@@ -780,13 +781,16 @@ class RewrapManyDataKeyContext(MongoCryptContext):
             key_encryption_key_bson = callback.bson_encode(data)
 
         try:
-            if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, key_encryption_key_bson):
-                self._raise_from_status()
+            if key_encryption_key_bson:
+                with MongoCryptBinaryIn(key_encryption_key_bson) as binary:
+                    if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, binary.bin):
+                        self._raise_from_status()
 
             filter_bson = callback.bson_encode(filter)
 
-            if not lib.mongocrypt_ctx_rewrap_many_datakey_init(ctx, filter_bson):
-                self._raise_from_status()
+            with MongoCryptBinaryIn(filter_bson) as binary:
+                if not lib.mongocrypt_ctx_rewrap_many_datakey_init(ctx, binary.bin):
+                    self._raise_from_status()
         except Exception:
             # Destroy the context on error.
             self._close()
