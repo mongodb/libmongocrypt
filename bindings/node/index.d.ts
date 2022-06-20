@@ -344,7 +344,7 @@ export interface ClientEncryptionEncryptOptions {
   contentionFactor?: bigint | number;
 
   /** @experimental */
-  queryType?: 'Equality';
+  queryType?: 'equality';
 }
 
 /**
