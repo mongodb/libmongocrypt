@@ -684,7 +684,7 @@ describe('ClientEncryption', function () {
       const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'Equality'
+        queryType: 'equality'
       });
       const findResult = await coll
         .find({
@@ -714,7 +714,7 @@ describe('ClientEncryption', function () {
       const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'Equality'
+        queryType: 'equality'
       });
       const findResult = await coll
         .find({
@@ -733,7 +733,7 @@ describe('ClientEncryption', function () {
       const findPayload2 = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'Equality',
+        queryType: 'equality',
         contentionFactor: 10
       });
       const findResult2 = await coll
