@@ -745,9 +745,8 @@ class RewrapManyDataKeyOpts:
         """Options given to a `rewrap_many_data_keys` operation.
 
         :Parameters:
-        `provider`: The name of the ``kms_provider``.
-        ``master_key``: Identifies a KMS-specific key used to encrypt the
-            new data key. The master_key document MUST have the fields corresponding to the given provider as specified in master_key. master_key MUST NOT be given if it is not applicable for the given provider.
+        `provider`: The new KMS provider to use to encrypt the data keys, or ``None`` to use the current KMS provider(s).
+        ``master_key``: The master key fields corresponding to the new KMS provider when ``provider`` is not ``None``.
         """
         self.provider = provider
         self.master_key = master_key
@@ -773,7 +772,7 @@ class RewrapManyDataKeyContext(MongoCryptContext):
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
-          - `filter`: A document used to filter the data keys.
+          - `filter`: The filter to use when finding data keys to rewrap in the key vault collection..
           - `opts`: An optional :class:`RewrapManyDataKeyOpts`.
           - `callback`: A :class:`MongoCryptCallback`.
         """

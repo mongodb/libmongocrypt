@@ -216,7 +216,7 @@ class ExplicitEncrypter(object):
             return run_state_machine(ctx, self.callback)
 
     def rewrap_many_data_key(self, filter, opts=None):
-        """**Experimental** Decrypts multiple data keys and (re-)encrypts them with a new master_key, or with their current master_key if a new one is not given.
+        """**Experimental** Rewraps zero or more data keys in the key vault collection that match the provided ``filter``.
 
         :Parameters:
           - `filter`: A document used to filter the data keys.
