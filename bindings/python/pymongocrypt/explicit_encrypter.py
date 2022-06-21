@@ -227,7 +227,8 @@ class ExplicitEncrypter(object):
         """
         with self.mongocrypt.rewrap_many_data_key_context(filter, opts) as ctx:
             keys = run_state_machine(ctx, self.callback)
-        return self.callback.rewrap_many_data_key(keys)
+        if keys is not None:
+            return self.callback.rewrap_many_data_key(keys)
 
     def close(self):
         """Cleanup resources."""

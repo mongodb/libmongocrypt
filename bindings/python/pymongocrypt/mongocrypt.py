@@ -742,7 +742,7 @@ class MongoCryptKmsContext(object):
 class RewrapManyDataKeyOpts:
 
     def __init__(self, provider, master_key=None):
-        """Options given to a `rewrap_many_data_keys` operation.
+        """Options given to a `rewrap_many_data_key` operation.
 
         :Parameters:
         `provider`: The new KMS provider to use to encrypt the data keys, or ``None`` to use the current KMS provider(s).
@@ -755,7 +755,7 @@ class RewrapManyDataKeyOpts:
 class RewrapManyDataKeyResult:
 
     def __init__(self, bulk_write_result):
-        """Result object returned by a `rewrap_many_data_keys` operation.
+        """Result object returned by a `rewrap_many_data_key` operation.
 
         :Parameters:
         `bulk_write_result`: the result of the bulk write operation used to update the key vault collection with rewrapped data keys.
