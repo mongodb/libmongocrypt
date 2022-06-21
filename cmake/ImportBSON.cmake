@@ -136,6 +136,8 @@ function (_import_bson)
       set (ENABLE_ZSTD OFF CACHE BOOL "Toggle libzstd for the mongoc subproject (not required by libmongocrypt)")
       # Disable over-alignment of bson types. (May be overridden by the user)
       set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
+      # We don't want the subproject to find libmongocrypt
+      set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
       add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
       # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
