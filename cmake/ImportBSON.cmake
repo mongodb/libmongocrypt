@@ -192,5 +192,9 @@ if (ENABLE_STATIC)
       EXCLUDE_FROM_ALL FALSE
       OUTPUT_NAME bson-static-for-libmongocrypt
       )
-   install (FILES $<TARGET_FILE:bson_static> DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+   install (
+      FILES $<TARGET_FILE:bson_static>
+      DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      RENAME ${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-for-libmongocrypt${CMAKE_STATIC_LIBRARY_SUFFIX}
+      )
 endif ()
