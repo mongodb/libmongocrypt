@@ -19,11 +19,6 @@
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 
-#define ALGORITHM_DETERMINISTIC "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-#define ALGORITHM_DETERMINISTIC_LEN 43
-#define ALGORITHM_RANDOM "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
-#define ALGORITHM_RANDOM_LEN 36
-
 bool
 _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
 {
@@ -251,8 +246,6 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                                  const char *algorithm,
                                  int len)
 {
-   size_t calculated_len;
-
    if (!ctx) {
       return false;
    }
@@ -265,7 +258,8 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       return false;
    }
 
-   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
+   if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE ||
+       ctx->opts.index_type.set) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "already set algorithm");
    }
 
@@ -277,7 +271,7 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "passed null algorithm");
    }
 
-   calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
+   const size_t calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
    if (ctx->crypt->log.trace_enabled) {
       _mongocrypt_log (&ctx->crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
@@ -288,21 +282,29 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                        algorithm);
    }
 
-   if (calculated_len == ALGORITHM_DETERMINISTIC_LEN &&
-       strncmp (algorithm,
-                ALGORITHM_DETERMINISTIC,
-                ALGORITHM_DETERMINISTIC_LEN) == 0) {
+   mstr_view algo_str = mstrv_view_data (algorithm, calculated_len);
+   if (mstr_eq (algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
-      return true;
-   }
-
-   if (calculated_len == ALGORITHM_RANDOM_LEN &&
-       strncmp (algorithm, ALGORITHM_RANDOM, ALGORITHM_RANDOM_LEN) == 0) {
+   } else if (mstr_eq (algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANDOM_STR))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
-      return true;
+   } else if (mstr_eq (algo_str,
+                       mstrv_lit (MONGOCRYPT_ALGORITHM_INDEXED_STR))) {
+      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_EQUALITY;
+      ctx->opts.index_type.set = true;
+   } else if (mstr_eq (algo_str,
+                       mstrv_lit (MONGOCRYPT_ALGORITHM_UNINDEXED_STR))) {
+      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_NONE;
+      ctx->opts.index_type.set = true;
+   } else {
+      char *error = bson_strdup_printf ("unsupported algorithm string \"%.*s\"",
+                                        (int) algo_str.len,
+                                        algo_str.data);
+      _mongocrypt_ctx_fail_w_msg (ctx, error);
+      bson_free (error);
+      return false;
    }
 
-   return _mongocrypt_ctx_fail_w_msg (ctx, "unsupported algorithm");
+   return true;
 }
 
 
@@ -823,6 +825,12 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
 {
    bool has_id = false, has_alt_name = false, has_multiple_alt_names = false;
 
+   // This condition is guarded in setopt_algorithm:
+   BSON_ASSERT (
+      !(ctx->opts.index_type.set &&
+        ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) &&
+      "Both an encryption algorithm and an index_type were set.");
+
    if (ctx->initialized) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "cannot double initialize");
    }
@@ -1072,18 +1080,6 @@ _mongocrypt_ctx_kms_providers (mongocrypt_ctx_t *ctx)
 }
 
 bool
-mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_index_type_t index_type)
-{
-   if (!ctx) {
-      return false;
-   }
-   ctx->opts.index_type.value = index_type;
-   ctx->opts.index_type.set = true;
-   return true;
-}
-
-bool
 mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx,
                                          int64_t contention_factor)
 {
@@ -1109,12 +1105,38 @@ mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
 
 bool
 mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
-                                  mongocrypt_query_type_t query_type)
+                                  const char *query_type,
+                                  int len)
 {
    if (!ctx) {
       return false;
    }
-   ctx->opts.query_type.value = query_type;
-   ctx->opts.query_type.set = true;
+
+   if (ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "Cannot set options after init");
+   }
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+   if (len < -1) {
+      return _mongocrypt_ctx_fail_w_msg (ctx,
+                                         "Invalid query_type string length");
+   }
+   if (!query_type) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "Invalid null query_type string");
+   }
+
+   const size_t calc_len = len == -1 ? strlen (query_type) : (size_t) len;
+   mstr_view qt_str = mstrv_view_data (query_type, calc_len);
+   if (mstr_eq (qt_str, mstrv_lit (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR))) {
+      ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_EQUALITY;
+      ctx->opts.query_type.set = true;
+   } else {
+      char *error = bson_strdup_printf (
+         "Unsupported query_type \"%.*s\"", (int) qt_str.len, qt_str.data);
+      _mongocrypt_ctx_fail_w_msg (ctx, error);
+      bson_free (error);
+      return false;
+   }
    return true;
 }

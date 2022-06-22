@@ -338,8 +338,7 @@ main ()
    key_id = _iter_to_binary (&iter);
    mongocrypt_ctx_setopt_key_id (ctx, key_id);
    bson_destroy (&key_doc);
-   mongocrypt_ctx_setopt_algorithm (
-      ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Random", -1);
+   mongocrypt_ctx_setopt_algorithm (ctx, MONGOCRYPT_ALGORITHM_RANDOM_STR, -1);
 
    wrapped = BCON_NEW ("v", "hello");
    msg = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (wrapped),

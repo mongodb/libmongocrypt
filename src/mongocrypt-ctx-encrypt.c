@@ -2092,10 +2092,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       }
       /* algorithm is FLE 1 only. */
       if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
-         if (ctx->opts.index_type.set) {
-            return _mongocrypt_ctx_fail_w_msg (
-               ctx, "cannot set both algorithm and index type");
-         }
          if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
             return _mongocrypt_ctx_fail_w_msg (
                ctx, "cannot set both algorithm and index key id");

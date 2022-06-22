@@ -28,7 +28,7 @@ class ExplicitEncryptOpts(object):
             'keyAltName'. Must be BSON encoded document in the form:
             { "keyAltName" : (BSON UTF8 value) }
           - `index_key_id` (bytes): the index key id to use for Queryable Encryption.
-          - `query_type` (int): The query type to execute.
+          - `query_type` (str): The query type to execute.
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
 
@@ -40,9 +40,9 @@ class ExplicitEncryptOpts(object):
         self.key_alt_name = key_alt_name
         self.index_key_id = index_key_id
         if query_type is not None:
-            if not isinstance(query_type, int):
+            if not isinstance(query_type, str):
                 raise TypeError(
-                    'query_type must be an int or None, not: %r' % (type(query_type),))
+                    'query_type must be str or None, not: %r' % (type(query_type),))
         self.query_type = query_type
         if contention_factor is not None and not isinstance(contention_factor, int):
             raise TypeError(
@@ -183,7 +183,7 @@ class ExplicitEncrypter(object):
           - `key_alt_name` (string): Identifies a key vault document by
             'keyAltName'.
           - `index_key_id` (bytes): the index key id to use for Queryable Encryption.
-          - `query_type` (int): The query type to execute.
+          - `query_type` (str): The query type to execute.
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
 
