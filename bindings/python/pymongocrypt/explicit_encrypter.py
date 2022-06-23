@@ -167,6 +167,20 @@ class ExplicitEncrypter(object):
         return self.create_data_key(kms_provider, master_key=master_key,
             key_alt_names=key_alt_names, key_material=key_material)
 
+    def rewrap_many_data_key(self, filter, opts=None):
+        """Decrypts and encrypts all matching data keys with a possibly new `master_key` value.
+
+        :Parameters:
+          - `filter`: A document used to filter the data keys.
+          - `opts`: (optional) :class:`RewrapManyDataKeyOpts`.
+
+        :Returns:
+          A :class:`RewrapManyDataKeyResult`.
+        """
+        with self.mongocrypt.rewrap_many_data_key_context(filter, opts) as ctx:
+            keys = run_state_machine(ctx, self.callback)
+        return self.callback.rewrap_many_data_key(keys)
+
     def encrypt(self, value, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
                 query_type=None, contention_factor=None):
         """Encrypts a BSON value.
@@ -214,20 +228,6 @@ class ExplicitEncrypter(object):
         """
         with self.mongocrypt.explicit_decryption_context(value) as ctx:
             return run_state_machine(ctx, self.callback)
-
-    def rewrap_many_data_key(self, filter, opts=None):
-        """**Experimental** Rewraps zero or more data keys in the key vault collection that match the provided ``filter``.
-
-        :Parameters:
-          - `filter`: A document used to filter the data keys.
-          - `opts`: (optional) :class:`RewrapManyDataKeyOpts`.
-
-        :Returns:
-          A :class:`RewrapManyDataKeyResult`.
-        """
-        with self.mongocrypt.rewrap_many_data_key_context(filter, opts) as ctx:
-            keys = run_state_machine(ctx, self.callback)
-        return self.callback.rewrap_many_data_key(keys)
 
     def close(self):
         """Cleanup resources."""
