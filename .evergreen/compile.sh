@@ -16,7 +16,6 @@ set -o errexit
 save_pwd="$(pwd)"
 
 . ./libmongocrypt/.evergreen/setup-env.sh
-. ./libmongocrypt/.evergreen/prep_c_driver_source.sh
 . ./libmongocrypt/.evergreen/build_all.sh
 
 cd ${save_pwd}

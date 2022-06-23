@@ -61,9 +61,9 @@ typedef struct {
 } _state_machine_t;
 
 bool
-_state_machine_run (_state_machine_t *state_machine,
-                    bson_t *result,
-                    bson_error_t *error);
+_csfle_state_machine_run (_state_machine_t *state_machine,
+                          bson_t *result,
+                          bson_error_t *error);
 
 bson_t *
 util_bin_to_bson (mongocrypt_binary_t *bin);

@@ -25,7 +25,9 @@ export DEB_CFLAGS_MAINT_APPEND  = -fPIC
 override_dh_auto_configure:
 	dh_auto_configure -B$(CURDIR)/cmake-build -- \
 	-DBUILD_VERSION=$(DEB_VERSION_UPSTREAM) \
-	-DENABLE_SHARED_BSON=ON \
+	-DUSE_SHARED_LIBBSON=ON \
+	-DMONGOCRYPT_MONGOC_DIR=USE-SYSTEM \
+	-DENABLE_ONLINE_TESTS=OFF \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo
 
 override_dh_auto_build:

@@ -17,19 +17,10 @@ The documentation can be rendered into HTML with doxygen. Run `doxygen ./doc/Dox
 
 ## Building libmongocrypt ##
 
-First build the following dependencies:
-
-1. [The BSON library (part of the C driver)](https://github.com/mongodb/mongo-c-driver), consisting of libbson. Build it from source.
-   ```
-   git clone https://github.com/mongodb/mongo-c-driver
-   cd mongo-c-driver
-   mkdir cmake-build && cd cmake-build
-   cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PREFIX="/path/to/bson-install" ../
-   make -j8 install
-   ```
-   This installs the library and includes into /path/to/bson-install. The prefix can be omitted if you prefer installing in /usr/local.
-
-2. OpenSSL (if on Linux).
+On Windows and macOS, libmongocrypt can use the platform's default encryption
+APIs as its encryption backend. On other systems, one will want to install the
+OpenSSL development libraries, which libmongocrypt will use as the default
+encryption backend.
 
 Then build libmongocrypt:
 
@@ -37,11 +28,12 @@ Then build libmongocrypt:
 git clone https://github.com/mongodb/libmongocrypt
 cd libmongocrypt
 mkdir cmake-build && cd cmake-build
-cmake -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
+cmake ../
 make
 ```
 
-This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the `CMAKE_PREFIX_PATH` must include the path to the BSON library installation directory if it was not the defaults.  Also note that if your project will also dynamically link to the BSON library, you will need to add `-DENABLE_SHARED_BSON=ON` to the `cmake` command line.
+This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build
+directory.
 
 ## Installing libmongocrypt on macOS ##
 Install the latest release of libmongocrypt with the following.
@@ -52,10 +44,8 @@ brew install mongodb/brew/libmongocrypt
 To install the latest unstable development version of libmongocrypt, use `brew install mongodb/brew/libmongocrypt --HEAD`. Do not use the unstable version of libmongocrypt in a production environment.
 
 ## Building libmongocrypt from source on macOS ##
-First install [Homebrew according to its own instructions](https://brew.sh/). Using Homebrew, install the following dependencies.
-```
-brew install mongo-c-driver cmake
-```
+
+First install [Homebrew according to its own instructions](https://brew.sh/).
 
 Install the XCode Command Line Tools:
 ```
@@ -66,7 +56,7 @@ Then clone and build libmongocrypt:
 ```
 git clone https://github.com/mongodb/libmongocrypt.git
 cd libmongocrypt
-cmake -DENABLE_SHARED_BSON=ON .
+cmake .
 cmake --build . --target install
 ```
 

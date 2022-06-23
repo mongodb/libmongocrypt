@@ -64,7 +64,7 @@ cd $pkgconfig_tests_root/libmongocrypt-cmake-build
 PREFIX_PATH="$(system_path $pkgconfig_tests_root/install)"
 INSTALL_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt)"
 SRC_PATH="$(system_path $libmongocrypt_root)"
-$CMAKE -DENABLE_SHARED_BSON=OFF -DENABLE_BUILD_FOR_PPA=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DUSE_SHARED_LIBBSON=OFF -DENABLE_BUILD_FOR_PPA=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 find ${PREFIX_PATH} -name libbson-static-1.0.a -execdir cp {} $(dirname $(find ${INSTALL_PATH} -name libmongocrypt-static.a )) \;
 
@@ -108,7 +108,7 @@ cd $pkgconfig_tests_root/libmongocrypt-cmake-build
 PREFIX_PATH="$(system_path $pkgconfig_tests_root/install)"
 INSTALL_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt)"
 SRC_PATH="$(system_path $libmongocrypt_root)"
-$CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
+$CMAKE -DUSE_SHARED_LIBBSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 # Build example-state-machine, static linking against libmongocrypt
