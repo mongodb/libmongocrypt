@@ -89,13 +89,14 @@ class MongoCryptCallback(ABC):
 
     @abstractmethod
     def rewrap_many_data_key(self, data_keys):
-        """**Experimental** Decrypts multiple data keys and (re-)encrypts them with a new master_key, or with their current master_key if a new one is not given.
+        """Decrypts and encrypts all matching data keys in the key vault with a possibly new `master_key` value.
 
         :Parameters:
-            `data_keys`: The data keys to insert.
+          - `filter`: A document used to filter the data keys.
+          - `opts`: (optional) :class:`RewrapManyDataKeyOpts`.
 
         :Returns:
-           A :class:`RewrapManyDataKeyResult`.
+          A :class:`RewrapManyDataKeyResult`.
         """
         pass
 

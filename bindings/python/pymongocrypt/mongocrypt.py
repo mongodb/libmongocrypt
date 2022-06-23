@@ -270,15 +270,6 @@ class MongoCrypt(object):
             return None
         return ver
 
-    def get_key(self, key_id):
-        if self.__crypt is None:
-            return
-        return
-
-    def get_keys(self):
-        if self.__crypt is None:
-            return []
-
     def close(self):
         """Cleanup resources."""
         if self.__crypt is None:
@@ -358,7 +349,7 @@ class MongoCrypt(object):
                               self.__callback)
 
     def rewrap_many_data_key_context(self, filter, opts=None):
-        """**Experimental** Creates a context to use for rewrapping many data keys.
+        """Creates a context to use for rewrapping many data keys.
 
         :Parameters:
           - `filter`: A document used to filter the data keys.
@@ -732,7 +723,7 @@ class MongoCryptKmsContext(object):
         raise exc
 
 
-class RewrapManyDataKeyOpts:
+class RewrapManyDataKeyOpts(object):
 
     def __init__(self, provider, master_key=None):
         """Options given to a `rewrap_many_data_key` operation.
@@ -745,7 +736,7 @@ class RewrapManyDataKeyOpts:
         self.master_key = master_key
 
 
-class RewrapManyDataKeyResult:
+class RewrapManyDataKeyResult(object):
 
     def __init__(self, bulk_write_result):
         """Result object returned by a `rewrap_many_data_key` operation.

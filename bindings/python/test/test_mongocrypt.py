@@ -589,7 +589,8 @@ class TestExplicitEncryption(unittest.TestCase):
             "key": "key",
             "endpoint": "example.com"
         }
-        encrypter.create_data_key("aws", master_key=master_key)
+        key_material = base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5')
+        encrypter.create_data_key("aws", master_key=master_key, key_material=key_material)
         self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
     def test_key_creation(self):
@@ -626,6 +627,16 @@ class TestExplicitEncryption(unittest.TestCase):
         }
         encrypter.create_key("aws", master_key=master_key)
         self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
+
+    def test_key_creation_bad_key_material(self):
+        mock_key_vault = KeyVaultCallback(
+            kms_reply=http_data('kms-encrypt-reply.txt'))
+        encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        key_material = b'0' * 97
+        with self.assertRaisesRegex(MongoCryptError, "keyMaterial should have length 96, but has length 97"):
+            encrypter.create_key("local", key_material=key_material)
 
     def test_rewrap_many_data_key(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'

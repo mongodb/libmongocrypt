@@ -55,7 +55,8 @@ class DataKeyOpts(object):
         """Options for creating encryption keys.
 
         :Parameters:
-          - `master_key`: åIf the kmsProvider is "local" the `master_key` is
+          - `master_key`: Identifies a KMS-specific key used to encrypt the
+            new data key. If the kmsProvider is "local" the `master_key` is
             not applicable and may be omitted.
 
             If the `kms_provider` is "aws" it is required and has the
@@ -102,7 +103,7 @@ class DataKeyOpts(object):
             mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON
             encoded document in the form: { "keyAltName" : (BSON UTF8 value) }
 
-          - `key_material`: **Experimental** An optional BinData of 96 bytes to use as custom key material for the data key being created. If key_material is given, the custom key material is used for encrypting and decrypting data. Otherwise, the key material for the new data key is generated from a cryptographically secure random device.
+          - `key_material`: An optional binary value of 96 bytes to use as custom key material for the data key being created. If ``key_material`` is given, the custom key material is used for encrypting and decrypting data. Otherwise, the key material for the new data key is generated from a cryptographically secure random device.
         """
         self.master_key = master_key
         self.key_alt_names = key_alt_names
@@ -132,12 +133,12 @@ class ExplicitEncrypter(object):
         :Parameters:
           - `kms_provider`: The KMS provider to use. Supported values are
             "aws", "azure", "gcp", "kmip", and "local".
-          - `master_key`: See DataKeyOpts.
+          - `master_key`: See class:`DataKeyOpts`.
           - `key_alt_names` (optional): An optional list of string alternate
             names used to reference a key. If a key is created with alternate
             names, then encryption may refer to the key by the unique
             alternate name instead of by ``_id``.
-          - `key_material`: (optional) See DataKeyOpts.
+          - `key_material`: (optional) See class:`DataKeyOpts`.
 
         :Returns:
           The _id of the created data key document.
