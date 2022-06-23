@@ -87,7 +87,7 @@ class TestMongoCryptOptions(unittest.TestCase):
         schema_map = bson_data('schema-map.json')
         valid = [
             ({'local': {'key': b'1' * 96}}, None),
-            ({'aws', {}}, None),
+            ({'aws': {}}, None),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
