@@ -87,6 +87,7 @@ class TestMongoCryptOptions(unittest.TestCase):
         schema_map = bson_data('schema-map.json')
         valid = [
             ({'local': {'key': b'1' * 96}}, None),
+            ({'aws', {}}, None),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
@@ -95,6 +96,7 @@ class TestMongoCryptOptions(unittest.TestCase):
               'local': {'key': b'1' * 96}}, None),
             ({'local': {'key': to_base64(b'1' * 96)}}, None),
             ({'local': {'key': Binary(b'1' * 96)}}, None),
+            ({'gcp': {}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
                       'privateKey': b'1'}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
@@ -120,7 +122,6 @@ class TestMongoCryptOptions(unittest.TestCase):
                 ValueError, 'at least one KMS provider must be configured'):
             MongoCryptOptions({})
         for invalid_kms_providers in [
-                {'aws': {}},
                 {'aws': {'accessKeyId': 'foo'}},
                 {'aws': {'secretAccessKey': 'foo'}}]:
             with self.assertRaisesRegex(
@@ -589,7 +590,7 @@ class TestExplicitEncryption(unittest.TestCase):
             "key": "key",
             "endpoint": "example.com"
         }
-        key_material = base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5')
+        key_material = Binary(base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5'))
         encrypter.create_data_key("aws", master_key=master_key, key_material=key_material)
         self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
@@ -634,7 +635,7 @@ class TestExplicitEncryption(unittest.TestCase):
         encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
-        key_material = b'0' * 97
+        key_material = Binary(b'0' * 97)
         with self.assertRaisesRegex(MongoCryptError, "keyMaterial should have length 96, but has length 97"):
             encrypter.create_key("local", key_material=key_material)
 
