@@ -4375,6 +4375,36 @@ _test_encrypt_macos_no_ctr (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+// Assert an error is returned when credentials requested in
+// MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state are not satisfied.
+static void
+_test_encrypt_per_ctx_credentials_not_passed (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}"));
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+   ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                 ctx, TEST_BSON ("{'aws': {}}")), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_FAILS (
+      mongocrypt_ctx_mongo_feed (
+         ctx, TEST_FILE ("./test/example/key-document.json")),
+      ctx, "client not configured with KMS provider necessary");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -4434,4 +4464,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_fle2_create);
    INSTALL_TEST (_test_fle2_create_bypass_query_analysis);
    INSTALL_TEST (_test_encrypt_macos_no_ctr);
+   INSTALL_TEST (_test_encrypt_per_ctx_credentials_not_passed);
 }
