@@ -91,48 +91,51 @@ class MongoCryptOptions(object):
             aws = kms_providers["aws"]
             if not isinstance(aws, dict):
                 raise ValueError("kms_providers['aws'] must be a dict")
-            if len(aws) and ("accessKeyId" not in aws or "secretAccessKey" not in aws):
-                raise ValueError("kms_providers['aws'] must contain "
-                                 "'accessKeyId' and 'secretAccessKey'")
+            if len(aws):
+                if "accessKeyId" not in aws or "secretAccessKey" not in aws:
+                    raise ValueError("kms_providers['aws'] must contain "
+                                     "'accessKeyId' and 'secretAccessKey'")
 
         if 'azure' in kms_providers:
             azure = kms_providers["azure"]
             if not isinstance(azure, dict):
                 raise ValueError("kms_providers['azure'] must be a dict")
-            if len(azure) and ('clientId' not in azure or 'clientSecret' not in azure):
-                raise ValueError("kms_providers['azure'] must contain "
-                                 "'clientId' and 'clientSecret'")
+            if len(azure):
+                if 'clientId' not in azure or 'clientSecret' not in azure:
+                    raise ValueError("kms_providers['azure'] must contain "
+                                     "'clientId' and 'clientSecret'")
 
         if 'gcp' in kms_providers:
             gcp = kms_providers['gcp']
             if not isinstance(gcp, dict):
                 raise ValueError("kms_providers['gcp'] must be a dict")
-            if len(gcp) and ('email' not in gcp or 'privateKey' not in gcp):
-                raise ValueError("kms_providers['gcp'] must contain "
-                                 "'email' and 'privateKey'")
-            if not isinstance(kms_providers['gcp']['privateKey'],
-                              (bytes, unicode_type)):
-                raise TypeError("kms_providers['gcp']['privateKey'] must "
-                                "be an instance of bytes or str "
-                                "(unicode in Python 2)")
+            if len(gcp):
+                if 'email' not in gcp or 'privateKey' not in gcp:
+                    raise ValueError("kms_providers['gcp'] must contain "
+                                     "'email' and 'privateKey'")
+                if not isinstance(kms_providers['gcp']['privateKey'],
+                                  (bytes, unicode_type)):
+                    raise TypeError("kms_providers['gcp']['privateKey'] must "
+                                    "be an instance of bytes or str "
+                                    "(unicode in Python 2)")
 
         if 'kmip' in kms_providers:
             kmip = kms_providers['kmip']
             if not isinstance(kmip, dict):
                 raise ValueError("kms_providers['kmip'] must be a dict")
-            if len(kmip) and 'endpoint' not in kmip:
-                raise ValueError("kms_providers['kmip'] must contain "
-                                 "'endpoint'")
-            if not isinstance(kms_providers['kmip']['endpoint'],
-                              (str, unicode_type)):
-                raise TypeError("kms_providers['kmip']['endpoint'] must "
-                                "be an instance of str")
+            if len(kmip):
+                if 'endpoint' not in kmip:
+                    raise ValueError("kms_providers['kmip'] must contain "
+                                     "'endpoint'")
+                if not isinstance(kms_providers['kmip']['endpoint'],
+                                  (str, unicode_type)):
+                    raise TypeError("kms_providers['kmip']['endpoint'] must "
+                                    "be an instance of str")
 
         if 'local' in kms_providers:
             local = kms_providers['local']
             if not isinstance(local, dict):
                 raise ValueError("kms_providers['local'] must be a dict")
-
             if len(local):
                 if 'key' not in local:
                     raise ValueError("kms_providers['local'] must contain 'key'")
@@ -738,11 +741,12 @@ class RewrapManyDataKeyOpts(object):
 
 class RewrapManyDataKeyResult(object):
 
-    def __init__(self, bulk_write_result):
+    def __init__(self, bulk_write_result=None):
         """Result object returned by a `rewrap_many_data_key` operation.
 
         :Parameters:
-        `bulk_write_result`: the result of the bulk write operation used to update the key vault collection with rewrapped data keys.
+        `bulk_write_result`: The result of the bulk write operation used to update the key vault collection with rewrapped data keys.   If ``rewrap_many_data_key()`` does not find any matching keys to rewrap, no bulk write operation will be executed and this field
+        will be unset.
         """
         self.bulk_write_result = bulk_write_result
 
