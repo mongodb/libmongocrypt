@@ -450,7 +450,7 @@ class KeyVaultCallback(MockCallback):
         return bson.decode(data_key, OPTS)['_id']
 
 
-class RewrapMoreDataKeyCallback(MockCallback):
+class RewrapManyDataKeyCallback(MockCallback):
 
     def rewrap_many_data_key(self, data_keys):
         keys = bson.decode(data_keys)['v']
@@ -642,7 +642,7 @@ class TestExplicitEncryption(unittest.TestCase):
     def test_rewrap_many_data_key(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
         index_key_path = 'keys/12345678123498761234123456789012-local-document.json'
-        encrypter = ExplicitEncrypter(RewrapMoreDataKeyCallback(
+        encrypter = ExplicitEncrypter(RewrapManyDataKeyCallback(
             key_docs=[bson_data(key_path), bson_data(index_key_path)]), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 

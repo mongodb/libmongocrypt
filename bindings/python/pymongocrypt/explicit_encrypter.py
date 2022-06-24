@@ -103,7 +103,12 @@ class DataKeyOpts(object):
             mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON
             encoded document in the form: { "keyAltName" : (BSON UTF8 value) }
 
-          - `key_material`: An optional binary value of 96 bytes to use as custom key material for the data key being created. If ``key_material`` is given, the custom key material is used for encrypting and decrypting data. Otherwise, the key material for the new data key is generated from a cryptographically secure random device.
+          - `key_material`: An optional binary value of 96 bytes to use as
+            custom key material for the data key being created. If
+            ``key_material`` is given, the custom key material is used for
+            encrypting and decrypting data. Otherwise, the key material for the
+            new data key is generated from a cryptographically secure random
+            device.
         """
         self.master_key = master_key
         self.key_alt_names = key_alt_names
@@ -158,15 +163,6 @@ class ExplicitEncrypter(object):
         with self.mongocrypt.data_key_context(kms_provider, opts) as ctx:
             key = run_state_machine(ctx, self.callback)
         return self.callback.insert_data_key(key)
-
-    def create_key(self, kms_provider, master_key=None,
-                        key_alt_names=None, key_material=None):
-        """Creates a data key used for explicit encryption.
-
-        Alias of :meth:`ExplicitEncrypter.create_data_key`.
-        """
-        return self.create_data_key(kms_provider, master_key=master_key,
-            key_alt_names=key_alt_names, key_material=key_material)
 
     def rewrap_many_data_key(self, filter, opts=None):
         """Decrypts and encrypts all matching data keys with a possibly new `master_key` value.

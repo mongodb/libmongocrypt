@@ -356,8 +356,12 @@ class MongoCrypt(object):
 
         :Parameters:
           - `filter`: A document used to filter the data keys.
-          - `opts`: (optional) dictionary with an optional "provider" that is the name of a different kms provider, and an optional "master_key" document for the given provider.
-          The master_key document MUST have the fields corresponding to the given provider as specified in master_key. master_key MUST NOT be given if it is not applicable for the given provider.
+          - `opts`: (optional) dictionary with an optional "provider" that is
+            the name of a different kms provider, and an optional "master_key"
+            document for the given provider.
+            The master_key document MUST have the fields corresponding to the
+            given provider as specified in master_key. master_key MUST NOT be
+            given if it is not applicable for the given provider.
 
         :Returns:
           A :class:`RewrapManyDataKeyContext`.
@@ -732,8 +736,10 @@ class RewrapManyDataKeyOpts(object):
         """Options given to a `rewrap_many_data_key` operation.
 
         :Parameters:
-        `provider`: The new KMS provider to use to encrypt the data keys, or ``None`` to use the current KMS provider(s).
-        ``master_key``: The master key fields corresponding to the new KMS provider when ``provider`` is not ``None``.
+          - `provider`: The new KMS provider to use to encrypt the data keys,
+            or ``None`` to use the current KMS provider(s).
+          - ``master_key``: The master key fields corresponding to the new KMS
+            provider when ``provider`` is not ``None``.
         """
         self.provider = provider
         self.master_key = master_key
@@ -745,8 +751,11 @@ class RewrapManyDataKeyResult(object):
         """Result object returned by a `rewrap_many_data_key` operation.
 
         :Parameters:
-        `bulk_write_result`: The result of the bulk write operation used to update the key vault collection with rewrapped data keys.   If ``rewrap_many_data_key()`` does not find any matching keys to rewrap, no bulk write operation will be executed and this field
-        will be unset.
+          - `bulk_write_result`: The result of the bulk write operation used to
+            update the key vault collection with rewrapped data keys.   If
+          - ``rewrap_many_data_key()`` does not find any matching keys to
+            rewrap, no bulk write operation will be executed and this field
+            will be unset.
         """
         self.bulk_write_result = bulk_write_result
 
