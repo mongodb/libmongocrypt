@@ -176,8 +176,7 @@ class ExplicitEncrypter(object):
           A dictionary with an optional ``bulk_write_result`` field.
         """
         with self.mongocrypt.rewrap_many_data_key_context(filter, provider, master_key) as ctx:
-            keys = run_state_machine(ctx, self.callback)
-        return self.callback.rewrap_many_data_key(keys)
+            return run_state_machine(ctx, self.callback)
 
     def encrypt(self, value, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
                 query_type=None, contention_factor=None):

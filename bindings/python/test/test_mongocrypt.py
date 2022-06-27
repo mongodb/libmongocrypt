@@ -21,6 +21,7 @@ import sys
 import uuid
 
 import bson
+from bson.raw_bson import RawBSONDocument
 from bson import json_util
 from bson.binary import Binary, UuidRepresentation
 from bson.codec_options import CodecOptions
@@ -364,9 +365,6 @@ class MockCallback(MongoCryptCallback):
     def insert_data_key(self, data_key):
         raise NotImplementedError
 
-    def rewrap_many_data_key(self, data_keys):
-        raise NotImplementedError
-
     def bson_encode(self, doc):
         return bson.encode(doc)
 
@@ -445,14 +443,6 @@ class KeyVaultCallback(MockCallback):
     def insert_data_key(self, data_key):
         self.data_key = data_key
         return bson.decode(data_key, OPTS)['_id']
-
-
-class RewrapManyDataKeyCallback(MockCallback):
-
-    def rewrap_many_data_key(self, data_keys):
-        keys = bson.decode(data_keys)['v']
-        result = BulkWriteResult({"nModified": len(keys)}, True)
-        return dict(bulk_write_result=result)
 
 
 class TestExplicitEncryption(unittest.TestCase):
@@ -604,12 +594,13 @@ class TestExplicitEncryption(unittest.TestCase):
     def test_rewrap_many_data_key(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
         index_key_path = 'keys/12345678123498761234123456789012-local-document.json'
-        encrypter = ExplicitEncrypter(RewrapManyDataKeyCallback(
+        encrypter = ExplicitEncrypter(MockCallback(
             key_docs=[bson_data(key_path), bson_data(index_key_path)]), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
         result = encrypter.rewrap_many_data_key({})
-        assert result['bulk_write_result'].modified_count == 2
+        raw_doc = RawBSONDocument(result)
+        assert len(raw_doc['v']) == 2
 
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:

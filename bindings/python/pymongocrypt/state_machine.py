@@ -88,18 +88,6 @@ class MongoCryptCallback(ABC):
         pass
 
     @abstractmethod
-    def rewrap_many_data_key(self, data_keys):
-        """Decrypts and encrypts all matching data keys in the key vault with a possibly new `master_key` value.
-
-        :Parameters:
-          - `data_keys` - The result of a ``rewrap_many_data_key`` operation.
-
-        :Returns:
-          A dictionary with an optional ``bulk_write_result`` field.
-        """
-        pass
-
-    @abstractmethod
     def bson_encode(self, doc):
         """Encode a document to BSON.
 
