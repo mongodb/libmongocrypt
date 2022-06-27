@@ -96,7 +96,7 @@ class MongoCryptCallback(ABC):
           - `opts`: (optional) :class:`RewrapManyDataKeyOpts`.
 
         :Returns:
-          A :class:`RewrapManyDataKeyResult`.
+          A dictionary with an optional ``bulk_write_result`` field.
         """
         pass
 

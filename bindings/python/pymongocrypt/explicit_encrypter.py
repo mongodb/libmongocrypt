@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.mongocrypt import MongoCrypt, RewrapManyDataKeyResult
+from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.state_machine import run_state_machine
 
 
@@ -172,7 +172,7 @@ class ExplicitEncrypter(object):
           - `opts`: (optional) :class:`RewrapManyDataKeyOpts`.
 
         :Returns:
-          A :class:`RewrapManyDataKeyResult`.
+          A dictionary with an optional ``bulk_write_result`` field.
         """
         with self.mongocrypt.rewrap_many_data_key_context(filter, opts) as ctx:
             keys = run_state_machine(ctx, self.callback)

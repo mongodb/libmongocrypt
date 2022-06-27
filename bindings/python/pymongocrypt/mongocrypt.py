@@ -737,21 +737,6 @@ class RewrapManyDataKeyOpts(object):
         self.master_key = master_key
 
 
-class RewrapManyDataKeyResult(object):
-
-    def __init__(self, bulk_write_result=None):
-        """Result object returned by a `rewrap_many_data_key` operation.
-
-        :Parameters:
-          - `bulk_write_result`: The result of the bulk write operation used to
-            update the key vault collection with rewrapped data keys.   If
-          - ``rewrap_many_data_key()`` does not find any matching keys to
-            rewrap, no bulk write operation will be executed and this field
-            will be unset.
-        """
-        self.bulk_write_result = bulk_write_result
-
-
 class RewrapManyDataKeyContext(MongoCryptContext):
     __slots__ = ()
 

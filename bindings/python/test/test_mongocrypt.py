@@ -38,8 +38,7 @@ from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryIn,
                                      MongoCryptBinaryOut,
-                                     MongoCryptOptions,
-                                     RewrapManyDataKeyResult)
+                                     MongoCryptOptions)
 from pymongocrypt.state_machine import MongoCryptCallback
 
 from test import unittest
@@ -453,7 +452,7 @@ class RewrapManyDataKeyCallback(MockCallback):
     def rewrap_many_data_key(self, data_keys):
         keys = bson.decode(data_keys)['v']
         result = BulkWriteResult({"nModified": len(keys)}, True)
-        return RewrapManyDataKeyResult(result)
+        return dict(bulk_write_result=result)
 
 
 class TestExplicitEncryption(unittest.TestCase):
@@ -610,7 +609,7 @@ class TestExplicitEncryption(unittest.TestCase):
         self.addCleanup(encrypter.close)
 
         result = encrypter.rewrap_many_data_key({})
-        assert result.bulk_write_result.modified_count == 2
+        assert result['bulk_write_result'].modified_count == 2
 
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:
