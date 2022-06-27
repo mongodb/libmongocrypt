@@ -164,17 +164,18 @@ class ExplicitEncrypter(object):
             key = run_state_machine(ctx, self.callback)
         return self.callback.insert_data_key(key)
 
-    def rewrap_many_data_key(self, filter, opts=None):
+    def rewrap_many_data_key(self, filter, provider=None, master_key=None):
         """Decrypts and encrypts all matching data keys with a possibly new `master_key` value.
 
         :Parameters:
           - `filter`: A document used to filter the data keys.
-          - `opts`: (optional) :class:`RewrapManyDataKeyOpts`.
+          - `provider`: (optional) The name of a different kms provider.
+          - `master_key`: Optional document for the given provider.
 
         :Returns:
           A dictionary with an optional ``bulk_write_result`` field.
         """
-        with self.mongocrypt.rewrap_many_data_key_context(filter, opts) as ctx:
+        with self.mongocrypt.rewrap_many_data_key_context(filter, provider, master_key) as ctx:
             keys = run_state_machine(ctx, self.callback)
         return self.callback.rewrap_many_data_key(keys)
 

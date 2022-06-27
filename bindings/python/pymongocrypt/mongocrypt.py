@@ -343,22 +343,21 @@ class MongoCrypt(object):
         return DataKeyContext(self._create_context(), kms_provider, opts,
                               self.__callback)
 
-    def rewrap_many_data_key_context(self, filter, opts=None):
+    def rewrap_many_data_key_context(self, filter, provider, master_key):
         """Creates a context to use for rewrapping many data keys.
 
         :Parameters:
           - `filter`: A document used to filter the data keys.
-          - `opts`: (optional) dictionary with an optional "provider" that is
-            the name of a different kms provider, and an optional "master_key"
-            document for the given provider.
-            The master_key document MUST have the fields corresponding to the
+          - `provider`: (optional) The name of a different kms provider.
+          - `master_key`: Optional document for the given provider.
+            MUST have the fields corresponding to the
             given provider as specified in master_key. master_key MUST NOT be
             given if it is not applicable for the given provider.
 
         :Returns:
           A :class:`RewrapManyDataKeyContext`.
         """
-        return RewrapManyDataKeyContext(self._create_context(), filter, opts, self.__callback)
+        return RewrapManyDataKeyContext(self._create_context(), filter, provider, master_key, self.__callback)
 
 
 class MongoCryptContext(object):
@@ -722,40 +721,26 @@ class MongoCryptKmsContext(object):
         raise exc
 
 
-class RewrapManyDataKeyOpts(object):
-
-    def __init__(self, provider, master_key=None):
-        """Options given to a `rewrap_many_data_key` operation.
-
-        :Parameters:
-          - `provider`: The new KMS provider to use to encrypt the data keys,
-            or ``None`` to use the current KMS provider(s).
-          - ``master_key``: The master key fields corresponding to the new KMS
-            provider when ``provider`` is not ``None``.
-        """
-        self.provider = provider
-        self.master_key = master_key
-
-
 class RewrapManyDataKeyContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, filter, opts, callback):
+    def __init__(self, ctx, filter, provider, master_key, callback):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
           - `filter`: The filter to use when finding data keys to rewrap in the key vault collection..
-          - `opts`: An optional :class:`RewrapManyDataKeyOpts`.
+          - `provider`: (optional) The name of a different kms provider.
+          - `master_key`: Optional document for the given provider.
           - `callback`: A :class:`MongoCryptCallback`.
         """
         super(RewrapManyDataKeyContext, self).__init__(ctx)
         key_encryption_key_bson = None
-        if opts is not None:
-            data = dict(provider=opts.provider)
-            if opts.master_key:
-                data.update(opts.master_key)
+        if provider is not None:
+            data = dict(provider=provider)
+            if master_key:
+                data.update(master_key)
             key_encryption_key_bson = callback.bson_encode(data)
 
         try:
