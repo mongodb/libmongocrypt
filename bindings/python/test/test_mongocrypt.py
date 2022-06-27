@@ -32,7 +32,7 @@ sys.path[0:0] = [""]
 
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
-from pymongocrypt.compat import unicode_type, PY3
+from pymongocrypt.compat import unicode_type, safe_bytearray_or_base64, PY3
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
@@ -87,7 +87,6 @@ class TestMongoCryptOptions(unittest.TestCase):
         schema_map = bson_data('schema-map.json')
         valid = [
             ({'local': {'key': b'1' * 96}}, None),
-            ({'aws': {}}, None),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
@@ -96,7 +95,6 @@ class TestMongoCryptOptions(unittest.TestCase):
               'local': {'key': b'1' * 96}}, None),
             ({'local': {'key': to_base64(b'1' * 96)}}, None),
             ({'local': {'key': Binary(b'1' * 96)}}, None),
-            ({'gcp': {}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
                       'privateKey': b'1'}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
@@ -590,54 +588,19 @@ class TestExplicitEncryption(unittest.TestCase):
             "key": "key",
             "endpoint": "example.com"
         }
-        key_material = Binary(base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5'))
+        key_material = safe_bytearray_or_base64(base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5'))
         encrypter.create_data_key("aws", master_key=master_key, key_material=key_material)
         self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
-    def test_key_creation(self):
+    def test_data_key_creation_bad_key_material(self):
         mock_key_vault = KeyVaultCallback(
             kms_reply=http_data('kms-encrypt-reply.txt'))
         encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
-        valid_args = [
-            ('local', None, ['first', 'second']),
-            ('aws', {'region': 'region', 'key': 'cmk'}, ['third', 'forth']),
-            # Unicode region and key
-            ('aws', {'region': u'region-unicode', 'key': u'cmk-unicode'}, []),
-            # Endpoint
-            ('aws', {'region': 'region', 'key': 'cmk',
-                     'endpoint': 'kms.us-east-1.amazonaws.com:443'}, []),
-        ]
-        for kms_provider, master_key, key_alt_names in valid_args:
-            key_id = encrypter.create_key(
-                kms_provider, master_key=master_key,
-                key_alt_names=key_alt_names)
-            self.assertIsInstance(key_id, Binary)
-            self.assertEqual(key_id.subtype, 4)
-            data_key = bson.decode(mock_key_vault.data_key, OPTS)
-            # CDRIVER-3277 The order of key_alt_names is not maintained.
-            for name in key_alt_names:
-                self.assertIn(name, data_key['keyAltNames'])
-
-        # Assert that the custom endpoint is passed to libmongocrypt.
-        master_key = {
-            "region": "region",
-            "key": "key",
-            "endpoint": "example.com"
-        }
-        encrypter.create_key("aws", master_key=master_key)
-        self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
-
-    def test_key_creation_bad_key_material(self):
-        mock_key_vault = KeyVaultCallback(
-            kms_reply=http_data('kms-encrypt-reply.txt'))
-        encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
-        self.addCleanup(encrypter.close)
-
-        key_material = Binary(b'0' * 97)
+        key_material = safe_bytearray_or_base64(b'0' * 97)
         with self.assertRaisesRegex(MongoCryptError, "keyMaterial should have length 96, but has length 97"):
-            encrypter.create_key("local", key_material=key_material)
+            encrypter.create_data_key("local", key_material=key_material)
 
     def test_rewrap_many_data_key(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'

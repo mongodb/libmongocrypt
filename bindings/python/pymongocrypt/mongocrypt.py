@@ -84,66 +84,58 @@ class MongoCryptOptions(object):
         if not kms_providers:
             raise ValueError('at least one KMS provider must be configured')
 
-        # From https://github.com/mongodb/specifications/blob/cb58ded938146fcbce2b04a91d09f72d66832603/source/unified-test-format/unified-test-format.rst#id24
-        # If a KMS provider is given as an empty document (e.g. kmsProviders: { aws: {} }), drivers MUST configure the KMS provider without credentials to permit testing conditions where KMS credentials are needed.
-
         if 'aws' in kms_providers:
             aws = kms_providers["aws"]
             if not isinstance(aws, dict):
                 raise ValueError("kms_providers['aws'] must be a dict")
-            if len(aws):
-                if "accessKeyId" not in aws or "secretAccessKey" not in aws:
-                    raise ValueError("kms_providers['aws'] must contain "
-                                     "'accessKeyId' and 'secretAccessKey'")
+            if "accessKeyId" not in aws or "secretAccessKey" not in aws:
+                raise ValueError("kms_providers['aws'] must contain "
+                                 "'accessKeyId' and 'secretAccessKey'")
 
         if 'azure' in kms_providers:
             azure = kms_providers["azure"]
             if not isinstance(azure, dict):
                 raise ValueError("kms_providers['azure'] must be a dict")
-            if len(azure):
-                if 'clientId' not in azure or 'clientSecret' not in azure:
-                    raise ValueError("kms_providers['azure'] must contain "
-                                     "'clientId' and 'clientSecret'")
+            if 'clientId' not in azure or 'clientSecret' not in azure:
+                raise ValueError("kms_providers['azure'] must contain "
+                                 "'clientId' and 'clientSecret'")
 
         if 'gcp' in kms_providers:
             gcp = kms_providers['gcp']
             if not isinstance(gcp, dict):
                 raise ValueError("kms_providers['gcp'] must be a dict")
-            if len(gcp):
-                if 'email' not in gcp or 'privateKey' not in gcp:
-                    raise ValueError("kms_providers['gcp'] must contain "
-                                     "'email' and 'privateKey'")
-                if not isinstance(kms_providers['gcp']['privateKey'],
-                                  (bytes, unicode_type)):
-                    raise TypeError("kms_providers['gcp']['privateKey'] must "
-                                    "be an instance of bytes or str "
-                                    "(unicode in Python 2)")
+            if 'email' not in gcp or 'privateKey' not in gcp:
+                raise ValueError("kms_providers['gcp'] must contain "
+                                 "'email' and 'privateKey'")
+            if not isinstance(kms_providers['gcp']['privateKey'],
+                              (bytes, unicode_type)):
+                raise TypeError("kms_providers['gcp']['privateKey'] must "
+                                "be an instance of bytes or str "
+                                "(unicode in Python 2)")
 
         if 'kmip' in kms_providers:
             kmip = kms_providers['kmip']
             if not isinstance(kmip, dict):
                 raise ValueError("kms_providers['kmip'] must be a dict")
-            if len(kmip):
-                if 'endpoint' not in kmip:
-                    raise ValueError("kms_providers['kmip'] must contain "
-                                     "'endpoint'")
-                if not isinstance(kms_providers['kmip']['endpoint'],
-                                  (str, unicode_type)):
-                    raise TypeError("kms_providers['kmip']['endpoint'] must "
-                                    "be an instance of str")
+            if 'endpoint' not in kmip:
+                raise ValueError("kms_providers['kmip'] must contain "
+                                 "'endpoint'")
+            if not isinstance(kms_providers['kmip']['endpoint'],
+                              (str, unicode_type)):
+                raise TypeError("kms_providers['kmip']['endpoint'] must "
+                                "be an instance of str")
 
         if 'local' in kms_providers:
             local = kms_providers['local']
             if not isinstance(local, dict):
                 raise ValueError("kms_providers['local'] must be a dict")
-            if len(local):
-                if 'key' not in local:
-                    raise ValueError("kms_providers['local'] must contain 'key'")
-                if not isinstance(kms_providers['local']['key'],
-                                  (bytes, unicode_type)):
-                    raise TypeError("kms_providers['local']['key'] must be an "
-                                    "instance of bytes or str (unicode in "
-                                    "Python 2)")
+            if 'key' not in local:
+                raise ValueError("kms_providers['local'] must contain 'key'")
+            if not isinstance(kms_providers['local']['key'],
+                              (bytes, unicode_type)):
+                raise TypeError("kms_providers['local']['key'] must be an "
+                                "instance of bytes or str (unicode in "
+                                "Python 2)")
 
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
