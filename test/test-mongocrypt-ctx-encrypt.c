@@ -2365,10 +2365,10 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
                  ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
                     ctx, TEST_BSON ("{'v': 'value123'}")),
                  ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
 
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);

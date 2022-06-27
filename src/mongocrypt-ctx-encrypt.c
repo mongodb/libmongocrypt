@@ -1643,11 +1643,10 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    if (ctx->opts.contention_factor.set) {
       marking.fle2.maxContentionCounter = ctx->opts.contention_factor.value;
-   } else {
-      // DEFAULT_CONTENTION_FACTOR must match the default on the server.
-      // See https://github.com/mongodb/mongo/blob/ddff02d34d8a9b2a999267e5c94dcc405eb7fc42/src/mongo/crypto/encryption_fields.idl#L66
-      #define DEFAULT_CONTENTION_FACTOR 4
-      marking.fle2.maxContentionCounter = DEFAULT_CONTENTION_FACTOR;
+   } else if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "contention factor required for indexed algorithm");
+      goto fail;
    }
 
    /* Convert marking to ciphertext. */
@@ -2134,6 +2133,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
        !mc_validate_contention (ctx->opts.contention_factor.value,
                                 ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
+   }
+
+   if (ctx->opts.index_type.set &&
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY &&
+       !ctx->opts.contention_factor.set) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "contention factor is required for indexed algorithm");
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
