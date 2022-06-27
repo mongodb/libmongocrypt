@@ -1643,6 +1643,11 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    if (ctx->opts.contention_factor.set) {
       marking.fle2.maxContentionCounter = ctx->opts.contention_factor.value;
+   } else {
+      // DEFAULT_CONTENTION_FACTOR must match the default on the server.
+      // See https://github.com/mongodb/mongo/blob/ddff02d34d8a9b2a999267e5c94dcc405eb7fc42/src/mongo/crypto/encryption_fields.idl#L66
+      #define DEFAULT_CONTENTION_FACTOR 4
+      marking.fle2.maxContentionCounter = DEFAULT_CONTENTION_FACTOR;
    }
 
    /* Convert marking to ciphertext. */
