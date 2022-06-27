@@ -526,8 +526,8 @@ class TestExplicitEncryption(unittest.TestCase):
         val = {'v': 'value123'}
         encoded_val = bson.encode(val)
         for kwargs in [
-            dict(algorithm='Indexed'),
-            dict(algorithm='Indexed', query_type='equality'),
+            dict(algorithm='Indexed', contention_factor=0),
+            dict(algorithm='Indexed', query_type='equality', contention_factor=0),
             dict(algorithm='Indexed', contention_factor=100),
             dict(algorithm='Unindexed'),
         ]:

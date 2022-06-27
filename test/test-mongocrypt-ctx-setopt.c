@@ -802,6 +802,18 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       EX_ENCRYPT_INIT_FAILS (bson, "cannot set query type with no index type");
    }
 
+   /* Contention factor is required for "Indexed" algorithm. */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
+      EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
+   }
+
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
 }
