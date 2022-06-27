@@ -598,7 +598,7 @@ class TestExplicitEncryption(unittest.TestCase):
         encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
-        key_material = safe_bytearray_or_base64(b'0' * 97)
+        key_material = Binary(b'0' * 97)
         with self.assertRaisesRegex(MongoCryptError, "keyMaterial should have length 96, but has length 97"):
             encrypter.create_data_key("local", key_material=key_material)
 
