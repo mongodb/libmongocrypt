@@ -38,8 +38,11 @@ function collectionNamespace(ns) {
 class MongoCryptError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'MongoCryptError';
     Error.captureStackTrace(this, this.constructor);
+  }
+
+  get name() {
+    return 'MongoCryptError';
   }
 }
 
