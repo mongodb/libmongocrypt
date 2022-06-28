@@ -173,7 +173,7 @@ class ExplicitEncrypter(object):
           - `master_key`: Optional document for the given provider.
 
         :Returns:
-          A dictionary with an optional ``bulk_write_result`` field.
+          A binary document with the rewrap data.
         """
         with self.mongocrypt.rewrap_many_data_key_context(filter, provider, master_key) as ctx:
             return run_state_machine(ctx, self.callback)
