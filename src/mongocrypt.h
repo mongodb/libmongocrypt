@@ -1270,7 +1270,7 @@ mongocrypt_ctx_provide_kms_providers (
  *
  * If @p ctx was initialized with @ref mongocrypt_ctx_rewrap_many_datakey_init,
  * then this BSON has the form:
- *   { "v": [{ _id: ..., keyMaterial: ..., masterKey: ... }, ...] }
+ *   { "v": [{ "_id": ..., "keyMaterial": ..., "masterKey": ... }, ...] }
  * where each BSON document in the array contains the updated fields of a
  * rewrapped datakey to be bulk-updated into the key vault collection.
  * Note: the updateDate field should be updated using the $currentDate operator.
