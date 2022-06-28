@@ -366,7 +366,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
 
    if (!_mongocrypt_key_broker_decrypted_key_by_id (
           kb, indexKeyId, &indexKey)) {
-      CLIENT_ERR ("unable to retreive key");
+      CLIENT_ERR ("unable to retrieve key");
       goto fail;
    }
 
@@ -658,7 +658,7 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
 
    if (!_mongocrypt_key_broker_decrypted_key_by_id (
           kb, &placeholder->user_key_id, &user_key)) {
-      CLIENT_ERR ("unable to retreive key");
+      CLIENT_ERR ("unable to retrieve key");
       goto fail;
    }
 
