@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 10),
                libssl-dev,
                pkg-config,
                libbson-dev
-Standards-Version: 4.6.0
+Standards-Version: 4.6.1
 Section: libs
 Homepage: https://github.com/mongodb/libmongocrypt
 
