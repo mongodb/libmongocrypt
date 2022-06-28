@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.5.0
+## Fixed
+- Update to use new payload for FLE 2.0 find. 
+- Require contention factor.
 ## 1.5.0-rc2
 ### Fixed
 - Fix handling of create command with $jsonSchema.
