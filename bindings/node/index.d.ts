@@ -337,13 +337,13 @@ export interface ClientEncryptionEncryptOptions {
    */
   keyAltName?: string;
 
-  /** @beta Public Technical Preview: The id of the index key. */
+  /** @experimental Public Technical Preview: The id of the index key. */
   indexKeyId?: Binary;
 
-  /** @beta Public Technical Preview: The contention factor. */
+  /** @experimental Public Technical Preview: The contention factor. */
   contentionFactor?: bigint | number;
 
-  /** @beta Public Technical Preview: The qwuery type supported */
+  /** @experimental Public Technical Preview: The qwuery type supported */
   queryType?: 'equality';
 }
 
