@@ -28,7 +28,17 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
       --version latest --out ../crypt_shared/
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
-    PYTHONS=("python"   # Python 2.7 from brew
+    if [[ $(uname -m) == 'arm64' ]]; then
+      PYTHONS=("python3"  # Python 3 from brew
+             "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.5/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
+             "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3")
+    else
+      PYTHONS=("python"   # Python 2.7 from brew
              "python3"  # Python 3 from brew
              "/System/Library/Frameworks/Python.framework/Versions/2.7/bin/python"
              "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
@@ -38,11 +48,16 @@ elif [ "Darwin" = "$(uname -s)" ]; then
              "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
              "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3")
+    fi
+
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
-    ls /opt/mongodbtoolchain/
-    /opt/mongodbtoolchain/v4/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py \
+    createvirtualenv python3 .venv
+    python -m pip install certifi
+    python drivers-evergreen-tools/.evergreen/mongodl.py \
       --component crypt_shared \
       --version latest --out ../crypt_shared/
+    deactivate
+    rm -rf .venv
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
     PYTHONS=("/opt/python/2.7/bin/python"
