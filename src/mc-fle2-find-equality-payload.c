@@ -32,6 +32,7 @@ mc_FLE2FindEqualityPayload_cleanup (mc_FLE2FindEqualityPayload_t *payload)
    _mongocrypt_buffer_cleanup (&payload->edcDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->escDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->eccDerivedToken);
+   _mongocrypt_buffer_cleanup (&payload->serverEncryptionToken);
 }
 
 #define IF_FIELD(Name)                                               \
@@ -85,7 +86,8 @@ mc_FLE2FindEqualityPayload_parse (mc_FLE2FindEqualityPayload_t *out,
                                   mongocrypt_status_t *status)
 {
    bson_iter_t iter;
-   bool has_d = false, has_s = false, has_c = false, has_cm = false;
+   bool has_d = false, has_s = false, has_c = false, has_e = false,
+        has_cm = false;
 
    mc_FLE2FindEqualityPayload_init (out);
    if (!bson_validate (in, BSON_VALIDATE_NONE, NULL) ||
@@ -101,6 +103,7 @@ mc_FLE2FindEqualityPayload_parse (mc_FLE2FindEqualityPayload_t *out,
       PARSE_BINARY (d, edcDerivedToken)
       PARSE_BINARY (s, escDerivedToken)
       PARSE_BINARY (c, eccDerivedToken)
+      PARSE_BINARY (e, serverEncryptionToken)
       IF_FIELD (cm)
       {
          if (!BSON_ITER_HOLDS_INT64 (&iter)) {
@@ -115,6 +118,7 @@ mc_FLE2FindEqualityPayload_parse (mc_FLE2FindEqualityPayload_t *out,
    CHECK_HAS (d);
    CHECK_HAS (s);
    CHECK_HAS (c);
+   CHECK_HAS (e);
    CHECK_HAS (cm);
 
    return true;
@@ -136,6 +140,8 @@ mc_FLE2FindEqualityPayload_serialize (
    IUPS_APPEND_BINDATA ("d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
    IUPS_APPEND_BINDATA ("s", BSON_SUBTYPE_BINARY, payload->escDerivedToken);
    IUPS_APPEND_BINDATA ("c", BSON_SUBTYPE_BINARY, payload->eccDerivedToken);
+   IUPS_APPEND_BINDATA (
+      "e", BSON_SUBTYPE_BINARY, payload->serverEncryptionToken);
    if (!BSON_APPEND_INT64 (out, "cm", payload->maxContentionCounter)) {
       return false;
    }

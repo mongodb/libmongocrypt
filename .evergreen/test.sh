@@ -23,8 +23,6 @@ if [ "Windows_NT" == "$OS" ]; then
     BIN_DIR=./cmake-build/RelWithDebInfo
     KMS_BIN_DIR=./cmake-build/kms-message/RelWithDebInfo
     NOCRYPTO_BIN_DIR=./cmake-build-nocrypto/RelWithDebInfo
-    # Make sure libbson dll is in the path
-    export PATH=${BSON_INSTALL_PREFIX}/bin:$PATH
 fi
 
 echo "Running kms-message tests."

@@ -637,7 +637,7 @@ _validate_csfle_singleton (mongocrypt_t *crypt, _loaded_csfle found)
    bool okay = true;
    if (!found.okay) {
       // There is one loaded, but we failed to find that same library. Error:
-      CLIENT_ERR ("An existing CSFLE libary is loaded by the application at "
+      CLIENT_ERR ("An existing CSFLE library is loaded by the application at "
                   "[%s], but the current call to mongocrypt_init() failed to "
                   "find that same library.",
                   existing_path.data);

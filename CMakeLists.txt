@@ -12,18 +12,23 @@ endif ()
 
 set (CMAKE_C_STANDARD 99)
 
-option (ENABLE_SHARED_BSON "Dynamically link libbson (default is static)" OFF)
 option (ENABLE_STATIC "Install static libraries" ON)
 option (ENABLE_PIC
    "Enables building of position independent code for static library components."
    ON
 )
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
-if (ENABLE_SHARED_BSON AND ENABLE_BUILD_FOR_PPA)
+option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
+
+list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
+include (GNUInstallDirs)
+
+include (ImportBSON)
+
+if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
    message (FATAL_ERROR "PPA build requires static linking to libbson")
 endif ()
-
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 # Enable a higher warning level and warnings-as-errors
 include (MongoC-Warnings)
@@ -36,40 +41,11 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       )
 endif ()
 
-# Attempt to find libbson by new package name.
-find_package (bson-1.0 1.11 QUIET)
-if (bson-1.0_FOUND)
-   message ("--   libbson found version \"${bson-1.0_VERSION}\"")
-   set (BSON_TARGET mongo::bson_static)
-   if (ENABLE_SHARED_BSON)
-      set (BSON_TARGET mongo::bson_shared)
-   endif ()
-elseif (ENABLE_SHARED_BSON)
-   # Try old package name for libbson.
-   find_package (libbson-1.0 1.11 REQUIRED)
-   message ("--   libbson found version \"${BSON_VERSION}\"")
-   message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
-   message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
-   set (BSON_TARGET ${BSON_LIBRARIES})
-   set (BSON_INCLUDES ${BSON_INCLUDE_DIRS})
-   set (BSON_DEFINITIONS ${BSON_DEFINITIONS})
-else ()
-   # Try old package name for libbson.
-   find_package (libbson-static-1.0 1.11 REQUIRED)
-   message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
-   message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
-   message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
-   set (BSON_TARGET ${BSON_STATIC_LIBRARIES})
-   set (BSON_INCLUDES ${BSON_STATIC_INCLUDE_DIRS})
-   set (BSON_DEFINITIONS ${BSON_STATIC_DEFINITIONS})
-endif ()
-
-find_package ( Threads REQUIRED )
+find_package (Threads REQUIRED)
 
 add_subdirectory (bindings/cs)
 
 include (GenerateExportHeader)
-include (GNUInstallDirs)
 
 include (CTest)
 
@@ -215,7 +191,6 @@ target_include_directories (
    PRIVATE
       "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src"
       "${CMAKE_CURRENT_SOURCE_DIR}/src"
-      ${BSON_INCLUDES}
    PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
    )
@@ -228,19 +203,19 @@ else ()
    message ("Detected byte order: little endian")
    list (APPEND MONGOCRYPT_DEFINITIONS MONGOCRYPT_LITTLE_ENDIAN)
 endif ()
-target_compile_definitions (mongocrypt PRIVATE ${BSON_DEFINITIONS} ${MONGOCRYPT_DEFINITIONS})
+target_compile_definitions (mongocrypt PRIVATE ${MONGOCRYPT_DEFINITIONS})
 target_link_libraries (
    mongocrypt
    PRIVATE
-      ${BSON_TARGET}
-      ${CMAKE_THREAD_LIBS_INIT}
+      _mongocrypt::libbson_for_shared
+      Threads::Threads
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
       ${CMAKE_DL_LIBS}
    )
 
-if (NOT ENABLE_SHARED_BSON)
+if (NOT USE_SHARED_LIBBSON)
    if (APPLE)
       message ("compiling with unexported symbols list to hide bson symbols")
       set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.txt\"")
@@ -267,14 +242,12 @@ target_include_directories (
    PRIVATE
       "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src"
       "${CMAKE_CURRENT_SOURCE_DIR}/src"
-      ${BSON_INCLUDES}
    PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
    )
 target_compile_definitions (
    mongocrypt_static
    PRIVATE
-      ${BSON_DEFINITIONS}
       ${MONGOCRYPT_DEFINITIONS}
    PUBLIC
       MONGOCRYPT_STATIC_DEFINE
@@ -283,7 +256,7 @@ target_compile_definitions (
 target_link_libraries (
    mongocrypt_static
    PRIVATE
-      ${BSON_TARGET}
+      _mongocrypt::libbson_for_static
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
@@ -352,7 +325,7 @@ if (BUILD_TESTING)
 
    set_target_properties(stubbed-crypt_shared stubbed-crypt_shared-2 PROPERTIES
       INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src"
-      LINK_LIBRARIES "mongo::bson_static"
+      LINK_LIBRARIES _mongocrypt::libbson_for_static
       COMPILE_FEATURES cxx_std_11
       PREFIX ""
       )
@@ -424,10 +397,9 @@ set (TEST_MONGOCRYPT_SOURCES
 # Define test-mongocrypt
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
-target_link_libraries (test-mongocrypt PRIVATE mongocrypt_static)
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_link_libraries (test-mongocrypt PRIVATE ${BSON_TARGET} mongo::mlib)
-target_include_directories (test-mongocrypt PRIVATE ${BSON_INCLUDES} "${CMAKE_CURRENT_LIST_DIR}/test")
+target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mlib)
+target_include_directories (test-mongocrypt PRIVATE "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE
    ${BSON_DEFINITIONS}
    ${MONGOCRYPT_DEFINITIONS}
@@ -451,7 +423,7 @@ endforeach ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable (csfle-markup src/csfle-markup.cpp)
-   target_link_libraries (csfle-markup PRIVATE mongocrypt_static ${BSON_TARGET} mongo::mlib)
+   target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson_for_static mongo::mlib)
    target_compile_features (csfle-markup PRIVATE cxx_std_20)
 endif ()
 
@@ -459,27 +431,22 @@ endif ()
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    # Define example-state-machine
    add_executable (example-state-machine test/example-state-machine.c)
-   target_link_libraries (example-state-machine PRIVATE mongocrypt ${BSON_TARGET})
-   target_include_directories (example-state-machine PRIVATE ${BSON_INCLUDES})
-   target_compile_definitions (example-state-machine PRIVATE ${BSON_DEFINITIONS})
+   target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared)
    target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
 
    # Define example-state-machine-static
    add_executable (example-state-machine-static test/example-state-machine.c)
-   target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static ${BSON_TARGET})
-   target_include_directories (example-state-machine-static PRIVATE ${BSON_INCLUDES})
-   target_compile_definitions (example-state-machine-static PRIVATE ${BSON_DEFINITIONS})
+   target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static _mongocrypt::libbson_for_static)
    target_include_directories (example-state-machine-static PRIVATE ./src)
 
-   find_package (mongoc-1.0)
-   if (ENABLE_ONLINE_TESTS AND mongoc-1.0_FOUND)
+   if (ENABLE_ONLINE_TESTS)
       message ("compiling utilities")
       add_executable (csfle test/util/csfle.c test/util/util.c)
       target_link_libraries (csfle PRIVATE mongocrypt_static)
       target_include_directories (csfle PRIVATE ${CMAKE_BINARY_DIR}/src)
       target_include_directories (csfle PRIVATE ./src)
       target_include_directories (csfle PRIVATE ./kms-message/src)
-      target_link_libraries (csfle PRIVATE mongo::mongoc_shared)
+      target_link_libraries (csfle PRIVATE _mongocrypt::mongoc)
    endif ()
 endif ()
 
@@ -515,7 +482,7 @@ set (PROJECT_DESCRIPTION "The libmongocrypt client-side field level encryption l
 if (NOT ENABLE_BUILD_FOR_PPA)
    set (PKG_CONFIG_STATIC_REQUIRES "libbson-static-1.0")
 endif ()
-if (ENABLE_SHARED_BSON)
+if (USE_SHARED_LIBBSON)
    set (PKG_CONFIG_REQUIRES "libbson-1.0")
    set (PKG_CONFIG_STATIC_REQUIRES "libbson-1.0")
 endif ()
@@ -562,14 +529,9 @@ write_basic_package_version_file (
    COMPATIBILITY AnyNewerVersion
 )
 
-export (EXPORT mongocrypt_targets
-   NAMESPACE mongo::
-   FILE "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt_targets.cmake"
-)
-
 configure_file (cmake/mongocrypt-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config.cmake"
-   COPYONLY
+   @ONLY
 )
 
 install (EXPORT mongocrypt_targets
@@ -580,7 +542,7 @@ install (EXPORT mongocrypt_targets
 
 install (
    FILES
-      cmake/mongocrypt-config.cmake
+      "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config.cmake"
       "${CMAKE_CURRENT_BINARY_DIR}/mongocrypt/mongocrypt-config-version.cmake"
    DESTINATION
       ${CMAKE_INSTALL_LIBDIR}/cmake/mongocrypt

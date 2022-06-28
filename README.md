@@ -17,19 +17,10 @@ The documentation can be rendered into HTML with doxygen. Run `doxygen ./doc/Dox
 
 ## Building libmongocrypt ##
 
-First build the following dependencies:
-
-1. [The BSON library (part of the C driver)](https://github.com/mongodb/mongo-c-driver), consisting of libbson. Build it from source.
-   ```
-   git clone https://github.com/mongodb/mongo-c-driver
-   cd mongo-c-driver
-   mkdir cmake-build && cd cmake-build
-   cmake -DENABLE_MONGOC=OFF -DCMAKE_INSTALL_PREFIX="/path/to/bson-install" ../
-   make -j8 install
-   ```
-   This installs the library and includes into /path/to/bson-install. The prefix can be omitted if you prefer installing in /usr/local.
-
-2. OpenSSL (if on Linux).
+On Windows and macOS, libmongocrypt can use the platform's default encryption
+APIs as its encryption backend. On other systems, one will want to install the
+OpenSSL development libraries, which libmongocrypt will use as the default
+encryption backend.
 
 Then build libmongocrypt:
 
@@ -37,11 +28,12 @@ Then build libmongocrypt:
 git clone https://github.com/mongodb/libmongocrypt
 cd libmongocrypt
 mkdir cmake-build && cd cmake-build
-cmake -DCMAKE_PREFIX_PATH="/path/to/bson-install" ../
+cmake ../
 make
 ```
 
-This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build directory. Note, the `CMAKE_PREFIX_PATH` must include the path to the BSON library installation directory if it was not the defaults.  Also note that if your project will also dynamically link to the BSON library, you will need to add `-DENABLE_SHARED_BSON=ON` to the `cmake` command line.
+This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build
+directory.
 
 ## Installing libmongocrypt on macOS ##
 Install the latest release of libmongocrypt with the following.
@@ -52,10 +44,8 @@ brew install mongodb/brew/libmongocrypt
 To install the latest unstable development version of libmongocrypt, use `brew install mongodb/brew/libmongocrypt --HEAD`. Do not use the unstable version of libmongocrypt in a production environment.
 
 ## Building libmongocrypt from source on macOS ##
-First install [Homebrew according to its own instructions](https://brew.sh/). Using Homebrew, install the following dependencies.
-```
-brew install mongo-c-driver cmake
-```
+
+First install [Homebrew according to its own instructions](https://brew.sh/).
 
 Install the XCode Command Line Tools:
 ```
@@ -66,7 +56,7 @@ Then clone and build libmongocrypt:
 ```
 git clone https://github.com/mongodb/libmongocrypt.git
 cd libmongocrypt
-cmake -DENABLE_SHARED_BSON=ON .
+cmake .
 cmake --build . --target install
 ```
 
@@ -125,9 +115,9 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 Do the following when releasing:
 - Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
+   - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Create a branch named `rx.y`.
    - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project to set `Branch Name` to `rx.y`.
-   - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"`.
 - Commit, create a new git tag, like `1.0.0-rc123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
@@ -186,7 +176,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.4/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.5/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -205,7 +195,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.4/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.5/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -224,7 +214,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.4/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.5/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -247,7 +237,7 @@ sudo rpm --import https://www.mongodb.org/static/pgp/libmongocrypt.asc
 Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):
 
 ```
-sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/1.4/x86_64" libmongocrypt
+sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/1.5/x86_64" libmongocrypt
 ```
 
 Finally, install the libmongocrypt packages:

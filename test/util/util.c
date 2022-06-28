@@ -87,6 +87,9 @@ _log_to_stdout (mongocrypt_log_level_t level,
    case MONGOCRYPT_LOG_LEVEL_TRACE:
       printf ("TRACE");
       break;
+   default:
+      printf ("?????");
+      break;
    }
    printf (" %s\n", message);
 }
@@ -151,9 +154,9 @@ _status_to_error (mongocrypt_status_t *status, bson_error_t *error)
  * Returns false if error, and sets @error.
  */
 bool
-_ctx_check_error (mongocrypt_ctx_t *ctx,
-                  bson_error_t *error,
-                  bool error_expected)
+_test_ctx_check_error (mongocrypt_ctx_t *ctx,
+                       bson_error_t *error,
+                       bool error_expected)
 {
    mongocrypt_status_t *status;
 
@@ -175,9 +178,9 @@ _ctx_check_error (mongocrypt_ctx_t *ctx,
 }
 
 bool
-_kms_ctx_check_error (mongocrypt_kms_ctx_t *kms_ctx,
-                      bson_error_t *error,
-                      bool error_expected)
+_test_kms_ctx_check_error (mongocrypt_kms_ctx_t *kms_ctx,
+                           bson_error_t *error,
+                           bool error_expected)
 {
    mongocrypt_status_t *status;
 
@@ -191,30 +194,6 @@ _kms_ctx_check_error (mongocrypt_kms_ctx_t *kms_ctx,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                       "generic error from libmongocrypt KMS operation");
-      mongocrypt_status_destroy (status);
-      return false;
-   }
-   mongocrypt_status_destroy (status);
-   return true;
-}
-
-bool
-_crypt_check_error (mongocrypt_t *crypt,
-                    bson_error_t *error,
-                    bool error_expected)
-{
-   mongocrypt_status_t *status;
-
-   status = mongocrypt_status_new ();
-   if (!mongocrypt_status (crypt, status)) {
-      _status_to_error (status, error);
-      mongocrypt_status_destroy (status);
-      return false;
-   } else if (error_expected) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "generic error from libmongocrypt handle");
       mongocrypt_status_destroy (status);
       return false;
    }
@@ -256,7 +235,7 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine,
     * provided by mongocrypt_ctx_mongo_op */
    filter_bin = mongocrypt_binary_new ();
    if (!mongocrypt_ctx_mongo_op (state_machine->ctx, filter_bin)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -296,7 +275,7 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine,
       collinfo_bin = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (collinfo_bson), collinfo_bson->len);
       if (!mongocrypt_ctx_mongo_feed (state_machine->ctx, collinfo_bin)) {
-         _ctx_check_error (state_machine->ctx, error, true);
+         _test_ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       }
    } else if (mongoc_cursor_error (cursor, error)) {
@@ -305,7 +284,7 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine,
 
    /* 3. Call mongocrypt_ctx_mongo_done */
    if (!mongocrypt_ctx_mongo_done (state_machine->ctx)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -334,7 +313,7 @@ _state_need_mongo_markings (_state_machine_t *state_machine,
    mongocryptd_cmd_bin = mongocrypt_binary_new ();
 
    if (!mongocrypt_ctx_mongo_op (state_machine->ctx, mongocryptd_cmd_bin)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -381,13 +360,13 @@ _state_need_mongo_markings (_state_machine_t *state_machine,
    mongocryptd_reply_bin = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (&reply), reply.len);
    if (!mongocrypt_ctx_mongo_feed (state_machine->ctx, mongocryptd_reply_bin)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
    /* 3. Call mongocrypt_ctx_mongo_done. */
    if (!mongocrypt_ctx_mongo_done (state_machine->ctx)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -416,12 +395,12 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
     * provided by mongocrypt_ctx_mongo_op. */
    filter_bin = mongocrypt_binary_new ();
    if (!mongocrypt_ctx_mongo_op (state_machine->ctx, filter_bin)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
    if (!_bin_to_static_bson (filter_bin, &filter_bson, error)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -465,7 +444,7 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
       key_bin = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (key_bson), key_bson->len);
       if (!mongocrypt_ctx_mongo_feed (state_machine->ctx, key_bin)) {
-         _ctx_check_error (state_machine->ctx, error, true);
+         _test_ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       }
    }
@@ -476,7 +455,7 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
 
    /* 3. Call mongocrypt_ctx_mongo_done. */
    if (!mongocrypt_ctx_mongo_done (state_machine->ctx)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -587,59 +566,14 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
                             mongoc_iovec_t *iov,
                             size_t iovcnt,
                             int32_t timeout_msec,
-                            bson_error_t *error)
-{
-   size_t total_bytes = 0;
-   size_t i;
-   ssize_t r;
-
-   for (i = 0; i < iovcnt; i++) {
-      total_bytes += iov[i].iov_len;
-   }
-
-   r = mongoc_stream_writev (stream, iov, iovcnt, timeout_msec);
-
-   if (r < 0) {
-      if (error) {
-         char buf[128];
-         char *errstr;
-
-         errstr = bson_strerror_r (errno, buf, sizeof (buf));
-
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "Failure during socket delivery: %s (%d)",
-                         errstr,
-                         errno);
-      }
-
-      return false;
-   }
-
-   if (r != (ssize_t) total_bytes) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure to send all requested bytes (only sent: %" PRIu64
-                      "/%" PRId64 " in %dms) during socket delivery",
-                      (uint64_t) r,
-                      (int64_t) total_bytes,
-                      timeout_msec);
-
-      return false;
-   }
-
-   return true;
-}
+                            bson_error_t *error);
 
 static bool
-_state_need_kms_credentials (
-   _state_machine_t *state_machine,
-   bson_error_t *error)
+_state_need_kms_credentials (_state_machine_t *state_machine,
+                             bson_error_t *error)
 {
    bson_t empty = BSON_INITIALIZER;
-   mongocrypt_binary_t* bin = util_bson_to_bin (&empty);
+   mongocrypt_binary_t *bin = util_bson_to_bin (&empty);
    mongocrypt_ctx_provide_kms_providers (state_machine->ctx, bin);
    mongocrypt_binary_destroy (bin);
    return true;
@@ -665,12 +599,12 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       mongocrypt_binary_destroy (http_req);
       http_req = mongocrypt_binary_new ();
       if (!mongocrypt_kms_ctx_message (kms_ctx, http_req)) {
-         _kms_ctx_check_error (kms_ctx, error, true);
+         _test_kms_ctx_check_error (kms_ctx, error, true);
          goto fail;
       }
 
       if (!mongocrypt_kms_ctx_endpoint (kms_ctx, &endpoint)) {
-         _kms_ctx_check_error (kms_ctx, error, true);
+         _test_kms_ctx_check_error (kms_ctx, error, true);
          goto fail;
       }
 
@@ -741,9 +675,10 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          }
 
          mongocrypt_binary_destroy (http_reply);
-         http_reply = mongocrypt_binary_new_from_data (buf, read_ret);
+         http_reply =
+            mongocrypt_binary_new_from_data (buf, (uint32_t) read_ret);
          if (!mongocrypt_kms_ctx_feed (kms_ctx, http_reply)) {
-            _kms_ctx_check_error (kms_ctx, error, true);
+            _test_kms_ctx_check_error (kms_ctx, error, true);
             goto fail;
          }
       }
@@ -751,12 +686,12 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    }
    /* When NULL is returned by mongocrypt_ctx_next_kms_ctx, this can either be
     * an error or end-of-list. */
-   if (!_ctx_check_error (state_machine->ctx, error, false)) {
+   if (!_test_ctx_check_error (state_machine->ctx, error, false)) {
       goto fail;
    }
 
    if (!mongocrypt_ctx_kms_done (state_machine->ctx)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -781,7 +716,7 @@ _state_ready (_state_machine_t *state_machine,
    bson_init (result);
    result_bin = mongocrypt_binary_new ();
    if (!mongocrypt_ctx_finalize (state_machine->ctx, result_bin)) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _test_ctx_check_error (state_machine->ctx, error, true);
       goto fail;
    }
 
@@ -836,9 +771,9 @@ _state_string (mongocrypt_ctx_state_t state)
  * --------------------------------------------------------------------------
  */
 bool
-_state_machine_run (_state_machine_t *state_machine,
-                    bson_t *result,
-                    bson_error_t *error)
+_csfle_state_machine_run (_state_machine_t *state_machine,
+                          bson_t *result,
+                          bson_error_t *error)
 {
    bool ret = false;
    mongocrypt_binary_t *bin = NULL;
@@ -853,7 +788,7 @@ _state_machine_run (_state_machine_t *state_machine,
       switch (mongocrypt_ctx_state (state_machine->ctx)) {
       default:
       case MONGOCRYPT_CTX_ERROR:
-         _ctx_check_error (state_machine->ctx, error, true);
+         _test_ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
          if (!_state_need_mongo_collinfo (state_machine, error)) {
