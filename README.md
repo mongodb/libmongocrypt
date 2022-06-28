@@ -115,9 +115,9 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 Do the following when releasing:
 - Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
+   - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Create a branch named `rx.y`.
    - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project to set `Branch Name` to `rx.y`.
-   - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"`.
 - Commit, create a new git tag, like `1.0.0-rc123`, and push.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change). For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/2336123fbc1f4f5894f49df5e6320040987bb0d3) and its parent commit.
