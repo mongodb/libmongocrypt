@@ -343,7 +343,7 @@ export interface ClientEncryptionEncryptOptions {
   /** @experimental Public Technical Preview: The contention factor. */
   contentionFactor?: bigint | number;
 
-  /** @experimental Public Technical Preview: The qwuery type supported */
+  /** @experimental Public Technical Preview: The query type supported */
   queryType?: 'equality';
 }
 
