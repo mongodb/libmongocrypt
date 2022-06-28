@@ -225,7 +225,6 @@ describe('cryptoCallbacks', function () {
 
             const encryptOptions = {
               keyId: dataKey,
-              indexKeyId: dataKey,
               algorithm: 'Indexed'
             };
 
