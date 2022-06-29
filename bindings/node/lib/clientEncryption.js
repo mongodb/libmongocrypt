@@ -285,9 +285,17 @@ module.exports = function (modules) {
           const dbName = databaseNamespace(this._keyVaultNamespace);
           const collectionName = collectionNamespace(this._keyVaultNamespace);
           const replacements = dataKey.v.map(key => ({
-            replaceOne: {
+            updateOne: {
               filter: { _id: key._id },
-              replacement: key
+              update: {
+                $set: {
+                  masterKey: key.masterKey,
+                  keyMaterial: key.keyMaterial
+                },
+                $currentDate: {
+                  updateDate: true
+                }
+              }
             }
           }));
 
