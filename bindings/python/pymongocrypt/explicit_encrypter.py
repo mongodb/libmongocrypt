@@ -152,7 +152,7 @@ class ExplicitEncrypter(object):
             key = run_state_machine(ctx, self.callback)
         return self.callback.insert_data_key(key)
 
-    def encrypt(self, value, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
+    def encrypt(self, value, algorithm, key_id=None, key_alt_name=None,
                 query_type=None, contention_factor=None):
         """Encrypts a BSON value.
 
@@ -167,7 +167,6 @@ class ExplicitEncrypter(object):
             key. For example, ``uuid.bytes`` or ``bytes(bson_binary)``.
           - `key_alt_name` (string): Identifies a key vault document by
             'keyAltName'.
-          - `index_key_id` (bytes): the index key id to use for Queryable Encryption.
           - `query_type` (str): The query type to execute.
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
@@ -176,7 +175,7 @@ class ExplicitEncrypter(object):
           The encrypted BSON value.
 
         .. versionchanged:: 1.3
-           Added the `index_key_id`, `query_type`, and `contention_factor` parameters.
+           Added the `query_type` and `contention_factor` parameters.
         """
         # CDRIVER-3275 key_alt_name needs to be wrapped in a bson document.
         if key_alt_name is not None:
