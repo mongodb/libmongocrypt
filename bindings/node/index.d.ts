@@ -377,19 +377,6 @@ export class ClientEncryption {
     options: ClientEncryptionCreateDataKeyProviderOptions
   ): Promise<Binary>;
 
-  /** Alias for @see createDataKey. */
-  createKey(
-    provider: ClientEncryptionDataKeyProvider,
-    callback: ClientEncryptionCreateDataKeyCallback
-  ): void;
-
-  /** Alias for @see createDataKey. */
-  createKey(
-    provider: ClientEncryptionDataKeyProvider,
-    options: ClientEncryptionCreateDataKeyProviderOptions,
-    callback: ClientEncryptionCreateDataKeyCallback
-  ): void;
-
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
    * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
