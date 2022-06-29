@@ -283,7 +283,8 @@ module.exports = function (modules) {
           }
 
           if (dataKey.v.length === 0) {
-            return process.nextTick(cb, null, {});
+            cb(null, {});
+            return;
           }
 
           const dbName = databaseNamespace(this._keyVaultNamespace);
