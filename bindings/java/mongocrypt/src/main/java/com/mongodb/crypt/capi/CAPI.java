@@ -829,6 +829,19 @@ public class CAPI {
     mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t ctx,
                                           mongocrypt_binary_t msg);
 
+    /**
+     * Initialize a context to rewrap datakeys.
+     *
+     * Associated options {@link #mongocrypt_ctx_setopt_key_encryption_key(mongocrypt_ctx_t, mongocrypt_binary_t)}
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param filter The filter to use for the find command on the key vault collection to retrieve datakeys to rewrap.
+     * @return A boolean indicating success. If false, and error status is set.
+     * @since 1.5
+     */
+    public static native boolean
+    mongocrypt_ctx_rewrap_many_datakey_init (mongocrypt_ctx_t ctx, mongocrypt_binary_t filter);
+
 
     public static final int MONGOCRYPT_CTX_ERROR = 0;
     public static final int MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1; /* run on main MongoClient */

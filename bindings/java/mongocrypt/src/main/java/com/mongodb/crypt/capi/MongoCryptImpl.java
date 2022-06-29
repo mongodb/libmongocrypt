@@ -23,12 +23,14 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_log_fn_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.mongodb.crypt.capi.CAPI.mongocrypt_t;
 import com.sun.jna.Pointer;
+import org.bson.BsonBinary;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -46,6 +48,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_new;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_rewrap_many_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_contention_factor;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
@@ -80,9 +83,7 @@ import static org.bson.assertions.Assertions.notNull;
 
 class MongoCryptImpl implements MongoCrypt {
     private static final Logger LOGGER = Loggers.getLogger();
-    private static final String INDEXED = "Indexed";
-    private static final String UNINDEXED = "Unindexed";
-
+    private static final BsonString EMPTY_STRING = new BsonString("");
     private final mongocrypt_t wrapped;
 
     // Keep a strong reference to all the callbacks so that they don't get garbage collected
@@ -232,19 +233,27 @@ class MongoCryptImpl implements MongoCrypt {
         }
 
         if (kmsProvider.equals("aws")) {
-            configure(() -> mongocrypt_ctx_setopt_masterkey_aws(context,
-                                                                 new cstring(options.getMasterKey().getString("region").getValue()), -1,
-                                                                 new cstring(options.getMasterKey().getString("key").getValue()), -1), context);
-            if (options.getMasterKey().containsKey("endpoint")) {
-                configure(() -> mongocrypt_ctx_setopt_masterkey_aws_endpoint(context,
-                                                                              new cstring(options.getMasterKey().getString("endpoint").getValue()), -1), context);
+            BsonDocument masterKey = options.getMasterKey();
+            if (masterKey != null){
+                configure(() -> mongocrypt_ctx_setopt_masterkey_aws(context,
+                                                                    new cstring(masterKey.getString("region", EMPTY_STRING).getValue()), -1,
+                                                                    new cstring(masterKey.getString("key", EMPTY_STRING).getValue()), -1),
+                          context);
+                if (masterKey.containsKey("endpoint")) {
+                    configure(() -> mongocrypt_ctx_setopt_masterkey_aws_endpoint(context,
+                                                                                 new cstring(masterKey.getString("endpoint").getValue()),
+                                                                                 -1), context);
+                }
             }
         } else if (kmsProvider.equals("local")) {
             configure(() -> mongocrypt_ctx_setopt_masterkey_local(context), context);
         } else {
-            BsonDocument masterKey = options.getMasterKey().clone();
-            masterKey.put("provider", new BsonString(kmsProvider));
-            try (BinaryHolder masterKeyHolder = toBinary(masterKey)) {
+            BsonDocument keyDocument = new BsonDocument("provider", new BsonString(kmsProvider));
+            BsonDocument masterKey = options.getMasterKey();
+            if (masterKey != null) {
+                masterKey.forEach(keyDocument::append);
+            }
+            try (BinaryHolder masterKeyHolder = toBinary(keyDocument)) {
                 configure(() -> mongocrypt_ctx_setopt_key_encryption_key(context, masterKeyHolder.getBinary()), context);
             }
         }
@@ -305,6 +314,31 @@ class MongoCryptImpl implements MongoCrypt {
         }
         try (BinaryHolder binaryHolder = toBinary(document)) {
             configure(() -> mongocrypt_ctx_explicit_decrypt_init(context, binaryHolder.getBinary()), context);
+        }
+        return new MongoCryptContextImpl(context);
+    }
+
+    @Override
+    public MongoCryptContext createRewrapManyDatakeyContext(final BsonDocument filter, final MongoRewrapManyDataKeyOptions options) {
+        isTrue("open", !closed.get());
+        mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
+        if (context == null) {
+            throwExceptionFromStatus();
+        }
+
+        if (options != null && options.getProvider() != null) {
+            BsonDocument keyDocument = new BsonDocument("provider", new BsonString(options.getProvider()));
+            BsonDocument masterKey = options.getMasterKey();
+            if (masterKey != null) {
+                masterKey.forEach(keyDocument::append);
+            }
+            try (BinaryHolder binaryHolder =  toBinary(keyDocument)) {
+                configure(() -> mongocrypt_ctx_setopt_key_encryption_key(context, binaryHolder.getBinary()), context);
+            }
+        }
+
+        try (BinaryHolder binaryHolder = toBinary(filter)) {
+            configure(() -> mongocrypt_ctx_rewrap_many_datakey_init(context, binaryHolder.getBinary()), context);
         }
         return new MongoCryptContextImpl(context);
     }
