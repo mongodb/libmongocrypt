@@ -27,7 +27,6 @@ from bson.binary import Binary, UuidRepresentation
 from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
-from pymongo.results import BulkWriteResult
 
 sys.path[0:0] = [""]
 
@@ -577,7 +576,9 @@ class TestExplicitEncryption(unittest.TestCase):
             "key": "key",
             "endpoint": "example.com"
         }
-        key_material = safe_bytearray_or_base64(base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5'))
+        key_material = base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5')
+        if not PY3:
+            key_material = Binary(key_material)
         encrypter.create_data_key("aws", master_key=master_key, key_material=key_material)
         self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
