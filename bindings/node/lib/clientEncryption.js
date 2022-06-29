@@ -282,6 +282,10 @@ module.exports = function (modules) {
             return;
           }
 
+          if (dataKey.v.length === 0) {
+            return process.nextTick(cb, null, {});
+          }
+
           const dbName = databaseNamespace(this._keyVaultNamespace);
           const collectionName = collectionNamespace(this._keyVaultNamespace);
           const replacements = dataKey.v.map(key => ({
