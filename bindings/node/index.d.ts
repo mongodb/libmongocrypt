@@ -310,7 +310,8 @@ export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
 
 /** @experimental */
 export interface ClientEncryptionRewrapManyDataKeyResult {
-  bulkWriteResult: BulkWriteResult;
+  /** The result of rewrapping data keys. If unset, no keys matched the filter. */
+  bulkWriteResult?: BulkWriteResult;
 }
 
 /** @experimental */
