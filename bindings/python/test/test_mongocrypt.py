@@ -489,12 +489,7 @@ class TestExplicitEncryption(unittest.TestCase):
         encoded_val = bson.encode(val)
         # Invalid algorithm.
         with self.assertRaisesRegex(MongoCryptError, "algorithm"):
-            encrypter.encrypt(encoded_val, "Invalid", key_id)
-        # Invalid index_key_id type.
-        with self.assertRaises(TypeError):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, index_key_id=1)
-        with self.assertRaises(MongoCryptError):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, index_key_id=b'1234')
+            encrypter.encrypt(encoded_val, "Invalid", key_id))
         # Invalid query_type type.
         with self.assertRaisesRegex(TypeError, "query_type"):
             encrypter.encrypt(encoded_val, "Indexed", key_id, query_type=42)
@@ -517,9 +512,8 @@ class TestExplicitEncryption(unittest.TestCase):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
         index_key_path = 'keys/12345678123498761234123456789012-local-document.json'
         key_id = json_data(key_path)['_id']
-        index_key_id = json_data(index_key_path)['_id']
         encrypter = ExplicitEncrypter(MockCallback(
-            key_docs=[bson_data(key_path), bson_data(index_key_path)],
+            key_docs=[bson_data(key_path)],
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
@@ -532,7 +526,6 @@ class TestExplicitEncryption(unittest.TestCase):
             dict(algorithm='Unindexed'),
         ]:
             kwargs['key_id'] = key_id
-            kwargs['index_key_id'] = index_key_id
             encrypted = encrypter.encrypt(encoded_val, **kwargs)
             encrypted_val = bson.decode(encrypted, OPTS)['v']
             self.assertIsInstance(encrypted_val, Binary)

@@ -504,11 +504,6 @@ class ExplicitEncryptionContext(MongoCryptContext):
                     if not lib.mongocrypt_ctx_setopt_key_alt_name(ctx, binary.bin):
                         self._raise_from_status()
 
-            if opts.index_key_id is not None:
-                with MongoCryptBinaryIn(opts.index_key_id) as binary:
-                    if not lib.mongocrypt_ctx_setopt_index_key_id(ctx, binary.bin):
-                        self._raise_from_status()
-
             if opts.query_type is not None:
                 qt = str_to_bytes(opts.query_type)
                 if not lib.mongocrypt_ctx_setopt_query_type(ctx, qt, -1):

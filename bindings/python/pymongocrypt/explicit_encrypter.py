@@ -17,7 +17,7 @@ from pymongocrypt.state_machine import run_state_machine
 
 
 class ExplicitEncryptOpts(object):
-    def __init__(self, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
+    def __init__(self, algorithm, key_id=None, key_alt_name=None,
                  query_type=None, contention_factor=None):
         """Options for explicit encryption.
 
@@ -27,18 +27,16 @@ class ExplicitEncryptOpts(object):
           - `key_alt_name` (bytes): Identifies a key vault document by
             'keyAltName'. Must be BSON encoded document in the form:
             { "keyAltName" : (BSON UTF8 value) }
-          - `index_key_id` (bytes): the index key id to use for Queryable Encryption.
           - `query_type` (str): The query type to execute.
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
 
         .. versionchanged:: 1.3
-           Added the `index_key_id`, `query_type`, and `contention_factor` parameters.
+           Added the `query_type` and `contention_factor` parameters.
         """
         self.algorithm = algorithm
         self.key_id = key_id
         self.key_alt_name = key_alt_name
-        self.index_key_id = index_key_id
         if query_type is not None:
             if not isinstance(query_type, str):
                 raise TypeError(
@@ -182,7 +180,7 @@ class ExplicitEncrypter(object):
             key_alt_name = self.callback.bson_encode(
                 {'keyAltName': key_alt_name})
         opts = ExplicitEncryptOpts(
-            algorithm, key_id, key_alt_name, index_key_id, query_type, contention_factor)
+            algorithm, key_id, key_alt_name, query_type, contention_factor)
         with self.mongocrypt.explicit_encryption_context(value, opts) as ctx:
             return run_state_machine(ctx, self.callback)
 
