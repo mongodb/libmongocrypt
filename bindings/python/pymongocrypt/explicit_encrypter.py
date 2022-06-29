@@ -51,7 +51,7 @@ class ExplicitEncryptOpts(object):
 
 
 class DataKeyOpts(object):
-    def __init__(self, master_key=None, key_alt_names=None):
+    def __init__(self, master_key=None, key_alt_names=None, key_material=None):
         """Options for creating encryption keys.
 
         :Parameters:
@@ -102,9 +102,17 @@ class DataKeyOpts(object):
           - `key_alt_names`: An optional list of bytes suitable to be passed to
             mongocrypt_ctx_setopt_key_alt_name. Each element must be BSON
             encoded document in the form: { "keyAltName" : (BSON UTF8 value) }
+
+          - `key_material`: An optional binary value of 96 bytes to use as
+            custom key material for the data key being created. If
+            ``key_material`` is given, the custom key material is used for
+            encrypting and decrypting data. Otherwise, the key material for the
+            new data key is generated from a cryptographically secure random
+            device.
         """
         self.master_key = master_key
         self.key_alt_names = key_alt_names
+        self.key_material = key_material
 
 
 class ExplicitEncrypter(object):
@@ -124,17 +132,18 @@ class ExplicitEncrypter(object):
         self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
     def create_data_key(self, kms_provider, master_key=None,
-                        key_alt_names=None):
+                        key_alt_names=None, key_material=None):
         """Creates a data key used for explicit encryption.
 
         :Parameters:
           - `kms_provider`: The KMS provider to use. Supported values are
             "aws", "azure", "gcp", "kmip", and "local".
-          - `master_key`: See DataKeyOpts.
+          - `master_key`: See class:`DataKeyOpts`.
           - `key_alt_names` (optional): An optional list of string alternate
             names used to reference a key. If a key is created with alternate
             names, then encryption may refer to the key by the unique
             alternate name instead of by ``_id``.
+          - `key_material`: (optional) See class:`DataKeyOpts`.
 
         :Returns:
           The _id of the created data key document.
@@ -147,10 +156,27 @@ class ExplicitEncrypter(object):
                 encoded_names.append(
                     self.callback.bson_encode({'keyAltName': name}))
 
-        opts = DataKeyOpts(master_key, encoded_names)
+        if key_material is not None:
+            key_material = self.callback.bson_encode({'keyMaterial': key_material})
+
+        opts = DataKeyOpts(master_key, encoded_names, key_material)
         with self.mongocrypt.data_key_context(kms_provider, opts) as ctx:
             key = run_state_machine(ctx, self.callback)
         return self.callback.insert_data_key(key)
+
+    def rewrap_many_data_key(self, filter, provider=None, master_key=None):
+        """Decrypts and encrypts all matching data keys with a possibly new `master_key` value.
+
+        :Parameters:
+          - `filter`: A document used to filter the data keys.
+          - `provider`: (optional) The name of a different kms provider.
+          - `master_key`: Optional document for the given provider.
+
+        :Returns:
+          A binary document with the rewrap data.
+        """
+        with self.mongocrypt.rewrap_many_data_key_context(filter, provider, master_key) as ctx:
+            return run_state_machine(ctx, self.callback)
 
     def encrypt(self, value, algorithm, key_id=None, key_alt_name=None, index_key_id=None,
                 query_type=None, contention_factor=None):
