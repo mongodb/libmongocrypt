@@ -21,8 +21,23 @@ functions:
       params:
         script: |-
           set -o errexit
-          chmod u+x libmongocrypt/.evergreen/*.sh
-          ./libmongocrypt/.evergreen/print-env-info.sh
+          cd libmongocrypt
+          chmod u+x .evergreen/*.sh
+          ./.evergreen/print-env-info.sh
+
+          if [ "${is_patch}" != "true" ]; then
+            # determine if we have a release tag present on HEAD
+            head_tag=$(git tag -l --points-at HEAD '[0-9].*' | tail -1)
+          fi
+          echo "tag_upload_location: $head_tag"
+
+          cat <<EOT > ../tag_expansion.yml
+          tag_upload_location: "$head_tag"
+          EOT
+    - command: expansions.update
+      params:
+        ignore_missing_file: true
+        file: tag_expansion.yml
 
   "tar and upload libmongocrypt libraries":
     - command: archive.targz_pack
@@ -469,9 +484,13 @@ tasks:
     - variant: macos
       name: build-and-test-and-upload
   commands:
+    - func: "fetch source"
     - command: shell.exec
       params:
-        script: mkdir all
+        script: |-
+          # this directory was created in "fetch source", but it isn't needed here
+          rm -rf libmongocrypt
+          mkdir all
     - func: "download tarball"
       vars: { variant_name: ubuntu1604 }
     - func: "download tarball"
@@ -521,6 +540,15 @@ tasks:
         target: libmongocrypt-all.tar.gz
         source_dir: all
         include: [./**]
+    - command: shell.exec
+      params:
+        script: |-
+          set -o errexit
+          if [ -n "${tag_upload_location}" ]; then
+            # the "fetch source" step detected a release tag on HEAD, so we
+            # prepare a local file for upload to a location based on the tag
+            cp -a libmongocrypt-all.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
+          fi
     - command: s3.put
       params:
         aws_key: '${aws_key}'
@@ -538,6 +566,17 @@ tasks:
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-all.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: 'libmongocrypt-feature/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        optional: true
+        display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
+        local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
 - name: publish-packages
