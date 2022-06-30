@@ -566,7 +566,7 @@ tasks:
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: 'libmongocrypt-feature/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
+        remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
         optional: true
