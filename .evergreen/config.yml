@@ -27,13 +27,11 @@ functions:
 
           if [ "${is_patch}" != "true" ]; then
             # determine if we have a release tag present on HEAD
-            head_tag=$(git tag -l --points-at HEAD '[0-9].*' | tail -1)
+            head_tag=$(git tag -l --points-at HEAD '[0-9].*')
           fi
           echo "tag_upload_location: $head_tag"
 
-          cat <<EOT > ../tag_expansion.yml
-          tag_upload_location: "$head_tag"
-          EOT
+          echo "tag_upload_location: \"$head_tag\"" > ../tag_expansion.yml
     - command: expansions.update
       params:
         ignore_missing_file: true
@@ -487,10 +485,7 @@ tasks:
     - func: "fetch source"
     - command: shell.exec
       params:
-        script: |-
-          # this directory was created in "fetch source", but it isn't needed here
-          rm -rf libmongocrypt
-          mkdir all
+        script: mkdir all
     - func: "download tarball"
       vars: { variant_name: ubuntu1604 }
     - func: "download tarball"
