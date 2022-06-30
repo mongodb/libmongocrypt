@@ -338,9 +338,6 @@ export interface ClientEncryptionEncryptOptions {
    */
   keyAltName?: string;
 
-  /** @experimental Public Technical Preview: The id of the index key. */
-  indexKeyId?: Binary;
-
   /** @experimental Public Technical Preview: The contention factor. */
   contentionFactor?: bigint | number;
 

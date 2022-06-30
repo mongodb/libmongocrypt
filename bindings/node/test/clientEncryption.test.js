@@ -571,7 +571,6 @@ describe('ClientEncryption', function () {
 
       const encryptOptions = {
         keyId: new Binary(Buffer.from('ABCDEFAB123498761234123456789012', 'hex'), 4),
-        indexKeyId: new Binary(Buffer.from('12345678123498761234123456789012', 'hex'), 4),
         algorithm: 'Unindexed'
       };
 

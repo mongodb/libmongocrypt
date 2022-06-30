@@ -374,9 +374,6 @@ module.exports = function (modules) {
       if (options.keyId) {
         contextOptions.keyId = options.keyId.buffer;
       }
-      if (options.indexKeyId) {
-        contextOptions.indexKeyId = options.indexKeyId.buffer;
-      }
       if (options.keyAltName) {
         const keyAltName = options.keyAltName;
         if (options.keyId) {

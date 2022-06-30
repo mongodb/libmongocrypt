@@ -581,19 +581,6 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }
-
-        if (options.Has("indexKeyId")) {
-            Napi::Value indexKeyId = options["indexKeyId"];
-
-            if (!indexKeyId.IsBuffer()) {
-                throw TypeError::New(Env(), "`indexKeyId` must be a Buffer");
-            }
-
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(indexKeyId.As<Uint8Array>()));
-            if (!mongocrypt_ctx_setopt_index_key_id(context.get(), binary.get())) {
-                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
-            }
-        }
     }
 
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(BufferToBinary(valueBuffer.As<Uint8Array>()));
