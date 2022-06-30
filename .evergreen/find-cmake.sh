@@ -13,15 +13,20 @@ find_cmake ()
     CMAKE="/opt/cmake/bin/cmake"
   elif [ -z "$IGNORE_SYSTEM_CMAKE" ] && command -v cmake 2>/dev/null; then
      CMAKE=cmake
-  elif uname -a | grep -iq 'x86_64 GNU/Linux'; then
-     if [ -f "$(pwd)/cmake-3.11.0/bin/cmake" ]; then
-      CMAKE="$(pwd)/cmake-3.11.0/bin/cmake"
+  elif uname -a | grep -iq 'GNU/Linux'; then
+    version="3.19.4"  # First version that ships arm64 binaries
+    root="$PWD/cmake-$version"
+    expect_exe="$root/bin/cmake"
+    if [ -f "$expect_exe" ]; then
+      CMAKE="$expect_exe"
       return 0
-     fi
-     curl --retry 5 https://cmake.org/files/v3.11/cmake-3.11.0-Linux-x86_64.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz
-     mkdir cmake-3.11.0
-     tar xzf cmake.tar.gz -C cmake-3.11.0 --strip-components=1
-     CMAKE=$(pwd)/cmake-3.11.0/bin/cmake
+    fi
+    arch="$(uname -m)"
+    curl --retry 5 "https://github.com/Kitware/CMake/releases/download/v$version/cmake-$version-Linux-$arch.tar.gz" \
+      -LsS --max-time 120 --fail --output cmake.tgz
+    mkdir -p "$root"
+    tar xzf "$PWD/cmake.tgz" -C "$root" --strip-components=1
+    CMAKE=$expect_exe
   elif [ -f "/cygdrive/c/cmake/bin/cmake" ]; then
      CMAKE="/cygdrive/c/cmake/bin/cmake"
   fi
