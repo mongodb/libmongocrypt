@@ -510,7 +510,6 @@ class TestExplicitEncryption(unittest.TestCase):
 
     def test_encrypt_indexed(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
-        index_key_path = 'keys/12345678123498761234123456789012-local-document.json'
         key_id = json_data(key_path)['_id']
         encrypter = ExplicitEncrypter(MockCallback(
             key_docs=[bson_data(key_path)],
@@ -587,9 +586,8 @@ class TestExplicitEncryption(unittest.TestCase):
 
     def test_rewrap_many_data_key(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
-        index_key_path = 'keys/12345678123498761234123456789012-local-document.json'
         encrypter = ExplicitEncrypter(MockCallback(
-            key_docs=[bson_data(key_path), bson_data(index_key_path)]), self.mongo_crypt_opts())
+            key_docs=[bson_data(key_path)]), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
         result = encrypter.rewrap_many_data_key({})
