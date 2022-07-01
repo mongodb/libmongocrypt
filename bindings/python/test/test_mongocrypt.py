@@ -489,7 +489,7 @@ class TestExplicitEncryption(unittest.TestCase):
         encoded_val = bson.encode(val)
         # Invalid algorithm.
         with self.assertRaisesRegex(MongoCryptError, "algorithm"):
-            encrypter.encrypt(encoded_val, "Invalid", key_id))
+            encrypter.encrypt(encoded_val, "Invalid", key_id)
         # Invalid query_type type.
         with self.assertRaisesRegex(TypeError, "query_type"):
             encrypter.encrypt(encoded_val, "Indexed", key_id, query_type=42)
