@@ -645,6 +645,24 @@ public class CAPI {
                                         mongocrypt_binary_t key_alt_name);
 
     /**
+     * Set the keyMaterial to use for encrypting data.
+     *
+     * <p>
+     * Pass the binary encoding of a BSON document like the following:
+     * <code>{ "keyMaterial" : (BSON BINARY value) }</code>
+     * </p>
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param key_material The data encryption key to use. The viewed data is
+     * copied. It is valid to destroy @p key_material with @ref
+     * mongocrypt_binary_destroy immediately after.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_key_material (mongocrypt_ctx_t ctx, mongocrypt_binary_t key_material);
+
+    /**
      * Set the algorithm used for encryption to either
      * deterministic or random encryption. This value
      * should only be set when using explicit encryption.

@@ -54,6 +54,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_contention_facto
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_encryption_key;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_material;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws_endpoint;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
@@ -263,6 +264,12 @@ class MongoCryptImpl implements MongoCrypt {
                 try (BinaryHolder keyAltNameBinaryHolder = toBinary(new BsonDocument("keyAltName", new BsonString(cur)))) {
                     configure(() -> mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary()), context);
                 }
+            }
+        }
+
+        if (options.getKeyMaterial() != null) {
+            try (BinaryHolder keyMaterialBinaryHolder = toBinary(new BsonDocument("keyMaterial", new BsonBinary(options.getKeyMaterial())))) {
+                configure(() -> mongocrypt_ctx_setopt_key_material(context, keyMaterialBinaryHolder.getBinary()), context);
             }
         }
 
