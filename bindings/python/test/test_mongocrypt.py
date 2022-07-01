@@ -586,8 +586,9 @@ class TestExplicitEncryption(unittest.TestCase):
 
     def test_rewrap_many_data_key(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+        key_path2 = 'keys/12345678123498761234123456789012-local-document.json'
         encrypter = ExplicitEncrypter(MockCallback(
-            key_docs=[bson_data(key_path)]), self.mongo_crypt_opts())
+            key_docs=[bson_data(key_path), bson_data(key_path2)]), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
         result = encrypter.rewrap_many_data_key({})
