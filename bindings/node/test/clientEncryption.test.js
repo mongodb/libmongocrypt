@@ -283,7 +283,8 @@ describe('ClientEncryption', function () {
         .then(dataKey => {
           const encryptOptions = {
             keyId: dataKey,
-            algorithm: 'Indexed'
+            algorithm: 'Indexed',
+            contentionFactor: 0
           };
 
           return newClientEncryption().encrypt('hello', encryptOptions);
@@ -329,7 +330,8 @@ describe('ClientEncryption', function () {
         .then(dataKey => {
           const encryptOptions = {
             keyId: dataKey,
-            algorithm: 'Indexed'
+            algorithm: 'Indexed',
+            contentionFactor: 0
           };
 
           return encryption.encrypt('hello', encryptOptions);
@@ -724,7 +726,8 @@ describe('ClientEncryption', function () {
       const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'equality'
+        queryType: 'equality',
+        contentionFactor: 0
       });
       const findResult = await coll
         .find({
@@ -787,7 +790,8 @@ describe('ClientEncryption', function () {
     it('Case 4: can roundtrip encrypted indexed', async function () {
       const payload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
-        algorithm: 'Indexed'
+        algorithm: 'Indexed',
+        contentionFactor: 10
       });
       const decrypted = await clientEncryption.decrypt(payload);
 

@@ -225,7 +225,8 @@ describe('cryptoCallbacks', function () {
 
             const encryptOptions = {
               keyId: dataKey,
-              algorithm: 'Indexed'
+              algorithm: 'Indexed',
+              contentionFactor: 0
             };
 
             encryption.encrypt('hello', encryptOptions, (err, encryptedValue) => {
