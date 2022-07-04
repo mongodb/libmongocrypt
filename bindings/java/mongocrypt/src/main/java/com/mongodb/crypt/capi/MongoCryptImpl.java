@@ -30,12 +30,9 @@ import org.bson.BsonString;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_INDEX_TYPE_EQUALITY;
-import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_INDEX_TYPE_NONE;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_ERROR;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_FATAL;
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_LOG_LEVEL_INFO;
@@ -55,9 +52,6 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_encryption_key;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_id;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_material;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_aws_endpoint;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_masterkey_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_query_type;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
@@ -84,7 +78,6 @@ import static org.bson.assertions.Assertions.notNull;
 
 class MongoCryptImpl implements MongoCrypt {
     private static final Logger LOGGER = Loggers.getLogger();
-    private static final BsonString EMPTY_STRING = new BsonString("");
     private final mongocrypt_t wrapped;
 
     // Keep a strong reference to all the callbacks so that they don't get garbage collected
@@ -233,30 +226,13 @@ class MongoCryptImpl implements MongoCrypt {
             throwExceptionFromStatus();
         }
 
-        if (kmsProvider.equals("aws")) {
-            BsonDocument masterKey = options.getMasterKey();
-            if (masterKey != null){
-                configure(() -> mongocrypt_ctx_setopt_masterkey_aws(context,
-                                                                    new cstring(masterKey.getString("region", EMPTY_STRING).getValue()), -1,
-                                                                    new cstring(masterKey.getString("key", EMPTY_STRING).getValue()), -1),
-                          context);
-                if (masterKey.containsKey("endpoint")) {
-                    configure(() -> mongocrypt_ctx_setopt_masterkey_aws_endpoint(context,
-                                                                                 new cstring(masterKey.getString("endpoint").getValue()),
-                                                                                 -1), context);
-                }
-            }
-        } else if (kmsProvider.equals("local")) {
-            configure(() -> mongocrypt_ctx_setopt_masterkey_local(context), context);
-        } else {
-            BsonDocument keyDocument = new BsonDocument("provider", new BsonString(kmsProvider));
-            BsonDocument masterKey = options.getMasterKey();
-            if (masterKey != null) {
-                masterKey.forEach(keyDocument::append);
-            }
-            try (BinaryHolder masterKeyHolder = toBinary(keyDocument)) {
-                configure(() -> mongocrypt_ctx_setopt_key_encryption_key(context, masterKeyHolder.getBinary()), context);
-            }
+        BsonDocument keyDocument = new BsonDocument("provider", new BsonString(kmsProvider));
+        BsonDocument masterKey = options.getMasterKey();
+        if (masterKey != null) {
+            masterKey.forEach(keyDocument::append);
+        }
+        try (BinaryHolder masterKeyHolder = toBinary(keyDocument)) {
+            configure(() -> mongocrypt_ctx_setopt_key_encryption_key(context, masterKeyHolder.getBinary()), context);
         }
 
         if (options.getKeyAltNames() != null) {
