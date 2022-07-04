@@ -645,6 +645,24 @@ public class CAPI {
                                         mongocrypt_binary_t key_alt_name);
 
     /**
+     * Set the keyMaterial to use for encrypting data.
+     *
+     * <p>
+     * Pass the binary encoding of a BSON document like the following:
+     * <code>{ "keyMaterial" : (BSON BINARY value) }</code>
+     * </p>
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param key_material The data encryption key to use. The viewed data is
+     * copied. It is valid to destroy @p key_material with @ref
+     * mongocrypt_binary_destroy immediately after.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_key_material (mongocrypt_ctx_t ctx, mongocrypt_binary_t key_material);
+
+    /**
      * Set the algorithm used for encryption to either
      * deterministic or random encryption. This value
      * should only be set when using explicit encryption.
@@ -828,6 +846,19 @@ public class CAPI {
     public static native boolean
     mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t ctx,
                                           mongocrypt_binary_t msg);
+
+    /**
+     * Initialize a context to rewrap datakeys.
+     *
+     * Associated options {@link #mongocrypt_ctx_setopt_key_encryption_key(mongocrypt_ctx_t, mongocrypt_binary_t)}
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param filter The filter to use for the find command on the key vault collection to retrieve datakeys to rewrap.
+     * @return A boolean indicating success. If false, and error status is set.
+     * @since 1.5
+     */
+    public static native boolean
+    mongocrypt_ctx_rewrap_many_datakey_init (mongocrypt_ctx_t ctx, mongocrypt_binary_t filter);
 
 
     public static final int MONGOCRYPT_CTX_ERROR = 0;
