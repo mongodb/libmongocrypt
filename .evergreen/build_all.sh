@@ -18,19 +18,6 @@ evergreen_root="$(pwd)"
 
 . ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
 
-if test -f /proc/cpuinfo; then
-    # Count the number of lines beginning with "processor" in the cpuinfo
-    jobs="$(grep -c '^processor' /proc/cpuinfo)"
-    if command -v bc; then
-        # Add two (hueristic to compensate for I/O latency)
-        jobs="$(echo "$jobs+2" | bc)"
-    fi
-    export MAKEFLAGS="-j$jobs ${MAKEFLAGS-}"
-else
-    # Cannot tell the best number of jobs. Provide a reasonable default.
-    export MAKEFLAGS="-j8 ${MAKEFLAGS-}"
-fi
-
 # We may need some more C++ flags
 _cxxflags=""
 
