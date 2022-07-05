@@ -791,7 +791,7 @@ describe('ClientEncryption', function () {
       const payload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        contentionFactor: 10
+        contentionFactor: 0
       });
       const decrypted = await clientEncryption.decrypt(payload);
 
