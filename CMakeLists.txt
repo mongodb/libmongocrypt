@@ -357,6 +357,7 @@ if (BUILD_TESTING)
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
+   test/test-gcp-auth.c
    test/test-mc-efc.c
    test/test-mc-fle2-payload-ieev.c
    test/test-mc-fle2-payload-iup.c
