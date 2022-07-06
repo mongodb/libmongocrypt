@@ -687,7 +687,8 @@ describe('ClientEncryption', function () {
       const coll = encryptedClient.db('db').collection('explicit_encryption');
       const insertPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
-        algorithm: 'Indexed'
+        algorithm: 'Indexed',
+        contentionFactor: 0
       });
       await coll.insertOne({
         encryptedIndexed: insertPayload
@@ -696,7 +697,8 @@ describe('ClientEncryption', function () {
       const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'equality'
+        queryType: 'equality',
+        contentionFactor: 0
       });
       const findResult = await coll
         .find({
