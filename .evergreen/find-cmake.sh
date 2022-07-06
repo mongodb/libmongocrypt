@@ -3,14 +3,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 find_cmake ()
 {
-  # Check if on macOS with arm64. Use system cmake. See BUILD-14565.
-  local OS_NAME="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  local MARCH="$(uname -m | tr '[:upper:]' '[:lower:]')"
-
   if [ ! -z "$CMAKE" ]; then
     return 0
-  elif test "$OS_NAME" = "darwin" -a "$MARCH" = "arm64"; then
-    CMAKE=cmake
   elif [ -f "/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake" ]; then
     CMAKE="/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake"
   elif [ -f "/Applications/Cmake.app/Contents/bin/cmake" ]; then
