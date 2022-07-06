@@ -23,6 +23,8 @@ fi
 libmongocrypt_root=$(pwd)
 pkgconfig_tests_root=${libmongocrypt_root}/pkgconfig_tests
 
+. ${libmongocrypt_root}/.evergreen/setup-env.sh
+
 rm -rf pkgconfig_tests
 mkdir -p pkgconfig_tests/{install,libmongocrypt-cmake-build}
 cd pkgconfig_tests
