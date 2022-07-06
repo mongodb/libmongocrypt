@@ -878,7 +878,11 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'azure': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'local': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'gcp': {}}", NULL, "on-demand credentials not enabled", false},
-      {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false}};
+      {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false},
+      {"{'gcp': {'accessToken': { '$binary': {'base64': 'AAAA', 'subType': "
+       "'00' }}, 'email': 'foo@bar.com' }}",
+       "Unexpected field: 'email'"}
+   };
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;
