@@ -1363,6 +1363,34 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
 
+         if (!_mongocrypt_parse_optional_binary (
+                &as_bson,
+                "gcp.accessToken",
+                &kms_providers->gcp.access_token,
+                status)) {
+            return false;
+         }
+
+         if (!_mongocrypt_buffer_empty (&kms_providers->gcp.access_token)) {
+            /* "gcp" document has form:
+             * {
+             *    "accessToken": <required UTF-8 or Binary>
+             * }
+             */
+            if (!_mongocrypt_check_allowed_fields (
+                   &as_bson, "gcp", status, "accessToken")) {
+               return false;
+            }
+            kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
+            continue;
+         }
+
+         /* "gcp" document has form:
+          * {
+          *    "email": <required UTF-8>
+          *    "privateKey": <required UTF-8 or Binary>
+          * }
+          */
          if (!_mongocrypt_parse_required_utf8 (
                 &as_bson, "gcp.email", &kms_providers->gcp.email, status)) {
             return false;

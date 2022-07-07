@@ -65,8 +65,8 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
 
    if (ctx->opts.kek.provider.kmip.endpoint) {
       endpoint = ctx->opts.kek.provider.kmip.endpoint;
-   } else if (_mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint) {
-      endpoint = _mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint;
+   } else if (_mongocrypt_ctx_kms_providers (ctx)->kmip.endpoint) {
+      endpoint = _mongocrypt_ctx_kms_providers (ctx)->kmip.endpoint;
    } else {
       CLIENT_ERR ("endpoint not set for KMIP request");
       goto fail;
@@ -182,7 +182,7 @@ _kms_start (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_datakey_t *dkctx;
    char *access_token = NULL;
    _mongocrypt_opts_kms_providers_t *const kms_providers =
-      _mongocrypt_ctx_kms_providers(ctx);
+      _mongocrypt_ctx_kms_providers (ctx);
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
 
@@ -245,7 +245,13 @@ _kms_start (mongocrypt_ctx_t *ctx)
       }
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-      access_token = _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_gcp);
+      if (!_mongocrypt_buffer_empty (&ctx->kms_providers.gcp.access_token)) {
+         access_token = bson_strdup (
+            (const char *) ctx->kms_providers.gcp.access_token.data);
+      } else {
+         access_token =
+            _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_gcp);
+      }
       if (access_token) {
          if (!_mongocrypt_kms_ctx_init_gcp_encrypt (
                 &dkctx->kms,
