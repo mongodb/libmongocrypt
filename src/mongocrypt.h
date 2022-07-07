@@ -837,7 +837,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  *    location: <string>,
  *    keyRing: <string>,
  *    keyName: <string>,
- *    keyVersion: <string>,
+ *    keyVersion: <optional string>,
  *    endpoint: <optional string>
  * }
  *

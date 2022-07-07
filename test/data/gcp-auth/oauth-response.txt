@@ -1,0 +1,5 @@
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=UTF-8
+Content-Length: 76
+
+{"access_token":"test-access-token","expires_in":3599,"token_type":"Bearer"}

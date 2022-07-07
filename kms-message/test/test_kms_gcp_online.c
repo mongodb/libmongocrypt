@@ -20,7 +20,7 @@
 #include "kms_message/kms_response.h"
 #include "kms_message/kms_response_parser.h"
 
-#define MONGOC_LOG_DOMAIN "test_kms_azure_online"
+#define MONGOC_LOG_DOMAIN "test_kms_gcp_online"
 #include <mongoc/mongoc.h>
 
 #include "test_kms_assert.h"
