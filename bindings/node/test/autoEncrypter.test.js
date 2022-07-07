@@ -18,16 +18,13 @@ const expect = chai.expect;
 chai.use(require('chai-subset'));
 chai.use(require('sinon-chai'));
 
-const sharedLibrarySuffix =
-  process.platform === 'win32' ? 'dll' : process.platform === 'darwin' ? 'dylib' : 'so';
-let sharedLibraryStub = path.resolve(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  `mongo_crypt_v1.${sharedLibrarySuffix}`
-);
+
+// If we've got the shared library on the fs we set the location is an env variable.
+let sharedLibraryStub = process.env.CRYPT_SHARED_LIBRARY;
+
 if (!fs.existsSync(sharedLibraryStub)) {
+  const sharedLibrarySuffix =
+    process.platform === 'win32' ? 'dll' : process.platform === 'darwin' ? 'dylib' : 'so';
   sharedLibraryStub = path.resolve(
     __dirname,
     '..',
@@ -297,362 +294,369 @@ describe('AutoEncrypter', function () {
       });
     });
 
-    // TODO(NODE-4089): Enable test once https://github.com/mongodb/libmongocrypt/pull/263 is done
-    it.skip('should encrypt mock data when using the crypt_shared library', function (done) {
-      const client = new MockClient();
-      const mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: {}
-        },
-        async onKmsProviderRefresh() {
-          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
-        },
-        extraOptions: {
-          cryptSharedLibPath: sharedLibraryStub
-        }
-      });
+    if (process.env.CRYPT_SHARED_LIBRARY) {
+      it('should encrypt mock data when using the crypt_shared library', function (done) {
+        const client = new MockClient();
+        const mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: {}
+          },
+          async onKmsProviderRefresh() {
+            return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
+          },
+          extraOptions: {
+            cryptSharedLibPath: sharedLibraryStub
+          }
+        });
 
-      expect(mc).to.not.have.property('_mongocryptdManager');
-      expect(mc).to.not.have.property('_mongocryptdClient');
+        expect(mc).to.not.have.property('_mongocryptdManager');
+        expect(mc).to.not.have.property('_mongocryptdClient');
 
-      mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
-        if (err) return done(err);
-        const expected = EJSON.parse(
-          JSON.stringify({
-            find: 'test',
-            filter: {
-              ssn: {
-                $binary: {
-                  base64:
-                    'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=',
-                  subType: '6'
+        mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
+          if (err) return done(err);
+          const expected = EJSON.parse(
+            JSON.stringify({
+              find: 'test',
+              filter: {
+                ssn: {
+                  $eq: {
+                    $binary: {
+                      base64:
+                        'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=',
+                      subType: '6'
+                    }
+                  }
                 }
               }
-            }
-          })
-        );
+            })
+          );
 
-        expect(encrypted).to.containSubset(expected);
-        done();
-      });
-    });
-  });
-
-  describe('logging', function () {
-    it('should allow registration of a log handler', function (done) {
-      ENABLE_LOG_TEST = true;
-
-      let loggerCalled = false;
-      const logger = (level, message) => {
-        if (loggerCalled) return;
-
-        loggerCalled = true;
-        expect(level).to.be.oneOf([2, 3]);
-        expect(message).to.not.be.empty;
-      };
-
-      const client = new MockClient();
-      const mc = new AutoEncrypter(client, {
-        logger,
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        }
-      });
-
-      mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
-        if (err) return done(err);
-        const expected = EJSON.parse(
-          JSON.stringify({
-            find: 'test',
-            filter: {
-              ssn: '457-55-5462'
-            }
-          })
-        );
-
-        expect(encrypted).to.containSubset(expected);
-        done();
-      });
-    });
-  });
-
-  describe('autoSpawn', function () {
-    beforeEach(function () {
-      if (requirements.SKIP_LIVE_TESTS) {
-        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
-        this.currentTest.skip();
-        return;
-      }
-    });
-    afterEach(function (done) {
-      if (this.mc) {
-        this.mc.teardown(false, err => {
-          this.mc = undefined;
-          done(err);
-        });
-      } else {
-        done();
-      }
-    });
-
-    it('should autoSpawn a mongocryptd on init by default', function (done) {
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        }
-      });
-
-      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
-
-      const localMcdm = this.mc._mongocryptdManager;
-      sandbox.spy(localMcdm, 'spawn');
-
-      this.mc.init(err => {
-        if (err) return done(err);
-        expect(localMcdm.spawn).to.have.been.calledOnce;
-        done();
-      });
-    });
-
-    it('should not attempt to kick off mongocryptd on a normal error', function (done) {
-      let called = false;
-      StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
-        if (!called) {
-          called = true;
-          callback(new Error('msg'));
-          return;
-        }
-
-        callback(null, MOCK_MONGOCRYPTD_RESPONSE);
-      });
-
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        }
-      });
-      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
-
-      const localMcdm = this.mc._mongocryptdManager;
-      this.mc.init(err => {
-        if (err) return done(err);
-
-        sandbox.spy(localMcdm, 'spawn');
-
-        this.mc.encrypt('test.test', TEST_COMMAND, err => {
-          expect(localMcdm.spawn).to.not.have.been.called;
-          expect(err).to.be.an.instanceOf(Error);
+          expect(encrypted).to.containSubset(expected);
           done();
         });
       });
-    });
-
-    it('should restore the mongocryptd and retry once if a MongoNetworkTimeoutError is experienced', function (done) {
-      let called = false;
-      StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
-        if (!called) {
-          called = true;
-          callback(new MongoNetworkTimeoutError('msg'));
-          return;
-        }
-
-        callback(null, MOCK_MONGOCRYPTD_RESPONSE);
-      });
-
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        }
-      });
-      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
-
-      const localMcdm = this.mc._mongocryptdManager;
-      this.mc.init(err => {
-        if (err) return done(err);
-
-        sandbox.spy(localMcdm, 'spawn');
-
-        this.mc.encrypt('test.test', TEST_COMMAND, err => {
-          expect(localMcdm.spawn).to.have.been.calledOnce;
-          expect(err).to.not.exist;
-          done();
-        });
-      });
-    });
-
-    it('should propagate error if MongoNetworkTimeoutError is experienced twice in a row', function (done) {
-      let counter = 2;
-      StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
-        if (counter) {
-          counter -= 1;
-          callback(new MongoNetworkTimeoutError('msg'));
-          return;
-        }
-
-        callback(null, MOCK_MONGOCRYPTD_RESPONSE);
-      });
-
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        }
-      });
-      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
-
-      const localMcdm = this.mc._mongocryptdManager;
-      this.mc.init(err => {
-        if (err) return done(err);
-
-        sandbox.spy(localMcdm, 'spawn');
-
-        this.mc.encrypt('test.test', TEST_COMMAND, err => {
-          expect(localMcdm.spawn).to.have.been.calledOnce;
-          expect(err).to.be.an.instanceof(MongoNetworkTimeoutError);
-          done();
-        });
-      });
-    });
-
-    it('should return a useful message if mongocryptd fails to autospawn', function (done) {
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        },
-        extraOptions: {
-          mongocryptdURI: 'mongodb://something.invalid:27020/'
-        }
-      });
-      expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
-
-      sandbox.stub(MongocryptdManager.prototype, 'spawn').callsFake(callback => {
-        callback();
-      });
-
-      this.mc.init(err => {
-        expect(err).to.exist;
-        expect(err).to.be.instanceOf(MongoError);
-        done();
-      });
-    });
+    }
   });
 
-  describe('noAutoSpawn', function () {
-    beforeEach('start MongocryptdManager', function (done) {
-      if (requirements.SKIP_LIVE_TESTS) {
-        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
-        this.skip();
-      }
+  // Tests that are specifically spawning a mongocryptd must not run when shared
+  // library is loaded.
+  if (!process.env.CRYPT_SHARED_LIBRARY) {
+    describe('logging', function () {
+      it('should allow registration of a log handler', function (done) {
+        ENABLE_LOG_TEST = true;
 
-      this.mcdm = new MongocryptdManager({});
-      this.mcdm.spawn(done);
-    });
+        let loggerCalled = false;
+        const logger = (level, message) => {
+          if (loggerCalled) return;
 
-    afterEach(function (done) {
-      if (this.mc) {
-        this.mc.teardown(false, err => {
-          this.mc = undefined;
-          done(err);
-        });
-      } else {
-        done();
-      }
-    });
+          loggerCalled = true;
+          expect(level).to.be.oneOf([2, 3]);
+          expect(message).to.not.be.empty;
+        };
 
-    ['mongocryptdBypassSpawn', 'bypassAutoEncryption', 'bypassQueryAnalysis'].forEach(opt => {
-      const encryptionOptions = {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        },
-        extraOptions: {
-          mongocryptdBypassSpawn: opt === 'mongocryptdBypassSpawn'
-        },
-        bypassAutoEncryption: opt === 'bypassAutoEncryption',
-        bypassQueryAnalysis: opt === 'bypassQueryAnalysis'
-      };
-
-      it(`should not spawn mongocryptd on startup if ${opt} is true`, function (done) {
         const client = new MockClient();
-        this.mc = new AutoEncrypter(client, encryptionOptions);
+        const mc = new AutoEncrypter(client, {
+          logger,
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          }
+        });
 
-        const localMcdm = this.mc._mongocryptdManager || { spawn: () => {} };
+        mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
+          if (err) return done(err);
+          const expected = EJSON.parse(
+            JSON.stringify({
+              find: 'test',
+              filter: {
+                ssn: '457-55-5462'
+              }
+            })
+          );
+
+          expect(encrypted).to.containSubset(expected);
+          done();
+        });
+      });
+    });
+
+    describe('autoSpawn', function () {
+      beforeEach(function () {
+        if (requirements.SKIP_LIVE_TESTS) {
+          this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+          this.currentTest.skip();
+          return;
+        }
+      });
+      afterEach(function (done) {
+        if (this.mc) {
+          this.mc.teardown(false, err => {
+            this.mc = undefined;
+            done(err);
+          });
+        } else {
+          done();
+        }
+      });
+
+      it('should autoSpawn a mongocryptd on init by default', function (done) {
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          }
+        });
+
+        expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
+
+        const localMcdm = this.mc._mongocryptdManager;
+        sandbox.spy(localMcdm, 'spawn');
+
+        this.mc.init(err => {
+          if (err) return done(err);
+          expect(localMcdm.spawn).to.have.been.calledOnce;
+          done();
+        });
+      });
+
+      it('should not attempt to kick off mongocryptd on a normal error', function (done) {
+        let called = false;
+        StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
+          if (!called) {
+            called = true;
+            callback(new Error('msg'));
+            return;
+          }
+
+          callback(null, MOCK_MONGOCRYPTD_RESPONSE);
+        });
+
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          }
+        });
+        expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
+
+        const localMcdm = this.mc._mongocryptdManager;
+        this.mc.init(err => {
+          if (err) return done(err);
+
+          sandbox.spy(localMcdm, 'spawn');
+
+          this.mc.encrypt('test.test', TEST_COMMAND, err => {
+            expect(localMcdm.spawn).to.not.have.been.called;
+            expect(err).to.be.an.instanceOf(Error);
+            done();
+          });
+        });
+      });
+
+      it('should restore the mongocryptd and retry once if a MongoNetworkTimeoutError is experienced', function (done) {
+        let called = false;
+        StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
+          if (!called) {
+            called = true;
+            callback(new MongoNetworkTimeoutError('msg'));
+            return;
+          }
+
+          callback(null, MOCK_MONGOCRYPTD_RESPONSE);
+        });
+
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          }
+        });
+        expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
+
+        const localMcdm = this.mc._mongocryptdManager;
+        this.mc.init(err => {
+          if (err) return done(err);
+
+          sandbox.spy(localMcdm, 'spawn');
+
+          this.mc.encrypt('test.test', TEST_COMMAND, err => {
+            expect(localMcdm.spawn).to.have.been.calledOnce;
+            expect(err).to.not.exist;
+            done();
+          });
+        });
+      });
+
+      it('should propagate error if MongoNetworkTimeoutError is experienced twice in a row', function (done) {
+        let counter = 2;
+        StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
+          if (counter) {
+            counter -= 1;
+            callback(new MongoNetworkTimeoutError('msg'));
+            return;
+          }
+
+          callback(null, MOCK_MONGOCRYPTD_RESPONSE);
+        });
+
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          }
+        });
+        expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
+
+        const localMcdm = this.mc._mongocryptdManager;
+        this.mc.init(err => {
+          if (err) return done(err);
+
+          sandbox.spy(localMcdm, 'spawn');
+
+          this.mc.encrypt('test.test', TEST_COMMAND, err => {
+            expect(localMcdm.spawn).to.have.been.calledOnce;
+            expect(err).to.be.an.instanceof(MongoNetworkTimeoutError);
+            done();
+          });
+        });
+      });
+
+      it('should return a useful message if mongocryptd fails to autospawn', function (done) {
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          },
+          extraOptions: {
+            mongocryptdURI: 'mongodb://something.invalid:27020/'
+          }
+        });
+        expect(this.mc).to.have.property('cryptSharedLibVersionInfo', null);
+
+        sandbox.stub(MongocryptdManager.prototype, 'spawn').callsFake(callback => {
+          callback();
+        });
+
+        this.mc.init(err => {
+          expect(err).to.exist;
+          expect(err).to.be.instanceOf(MongoError);
+          done();
+        });
+      });
+    });
+
+    describe('noAutoSpawn', function () {
+      beforeEach('start MongocryptdManager', function (done) {
+        if (requirements.SKIP_LIVE_TESTS) {
+          this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+          this.skip();
+        }
+
+        this.mcdm = new MongocryptdManager({});
+        this.mcdm.spawn(done);
+      });
+
+      afterEach(function (done) {
+        if (this.mc) {
+          this.mc.teardown(false, err => {
+            this.mc = undefined;
+            done(err);
+          });
+        } else {
+          done();
+        }
+      });
+
+      ['mongocryptdBypassSpawn', 'bypassAutoEncryption', 'bypassQueryAnalysis'].forEach(opt => {
+        const encryptionOptions = {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          },
+          extraOptions: {
+            mongocryptdBypassSpawn: opt === 'mongocryptdBypassSpawn'
+          },
+          bypassAutoEncryption: opt === 'bypassAutoEncryption',
+          bypassQueryAnalysis: opt === 'bypassQueryAnalysis'
+        };
+
+        it(`should not spawn mongocryptd on startup if ${opt} is true`, function (done) {
+          const client = new MockClient();
+          this.mc = new AutoEncrypter(client, encryptionOptions);
+
+          const localMcdm = this.mc._mongocryptdManager || { spawn: () => {} };
+          sandbox.spy(localMcdm, 'spawn');
+
+          this.mc.init(err => {
+            expect(err).to.not.exist;
+            expect(localMcdm.spawn).to.have.a.callCount(0);
+            done();
+          });
+        });
+      });
+
+      it('should not spawn a mongocryptd or retry on a server selection error if mongocryptdBypassSpawn: true', function (done) {
+        let called = false;
+        const timeoutError = new MongoNetworkTimeoutError('msg');
+        StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
+          if (!called) {
+            called = true;
+            callback(timeoutError);
+            return;
+          }
+
+          callback(null, MOCK_MONGOCRYPTD_RESPONSE);
+        });
+
+        const client = new MockClient();
+        this.mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+            local: { key: Buffer.alloc(96) }
+          },
+          extraOptions: {
+            mongocryptdBypassSpawn: true
+          }
+        });
+
+        const localMcdm = this.mc._mongocryptdManager;
         sandbox.spy(localMcdm, 'spawn');
 
         this.mc.init(err => {
           expect(err).to.not.exist;
-          expect(localMcdm.spawn).to.have.a.callCount(0);
-          done();
-        });
-      });
-    });
-
-    it('should not spawn a mongocryptd or retry on a server selection error if mongocryptdBypassSpawn: true', function (done) {
-      let called = false;
-      const timeoutError = new MongoNetworkTimeoutError('msg');
-      StateMachine.prototype.markCommand.callsFake((client, ns, filter, callback) => {
-        if (!called) {
-          called = true;
-          callback(timeoutError);
-          return;
-        }
-
-        callback(null, MOCK_MONGOCRYPTD_RESPONSE);
-      });
-
-      const client = new MockClient();
-      this.mc = new AutoEncrypter(client, {
-        keyVaultNamespace: 'admin.datakeys',
-        logger: () => {},
-        kmsProviders: {
-          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-          local: { key: Buffer.alloc(96) }
-        },
-        extraOptions: {
-          mongocryptdBypassSpawn: true
-        }
-      });
-
-      const localMcdm = this.mc._mongocryptdManager;
-      sandbox.spy(localMcdm, 'spawn');
-
-      this.mc.init(err => {
-        expect(err).to.not.exist;
-        expect(localMcdm.spawn).to.not.have.been.called;
-
-        this.mc.encrypt('test.test', TEST_COMMAND, (err, response) => {
           expect(localMcdm.spawn).to.not.have.been.called;
-          expect(response).to.not.exist;
-          expect(err).to.equal(timeoutError);
-          done();
+
+          this.mc.encrypt('test.test', TEST_COMMAND, (err, response) => {
+            expect(localMcdm.spawn).to.not.have.been.called;
+            expect(response).to.not.exist;
+            expect(err).to.equal(timeoutError);
+            done();
+          });
         });
       });
     });
-  });
+  }
 
   describe('crypt_shared library', function () {
     it('should fail if no library can be found in the search path and cryptSharedLibRequired is set', function () {
@@ -674,9 +678,13 @@ describe('AutoEncrypter', function () {
         });
         expect.fail('missed exception');
       } catch (err) {
-        expect(err.message).to.include(
-          '`cryptSharedLibRequired` set but no crypt_shared library loaded'
-        );
+        if (process.env.CRYPT_SHARED_LIBRARY) {
+          expect(err.message).to.include('An existing CSFLE libary is loaded by');
+        } else {
+          expect(err.message).to.include(
+            '`cryptSharedLibRequired` set but no crypt_shared library loaded'
+          );
+        }
       }
     });
 
@@ -696,11 +704,7 @@ describe('AutoEncrypter', function () {
 
       expect(this.mc).to.not.have.property('_mongocryptdManager');
       expect(this.mc).to.not.have.property('_mongocryptdClient');
-      expect(this.mc).to.have.deep.property('cryptSharedLibVersionInfo', {
-        // eslint-disable-next-line no-undef
-        version: BigInt(0x000600020001000),
-        versionStr: 'stubbed-crypt_shared'
-      });
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo');
 
       this.mc.teardown(true, done);
     });
@@ -721,11 +725,7 @@ describe('AutoEncrypter', function () {
 
       expect(this.mc).to.not.have.property('_mongocryptdManager');
       expect(this.mc).to.not.have.property('_mongocryptdClient');
-      expect(this.mc).to.have.deep.property('cryptSharedLibVersionInfo', {
-        // eslint-disable-next-line no-undef
-        version: BigInt(0x000600020001000),
-        versionStr: 'stubbed-crypt_shared'
-      });
+      expect(this.mc).to.have.property('cryptSharedLibVersionInfo');
 
       this.mc.teardown(true, done);
     });
