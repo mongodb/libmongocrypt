@@ -26,6 +26,7 @@
 function (GetVersion OUTVAR)
     execute_process (
         COMMAND git describe --tags --match "1.*"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_VARIABLE VERSION_WITH_SUFFIX
         RESULT_VARIABLE GIT_STATUS
         ERROR_VARIABLE GIT_ERROR
@@ -38,6 +39,7 @@ function (GetVersion OUTVAR)
 
     execute_process (
         COMMAND git describe --tags --abbrev=0 --match "1.*"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_VARIABLE VERSION
         RESULT_VARIABLE GIT_STATUS
         ERROR_VARIABLE GIT_ERROR
@@ -88,6 +90,7 @@ function (GetVersion OUTVAR)
     # Append our custom suffix +<date>git<short hash>
     execute_process (
         COMMAND git rev-parse --revs-only --short=10 HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_VARIABLE SUFFIX_SHA
         RESULT_VARIABLE GIT_STATUS
         ERROR_VARIABLE GIT_ERROR
