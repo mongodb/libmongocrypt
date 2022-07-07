@@ -278,7 +278,7 @@ module.exports = function (modules) {
             return;
           }
 
-          if (dataKey.v.length === 0) {
+          if (!dataKey || dataKey.v.length === 0) {
             cb(null, {});
             return;
           }
