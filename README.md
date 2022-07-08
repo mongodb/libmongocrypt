@@ -115,8 +115,9 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 Do the following when releasing:
 - Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
+   - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Update the release branch references (i.e., `-DRELEASE_BRANCH_REF=origin/rx.y`) in the invocations of `GetVersion.cmake` (currently located in `CMakeLists.txt`, `.evergreen/debian_package_build.sh`, and `.evergreen/config.yml`) so that they refer to the new branch you are about to create
-   - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to `CHANGELOG.md` and the files which contain invocations of `GetVersion.cmake`)
+   - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, `CHANGELOG.md`, and the files which contain invocations of `GetVersion.cmake`)
    - Create a branch named `rx.y`.
    - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project to set `Branch Name` to `rx.y`.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"` or with `version = "1.0.0"` (depending on whether this is a pre-release or a final release).
@@ -129,7 +130,6 @@ Do the following when releasing:
    - For all final releases, on the `rx.y` release branch increment the patch version (i.e., change `version = "1.0.0"` to `version = "1.0.1-SNAPSHOT"`).
    - For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/508e21f4abff9f5519e0357a63a4ad30d2c24692) and its parent commit.
    - Note that if this is a new minor release (e.g. `x.y.0`), then post-release changes to build.gradle.kts happen on two branches.
-- If this is a new minor release (e.g. `x.y.0`), then on the `master` branch update the Linux distribution package installation instructions in the below sections to refer to the next version x.\[y+1\]. (It must be the next minor version as after these steps are completed builds from `master` will carry a version based on x.\[y+1\].)
 - Commit and push.
 - Ensure the version on Evergreen with the tagged commit is scheduled. The upload-all task must run to complete the release. ([Example](https://evergreen.mongodb.com/task/libmongocrypt_publish_snapshot_upload_all_77eec777c14171956c69b60aaaa4f85931c957ba_22_03_02_13_51_38)).
 - Create the release from the GitHub releases page from the new tag.
