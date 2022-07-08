@@ -245,9 +245,9 @@ _kms_start (mongocrypt_ctx_t *ctx)
       }
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-      if (!_mongocrypt_buffer_empty (&ctx->kms_providers.gcp.access_token)) {
-         access_token = bson_strdup (
-            (const char *) ctx->kms_providers.gcp.access_token.data);
+      if (NULL != ctx->kms_providers.gcp.access_token) {
+         access_token =
+            bson_strdup ((const char *) ctx->kms_providers.gcp.access_token);
       } else {
          access_token =
             _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_gcp);

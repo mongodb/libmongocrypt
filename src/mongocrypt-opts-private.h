@@ -38,7 +38,7 @@ typedef struct {
    char *email;
    _mongocrypt_buffer_t private_key;
    _mongocrypt_endpoint_t *endpoint;
-   _mongocrypt_buffer_t access_token;
+   char *access_token;
 } _mongocrypt_opts_kms_provider_gcp_t;
 
 typedef struct {

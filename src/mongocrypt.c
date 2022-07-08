@@ -1363,18 +1363,17 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
 
-         if (!_mongocrypt_parse_optional_binary (
-                &as_bson,
-                "gcp.accessToken",
-                &kms_providers->gcp.access_token,
-                status)) {
+         if (!_mongocrypt_parse_optional_utf8 (&as_bson,
+                                               "gcp.accessToken",
+                                               &kms_providers->gcp.access_token,
+                                               status)) {
             return false;
          }
 
-         if (!_mongocrypt_buffer_empty (&kms_providers->gcp.access_token)) {
+         if (NULL != kms_providers->gcp.access_token) {
             /* "gcp" document has form:
              * {
-             *    "accessToken": <required UTF-8 or Binary>
+             *    "accessToken": <required UTF-8>
              * }
              */
             if (!_mongocrypt_check_allowed_fields (

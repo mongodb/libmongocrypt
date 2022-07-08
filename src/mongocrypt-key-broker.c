@@ -569,9 +569,8 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          }
       }
    } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-      if (!_mongocrypt_buffer_empty (&kms_providers->gcp.access_token)) {
-         access_token =
-            bson_strdup ((const char *) kms_providers->gcp.access_token.data);
+      if (NULL != kms_providers->gcp.access_token) {
+         access_token = bson_strdup (kms_providers->gcp.access_token);
       } else {
          access_token =
             _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_gcp);
@@ -837,9 +836,8 @@ _mongocrypt_key_broker_kms_done (
             bson_free (access_token);
          } else if (key_returned->doc->kek.kms_provider ==
                     MONGOCRYPT_KMS_PROVIDER_GCP) {
-            if (!_mongocrypt_buffer_empty (&kms_providers->gcp.access_token)) {
-               access_token = bson_strdup (
-                  (const char *) kms_providers->gcp.access_token.data);
+            if (NULL != kms_providers->gcp.access_token) {
+               access_token = bson_strdup (kms_providers->gcp.access_token);
             } else {
                access_token =
                   _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_gcp);

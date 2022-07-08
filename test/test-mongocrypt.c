@@ -879,8 +879,7 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'local': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'gcp': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false},
-      {"{'gcp': {'accessToken': { '$binary': {'base64': 'AAAA', 'subType': "
-       "'00' }}, 'email': 'foo@bar.com' }}",
+      {"{'gcp': {'accessToken': 'foobar', 'email': 'foo@bar.com' }}",
        "Unexpected field: 'email'"}
    };
 
