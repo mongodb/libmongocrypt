@@ -8,6 +8,7 @@ module.exports = function (modules) {
   const promiseOrCallback = common.promiseOrCallback;
   const StateMachine = modules.stateMachine.StateMachine;
   const cryptoCallbacks = require('./cryptoCallbacks');
+  const { promisify } = require('util');
 
   /**
    * @typedef {object} KMSProviders
@@ -26,6 +27,26 @@ module.exports = function (modules) {
    * @property {string} [gcp.email] The service account email to authenticate
    * @property {string|Binary} [gcp.privateKey] A PKCS#8 encrypted key. This can either be a base64 string or a binary representation
    * @property {string} [gcp.endpoint] If present, a host with optional port. E.g. "example.com" or "example.com:443". Defaults to "oauth2.googleapis.com"
+   */
+
+  /**
+   * @typedef {object} DataKey
+   * @description A data key as stored in the database.
+   * @property {UUID} _id A unique identifier for the key.
+   * @property {number} version A numeric identifier for the schema version of this document. Implicitly 0 if unset.
+   * @property {string[]} [keyAltNames] Alternate names to search for keys by. Used for a per-document key scenario in support of GDPR scenarios.
+   * @property {Binary} keyMaterial Encrypted data key material, BinData type General.
+   * @property {Date} creationDate The datetime the wrapped data key material was imported into the Key Database.
+   * @property {Date} updateDate The datetime the wrapped data key material was last modified. On initial import, this value will be set to creationDate.
+   * @property {number} status 0 = enabled, 1 = disabled
+   * @property {object} masterKey the encrypted master key
+   */
+
+  /**
+   * @typedef {object} DeleteResult
+   * @description The result of a delete operation from the MongoDB Node driver.
+   * @property {boolean} acknowledged Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined.
+   * @property {number} deletedCount The number of documents that were deleted
    */
 
   /**
@@ -243,12 +264,13 @@ module.exports = function (modules) {
       });
     }
 
-    rewrapManyDataKey(filter, options, callback) {
-      if (typeof options === 'function') {
-        callback = options;
-        options = {};
-      }
-
+    /**
+     *  todo - add documentation
+     * @param {*} filter
+     * @param {*} options
+     * @returns
+     */
+    async rewrapManyDataKey(filter, options) {
       const bson = this._bson;
 
       let keyEncryptionKeyBson = undefined;
@@ -271,57 +293,175 @@ module.exports = function (modules) {
         session: options.session
       });
 
-      return promiseOrCallback(callback, cb => {
-        stateMachine.execute(this, context, (err, dataKey) => {
-          if (err) {
-            cb(err, null);
-            return;
-          }
+      const execute = promisify(stateMachine.execute.bind(stateMachine));
 
-          if (!dataKey || dataKey.v.length === 0) {
-            cb(null, {});
-            return;
-          }
+      const dataKey = await execute(this, context);
+      if (!dataKey || dataKey.v.length === 0) {
+        return {};
+      }
 
-          const dbName = databaseNamespace(this._keyVaultNamespace);
-          const collectionName = collectionNamespace(this._keyVaultNamespace);
-          const replacements = dataKey.v.map(key => ({
-            updateOne: {
-              filter: { _id: key._id },
-              update: {
-                $set: {
-                  masterKey: key.masterKey,
-                  keyMaterial: key.keyMaterial
-                },
-                $currentDate: {
-                  updateDate: true
-                }
-              }
+      const dbName = databaseNamespace(this._keyVaultNamespace);
+      const collectionName = collectionNamespace(this._keyVaultNamespace);
+      const replacements = dataKey.v.map(key => ({
+        updateOne: {
+          filter: { _id: key._id },
+          update: {
+            $set: {
+              masterKey: key.masterKey,
+              keyMaterial: key.keyMaterial
+            },
+            $currentDate: {
+              updateDate: true
             }
-          }));
+          }
+        }
+      }));
 
-          this._keyVaultClient
-            .db(dbName)
-            .collection(collectionName)
-            .bulkWrite(
-              replacements,
-              {
-                writeConcern: { w: 'majority' },
-                session: options.session
-              },
-              (err, result) => {
-                if (err) {
-                  cb(err, null);
-                  return;
-                }
-
-                cb(null, {
-                  bulkWriteResult: result
-                });
-              }
-            );
+      const result = await this._keyVaultClient
+        .db(dbName)
+        .collection(collectionName)
+        .bulkWrite(replacements, {
+          writeConcern: { w: 'majority' },
+          session: options.session
         });
-      });
+
+      return { bulkWriteResult: result };
+    }
+
+    /**
+     * Deletes the key with the provided id from the keyvault, if it exists.
+     *
+     * @param {ClientEncryption~dataKeyId} id - the id of the document to delete.
+     * @returns {Promise} Returns a promise that either resolves to a {@link DeleteResult} or rejects with an error.
+     */
+    async deleteKey(id) {
+      const dbName = databaseNamespace(this._keyVaultNamespace);
+      const collectionName = collectionNamespace(this._keyVaultNamespace);
+      return await this._keyVaultClient
+        .db(dbName)
+        .collection(collectionName)
+        .deleteOne({ _id: id }, { writeConcern: { w: 'majority' } });
+    }
+
+    /**
+     * Finds all the keys currently stored in the keyvault.
+     *
+     * This method will not throw.
+     *
+     * @returns {FindCursor} a FindCursor over all keys in the keyvault.
+     */
+    getKeys() {
+      const dbName = databaseNamespace(this._keyVaultNamespace);
+      const collectionName = collectionNamespace(this._keyVaultNamespace);
+      return this._keyVaultClient
+        .db(dbName)
+        .collection(collectionName)
+        .find({}, { readConcern: { level: 'majority' } });
+    }
+
+    /**
+     * Finds a key in the keyvault with the specified key.
+     *
+     * @param {ClientEncryption~dataKeyId} id - the id of the document to delete.
+     * @returns {Promise} IReturns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
+     * match the id.  The promise rejects with an error if an error is thrown.
+     */
+    async getKey(id) {
+      const dbName = databaseNamespace(this._keyVaultNamespace);
+      const collectionName = collectionNamespace(this._keyVaultNamespace);
+      return await this._keyVaultClient
+        .db(dbName)
+        .collection(collectionName)
+        .findOne({ _id: id }, { readConcern: { level: 'majority' } });
+    }
+
+    /**
+     * Finds a key in the keyvault which has the specified keyAltNames as a keyAltName.
+     *
+     * @param {string} keyAltName - a keyAltName to search for a key
+     * @returns {Promise} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
+     * match the id.  The promise rejects with an error if an error is thrown.
+     */
+    async getKeyByAltName(keyAltName) {
+      const dbName = databaseNamespace(this._keyVaultNamespace);
+      const collectionName = collectionNamespace(this._keyVaultNamespace);
+      return await this._keyVaultClient
+        .db(dbName)
+        .collection(collectionName)
+        .findOne({ keyAltNames: keyAltName }, { readConcern: { level: 'majority' } });
+    }
+
+    /**
+     * Adds a keyAltName to a key identified by the provided `id`.
+     *
+     * This method resolves to/returns the *old* key value (prior to adding the new altKeyName).
+     *
+     * @param {ClientEncryption~dataKeyId} id The id of the document to update.
+     * @param {string} keyAltName - a keyAltName to search for a key
+     * @returns {Promise} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
+     * match the id.  The promise rejects with an error if an error is thrown.
+     */
+    async addKeyAltName(id, keyAltName) {
+      const dbName = databaseNamespace(this._keyVaultNamespace);
+      const collectionName = collectionNamespace(this._keyVaultNamespace);
+      const { value } = await this._keyVaultClient
+        .db(dbName)
+        .collection(collectionName)
+        .findOneAndUpdate(
+          { _id: id },
+          { $addToSet: { keyAltNames: keyAltName } },
+          { writeConcern: { w: 'majority' }, returnDocument: 'before' }
+        );
+
+      return value;
+    }
+
+    /**
+     * Adds a keyAltName to a key identified by the provided `id`.
+     *
+     * This method resolves to/returns the *old* key value (prior to removing the new altKeyName).
+     *
+     * If the removed keyAltName is the last keyAltName for that key, the `altKeyNames` property is unset from the document.
+     *
+     * @param {ClientEncryption~dataKeyId} id The id of the document to update.
+     * @param {string} keyAltName - a keyAltName to search for a key
+     * @returns {Promise} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
+     * match the id.  The promise rejects with an error if an error is thrown.
+     */
+    async removeKeyAltName(id, keyAltName) {
+      const dbName = databaseNamespace(this._keyVaultNamespace);
+      const collectionName = collectionNamespace(this._keyVaultNamespace);
+      const pipeline = [
+        {
+          $set: {
+            keyAltNames: {
+              $cond: [
+                {
+                  $eq: ['$keyAltNames', [keyAltName]]
+                },
+                '$$REMOVE',
+                {
+                  $filter: {
+                    input: '$keyAltNames',
+                    cond: {
+                      $ne: ['$$this', keyAltName]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ];
+      const { value } = await this._keyVaultClient
+        .db(dbName)
+        .collection(collectionName)
+        .findOneAndUpdate({ _id: id }, pipeline, {
+          writeConcern: { w: 'majority' },
+          returnDocument: 'before'
+        });
+
+      return value;
     }
 
     /**
@@ -331,7 +471,7 @@ module.exports = function (modules) {
      */
 
     /**
-     * Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
+     * Explicitly encrypt a provided value. Noe that either `options.keyId` or `options.keyAltName` must
      * be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
      *
      * @param {*} value The value that you wish to serialize. Must be of a type that can be serialized into BSON

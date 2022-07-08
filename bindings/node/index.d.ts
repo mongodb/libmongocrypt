@@ -1,7 +1,18 @@
 import type { Document, Binary } from 'bson';
-import type { MongoClient, BulkWriteResult, ClientSession } from 'mongodb';
+import type { MongoClient, BulkWriteResult, ClientSession, DeleteResult, FindCursor } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
+
+export interface DataKeySchema {
+  _id: Binary;
+  version: number;
+  keyAltNames?: string[];
+  keyMaterial: Binary;
+  creationDate: Date;
+  updateDate: Date;
+  status: number;
+  masterKey: Document;
+}
 
 /**
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
@@ -314,11 +325,6 @@ export interface ClientEncryptionRewrapManyDataKeyResult {
   bulkWriteResult?: BulkWriteResult;
 }
 
-/** @experimental */
-export interface ClientEncryptionRewrapManyDataKeyCallback {
-  (error?: Error, result?: ClientEncryptionRewrapManyDataKeyResult): void;
-}
-
 /**
  * Options to provide when encrypting data.
  */
@@ -398,27 +404,59 @@ export class ClientEncryption {
 
   /** @experimental */
   rewrapManyDataKey(
-    filter: Document
+    filter: Document,
+    options?: ClientEncryptionRewrapManyDataKeyProviderOptions
   ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
 
-  /** @experimental */
-  rewrapManyDataKey(
-    filter: Document,
-    options: ClientEncryptionRewrapManyDataKeyProviderOptions
-  ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
+  /**
+   * Deletes the key with the provided id from the keyvault, if it exists.
+   *
+   * @param id - the id of the document to delete.
+   */
+  deleteKey(id: Binary): Promise<DeleteResult>;
 
-  /** @experimental */
-  rewrapManyDataKey(
-    filter: Document,
-    callback: ClientEncryptionRewrapManyDataKeyCallback
-  ): void;
+  /**
+   * Finds all the keys currently stored in the keyvault.
+   *
+   * This method will not throw.
+   */
+  getKeys(): FindCursor<DataKeySchema>; 
 
-  /** @experimental */
-  rewrapManyDataKey(
-    filter: Document,
-    options: ClientEncryptionRewrapManyDataKeyProviderOptions,
-    callback: ClientEncryptionRewrapManyDataKeyCallback
-  ): void;
+  /**
+   * Finds a key in the keyvault with the specified key.
+   *
+   * @param id - the id of the document to delete.
+   */
+  getKey(id: Binary): Promise<DataKeySchema | null>;
+
+  /**
+   * Finds a key in the keyvault which has the specified keyAltNames as a keyAltName.
+   *
+   * @param keyAltName a potential keyAltName to search for in the keyAltNames array
+   */
+  getKeyByAltName(keyAltName: string): Promise<DataKeySchema | null>;
+
+  /**
+   * Adds a keyAltName to a key identified by the provided `id`.
+   *
+   * This method resolves to/returns the *old* key value (prior to adding the new altKeyName).
+   *
+   * @param id The id of the document to update.
+   * @param keyAltName a keyAltName to search for a key
+   */
+  addKeyAltName(id: Binary, keyAltName: string): Promise<DataKeySchema | null>;
+
+  /**
+   * Adds a keyAltName to a key identified by the provided `id`.
+   *
+   * This method resolves to/returns the *old* key value (prior to removing the new altKeyName).
+   *
+   * If the removed keyAltName is the last keyAltName for that key, the `altKeyNames` property is unset from the document.
+   *
+   * @param id the id of the document to update.
+   * @param keyAltName a keyAltName to search for a key
+   */
+  removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKeySchema | null>;
 
   /**
    * Explicitly encrypt a provided value.
