@@ -1125,7 +1125,6 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    const char *host;
    char *request_string;
    bool ret = false;
-   char *bearer_token_value = NULL;
 
    _init_common (kms, log, MONGOCRYPT_KMS_AZURE_WRAPKEY);
    status = kms->status;
@@ -1170,7 +1169,6 @@ fail:
    kms_request_opt_destroy (opt);
    bson_free (path_and_query);
    bson_free (payload);
-   bson_free (bearer_token_value);
    return ret;
 }
 
@@ -1189,7 +1187,6 @@ _mongocrypt_kms_ctx_init_azure_unwrapkey (
    const char *host;
    char *request_string;
    bool ret = false;
-   char *bearer_token_value = NULL;
 
    _init_common (kms, log, MONGOCRYPT_KMS_AZURE_UNWRAPKEY);
    status = kms->status;
@@ -1234,7 +1231,6 @@ fail:
    kms_request_opt_destroy (opt);
    bson_free (path_and_query);
    bson_free (payload);
-   bson_free (bearer_token_value);
    return ret;
 }
 
@@ -1376,7 +1372,6 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    const char *hostname;
    char *request_string;
    bool ret = false;
-   char *bearer_token_value = NULL;
 
    _init_common (kms, log, MONGOCRYPT_KMS_GCP_ENCRYPT);
    status = kms->status;
@@ -1429,7 +1424,6 @@ fail:
    kms_request_opt_destroy (opt);
    bson_free (path_and_query);
    bson_free (payload);
-   bson_free (bearer_token_value);
    return ret;
 }
 
@@ -1448,7 +1442,6 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (
    const char *hostname;
    char *request_string;
    bool ret = false;
-   char *bearer_token_value = NULL;
 
    _init_common (kms, log, MONGOCRYPT_KMS_GCP_DECRYPT);
    status = kms->status;
@@ -1499,7 +1492,6 @@ fail:
    kms_request_opt_destroy (opt);
    bson_free (path_and_query);
    bson_free (payload);
-   bson_free (bearer_token_value);
    return ret;
 }
 

@@ -36,6 +36,8 @@ libmongocrypt_root=$(pwd)
 linker_tests_root=${libmongocrypt_root}/linker_tests
 linker_tests_deps_root=${libmongocrypt_root}/.evergreen/linker_tests_deps
 
+. ${libmongocrypt_root}/.evergreen/setup-env.sh
+
 rm -rf linker_tests
 mkdir -p linker_tests/{install,libmongocrypt-cmake-build,app-cmake-build}
 cd linker_tests

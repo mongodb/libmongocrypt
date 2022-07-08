@@ -149,6 +149,7 @@ if (BUILD_VERSION STREQUAL "0.0.0")
       file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
       message (STATUS "File VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
    else ()
+      set (RELEASE_BRANCH_REF "origin/r1.5")
       include (GetVersion)
       GetVersion (BUILD_VERSION)
       message (STATUS "Storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
@@ -357,6 +358,7 @@ if (BUILD_TESTING)
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
+   test/test-gcp-auth.c
    test/test-mc-efc.c
    test/test-mc-fle2-payload-ieev.c
    test/test-mc-fle2-payload-iup.c

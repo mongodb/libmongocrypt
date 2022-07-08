@@ -234,6 +234,7 @@ module.exports = function (modules) {
         }
 
         case MONGOCRYPT_CTX_DONE:
+          callback();
           return;
 
         default:

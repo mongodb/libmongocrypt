@@ -68,6 +68,7 @@ functions:
         script: |-
           set -o errexit
           set -o xtrace
+          export LSAN_OPTIONS="suppressions=$PWD/libmongocrypt/.lsan-suppressions"
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${test_env|} ./libmongocrypt/.evergreen/test.sh
           cd libmongocrypt
@@ -91,7 +92,7 @@ functions:
           fi
           # Get current version of libmongocrypt.
           cd libmongocrypt
-          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
           cd ..
 
           if [ "${has_packages|}" != "true" ] ; then
@@ -302,7 +303,7 @@ tasks:
   - func: "build and test"
     vars:
       compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
-      test_env: ASAN_OPTIONS="detect_leaks=1" LSAN_OPTIONS="suppressions=.lsan-suppressions"
+      test_env: ASAN_OPTIONS="detect_leaks=1"
 
 - name: build-and-test-asan-mac
   commands:
@@ -310,7 +311,6 @@ tasks:
   - func: "build and test"
     vars:
       compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
-      test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
 - name: build-and-test-asan-s390x
   commands:
@@ -318,7 +318,6 @@ tasks:
   - func: "build and test"
     vars:
       compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
-      test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
 - name: build-and-test-valgrind
   commands:
@@ -597,7 +596,7 @@ tasks:
             IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
           fi
           # Get the current version of libmongocrypt.
-          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
 
           if [ "${is_patch}" = "true" ]; then
             echo "patch build, skipping packaging publication"
@@ -636,7 +635,7 @@ tasks:
           set -o errexit
 
           CMAKE=/cygdrive/c/cmake/bin/cmake
-          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
           case "$mongocrypt_version" in
             *+*)
               # Not a tagged release.
