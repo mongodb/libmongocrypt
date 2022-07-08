@@ -49,7 +49,7 @@ sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
   cd /tmp/libmongocrypt && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  cmake -P ./cmake/GetVersion.cmake > VERSION_CURRENT 2>&1 && \
+  cmake -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake > VERSION_CURRENT 2>&1 && \
   git add --force VERSION_CURRENT && \
   git commit VERSION_CURRENT -m 'Set current version' && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
