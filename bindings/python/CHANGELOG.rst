@@ -4,6 +4,7 @@ Changelog
 Changes in Version 1.3.0
 ------------------------
 
+- Bundle libmongocrypt 1.5.0 in release wheels.
 - Add support for Queryable Encryption with MongoDB 6.0.
 - Add support for the crypt_shared library which can be used instead
   of mongocryptd.
