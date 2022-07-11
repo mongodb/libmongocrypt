@@ -109,30 +109,6 @@ namespace MongoDB.Libmongocrypt
         /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
         /// <param name="message">The BSON message.</param>
         /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContextWithKeyId(byte[] keyId, string encryptionAlgorithm, byte[] message)
-        {
-            return StartExplicitEncryptionContext(keyId, keyAltName: null, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
-        }
-
-        /// <summary>
-        /// Starts an explicit encryption context.
-        /// </summary>
-        /// <param name="keyAltName">The alternative key name.</param>
-        /// <param name="encryptionAlgorithm">The algorithm.</param>
-        /// <param name="message">The BSON message.</param>
-        /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContextWithKeyAltName(byte[] keyAltName, string encryptionAlgorithm, byte[] message)
-        {
-            return StartExplicitEncryptionContext(keyId: null, keyAltName, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
-        }
-
-        /// <summary>
-        /// Starts an explicit encryption context.
-        /// </summary>
-        /// <param name="key">The key id.</param>
-        /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
-        /// <param name="message">The BSON message.</param>
-        /// <returns>A encryption context. </returns>
         public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, string queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
         {
             var handle = Library.mongocrypt_ctx_new(_handle);
@@ -209,6 +185,17 @@ namespace MongoDB.Libmongocrypt
                     }
                 }
             }
+
+            return new CryptContext(handle);
+        }
+
+        public CryptContext StartRewrapMultipleDataKeysContext(KmsKeyId kmsKey, byte[] filter)
+        {
+            var handle = Library.mongocrypt_ctx_new(_handle);
+
+            kmsKey.SetCredentials(handle, _status);
+
+            PinnedBinary.RunAsPinnedBinary(handle, filter, _status, (h, pb) => Library.mongocrypt_ctx_rewrap_many_datakey_init(h, pb));
 
             return new CryptContext(handle);
         }

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -27,6 +26,7 @@ namespace MongoDB.Libmongocrypt
     {
         private readonly IReadOnlyList<byte[]> _alternateKeyNameBytes;
         private readonly byte[] _dataKeyOptionsBytes;
+        private readonly byte[] _keyMaterialBytes;
 
         /// <summary>
         /// Creates an <see cref="KmsKeyId"/> class.
@@ -35,48 +35,57 @@ namespace MongoDB.Libmongocrypt
         /// <param name="alternateKeyNameBytes">The byte representation of alternate keyName.</param>
         public KmsKeyId(
             byte[] dataKeyOptionsBytes,
-            IEnumerable<byte[]> alternateKeyNameBytes = null)
+            IEnumerable<byte[]> alternateKeyNameBytes = null,
+            byte[] keyMaterialBytes = null)
         {
-            _dataKeyOptionsBytes = dataKeyOptionsBytes ?? throw new ArgumentNullException(nameof(dataKeyOptionsBytes));
+            _dataKeyOptionsBytes = dataKeyOptionsBytes;
             _alternateKeyNameBytes = (alternateKeyNameBytes ?? Enumerable.Empty<byte[]>()).ToList().AsReadOnly();
+            _keyMaterialBytes = keyMaterialBytes;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Alternate key name bytes. 
+        /// </summary>
         public IReadOnlyList<byte[]> AlternateKeyNameBytes => _alternateKeyNameBytes;
 
+        /// <summary>
+        /// Data key options bytes. 
+        /// </summary>
+        public byte[] DataKeyOptionsBytes => _dataKeyOptionsBytes;
+
+        /// <summary>
+        /// Key material bytes. 
+        /// </summary>
+        public byte[] KeyMaterialBytes => _keyMaterialBytes;
+
         // internal methods
-        internal void SetAlternateKeyNames(ContextSafeHandle context, Status status)
+        internal void SetCredentials(ContextSafeHandle context, Status status)
+        {
+            if (_dataKeyOptionsBytes != null)
+            {
+                PinnedBinary.RunAsPinnedBinary(context, _dataKeyOptionsBytes, status, (h, pb) => Library.mongocrypt_ctx_setopt_key_encryption_key(h, pb));
+            }
+
+            SetAlternateKeyNamesIfConfigured(context, status);
+
+            SetKeyMaterialIfConfigured(context, status);
+        }
+
+        // private methods
+        private void SetAlternateKeyNamesIfConfigured(ContextSafeHandle context, Status status)
         {
             foreach (var alternateKeyNameBytes in _alternateKeyNameBytes)
             {
-                unsafe
-                {
-                    fixed (byte* p = alternateKeyNameBytes)
-                    {
-                        IntPtr ptr = (IntPtr)p;
-                        using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)alternateKeyNameBytes.Length))
-                        {
-                            context.Check(status, Library.mongocrypt_ctx_setopt_key_alt_name(context, pinned.Handle));
-                        }
-                    }
-                }
+                PinnedBinary.RunAsPinnedBinary(context, alternateKeyNameBytes, status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
             }
         }
 
-        internal void SetCredentials(ContextSafeHandle context, Status status)
+        private void SetKeyMaterialIfConfigured(ContextSafeHandle context, Status status)
         {
-            unsafe
+            if (_keyMaterialBytes != null)
             {
-                fixed (byte* p = _dataKeyOptionsBytes)
-                {
-                    IntPtr ptr = (IntPtr)p;
-                    using (PinnedBinary pinned = new PinnedBinary(ptr, (uint)_dataKeyOptionsBytes.Length))
-                    {
-                        context.Check(status, Library.mongocrypt_ctx_setopt_key_encryption_key(context, pinned.Handle));
-                    }
-                }
+                PinnedBinary.RunAsPinnedBinary(context, _keyMaterialBytes, status, (h, pb) => Library.mongocrypt_ctx_setopt_key_material(h, pb));
             }
-            SetAlternateKeyNames(context, status);
         }
     }
 }
