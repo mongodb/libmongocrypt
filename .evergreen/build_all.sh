@@ -40,15 +40,7 @@ else
     fi
 fi
 
-if test -z "${CTEST-}"; then
-    if test "$(basename "$CMAKE")" = "$CMAKE"; then
-        # We use CMake from PATH. Just use CTest from PATH as well.
-        CTEST=ctest
-    else
-        # Use the CTest that lives beside the CMake we are using.
-        CTEST="$(dirname "$CMAKE")/ctest"
-    fi
-fi
+: "${CTEST:="${CMAKE%cmake*}ctest"}"
 
 if [ "$PPA_BUILD_ONLY" ]; then
     # Clean-up from previous build iteration
