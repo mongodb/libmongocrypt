@@ -435,11 +435,21 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    add_executable (example-state-machine test/example-state-machine.c)
    target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared)
    target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
+   add_test (
+      NAME example-state-machine
+      COMMAND example-state-machine
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
 
    # Define example-state-machine-static
    add_executable (example-state-machine-static test/example-state-machine.c)
    target_link_libraries (example-state-machine-static PRIVATE mongocrypt_static _mongocrypt::libbson_for_static)
    target_include_directories (example-state-machine-static PRIVATE ./src)
+   add_test (
+      NAME example-state-machine-static
+      COMMAND example-state-machine-static
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
 
    if (ENABLE_ONLINE_TESTS)
       message ("compiling utilities")

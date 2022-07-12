@@ -40,6 +40,10 @@ else
     fi
 fi
 
+: "${CTEST:="${CMAKE%cmake*}ctest"}"
+# Have CTest print test failure info to stderr
+export CTEST_OUTPUT_ON_FAILURE=1
+
 if [ "$PPA_BUILD_ONLY" ]; then
     # Clean-up from previous build iteration
     cd $evergreen_root
@@ -76,6 +80,7 @@ echo "Installing libmongocrypt"
 $CMAKE --build . --target install --config RelWithDebInfo
 $CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
 $CMAKE --build . --target test_kms_request --config RelWithDebInfo
+"$CTEST" -C RelWithDebInfo
 cd $evergreen_root
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
@@ -104,6 +109,7 @@ echo "Installing libmongocrypt with no crypto"
 $CMAKE --build . --target install --config RelWithDebInfo
 echo "Building test-mongocrypt with no crypto"
 $CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
+"$CTEST" -C RelWithDebInfo
 cd $evergreen_root
 
 # Build and install libmongocrypt without statically linking libbson
@@ -113,3 +119,4 @@ cd cmake-build-sharedbson
 $CMAKE -DUSE_SHARED_LIBBSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/sharedbson" ../
 echo "Installing libmongocrypt with shared libbson"
 $CMAKE --build . --target install  --config RelWithDebInfo
+"$CTEST" -C RelWithDebInfo

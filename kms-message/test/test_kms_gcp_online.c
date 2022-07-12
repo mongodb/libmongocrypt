@@ -56,7 +56,9 @@ test_getenv (const char *key)
 {
    char *value = getenv (key);
    if (!value) {
-      TEST_ERROR ("Environment variable: %s not set", key);
+      fprintf (
+         stderr, "Environment variable: %s not set (@@ctest-skip@@)", key);
+      exit (2);
    }
    TEST_TRACE ("Env: %s = %s", key, value);
    return value;
