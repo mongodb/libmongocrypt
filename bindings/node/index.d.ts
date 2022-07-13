@@ -3,7 +3,7 @@ import type { MongoClient, BulkWriteResult, ClientSession, DeleteResult, FindCur
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
 
-export interface DataKeySchema {
+export interface DataKey {
   _id: Binary;
   version: number;
   keyAltNames?: string[];
@@ -316,7 +316,6 @@ export interface ClientEncryptionCreateDataKeyProviderOptions {
 export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
   provider: ClientEncryptionDataKeyProvider;
   masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
-  session?: ClientSession;
 }
 
 /** @experimental */
@@ -420,21 +419,21 @@ export class ClientEncryption {
    *
    * This method will not throw.
    */
-  getKeys(): FindCursor<DataKeySchema>; 
+  getKeys(): FindCursor<DataKey>; 
 
   /**
    * Finds a key in the keyvault with the specified key.
    *
    * @param id - the id of the document to delete.
    */
-  getKey(id: Binary): Promise<DataKeySchema | null>;
+  getKey(id: Binary): Promise<DataKey | null>;
 
   /**
    * Finds a key in the keyvault which has the specified keyAltNames as a keyAltName.
    *
    * @param keyAltName a potential keyAltName to search for in the keyAltNames array
    */
-  getKeyByAltName(keyAltName: string): Promise<DataKeySchema | null>;
+  getKeyByAltName(keyAltName: string): Promise<DataKey | null>;
 
   /**
    * Adds a keyAltName to a key identified by the provided `id`.
@@ -444,7 +443,7 @@ export class ClientEncryption {
    * @param id The id of the document to update.
    * @param keyAltName a keyAltName to search for a key
    */
-  addKeyAltName(id: Binary, keyAltName: string): Promise<DataKeySchema | null>;
+  addKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
    * Adds a keyAltName to a key identified by the provided `id`.
@@ -456,7 +455,7 @@ export class ClientEncryption {
    * @param id the id of the document to update.
    * @param keyAltName a keyAltName to search for a key
    */
-  removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKeySchema | null>;
+  removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
    * Explicitly encrypt a provided value.

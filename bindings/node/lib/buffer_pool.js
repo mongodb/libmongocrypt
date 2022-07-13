@@ -8,6 +8,7 @@ const kLength = Symbol('length');
 /**
  * A pool of Buffers which allow you to read them as if they were one
  * @internal
+ * @ignore
  */
 class BufferPool {
   // [kBuffers]: Buffer[];
