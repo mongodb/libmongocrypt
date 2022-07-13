@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.5.1
+### New Features
+- Update Java bindings to support remaining 1.5.0 API.
+
 ## 1.5.0
 ## Fixed
 - Update to use new payload for FLE 2.0 find. 
