@@ -29,9 +29,8 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     if [[ $(uname -m) == 'arm64' ]]; then
-      PYTHONS=(
-             "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
-             )
+      PYTHONS=("/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+              )
     else
       PYTHONS=("python"   # Python 2.7 from brew
              "python3"  # Python 3 from brew
@@ -46,13 +45,9 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     fi
 
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
-    createvirtualenv python3 .venv
-    python -m pip install certifi
-    python drivers-evergreen-tools/.evergreen/mongodl.py \
+    python3 drivers-evergreen-tools/.evergreen/mongodl.py \
       --component crypt_shared \
       --version latest --out ../crypt_shared/
-    deactivate
-    rm -rf .venv
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
     PYTHONS=("/opt/python/2.7/bin/python"
