@@ -34,9 +34,14 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 elif [ "Darwin" = "$(uname -s)" ]; then
+    if [[ $(uname -m) == 'arm64' ]]; then
+      PYTHON="/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+    else
+      PYTHON="python3.7"
+    fi
     # Build the source dist first
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    python3.7 setup.py sdist
+    $PYTHON setup.py sdist
 
     # Build the manylinux2010 wheels
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
@@ -69,7 +74,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
-    python3.7 setup.py bdist_wheel
+    $PYTHON setup.py bdist_wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 else
