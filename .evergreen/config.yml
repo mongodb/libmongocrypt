@@ -1094,6 +1094,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
+  - test-python
   # Needs: BUILD-14976
   # - test-java
 - name: windows-vs2017-32bit
