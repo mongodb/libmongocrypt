@@ -353,6 +353,16 @@ module.exports = function (modules) {
      *
      * @param {ClientEncryptionDataKeyId} id - the id of the document to delete.
      * @returns {Promise<DeleteResult>} Returns a promise that either resolves to a {@link DeleteResult} or rejects with an error.
+     *
+     * @example
+     * // delete a key by _id
+     * const id = new Binary(); // id is a bson binary subtype 4 object
+     * const { deletedCount } = await clientEncryption.deleteKey(id);
+     *
+     * if (deletedCount != null && deletedCount > 0) {
+     *   // successful deletion
+     * }
+     *
      */
     async deleteKey(_id) {
       const dbName = databaseNamespace(this._keyVaultNamespace);
