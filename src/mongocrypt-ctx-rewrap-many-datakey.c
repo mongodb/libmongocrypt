@@ -45,21 +45,35 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
          BSON_ASSERT (bson_init_static (&bson, bin.data, bin.len));
 
-         /* All other fields such as keyAltNames are already present, but '_id'
-          * and 'creationDate' should be the same value as before rewrap. */
-         bson_copy_to_excluding_noinit (
-            &bson, &elem, "_id", "creationDate", NULL);
+         /* Among all (possible) fields in key document, the only fields
+          * required by caller to construct the corresponding bulk write
+          * operations to update the key document with rewrapped key material
+          * are:
+          *   - _id (same as original key)
+          *   - keyMaterial (updated)
+          *   - masterKey (updated)
+          * Which means the following fields can be excluded:
+          *   - _id (discard new ID generated during rewrapping)
+          *   - creationDate
+          *   - updateDate (updated via the $currentDate operator)
+          *   - status
+          *   - keyAltNames
+          */
+         bson_copy_to_excluding_noinit (&bson,
+                                        &elem,
+                                        "_id",
+                                        "creationDate",
+                                        "updateDate",
+                                        "status",
+                                        "keyAltNames",
+                                        NULL);
 
-         /* Preserve key ID. */
+         /* Preserve key ID of original document. */
          BSON_ASSERT (BSON_APPEND_BINARY (&elem,
                                           "_id",
                                           BSON_SUBTYPE_UUID,
                                           iter->doc->id.data,
                                           iter->doc->id.len));
-
-         /* Preserve creation date. */
-         BSON_ASSERT (BSON_APPEND_DATE_TIME (
-            &elem, "creationDate", iter->doc->creation_date));
 
          /* Array indicies must be specified manually. */
          {

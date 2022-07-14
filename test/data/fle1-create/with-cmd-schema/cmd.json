@@ -1,0 +1,12 @@
+{
+   "create": "coll",
+   "validator": {
+      "$jsonSchema": {
+         "properties": {
+            "a": {
+               "bsonType": "number"
+            }
+         }
+      }
+   }
+}

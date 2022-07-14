@@ -38,8 +38,8 @@ _test_explicit_encrypt_init (_mongocrypt_tester_t *tester)
    bson_t *bson_name;
    bson_t *bson_bad_name;
 
-   char *random = "AEAD_AES_256_CBC_HMAC_SHA_512-Random";
-   char *deterministic = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic";
+   char *random = MONGOCRYPT_ALGORITHM_RANDOM_STR;
+   char *deterministic = MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR;
 
    bson_msg = BCON_NEW ("v", "hello");
    msg = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (bson_msg),
@@ -1354,7 +1354,7 @@ _test_explicit_encryption (_mongocrypt_tester_t *tester)
    mongocrypt_ctx_t *ctx;
    _mongocrypt_buffer_t from_key_id, from_key_altname;
    mongocrypt_binary_t *bin, *key_id;
-   char *deterministic = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic";
+   char *deterministic = MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
@@ -2292,9 +2292,9 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_NONE),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2304,6 +2304,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
                     ctx, TEST_BSON ("{'v': 'value123'}")),
                  ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
 
       ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                           MONGOCRYPT_CTX_NEED_MONGO_KEYS);
@@ -2355,15 +2356,16 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
                  ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
                     ctx, TEST_BSON ("{'v': 'value123'}")),
                  ctx);
@@ -2417,9 +2419,9 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2487,9 +2489,9 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
@@ -2549,12 +2551,13 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
                     ctx, TEST_BSON ("{'v': 'value123'}")),
                  ctx);
@@ -2593,18 +2596,19 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
+                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
                  ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
                     ctx, TEST_BSON ("{'v': 123456}")),
                  ctx);
@@ -2647,12 +2651,12 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_query_type (ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
+                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
@@ -2704,9 +2708,9 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, -1), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
@@ -2726,9 +2730,9 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       mongocrypt_t *crypt = _crypt_with_rng (&source);
       mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
 
-      ASSERT_OK (
-         mongocrypt_ctx_setopt_index_type (ctx, MONGOCRYPT_INDEX_TYPE_EQUALITY),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, INT64_MAX), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_key_id (
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
@@ -3979,6 +3983,7 @@ _test_fle1_create_without_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Test encrypting a "create" command with a schema from the schema map. */
 static void
 _test_fle1_create_with_schema (_mongocrypt_tester_t *tester)
 {
@@ -4010,13 +4015,13 @@ _test_fle1_create_with_schema (_mongocrypt_tester_t *tester)
 
       ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
       ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-         TEST_FILE ("./test/data/fle1-create/without-schema/"
+         TEST_FILE ("./test/data/fle1-create/with-schema/"
                     "ismaster-to-mongocryptd.json"),
          cmd_to_mongocryptd);
       mongocrypt_binary_destroy (cmd_to_mongocryptd);
       ASSERT_OK (mongocrypt_ctx_mongo_feed (
                     ctx,
-                    TEST_FILE ("./test/data/fle1-create/without-schema/"
+                    TEST_FILE ("./test/data/fle1-create/with-schema/"
                                "mongocryptd-ismaster.json")),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
@@ -4056,6 +4061,78 @@ _test_fle1_create_with_schema (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Test encrypting a "create" command with a schema included in the "create"
+ * command. This is a regression test for MONGOCRYPT-436. */
+static void
+_test_fle1_create_with_cmd_schema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx,
+         "db",
+         -1,
+         TEST_FILE ("./test/data/fle1-create/with-cmd-schema/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle1-create/with-cmd-schema/"
+                    "ismaster-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/with-cmd-schema/"
+                               "mongocryptd-ismaster.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-cmd-schema/cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/fle1-create/with-cmd-schema/"
+                               "mongocryptd-reply.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE (
+            "./test/data/fle1-create/with-cmd-schema/encrypted-payload.json"),
+         out);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+/* Test encrypting the "create" command with mongocryptd version < 6.0.0.
+ * Expect the "create" command not to be sent to mongocryptd. */
 static void
 _test_fle1_create_old_mongocryptd (_mongocrypt_tester_t *tester)
 {
@@ -4247,6 +4324,61 @@ _test_fle2_create_bypass_query_analysis (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+// Test the error message returned on macOS versions that do not support AES-CTR
+// mode. This tests behavior changed in MONGOCRYPT-440.
+static void
+_test_encrypt_macos_no_ctr (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t key_id;
+
+   if (_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with CTR support detected. Skipping.");
+      return;
+   }
+
+   _mongocrypt_buffer_copy_from_hex (&key_id,
+                                     "ABCDEFAB123498761234123456789012");
+
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                 ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_id (
+                 ctx, _mongocrypt_buffer_as_binary (&key_id)),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
+                 ctx, TEST_BSON ("{'v': 'value123'}")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/keys/"
+                               "ABCDEFAB123498761234123456789012-local-"
+                               "document.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *got = mongocrypt_binary_new ();
+
+      ASSERT_FAILS (mongocrypt_ctx_finalize (ctx, got),
+                    ctx,
+                    "CTR mode is only supported on macOS 10.15+");
+      mongocrypt_binary_destroy (got);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -4300,8 +4432,10 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_dollardb_preserved_fle1);
    INSTALL_TEST (_test_fle1_create_without_schema);
    INSTALL_TEST (_test_fle1_create_with_schema);
+   INSTALL_TEST (_test_fle1_create_with_cmd_schema);
    INSTALL_TEST (_test_fle1_create_old_mongocryptd);
    INSTALL_TEST (_test_fle1_create_with_csfle);
    INSTALL_TEST (_test_fle2_create);
    INSTALL_TEST (_test_fle2_create_bypass_query_analysis);
+   INSTALL_TEST (_test_encrypt_macos_no_ctr);
 }

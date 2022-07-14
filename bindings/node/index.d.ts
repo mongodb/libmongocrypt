@@ -310,7 +310,8 @@ export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
 
 /** @experimental */
 export interface ClientEncryptionRewrapManyDataKeyResult {
-  bulkWriteResult: BulkWriteResult;
+  /** The result of rewrapping data keys. If unset, no keys matched the filter. */
+  bulkWriteResult?: BulkWriteResult;
 }
 
 /** @experimental */
@@ -337,14 +338,11 @@ export interface ClientEncryptionEncryptOptions {
    */
   keyAltName?: string;
 
-  /** @experimental */
-  indexKeyId?: Binary;
-
-  /** @experimental */
+  /** @experimental Public Technical Preview: The contention factor. */
   contentionFactor?: bigint | number;
 
-  /** @experimental */
-  queryType?: 'Equality';
+  /** @experimental Public Technical Preview: The query type supported */
+  queryType?: 'equality';
 }
 
 /**
@@ -375,19 +373,6 @@ export class ClientEncryption {
     provider: ClientEncryptionDataKeyProvider,
     options: ClientEncryptionCreateDataKeyProviderOptions
   ): Promise<Binary>;
-
-  /** Alias for @see createDataKey. */
-  createKey(
-    provider: ClientEncryptionDataKeyProvider,
-    callback: ClientEncryptionCreateDataKeyCallback
-  ): void;
-
-  /** Alias for @see createDataKey. */
-  createKey(
-    provider: ClientEncryptionDataKeyProvider,
-    options: ClientEncryptionCreateDataKeyProviderOptions,
-    callback: ClientEncryptionCreateDataKeyCallback
-  ): void;
 
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace

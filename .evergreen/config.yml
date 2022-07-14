@@ -21,15 +21,21 @@ functions:
       params:
         script: |-
           set -o errexit
-          chmod u+x libmongocrypt/.evergreen/*.sh
-          ./libmongocrypt/.evergreen/print-env-info.sh
-    - command: s3.get
+          cd libmongocrypt
+          chmod u+x .evergreen/*.sh
+          ./.evergreen/print-env-info.sh
+
+          if [ "${is_patch}" != "true" ]; then
+            # determine if we have a release tag present on HEAD
+            head_tag=$(git tag -l --points-at HEAD '[0-9].*')
+          fi
+          echo "tag_upload_location: $head_tag"
+
+          echo "tag_upload_location: \"$head_tag\"" > ../tag_expansion.yml
+    - command: expansions.update
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${branch_name}/${libmongocrypt_s3_suffix}/mongo-c-driver-src.tar.gz'
-        bucket: mciuploads
-        extract_to: mongo-c-driver
+        ignore_missing_file: true
+        file: tag_expansion.yml
 
   "tar and upload libmongocrypt libraries":
     - command: archive.targz_pack
@@ -62,8 +68,8 @@ functions:
         script: |-
           set -o errexit
           set -o xtrace
+          export LSAN_OPTIONS="suppressions=$PWD/libmongocrypt/.lsan-suppressions"
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
-          ${test_env|} ./libmongocrypt/.evergreen/test.sh
           cd libmongocrypt
           ./.evergreen/linker-tests.sh
           ./.evergreen/pkgconfig-tests.sh
@@ -80,13 +86,12 @@ functions:
           if [ "$OS" == "Windows_NT" ]; then
              CMAKE=/cygdrive/c/cmake/bin/cmake
           else
-             chmod u+x ./mongo-c-driver/.evergreen/find-cmake.sh
              # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-             IGNORE_SYSTEM_CMAKE=1 . ./mongo-c-driver/.evergreen/find-cmake.sh
+             IGNORE_SYSTEM_CMAKE=1 . ./libmongocrypt/.evergreen/find-cmake.sh
           fi
           # Get current version of libmongocrypt.
           cd libmongocrypt
-          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
           cd ..
 
           if [ "${has_packages|}" != "true" ] ; then
@@ -210,7 +215,7 @@ functions:
           export SIGNING_PASSWORD=${signing_password}
           export SIGNING_KEY_ID=${signing_keyId}
           export RING_FILE_GPG_BASE64=${ring_file_gpg_base64}
-          export GIT_REVISION=${revision} 
+          export GIT_REVISION=${revision}
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/publish.sh
 
   "download tarball":
@@ -268,40 +273,10 @@ functions:
       params:
         script: |-
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
-          ${test_env|} ./libmongocrypt/.evergreen/test.sh
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
 tasks:
-- name: prep-c-driver-source
-  # clone C driver source and calculate build version on a platform with a
-  # recent version of 'git'; the resultant prepared tarball will be used by
-  # build tasks that must build the C driver
-  commands:
-  - command: git.get_project
-    params: {directory: libmongocrypt}
-  - command: "shell.exec"
-    params:
-      script: |-
-        ${compile_env|} ./libmongocrypt/.evergreen/prep_c_driver_source.sh
-  - command: archive.targz_pack
-    params:
-      target: mongo-c-driver-src.tar.gz
-      source_dir: mongo-c-driver
-      include: [./**]
-  - command: s3.put
-    params:
-      aws_key: '${aws_key}'
-      aws_secret: '${aws_secret}'
-      remote_file: '${project}/${branch_name}/${libmongocrypt_s3_suffix}/mongo-c-driver-src.tar.gz'
-      bucket: mciuploads
-      permissions: public-read
-      local_file: 'mongo-c-driver-src.tar.gz'
-      content_type: '${content_type|application/x-gzip}'
-
 - name: build-and-test-and-upload
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
@@ -309,65 +284,39 @@ tasks:
   - func: "create packages and repos"
 
 - name: clang-tidy
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "run clang-tidy"
 
 - name: build-and-test-shared-bson
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DENABLE_SHARED_BSON=ON"
+      compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
 
 - name: build-and-test-asan
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
-      test_env: ASAN_OPTIONS="detect_leaks=1" LSAN_OPTIONS="suppressions=.lsan-suppressions"
+      compile_env: >
+        LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
+        ASAN_OPTIONS="detect_leaks=1"
 
 - name: build-and-test-asan-mac
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
     vars:
       compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
-      test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
 
 - name: build-and-test-asan-s390x
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build and test"
     vars:
       compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
-      test_env: LSAN_OPTIONS="suppressions=.lsan-suppressions"
-
-- name: build-and-test-valgrind
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-    vars:
-      test_env: VALGRIND="valgrind --leak-check=full --error-exitcode=1"
 
 - name: test-java
   depends_on:
@@ -401,9 +350,6 @@ tasks:
       vars: { variant_name: windows-test }
 
 - name: build-and-test-csharp
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
   - func: "fetch source"
   - func: "build csharp and test"
@@ -411,9 +357,6 @@ tasks:
       test_env: PROJECT_DIRECTORY=${project_directory}
 
 - name: build-and-test-node
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
     - func: "fetch source"
     - func: "build and test node"
@@ -421,9 +364,6 @@ tasks:
 
 # Note: keep this disabled unless you want master to force-push
 - name: build-and-test-node-force-publish
-  depends_on:
-    - variant: ubuntu2004-64
-      name: prep-c-driver-source
   commands:
     - func: "fetch source"
     - func: "build and test node"
@@ -449,7 +389,7 @@ tasks:
       name: build-and-test-and-upload
     - variant: macos_x86_64
       name: build-and-test-and-upload
-    # Needs: BUILD-14976 
+    # Needs: BUILD-14976
     # - variant: macos
     #   name: build-and-test-and-upload
   commands:
@@ -468,7 +408,7 @@ tasks:
       vars: { variant_name: "windows-test" }
     - func: "download tarball"
       vars: { variant_name: "macos_x86_64" }
-    # Needs: BUILD-14976 
+    # Needs: BUILD-14976
     # - func: "download tarball"
     #   vars: { variant_name: "macos" }
     - command: archive.targz_pack
@@ -533,6 +473,7 @@ tasks:
     - variant: macos
       name: build-and-test-and-upload
   commands:
+    - func: "fetch source"
     - command: shell.exec
       params:
         script: mkdir all
@@ -585,6 +526,15 @@ tasks:
         target: libmongocrypt-all.tar.gz
         source_dir: all
         include: [./**]
+    - command: shell.exec
+      params:
+        script: |-
+          set -o errexit
+          if [ -n "${tag_upload_location}" ]; then
+            # the "fetch source" step detected a release tag on HEAD, so we
+            # prepare a local file for upload to a location based on the tag
+            cp -a libmongocrypt-all.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
+          fi
     - command: s3.put
       params:
         aws_key: '${aws_key}'
@@ -602,6 +552,17 @@ tasks:
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-all.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        optional: true
+        display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
+        local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
 - name: publish-packages
@@ -623,12 +584,11 @@ tasks:
           if [ "$OS" == "Windows_NT" ]; then
             CMAKE=/cygdrive/c/cmake/bin/cmake
           else
-            chmod u+x ../mongo-c-driver/.evergreen/find-cmake.sh
             # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-            IGNORE_SYSTEM_CMAKE=1 . ../mongo-c-driver/.evergreen/find-cmake.sh
+            IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
           fi
           # Get the current version of libmongocrypt.
-          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
 
           if [ "${is_patch}" = "true" ]; then
             echo "patch build, skipping packaging publication"
@@ -667,7 +627,7 @@ tasks:
           set -o errexit
 
           CMAKE=/cygdrive/c/cmake/bin/cmake
-          mongocrypt_version="$($CMAKE -P ./cmake/GetVersion.cmake 2>&1)"
+          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
           case "$mongocrypt_version" in
             *+*)
               # Not a tagged release.
@@ -724,9 +684,6 @@ tasks:
         content_type: '${content_type|application/x-gzip}'
 
 - name: debian-package-build
-  depends_on:
-  - variant: ubuntu2004-64
-    name: prep-c-driver-source
   commands:
     - func: "fetch source"
     - command: shell.exec
@@ -801,7 +758,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-valgrind
   - build-and-test-node
   - test-java
   - name: publish-packages
@@ -1100,7 +1056,6 @@ buildvariants:
     packager_arch: x86_64
   tasks:
   - clang-tidy
-  - prep-c-driver-source
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -1142,11 +1097,10 @@ buildvariants:
   run_on: macos-1100-arm64
   expansions:
     compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
-    test_env: MACOS_UNIVERSAL=ON
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
-  # Needs: BUILD-14976 
+  # Needs: BUILD-14976
   # - test-java
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.

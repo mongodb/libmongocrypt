@@ -293,7 +293,7 @@ fn_createdatakey (bson_t *args)
       MONGOC_DEBUG ("Running state machine");
    }
 
-   if (!_state_machine_run (&state.machine, &result, &error)) {
+   if (!_csfle_state_machine_run (&state.machine, &result, &error)) {
       ERREXIT_BSON (&error);
    }
 
@@ -354,7 +354,7 @@ fn_autoencrypt (bson_t *args)
       MONGOC_INFO ("Running state machine");
    }
 
-   if (!_state_machine_run (&state.machine, &result, &error)) {
+   if (!_csfle_state_machine_run (&state.machine, &result, &error)) {
       ERREXIT_BSON (&error);
    }
 
@@ -410,7 +410,7 @@ fn_autodecrypt (bson_t *args)
       MONGOC_INFO ("Running state machine");
    }
 
-   if (!_state_machine_run (&state.machine, &result, &error)) {
+   if (!_csfle_state_machine_run (&state.machine, &result, &error)) {
       ERREXIT_BSON (&error);
    }
 
@@ -497,7 +497,7 @@ fn_explicitencrypt (bson_t *args)
       MONGOC_INFO ("Running state machine");
    }
 
-   if (!_state_machine_run (&state.machine, &result, &error)) {
+   if (!_csfle_state_machine_run (&state.machine, &result, &error)) {
       ERREXIT_BSON (&error);
    }
 
@@ -550,7 +550,7 @@ fn_explicitdecrypt (bson_t *args)
       MONGOC_INFO ("Running state machine");
    }
 
-   if (!_state_machine_run (&state.machine, &result, &error)) {
+   if (!_csfle_state_machine_run (&state.machine, &result, &error)) {
       ERREXIT_BSON (&error);
    }
 

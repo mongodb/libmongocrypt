@@ -54,7 +54,7 @@
               'libraries': [
                 '<(module_root_dir)/deps/lib/libmongocrypt-static.a',
                 '<(module_root_dir)/deps/lib/libkms_message-static.a',
-                '<(module_root_dir)/deps/lib/libbson-static-1.0.a'
+                '<(module_root_dir)/deps/lib/libbson-static-for-libmongocrypt.a'
               ]
             }
           }],
@@ -67,7 +67,7 @@
               'libraries': [
                 '<(module_root_dir)/deps/lib/mongocrypt-static.lib',
                 '<(module_root_dir)/deps/lib/kms_message-static.lib',
-                '<(module_root_dir)/deps/lib/bson-static-1.0.lib',
+                '<(module_root_dir)/deps/lib/bson-static-for-libmongocrypt.lib',
                 '-lws2_32'
               ]
             }

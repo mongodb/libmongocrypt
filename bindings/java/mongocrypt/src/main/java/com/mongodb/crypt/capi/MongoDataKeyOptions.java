@@ -27,6 +27,7 @@ import java.util.List;
 public class MongoDataKeyOptions {
     private final List<String> keyAltNames;
     private final BsonDocument masterKey;
+    private final byte[] keyMaterial;
 
     /**
      * Options builder
@@ -34,6 +35,7 @@ public class MongoDataKeyOptions {
     public static class Builder {
         private List<String> keyAltNames;
         private BsonDocument masterKey;
+        private byte[] keyMaterial;
 
         /**
          * Add alternate key names
@@ -53,6 +55,18 @@ public class MongoDataKeyOptions {
          */
         public Builder masterKey(final BsonDocument masterKey) {
             this.masterKey = masterKey;
+            return this;
+        }
+
+        /**
+         * Add the key material
+         *
+         * @param keyMaterial the optional custom key material for the data key
+         * @return this
+         * @since 1.5
+         */
+        public Builder keyMaterial(final byte[] keyMaterial) {
+            this.keyMaterial = keyMaterial;
             return this;
         }
 
@@ -93,8 +107,19 @@ public class MongoDataKeyOptions {
         return masterKey;
     }
 
+    /**
+     * Gets the custom key material if set.
+     *
+     * @return the custom key material for the data key or null
+     * @since 1.5
+     */
+    public byte[] getKeyMaterial() {
+        return keyMaterial;
+    }
+
     private MongoDataKeyOptions(final Builder builder) {
         keyAltNames = builder.keyAltNames;
         masterKey = builder.masterKey;
+        keyMaterial = builder.keyMaterial;
     }
 }

@@ -21,6 +21,7 @@ import sys
 import uuid
 
 import bson
+from bson.raw_bson import RawBSONDocument
 from bson import json_util
 from bson.binary import Binary, UuidRepresentation
 from bson.codec_options import CodecOptions
@@ -31,7 +32,7 @@ sys.path[0:0] = [""]
 
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
-from pymongocrypt.compat import unicode_type, PY3
+from pymongocrypt.compat import unicode_type, safe_bytearray_or_base64, PY3
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
@@ -118,7 +119,6 @@ class TestMongoCryptOptions(unittest.TestCase):
                 ValueError, 'at least one KMS provider must be configured'):
             MongoCryptOptions({})
         for invalid_kms_providers in [
-                {'aws': {}},
                 {'aws': {'accessKeyId': 'foo'}},
                 {'aws': {'secretAccessKey': 'foo'}}]:
             with self.assertRaisesRegex(
@@ -490,14 +490,12 @@ class TestExplicitEncryption(unittest.TestCase):
         # Invalid algorithm.
         with self.assertRaisesRegex(MongoCryptError, "algorithm"):
             encrypter.encrypt(encoded_val, "Invalid", key_id)
-        # Invalid index_key_id type.
-        with self.assertRaises(TypeError):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, index_key_id=1)
-        with self.assertRaises(MongoCryptError):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, index_key_id=b'1234')
         # Invalid query_type type.
         with self.assertRaisesRegex(TypeError, "query_type"):
-            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type='not an int')
+            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type=42)
+        # Invalid query_type string.
+        with self.assertRaisesRegex(MongoCryptError, "query_type"):
+            encrypter.encrypt(encoded_val, "Indexed", key_id, query_type='invalid query type string')
         # Invalid contention_factor type.
         with self.assertRaisesRegex(TypeError, "contention_factor"):
             encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor='not an int')
@@ -505,31 +503,28 @@ class TestExplicitEncryption(unittest.TestCase):
             encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor=-1)
         # Invalid: Unindexed + query_type is an error.
         with self.assertRaisesRegex(MongoCryptError, "query"):
-            encrypter.encrypt(encoded_val, "Unindexed", key_id, query_type=1)
+            encrypter.encrypt(encoded_val, "Unindexed", key_id, query_type='equality')
         # Invalid: Unindexed + contention_factor is an error.
         with self.assertRaisesRegex(MongoCryptError, "contention"):
             encrypter.encrypt(encoded_val, "Unindexed", key_id, contention_factor=1)
 
     def test_encrypt_indexed(self):
         key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
-        index_key_path = 'keys/12345678123498761234123456789012-local-document.json'
         key_id = json_data(key_path)['_id']
-        index_key_id = json_data(index_key_path)['_id']
         encrypter = ExplicitEncrypter(MockCallback(
-            key_docs=[bson_data(key_path), bson_data(index_key_path)],
+            key_docs=[bson_data(key_path)],
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
         val = {'v': 'value123'}
         encoded_val = bson.encode(val)
         for kwargs in [
-            dict(algorithm='Indexed'),
-            dict(algorithm='Indexed', query_type=1),
+            dict(algorithm='Indexed', contention_factor=0),
+            dict(algorithm='Indexed', query_type='equality', contention_factor=0),
             dict(algorithm='Indexed', contention_factor=100),
             dict(algorithm='Unindexed'),
         ]:
             kwargs['key_id'] = key_id
-            kwargs['index_key_id'] = index_key_id
             encrypted = encrypter.encrypt(encoded_val, **kwargs)
             encrypted_val = bson.decode(encrypted, OPTS)['v']
             self.assertIsInstance(encrypted_val, Binary)
@@ -573,9 +568,32 @@ class TestExplicitEncryption(unittest.TestCase):
             "key": "key",
             "endpoint": "example.com"
         }
-        encrypter.create_data_key("aws", master_key=master_key)
+        key_material = base64.b64decode('xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5')
+        if not PY3:
+            key_material = Binary(key_material)
+        encrypter.create_data_key("aws", master_key=master_key, key_material=key_material)
         self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
 
+    def test_data_key_creation_bad_key_material(self):
+        mock_key_vault = KeyVaultCallback(
+            kms_reply=http_data('kms-encrypt-reply.txt'))
+        encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        key_material = Binary(b'0' * 97)
+        with self.assertRaisesRegex(MongoCryptError, "keyMaterial should have length 96, but has length 97"):
+            encrypter.create_data_key("local", key_material=key_material)
+
+    def test_rewrap_many_data_key(self):
+        key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+        key_path2 = 'keys/12345678123498761234123456789012-local-document.json'
+        encrypter = ExplicitEncrypter(MockCallback(
+            key_docs=[bson_data(key_path), bson_data(key_path2)]), self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        result = encrypter.rewrap_many_data_key({})
+        raw_doc = RawBSONDocument(result)
+        assert len(raw_doc['v']) == 2
 
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:

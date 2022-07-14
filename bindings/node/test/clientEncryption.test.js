@@ -283,7 +283,8 @@ describe('ClientEncryption', function () {
         .then(dataKey => {
           const encryptOptions = {
             keyId: dataKey,
-            algorithm: 'Indexed'
+            algorithm: 'Indexed',
+            contentionFactor: 0
           };
 
           return newClientEncryption().encrypt('hello', encryptOptions);
@@ -305,6 +306,17 @@ describe('ClientEncryption', function () {
         });
     });
 
+    it('should not perform updates if no keys match', function () {
+      const clientEncryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: { local: { key: 'A'.repeat(128) } }
+      });
+
+      return clientEncryption.rewrapManyDataKey({ _id: 12345 }).then(rewrapManyDataKeyResult => {
+        expect(rewrapManyDataKeyResult.bulkWriteResult).to.equal(undefined);
+      });
+    });
+
     it('should explicitly encrypt and decrypt with a re-wrapped local key (explicit session/transaction)', function () {
       const encryption = new ClientEncryption(client, {
         keyVaultNamespace: 'client.encryption',
@@ -318,7 +330,8 @@ describe('ClientEncryption', function () {
         .then(dataKey => {
           const encryptOptions = {
             keyId: dataKey,
-            algorithm: 'Indexed'
+            algorithm: 'Indexed',
+            contentionFactor: 0
           };
 
           return encryption.encrypt('hello', encryptOptions);
@@ -560,7 +573,6 @@ describe('ClientEncryption', function () {
 
       const encryptOptions = {
         keyId: new Binary(Buffer.from('ABCDEFAB123498761234123456789012', 'hex'), 4),
-        indexKeyId: new Binary(Buffer.from('12345678123498761234123456789012', 'hex'), 4),
         algorithm: 'Unindexed'
       };
 
@@ -675,7 +687,8 @@ describe('ClientEncryption', function () {
       const coll = encryptedClient.db('db').collection('explicit_encryption');
       const insertPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
-        algorithm: 'Indexed'
+        algorithm: 'Indexed',
+        contentionFactor: 0
       });
       await coll.insertOne({
         encryptedIndexed: insertPayload
@@ -684,7 +697,8 @@ describe('ClientEncryption', function () {
       const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'Equality'
+        queryType: 'equality',
+        contentionFactor: 0
       });
       const findResult = await coll
         .find({
@@ -714,7 +728,8 @@ describe('ClientEncryption', function () {
       const findPayload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'Equality'
+        queryType: 'equality',
+        contentionFactor: 0
       });
       const findResult = await coll
         .find({
@@ -733,7 +748,7 @@ describe('ClientEncryption', function () {
       const findPayload2 = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
         algorithm: 'Indexed',
-        queryType: 'Equality',
+        queryType: 'equality',
         contentionFactor: 10
       });
       const findResult2 = await coll
@@ -777,7 +792,8 @@ describe('ClientEncryption', function () {
     it('Case 4: can roundtrip encrypted indexed', async function () {
       const payload = await clientEncryption.encrypt('encrypted indexed value', {
         keyId: KEY1_ID,
-        algorithm: 'Indexed'
+        algorithm: 'Indexed',
+        contentionFactor: 0
       });
       const decrypted = await clientEncryption.decrypt(payload);
 

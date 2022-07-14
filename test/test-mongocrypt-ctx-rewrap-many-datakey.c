@@ -892,43 +892,6 @@ _test_rewrap_many_datakey_finalize (_mongocrypt_tester_t *tester)
          ASSERT (iter.raw != b_iter.raw || iter.off != b_iter.off);
       }
 
-      /* Both keys should have same creation date as prior to rewrap. */
-      iter = a_iter;
-      ASSERT (bson_iter_find_descendant (&iter, "creationDate", &iter));
-      ASSERT (fields_a->creation_date == bson_iter_date_time (&iter));
-      iter = b_iter;
-      ASSERT (bson_iter_find_descendant (&iter, "creationDate", &iter));
-      ASSERT (fields_b->creation_date == bson_iter_date_time (&iter));
-
-      /* Both keys should have same alt names as prior to rewrap. */
-      {
-         _mongocrypt_key_alt_name_t *key_alt_names;
-
-         iter = a_iter;
-         ASSERT (bson_iter_find_descendant (&iter, "keyAltNames", &iter));
-         ASSERT (
-            _mongocrypt_key_alt_name_from_iter (&iter, &key_alt_names, NULL));
-         ASSERT (_mongocrypt_key_alt_name_unique_list_equal (
-            fields_a->key_alt_names, key_alt_names));
-         _mongocrypt_key_alt_name_destroy_all (key_alt_names);
-
-         iter = b_iter;
-         ASSERT (bson_iter_find_descendant (&iter, "keyAltNames", &iter));
-         ASSERT (
-            _mongocrypt_key_alt_name_from_iter (&iter, &key_alt_names, NULL));
-         ASSERT (_mongocrypt_key_alt_name_unique_list_equal (
-            fields_b->key_alt_names, key_alt_names));
-         _mongocrypt_key_alt_name_destroy_all (key_alt_names);
-      }
-
-      /* Both keys should have a new update date. */
-      iter = a_iter;
-      ASSERT (bson_iter_find_descendant (&iter, "updateDate", &iter));
-      ASSERT (fields_a->update_date < bson_iter_date_time (&iter));
-      iter = b_iter;
-      ASSERT (bson_iter_find_descendant (&iter, "updateDate", &iter));
-      ASSERT (fields_b->update_date < bson_iter_date_time (&iter));
-
       /* Both keys should be rewrapped with new masterKey. */
       iter = a_iter;
       ASSERT (bson_iter_find_descendant (&iter, "masterKey.key", &iter));

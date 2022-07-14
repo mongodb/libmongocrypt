@@ -2,9 +2,17 @@
 # from git history.
 #
 # This may be run as an independent script, like so:
-# cmake -P ./cmake/GetVersion.cmake
+# cmake -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake
 # And the computed version is printed to stderr (since printing to stdout with
 # cmake's "message" function would prefix with "-- ")
+#
+# Note that specifying -DRELEASE_BRANCH_REF=origin/r1.5 tells the script to base
+# its version calculation on that particular branch.  It should point to the
+# latest available release branch.  This is necessary to ensure that calling the
+# script while checked out to a branch other than the latest release branch
+# returns a sensible version number.  Put more concretely, given the latest
+# release branch as origin/r1.5, running this script while checked out on the
+# master branch will return a version number like 1.6.0-dev+...
 #
 # The general approach of this function is to produce a sequence of versions
 # which distinguish between development versions, release candidates, prerelease
@@ -25,7 +33,8 @@
 #
 function (GetVersion OUTVAR)
     execute_process (
-        COMMAND git describe --tags --match "1.*"
+        COMMAND git describe --tags --match "1.*" ${RELEASE_BRANCH_REF}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_VARIABLE VERSION_WITH_SUFFIX
         RESULT_VARIABLE GIT_STATUS
         ERROR_VARIABLE GIT_ERROR
@@ -37,7 +46,8 @@ function (GetVersion OUTVAR)
     endif ()
 
     execute_process (
-        COMMAND git describe --tags --abbrev=0 --match "1.*"
+        COMMAND git describe --tags --abbrev=0 --match "1.*" ${RELEASE_BRANCH_REF}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_VARIABLE VERSION
         RESULT_VARIABLE GIT_STATUS
         ERROR_VARIABLE GIT_ERROR
@@ -56,6 +66,19 @@ function (GetVersion OUTVAR)
     endif ()
 
     # Otherwise, construct a version based on the next release version
+    execute_process (
+        COMMAND git rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE CURRENT_BRANCH
+        RESULT_VARIABLE GIT_STATUS
+        ERROR_VARIABLE GIT_ERROR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if (NOT GIT_STATUS STREQUAL 0)
+        message (FATAL_ERROR "Unable to determine branch: 'git rev-parse' failed: '${GIT_ERROR}'")
+    endif ()
+
 
     # A list of version components separated by dots and dashes: "1.0.0-[prerelease-marker]"
     string (REGEX MATCHALL "[^.-]+" VERSION_PARTS ${VERSION})
@@ -65,7 +88,12 @@ function (GetVersion OUTVAR)
     list (GET VERSION_PARTS 1 MINOR_VERSION)
     list (GET VERSION_PARTS 2 PATCH_VERSION)
     set (PRERELEASE_VERSION "")
-    if (VERSION_LENGTH GREATER 3)
+    if (CURRENT_BRANCH STREQUAL "master")
+        # We need a version in the next minor sequence
+        math (EXPR MINOR_VERSION "${MINOR_VERSION} + 1")
+        set (PATCH_VERSION "0")
+        set (PRERELEASE_VERSION "-dev")
+    elseif (VERSION_LENGTH GREATER 3)
         # The version we are starting with is already a pre-release of the next
         list (GET VERSION_PARTS 3 PRERELEASE_VERSION)
         string (REGEX MATCHALL "(alpha|beta|rc|[0-9]+)" PRERELEASE_PARTS ${PRERELEASE_VERSION})
@@ -88,6 +116,7 @@ function (GetVersion OUTVAR)
     # Append our custom suffix +<date>git<short hash>
     execute_process (
         COMMAND git rev-parse --revs-only --short=10 HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_VARIABLE SUFFIX_SHA
         RESULT_VARIABLE GIT_STATUS
         ERROR_VARIABLE GIT_ERROR

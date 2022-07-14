@@ -18,6 +18,7 @@
 
 package com.mongodb.crypt.capi;
 
+import org.bson.BsonBinary;
 import org.bson.BsonDocument;
 
 import java.io.Closeable;
@@ -68,6 +69,16 @@ public interface MongoCrypt extends Closeable {
      * @return the context
      */
     MongoCryptContext createExplicitDecryptionContext(BsonDocument document);
+
+    /**
+     * Create a context to use for encryption
+     *
+     * @param filter The filter to use for the find command on the key vault collection to retrieve datakeys to rewrap.
+     * @param options  the rewrap many data key options
+     * @return the context
+     * @since 1.5
+     */
+    MongoCryptContext createRewrapManyDatakeyContext(BsonDocument filter, MongoRewrapManyDataKeyOptions options);
 
     /**
      * @return the version string of the loaded crypt shared dynamic library if available or null

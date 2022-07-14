@@ -366,7 +366,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
 
    if (!_mongocrypt_key_broker_decrypted_key_by_id (
           kb, indexKeyId, &indexKey)) {
-      CLIENT_ERR ("unable to retreive key");
+      CLIENT_ERR ("unable to retrieve key");
       goto fail;
    }
 
@@ -530,7 +530,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
       }
    }
 
-   // e := collectionLevel1Token
+   // e := ServerDataEncryptionLevel1Token
    {
       mc_ServerDataEncryptionLevel1Token_t *serverToken =
          mc_ServerDataEncryptionLevel1Token_new (
@@ -603,6 +603,20 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    // c := ECCDerivedToken
    _mongocrypt_buffer_steal (&payload.eccDerivedToken, &common.eccDerivedToken);
 
+   // e := ServerDataEncryptionLevel1Token
+   {
+      mc_ServerDataEncryptionLevel1Token_t *serverToken =
+         mc_ServerDataEncryptionLevel1Token_new (
+            kb->crypt->crypto, &common.tokenKey, status);
+      if (!serverToken) {
+         goto fail;
+      }
+      _mongocrypt_buffer_copy_to (
+         mc_ServerDataEncryptionLevel1Token_get (serverToken),
+         &payload.serverEncryptionToken);
+      mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
+   }
+
    payload.maxContentionCounter = placeholder->maxContentionCounter;
 
    {
@@ -644,7 +658,7 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
 
    if (!_mongocrypt_key_broker_decrypted_key_by_id (
           kb, &placeholder->user_key_id, &user_key)) {
-      CLIENT_ERR ("unable to retreive key");
+      CLIENT_ERR ("unable to retrieve key");
       goto fail;
    }
 

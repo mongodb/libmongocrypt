@@ -170,10 +170,6 @@ module.exports = function (modules) {
      *   keyAltNames: [ 'mySpecialKey' ]
      * });
      */
-    createKey(provider, options, callback) {
-      return this.createDataKey(provider, options, callback);
-    }
-
     createDataKey(provider, options, callback) {
       if (typeof options === 'function') {
         callback = options;
@@ -282,12 +278,25 @@ module.exports = function (modules) {
             return;
           }
 
+          if (!dataKey || dataKey.v.length === 0) {
+            cb(null, {});
+            return;
+          }
+
           const dbName = databaseNamespace(this._keyVaultNamespace);
           const collectionName = collectionNamespace(this._keyVaultNamespace);
           const replacements = dataKey.v.map(key => ({
-            replaceOne: {
+            updateOne: {
               filter: { _id: key._id },
-              replacement: key
+              update: {
+                $set: {
+                  masterKey: key.masterKey,
+                  keyMaterial: key.keyMaterial
+                },
+                $currentDate: {
+                  updateDate: true
+                }
+              }
             }
           }));
 
@@ -365,9 +374,6 @@ module.exports = function (modules) {
       if (options.keyId) {
         contextOptions.keyId = options.keyId.buffer;
       }
-      if (options.indexKeyId) {
-        contextOptions.indexKeyId = options.indexKeyId.buffer;
-      }
       if (options.keyAltName) {
         const keyAltName = options.keyAltName;
         if (options.keyId) {
@@ -381,14 +387,6 @@ module.exports = function (modules) {
         }
 
         contextOptions.keyAltName = bson.serialize({ keyAltName });
-      }
-      if (options.algorithm === 'Indexed') {
-        delete contextOptions.algorithm;
-        contextOptions.indexType = 'Equality';
-      }
-      if (options.algorithm === 'Unindexed') {
-        delete contextOptions.algorithm;
-        contextOptions.indexType = 'None';
       }
 
       const stateMachine = new StateMachine({

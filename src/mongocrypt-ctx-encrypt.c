@@ -977,7 +977,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
    if (1) {                                                            \
       if (csfle.status_get_error (status)) {                           \
          _mongocrypt_set_error (ctx->status,                           \
-                                MONGOCRYPT_STATUS_ERROR_CSFLE,         \
+                                MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,  \
                                 MONGOCRYPT_GENERIC_ERROR_CODE,         \
                                 "csfle " #Func                         \
                                 " failed: %s [Error %d, code %d]",     \
@@ -1643,6 +1643,10 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    if (ctx->opts.contention_factor.set) {
       marking.fle2.maxContentionCounter = ctx->opts.contention_factor.value;
+   } else if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "contention factor required for indexed algorithm");
+      goto fail;
    }
 
    /* Convert marking to ciphertext. */
@@ -1931,6 +1935,62 @@ _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
    return true;
 }
 
+/* _try_schema_from_create_cmd tries to find a JSON schema included in a create
+ * command by checking for "validator.$jsonSchema". Example:
+ * {
+ *     "create" : "coll",
+ *     "validator" : {
+ *         "$jsonSchema" : {
+ *             "properties" : { "a" : { "bsonType" : "number" } }
+ *          }
+ *     }
+ * }
+ * If the "create" command does not include a JSON schema, an empty JSON schema
+ * is returned. This is to avoid an unnecessary 'listCollections' command for
+ * create. */
+static bool
+_try_schema_from_create_cmd (mongocrypt_ctx_t *ctx)
+{
+   _mongocrypt_ctx_encrypt_t *ectx;
+   mongocrypt_status_t *status = ctx->status;
+
+   ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+   /* As a special case, use an empty schema for the 'create' command. */
+   const char *cmd_name = ectx->cmd_name;
+
+   if (0 != strcmp (cmd_name, "create")) {
+      return true;
+   }
+
+   bson_t cmd_bson;
+   bson_iter_t iter;
+
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &cmd_bson)) {
+      CLIENT_ERR ("unable to convert command buffer to BSON");
+      _mongocrypt_ctx_fail (ctx);
+      return false;
+   }
+
+   if (!bson_iter_init (&iter, &cmd_bson)) {
+      CLIENT_ERR ("unable to iterate over command BSON");
+      _mongocrypt_ctx_fail (ctx);
+      return false;
+   }
+
+   if (bson_iter_find_descendant (&iter, "validator.$jsonSchema", &iter)) {
+      if (!_mongocrypt_buffer_copy_from_document_iter (&ectx->schema, &iter)) {
+         CLIENT_ERR (
+            "failed to parse BSON document from create validator.$jsonSchema");
+         _mongocrypt_ctx_fail (ctx);
+         return false;
+      }
+      ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+      return true;
+   }
+
+   return true;
+}
+
 static bool
 _permitted_for_encryption (bson_iter_t *iter,
                            mongocrypt_encryption_algorithm_t algo,
@@ -2036,10 +2096,6 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
       }
       /* algorithm is FLE 1 only. */
       if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
-         if (ctx->opts.index_type.set) {
-            return _mongocrypt_ctx_fail_w_msg (
-               ctx, "cannot set both algorithm and index type");
-         }
          if (!_mongocrypt_buffer_empty (&ctx->opts.index_key_id)) {
             return _mongocrypt_ctx_fail_w_msg (
                ctx, "cannot set both algorithm and index key id");
@@ -2077,6 +2133,12 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
        !mc_validate_contention (ctx->opts.contention_factor.value,
                                 ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
+   }
+
+   if (ctx->opts.index_type.set &&
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY &&
+       !ctx->opts.contention_factor.set) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "contention factor is required for indexed algorithm");
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
@@ -2461,9 +2523,15 @@ mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx)
       return false;
    }
    if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
-      /* Check if we have a local schema from schema_map */
-      if (!_try_schema_from_schema_map (ctx)) {
+      if (!_try_schema_from_create_cmd (ctx)) {
          return false;
+      }
+
+      /* Check if we have a local schema from schema_map */
+      if (_mongocrypt_buffer_empty (&ectx->schema)) {
+         if (!_try_schema_from_schema_map (ctx)) {
+            return false;
+         }
       }
 
       /* If we didn't have a local schema, try the cache. */

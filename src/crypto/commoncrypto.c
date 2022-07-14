@@ -23,6 +23,40 @@
 #include <CommonCrypto/CommonHMAC.h>
 #include <CommonCrypto/CommonRandom.h>
 
+static const char *
+CCCryptorStatus_to_string (CCCryptorStatus status)
+{
+   switch (status) {
+   case kCCSuccess:
+      return "Success";
+   case kCCParamError:
+      return "ParamError";
+   case kCCBufferTooSmall:
+      return "BufferTooSmall";
+   case kCCMemoryFailure:
+      return "MemoryFailure";
+   case kCCAlignmentError:
+      return "AlignmentError";
+   case kCCDecodeError:
+      return "DecodeError";
+   case kCCUnimplemented:
+      return "Unimplemented";
+   case kCCOverflow:
+      return "Overflow";
+   case kCCRNGFailure:
+      return "RNGFailure";
+   case kCCUnspecifiedError:
+      return "UnspecifiedError";
+   case kCCCallSequenceError:
+      return "CallSequenceError";
+   case kCCKeySizeError:
+      return "KeySizeError";
+   case kCCInvalidKey:
+      return "InvalidKey";
+   default:
+      return "Unknown";
+   }
+}
 
 bool _native_crypto_initialized = false;
 
@@ -56,7 +90,16 @@ _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
                                         &ctx);
 
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
+      if (cc_status == kCCUnimplemented && mode == kCCModeCTR) {
+         CLIENT_ERR ("error initializing cipher: %s (%d). CTR mode is only "
+                     "supported on macOS 10.15+",
+                     CCCryptorStatus_to_string (cc_status),
+                     (int) cc_status);
+      } else {
+         CLIENT_ERR ("error initializing cipher: %s (%d)",
+                     CCCryptorStatus_to_string (cc_status),
+                     (int) cc_status);
+      }
       goto done;
    }
 
@@ -69,7 +112,9 @@ _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
                                 args.out->len,
                                 &intermediate_bytes_written);
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error encrypting: %d", (int) cc_status);
+      CLIENT_ERR ("error encrypting: %s (%d)",
+                  CCCryptorStatus_to_string (cc_status),
+                  (int) cc_status);
       goto done;
    }
    *args.bytes_written = intermediate_bytes_written;
@@ -82,7 +127,9 @@ _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
    *args.bytes_written += intermediate_bytes_written;
 
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error finalizing: %d", (int) cc_status);
+      CLIENT_ERR ("error finalizing: %s (%d)",
+                  CCCryptorStatus_to_string (cc_status),
+                  (int) cc_status);
       goto done;
    }
 
@@ -129,7 +176,16 @@ _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
                                         &ctx);
 
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error initializing cipher: %d", (int) cc_status);
+      if (cc_status == kCCUnimplemented && mode == kCCModeCTR) {
+         CLIENT_ERR ("error initializing cipher: %s (%d). CTR mode is only "
+                     "supported on macOS 10.15+",
+                     CCCryptorStatus_to_string (cc_status),
+                     (int) cc_status);
+      } else {
+         CLIENT_ERR ("error initializing cipher: %s (%d)",
+                     CCCryptorStatus_to_string (cc_status),
+                     (int) cc_status);
+      }
       goto done;
    }
 
@@ -141,7 +197,9 @@ _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
                                 args.out->len,
                                 &intermediate_bytes_written);
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error decrypting: %d", (int) cc_status);
+      CLIENT_ERR ("error decrypting: %s (%d)",
+                  CCCryptorStatus_to_string (cc_status),
+                  (int) cc_status);
       goto done;
    }
    *args.bytes_written = intermediate_bytes_written;
@@ -153,7 +211,9 @@ _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
    *args.bytes_written += intermediate_bytes_written;
 
    if (cc_status != kCCSuccess) {
-      CLIENT_ERR ("error finalizing: %d", (int) cc_status);
+      CLIENT_ERR ("error finalizing: %s (%d)",
+                  CCCryptorStatus_to_string (cc_status),
+                  (int) cc_status);
       goto done;
    }
 

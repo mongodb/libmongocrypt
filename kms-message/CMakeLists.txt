@@ -261,24 +261,45 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       target_link_libraries(test_kms_request "${OPENSSL_LIBRARIES}")
       target_include_directories(test_kms_request PRIVATE "${OPENSSL_INCLUDE_DIR}")
    endif()
+
+   add_test (
+      NAME test_kms_request
+      COMMAND test_kms_request
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
 endif ()
 
 # build online_tests if OpenSSL is available (to create TLS connections).
-find_package (mongoc-1.0 1.16.2)
-if(NOT mongoc-1.0_FOUND)
-   message ("test_kms_azure_online target disabled: libmongoc not found. Required for creating TLS streams")
-elseif(DISABLE_NATIVE_CRYPTO)
+if(DISABLE_NATIVE_CRYPTO)
    message ("test_kms_azure_online target disabled: Not building with native crypto.")
 elseif(ENABLE_ONLINE_TESTS)
    add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms_util.c test/test_kms_online_util.c)
    target_include_directories(test_kms_azure_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_compile_definitions(test_kms_azure_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
-   target_link_libraries(test_kms_azure_online mongo::mongoc_shared)
+   target_link_libraries(test_kms_azure_online _mongocrypt::mongoc)
    target_link_libraries(test_kms_azure_online kms_message_static)
+   add_test (
+      NAME test_kms_azure_online
+      COMMAND test_kms_azure_online
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
 
    add_executable(test_kms_gcp_online test/test_kms_gcp_online.c test/test_kms_util.c test/test_kms_online_util.c)
    target_include_directories(test_kms_gcp_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_compile_definitions(test_kms_gcp_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
-   target_link_libraries(test_kms_gcp_online mongo::mongoc_shared)
+   target_link_libraries(test_kms_gcp_online _mongocrypt::mongoc)
    target_link_libraries(test_kms_gcp_online kms_message_static)
+   add_test (
+      NAME test_kms_gcp_online
+      COMMAND test_kms_gcp_online
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
+   set_tests_properties (
+      test_kms_gcp_online test_kms_azure_online
+      PROPERTIES
+      SKIP_REGULAR_EXPRESSION "@@ctest-skip@@"
+      # Older CMake (<3.16) does not support skipping via regex, so we'll use the
+      # less-expressive skip-retcode.
+      SKIP_RETURN_CODE 2
+   )
 endif ()

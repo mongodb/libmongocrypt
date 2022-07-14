@@ -454,7 +454,6 @@ public class CAPI {
      *     <li>The crypt_shared shared library will not attempt to be loaded.</li>
      *     <li>A mongocrypt_ctx_t will never enter the MONGOCRYPT_CTX_NEED_MARKINGS state.</li>
      * </ul>
-     * </p>
      *
      * @param crypt The @ref mongocrypt_t object to update
      * @since 1.5
@@ -463,24 +462,11 @@ public class CAPI {
     mongocrypt_setopt_bypass_query_analysis (mongocrypt_t crypt);
 
     /**
-     * Set the index type used for explicit encryption.
-     * The index type is only used for Queryable Encryption.
-     *
-     * @param ctx The @ref mongocrypt_ctx_t object.
-     * @param index_type
-     * @return A boolean indicating success. If false, an error status is set.
-     * Retrieve it with @ref mongocrypt_ctx_status.
-     * @since 1.5
-     */
-    public static native boolean
-    mongocrypt_ctx_setopt_index_type (mongocrypt_ctx_t ctx, int index_type);
-
-    /**
      * Set the contention factor used for explicit encryption.
      * The contention factor is only used for indexed Queryable Encryption.
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
-     * @param contention_factor
+     * @param contention_factor the contention factor
      * @return A boolean indicating success. If false, an error status is set.
      * Retrieve it with @ref mongocrypt_ctx_status.
      * @since 1.5
@@ -568,7 +554,7 @@ public class CAPI {
      * Retrieve it with @ref mongocrypt_ctx_status
      */
     public static native boolean
-    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, int query_type);
+    mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, cstring query_type, int len);
 
     /**
      * Initialize new @ref mongocrypt_t object.
@@ -657,6 +643,24 @@ public class CAPI {
     public static native boolean
     mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t ctx,
                                         mongocrypt_binary_t key_alt_name);
+
+    /**
+     * Set the keyMaterial to use for encrypting data.
+     *
+     * <p>
+     * Pass the binary encoding of a BSON document like the following:
+     * <code>{ "keyMaterial" : (BSON BINARY value) }</code>
+     * </p>
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param key_material The data encryption key to use. The viewed data is
+     * copied. It is valid to destroy @p key_material with @ref
+     * mongocrypt_binary_destroy immediately after.
+     * @return A boolean indicating success. If false, an error status is set.
+     * Retrieve it with @ref mongocrypt_ctx_status
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_key_material (mongocrypt_ctx_t ctx, mongocrypt_binary_t key_material);
 
     /**
      * Set the algorithm used for encryption to either
@@ -842,6 +846,19 @@ public class CAPI {
     public static native boolean
     mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t ctx,
                                           mongocrypt_binary_t msg);
+
+    /**
+     * Initialize a context to rewrap datakeys.
+     *
+     * Associated options {@link #mongocrypt_ctx_setopt_key_encryption_key(mongocrypt_ctx_t, mongocrypt_binary_t)}
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param filter The filter to use for the find command on the key vault collection to retrieve datakeys to rewrap.
+     * @return A boolean indicating success. If false, and error status is set.
+     * @since 1.5
+     */
+    public static native boolean
+    mongocrypt_ctx_rewrap_many_datakey_init (mongocrypt_ctx_t ctx, mongocrypt_binary_t filter);
 
 
     public static final int MONGOCRYPT_CTX_ERROR = 0;

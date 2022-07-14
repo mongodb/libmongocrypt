@@ -32,7 +32,6 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  secure_random,
                                  sign_rsaes_pkcs1_v1_5)
 
-
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
                  bypass_query_analysis=False, crypt_shared_lib_path=None,
@@ -344,6 +343,22 @@ class MongoCrypt(object):
         return DataKeyContext(self._create_context(), kms_provider, opts,
                               self.__callback)
 
+    def rewrap_many_data_key_context(self, filter, provider, master_key):
+        """Creates a context to use for rewrapping many data keys.
+
+        :Parameters:
+          - `filter`: A document used to filter the data keys.
+          - `provider`: (optional) The name of a different kms provider.
+          - `master_key`: Optional document for the given provider.
+            MUST have the fields corresponding to the
+            given provider as specified in master_key. master_key MUST NOT be
+            given if it is not applicable for the given provider.
+
+        :Returns:
+          A :class:`RewrapManyDataKeyContext`.
+        """
+        return RewrapManyDataKeyContext(self._create_context(), filter, provider, master_key, self.__callback)
+
 
 class MongoCryptContext(object):
     __slots__ = ("__ctx",)
@@ -490,17 +505,9 @@ class ExplicitEncryptionContext(MongoCryptContext):
         """
         super(ExplicitEncryptionContext, self).__init__(ctx)
         try:
-            if opts.algorithm == 'Indexed':
-                if not lib.mongocrypt_ctx_setopt_index_type(
-                        ctx, lib.MONGOCRYPT_INDEX_TYPE_EQUALITY):
-                    self._raise_from_status()
-            elif opts.algorithm == 'Unindexed':
-                if not lib.mongocrypt_ctx_setopt_index_type(ctx, lib.MONGOCRYPT_INDEX_TYPE_NONE):
-                    self._raise_from_status()
-            else:
-                algorithm = str_to_bytes(opts.algorithm)
-                if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
-                    self._raise_from_status()
+            algorithm = str_to_bytes(opts.algorithm)
+            if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
+                self._raise_from_status()
 
             if opts.key_id is not None:
                 with MongoCryptBinaryIn(opts.key_id) as binary:
@@ -512,13 +519,9 @@ class ExplicitEncryptionContext(MongoCryptContext):
                     if not lib.mongocrypt_ctx_setopt_key_alt_name(ctx, binary.bin):
                         self._raise_from_status()
 
-            if opts.index_key_id is not None:
-                with MongoCryptBinaryIn(opts.index_key_id) as binary:
-                    if not lib.mongocrypt_ctx_setopt_index_key_id(ctx, binary.bin):
-                        self._raise_from_status()
-
             if opts.query_type is not None:
-                if not lib.mongocrypt_ctx_setopt_query_type(ctx, opts.query_type):
+                qt = str_to_bytes(opts.query_type)
+                if not lib.mongocrypt_ctx_setopt_query_type(ctx, qt, -1):
                     self._raise_from_status()
 
             if opts.contention_factor is not None:
@@ -621,6 +624,12 @@ class DataKeyContext(MongoCryptContext):
                                 ctx, binary.bin):
                             self._raise_from_status()
 
+            if opts.key_material:
+                with MongoCryptBinaryIn(opts.key_material) as binary:
+                    if not lib.mongocrypt_ctx_setopt_key_material(
+                            ctx, binary.bin):
+                        self._raise_from_status()
+
             if not lib.mongocrypt_ctx_datakey_init(ctx):
                 self._raise_from_status()
         except Exception:
@@ -705,3 +714,42 @@ class MongoCryptKmsContext(object):
         finally:
             lib.mongocrypt_status_destroy(status)
         raise exc
+
+
+class RewrapManyDataKeyContext(MongoCryptContext):
+    __slots__ = ()
+
+    def __init__(self, ctx, filter, provider, master_key, callback):
+        """Abstracts libmongocrypt's mongocrypt_ctx_t type.
+
+        :Parameters:
+          - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
+            of the underlying mongocrypt_ctx_t.
+          - `filter`: The filter to use when finding data keys to rewrap in the key vault collection..
+          - `provider`: (optional) The name of a different kms provider.
+          - `master_key`: Optional document for the given provider.
+          - `callback`: A :class:`MongoCryptCallback`.
+        """
+        super(RewrapManyDataKeyContext, self).__init__(ctx)
+        key_encryption_key_bson = None
+        if provider is not None:
+            data = dict(provider=provider)
+            if master_key:
+                data.update(master_key)
+            key_encryption_key_bson = callback.bson_encode(data)
+
+        try:
+            if key_encryption_key_bson:
+                with MongoCryptBinaryIn(key_encryption_key_bson) as binary:
+                    if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, binary.bin):
+                        self._raise_from_status()
+
+            filter_bson = callback.bson_encode(filter)
+
+            with MongoCryptBinaryIn(filter_bson) as binary:
+                if not lib.mongocrypt_ctx_rewrap_many_datakey_init(ctx, binary.bin):
+                    self._raise_from_status()
+        except Exception:
+            # Destroy the context on error.
+            self._close()
+            raise
