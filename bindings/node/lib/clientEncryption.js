@@ -309,8 +309,7 @@ module.exports = function (modules) {
       const stateMachine = new StateMachine({
         bson,
         proxyOptions: this._proxyOptions,
-        tlsOptions: this._tlsOptions,
-        session: options.session
+        tlsOptions: this._tlsOptions
       });
 
       const execute = promisify(stateMachine.execute.bind(stateMachine));
@@ -341,8 +340,7 @@ module.exports = function (modules) {
         .db(dbName)
         .collection(collectionName)
         .bulkWrite(replacements, {
-          writeConcern: { w: 'majority' },
-          session: options.session
+          writeConcern: { w: 'majority' }
         });
 
       return { bulkWriteResult: result };
