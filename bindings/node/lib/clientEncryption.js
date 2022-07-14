@@ -289,6 +289,24 @@ module.exports = function (modules) {
      * @param {KmsProvider} options.provider The KMS provider to use when re-wrapping the data keys.
      * @param {AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions} [options.masterKey]
      * @returns {Promise<RewrapManyDataKeyResult>}
+     *
+     * @example
+     * // rewrapping all data data keys (using a filter that matches all documents)
+     * const filter = {};
+     *
+     * const result = await clientEncryption.rewrapManyDataKey(filter);
+     * if (result.bulkWriteResult != null) {
+     *  // keys were re-wrapped, results will be available in the bulkWrite object.
+     * }
+     *
+     * @example
+     * // attempting to rewrap all data keys with no matches
+     * const filter = { _id: new Binary() } // assume _id matches no documents in the database
+     * const result = await clientEncryption.rewrapManyDataKey(filter);
+     *
+     * if (result.bulkWriteResult == null) {
+     *  // no keys matched, `bulkWriteResult` does not exist on the result object
+     * }
      */
     async rewrapManyDataKey(filter, options) {
       const bson = this._bson;
