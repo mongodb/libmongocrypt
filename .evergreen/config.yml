@@ -1087,7 +1087,7 @@ buildvariants:
   tasks:
   - name: debian-package-build
 - name: macos
-  display_name: macOS (arm64) 11.0
+  display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
   expansions:
     compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
