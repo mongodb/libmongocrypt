@@ -15,6 +15,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 # The libmongocrypt git revision release to embed in our wheels.
 REVISION=$(git rev-list -n 1 1.5.0)
+# The libmongocrypt release branch.
+BRANCH="r1.5"
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
@@ -22,7 +24,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
 
     # Build the Windows wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/windows-test/master/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/windows-test/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dll
@@ -45,7 +47,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 
     # Build the manylinux2010 wheels
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/rhel-62-64-bit/master/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     NOCRYPTO_SO=libmongocrypt/nocrypto/lib64/libmongocrypt.so
@@ -66,7 +68,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 
     # Build the mac wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/macos/master/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/macos/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     NOCRYPTO_SO=libmongocrypt/nocrypto/lib/libmongocrypt.dylib
