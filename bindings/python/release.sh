@@ -60,8 +60,10 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     ls dist
 fi
 
-hash docker 2>/dev/null || true
+set +e
+hash docker 2>/dev/null
 HAVE_DOCKER=$?
+set -e
 
 if [[  "Windows_NT" != "$OS" && ${HAVE_DOCKER} == 0 ]]; then
     # Build the manylinux2010 wheels
