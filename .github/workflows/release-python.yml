@@ -1,9 +1,10 @@
 name: Python Dist
 
 on:
-  push:
+  pull_request:
     paths:
       - 'bindings/python/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 concurrency:
