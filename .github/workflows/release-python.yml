@@ -38,7 +38,7 @@ jobs:
 
       - name: Build Wheels
         run:  |
-          PYTHON=$(which python) ./release.sh
+          MACOSX_DEPLOYMENT_TARGET=10.14 PYTHON=$(which python) ./release.sh
 
       - name: Test Wheel on Windows
         if: ${{ startsWith(matrix.os, 'windows') }}
