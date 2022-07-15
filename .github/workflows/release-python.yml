@@ -30,7 +30,13 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v3
       - name: Install Dependencies
-        run: python -m pip install -U build pip
+        run: |
+          python -m pip install -U build pip
+          git fetch origin
+
+      - name: Build SDist on Linux
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run:  python -m build --sdist
 
       - name: Handle libmongocrypt on Macos
         if: ${{ startsWith(matrix.os, 'macos') }}
@@ -43,10 +49,6 @@ jobs:
       - name: Handle libmongocrypt on Linux
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run:  LIBMONGOCRYPT_TARGET=linux bash ./handle_libmongocrypt.sh
-
-      - name: Build SDist on Linux
-        if: ${{ startsWith(matrix.os, 'ubuntu') }}
-        run:  python -m build --sdist
 
       - name: Build and Test Wheel
         run: |
