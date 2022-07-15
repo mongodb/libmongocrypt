@@ -58,9 +58,6 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     $PYTHON setup.py bdist_wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
-else
-   echo "ERROR: Run this script on macOS or Windows"
-   exit 1
 fi
 
 
