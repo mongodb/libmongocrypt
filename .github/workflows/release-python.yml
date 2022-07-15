@@ -49,7 +49,7 @@ jobs:
         run:  python -m build --sdist
 
       - name: Build and Test Wheel
-        run:
+        run: |
           python -m build --wheel
           pip install ./dist/*.whl
           cd $HOME
