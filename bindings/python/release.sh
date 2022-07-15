@@ -55,7 +55,9 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
-    MACOSX_DEPLOYMENT_TARGET="10.15" _PYTHON_HOST_PLATFORM="10.15" $PYTHON setup.py bdist_wheel
+    # Explicitly set the host platform, see
+    # https://discuss.python.org/t/pep-425-platform-tag/5157/4.
+    _PYTHON_HOST_PLATFORM=macosx_10_14_universal2 $PYTHON setup.py bdist_wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 fi
