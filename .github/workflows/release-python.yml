@@ -13,8 +13,14 @@ concurrency:
   group: dist-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  working-directory: ./bindings/python
+  run:
+    shell:
+        bash -eux {0}
+
 jobs:
-  build-wheels:
+  build-windows-wheel:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -22,34 +28,43 @@ jobs:
     name: Build ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - uses: pypa/cibuildwheel@v2.3.1
-        with:
-          package-dir: ./bindings/python
+      - uses: actions/setup-python@v3
+      - name: Install Dependencies
+        run: python -m pip install -U build pip
+
+      - name: Handle libmongocrypt on Macos
+        if: {{ startsWith(matrix.os, 'macos' }}
+        run:  LIBMONGOCRYPT_TARGET=macos bash ./bindings/python/handle_libmongocrypt.sh
+
+      - name: Handle libmongocrypt on Windows
+        if: {{ startsWith(matrix.os, 'windows' }}
+        run:  LIBMONGOCRYPT_TARGET=windows bash ./bindings/python/handle_libmongocrypt.sh
+
+      - name: Handle libmongocrypt on Linux
+        if: {{ startsWith(matrix.os, 'linux' }}
+        run:  LIBMONGOCRYPT_TARGET=linux bash ./bindings/python/handle_libmongocrypt.sh
+
+      - name: Build SDist on Linux
+        if: {{ startsWith(matrix.os, 'linux' }}
+        run:  python -m build --sdist
+
+      - name: Build and Test Wheel
+        run:
+          python -m build --wheel
+          pip install ./dist/*.whl
+          cd $HOME
+          python -c "pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+
       - uses: actions/upload-artifact@v2
         with:
-          name: pymongocrypt-${{ matrix.os }}-wheel
-          path: ./wheelhouse/*.whl
+          name: pymongocrypt-${{ matrix.os }}-dist
+          path: ./bindings/python/dist/*.*
           if-no-files-found: error
-
-  build-sdist:
-    name: Build SDist
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v2
-      - name: Build SDist
-        working-directory: ./bindings/python
-        run: |
-          set -ex
-          python -m pip install -U pip build
-          python -m build --sdist .
 
   collect-dist:
     runs-on: ubuntu-latest
     needs: [build-wheels, build-sdist]
-    name: Download Wheels
+    name: Download Dist Files
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v2
