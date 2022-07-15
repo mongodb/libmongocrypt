@@ -33,7 +33,8 @@ jobs:
           git fetch origin --tags
 
       - name: Build Wheels
-        run:  ./release.sh
+        run:  |
+          PYTHON=$(which python) ./release.sh
 
       - name: Test Wheel on Windows
         if: ${{ startsWith(matrix.os, 'windows') }}

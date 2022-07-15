@@ -37,9 +37,9 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     ls dist
 elif [ "Darwin" = "$(uname -s)" ]; then
     if [[ $(uname -m) == 'arm64' ]]; then
-      PYTHON="/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+      PYTHON="${PYTHON:-/Library/Frameworks/Python.framework/Versions/3.10/bin/python3}"
     else
-      PYTHON="python3.7"
+      PYTHON="${PYTHON:python3.7}"
     fi
     # Build the source dist first
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
