@@ -50,7 +50,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 
     # Build the mac wheel.
     LIBMONGOCRYPT_TARGET=macos ./handle_libmongocrypt.sh
-    $PYTHON setup.py bdist_wheel --universal
+    $PYTHON setup.py bdist_wheel
 
     # Clear all temp files
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib

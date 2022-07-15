@@ -49,7 +49,7 @@ jobs:
 
       - name: Build and Test Wheel
         run: |
-          python setup.py bdist_wheel --universal
+          python setup.py bdist_wheel
           pip install ./dist/*.whl
           cd $HOME
           python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
