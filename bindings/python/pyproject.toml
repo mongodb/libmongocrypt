@@ -1,0 +1,24 @@
+[build-system]
+requires = [
+    "setuptools>=47.9",
+    "wheel>=0.37"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+skip = "pp* *-manylinux_i686 *_ppc64le *_s390x *-musllinux*"
+before-build = "bash ./cibw_before_build.sh"
+build-frontend = "build"
+test-command = "python -c \"pymongocrypt; print(pymongocrypt.libmongocrypt_version())\""
+
+[tool.cibuildwheel.windows]
+environment = { "LIBMONGOCRYPT_TARGET" = "windows"}
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"
+environment = { "LIBMONGOCRYPT_TARGET" = "linux"}
+
+[tool.cibuildwheel.macos]
+archs = "x86_64 universal2"
+test-skip = "*universal2:arm64"
+environment = { "LIBMONGOCRYPT_TARGET" = "macos"}
