@@ -29,10 +29,9 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     else
       PYTHON="python3.7"
     fi
-    pip install build
 
     # Build the source dist first
-    python -m build --sdist
+    $PYTHON setup.py sdist
 
     # Build the manylinux2010 wheels.
     # Fetch libmongocrypt for linux.
@@ -51,7 +50,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 
     # Build the mac wheel.
     LIBMONGOCRYPT_TARGET=macos ./handle_libmongocrypt.sh
-    python -m build wheel
+    $PYTHON setup.py bdist_wheel --universal
 
     # Clear all temp files
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
