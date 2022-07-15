@@ -33,19 +33,19 @@ jobs:
         run: python -m pip install -U build pip
 
       - name: Handle libmongocrypt on Macos
-        if: ${{ startsWith(matrix.os, 'macos' }}
+        if: ${{ startsWith(matrix.os, 'macos') }}
         run:  LIBMONGOCRYPT_TARGET=macos bash ./bindings/python/handle_libmongocrypt.sh
 
       - name: Handle libmongocrypt on Windows
-        if: ${{ startsWith(matrix.os, 'windows' }}
+        if: ${{ startsWith(matrix.os, 'windows') }}
         run:  LIBMONGOCRYPT_TARGET=windows bash ./bindings/python/handle_libmongocrypt.sh
 
       - name: Handle libmongocrypt on Linux
-        if: ${{ startsWith(matrix.os, 'linux' }}
+        if: ${{ startsWith(matrix.os, 'linux') }}
         run:  LIBMONGOCRYPT_TARGET=linux bash ./bindings/python/handle_libmongocrypt.sh
 
       - name: Build SDist on Linux
-        if: ${{ startsWith(matrix.os, 'linux' }}
+        if: ${{ startsWith(matrix.os, 'linux') }}
         run:  python -m build --sdist
 
       - name: Build and Test Wheel
