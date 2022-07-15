@@ -39,7 +39,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     if [[ $(uname -m) == 'arm64' ]]; then
       PYTHON="${PYTHON:-/Library/Frameworks/Python.framework/Versions/3.10/bin/python3}"
     else
-      PYTHON="${PYTHON:python3.7}"
+      PYTHON="${PYTHON:-python3.7}"
     fi
     # Build the source dist first
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
