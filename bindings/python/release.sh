@@ -55,13 +55,13 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
-    $PYTHON setup.py bdist_wheel
+    MACOSX_DEPLOYMENT_TARGET=10_14 $PYTHON setup.py bdist_wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 fi
 
 
-if hash docker 2>/dev/null; then
+if [[  "Windows_NT" != "$OS" && hash docker 2>/dev/null ]]; then
     # Build the manylinux2010 wheels
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
@@ -83,6 +83,6 @@ if hash docker 2>/dev/null; then
         docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
     done
 
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 fi
