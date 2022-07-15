@@ -36,14 +36,14 @@ jobs:
         run:  ./release.sh
 
       - name: Test Wheel on Windows
-        if: ${{ startsWith({{matrix.os}}, 'windows')
+        if: ${{ startsWith(matrix.os, 'windows') }}
         run: |
           pip install ./dist/*.whl
           cd $HOME
           python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
 
       - name: Test Wheel on MacOS
-        if: ${{ startsWith({{matrix.os}}, 'windows')
+        if: ${{ startsWith(matrix.os, 'windows') }}
         run: |
           pip install ./dist/*macosx*.whl
           cd $HOME
