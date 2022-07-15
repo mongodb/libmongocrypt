@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-2019, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest]  # windows-2019,
     name: Build ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -68,6 +68,7 @@ jobs:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v2
       - name: Flatten directory
+        working-directory: .
         run: |
           find . -mindepth 2 -type f -exec mv {} . \;
           find . -type d -empty -delete
