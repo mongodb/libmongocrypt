@@ -341,6 +341,9 @@ module.exports = function (modules) {
  * objects and attach a `decryptedKeys` property on each sub-object that
  * contained encrypted fields. Because we only call this on BSON responses,
  * we do not need to worry about circular references.
+ *
+ * @internal
+ * @ignore
  */
 function decorateDecryptionResult(decrypted, original, bson, isTopLevelDecorateCall = true) {
   const decryptedKeys = Symbol.for('@@mdb.decryptedKeys');

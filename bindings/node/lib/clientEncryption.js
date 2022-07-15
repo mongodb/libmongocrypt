@@ -367,7 +367,7 @@ module.exports = function (modules) {
     /**
      * Deletes the key with the provided id from the keyvault, if it exists.
      *
-     * @param {ClientEncryptionDataKeyId} id - the id of the document to delete.
+     * @param {ClientEncryptionDataKeyId} _id - the id of the document to delete.
      * @returns {Promise<DeleteResult>} Returns a promise that either resolves to a {@link DeleteResult} or rejects with an error.
      *
      * @example
@@ -409,9 +409,9 @@ module.exports = function (modules) {
     }
 
     /**
-     * Finds a key in the keyvault with the specified key.
+     * Finds a key in the keyvault with the specified _id.
      *
-     * @param {ClientEncryptionDataKeyId} id - the id of the document to delete.
+     * @param {ClientEncryptionDataKeyId} _id - the id of the document to delete.
      * @returns {Promise<DataKey>} IReturns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
      * match the id.  The promise rejects with an error if an error is thrown.
      * @example
@@ -432,7 +432,7 @@ module.exports = function (modules) {
     }
 
     /**
-     * Finds a key in the keyvault which has the specified keyAltNames as a keyAltName.
+     * Finds a key in the keyvault which has the specified keyAltName.
      *
      * @param {string} keyAltName - a keyAltName to search for a key
      * @returns {Promise<DataKey | null>} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
@@ -455,11 +455,11 @@ module.exports = function (modules) {
     }
 
     /**
-     * Adds a keyAltName to a key identified by the provided `id`.
+     * Adds a keyAltName to a key identified by the provided _id.
      *
      * This method resolves to/returns the *old* key value (prior to adding the new altKeyName).
      *
-     * @param {ClientEncryptionDataKeyId} id The id of the document to update.
+     * @param {ClientEncryptionDataKeyId} _id The id of the document to update.
      * @param {string} keyAltName - a keyAltName to search for a key
      * @returns {Promise<DataKey>} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
      * match the id.  The promise rejects with an error if an error is thrown.
@@ -488,13 +488,13 @@ module.exports = function (modules) {
     }
 
     /**
-     * Adds a keyAltName to a key identified by the provided `id`.
+     * Adds a keyAltName to a key identified by the provided _id.
      *
      * This method resolves to/returns the *old* key value (prior to removing the new altKeyName).
      *
      * If the removed keyAltName is the last keyAltName for that key, the `altKeyNames` property is unset from the document.
      *
-     * @param {ClientEncryptionDataKeyId} id The id of the document to update.
+     * @param {ClientEncryptionDataKeyId} _id The id of the document to update.
      * @param {string} keyAltName - a keyAltName to search for a key
      * @returns {Promise<DataKey | null>} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
      * match the id.  The promise rejects with an error if an error is thrown.

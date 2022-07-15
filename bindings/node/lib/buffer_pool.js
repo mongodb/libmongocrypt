@@ -1,8 +1,15 @@
 'use strict';
 
-/** @internal */
+/**
+ * @internal
+ * @ignore
+ * */
 const kBuffers = Symbol('buffers');
-/** @internal */
+/**
+ * @internal
+ * @ignore
+ *
+ * */
 const kLength = Symbol('length');
 
 /**

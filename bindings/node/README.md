@@ -59,26 +59,6 @@ npm test
 </dd>
 </dl>
 
-## Constants
-
-<dl>
-<dt><a href="#kBuffers">kBuffers</a></dt>
-<dd></dd>
-<dt><a href="#kLength">kLength</a></dt>
-<dd></dd>
-</dl>
-
-## Functions
-
-<dl>
-<dt><a href="#decorateDecryptionResult">decorateDecryptionResult()</a></dt>
-<dd><p>Recurse through the (identically-shaped) <code>decrypted</code> and <code>original</code>
-objects and attach a <code>decryptedKeys</code> property on each sub-object that
-contained encrypted fields. Because we only call this on BSON responses,
-we do not need to worry about circular references.</p>
-</dd>
-</dl>
-
 ## Typedefs
 
 <dl>
@@ -274,17 +254,17 @@ The public interface for explicit client side encryption
 
         * [.rewrapManyDataKey(filter, [options])](#ClientEncryption+rewrapManyDataKey)
 
-        * [.deleteKey(id)](#ClientEncryption+deleteKey)
+        * [.deleteKey(_id)](#ClientEncryption+deleteKey)
 
         * [.getKeys()](#ClientEncryption+getKeys)
 
-        * [.getKey(id)](#ClientEncryption+getKey)
+        * [.getKey(_id)](#ClientEncryption+getKey)
 
         * [.getKeyByAltName(keyAltName)](#ClientEncryption+getKeyByAltName)
 
-        * [.addKeyAltName(id, keyAltName)](#ClientEncryption+addKeyAltName)
+        * [.addKeyAltName(_id, keyAltName)](#ClientEncryption+addKeyAltName)
 
-        * [.removeKeyAltName(id, keyAltName)](#ClientEncryption+removeKeyAltName)
+        * [.removeKeyAltName(_id, keyAltName)](#ClientEncryption+removeKeyAltName)
 
         * [.encrypt(value, options, [callback])](#ClientEncryption+encrypt)
 
@@ -401,17 +381,47 @@ Searches the keyvault for any data keys matching the provided filter.  If there 
 
 If no matches are found, then no bulk write is performed.
 
+**Example**  
+```js
+// rewrapping all data data keys (using a filter that matches all documents)
+const filter = {};
+
+const result = await clientEncryption.rewrapManyDataKey(filter);
+if (result.bulkWriteResult != null) {
+ // keys were re-wrapped, results will be available in the bulkWrite object.
+}
+```
+**Example**  
+```js
+// attempting to rewrap all data keys with no matches
+const filter = { _id: new Binary() } // assume _id matches no documents in the database
+const result = await clientEncryption.rewrapManyDataKey(filter);
+
+if (result.bulkWriteResult == null) {
+ // no keys matched, `bulkWriteResult` does not exist on the result object
+}
+```
 <a name="ClientEncryption+deleteKey"></a>
 
-### *clientEncryption*.deleteKey(id)
+### *clientEncryption*.deleteKey(_id)
 
 | Param | Type | Description |
 | --- | --- | --- |
-| id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | the id of the document to delete. |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | the id of the document to delete. |
 
 Deletes the key with the provided id from the keyvault, if it exists.
 
 **Returns**: [<code>Promise.&lt;DeleteResult&gt;</code>](#DeleteResult) - Returns a promise that either resolves to a [DeleteResult](#DeleteResult) or rejects with an error.  
+**Example**  
+```js
+// delete a key by _id
+const id = new Binary(); // id is a bson binary subtype 4 object
+const { deletedCount } = await clientEncryption.deleteKey(id);
+
+if (deletedCount != null && deletedCount > 0) {
+  // successful deletion
+}
+```
 <a name="ClientEncryption+getKeys"></a>
 
 ### *clientEncryption*.getKeys()
@@ -427,13 +437,13 @@ const keys = await clientEncryption.getKeys().toArray();
 ```
 <a name="ClientEncryption+getKey"></a>
 
-### *clientEncryption*.getKey(id)
+### *clientEncryption*.getKey(_id)
 
 | Param | Type | Description |
 | --- | --- | --- |
-| id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | the id of the document to delete. |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | the id of the document to delete. |
 
-Finds a key in the keyvault with the specified key.
+Finds a key in the keyvault with the specified _id.
 
 **Returns**: [<code>Promise.&lt;DataKey&gt;</code>](#DataKey) - IReturns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
 match the id.  The promise rejects with an error if an error is thrown.  
@@ -454,7 +464,7 @@ if (!key) {
 | --- | --- | --- |
 | keyAltName | <code>string</code> | a keyAltName to search for a key |
 
-Finds a key in the keyvault which has the specified keyAltNames as a keyAltName.
+Finds a key in the keyvault which has the specified keyAltName.
 
 **Returns**: <code>Promise.&lt;(DataKey\|null)&gt;</code> - Returns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
 match the id.  The promise rejects with an error if an error is thrown.  
@@ -469,14 +479,14 @@ if (!key) {
 ```
 <a name="ClientEncryption+addKeyAltName"></a>
 
-### *clientEncryption*.addKeyAltName(id, keyAltName)
+### *clientEncryption*.addKeyAltName(_id, keyAltName)
 
 | Param | Type | Description |
 | --- | --- | --- |
-| id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the document to update. |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the document to update. |
 | keyAltName | <code>string</code> | a keyAltName to search for a key |
 
-Adds a keyAltName to a key identified by the provided `id`.
+Adds a keyAltName to a key identified by the provided _id.
 
 This method resolves to/returns the *old* key value (prior to adding the new altKeyName).
 
@@ -494,14 +504,14 @@ if (!oldKey) {
 ```
 <a name="ClientEncryption+removeKeyAltName"></a>
 
-### *clientEncryption*.removeKeyAltName(id, keyAltName)
+### *clientEncryption*.removeKeyAltName(_id, keyAltName)
 
 | Param | Type | Description |
 | --- | --- | --- |
-| id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the document to update. |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the document to update. |
 | keyAltName | <code>string</code> | a keyAltName to search for a key |
 
-Adds a keyAltName to a key identified by the provided `id`.
+Adds a keyAltName to a key identified by the provided _id.
 
 This method resolves to/returns the *old* key value (prior to removing the new altKeyName).
 
@@ -613,22 +623,6 @@ the original ones.
 
 ## MongoCryptError
 An error indicating that something went wrong specifically with MongoDB Client Encryption
-
-<a name="kBuffers"></a>
-
-## kBuffers
-**Internal**:   
-<a name="kLength"></a>
-
-## kLength
-**Internal**:   
-<a name="decorateDecryptionResult"></a>
-
-## decorateDecryptionResult()
-Recurse through the (identically-shaped) `decrypted` and `original`
-objects and attach a `decryptedKeys` property on each sub-object that
-contained encrypted fields. Because we only call this on BSON responses,
-we do not need to worry about circular references.
 
 <a name="KMSProviders"></a>
 

@@ -3,9 +3,12 @@ import type { MongoClient, BulkWriteResult, ClientSession, DeleteResult, FindCur
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
 
+/**
+ * The schema for a DataKey in the key vault collection.
+ */
 export interface DataKey {
   _id: Binary;
-  version: number;
+  version?: number;
   keyAltNames?: string[];
   keyMaterial: Binary;
   creationDate: Date;
