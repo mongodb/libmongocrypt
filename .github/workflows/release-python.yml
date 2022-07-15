@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 defaults:
-  working-directory: ./bindings/python
   run:
+    working-directory: ./bindings/python
     shell:
         bash -eux {0}
 
