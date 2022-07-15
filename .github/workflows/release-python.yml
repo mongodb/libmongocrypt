@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-2019]
+        os: [macos-10.15, windows-2019]
     name: Build ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -31,26 +31,20 @@ jobs:
           python -m pip install -U pip setuptools wheel
           git fetch origin --tags
 
-      - name: Build SDist on Linux
-        if: ${{ startsWith(matrix.os, 'ubuntu') }}
-        run:  python setup.py sdist
+      - name: Build Wheels
+        run:  ./release.sh
 
-      - name: Handle libmongocrypt on Macos
-        if: ${{ startsWith(matrix.os, 'macos') }}
-        run:  LIBMONGOCRYPT_TARGET=macos ./handle_libmongocrypt.sh
-
-      - name: Handle libmongocrypt on Windows
-        if: ${{ startsWith(matrix.os, 'windows') }}
-        run:  LIBMONGOCRYPT_TARGET=windows ./handle_libmongocrypt.sh
-
-      - name: Handle libmongocrypt on Linux
-        if: ${{ startsWith(matrix.os, 'ubuntu') }}
-        run:  LIBMONGOCRYPT_TARGET=linux ./handle_libmongocrypt.sh
-
-      - name: Build and Test Wheel
+      - name: Test Wheel on Windows
+        if: ${{ startsWith({{matrix.os}}, 'windows')
         run: |
-          python setup.py bdist_wheel
           pip install ./dist/*.whl
+          cd $HOME
+          python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+
+      - name: Test Wheel on MacOS
+        if: ${{ startsWith({{matrix.os}}, 'windows')
+        run: |
+          pip install ./dist/*macosx*.whl
           cd $HOME
           python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
 
@@ -58,11 +52,11 @@ jobs:
         with:
           name: pymongocrypt-${{ matrix.os }}-dist
           path: ./bindings/python/dist/*.*
-          if-no-files-found: error
+          if-no-files-found: errors
 
   collect-dist:
     runs-on: ubuntu-latest
-    needs: [build-dist]
+    needs: [build-dist, test-wheels]
     name: Download Dist Files
     steps:
       - name: Download all workflow run artifacts
