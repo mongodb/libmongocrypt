@@ -551,7 +551,7 @@ module.exports = function (modules) {
      */
 
     /**
-     * Explicitly encrypt a provided value. Noe that either `options.keyId` or `options.keyAltName` must
+     * Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
      * be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
      *
      * @param {*} value The value that you wish to serialize. Must be of a type that can be serialized into BSON
