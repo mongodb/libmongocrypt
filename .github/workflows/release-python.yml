@@ -41,11 +41,11 @@ jobs:
         run:  LIBMONGOCRYPT_TARGET=windows bash ./bindings/python/handle_libmongocrypt.sh
 
       - name: Handle libmongocrypt on Linux
-        if: ${{ startsWith(matrix.os, 'linux') }}
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run:  LIBMONGOCRYPT_TARGET=linux bash ./bindings/python/handle_libmongocrypt.sh
 
       - name: Build SDist on Linux
-        if: ${{ startsWith(matrix.os, 'linux') }}
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run:  python -m build --sdist
 
       - name: Build and Test Wheel
