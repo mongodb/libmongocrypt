@@ -56,7 +56,7 @@ jobs:
 
   collect-dist:
     runs-on: ubuntu-latest
-    needs: [build-dist, test-wheels]
+    needs: [build-dist]
     name: Download Dist Files
     steps:
       - name: Download all workflow run artifacts
