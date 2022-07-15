@@ -55,7 +55,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
-    MACOSX_DEPLOYMENT_TARGET="10.14" $PYTHON setup.py bdist_wheel
+    MACOSX_DEPLOYMENT_TARGET="10.15" $PYTHON setup.py bdist_wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 fi
