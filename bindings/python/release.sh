@@ -60,7 +60,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     ls dist
 fi
 
-hash docker 2>/dev/null
+hash docker 2>/dev/null || true
 HAVE_DOCKER=$?
 
 if [[  "Windows_NT" != "$OS" && ${HAVE_DOCKER} == 0 ]]; then

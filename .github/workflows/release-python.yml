@@ -55,7 +55,7 @@ jobs:
         with:
           name: pymongocrypt-${{ matrix.os }}-dist
           path: ./bindings/python/dist/*.*
-          if-no-files-found: errors
+          if-no-files-found: error
 
   collect-dist:
     runs-on: ubuntu-latest
