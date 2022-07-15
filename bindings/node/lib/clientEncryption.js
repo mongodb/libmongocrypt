@@ -412,7 +412,7 @@ module.exports = function (modules) {
      * Finds a key in the keyvault with the specified key.
      *
      * @param {ClientEncryptionDataKeyId} id - the id of the document to delete.
-     * @returns {Promise<DataKey>} IReturns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
+     * @returns {Promise<DataKey>} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
      * match the id.  The promise rejects with an error if an error is thrown.
      * @example
      * // getting a key by id
@@ -436,7 +436,7 @@ module.exports = function (modules) {
      *
      * @param {string} keyAltName - a keyAltName to search for a key
      * @returns {Promise<DataKey | null>} Returns a promise that either resolves to a {@link DataKey} if a document matches the key or null if no documents
-     * match the id.  The promise rejects with an error if an error is thrown.
+     * match the keyAltName.  The promise rejects with an error if an error is thrown.
      * @example
      * // get a key by alt name
      * const keyAltName = 'keyAltName';
