@@ -53,7 +53,7 @@ jobs:
           python -m build --wheel
           pip install ./dist/*.whl
           cd $HOME
-          python -c "pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+          python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
 
       - uses: actions/upload-artifact@v2
         with:
