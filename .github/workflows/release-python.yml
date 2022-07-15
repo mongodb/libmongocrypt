@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-10.15, windows-2019, ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
     name: Build ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -38,7 +38,7 @@ jobs:
 
       - name: Build Wheels
         run:  |
-          MACOSX_DEPLOYMENT_TARGET=10.15 PYTHON=$(which python) ./release.sh
+          PYTHON=$(which python) ./release.sh
 
       - name: Test Wheel on Windows
         if: ${{ startsWith(matrix.os, 'windows') }}
