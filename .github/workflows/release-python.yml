@@ -1,9 +1,6 @@
 name: Python Dist
 
 on:
-  push:
-    paths:
-      - 'bindings/python/**'
   pull_request:
     paths:
       - 'bindings/python/**'
