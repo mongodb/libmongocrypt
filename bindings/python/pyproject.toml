@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 skip = "pp* *-manylinux_i686 *_ppc64le *_s390x *-musllinux*"
-before-build = "bash ./handle_libmongocrypt.sh"
+before-build = "bash .bindings/python/handle_libmongocrypt.sh"
 build-frontend = "build"
 test-command = "python -c \"pymongocrypt; print(pymongocrypt.libmongocrypt_version())\""
 

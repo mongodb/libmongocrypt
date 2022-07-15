@@ -1,4 +1,4 @@
-name: Python Wheels
+name: Python Dist
 
 on:
   push:
@@ -8,6 +8,10 @@ on:
     paths:
       - 'bindings/python/**'
   workflow_dispatch:
+
+concurrency:
+  group: dist-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-wheels:
@@ -41,12 +45,6 @@ jobs:
           set -ex
           python -m pip install -U pip build
           python -m build --sdist .
-      - name: Test SDist
-        working-directory: ./bindings/python
-        run: |
-          python -m pip install dist/*.gz
-          cd ..
-          python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
 
   collect-dist:
     runs-on: ubuntu-latest
