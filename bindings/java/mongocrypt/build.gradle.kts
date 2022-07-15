@@ -103,7 +103,6 @@ val jnaMapping: Map<String, String> = mapOf(
     "rhel-71-ppc64el" to "linux-ppc64le",
     "ubuntu1604-arm64" to "linux-aarch64",
     "windows-test" to "win32-x86-64",
-    "macos_x86_64" to "darwin-x86-64",
     "macos" to "darwin"
 )
 

@@ -398,9 +398,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: macos_x86_64
       name: build-and-test-and-upload
-    # Needs: BUILD-14976
-    # - variant: macos
-    #   name: build-and-test-and-upload
+    - variant: macos
+      name: build-and-test-and-upload
   commands:
     - command: shell.exec
       params:
@@ -417,9 +416,8 @@ tasks:
       vars: { variant_name: "windows-test" }
     - func: "download tarball"
       vars: { variant_name: "macos_x86_64" }
-    # Needs: BUILD-14976
-    # - func: "download tarball"
-    #   vars: { variant_name: "macos" }
+    - func: "download tarball"
+      vars: { variant_name: "macos" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-java.tar.gz
@@ -1105,7 +1103,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
-  # Needs: BUILD-14976
+  # MONGOCRYPT-459 - depends on BUILD-14976
   # - test-java
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
