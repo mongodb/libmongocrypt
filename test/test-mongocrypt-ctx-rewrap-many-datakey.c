@@ -1026,29 +1026,6 @@ _test_rewrap_many_datakey_kms_credentials (_mongocrypt_tester_t *tester)
       mongocrypt_destroy (crypt);
    }
 
-   /* Should not enter NEED_KMS_CREDENTIALS state if use need KMS credentials
-    * option is not set. If required credentials are not provided, should fail
-    * on decryption. */
-   crypt = mongocrypt_new ();
-   ASSERT_OK (
-      mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}")),
-      crypt);
-   ASSERT_OK (mongocrypt_init (crypt), crypt);
-   ctx = mongocrypt_ctx_new (crypt);
-   ASSERT_OK (ctx, crypt);
-   ASSERT_OK (mongocrypt_ctx_rewrap_many_datakey_init (ctx, TEST_BSON ("{}")),
-              ctx);
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-   ASSERT_FAILS (
-      mongocrypt_ctx_mongo_feed (
-         ctx, TEST_FILE ("./test/data/rmd/key-document-a.json")),
-      ctx,
-      "client not configured with KMS provider necessary to decrypt");
-   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
-   mongocrypt_ctx_destroy (ctx);
-   mongocrypt_destroy (crypt);
-
    /* Should not enter NEED_KMS_CREDENTIALS state if credentials already
     * provided. */
    crypt = mongocrypt_new ();
