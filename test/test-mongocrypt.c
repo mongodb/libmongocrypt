@@ -800,7 +800,7 @@ _test_setopt_invalid_kms_providers (_mongocrypt_tester_t *tester)
 typedef struct {
    char *value;
    /* errmsg is the expected error message from mongocrypt_setopt_kms_providers
-   */
+    */
    char *errmsg;
    /* errmsg_init is the expected error message from mongocrypt_init */
    char *errmsg_init;
@@ -872,13 +872,13 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'local': {}}", NULL, NULL, true},
       {"{'gcp': {}}", NULL, NULL, true},
       {"{'kmip': {}}", NULL, NULL, true},
-      /* Empty documents are not OK if on-demand KMS credentials are not opted-in. */
+      /* Empty documents are not OK if on-demand KMS credentials are not
+         opted-in. */
       {"{'aws': {}}", NULL, "on-demand credentials not supported", false},
       {"{'azure': {}}", NULL, "on-demand credentials not supported", false},
       {"{'local': {}}", NULL, "on-demand credentials not supported", false},
       {"{'gcp': {}}", NULL, "on-demand credentials not supported", false},
-      {"{'kmip': {}}", NULL, "on-demand credentials not supported", false}
-      };
+      {"{'kmip': {}}", NULL, "on-demand credentials not supported", false}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;

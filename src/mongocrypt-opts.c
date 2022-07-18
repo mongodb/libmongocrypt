@@ -135,7 +135,7 @@ _mongocrypt_opts_kms_providers_validate (
    }
 
    if (kms_providers->need_credentials &&
-         !opts->use_need_kms_credentials_state) {
+       !opts->use_need_kms_credentials_state) {
       CLIENT_ERR ("on-demand credentials not supported");
       return false;
    }
@@ -232,9 +232,8 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
           &opts->encrypted_field_config_map, &opts->schema_map, status)) {
       return false;
    }
-   return _mongocrypt_opts_kms_providers_validate (opts,
-                                                   &opts->kms_providers,
-                                                   status);
+   return _mongocrypt_opts_kms_providers_validate (
+      opts, &opts->kms_providers, status);
 }
 
 bool
