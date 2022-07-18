@@ -586,7 +586,8 @@ mongocrypt_ctx_provide_kms_providers (
       return false;
    }
 
-   if (!_mongocrypt_opts_kms_providers_validate (&ctx->per_ctx_kms_providers,
+   if (!_mongocrypt_opts_kms_providers_validate (&ctx->crypt->opts,
+                                                 &ctx->per_ctx_kms_providers,
                                                  ctx->status)) {
       /* Remove the parsed KMS providers if they are invalid */
       _mongocrypt_opts_kms_providers_cleanup (&ctx->per_ctx_kms_providers);

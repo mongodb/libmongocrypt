@@ -117,6 +117,7 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
 
 bool
 _mongocrypt_opts_kms_providers_validate (
+   _mongocrypt_opts_t *opts,
    _mongocrypt_opts_kms_providers_t *kms_providers,
    mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 

@@ -109,7 +109,9 @@ _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 
 bool
 _mongocrypt_opts_kms_providers_validate (
-   _mongocrypt_opts_kms_providers_t *kms_providers, mongocrypt_status_t *status)
+   _mongocrypt_opts_t *opts,
+   _mongocrypt_opts_kms_providers_t *kms_providers,
+   mongocrypt_status_t *status)
 {
    if (!kms_providers->configured_providers &&
        !kms_providers->need_credentials) {
@@ -130,6 +132,12 @@ _mongocrypt_opts_kms_providers_validate (
          CLIENT_ERR ("local data key unset");
          return false;
       }
+   }
+
+   if (kms_providers->need_credentials &&
+         !opts->use_need_kms_credentials_state) {
+      CLIENT_ERR ("on-demand credentials not supported");
+      return false;
    }
 
    return true;
@@ -224,7 +232,8 @@ _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
           &opts->encrypted_field_config_map, &opts->schema_map, status)) {
       return false;
    }
-   return _mongocrypt_opts_kms_providers_validate (&opts->kms_providers,
+   return _mongocrypt_opts_kms_providers_validate (opts,
+                                                   &opts->kms_providers,
                                                    status);
 }
 
