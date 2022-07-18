@@ -874,11 +874,11 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'kmip': {}}", NULL, NULL, true},
       /* Empty documents are not OK if on-demand KMS credentials are not
          opted-in. */
-      {"{'aws': {}}", NULL, "on-demand credentials not supported", false},
-      {"{'azure': {}}", NULL, "on-demand credentials not supported", false},
-      {"{'local': {}}", NULL, "on-demand credentials not supported", false},
-      {"{'gcp': {}}", NULL, "on-demand credentials not supported", false},
-      {"{'kmip': {}}", NULL, "on-demand credentials not supported", false}};
+      {"{'aws': {}}", NULL, "on-demand credentials not enabled", false},
+      {"{'azure': {}}", NULL, "on-demand credentials not enabled", false},
+      {"{'local': {}}", NULL, "on-demand credentials not enabled", false},
+      {"{'gcp': {}}", NULL, "on-demand credentials not enabled", false},
+      {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;

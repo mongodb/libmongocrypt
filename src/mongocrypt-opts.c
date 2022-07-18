@@ -136,7 +136,7 @@ _mongocrypt_opts_kms_providers_validate (
 
    if (kms_providers->need_credentials &&
        !opts->use_need_kms_credentials_state) {
-      CLIENT_ERR ("on-demand credentials not supported");
+      CLIENT_ERR ("on-demand credentials not enabled");
       return false;
    }
 
