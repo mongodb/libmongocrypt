@@ -45,7 +45,7 @@ module.exports = function (modules) {
    */
 
   /**
-   * @typedef { object } ClientSession The ClientSession class from the MongoDB Node driver (see https://mongodb.github.io/node-mongodb-native/4.8/classes/ClientSession.html)
+   * @typedef {object} ClientSession The ClientSession class from the MongoDB Node driver (see https://mongodb.github.io/node-mongodb-native/4.8/classes/ClientSession.html)
    */
 
   /**

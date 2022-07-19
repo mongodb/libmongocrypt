@@ -411,6 +411,7 @@ export class ClientEncryption {
   ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
 
   /**
+   * @experimental
    * Deletes the key with the provided id from the keyvault, if it exists.
    *
    * @param id - the id of the document to delete.
@@ -418,6 +419,7 @@ export class ClientEncryption {
   deleteKey(id: Binary): Promise<DeleteResult>;
 
   /**
+   * @experimental
    * Finds all the keys currently stored in the keyvault.
    *
    * This method will not throw.
@@ -425,6 +427,7 @@ export class ClientEncryption {
   getKeys(): FindCursor<DataKey>; 
 
   /**
+   * @experimental
    * Finds a key in the keyvault with the specified key.
    *
    * @param id - the id of the document to delete.
@@ -432,31 +435,34 @@ export class ClientEncryption {
   getKey(id: Binary): Promise<DataKey | null>;
 
   /**
+   * @experimental
    * Finds a key in the keyvault which has the specified keyAltNames as a keyAltName.
    *
-   * @param keyAltName a potential keyAltName to search for in the keyAltNames array
+   * @param keyAltName - a potential keyAltName to search for in the keyAltNames array
    */
   getKeyByAltName(keyAltName: string): Promise<DataKey | null>;
 
   /**
+   * @experimental
    * Adds a keyAltName to a key identified by the provided `id`.
    *
    * This method resolves to/returns the *old* key value (prior to adding the new altKeyName).
    *
-   * @param id The id of the document to update.
-   * @param keyAltName a keyAltName to search for a key
+   * @param id - The id of the document to update.
+   * @param keyAltName - a keyAltName to search for a key
    */
   addKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
+   * @experimental
    * Adds a keyAltName to a key identified by the provided `id`.
    *
    * This method resolves to/returns the *old* key value (prior to removing the new altKeyName).
    *
    * If the removed keyAltName is the last keyAltName for that key, the `altKeyNames` property is unset from the document.
    *
-   * @param id the id of the document to update.
-   * @param keyAltName a keyAltName to search for a key
+   * @param id - the id of the document to update.
+   * @param keyAltName - a keyAltName to search for a key
    */
   removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
