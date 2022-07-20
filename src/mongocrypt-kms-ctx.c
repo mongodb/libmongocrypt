@@ -488,9 +488,11 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    if (!bson_iter_init_find (&iter, &body_bson, json_field) ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
       CLIENT_ERR (
-         "KMS JSON response does not include string '%s'. HTTP status=%d",
+         "KMS JSON response does not include field '%s'. HTTP status=%d. "
+         "Response body=\n%s",
          json_field,
-         http_status);
+         http_status,
+         body);
       goto fail;
    }
 
@@ -555,8 +557,10 @@ _ctx_done_oauth (mongocrypt_kms_ctx_t *kms)
    if (!bson_iter_init_find (&iter, bson_body, "access_token") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
       CLIENT_ERR (
-         "Invalid KMS response, no access_token returned. HTTP status=%d",
-         http_status);
+         "KMS JSON response does not include field 'access_token'. "
+         "HTTP status=%d. Response body=\n%s",
+         http_status,
+         body);
       goto fail;
    }
 
@@ -620,8 +624,11 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
 
    if (!bson_iter_init_find (&iter, bson_body, "value") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      CLIENT_ERR ("Invalid KMS response, no value returned. HTTP status=%d",
-                  http_status);
+      CLIENT_ERR (
+         "KMS JSON response does not include field 'value'. HTTP status=%d. "
+         "Response body=\n%s",
+         http_status,
+         body);
       goto fail;
    }
 
@@ -691,9 +698,11 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    if (!bson_iter_init_find (&iter, &body_bson, json_field) ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
       CLIENT_ERR (
-         "KMS JSON response does not include string '%s'. HTTP status=%d",
+         "KMS JSON response does not include field '%s'. HTTP status=%d. "
+         "Response body=\n%s",
          json_field,
-         http_status);
+         http_status,
+         body);
       goto fail;
    }
 

@@ -252,5 +252,32 @@
       "  }\n",
       "}\n"
     ]
+  },
+  {
+    "description": "JSON in response missing needed field",
+    "ctx": [
+      "datakey",
+      "decrypt",
+      "azure_oauth_datakey",
+      "azure_oauth_decrypt",
+      "azure_datakey",
+      "azure_decrypt",
+      "gcp_oauth_datakey",
+      "gcp_oauth_decrypt",
+      "gcp_datakey",
+      "gcp_decrypt"
+    ],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\r\n",
+      "Content-Type: application/x-amz-json-1.1\r\n",
+      "Content-Length: 8\r\n",
+      "\r\n",
+      "{\"x\": 1}"
+    ],
+    "expect": [
+      "HTTP status=200. Response body=\n",
+      "{\"x\": 1}"
+    ]
   }
 ]
