@@ -3,19 +3,38 @@ MongoDB Client Encryption
 
 The Node.js wrapper for [`libmongocrypt`](../../README.md)
 
-### Requirements
-
-Follow the instructions for building `libmongocrypt` [here](../../README.md#building-libmongocrypt).
-
 ### Installation
 
-Now you can install `mongodb-client-encryption` with the following:
+You can install `mongodb-client-encryption` with the following:
 
 ```bash
 npm install mongodb-client-encryption
 ```
 
-### Testing
+### Development 
+#### Setup 
+
+Run the following command to build libmongocrypt and setup the node bindings for development:
+
+```shell
+bash ./etc/build-static.sh
+```
+
+
+#### Testing
+
+Some tests require a standalone server to be running with authentication enabled.  Set up a single 
+server running with the following conditions:
+
+| param     | value     | 
+|-----------|-----------|
+| host      | localhost |
+| port      | 27017     |
+| username  | bob       |
+| password  | pwd123    |
+
+Note: this is the same setup as the default from the `cluster_setup.sh` script for standalone servers in the Node driver.
+
 
 Run the test suite using:
 
