@@ -27,7 +27,7 @@
       "HTTP line 1\r\n",
       "HTTP line 2\r\n"
    ],
-   expect: "ok" | "error message"
+   expect: "ok" | "error message" | <array of strings>
 }
 */
 
@@ -49,7 +49,7 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
       bool ok = false;
       mongocrypt_status_t *status;
       mongocrypt_binary_t *bin = NULL;
-      const char *expect;
+      char *expect;
 
       status = mongocrypt_status_new ();
       crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
@@ -121,7 +121,18 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
 
    failed:
       BSON_ASSERT (bson_iter_init_find (&iter, test, "expect"));
-      expect = bson_iter_utf8 (&iter, NULL);
+      if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+         // Concatenate array into one string.
+         bson_string_t *builder = bson_string_new (NULL);
+         bson_iter_recurse (&iter, &iter);
+         while (bson_iter_next (&iter)) {
+            ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+            bson_string_append (builder, bson_iter_utf8 (&iter, NULL));
+         }
+         expect = bson_string_free (builder, false /* free segment */);
+      } else {
+         expect = bson_strdup (bson_iter_utf8 (&iter, NULL));
+      }
 
       if (0 == strcmp ("ok", expect)) {
          ASSERT_OR_PRINT (ok, status);
@@ -129,6 +140,7 @@ _test_one_kms_response (_mongocrypt_tester_t *tester, bson_t *test)
          ASSERT_STATUS_CONTAINS (status, expect);
       }
 
+      bson_free (expect);
       mongocrypt_binary_destroy (bin);
       mongocrypt_status_destroy (status);
       mongocrypt_ctx_destroy (ctx);
