@@ -198,5 +198,45 @@
       "\r\n"
     ],
     "expect": "Invalid JWT Signature"
+  },
+  {
+    "description": "GCP invalid ciphertext",
+    "ctx": ["gcp_datakey", "gcp_decrypt"],
+    "http_reply": [
+      "HTTP/1.1 400 Bad Request\r\n",
+      "Alt-Svc: h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"\r\n",
+      "Cache-Control: private\r\n",
+      "Content-Encoding: gzip\r\n",
+      "Content-Type: application/json; charset=UTF-8\r\n",
+      "Date: Wed, 20 Jul 2022 17:36:54 GMT\r\n",
+      "Server: ESF\r\n",
+      "Transfer-Encoding: chunked\r\n",
+      "Vary: Origin, X-Origin, Referer\r\n",
+      "X-Content-Type-Options: nosniff\r\n",
+      "X-Frame-Options: SAMEORIGIN\r\n",
+      "X-XSS-Protection: 0\r\n",
+      "\r\n",
+      "87\r\n",
+      "{\n",
+      "  \"error\": {\n",
+      "    \"code\": 400,\n",
+      "    \"message\": \"Decryption failed: the ciphertext is invalid.\",\n",
+      "    \"status\": \"INVALID_ARGUMENT\"\n",
+      "  }\n",
+      "}\n",
+      "\r\n",
+      "0\r\n",
+      "\r\n"      
+    ],
+    "expect": [
+      "Error in KMS response. HTTP status=400. Response body=\n",
+      "{\n",
+      "  \"error\": {\n",
+      "    \"code\": 400,\n",
+      "    \"message\": \"Decryption failed: the ciphertext is invalid.\",\n",
+      "    \"status\": \"INVALID_ARGUMENT\"\n",
+      "  }\n",
+      "}\n"
+    ]
   }
 ]
