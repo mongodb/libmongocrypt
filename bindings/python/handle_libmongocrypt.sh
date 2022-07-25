@@ -5,6 +5,9 @@ REVISION=$(git rev-list -n 1 1.5.0)
 # The libmongocrypt release branch.
 BRANCH="r1.5"
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd $SCRIPT_DIR
+
 # Clear any current binary files.
 rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 
