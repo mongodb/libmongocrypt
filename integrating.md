@@ -2,7 +2,7 @@
 
 libmongocrypt is a C library meant to assist drivers in supporting
 client side encryption. libmongocrypt acts as a state machine and the
-driver is responsible for I/O between mongod, mongocryptd, and AWS KMS.
+driver is responsible for I/O between mongod, mongocryptd, and KMS.
 
 There are two major parts to integrating libmongocrypt into your driver:
 
@@ -51,7 +51,7 @@ check. The crux of libmongocrypt\'s API is the state machine represented
 by mongocrypt\_ctx\_t. This state machine is exercised in the
 [example-state-machine](https://github.com/10gen/libmongocrypt/blob/master/test/example-state-machine.c)
 executable included with libmongocrypt. It uses mock responses from
-mongod, mongocryptd, and AWS KMS. Reimplement the state machine loop
+mongod, mongocryptd, and KMS. Reimplement the state machine loop
 (\_run\_state\_machine) in example-state-machine with your binding.
 
 To debug, configure with the cmake option `-DENABLE_TRACE=ON`, and set the environment variable `MONGOCRYPT_TRACE=ON` to log the arguments to mongocrypt functions. Note, this is insecure and should only be used for debugging.
@@ -88,7 +88,7 @@ following:
     auto encrypt).
 -   the key vault MongoClient (which may be the same as the encrypted
     MongoClient).
--   AWS KMS (via a TLS socket).
+-   KMS (via a TLS socket).
 -   the MongoClient to the local mongocryptd process.
 
 ### Initializing ###
@@ -178,7 +178,7 @@ All contexts except for create data key.
 
 **libmongocrypt needs**...
 
-The responses from one or more HTTP messages to AWS KMS.
+The responses from one or more HTTP messages to KMS.
 
 **Driver needs to...**
 
