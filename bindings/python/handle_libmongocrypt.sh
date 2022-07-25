@@ -20,7 +20,7 @@ elif [ "linux" = "$LIBMONGOCRYPT_TARGET" ]; then
     DOWNLOAD_TARGET="rhel-62-64-bit"
     NOCRYPTO_SO=libmongocrypt/nocrypto/lib64/libmongocrypt.so
 else
-    echo "ERROR: Run this script on macOS or Windows"
+    echo "ERROR: Unknown LIBMONGOCRYPT_TARGET"
    exit 1
 fi
 

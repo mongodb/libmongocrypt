@@ -21,7 +21,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
     virtualenv -p C:\\python\\Python37\\python.exe venv37 && . ./venv37/Scripts/activate
 
-    LIBMONGOCRYPT_TARGET=windows ./handle_libmongocrypt.sh
+    LIBMONGOCRYPT_TARGET=windows bash handle_libmongocrypt.sh
 
 elif [ "Darwin" = "$(uname -s)" ]; then
     if [[ $(uname -m) == 'arm64' ]]; then
@@ -36,7 +36,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 
     # Build the manylinux2010 wheels.
     # Fetch libmongocrypt for linux.
-    LIBMONGOCRYPT_TARGET=linux  ./handle_libmongocrypt.sh
+    LIBMONGOCRYPT_TARGET=linux bash handle_libmongocrypt.sh
 
     # 2021-05-05-1ac6ef3 was the last release to generate pip < 20.3 compatible
     # wheels. After that auditwheel was upgraded to v4 which produces PEP 600
@@ -50,7 +50,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     done
 
     # Build the mac wheel.
-    LIBMONGOCRYPT_TARGET=macos ./handle_libmongocrypt.sh
+    LIBMONGOCRYPT_TARGET=macos bash handle_libmongocrypt.sh
     python -m build wheel
 
     # Clear all temp files
