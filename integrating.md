@@ -205,6 +205,28 @@ The responses from one or more HTTP messages to AWS KMS.
 
 All contexts.
 
+#### State: `MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` ####
+
+`MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` was added in libmongocrypt 1.4.0 as part of [MONGOCRYPT-382](https://jira.mongodb.org/browse/MONGOCRYPT-382).
+
+`MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` can only be entered if `mongocrypt_setopt_use_need_kms_credentials_state` is called. This prevents breaking drivers that do not handle the `MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` state.
+
+If a KMS provider is configured with an empty document (e.g. `{ "aws": {} }`), the `MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS` is entered before KMS requests are made.
+
+**libmongocrypt needs**...
+
+Credentials for one or more KMS providers.
+
+**Driver needs to...**
+
+Fetch credentials for supported KMS providers. See the [Client Side Encryption specification](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst#automatic-credentials) for details.
+
+Pass credentials to libmongocrypt using `mongocrypt_ctx_provide_kms_providers`.
+
+**Applies to...**
+
+All contexts.
+
 #### State: MONGOCRYPT\_CTX\_READY ####
 
 **Driver needs to...**
