@@ -27,7 +27,7 @@ if sys.platform in ('win32', 'darwin'):
                 if sys.platform == 'darwin' and 'MACOSX_DEPLOYMENT_TARGET' in os.environ:
                     ver = os.environ['MACOSX_DEPLOYMENT_TARGET']
                     patt = re.compile(r'macosx_(\d+_\d+)_')
-                    plat = re.sub(patt, 'macosx_' + ver, plat)
+                    plat = re.sub(patt, 'macosx_' + ver + '_', plat)
                 # Our python source is py2/3 compatible.
                 python, abi = 'py2.py3', 'none'
                 return python, abi, plat
