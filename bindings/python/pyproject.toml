@@ -21,4 +21,4 @@ environment = { "LIBMONGOCRYPT_TARGET" = "linux"}
 [tool.cibuildwheel.macos]
 archs = "x86_64 universal2"
 test-skip = "*universal2:arm64"
-environment = { "LIBMONGOCRYPT_TARGET" = "macos", "MACOSX_DEPLOYMENT_TARGET" = "10.9"}
+environment = {LIBMONGOCRYPT_TARGET="macos", MACOSX_DEPLOYMENT_TARGET=10.9}

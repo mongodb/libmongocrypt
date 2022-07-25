@@ -22,6 +22,9 @@ if sys.platform in ('win32', 'darwin'):
 
             def get_tag(self):
                 python, abi, plat = _bdist_wheel.get_tag(self)
+                # Use MACOSX_DEPLOYMENT_TARGET variable if available.
+                if sys.platform == 'darwin' and 'MACOSX_DEPLOYMENT_TARGET' in os.environ:
+                    plat = 'macosx_' + os.environ['MACOSX_DEPLOYMENT_TARGET'].replace('.', '_')
                 # Our python source is py2/3 compatible.
                 python, abi = 'py2.py3', 'none'
                 return python, abi, plat
