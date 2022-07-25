@@ -42,7 +42,7 @@ describe('ClientEncryption', function () {
   }
 
   async function setup() {
-    client = new MongoClient('mongodb://bob:pwd123@localhost:27017', {
+    client = new MongoClient('mongodb://localhost:27017/test', {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
