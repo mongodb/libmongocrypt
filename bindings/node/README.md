@@ -30,11 +30,8 @@ server running with the following conditions:
 |-----------|-----------|
 | host      | localhost |
 | port      | 27017     |
-| username  | bob       |
-| password  | pwd123    |
 
-Note: this is the same setup as the default from the `cluster_setup.sh` script for standalone servers in the Node driver.
-
+This is the standard setup for a standalone server with no authentication.
 
 Run the test suite using:
 
