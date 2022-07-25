@@ -1,3 +1,4 @@
+import re
 import os
 import sys
 
@@ -24,7 +25,9 @@ if sys.platform in ('win32', 'darwin'):
                 python, abi, plat = _bdist_wheel.get_tag(self)
                 # Use MACOSX_DEPLOYMENT_TARGET variable if available.
                 if sys.platform == 'darwin' and 'MACOSX_DEPLOYMENT_TARGET' in os.environ:
-                    plat = 'macosx_' + os.environ['MACOSX_DEPLOYMENT_TARGET'].replace('.', '_')
+                    ver = os.environ['MACOSX_DEPLOYMENT_TARGET']
+                    patt = re.compile(r'macosx_(\d+_\d+)_')
+                    plat = re.sub(patt, 'macosx_' + ver, plat)
                 # Our python source is py2/3 compatible.
                 python, abi = 'py2.py3', 'none'
                 return python, abi, plat
