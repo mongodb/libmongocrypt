@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 # 	libmongocrypt.so
 # The wheel has to be platlib compliant in order to be repaired by auditwheel.
 cmdclass = {}
-if True: #sys.platform in ('win32', 'darwin'):
+if sys.platform in ('win32', 'darwin'):
     try:
         from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
         class bdist_wheel(_bdist_wheel):

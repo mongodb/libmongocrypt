@@ -13,30 +13,68 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-
-# Remove any binary files
-rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+# The libmongocrypt git revision release to embed in our wheels.
+REVISION=$(git rev-list -n 1 1.5.0)
+# The libmongocrypt release branch.
+BRANCH="r1.5"
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
     virtualenv -p C:\\python\\Python37\\python.exe venv37 && . ./venv37/Scripts/activate
 
-    LIBMONGOCRYPT_TARGET=windows bash handle_libmongocrypt.sh
+    # Build the Windows wheel
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/windows-test/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    mkdir libmongocrypt
+    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
+    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dll
+    chmod +x ${NOCRYPTO_SO}
+    cp ${NOCRYPTO_SO} pymongocrypt/
+    rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
+    python setup.py bdist_wheel
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    ls dist
 elif [ "Darwin" = "$(uname -s)" ]; then
     if [[ $(uname -m) == 'arm64' ]]; then
-      PYTHON="/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+      PYTHON="${PYTHON:-/Library/Frameworks/Python.framework/Versions/3.10/bin/python3}"
     else
-      PYTHON="python3.7"
+      PYTHON="${PYTHON:-python3.7}"
     fi
-    pip install build
-
     # Build the source dist first
-    python -m build --sdist
+    rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    $PYTHON setup.py sdist
 
-    # Build the manylinux2010 wheels.
-    # Fetch libmongocrypt for linux.
-    LIBMONGOCRYPT_TARGET=linux bash handle_libmongocrypt.sh
+    # Build the mac wheel
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/macos/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    mkdir libmongocrypt
+    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
+    NOCRYPTO_SO=libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    chmod +x ${NOCRYPTO_SO}
+    cp ${NOCRYPTO_SO} pymongocrypt/
+    rm -rf ./libmongocrypt libmongocrypt.tar.gz
+
+    $PYTHON setup.py bdist_wheel
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    ls dist
+fi
+
+set +e
+hash docker 2>/dev/null
+HAVE_DOCKER=$?
+set -e
+
+if [[  "Windows_NT" != "$OS" && ${HAVE_DOCKER} == 0 ]]; then
+    # Build the manylinux2010 wheels
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    mkdir libmongocrypt
+    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
+    NOCRYPTO_SO=libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    chmod +x ${NOCRYPTO_SO}
+    cp ${NOCRYPTO_SO} pymongocrypt/
+    rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
     # 2021-05-05-1ac6ef3 was the last release to generate pip < 20.3 compatible
     # wheels. After that auditwheel was upgraded to v4 which produces PEP 600
@@ -49,15 +87,6 @@ elif [ "Darwin" = "$(uname -s)" ]; then
         docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
     done
 
-    # Build the mac wheel.
-    LIBMONGOCRYPT_TARGET=macos bash handle_libmongocrypt.sh
-    python -m build wheel
-
-    # Clear all temp files
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-
+    sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
-else
-   echo "ERROR: Run this script on macOS or Windows"
-   exit 1
 fi
