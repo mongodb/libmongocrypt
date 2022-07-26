@@ -17,12 +17,13 @@ set -o errexit  # Exit the script with error if any of the commands fail
 REVISION=$(git rev-list -n 1 1.5.0)
 # The libmongocrypt release branch.
 BRANCH="r1.5"
+MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:=10.14}
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
     virtualenv -p C:\\python\\Python37\\python.exe venv37 && . ./venv37/Scripts/activate
 
-    # Build the Windows wheel
+    # Build the Windows wheel.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/windows-test/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
@@ -41,11 +42,11 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     else
       PYTHON="${PYTHON:-python3.7}"
     fi
-    # Build the source dist first
+    # Build the source dist first.
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     $PYTHON setup.py sdist
 
-    # Build the mac wheel
+    # Build the mac wheel.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/macos/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
@@ -55,8 +56,16 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
-    $PYTHON setup.py bdist_wheel
+    # Make the x86_64 wheel.
+    MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET $PYTHON setup.py bdist_wheel
+
+    # Make a universal2 wheel.
+    fname=$(ls -AU | head -1)
+    cp "$fname" "$(echo "$fname" | sed s/x86_64/universal2/)"
+
+    # Clean up.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+
     ls dist
 fi
 
@@ -66,7 +75,7 @@ HAVE_DOCKER=$?
 set -e
 
 if [[  "Windows_NT" != "$OS" && ${HAVE_DOCKER} == 0 ]]; then
-    # Build the manylinux2010 wheels
+    # Build the manylinux2010 wheels.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
