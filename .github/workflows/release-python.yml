@@ -40,10 +40,9 @@ jobs:
         run:  |
           PYTHON=$(which python) ./release.sh
 
-      - name: Test Dist File(s)
-        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
+      - name: Test Wheel(s)
         run: |
-          for file in ./dist/*; do
+          for file in ./dist/*.whl; do
             pip install $file
             pushd $HOME
             python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
