@@ -40,17 +40,17 @@ jobs:
         run:  |
           MACOSX_DEPLOYMENT_TARGET=10.14 PYTHON=$(which python) ./release.sh
 
-      - name: Test Wheel on Windows
-        if: ${{ startsWith(matrix.os, 'windows') }}
+      - name: Test Wheel on Non-Ubuntu
+        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         run: |
           pip install ./dist/*.whl
           cd $HOME
           python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
 
-      - name: Test Wheel on MacOS
-        if: ${{ startsWith(matrix.os, 'macos') }}
+      - name: Test Wheel on Ubuntu
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: |
-          pip install ./dist/*macosx*.whl
+          pip install ./dist/*manylinux_2_12*.whl
           cd $HOME
           python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
 
