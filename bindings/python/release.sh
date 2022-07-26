@@ -65,7 +65,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     ls dist
 fi
 
-if [[  "Windows_NT" != "$OS" && command -v docker ]]; then
+if [ command -v docker ]; then
     # Build the manylinux2010 wheels.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
