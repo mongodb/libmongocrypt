@@ -60,7 +60,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET $PYTHON setup.py bdist_wheel
 
     # Make a universal2 wheel.
-    fname=$(ls -AU | head -1)
+    fname=$(ls -AU ./dist | head -1)
     cp "$fname" "$(echo "$fname" | sed s/x86_64/universal2/)"
 
     # Clean up.
