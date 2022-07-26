@@ -46,7 +46,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     $PYTHON setup.py sdist
 
     # Select the appropriate MacOS target based on Python version.
-    if [[ $($PYTHON --version) == 3.7* ]]; then
+    if [[ $($PYTHON --version) == Python 3.7* ]]; then
         MACOS_TARGET="macos_x86_64"
     else
         MACOS_TARGET="macos"
