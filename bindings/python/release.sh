@@ -45,9 +45,17 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     $PYTHON setup.py sdist
 
+    # Select the appropriate MacOS target based on Python version.
+    if [[ $($PYTHON --version) = "3.7" ]]; then
+        MACOS_TARGET="macos_x86_64"
+    else
+        MACOS_TARGET="macos"
+    fi
+
+
     # Build the mac wheel.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/macos/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$MACOS_TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     NOCRYPTO_SO=libmongocrypt/nocrypto/lib/libmongocrypt.dylib
