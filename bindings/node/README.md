@@ -3,19 +3,35 @@ MongoDB Client Encryption
 
 The Node.js wrapper for [`libmongocrypt`](../../README.md)
 
-### Requirements
-
-Follow the instructions for building `libmongocrypt` [here](../../README.md#building-libmongocrypt).
-
 ### Installation
 
-Now you can install `mongodb-client-encryption` with the following:
+You can install `mongodb-client-encryption` with the following:
 
 ```bash
 npm install mongodb-client-encryption
 ```
 
-### Testing
+### Development 
+#### Setup 
+
+Run the following command to build libmongocrypt and setup the node bindings for development:
+
+```shell
+bash ./etc/build-static.sh
+```
+
+
+#### Testing
+
+Some tests require a standalone server to be running with authentication enabled.  Set up a single 
+server running with the following conditions:
+
+| param     | value     | 
+|-----------|-----------|
+| host      | localhost |
+| port      | 27017     |
+
+This is the standard setup for a standalone server with no authentication.
 
 Run the test suite using:
 
@@ -46,6 +62,31 @@ npm test
 <dt><a href="#KMSProviders">KMSProviders</a> : <code>object</code></dt>
 <dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
 </dd>
+<dt><a href="#DataKey">DataKey</a> : <code>object</code></dt>
+<dd><p>A data key as stored in the database.</p>
+</dd>
+<dt><a href="#KmsProvider">KmsProvider</a> : <code>string</code></dt>
+<dd><p>A string containing the name of a kms provider.  Valid options are &#39;aws&#39;, &#39;azure&#39;, &#39;gcp&#39;, &#39;kmip&#39;, or &#39;local&#39;</p>
+</dd>
+<dt><a href="#ClientSession">ClientSession</a> : <code>object</code></dt>
+<dd><p>The ClientSession class from the MongoDB Node driver (see <a href="https://mongodb.github.io/node-mongodb-native/4.8/classes/ClientSession.html">https://mongodb.github.io/node-mongodb-native/4.8/classes/ClientSession.html</a>)</p>
+</dd>
+<dt><a href="#DeleteResult">DeleteResult</a> : <code>object</code></dt>
+<dd><p>The result of a delete operation from the MongoDB Node driver (see <a href="https://mongodb.github.io/node-mongodb-native/4.8/interfaces/DeleteResult.html">https://mongodb.github.io/node-mongodb-native/4.8/interfaces/DeleteResult.html</a>)</p>
+</dd>
+<dt><a href="#BulkWriteResult">BulkWriteResult</a> : <code>object</code></dt>
+<dd><p>The BulkWriteResult class from the MongoDB Node driver (<a href="https://mongodb.github.io/node-mongodb-native/4.8/classes/BulkWriteResult.html">https://mongodb.github.io/node-mongodb-native/4.8/classes/BulkWriteResult.html</a>)</p>
+</dd>
+<dt><a href="#FindCursor">FindCursor</a> : <code>object</code></dt>
+<dd><p>The FindCursor class from the MongoDB Node driver (see <a href="https://mongodb.github.io/node-mongodb-native/4.8/classes/FindCursor.html">https://mongodb.github.io/node-mongodb-native/4.8/classes/FindCursor.html</a>)</p>
+</dd>
+<dt><a href="#ClientEncryptionDataKeyId">ClientEncryptionDataKeyId</a> : <code>Binary</code></dt>
+<dd><p>The id of an existing dataKey. Is a bson Binary value.
+Can be used for <a href="ClientEncryption.encrypt">ClientEncryption.encrypt</a>, and can be used to directly
+query for the data key itself against the key vault namespace.</p>
+</dd>
+<dt><a href="#ClientEncryptionCreateDataKeyCallback">ClientEncryptionCreateDataKeyCallback</a> : <code>function</code></dt>
+<dd></dd>
 <dt><a href="#AWSEncryptionKeyOptions">AWSEncryptionKeyOptions</a> : <code>object</code></dt>
 <dd><p>Configuration options for making an AWS encryption key</p>
 </dd>
@@ -55,6 +96,10 @@ npm test
 <dt><a href="#AzureEncryptionKeyOptions">AzureEncryptionKeyOptions</a> : <code>object</code></dt>
 <dd><p>Configuration options for making an Azure encryption key</p>
 </dd>
+<dt><a href="#RewrapManyDataKeyResult">RewrapManyDataKeyResult</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#ClientEncryptionEncryptCallback">ClientEncryptionEncryptCallback</a> : <code>function</code></dt>
+<dd></dd>
 </dl>
 
 <a name="AutoEncrypter"></a>
@@ -68,13 +113,19 @@ An internal class to be used by the driver for auto encryption
 
     * [new AutoEncrypter(client, [options])](#new_AutoEncrypter_new)
 
-    * [~logLevel](#AutoEncrypter..logLevel)
+    * _instance_
+        * [.cryptSharedLibVersionInfo](#AutoEncrypter+cryptSharedLibVersionInfo)
 
-    * [~AutoEncryptionOptions](#AutoEncrypter..AutoEncryptionOptions)
+        * [.askForKMSCredentials()](#AutoEncrypter+askForKMSCredentials)
 
-    * [~AutoEncryptionExtraOptions](#AutoEncrypter..AutoEncryptionExtraOptions)
+    * _inner_
+        * [~logLevel](#AutoEncrypter..logLevel)
 
-    * [~logger](#AutoEncrypter..logger)
+        * [~AutoEncryptionOptions](#AutoEncrypter..AutoEncryptionOptions)
+
+        * [~AutoEncryptionExtraOptions](#AutoEncrypter..AutoEncryptionExtraOptions)
+
+        * [~logger](#AutoEncrypter..logger)
 
 
 <a name="new_AutoEncrypter_new"></a>
@@ -95,7 +146,7 @@ It protects against a malicious server advertising a false JSON Schema, which co
 Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.
 Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
-**Example**
+**Example**  
 ```js
 // Enabling autoEncryption via a MongoClient
 const { MongoClient } = require('mongodb');
@@ -113,6 +164,22 @@ const client = new MongoClient(URL, {
 await client.connect();
 // From here on, the client will be encrypting / decrypting automatically
 ```
+<a name="AutoEncrypter+cryptSharedLibVersionInfo"></a>
+
+### *autoEncrypter*.cryptSharedLibVersionInfo
+Return the current libmongocrypt's CSFLE shared library version
+as `{ version: bigint, versionStr: string }`, or `null` if no CSFLE
+shared library was loaded.
+
+<a name="AutoEncrypter+askForKMSCredentials"></a>
+
+### *autoEncrypter*.askForKMSCredentials()
+Ask the user for KMS credentials.
+
+This returns anything that looks like the kmsProviders original input
+option. It can be empty, and any provider specified here will override
+the original ones.
+
 <a name="AutoEncrypter..logLevel"></a>
 
 ### *AutoEncrypter*~logLevel
@@ -182,17 +249,27 @@ The public interface for explicit client side encryption
     * _instance_
         * [.createDataKey(provider, [options], [callback])](#ClientEncryption+createDataKey)
 
+        * [.rewrapManyDataKey(filter, [options])](#ClientEncryption+rewrapManyDataKey)
+
+        * [.deleteKey(_id)](#ClientEncryption+deleteKey)
+
+        * [.getKeys()](#ClientEncryption+getKeys)
+
+        * [.getKey(_id)](#ClientEncryption+getKey)
+
+        * [.getKeyByAltName(keyAltName)](#ClientEncryption+getKeyByAltName)
+
+        * [.addKeyAltName(_id, keyAltName)](#ClientEncryption+addKeyAltName)
+
+        * [.removeKeyAltName(_id, keyAltName)](#ClientEncryption+removeKeyAltName)
+
         * [.encrypt(value, options, [callback])](#ClientEncryption+encrypt)
 
         * [.decrypt(value, callback)](#ClientEncryption+decrypt)
 
+        * [.askForKMSCredentials()](#ClientEncryption+askForKMSCredentials)
+
     * _inner_
-        * [~dataKeyId](#ClientEncryption..dataKeyId)
-
-        * [~createDataKeyCallback](#ClientEncryption..createDataKeyCallback)
-
-        * [~encryptCallback](#ClientEncryption..encryptCallback)
-
         * [~decryptCallback](#ClientEncryption..decryptCallback)
 
 
@@ -211,7 +288,7 @@ The public interface for explicit client side encryption
 
 Create a new encryption instance
 
-**Example**
+**Example**  
 ```js
 new ClientEncryption(mongoClient, {
   keyVaultNamespace: 'client.encryption',
@@ -222,7 +299,7 @@ new ClientEncryption(mongoClient, {
   }
 });
 ```
-**Example**
+**Example**  
 ```js
 new ClientEncryption(mongoClient, {
   keyVaultNamespace: 'client.encryption',
@@ -244,12 +321,12 @@ new ClientEncryption(mongoClient, {
 | [options] | <code>object</code> | Options for creating the data key |
 | [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | Idenfities a new KMS-specific key used to encrypt the new data key |
 | [options.keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id. |
-| [callback] | [<code>createDataKeyCallback</code>](#ClientEncryption..createDataKeyCallback) | Optional callback to invoke when key is created |
+| [callback] | [<code>ClientEncryptionCreateDataKeyCallback</code>](#ClientEncryptionCreateDataKeyCallback) | Optional callback to invoke when key is created |
 
 Creates a data key used for explicit encryption and inserts it into the key vault namespace
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with [the id of the created data key](#ClientEncryption..dataKeyId), or rejects with an error. If a callback is provided, returns nothing.
-**Example**
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with [the id of the created data key](ClientEncryption~dataKeyId), or rejects with an error. If a callback is provided, returns nothing.  
+**Example**  
 ```js
 // Using callbacks to create a local key
 clientEncryption.createDataKey('local', (err, dataKey) => {
@@ -260,12 +337,12 @@ clientEncryption.createDataKey('local', (err, dataKey) => {
   }
 });
 ```
-**Example**
+**Example**  
 ```js
 // Using async/await to create a local key
 const dataKeyId = await clientEncryption.createDataKey('local');
 ```
-**Example**
+**Example**  
 ```js
 // Using async/await to create an aws key
 const dataKeyId = await clientEncryption.createDataKey('aws', {
@@ -275,7 +352,7 @@ const dataKeyId = await clientEncryption.createDataKey('aws', {
   }
 });
 ```
-**Example**
+**Example**  
 ```js
 // Using async/await to create an aws key with a keyAltName
 const dataKeyId = await clientEncryption.createDataKey('aws', {
@@ -286,6 +363,170 @@ const dataKeyId = await clientEncryption.createDataKey('aws', {
   keyAltNames: [ 'mySpecialKey' ]
 });
 ```
+<a name="ClientEncryption+rewrapManyDataKey"></a>
+
+### *clientEncryption*.rewrapManyDataKey(filter, [options])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| filter | <code>object</code> | A valid MongoDB filter. Any documents matching this filter will be re-wrapped. |
+| [options] | <code>object</code> |  |
+| options.provider | [<code>KmsProvider</code>](#KmsProvider) | The KMS provider to use when re-wrapping the data keys. |
+| [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) |  |
+
+Searches the keyvault for any data keys matching the provided filter.  If there are matches, the attempts to re-wrap the data keys using the provided options.
+
+If no matches are found, then no bulk write is performed.
+
+**Example**  
+```js
+// rewrapping all data data keys (using a filter that matches all documents)
+const filter = {};
+
+const result = await clientEncryption.rewrapManyDataKey(filter);
+if (result.bulkWriteResult != null) {
+ // keys were re-wrapped, results will be available in the bulkWrite object.
+}
+```
+**Example**  
+```js
+// attempting to rewrap all data keys with no matches
+const filter = { _id: new Binary() } // assume _id matches no documents in the database
+const result = await clientEncryption.rewrapManyDataKey(filter);
+
+if (result.bulkWriteResult == null) {
+ // no keys matched, `bulkWriteResult` does not exist on the result object
+}
+```
+<a name="ClientEncryption+deleteKey"></a>
+
+### *clientEncryption*.deleteKey(_id)
+
+| Param | Type | Description |
+| --- | --- | --- |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | the id of the document to delete. |
+
+Deletes the key with the provided id from the keyvault, if it exists.
+
+**Returns**: [<code>Promise.&lt;DeleteResult&gt;</code>](#DeleteResult) - Returns a promise that either resolves to a [DeleteResult](#DeleteResult) or rejects with an error.  
+**Example**  
+```js
+// delete a key by _id
+const id = new Binary(); // id is a bson binary subtype 4 object
+const { deletedCount } = await clientEncryption.deleteKey(id);
+
+if (deletedCount != null && deletedCount > 0) {
+  // successful deletion
+}
+```
+<a name="ClientEncryption+getKeys"></a>
+
+### *clientEncryption*.getKeys()
+Finds all the keys currently stored in the keyvault.
+
+This method will not throw.
+
+**Returns**: [<code>FindCursor</code>](#FindCursor) - a FindCursor over all keys in the keyvault.  
+**Example**  
+```js
+// fetching all keys
+const keys = await clientEncryption.getKeys().toArray();
+```
+<a name="ClientEncryption+getKey"></a>
+
+### *clientEncryption*.getKey(_id)
+
+| Param | Type | Description |
+| --- | --- | --- |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | the id of the document to delete. |
+
+Finds a key in the keyvault with the specified _id.
+
+**Returns**: [<code>Promise.&lt;DataKey&gt;</code>](#DataKey) - IReturns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
+match the id.  The promise rejects with an error if an error is thrown.  
+**Example**  
+```js
+// getting a key by id
+const id = new Binary(); // id is a bson binary subtype 4 object
+const key = await clientEncryption.getKey(id);
+if (!key) {
+ // key is null if there was no matching key
+}
+```
+<a name="ClientEncryption+getKeyByAltName"></a>
+
+### *clientEncryption*.getKeyByAltName(keyAltName)
+
+| Param | Type | Description |
+| --- | --- | --- |
+| keyAltName | <code>string</code> | a keyAltName to search for a key |
+
+Finds a key in the keyvault which has the specified keyAltName.
+
+**Returns**: <code>Promise.&lt;(DataKey\|null)&gt;</code> - Returns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
+match the id.  The promise rejects with an error if an error is thrown.  
+**Example**  
+```js
+// get a key by alt name
+const keyAltName = 'keyAltName';
+const key = await clientEncryption.getKeyByAltName(keyAltName);
+if (!key) {
+ // key is null if there is no matching key
+}
+```
+<a name="ClientEncryption+addKeyAltName"></a>
+
+### *clientEncryption*.addKeyAltName(_id, keyAltName)
+
+| Param | Type | Description |
+| --- | --- | --- |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the document to update. |
+| keyAltName | <code>string</code> | a keyAltName to search for a key |
+
+Adds a keyAltName to a key identified by the provided _id.
+
+This method resolves to/returns the *old* key value (prior to adding the new altKeyName).
+
+**Returns**: [<code>Promise.&lt;DataKey&gt;</code>](#DataKey) - Returns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
+match the id.  The promise rejects with an error if an error is thrown.  
+**Example**  
+```js
+// adding an keyAltName to a data key
+const id = new Binary();  // id is a bson binary subtype 4 object
+const keyAltName = 'keyAltName';
+const oldKey = await clientEncryption.addKeyAltName(id, keyAltName);
+if (!oldKey) {
+ // null is returned if there is no matching document with an id matching the supplied id
+}
+```
+<a name="ClientEncryption+removeKeyAltName"></a>
+
+### *clientEncryption*.removeKeyAltName(_id, keyAltName)
+
+| Param | Type | Description |
+| --- | --- | --- |
+| _id | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the document to update. |
+| keyAltName | <code>string</code> | a keyAltName to search for a key |
+
+Adds a keyAltName to a key identified by the provided _id.
+
+This method resolves to/returns the *old* key value (prior to removing the new altKeyName).
+
+If the removed keyAltName is the last keyAltName for that key, the `altKeyNames` property is unset from the document.
+
+**Returns**: <code>Promise.&lt;(DataKey\|null)&gt;</code> - Returns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
+match the id.  The promise rejects with an error if an error is thrown.  
+**Example**  
+```js
+// removing a key alt name from a data key
+const id = new Binary();  // id is a bson binary subtype 4 object
+const keyAltName = 'keyAltName';
+const oldKey = await clientEncryption.removeKeyAltName(id, keyAltName);
+
+if (!oldKey) {
+ // null is returned if there is no matching document with an id matching the supplied id
+}
+```
 <a name="ClientEncryption+encrypt"></a>
 
 ### *clientEncryption*.encrypt(value, options, [callback])
@@ -294,16 +535,16 @@ const dataKeyId = await clientEncryption.createDataKey('aws', {
 | --- | --- | --- |
 | value | <code>\*</code> | The value that you wish to serialize. Must be of a type that can be serialized into BSON |
 | options | <code>object</code> |  |
-| [options.keyId] | [<code>dataKeyId</code>](#ClientEncryption..dataKeyId) | The id of the Binary dataKey to use for encryption |
+| [options.keyId] | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the Binary dataKey to use for encryption |
 | [options.keyAltName] | <code>string</code> | A unique string name corresponding to an already existing dataKey. |
-| options.algorithm |  | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'` or `AEAD_AES_256_CBC_HMAC_SHA_512-Random'` |
-| [callback] | [<code>encryptCallback</code>](#ClientEncryption..encryptCallback) | Optional callback to invoke when value is encrypted |
+| [options.algorithm] |  | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'` |
+| [callback] | [<code>ClientEncryptionEncryptCallback</code>](#ClientEncryptionEncryptCallback) | Optional callback to invoke when value is encrypted |
 
-Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
+Explicitly encrypt a provided value. Noe that either `options.keyId` or `options.keyAltName` must
 be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.
-**Example**
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.  
+**Example**  
 ```js
 // Encryption with callback API
 function encryptMyData(value, callback) {
@@ -315,7 +556,7 @@ function encryptMyData(value, callback) {
   });
 }
 ```
-**Example**
+**Example**  
 ```js
 // Encryption with async/await api
 async function encryptMyData(value) {
@@ -323,7 +564,7 @@ async function encryptMyData(value) {
   return clientEncryption.encrypt(value, { keyId, algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
 }
 ```
-**Example**
+**Example**  
 ```js
 // Encryption using a keyAltName
 async function encryptMyData(value) {
@@ -337,50 +578,34 @@ async function encryptMyData(value) {
 
 | Param | Type | Description |
 | --- | --- | --- |
-| value | `Buffer \| Binary` | An encrypted value |
+| value | <code>Buffer</code> \| <code>Binary</code> | An encrypted value |
 | callback | [<code>decryptCallback</code>](#ClientEncryption..decryptCallback) | Optional callback to invoke when value is decrypted |
 
 Explicitly decrypt a provided encrypted value
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.
-**Example**
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.  
+**Example**  
 ```js
 // Decrypting value with callback API
 function decryptMyValue(value, callback) {
   clientEncryption.decrypt(value, callback);
 }
 ```
-**Example**
+**Example**  
 ```js
 // Decrypting value with async/await API
 async function decryptMyValue(value) {
   return clientEncryption.decrypt(value);
 }
 ```
-<a name="ClientEncryption..dataKeyId"></a>
+<a name="ClientEncryption+askForKMSCredentials"></a>
 
-### *ClientEncryption*~dataKeyId
-The id of an existing dataKey. Is a bson Binary value.
-Can be used for [ClientEncryption.encrypt](ClientEncryption.encrypt), and can be used to directly
-query for the data key itself against the key vault namespace.
+### *clientEncryption*.askForKMSCredentials()
+Ask the user for KMS credentials.
 
-<a name="ClientEncryption..createDataKeyCallback"></a>
-
-### *ClientEncryption*~createDataKeyCallback
-
-| Param | Type | Description |
-| --- | --- | --- |
-| [error] | <code>Error</code> | If present, indicates an error that occurred in the creation of the data key |
-| [dataKeyId] | [<code>dataKeyId</code>](#ClientEncryption..dataKeyId) | If present, returns the id of the created data key |
-
-<a name="ClientEncryption..encryptCallback"></a>
-
-### *ClientEncryption*~encryptCallback
-
-| Param | Type | Description |
-| --- | --- | --- |
-| [err] | <code>Error</code> | If present, indicates an error that occurred in the process of encryption |
-| [result] | <code>Buffer</code> | If present, is the encrypted result |
+This returns anything that looks like the kmsProviders original input
+option. It can be empty, and any provider specified here will override
+the original ones.
 
 <a name="ClientEncryption..decryptCallback"></a>
 
@@ -419,6 +644,72 @@ An error indicating that something went wrong specifically with MongoDB Client E
 | [gcp.endpoint] | <code>string</code> | If present, a host with optional port. E.g. "example.com" or "example.com:443". Defaults to "oauth2.googleapis.com" |
 
 Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
+
+<a name="DataKey"></a>
+
+## DataKey
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| _id | <code>UUID</code> | A unique identifier for the key. |
+| version | <code>number</code> | A numeric identifier for the schema version of this document. Implicitly 0 if unset. |
+| [keyAltNames] | <code>Array.&lt;string&gt;</code> | Alternate names to search for keys by. Used for a per-document key scenario in support of GDPR scenarios. |
+| keyMaterial | <code>Binary</code> | Encrypted data key material, BinData type General. |
+| creationDate | <code>Date</code> | The datetime the wrapped data key material was imported into the Key Database. |
+| updateDate | <code>Date</code> | The datetime the wrapped data key material was last modified. On initial import, this value will be set to creationDate. |
+| status | <code>number</code> | 0 = enabled, 1 = disabled |
+| masterKey | <code>object</code> | the encrypted master key |
+
+A data key as stored in the database.
+
+<a name="KmsProvider"></a>
+
+## KmsProvider
+A string containing the name of a kms provider.  Valid options are 'aws', 'azure', 'gcp', 'kmip', or 'local'
+
+<a name="ClientSession"></a>
+
+## ClientSession
+The ClientSession class from the MongoDB Node driver (see https://mongodb.github.io/node-mongodb-native/4.8/classes/ClientSession.html)
+
+<a name="DeleteResult"></a>
+
+## DeleteResult
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| acknowledged | <code>boolean</code> | Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined. |
+| deletedCount | <code>number</code> | The number of documents that were deleted |
+
+The result of a delete operation from the MongoDB Node driver (see https://mongodb.github.io/node-mongodb-native/4.8/interfaces/DeleteResult.html)
+
+<a name="BulkWriteResult"></a>
+
+## BulkWriteResult
+The BulkWriteResult class from the MongoDB Node driver (https://mongodb.github.io/node-mongodb-native/4.8/classes/BulkWriteResult.html)
+
+<a name="FindCursor"></a>
+
+## FindCursor
+The FindCursor class from the MongoDB Node driver (see https://mongodb.github.io/node-mongodb-native/4.8/classes/FindCursor.html)
+
+<a name="ClientEncryptionDataKeyId"></a>
+
+## ClientEncryptionDataKeyId
+The id of an existing dataKey. Is a bson Binary value.
+Can be used for [ClientEncryption.encrypt](ClientEncryption.encrypt), and can be used to directly
+query for the data key itself against the key vault namespace.
+
+<a name="ClientEncryptionCreateDataKeyCallback"></a>
+
+## ClientEncryptionCreateDataKeyCallback
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [error] | <code>Error</code> | If present, indicates an error that occurred in the creation of the data key |
+| [dataKeyId] | <code>ClientEncryption~dataKeyId</code> | If present, returns the id of the created data key |
 
 <a name="AWSEncryptionKeyOptions"></a>
 
@@ -461,3 +752,22 @@ Configuration options for making a GCP encryption key
 | [keyVersion] | <code>string</code> | Key version |
 
 Configuration options for making an Azure encryption key
+
+<a name="RewrapManyDataKeyResult"></a>
+
+## RewrapManyDataKeyResult
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [bulkWriteResult] | [<code>BulkWriteResult</code>](#BulkWriteResult) | An optional BulkWriteResult, if any keys were matched and attempted to be re-wrapped. |
+
+<a name="ClientEncryptionEncryptCallback"></a>
+
+## ClientEncryptionEncryptCallback
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [err] | <code>Error</code> | If present, indicates an error that occurred in the process of encryption |
+| [result] | <code>Buffer</code> | If present, is the encrypted result |
+

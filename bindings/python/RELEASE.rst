@@ -50,7 +50,7 @@ Docker and a Windows machine.
      $ git push
      $ git push --tags
 
-#. Download the release assets from the "Python Wheels" Github Workflow.
+#. Download the release assets from the "Python Dist" Github Workflow.
 
 #. Upload all the release packages to PyPI with twine::
 
