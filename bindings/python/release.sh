@@ -17,7 +17,6 @@ set -o errexit  # Exit the script with error if any of the commands fail
 REVISION=$(git rev-list -n 1 1.5.0)
 # The libmongocrypt release branch.
 BRANCH="r1.5"
-MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:=10.14}
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
@@ -57,7 +56,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
     # Make the wheel.
-    MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET $PYTHON setup.py bdist_wheel
+    $PYTHON setup.py bdist_wheel
 
     # Clean up.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
