@@ -61,7 +61,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 
     # Make a universal2 wheel.
     fname=$(ls -AU ./dist | head -1)
-    cp "$fname" "$(echo "$fname" | sed s/x86_64/universal2/)"
+    cp "./dist/$fname" "$(echo "./dist/$fname" | sed s/x86_64/universal2/)"
 
     # Clean up.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
