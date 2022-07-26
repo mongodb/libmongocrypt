@@ -36,23 +36,20 @@ jobs:
           python -m pip install -U pip setuptools wheel packaging
           git fetch origin --tags
 
-      - name: Build Wheels
+      - name: Build Dist File(s)
         run:  |
           PYTHON=$(which python) ./release.sh
 
-      - name: Test Wheel on Non-Ubuntu
+      - name: Test Dist File(s)
         if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         run: |
-          pip install ./dist/*.whl
-          cd $HOME
-          python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-
-      - name: Test Wheel on Ubuntu
-        if: ${{ startsWith(matrix.os, 'ubuntu') }}
-        run: |
-          pip install ./dist/*manylinux_2_12*.whl
-          cd $HOME
-          python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+          for file in ./dist/*; do
+            pip install $file
+            pushd $HOME
+            python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+            pip uninstall -y pymongocrypt
+            popd
+          done
 
       - uses: actions/upload-artifact@v2
         with:
