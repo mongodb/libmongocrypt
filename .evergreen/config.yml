@@ -294,17 +294,17 @@ functions:
 
   "test python release":
   - command: shell.exec
-      params:
-        script: |
-          set -o xtrace
-          cd ./libmongocrypt/bindings/python
-          for file in ./dist/*.whl; do
-            pip install $file
-            pushd $HOME
-            python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-            pip uninstall -y pymongocrypt
-            popd
-          done
+    params:
+      script: |
+        set -o xtrace
+        cd ./libmongocrypt/bindings/python
+        for file in ./dist/*.whl; do
+          pip install $file
+          pushd $HOME
+          python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+          pip uninstall -y pymongocrypt
+          popd
+        done
 
   "upload python release":
     - command: archive.targz_pack
@@ -450,6 +450,7 @@ tasks:
 
 - name: "release-python-posix"
   tags: ["release_python_tag"]
+  run_on: macos-1014
   commands:
     - func: "fetch source"
     - func: "build python release posix"
@@ -458,6 +459,7 @@ tasks:
 
 - name: "release-python-windows"
   tags: ["release_python_tag"]
+  run_on: windows-test
   commands:
     - func: "fetch source"
     - func: "build python release windows"
