@@ -280,10 +280,9 @@ functions:
       params:
         script: |
           set -o xtrace
-          pwd
-          ls -ltr
-          bash ./libmongocrypt/bindings/python/release.sh
-          for file in ././libmongocrypt/bindings/python/dist/*.whl; do
+          cd ./libmongocrypt/bindings/python
+          ./release.sh
+          for file in ./dist/*.whl; do
             pip install $file
             pushd $HOME
             python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
@@ -437,14 +436,22 @@ tasks:
   tags: ["release_python_tag"]
   run_on: macos-1014
   commands:
+    - func: "fetch source"
+    - func: "download tarball"
+      vars: { variant_name: "${build_variant}" }
     - func: "build python release"
+      vars: { variant_name: "${build_variant}" }
     - func: "upload python release"
 
 - name: "release-python-windows"
   tags: ["release_python_tag"]
   run_on: windows-64-vsMulti-small
   commands:
+    - func: "fetch source"
+    - func: "download tarball"
+      vars: { variant_name: "${build_variant}" }
     - func: "build python release"
+      vars: { variant_name: "${build_variant}" }
     - func: "upload python release"
 
 - name: "release-python-manylinux"
@@ -452,7 +459,11 @@ tasks:
   run_on: ubuntu2004-large
   exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
   commands:
+    - func: "fetch source"
+    - func: "download tarball"
+      vars: { variant_name: "${build_variant}" }
     - func: "build python release"
+      vars: { variant_name: "${build_variant}" }
     - func: "upload python release"
 
 - name: "release-python-combine"

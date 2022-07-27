@@ -64,6 +64,7 @@ Docker and a Windows machine.
      pymongocrypt-<version>-py2.py3-none-macosx_10_14_x86_64.whl
      pymongocrypt-<version>-py2.py3-none-macosx_11_0_x86_64.whl
      pymongocrypt-<version>-py2.py3-none-macosx_11_0_universal2.whl
+     pymongocrypt-<version>-py2.py3-none-win_amd64.whl
 
 #. Upload all the release packages to PyPI with twine::
 
@@ -80,14 +81,8 @@ Manually Creating Wheels
      $ git checkout "pymongocrypt <release version number>"
      $ ./release.sh
 
-   This will create the following distributions::
-
-     $ ls dist
-     pymongocrypt-<version>.tar.gz
-     pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
-     pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
-     pymongocrypt-<version>-py2.py3-none-macosx_10_14_x86_64.whl
-      pymongocrypt-<version>-py2.py3-none-macosx_10_14_universal2.whl
+  Make sure to run using the official binaries for Python 3.7 and 3.10.  You
+  should end up with the same files created by Evergreen (except for the Windows wheel).
 
 #. To build the release package for Windows, launch a windows-64-vsMulti-small
    Evergreen spawn host, clone the repro, checkout the release tag, and run
