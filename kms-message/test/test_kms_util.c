@@ -64,6 +64,9 @@ data_to_hex (const uint8_t *buf, size_t len) {
 char *
 replace_all (const char *input, const char *match, const char *replacement)
 {
+   ASSERT (input);
+   ASSERT (match);
+   ASSERT (replacement);
    kms_request_str_t *replaced = kms_request_str_new ();
    const char *start = input;
    const char *iter = strstr (input, match);
