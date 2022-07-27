@@ -447,6 +447,7 @@ tasks:
 
 - name: "release-python-windows"
   tags: ["release_python_tag"]
+  run_on: windows-test
   depends_on:
   # Depends on the windows-64-vs2017-test upload.
   - variant: windows-test
