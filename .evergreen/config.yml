@@ -277,12 +277,13 @@ functions:
 
   "build python release":
     - command: shell.exec
-      type: test
       params:
         script: |
           set -o xtrace
-          ./libmongocrypt/bindings/python/release.sh
-          for file in ./dist/*.whl; do
+          cwd
+          ls -ltr
+          bash ./libmongocrypt/bindings/python/release.sh
+          for file in ././libmongocrypt/bindings/python/dist/*.whl; do
             pip install $file
             pushd $HOME
             python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
