@@ -1279,6 +1279,7 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_response_parser_excess_test);
    RUN_TEST (kms_kmip_response_parser_notenough_test);
    RUN_TEST (test_request_newlines);
+   RUN_TEST (test_kms_util);
 
 
    if (!ran_tests) {

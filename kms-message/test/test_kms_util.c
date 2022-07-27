@@ -16,6 +16,7 @@
 
 #include "test_kms_util.h"
 
+#include "test_kms_assert.h"
 #include "hexlify.h"
 
 #include <ctype.h> /* tolower */
@@ -58,4 +59,31 @@ hex_to_data (const char *unfiltered_hex, size_t *outlen)
 char *
 data_to_hex (const uint8_t *buf, size_t len) {
    return hexlify (buf, len);
+}
+
+char *
+replace_all (const char *input, const char *match, const char *replacement)
+{
+   kms_request_str_t *replaced = kms_request_str_new ();
+   const char *start = input;
+   const char *iter = strstr (input, match);
+   while (iter != NULL) {
+      kms_request_str_append_chars (replaced, start, (ssize_t) (iter - start));
+      kms_request_str_append_chars (
+         replaced, replacement, strlen (replacement));
+      iter += strlen (match);
+      start = iter;
+      iter = strstr (iter, match);
+   }
+   // Append the remainder of input.
+   kms_request_str_append_chars (replaced, start, -1);
+   return kms_request_str_detach (replaced);
+}
+
+void
+test_kms_util (void)
+{
+   char *got = replace_all ("foo bar baz", "bar", "baz");
+   ASSERT_CMPSTR (got, "foo baz baz");
+   free (got);
 }
