@@ -313,6 +313,13 @@ test_compare (kms_request_t *request,
    char *actual;
 
    expect = read_test (dir_path, suffix);
+   if (0 == strcmp (suffix, "sreq")) {
+      /* The final signed request is an HTTP request.
+       * The expected output must contain \r\n, not \n. */
+      char* tmp = replace_all (expect, "\n", "\r\n");
+      free (expect);
+      expect = tmp;
+   }
    actual = func (request);
    ASSERT_CMPSTR (expect, actual);
    free (actual);
