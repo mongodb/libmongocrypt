@@ -251,7 +251,7 @@ public class MongoCryptTest {
         assertEquals("kms.us-east-1.amazonaws.com:443", keyDecryptor.getHostName());
 
         ByteBuffer keyDecryptorMessage = keyDecryptor.getMessage();
-        assertEquals(781, keyDecryptorMessage.remaining());
+        assertEquals(790, keyDecryptorMessage.remaining());
 
         int bytesNeeded = keyDecryptor.bytesNeeded();
         assertEquals(1024, bytesNeeded);
