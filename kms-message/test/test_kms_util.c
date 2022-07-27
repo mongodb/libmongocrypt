@@ -70,7 +70,7 @@ replace_all (const char *input, const char *match, const char *replacement)
    while (iter != NULL) {
       kms_request_str_append_chars (replaced, start, (ssize_t) (iter - start));
       kms_request_str_append_chars (
-         replaced, replacement, strlen (replacement));
+         replaced, replacement, (ssize_t) strlen (replacement));
       iter += strlen (match);
       start = iter;
       iter = strstr (iter, match);
