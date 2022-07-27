@@ -275,6 +275,89 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
+  "build python release":
+    - command: shell.exec
+      type: test
+      params:
+        script: |
+          set -o xtrace
+          ./libmongocrypt/bindings/python/release.sh
+          for file in ./dist/*.whl; do
+            pip install $file
+            pushd $HOME
+            python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+            pip uninstall -y pymongocrypt
+            popd
+          done
+
+  "upload python release":
+    - command: archive.targz_pack
+      params:
+        target: "release-files.tgz"
+        source_dir: "libmongocrypt/bindings/python/dist"
+        include:
+          - "*"
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: release-files.tgz
+        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}-python/${task_id}-${execution}-release-files.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/gzip}
+        display_name: Release Python files
+
+  "download and merge python releases":
+    - command: shell.exec
+      params:
+        silent: true
+        script: |
+          export AWS_ACCESS_KEY_ID=${aws_key}
+          export AWS_SECRET_ACCESS_KEY=${aws_secret}
+          # Download all the task coverage files.
+          aws s3 cp --recursive s3://mciuploads/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}-python/ release/
+    - command: shell.exec
+      params:
+        shell: "bash"
+        script: |
+          set -o xtrace
+          ${PREPARE_SHELL}
+          # Combine releases into one directory.
+          ls -la release/
+          mkdir releases
+          # Copy old manylinux release first since we want the newer manylinux
+          # wheels to override them.
+          mkdir old_manylinux
+          if mv release/*old_manylinux* old_manylinux; then
+            for REL in old_manylinux/*; do
+              tar zxvf $REL -C releases/
+            done
+          fi
+          for REL in release/*; do
+            tar zxvf $REL -C releases/
+          done
+          # Build source distribution.
+          cd src/
+          /opt/python/3.7/bin/python3 setup.py sdist
+          cp dist/* ../releases
+    - command: archive.targz_pack
+      params:
+        target: "release-files-all.tgz"
+        source_dir: "releases/"
+        include:
+          - "*"
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: release-files-all.tgz
+        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}-python/${task_id}-${execution}-release-files-all.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/gzip}
+        display_name: Release Python files all
+
 tasks:
 - name: build-and-test-and-upload
   commands:
@@ -348,6 +431,38 @@ tasks:
       vars: { variant_name: windows-test }
     - func: "test python"
       vars: { variant_name: windows-test }
+
+- name: "release-python-mac"
+  tags: ["release_python_tag"]
+  run_on: macos-1014
+  commands:
+    - func: "build python release"
+    - func: "upload python release"
+
+- name: "release-python-windows"
+  tags: ["release_python_tag"]
+  run_on: windows-64-vsMulti-small
+  commands:
+    - func: "build python release"
+    - func: "upload python release"
+
+- name: "release-python-manylinux"
+  tags: ["release_python_tag"]
+  run_on: ubuntu2004-large
+  exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
+  commands:
+    - func: "build python release"
+    - func: "upload python release"
+
+- name: "release-python-combine"
+  tags: ["release_python_tag"]
+  run_on: ubuntu2004-small
+  depends_on:
+    - name: "*"
+      variant: ".release_python_tag"
+      patch_optional: true
+  commands:
+    - func: "download and merge python releases"
 
 - name: build-and-test-csharp
   commands:
@@ -809,6 +924,12 @@ buildvariants:
   run_on: windows-64-vsMulti-small
   tasks:
   - test-python-windows
+- name: Python Release
+  display_name: Python Release
+  batchtime: 20160 # 14 days
+  tags: ["release_python_tag"]
+  tasks:
+  - ".release_python_tag"
 - name: linux-64-amazon-ami
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test
