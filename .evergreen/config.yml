@@ -435,6 +435,8 @@ tasks:
 - name: "release-python-mac"
   tags: ["release_python_tag"]
   run_on: macos-1014
+  depends_on:
+    - build-and-test-and-upload
   commands:
     - func: "fetch source"
     - func: "download tarball"
@@ -445,18 +447,23 @@ tasks:
 
 - name: "release-python-windows"
   tags: ["release_python_tag"]
-  run_on: windows-64-vsMulti-small
+  depends_on:
+  # Depends on the windows-64-vs2017-test upload.
+  - variant: windows-test
+    name: build-and-test-and-upload
   commands:
     - func: "fetch source"
     - func: "download tarball"
-      vars: { variant_name: "${build_variant}" }
+      vars: { variant_name: windows-test }
     - func: "build python release"
-      vars: { variant_name: "${build_variant}" }
+      vars: { variant_name: windows-test }
     - func: "upload python release"
 
 - name: "release-python-manylinux"
   tags: ["release_python_tag"]
   run_on: ubuntu2004-large
+  depends_on:
+    - build-and-test-and-upload
   exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
   commands:
     - func: "fetch source"
