@@ -281,8 +281,12 @@ functions:
         script: |
           set -o xtrace
           cd ./libmongocrypt/bindings/python
-          PYTHON=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 ./release.sh
-          PYTHON=/Library/Frameworks/Python.framework/Versions/3.10/bin/python3 ./release.sh
+          export PYTHON=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3
+          $PYTHON -m pip install --user --upgrade setuptools wheel
+          ./release.sh
+          export PYTHON=/Library/Frameworks/Python.framework/Versions/3.10/bin/python3
+          $PYTHON -m pip install --user --upgrade setuptools wheel
+          ./release.sh
 
   "build python release windows":
     - command: shell.exec
