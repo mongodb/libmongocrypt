@@ -762,6 +762,13 @@ kms_request_validate (kms_request_t *request)
    }
 }
 
+/* append_http_endofline appends an HTTP end-of-line marker: "\r\n". */
+static void
+append_http_endofline (kms_request_str_t *str)
+{
+   kms_request_str_append_chars (str, "\r\n", 2);
+}
+
 char *
 kms_request_get_signed (kms_request_t *request)
 {
@@ -795,7 +802,7 @@ kms_request_get_signed (kms_request_t *request)
    }
 
    kms_request_str_append_chars (sreq, " HTTP/1.1", -1);
-   kms_request_str_append_newline (sreq);
+   append_http_endofline (sreq);
 
    /* headers */
    lst = kms_kv_list_dup (request->header_fields);
@@ -804,7 +811,7 @@ kms_request_get_signed (kms_request_t *request)
       kms_request_str_append (sreq, lst->kvs[i].key);
       kms_request_str_append_char (sreq, ':');
       kms_request_str_append (sreq, lst->kvs[i].value);
-      kms_request_str_append_newline (sreq);
+      append_http_endofline (sreq);
    }
 
    /* authorization header */
@@ -819,8 +826,8 @@ kms_request_get_signed (kms_request_t *request)
 
    /* body */
    if (request->payload->len) {
-      kms_request_str_append_newline (sreq);
-      kms_request_str_append_newline (sreq);
+      append_http_endofline (sreq);
+      append_http_endofline (sreq);
       kms_request_str_append (sreq, request->payload);
    }
 
@@ -867,7 +874,7 @@ kms_request_to_string (kms_request_t *request)
    }
 
    kms_request_str_append_chars (sreq, " HTTP/1.1", -1);
-   kms_request_str_append_newline (sreq);
+   append_http_endofline (sreq);
 
    /* headers */
    lst = kms_kv_list_dup (request->header_fields);
@@ -876,10 +883,10 @@ kms_request_to_string (kms_request_t *request)
       kms_request_str_append (sreq, lst->kvs[i].key);
       kms_request_str_append_char (sreq, ':');
       kms_request_str_append (sreq, lst->kvs[i].value);
-      kms_request_str_append_newline (sreq);
+      append_http_endofline (sreq);
    }
 
-   kms_request_str_append_newline (sreq);
+   append_http_endofline (sreq);
 
    /* body */
    if (request->payload->len) {

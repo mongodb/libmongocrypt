@@ -33,4 +33,13 @@ hex_to_data (const char *unfiltered_hex, size_t *outlen);
 char *
 data_to_hex (const uint8_t *data, size_t len);
 
+/* replace_all returns a copy of @input with all occurrences of @match replaced
+ * with @replacement. */
+char *
+replace_all (const char *input, const char *match, const char *replacement);
+
+/* test_kms_util tests utility functions. */
+void
+test_kms_util (void);
+
 #endif /* TEST_KMS_UTIL_H */
