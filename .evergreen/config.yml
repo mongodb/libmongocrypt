@@ -275,13 +275,29 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
-  "build python release":
+  "build python release posix":
+    - command: shell.exec
+      params:
+        script: |
+          set -o xtrace
+          cd ./libmongocrypt/bindings/python
+          PYTHON=/opt/python/3.7/bin/python3 ./release.sh
+          PYTHON=/opt/python/3.10/bin/python3 ./release.sh
+
+  "build python release windows":
     - command: shell.exec
       params:
         script: |
           set -o xtrace
           cd ./libmongocrypt/bindings/python
           ./release.sh
+
+  "test python release":
+  - command: shell.exec
+      params:
+        script: |
+          set -o xtrace
+          cd ./libmongocrypt/bindings/python
           for file in ./dist/*.whl; do
             pip install $file
             pushd $HOME
@@ -432,46 +448,20 @@ tasks:
     - func: "test python"
       vars: { variant_name: windows-test }
 
-- name: "release-python-mac"
+- name: "release-python-posix"
   tags: ["release_python_tag"]
-  run_on: macos-1014
-  depends_on:
-    - build-and-test-and-upload
   commands:
     - func: "fetch source"
-    - func: "download tarball"
-      vars: { variant_name: "${build_variant}" }
-    - func: "build python release"
-      vars: { variant_name: "${build_variant}" }
+    - func: "build python release posix"
+    - func: "test python release"
     - func: "upload python release"
 
 - name: "release-python-windows"
   tags: ["release_python_tag"]
-  run_on: windows-test
-  depends_on:
-  # Depends on the windows-64-vs2017-test upload.
-  - variant: windows-test
-    name: build-and-test-and-upload
   commands:
     - func: "fetch source"
-    - func: "download tarball"
-      vars: { variant_name: windows-test }
-    - func: "build python release"
-      vars: { variant_name: windows-test }
-    - func: "upload python release"
-
-- name: "release-python-manylinux"
-  tags: ["release_python_tag"]
-  run_on: ubuntu2004-large
-  depends_on:
-    - build-and-test-and-upload
-  exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
-  commands:
-    - func: "fetch source"
-    - func: "download tarball"
-      vars: { variant_name: "${build_variant}" }
-    - func: "build python release"
-      vars: { variant_name: "${build_variant}" }
+    - func: "build python release windows"
+    - func: "test python release"
     - func: "upload python release"
 
 - name: "release-python-combine"
