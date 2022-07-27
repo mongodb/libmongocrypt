@@ -32,6 +32,9 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     cp ${NOCRYPTO_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
+    # Ensure updated deps.
+    python -m pip install --upgrade pip setuptools wheel
+
     python setup.py bdist_wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
@@ -41,6 +44,9 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     else
       PYTHON="${PYTHON:-python3.7}"
     fi
+
+    # Ensure updated deps.
+    $PYTHON -m pip install --upgrade pip setuptools wheel
 
     # Build the source dist first.
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
