@@ -50,7 +50,20 @@ Docker and a Windows machine.
      $ git push
      $ git push --tags
 
-#. Download the release assets from the "Python Dist" Github Workflow.
+#. Pushing a tag will trigger a release process in Evergreen which builds
+   wheels for manylinux, macOS, and Windows. Wait for the "release-python-combine"
+   task to complete and then download the "Release Python files all" archive. See:
+   https://evergreen.mongodb.com/waterfall/libmongocrypt?bv_filter=release
+
+   The contents should look like this::
+
+     $ ls path/to/archive
+     pymongocrypt-<version>.tar.gz
+     pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
+     pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
+     pymongocrypt-<version>-py2.py3-none-macosx_10_14_x86_64.whl
+     pymongocrypt-<version>-py2.py3-none-macosx_11_0_x86_64.whl
+     pymongocrypt-<version>-py2.py3-none-macosx_11_0_universal2.whl
 
 #. Upload all the release packages to PyPI with twine::
 
