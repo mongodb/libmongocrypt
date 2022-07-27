@@ -281,8 +281,8 @@ functions:
         script: |
           set -o xtrace
           cd ./libmongocrypt/bindings/python
-          PYTHON=/opt/python/3.7/bin/python3 ./release.sh
-          PYTHON=/opt/python/3.10/bin/python3 ./release.sh
+          PYTHON=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 ./release.sh
+          PYTHON=/Library/Frameworks/Python.framework/Versions/3.10/bin/python3 ./release.sh
 
   "build python release windows":
     - command: shell.exec
