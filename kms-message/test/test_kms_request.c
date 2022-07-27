@@ -278,9 +278,10 @@ read_req (const char *path)
          /* end of header */
          break;
       } else if (line_len > 2) {
-         /* continuing a multiline header from previous line */
-         /* TODO: is this a test quirk or HTTP specified behavior? */
-         kms_request_append_header_field_value (request, "\n", 1);
+         /* continuing a multiline header value from previous line */
+         /* Header line folding is deprecated by RFC 7230 section 3.2. */
+         /* get-header-value-multiline tests this behavior. */
+         kms_request_append_header_field_value (request, "\r\n", 2);
          /* omit this line's newline */
          kms_request_append_header_field_value (
             request, line, (size_t) (line_len - 1));
