@@ -275,24 +275,13 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
-  "build python release macos-1014":
+  "build python release macos":
     - command: shell.exec
       params:
         script: |
           set -ex
           cd ./libmongocrypt/bindings/python
-          export PYTHON=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3
-          MACOS_TARGET=macos_x86_64 ./release.sh
-
-  "build python release macos-1100":
-    - command: shell.exec
-      params:
-        script: |
-          set -ex
-          cd ./libmongocrypt/bindings/python
-          export PYTHON=/Library/Frameworks/Python.framework/Versions/3.10/bin/python3
-          MACOS_TARGET=macos_x86_64 ./release.sh
-          ./release.sh
+          PYTHON=$PYTHON MACOS_TARGET=$MACOS_TARGET ./release.sh
 
   "build python release":
     - command: shell.exec
@@ -310,10 +299,10 @@ functions:
           cd ./libmongocrypt/bindings/python
           ROOT=$(pwd)
           for file in ./dist/*.whl; do
+            ${PYTHON} -m pip uninstall -y pymongocrypt
             ${PYTHON} -m pip install --user $file
             cd $HOME
             ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-            ${PYTHON} -m pip uninstall -y pymongocrypt
             cd $ROOT
           done
 
@@ -464,7 +453,10 @@ tasks:
   run_on: macos-1014
   commands:
     - func: "fetch source"
-    - func: "build python release macos-1014"
+    - func: "build python release macos"
+      vars:
+        PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3
+        MACOS_TARGET: macos_x86_64
     - func: "test python release"
       vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
     - func: "upload python release"
@@ -474,7 +466,10 @@ tasks:
   run_on: macos-1100
   commands:
     - func: "fetch source"
-    - func: "build python release macos-1100"
+    - func: "build python release macos"
+      vars:
+        PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3
+        MACOS_TARGET: macos
     - func: "test python release"
       vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"

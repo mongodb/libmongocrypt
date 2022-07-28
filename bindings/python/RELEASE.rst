@@ -62,7 +62,6 @@ Docker and a Windows machine.
      pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
      pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
      pymongocrypt-<version>-py2.py3-none-macosx_10_14_x86_64.whl
-     pymongocrypt-<version>-py2.py3-none-macosx_11_0_x86_64.whl
      pymongocrypt-<version>-py2.py3-none-macosx_11_0_universal2.whl
      pymongocrypt-<version>-py2.py3-none-win_amd64.whl
 
@@ -80,7 +79,6 @@ Manually Creating Wheels
      $ cd libmongocrypt/bindings/python
      $ git checkout "pymongocrypt <release version number>"
      $ MACOS_TARGET=macos_x86_64 PYTHON=<python37> ./release.sh
-     $ MACOS_TARGET=macos_x86_64 PYTHON=<python310> ./release.sh
      $ PYTHON=<python310> ./release.sh
 
   Make sure to run using the official binaries for Python 3.7 and 3.10.  You
