@@ -275,15 +275,21 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
-  "build python release macos":
+  "build python release macos-1014":
     - command: shell.exec
       params:
         script: |
           set -ex
           cd ./libmongocrypt/bindings/python
-          /opt/mongodbtoolchain/v2/bin/python --version
           export PYTHON=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3
           MACOS_TARGET=macos_x86_64 ./release.sh
+
+  "build python release macos-1100":
+    - command: shell.exec
+      params:
+        script: |
+          set -ex
+          cd ./libmongocrypt/bindings/python
           export PYTHON=/Library/Frameworks/Python.framework/Versions/3.10/bin/python3
           MACOS_TARGET=macos_x86_64 ./release.sh
           ./release.sh
@@ -453,14 +459,24 @@ tasks:
     - func: "test python"
       vars: { variant_name: windows-test }
 
-- name: "release-python-macos"
+- name: "release-python-macos-10.14"
+  tags: ["release_python_tag"]
+  run_on: macos-1014
+  commands:
+    - func: "fetch source"
+    - func: "build python release macos 11"
+    - func: "test python release"
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
+    - func: "upload python release"
+
+- name: "release-python-macos-11"
   tags: ["release_python_tag"]
   run_on: macos-1100
   commands:
     - func: "fetch source"
-    - func: "build python release macos"
+    - func: "build python release macos 11"
     - func: "test python release"
-      vars: { PYTHON: python }
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-linux"
