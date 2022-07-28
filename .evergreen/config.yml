@@ -313,7 +313,7 @@ functions:
         source_dir: "libmongocrypt/bindings/python/dist"
         include:
           - "*"
-    - command: s3.putx
+    - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
