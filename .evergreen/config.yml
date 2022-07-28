@@ -282,6 +282,13 @@ functions:
           set -ex
           cd ./libmongocrypt/bindings/python
           PYTHON=${PYTHON} ./release.sh
+
+  "test python release":
+  - command: shell.exec
+      params:
+        script: |
+          set -ex
+          cd ./libmongocrypt/bindings/python
           for file in ./dist/*.whl; do
             ${PYTHON} -m pip install --user $file
             pushd $HOME
@@ -439,6 +446,8 @@ tasks:
     - func: "fetch source"
     - func: "build python release"
       vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
+    - func: "test python release"
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-macos-3.10"
@@ -458,6 +467,8 @@ tasks:
     - func: "fetch source"
     - func: "build python release"
       vars: { PYTHON: python }
+    - func: "test python release"
+      vars: { PYTHON: python }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -466,6 +477,8 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
+      vars: { PYTHON: python }
+    - func: "test python release"
       vars: { PYTHON: python }
     - func: "upload python release"
 
