@@ -300,7 +300,7 @@ functions:
           ROOT=$(pwd)
           for file in ./dist/*.whl; do
             ${PYTHON} -m pip uninstall -y pymongocrypt
-            ${PYTHON} -m pip install --user $file
+            ${PYTHON} -m pip install --upgrade --user $file
             cd $HOME
             ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
             cd $ROOT
