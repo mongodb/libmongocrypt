@@ -313,7 +313,7 @@ functions:
             ${PYTHON} -m pip install --user $file
             cd $HOME
             ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-            pip uninstall -y pymongocrypt
+            ${PYTHON} -m pip uninstall -y pymongocrypt
             cd $ROOT
           done
 
