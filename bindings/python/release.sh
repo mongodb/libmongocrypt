@@ -64,11 +64,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
     # Make the wheel.
-    if [ "macos_x86_64" = "$MACOS_TARGET" ]; then
-        arch -x86_64 $PYTHON setup.py bdist_wheel
-    else:
-        $PYTHON setup.py bdist_wheel
-    fi
+    $PYTHON setup.py bdist_wheel
 
     # Clean up.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
