@@ -275,22 +275,17 @@ functions:
           ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
           ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
 
-  "build python release posix":
+  "build python release":
     - command: shell.exec
       params:
         script: |
-          set -o xtrace
-          cd ./libmongocrypt/bindings/python
-          PYTHON=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 ./release.sh
-          PYTHON=/Library/Frameworks/Python.framework/Versions/3.10/bin/python3 ./release.sh
-
-  "build python release windows":
-    - command: shell.exec
-      params:
-        script: |
-          set -o xtrace
-          cd ./libmongocrypt/bindings/python
-          ./release.sh
+          set -ex
+          PYTHON=$PYTHON ./libmongocrypt/bindings/python/release.sh
+          for file in ./libmongocrypt/bindings/python/dist/*.whl; do
+            $PYTHON -m pip install --user $file
+            $PYTHON -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+            pip uninstall -y pymongocrypt
+          done
 
   "upload python release":
     - command: archive.targz_pack
@@ -434,12 +429,32 @@ tasks:
     - func: "test python"
       vars: { variant_name: windows-test }
 
-- name: "release-python-posix"
+- name: "release-python-macos-3.7"
   tags: ["release_python_tag"]
   run_on: macos-1014
   commands:
     - func: "fetch source"
-    - func: "build python release posix"
+    - func: "build python release"
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
+    - func: "upload python release"
+
+- name: "release-python-macos-3.10"
+  tags: ["release_python_tag"]
+  run_on: macos-1014
+  commands:
+    - func: "fetch source"
+    - func: "build python release"
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
+    - func: "upload python release"
+
+- name: "release-python-linux"
+  tags: ["release_python_tag"]
+  run_on: ubuntu2004-large
+  exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
+  commands:
+    - func: "fetch source"
+    - func: "build python release"
+      vars: { PYTHON: python }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -447,7 +462,8 @@ tasks:
   run_on: windows-test
   commands:
     - func: "fetch source"
-    - func: "build python release windows"
+    - func: "build python release"
+      vars: { PYTHON: python }
     - func: "upload python release"
 
 - name: "release-python-combine"
