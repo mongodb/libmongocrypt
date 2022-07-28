@@ -313,7 +313,7 @@ functions:
         source_dir: "libmongocrypt/bindings/python/dist"
         include:
           - "*"
-    - command: s3.put
+    - command: s3.putx
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
@@ -965,7 +965,7 @@ buildvariants:
   run_on: windows-64-vsMulti-small
   tasks:
   - test-python-windows
-- name: Python Release
+- name: python-release
   display_name: Python Release
   batchtime: 20160 # 14 days
   tags: ["release_python_tag"]
