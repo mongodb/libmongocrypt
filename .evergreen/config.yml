@@ -464,7 +464,7 @@ tasks:
   run_on: macos-1014
   commands:
     - func: "fetch source"
-    - func: "build python release macos 11"
+    - func: "build python release macos-1014"
     - func: "test python release"
       vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
     - func: "upload python release"
@@ -474,7 +474,7 @@ tasks:
   run_on: macos-1100
   commands:
     - func: "fetch source"
-    - func: "build python release macos 11"
+    - func: "build python release macos-1100"
     - func: "test python release"
       vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"
