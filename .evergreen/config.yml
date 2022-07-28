@@ -281,7 +281,7 @@ functions:
         script: |
           set -ex
           cd ./libmongocrypt/bindings/python
-          PYTHON=$PYTHON MACOS_TARGET=$MACOS_TARGET ./release.sh
+          PYTHON=${PYTHON} MACOS_TARGET=${MACOS_TARGET} ./release.sh
 
   "build python release":
     - command: shell.exec
