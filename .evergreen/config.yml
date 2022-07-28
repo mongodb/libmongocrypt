@@ -301,12 +301,13 @@ functions:
         script: |
           set -ex
           cd ./libmongocrypt/bindings/python
+          ROOT=$(pwd)
           for file in ./dist/*.whl; do
             ${PYTHON} -m pip install --user $file
-            pushd $HOME
+            cd $HOME
             ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
             pip uninstall -y pymongocrypt
-            popd
+            cd $ROOT
           done
 
   "upload python release":
