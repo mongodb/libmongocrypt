@@ -492,7 +492,7 @@ tasks:
 
 - name: "release-python-windows"
   tags: ["release_python_tag"]
-  run_on: windows-test
+  run_on: windows-64-vsMulti-small
   commands:
     - func: "fetch source"
     - func: "build python release"
