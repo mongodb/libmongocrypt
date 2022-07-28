@@ -280,11 +280,14 @@ functions:
       params:
         script: |
           set -ex
-          REVISION=${revision} PYTHON=${PYTHON} ./libmongocrypt/bindings/python/release.sh
-          for file in ./libmongocrypt/bindings/python/dist/*.whl; do
+          cd ./libmongocrypt/bindings/python
+          REVISION=${revision} PYTHON=${PYTHON} ./release.sh
+          for file in ./dist/*.whl; do
             ${PYTHON} -m pip install --user $file
+            pushd $HOME
             ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
             pip uninstall -y pymongocrypt
+            popd
           done
 
   "upload python release":
