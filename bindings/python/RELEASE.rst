@@ -79,7 +79,9 @@ Manually Creating Wheels
      $ git clone git@github.com:mongodb/libmongocrypt.git
      $ cd libmongocrypt/bindings/python
      $ git checkout "pymongocrypt <release version number>"
-     $ ./release.sh
+     $ MACOS_TARGET=macos_x86_64 PYTHON=<python37> ./release.sh
+     $ MACOS_TARGET=macos_x86_64 PYTHON=<python310> ./release.sh
+     $ PYTHON=<python310> ./release.sh
 
   Make sure to run using the official binaries for Python 3.7 and 3.10.  You
   should end up with the same files created by Evergreen (except for the Windows wheel).

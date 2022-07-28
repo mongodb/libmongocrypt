@@ -17,6 +17,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 REVISION=$(git rev-list -n 1 1.5.0)
 # The libmongocrypt release branch.
 BRANCH="r1.5"
+MACOS_TARGET=${MACOS_TARGET:="macos"}
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
@@ -52,13 +53,6 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     $PYTHON setup.py sdist
 
-    # Select the appropriate MacOS target based on Python version.
-    if [[ $($PYTHON --version) == "Python 3.7"* ]]; then
-        MACOS_TARGET="macos_x86_64"
-    else
-        MACOS_TARGET="macos"
-    fi
-
     # Build the mac wheel.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$MACOS_TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
@@ -70,7 +64,11 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 
     # Make the wheel.
-    $PYTHON setup.py bdist_wheel
+    if [ "macos_x86_64" = "$MACOS_TARGET" ]; then
+        arch -x86_64 $PYTHON setup.py bdist_wheel
+    else:
+        $PYTHON setup.py bdist_wheel
+    fi
 
     # Clean up.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
