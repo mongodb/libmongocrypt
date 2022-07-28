@@ -281,7 +281,7 @@ functions:
         script: |
           set -ex
           cd ./libmongocrypt/bindings/python
-          REVISION=${revision} PYTHON=${PYTHON} ./release.sh
+          PYTHON=${PYTHON} ./release.sh
           for file in ./dist/*.whl; do
             ${PYTHON} -m pip install --user $file
             pushd $HOME
