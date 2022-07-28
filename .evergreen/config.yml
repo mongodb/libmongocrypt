@@ -284,7 +284,7 @@ functions:
           PYTHON=${PYTHON} ./release.sh
 
   "test python release":
-  - command: shell.exec
+    - command: shell.exec
       params:
         script: |
           set -ex
