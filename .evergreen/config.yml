@@ -652,7 +652,7 @@ tasks:
           set -o errexit
           set -o xtrace
           export IS_PATCH="${is_patch}"
-          sh .evergreen/debian_package_build.sh
+          bash .evergreen/debian_package_build.sh
     - command: s3.put
       params:
         aws_key: ${aws_key}
