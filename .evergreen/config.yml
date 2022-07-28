@@ -280,10 +280,10 @@ functions:
       params:
         script: |
           set -ex
-          PYTHON=$PYTHON ./libmongocrypt/bindings/python/release.sh
+          REVISION=${revision} PYTHON=${PYTHON} ./libmongocrypt/bindings/python/release.sh
           for file in ./libmongocrypt/bindings/python/dist/*.whl; do
-            $PYTHON -m pip install --user $file
-            $PYTHON -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+            ${PYTHON} -m pip install --user $file
+            ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
             pip uninstall -y pymongocrypt
           done
 
