@@ -3,8 +3,7 @@
 # Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
 #
 
-set -o xtrace
-set -o errexit
+set -euxo pipefail
 
 echo "Begin compile process"
 
@@ -16,7 +15,7 @@ cd $evergreen_root
 
 if [ "$OS" == "Windows_NT" ]; then
     # Make sure libbson.dll is in the path on Windows
-    export PATH=${INSTALL_PREFIX}/mongo-c-driver/bin:$PATH
+    export PATH=${MONGOCRYPT_INSTALL_PREFIX}/mongo-c-driver/bin:$PATH
 
     for var in TMP TEMP NUGET_PACKAGES NUGET_HTTP_CACHE_PATH APPDATA; do export $var=z:\\data\\tmp; done
 

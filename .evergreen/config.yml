@@ -77,6 +77,7 @@ functions:
 
   "create packages and repos":
     - command: "shell.exec"
+      shell: bash
       params:
         script: |-
           set -o xtrace
@@ -88,6 +89,7 @@ functions:
           else
              # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
              IGNORE_SYSTEM_CMAKE=1 . ./libmongocrypt/.evergreen/find-cmake.sh
+             set +u
           fi
           # Get current version of libmongocrypt.
           cd libmongocrypt

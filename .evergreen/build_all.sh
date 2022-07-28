@@ -9,8 +9,7 @@
 # Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
 #
 
-set -o xtrace
-set -o errexit
+set -euxo pipefail
 
 echo "Begin compile process"
 
@@ -72,7 +71,7 @@ ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DENABLE_MORE_WARNINGS_AS_ERRORS
 
 $CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
 
-if [ "$CONFIGURE_ONLY" ]; then
+if [ "${CONFIGURE_ONLY-}" ]; then
     echo "Only running cmake";
     exit 0;
 fi
