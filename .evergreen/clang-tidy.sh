@@ -3,8 +3,7 @@
 # static analyzer.
 #
 
-set -o xtrace
-set -o errexit
+set -euxo pipefail
 
 echo "Begin compile process"
 

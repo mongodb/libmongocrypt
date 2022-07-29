@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -o xtrace
-set -o errexit
+set -euxo pipefail
 
 # Clone mongo-c-driver and check out to a tagged version.
 MONGO_C_DRIVER_VERSION=1.17.0

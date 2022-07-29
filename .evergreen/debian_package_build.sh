@@ -6,8 +6,7 @@
 # Supported/used environment variables:
 #   IS_PATCH    If "true", this is an Evergreen patch build.
 
-set -o xtrace
-set -o errexit
+set -euxo pipefail
 
 on_exit () {
   if [ -e ./unstable-chroot/debootstrap/debootstrap.log ]; then

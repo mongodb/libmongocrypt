@@ -1,9 +1,9 @@
 #!/bin/bash
-set -o xtrace
-set -o errexit
+
+set -euxo pipefail
 
 system_path () {
-    if [ "$OS" == "Windows_NT" ]; then
+    if [ "${OS-}" == "Windows_NT" ]; then
         cygpath -a "$1" -w
     else
         echo $1
