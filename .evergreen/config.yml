@@ -327,12 +327,6 @@ functions:
   "download and merge python releases":
     - command: shell.exec
       params:
-        silent: true
-        script: |
-          export AWS_ACCESS_KEY_ID=${aws_key}
-          export AWS_SECRET_ACCESS_KEY=${aws_secret}
-    - command: shell.exec
-      params:
         shell: "bash"
         script: |
           set -o xtrace
@@ -341,14 +335,6 @@ functions:
           # Combine releases into one directory.
           ls -la release/
           mkdir releases
-          # Copy old manylinux release first since we want the newer manylinux
-          # wheels to override them.
-          mkdir old_manylinux
-          if mv release/*old_manylinux* old_manylinux; then
-            for REL in old_manylinux/*; do
-              tar zxvf $REL -C releases/
-            done
-          fi
           for REL in release/*; do
             tar zxvf $REL -C releases/
           done
@@ -367,7 +353,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: release-files-all.tgz
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}-python/${task_id}-${execution}-release-files-all.tar.gz'
+        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/gzip}
@@ -502,6 +488,7 @@ tasks:
       variant: ".release_python_tag"
       patch_optional: true
   commands:
+    - func: "setup packaging credentials"
     - func: "download and merge python releases"
 
 - name: build-and-test-csharp
