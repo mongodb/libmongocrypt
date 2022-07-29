@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.5.2
+### Fixed
+- Fix datakey decryption requiring multiple rounds of KMS requests.
 ## 1.5.1
 ### New Features
 - Update Java bindings to support remaining 1.5.0 API.
