@@ -331,13 +331,13 @@ functions:
         script: |
           export AWS_ACCESS_KEY_ID=${aws_key}
           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-          # Download all the release files.
-          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
     - command: shell.exec
       params:
         shell: "bash"
         script: |
           set -o xtrace
+          # Download all the release files.
+          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
           # Combine releases into one directory.
           ls -la release/
           mkdir releases
