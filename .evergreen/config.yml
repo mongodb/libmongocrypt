@@ -318,7 +318,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: release-files.tgz
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}-python/${task_id}-${execution}-release-files.tar.gz'
+        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/gzip}
@@ -332,7 +332,7 @@ functions:
           export AWS_ACCESS_KEY_ID=${aws_key}
           export AWS_SECRET_ACCESS_KEY=${aws_secret}
           # Download all the task coverage files.
-          aws s3 cp --recursive s3://mciuploads/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}-python/ release/
+          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
     - command: shell.exec
       params:
         shell: "bash"
