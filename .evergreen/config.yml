@@ -327,6 +327,25 @@ functions:
   "download and merge python releases":
     - command: shell.exec
       params:
+        silent: true
+        shell: "bash"
+        script: |
+          # set AWS credentials
+          rm -rf ~/.aws
+          mkdir -p ~/.aws
+
+          cat <<EOF >> ~/.aws/config
+          [default]
+          region = us-east-1
+          EOF
+
+          cat <<EOF >> ~/.aws/credentials
+          [default]
+          aws_access_key_id = ${aws_key}
+          aws_secret_access_key = ${aws_secret}
+          EOF
+    - command: shell.exec
+      params:
         shell: "bash"
         script: |
           set -o xtrace
@@ -488,7 +507,6 @@ tasks:
       variant: ".release_python_tag"
       patch_optional: true
   commands:
-    - func: "setup packaging credentials"
     - func: "download and merge python releases"
 
 - name: build-and-test-csharp
