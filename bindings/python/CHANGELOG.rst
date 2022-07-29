@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in Version 1.3.1
+------------------------
+
+- Bundle libmongocrypt 1.5.2 in release wheels.
+- **Remove support for libmongocrypt <=1.5.1, libmongocrypt >=1.5.2 is now
+  required.** Note this is only relevant for users that install from
+  source or use the ``PYMONGOCRYPT_LIB`` environment variable.
+
 Changes in Version 1.3.0
 ------------------------
 
