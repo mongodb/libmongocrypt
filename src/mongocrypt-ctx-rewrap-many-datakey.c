@@ -171,6 +171,9 @@ _add_new_datakey (mongocrypt_ctx_t *ctx, key_returned_t *key)
    _mongocrypt_ctx_rewrap_many_datakey_t *const rmdctx =
       (_mongocrypt_ctx_rewrap_many_datakey_t *) ctx;
 
+   /* Datakey should be fully decrypted at this stage. */
+   BSON_ASSERT (key->decrypted);
+
    _mongocrypt_ctx_rmd_datakey_t *const datakey =
       bson_malloc0 (sizeof (_mongocrypt_ctx_rmd_datakey_t));
 
@@ -233,7 +236,19 @@ _start_kms_encrypt (mongocrypt_ctx_t *ctx)
          _mongocrypt_status_copy_to (ctx->kb.status, ctx->status);
          return _mongocrypt_ctx_fail (ctx);
       }
+
+      if (!_mongocrypt_ctx_state_from_key_broker (ctx)) {
+         return _mongocrypt_ctx_fail (ctx);
+      }
+
+      /* Some providers may require multiple rounds of KMS requests. */
+      if (ctx->state == MONGOCRYPT_CTX_NEED_KMS) {
+         return true;
+      }
    }
+
+   /* All datakeys should be decrypted at this point. */
+   BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_READY);
 
    /* For all decrypted datakeys, initialize a corresponding datakey context. */
    {
