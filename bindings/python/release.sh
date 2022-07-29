@@ -36,11 +36,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 elif [ "Darwin" = "$(uname -s)" ]; then
-    if [[ $(uname -m) == 'arm64' ]]; then
-      PYTHON="/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
-    else
-      PYTHON="python3.7"
-    fi
+    PYTHON="/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
     # Build the source dist first
     rm -rf build pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     $PYTHON setup.py sdist
@@ -66,7 +62,20 @@ elif [ "Darwin" = "$(uname -s)" ]; then
         docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
     done
 
-    # Build the mac wheel
+    # Build the x86_64 only mac wheel
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/macos_x86_64/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    mkdir libmongocrypt
+    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
+    NOCRYPTO_SO=libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    chmod +x ${NOCRYPTO_SO}
+    cp ${NOCRYPTO_SO} pymongocrypt/
+    rm -rf ./libmongocrypt libmongocrypt.tar.gz
+
+    $PYTHON setup.py bdist_wheel
+
+    # Build the universal mac wheel
+    PYTHON="/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/macos/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
