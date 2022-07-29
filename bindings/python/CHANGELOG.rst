@@ -4,6 +4,8 @@ Changelog
 Changes in Version 1.3.1
 ------------------------
 
+1.3.1 is a recommended upgrade for all users of 1.3.0.
+
 - Fix a potential data corruption bug in RewrapManyDataKey
   (ClientEncryption.rewrap_many_data_key) when rotating
   encrypted data encryption keys backed by GCP or Azure key services.
