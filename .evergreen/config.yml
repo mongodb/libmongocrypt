@@ -557,6 +557,9 @@ tasks:
             exit 0
           fi
 
+          # Some venv-activate scripts are not nounset-clean
+          set +u
+
           # Need requests and poster for notary-client.py
           python -m virtualenv venv
           cd venv
