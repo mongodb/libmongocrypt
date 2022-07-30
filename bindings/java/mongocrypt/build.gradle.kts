@@ -43,7 +43,7 @@ repositories {
 }
 
 group = "org.mongodb"
-version = "1.5.2"
+version = "1.5.3-SNAPSHOT"
 description = "MongoDB client-side crypto support"
 
 java {
