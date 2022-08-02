@@ -32,6 +32,43 @@
 # up being included in a particular release cycle.
 #
 function (GetVersion OUTVAR)
+    # First we check "git describe" against the currently checked out commit,
+    # so that if it is tagged we pick that up
+    execute_process (
+        COMMAND git describe --tags --match "1.*"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE LOCAL_VERSION_WITH_SUFFIX
+        RESULT_VARIABLE GIT_STATUS
+        ERROR_VARIABLE GIT_ERROR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if (NOT GIT_STATUS STREQUAL 0)
+        message (FATAL_ERROR "Unable to determine version: 'git describe' failed: '${GIT_ERROR}'")
+    endif ()
+
+    execute_process (
+        COMMAND git describe --tags --abbrev=0 --match "1.*"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE LOCAL_VERSION
+        RESULT_VARIABLE GIT_STATUS
+        ERROR_VARIABLE GIT_ERROR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if (NOT GIT_STATUS STREQUAL 0)
+        message (FATAL_ERROR "Unable to determine version: 'git describe' failed: '${GIT_ERROR}'")
+    endif ()
+
+    # If "git describe --abbrev=0" has the same result as "git describe", then the current commit
+    # is tagged, so return that.
+    if (LOCAL_VERSION STREQUAL LOCAL_VERSION_WITH_SUFFIX)
+            set (${OUTVAR} ${LOCAL_VERSION} PARENT_SCOPE)
+        return ()
+    endif ()
+
+    # Next we check "git describe" against the specified branch reference, so
+    # we are certain to get a version at least as high as the last release tag
     execute_process (
         COMMAND git describe --tags --match "1.*" ${RELEASE_BRANCH_REF}
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
