@@ -880,8 +880,7 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'gcp': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'gcp': {'accessToken': 'foobar', 'email': 'foo@bar.com' }}",
-       "Unexpected field: 'email'"}
-   };
+       "Unexpected field: 'email'"}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;
