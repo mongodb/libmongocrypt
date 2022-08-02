@@ -86,20 +86,34 @@
       "HTTP/1.1 100 Continue\r\n",
       "\r\n"
     ],
-    "expect": "Unsupported HTTP code in KMS response"
+    "expect": "Unsupported HTTP code in KMS response. HTTP status=100. Response body=\n"
   },
   {
     "description": "Bad JSON in response",
-    "ctx": ["decrypt"],
+    "ctx": [
+      "datakey",
+      "decrypt",
+      "azure_oauth_datakey",
+      "azure_oauth_decrypt",
+      "azure_datakey",
+      "azure_decrypt",
+      "gcp_oauth_datakey",
+      "gcp_oauth_decrypt",
+      "gcp_datakey",
+      "gcp_decrypt"
+    ],
     "http_reply": [
       "HTTP/1.1 200 OK\r\n",
       "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\r\n",
       "Content-Type: application/x-amz-json-1.1\r\n",
-      "Content-Length: 233\r\n",
+      "Content-Length: 7\r\n",
       "\r\n",
-      "BADJSON\": \"arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0\", \"Plaintext\": \"TqhXy3tKckECjy4/ZNykMWG8amBF46isVPzeOgeusKrwheBmYaU8TMG5AHR/NeUDKukqo8hBGgogiQOVpLPkqBQHD8YkLsNbDmHoGOill5QAHnniF/Lz405bGucB5TfR\"}"
+      "BADJSON"
     ],
-    "expect": "Error parsing JSON in KMS response"
+    "expect": [
+      "Error parsing JSON in KMS response 'Got parse error at \"B\", position 0: \"SPECIAL_EXPECTED\"'. HTTP status=200. Response body=\n",
+      "BADJSON"
+    ]
   },
   {
     "description": "Non-numeric status in response",
@@ -198,5 +212,72 @@
       "\r\n"
     ],
     "expect": "Invalid JWT Signature"
+  },
+  {
+    "description": "GCP invalid ciphertext",
+    "ctx": ["gcp_datakey", "gcp_decrypt"],
+    "http_reply": [
+      "HTTP/1.1 400 Bad Request\r\n",
+      "Alt-Svc: h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"\r\n",
+      "Cache-Control: private\r\n",
+      "Content-Encoding: gzip\r\n",
+      "Content-Type: application/json; charset=UTF-8\r\n",
+      "Date: Wed, 20 Jul 2022 17:36:54 GMT\r\n",
+      "Server: ESF\r\n",
+      "Transfer-Encoding: chunked\r\n",
+      "Vary: Origin, X-Origin, Referer\r\n",
+      "X-Content-Type-Options: nosniff\r\n",
+      "X-Frame-Options: SAMEORIGIN\r\n",
+      "X-XSS-Protection: 0\r\n",
+      "\r\n",
+      "87\r\n",
+      "{\n",
+      "  \"error\": {\n",
+      "    \"code\": 400,\n",
+      "    \"message\": \"Decryption failed: the ciphertext is invalid.\",\n",
+      "    \"status\": \"INVALID_ARGUMENT\"\n",
+      "  }\n",
+      "}\n",
+      "\r\n",
+      "0\r\n",
+      "\r\n"      
+    ],
+    "expect": [
+      "Error in KMS response. HTTP status=400. Response body=\n",
+      "{\n",
+      "  \"error\": {\n",
+      "    \"code\": 400,\n",
+      "    \"message\": \"Decryption failed: the ciphertext is invalid.\",\n",
+      "    \"status\": \"INVALID_ARGUMENT\"\n",
+      "  }\n",
+      "}\n"
+    ]
+  },
+  {
+    "description": "JSON in response missing needed field",
+    "ctx": [
+      "datakey",
+      "decrypt",
+      "azure_oauth_datakey",
+      "azure_oauth_decrypt",
+      "azure_datakey",
+      "azure_decrypt",
+      "gcp_oauth_datakey",
+      "gcp_oauth_decrypt",
+      "gcp_datakey",
+      "gcp_decrypt"
+    ],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\r\n",
+      "Content-Type: application/x-amz-json-1.1\r\n",
+      "Content-Length: 8\r\n",
+      "\r\n",
+      "{\"x\": 1}"
+    ],
+    "expect": [
+      "HTTP status=200. Response body=\n",
+      "{\"x\": 1}"
+    ]
   }
 ]

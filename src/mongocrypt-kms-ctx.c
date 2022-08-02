@@ -417,6 +417,32 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms)
                                            DEFAULT_MAX_KMS_BYTE_REQUEST);
 }
 
+static void _handle_non200_http_status (int http_status,
+                                        const char* body,
+                                        size_t body_len,
+                                        mongocrypt_status_t *status) {
+   /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
+    * support handling 200 response. */
+   if (http_status < 400) {
+      CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d. "
+                  "Response body=\n%s",
+                  http_status,
+                  body);
+      return;
+   }
+
+   /* Either empty body or body containing JSON with error message. */
+   if (body_len == 0) {
+      CLIENT_ERR ("Error in KMS response. HTTP status=%d. Empty body.",
+                  http_status);
+      return;
+   }
+
+   CLIENT_ERR ("Error in KMS response. HTTP status=%d. Response body=\n%s",
+               http_status,
+               body);
+}
+
 /* An AWS KMS context has received full response. Parse out the result or error.
  */
 static bool
@@ -442,37 +468,7 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    body = kms_response_get_body (response, &body_len);
 
    if (http_status != 200) {
-      /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
-       * support handling 200 response. */
-      if (http_status < 400) {
-         CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d",
-                     http_status);
-         goto fail;
-      }
-
-      /* Either empty body or body containing JSON with error message. */
-      if (body_len == 0) {
-         CLIENT_ERR ("Error in KMS response. HTTP status=%d", http_status);
-         goto fail;
-      }
-      /* AWS error responses include a JSON message, like { "message":
-       * "error" } */
-      bson_destroy (&body_bson);
-      if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
-         bson_init (&body_bson);
-      } else if (bson_iter_init_find (&iter, &body_bson, "message") &&
-                 BSON_ITER_HOLDS_UTF8 (&iter)) {
-         CLIENT_ERR ("Error in KMS response '%s'. "
-                     "HTTP status=%d",
-                     bson_iter_utf8 (&iter, NULL),
-                     http_status);
-         goto fail;
-      }
-
-      /* If we couldn't parse JSON, return the body unchanged as an error. */
-      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. HTTP status=%d",
-                  body,
-                  http_status);
+      _handle_non200_http_status (http_status, body, body_len, status);
       goto fail;
    }
 
@@ -481,9 +477,10 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    bson_destroy (&body_bson);
    if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
-                  "HTTP status=%d",
+                  "HTTP status=%d. Response body=\n%s",
                   bson_error.message,
-                  http_status);
+                  http_status,
+                  body);
       bson_init (&body_bson);
       goto fail;
    }
@@ -491,9 +488,11 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    if (!bson_iter_init_find (&iter, &body_bson, json_field) ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
       CLIENT_ERR (
-         "KMS JSON response does not include string '%s'. HTTP status=%d",
+         "KMS JSON response does not include field '%s'. HTTP status=%d. "
+         "Response body=\n%s",
          json_field,
-         http_status);
+         http_status,
+         body);
       goto fail;
    }
 
@@ -542,40 +541,26 @@ _ctx_done_oauth (mongocrypt_kms_ctx_t *kms)
    bson_body =
       bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
    if (!bson_body) {
-      CLIENT_ERR ("Invalid JSON in KMS response. HTTP status=%d. Error: %s",
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                  "HTTP status=%d. Response body=\n%s",
+                  bson_error.message,
                   http_status,
-                  bson_error.message);
+                  body);
       goto fail;
    }
 
    if (http_status != 200) {
-      const char *error = "";
-      const char *error_description = "";
-      /* Check for oauth errors.
-       * https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-aadsts-error-codes#handling-error-codes-in-your-application.
-       * 'error' provides a short error classification
-       * 'error_description' is a long error description
-       */
-      if (bson_iter_init_find (&iter, bson_body, "error") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         error = bson_iter_utf8 (&iter, NULL);
-      }
-      if (bson_iter_init_find (&iter, bson_body, "error_description") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         error_description = bson_iter_utf8 (&iter, NULL);
-      }
-      CLIENT_ERR ("Error in KMS response: '%s', '%s'. HTTP status=%d",
-                  error,
-                  error_description,
-                  http_status);
+      _handle_non200_http_status (http_status, body, body_len, status); 
       goto fail;
    }
 
    if (!bson_iter_init_find (&iter, bson_body, "access_token") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
       CLIENT_ERR (
-         "Invalid KMS response, no access_token returned. HTTP status=%d",
-         http_status);
+         "KMS JSON response does not include field 'access_token'. "
+         "HTTP status=%d. Response body=\n%s",
+         http_status,
+         body);
       goto fail;
    }
 
@@ -624,29 +609,26 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
    bson_body =
       bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
    if (!bson_body) {
-      CLIENT_ERR ("Invalid JSON in KMS response. HTTP status=%d", http_status);
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                  "HTTP status=%d. Response body=\n%s",
+                  bson_error.message,
+                  http_status,
+                  body);
       goto fail;
    }
 
    if (http_status != 200) {
-      const char *message = "";
-      /* Check for errors.
-       * https://docs.microsoft.com/en-us/rest/api/keyvault/wrapkey/wrapkey#error
-       */
-      if (bson_iter_init (&iter, bson_body) &&
-          bson_iter_find_descendant (&iter, "error.message", &iter) &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         message = bson_iter_utf8 (&iter, NULL);
-      }
-      CLIENT_ERR (
-         "Error in KMS response: '%s'. HTTP status=%d", message, http_status);
+      _handle_non200_http_status (http_status, body, body_len, status);
       goto fail;
    }
 
    if (!bson_iter_init_find (&iter, bson_body, "value") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      CLIENT_ERR ("Invalid KMS response, no value returned. HTTP status=%d",
-                  http_status);
+      CLIENT_ERR (
+         "KMS JSON response does not include field 'value'. HTTP status=%d. "
+         "Response body=\n%s",
+         http_status,
+         body);
       goto fail;
    }
 
@@ -696,50 +678,7 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    body = kms_response_get_body (response, &body_len);
 
    if (http_status != 200) {
-      /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
-       * support handling 200 response. */
-      if (http_status < 400) {
-         CLIENT_ERR ("Unsupported HTTP code in KMS response. HTTP status=%d",
-                     http_status);
-         goto fail;
-      }
-
-      /* Either empty body or body containing JSON with error message. */
-      if (body_len == 0) {
-         CLIENT_ERR ("Error in KMS response. HTTP status=%d", http_status);
-         goto fail;
-      }
-      /* GCP error responses include a JSON message, like { "message":
-       * "error", "code": <num> } */
-      bson_destroy (&body_bson);
-      if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
-         bson_init (&body_bson);
-      } else {
-         const char *msg = "";
-         int32_t code = 0;
-
-         if (bson_iter_init_find (&iter, &body_bson, "message") &&
-             BSON_ITER_HOLDS_UTF8 (&iter)) {
-            msg = bson_iter_utf8 (&iter, NULL);
-         }
-
-         if (bson_iter_init_find (&iter, &body_bson, "code") &&
-             BSON_ITER_HOLDS_INT32 (&iter)) {
-            code = bson_iter_int32 (&iter);
-         }
-
-         CLIENT_ERR ("Error in KMS response '%s', code: '%d'. "
-                     "HTTP status=%d",
-                     msg,
-                     code,
-                     http_status);
-         goto fail;
-      }
-
-      /* If we couldn't parse JSON, return the body unchanged as an error. */
-      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. HTTP status=%d",
-                  body,
-                  http_status);
+      _handle_non200_http_status (http_status, body, body_len, status);
       goto fail;
    }
 
@@ -748,9 +687,10 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    bson_destroy (&body_bson);
    if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
-                  "HTTP status=%d",
+                  "HTTP status=%d. Response body=\n%s",
                   bson_error.message,
-                  http_status);
+                  http_status,
+                  body);
       bson_init (&body_bson);
       goto fail;
    }
@@ -758,9 +698,11 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    if (!bson_iter_init_find (&iter, &body_bson, json_field) ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
       CLIENT_ERR (
-         "KMS JSON response does not include string '%s'. HTTP status=%d",
+         "KMS JSON response does not include field '%s'. HTTP status=%d. "
+         "Response body=\n%s",
          json_field,
-         http_status);
+         http_status,
+         body);
       goto fail;
    }
 
