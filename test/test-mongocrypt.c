@@ -551,9 +551,9 @@ _mongocrypt_tester_mongocrypt (tester_mongocrypt_flags flags)
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
       if (mongocrypt_crypt_shared_lib_version (crypt) == 0) {
-         BSON_ASSERT (
-            !"tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but no "
-             "crypt_shared library was loaded by mongocrypt_init");
+         BSON_ASSERT (false &&
+                      "tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but "
+                      "no crypt_shared library was loaded by mongocrypt_init");
       }
    }
    return crypt;
@@ -880,8 +880,7 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'gcp': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'gcp': {'accessToken': 'foobar', 'email': 'foo@bar.com' }}",
-       "Unexpected field: 'email'"}
-   };
+       "Unexpected field: 'email'"}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;

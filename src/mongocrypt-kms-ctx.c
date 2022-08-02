@@ -166,7 +166,7 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    }
 
    if (0 ==
-         (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
+       (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
       CLIENT_ERR ("aws kms not configured");
       goto done;
    }
@@ -195,9 +195,8 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    kms_request_set_service (kms->req, "kms");
 
    if (kms_providers->aws.session_token) {
-      kms_request_add_header_field (kms->req,
-                                    "X-Amz-Security-Token",
-                                    kms_providers->aws.session_token);
+      kms_request_add_header_field (
+         kms->req, "X-Amz-Security-Token", kms_providers->aws.session_token);
    }
 
    if (kms_request_get_error (kms->req)) {
@@ -224,14 +223,14 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
       goto done;
    }
 
-   if (!kms_request_set_access_key_id (
-          kms->req, kms_providers->aws.access_key_id)) {
+   if (!kms_request_set_access_key_id (kms->req,
+                                       kms_providers->aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
-   if (!kms_request_set_secret_key (
-          kms->req, kms_providers->aws.secret_access_key)) {
+   if (!kms_request_set_secret_key (kms->req,
+                                    kms_providers->aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
@@ -300,7 +299,7 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    }
 
    if (0 ==
-         (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
+       (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
       CLIENT_ERR ("aws kms not configured");
       goto done;
    }
@@ -332,9 +331,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    kms_request_set_service (kms->req, "kms");
 
    if (kms_providers->aws.session_token) {
-      kms_request_add_header_field (kms->req,
-                                    "X-Amz-Security-Token",
-                                    kms_providers->aws.session_token);
+      kms_request_add_header_field (
+         kms->req, "X-Amz-Security-Token", kms_providers->aws.session_token);
    }
 
    if (kms_request_get_error (kms->req)) {
@@ -361,14 +359,14 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
       goto done;
    }
 
-   if (!kms_request_set_access_key_id (
-          kms->req, kms_providers->aws.access_key_id)) {
+   if (!kms_request_set_access_key_id (kms->req,
+                                       kms_providers->aws.access_key_id)) {
       CLIENT_ERR ("failed to set aws access key id");
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
-   if (!kms_request_set_secret_key (
-          kms->req, kms_providers->aws.secret_access_key)) {
+   if (!kms_request_set_secret_key (kms->req,
+                                    kms_providers->aws.secret_access_key)) {
       CLIENT_ERR ("failed to set aws secret access key");
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
@@ -417,10 +415,12 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms)
                                            DEFAULT_MAX_KMS_BYTE_REQUEST);
 }
 
-static void _handle_non200_http_status (int http_status,
-                                        const char* body,
-                                        size_t body_len,
-                                        mongocrypt_status_t *status) {
+static void
+_handle_non200_http_status (int http_status,
+                            const char *body,
+                            size_t body_len,
+                            mongocrypt_status_t *status)
+{
    /* 1xx, 2xx, and 3xx HTTP status codes are not errors, but we only
     * support handling 200 response. */
    if (http_status < 400) {
@@ -550,17 +550,16 @@ _ctx_done_oauth (mongocrypt_kms_ctx_t *kms)
    }
 
    if (http_status != 200) {
-      _handle_non200_http_status (http_status, body, body_len, status); 
+      _handle_non200_http_status (http_status, body, body_len, status);
       goto fail;
    }
 
    if (!bson_iter_init_find (&iter, bson_body, "access_token") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      CLIENT_ERR (
-         "KMS JSON response does not include field 'access_token'. "
-         "HTTP status=%d. Response body=\n%s",
-         http_status,
-         body);
+      CLIENT_ERR ("KMS JSON response does not include field 'access_token'. "
+                  "HTTP status=%d. Response body=\n%s",
+                  http_status,
+                  body);
       goto fail;
    }
 
@@ -1020,13 +1019,12 @@ _mongocrypt_kms_ctx_init_azure_auth (
    BSON_ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
-   kms->req =
-      kms_azure_request_oauth_new (hostname,
-                                   scope,
-                                   kms_providers->azure.tenant_id,
-                                   kms_providers->azure.client_id,
-                                   kms_providers->azure.client_secret,
-                                   opt);
+   kms->req = kms_azure_request_oauth_new (hostname,
+                                           scope,
+                                           kms_providers->azure.tenant_id,
+                                           kms_providers->azure.client_id,
+                                           kms_providers->azure.client_secret,
+                                           opt);
    if (kms_request_get_error (kms->req)) {
       CLIENT_ERR ("error constructing KMS message: %s",
                   kms_request_get_error (kms->req));
@@ -1563,7 +1561,7 @@ mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len)
 {
    switch (kms->req_type) {
    default:
-      BSON_ASSERT ("unknown KMS request type");
+      BSON_ASSERT (false && "unknown KMS request type");
    case MONGOCRYPT_KMS_AWS_ENCRYPT:
    case MONGOCRYPT_KMS_AWS_DECRYPT:
       return set_and_ret ("aws", len);
