@@ -4,13 +4,13 @@
 - Fix datakey decryption requiring multiple rounds of KMS requests.
 ## 1.5.1
 ## Warnings
-- This release has a severe bug in the contexts returned by `mongocrypt_ctx_rewrap_many_datakey_init` that may result in data corruption. Please upgrade to 1.5.2 to use `mongocrypt_ctx_rewrap_many_datakey_init`.
+- This release has a severe bug in the context returned by `mongocrypt_ctx_rewrap_many_datakey_init` that may result in data corruption. Please upgrade to 1.5.2 before using `mongocrypt_ctx_rewrap_many_datakey_init`.
 ### New Features
 - Update Java bindings to support remaining 1.5.0 API.
 
 ## 1.5.0
 ## Warnings
-- This release has a severe bug in the contexts returned by `mongocrypt_ctx_rewrap_many_datakey_init` that may result in data corruption. Please upgrade to 1.5.2 to use `mongocrypt_ctx_rewrap_many_datakey_init`.
+- This release has a severe bug in the context returned by `mongocrypt_ctx_rewrap_many_datakey_init` that may result in data corruption. Please upgrade to 1.5.2 before using `mongocrypt_ctx_rewrap_many_datakey_init`.
 ## Fixed
 - Update to use new payload for FLE 2.0 find. 
 - Require contention factor.
