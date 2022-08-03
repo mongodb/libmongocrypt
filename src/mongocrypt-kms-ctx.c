@@ -685,11 +685,12 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
     */
    bson_destroy (&body_bson);
    if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
-      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
-                  "HTTP status=%d. Response body=\n%s",
-                  bson_error.message,
-                  http_status,
-                  body);
+      CLIENT_ERR (
+         "Invalid KMS response. Error parsing JSON in KMS response '%s'. "
+         "HTTP status=%d. Response body=\n%s",
+         bson_error.message,
+         http_status,
+         body);
       bson_init (&body_bson);
       goto fail;
    }
