@@ -556,7 +556,8 @@ _ctx_done_oauth (mongocrypt_kms_ctx_t *kms)
 
    if (!bson_iter_init_find (&iter, bson_body, "access_token") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      CLIENT_ERR ("KMS JSON response does not include field 'access_token'. "
+      CLIENT_ERR ("Invalid KMS response. KMS JSON response does not include "
+                  "field 'access_token'. "
                   "HTTP status=%d. Response body=\n%s",
                   http_status,
                   body);
