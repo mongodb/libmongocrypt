@@ -64,7 +64,12 @@ namespace MongoDB.Libmongocrypt
             /// <summary>
             /// LibMongoCrypt is complete.
             /// </summary>
-            MONGOCRYPT_CTX_DONE = 6
+            MONGOCRYPT_CTX_DONE = 6,
+
+            /// <summary>
+            /// LibMongoCrypt requires new credentials.
+            /// </summary>
+            MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7
         }
 
         private ContextSafeHandle _handle;
@@ -163,6 +168,11 @@ namespace MongoDB.Libmongocrypt
             }
 
             return new KmsRequestCollection(requests, this);
+        }
+
+        public void SetCredentials(byte[] credentials)
+        {
+            PinnedBinary.RunAsPinnedBinary(_handle, credentials, _status, (h, b) => Library.mongocrypt_ctx_provide_kms_providers(h, b));
         }
 
         void IStatus.Check(Status status)

@@ -72,6 +72,8 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_append_crypt_shared_lib_search_path>(("mongocrypt_setopt_append_crypt_shared_lib_search_path")), true);
             _mongocrypt_setopt_set_crypt_shared_lib_path_override = new Lazy<Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override>(("mongocrypt_setopt_set_crypt_shared_lib_path_override")), true);
+            _mongocrypt_setopt_use_need_kms_credentials_state = new Lazy<Delegates.mongocrypt_setopt_use_need_kms_credentials_state>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_use_need_kms_credentials_state>(("mongocrypt_setopt_use_need_kms_credentials_state")), true);
             _mongocrypt_crypt_shared_lib_version_string = new Lazy<Delegates.mongocrypt_crypt_shared_lib_version_string>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_crypt_shared_lib_version_string>(("mongocrypt_crypt_shared_lib_version_string")), true);
             _mongocrypt_crypt_shared_lib_version = new Lazy<Delegates.mongocrypt_crypt_shared_lib_version>(
@@ -155,6 +157,8 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_ctx_datakey_init = new Lazy<Delegates.mongocrypt_ctx_datakey_init>(
                 () => __loader.Value
                     .GetFunction<Delegates.mongocrypt_ctx_datakey_init>(("mongocrypt_ctx_datakey_init")), true);
+            _mongocrypt_ctx_provide_kms_providers = new Lazy<Delegates.mongocrypt_ctx_provide_kms_providers>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_provide_kms_providers>(("mongocrypt_ctx_provide_kms_providers")), true);
             _mongocrypt_ctx_state = new Lazy<Delegates.mongocrypt_ctx_state>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_state>(("mongocrypt_ctx_state")), true);
             _mongocrypt_ctx_mongo_op = new Lazy<Delegates.mongocrypt_ctx_mongo_op>(
@@ -229,6 +233,7 @@ namespace MongoDB.Libmongocrypt
 
         internal static Delegates.mongocrypt_setopt_append_crypt_shared_lib_search_path mongocrypt_setopt_append_crypt_shared_lib_search_path => _mongocrypt_setopt_append_crypt_shared_lib_search_path.Value;
         internal static Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override mongocrypt_setopt_set_crypt_shared_lib_path_override => _mongocrypt_setopt_set_crypt_shared_lib_path_override.Value;
+        internal static Delegates.mongocrypt_setopt_use_need_kms_credentials_state mongocrypt_setopt_use_need_kms_credentials_state => _mongocrypt_setopt_use_need_kms_credentials_state.Value;
         internal static Delegates.mongocrypt_crypt_shared_lib_version_string mongocrypt_crypt_shared_lib_version_string => _mongocrypt_crypt_shared_lib_version_string.Value;
         internal static Delegates.mongocrypt_crypt_shared_lib_version mongocrypt_crypt_shared_lib_version => _mongocrypt_crypt_shared_lib_version.Value;
 
@@ -260,6 +265,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_ctx_explicit_encrypt_init mongocrypt_ctx_explicit_encrypt_init => _mongocrypt_ctx_explicit_encrypt_init.Value;
         internal static Delegates.mongocrypt_ctx_explicit_decrypt_init mongocrypt_ctx_explicit_decrypt_init => _mongocrypt_ctx_explicit_decrypt_init.Value;
         internal static Delegates.mongocrypt_ctx_datakey_init mongocrypt_ctx_datakey_init => _mongocrypt_ctx_datakey_init.Value;
+        internal static Delegates.mongocrypt_ctx_provide_kms_providers mongocrypt_ctx_provide_kms_providers => _mongocrypt_ctx_provide_kms_providers.Value;
         internal static Delegates.mongocrypt_ctx_setopt_masterkey_local mongocrypt_ctx_setopt_masterkey_local => _mongocrypt_ctx_setopt_masterkey_local.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_id mongocrypt_ctx_setopt_key_id => _mongocrypt_ctx_setopt_key_id.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_alt_name mongocrypt_ctx_setopt_key_alt_name => _mongocrypt_ctx_setopt_key_alt_name.Value;
@@ -302,6 +308,7 @@ namespace MongoDB.Libmongocrypt
 
         private static readonly Lazy<Delegates.mongocrypt_setopt_append_crypt_shared_lib_search_path> _mongocrypt_setopt_append_crypt_shared_lib_search_path;
         private static readonly Lazy<Delegates.mongocrypt_setopt_set_crypt_shared_lib_path_override> _mongocrypt_setopt_set_crypt_shared_lib_path_override;
+        private static readonly Lazy<Delegates.mongocrypt_setopt_use_need_kms_credentials_state> _mongocrypt_setopt_use_need_kms_credentials_state;
         private static readonly Lazy<Delegates.mongocrypt_crypt_shared_lib_version_string> _mongocrypt_crypt_shared_lib_version_string;
         private static readonly Lazy<Delegates.mongocrypt_crypt_shared_lib_version> _mongocrypt_crypt_shared_lib_version;
 
@@ -339,6 +346,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_explicit_decrypt_init> _mongocrypt_ctx_explicit_decrypt_init;
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_datakey_init> _mongocrypt_ctx_datakey_init;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_provide_kms_providers> _mongocrypt_ctx_provide_kms_providers;
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_masterkey_local> _mongocrypt_ctx_setopt_masterkey_local;
 
@@ -482,6 +490,11 @@ namespace MongoDB.Libmongocrypt
             /// </summary>
             public delegate void mongocrypt_setopt_set_crypt_shared_lib_path_override(MongoCryptSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string path);
             /// <summary>
+            /// void mongocrypt_setopt_use_need_kms_credentials_state(mongocrypt_t* crypt);
+            /// </summary>
+            /// <param name="handle"></param>
+            public delegate void mongocrypt_setopt_use_need_kms_credentials_state(MongoCryptSafeHandle handle);
+            /// <summary>
             /// const char * mongocrypt_crypt_shared_lib_version_string(const mongocrypt_t* crypt, uint32_t *len);
             /// </summary>
             public delegate IntPtr mongocrypt_crypt_shared_lib_version_string(MongoCryptSafeHandle handle, out uint length);
@@ -558,6 +571,12 @@ namespace MongoDB.Libmongocrypt
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_datakey_init(ContextSafeHandle handle);
+
+            /// <summary>
+            /// bool mongocrypt_ctx_provide_kms_providers(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* kms_providers_definition);
+            /// </summary>
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_provide_kms_providers(ContextSafeHandle handle, BinarySafeHandle kms_providers_definition);
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_schema_map(ContextSafeHandle handle, BinarySafeHandle binary);
