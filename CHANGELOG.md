@@ -1,4 +1,13 @@
 # ChangeLog
+## 1.6.0-alpha0
+### New Features
+- Support accessToken to authenticate with GCP.
+### Improvements
+- Use CRLF, not LF, for HTTP request newlines.
+- Include full body of HTTP errors in `mongocrypt_status_t`.
+### New Features
+- Update Java bindings to support remaining 1.5.0 API.
+# ChangeLog
 ## 1.5.2
 ### Fixed
 - Fix datakey decryption requiring multiple rounds of KMS requests.
