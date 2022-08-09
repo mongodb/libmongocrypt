@@ -116,7 +116,7 @@ functions:
       params:
         script: |-
           if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
-          env ${compile_env|} CONFIGURE_ONLY=ON CC=clang CXX=clang++ \
+          env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
 
@@ -635,6 +635,10 @@ tasks:
       name: build-and-test-and-upload
     - variant: ubuntu2004-arm64
       name: build-and-test-and-upload
+    - variant: ubuntu2204-64
+      name: build-and-test-and-upload
+    - variant: ubuntu2204-arm64
+      name: build-and-test-and-upload
     - variant: macos
       name: build-and-test-and-upload
   commands:
@@ -686,6 +690,10 @@ tasks:
       vars: { variant_name: "ubuntu2004-64" }
     - func: "download tarball"
       vars: { variant_name: "ubuntu2004-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2204-64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2204-arm64" }
     - func: "download tarball"
       vars: { variant_name: "macos" }
     - command: archive.targz_pack
@@ -1289,6 +1297,40 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-node
   - build-and-test-node-no-optional-dependencies
+  - test-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
+- name: ubuntu2204-64
+  display_name: "Ubuntu 22.04 64-bit"
+  run_on: ubuntu2204-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2204
+    packager_arch: x86_64
+    clang_env: CC=clang-12 CXX=clang++-12
+  tasks:
+  - clang-tidy
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - build-and-test-csharp
+  - test-java
+  - upload-java
+  - publish-packages
+- name: ubuntu2204-arm64
+  display_name: "Ubuntu 22.04 arm64"
+  run_on: ubuntu2204-arm64-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2204
+    packager_arch: arm64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:

@@ -241,3 +241,17 @@ repos:
       - arm64
     repos:
       - apt/ubuntu/dists/focal/libmongocrypt
+
+  - name: ubuntu2204
+    type: deb
+    code_name: "jammy"
+    edition: org
+    bucket: libmongocrypt
+    region: us-east-1
+    component: universe
+    architectures:
+      - amd64
+      - i386
+      - arm64
+    repos:
+      - apt/ubuntu/dists/jammy/libmongocrypt
