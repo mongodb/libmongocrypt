@@ -605,6 +605,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: amazon2-arm64
       name: build-and-test-and-upload
+    - variant: debian11
+      name: build-and-test-and-upload
     - variant: debian10
       name: build-and-test-and-upload
     - variant: debian92
@@ -654,6 +656,8 @@ tasks:
       vars: { variant_name: "amazon2" }
     - func: "download tarball"
       vars: { variant_name: "amazon2-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "debian11" }
     - func: "download tarball"
       vars: { variant_name: "debian10" }
     - func: "download tarball"
@@ -1035,6 +1039,22 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+- name: debian11
+  display_name: "Debian 11.0"
+  run_on: debian11-large
+  expansions:
+    has_packages: true
+    packager_distro: debian11
+    packager_arch: x86_64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - test-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
 - name: debian10
   display_name: "Debian 10.0"
   run_on: debian10-test

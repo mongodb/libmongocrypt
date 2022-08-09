@@ -175,6 +175,18 @@ repos:
     repos:
       - apt/debian/dists/buster/libmongocrypt
 
+  - name: debian11
+    type: deb
+    code_name: "bullseye"
+    bucket: libmongocrypt
+    region: us-east-1
+    edition: org
+    component: main
+    architectures:
+      - amd64
+    repos:
+      - apt/debian/dists/bullseye/libmongocrypt
+
   - name: ubuntu1404
     type: deb
     code_name: "trusty"
