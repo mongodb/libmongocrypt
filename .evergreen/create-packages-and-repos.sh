@@ -16,11 +16,6 @@ else
   IGNORE_SYSTEM_CMAKE=1 . "$WORKDIR/libmongocrypt/.evergreen/find-cmake.sh"
 fi
 
-# Get current version of libmongocrypt.
-pushd "$WORKDIR/libmongocrypt"
-  mongocrypt_version="$("$CMAKE" -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
-popd
-
 if ! "${HAS_PACKAGES:-false}"; then
   echo "'HAS_PACKAGES' is not 'true': Skipping package build"
   exit 0
@@ -48,6 +43,11 @@ if test "$OS" = "Windows_NT"; then
 else
   PYTHONPATH="$PYTHONPATH:$WORKDIR/src"
 fi
+
+# Get current version of libmongocrypt.
+pushd "$WORKDIR/libmongocrypt"
+  mongocrypt_version="$("$python" etc/calc_release_version.py 2>&1)"
+popd
 
 PPA_BUILD_ONLY=1 ./libmongocrypt/.evergreen/build_all.sh
 pkg_version=$mongocrypt_version

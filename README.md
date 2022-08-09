@@ -116,13 +116,7 @@ Do the following when releasing:
 - Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
-   - Update the release branch references (i.e.,
-     `-DRELEASE_BRANCH_REF=origin/rx.y`) in the invocations of
-     `GetVersion.cmake` (currently located in `CMakeLists.txt`,
-     `.evergreen/debian_package_build.sh`,
-     `.evergreen/create-packages-and-repos.sh`, and `.evergreen/config.yml`) so
-     that they refer to the new branch you are about to create
-   - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, `CHANGELOG.md`, and the files which contain invocations of `GetVersion.cmake`)
+   - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, and `CHANGELOG.md`)
    - Create a branch named `rx.y`.
    - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project to set `Branch Name` to `rx.y`.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"` or with `version = "1.0.0"` (depending on whether this is a pre-release or a final release).
