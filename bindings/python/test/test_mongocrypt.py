@@ -39,7 +39,7 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryIn,
                                      MongoCryptBinaryOut,
                                      MongoCryptOptions)
-from pymongocrypt.state_machine import MongoCryptCallback
+from pymongocrypt.state_machine import MongoCryptCallback, run_state_machine
 
 from test import unittest
 
@@ -86,6 +86,7 @@ class TestMongoCryptOptions(unittest.TestCase):
         schema_map = bson_data('schema-map.json')
         valid = [
             ({'local': {'key': b'1' * 96}}, None),
+            ({ 'aws' : {} }, schema_map),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
@@ -107,12 +108,14 @@ class TestMongoCryptOptions(unittest.TestCase):
             self.assertEqual(opts.schema_map, schema_map)
             self.assertIsNone(opts.encrypted_fields_map)
             self.assertFalse(opts.bypass_query_analysis)
+            self.assertFalse(opts.use_need_kms_credentials_state)
 
         encrypted_fields_map = bson_data('encrypted-field-config-map.json')
         opts = MongoCryptOptions(valid[0][0], schema_map, encrypted_fields_map=encrypted_fields_map,
                                  bypass_query_analysis=True)
         self.assertEqual(opts.encrypted_fields_map, encrypted_fields_map)
         self.assertTrue(opts.bypass_query_analysis)
+        self.assertFalse(opts.use_need_kms_credentials_state)
 
     def test_mongocrypt_options_validation(self):
         with self.assertRaisesRegex(
@@ -367,6 +370,9 @@ class MockCallback(MongoCryptCallback):
     def bson_encode(self, doc):
         return bson.encode(doc)
 
+    def ask_for_kms_credentials(self):
+        return { "aws": { "accessKeyId": "foo:", 'secretAccessKey': 'foo'}, 'local': {'key': b'\x00'*96}  }
+
     def close(self):
         pass
 
@@ -429,6 +435,20 @@ class TestMongoCryptCallback(unittest.TestCase):
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+    def test_need_kms_credentials(self):
+        kms_providers = { 'aws': {}, 'local': {'key': b'\x00'*96} }
+        opts = MongoCryptOptions(kms_providers, use_need_kms_credentials_state=True)
+        encrypter = AutoEncrypter(MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document.json')],
+            kms_reply=http_data('kms-reply.txt')), opts)
+        self.addCleanup(encrypter.close)
+        encrypted = encrypter.encrypt('test', bson_data('command.json'))
+        self.assertEqual(bson.decode(encrypted, OPTS),
+                         json_data('encrypted-command.json'))
+        self.assertEqual(encrypted, bson_data('encrypted-command.json'))
 
 
 class KeyVaultCallback(MockCallback):
@@ -594,6 +614,7 @@ class TestExplicitEncryption(unittest.TestCase):
         result = encrypter.rewrap_many_data_key({})
         raw_doc = RawBSONDocument(result)
         assert len(raw_doc['v']) == 2
+
 
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:

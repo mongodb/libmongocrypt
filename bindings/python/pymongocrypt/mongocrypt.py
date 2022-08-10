@@ -35,7 +35,8 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
                  bypass_query_analysis=False, crypt_shared_lib_path=None,
-                 crypt_shared_lib_required=False, bypass_encryption=False):
+                 crypt_shared_lib_required=False, bypass_encryption=False,
+                 use_need_kms_credentials_state=False):
         """Options for :class:`MongoCrypt`.
 
         :Parameters:
@@ -70,6 +71,20 @@ class MongoCryptOptions(object):
             outgoing commands. Set `bypass_query_analysis` to use explicit
             encryption on indexed fields without the MongoDB Enterprise Advanced
             licensed crypt_shared library.
+          - `crypt_shared_lib_path`: Optional string path to the crypt_shared
+            library.
+          - `crypt_shared_lib_required`: Whether to require a crypt_shared
+            library.
+          - `bypass_encryption`: Whether to bypass encryption.
+          - `use_need_kms_credentials_state`: Whether to enable on-demand
+            kms credential access.
+
+        .. versionadded:: 1.4
+            ``use_need_kms_credentials_state`` parameter.
+
+        .. versionadded:: 1.3
+           ``crypt_shared_lib_path``, ``crypt_shared_lib_path``,
+           ``bypass_encryption`` parameters.
 
         .. versionadded:: 1.1
            Support for "azure" and "gcp" kms_providers.
@@ -88,9 +103,10 @@ class MongoCryptOptions(object):
             aws = kms_providers["aws"]
             if not isinstance(aws, dict):
                 raise ValueError("kms_providers['aws'] must be a dict")
-            if "accessKeyId" not in aws or "secretAccessKey" not in aws:
-                raise ValueError("kms_providers['aws'] must contain "
-                                 "'accessKeyId' and 'secretAccessKey'")
+            if len(aws):
+                if "accessKeyId" not in aws or "secretAccessKey" not in aws:
+                    raise ValueError("kms_providers['aws'] must contain "
+                                     "'accessKeyId' and 'secretAccessKey'")
 
         if 'azure' in kms_providers:
             azure = kms_providers["azure"]
@@ -150,6 +166,7 @@ class MongoCryptOptions(object):
         self.crypt_shared_lib_path = crypt_shared_lib_path
         self.crypt_shared_lib_required = crypt_shared_lib_required
         self.bypass_encryption = bypass_encryption
+        self.use_need_kms_credentials_state = use_need_kms_credentials_state
 
 
 class MongoCrypt(object):
@@ -238,6 +255,9 @@ class MongoCrypt(object):
 
         if not self.__opts.bypass_encryption:
             lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
+
+        if self.__opts.use_need_kms_credentials_state:
+            lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
@@ -421,6 +441,12 @@ class MongoCryptContext(object):
         """Completes the mongo operation."""
         if not lib.mongocrypt_ctx_mongo_done(self.__ctx):
             self._raise_from_status()
+
+    def provide_kms_providers(self, providers):
+        """Provide a map of KMS providers."""
+        with MongoCryptBinaryIn(providers) as binary:
+            if not lib.mongocrypt_ctx_provide_kms_providers(self.__ctx, binary.bin):
+                self._raise_from_status()
 
     def kms_contexts(self):
         """Yields the MongoCryptKmsContexts."""

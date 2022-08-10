@@ -102,6 +102,15 @@ class MongoCryptCallback(ABC):
         pass
 
     @abstractmethod
+    def ask_for_kms_credentials(self):
+        """Return on-demand kms credentials.
+
+        :Returns:
+        Map of KMS provider options.
+        """
+        pass
+
+    @abstractmethod
     def close(self):
         """Release resources."""
         pass
@@ -149,5 +158,11 @@ def run_state_machine(ctx, callback):
                 with kms_ctx:
                     callback.kms_request(kms_ctx)
             ctx.complete_kms()
+        elif state == lib.MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+            creds = callback.ask_for_kms_credentials()
+            if not isinstance(creds, bytes):
+                creds = callback.bson_encode(creds)
+            ctx.provide_kms_providers(creds)
+            ctx.complete_mongo_operation()
         else:
             raise MongoCryptError('unknown state: %r' % (state,))
