@@ -350,6 +350,7 @@ class MockCallback(MongoCryptCallback):
         self.key_docs = key_docs
         self.kms_reply = kms_reply
         self.kms_endpoint = None
+        self.got_on_demand_credentials = False
 
     def kms_request(self, kms_context):
         self.kms_endpoint = kms_context.endpoint
@@ -371,7 +372,8 @@ class MockCallback(MongoCryptCallback):
         return bson.encode(doc)
 
     def ask_for_kms_credentials(self):
-        return { "aws": { "accessKeyId": "foo:", 'secretAccessKey': 'foo'}, 'local': {'key': b'\x00'*96}  }
+        self.got_on_demand_credentials = True
+        return { "aws": { "accessKeyId": "example", "secretAccessKey": "example"} }
 
     def close(self):
         pass
@@ -437,18 +439,21 @@ class TestMongoCryptCallback(unittest.TestCase):
         self.assertEqual(decrypted, bson_data('command-reply.json'))
 
     def test_need_kms_credentials(self):
-        kms_providers = { 'aws': {}, 'local': {'key': b'\x00'*96} }
+        kms_providers = { 'aws': {} }
         opts = MongoCryptOptions(kms_providers, use_need_kms_credentials_state=True)
-        encrypter = AutoEncrypter(MockCallback(
+        callback = MockCallback(
             list_colls_result=bson_data('collection-info.json'),
             mongocryptd_reply=bson_data('mongocryptd-reply.json'),
             key_docs=[bson_data('key-document.json')],
-            kms_reply=http_data('kms-reply.txt')), opts)
+            kms_reply=http_data('kms-reply.txt'))
+        encrypter = AutoEncrypter(callback, opts)
         self.addCleanup(encrypter.close)
-        encrypted = encrypter.encrypt('test', bson_data('command.json'))
-        self.assertEqual(bson.decode(encrypted, OPTS),
-                         json_data('encrypted-command.json'))
-        self.assertEqual(encrypted, bson_data('encrypted-command.json'))
+        decrypted = encrypter.decrypt(
+            bson_data('encrypted-command-reply.json'))
+        self.assertEqual(bson.decode(decrypted, OPTS),
+                         json_data('command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
+        self.assertEqual(callback.got_on_demand_credentials, True)
 
 
 class KeyVaultCallback(MockCallback):

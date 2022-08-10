@@ -163,6 +163,5 @@ def run_state_machine(ctx, callback):
             if not isinstance(creds, bytes):
                 creds = callback.bson_encode(creds)
             ctx.provide_kms_providers(creds)
-            ctx.complete_mongo_operation()
         else:
             raise MongoCryptError('unknown state: %r' % (state,))
