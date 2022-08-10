@@ -2138,7 +2138,8 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    if (ctx->opts.index_type.set &&
        ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY &&
        !ctx->opts.contention_factor.set) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "contention factor is required for indexed algorithm");
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "contention factor is required for indexed algorithm");
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
