@@ -280,7 +280,7 @@ module.exports = function (modules) {
      */
 
     /**
-     * Searches the keyvault for any data keys matching the provided filter.  If there are matches, the attempts to re-wrap the data keys using the provided options.
+     * Searches the keyvault for any data keys matching the provided filter.  If there are matches, rewrapManyDataKey then attempts to re-wrap the data keys using the provided options.
      *
      * If no matches are found, then no bulk write is performed.
      *
