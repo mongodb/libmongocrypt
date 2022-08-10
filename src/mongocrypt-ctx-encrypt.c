@@ -1935,8 +1935,9 @@ _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
    return true;
 }
 
-/* _try_schema_from_create_cmd tries to find a JSON schema included in a create
- * command by checking for "validator.$jsonSchema". Example:
+/* _try_schema_from_create_or_collMod_cmd tries to find a JSON schema included
+ * in a create or collMod command by checking for "validator.$jsonSchema".
+ * Example:
  * {
  *     "create" : "coll",
  *     "validator" : {
@@ -1946,19 +1947,23 @@ _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
  *     }
  * }
  * If the "create" command does not include a JSON schema, an empty JSON schema
- * is returned. This is to avoid an unnecessary 'listCollections' command for
- * create. */
+ * is later. This is to avoid an unnecessary 'listCollections' command for
+ * create.
+ *
+ * If the "collMod" command does not include a JSON schema, a schema is later
+ * requested from other sources. This is because a "collMod" command may have
+ * sensitive data in the "validator" field.
+ */
 static bool
-_try_schema_from_create_cmd (mongocrypt_ctx_t *ctx)
+_try_schema_from_create_or_collMod_cmd (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
    mongocrypt_status_t *status = ctx->status;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   /* As a special case, use an empty schema for the 'create' command. */
    const char *cmd_name = ectx->cmd_name;
 
-   if (0 != strcmp (cmd_name, "create")) {
+   if (0 != strcmp (cmd_name, "create") && 0 != strcmp (cmd_name, "collMod")) {
       return true;
    }
 
@@ -2524,7 +2529,7 @@ mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx)
       return false;
    }
    if (_mongocrypt_buffer_empty (&ectx->encrypted_field_config)) {
-      if (!_try_schema_from_create_cmd (ctx)) {
+      if (!_try_schema_from_create_or_collMod_cmd (ctx)) {
          return false;
       }
 
