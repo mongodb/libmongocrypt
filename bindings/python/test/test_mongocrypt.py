@@ -39,7 +39,7 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryIn,
                                      MongoCryptBinaryOut,
                                      MongoCryptOptions)
-from pymongocrypt.state_machine import MongoCryptCallback, run_state_machine
+from pymongocrypt.state_machine import MongoCryptCallback
 
 from test import unittest
 
