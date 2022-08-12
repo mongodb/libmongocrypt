@@ -1,0 +1,8 @@
+{
+    "collMod": "encryptedCollection",
+    "validator": {
+        "$jsonSchema": {
+            "bsonType": "object"
+        }
+    }
+}

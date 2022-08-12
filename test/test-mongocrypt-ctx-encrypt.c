@@ -4379,6 +4379,64 @@ _test_encrypt_macos_no_ctr (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* If collMod contains a $jsonSchema, expect the same $jsonSchema to be used in
+ * the command to mongocryptd. This is a regression test for MONGOCRYPT-463. */
+static void
+_test_fle1_collmod_with_jsonSchema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_FILE ("./test/data/fle1-collMod/cmd.json")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+   {
+      mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new ();
+
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, cmd_to_mongocryptd), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle1-collMod/cmd-to-mongocryptd.json"),
+         cmd_to_mongocryptd);
+      mongocrypt_binary_destroy (cmd_to_mongocryptd);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx, TEST_FILE ("./test/data/fle1-collMod/mongocryptd-reply.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+/* If collMod does not contain a $jsonSchema, expect a schema to be requested.
+ */
+static void
+_test_fle1_collmod_without_jsonSchema (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   ASSERT_OK (
+      mongocrypt_ctx_encrypt_init (
+         ctx, "db", -1, TEST_BSON ("{'collMod': 'encryptedCollection'}")),
+      ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
 {
@@ -4438,4 +4496,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_fle2_create);
    INSTALL_TEST (_test_fle2_create_bypass_query_analysis);
    INSTALL_TEST (_test_encrypt_macos_no_ctr);
+   INSTALL_TEST (_test_fle1_collmod_with_jsonSchema);
+   INSTALL_TEST (_test_fle1_collmod_without_jsonSchema);
 }
