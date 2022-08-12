@@ -1951,8 +1951,9 @@ _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
  * create.
  *
  * If the "collMod" command does not include a JSON schema, a schema is later
- * requested from other sources. This is because a "collMod" command may have
- * sensitive data in the "validator" field.
+ * requested by entering the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO state.
+ * This is because a "collMod" command may have sensitive data in the
+ * "validator" field.
  */
 static bool
 _try_schema_from_create_or_collMod_cmd (mongocrypt_ctx_t *ctx)
