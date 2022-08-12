@@ -350,6 +350,8 @@ class MockCallback(MongoCryptCallback):
         self.key_docs = key_docs
         self.kms_reply = kms_reply
         self.kms_endpoint = None
+        # Used to track whether we have fetched
+        # on demand credentials for testing purposes.
         self.got_on_demand_credentials = False
 
     def kms_request(self, kms_context):
@@ -619,7 +621,6 @@ class TestExplicitEncryption(unittest.TestCase):
         result = encrypter.rewrap_many_data_key({})
         raw_doc = RawBSONDocument(result)
         assert len(raw_doc['v']) == 2
-
 
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:
