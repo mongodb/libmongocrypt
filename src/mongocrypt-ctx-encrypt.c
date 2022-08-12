@@ -1947,7 +1947,7 @@ _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
  *     }
  * }
  * If the "create" command does not include a JSON schema, an empty JSON schema
- * is later. This is to avoid an unnecessary 'listCollections' command for
+ * is returned. This is to avoid an unnecessary 'listCollections' command for
  * create.
  *
  * If the "collMod" command does not include a JSON schema, a schema is later
