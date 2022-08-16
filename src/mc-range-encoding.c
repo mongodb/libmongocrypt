@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mc-macros-private.h"
 #include "mc-range-encoding-private.h"
 #include "mongocrypt-private.h"
 
@@ -25,10 +26,7 @@
 
 /* Enable -Wconversion for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wconversion"
-#endif
+MC_BEGIN_CHECK_CONVERSIONS
 
 /**
  * Encode a signed 32-bit integer as an unsigned 32-bit integer by adding 2^31.

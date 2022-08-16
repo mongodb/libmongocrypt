@@ -15,14 +15,12 @@
  */
 #include "test-mongocrypt.h"
 
+#include "mc-macros-private.h"
 #include "mc-range-encoding-private.h"
 
 /* Enable -Wconversion for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wconversion"
-#endif
+MC_BEGIN_CHECK_CONVERSIONS
 
 typedef struct {
    mc_getTypeInfo32_args_t args;
@@ -275,6 +273,4 @@ _mongocrypt_tester_install_range_encoding (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_RangeTest_Encode_Int64);
 }
 
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
+MC_END_CHECK_CONVERSIONS
