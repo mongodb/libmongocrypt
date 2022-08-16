@@ -59,7 +59,7 @@ describe('StateMachine', function () {
     };
     const options = { promoteLongs: false, promoteValues: false };
     const serializedCommand = BSON.serialize(command);
-    const stateMachine = new StateMachine({ bson: BSON });
+    const stateMachine = new StateMachine({});
     const callback = () => {};
 
     context('when executing the command', function () {
@@ -97,7 +97,7 @@ describe('StateMachine', function () {
       });
 
       it('should only resolve once bytesNeeded drops to zero', function (done) {
-        const stateMachine = new StateMachine({ bson: BSON });
+        const stateMachine = new StateMachine({});
         const request = new MockRequest(Buffer.from('foobar'), 500);
         let status = 'pending';
         stateMachine
@@ -139,7 +139,6 @@ describe('StateMachine', function () {
         ].forEach(function (option) {
           context(`when the option is ${option}`, function () {
             const stateMachine = new StateMachine({
-              bson: BSON,
               tlsOptions: { aws: { [option]: true } }
             });
             const request = new MockRequest(Buffer.from('foobar'), 500);
@@ -157,7 +156,6 @@ describe('StateMachine', function () {
       context('when the options are secure', function () {
         context('when providing tlsCertificateKeyFile', function () {
           const stateMachine = new StateMachine({
-            bson: BSON,
             tlsOptions: { aws: { tlsCertificateKeyFile: 'test.pem' } }
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
@@ -185,7 +183,6 @@ describe('StateMachine', function () {
 
         context('when providing tlsCAFile', function () {
           const stateMachine = new StateMachine({
-            bson: BSON,
             tlsOptions: { aws: { tlsCAFile: 'test.pem' } }
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
@@ -212,7 +209,6 @@ describe('StateMachine', function () {
 
         context('when providing tlsCertificateKeyFilePassword', function () {
           const stateMachine = new StateMachine({
-            bson: BSON,
             tlsOptions: { aws: { tlsCertificateKeyFilePassword: 'test' } }
           });
           const request = new MockRequest(Buffer.from('foobar'), -1);
@@ -285,7 +281,6 @@ describe('StateMachine', function () {
 
     it('should create HTTPS connections through a Socks5 proxy (no proxy auth)', async function () {
       const stateMachine = new StateMachine({
-        bson: BSON,
         proxyOptions: {
           proxyHost: 'localhost',
           proxyPort: socks5srv.address().port
@@ -307,7 +302,6 @@ describe('StateMachine', function () {
     it('should create HTTPS connections through a Socks5 proxy (username/password auth)', async function () {
       withUsernamePassword = true;
       const stateMachine = new StateMachine({
-        bson: BSON,
         proxyOptions: {
           proxyHost: 'localhost',
           proxyPort: socks5srv.address().port,

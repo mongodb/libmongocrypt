@@ -6,6 +6,7 @@ module.exports = function (modules) {
   const fs = require('fs');
   const { once } = require('events');
   const { SocksClient } = require('socks');
+  const bson = require('bson');
 
   // Try first to import 4.x name, fallback to 3.x name
   const MongoNetworkTimeoutError =
@@ -89,7 +90,6 @@ module.exports = function (modules) {
   class StateMachine {
     constructor(options) {
       this.options = options || {};
-      this.bson = options.bson;
     }
 
     /**
@@ -101,7 +101,6 @@ module.exports = function (modules) {
      * @returns {void}
      */
     execute(autoEncrypter, context, callback) {
-      const bson = this.bson;
       const keyVaultNamespace = autoEncrypter._keyVaultNamespace;
       const keyVaultClient = autoEncrypter._keyVaultClient;
       const metaDataClient = autoEncrypter._metaDataClient;
@@ -400,7 +399,6 @@ module.exports = function (modules) {
      * @param {StateMachine~fetchCollectionInfoCallback} callback Invoked with the info of the requested collection, or with an error
      */
     fetchCollectionInfo(client, ns, filter, callback) {
-      const bson = this.bson;
       const dbName = databaseNamespace(ns);
 
       client
@@ -432,7 +430,6 @@ module.exports = function (modules) {
      * @returns {void}
      */
     markCommand(client, ns, command, callback) {
-      const bson = this.bson;
       const options = { promoteLongs: false, promoteValues: false };
       const dbName = databaseNamespace(ns);
       const rawCommand = bson.deserialize(command, options);
@@ -457,7 +454,6 @@ module.exports = function (modules) {
      * @returns {void}
      */
     fetchKeys(client, keyVaultNamespace, filter, callback) {
-      const bson = this.bson;
       const dbName = databaseNamespace(keyVaultNamespace);
       const collectionName = collectionNamespace(keyVaultNamespace);
       filter = bson.deserialize(filter);

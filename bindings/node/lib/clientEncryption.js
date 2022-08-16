@@ -9,6 +9,7 @@ module.exports = function (modules) {
   const StateMachine = modules.stateMachine.StateMachine;
   const cryptoCallbacks = require('./cryptoCallbacks');
   const { promisify } = require('util');
+  const bson = require('bson');
 
   /**
    * @typedef {object} KMSProviders Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
@@ -99,7 +100,6 @@ module.exports = function (modules) {
      */
     constructor(client, options) {
       this._client = client;
-      this._bson = options.bson || client.topology.bson;
       this._proxyOptions = options.proxyOptions;
       this._tlsOptions = options.tlsOptions;
 
@@ -111,7 +111,7 @@ module.exports = function (modules) {
 
       // kmsProviders will be parsed by libmongocrypt, must be provided as BSON binary data
       if (options.kmsProviders && !Buffer.isBuffer(options.kmsProviders)) {
-        options.kmsProviders = this._bson.serialize(options.kmsProviders);
+        options.kmsProviders = bson.serialize(options.kmsProviders);
       } else if (!options.onKmsProviderRefresh) {
         throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
       }
@@ -210,8 +210,6 @@ module.exports = function (modules) {
         options = {};
       }
 
-      const bson = this._bson;
-
       const dataKey = Object.assign({ provider }, options.masterKey);
 
       if (options.keyAltNames && !Array.isArray(options.keyAltNames)) {
@@ -244,7 +242,6 @@ module.exports = function (modules) {
         keyMaterial
       });
       const stateMachine = new StateMachine({
-        bson,
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });
@@ -309,8 +306,6 @@ module.exports = function (modules) {
      * }
      */
     async rewrapManyDataKey(filter, options) {
-      const bson = this._bson;
-
       let keyEncryptionKeyBson = undefined;
       if (options) {
         const keyEncryptionKey = Object.assign({ provider: options.provider }, options.masterKey);
@@ -325,7 +320,6 @@ module.exports = function (modules) {
         keyEncryptionKeyBson
       );
       const stateMachine = new StateMachine({
-        bson,
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });
@@ -588,7 +582,6 @@ module.exports = function (modules) {
      * }
      */
     encrypt(value, options, callback) {
-      const bson = this._bson;
       const valueBuffer = bson.serialize({ v: value });
       const contextOptions = Object.assign({}, options);
       if (options.keyId) {
@@ -610,7 +603,6 @@ module.exports = function (modules) {
       }
 
       const stateMachine = new StateMachine({
-        bson,
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });
@@ -654,12 +646,10 @@ module.exports = function (modules) {
      * }
      */
     decrypt(value, callback) {
-      const bson = this._bson;
       const valueBuffer = bson.serialize({ v: value });
       const context = this._mongoCrypt.makeExplicitDecryptionContext(valueBuffer);
 
       const stateMachine = new StateMachine({
-        bson,
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions
       });

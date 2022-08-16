@@ -9,6 +9,7 @@ module.exports = function (modules) {
   const MongoClient = modules.mongodb.MongoClient;
   const MongoError = modules.mongodb.MongoError;
   const cryptoCallbacks = require('./cryptoCallbacks');
+  const bson = require('bson');
 
   /**
    * Configuration options for a automatic client encryption.
@@ -91,7 +92,6 @@ module.exports = function (modules) {
      */
     constructor(client, options) {
       this._client = client;
-      this._bson = options.bson || client.topology.bson;
       this._bypassEncryption = options.bypassAutoEncryption === true;
 
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';
@@ -105,18 +105,18 @@ module.exports = function (modules) {
       if (options.schemaMap) {
         mongoCryptOptions.schemaMap = Buffer.isBuffer(options.schemaMap)
           ? options.schemaMap
-          : this._bson.serialize(options.schemaMap);
+          : bson.serialize(options.schemaMap);
       }
 
       if (options.encryptedFieldsMap) {
         mongoCryptOptions.encryptedFieldsMap = Buffer.isBuffer(options.encryptedFieldsMap)
           ? options.encryptedFieldsMap
-          : this._bson.serialize(options.encryptedFieldsMap);
+          : bson.serialize(options.encryptedFieldsMap);
       }
 
       if (options.kmsProviders) {
         mongoCryptOptions.kmsProviders = !Buffer.isBuffer(options.kmsProviders)
-          ? this._bson.serialize(options.kmsProviders)
+          ? bson.serialize(options.kmsProviders)
           : options.kmsProviders;
       } else if (!options.onKmsProviderRefresh) {
         throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
@@ -240,7 +240,6 @@ module.exports = function (modules) {
         return;
       }
 
-      const bson = this._bson;
       const commandBuffer = Buffer.isBuffer(cmd) ? cmd : bson.serialize(cmd, options);
 
       let context;
@@ -257,7 +256,6 @@ module.exports = function (modules) {
       context.document = cmd;
 
       const stateMachine = new StateMachine({
-        bson,
         ...options,
         promoteValues: false,
         promoteLongs: false,
@@ -280,7 +278,6 @@ module.exports = function (modules) {
         options = {};
       }
 
-      const bson = this._bson;
       const buffer = Buffer.isBuffer(response) ? response : bson.serialize(response, options);
 
       let context;
@@ -295,7 +292,6 @@ module.exports = function (modules) {
       context.id = this._contextCounter++;
 
       const stateMachine = new StateMachine({
-        bson,
         ...options,
         proxyOptions: this._proxyOptions,
         tlsOptions: this._tlsOptions

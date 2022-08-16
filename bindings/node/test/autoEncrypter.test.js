@@ -60,9 +60,7 @@ const MOCK_KMS_DECRYPT_REPLY = readHttpResponse(`${__dirname}/data/kms-decrypt-r
 
 class MockClient {
   constructor() {
-    this.topology = {
-      bson: BSON
-    };
+    this.topology = {};
   }
 }
 

@@ -23,9 +23,7 @@ const ClientEncryption = require('../lib/clientEncryption')({
 
 class MockClient {
   constructor() {
-    this.topology = {
-      bson: BSON
-    };
+    this.topology = {};
   }
 }
 
