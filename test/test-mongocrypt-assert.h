@@ -138,8 +138,8 @@
 
 #define ASSERT_CMP_HELPER(_a, _operator, _b, fmt, type)      \
    do {                                                      \
-      type _a_value = _a;                                    \
-      type _b_value = _b;                                    \
+      type _a_value = (_a);                                  \
+      type _b_value = (_b);                                  \
       if (!(_a_value _operator _b_value)) {                  \
          TEST_ERROR ("comparison failed: %" fmt " %s %" fmt, \
                      _a_value,                               \
