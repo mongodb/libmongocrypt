@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MC_MACROS_PRIVATE_H
-#define MC_MACROS_PRIVATE_H
+#ifndef MC_CHECK_CONVERSIONS_PRIVATE
+#define MC_CHECK_CONVERSIONS_PRIVATE
 
 // gcc 4.6 added support for "diagnostic push".
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
@@ -33,4 +33,4 @@
 #define MC_END_CHECK_CONVERSIONS
 #endif
 
-#endif /* MC_MACROS_PRIVATE_H */
+#endif /* MC_CHECK_CONVERSIONS_PRIVATE */

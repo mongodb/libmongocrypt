@@ -15,7 +15,7 @@
  */
 #include "test-mongocrypt.h"
 
-#include "mc-macros-private.h"
+#include "mc-check-conversions-private.h"
 #include "mc-range-encoding-private.h"
 
 /* Enable -Wconversion for only this file.
