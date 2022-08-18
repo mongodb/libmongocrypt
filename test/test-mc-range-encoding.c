@@ -31,7 +31,7 @@ typedef struct {
 static void
 _test_RangeTest_Encode_Int32 (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_status_t *status;
+   mongocrypt_status_t *const status = mongocrypt_status_new ();
    Int32Test tests[] = {
       /* Test cases copied from server Int32_NoBounds test ... begin */
       {.args = {.value = INT32_C (2147483647)},
@@ -113,8 +113,6 @@ _test_RangeTest_Encode_Int32 (_mongocrypt_tester_t *tester)
       /* Test cases copied from server Int32_Errors test ... end */
    };
 
-   status = mongocrypt_status_new ();
-
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       Int32Test *test = tests + i;
 
@@ -152,7 +150,7 @@ typedef struct {
 static void
 _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_status_t *status;
+   mongocrypt_status_t *const status = mongocrypt_status_new ();
    Int64Test tests[] = {
       /* Test cases copied from server Int64_NoBounds test ... begin */
       {.args = {.value = INT64_C (9223372036854775807)},
@@ -243,8 +241,6 @@ _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
        .expectError = "The minimum value must be less than the maximum value"},
       /* Test cases copied from server Int64_Errors test ... end */
    };
-
-   status = mongocrypt_status_new ();
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       Int64Test *test = tests + i;
