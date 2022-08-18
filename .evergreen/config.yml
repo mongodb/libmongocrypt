@@ -398,9 +398,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: macos_x86_64
       name: build-and-test-and-upload
-    # Needs: BUILD-14976
-    # - variant: macos
-    #   name: build-and-test-and-upload
+    - variant: macos
+      name: build-and-test-and-upload
   commands:
     - command: shell.exec
       params:
@@ -417,14 +416,22 @@ tasks:
       vars: { variant_name: "windows-test" }
     - func: "download tarball"
       vars: { variant_name: "macos_x86_64" }
-    # Needs: BUILD-14976
-    # - func: "download tarball"
-    #   vars: { variant_name: "macos" }
+    - func: "download tarball"
+      vars: { variant_name: "macos" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-java.tar.gz
         source_dir: all
         include: [./**]
+    - command: shell.exec
+      params:
+        script: |-
+          set -o errexit
+          if [ -n "${tag_upload_location}" ]; then
+            # the "fetch source" step detected a release tag on HEAD, so we
+            # prepare a local file for upload to a location based on the tag
+            cp -a libmongocrypt-java.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
+          fi
     - command: s3.put
       params:
         aws_key: '${aws_key}'
@@ -433,6 +440,17 @@ tasks:
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-java.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        optional: true
+        display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
+        local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
 - name: upload-all
@@ -1105,8 +1123,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
-  # Needs: BUILD-14976
-  # - test-java
+  - test-java
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"
