@@ -92,32 +92,14 @@ mc_getTypeInfo32 (mc_getTypeInfo32_args_t args,
       return false;
    }
 
-   // Handle min int32 as a special case
-   if (args.min.value == INT32_MIN) {
-      uint32_t v_u32 = encodeInt32 (args.value);
-      *out = (mc_OSTType_Int32){v_u32, 0, encodeInt32 (args.max.value)};
-      return true;
-   }
+   // Convert to unbiased uint32. Then subtract the min value.
+   uint32_t v_u32 = encodeInt32 (args.value);
+   uint32_t min_u32 = encodeInt32 (args.min.value);
+   uint32_t max_u32 = encodeInt32 (args.max.value);
 
-   // For negative numbers, first convert them to unbiased uint32 and then
-   // subtract the min value.
-   if (args.min.value < 0) {
-      uint32_t v_u32 = encodeInt32 (args.value);
-      uint32_t min_u32 = encodeInt32 (args.min.value);
-      uint32_t max_u32 = encodeInt32 (args.max.value);
-
-      v_u32 -= min_u32;
-      max_u32 -= min_u32;
-
-      *out = (mc_OSTType_Int32){v_u32, 0, max_u32};
-      return true;
-   }
-
-   uint32_t v_u32 = (uint32_t) (args.value);
-   uint32_t min_u32 = (uint32_t) (args.min.value);
-   uint32_t max_u32 = (uint32_t) (args.max.value);
    v_u32 -= min_u32;
    max_u32 -= min_u32;
+
    *out = (mc_OSTType_Int32){v_u32, 0, max_u32};
    return true;
 }
@@ -183,32 +165,14 @@ mc_getTypeInfo64 (mc_getTypeInfo64_args_t args,
       return false;
    }
 
-   // Handle min int64 as a special case
-   if (args.min.value == INT64_MIN) {
-      uint64_t v_u64 = encodeInt64 (args.value);
-      *out = (mc_OSTType_Int64){v_u64, 0, encodeInt64 (args.max.value)};
-      return true;
-   }
+   // Convert to unbiased uint64. Then subtract the min value.
+   uint64_t v_u64 = encodeInt64 (args.value);
+   uint64_t min_u64 = encodeInt64 (args.min.value);
+   uint64_t max_u64 = encodeInt64 (args.max.value);
 
-   // For negative numbers, first convert them to unbiased uint64 and then
-   // subtract the min value.
-   if (args.min.value < 0) {
-      uint64_t v_u64 = encodeInt64 (args.value);
-      uint64_t min_u64 = encodeInt64 (args.min.value);
-      uint64_t max_u64 = encodeInt64 (args.max.value);
-
-      v_u64 -= min_u64;
-      max_u64 -= min_u64;
-
-      *out = (mc_OSTType_Int64){v_u64, 0, max_u64};
-      return true;
-   }
-
-   uint64_t v_u64 = (uint64_t) (args.value);
-   uint64_t min_u64 = (uint64_t) (args.min.value);
-   uint64_t max_u64 = (uint64_t) (args.max.value);
    v_u64 -= min_u64;
    max_u64 -= min_u64;
+
    *out = (mc_OSTType_Int64){v_u64, 0, max_u64};
    return true;
 }
