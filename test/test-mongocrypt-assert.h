@@ -164,7 +164,7 @@
 #define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "zu", size_t)
 #define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "zd", ssize_t)
 #define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "f", double)
-#define ASSERT_CMPVOID(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "p", void *)
+#define ASSERT_CMPPTR(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "p", const void *)
 
 #define ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expected, actual)                  \
    do {                                                                        \
