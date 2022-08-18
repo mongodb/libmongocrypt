@@ -18,7 +18,7 @@
 #include "mc-check-conversions-private.h"
 #include "mc-range-encoding-private.h"
 
-/* Enable -Wconversion for only this file.
+/* Enable -Wconversion as error for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
 MC_BEGIN_CONVERSION_ERRORS
 
