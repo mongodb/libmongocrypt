@@ -37,7 +37,7 @@ encodeInt32 (int32_t v)
 {
    // Shift the int32_t range [-2^31, 2^31 - 1] to the uint32_t range [0, 2^32].
    // new_zero is the mapped 0 value.
-   uint32_t new_zero = (1U << 31);
+   uint32_t new_zero = (UINT32_C (1) << 31);
 
    if (v < 0) {
       // Signed integers have a value that there is no positive equivalent and
@@ -111,7 +111,7 @@ encodeInt64 (int64_t v)
 {
    // Shift the int64_t range [-2^63, 2^63 - 1] to the uint64_t range [0, 2^64].
    // new_zero is the mapped 0 value.
-   uint64_t new_zero = (1ULL << 63);
+   uint64_t new_zero = (UINT64_C (1) << 63);
 
    if (v < 0) {
       // Signed integers have a value that there is no positive equivalent and
