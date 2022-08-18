@@ -26,7 +26,7 @@
 
 /* Enable -Wconversion for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CHECK_CONVERSIONS
+MC_BEGIN_CONVERSION_ERRORS
 
 /**
  * Encode a signed 32-bit integer as an unsigned 32-bit integer by adding 2^31.
@@ -175,4 +175,4 @@ mc_getTypeInfo64 (mc_getTypeInfo64_args_t args,
    return true;
 }
 
-MC_END_CHECK_CONVERSIONS
+MC_END_CONVERSION_ERRORS
