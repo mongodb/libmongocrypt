@@ -90,7 +90,8 @@ val gitHash: String by lazy {
  */
 val jnaDownloadsDir = "$buildDir/jnaLibs/downloads/"
 val jnaResourcesDir = "$buildDir/jnaLibs/resources/"
-val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesDir}${com.sun.jna.Platform.RESOURCE_PREFIX}")
+val jnaLibPlatform: String = if (com.sun.jna.Platform.RESOURCE_PREFIX.startsWith("darwin")) "darwin" else com.sun.jna.Platform.RESOURCE_PREFIX
+val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesDir}${jnaLibPlatform}")
 val jnaResources: String = System.getProperty("jna.library.path", jnaLibsPath)
 
 // Download jnaLibs that match the git to jnaResourcesBuildDir
