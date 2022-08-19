@@ -156,7 +156,7 @@
 #define ASSERT_CMPINT32(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, PRId32, int32_t)
 #define ASSERT_CMPINT64(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, PRId64, int64_t)
 #define ASSERT_CMPUINT16(a, eq, b) \
-   ASSERT_CMP_HELPER (a, eq, b, PRId16, uint16_t)
+   ASSERT_CMP_HELPER (a, eq, b, PRIu16, uint16_t)
 #define ASSERT_CMPUINT32(a, eq, b) \
    ASSERT_CMP_HELPER (a, eq, b, PRIu32, uint32_t)
 #define ASSERT_CMPUINT64(a, eq, b) \
