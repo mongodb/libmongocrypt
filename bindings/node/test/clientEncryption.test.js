@@ -2,8 +2,8 @@
 const fs = require('fs');
 const expect = require('chai').expect;
 const sinon = require('sinon');
-const BSON = require('bson');
 const mongodb = require('mongodb');
+const BSON = mongodb.BSON;
 const MongoClient = mongodb.MongoClient;
 const cryptoCallbacks = require('../lib/cryptoCallbacks');
 const stateMachine = require('../lib/stateMachine')({ mongodb });
@@ -61,6 +61,108 @@ describe('ClientEncryption', function () {
 
     return client.close();
   }
+
+  describe('#constructor', function () {
+    context('when mongodb exports BSON (driver >= 4.9.0)', function () {
+      context('when a bson option is provided', function () {
+        const bson = Object.assign({}, BSON);
+        const encrypter = new ClientEncryption(
+          {},
+          {
+            bson: bson,
+            keyVaultNamespace: 'client.encryption',
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          }
+        );
+
+        it('uses the bson option', function () {
+          expect(encrypter._bson).to.equal(bson);
+        });
+      });
+
+      context('when a bson option is not provided', function () {
+        const encrypter = new ClientEncryption(
+          {},
+          {
+            keyVaultNamespace: 'client.encryption',
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          }
+        );
+
+        it('uses the mongodb exported BSON', function () {
+          expect(encrypter._bson).to.equal(BSON);
+        });
+      });
+
+      it('never uses bson from the topology', function () {
+        expect(() => {
+          new ClientEncryption(
+            {},
+            {
+              keyVaultNamespace: 'client.encryption',
+              kmsProviders: {
+                local: { key: Buffer.alloc(96) }
+              }
+            }
+          );
+        }).not.to.throw();
+      });
+    });
+
+    context('when mongodb does not export BSON (driver < 4.9.0)', function () {
+      context('when a bson option is provided', function () {
+        const bson = Object.assign({}, BSON);
+        const encrypter = new ClientEncryption(
+          {},
+          {
+            bson: bson,
+            keyVaultNamespace: 'client.encryption',
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          }
+        );
+
+        it('uses the bson option', function () {
+          expect(encrypter._bson).to.equal(bson);
+        });
+      });
+
+      context('when a bson option is not provided', function () {
+        const mongoNoBson = { ...mongodb, BSON: undefined };
+        const ClientEncryptionNoBson = require('../lib/clientEncryption')({
+          mongodb: mongoNoBson,
+          stateMachine
+        }).ClientEncryption;
+
+        context('when the client has a topology', function () {
+          const client = new MockClient();
+          const encrypter = new ClientEncryptionNoBson(client, {
+            keyVaultNamespace: 'client.encryption',
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          });
+
+          it('uses the bson on the topology', function () {
+            expect(encrypter._bson).to.equal(client.topology.bson);
+          });
+        });
+
+        context('when the client does not have a topology', function () {
+          it('raises an error', function () {
+            expect(() => {
+              new ClientEncryptionNoBson({}, {});
+            }).to.throw(/bson/);
+          });
+        });
+      });
+    });
+  });
 
   describe('stubbed stateMachine', function () {
     let sandbox = sinon.createSandbox();

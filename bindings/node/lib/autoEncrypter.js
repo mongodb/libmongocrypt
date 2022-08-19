@@ -8,6 +8,7 @@ module.exports = function (modules) {
   const MongocryptdManager = require('./mongocryptdManager').MongocryptdManager;
   const MongoClient = modules.mongodb.MongoClient;
   const MongoError = modules.mongodb.MongoError;
+  const BSON = modules.mongodb.BSON;
   const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
@@ -91,7 +92,7 @@ module.exports = function (modules) {
      */
     constructor(client, options) {
       this._client = client;
-      this._bson = options.bson || client.topology.bson;
+      this._bson = options.bson || BSON || client.topology.bson;
       this._bypassEncryption = options.bypassAutoEncryption === true;
 
       this._keyVaultNamespace = options.keyVaultNamespace || 'admin.datakeys';

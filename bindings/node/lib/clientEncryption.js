@@ -7,6 +7,7 @@ module.exports = function (modules) {
   const collectionNamespace = common.collectionNamespace;
   const promiseOrCallback = common.promiseOrCallback;
   const StateMachine = modules.stateMachine.StateMachine;
+  const BSON = modules.mongodb.BSON;
   const cryptoCallbacks = require('./cryptoCallbacks');
   const { promisify } = require('util');
 
@@ -99,7 +100,7 @@ module.exports = function (modules) {
      */
     constructor(client, options) {
       this._client = client;
-      this._bson = options.bson || client.topology.bson;
+      this._bson = options.bson || BSON || client.topology.bson;
       this._proxyOptions = options.proxyOptions;
       this._tlsOptions = options.tlsOptions;
 
