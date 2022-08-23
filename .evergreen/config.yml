@@ -404,30 +404,15 @@ tasks:
     - func: "test python"
       vars: { variant_name: windows-test }
 
-- name: "release-python-macos-1014"
-  tags: ["release_python_tag"]
-  run_on: macos-1014
-  commands:
-    - func: "fetch source"
-    - func: "build python release macos"
-      vars:
-        PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3
-        MACOS_TARGET: macos_x86_64
-    - func: "test python release"
-      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
-    - func: "upload python release"
-
-- name: "release-python-macos-1100"
+- name: "release-python-macos"
   tags: ["release_python_tag"]
   run_on: macos-1100
   commands:
     - func: "fetch source"
     - func: "build python release macos"
       vars:
-        PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3
         MACOS_TARGET: macos
     - func: "test python release"
-      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-linux"
