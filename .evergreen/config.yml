@@ -413,6 +413,7 @@ tasks:
       vars:
         MACOS_TARGET: macos
     - func: "test python release"
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-linux"
