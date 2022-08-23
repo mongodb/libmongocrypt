@@ -848,6 +848,25 @@ _test_decrypt_fle2_iup (_mongocrypt_tester_t *tester)
 }
 #undef TEST_IUP_BASE64
 
+/* Test decrypting a BSON binary non-subtype 6 is an error. */
+static void
+_test_decrypt_wrong_binary_subtype (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+   /* Use subtype 0. */
+   ASSERT_FAILS (
+      mongocrypt_ctx_explicit_decrypt_init (
+         ctx,
+         TEST_BSON (
+            "{'v': { '$binary': { 'base64': 'AAAA', 'subType': '00' }}}")),
+      ctx,
+      "decryption expected BSON binary subtype 6, got 0");
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
@@ -862,4 +881,5 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_decrypt_fle2);
    INSTALL_TEST (_test_explicit_decrypt_fle2_ieev);
    INSTALL_TEST (_test_decrypt_fle2_iup);
+   INSTALL_TEST (_test_decrypt_wrong_binary_subtype);
 }

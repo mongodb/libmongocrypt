@@ -136,15 +136,35 @@
    ASSERT_CMPBYTES (                    \
       (expected).data, (expected).len, (actual).data, (actual).len)
 
-#define ASSERT_CMPINT(_a, _operator, _b)                                \
-   do {                                                                 \
-      int _a_int = _a;                                                  \
-      int _b_int = _b;                                                  \
-      if (!(_a_int _operator _b_int)) {                                 \
-         TEST_ERROR (                                                   \
-            "comparison failed: %d %s %d", _a_int, #_operator, _b_int); \
-      }                                                                 \
+#define ASSERT_CMP_HELPER(_a, _operator, _b, fmt, type)      \
+   do {                                                      \
+      type _a_value = (_a);                                  \
+      type _b_value = (_b);                                  \
+      if (!(_a_value _operator _b_value)) {                  \
+         TEST_ERROR ("comparison failed: %" fmt " %s %" fmt, \
+                     _a_value,                               \
+                     #_operator,                             \
+                     _b_value);                              \
+      }                                                      \
    } while (0);
+
+#define ASSERT_CMPINT(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "d", int)
+#define ASSERT_CMPUINT(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "u", unsigned int)
+#define ASSERT_CMPLONG(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "ld", long)
+#define ASSERT_CMPULONG(a, eq, b) \
+   ASSERT_CMP_HELPER (a, eq, b, "lu", unsigned long)
+#define ASSERT_CMPINT32(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, PRId32, int32_t)
+#define ASSERT_CMPINT64(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, PRId64, int64_t)
+#define ASSERT_CMPUINT16(a, eq, b) \
+   ASSERT_CMP_HELPER (a, eq, b, PRIu16, uint16_t)
+#define ASSERT_CMPUINT32(a, eq, b) \
+   ASSERT_CMP_HELPER (a, eq, b, PRIu32, uint32_t)
+#define ASSERT_CMPUINT64(a, eq, b) \
+   ASSERT_CMP_HELPER (a, eq, b, PRIu64, uint64_t)
+#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "zu", size_t)
+#define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "zd", ssize_t)
+#define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "f", double)
+#define ASSERT_CMPPTR(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "p", const void *)
 
 #define ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expected, actual)                  \
    do {                                                                        \

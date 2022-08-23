@@ -2,10 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const BSON = require('bson');
-const EJSON = require('bson').EJSON;
 const sinon = require('sinon');
 const mongodb = require('mongodb');
+const BSON = mongodb.BSON;
+const EJSON = BSON.EJSON;
 const requirements = require('./requirements.helper');
 const MongoNetworkTimeoutError = mongodb.MongoNetworkTimeoutError || mongodb.MongoTimeoutError;
 const MongoError = mongodb.MongoError;
@@ -108,6 +108,103 @@ describe('AutoEncrypter', function () {
 
   afterEach(() => {
     sandbox.restore();
+  });
+
+  describe('#constructor', function () {
+    context('when mongodb exports BSON (driver >= 4.9.0)', function () {
+      context('when a bson option is provided', function () {
+        const bson = Object.assign({}, BSON);
+        const encrypter = new AutoEncrypter(
+          {},
+          {
+            bson: bson,
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          }
+        );
+
+        it('uses the bson option', function () {
+          expect(encrypter._bson).to.equal(bson);
+        });
+      });
+
+      context('when a bson option is not provided', function () {
+        const encrypter = new AutoEncrypter(
+          {},
+          {
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          }
+        );
+
+        it('uses the mongodb exported BSON', function () {
+          expect(encrypter._bson).to.equal(BSON);
+        });
+      });
+
+      it('never uses bson from the topology', function () {
+        expect(() => {
+          new AutoEncrypter(
+            {},
+            {
+              kmsProviders: {
+                local: { key: Buffer.alloc(96) }
+              }
+            }
+          );
+        }).not.to.throw();
+      });
+    });
+
+    context('when mongodb does not export BSON (driver < 4.9.0)', function () {
+      context('when a bson option is provided', function () {
+        const bson = Object.assign({}, BSON);
+        const encrypter = new AutoEncrypter(
+          {},
+          {
+            bson: bson,
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          }
+        );
+
+        it('uses the bson option', function () {
+          expect(encrypter._bson).to.equal(bson);
+        });
+      });
+
+      context('when a bson option is not provided', function () {
+        const mongoNoBson = { ...mongodb, BSON: undefined };
+        const AutoEncrypterNoBson = require('../lib/autoEncrypter')({
+          mongodb: mongoNoBson,
+          stateMachine
+        }).AutoEncrypter;
+
+        context('when the client has a topology', function () {
+          const client = new MockClient();
+          const encrypter = new AutoEncrypterNoBson(client, {
+            kmsProviders: {
+              local: { key: Buffer.alloc(96) }
+            }
+          });
+
+          it('uses the bson on the topology', function () {
+            expect(encrypter._bson).to.equal(client.topology.bson);
+          });
+        });
+
+        context('when the client does not have a topology', function () {
+          it('raises an error', function () {
+            expect(() => {
+              new AutoEncrypterNoBson({}, {});
+            }).to.throw(/bson/);
+          });
+        });
+      });
+    });
   });
 
   it('should support `bypassAutoEncryption`', function (done) {

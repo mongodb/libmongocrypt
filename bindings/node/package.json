@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "2.2.0-alpha.5",
+  "version": "2.2.0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "lib/index.js",
   "types": "index.d.ts",
@@ -40,7 +40,6 @@
     "socks": "^2.6.1"
   },
   "devDependencies": {
-    "bson": "^4.6.4",
     "chai": "^4.3.6",
     "chai-subset": "^1.6.0",
     "chalk": "^4.1.2",
@@ -51,7 +50,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "jsdoc-to-markdown": "^7.1.1",
     "mocha": "^9.2.0",
-    "mongodb": "^4.6.0",
+    "mongodb": "^4.9.0",
     "node-gyp": "^8.4.1",
     "prebuild": "^11.0.2",
     "prettier": "^2.5.1",

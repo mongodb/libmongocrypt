@@ -46,6 +46,7 @@ _mongocrypt_opts_kms_provider_gcp_cleanup (
    bson_free (kms_provider_gcp->email);
    _mongocrypt_endpoint_destroy (kms_provider_gcp->endpoint);
    _mongocrypt_buffer_cleanup (&kms_provider_gcp->private_key);
+   bson_free (kms_provider_gcp->access_token);
 }
 
 void

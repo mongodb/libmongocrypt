@@ -1,6 +1,5 @@
 'use strict';
 
-const BSON = require('bson');
 const { EventEmitter, once } = require('events');
 const net = require('net');
 const tls = require('tls');
@@ -8,6 +7,7 @@ const fs = require('fs');
 const expect = require('chai').expect;
 const sinon = require('sinon');
 const mongodb = require('mongodb');
+const BSON = mongodb.BSON;
 const StateMachine = require('../lib/stateMachine')({ mongodb }).StateMachine;
 
 describe('StateMachine', function () {

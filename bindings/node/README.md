@@ -374,7 +374,7 @@ const dataKeyId = await clientEncryption.createDataKey('aws', {
 | options.provider | [<code>KmsProvider</code>](#KmsProvider) | The KMS provider to use when re-wrapping the data keys. |
 | [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) |  |
 
-Searches the keyvault for any data keys matching the provided filter.  If there are matches, the attempts to re-wrap the data keys using the provided options.
+Searches the keyvault for any data keys matching the provided filter.  If there are matches, rewrapManyDataKey then attempts to re-wrap the data keys using the provided options.
 
 If no matches are found, then no bulk write is performed.
 
@@ -442,7 +442,7 @@ const keys = await clientEncryption.getKeys().toArray();
 
 Finds a key in the keyvault with the specified _id.
 
-**Returns**: [<code>Promise.&lt;DataKey&gt;</code>](#DataKey) - IReturns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
+**Returns**: [<code>Promise.&lt;DataKey&gt;</code>](#DataKey) - Returns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
 match the id.  The promise rejects with an error if an error is thrown.  
 **Example**  
 ```js
@@ -464,7 +464,7 @@ if (!key) {
 Finds a key in the keyvault which has the specified keyAltName.
 
 **Returns**: <code>Promise.&lt;(DataKey\|null)&gt;</code> - Returns a promise that either resolves to a [DataKey](#DataKey) if a document matches the key or null if no documents
-match the id.  The promise rejects with an error if an error is thrown.  
+match the keyAltName.  The promise rejects with an error if an error is thrown.  
 **Example**  
 ```js
 // get a key by alt name
@@ -540,7 +540,7 @@ if (!oldKey) {
 | [options.algorithm] |  | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'` |
 | [callback] | [<code>ClientEncryptionEncryptCallback</code>](#ClientEncryptionEncryptCallback) | Optional callback to invoke when value is encrypted |
 
-Explicitly encrypt a provided value. Noe that either `options.keyId` or `options.keyAltName` must
+Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
 be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
 
 **Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.  

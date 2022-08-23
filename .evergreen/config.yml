@@ -77,61 +77,16 @@ functions:
 
   "create packages and repos":
     - command: "shell.exec"
+      shell: bash
       params:
-        script: |-
-          set -o xtrace
-          set -o errexit
-
-          # Find cmake.
-          if [ "$OS" == "Windows_NT" ]; then
-             CMAKE=/cygdrive/c/cmake/bin/cmake
-          else
-             # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-             IGNORE_SYSTEM_CMAKE=1 . ./libmongocrypt/.evergreen/find-cmake.sh
-          fi
-          # Get current version of libmongocrypt.
-          cd libmongocrypt
-          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
-          cd ..
-
-          if [ "${has_packages|}" != "true" ] ; then
-            echo "'has_packages' is not 'true', skipping package build"
-            exit 0
-          fi
-
-          # check if virtualenv is set up
-          if [ -d "${workdir}/venv" ]; then
-            if [ "Windows_NT" = "$OS" ]; then
-              # Need to quote the path on Windows to preserve the separator.
-              . "${workdir}/venv/Scripts/activate" 2> /tmp/activate_error.log
-            else
-              . ${workdir}/venv/bin/activate 2> /tmp/activate_error.log
-            fi
-            if [ $? -ne 0 ]; then
-              echo "Failed to activate virtualenv: $(cat /tmp/activate_error.log)"
-            fi
-            python=python
-          else
-            python=${python|/opt/mongodbtoolchain/v3/bin/python3}
-          fi
-
-          if [ "Windows_NT" = "$OS" ]; then
-            export PYTHONPATH="$PYTHONPATH;$(cygpath -w ${workdir}/src)"
-          else
-            export PYTHONPATH="$PYTHONPATH:${workdir}/src"
-          fi
-
-          PPA_BUILD_ONLY=1 ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
-          pkg_version=$mongocrypt_version
-          tar -zcv -C install --transform="s|^libmongocrypt/|libmongocrypt-$pkg_version/|" --exclude=nocrypto --exclude=sharedbson -f libmongocrypt-$pkg_version.tar.gz libmongocrypt
-          cd libmongocrypt/etc/
-          # The files from libmongocrypt/debian/ are the official maintainer scripts,
-          # but libmongocrypt/etc/debian/ contains a few custom scripts that are
-          # meant to support the packager.py workflow.  This step "fills in" around
-          # those custom scripts.
-          cp -nr ../debian/* debian/
-          $python ./packager.py --prefix `pwd`/.. --distros ${packager_distro} --tarball `pwd`/../../libmongocrypt-$pkg_version.tar.gz --library-version $pkg_version --metadata-gitspec HEAD --arches ${packager_arch}
-          cd ../..
+        script: |
+          env "WORKDIR=${workdir}" \
+              "PYTHON=${python|}" \
+              "HAS_PACKAGES=${has_packages|false}" \
+              "PACKAGER_DISTRO=${packager_distro}" \
+              "PACKAGER_ARCH=${packager_arch}" \
+              ${compile_env|} \
+            bash libmongocrypt/.evergreen/create-packages-and-repos.sh
     - command: archive.targz_pack
       params:
         target: libmongocrypt-distro-packages.tar.gz
@@ -240,6 +195,7 @@ functions:
     - command: shell.exec
       params:
         silent: true
+        shell: bash
         script: |
           set -o errexit
           if [ "${is_patch}" = "true" ]; then
@@ -272,8 +228,8 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
-          ${compile_env|} ./libmongocrypt/.evergreen/compile_cs.sh
+          env ${compile_env|} bash ./libmongocrypt/.evergreen/build_all.sh
+          env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
 
   "build python release macos":
     - command: shell.exec
@@ -545,9 +501,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: macos_x86_64
       name: build-and-test-and-upload
-    # Needs: BUILD-14976
-    # - variant: macos
-    #   name: build-and-test-and-upload
+    - variant: macos
+      name: build-and-test-and-upload
   commands:
     - command: shell.exec
       params:
@@ -564,14 +519,22 @@ tasks:
       vars: { variant_name: "windows-test" }
     - func: "download tarball"
       vars: { variant_name: "macos_x86_64" }
-    # Needs: BUILD-14976
-    # - func: "download tarball"
-    #   vars: { variant_name: "macos" }
+    - func: "download tarball"
+      vars: { variant_name: "macos" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-java.tar.gz
         source_dir: all
         include: [./**]
+    - command: shell.exec
+      params:
+        script: |-
+          set -o errexit
+          if [ -n "${tag_upload_location}" ]; then
+            # the "fetch source" step detected a release tag on HEAD, so we
+            # prepare a local file for upload to a location based on the tag
+            cp -a libmongocrypt-java.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
+          fi
     - command: s3.put
       params:
         aws_key: '${aws_key}'
@@ -580,6 +543,17 @@ tasks:
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt-java.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        optional: true
+        display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
+        local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
 - name: upload-all
@@ -730,6 +704,7 @@ tasks:
     - command: shell.exec
       params:
         working_dir: libmongocrypt
+        shell: bash
         script: |-
           [ -f ~/.notary_env.sh ] && . ~/.notary_env.sh
           set -o xtrace
@@ -755,6 +730,9 @@ tasks:
             echo "'has_packages' is not 'true', skipping package publication"
             exit 0
           fi
+
+          # Some venv-activate scripts are not nounset-clean
+          set +u
 
           # Need requests and poster for notary-client.py
           python -m virtualenv venv
@@ -851,7 +829,7 @@ tasks:
           set -o errexit
           set -o xtrace
           export IS_PATCH="${is_patch}"
-          sh .evergreen/debian_package_build.sh
+          bash .evergreen/debian_package_build.sh
     - command: s3.put
       params:
         aws_key: ${aws_key}
@@ -1257,8 +1235,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-node
   - test-python
-  # Needs: BUILD-14976
-  # - test-java
+  - test-java
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"

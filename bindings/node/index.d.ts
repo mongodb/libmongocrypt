@@ -404,14 +404,17 @@ export class ClientEncryption {
     callback: ClientEncryptionCreateDataKeyCallback
   ): void;
 
-  /** @experimental */
+  /** 
+   * Searches the keyvault for any data keys matching the provided filter.  If there are matches, rewrapManyDataKey then attempts to re-wrap the data keys using the provided options.
+   *
+   * If no matches are found, then no bulk write is performed.
+   */
   rewrapManyDataKey(
     filter: Document,
     options?: ClientEncryptionRewrapManyDataKeyProviderOptions
   ): Promise<ClientEncryptionRewrapManyDataKeyResult>;
 
   /**
-   * @experimental
    * Deletes the key with the provided id from the keyvault, if it exists.
    *
    * @param id - the id of the document to delete.
@@ -419,15 +422,13 @@ export class ClientEncryption {
   deleteKey(id: Binary): Promise<DeleteResult>;
 
   /**
-   * @experimental
    * Finds all the keys currently stored in the keyvault.
    *
    * This method will not throw.
    */
-  getKeys(): FindCursor<DataKey>; 
+  getKeys(): FindCursor<DataKey>;
 
   /**
-   * @experimental
    * Finds a key in the keyvault with the specified key.
    *
    * @param id - the id of the document to delete.
@@ -435,7 +436,6 @@ export class ClientEncryption {
   getKey(id: Binary): Promise<DataKey | null>;
 
   /**
-   * @experimental
    * Finds a key in the keyvault which has the specified keyAltNames as a keyAltName.
    *
    * @param keyAltName - a potential keyAltName to search for in the keyAltNames array
@@ -443,7 +443,6 @@ export class ClientEncryption {
   getKeyByAltName(keyAltName: string): Promise<DataKey | null>;
 
   /**
-   * @experimental
    * Adds a keyAltName to a key identified by the provided `id`.
    *
    * This method resolves to/returns the *old* key value (prior to adding the new altKeyName).
@@ -454,7 +453,6 @@ export class ClientEncryption {
   addKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
-   * @experimental
    * Adds a keyAltName to a key identified by the provided `id`.
    *
    * This method resolves to/returns the *old* key value (prior to removing the new altKeyName).

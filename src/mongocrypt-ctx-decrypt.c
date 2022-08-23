@@ -617,6 +617,22 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "invalid msg, 'v' must contain a binary");
    }
 
+   {
+      bson_subtype_t subtype;
+      const uint8_t *binary;
+      uint32_t binary_len;
+      mongocrypt_status_t *status = ctx->status;
+
+      bson_iter_binary (&iter, &subtype, &binary_len, &binary);
+      if (subtype != BSON_SUBTYPE_ENCRYPTED) {
+         CLIENT_ERR ("decryption expected BSON binary subtype %d, got %d",
+                     (int) BSON_SUBTYPE_ENCRYPTED,
+                     (int) subtype);
+         return _mongocrypt_ctx_fail (ctx);
+      }
+   }
+
+
    if (!mongocrypt_ctx_decrypt_init (ctx, msg)) {
       return false;
    }

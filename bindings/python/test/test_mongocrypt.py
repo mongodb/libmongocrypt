@@ -245,7 +245,7 @@ class TestMongoCrypt(unittest.TestCase):
         with km_contexts[0] as kms_ctx:
             self.assertEqual(kms_ctx.kms_provider, "aws")
             self.assertEqual(kms_ctx.endpoint, "kms.us-east-1.amazonaws.com:443")
-            self.assertEqual(len(kms_ctx.message), 781)
+            self.assertEqual(len(kms_ctx.message), 790)
             self.assertEqual(kms_ctx.bytes_needed, 1024)
 
             kms_ctx.feed(http_data('kms-reply.txt'))

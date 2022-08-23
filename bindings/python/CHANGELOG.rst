@@ -1,6 +1,33 @@
 Changelog
 =========
 
+Changes in Version 1.3.1
+------------------------
+
+1.3.1 is a recommended upgrade for all users of 1.3.0.
+
+- Fix a potential data corruption bug in RewrapManyDataKey
+  (ClientEncryption.rewrap_many_data_key) when rotating
+  encrypted data encryption keys backed by GCP or Azure key services.
+
+  The following conditions will trigger this bug:
+
+  - A GCP-backed or Azure-backed data encryption key being rewrapped requires
+    fetching an access token for decryption of the data encryption key.
+
+  The result of this bug is that the key material for all data encryption keys
+  being rewrapped is replaced by new randomly generated material, destroying
+  the original key material.
+
+  To mitigate potential data corruption, upgrade to this version or higher
+  before using RewrapManyDataKey to rotate Azure-backed or GCP-backed data
+  encryption keys. A backup of the key vault collection should always be
+  taken before key rotation.
+- Bundle libmongocrypt 1.5.2 in release wheels.
+- **Remove support for libmongocrypt <=1.5.1, libmongocrypt >=1.5.2 is now
+  required.** Note this is only relevant for users that install from
+  source or use the ``PYMONGOCRYPT_LIB`` environment variable.
+
 Changes in Version 1.3.0
 ------------------------
 

@@ -1,9 +1,10 @@
-#!/bin/sh
-set -o errexit  # Exit the script with error if any of the commands fail
+#!/bin/bash
+
+set -euxo pipefail
 
 find_cmake ()
 {
-  if [ ! -z "$CMAKE" ]; then
+  if [ ! -z "${CMAKE-}" ]; then
     return 0
   elif [ -f "/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake" ]; then
     CMAKE="/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake"
@@ -11,7 +12,7 @@ find_cmake ()
     CMAKE="/Applications/Cmake.app/Contents/bin/cmake"
   elif [ -f "/opt/cmake/bin/cmake" ]; then
     CMAKE="/opt/cmake/bin/cmake"
-  elif [ -z "$IGNORE_SYSTEM_CMAKE" ] && command -v cmake 2>/dev/null; then
+  elif [ -z "${IGNORE_SYSTEM_CMAKE-}" ] && command -v cmake 2>/dev/null; then
     CMAKE=cmake
   elif uname -a | grep -iq 'GNU/Linux'; then
     version="3.19.4"  # First version that ships arm64 binaries

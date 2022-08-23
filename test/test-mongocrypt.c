@@ -551,9 +551,9 @@ _mongocrypt_tester_mongocrypt (tester_mongocrypt_flags flags)
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
       if (mongocrypt_crypt_shared_lib_version (crypt) == 0) {
-         BSON_ASSERT (
-            !"tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but no "
-             "crypt_shared library was loaded by mongocrypt_init");
+         BSON_ASSERT (false &&
+                      "tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but "
+                      "no crypt_shared library was loaded by mongocrypt_init");
       }
    }
    return crypt;
@@ -878,7 +878,9 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'azure': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'local': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'gcp': {}}", NULL, "on-demand credentials not enabled", false},
-      {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false}};
+      {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false},
+      {"{'gcp': {'accessToken': 'foobar', 'email': 'foo@bar.com' }}",
+       "Unexpected field: 'email'"}};
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;
@@ -968,6 +970,7 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_compact (&tester);
    _mongocrypt_tester_install_fle2_payload_uev (&tester);
    _mongocrypt_tester_install_fle2_payload_iup (&tester);
+   _mongocrypt_tester_install_range_encoding (&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
    char osversion[32];

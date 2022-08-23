@@ -10,8 +10,7 @@
 # NOTE: This script is not meant to be invoked for Evergreen builds.  It is a
 # convenience script for users of libmongocrypt
 
-set -o xtrace
-set -o errexit
+set -euxo pipefail
 
 save_pwd="$(pwd)"
 
