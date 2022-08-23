@@ -40,7 +40,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 elif [ "Darwin" = "$(uname -s)" ]; then
-    PYTHON="/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+    PYTHON="/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
 
     # Ensure updated deps.
     $PYTHON -m pip install --upgrade pip setuptools wheel
