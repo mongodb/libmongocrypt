@@ -18,7 +18,6 @@ import base64
 import copy
 import os
 import sys
-import uuid
 
 import bson
 from bson.raw_bson import RawBSONDocument
@@ -32,7 +31,7 @@ sys.path[0:0] = [""]
 
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
-from pymongocrypt.compat import unicode_type, safe_bytearray_or_base64, PY3
+from pymongocrypt.compat import unicode_type, PY3
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
@@ -41,12 +40,7 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptOptions)
 from pymongocrypt.state_machine import MongoCryptCallback
 
-from test import unittest
-
-try:
-    from unittest import mock
-except ImportError:  # python 2
-    import mock
+from test import unittest, mock
 
 
 # Data for testing libbmongocrypt binding.
