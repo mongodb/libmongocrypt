@@ -76,4 +76,12 @@ typedef struct {
 mc_edges_t *
 mc_getEdgesInt64 (mc_getEdgesInt64_args_t args, mongocrypt_status_t *status);
 
+// count_leading_zeros_u64 returns the number of leading 0 bits of `in`.
+size_t
+mc_count_leading_zeros_u64 (uint64_t in);
+
+// count_leading_zeros_u32 returns the number of leading 0 bits of `in`.
+size_t
+mc_count_leading_zeros_u32 (uint32_t in);
+
 #endif /* MC_RANGE_EDGE_GENERATION_PRIVATE_H */

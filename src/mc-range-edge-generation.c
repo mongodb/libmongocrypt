@@ -41,6 +41,30 @@ mc_edges_destroy (mc_edges_t *edges)
 {
 }
 
+size_t
+mc_count_leading_zeros_u64 (uint64_t in)
+{
+   uint64_t bit = UINT64_C (1) << 63;
+   size_t count = 0;
+   while ((bit & in) == 0 && bit > 0) {
+      bit >>= 1;
+      count += 1;
+   }
+   return count;
+}
+
+size_t
+mc_count_leading_zeros_u32 (uint32_t in)
+{
+   uint32_t bit = UINT32_C (1) << 31;
+   size_t count = 0;
+   while ((bit & in) == 0 && bit > 0) {
+      bit >>= 1;
+      count += 1;
+   }
+   return count;
+}
+
 mc_edges_t *
 mc_getEdgesInt32 (mc_getEdgesInt32_args_t args, mongocrypt_status_t *status)
 {

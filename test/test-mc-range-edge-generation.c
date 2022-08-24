@@ -134,11 +134,26 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
+static void
+_test_count_leading_zeros (_mongocrypt_tester_t *tester)
+{
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u64 (UINT64_C (0)), ==, 64);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u64 (UINT64_C (1)), ==, 63);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u64 (UINT64_MAX), ==, 0);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u64 ((~UINT64_C (0)) >> 1), ==, 1);
+
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 (UINT32_C (0)), ==, 32);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 (UINT32_C (1)), ==, 31);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 (UINT32_MAX), ==, 0);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 ((~UINT32_C (0)) >> 1), ==, 1);
+}
+
 void
 _mongocrypt_tester_install_range_edge_generation (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_getEdgesInt32);
    INSTALL_TEST (_test_getEdgesInt64);
+   INSTALL_TEST (_test_count_leading_zeros);
 }
 
 MC_END_CONVERSION_ERRORS
