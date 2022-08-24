@@ -18,6 +18,7 @@
 #define MC_RANGE_ENCODING_PRIVATE_H
 
 #include <stdint.h>
+#include "mc-optional-private.h"
 #include "mongocrypt-status-private.h"
 
 /* mc-range-encoding-private.h has functions to encode numeric types for
@@ -35,17 +36,6 @@ typedef struct {
 } mc_OSTType_Int32;
 
 typedef struct {
-   bool set;
-   int32_t value;
-} mc_optional_int32_t;
-
-#define OPT_I32(val)            \
-   (mc_optional_int32_t)        \
-   {                            \
-      .set = true, .value = val \
-   }
-
-typedef struct {
    int32_t value;
    mc_optional_int32_t min;
    mc_optional_int32_t max;
@@ -58,24 +48,6 @@ bool
 mc_getTypeInfo32 (mc_getTypeInfo32_args_t args,
                   mc_OSTType_Int32 *out,
                   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
-
-/* mc_OSTType_Int64 describes the encoding of an BSON int64. */
-typedef struct {
-   uint64_t value;
-   uint64_t min;
-   uint64_t max;
-} mc_OSTType_Int64;
-
-typedef struct {
-   bool set;
-   int64_t value;
-} mc_optional_int64_t;
-
-#define OPT_I64(val)            \
-   (mc_optional_int64_t)        \
-   {                            \
-      .set = true, .value = val \
-   }
 
 typedef struct {
    int64_t value;
