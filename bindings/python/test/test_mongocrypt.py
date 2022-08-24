@@ -349,9 +349,6 @@ class MockCallback(MongoCryptCallback):
         self.key_docs = key_docs
         self.kms_reply = kms_reply
         self.kms_endpoint = None
-        # Used to track whether we have fetched
-        # on demand credentials for testing purposes.
-        self.got_on_demand_credentials = False
 
     def kms_request(self, kms_context):
         self.kms_endpoint = kms_context.endpoint
