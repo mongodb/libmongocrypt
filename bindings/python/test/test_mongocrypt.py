@@ -42,7 +42,12 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
 from pymongocrypt.state_machine import MongoCryptCallback
 
 from test import unittest
-from unittest import mock
+
+try:
+    from unittest import mock
+except ImportError:  # python 2
+    import mock
+
 
 # Data for testing libbmongocrypt binding.
 DATA_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data'))
