@@ -795,8 +795,11 @@ class RewrapManyDataKeyContext(MongoCryptContext):
 
 
 def _ask_for_kms_credentials(kms_providers):
+    """Get on-demand kms credentials.
+
+    This is a separate function so it can be overridden in unit tests."""
     if 'aws' not in kms_providers:
-            return
+        return
     if len(kms_providers['aws']):
         return
     if not _HAVE_AUTH_AWS:
@@ -808,4 +811,4 @@ def _ask_for_kms_credentials(kms_providers):
     creds_dict = {"accessKeyId": creds.username, "secretAccessKey": creds.password}
     if creds.token:
         creds_dict["sessionToken"] = creds.token
-        return { 'aws': creds_dict }
+    return { 'aws': creds_dict }
