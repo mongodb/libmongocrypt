@@ -429,7 +429,7 @@ tasks:
 
 - name: "release-python-linux"
   tags: ["release_python_tag"]
-  run_on: ubuntu2004-large
+  run_on: ubuntu2004-small
   exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
   commands:
     - func: "fetch source"
