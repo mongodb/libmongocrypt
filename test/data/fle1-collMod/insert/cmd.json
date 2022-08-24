@@ -1,0 +1,8 @@
+{
+    "insert": "encryptedCollection",
+    "documents": [
+        {
+            "x": 1
+        }
+    ]
+}

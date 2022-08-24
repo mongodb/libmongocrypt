@@ -151,9 +151,9 @@ PyMongoCrypt supports CPython 2.7, 3.4+, PyPy, and PyPy3.5+.
 PyMongoCrypt requires `cffi <https://pypi.org/project/cffi/>`_ and
 `cryptography <https://pypi.org/project/cryptography/>`_.
 
-PyMongoCrypt also requires libmongocrypt to be installed on your
-system. If libmongocrypt is not installed you will see an error
-like this:
+If not installed using one of the official wheels, PyMongoCrypt also requires
+libmongocrypt to be installed on your system. If libmongocrypt is not
+installed you will see an error like this:
 
 .. code-block:: python
 

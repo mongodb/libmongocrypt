@@ -1,0 +1,14 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "collMod": "encryptedCollection",
+        "validator": {
+            "$jsonSchema": {
+                "bsonType": "object"
+            }
+        }
+    },
+    "hasEncryptedPlaceholders": false
+}

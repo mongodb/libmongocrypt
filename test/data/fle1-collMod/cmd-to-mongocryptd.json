@@ -1,0 +1,12 @@
+{
+    "collMod": "encryptedCollection",
+    "validator": {
+        "$jsonSchema": {
+            "bsonType": "object"
+        }
+    },
+    "jsonSchema": {
+        "bsonType": "object"
+    },
+    "isRemoteSchema": true
+}
