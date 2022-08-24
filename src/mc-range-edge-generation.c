@@ -65,6 +65,44 @@ mc_count_leading_zeros_u32 (uint32_t in)
    return count;
 }
 
+char *
+mc_convert_to_bitstring_u64 (uint64_t in)
+{
+   char *out = bson_malloc (64 + 1);
+   uint64_t bit = UINT64_C (1) << 63;
+   size_t count = 0;
+   while (bit > 0) {
+      if (bit & in) {
+         out[count] = '1';
+      } else {
+         out[count] = '0';
+      }
+      bit >>= 1;
+      count += 1;
+   }
+   out[64] = '\0';
+   return out;
+}
+
+char *
+mc_convert_to_bitstring_u32 (uint32_t in)
+{
+   char *out = bson_malloc (32 + 1);
+   uint32_t bit = UINT32_C (1) << 31;
+   size_t count = 0;
+   while (bit > 0) {
+      if (bit & in) {
+         out[count] = '1';
+      } else {
+         out[count] = '0';
+      }
+      bit >>= 1;
+      count += 1;
+   }
+   out[32] = '\0';
+   return out;
+}
+
 mc_edges_t *
 mc_getEdgesInt32 (mc_getEdgesInt32_args_t args, mongocrypt_status_t *status)
 {

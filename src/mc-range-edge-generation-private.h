@@ -84,4 +84,16 @@ mc_count_leading_zeros_u64 (uint64_t in);
 size_t
 mc_count_leading_zeros_u32 (uint32_t in);
 
+// mc_convert_to_bitstring_u64 returns a 64 character string of 1's and 0's
+// representing the bits of `in`. Caller must call `bson_free` on returned
+// value.
+char *
+mc_convert_to_bitstring_u64 (uint64_t in);
+
+// mc_convert_to_bitstring_u32 returns a 32 character string of 1's and 0's
+// representing the bits of `in`. Caller must call `bson_free` on returned
+// value.
+char *
+mc_convert_to_bitstring_u32 (uint32_t in);
+
 #endif /* MC_RANGE_EDGE_GENERATION_PRIVATE_H */

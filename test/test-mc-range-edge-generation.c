@@ -148,12 +148,64 @@ _test_count_leading_zeros (_mongocrypt_tester_t *tester)
    ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 ((~UINT32_C (0)) >> 1), ==, 1);
 }
 
+typedef struct {
+   uint32_t in;
+   const char *expect;
+} bitstring_u32_test;
+
+typedef struct {
+   uint64_t in;
+   const char *expect;
+} bitstring_u64_test;
+
+static void
+_test_convert_to_bitstring (_mongocrypt_tester_t *tester)
+{
+   // Test uint32_t.
+   {
+      bitstring_u32_test tests[] = {
+         {.in = 0, .expect = "00000000000000000000000000000000"},
+         {.in = 1, .expect = "00000000000000000000000000000001"},
+         {.in = 123, .expect = "00000000000000000000000001111011"},
+         {.in = UINT32_MAX, .expect = "11111111111111111111111111111111"}};
+      for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+         bitstring_u32_test *test = tests + i;
+         char *got = mc_convert_to_bitstring_u32 (test->in);
+         ASSERT_STREQUAL (test->expect, got);
+         bson_free (got);
+      }
+   }
+   // Test uint64_t.
+   {
+      bitstring_u64_test tests[] = {
+         {.in = 0,
+          .expect = "0000000000000000000000000000000000000000000000000000000000"
+                    "000000"},
+         {.in = 1,
+          .expect = "0000000000000000000000000000000000000000000000000000000000"
+                    "000001"},
+         {.in = 123,
+          .expect = "0000000000000000000000000000000000000000000000000000000001"
+                    "111011"},
+         {.in = UINT64_MAX,
+          .expect = "1111111111111111111111111111111111111111111111111111111111"
+                    "111111"}};
+      for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+         bitstring_u64_test *test = tests + i;
+         char *got = mc_convert_to_bitstring_u64 (test->in);
+         ASSERT_STREQUAL (test->expect, got);
+         bson_free (got);
+      }
+   }
+}
+
 void
 _mongocrypt_tester_install_range_edge_generation (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_getEdgesInt32);
    INSTALL_TEST (_test_getEdgesInt64);
    INSTALL_TEST (_test_count_leading_zeros);
+   INSTALL_TEST (_test_convert_to_bitstring);
 }
 
 MC_END_CONVERSION_ERRORS
