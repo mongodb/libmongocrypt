@@ -17,8 +17,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 REVISION=$(git rev-list -n 1 1.5.2)
 # The libmongocrypt release branch.
 BRANCH="r1.5"
-
-
+MACOS_TARGET=${MACOS_TARGET:="macos"}
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
@@ -49,7 +48,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 
-    # Install the sdidt
+    # Install the sdist.
     $PYTHON setup.py sdist
 
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/${MACOS_TARGET}/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
@@ -87,6 +86,7 @@ if [ $(command -v docker) ]; then
         docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
     done
 
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    # Sudo is needed to remove the files created by docker.
+    sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     ls dist
 fi
