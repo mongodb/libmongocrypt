@@ -715,8 +715,6 @@ tasks:
             # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
             IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
           fi
-          # Get the current version of libmongocrypt.
-          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
 
           if [ "${is_patch}" = "true" ]; then
             echo "patch build, skipping packaging publication"
@@ -739,7 +737,8 @@ tasks:
           ./bin/pip install poster
           ./bin/pip install pycrypto
           cd ..
-          pkg_version=$mongocrypt_version
+          # Get the current version of libmongocrypt.
+          pkg_version="$(python etc/calc_release_version.py)"
           CURATOR_RELEASE=${curator_release|"e0b5f66fc89ec0acddcd40ea5f447a8300ded2b9"}
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
@@ -758,7 +757,7 @@ tasks:
           set -o errexit
 
           CMAKE=/cygdrive/c/cmake/bin/cmake
-          mongocrypt_version="$($CMAKE -DRELEASE_BRANCH_REF=origin/r1.5 -P ./cmake/GetVersion.cmake 2>&1)"
+          mongocrypt_version="$(python etc/calc_release_version.py)"
           case "$mongocrypt_version" in
             *+*)
               # Not a tagged release.

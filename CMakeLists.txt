@@ -146,13 +146,38 @@ endif ()
 
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version")
 if (BUILD_VERSION STREQUAL "0.0.0")
-   if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
+   if (EXISTS ${CMAKE_BINARY_DIR}/VERSION_CURRENT)
+      file (STRINGS ${CMAKE_BINARY_DIR}/VERSION_CURRENT BUILD_VERSION)
+   elseif (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
       file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
       message (STATUS "File VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
    else ()
-      set (RELEASE_BRANCH_REF "origin/r1.5")
-      include (GetVersion)
-      GetVersion (BUILD_VERSION)
+      find_package (PythonInterp)
+      if (PYTHONINTERP_FOUND)
+         execute_process (
+            COMMAND ${PYTHON_EXECUTABLE} etc/calc_release_version.py
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            OUTPUT_VARIABLE CALC_RELEASE_VERSION
+            RESULT_VARIABLE CALC_RELEASE_VERSION_RESULT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+         )
+         if (NOT CALC_RELEASE_VERSION_RESULT STREQUAL 0)
+            # If python failed above, stderr would tell the user about it
+            message (FATAL_ERROR
+               "BUILD_VERSION not specified and could not be calculated\
+ (script invocation failed); specify in CMake command, -DBUILD_VERSION=<version>"
+            )
+         else ()
+            set (BUILD_VERSION ${CALC_RELEASE_VERSION})
+            message ("calculated BUILD_VERSION ${BUILD_VERSION}")
+            file (WRITE ${CMAKE_BINARY_DIR}/VERSION_CURRENT ${CALC_RELEASE_VERSION})
+         endif ()
+      else ()
+         message (FATAL_ERROR
+            "BUILD_VERSION not specified and could not be calculated\
+ (Python was not found on the system); specify in CMake command, -DBUILD_VERSION=<version>"
+         )
+      endif ()
       message (STATUS "Storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
       file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
    endif ()
