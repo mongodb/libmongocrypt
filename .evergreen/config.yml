@@ -231,6 +231,105 @@ functions:
           env ${compile_env|} bash ./libmongocrypt/.evergreen/build_all.sh
           env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
 
+  "build python release macos":
+    - command: shell.exec
+      params:
+        script: |
+          set -ex
+          cd ./libmongocrypt/bindings/python
+          PYTHON=${PYTHON} MACOS_TARGET=${MACOS_TARGET} ./release.sh
+
+  "build python release":
+    - command: shell.exec
+      params:
+        script: |
+          set -ex
+          cd ./libmongocrypt/bindings/python
+          ./release.sh
+
+  "test python release":
+    - command: shell.exec
+      params:
+        script: |
+          set -ex
+          cd ./libmongocrypt/bindings/python
+          ROOT=$(pwd)
+          for file in ./dist/*.whl; do
+            ${PYTHON} -m pip uninstall -y pymongocrypt
+            ${PYTHON} -m pip install --upgrade --user $file
+            cd $HOME
+            ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+            cd $ROOT
+          done
+
+  "upload python release":
+    - command: archive.targz_pack
+      params:
+        target: "release-files.tgz"
+        source_dir: "libmongocrypt/bindings/python/dist"
+        include:
+          - "*"
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: release-files.tgz
+        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/gzip}
+        display_name: Release Python files
+
+  "download and merge python releases":
+    - command: shell.exec
+      params:
+        silent: true
+        shell: "bash"
+        script: |
+          # set AWS credentials
+          rm -rf ~/.aws
+          mkdir -p ~/.aws
+
+          cat <<EOF >> ~/.aws/config
+          [default]
+          region = us-east-1
+          EOF
+
+          cat <<EOF >> ~/.aws/credentials
+          [default]
+          aws_access_key_id = ${aws_key}
+          aws_secret_access_key = ${aws_secret}
+          EOF
+    - command: shell.exec
+      params:
+        shell: "bash"
+        script: |
+          set -o xtrace
+          # Download all the release files.
+          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
+          # Combine releases into one directory.
+          ls -la release/
+          mkdir releases
+          for REL in release/*; do
+            tar zxvf $REL -C releases/
+          done
+    - command: archive.targz_pack
+      params:
+        target: "release-files-all.tgz"
+        source_dir: "releases/"
+        include:
+          - "*"
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: release-files-all.tgz
+        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/gzip}
+        display_name: Release Python files all
+
 tasks:
 - name: build-and-test-and-upload
   commands:
@@ -304,6 +403,60 @@ tasks:
       vars: { variant_name: windows-test }
     - func: "test python"
       vars: { variant_name: windows-test }
+
+- name: "release-python-macos-1100"
+  tags: ["release_python_tag"]
+  run_on: macos-1100
+  commands:
+    - func: "fetch source"
+    - func: "build python release macos"
+    - func: "test python release"
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
+    - func: "upload python release"
+
+- name: "release-python-macos-1014"
+  tags: ["release_python_tag"]
+  run_on: macos-1014
+  commands:
+    - func: "fetch source"
+    - func: "build python release macos"
+      vars:
+        PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3
+        MACOS_TARGET: macos_x86_64
+    - func: "test python release"
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
+    - func: "upload python release"
+
+- name: "release-python-linux"
+  tags: ["release_python_tag"]
+  run_on: ubuntu2004-small
+  exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
+  commands:
+    - func: "fetch source"
+    - func: "build python release"
+    - func: "test python release"
+      vars: { PYTHON: python }
+    - func: "upload python release"
+
+- name: "release-python-windows"
+  tags: ["release_python_tag"]
+  run_on: windows-64-vsMulti-small
+  commands:
+    - func: "fetch source"
+    - func: "build python release"
+    - func: "test python release"
+      vars: { PYTHON: python }
+    - func: "upload python release"
+
+- name: "release-python-combine"
+  tags: ["release_python_tag"]
+  run_on: ubuntu2004-small
+  depends_on:
+    - name: "*"
+      variant: ".release_python_tag"
+      patch_optional: true
+  commands:
+    - func: "download and merge python releases"
 
 - name: build-and-test-csharp
   commands:
@@ -787,6 +940,12 @@ buildvariants:
   run_on: windows-64-vsMulti-small
   tasks:
   - test-python-windows
+- name: python-release
+  display_name: Python Release
+  batchtime: 20160 # 14 days
+  tags: ["release_python_tag"]
+  tasks:
+  - ".release_python_tag"
 - name: linux-64-amazon-ami
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test
