@@ -59,6 +59,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/commoncrypto.c
    src/crypto/libcrypto.c
    src/crypto/none.c
+   src/mc-array.c
    src/mc-efc.c
    src/mc-fle2-insert-update-payload.c
    src/mc-fle2-encryption-placeholder.c
