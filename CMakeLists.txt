@@ -381,6 +381,14 @@ if (BUILD_TESTING)
          OUTPUT_NAME "mongo_crypt_v1"
          )
    endif ()
+
+   if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.20.0")
+      include (FetchCatch2)
+      file (GLOB_RECURSE test_files CONFIGURE_DEPENDS src/*.test.cpp)
+      add_executable (test-runner ${test_files})
+      target_link_libraries (test-runner PRIVATE Catch2WithMain mongocrypt_static mongo::mlib)
+      catch_discover_tests (test-runner)
+   endif ()
 endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
