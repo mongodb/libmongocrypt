@@ -585,7 +585,7 @@ tasks:
           ./bin/pip install pycrypto
           cd ..
           # Get the current version of libmongocrypt.
-          pkg_version="$(python etc/calc_release_version.py 2>&1)"
+          pkg_version="$(python etc/calc_release_version.py)"
           CURATOR_RELEASE=${curator_release|"e0b5f66fc89ec0acddcd40ea5f447a8300ded2b9"}
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
