@@ -14,6 +14,12 @@
 
 import copy
 
+try:
+    from pymongo_auth_aws.auth import _aws_temp_credentials
+    _HAVE_AUTH_AWS = True
+except ImportError:
+    _HAVE_AUTH_AWS = False
+
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
@@ -70,6 +76,15 @@ class MongoCryptOptions(object):
             outgoing commands. Set `bypass_query_analysis` to use explicit
             encryption on indexed fields without the MongoDB Enterprise Advanced
             licensed crypt_shared library.
+          - `crypt_shared_lib_path`: Optional string path to the crypt_shared
+            library.
+          - `crypt_shared_lib_required`: Whether to require a crypt_shared
+            library.
+          - `bypass_encryption`: Whether to bypass encryption.
+
+        .. versionadded:: 1.3
+           ``crypt_shared_lib_path``, ``crypt_shared_lib_path``,
+           ``bypass_encryption`` parameters.
 
         .. versionadded:: 1.1
            Support for "azure" and "gcp" kms_providers.
@@ -88,9 +103,10 @@ class MongoCryptOptions(object):
             aws = kms_providers["aws"]
             if not isinstance(aws, dict):
                 raise ValueError("kms_providers['aws'] must be a dict")
-            if "accessKeyId" not in aws or "secretAccessKey" not in aws:
-                raise ValueError("kms_providers['aws'] must contain "
-                                 "'accessKeyId' and 'secretAccessKey'")
+            if len(aws):
+                if "accessKeyId" not in aws or "secretAccessKey" not in aws:
+                    raise ValueError("kms_providers['aws'] must contain "
+                                     "'accessKeyId' and 'secretAccessKey'")
 
         if 'azure' in kms_providers:
             azure = kms_providers["azure"]
@@ -239,6 +255,9 @@ class MongoCrypt(object):
         if not self.__opts.bypass_encryption:
             lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
 
+        if 'aws' in kms_providers and not len(kms_providers['aws']):
+            lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
+
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
 
@@ -292,7 +311,7 @@ class MongoCrypt(object):
         :Returns:
           A :class:`EncryptionContext`.
         """
-        return EncryptionContext(self._create_context(), database, command)
+        return EncryptionContext(self._create_context(), self.__opts.kms_providers, database, command)
 
     def decryption_context(self, command):
         """Creates a context to use for decryption.
@@ -303,7 +322,7 @@ class MongoCrypt(object):
         :Returns:
           A :class:`DecryptionContext`.
         """
-        return DecryptionContext(self._create_context(), command)
+        return DecryptionContext(self._create_context(), self.__opts.kms_providers, command)
 
     def explicit_encryption_context(self, value, opts):
         """Creates a context to use for explicit encryption.
@@ -316,7 +335,8 @@ class MongoCrypt(object):
         :Returns:
           A :class:`ExplicitEncryptionContext`.
         """
-        return ExplicitEncryptionContext(self._create_context(), value, opts)
+        return ExplicitEncryptionContext(self._create_context(),
+            self.__opts.kms_providers, value, opts)
 
     def explicit_decryption_context(self, value):
         """Creates a context to use for explicit decryption.
@@ -328,7 +348,8 @@ class MongoCrypt(object):
         :Returns:
           A :class:`ExplicitDecryptionContext`.
         """
-        return ExplicitDecryptionContext(self._create_context(), value)
+        return ExplicitDecryptionContext(self._create_context(),
+            self.__opts.kms_providers, value)
 
     def data_key_context(self, kms_provider, opts=None):
         """Creates a context to use for key generation.
@@ -340,7 +361,7 @@ class MongoCrypt(object):
         :Returns:
           A :class:`DataKeyContext`.
         """
-        return DataKeyContext(self._create_context(), kms_provider, opts,
+        return DataKeyContext(self._create_context(), self.__opts.kms_providers, kms_provider, opts,
                               self.__callback)
 
     def rewrap_many_data_key_context(self, filter, provider, master_key):
@@ -357,21 +378,22 @@ class MongoCrypt(object):
         :Returns:
           A :class:`RewrapManyDataKeyContext`.
         """
-        return RewrapManyDataKeyContext(self._create_context(), filter, provider, master_key, self.__callback)
+        return RewrapManyDataKeyContext(self._create_context(), self.__opts.kms_providers, filter, provider, master_key, self.__callback)
 
 
 class MongoCryptContext(object):
-    __slots__ = ("__ctx",)
+    __slots__ = ("__ctx", "__kms_providers")
 
-    def __init__(self, ctx):
+    def __init__(self, ctx, kms_providers):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
-          - `database`: Optional, the name of the database.
+          - `kms_providers`: The KMS provider map.
         """
         self.__ctx = ctx
+        self.__kms_providers = kms_providers
 
     def _close(self):
         """Cleanup resources."""
@@ -422,6 +444,16 @@ class MongoCryptContext(object):
         if not lib.mongocrypt_ctx_mongo_done(self.__ctx):
             self._raise_from_status()
 
+    def ask_for_kms_credentials(self):
+        """Get on-demand kms credentials"""
+        return _ask_for_kms_credentials(self.__kms_providers)
+
+    def provide_kms_providers(self, providers):
+        """Provide a map of KMS providers."""
+        with MongoCryptBinaryIn(providers) as binary:
+            if not lib.mongocrypt_ctx_provide_kms_providers(self.__ctx, binary.bin):
+                self._raise_from_status()
+
     def kms_contexts(self):
         """Yields the MongoCryptKmsContexts."""
         ctx = lib.mongocrypt_ctx_next_kms_ctx(self.__ctx)
@@ -445,16 +477,17 @@ class MongoCryptContext(object):
 class EncryptionContext(MongoCryptContext):
     __slots__ = ("database",)
 
-    def __init__(self, ctx, database, command):
+    def __init__(self, ctx, kms_providers, database, command):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
+         - `kms_providers`: The KMS provider map.
           - `database`: Optional, the name of the database.
           - `command`: The BSON command to encrypt.
         """
-        super(EncryptionContext, self).__init__(ctx)
+        super(EncryptionContext, self).__init__(ctx, kms_providers)
         self.database = database
         try:
             with MongoCryptBinaryIn(command) as binary:
@@ -471,15 +504,16 @@ class EncryptionContext(MongoCryptContext):
 class DecryptionContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, command):
+    def __init__(self, ctx, kms_providers, command):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
+          - `kms_providers`: The KMS provider map.
           - `command`: The encoded BSON command to decrypt.
         """
-        super(DecryptionContext, self).__init__(ctx)
+        super(DecryptionContext, self).__init__(ctx, kms_providers)
         try:
             with MongoCryptBinaryIn(command) as binary:
                 if not lib.mongocrypt_ctx_decrypt_init(ctx, binary.bin):
@@ -493,17 +527,18 @@ class DecryptionContext(MongoCryptContext):
 class ExplicitEncryptionContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, value, opts):
+    def __init__(self, ctx, kms_providers, value, opts):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
+          - `kms_providers`: The KMS provider map.
           - `value`:  The encoded document to encrypt, which must be in the
             form { "v" : BSON value to encrypt }}.
           - `opts`: A :class:`ExplicitEncryptOpts`.
         """
-        super(ExplicitEncryptionContext, self).__init__(ctx)
+        super(ExplicitEncryptionContext, self).__init__(ctx, kms_providers)
         try:
             algorithm = str_to_bytes(opts.algorithm)
             if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
@@ -540,15 +575,16 @@ class ExplicitEncryptionContext(MongoCryptContext):
 class ExplicitDecryptionContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, value):
+    def __init__(self, ctx, kms_providers, value):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
+          - `kms_providers`: The KMS provider map.
           - `value`: The encoded BSON value to decrypt.
         """
-        super(ExplicitDecryptionContext, self).__init__(ctx)
+        super(ExplicitDecryptionContext, self).__init__(ctx, kms_providers)
 
         try:
             with MongoCryptBinaryIn(value) as binary:
@@ -564,17 +600,18 @@ class ExplicitDecryptionContext(MongoCryptContext):
 class DataKeyContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, kms_provider, opts, callback):
+    def __init__(self, ctx, kms_providers, kms_provider, opts, callback):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
+          - `kms_providers`: The KMS provider map.
           - `kms_provider`: The KMS provider.
           - `opts`: An optional class:`DataKeyOpts`.
           - `callback`: A :class:`MongoCryptCallback`.
         """
-        super(DataKeyContext, self).__init__(ctx)
+        super(DataKeyContext, self).__init__(ctx, kms_providers)
         try:
             if kms_provider not in ['aws', 'gcp', 'azure', 'kmip', 'local']:
                 raise ValueError('unknown kms_provider: %s' % (kms_provider,))
@@ -719,18 +756,20 @@ class MongoCryptKmsContext(object):
 class RewrapManyDataKeyContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, filter, provider, master_key, callback):
+    def __init__(self, ctx, kms_providers, filter, provider, master_key,
+        callback):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
           - `ctx`: A mongocrypt_ctx_t. This MongoCryptContext takes ownership
             of the underlying mongocrypt_ctx_t.
+         - `kms_providers`: The KMS provider map.
           - `filter`: The filter to use when finding data keys to rewrap in the key vault collection..
           - `provider`: (optional) The name of a different kms provider.
           - `master_key`: Optional document for the given provider.
           - `callback`: A :class:`MongoCryptCallback`.
         """
-        super(RewrapManyDataKeyContext, self).__init__(ctx)
+        super(RewrapManyDataKeyContext, self).__init__(ctx, kms_providers)
         key_encryption_key_bson = None
         if provider is not None:
             data = dict(provider=provider)
@@ -753,3 +792,23 @@ class RewrapManyDataKeyContext(MongoCryptContext):
             # Destroy the context on error.
             self._close()
             raise
+
+
+def _ask_for_kms_credentials(kms_providers):
+    """Get on-demand kms credentials.
+
+    This is a separate function so it can be overridden in unit tests."""
+    if 'aws' not in kms_providers:
+        return
+    if len(kms_providers['aws']):
+        return
+    if not _HAVE_AUTH_AWS:
+        raise RuntimeError(
+            "MONGODB-AWS authentication requires pymongo-auth-aws: "
+            "install with: python -m pip install 'pymongo[aws]'"
+        )
+    creds = _aws_temp_credentials()
+    creds_dict = {"accessKeyId": creds.username, "secretAccessKey": creds.password}
+    if creds.token:
+        creds_dict["sessionToken"] = creds.token
+    return { 'aws': creds_dict }

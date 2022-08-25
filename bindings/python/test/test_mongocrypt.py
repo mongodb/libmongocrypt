@@ -18,7 +18,6 @@ import base64
 import copy
 import os
 import sys
-import uuid
 
 import bson
 from bson.raw_bson import RawBSONDocument
@@ -32,7 +31,7 @@ sys.path[0:0] = [""]
 
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
-from pymongocrypt.compat import unicode_type, safe_bytearray_or_base64, PY3
+from pymongocrypt.compat import unicode_type, PY3
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import (MongoCrypt,
@@ -41,7 +40,8 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
                                      MongoCryptOptions)
 from pymongocrypt.state_machine import MongoCryptCallback
 
-from test import unittest
+from test import unittest, mock
+
 
 # Data for testing libbmongocrypt binding.
 DATA_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data'))
@@ -86,6 +86,7 @@ class TestMongoCryptOptions(unittest.TestCase):
         schema_map = bson_data('schema-map.json')
         valid = [
             ({'local': {'key': b'1' * 96}}, None),
+            ({ 'aws' : {} }, schema_map),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
@@ -426,6 +427,27 @@ class TestMongoCryptCallback(unittest.TestCase):
         self.addCleanup(encrypter.close)
         decrypted = encrypter.decrypt(
             bson_data('encrypted-command-reply.json'))
+        self.assertEqual(bson.decode(decrypted, OPTS),
+                         json_data('command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+    def test_need_kms_credentials(self):
+        kms_providers = { 'aws': {} }
+        opts = MongoCryptOptions(kms_providers)
+        callback = MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document.json')],
+            kms_reply=http_data('kms-reply.txt'))
+        encrypter = AutoEncrypter(callback, opts)
+        self.addCleanup(encrypter.close)
+
+        with mock.patch("pymongocrypt.mongocrypt._ask_for_kms_credentials") as m:
+            m.return_value = { "aws": { "accessKeyId": "example", "secretAccessKey": "example"} }
+            decrypted = encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
