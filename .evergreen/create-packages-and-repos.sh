@@ -46,7 +46,7 @@ fi
 
 # Get current version of libmongocrypt.
 pushd "$WORKDIR/libmongocrypt"
-  mongocrypt_version="$("$python" etc/calc_release_version.py 2>&1)"
+  mongocrypt_version="$("$python" etc/calc_release_version.py)"
 popd
 
 PPA_BUILD_ONLY=1 ./libmongocrypt/.evergreen/build_all.sh
