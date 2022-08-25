@@ -19,60 +19,46 @@
 
 #include <stddef.h> // size_t
 #include <stdint.h>
+#include "mc-optional-private.h"
 #include "mongocrypt-status-private.h"
 
+// mc_edges_t represents a list of edges.
 typedef struct _mc_edges_t mc_edges_t;
 
-/* mc_edges_get returns edge at an index.
- * Returns NULL if `index` is out of range. */
+// mc_edges_get returns edge at an index.
+// Returns NULL if `index` is out of range.
 const char *
-mc_edges_get (size_t index);
+mc_edges_get (mc_edges_t *edges, size_t index);
 
-/* mc_edges_len returns the number of represented edges. */
+// mc_edges_len returns the number of represented edges.
 size_t
 mc_edges_len (mc_edges_t *edges);
 
-/* mc_edges_destroys frees `edges`. */
+// mc_edges_destroys frees `edges`.
 void
 mc_edges_destroy (mc_edges_t *edges);
-
-typedef struct {
-   bool set;
-   int32_t value;
-} mc_optional_int32_t;
-
-#define OPT_I32(val)            \
-   (mc_optional_int32_t)        \
-   {                            \
-      .set = true, .value = val \
-   }
 
 typedef struct {
    int32_t value;
    mc_optional_int32_t min;
    mc_optional_int32_t max;
+   size_t sparsity;
 } mc_getEdgesInt32_args_t;
 
+// mc_getEdgesInt32 implements the Edge Generation algorithm described in
+// SERVER-67751 for int32_t.
 mc_edges_t *
 mc_getEdgesInt32 (mc_getEdgesInt32_args_t args, mongocrypt_status_t *status);
-
-typedef struct {
-   bool set;
-   int64_t value;
-} mc_optional_int64_t;
-
-#define OPT_I64(val)            \
-   (mc_optional_int64_t)        \
-   {                            \
-      .set = true, .value = val \
-   }
 
 typedef struct {
    int64_t value;
    mc_optional_int64_t min;
    mc_optional_int64_t max;
+   size_t sparsity;
 } mc_getEdgesInt64_args_t;
 
+// mc_getEdgesInt64 implements the Edge Generation algorithm described in 
+// SERVER-67751 for int32_t.
 mc_edges_t *
 mc_getEdgesInt64 (mc_getEdgesInt64_args_t args, mongocrypt_status_t *status);
 

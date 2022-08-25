@@ -17,6 +17,7 @@
 #include "test-mongocrypt.h"
 
 #include "mc-check-conversions-private.h"
+#include "mc-optional-private.h"
 #include "mc-range-edge-generation-private.h"
 
 /* Enable -Wconversion as error for only this file.
@@ -37,7 +38,7 @@ print_edges_compared (mc_edges_t *edgesGot, const char *edgesExpected[])
 {
    fprintf (stderr, "edges got ... begin\n");
    for (size_t i = 0; i < mc_edges_len (edgesGot); i++) {
-      fprintf (stderr, "  %s\n", mc_edges_get (i));
+      fprintf (stderr, "  %s\n", mc_edges_get (edgesGot, i));
    }
    fprintf (stderr, "edges got ... end\n");
 
@@ -54,7 +55,17 @@ static void
 _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
 {
    mongocrypt_status_t *const status = mongocrypt_status_new ();
-   Int32Test tests[] = {{.args = {.value = INT32_C (123)},
+   Int32Test tests[] = {{.args = {.value = INT32_C (2),
+                                  .min = OPT_I32 (0),
+                                  .max = OPT_I32 (7),
+                                  .sparsity = 1},
+                         .expectEdges = {"root", "0", "01", "010"}},
+                        {.args = {.value = INT32_C (2),
+                                  .min = OPT_I32 (0),
+                                  .max = OPT_I32 (7),
+                                  .sparsity = 2},
+                         .expectEdges = {"root", "01", "010"}},
+                        {.args = {.value = INT32_C (123), .sparsity = 1},
                          .expectEdges = {"root",
                                          "1",
                                          "10",
@@ -86,7 +97,8 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
                                          "1000000000000000000000000111",
                                          "10000000000000000000000001111",
                                          "100000000000000000000000011110",
-                                         "1000000000000000000000000111101"}}};
+                                         "1000000000000000000000000111101",
+                                         "10000000000000000000000001111011"}}};
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       Int32Test *test = tests + i;
@@ -110,27 +122,151 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
             "got %zu edges, expected %zu edges\n", numGot, numExpected);
       }
 
-      for (i = 0; i < numGot; i++) {
-         const char *edgeGot = mc_edges_get (i);
-         const char *edgeExpected = test->expectEdges[i];
+      for (size_t gotI = 0; gotI < numGot; gotI++) {
+         const char *edgeGot = mc_edges_get (got, gotI);
+         const char *edgeExpected = test->expectEdges[gotI];
          if (0 == strcmp (edgeGot, edgeExpected)) {
             continue;
          }
          print_edges_compared (got, test->expectEdges);
-         TEST_ERROR (
-            "edge mismatch at index %zu. %s != %s\n", i, edgeGot, edgeExpected);
+         TEST_ERROR ("edge mismatch at index %zu. %s != %s\n",
+                     gotI,
+                     edgeGot,
+                     edgeExpected);
       }
+      mc_edges_destroy (got);
    }
    mongocrypt_status_destroy (status);
 }
+
+#define MAX_INT64_EDGES 65
+typedef struct {
+   mc_getEdgesInt64_args_t args;
+   const char *expectError;
+   // expectEdges includes a trailing NULL pointer.
+   const char *expectEdges[MAX_INT64_EDGES + 1];
+} Int64Test;
+#undef MAX_INT64_EDGES
 
 static void
 _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
 {
    mongocrypt_status_t *const status = mongocrypt_status_new ();
-   mc_edges_t *edges = mc_getEdgesInt64 (
-      (mc_getEdgesInt64_args_t){.value = INT64_C (123)}, status);
-   ASSERT_OK_STATUS (edges != NULL, status);
+   Int64Test tests[] = {
+      {.args = {.value = INT64_C (2),
+                .min = OPT_I64 (0),
+                .max = OPT_I64 (7),
+                .sparsity = 1},
+       .expectEdges = {"root", "0", "01", "010"}},
+      {.args = {.value = INT64_C (2),
+                .min = OPT_I64 (0),
+                .max = OPT_I64 (7),
+                .sparsity = 2},
+       .expectEdges = {"root", "01", "010"}},
+      {.args = {.value = INT64_C (123), .sparsity = 1},
+       .expectEdges = {
+          "root",
+          "1",
+          "10",
+          "100",
+          "1000",
+          "10000",
+          "100000",
+          "1000000",
+          "10000000",
+          "100000000",
+          "1000000000",
+          "10000000000",
+          "100000000000",
+          "1000000000000",
+          "10000000000000",
+          "100000000000000",
+          "1000000000000000",
+          "10000000000000000",
+          "100000000000000000",
+          "1000000000000000000",
+          "10000000000000000000",
+          "100000000000000000000",
+          "1000000000000000000000",
+          "10000000000000000000000",
+          "100000000000000000000000",
+          "1000000000000000000000000",
+          "10000000000000000000000000",
+          "100000000000000000000000000",
+          "1000000000000000000000000000",
+          "10000000000000000000000000000",
+          "100000000000000000000000000000",
+          "1000000000000000000000000000000",
+          "10000000000000000000000000000000",
+          "100000000000000000000000000000000",
+          "1000000000000000000000000000000000",
+          "10000000000000000000000000000000000",
+          "100000000000000000000000000000000000",
+          "1000000000000000000000000000000000000",
+          "10000000000000000000000000000000000000",
+          "100000000000000000000000000000000000000",
+          "1000000000000000000000000000000000000000",
+          "10000000000000000000000000000000000000000",
+          "100000000000000000000000000000000000000000",
+          "1000000000000000000000000000000000000000000",
+          "10000000000000000000000000000000000000000000",
+          "100000000000000000000000000000000000000000000",
+          "1000000000000000000000000000000000000000000000",
+          "10000000000000000000000000000000000000000000000",
+          "100000000000000000000000000000000000000000000000",
+          "1000000000000000000000000000000000000000000000000",
+          "10000000000000000000000000000000000000000000000000",
+          "100000000000000000000000000000000000000000000000000",
+          "1000000000000000000000000000000000000000000000000000",
+          "10000000000000000000000000000000000000000000000000000",
+          "100000000000000000000000000000000000000000000000000000",
+          "1000000000000000000000000000000000000000000000000000000",
+          "10000000000000000000000000000000000000000000000000000000",
+          "100000000000000000000000000000000000000000000000000000000",
+          "1000000000000000000000000000000000000000000000000000000001",
+          "10000000000000000000000000000000000000000000000000000000011",
+          "100000000000000000000000000000000000000000000000000000000111",
+          "1000000000000000000000000000000000000000000000000000000001111",
+          "10000000000000000000000000000000000000000000000000000000011110",
+          "100000000000000000000000000000000000000000000000000000000111101",
+          "1000000000000000000000000000000000000000000000000000000001111011"}}};
+
+   for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      Int64Test *test = tests + i;
+      mc_edges_t *got = mc_getEdgesInt64 (test->args, status);
+      if (test->expectError != NULL) {
+         ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
+         ASSERT_STATUS_CONTAINS (status, test->expectError);
+         continue;
+      }
+      ASSERT_OK_STATUS (got != NULL, status);
+
+      size_t numGot = mc_edges_len (got);
+      size_t numExpected = 0;
+      while (test->expectEdges[numExpected] != NULL) {
+         numExpected += 1;
+      }
+
+      if (numExpected != numGot) {
+         print_edges_compared (got, test->expectEdges);
+         TEST_ERROR (
+            "got %zu edges, expected %zu edges\n", numGot, numExpected);
+      }
+
+      for (size_t gotI = 0; gotI < numGot; gotI++) {
+         const char *edgeGot = mc_edges_get (got, gotI);
+         const char *edgeExpected = test->expectEdges[gotI];
+         if (0 == strcmp (edgeGot, edgeExpected)) {
+            continue;
+         }
+         print_edges_compared (got, test->expectEdges);
+         TEST_ERROR ("edge mismatch at index %zu. %s != %s\n",
+                     gotI,
+                     edgeGot,
+                     edgeExpected);
+      }
+      mc_edges_destroy (got);
+   }
    mongocrypt_status_destroy (status);
 }
 
