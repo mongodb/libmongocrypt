@@ -604,7 +604,7 @@ tasks:
           set -o errexit
 
           CMAKE=/cygdrive/c/cmake/bin/cmake
-          mongocrypt_version="$(python etc/calc_release_version.py 2>&1)"
+          mongocrypt_version="$(python etc/calc_release_version.py)"
           case "$mongocrypt_version" in
             *+*)
               # Not a tagged release.
