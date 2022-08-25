@@ -39,6 +39,10 @@
 #endif
 /* clang-format on */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Returns the version string for libmongocrypt.
  *
@@ -1522,5 +1526,9 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
 
 /// String constant for setopt_query_type_v2, "equality" query type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* MONGOCRYPT_H */
