@@ -57,7 +57,6 @@ print_edges_compared (mc_edges_t *edgesGot, const char *edgesExpected[])
 static void
 _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_status_t *const status = mongocrypt_status_new ();
    Int32Test tests[] = {
       {.value = 2,
        .min = OPT_I32 (0),
@@ -69,10 +68,14 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
        .max = OPT_I32 (7),
        .sparsity = 2,
        .expectEdges = {"01", "010", "root"}},
+      {.value = 1,
+       .sparsity = 0,
+       .expectError = "sparsity must be 1 or larger"},
 #include "data/range-edge-generation/edges_int32.cstruct"
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
       Int32Test *test = tests + i;
       mc_getEdgesInt32_args_t args = {.value = test->value,
                                       .min = test->min,
@@ -82,6 +85,7 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
       if (test->expectError != NULL) {
          ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
+         mongocrypt_status_destroy (status);
          continue;
       }
       ASSERT_OK_STATUS (got != NULL, status);
@@ -111,8 +115,8 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
                      edgeExpected);
       }
       mc_edges_destroy (got);
+      mongocrypt_status_destroy (status);
    }
-   mongocrypt_status_destroy (status);
 }
 
 #define MAX_INT64_EDGES 65
@@ -130,7 +134,6 @@ typedef struct {
 static void
 _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_status_t *const status = mongocrypt_status_new ();
    Int64Test tests[] = {
       {.value = INT64_C (2),
        .min = OPT_I64 (0),
@@ -142,10 +145,14 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
        .max = OPT_I64 (7),
        .sparsity = 2,
        .expectEdges = {"01", "010", "root"}},
+      {.value = 1,
+       .sparsity = 0,
+       .expectError = "sparsity must be 1 or larger"},
 #include "data/range-edge-generation/edges_int64.cstruct"
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
       Int64Test *test = tests + i;
       mc_getEdgesInt64_args_t args = {.value = test->value,
                                       .min = test->min,
@@ -155,6 +162,7 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
       if (test->expectError != NULL) {
          ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
+         mongocrypt_status_destroy (status);
          continue;
       }
       ASSERT_OK_STATUS (got != NULL, status);
@@ -184,8 +192,8 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
                      edgeExpected);
       }
       mc_edges_destroy (got);
+      mongocrypt_status_destroy (status);
    }
-   mongocrypt_status_destroy (status);
 }
 
 static void
