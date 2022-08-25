@@ -26,10 +26,13 @@ MC_BEGIN_CONVERSION_ERRORS
 
 #define MAX_INT32_EDGES 33
 typedef struct {
-   mc_getEdgesInt32_args_t args;
-   const char *expectError;
+   int32_t value;
+   mc_optional_int32_t min;
+   mc_optional_int32_t max;
+   size_t sparsity;
    // expectEdges includes a trailing NULL pointer.
    const char *expectEdges[MAX_INT32_EDGES + 1];
+   const char *expectError;
 } Int32Test;
 #undef MAX_INT32_EDGES
 
@@ -55,54 +58,27 @@ static void
 _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
 {
    mongocrypt_status_t *const status = mongocrypt_status_new ();
-   Int32Test tests[] = {{.args = {.value = INT32_C (2),
-                                  .min = OPT_I32 (0),
-                                  .max = OPT_I32 (7),
-                                  .sparsity = 1},
-                         .expectEdges = {"root", "0", "01", "010"}},
-                        {.args = {.value = INT32_C (2),
-                                  .min = OPT_I32 (0),
-                                  .max = OPT_I32 (7),
-                                  .sparsity = 2},
-                         .expectEdges = {"root", "01", "010"}},
-                        {.args = {.value = INT32_C (123), .sparsity = 1},
-                         .expectEdges = {"root",
-                                         "1",
-                                         "10",
-                                         "100",
-                                         "1000",
-                                         "10000",
-                                         "100000",
-                                         "1000000",
-                                         "10000000",
-                                         "100000000",
-                                         "1000000000",
-                                         "10000000000",
-                                         "100000000000",
-                                         "1000000000000",
-                                         "10000000000000",
-                                         "100000000000000",
-                                         "1000000000000000",
-                                         "10000000000000000",
-                                         "100000000000000000",
-                                         "1000000000000000000",
-                                         "10000000000000000000",
-                                         "100000000000000000000",
-                                         "1000000000000000000000",
-                                         "10000000000000000000000",
-                                         "100000000000000000000000",
-                                         "1000000000000000000000000",
-                                         "10000000000000000000000001",
-                                         "100000000000000000000000011",
-                                         "1000000000000000000000000111",
-                                         "10000000000000000000000001111",
-                                         "100000000000000000000000011110",
-                                         "1000000000000000000000000111101",
-                                         "10000000000000000000000001111011"}}};
+   Int32Test tests[] = {
+      {.value = 2,
+       .min = OPT_I32 (0),
+       .max = OPT_I32 (7),
+       .sparsity = 1,
+       .expectEdges = {"0", "01", "010", "root"}},
+      {.value = 2,
+       .min = OPT_I32 (0),
+       .max = OPT_I32 (7),
+       .sparsity = 2,
+       .expectEdges = {"01", "010", "root"}},
+#include "data/range-edge-generation/edges_int32.cstruct"
+   };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       Int32Test *test = tests + i;
-      mc_edges_t *got = mc_getEdgesInt32 (test->args, status);
+      mc_getEdgesInt32_args_t args = {.value = test->value,
+                                      .min = test->min,
+                                      .max = test->max,
+                                      .sparsity = test->sparsity};
+      mc_edges_t *got = mc_getEdgesInt32 (args, status);
       if (test->expectError != NULL) {
          ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
@@ -141,10 +117,13 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
 
 #define MAX_INT64_EDGES 65
 typedef struct {
-   mc_getEdgesInt64_args_t args;
-   const char *expectError;
+   int64_t value;
+   mc_optional_int64_t min;
+   mc_optional_int64_t max;
+   size_t sparsity;
    // expectEdges includes a trailing NULL pointer.
    const char *expectEdges[MAX_INT64_EDGES + 1];
+   const char *expectError;
 } Int64Test;
 #undef MAX_INT64_EDGES
 
@@ -153,87 +132,26 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
 {
    mongocrypt_status_t *const status = mongocrypt_status_new ();
    Int64Test tests[] = {
-      {.args = {.value = INT64_C (2),
-                .min = OPT_I64 (0),
-                .max = OPT_I64 (7),
-                .sparsity = 1},
-       .expectEdges = {"root", "0", "01", "010"}},
-      {.args = {.value = INT64_C (2),
-                .min = OPT_I64 (0),
-                .max = OPT_I64 (7),
-                .sparsity = 2},
-       .expectEdges = {"root", "01", "010"}},
-      {.args = {.value = INT64_C (123), .sparsity = 1},
-       .expectEdges = {
-          "root",
-          "1",
-          "10",
-          "100",
-          "1000",
-          "10000",
-          "100000",
-          "1000000",
-          "10000000",
-          "100000000",
-          "1000000000",
-          "10000000000",
-          "100000000000",
-          "1000000000000",
-          "10000000000000",
-          "100000000000000",
-          "1000000000000000",
-          "10000000000000000",
-          "100000000000000000",
-          "1000000000000000000",
-          "10000000000000000000",
-          "100000000000000000000",
-          "1000000000000000000000",
-          "10000000000000000000000",
-          "100000000000000000000000",
-          "1000000000000000000000000",
-          "10000000000000000000000000",
-          "100000000000000000000000000",
-          "1000000000000000000000000000",
-          "10000000000000000000000000000",
-          "100000000000000000000000000000",
-          "1000000000000000000000000000000",
-          "10000000000000000000000000000000",
-          "100000000000000000000000000000000",
-          "1000000000000000000000000000000000",
-          "10000000000000000000000000000000000",
-          "100000000000000000000000000000000000",
-          "1000000000000000000000000000000000000",
-          "10000000000000000000000000000000000000",
-          "100000000000000000000000000000000000000",
-          "1000000000000000000000000000000000000000",
-          "10000000000000000000000000000000000000000",
-          "100000000000000000000000000000000000000000",
-          "1000000000000000000000000000000000000000000",
-          "10000000000000000000000000000000000000000000",
-          "100000000000000000000000000000000000000000000",
-          "1000000000000000000000000000000000000000000000",
-          "10000000000000000000000000000000000000000000000",
-          "100000000000000000000000000000000000000000000000",
-          "1000000000000000000000000000000000000000000000000",
-          "10000000000000000000000000000000000000000000000000",
-          "100000000000000000000000000000000000000000000000000",
-          "1000000000000000000000000000000000000000000000000000",
-          "10000000000000000000000000000000000000000000000000000",
-          "100000000000000000000000000000000000000000000000000000",
-          "1000000000000000000000000000000000000000000000000000000",
-          "10000000000000000000000000000000000000000000000000000000",
-          "100000000000000000000000000000000000000000000000000000000",
-          "1000000000000000000000000000000000000000000000000000000001",
-          "10000000000000000000000000000000000000000000000000000000011",
-          "100000000000000000000000000000000000000000000000000000000111",
-          "1000000000000000000000000000000000000000000000000000000001111",
-          "10000000000000000000000000000000000000000000000000000000011110",
-          "100000000000000000000000000000000000000000000000000000000111101",
-          "1000000000000000000000000000000000000000000000000000000001111011"}}};
+      {.value = INT64_C (2),
+       .min = OPT_I64 (0),
+       .max = OPT_I64 (7),
+       .sparsity = 1,
+       .expectEdges = {"0", "01", "010", "root"}},
+      {.value = INT64_C (2),
+       .min = OPT_I64 (0),
+       .max = OPT_I64 (7),
+       .sparsity = 2,
+       .expectEdges = {"01", "010", "root"}},
+#include "data/range-edge-generation/edges_int64.cstruct"
+   };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       Int64Test *test = tests + i;
-      mc_edges_t *got = mc_getEdgesInt64 (test->args, status);
+      mc_getEdgesInt64_args_t args = {.value = test->value,
+                                      .min = test->min,
+                                      .max = test->max,
+                                      .sparsity = test->sparsity};
+      mc_edges_t *got = mc_getEdgesInt64 (args, status);
       if (test->expectError != NULL) {
          ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
