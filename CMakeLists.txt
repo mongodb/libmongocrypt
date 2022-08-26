@@ -30,6 +30,11 @@ if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
    message (FATAL_ERROR "PPA build requires static linking to libbson")
 endif ()
 
+include (CTest)
+if (BUILD_TESTING)
+   include (TryFetchCatch2)
+endif ()
+
 # Enable a higher warning level and warnings-as-errors
 include (MongoC-Warnings)
 option (ENABLE_MORE_WARNINGS_AS_ERRORS "Enable extra warnings-as-errors in the build." OFF)
@@ -46,8 +51,6 @@ find_package (Threads REQUIRED)
 add_subdirectory (bindings/cs)
 
 include (GenerateExportHeader)
-
-include (CTest)
 
 set (MONGOCRYPT_PUBLIC_HEADERS
    src/mongocrypt-compat.h
@@ -382,8 +385,9 @@ if (BUILD_TESTING)
          )
    endif ()
 
-   if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.20.0")
-      include (FetchCatch2)
+   if (NOT TARGET Catch2WithMain OR NOT COMMAND catch_discover_tests)
+      message (STATUS "NOTE: Catch2-based tests will NOT be built")
+   else ()
       file (GLOB_RECURSE test_files CONFIGURE_DEPENDS src/*.test.cpp)
       add_executable (test-runner ${test_files})
       target_link_libraries (test-runner PRIVATE Catch2WithMain mongocrypt_static mongo::mlib)
