@@ -26,6 +26,7 @@ override_dh_auto_configure:
 	dh_auto_configure -B$(CURDIR)/cmake-build -- \
 	-DBUILD_VERSION=$(DEB_VERSION_UPSTREAM) \
 	-DUSE_SHARED_LIBBSON=ON \
+	-DBUILD_TESTING=OFF \
 	-DMONGOCRYPT_MONGOC_DIR=USE-SYSTEM \
 	-DENABLE_ONLINE_TESTS=OFF \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo
