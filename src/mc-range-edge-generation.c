@@ -64,7 +64,7 @@ const char *
 mc_edges_get (mc_edges_t *edges, size_t index)
 {
    BSON_ASSERT_PARAM (edges);
-   if (index > edges->edges.len - 1) {
+   if (index > edges->edges.len - 1u) {
       return NULL;
    }
    return _mc_array_index (&edges->edges, char *, index);
