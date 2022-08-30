@@ -1313,6 +1313,28 @@ _mongocrypt_parse_kms_providers (
             return false;
          }
 
+         if (!_mongocrypt_parse_optional_utf8 (
+                &as_bson,
+                "azure.accessToken",
+                &kms_providers->azure.access_token,
+                status)) {
+            return false;
+         }
+
+         if (kms_providers->azure.access_token) {
+            // Caller provides an accessToken directly
+            if (!_mongocrypt_check_allowed_fields (
+                   &as_bson, "azure", status, "accessToken")) {
+               return false;
+            }
+            kms_providers->configured_providers |=
+               MONGOCRYPT_KMS_PROVIDER_AZURE;
+            continue;
+         }
+
+         // No accessToken given, so we'll need to look one up on our own later
+         // using the Azure API
+
          if (!_mongocrypt_parse_required_utf8 (&as_bson,
                                                "azure.tenantId",
                                                &kms_providers->azure.tenant_id,

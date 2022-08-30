@@ -218,8 +218,12 @@ _kms_start (mongocrypt_ctx_t *ctx)
 
       ctx->state = MONGOCRYPT_CTX_NEED_KMS;
    } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
-      access_token =
-         _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_azure);
+      if (ctx->kms_providers.azure.access_token) {
+         access_token = bson_strdup (ctx->kms_providers.azure.access_token);
+      } else {
+         access_token =
+            _mongocrypt_cache_oauth_get (ctx->crypt->cache_oauth_azure);
+      }
       if (access_token) {
          if (!_mongocrypt_kms_ctx_init_azure_wrapkey (
                 &dkctx->kms,

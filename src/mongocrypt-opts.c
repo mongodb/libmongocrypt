@@ -35,6 +35,7 @@ _mongocrypt_opts_kms_provider_azure_cleanup (
    bson_free (kms_provider_azure->client_id);
    bson_free (kms_provider_azure->client_secret);
    bson_free (kms_provider_azure->tenant_id);
+   bson_free (kms_provider_azure->access_token);
    _mongocrypt_endpoint_destroy (
       kms_provider_azure->identity_platform_endpoint);
 }

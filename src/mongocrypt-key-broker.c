@@ -539,7 +539,12 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
          goto done;
       }
    } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
-      access_token = _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
+      if (kms_providers->azure.access_token) {
+         access_token = bson_strdup (kms_providers->azure.access_token);
+      } else {
+         access_token =
+            _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
+      }
       if (!access_token) {
          key_returned->needs_auth = true;
          /* Create an oauth request if one does not exist. */
@@ -814,8 +819,12 @@ _mongocrypt_key_broker_kms_done (
 
          if (key_returned->doc->kek.kms_provider ==
              MONGOCRYPT_KMS_PROVIDER_AZURE) {
-            access_token =
-               _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
+            if (kms_providers->azure.access_token) {
+               access_token = bson_strdup (kms_providers->azure.access_token);
+            } else {
+               access_token =
+                  _mongocrypt_cache_oauth_get (kb->crypt->cache_oauth_azure);
+            }
 
             if (!access_token) {
                return _key_broker_fail_w_msg (
