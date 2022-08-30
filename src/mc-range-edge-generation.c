@@ -32,6 +32,7 @@ struct _mc_edges_t {
 static mc_edges_t *
 mc_edges_new (const char *leaf, size_t sparsity, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (leaf);
    if (sparsity < 1) {
       CLIENT_ERR ("sparsity must be 1 or larger");
       return NULL;
@@ -60,6 +61,7 @@ mc_edges_new (const char *leaf, size_t sparsity, mongocrypt_status_t *status)
 const char *
 mc_edges_get (mc_edges_t *edges, size_t index)
 {
+   BSON_ASSERT_PARAM (edges);
    if (index > edges->edges.len - 1) {
       return NULL;
    }
@@ -69,6 +71,7 @@ mc_edges_get (mc_edges_t *edges, size_t index)
 size_t
 mc_edges_len (mc_edges_t *edges)
 {
+   BSON_ASSERT_PARAM (edges);
    return edges->edges.len;
 }
 
