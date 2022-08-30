@@ -41,7 +41,7 @@ mc_edges_new (const char *leaf, size_t sparsity, mongocrypt_status_t *status)
    edges->sparsity = sparsity;
    _mc_array_init (&edges->edges, sizeof (char *));
 
-   size_t leaf_len = strlen(leaf);
+   const size_t leaf_len = strlen (leaf);
    // Start loop at 1. The full leaf is unconditionally appended after loop.
    for (size_t i = 1; i < leaf_len; i++) {
       if (i % sparsity == 0) {

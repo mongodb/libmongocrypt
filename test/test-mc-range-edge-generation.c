@@ -231,7 +231,7 @@ _test_convert_to_bitstring (_mongocrypt_tester_t *tester)
          {.in = 1, .expect = "00000000000000000000000000000001"},
          {.in = 123, .expect = "00000000000000000000000001111011"},
          {.in = UINT32_MAX, .expect = "11111111111111111111111111111111"},
-         {.in = UINT32_MAX - 1, .expect = "11111111111111111111111111111110"}};
+         {.in = UINT32_MAX - 1u, .expect = "11111111111111111111111111111110"}};
       for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
          bitstring_u32_test *test = tests + i;
          char *got = mc_convert_to_bitstring_u32 (test->in);
@@ -254,7 +254,7 @@ _test_convert_to_bitstring (_mongocrypt_tester_t *tester)
          {.in = UINT64_MAX,
           .expect = "1111111111111111111111111111111111111111111111111111111111"
                     "111111"},
-         {.in = UINT64_MAX-1,
+         {.in = UINT64_MAX - 1u,
           .expect = "1111111111111111111111111111111111111111111111111111111111"
                     "111110"}};
       for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
