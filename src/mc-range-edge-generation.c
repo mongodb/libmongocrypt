@@ -98,7 +98,7 @@ mc_count_leading_zeros_u64 (uint64_t in)
    size_t count = 0;
    while ((bit & in) == 0 && bit > 0) {
       bit >>= 1;
-      count += 1;
+      ++count;
    }
    return count;
 }
@@ -110,7 +110,7 @@ mc_count_leading_zeros_u32 (uint32_t in)
    size_t count = 0;
    while ((bit & in) == 0 && bit > 0) {
       bit >>= 1;
-      count += 1;
+      ++count;
    }
    return count;
 }
@@ -128,7 +128,7 @@ mc_convert_to_bitstring_u64 (uint64_t in)
          out[count] = '0';
       }
       bit >>= 1;
-      count += 1;
+      ++count;
    }
    out[64] = '\0';
    return out;
@@ -147,7 +147,7 @@ mc_convert_to_bitstring_u32 (uint32_t in)
          out[count] = '0';
       }
       bit >>= 1;
-      count += 1;
+      ++count;
    }
    out[32] = '\0';
    return out;
