@@ -39,6 +39,7 @@ typedef struct {
 static void
 print_edges_compared (mc_edges_t *edgesGot, const char *edgesExpected[])
 {
+   fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr, "edges got ... begin\n");
    for (size_t i = 0; i < mc_edges_len (edgesGot); i++) {
       fprintf (stderr, "  %s\n", mc_edges_get (edgesGot, i));
