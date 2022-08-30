@@ -58,7 +58,7 @@ typedef struct {
 } mc_getEdgesInt64_args_t;
 
 // mc_getEdgesInt64 implements the Edge Generation algorithm described in 
-// SERVER-67751 for int32_t.
+// SERVER-67751 for int64_t.
 mc_edges_t *
 mc_getEdgesInt64 (mc_getEdgesInt64_args_t args, mongocrypt_status_t *status);
 
