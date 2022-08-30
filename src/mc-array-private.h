@@ -17,10 +17,10 @@
 #ifndef MC_ARRAY_PRIVATE_H
 #define MC_ARRAY_PRIVATE_H
 
-/* This file is copied from mongoc-array-private.h in libmongoc. */
+/* This file is copied from mongoc-array-private.h in libmongoc version 1.17.7
+ * at commit 200a01bb208633fe3cf395d81acc1e19492d9de4 */
 
 #include <bson/bson.h>
-
 
 
 typedef struct _mc_array_t mc_array_t;
@@ -45,11 +45,10 @@ void
 _mc_array_copy (mc_array_t *dst, const mc_array_t *src);
 void
 _mc_array_append_vals (mc_array_t *array,
-                           const void *data,
-                           uint32_t n_elements);
+                       const void *data,
+                       uint32_t n_elements);
 void
 _mc_array_destroy (mc_array_t *array);
-
 
 
 #endif /* MC_ARRAY_PRIVATE_H */

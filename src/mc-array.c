@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-/* This file is copied from mongoc-array.c in libmongoc. */
+/* This file is copied from mongoc-array.c in libmongoc version 1.17.7 at commit
+ * 200a01bb208633fe3cf395d81acc1e19492d9de4 */
 
 #include "mc-array-private.h"
 
@@ -71,9 +72,7 @@ _mc_array_destroy (mc_array_t *array)
 
 
 void
-_mc_array_append_vals (mc_array_t *array,
-                           const void *data,
-                           uint32_t n_elements)
+_mc_array_append_vals (mc_array_t *array, const void *data, uint32_t n_elements)
 {
    size_t len;
    size_t off;
