@@ -59,12 +59,14 @@ set (MONGOCRYPT_SOURCES
    src/crypto/commoncrypto.c
    src/crypto/libcrypto.c
    src/crypto/none.c
+   src/mc-array.c
    src/mc-efc.c
    src/mc-fle2-insert-update-payload.c
    src/mc-fle2-encryption-placeholder.c
    src/mc-fle2-find-equality-payload.c
    src/mc-fle2-payload-ieev.c
    src/mc-fle2-payload-uev.c
+   src/mc-range-edge-generation.c
    src/mc-range-encoding.c
    src/mc-tokens.c
    src/mongocrypt-binary.c
@@ -389,6 +391,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-fle2-payload-ieev.c
    test/test-mc-fle2-payload-iup.c
    test/test-mc-fle2-payload-uev.c
+   test/test-mc-range-edge-generation.c
    test/test-mc-tokens.c
    test/test-mc-range-encoding.c
    test/test-mongocrypt-assert-match-bson.c
