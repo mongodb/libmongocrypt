@@ -17,8 +17,7 @@
 # --libmongocrypt
 #
 
-. "$(dirname "${BASH_SOURCE[0]}")/init.sh"
-. "$EVG_DIR/setup-env.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 linker_tests_root="$LIBMONGOCRYPT_DIR/linker_tests"
 linker_tests_deps_root="$EVG_DIR/linker_tests_deps"
@@ -27,13 +26,8 @@ rm -rf -- "$linker_tests_root"
 mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build}
 
 # Make libbson1 and libbson2
-pushd "$linker_tests_root"
-  . "$EVG_DIR/prep_c_driver_source.sh"
-  MONGOC_DIR="$linker_tests_root/mongo-c-driver"
-popd
-
-: "${ADDITIONAL_CMAKE_FLAGS:=}"
-: "${MACOS_UNIVERSAL:=}"
+run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
+MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
 if [ "$OS_NAME" = "windows" ]; then
@@ -56,9 +50,7 @@ if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
-pushd "$MONGOC_DIR"
-  git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
-popd
+run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
 
 BUILD_PATH="$MONGOC_DIR/cmake-build"
 BSON1_INSTALL_PATH="$linker_tests_root/install/bson1"
@@ -73,10 +65,8 @@ $CMAKE \
 $CMAKE --build "$BUILD_PATH" --target install --config RelWithDebInfo
 # Make libbson2
 
-pushd "$MONGOC_DIR"
-  git reset --hard
-  git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson2.patch"
-popd
+run_chdir "$MONGOC_DIR" git reset --hard
+run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson2.patch"
 LIBBSON2_SRC_DIR="$MONGOC_DIR"
 
 # Build libmongocrypt, static linking against libbson2

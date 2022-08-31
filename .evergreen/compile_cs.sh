@@ -1,15 +1,16 @@
+#!/bin/bash
+
 # Compiles libmongocrypt dependencies and targets.
 #
 # Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
 #
 
-set -euxo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 echo "Begin compile process"
 
 evergreen_root="$(pwd)"
 
-. ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
 
 cd $evergreen_root
 

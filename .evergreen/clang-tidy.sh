@@ -3,14 +3,7 @@
 # static analyzer.
 #
 
-. "$(dirname "${BASH_SOURCE[0]}")/init.sh"
-
-set -o xtrace
-set -o errexit
-
-echo "Begin compile process"
-
-. "$EVG_DIR/setup-env.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 CLANG_TIDY=/opt/mongodbtoolchain/v3/bin/clang-tidy
 

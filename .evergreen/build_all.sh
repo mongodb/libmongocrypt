@@ -1,31 +1,18 @@
 #!/bin/bash
 # Compiles libmongocrypt dependencies and targets.
 #
-# Assumes the current working directory contains libmongocrypt.
-# So script should be called like: ./libmongocrypt/.evergreen/build_all.sh
-# The current working directory should be empty aside from 'libmongocrypt'
-# since this script creates new directories/files (e.g. mongo-c-driver, venv).
-#
 # Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
 #
 
-. "$(dirname "${BASH_SOURCE[0]}")/init.sh"
 set -x
 echo "Begin compile process"
 
-evergreen_root="$(pwd)"
-
-. "$EVG_DIR/setup-env.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 # We may need some more C++ flags
 _cxxflags=""
 
-: "${ADDITIONAL_CMAKE_FLAGS:=}"
-: "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
-: "${LIBMONGOCRYPT_EXTRA_CFLAGS:=}"
 : "${CONFIGURE_ONLY:=}"
-: "${MACOS_UNIVERSAL:=}"
-: "${PPA_BUILD_ONLY:=}"
 
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
 if [ "$OS_NAME" = "windows" ]; then
