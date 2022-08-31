@@ -61,13 +61,7 @@ fi
 
 : "${CMAKE:=cmake}"
 
-cd $evergreen_root
-
-# Build and install libmongocrypt.
-cd libmongocrypt
-mkdir cmake-build
-cd cmake-build
-
+cd "$(dirname "$LIBMONGOCRYPT_DIR")"
 for suffix in "dll" "dylib" "so"; do
     if test -f "mongo_crypt_v1.$suffix"; then
         ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DMONGOCRYPT_TESTING_CRYPT_SHARED_FILE=$PWD/mongo_crypt_v1.$suffix"
@@ -76,18 +70,32 @@ done
 
 ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DENABLE_MORE_WARNINGS_AS_ERRORS=ON"
 
-$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
+common_cmake_args=(
+    $ADDITIONAL_CMAKE_FLAGS
+    $LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS
+    -DCMAKE_C_FLAGS="$LIBMONGOCRYPT_EXTRA_CFLAGS"
+    -DCMAKE_CXX_FLAGS="$LIBMONGOCRYPT_EXTRA_CFLAGS $_cxxflags"
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    -H"$LIBMONGOCRYPT_DIR"
+)
 
-if [ "${CONFIGURE_ONLY-}" ]; then
+# Build and install libmongocrypt.
+build_dir="$LIBMONGOCRYPT_DIR/cmake-build"
+"$CMAKE" \
+    -B"$build_dir" \
+    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX" \
+    "${common_cmake_args[@]}"
+
+if [ "$CONFIGURE_ONLY" ]; then
     echo "Only running cmake";
     exit 0;
 fi
 echo "Installing libmongocrypt"
-$CMAKE --build . --target install --config RelWithDebInfo
-$CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
-$CMAKE --build . --target test_kms_request --config RelWithDebInfo
-"$CTEST" -C RelWithDebInfo
-cd $evergreen_root
+$CMAKE --build "$build_dir" --target install --config RelWithDebInfo
+$CMAKE --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
+$CMAKE --build "$build_dir" --target test_kms_request --config RelWithDebInfo
+run_chdir "$build_dir" "$CTEST" -C RelWithDebInfo
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if [ "$MACOS_UNIVERSAL" = "ON" ]; then
@@ -107,22 +115,24 @@ if [ "$PPA_BUILD_ONLY" ]; then
 fi
 
 # Build and install libmongocrypt with no native crypto.
-cd libmongocrypt
-mkdir cmake-build-nocrypto
-cd cmake-build-nocrypto
-$CMAKE -DDISABLE_NATIVE_CRYPTO=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/nocrypto" ../
-echo "Installing libmongocrypt with no crypto"
-$CMAKE --build . --target install --config RelWithDebInfo
-echo "Building test-mongocrypt with no crypto"
-$CMAKE --build . --target test-mongocrypt --config RelWithDebInfo
-"$CTEST" -C RelWithDebInfo
-cd $evergreen_root
+build_dir="$LIBMONGOCRYPT_DIR/cmake-build-nocrypto"
+"$CMAKE" \
+    -B"$build_dir" \
+    -DDISABLE_NATIVE_CRYPTO=ON \
+    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
+    "${common_cmake_args[@]}"
+
+$CMAKE --build "$build_dir" --target install --config RelWithDebInfo
+$CMAKE --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
+run_chdir "$build_dir" "$CTEST" -C RelWithDebInfo
 
 # Build and install libmongocrypt without statically linking libbson
-cd libmongocrypt
-mkdir cmake-build-sharedbson
-cd cmake-build-sharedbson
-$CMAKE -DUSE_SHARED_LIBBSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS}" -DCMAKE_C_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS}" -DCMAKE_CXX_FLAGS="${LIBMONGOCRYPT_EXTRA_CFLAGS} $_cxxflags" "-DCMAKE_INSTALL_PREFIX=${MONGOCRYPT_INSTALL_PREFIX}/sharedbson" ../
-echo "Installing libmongocrypt with shared libbson"
-$CMAKE --build . --target install  --config RelWithDebInfo
-"$CTEST" -C RelWithDebInfo
+build_dir="$LIBMONGOCRYPT_DIR/cmake-build-sharedbson"
+"$CMAKE" \
+    -B"$build_dir" \
+    -DUSE_SHARED_LIBBSON=ON \
+    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
+    "${common_cmake_args[@]}"
+
+"$CMAKE" --build "$build_dir" --target install  --config RelWithDebInfo
+run_chdir "$build_dir" "$CTEST" -C RelWithDebInfo
