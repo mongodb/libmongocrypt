@@ -2,14 +2,6 @@
 
 set -euxo pipefail
 
-system_path () {
-    if [ "${OS-}" == "Windows_NT" ]; then
-        cygpath -a "$1" -w
-    else
-        echo $1
-    fi
-}
-
 if [ ! -e ./.evergreen ]; then
     echo "Error: run from libmongocrypt root"
     exit 1;
@@ -32,10 +24,13 @@ cd pkgconfig_tests
 $libmongocrypt_root/.evergreen/prep_c_driver_source.sh
 cd mongo-c-driver
 
+: "${ADDITIONAL_CMAKE_FLAGS:=}"
+: "${MACOS_UNIVERSAL:=}"
+
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
-if [ "$OS" == "Windows_NT" ]; then
+if [ "$OS_NAME" = "windows" ]; then
     CMAKE=/cygdrive/c/cmake/bin/cmake
-    if [ "$WINDOWS_32BIT" != "ON" ]; then
+    if [ "${WINDOWS_32BIT-}" != "ON" ]; then
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
 else
@@ -55,28 +50,28 @@ fi
 
 mkdir cmake-build
 cd cmake-build
-INSTALL_PATH="$(system_path $pkgconfig_tests_root/install)"
-SRC_PATH="$(system_path ../)"
+INSTALL_PATH="$(native_path $pkgconfig_tests_root/install)"
+SRC_PATH="$(native_path ../)"
 $CMAKE -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
 # Build libmongocrypt, static linking against libbson and configured for the PPA
 cd $pkgconfig_tests_root/libmongocrypt-cmake-build
-PREFIX_PATH="$(system_path $pkgconfig_tests_root/install)"
-INSTALL_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt)"
-SRC_PATH="$(system_path $libmongocrypt_root)"
+PREFIX_PATH="$(native_path $pkgconfig_tests_root/install)"
+INSTALL_PATH="$(native_path $pkgconfig_tests_root/install/libmongocrypt)"
+SRC_PATH="$(native_path $libmongocrypt_root)"
 $CMAKE -DUSE_SHARED_LIBBSON=OFF -DENABLE_BUILD_FOR_PPA=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 find ${PREFIX_PATH} -name libbson-static-1.0.a -execdir cp {} $(dirname $(find ${INSTALL_PATH} -name libmongocrypt-static.a )) \;
 
 # To validate the pkg-config scripts, we don't want the libbson script to be visible
-export PKG_CONFIG_PATH="$(system_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install/libmongocrypt -name libmongocrypt.pc)))"
+export PKG_CONFIG_PATH="$(native_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install/libmongocrypt -name libmongocrypt.pc)))"
 
 echo "Validating pkg-config scripts"
 pkg-config --debug --print-errors --exists libmongocrypt-static
 pkg-config --debug --print-errors --exists libmongocrypt
 
-export PKG_CONFIG_PATH="$(system_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install -name libbson-1.0.pc))):$(system_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install/libmongocrypt -name libmongocrypt.pc)))"
+export PKG_CONFIG_PATH="$(native_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install -name libbson-1.0.pc))):$(native_path $(/usr/bin/dirname $(/usr/bin/find $pkgconfig_tests_root/install/libmongocrypt -name libmongocrypt.pc)))"
 
 # Build example-state-machine, static linking against libmongocrypt
 cd $libmongocrypt_root
@@ -92,7 +87,7 @@ rm -f example-state-machine example-no-bson
 gcc $(pkg-config --cflags libmongocrypt libbson-static-1.0) -o example-state-machine test/example-state-machine.c $(pkg-config --libs libmongocrypt)
 # Build example-no-bson, dynamic linking against libmongocrypt
 gcc $(pkg-config --cflags libmongocrypt) -o example-no-bson test/example-no-bson.c $(pkg-config --libs libmongocrypt)
-export LD_LIBRARY_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib):$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib64)"
+export LD_LIBRARY_PATH="$(native_path $pkgconfig_tests_root/install/libmongocrypt/lib):$(native_path $pkgconfig_tests_root/install/libmongocrypt/lib64)"
 ./example-state-machine
 ./example-no-bson
 unset LD_LIBRARY_PATH
@@ -106,9 +101,9 @@ mkdir -p libmongocrypt-cmake-build
 
 # Build libmongocrypt, dynamic linking against libbson
 cd $pkgconfig_tests_root/libmongocrypt-cmake-build
-PREFIX_PATH="$(system_path $pkgconfig_tests_root/install)"
-INSTALL_PATH="$(system_path $pkgconfig_tests_root/install/libmongocrypt)"
-SRC_PATH="$(system_path $libmongocrypt_root)"
+PREFIX_PATH="$(native_path $pkgconfig_tests_root/install)"
+INSTALL_PATH="$(native_path $pkgconfig_tests_root/install/libmongocrypt)"
+SRC_PATH="$(native_path $libmongocrypt_root)"
 $CMAKE -DUSE_SHARED_LIBBSON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
@@ -117,7 +112,7 @@ cd $libmongocrypt_root
 gcc $(pkg-config --cflags libmongocrypt-static libbson-static-1.0) -o example-state-machine test/example-state-machine.c $(pkg-config --libs libmongocrypt-static)
 # Build example-no-bson, static linking against libmongocrypt
 gcc $(pkg-config --cflags libmongocrypt-static) -o example-no-bson test/example-no-bson.c $(pkg-config --libs libmongocrypt-static)
-export LD_LIBRARY_PATH="$(system_path $pkgconfig_tests_root/install/lib):$(system_path $pkgconfig_tests_root/install/lib64)"
+export LD_LIBRARY_PATH="$(native_path $pkgconfig_tests_root/install/lib):$(native_path $pkgconfig_tests_root/install/lib64)"
 ./example-state-machine
 ./example-no-bson
 unset LD_LIBRARY_PATH
@@ -128,7 +123,7 @@ rm -f example-state-machine example-no-bson
 gcc $(pkg-config --cflags libmongocrypt libbson-static-1.0) -o example-state-machine test/example-state-machine.c $(pkg-config --libs libmongocrypt)
 # Build example-no-bson, dynamic linking against libmongocrypt
 gcc $(pkg-config --cflags libmongocrypt) -o example-no-bson test/example-no-bson.c $(pkg-config --libs libmongocrypt)
-export LD_LIBRARY_PATH="$(system_path $pkgconfig_tests_root/install/lib):$(system_path $pkgconfig_tests_root/install/lib64):$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib):$(system_path $pkgconfig_tests_root/install/libmongocrypt/lib64)"
+export LD_LIBRARY_PATH="$(native_path $pkgconfig_tests_root/install/lib):$(native_path $pkgconfig_tests_root/install/lib64):$(native_path $pkgconfig_tests_root/install/libmongocrypt/lib):$(native_path $pkgconfig_tests_root/install/libmongocrypt/lib64)"
 ./example-state-machine
 ./example-no-bson
 unset LD_LIBRARY_PATH

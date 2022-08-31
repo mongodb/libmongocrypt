@@ -9,30 +9,36 @@
 # Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
 #
 
-set -euxo pipefail
-
+. "$(dirname "${BASH_SOURCE[0]}")/init.sh"
+set -x
 echo "Begin compile process"
 
 evergreen_root="$(pwd)"
 
-. ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
+. "$EVG_DIR/setup-env.sh"
 
 # We may need some more C++ flags
 _cxxflags=""
 
+: "${ADDITIONAL_CMAKE_FLAGS:=}"
+: "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
+: "${LIBMONGOCRYPT_EXTRA_CFLAGS:=}"
+: "${CONFIGURE_ONLY:=}"
+: "${MACOS_UNIVERSAL:=}"
+: "${PPA_BUILD_ONLY:=}"
+
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
-if [ "$OS" == "Windows_NT" ]; then
+if [ "$OS_NAME" = "windows" ]; then
     : "${CMAKE:=/cygdrive/c/cmake/bin/cmake}"
     # Enable exception handling for MSVC
     _cxxflags="-EHsc"
-    if [ "$WINDOWS_32BIT" != "ON" ]; then
+    if [ "${WINDOWS_32BIT-}" != "ON" ]; then
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
 else
     # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-    IGNORE_SYSTEM_CMAKE=1 . ${evergreen_root}/libmongocrypt/.evergreen/find-cmake.sh
+    IGNORE_SYSTEM_CMAKE=1 . "$EVG_DIR/find-cmake.sh"
     # Check if on macOS with arm64. Use system cmake. See BUILD-14565.
-    OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
     MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
     if [ "darwin" = "$OS_NAME" -a "arm64" = "$MARCH" ]; then
         CMAKE=cmake
@@ -45,14 +51,15 @@ export CTEST_OUTPUT_ON_FAILURE=1
 
 if [ "$PPA_BUILD_ONLY" ]; then
     # Clean-up from previous build iteration
-    cd $evergreen_root
-    rm -rf libmongocrypt/cmake-build* "${MONGOCRYPT_INSTALL_PREFIX}"
-    ADDITIONAL_CMAKE_FLAGS="${ADDITIONAL_CMAKE_FLAGS} -DENABLE_BUILD_FOR_PPA=ON"
+    rm -rf -- "$LIBMONGOCRYPT_DIR"/cmake-build* "$MONGOCRYPT_INSTALL_PREFIX"
+    ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DENABLE_BUILD_FOR_PPA=ON"
 fi
 
 if [ "$MACOS_UNIVERSAL" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
+
+: "${CMAKE:=cmake}"
 
 cd $evergreen_root
 

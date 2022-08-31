@@ -2,14 +2,6 @@
 
 set -euxo pipefail
 
-system_path () {
-    if [ "${OS-}" == "Windows_NT" ]; then
-        cygpath -a "$1" -w
-    else
-        echo $1
-    fi
-}
-
 # Directory layout
 # .evergreen
 # -linker_tests_deps
@@ -46,10 +38,13 @@ cd linker_tests
 $libmongocrypt_root/.evergreen/prep_c_driver_source.sh
 cd mongo-c-driver
 
+: "${ADDITIONAL_CMAKE_FLAGS:=}"
+: "${MACOS_UNIVERSAL:=}"
+
 # Use C driver helper script to find cmake binary, stored in $CMAKE.
-if [ "$OS" == "Windows_NT" ]; then
+if [ "$OS_NAME" = "windows" ]; then
     CMAKE=/cygdrive/c/cmake/bin/cmake
-    if [ "$WINDOWS_32BIT" != "ON" ]; then
+    if [ "${WINDOWS_32BIT-}" != "ON" ]; then
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
 else
@@ -63,27 +58,27 @@ else
     fi
 fi
 
-if [ "$MACOS_UNIVERSAL" = "ON" ]; then
+if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
-git apply --ignore-whitespace "$(system_path $linker_tests_deps_root/bson_patches/libbson1.patch)"
+git apply --ignore-whitespace "$(native_path $linker_tests_deps_root/bson_patches/libbson1.patch)"
 mkdir cmake-build
 cd cmake-build
-INSTALL_PATH="$(system_path $linker_tests_root/install/bson1)"
-SRC_PATH="$(system_path ../)"
+INSTALL_PATH="$(native_path $linker_tests_root/install/bson1)"
+SRC_PATH="$(native_path ../)"
 $CMAKE -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 # Make libbson2
 cd ..
 git reset --hard
-git apply --ignore-whitespace "$(system_path $linker_tests_deps_root/bson_patches/libbson2.patch)"
-LIBBSON2_SRC_DIR="$(system_path "$PWD")"
+git apply --ignore-whitespace "$(native_path $linker_tests_deps_root/bson_patches/libbson2.patch)"
+LIBBSON2_SRC_DIR="$(native_path "$PWD")"
 
 # Build libmongocrypt, static linking against libbson2
 cd $linker_tests_root/libmongocrypt-cmake-build
-INSTALL_PATH="$(system_path $linker_tests_root/install/libmongocrypt)"
-SRC_PATH="$(system_path $libmongocrypt_root)"
+INSTALL_PATH="$(native_path $linker_tests_root/install/libmongocrypt)"
+SRC_PATH="$(native_path $libmongocrypt_root)"
 $CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo "-DMONGOCRYPT_MONGOC_DIR=$LIBBSON2_SRC_DIR" $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
 $CMAKE --build . --target install --config RelWithDebInfo
 
@@ -91,12 +86,12 @@ echo "Test case: Modelling libmongoc's use"
 # app links against libbson1.so
 # app links against libmongocrypt.so
 cd $linker_tests_root/app-cmake-build
-PREFIX_PATH="$(system_path $linker_tests_root/install/bson1);$(system_path $linker_tests_root/install/libmongocrypt)"
-SRC_PATH="$(system_path $linker_tests_deps_root/app)"
+PREFIX_PATH="$(native_path $linker_tests_root/install/bson1);$(native_path $linker_tests_root/install/libmongocrypt)"
+SRC_PATH="$(native_path $linker_tests_deps_root/app)"
 $CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" "$SRC_PATH"
 $CMAKE --build . --target app --config RelWithDebInfo
 
-if [ "$OS" == "Windows_NT" ]; then
+if [ "$OS_NAME" = "windows" ]; then
     export PATH="$PATH:$linker_tests_root/install/bson1/bin:$linker_tests_root/install/libmongocrypt/bin"
     APP_CMD="./RelWithDebInfo/app.exe"
 else

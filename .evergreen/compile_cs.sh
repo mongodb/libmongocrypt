@@ -13,7 +13,7 @@ evergreen_root="$(pwd)"
 
 cd $evergreen_root
 
-if [ "$OS" == "Windows_NT" ]; then
+if [ "$OS_NAME" = "windows" ]; then
     # Make sure libbson.dll is in the path on Windows
     export PATH=${MONGOCRYPT_INSTALL_PREFIX}/mongo-c-driver/bin:$PATH
 
