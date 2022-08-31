@@ -108,7 +108,6 @@ env LD_LIBRARY_PATH="$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64" 
 rm -r "$mongocrypt_install_dir"
 
 # Build libmongocrypt, dynamic linking against libbson
-cd $pkgconfig_tests_root/libmongocrypt-cmake-build
 $CMAKE -DUSE_SHARED_LIBBSON=ON \
        -DENABLE_BUILD_FOR_PPA=OFF \
        "${common_cmake_flags[@]}" \
