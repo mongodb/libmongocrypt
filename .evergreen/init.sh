@@ -110,7 +110,7 @@ function abspath() {
         return 0
     else
         # Resolve the parent path
-        _parent="$(DEBUG=0 abspath "$_parent")"
+        _parent="$(set +x; DEBUG=0 abspath "$_parent")"
     fi
     # At this point $_parent is an absolute path
     if test "$_fname" = ".."; then
