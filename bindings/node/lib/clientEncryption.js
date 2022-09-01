@@ -113,11 +113,12 @@ module.exports = function (modules) {
       // kmsProviders will be parsed by libmongocrypt, must be provided as BSON binary data
       if (options.kmsProviders && !Buffer.isBuffer(options.kmsProviders)) {
         options.kmsProviders = this._bson.serialize(options.kmsProviders);
-      } else if (!options.onKmsProviderRefresh) {
+      } else if (!options.onKmsProviderRefresh && !options.onEmptyKmsProviders) {
         throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
       }
 
       this._onKmsProviderRefresh = options.onKmsProviderRefresh;
+      this._onEmptyKmsProviders = options.onEmptyKmsProviders;
       this._keyVaultNamespace = options.keyVaultNamespace;
       this._keyVaultClient = options.keyVaultClient || client;
       this._mongoCrypt = new mc.MongoCrypt(options);
@@ -675,17 +676,6 @@ module.exports = function (modules) {
           cb(null, result.v);
         });
       });
-    }
-
-    /**
-     * Ask the user for KMS credentials.
-     *
-     * This returns anything that looks like the kmsProviders original input
-     * option. It can be empty, and any provider specified here will override
-     * the original ones.
-     */
-    async askForKMSCredentials() {
-      return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
     }
   }
 

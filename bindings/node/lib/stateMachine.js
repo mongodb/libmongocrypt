@@ -12,6 +12,7 @@ module.exports = function (modules) {
     modules.mongodb.MongoNetworkTimeoutError || modules.mongodb.MongoTimeoutError;
 
   const common = require('./common');
+  const askForKMSCredentials = common.askForKMSCredentials;
   const debug = common.debug;
   const databaseNamespace = common.databaseNamespace;
   const collectionNamespace = common.collectionNamespace;
@@ -178,8 +179,7 @@ module.exports = function (modules) {
         }
 
         case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS: {
-          autoEncrypter
-            .askForKMSCredentials()
+          askForKMSCredentials(autoEncrypter)
             .then(kmsProviders => {
               context.provideKMSProviders(
                 !Buffer.isBuffer(kmsProviders) ? bson.serialize(kmsProviders) : kmsProviders

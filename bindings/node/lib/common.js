@@ -91,7 +91,29 @@ function promiseOrCallback(callback, fn) {
   });
 }
 
+/**
+ * Ask for KMS credentials.
+ *
+ * This returns anything that looks like the kmsProviders original input
+ * option. It can be empty, and any provider specified here will override
+ * the original ones.
+ *
+ * @param {AutoEncrypter|ClientEncryption} encrypter The encrypter.
+ */
+async function askForKMSCredentials(encrypter) {
+  // First attempt to use the user provided callback to get the credentials.
+  const creds = encrypter._onKmsProviderRefresh ? encrypter._onKmsProviderRefresh() : {};
+  // If the credentials are empty and we have an additional callback provided
+  // by the driver to attempt to fetch them, attempt to use that.
+  if (!creds.aws && encrypter._onEmptyKmsProviders) {
+    return encrypter._onEmptyKmsProviders();
+  }
+  // Return the credentials which could be populated or empty.
+  return creds;
+}
+
 module.exports = {
+  askForKMSCredentials,
   debug,
   databaseNamespace,
   collectionNamespace,

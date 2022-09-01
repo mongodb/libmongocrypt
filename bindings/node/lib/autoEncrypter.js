@@ -101,6 +101,7 @@ module.exports = function (modules) {
       this._proxyOptions = options.proxyOptions || {};
       this._tlsOptions = options.tlsOptions || {};
       this._onKmsProviderRefresh = options.onKmsProviderRefresh;
+      this._onEmptyKmsProviders = options.onEmptyKmsProviders;
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
@@ -311,17 +312,6 @@ module.exports = function (modules) {
         }
         callback(err, result);
       });
-    }
-
-    /**
-     * Ask the user for KMS credentials.
-     *
-     * This returns anything that looks like the kmsProviders original input
-     * option. It can be empty, and any provider specified here will override
-     * the original ones.
-     */
-    async askForKMSCredentials() {
-      return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
     }
 
     /**

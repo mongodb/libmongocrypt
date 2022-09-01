@@ -326,6 +326,26 @@ describe('AutoEncrypter', function () {
       });
     });
 
+    it('decrypts mock data with driver provided env callback', function (done) {
+      const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: {}
+        },
+        async onEmptyKmsProviders() {
+          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
+        }
+      });
+      mc.decrypt(input, (err, decrypted) => {
+        if (err) return done(err);
+        expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+        done();
+      });
+    });
+
     it('should encrypt mock data', function (done) {
       const client = new MockClient();
       const mc = new AutoEncrypter(client, {
@@ -368,6 +388,41 @@ describe('AutoEncrypter', function () {
           aws: {}
         },
         async onKmsProviderRefresh() {
+          return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
+        }
+      });
+
+      mc.encrypt('test.test', TEST_COMMAND, (err, encrypted) => {
+        if (err) return done(err);
+        const expected = EJSON.parse(
+          JSON.stringify({
+            find: 'test',
+            filter: {
+              ssn: {
+                $binary: {
+                  base64:
+                    'AWFhYWFhYWFhYWFhYWFhYWECRTOW9yZzNDn5dGwuqsrJQNLtgMEKaujhs9aRWRp+7Yo3JK8N8jC8P0Xjll6C1CwLsE/iP5wjOMhVv1KMMyOCSCrHorXRsb2IKPtzl2lKTqQ=',
+                  subType: '6'
+                }
+              }
+            }
+          })
+        );
+
+        expect(encrypted).to.containSubset(expected);
+        done();
+      });
+    });
+
+    it('encrypts mock data with driver provided env callback', function (done) {
+      const client = new MockClient();
+      const mc = new AutoEncrypter(client, {
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: {}
+        },
+        async onEmptyKmsProviders() {
           return { aws: { accessKeyId: 'example', secretAccessKey: 'example' } };
         }
       });
