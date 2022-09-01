@@ -229,7 +229,8 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          env ${compile_env|} bash ./libmongocrypt/.evergreen/build_all.sh
+          env ${compile_env|} DEFAULT_BUILD_ONLY=true \
+            bash ./libmongocrypt/.evergreen/build_all.sh
           env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
 
   "build python release macos":

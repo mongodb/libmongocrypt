@@ -101,6 +101,11 @@ if [ "$PPA_BUILD_ONLY" ]; then
     exit 0;
 fi
 
+if "${DEFAULT_BUILD_ONLY:-false}"; then
+    echo "Skipping nocrypto+sharedbson builds"
+    exit 0
+fi
+
 # Build and install libmongocrypt with no native crypto.
 "$CMAKE" \
     -DDISABLE_NATIVE_CRYPTO=ON \
