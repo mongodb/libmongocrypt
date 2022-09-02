@@ -25,41 +25,6 @@
  * Other libmongocrypt files warn for -Wconversion. */
 MC_BEGIN_CONVERSION_ERRORS
 
-typedef struct {
-   int32_t range_min;
-   int32_t range_max;
-   mc_optional_int32_t min;
-   mc_optional_int32_t max;
-   size_t sparsity;
-   /* expectMincoverString is newline delimitted list of strings. */
-   const char *expectMincoverString;
-   mc_array_t expectMincover;
-   const char *expectError;
-} Int32Test;
-
-static void
-Int32Test_dump (Int32Test *test, mc_mincover_t *got)
-{
-   fflush (stdout); // Avoid incomplete stdout output from prior tests on error
-   fprintf (stderr,
-            "testcase: range_min=%" PRId32 " range_max=%" PRId32,
-            test->range_min,
-            test->range_max);
-   if (test->min.set) {
-      fprintf (stderr, " min=%" PRId32, test->min.value);
-   }
-   if (test->max.set) {
-      fprintf (stderr, " max=%" PRId32, test->max.value);
-   }
-   fprintf (stderr, " sparsity=%zu", test->sparsity);
-   fprintf (stderr, " expected mincover:\n%s", test->expectMincoverString);
-   fprintf (stderr, "mincover got ... begin\n");
-   for (size_t i = 0; i < mc_mincover_len (got); i++) {
-      fprintf (stderr, "  %s\n", mc_mincover_get (got, i));
-   }
-   fprintf (stderr, "mincover got ... end\n");
-}
-
 static void
 expectMincover_init (mc_array_t *expectMincover,
                      const char *expectMincoverString)
@@ -102,6 +67,220 @@ expectMincover_cleanup (mc_array_t *expectMincover)
    _mc_array_destroy (expectMincover);
 }
 
+typedef struct {
+   int32_t range_min;
+   int32_t range_max;
+   mc_optional_int32_t min;
+   mc_optional_int32_t max;
+   size_t sparsity;
+   /* expectMincoverString is newline delimitted list of strings. */
+   const char *expectMincoverString;
+   mc_array_t expectMincover;
+   const char *expectError;
+} Int32Test;
+
+typedef struct {
+   int64_t range_min;
+   int64_t range_max;
+   mc_optional_int64_t min;
+   mc_optional_int64_t max;
+   size_t sparsity;
+   /* expectMincoverString is newline delimitted list of strings. */
+   const char *expectMincoverString;
+   mc_array_t expectMincover;
+   const char *expectError;
+} Int64Test;
+
+typedef struct _test_getMincover_args {
+   mc_mincover_t *(*getMincover) (void *tests,
+                                  size_t idx,
+                                  mongocrypt_status_t *status);
+   const char *(*expectError) (void *tests, size_t idx);
+   void (*expectMincover_init) (void *tests, size_t idx);
+   mc_array_t *(*expectMincover) (void *tests, size_t idx);
+   void (*dump) (void *tests, size_t idx, mc_mincover_t *got);
+} _test_getMincover_args;
+
+static mc_mincover_t *
+_test_getMincover32 (void *tests, size_t idx, mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (tests);
+
+   Int32Test *test = (Int32Test *) tests + idx;
+
+   return mc_getMincoverInt32 (
+      (mc_getMincoverInt32_args_t){.range_min = test->range_min,
+                                   .range_max = test->range_max,
+                                   .min = test->min,
+                                   .max = test->max,
+                                   .sparsity = test->sparsity},
+      status);
+}
+
+static mc_mincover_t *
+_test_getMincover64 (void *tests, size_t idx, mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (tests);
+
+   Int64Test *const test = (Int64Test *) tests + idx;
+
+   return mc_getMincoverInt64 (
+      (mc_getMincoverInt64_args_t){.range_min = test->range_min,
+                                   .range_max = test->range_max,
+                                   .min = test->min,
+                                   .max = test->max,
+                                   .sparsity = test->sparsity},
+      status);
+}
+
+static const char *
+_test_expectError32 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return ((Int32Test *) tests + idx)->expectError;
+}
+
+static const char *
+_test_expectError64 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return ((Int64Test *) tests + idx)->expectError;
+}
+
+static void
+_test_expectMincover_init32 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   Int32Test *const test = (Int32Test *) tests + idx;
+   expectMincover_init (&test->expectMincover, test->expectMincoverString);
+}
+
+static void
+_test_expectMincover_init64 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   Int64Test *const test = (Int64Test *) tests + idx;
+   expectMincover_init (&test->expectMincover, test->expectMincoverString);
+}
+
+static mc_array_t *
+_test_expectMincover32 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return &((Int32Test *) tests + idx)->expectMincover;
+}
+
+static mc_array_t *
+_test_expectMincover64 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return &((Int64Test *) tests + idx)->expectMincover;
+}
+
+static void
+_test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
+{
+   BSON_ASSERT_PARAM (tests);
+   Int32Test *const test = (Int32Test *) tests + idx;
+   fflush (stdout); // Avoid incomplete stdout output from prior tests on error
+   fprintf (stderr,
+            "testcase: range_min=%" PRId32 " range_max=%" PRId32,
+            test->range_min,
+            test->range_max);
+   if (test->min.set) {
+      fprintf (stderr, " min=%" PRId32, test->min.value);
+   }
+   if (test->max.set) {
+      fprintf (stderr, " max=%" PRId32, test->max.value);
+   }
+   fprintf (stderr, " sparsity=%zu", test->sparsity);
+   fprintf (stderr, " expected mincover:\n%s", test->expectMincoverString);
+   fprintf (stderr, "mincover got ... begin\n");
+   for (size_t i = 0; i < mc_mincover_len (got); i++) {
+      fprintf (stderr, "  %s\n", mc_mincover_get (got, i));
+   }
+   fprintf (stderr, "mincover got ... end\n");
+}
+
+static void
+_test_dump_64 (void *tests, size_t idx, mc_mincover_t *got)
+{
+   BSON_ASSERT_PARAM (tests);
+   Int64Test *const test = (Int64Test *) tests + idx;
+   fflush (stdout); // Avoid incomplete stdout output from prior tests on error
+   fprintf (stderr,
+            "testcase: range_min=%" PRId64 " range_max=%" PRId64,
+            test->range_min,
+            test->range_max);
+   if (test->min.set) {
+      fprintf (stderr, " min=%" PRId64, test->min.value);
+   }
+   if (test->max.set) {
+      fprintf (stderr, " max=%" PRId64, test->max.value);
+   }
+   fprintf (stderr, " sparsity=%zu", test->sparsity);
+   fprintf (stderr, " expected mincover:\n%s", test->expectMincoverString);
+   fprintf (stderr, "mincover got ... begin\n");
+   for (size_t i = 0; i < mc_mincover_len (got); i++) {
+      fprintf (stderr, "  %s\n", mc_mincover_get (got, i));
+   }
+   fprintf (stderr, "mincover got ... end\n");
+}
+
+
+static void
+_test_getMincover_impl (void *tests,
+                        size_t num_tests,
+                        _test_getMincover_args args)
+{
+   BSON_ASSERT_PARAM (tests);
+
+   for (size_t i = 0; i < num_tests; i++) {
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
+      mc_mincover_t *got = args.getMincover (tests, i, status);
+      const char *expectError = args.expectError (tests, i);
+      if (expectError) {
+         ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
+         ASSERT_STATUS_CONTAINS (status, expectError);
+         mongocrypt_status_destroy (status);
+         continue;
+      }
+      ASSERT_OK_STATUS (got != NULL, status);
+
+      args.expectMincover_init (tests, i);
+      size_t numGot = mc_mincover_len (got);
+      mc_array_t *expectMincover = args.expectMincover (tests, i);
+      size_t numExpected = expectMincover->len;
+
+      if (numExpected != numGot) {
+         args.dump (tests, i, got);
+         TEST_ERROR ("test %zu: got %zu mincover, expected %zu mincover\n",
+                     i,
+                     numGot,
+                     numExpected);
+      }
+
+      for (size_t gotI = 0; gotI < numGot; gotI++) {
+         const char *edgeGot = mc_mincover_get (got, gotI);
+         const char *edgeExpected =
+            _mc_array_index (expectMincover, const char *, gotI);
+         if (0 == strcmp (edgeGot, edgeExpected)) {
+            continue;
+         }
+         args.dump (tests, i, got);
+         TEST_ERROR ("test %zu: edge mismatch at index %zu. %s != %s\n",
+                     i,
+                     gotI,
+                     edgeGot,
+                     edgeExpected);
+      }
+
+      expectMincover_cleanup (expectMincover);
+      mc_mincover_destroy (got);
+      mongocrypt_status_destroy (status);
+   }
+}
+
 static void
 _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
 {
@@ -136,89 +315,15 @@ _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
 
    };
 
-   for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
-      mongocrypt_status_t *const status = mongocrypt_status_new ();
-      Int32Test *test = tests + i;
-      mc_getMincoverInt32_args_t args = {.range_min = test->range_min,
-                                         .range_max = test->range_max,
-                                         .min = test->min,
-                                         .max = test->max,
-                                         .sparsity = test->sparsity};
-      mc_mincover_t *got = mc_getMincoverInt32 (args, status);
-      if (test->expectError != NULL) {
-         ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
-         ASSERT_STATUS_CONTAINS (status, test->expectError);
-         mongocrypt_status_destroy (status);
-         continue;
-      }
-      ASSERT_OK_STATUS (got != NULL, status);
-
-      expectMincover_init (&test->expectMincover, test->expectMincoverString);
-      size_t numGot = mc_mincover_len (got);
-      size_t numExpected = test->expectMincover.len;
-
-      if (numExpected != numGot) {
-         Int32Test_dump (test, got);
-         TEST_ERROR ("test %zu: got %zu mincover, expected %zu mincover\n",
-                     i,
-                     numGot,
-                     numExpected);
-      }
-
-      for (size_t gotI = 0; gotI < numGot; gotI++) {
-         const char *edgeGot = mc_mincover_get (got, gotI);
-         const char *edgeExpected =
-            _mc_array_index (&test->expectMincover, const char *, gotI);
-         if (0 == strcmp (edgeGot, edgeExpected)) {
-            continue;
-         }
-         Int32Test_dump (test, got);
-         TEST_ERROR ("test %zu: edge mismatch at index %zu. %s != %s\n",
-                     i,
-                     gotI,
-                     edgeGot,
-                     edgeExpected);
-      }
-
-      expectMincover_cleanup (&test->expectMincover);
-      mc_mincover_destroy (got);
-      mongocrypt_status_destroy (status);
-   }
-}
-
-typedef struct {
-   int64_t range_min;
-   int64_t range_max;
-   mc_optional_int64_t min;
-   mc_optional_int64_t max;
-   size_t sparsity;
-   /* expectMincoverString is newline delimitted list of strings. */
-   const char *expectMincoverString;
-   mc_array_t expectMincover;
-   const char *expectError;
-} Int64Test;
-
-static void
-Int64Test_dump (Int64Test *test, mc_mincover_t *got)
-{
-   fflush (stdout); // Avoid incomplete stdout output from prior tests on error
-   fprintf (stderr,
-            "testcase: range_min=%" PRId64 " range_max=%" PRId64,
-            test->range_min,
-            test->range_max);
-   if (test->min.set) {
-      fprintf (stderr, " min=%" PRId64, test->min.value);
-   }
-   if (test->max.set) {
-      fprintf (stderr, " max=%" PRId64, test->max.value);
-   }
-   fprintf (stderr, " sparsity=%zu", test->sparsity);
-   fprintf (stderr, " expected mincover:\n%s", test->expectMincoverString);
-   fprintf (stderr, "mincover got ... begin\n");
-   for (size_t i = 0; i < mc_mincover_len (got); i++) {
-      fprintf (stderr, "  %s\n", mc_mincover_get (got, i));
-   }
-   fprintf (stderr, "mincover got ... end\n");
+   _test_getMincover_impl (
+      tests,
+      sizeof (tests) / sizeof (tests[0]),
+      (_test_getMincover_args){.getMincover = _test_getMincover32,
+                               .expectMincover_init =
+                                  _test_expectMincover_init32,
+                               .expectMincover = _test_expectMincover32,
+                               .expectError = _test_expectError32,
+                               .dump = _test_dump_32});
 }
 
 static void
@@ -255,54 +360,15 @@ _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
 
    };
 
-   for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
-      mongocrypt_status_t *const status = mongocrypt_status_new ();
-      Int64Test *test = tests + i;
-      mc_getMincoverInt64_args_t args = {.range_min = test->range_min,
-                                         .range_max = test->range_max,
-                                         .min = test->min,
-                                         .max = test->max,
-                                         .sparsity = test->sparsity};
-      mc_mincover_t *got = mc_getMincoverInt64 (args, status);
-      if (test->expectError != NULL) {
-         ASSERT_OR_PRINT_MSG (NULL == got, "expected error, got success");
-         ASSERT_STATUS_CONTAINS (status, test->expectError);
-         mongocrypt_status_destroy (status);
-         continue;
-      }
-      ASSERT_OK_STATUS (got != NULL, status);
-
-      expectMincover_init (&test->expectMincover, test->expectMincoverString);
-      size_t numGot = mc_mincover_len (got);
-      size_t numExpected = test->expectMincover.len;
-
-      if (numExpected != numGot) {
-         Int64Test_dump (test, got);
-         TEST_ERROR ("test %zu: got %zu mincover, expected %zu mincover\n",
-                     i,
-                     numGot,
-                     numExpected);
-      }
-
-      for (size_t gotI = 0; gotI < numGot; gotI++) {
-         const char *edgeGot = mc_mincover_get (got, gotI);
-         const char *edgeExpected =
-            _mc_array_index (&test->expectMincover, const char *, gotI);
-         if (0 == strcmp (edgeGot, edgeExpected)) {
-            continue;
-         }
-         Int64Test_dump (test, got);
-         TEST_ERROR ("test %zu: edge mismatch at index %zu. %s != %s\n",
-                     i,
-                     gotI,
-                     edgeGot,
-                     edgeExpected);
-      }
-
-      expectMincover_cleanup (&test->expectMincover);
-      mc_mincover_destroy (got);
-      mongocrypt_status_destroy (status);
-   }
+   _test_getMincover_impl (
+      tests,
+      sizeof (tests) / sizeof (tests[0]),
+      (_test_getMincover_args){.getMincover = _test_getMincover64,
+                               .expectMincover_init =
+                                  _test_expectMincover_init64,
+                               .expectMincover = _test_expectMincover64,
+                               .expectError = _test_expectError64,
+                               .dump = _test_dump_64});
 }
 
 void
