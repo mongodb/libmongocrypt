@@ -102,7 +102,7 @@ function promiseOrCallback(callback, fn) {
  */
 async function askForKMSCredentials(encrypter) {
   // First attempt to use the user provided callback to get the credentials.
-  const creds = encrypter._onKmsProviderRefresh ? encrypter._onKmsProviderRefresh() : {};
+  const creds = encrypter._onKmsProviderRefresh ? await encrypter._onKmsProviderRefresh() : {};
   // If the credentials are empty and we have an additional callback provided
   // by the driver to attempt to fetch them, attempt to use that.
   if (!creds.aws && encrypter._onEmptyKmsProviders) {
