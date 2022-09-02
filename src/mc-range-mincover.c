@@ -71,7 +71,7 @@ mc_mincover_destroy (mc_mincover_t *mincover)
 }
 
 #define BITS 32
-#include "mc-range-mincover-generator.template.c"
+#include "mc-range-mincover-generator.template.h"
 #undef BITS
 
 mc_mincover_t *
@@ -110,7 +110,7 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
 }
 
 #define BITS 64
-#include "mc-range-mincover-generator.template.c"
+#include "mc-range-mincover-generator.template.h"
 #undef BITS
 
 mc_mincover_t *

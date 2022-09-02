@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// mc-range-mincover-generator.template.c is meant to be included in another
+// mc-range-mincover-generator.template.h is meant to be included in another
 // source file.
 #ifndef BITS
 #error "must be included with BITS defined"
