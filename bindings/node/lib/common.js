@@ -104,7 +104,9 @@ async function askForKMSCredentials(encrypter) {
   // First attempt to use the user provided callback to get the credentials.
   const creds = encrypter._onKmsProviderRefresh ? await encrypter._onKmsProviderRefresh() : {};
   // If the credentials are empty and we have an additional callback provided
-  // by the driver to attempt to fetch them, attempt to use that.
+  // by the driver to attempt to fetch them, attempt to use that. We single out
+  // AWS for now since it's the only $external cloud provider auth that the driver
+  // supports.
   if (!creds.aws && encrypter._onEmptyKmsProviders) {
     return encrypter._onEmptyKmsProviders();
   }
