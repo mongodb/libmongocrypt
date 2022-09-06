@@ -22,6 +22,44 @@
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
 
+/** FLE2RangeSpec represents the range find specification that is encoded inside
+ * of a FLE2EncryptionPlaceholder. See
+ * https://github.com/mongodb/mongo/blob/d870dda33fb75983f628636ff8f849c7f1c90b09/src/mongo/crypto/fle_field_schema.idl#L346
+ * for the representation in the MongoDB server. */
+typedef struct {
+   // min is the minimum value for an encrypted range query.
+   bson_iter_t min;
+   // minIncluded indicates if the lower bound should be included in the range.
+   bool minIncluded;
+   // max is the maximum value for an encrypted range query.
+   bson_iter_t max;
+   // maxIncluded indicates if the upper bound should be included in the range.
+   bool maxIncluded;
+} mc_FLE2RangeSpec_t;
+
+bool
+mc_FLE2RangeSpec_parse (mc_FLE2RangeSpec_t *out,
+                        const bson_iter_t *in,
+                        mongocrypt_status_t *status);
+
+/** mc_FLE2RangeInsertSpec_t represents the range insert specification that is
+ * encoded inside of a FLE2EncryptionPlaceholder. See
+ * https://github.com/mongodb/mongo/blob/d870dda33fb75983f628636ff8f849c7f1c90b09/src/mongo/crypto/fle_field_schema.idl#L364
+ * for the representation in the MongoDB server. */
+typedef struct {
+   // v is the value to encrypt.
+   bson_iter_t v;
+   // lb is the Queryable Encryption lower bound for range.
+   bson_iter_t lb;
+   // ub is the Queryable Encryption upper bound for range.
+   bson_iter_t ub;
+} mc_FLE2RangeInsertSpec_t;
+
+bool
+mc_FLE2RangeInsertSpec_parse (mc_FLE2RangeInsertSpec_t *out,
+                              const bson_iter_t *in,
+                              mongocrypt_status_t *status);
+
 /** FLE2EncryptionPlaceholder implements Encryption BinData (subtype 6)
  * sub-subtype 0, the intent-to-encrypt mapping. Contains a value to encrypt and
  * a description of how it should be encrypted.
@@ -35,7 +73,7 @@
  *
  * See
  * https://github.com/mongodb/mongo/blob/d870dda33fb75983f628636ff8f849c7f1c90b09/src/mongo/crypto/fle_field_schema.idl#L133
- * for the representation of this type in the MongoDB server.
+ * for the representation in the MongoDB server.
  */
 
 typedef struct {
@@ -45,6 +83,8 @@ typedef struct {
    _mongocrypt_buffer_t index_key_id;
    _mongocrypt_buffer_t user_key_id;
    int64_t maxContentionCounter;
+   // sparsity is the Queryable Encryption range hypergraph sparsity factor
+   int32_t sparsity;
 } mc_FLE2EncryptionPlaceholder_t;
 
 void
@@ -64,5 +104,10 @@ mc_FLE2EncryptionPlaceholder_cleanup (
  * or from mongocrypt_ctx_setopt_contention_factor. */
 bool
 mc_validate_contention (int64_t contention, mongocrypt_status_t *status);
+
+/* mc_validate_sparsity is used to check that sparsity is a valid
+ * value. */
+bool
+mc_validate_sparsity (int32_t sparsity, mongocrypt_status_t *status);
 
 #endif /* MC_FLE2_ENCRYPTION_PLACEHOLDER_PRIVATE_H */
