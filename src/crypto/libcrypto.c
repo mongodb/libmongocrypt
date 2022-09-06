@@ -75,6 +75,9 @@ _encrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 
    ctx = EVP_CIPHER_CTX_new ();
 
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
    BSON_ASSERT (ctx);
    BSON_ASSERT (cipher);
    BSON_ASSERT (NULL == args.iv ||
@@ -139,6 +142,10 @@ _decrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 
    ctx = EVP_CIPHER_CTX_new ();
 
+   BSON_ASSERT (args.iv);
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
    BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == args.iv->len);
    BSON_ASSERT (EVP_CIPHER_key_length (cipher) == args.key->len);
 
@@ -213,6 +220,11 @@ _hmac_with_hash (const EVP_MD *hash,
                  _mongocrypt_buffer_t *out,
                  mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (status);
+
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    if (!HMAC (hash,
               key->data,
@@ -277,6 +289,9 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        uint32_t count,
                        mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (status);
+
    int ret = RAND_bytes (out->data, count);
    /* From man page: "RAND_bytes() and RAND_priv_bytes() return 1 on success, -1
     * if not supported by the current RAND method, or 0 on other failure. The
