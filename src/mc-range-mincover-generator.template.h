@@ -167,7 +167,7 @@ WITH_BITS (MinCoverGenerator_minCoverRec) (WITH_BITS (MinCoverGenerator) * mcg,
 
    BSON_ASSERT (maskedBits > 0);
 
-   const size_t newBits = maskedBits - 1;
+   const size_t newBits = maskedBits - 1u;
    WITH_BITS (MinCoverGenerator_minCoverRec) (mcg, c, blockStart, newBits);
    WITH_BITS (MinCoverGenerator_minCoverRec)
    (mcg, c, blockStart | (UINT_T) 1 << (UINT_T) newBits, newBits);
