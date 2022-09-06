@@ -193,8 +193,10 @@ _test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
    if (test->max.set) {
       fprintf (stderr, " max=%" PRId32, test->max.value);
    }
-   fprintf (stderr, " sparsity=%zu", test->sparsity);
-   fprintf (stderr, " expected mincover:\n%s", test->expectMincoverString);
+   fprintf (stderr, " sparsity=%zu\n", test->sparsity);
+   fprintf (stderr, "mincover expected ... begin\n");
+   fprintf (stderr, "%s", test->expectMincoverString);
+   fprintf (stderr, "mincover expected ... end\n");
    fprintf (stderr, "mincover got ... begin\n");
    for (size_t i = 0; i < mc_mincover_len (got); i++) {
       fprintf (stderr, "  %s\n", mc_mincover_get (got, i));
