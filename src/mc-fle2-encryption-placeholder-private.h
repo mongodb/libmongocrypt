@@ -22,6 +22,22 @@
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
 
+/** FLE2EncryptionPlaceholder implements Encryption BinData (subtype 6)
+ * sub-subtype 0, the intent-to-encrypt mapping. Contains a value to encrypt and
+ * a description of how it should be encrypted.
+ *
+ * For automatic encryption, FLE2EncryptionPlaceholder is created by query
+ * analysis (mongocryptd or mongo_crypt shared library). For explicit
+ * encryption, FLE2EncryptionPlaceholder is created by libmongocrypt.
+ *
+ * FLE2EncryptionPlaceholder is processed by libmongocrypt into a payload
+ * suitable to send to the MongoDB server (mongod/mongos).
+ *
+ * See
+ * https://github.com/mongodb/mongo/blob/d870dda33fb75983f628636ff8f849c7f1c90b09/src/mongo/crypto/fle_field_schema.idl#L133
+ * for the representation of this type in the MongoDB server.
+ */
+
 typedef struct {
    mongocrypt_fle2_placeholder_type_t type;
    mongocrypt_fle2_encryption_algorithm_t algorithm;
