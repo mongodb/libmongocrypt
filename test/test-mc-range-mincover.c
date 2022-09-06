@@ -76,7 +76,7 @@ expectMincover_init (mc_array_t *expectMincover,
             _mc_array_append_val (expectMincover, got);
          }
          curr = ptr + 1;
-         ptr += 1;
+         ++ptr;
          nchars = 0;
          continue;
       }
@@ -87,8 +87,8 @@ expectMincover_init (mc_array_t *expectMincover,
          }
          return;
       }
-      ptr += 1;
-      nchars += 1;
+      ++ptr;
+      ++nchars;
    }
 }
 
