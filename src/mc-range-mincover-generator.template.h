@@ -77,7 +77,7 @@ static WITH_BITS (MinCoverGenerator) *
       bson_malloc0 (sizeof (WITH_BITS (MinCoverGenerator)));
    mcg->_rangeMin = rangeMin;
    mcg->_rangeMax = rangeMax;
-   mcg->_maxlen = BITS - WITH_BITS (mc_count_leading_zeros) (max);
+   mcg->_maxlen = (size_t) BITS - WITH_BITS (mc_count_leading_zeros) (max);
    mcg->_sparsity = sparsity;
    return mcg;
 }
@@ -98,7 +98,7 @@ WITH_BITS (applyMask) (UINT_T value, size_t maskedBits)
 {
    const UINT_T ones = ~UINT_C (0);
 
-   BSON_ASSERT (maskedBits <= BITS);
+   BSON_ASSERT (maskedBits <= (size_t) BITS);
    BSON_ASSERT (maskedBits >= 0);
 
    if (maskedBits == 0) {
@@ -127,7 +127,7 @@ WITH_BITS (MinCoverGenerator_toString) (WITH_BITS (MinCoverGenerator) * mcg,
 {
    BSON_ASSERT_PARAM (mcg);
    BSON_ASSERT (maskedBits <= mcg->_maxlen);
-   BSON_ASSERT (maskedBits <= BITS);
+   BSON_ASSERT (maskedBits <= (size_t) BITS);
    BSON_ASSERT (maskedBits >= 0);
 
    if (maskedBits == mcg->_maxlen) {
@@ -136,8 +136,9 @@ WITH_BITS (MinCoverGenerator_toString) (WITH_BITS (MinCoverGenerator) * mcg,
 
    UINT_T shifted = start >> (UINT_T) maskedBits;
    char *valueBin = WITH_BITS (mc_convert_to_bitstring) (shifted);
-   char *ret = bson_strndup (valueBin + (BITS - mcg->_maxlen + maskedBits),
-                             mcg->_maxlen + maskedBits);
+   char *ret =
+      bson_strndup (valueBin + ((size_t) BITS - mcg->_maxlen + maskedBits),
+                    mcg->_maxlen + maskedBits);
    bson_free (valueBin);
    return ret;
 }
