@@ -128,7 +128,7 @@ mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
       IF_FIELD (cm)
       {
          if (!BSON_ITER_HOLDS_INT64 (&iter)) {
-            CLIENT_ERR ("invalid maeking, 'cm' must be an int64");
+            CLIENT_ERR ("invalid marking, 'cm' must be an int64");
             goto fail;
          }
          out->maxContentionCounter = bson_iter_int64 (&iter);
