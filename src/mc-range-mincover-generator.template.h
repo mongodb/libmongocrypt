@@ -188,5 +188,6 @@ WITH_BITS (MinCoverGenerator_minCover) (WITH_BITS (MinCoverGenerator) * mcg,
 }
 
 #undef UINT_T
+#undef UINT_C
 #undef FMT_UINT_T
 #undef WITH_BITS
