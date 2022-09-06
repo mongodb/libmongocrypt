@@ -103,8 +103,7 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
    if (!mcg) {
       return NULL;
    }
-   mc_mincover_t *mc = MinCoverGenerator_minCover_u32 (
-      mcg, a.value, b.value, a.max, args.sparsity);
+   mc_mincover_t *mc = MinCoverGenerator_minCover_u32 (mcg);
    MinCoverGenerator_destroy_u32 (mcg);
    return mc;
 }
@@ -142,8 +141,7 @@ mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
    if (!mcg) {
       return NULL;
    }
-   mc_mincover_t *mc = MinCoverGenerator_minCover_u64 (
-      mcg, a.value, b.value, a.max, args.sparsity);
+   mc_mincover_t *mc = MinCoverGenerator_minCover_u64 (mcg);
    MinCoverGenerator_destroy_u64 (mcg);
    return mc;
 }

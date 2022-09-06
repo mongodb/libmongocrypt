@@ -174,11 +174,7 @@ WITH_BITS (MinCoverGenerator_minCoverRec) (WITH_BITS (MinCoverGenerator) * mcg,
 }
 
 static inline mc_mincover_t *
-WITH_BITS (MinCoverGenerator_minCover) (WITH_BITS (MinCoverGenerator) * mcg,
-                                        UINT_T rangeMin,
-                                        UINT_T rangeMax,
-                                        UINT_T max,
-                                        size_t sparsity)
+WITH_BITS (MinCoverGenerator_minCover) (WITH_BITS (MinCoverGenerator) * mcg)
 {
    BSON_ASSERT_PARAM (mcg);
    mc_mincover_t *mc = mc_mincover_new ();
