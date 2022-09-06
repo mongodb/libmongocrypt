@@ -804,7 +804,7 @@ def _ask_for_kms_credentials(kms_providers):
         return
     if not _HAVE_AUTH_AWS:
         raise RuntimeError(
-            "MONGODB-AWS authentication requires pymongo-auth-aws: "
+            "On-demand AWS credentials require pymongo-auth-aws: "
             "install with: python -m pip install 'pymongo[aws]'"
         )
     creds = _aws_temp_credentials()
