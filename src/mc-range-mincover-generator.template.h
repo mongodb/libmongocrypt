@@ -48,7 +48,7 @@ typedef struct {
    size_t _maxlen;
 } WITH_BITS (MinCoverGenerator);
 
-static WITH_BITS (MinCoverGenerator) *
+static inline WITH_BITS (MinCoverGenerator) *
    WITH_BITS (MinCoverGenerator_new) (UINT_T rangeMin,
                                       UINT_T rangeMax,
                                       UINT_T max,
@@ -82,7 +82,7 @@ static WITH_BITS (MinCoverGenerator) *
    return mcg;
 }
 
-static void
+static inline void
 WITH_BITS (MinCoverGenerator_destroy) (WITH_BITS (MinCoverGenerator) * mcg)
 {
    if (!mcg) {
@@ -93,7 +93,7 @@ WITH_BITS (MinCoverGenerator_destroy) (WITH_BITS (MinCoverGenerator) * mcg)
 
 // applyMask applies a mask of 1 bits starting from the right.
 // Bits 0 to bit-1 are replaced with 1. Other bits are left as-is.
-static UINT_T
+static inline UINT_T
 WITH_BITS (applyMask) (UINT_T value, size_t maskedBits)
 {
    const UINT_T ones = ~UINT_C (0);
@@ -105,12 +105,12 @@ WITH_BITS (applyMask) (UINT_T value, size_t maskedBits)
       return value;
    }
 
-   const UINT_T shift = (BITS - (UINT_T) (maskedBits));
+   const size_t shift = ((size_t) BITS - (UINT_T) (maskedBits));
    const UINT_T mask = ones >> shift;
    return value | mask;
 }
 
-static bool
+static inline bool
 WITH_BITS (MinCoverGenerator_isLevelStored) (WITH_BITS (MinCoverGenerator) *
                                                 mcg,
                                              size_t maskedBits)
@@ -143,7 +143,7 @@ WITH_BITS (MinCoverGenerator_toString) (WITH_BITS (MinCoverGenerator) * mcg,
    return ret;
 }
 
-static void
+static inline void
 WITH_BITS (MinCoverGenerator_minCoverRec) (WITH_BITS (MinCoverGenerator) * mcg,
                                            mc_array_t *c,
                                            UINT_T blockStart,
@@ -173,7 +173,7 @@ WITH_BITS (MinCoverGenerator_minCoverRec) (WITH_BITS (MinCoverGenerator) * mcg,
    (mcg, c, blockStart | (UINT_T) 1 << (UINT_T) newBits, newBits);
 }
 
-static mc_mincover_t *
+static inline mc_mincover_t *
 WITH_BITS (MinCoverGenerator_minCover) (WITH_BITS (MinCoverGenerator) * mcg,
                                         UINT_T rangeMin,
                                         UINT_T rangeMax,
