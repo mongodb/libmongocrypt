@@ -170,7 +170,7 @@ WITH_BITS (MinCoverGenerator_minCoverRec) (WITH_BITS (MinCoverGenerator) * mcg,
    const size_t newBits = maskedBits - 1u;
    WITH_BITS (MinCoverGenerator_minCoverRec) (mcg, c, blockStart, newBits);
    WITH_BITS (MinCoverGenerator_minCoverRec)
-   (mcg, c, blockStart | (UINT_T) 1 << (UINT_T) newBits, newBits);
+   (mcg, c, blockStart | UINT_C (1) << newBits, newBits);
 }
 
 static inline mc_mincover_t *
