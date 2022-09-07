@@ -102,7 +102,7 @@ WITH_BITS (applyMask) (UINT_T value, size_t maskedBits)
       return value;
    }
 
-   const size_t shift = ((size_t) BITS - (UINT_T) (maskedBits));
+   const size_t shift = ((size_t) BITS - maskedBits);
    const UINT_T mask = ones >> shift;
    return value | mask;
 }
