@@ -85,9 +85,6 @@ static inline WITH_BITS (MinCoverGenerator) *
 static inline void
 WITH_BITS (MinCoverGenerator_destroy) (WITH_BITS (MinCoverGenerator) * mcg)
 {
-   if (!mcg) {
-      return;
-   }
    bson_free (mcg);
 }
 
