@@ -113,7 +113,7 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 
 #### Steps to release ####
 Do the following when releasing:
-- Update CHANGELOG.md with with the version being released.
+- Update CHANGELOG.md with the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, and `CHANGELOG.md`)
