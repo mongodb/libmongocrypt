@@ -2359,6 +2359,27 @@ _test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
 }
 #undef RNG_DATA
 
+#include "./data/fle2-insert-range/int32/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_int32 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/int32", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/int64/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_int64 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/int64", &source);
+}
+#undef RNG_DATA
 
 static mongocrypt_t *
 _crypt_with_rng (_test_rng_data_source *rng_source)
@@ -4623,4 +4644,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_fle1_collmod_with_jsonSchema);
    INSTALL_TEST (_test_fle1_collmod_without_jsonSchema);
    INSTALL_TEST (_test_FLE2EncryptionPlaceholder_range_parse);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int32);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int64);
 }
