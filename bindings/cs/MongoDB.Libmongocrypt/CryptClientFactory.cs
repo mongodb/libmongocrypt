@@ -108,6 +108,8 @@ namespace MongoDB.Libmongocrypt
                     Library.mongocrypt_setopt_append_crypt_shared_lib_search_path(handle, options.CryptSharedLibSearchPath);
                 }
 
+                Library.mongocrypt_setopt_use_need_kms_credentials_state(handle);
+
                 Library.mongocrypt_init(handle);
 
                 if (options.IsCryptSharedLibRequired)
