@@ -131,7 +131,7 @@ WITH_BITS (MinCoverGenerator_toString) (WITH_BITS (MinCoverGenerator) * mcg,
       return bson_strdup ("root");
    }
 
-   UINT_T shifted = start >> (UINT_T) maskedBits;
+   UINT_T shifted = start >> maskedBits;
    char *valueBin = WITH_BITS (mc_convert_to_bitstring) (shifted);
    char *ret =
       bson_strndup (valueBin + ((size_t) BITS - mcg->_maxlen + maskedBits),
