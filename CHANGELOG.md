@@ -1,4 +1,9 @@
 # ChangeLog
+## 1.6.0
+## New Features
+- Support accessToken to authenticate with Azure.
+## Fixed
+- Use correct schema when `collMod` command includes `validator.$jsonSchema`.
 ## 1.6.0-alpha0
 ### New Features
 - Support accessToken to authenticate with GCP.
