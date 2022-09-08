@@ -113,7 +113,7 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 
 #### Steps to release ####
 Do the following when releasing:
-- Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
+- Update CHANGELOG.md with the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, and `CHANGELOG.md`)
@@ -129,8 +129,10 @@ Do the following when releasing:
    - For all final releases, on the `rx.y` release branch increment the patch version (i.e., change `version = "1.0.0"` to `version = "1.0.1-SNAPSHOT"`).
    - For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/508e21f4abff9f5519e0357a63a4ad30d2c24692) and its parent commit.
    - Note that if this is a new minor release (e.g. `x.y.0`), then post-release changes to build.gradle.kts happen on two branches.
-- Commit and push.
-- Ensure the version on Evergreen with the tagged commit is scheduled. The upload-all task must run to complete the release. ([Example](https://evergreen.mongodb.com/task/libmongocrypt_publish_snapshot_upload_all_77eec777c14171956c69b60aaaa4f85931c957ba_22_03_02_13_51_38)).
+   - Commit and push.
+- Ensure the version on Evergreen with the tagged commit is scheduled. The following tasks must pass to complete the release:
+   - `upload-all`
+   - `windows-upload`. It is scheduled from the `windows-upload-check` task.
 - Create the release from the GitHub releases page from the new tag.
 - Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/135)).
 - File a DOCSP ticket to update the dependent version of bindings in the [CSFLE guide](https://github.com/mongodb-university/csfle-guides). ([Example](https://jira.mongodb.org/browse/DOCSP-19476))
