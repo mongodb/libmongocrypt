@@ -19,6 +19,8 @@
 #include "mc-fle2-find-equality-payload-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
 #include "mc-fle2-payload-uev-private.h"
+#include "mc-range-encoding-private.h"
+#include "mc-range-edge-generation-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
@@ -26,6 +28,7 @@
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-marking-private.h"
+#include "mongocrypt-util-private.h" // mc_bson_type_to_string
 
 static bool
 _mongocrypt_marking_parse_fle1_placeholder (const bson_t *in,
@@ -228,8 +231,7 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
       if (!useCounter) {                                                       \
          /* FindEqualityPayload uses *fromDataToken */                         \
          _mongocrypt_buffer_copy_to (                                          \
-            mc_##Name##DerivedFromDataToken_get (fromDataToken),               \
-            out);                                                              \
+            mc_##Name##DerivedFromDataToken_get (fromDataToken), out);         \
          mc_##Name##DerivedFromDataToken_destroy (fromDataToken);              \
          return true;                                                          \
       }                                                                        \
@@ -564,6 +566,276 @@ fail:
    return res;
 }
 
+// get_edges creates and returns edges from an FLE2RangeInsertSpec. Returns NULL
+// on error.
+static mc_edges_t *
+get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
+           size_t sparsity,
+           mongocrypt_status_t *status)
+{
+   bson_type_t value_type = bson_iter_type (&insertSpec->v);
+
+#define GET_EDGES(BITS)                                                       \
+   mc_OSTType_Int##BITS OSTType;                                              \
+   {                                                                          \
+      mc_getTypeInfo##BITS##_args_t args = {                                  \
+         .value = bson_iter_int##BITS (&insertSpec->v),                       \
+         .min = OPT_I##BITS (bson_iter_int##BITS (&insertSpec->lb)),          \
+         .max = OPT_I##BITS (bson_iter_int##BITS (&insertSpec->ub))};         \
+                                                                              \
+      if (!mc_getTypeInfo##BITS (args, &OSTType, status)) {                   \
+         return NULL;                                                         \
+      }                                                                       \
+   }                                                                          \
+                                                                              \
+   mc_edges_t *edges;                                                         \
+   {                                                                          \
+      mc_getEdgesInt##BITS##_args_t args = {.value = OSTType.value,           \
+                                            .min = OPT_I##BITS (OSTType.min), \
+                                            .max = OPT_I##BITS (OSTType.max), \
+                                            .sparsity = sparsity};            \
+      if (!(edges = mc_getEdgesInt##BITS (args, status))) {                   \
+         return NULL;                                                         \
+      }                                                                       \
+   }                                                                          \
+   return edges;
+
+   if (value_type == BSON_TYPE_INT32) {
+      GET_EDGES (32)
+   }
+
+   else if (value_type == BSON_TYPE_INT64) {
+      GET_EDGES (64)
+   }
+
+#undef GET_EDGES
+
+   CLIENT_ERR ("unsupported BSON type: %s for range",
+               mc_bson_type_to_string (value_type));
+   return NULL;
+}
+
+// _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange transforms a
+// FLE2EncryptedPlaceholder to an FLE2InsertUpdatePayload for the range
+// algorithm.
+static bool
+_mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
+   _FLE2EncryptedPayloadCommon_t common = {{0}};
+   _mongocrypt_buffer_t value = {0};
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+   mc_FLE2InsertUpdatePayload_t payload;
+   bool res = false;
+   mc_edges_t *edges = NULL;
+
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
+   BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+   _mongocrypt_ciphertext_init (ciphertext);
+   mc_FLE2InsertUpdatePayload_init (&payload);
+
+   // Parse the value ("v"), lower bound ("lb"), and upper bound ("ub") from
+   // FLE2EncryptionPlaceholder for range insert.
+   mc_FLE2RangeInsertSpec_t insertSpec;
+   if (!mc_FLE2RangeInsertSpec_parse (
+          &insertSpec, &placeholder->v_iter, status)) {
+      goto fail;
+   }
+
+   _mongocrypt_buffer_from_iter (&value, &insertSpec.v);
+
+   int64_t contentionFactor = 0;
+   if (placeholder->maxContentionCounter > 0) {
+      /* Choose a random contentionFactor in the inclusive range [0,
+       * placeholder->maxContentionCounter] */
+      if (!_mongocrypt_random_int64 (crypto,
+                                     placeholder->maxContentionCounter + 1,
+                                     &contentionFactor,
+                                     status)) {
+         goto fail;
+      }
+   }
+
+   if (!_mongocrypt_fle2_placeholder_common (
+          kb,
+          &common,
+          &placeholder->index_key_id,
+          &value,
+          true, /* derive tokens using counter */
+          contentionFactor,
+          status)) {
+      goto fail;
+   }
+
+   // d := EDCDerivedToken
+   _mongocrypt_buffer_steal (&payload.edcDerivedToken, &common.edcDerivedToken);
+   // s := ESCDerivedToken
+   _mongocrypt_buffer_steal (&payload.escDerivedToken, &common.escDerivedToken);
+   // c := ECCDerivedToken
+   _mongocrypt_buffer_steal (&payload.eccDerivedToken, &common.eccDerivedToken);
+
+   // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndCounter ||
+   // ECCDerivedFromDataTokenAndCounter)
+   {
+      _mongocrypt_buffer_t tokens[] = {payload.escDerivedToken,
+                                       payload.eccDerivedToken};
+      _mongocrypt_buffer_t p;
+      _mongocrypt_buffer_concat (&p, tokens, 2);
+      mc_ECOCToken_t *ecocToken =
+         mc_ECOCToken_new (crypto, common.collectionsLevel1Token, status);
+      if (!ecocToken) {
+         _mongocrypt_buffer_cleanup (&p);
+         goto fail;
+      }
+      bool ok = _fle2_placeholder_aes_ctr_encrypt (kb,
+                                                   mc_ECOCToken_get (ecocToken),
+                                                   &p,
+                                                   &payload.encryptedTokens,
+                                                   status);
+      _mongocrypt_buffer_cleanup (&p);
+      mc_ECOCToken_destroy (ecocToken);
+      if (!ok) {
+         goto fail;
+      }
+   }
+
+   _mongocrypt_buffer_copy_to (&placeholder->index_key_id,
+                               &payload.indexKeyId);   // u
+   payload.valueType = bson_iter_type (&insertSpec.v); // t
+
+   // v := UserKeyId + EncryptAEAD(UserKey, value)
+   {
+      _mongocrypt_buffer_t tmp[2] = {placeholder->user_key_id, {0}};
+      if (!_fle2_placeholder_aead_encrypt (
+             kb, &placeholder->user_key_id, &value, &tmp[1], status)) {
+         goto fail;
+      }
+      bool ok = _mongocrypt_buffer_concat (&payload.value, tmp, 2);
+      _mongocrypt_buffer_cleanup (&tmp[1]);
+      if (!ok) {
+         goto fail;
+      }
+   }
+
+   // e := ServerDataEncryptionLevel1Token
+   {
+      mc_ServerDataEncryptionLevel1Token_t *serverToken =
+         mc_ServerDataEncryptionLevel1Token_new (
+            crypto, &common.tokenKey, status);
+      if (!serverToken) {
+         goto fail;
+      }
+      _mongocrypt_buffer_copy_to (
+         mc_ServerDataEncryptionLevel1Token_get (serverToken),
+         &payload.serverEncryptionToken);
+      mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
+   }
+
+   // g:= array<EdgeTokenSet>
+   {
+      edges = get_edges (&insertSpec, placeholder->sparsity, status);
+      if (!edges) {
+         goto fail;
+      }
+
+      for (size_t i = 0; i < mc_edges_len (edges); i++) {
+         // Create an EdgeTokenSet from each edge.
+         bool loop_ok = false;
+         const char *edge = mc_edges_get (edges, i);
+         _mongocrypt_buffer_t edge_buf = {0};
+         _FLE2EncryptedPayloadCommon_t edge_tokens = {{0}};
+         _mongocrypt_buffer_t encryptedTokens = {0};
+         mc_EdgeTokenSet_t etc = {{0}};
+
+         if (!_mongocrypt_buffer_from_string (&edge_buf, edge)) {
+            CLIENT_ERR ("failed to copy edge to buffer");
+            goto fail_loop;
+         }
+
+         if (!_mongocrypt_fle2_placeholder_common (
+                kb,
+                &edge_tokens,
+                &placeholder->index_key_id,
+                &edge_buf,
+                true, /* derive tokens using counter */
+                contentionFactor,
+                status)) {
+            goto fail_loop;
+         }
+
+         // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndCounter ||
+         // ECCDerivedFromDataTokenAndCounter)
+         {
+            _mongocrypt_buffer_t tokens[] = {edge_tokens.escDerivedToken,
+                                             edge_tokens.eccDerivedToken};
+            _mongocrypt_buffer_t p;
+            _mongocrypt_buffer_concat (&p, tokens, 2);
+            mc_ECOCToken_t *ecocToken = mc_ECOCToken_new (
+               crypto, edge_tokens.collectionsLevel1Token, status);
+            if (!ecocToken) {
+               _mongocrypt_buffer_cleanup (&p);
+               goto fail_loop;
+            }
+            bool ok = _fle2_placeholder_aes_ctr_encrypt (
+               kb, mc_ECOCToken_get (ecocToken), &p, &encryptedTokens, status);
+            _mongocrypt_buffer_cleanup (&p);
+            mc_ECOCToken_destroy (ecocToken);
+            if (!ok) {
+               goto fail_loop;
+            }
+         }
+
+         // d := EDCDerivedToken
+         _mongocrypt_buffer_steal (&etc.edcDerivedToken,
+                                   &edge_tokens.edcDerivedToken);
+         // s := ESCDerivedToken
+         _mongocrypt_buffer_steal (&etc.escDerivedToken,
+                                   &edge_tokens.escDerivedToken);
+         // c := ECCDerivedToken
+         _mongocrypt_buffer_steal (&etc.eccDerivedToken,
+                                   &edge_tokens.eccDerivedToken);
+
+         _mongocrypt_buffer_steal (&etc.encryptedTokens, &encryptedTokens);
+         _mc_array_append_val (&payload.edgeTokenSetArray, etc);
+
+         loop_ok = true;
+      fail_loop:
+         _mongocrypt_buffer_cleanup (&encryptedTokens);
+         _FLE2EncryptedPayloadCommon_cleanup (&edge_tokens);
+         _mongocrypt_buffer_cleanup (&edge_buf);
+         if (!loop_ok) {
+            goto fail;
+         }
+      }
+   }
+
+   // Serialize.
+   {
+      bson_t out;
+      bson_init (&out);
+      mc_FLE2InsertUpdatePayload_serializeForRange (&out, &payload);
+      _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
+   }
+   _mongocrypt_buffer_steal (&ciphertext->key_id, &payload.indexKeyId);
+   ciphertext->original_bson_type =
+      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;
+
+   res = true;
+fail:
+   mc_edges_destroy (edges);
+   mc_FLE2InsertUpdatePayload_cleanup (&payload);
+   _mongocrypt_buffer_cleanup (&value);
+   _FLE2EncryptedPayloadCommon_cleanup (&common);
+
+   return res;
+}
+
 
 static bool
 _mongocrypt_fle2_placeholder_to_find_ciphertext (
@@ -586,13 +858,14 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
 
    _mongocrypt_buffer_from_iter (&value, &placeholder->v_iter);
 
-   if (!_mongocrypt_fle2_placeholder_common (kb,
-                                             &common,
-                                             &placeholder->index_key_id,
-                                             &value,
-                                             false, /* derive tokens without counter */
-                                             placeholder->maxContentionCounter,
-                                             status)) {
+   if (!_mongocrypt_fle2_placeholder_common (
+          kb,
+          &common,
+          &placeholder->index_key_id,
+          &value,
+          false, /* derive tokens without counter */
+          placeholder->maxContentionCounter,
+          status)) {
       goto fail;
    }
 
@@ -832,6 +1105,10 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
             kb, marking, ciphertext, status);
       } else if (marking->fle2.type ==
                  MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
+         if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE) {
+            return _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
+               kb, marking, ciphertext, status);
+         }
          return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
             kb, marking, ciphertext, status);
       } else {
