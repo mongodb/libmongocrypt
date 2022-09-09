@@ -500,14 +500,14 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
          _mongocrypt_buffer_cleanup (&p);
          goto fail;
       }
-      res = _fle2_placeholder_aes_ctr_encrypt (kb,
-                                               mc_ECOCToken_get (ecocToken),
-                                               &p,
-                                               &payload.encryptedTokens,
-                                               status);
+      bool ok = _fle2_placeholder_aes_ctr_encrypt (kb,
+                                                   mc_ECOCToken_get (ecocToken),
+                                                   &p,
+                                                   &payload.encryptedTokens,
+                                                   status);
       _mongocrypt_buffer_cleanup (&p);
       mc_ECOCToken_destroy (ecocToken);
-      if (!res) {
+      if (!ok) {
          goto fail;
       }
    }
@@ -523,9 +523,9 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
              kb, &placeholder->user_key_id, &value, &tmp[1], status)) {
          goto fail;
       }
-      res = _mongocrypt_buffer_concat (&payload.value, tmp, 2);
+      bool ok = _mongocrypt_buffer_concat (&payload.value, tmp, 2);
       _mongocrypt_buffer_cleanup (&tmp[1]);
-      if (!res) {
+      if (!ok) {
          goto fail;
       }
    }
