@@ -24,11 +24,10 @@
 #include "mc-fle2-insert-update-payload-private.h"
 
 static bool
-_replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
-   void *ctx,
-   _mongocrypt_buffer_t *in,
-   bson_value_t *out,
-   mongocrypt_status_t *status)
+_replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
+                                                   _mongocrypt_buffer_t *in,
+                                                   bson_value_t *out,
+                                                   mongocrypt_status_t *status)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
@@ -219,7 +218,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
 
    if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue ||
        in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
-      return _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
+      return _replace_FLE2IndexedEncryptedValue_with_plaintext (
          ctx, in, out, status);
    }
 
@@ -337,9 +336,11 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    return true;
 }
 
+// TODO: rename to _collect_S_KeyID_from_FLE2IndexedEncryptedValue
 static bool
-_collect_S_KeyID_from_FLE2IndexedEqualityEncryptedValue (
-   void *ctx, _mongocrypt_buffer_t *in, mongocrypt_status_t *status)
+_collect_S_KeyID_from_FLE2IndexedEncryptedValue (void *ctx,
+                                                 _mongocrypt_buffer_t *in,
+                                                 mongocrypt_status_t *status)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
@@ -369,8 +370,9 @@ fail:
 }
 
 static bool
-_collect_K_KeyID_from_FLE2IndexedEqualityEncryptedValue (
-   void *ctx, _mongocrypt_buffer_t *in, mongocrypt_status_t *status)
+_collect_K_KeyID_from_FLE2IndexedEncryptedValue (void *ctx,
+                                                 _mongocrypt_buffer_t *in,
+                                                 mongocrypt_status_t *status)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
@@ -450,7 +452,7 @@ _check_for_K_KeyId (mongocrypt_ctx_t *ctx)
    bson_iter_init (&iter, &as_bson);
 
    if (!_mongocrypt_traverse_binary_in_bson (
-          _collect_K_KeyID_from_FLE2IndexedEqualityEncryptedValue,
+          _collect_K_KeyID_from_FLE2IndexedEncryptedValue,
           &ctx->kb,
           TRAVERSE_MATCH_CIPHERTEXT,
           &iter,
@@ -538,8 +540,7 @@ _collect_key_from_ciphertext (void *ctx,
 
    if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue ||
        in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
-      return _collect_S_KeyID_from_FLE2IndexedEqualityEncryptedValue (
-         ctx, in, status);
+      return _collect_S_KeyID_from_FLE2IndexedEncryptedValue (ctx, in, status);
    }
 
    if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
