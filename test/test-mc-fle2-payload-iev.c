@@ -15,14 +15,14 @@
  */
 
 #include "test-mongocrypt.h"
-#include "mc-fle2-payload-ieev-private.h"
+#include "mc-fle2-payload-iev-private.h"
 
 static void
 test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
 {
    _mongocrypt_buffer_t input;
    _mongocrypt_buffer_t expect_S_KeyId;
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev;
+   mc_FLE2IndexedEncryptedValue_t *iev;
 
    /* Test successful parse. */
    {
@@ -38,19 +38,17 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
          "6e7f339da76fc9c7c9d1c09619a77d49");
       _mongocrypt_buffer_copy_from_hex (&expect_S_KeyId,
                                         "12345678123498761234123456789012");
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       ASSERT_OK_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
-         status);
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status), status);
       const _mongocrypt_buffer_t *got =
-         mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (ieev, status);
+         mc_FLE2IndexedEncryptedValue_get_S_KeyId (iev, status);
       ASSERT_OR_PRINT (got != NULL, status);
       ASSERT_CMPBUF (expect_S_KeyId, *got);
       bson_type_t got_bson_type =
-         mc_FLE2IndexedEqualityEncryptedValue_get_original_bson_type (ieev,
-                                                                      status);
+         mc_FLE2IndexedEncryptedValue_get_original_bson_type (iev, status);
       ASSERT_OR_PRINT (got_bson_type == BSON_TYPE_UTF8, status);
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&expect_S_KeyId);
       _mongocrypt_buffer_cleanup (&input);
       mongocrypt_status_destroy (status);
@@ -60,12 +58,12 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
    {
       mongocrypt_status_t *status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (&input, "07123456781234");
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       ASSERT_FAILS_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status),
          status,
          "expected byte length >= 17 got: 7");
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&input);
       mongocrypt_status_destroy (status);
    }
@@ -82,12 +80,12 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
          "c6cc5fbd0fdc22a3b0316f5d1934d6b1f2a07be8d890250814c7e6b3e5f20bff1ebd0"
          "8638c0faa47a784995f8dfe4c2947b43b4c97b4970539930da449edff2a23ca459653"
          "6e7f339da76fc9c7c9d1c09619a77d49");
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       ASSERT_FAILS_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status),
          status,
          "expected fle_blob_subtype=7 got: 6");
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&input);
       mongocrypt_status_destroy (status);
    }
@@ -104,15 +102,14 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
          "c6cc5fbd0fdc22a3b0316f5d1934d6b1f2a07be8d890250814c7e6b3e5f20bff1ebd0"
          "8638c0faa47a784995f8dfe4c2947b43b4c97b4970539930da449edff2a23ca459653"
          "6e7f339da76fc9c7c9d1c09619a77d49");
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       ASSERT_OK_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
-         status);
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status), status);
       ASSERT_FAILS_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status),
          status,
          "must not be called twice");
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&input);
       mongocrypt_status_destroy (status);
    }
@@ -120,14 +117,14 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
    /* Test attempting to get S_KeyId before parsing. */
    {
       mongocrypt_status_t *status = mongocrypt_status_new ();
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       const _mongocrypt_buffer_t *got =
-         mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (ieev, status);
+         mc_FLE2IndexedEncryptedValue_get_S_KeyId (iev, status);
       ASSERT_FAILS_STATUS (
          got != NULL,
          status,
-         "must be called after mc_FLE2IndexedEqualityEncryptedValue_parse");
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+         "must be called after mc_FLE2IndexedEncryptedValue_parse");
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       mongocrypt_status_destroy (status);
    }
 }
@@ -138,7 +135,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t input;
    _mongocrypt_buffer_t correct_S_Key;
    _mongocrypt_buffer_t correct_K_Key;
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev;
+   mc_FLE2IndexedEncryptedValue_t *iev;
    _mongocrypt_buffer_t expect_S_KeyId;
    _mongocrypt_buffer_t expect_K_KeyId;
    _mongocrypt_buffer_t expect_client_value;
@@ -182,30 +179,29 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    /* Test success. */
    {
       mongocrypt_status_t *status = mongocrypt_status_new ();
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       ASSERT_OK_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
-         status);
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status), status);
 
       const _mongocrypt_buffer_t *got =
-         mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (ieev, status);
+         mc_FLE2IndexedEncryptedValue_get_S_KeyId (iev, status);
       ASSERT_OR_PRINT (got != NULL, status);
       ASSERT_CMPBUF (expect_S_KeyId, *got);
 
-      ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
-                           crypt->crypto, ieev, &correct_S_Key, status),
+      ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValue_add_S_Key (
+                           crypt->crypto, iev, &correct_S_Key, status),
                         status);
 
-      got = mc_FLE2IndexedEqualityEncryptedValue_get_K_KeyId (ieev, status);
+      got = mc_FLE2IndexedEncryptedValue_get_K_KeyId (iev, status);
       ASSERT_OR_PRINT (got != NULL, status);
       ASSERT_CMPBUF (expect_K_KeyId, *got);
 
       ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
-                           crypt->crypto, ieev, &correct_K_Key, status),
+                           crypt->crypto, iev, &correct_K_Key, status),
                         status);
-      got = mc_FLE2IndexedEqualityEncryptedValue_get_ClientValue (ieev, status);
+      got = mc_FLE2IndexedEncryptedValue_get_ClientValue (iev, status);
       ASSERT_CMPBUF (expect_client_value, *got);
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       mongocrypt_status_destroy (status);
    }
 
@@ -220,18 +216,17 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
        * ServerDataEncryptionLevel1Token. Change last byte to make S_Key
        * incorrect. */
       incorrect_S_Key.data[incorrect_S_Key.len - 1] = 0;
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       ASSERT_OK_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
-         status);
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status), status);
       /* Since S_Key is used for non-AEAD encryption, decryption does not return
        * an error. The output is garbled. It fails to parse the decrypted Inner
        * struct. */
-      ASSERT_FAILS_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
-                              crypt->crypto, ieev, &incorrect_S_Key, status),
+      ASSERT_FAILS_STATUS (mc_FLE2IndexedEncryptedValue_add_S_Key (
+                              crypt->crypto, iev, &incorrect_S_Key, status),
                            status,
                            "expected Inner byte length");
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&incorrect_S_Key);
       mongocrypt_status_destroy (status);
    }
@@ -246,18 +241,17 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       /* The second 32 bytes of K_Key is used for the mac key. Modify one byte
        * to get a decryption error. */
       incorrect_K_Key.data[32] = 0;
-      ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
       ASSERT_OK_STATUS (
-         mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, &input, status),
-         status);
-      ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
-                           crypt->crypto, ieev, &correct_S_Key, status),
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input, status), status);
+      ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValue_add_S_Key (
+                           crypt->crypto, iev, &correct_S_Key, status),
                         status);
       ASSERT_FAILS_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
-                              crypt->crypto, ieev, &incorrect_K_Key, status),
+                              crypt->crypto, iev, &incorrect_K_Key, status),
                            status,
                            "decryption error");
-      mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&incorrect_K_Key);
       mongocrypt_status_destroy (status);
    }

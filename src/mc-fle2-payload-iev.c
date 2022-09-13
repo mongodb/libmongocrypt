@@ -16,7 +16,8 @@
 
 #include "mongocrypt-private.h"
 
-#include "mc-fle2-payload-ieev-private.h"
+#include "mc-fle-blob-subtype-private.h"
+#include "mc-fle2-payload-iev-private.h"
 #include "mc-tokens-private.h"
 
 struct _mc_FLE2IndexedEqualityEncryptedValue_t {
@@ -32,37 +33,34 @@ struct _mc_FLE2IndexedEqualityEncryptedValue_t {
    bool client_value_decrypted;
 };
 
-mc_FLE2IndexedEqualityEncryptedValue_t *
-mc_FLE2IndexedEqualityEncryptedValue_new (void)
+mc_FLE2IndexedEncryptedValue_t *
+mc_FLE2IndexedEncryptedValue_new (void)
 {
-   return bson_malloc0 (sizeof (mc_FLE2IndexedEqualityEncryptedValue_t));
+   return bson_malloc0 (sizeof (mc_FLE2IndexedEncryptedValue_t));
 }
 
 bool
-mc_FLE2IndexedEqualityEncryptedValue_parse (
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   const _mongocrypt_buffer_t *buf,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
+                                    const _mongocrypt_buffer_t *buf,
+                                    mongocrypt_status_t *status)
 {
-   if (ieev->parsed) {
+   if (iev->parsed) {
       CLIENT_ERR (
-         "mc_FLE2IndexedEqualityEncryptedValue_parse must not be called twice");
+         "mc_FLE2IndexedEncryptedValue_parse must not be called twice");
       return false;
    }
 
    uint32_t offset = 0;
    /* Read fle_blob_subtype. */
    if (offset + 1 > buf->len) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse expected byte "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected byte "
                   "length >= %" PRIu32 " got: %" PRIu32,
                   offset + 1,
                   buf->len);
       return false;
    }
    uint8_t fle_blob_subtype = buf->data[offset];
-   if (fle_blob_subtype != 7) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse expected "
-                  "fle_blob_subtype=7 got: %" PRIu8,
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected "
                   fle_blob_subtype);
       return false;
    }
@@ -70,82 +68,80 @@ mc_FLE2IndexedEqualityEncryptedValue_parse (
 
    /* Read S_KeyId. */
    if (offset + 16 > buf->len) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse expected byte "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected byte "
                   "length >= %" PRIu32 " got: %" PRIu32,
                   offset + 16,
                   buf->len);
       return false;
    }
    if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &ieev->S_KeyId, buf->data + offset, 16)) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse failed to copy "
+          &iev->S_KeyId, buf->data + offset, 16)) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse failed to copy "
                   "data for S_KeyId");
       return false;
    }
-   ieev->S_KeyId.subtype = BSON_SUBTYPE_UUID;
+   iev->S_KeyId.subtype = BSON_SUBTYPE_UUID;
    offset += 16;
 
    /* Read original_bson_type. */
    if (offset + 1 > buf->len) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse expected byte "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected byte "
                   "length >= %" PRIu32 " got: %" PRIu32,
                   offset + 1,
                   buf->len);
       return false;
    }
-   ieev->original_bson_type = buf->data[offset];
+   iev->original_bson_type = buf->data[offset];
    offset += 1;
 
    /* Read InnerEncrypted. */
    if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &ieev->InnerEncrypted,
+          &iev->InnerEncrypted,
           buf->data + offset,
           (size_t) (buf->len - offset))) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse failed to copy "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse failed to copy "
                   "data for InnerEncrypted");
       return false;
    }
 
-   ieev->parsed = true;
+   iev->parsed = true;
    return true;
 }
 
 const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_get_S_KeyId (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
-   if (!ieev->parsed) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId must be "
-                  "called after mc_FLE2IndexedEqualityEncryptedValue_parse");
+   if (!iev->parsed) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_get_S_KeyId must be "
+                  "called after mc_FLE2IndexedEncryptedValue_parse");
       return NULL;
    }
 
-   return &ieev->S_KeyId;
+   return &iev->S_KeyId;
 }
 
 bool
-mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
-   _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   const _mongocrypt_buffer_t *S_Key,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
+                                        mc_FLE2IndexedEncryptedValue_t *iev,
+                                        const _mongocrypt_buffer_t *S_Key,
+                                        mongocrypt_status_t *status)
 {
-   if (!ieev->parsed) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key must be "
-                  "called after mc_FLE2IndexedEqualityEncryptedValue_parse");
+   if (!iev->parsed) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key must be "
+                  "called after mc_FLE2IndexedEncryptedValue_parse");
       return false;
    }
 
-   if (ieev->inner_decrypted) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key must not be "
+   if (iev->inner_decrypted) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key must not be "
                   "called twice");
       return false;
    }
 
    /* Attempt to decrypt InnerEncrypted */
    if (S_Key->len != MONGOCRYPT_KEY_LEN) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key expected "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
                   "S_Key to be %d bytes, got: %" PRIu32,
                   MONGOCRYPT_KEY_LEN,
                   S_Key->len);
@@ -158,7 +154,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
                                           S_Key,
                                           S_Key->len - MONGOCRYPT_TOKEN_KEY_LEN,
                                           MONGOCRYPT_TOKEN_KEY_LEN)) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key unable to "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key unable to "
                   "parse TokenKey from S_Key");
       return false;
    }
@@ -177,14 +173,14 @@ mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
       uint32_t bytes_written;
 
       _mongocrypt_buffer_resize (
-         &ieev->Inner,
-         _mongocrypt_fle2_calculate_plaintext_len (ieev->InnerEncrypted.len));
+         &iev->Inner,
+         _mongocrypt_fle2_calculate_plaintext_len (iev->InnerEncrypted.len));
 
       /* Decrypt InnerEncrypted. */
       if (!_mongocrypt_fle2_do_decryption (crypto,
                                            token_buf,
-                                           &ieev->InnerEncrypted,
-                                           &ieev->Inner,
+                                           &iev->InnerEncrypted,
+                                           &iev->Inner,
                                            &bytes_written,
                                            status)) {
          mc_ServerDataEncryptionLevel1Token_destroy (token);
@@ -196,146 +192,140 @@ mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
    /* Parse Inner for K_KeyId. */
    uint32_t offset = 0;
    /* Read uint64_t length. */
-   if (offset + 8 > ieev->Inner.len) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key expected "
+   if (offset + 8 > iev->Inner.len) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
                   "Inner byte length >= %" PRIu32 " got: %" PRIu32,
                   offset + 8,
-                  ieev->Inner.len);
+                  iev->Inner.len);
       return false;
    }
    uint64_t
       length; /* length is sizeof(K_KeyId) + ClientEncryptedValue_length. */
-   memcpy (&length, ieev->Inner.data, sizeof (uint64_t));
+   memcpy (&length, iev->Inner.data, sizeof (uint64_t));
    length = BSON_UINT64_FROM_LE (length);
    offset += 8;
 
    /* Read K_KeyId. */
-   if (offset + UUID_LEN > ieev->Inner.len) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key expected "
+   if (offset + UUID_LEN > iev->Inner.len) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
                   "Inner byte length >= %" PRIu32 " got: %" PRIu32,
                   offset + UUID_LEN,
-                  ieev->Inner.len);
+                  iev->Inner.len);
       return false;
    }
    if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &ieev->K_KeyId, ieev->Inner.data + offset, 16)) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key failed to "
+          &iev->K_KeyId, iev->Inner.data + offset, 16)) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key failed to "
                   "copy data for K_KeyId");
       return false;
    }
    offset += 16;
-   ieev->K_KeyId.subtype = BSON_SUBTYPE_UUID;
+   iev->K_KeyId.subtype = BSON_SUBTYPE_UUID;
 
    /* Read ClientEncryptedValue. */
-   if (offset + (length - 16) > ieev->Inner.len) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_S_Key expected "
+   if (offset + (length - 16) > iev->Inner.len) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
                   "Inner byte length >= %" PRIu32 " got: %" PRIu32,
                   offset + (length - 16),
-                  ieev->Inner.len);
+                  iev->Inner.len);
       return false;
    }
-   if (!_mongocrypt_buffer_copy_from_data_and_size (&ieev->ClientEncryptedValue,
-                                                    ieev->Inner.data + offset,
+   if (!_mongocrypt_buffer_copy_from_data_and_size (&iev->ClientEncryptedValue,
+                                                    iev->Inner.data + offset,
                                                     (size_t) (length - 16))) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_parse failed to copy "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse failed to copy "
                   "data for ClientEncryptedValue");
       return false;
    }
 
-   ieev->inner_decrypted = true;
+   iev->inner_decrypted = true;
    return true;
 }
 
 const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValue_get_K_KeyId (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_get_K_KeyId (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
-   if (!ieev->inner_decrypted) {
-      CLIENT_ERR (
-         "mc_FLE2IndexedEqualityEncryptedValue_get_K_KeyId must be called "
-         "after mc_FLE2IndexedEqualityEncryptedValue_add_S_Key");
+   if (!iev->inner_decrypted) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_get_K_KeyId must be called "
+                  "after mc_FLE2IndexedEncryptedValue_add_S_Key");
       return NULL;
    }
-   return &ieev->K_KeyId;
+   return &iev->K_KeyId;
 }
 
 bool
 mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
+   mc_FLE2IndexedEncryptedValue_t *iev,
    const _mongocrypt_buffer_t *K_Key,
    mongocrypt_status_t *status)
 {
-   if (!ieev->inner_decrypted) {
+   if (!iev->inner_decrypted) {
       CLIENT_ERR (
          "mc_FLE2IndexedEqualityEncryptedValue_add_K_Key must be called after "
-         "mc_FLE2IndexedEqualityEncryptedValue_add_S_Key");
+         "mc_FLE2IndexedEncryptedValue_add_S_Key");
       return false;
    }
-   if (ieev->client_value_decrypted) {
+   if (iev->client_value_decrypted) {
       CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_K_Key must not be "
                   "called twice");
       return false;
    }
    /* Attempt to decrypt ClientEncryptedValue */
-   _mongocrypt_buffer_resize (&ieev->ClientValue,
+   _mongocrypt_buffer_resize (&iev->ClientValue,
                               _mongocrypt_fle2aead_calculate_plaintext_len (
-                                 ieev->ClientEncryptedValue.len));
+                                 iev->ClientEncryptedValue.len));
    uint32_t bytes_written;
    if (!_mongocrypt_fle2aead_do_decryption (crypto,
-                                            &ieev->K_KeyId,
+                                            &iev->K_KeyId,
                                             K_Key,
-                                            &ieev->ClientEncryptedValue,
-                                            &ieev->ClientValue,
+                                            &iev->ClientEncryptedValue,
+                                            &iev->ClientValue,
                                             &bytes_written,
                                             status)) {
       return false;
    }
-   ieev->client_value_decrypted = true;
+   iev->client_value_decrypted = true;
    return true;
 }
 
 const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValue_get_ClientValue (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_get_ClientValue (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
-   if (!ieev->client_value_decrypted) {
+   if (!iev->client_value_decrypted) {
       CLIENT_ERR (
          "mc_FLE2IndexedEqualityEncryptedValue_getClientValue must be called "
          "after mc_FLE2IndexedEqualityEncryptedValue_add_K_Key");
       return NULL;
    }
-   return &ieev->ClientValue;
+   return &iev->ClientValue;
 }
 
 void
-mc_FLE2IndexedEqualityEncryptedValue_destroy (
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev)
+mc_FLE2IndexedEncryptedValue_destroy (mc_FLE2IndexedEncryptedValue_t *iev)
 {
-   if (!ieev) {
+   if (!iev) {
       return;
    }
-   _mongocrypt_buffer_cleanup (&ieev->S_KeyId);
-   _mongocrypt_buffer_cleanup (&ieev->InnerEncrypted);
-   _mongocrypt_buffer_cleanup (&ieev->Inner);
-   _mongocrypt_buffer_cleanup (&ieev->K_KeyId);
-   _mongocrypt_buffer_cleanup (&ieev->ClientValue);
-   _mongocrypt_buffer_cleanup (&ieev->ClientEncryptedValue);
-   bson_free (ieev);
+   _mongocrypt_buffer_cleanup (&iev->S_KeyId);
+   _mongocrypt_buffer_cleanup (&iev->InnerEncrypted);
+   _mongocrypt_buffer_cleanup (&iev->Inner);
+   _mongocrypt_buffer_cleanup (&iev->K_KeyId);
+   _mongocrypt_buffer_cleanup (&iev->ClientValue);
+   _mongocrypt_buffer_cleanup (&iev->ClientEncryptedValue);
+   bson_free (iev);
 }
 
 bson_type_t
-mc_FLE2IndexedEqualityEncryptedValue_get_original_bson_type (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_get_original_bson_type (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
-   if (!ieev->parsed) {
-      CLIENT_ERR (
-         "mc_FLE2IndexedEqualityEncryptedValue_get_original_bson_type must be "
-         "called after mc_FLE2IndexedEqualityEncryptedValue_parse");
+   if (!iev->parsed) {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_get_original_bson_type must be "
+                  "called after mc_FLE2IndexedEncryptedValue_parse");
       return 0;
    }
-   return ieev->original_bson_type;
+   return iev->original_bson_type;
 }

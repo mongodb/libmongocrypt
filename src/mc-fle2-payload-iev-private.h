@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef MONGOCRYPT_INDEXED_EQUALIY_ENCRYPTED_VALUE_PRIVATE_H
-#define MONGOCRYPT_INDEXED_EQUALIY_ENCRYPTED_VALUE_PRIVATE_H
+#ifndef MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_H
+#define MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_H
 
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-status-private.h"
 #include "mongocrypt-crypto-private.h"
 
 /**
- * FLE2IndexedEqualityEncryptedValue represents an FLE2 encrypted value. It is
+ * FLE2IndexedEncryptedValue represents an FLE2 encrypted value. It is
  * created server side.
  */
 
@@ -56,72 +56,65 @@
 /* clang-format on */
 
 typedef struct _mc_FLE2IndexedEqualityEncryptedValue_t
-   mc_FLE2IndexedEqualityEncryptedValue_t;
+   mc_FLE2IndexedEncryptedValue_t;
 
-mc_FLE2IndexedEqualityEncryptedValue_t *
-mc_FLE2IndexedEqualityEncryptedValue_new (void);
+mc_FLE2IndexedEncryptedValue_t *
+mc_FLE2IndexedEncryptedValue_new (void);
 
 bool
-mc_FLE2IndexedEqualityEncryptedValue_parse (
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   const _mongocrypt_buffer_t *buf,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
+                                    const _mongocrypt_buffer_t *buf,
+                                    mongocrypt_status_t *status);
 
-/* mc_FLE2IndexedEqualityEncryptedValue_get_original_bson_type returns
+/* mc_FLE2IndexedEncryptedValue_get_original_bson_type returns
  * original_bson_type. Returns 0 and sets @status on error.
- * It is an error to call before mc_FLE2IndexedEqualityEncryptedValue_parse. */
+ * It is an error to call before mc_FLE2IndexedEncryptedValue_parse. */
 bson_type_t
-mc_FLE2IndexedEqualityEncryptedValue_get_original_bson_type (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_get_original_bson_type (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status);
 
-/* mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId returns S_KeyId. Returns
+/* mc_FLE2IndexedEncryptedValue_get_S_KeyId returns S_KeyId. Returns
  * NULL and sets @status on error. It is an error to call before
- * mc_FLE2IndexedEqualityEncryptedValue_parse. */
+ * mc_FLE2IndexedEncryptedValue_parse. */
 const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_get_S_KeyId (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status);
 
-/* mc_FLE2IndexedEqualityEncryptedValue_add_S_Key decrypts InnerEncrypted.
+/* mc_FLE2IndexedEncryptedValue_add_S_Key decrypts InnerEncrypted.
  * Returns false and sets @status on error. It is an error to call before
- * mc_FLE2IndexedEqualityEncryptedValue_parse. */
+ * mc_FLE2IndexedEncryptedValue_parse. */
 bool
-mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
-   _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   const _mongocrypt_buffer_t *S_Key,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
+                                        mc_FLE2IndexedEncryptedValue_t *iev,
+                                        const _mongocrypt_buffer_t *S_Key,
+                                        mongocrypt_status_t *status);
 
-/* mc_FLE2IndexedEqualityEncryptedValue_get_K_KeyId returns Inner.K_KeyId.
+/* mc_FLE2IndexedEncryptedValue_get_K_KeyId returns Inner.K_KeyId.
  * Returns NULL and sets @status on error. It is an error to call before
- * mc_FLE2IndexedEqualityEncryptedValue_add_S_Key. */
+ * mc_FLE2IndexedEncryptedValue_add_S_Key. */
 const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValue_get_K_KeyId (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_get_K_KeyId (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status);
 
 /* mc_FLE2IndexedEqualityEncryptedValue_add_K_Key decrypts
  * Inner.ClientEncryptedValue. Returns false and sets @status on error. Must
- * not be called before mc_FLE2IndexedEqualityEncryptedValue_add_S_Key. */
+ * not be called before mc_FLE2IndexedEncryptedValue_add_S_Key. */
 bool
 mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
+   mc_FLE2IndexedEncryptedValue_t *iev,
    const _mongocrypt_buffer_t *K_Key,
    mongocrypt_status_t *status);
 
-/* mc_FLE2IndexedEqualityEncryptedValue_get_ClientValue returns the decrypted
+/* mc_FLE2IndexedEncryptedValue_get_ClientValue returns the decrypted
  * Inner.ClientEncryptedValue. Returns NULL and sets @status on error.
  * It is an error to call before mc_FLE2IndexedEqualityEncryptedValue_add_K_Key.
  */
 const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValue_get_ClientValue (
-   const mc_FLE2IndexedEqualityEncryptedValue_t *ieev,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_get_ClientValue (
+   const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status);
 
 void
-mc_FLE2IndexedEqualityEncryptedValue_destroy (
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev);
+mc_FLE2IndexedEncryptedValue_destroy (mc_FLE2IndexedEncryptedValue_t *iev);
 
-#endif /* MONGOCRYPT_INDEXED_EQUALIY_ENCRYPTED_VALUE_PRIVATE_H */
+#endif /* MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_H */
