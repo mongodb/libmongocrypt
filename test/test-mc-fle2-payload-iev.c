@@ -84,7 +84,7 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
       ASSERT_FAILS_STATUS (
          mc_FLE2IndexedEncryptedValue_parse (iev, &input, status),
          status,
-         "expected fle_blob_subtype=7 got: 6");
+         "expected fle_blob_subtype 7 or 9 got: 6");
       mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&input);
       mongocrypt_status_destroy (status);
