@@ -124,7 +124,6 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
       return false;
    }
 
-   mc_FLE2InsertUpdatePayload_init (out);
    if (!bson_validate (&in_bson, BSON_VALIDATE_NONE, NULL) ||
        !bson_iter_init (&iter, &in_bson)) {
       CLIENT_ERR ("invalid BSON");
