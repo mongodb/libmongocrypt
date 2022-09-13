@@ -24,6 +24,13 @@
 /**
  * FLE2IndexedEncryptedValue represents an FLE2 encrypted value. It is
  * created server side.
+ *
+ * FLE2IndexedEncryptedValue represents one of the following payloads:
+ * - FLE2IndexedEqualityEncryptedValue
+ * - FLE2IndexedRangeEncryptedValue
+ *
+ * Both payloads share a common prefix. libmongocrypt does not need to parse the
+ * edges in FLE2IndexedRangeEncryptedValue.
  */
 
 /* clang-format off */
@@ -52,6 +59,27 @@
  *
  * ClientEncryptedValue is the output of: EncryptAEAD(key=K_Key, plaintext=ClientValue, associated_data=K_KeyId)
  * K_Key is the key identified by K_KeyId.
+ *
+ * See https://github.com/mongodb/mongo/blob/fa94f5fb6216a1cc1e23f5ad4df05295b380070e/src/mongo/crypto/fle_crypto.h#L897
+ * for the server representation of FLE2IndexedEqualityEncryptedPayload.
+ */
+
+/*
+ * FLE2IndexedRangeEncryptedPayload shares the data layout with
+ * FLE2IndexedEqualityEncryptedValue with the following additional data appended to Inner:
+ *
+ * uint32_t edgeCount;
+ * struct {
+ *    uint64_t counter;
+ *    uint8_t[32] edc;  // EDCDerivedFromDataTokenAndContentionFactorToken
+ *    uint8_t[32] esc;  // ESCDerivedFromDataTokenAndContentionFactorToken
+ *    uint8_t[32] ecc;  // ECCDerivedFromDataTokenAndContentionFactorToken
+ * } edges[edgeCount];
+ *
+ * libmongocrypt ignores the edges.
+ * 
+ * See https://github.com/mongodb/mongo/blob/fa94f5fb6216a1cc1e23f5ad4df05295b380070e/src/mongo/crypto/fle_crypto.h#L897
+ * for the server representation of FLE2IndexedEqualityEncryptedPayload.
  */
 /* clang-format on */
 
