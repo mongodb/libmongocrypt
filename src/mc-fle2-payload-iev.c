@@ -60,7 +60,12 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
       return false;
    }
    uint8_t fle_blob_subtype = buf->data[offset];
+   if (fle_blob_subtype != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue &&
+       fle_blob_subtype != MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected "
+                  "fle_blob_subtype %d or %d got: %" PRIu8,
+                  MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue,
+                  MC_SUBTYPE_FLE2IndexedRangeEncryptedValue,
                   fle_blob_subtype);
       return false;
    }

@@ -1002,8 +1002,7 @@ _test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
       ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
       ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
       _assert_match_bson (
-         &out_bson,
-         TMP_BSON ("{'plainText': 'sample', 'encrypted': 'value123'}"));
+         &out_bson, TMP_BSON ("{'plainText': 'sample', 'encrypted': 123456}"));
       mongocrypt_binary_destroy (out);
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);

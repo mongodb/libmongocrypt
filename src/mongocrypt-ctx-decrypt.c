@@ -217,7 +217,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
    BSON_ASSERT (in);
    BSON_ASSERT (out);
 
-   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
+   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue ||
+       in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
       return _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
          ctx, in, out, status);
    }
@@ -377,7 +378,8 @@ _collect_K_KeyID_from_FLE2IndexedEqualityEncryptedValue (
    _mongocrypt_buffer_t S_Key = {0};
 
    /* Ignore other ciphertext types. */
-   if (in->data[0] != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
+   if (in->data[0] != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue &&
+       in->data[0] != MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
       return true;
    }
 
@@ -534,7 +536,8 @@ _collect_key_from_ciphertext (void *ctx,
 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
-   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
+   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue ||
+       in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
       return _collect_S_KeyID_from_FLE2IndexedEqualityEncryptedValue (
          ctx, in, status);
    }
