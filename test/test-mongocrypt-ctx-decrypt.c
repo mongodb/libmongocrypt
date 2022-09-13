@@ -867,6 +867,154 @@ _test_decrypt_wrong_binary_subtype (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+/* Test decrypting FLE2IndexedRangeEncryptedValue */
+static void
+_test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
+{
+   _mongocrypt_buffer_t S_KeyId;
+   _mongocrypt_buffer_t K_KeyId;
+
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
+
+#define TEST_IREV_BASE64                                                       \
+   "CRI0VngSNJh2EjQSNFZ4kBIQsPF0Ii0Hfv7ZMhnNt/yt+mviydF8EUw0YlO+amC3IF8dX2J/"  \
+   "GmRZRnihW3VqJYoLMk0BIit0x9YQiQEEQPxPcTXnCx4t1fquOY7cRGqIAWTDHuQ9AdUw94EY1" \
+   "J55mq9UhwD7flh0ySR/SbkTwjIU32U1iM6Bv4AriE4smI87Yd0V7Z7kDoDx7afx9vM/"       \
+   "+h9NWZvpfYcZ+P32sfILb3BdXT5zLrkyc5Xb3myDxE9abTrR8ePG0YuEmeqwGE4bZ6QHKzd/"  \
+   "RLmHciWstKOtER5uRpo3p570wGO8QE9QtQoJp/7N7Su30dK/"                          \
+   "bk59hVvlNO6i3nUPwqMd13DePobNGn84q3Fag5O4Kw8P4EGfomFWzxydlVQ0SppGVfan9tIj1" \
+   "CFu5doYYT4adzX7L9HinKsTWE5ctD9Qxhhzb2cVs5JO96j4mpwOaloF/"                  \
+   "4qJhyqlzTEpoCXGQ0X9aeEplibFxQ7FJkaFfYzIDIxA2d6lzwVel3j+VwQ7zOP/"           \
+   "bCnaFu6EP1OQw3ZarsaWGENf45DFuK5RsKX198vZTlqtH24YhAL1+noQTMtpTOp/"          \
+   "6vrczOXkr7dJGQ6RAfliq1maD18PN5yjdyNhr7BXsrK6f01DX2Xr4s51AARxQ/"            \
+   "0U5hmb4HjKg8Sbno4Th+Wza3I0RMgM0YzhRUJz+BXzx2l9NPdeyuECdQ1Q2wP1MNOCBy/"     \
+   "QBJmc+"                                                                    \
+   "RWYK57oWCuv5vmkpN8IlriyRv0PGRhYr4ZcLkDdzmuyfK6SGAvIPD4veDJRj3cXEazyMh6g+"  \
+   "rvwt70laxo2IOhvUXDc89WvarthTOzlFt5FNrA8uXhUYyL1q1XSWYCiCu5vRv77BvRUJjf2B6" \
+   "5kaIKUAGDhYuhch2yU6O9VsHLik3xOGSwIUZJbdMyHY+eA8ZlWZeKJbpjz7a/"             \
+   "TyBQU6VNG4+Z5SXJjURogkODNkx21QS0Z1+b7ZnCSXf1OQceomkDrREB7vyD2HX5rN2/"      \
+   "KIBMgH3J7DnG2VpNhYJ9Ve1hMDGcrQggjkCpdP7lloc6QiH837tD/81gYmr95IbuIHe/"      \
+   "x20oHh9heGHUELnCQ6hXYWOBvSFlGcqZs/"                                        \
+   "f0qxn5Fe2OfQPRzEstxoW99IdPvgotDnL2vaz2JNFvFqiofc2pIP7XvpFKIoQO7q8LX9z7ah1" \
+   "Yh8cbi6us8g5y9WzOfh882jU7vQT+31a1ZaeDMbFV1Cemc+/"                          \
+   "d0HNksi1qMJtcjrH2MQgXJ3BTyAuJH9OFK8iGqSzHhop9hp5z8mvx834PPjgBfZGt4w/"      \
+   "7qeie+T4sooGVVqA6F3jl8YfFdIUAwkxe5GBQVVvaRLYm/"                            \
+   "4SLGBf54Dexi7e0+rL2sG5DeKygNdFzMc6lRO+"                                    \
+   "gvmAMmDucRm4bxmu7ycNZCQUcuSKoMUWWu6A6eUiyBCQUxrrlX/"                       \
+   "3CkRXkQQ6JCwZZMvTgBokYx3WQR6LpW70xWLXyQhav4ZnHKzgITSOe7mUkMJ35NDMD+"       \
+   "qsxXY7sWbGz+b60DWF7yaMVzDPzIGjWLpckMRMxgN3bQ5SE/mFxdjoZD5yYb84q/"          \
+   "O7EjwGA9MSTp9MFEZt7VV3f5TDWiNUZKmjUgOdjBoTSAkVzAO2nqqQNg23x6Z6FQDBeefRkfc" \
+   "9FoUiBqHuN4fU/zc4Hkthp1McwIkYwRdlgPceD/"                                   \
+   "BSNbkNRNAnzghBhCquIqpXd8AptBX2qO67rfT7COhpn/"                              \
+   "fzVo3ueCRTaM2DtjD3uuH4rMNb3LDjyJFX1DZ5eEWkGq9UE/"                          \
+   "AFivfeia4cA0a8Z1LzZcW7WvE5Y1WIZN4gy9SZcNgHEQq8Ad8Q4fAbxe8XJ6/"             \
+   "tNvG+AvAuLEvNJtbhC/4Ei/"                                                   \
+   "JoXplvutDlW5d6g4KEWj4GICqggM5ZSv0TCkbfFkLdaJrOHrn+oI++"                    \
+   "krv1U4yQk6P18Mg2bE18ibe+LdWNsqn01V7yDmS+"                                  \
+   "VAvqQF8f2p4rOOyWsGc7CoyXSrq9LCuGq9eMPR6auo+"                               \
+   "tyS1Nek2t6SgpOpzBBDdQnC5sHC1OWTW3ui7w4H0NKCuZOiMncbSDOlegn8C0zZa6Z5iYAce8" \
+   "a8Ow3jryBEnKBaguhjjOMG8iX/eka8XP+UTxvso4fKVVOXQwobZMdYbf/"                 \
+   "sXNJbMbWrFc1S9rdlXL/"                                                      \
+   "nnYvYrRMnOBJ27Mz5vvtOpd4fyQ+wi1q+"                                         \
+   "5VvuLDM8u51B4oaYqpGUZZ3qVS5BBYm9cDxgMtcdoXjOSopHasdAhron+"                 \
+   "NdbGFBxyrUGKnnVXYocEuvsvwhBEA3HUUVV94m3C0agh2eVpmCIyWrs+"                  \
+   "grkpAaNLZwXVuzegttJ0GoTxzQnDIWkvlvkS3ZGo25spfPp+/Nda4SZAYRNmtnGfB2TRl0Wx/" \
+   "o/"                                                                        \
+   "V2vx+9qnGyDq52CSkMftpfnsMXAnAv6ps7U+"                                      \
+   "mgbgNPUFjv1Y0xKaeJdshu1HyEmq5aYqHJSfF2EzvPfH4d0Ijz1lsxMxL4IsqB7kufcOR4FFn" \
+   "aYXKIXLjRwM5VZNAK/3dvCb3l9H7QMOiJPbdoxAd123aymjz9N/"                       \
+   "2O33wMaG6OE8pXp0iYEaW7DOr0FfT913JeUnPNPcqqsA9YXod2UuNWZElTW/"              \
+   "saL32v9akNwA4Jd7Y5VgI4y+XyDH3kAU0Uc8g6YCx/hqcn4pd2+ryH+/"                  \
+   "5nVQhnCE0KNOjjrFS92RNLD71GUhWR+VXMw2tKXBUSKnt9Ai4LLJrdvFbwrdqK+"           \
+   "AjBUVqI3MgylNxRw2395ppAbheE1pAcoqLoDOGyOs66Y8kJGpaqs0AmdmZHw2OA26btw+"     \
+   "ceBN+UgScsB5P5wNIup1AvU5J7h1vlFBNygg3WO/MJGCz48xgJ/"                       \
+   "klg9wCLQ+vXtrhYJz15RgguADFLBrTcV/Miel20KulnprI+/"                          \
+   "lXtRvEAoGJSc0UZ8J7UVTf8kvYzT3hF7XzZzlhKxPYebjdnp2la4o2PkyZXcc/"            \
+   "gFLa7ickR28ZPUigwpW0lK5sJIwWbnZmP5wbQNhiGO8QL9gVpFOnu0xHpu8MqBvfZGf2HiE+"  \
+   "qBUSR89v88gz6u/TVP9zVH1dnk9PE54Uw3yPdxL/"                                  \
+   "feukvF71sEI6WWd2fdupgRlDGzASrKSAsFbaZobwUViEIFbWo7zPYVZyMglCrD1Xoxdd6EBeU" \
+   "SJDkS1nhiHOR/7FpIhae8fggAD+StXR7725vzcwIOX21ozRcE2iWw6OP99vDoqLQ8VYzYS0/"  \
+   "f3WMME6b5ndYz25uC0AiULXYI="
+
+   _mongocrypt_buffer_copy_from_hex (&S_KeyId,
+                                     "12345678123498761234123456789012");
+   _mongocrypt_buffer_copy_from_hex (&K_KeyId,
+                                     "ABCDEFAB123498761234123456789012");
+
+   /* Test success with an FLE2IndexedEqualityEncryptedValue payload. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx;
+      mongocrypt_binary_t *out;
+      bson_t out_bson;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (
+         mongocrypt_ctx_decrypt_init (
+            ctx,
+            TEST_BSON ("{'plainText':'sample','encrypted':{'$binary':{'base64':"
+                       "'" TEST_IREV_BASE64 "','subType':'6'}}}")),
+         ctx);
+      /* The first transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests S_Key.
+       */
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         mongocrypt_binary_t *filter = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-decrypt-ieev/first-filter.json"),
+            filter);
+         mongocrypt_binary_destroy (filter);
+      }
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/keys/"
+                               "12345678123498761234123456789012-local-"
+                               "document.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      /* The second transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests K_Key.
+       */
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      {
+         mongocrypt_binary_t *filter = mongocrypt_binary_new ();
+         ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+            TEST_FILE ("./test/data/fle2-decrypt-ieev/second-filter.json"),
+            filter);
+         mongocrypt_binary_destroy (filter);
+      }
+      ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                    ctx,
+                    TEST_FILE ("./test/data/keys/"
+                               "ABCDEFAB123498761234123456789012-local-"
+                               "document.json")),
+                 ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+      _assert_match_bson (
+         &out_bson,
+         TMP_BSON ("{'plainText': 'sample', 'encrypted': 'value123'}"));
+      mongocrypt_binary_destroy (out);
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+
+   _mongocrypt_buffer_cleanup (&K_KeyId);
+   _mongocrypt_buffer_cleanup (&S_KeyId);
+
+#undef TEST_IREV_BASE64
+}
+
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
@@ -882,4 +1030,5 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_explicit_decrypt_fle2_ieev);
    INSTALL_TEST (_test_decrypt_fle2_iup);
    INSTALL_TEST (_test_decrypt_wrong_binary_subtype);
+   INSTALL_TEST (_test_decrypt_fle2_irev);
 }
