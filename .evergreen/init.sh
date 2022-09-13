@@ -80,7 +80,7 @@ function run_chdir() {
     local _dir="$1"
     shift
     pushd "$_dir" > /dev/null
-    debug "Run in directory [$_dir]: $@"
+    debug "Run in directory [$_dir]:" "$@"
     command "$@"
     local _rc=$?
     popd > /dev/null
@@ -89,26 +89,28 @@ function run_chdir() {
 
 # Given a path string, convert it to an absolute path with no redundant components or directory separators
 function abspath() {
-    set -eu
     test "$#" -eq 1 || fail "abspath expects a single argument"
     local ret
     local arg="$1"
     debug "Resolve path [$arg]"
     # The parent path:
-    local _parent="$(dirname "$arg")"
+    local _parent
+    _parent="$(dirname "$arg")"
     # The filename part:
-    local _fname="$(basename "$arg")"
-    if test "$_parent" = "."; then
+    local _fname
+    _fname="$(basename "$arg")"
+    # There are four cases to consider from dirname:
+    if test "$_parent" = "."; then  # The parent is '.' as in './foo'
         # Replace the leading '.' with the working directory
         _parent="$PWD"
-    elif test "$_parent" = ".."; then
+    elif test "$_parent" = ".."; then  # The parent is '..' as in '../foo'
         # Replace a leading '..' with the parent of the working directory
         _parent="$(dirname "$PWD")"
-    elif test "$arg" = "$_parent"; then
-        # A root directory is its own parent acording to 'dirname'
-        echo "$arg"
+    elif test "$arg" = "$_parent"; then  # The parent is itself, as in '/'
+        # A root directory is its own parent according to 'dirname'
+        printf %s "$arg"
         return 0
-    else
+    else  # The parent is some other path, like 'foo' in 'foo/bar'
         # Resolve the parent path
         _parent="$(set +x; DEBUG=0 abspath "$_parent")"
     fi
@@ -128,19 +130,19 @@ function abspath() {
         ret="${ret//\/\///}"
     done
     debug "Resolved to: [$arg] -> [$ret]"
-    echo "$ret"
+    printf %s "$ret"
 }
 
 # Get the platform name: One of 'windows', 'macos', 'linux', or 'unknown'
 function os_name() {
-    test "$#" -eq 0 || fail "os_name accepts no arguments"
     have_command uname || fail "No 'uname' executable found"
 
     debug "Uname is [$(uname -a)]"
-    local _uname="$(uname | tr '[:upper:]' '[:lower:]')"
+    local _uname
+    _uname="$(uname | tr '[:upper:]' '[:lower:]')"
     local _os_name="unknown"
 
-    if [[ "$_uname" =~ '.*cywin|windows|mingw|msys.*' ]] || have_command cmd.exe; then
+    if [[ "$_uname" =~ .*cywin|windows|mingw|msys.* ]] || have_command cmd.exe; then
         _os_name="windows"
     elif test "$_uname" = 'darwin'; then
         _os_name='macos'
@@ -148,19 +150,21 @@ function os_name() {
         _os_name='linux'
     fi
 
-    echo $_os_name
+    printf %s "$_os_name"
 }
 
 # Ensure the given path is in a native format (converts cygwin paths to Windows-local paths)
 function native_path() {
     test "$#" -eq 1 || fail "native_path expects one argument"
-    if test "${OS_NAME}" = "windows" && have_command cygpath; then
+    if test "$OS_NAME" = "windows"; then
+        have_command cygpath || fail "No 'cygpath' command is available, but we require it to normalize file paths."
         debug "Convert path [$1]"
-        local r="$(cygpath -w "${1}")"
+        local r
+        r="$(cygpath -w "$1")"
         debug "Convert to [$r]"
-        echo "$r"
+        printf %s "$r"
     else
-        echo "${1}"
+        printf %s "$1"
     fi
 }
 

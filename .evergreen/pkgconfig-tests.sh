@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -euo pipefail
-
 . "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 if ! have_command pkg-config; then

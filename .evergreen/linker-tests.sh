@@ -25,7 +25,7 @@ linker_tests_deps_root="$EVG_DIR/linker_tests_deps"
 rm -rf -- "$linker_tests_root"
 mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build}
 
-# Make libbson1 and libbson2
+# Make libbson1
 run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
 MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
@@ -63,8 +63,8 @@ $CMAKE \
   "-H$SRC_PATH" \
   "-B$BUILD_PATH"
 $CMAKE --build "$BUILD_PATH" --target install --config RelWithDebInfo
-# Make libbson2
 
+# Prepare libbson2
 run_chdir "$MONGOC_DIR" git reset --hard
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson2.patch"
 LIBBSON2_SRC_DIR="$MONGOC_DIR"

@@ -4,7 +4,7 @@ set -euxo pipefail
 
 find_cmake ()
 {
-  if [ ! -z "${CMAKE-}" ]; then
+  if [ -n "${CMAKE-}" ]; then
     return 0
   elif [ -f "/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake" ]; then
     CMAKE="/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake"
@@ -31,7 +31,7 @@ find_cmake ()
   elif [ -f "/cygdrive/c/cmake/bin/cmake" ]; then
     CMAKE="/cygdrive/c/cmake/bin/cmake"
   fi
-  if [ -z "$CMAKE" -o -z "$( $CMAKE --version 2>/dev/null )" ]; then
+  if test -z "${CMAKE-}" || test -z "$( $CMAKE --version 2>/dev/null )"; then
     # Some images have no cmake yet, or a broken cmake (see: BUILD-8570)
     echo "-- MAKE CMAKE --"
     CMAKE_INSTALL_DIR=$(readlink -f cmake-install)
