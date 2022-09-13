@@ -81,12 +81,16 @@ typedef struct {
  * s: <binary> // ESCDerivedFromDataTokenAndCounter
  * c: <binary> // ECCDerivedFromDataTokenAndCounter
  * p: <binary> // Encrypted Tokens
+ *
+ * Instances of mc_EdgeTokenSet_t are expected to be owned by
+ * mc_FLE2InsertUpdatePayload_t and are freed in
+ * mc_FLE2InsertUpdatePayload_cleanup.
  */
 typedef struct {
-   _mongocrypt_buffer_t edcDerivedToken;       // d
-   _mongocrypt_buffer_t escDerivedToken;       // s
-   _mongocrypt_buffer_t eccDerivedToken;       // c
-   _mongocrypt_buffer_t encryptedTokens;       // p
+   _mongocrypt_buffer_t edcDerivedToken; // d
+   _mongocrypt_buffer_t escDerivedToken; // s
+   _mongocrypt_buffer_t eccDerivedToken; // c
+   _mongocrypt_buffer_t encryptedTokens; // p
 } mc_EdgeTokenSet_t;
 
 void
@@ -111,8 +115,8 @@ mc_FLE2InsertUpdatePayload_serialize (
    bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload);
 
 bool
-mc_FLE2InsertUpdatePayload_serializeForRange (bson_t *out,
-   const mc_FLE2InsertUpdatePayload_t *payload);
+mc_FLE2InsertUpdatePayload_serializeForRange (
+   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload);
 
 void
 mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload);
