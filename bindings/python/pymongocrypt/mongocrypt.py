@@ -15,7 +15,7 @@
 import copy
 
 try:
-    from pymongo_auth_aws.auth import _aws_temp_credentials
+    from pymongo_auth_aws.auth import aws_temp_credentials
     _HAVE_AUTH_AWS = True
 except ImportError:
     _HAVE_AUTH_AWS = False
@@ -807,7 +807,7 @@ def _ask_for_kms_credentials(kms_providers):
             "On-demand AWS credentials require pymongo-auth-aws: "
             "install with: python -m pip install 'pymongo[aws]'"
         )
-    creds = _aws_temp_credentials()
+    creds = aws_temp_credentials()
     creds_dict = {"accessKeyId": creds.username, "secretAccessKey": creds.password}
     if creds.token:
         creds_dict["sessionToken"] = creds.token
