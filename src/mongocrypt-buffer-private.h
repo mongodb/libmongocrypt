@@ -205,13 +205,24 @@ bool
 _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf,
                                       char *str) MONGOCRYPT_WARN_UNUSED_RESULT;
 
-/* _mongocrypt_buffer_copy_from_uint64_le initializes @buf from the little-endian
- * byte representation of @value.
- * Caller must call _mongocrypt_buffer_cleanup.
+/* _mongocrypt_buffer_from_string initializes @buf from @str.
+ * @buf retains a pointer to @str.
+ * @str must outlive @buf.
+ * @str must be NULL terminated.
+ * - Returns false on error.
+ * - Caller must call _mongocrypt_buffer_cleanup. */
+bool
+_mongocrypt_buffer_from_string (_mongocrypt_buffer_t *buf,
+                                const char *str) MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* _mongocrypt_buffer_copy_from_uint64_le initializes @buf from the
+ * little-endian byte representation of @value. Caller must call
+ * _mongocrypt_buffer_cleanup.
  * @value is expected to be in machine's native endianness.
  */
 void
-_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf, uint64_t value);
+_mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
+                                        uint64_t value);
 
 /* _mongocrypt_buffer_from_subrange initializes @out as a non-owning buffer to a
  * range of data from @in specified by @offset and @len. Returns false on error.
