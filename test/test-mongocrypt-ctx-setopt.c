@@ -472,7 +472,7 @@ _test_setopt_query_type (_mongocrypt_tester_t *tester)
    /* Test valid input. */
    REFRESH;
    QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR,
-                  strlen (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR));
+                  (int) strlen (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR));
 
    /* Test invalid length. */
    REFRESH;
