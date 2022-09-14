@@ -603,15 +603,10 @@ mstr_eq_ignore_case (mstr_view left, mstr_view right)
 #define _mstr_strncasecmp strncasecmp
 #endif
 
-   int got;
-
    if (left.len != right.len) {
       return false;
    }
-   got = _mstr_strncasecmp (left.data, right.data, left.len) == 0;
-
-#undef _mstr_strncasecmp
-   return got;
+   return _mstr_strncasecmp (left.data, right.data, left.len) == 0;
 }
 
 /// Determine whether the given character is an printable ASCII codepoint
