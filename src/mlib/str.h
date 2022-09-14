@@ -607,6 +607,7 @@ mstr_eq_ignore_case (mstr_view left, mstr_view right)
       return false;
    }
    return _mstr_strncasecmp (left.data, right.data, left.len) == 0;
+#undef _mstr_strncasecmp
 }
 
 /// Determine whether the given character is an printable ASCII codepoint
