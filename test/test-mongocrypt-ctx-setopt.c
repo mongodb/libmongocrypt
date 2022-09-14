@@ -68,6 +68,11 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
    ASSERT_FAILS (                            \
       mongocrypt_ctx_setopt_algorithm (ctx, algo, algo_len), ctx, msg);
 
+#define QUERY_TYPE_OK(qt, qt_len) \
+   ASSERT_OK (mongocrypt_ctx_setopt_query_type (ctx, qt, qt_len), ctx);
+#define QUERY_TYPE_FAILS(qt, qt_len, msg) \
+   ASSERT_FAILS (mongocrypt_ctx_setopt_query_type (ctx, qt, qt_len), ctx, msg);
+
 #define ENDPOINT_OK(endpoint, endpoint_len)                  \
    ASSERT_OK (mongocrypt_ctx_setopt_masterkey_aws_endpoint ( \
                  ctx, endpoint, endpoint_len),               \
@@ -441,6 +446,55 @@ _test_setopt_algorithm (_mongocrypt_tester_t *tester)
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
    ALGORITHM_FAILS (RAND, -1, "test")
+
+   /* Test case insensitive. */
+   REFRESH;
+   ALGORITHM_OK ("aEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
+   REFRESH;
+   ALGORITHM_OK ("aEAD_AES_256_CBC_HMAC_SHA_512-Random", -1);
+   REFRESH;
+   ALGORITHM_OK ("indexed", -1);
+   REFRESH;
+   ALGORITHM_OK ("unindexed", -1);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_setopt_query_type (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx = NULL;
+
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+
+   /* Test valid input. */
+   REFRESH;
+   QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR,
+                  strlen (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR));
+
+   /* Test invalid length. */
+   REFRESH;
+   QUERY_TYPE_FAILS ("foo", -2, "Invalid query_type string length");
+
+   /* Test double setting. */
+   REFRESH;
+   QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1);
+   QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1);
+
+   /* Test NULL input */
+   REFRESH;
+   QUERY_TYPE_FAILS (NULL, 0, "Invalid null query_type string");
+
+   /* Test with failed context. */
+   REFRESH;
+   _mongocrypt_ctx_fail_w_msg (ctx, "test");
+   QUERY_TYPE_FAILS (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1, "test")
+
+   /* Test case insensitive. */
+   REFRESH;
+   QUERY_TYPE_OK ("Equality", -1);
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -1008,6 +1062,7 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_endpoint (tester);
    _test_setopt_key_encryption_key_azure (tester);
    _test_setopt_key_encryption_key_gcp (tester);
+   _test_setopt_query_type (tester);
 
    /* Test options on different contexts */
    _test_setopt_for_datakey (tester);
