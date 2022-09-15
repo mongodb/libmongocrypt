@@ -147,6 +147,9 @@ _crypto_state_init (const _mongocrypt_buffer_t *key,
    BCRYPT_KEY_DATA_BLOB_HEADER blobHeader;
    NTSTATUS nt_status;
 
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (iv);
+
    keyBlob = NULL;
 
    state = bson_malloc0 (sizeof (*state));
@@ -224,9 +227,14 @@ _crypto_state_destroy (cng_encrypt_state *state)
 bool
 _native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
 {
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
+
    bool ret = false;
    mongocrypt_status_t *status = args.status;
    cng_encrypt_state *state = _crypto_state_init (args.key, args.iv, status);
+
+   BSON_ASSERT (state);
 
    NTSTATUS nt_status;
 
@@ -256,9 +264,14 @@ done:
 bool
 _native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 {
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
+
    bool ret = false;
    mongocrypt_status_t *status = args.status;
    cng_encrypt_state *state = _crypto_state_init (args.key, args.iv, status);
+
+   BSON_ASSERT (state);
 
    NTSTATUS nt_status;
 
@@ -291,7 +304,7 @@ done:
  * @out is the output. @out must be allocated by the caller with
  * the expected length @expect_out_len for the output.
  * Returns false and sets @status on error. @status is required. */
-bool
+static bool
 _hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
                       const _mongocrypt_buffer_t *key,
                       const _mongocrypt_buffer_t *in,
@@ -302,6 +315,11 @@ _hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
    bool ret = false;
    BCRYPT_HASH_HANDLE hHash;
    NTSTATUS nt_status;
+
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (status);
 
    if (out->len != expect_out_len) {
       CLIENT_ERR ("out does not contain " PRIu32 " bytes", expect_out_len);
@@ -350,6 +368,9 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        uint32_t count,
                        mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (status);
+
    NTSTATUS nt_status = BCryptGenRandom (_random, out->data, count, 0);
    if (nt_status != STATUS_SUCCESS) {
       CLIENT_ERR ("BCryptGenRandom Failed: 0x%x", (int) nt_status);
@@ -445,6 +466,10 @@ _cng_ctr_crypto_state_init (const _mongocrypt_buffer_t *key,
    unsigned char *keyBlob;
    BCRYPT_KEY_DATA_BLOB_HEADER blobHeader;
    NTSTATUS nt_status;
+
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (iv);
+   BSON_ASSERT_PARAM (status);
 
    keyBlob = NULL;
 

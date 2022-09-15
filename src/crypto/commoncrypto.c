@@ -70,6 +70,11 @@ _native_crypto_init ()
 bool
 _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
+   BSON_ASSERT (args.iv);
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
+
    bool ret = false;
    CCCryptorRef ctx = NULL;
    CCCryptorStatus cc_status;
@@ -156,6 +161,11 @@ _native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
 bool
 _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
+   BSON_ASSERT (args.iv);
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
+
    bool ret = false;
    CCCryptorRef ctx = NULL;
    CCCryptorStatus cc_status;
@@ -242,7 +252,7 @@ _native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
  * @out is the output. @out must be allocated by the caller with
  * the expected length @expect_out_len for the output.
  * Returns false and sets @status on error. @status is required. */
-bool
+static bool
 _hmac_with_algorithm (CCHmacAlgorithm algorithm,
                       const _mongocrypt_buffer_t *key,
                       const _mongocrypt_buffer_t *in,
@@ -251,6 +261,11 @@ _hmac_with_algorithm (CCHmacAlgorithm algorithm,
                       mongocrypt_status_t *status)
 {
    CCHmacContext *ctx;
+
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (status);
 
    if (out->len != expect_out_len) {
       CLIENT_ERR ("out does not contain %" PRIu32 " bytes", expect_out_len);
@@ -284,6 +299,9 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        uint32_t count,
                        mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (status);
+
    CCRNGStatus ret = CCRandomGenerateBytes (out->data, (size_t) count);
    if (ret != kCCSuccess) {
       CLIENT_ERR ("failed to generate random iv: %d", (int) ret);
