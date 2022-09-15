@@ -221,6 +221,7 @@ _hmac_with_hash (const EVP_MD *hash,
                  _mongocrypt_buffer_t *out,
                  mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (hash);
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
