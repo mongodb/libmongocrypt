@@ -11,6 +11,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#if defined(MLIB_HAVE_STRINGS_H)
+#include <strings.h> /* For strncasecmp. */
+#endif
+
 /**
  * @brief A simple non-owning string-view type.
  *
@@ -585,6 +589,25 @@ mstr_eq (mstr_view left, mstr_view right)
       return false;
    }
    return memcmp (left.data, right.data, left.len) == 0;
+}
+
+/**
+ * @brief Determine whether two strings are equivalent ignoring case.
+ */
+static inline bool
+mstr_eq_ignore_case (mstr_view left, mstr_view right)
+{
+#ifdef _WIN32
+#define _mstr_strncasecmp _strnicmp
+#else
+#define _mstr_strncasecmp strncasecmp
+#endif
+
+   if (left.len != right.len) {
+      return false;
+   }
+   return _mstr_strncasecmp (left.data, right.data, left.len) == 0;
+#undef _mstr_strncasecmp
 }
 
 /// Determine whether the given character is an printable ASCII codepoint

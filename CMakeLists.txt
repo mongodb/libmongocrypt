@@ -200,10 +200,15 @@ configure_file (
 # nor are its headers installed.
 add_library (_mongo-mlib INTERFACE)
 add_library (mongo::mlib ALIAS _mongo-mlib)
+list (APPEND MLIB_DEFINITIONS MLIB_USER)
+CHECK_INCLUDE_FILE (strings.h HAVE_STRINGS_H)
+if (HAVE_STRINGS_H)
+   list (APPEND MLIB_DEFINITIONS MLIB_HAVE_STRINGS_H)
+endif ()
 set_property(
    TARGET _mongo-mlib
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
-   MLIB_USER
+   ${MLIB_DEFINITIONS}
    )
 set_property(
    TARGET _mongo-mlib
