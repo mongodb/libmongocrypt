@@ -227,8 +227,8 @@ _crypto_state_destroy (cng_encrypt_state *state)
 bool
 _native_crypto_aes_256_cbc_encrypt (aes_256_args_t args)
 {
-   BSON_ASSERT_PARAM (args.in);
-   BSON_ASSERT_PARAM (args.out);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
 
    bool ret = false;
    mongocrypt_status_t *status = args.status;
@@ -264,8 +264,8 @@ done:
 bool
 _native_crypto_aes_256_cbc_decrypt (aes_256_args_t args)
 {
-   BSON_ASSERT_PARAM (args.in);
-   BSON_ASSERT_PARAM (args.out);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
 
    bool ret = false;
    mongocrypt_status_t *status = args.status;
