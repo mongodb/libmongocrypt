@@ -142,6 +142,7 @@ _decrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 
    ctx = EVP_CIPHER_CTX_new ();
 
+   BSON_ASSERT_PARAM (cipher);
    BSON_ASSERT (args.iv);
    BSON_ASSERT (args.key);
    BSON_ASSERT (args.in);
