@@ -25,7 +25,11 @@
 /** FLE2RangeFindSpec represents the range find specification that is encoded
  * inside of a FLE2EncryptionPlaceholder. See
  * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl#L346
- * for the representation in the MongoDB server. */
+ * for the representation in the MongoDB server.
+ *
+ * Bounds on range queries are referred to as lowerBound or lb, and upperBound
+ * or ub. Bounds on an underlying range index are referred to as min and max.
+ */
 typedef struct {
    // lowerBound is the lower bound for an encrypted range query.
    bson_iter_t lowerBound;
