@@ -140,11 +140,11 @@ mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
 
       IF_FIELD (s)
       {
-         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
-            CLIENT_ERR ("invalid marking, 's' must be an int32");
+         if (!BSON_ITER_HOLDS_INT64 (&iter)) {
+            CLIENT_ERR ("invalid marking, 's' must be an int64");
             goto fail;
          }
-         out->sparsity = bson_iter_int32 (&iter);
+         out->sparsity = bson_iter_int64 (&iter);
          if (!mc_validate_sparsity (out->sparsity, status)) {
             goto fail;
          }
@@ -193,7 +193,7 @@ mc_validate_contention (int64_t contention, mongocrypt_status_t *status)
 }
 
 bool
-mc_validate_sparsity (int32_t sparsity, mongocrypt_status_t *status)
+mc_validate_sparsity (int64_t sparsity, mongocrypt_status_t *status)
 {
    if (sparsity < 0) {
       CLIENT_ERR ("sparsity must be non-negative, got: %" PRId64, sparsity);
@@ -203,16 +203,17 @@ mc_validate_sparsity (int32_t sparsity, mongocrypt_status_t *status)
 }
 
 bool
-mc_FLE2RangeSpec_parse (mc_FLE2RangeSpec_t *out,
-                        const bson_iter_t *in,
-                        mongocrypt_status_t *status)
+mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
+                            const bson_iter_t *in,
+                            mongocrypt_status_t *status)
 {
    bson_iter_t iter = *in;
-   bool has_min = false, has_minIncluded = false, has_max = false,
-        has_maxIncluded = false;
+   bool has_lowerBound = false, has_lbIncluded = false, has_upperBound = false,
+        has_ubIncluded = false, has_indexMin = false, has_indexMax = false;
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      CLIENT_ERR ("invalid FLE2RangeSpec: must be an iterator to a document");
+      CLIENT_ERR (
+         "invalid FLE2RangeFindSpec: must be an iterator to a document");
       return false;
    }
    bson_iter_recurse (&iter, &iter);
@@ -221,43 +222,59 @@ mc_FLE2RangeSpec_parse (mc_FLE2RangeSpec_t *out,
       const char *field = bson_iter_key (&iter);
       BSON_ASSERT (field);
 
-      IF_FIELD (min)
+      IF_FIELD (lowerBound)
       {
-         out->min = iter;
+         out->lowerBound = iter;
       }
       END_IF_FIELD
 
-      IF_FIELD (minIncluded)
+      IF_FIELD (lbIncluded)
       {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            CLIENT_ERR ("invalid FLE2RangeSpec: 'minIncluded' must be a bool");
+            CLIENT_ERR (
+               "invalid FLE2RangeFindSpec: 'lbIncluded' must be a bool");
             goto fail;
          }
-         out->minIncluded = bson_iter_bool (&iter);
+         out->lbIncluded = bson_iter_bool (&iter);
       }
       END_IF_FIELD
 
-      IF_FIELD (max)
+      IF_FIELD (upperBound)
       {
-         out->max = iter;
+         out->upperBound = iter;
       }
       END_IF_FIELD
 
-      IF_FIELD (maxIncluded)
+      IF_FIELD (ubIncluded)
       {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            CLIENT_ERR ("invalid FLE2RangeSpec: 'maxIncluded' must be a bool");
+            CLIENT_ERR (
+               "invalid FLE2RangeFindSpec: 'ubIncluded' must be a bool");
             goto fail;
          }
-         out->maxIncluded = bson_iter_bool (&iter);
+         out->ubIncluded = bson_iter_bool (&iter);
+      }
+      END_IF_FIELD
+
+      IF_FIELD (indexMin)
+      {
+         out->indexMin = iter;
+      }
+      END_IF_FIELD
+
+      IF_FIELD (indexMax)
+      {
+         out->indexMax = iter;
       }
       END_IF_FIELD
    }
 
-   CHECK_HAS (min)
-   CHECK_HAS (minIncluded)
-   CHECK_HAS (max)
-   CHECK_HAS (maxIncluded)
+   CHECK_HAS (lowerBound)
+   CHECK_HAS (lbIncluded)
+   CHECK_HAS (upperBound)
+   CHECK_HAS (ubIncluded)
+   CHECK_HAS (indexMin)
+   CHECK_HAS (indexMax)
    return true;
 
 fail:
@@ -270,7 +287,7 @@ mc_FLE2RangeInsertSpec_parse (mc_FLE2RangeInsertSpec_t *out,
                               mongocrypt_status_t *status)
 {
    bson_iter_t iter = *in;
-   bool has_v = false, has_lb = false, has_ub = false;
+   bool has_v = false, has_min = false, has_max = false;
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       CLIENT_ERR (
@@ -289,22 +306,22 @@ mc_FLE2RangeInsertSpec_parse (mc_FLE2RangeInsertSpec_t *out,
       }
       END_IF_FIELD
 
-      IF_FIELD (lb)
+      IF_FIELD (min)
       {
-         out->lb = iter;
+         out->min = iter;
       }
       END_IF_FIELD
 
-      IF_FIELD (ub)
+      IF_FIELD (max)
       {
-         out->ub = iter;
+         out->max = iter;
       }
       END_IF_FIELD
    }
 
    CHECK_HAS (v)
-   CHECK_HAS (lb)
-   CHECK_HAS (ub)
+   CHECK_HAS (min)
+   CHECK_HAS (max)
    return true;
 
 fail:

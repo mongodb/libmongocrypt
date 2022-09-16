@@ -2086,10 +2086,10 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
       status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (
          &buf,
-         "03770000001074000100000010610003000000056b690010000000041234567812349"
+         "037d0000001074000100000010610003000000056b690010000000041234567812349"
          "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-         "0376001c00000010760040e20100106c6200000000001075620087d612000012636d0"
-         "000000000000000001073000100000000");
+         "0376001e00000010760040e20100106d696e0000000000106d61780087d6120000126"
+         "36d000000000000000000127300010000000000000000");
       ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
       mc_FLE2EncryptionPlaceholder_init (&placeholder);
       ASSERT_OK_STATUS (
@@ -2124,11 +2124,11 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
          ASSERT (BSON_ITER_HOLDS_INT32 (&spec.v));
          ASSERT_CMPINT32 (bson_iter_int32 (&spec.v), ==, 123456);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.lb));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.lb), ==, 0);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.min));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.min), ==, 0);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.ub));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.ub), ==, 1234567);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.max));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.max), ==, 1234567);
       }
 
       mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
@@ -2146,11 +2146,12 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
       status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (
          &buf,
-         "038e0000001074000200000010610003000000056b690010000000041234567812349"
+         "03ba0000001074000200000010610003000000056b690010000000041234567812349"
          "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-         "03760033000000106d696e0000000000086d696e496e636c756465640001106d61780"
-         "087d61200086d6178496e636c7564656400010012636d000000000000000000107300"
-         "0100000000");
+         "0376005b000000106c6f776572426f756e640000000000086c62496e636c756465640"
+         "001107570706572426f756e640087d61200087562496e636c75646564000110696e64"
+         "65784d696e000000000010696e6465784d61780087d612000012636d0000000000000"
+         "00000127300010000000000000000");
       ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
       mc_FLE2EncryptionPlaceholder_init (&placeholder);
       ASSERT_OK_STATUS (
@@ -2174,21 +2175,29 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
 
       ASSERT_CMPINT32 (placeholder.sparsity, ==, 1);
 
-      // Parse FLE2RangeSpec.
+      // Parse FLE2RangeFindSpec.
       {
-         mc_FLE2RangeSpec_t spec;
+         mc_FLE2RangeFindSpec_t spec;
 
          ASSERT_OK_STATUS (
-            mc_FLE2RangeSpec_parse (&spec, &placeholder.v_iter, status),
+            mc_FLE2RangeFindSpec_parse (&spec, &placeholder.v_iter, status),
             status);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.min));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.min), ==, 0);
-         ASSERT (spec.minIncluded);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.lowerBound));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.lowerBound), ==, 0);
+         ASSERT (spec.lbIncluded);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.max));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.max), ==, 1234567);
-         ASSERT (spec.maxIncluded);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.upperBound));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.upperBound), ==, 1234567);
+         ASSERT (spec.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.indexMin));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.indexMin), ==, 0);
+         ASSERT (spec.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.indexMax));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.indexMax), ==, 1234567);
+         ASSERT (spec.ubIncluded);
       }
 
       mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);

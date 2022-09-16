@@ -22,37 +22,43 @@
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
 
-/** FLE2RangeSpec represents the range find specification that is encoded inside
- * of a FLE2EncryptionPlaceholder. See
- * https://github.com/mongodb/mongo/blob/d870dda33fb75983f628636ff8f849c7f1c90b09/src/mongo/crypto/fle_field_schema.idl#L346
+/** FLE2RangeFindSpec represents the range find specification that is encoded
+ * inside of a FLE2EncryptionPlaceholder. See
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl#L346
  * for the representation in the MongoDB server. */
 typedef struct {
-   // min is the minimum value for an encrypted range query.
-   bson_iter_t min;
-   // minIncluded indicates if the lower bound should be included in the range.
-   bool minIncluded;
-   // max is the maximum value for an encrypted range query.
-   bson_iter_t max;
-   // maxIncluded indicates if the upper bound should be included in the range.
-   bool maxIncluded;
-} mc_FLE2RangeSpec_t;
+   // lowerBound is the lower bound for an encrypted range query.
+   bson_iter_t lowerBound;
+   // lbIncluded indicates if the lower bound should be included in the range.
+   bool lbIncluded;
+   // upperBound is the upperBound for an encrypted range query.
+   bson_iter_t upperBound;
+   // ubIncluded indicates if the upper bound should be included in the range.
+   bool ubIncluded;
+   // indexMin is the minimum value for the encrypted index that this query is
+   // using.
+   bson_iter_t indexMin;
+   // indexMax is the maximum value for the encrypted index that this query is
+   // using.
+   bson_iter_t indexMax;
+} mc_FLE2RangeFindSpec_t;
 
 bool
-mc_FLE2RangeSpec_parse (mc_FLE2RangeSpec_t *out,
-                        const bson_iter_t *in,
-                        mongocrypt_status_t *status);
+mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
+                            const bson_iter_t *in,
+                            mongocrypt_status_t *status);
 
 /** mc_FLE2RangeInsertSpec_t represents the range insert specification that is
  * encoded inside of a FLE2EncryptionPlaceholder. See
- * https://github.com/mongodb/mongo/blob/d870dda33fb75983f628636ff8f849c7f1c90b09/src/mongo/crypto/fle_field_schema.idl#L364
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl#L364
  * for the representation in the MongoDB server. */
 typedef struct {
    // v is the value to encrypt.
    bson_iter_t v;
-   // lb is the Queryable Encryption lower bound for range.
-   bson_iter_t lb;
-   // ub is the Queryable Encryption upper bound for range.
-   bson_iter_t ub;
+   // min is the Queryable Encryption min bound for range.
+   bson_iter_t min;
+   // max is the Queryable Encryption max bound for range.
+   bson_iter_t max;
 } mc_FLE2RangeInsertSpec_t;
 
 bool
@@ -84,7 +90,7 @@ typedef struct {
    _mongocrypt_buffer_t user_key_id;
    int64_t maxContentionCounter;
    // sparsity is the Queryable Encryption range hypergraph sparsity factor
-   int32_t sparsity;
+   int64_t sparsity;
 } mc_FLE2EncryptionPlaceholder_t;
 
 void
@@ -108,6 +114,6 @@ mc_validate_contention (int64_t contention, mongocrypt_status_t *status);
 /* mc_validate_sparsity is used to check that sparsity is a valid
  * value. */
 bool
-mc_validate_sparsity (int32_t sparsity, mongocrypt_status_t *status);
+mc_validate_sparsity (int64_t sparsity, mongocrypt_status_t *status);
 
 #endif /* MC_FLE2_ENCRYPTION_PLACEHOLDER_PRIVATE_H */
