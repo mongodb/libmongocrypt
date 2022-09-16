@@ -643,7 +643,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    _mongocrypt_ciphertext_init (ciphertext);
    mc_FLE2InsertUpdatePayload_init (&payload);
 
-   // Parse the value ("v"), lower bound ("lb"), and upper bound ("ub") from
+   // Parse the value ("v"), min ("min"), and max ("max") from
    // FLE2EncryptionPlaceholder for range insert.
    mc_FLE2RangeInsertSpec_t insertSpec;
    if (!mc_FLE2RangeInsertSpec_parse (
