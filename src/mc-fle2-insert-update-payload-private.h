@@ -32,7 +32,7 @@
  *
  * struct {
  *   uint8_t fle_blob_subtype = 4;
- *   uint8_t bson[16];
+ *   uint8_t bson[];
  * } FLE2InsertUpdatePayload;
  *
  * bson is a BSON document of this form:
