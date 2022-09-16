@@ -61,6 +61,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/none.c
    src/mc-array.c
    src/mc-efc.c
+   src/mc-fle2-find-range-payload.c
    src/mc-fle2-insert-update-payload.c
    src/mc-fle2-encryption-placeholder.c
    src/mc-fle2-find-equality-payload.c
