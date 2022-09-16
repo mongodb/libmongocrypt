@@ -552,9 +552,8 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
       mc_FLE2InsertUpdatePayload_serialize (&out, &payload);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
-   _mongocrypt_buffer_steal (&ciphertext->key_id, &payload.indexKeyId);
-   ciphertext->original_bson_type =
-      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2InsertUpdatePayload.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;
 
    res = true;
@@ -825,9 +824,8 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
       mc_FLE2InsertUpdatePayload_serializeForRange (&out, &payload);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
-   _mongocrypt_buffer_steal (&ciphertext->key_id, &payload.indexKeyId);
-   ciphertext->original_bson_type =
-      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2InsertUpdatePayload.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;
 
    res = true;
@@ -902,9 +900,8 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
       mc_FLE2FindEqualityPayload_serialize (&out, &payload);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
-   _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->index_key_id);
-   ciphertext->original_bson_type =
-      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2FindEqualityPayload.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindEqualityPayload;
 
    res = true;
