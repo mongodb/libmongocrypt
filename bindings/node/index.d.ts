@@ -404,7 +404,7 @@ export class ClientEncryption {
     callback: ClientEncryptionCreateDataKeyCallback
   ): void;
 
-  /** 
+  /**
    * Searches the keyvault for any data keys matching the provided filter.  If there are matches, rewrapManyDataKey then attempts to re-wrap the data keys using the provided options.
    *
    * If no matches are found, then no bulk write is performed.
@@ -507,4 +507,6 @@ export class ClientEncryption {
     value: Buffer | Binary,
     callback: ClientEncryptionDecryptCallback
   ): void;
+
+  static readonly libmongocryptVersion: string;
 }

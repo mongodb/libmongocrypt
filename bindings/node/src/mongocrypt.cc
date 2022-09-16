@@ -110,7 +110,8 @@ Function MongoCrypt::Init(Napi::Env env) {
                     InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
                     InstanceMethod("makeRewrapManyDataKeyContext", &MongoCrypt::MakeRewrapManyDataKeyContext),
                     InstanceAccessor("status", &MongoCrypt::Status, nullptr),
-                    InstanceAccessor("cryptSharedLibVersionInfo", &MongoCrypt::CryptSharedLibVersionInfo, nullptr)
+                    InstanceAccessor("cryptSharedLibVersionInfo", &MongoCrypt::CryptSharedLibVersionInfo, nullptr),
+                    StaticValue("libmongocryptVersion", String::New(env, mongocrypt_version(nullptr)))
                   });
 }
 

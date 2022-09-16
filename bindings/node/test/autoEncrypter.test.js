@@ -827,4 +827,8 @@ describe('AutoEncrypter', function () {
       this.mc.teardown(true, done);
     });
   });
+
+  it('should provide the libmongocrypt version', function () {
+    expect(AutoEncrypter.libmongocryptVersion).to.be.a('string');
+  });
 });
