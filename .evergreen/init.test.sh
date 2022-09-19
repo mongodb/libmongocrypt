@@ -11,7 +11,7 @@ function assert_eq() {
     fi
 }
 
-function test_abspath () {
+function test_abspath() {
     mkdir -p /tmp/a/b/c
     cd /tmp/a/b/c
     got=$(abspath .)
