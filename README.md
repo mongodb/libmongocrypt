@@ -113,7 +113,7 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 
 #### Steps to release ####
 Do the following when releasing:
-- Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
+- Update CHANGELOG.md with the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, and `CHANGELOG.md`)
@@ -129,8 +129,10 @@ Do the following when releasing:
    - For all final releases, on the `rx.y` release branch increment the patch version (i.e., change `version = "1.0.0"` to `version = "1.0.1-SNAPSHOT"`).
    - For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/508e21f4abff9f5519e0357a63a4ad30d2c24692) and its parent commit.
    - Note that if this is a new minor release (e.g. `x.y.0`), then post-release changes to build.gradle.kts happen on two branches.
-- Commit and push.
-- Ensure the version on Evergreen with the tagged commit is scheduled. The upload-all task must run to complete the release. ([Example](https://evergreen.mongodb.com/task/libmongocrypt_publish_snapshot_upload_all_77eec777c14171956c69b60aaaa4f85931c957ba_22_03_02_13_51_38)).
+   - Commit and push.
+- Ensure the version on Evergreen with the tagged commit is scheduled. The following tasks must pass to complete the release:
+   - `upload-all`
+   - `windows-upload`. It is scheduled from the `windows-upload-check` task.
 - Create the release from the GitHub releases page from the new tag.
 - Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/135)).
 - File a DOCSP ticket to update the dependent version of bindings in the [CSFLE guide](https://github.com/mongodb-university/csfle-guides). ([Example](https://jira.mongodb.org/browse/DOCSP-19476))
@@ -140,7 +142,7 @@ Do the following when releasing:
 Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.
 
 ### Unstable Development Distribution Packages ###
-To install the latest unstable development package, change `1.5` to `development` in the package URLs listed in the subsequent instructions. For example, `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.5` in the instructions would become `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/development`. Do not use the unstable version of libmongocrypt in a production environment.
+To install the latest unstable development package, change `1.6` to `development` in the package URLs listed in the subsequent instructions. For example, `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.6` in the instructions would become `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/development`. Do not use the unstable version of libmongocrypt in a production environment.
 
 ### .deb Packages (Debian and Ubuntu) ###
 
@@ -153,13 +155,13 @@ sudo sh -c 'curl -s --location https://www.mongodb.org/static/pgp/libmongocrypt.
 Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial` or `bionic`, as appropriate to your system):
 
 ```
-echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.5 universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
+echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.6 universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
 For Debian systems (be sure to change `<release>` to `stretch` or `buster`, as appropriate to your system):
 
 ```
-echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/1.5 main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
+echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/1.6 main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
 Third, update the package cache:
@@ -184,7 +186,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.5/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.6/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -203,7 +205,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.5/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.6/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -222,7 +224,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.5/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.6/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -245,7 +247,7 @@ sudo rpm --import https://www.mongodb.org/static/pgp/libmongocrypt.asc
 Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):
 
 ```
-sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/1.5/x86_64" libmongocrypt
+sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/1.6/x86_64" libmongocrypt
 ```
 
 Finally, install the libmongocrypt packages:

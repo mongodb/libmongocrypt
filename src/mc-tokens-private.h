@@ -46,11 +46,14 @@
  * ======================== End: FLE 2 Token Reference ========================
  */
 
-
+// TODO: replace `CONCAT` with `BSON_CONCAT` after libbson dependency is
+// upgraded to 1.20.0 or higher.
 #ifndef CONCAT
 #define CONCAT_1(a, b) a##b
 #define CONCAT(a, b) CONCAT_1 (a, b)
 #endif
+// TODO: replace `CONCAT3` with `BSON_CONCAT3` after libbson dependency is
+// upgraded to 1.20.0 or higher.
 #ifndef CONCAT3
 #define CONCAT3(a, b, c) CONCAT (a, CONCAT (b, c))
 #endif

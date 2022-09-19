@@ -880,7 +880,9 @@ _test_setopt_kms_providers (_mongocrypt_tester_t *tester)
       {"{'gcp': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'kmip': {}}", NULL, "on-demand credentials not enabled", false},
       {"{'gcp': {'accessToken': 'foobar', 'email': 'foo@bar.com' }}",
-       "Unexpected field: 'email'"}};
+       "Unexpected field: 'email'"},
+      {.value = "{ 'azure': { 'accessToken': 'secret' } }"},
+   };
 
    for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_t *crypt;
@@ -971,6 +973,8 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_fle2_payload_uev (&tester);
    _mongocrypt_tester_install_fle2_payload_iup (&tester);
    _mongocrypt_tester_install_range_encoding (&tester);
+   _mongocrypt_tester_install_range_edge_generation (&tester);
+   _mongocrypt_tester_install_range_mincover (&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
    char osversion[32];

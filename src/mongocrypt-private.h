@@ -149,7 +149,8 @@ typedef enum {
 
 typedef enum {
    MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED = 1,
-   MONGOCRYPT_FLE2_ALGORITHM_EQUALITY = 2
+   MONGOCRYPT_FLE2_ALGORITHM_EQUALITY = 2,
+   MONGOCRYPT_FLE2_ALGORITHM_RANGE = 3
 } mongocrypt_fle2_encryption_algorithm_t;
 
 bool

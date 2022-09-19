@@ -2073,6 +2073,130 @@ _test_FLE2EncryptionPlaceholder_parse (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
+static void
+_test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
+{
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "03770000001074000100000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "0376001c00000010760040e20100106c6200000000001075620087d612000012636d0"
+         "000000000000000001073000100000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT32 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeInsertSpec.
+      {
+         mc_FLE2RangeInsertSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeInsertSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.v));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.v), ==, 123456);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.lb));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.lb), ==, 0);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.ub));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.ub), ==, 1234567);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
+
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "038e0000001074000200000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "03760033000000106d696e0000000000086d696e496e636c756465640001106d61780"
+         "087d61200086d6178496e636c7564656400010012636d000000000000000000107300"
+         "0100000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT32 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeSpec.
+      {
+         mc_FLE2RangeSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.min));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.min), ==, 0);
+         ASSERT (spec.minIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.max));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.max), ==, 1234567);
+         ASSERT (spec.maxIncluded);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
+}
+
 
 // Shared implementation for insert and find tests
 typedef struct {
@@ -2235,6 +2359,27 @@ _test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
 }
 #undef RNG_DATA
 
+#include "./data/fle2-insert-range/int32/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_int32 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/int32", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/int64/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_int64 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/int64", &source);
+}
+#undef RNG_DATA
 
 static mongocrypt_t *
 _crypt_with_rng (_test_rng_data_source *rng_source)
@@ -4498,4 +4643,7 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_macos_no_ctr);
    INSTALL_TEST (_test_fle1_collmod_with_jsonSchema);
    INSTALL_TEST (_test_fle1_collmod_without_jsonSchema);
+   INSTALL_TEST (_test_FLE2EncryptionPlaceholder_range_parse);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int32);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int64);
 }

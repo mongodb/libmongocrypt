@@ -19,6 +19,8 @@
 
 #include "mlib/str.h"
 
+#include <bson/bson.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -54,5 +56,9 @@ typedef struct current_module_result {
  */
 current_module_result
 current_module_path ();
+
+/* mc_bson_type_to_string returns the string representation of a BSON type. */
+const char *
+mc_bson_type_to_string (bson_type_t bson_type);
 
 #endif /* MONGOCRYPT_UTIL_PRIVATE_H */

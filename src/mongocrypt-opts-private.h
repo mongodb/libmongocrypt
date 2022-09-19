@@ -32,6 +32,7 @@ typedef struct {
    char *client_id;
    char *client_secret;
    _mongocrypt_endpoint_t *identity_platform_endpoint;
+   char *access_token;
 } _mongocrypt_opts_kms_provider_azure_t;
 
 typedef struct {

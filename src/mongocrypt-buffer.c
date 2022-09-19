@@ -556,6 +556,18 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
    return true;
 }
 
+bool
+_mongocrypt_buffer_from_string (_mongocrypt_buffer_t *buf, const char *str)
+{
+   _mongocrypt_buffer_init (buf);
+   if (!size_to_uint32 (strlen (str), &buf->len)) {
+      return false;
+   }
+   buf->data = (uint8_t *) str;
+   buf->owned = false;
+   return true;
+}
+
 void
 _mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
                                         uint64_t value)

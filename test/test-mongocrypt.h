@@ -234,6 +234,12 @@ _mongocrypt_tester_install_gcp_auth (_mongocrypt_tester_t *tester);
 void
 _mongocrypt_tester_install_range_encoding (_mongocrypt_tester_t *tester);
 
+void
+_mongocrypt_tester_install_range_edge_generation (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_range_mincover (_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
