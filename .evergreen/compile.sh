@@ -2,20 +2,11 @@
 # Downloads and prepares the C driver source, then compiles libmongocrypt's
 # dependencies and targets.
 #
-# Assumes the current working directory contains libmongocrypt.
-# So script should be called like: ./libmongocrypt/.evergreen/compile.sh
-# The current working directory should be empty aside from 'libmongocrypt'
-# since this script creates new directories/files (e.g. mongo-c-driver, venv).
-#
 # NOTE: This script is not meant to be invoked for Evergreen builds.  It is a
 # convenience script for users of libmongocrypt
 
-set -euxo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/init.sh"
 
-save_pwd="$(pwd)"
-
-. ./libmongocrypt/.evergreen/setup-env.sh
-. ./libmongocrypt/.evergreen/build_all.sh
-
-cd ${save_pwd}
+bash "$EVG_DIR/setup-env.sh"
+bash "$EVG_DIR/build_all.sh"
 

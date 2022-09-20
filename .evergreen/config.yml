@@ -19,19 +19,21 @@ functions:
       params: {directory: libmongocrypt}
     - command: shell.exec
       params:
+        shell: bash
         script: |-
           set -o errexit
-          cd libmongocrypt
-          chmod u+x .evergreen/*.sh
-          ./.evergreen/print-env-info.sh
+          . libmongocrypt/.evergreen/init.sh
+          bash "$EVG_DIR/print-env-info.sh"
 
           if [ "${is_patch}" != "true" ]; then
             # determine if we have a release tag present on HEAD
             head_tag=$(git tag -l --points-at HEAD '[0-9].*')
+          else
+            head_tag=""
           fi
           echo "tag_upload_location: $head_tag"
 
-          echo "tag_upload_location: \"$head_tag\"" > ../tag_expansion.yml
+          echo "tag_upload_location: \"$head_tag\"" > tag_expansion.yml
     - command: expansions.update
       params:
         ignore_missing_file: true
@@ -65,20 +67,19 @@ functions:
   "build and test":
     - command: "shell.exec"
       params:
+        shell: bash
         script: |-
-          set -o errexit
-          set -o xtrace
-          export LSAN_OPTIONS="suppressions=$PWD/libmongocrypt/.lsan-suppressions"
-          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
-          cd libmongocrypt
-          ./.evergreen/linker-tests.sh
-          ./.evergreen/pkgconfig-tests.sh
+          . libmongocrypt/.evergreen/init.sh
+          export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
+          env ${compile_env|} bash "$EVG_DIR/build_all.sh"
+          bash "$EVG_DIR/linker-tests.sh"
+          bash "$EVG_DIR/pkgconfig-tests.sh"
 
 
   "create packages and repos":
     - command: "shell.exec"
-      shell: bash
       params:
+        shell: bash
         script: |
           env "WORKDIR=${workdir}" \
               "PYTHON=${python|}" \
@@ -228,7 +229,8 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          env ${compile_env|} bash ./libmongocrypt/.evergreen/build_all.sh
+          env ${compile_env|} DEFAULT_BUILD_ONLY=true \
+            bash ./libmongocrypt/.evergreen/build_all.sh
           env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
 
   "build python release macos":

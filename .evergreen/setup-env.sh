@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -euxo pipefail
-
-evergreen_root="$(pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/init.sh"
 
 : "${ADDITIONAL_CMAKE_FLAGS:=}"
 : "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
@@ -12,11 +10,12 @@ evergreen_root="$(pwd)"
 : "${WINDOWS_32BIT:=}"
 : "${OS:=unspecified}"
 
-[ -d "${MONGOCRYPT_INSTALL_PREFIX:=${evergreen_root}/install/libmongocrypt}" ] || mkdir -p "${MONGOCRYPT_INSTALL_PREFIX}"
+evergreen_root="$(dirname "$LIBMONGOCRYPT_DIR")"
 
-if [ "$OS" == "Windows_NT" ]; then
-	MONGOCRYPT_INSTALL_PREFIX=$(cygpath -w "$MONGOCRYPT_INSTALL_PREFIX")
-fi
+: "${MONGOCRYPT_INSTALL_PREFIX:="$evergreen_root/install/libmongocrypt"}"
+MONGOCRYPT_INSTALL_PREFIX="$(native_path "$MONGOCRYPT_INSTALL_PREFIX")"
+
+mkdir -p "$MONGOCRYPT_INSTALL_PREFIX"
 
 if test -f /proc/cpuinfo; then
     # Count the number of lines beginning with "processor" in the cpuinfo
