@@ -25,12 +25,8 @@ functions:
           . libmongocrypt/.evergreen/init.sh
           bash "$EVG_DIR/print-env-info.sh"
 
-          if [ "${is_patch}" != "true" ]; then
-            # determine if we have a release tag present on HEAD
-            head_tag=$(git tag -l --points-at HEAD '[0-9].*')
-          else
-            head_tag=""
-          fi
+          # determine if we have a release tag present on HEAD
+          head_tag=$(run_chdir libmongocrypt/ git tag -l --points-at HEAD '[0-9].*' || true)
           echo "tag_upload_location: $head_tag"
 
           echo "tag_upload_location: \"$head_tag\"" > tag_expansion.yml
