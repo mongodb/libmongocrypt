@@ -36,6 +36,10 @@ _fle2_append_encryptedFieldConfig (bson_t *dst,
    bool has_eccCollection = false;
    bool has_ecocCollection = false;
 
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (encryptedFieldConfig);
+   BSON_ASSERT_PARAM (coll_name);
+
    if (!bson_iter_init (&iter, encryptedFieldConfig)) {
       CLIENT_ERR ("unable to iterate encryptedFieldConfig");
       return false;
@@ -102,6 +106,12 @@ _fle2_append_encryptionInformation (bson_t *dst,
    bson_t encryption_information_bson;
    bson_t schema_bson;
    bson_t encrypted_field_config_bson;
+
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (ns);
+   BSON_ASSERT_PARAM (encryptedFieldConfig);
+   /* deleteTokens may be NULL */
+   BSON_ASSERT_PARAM (coll_name);
 
    if (!BSON_APPEND_DOCUMENT_BEGIN (
           dst, "encryptionInformation", &encryption_information_bson)) {
@@ -207,6 +217,13 @@ _fle2_insert_encryptionInformation (const char *cmd_name,
    bson_iter_t iter;
    bool ok = false;
 
+   BSON_ASSERT_PARAM (cmd_name);
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (ns);
+   BSON_ASSERT_PARAM (encryptedFieldConfig);
+   /* deleteTokens may be NULL */
+   BSON_ASSERT_PARAM (coll_name);
+
    if (0 != strcmp (cmd_name, "explain") || cmd_target == MC_TO_MONGOCRYPTD) {
       // All commands except "explain" expect "encryptionInformation"
       // at top-level. "explain" sent to mongocryptd expects
@@ -286,6 +303,9 @@ _mongo_op_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t *cmd;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    cmd = BCON_NEW ("name", BCON_UTF8 (ectx->coll_name));
    CRYPT_TRACEF (&ectx->parent.crypt->log, "constructed: %s\n", tmp_json (cmd));
@@ -301,6 +321,9 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
    bson_iter_t iter;
    _mongocrypt_ctx_encrypt_t *ectx;
    bool found_jsonschema = false;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (collinfo);
 
    /* Parse out the schema. */
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
@@ -379,12 +402,14 @@ _set_schema_from_collinfo (mongocrypt_ctx_t *ctx, bson_t *collinfo)
 /* get_command_name returns the name of a command. The command name is the first
  * field. For example, the command name of: {"find": "foo", "filter": {"bar":
  * 1}} is "find". */
-const char *
+static const char *
 get_command_name (_mongocrypt_buffer_t *cmd, mongocrypt_status_t *status)
 {
    bson_t cmd_bson;
    bson_iter_t iter;
    const char *cmd_name;
+
+   BSON_ASSERT_PARAM (cmd);
 
    if (!_mongocrypt_buffer_to_bson (cmd, &cmd_bson)) {
       CLIENT_ERR ("unable to convert command buffer to BSON");
@@ -416,6 +441,8 @@ command_needs_deleteTokens (const char *command_name)
    const char *cmds_needing_deleteTokens[] = {
       "delete", "update", "findAndModify"};
 
+   BSON_ASSERT_PARAM (command_name);
+
    size_t i;
    for (i = 0; i < sizeof (cmds_needing_deleteTokens) /
                       sizeof (cmds_needing_deleteTokens[0]);
@@ -435,6 +462,8 @@ context_uses_fle2 (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
+   BSON_ASSERT_PARAM (ctx);
+
    return !_mongocrypt_buffer_empty (&ectx->encrypted_field_config);
 }
 
@@ -445,6 +474,7 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
+   BSON_ASSERT_PARAM (ctx);
 
    /* deleteTokens are only appended for FLE 2. */
    if (!context_uses_fle2 (ctx)) {
@@ -461,6 +491,7 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
    mc_EncryptedField_t *field;
 
    for (field = ectx->efc.fields; field != NULL; field = field->next) {
+      BSON_ASSERT (field);
       if (field->has_queries) {
          if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
             _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
@@ -479,6 +510,8 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
+   BSON_ASSERT_PARAM (ctx);
+
    /* compactionTokens are only appended for FLE 2. */
    if (!context_uses_fle2 (ctx)) {
       return true;
@@ -496,6 +529,7 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
    mc_EncryptedField_t *field;
 
    for (field = ectx->efc.fields; field != NULL; field = field->next) {
+      BSON_ASSERT (field);
       if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
          _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
          _mongocrypt_ctx_fail (ctx);
@@ -511,6 +545,9 @@ _mongo_feed_collinfo (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    bson_t as_bson;
 
    _mongocrypt_ctx_encrypt_t *ectx;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    if (!bson_init_static (&as_bson, in->data, in->len)) {
@@ -537,6 +574,8 @@ static bool
 _mongo_done_collinfo (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
+
+   BSON_ASSERT_PARAM (ctx);
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    if (_mongocrypt_buffer_empty (&ectx->schema)) {
@@ -578,6 +617,10 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t cmd_bson = BSON_INITIALIZER,
           encrypted_field_config_bson = BSON_INITIALIZER;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    BSON_ASSERT (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
@@ -621,7 +664,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
  * generating encryption markings via query analysis.
  *
  * @param ctx The encryption context.
- * @param out The destination of the generate BSON document
+ * @param out The destination of the generated BSON document
  * @return true On success
  * @return false Otherwise. Sets a failing status message in this case.
  */
@@ -629,6 +672,10 @@ static bool
 _create_markings_cmd_bson (mongocrypt_ctx_t *ctx, bson_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
+
    if (context_uses_fle2 (ctx)) {
       // Defer to FLE2 to generate the markings command
       return _fle2_mongo_op_markings (ctx, out);
@@ -673,6 +720,9 @@ _mongo_op_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
+
    if (ectx->ismaster.needed) {
       if (_mongocrypt_buffer_empty (&ectx->ismaster.cmd)) {
          bson_t ismaster_cmd = BSON_INITIALIZER;
@@ -715,6 +765,9 @@ _collect_key_from_marking (void *ctx,
    _mongocrypt_key_broker_t *kb;
    bool res;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+
    kb = (_mongocrypt_key_broker_t *) ctx;
 
    if (!_mongocrypt_marking_parse_unowned (in, &marking, status)) {
@@ -752,6 +805,9 @@ _mongo_feed_markings (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
    bson_t as_bson;
    bson_iter_t iter;
    _mongocrypt_ctx_encrypt_t *ectx;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    if (!_mongocrypt_binary_to_bson (in, &as_bson)) {
@@ -833,6 +889,9 @@ static bool
 _mongo_done_markings (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   BSON_ASSERT_PARAM (ctx);
+
    if (ectx->ismaster.needed) {
       return mongocrypt_ctx_encrypt_ismaster_done (ctx);
    }
@@ -853,6 +912,10 @@ _add_dollar_db (const char *cmd_name,
    bson_t explain = BSON_INITIALIZER;
    bson_iter_t iter;
    bool ok = false;
+
+   BSON_ASSERT_PARAM (cmd_name);
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (db_name);
 
    if (!bson_iter_init_find (&iter, cmd, "$db")) {
       if (!BSON_APPEND_UTF8 (cmd, "$db", db_name)) {
@@ -941,12 +1004,16 @@ fail:
 static bool
 _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    BSON_ASSERT (
       ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS &&
       "_try_run_csfle_marking() should only be called when mongocrypt is "
       "ready for markings");
 
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   BSON_ASSERT (ctx->crypt);
 
    // We have a valid schema and just need to mark the fields for encryption
    if (!ctx->crypt->csfle.okay) {
@@ -991,7 +1058,6 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
       ((void) 0)
 
    mongo_crypt_v1_status *status = csfle.status_create ();
-   BSON_ASSERT (status);
 
    mongo_crypt_v1_query_analyzer *qa =
       csfle.query_analyzer_create (csfle_lib, status);
@@ -1044,7 +1110,9 @@ _marking_to_bson_value (void *ctx,
    _mongocrypt_buffer_t serialized_ciphertext = {0};
    bool ret = false;
 
-   BSON_ASSERT (out);
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (out);
 
    _mongocrypt_ciphertext_init (&ciphertext);
 
@@ -1092,7 +1160,8 @@ _replace_marking_with_ciphertext (void *ctx,
    _mongocrypt_marking_t marking;
    bool ret;
 
-   BSON_ASSERT (in);
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
 
    memset (&marking, 0, sizeof (marking));
 
@@ -1119,7 +1188,13 @@ generate_delete_tokens (_mongocrypt_crypto_t *crypto,
    bson_t *out = bson_new ();
    mc_EncryptedField_t *ef;
 
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (efc);
+
    for (ef = efc->fields; ef != NULL; ef = ef->next) {
+      BSON_ASSERT (ef);
+
       _mongocrypt_buffer_t IndexKey = {0};
       _mongocrypt_buffer_t TokenKey = {0};
       mc_ServerDataEncryptionLevel1Token_t *sdel1t = NULL;
@@ -1225,6 +1300,9 @@ _check_for_payload_requiring_encryptionInformation (void *ctx,
 {
    bool *out = (bool *) ctx;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+
    if (in->len < 1) {
       CLIENT_ERR ("unexpected empty FLE payload");
       return false;
@@ -1265,6 +1343,9 @@ must_omit_encryptionInformation (const char *command_name,
    // prohibited_commands prohibit encryptionInformation on mongod / mongos.
    const char *prohibited_commands[] = {
       "compactStructuredEncryptionData", "create", "collMod", "createIndexes"};
+
+   BSON_ASSERT_PARAM (command_name);
+   BSON_ASSERT_PARAM (command);
 
    for (i = 0;
         i < sizeof (prohibited_commands) / sizeof (prohibited_commands[0]);
@@ -1319,6 +1400,12 @@ _fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
    bson_t result_compactionTokens;
    bool ret = false;
 
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (efc);
+   BSON_ASSERT_PARAM (command_name);
+   BSON_ASSERT_PARAM (out);
+
    if (0 != strcmp (command_name, "compactStructuredEncryptionData")) {
       return true;
    }
@@ -1328,6 +1415,8 @@ _fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
 
    mc_EncryptedField_t *ptr;
    for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
+      BSON_ASSERT (ptr);
+
       /* Append ECOC token. */
       _mongocrypt_buffer_t key = {0};
       _mongocrypt_buffer_t tokenkey = {0};
@@ -1393,6 +1482,9 @@ _fle2_strip_encryptionInformation (const char *cmd_name,
 {
    bson_t stripped = BSON_INITIALIZER;
    bool ok = false;
+
+   BSON_ASSERT_PARAM (cmd_name);
+   BSON_ASSERT_PARAM (cmd);
 
    if (0 != strcmp (cmd_name, "explain")) {
       bson_copy_to_excluding_noinit (
@@ -1460,6 +1552,9 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t encrypted_field_config_bson;
    bson_t original_cmd_bson;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
@@ -1583,6 +1678,9 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    _mongocrypt_marking_t marking;
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
+
    BSON_ASSERT (ctx->opts.index_type.set);
 
    _mongocrypt_marking_init (&marking);
@@ -1681,6 +1779,9 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_iter_t iter;
    _mongocrypt_ctx_encrypt_t *ectx;
    bool res;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
@@ -1783,6 +1884,8 @@ _cleanup (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
 
+   BSON_ASSERT_PARAM (ctx);
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    bson_free (ectx->ns);
    bson_free (ectx->db_name);
@@ -1806,6 +1909,8 @@ _try_schema_from_schema_map (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t schema_map;
    bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (ctx);
 
    crypt = ctx->crypt;
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
@@ -1842,6 +1947,8 @@ _fle2_try_encrypted_field_config_from_map (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t encrypted_field_config_map;
    bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (ctx);
 
    crypt = ctx->crypt;
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
@@ -1889,6 +1996,8 @@ _try_schema_from_cache (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t *collinfo = NULL;
 
+   BSON_ASSERT_PARAM (ctx);
+
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
 
    /* Otherwise, we need a remote schema. Check if we have a response to
@@ -1920,6 +2029,8 @@ static bool
 _try_empty_schema_for_create (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
+
+   BSON_ASSERT_PARAM (ctx);
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    /* As a special case, use an empty schema for the 'create' command. */
@@ -1959,7 +2070,11 @@ static bool
 _try_schema_from_create_or_collMod_cmd (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
-   mongocrypt_status_t *status = ctx->status;
+   mongocrypt_status_t *status;
+
+   BSON_ASSERT_PARAM (ctx);
+
+   status = ctx->status;
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    const char *cmd_name = ectx->cmd_name;
@@ -2003,9 +2118,12 @@ _permitted_for_encryption (bson_iter_t *iter,
                            mongocrypt_status_t *status)
 {
    bson_type_t bson_type;
-   const bson_value_t *bson_value = bson_iter_value (iter);
+   const bson_value_t *bson_value;
    bool ret = false;
 
+   BSON_ASSERT_PARAM (iter);
+
+   bson_value = bson_iter_value (iter);
    if (!bson_value) {
       CLIENT_ERR ("Unknown BSON type");
       goto fail;
@@ -2219,6 +2337,10 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
    const char *cmd_name;
    bool eligible = false;
 
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (bypass);
+   /* collname is treated as uninitialized and is explicitly set below */
+
    *bypass = false;
 
    if (!_mongocrypt_binary_to_bson (cmd, &as_bson) ||
@@ -2375,6 +2497,9 @@ static bool
 needs_ismaster_check (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   BSON_ASSERT_PARAM (ctx);
+
    bool using_mongocryptd =
       !ectx->bypass_query_analysis && !ctx->crypt->csfle.okay;
    // The "create" and "createIndexes" command require an isMaster check when
@@ -2396,6 +2521,11 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
    if (!ctx) {
       return false;
    }
+
+   if (!db) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid db");
+   }
+
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.schema = OPT_OPTIONAL;
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
@@ -2510,6 +2640,8 @@ static bool
 mongocrypt_ctx_encrypt_ismaster_done (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   BSON_ASSERT_PARAM (ctx);
 
    ectx->ismaster.needed = false;
 

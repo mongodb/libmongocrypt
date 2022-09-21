@@ -23,6 +23,8 @@
 void
 _mongocrypt_log_init (_mongocrypt_log_t *log)
 {
+   BSON_ASSERT_PARAM (log);
+
    _mongocrypt_mutex_init (&log->mutex);
    /* Initially, no log function is set. */
    _mongocrypt_log_set_fn (log, NULL, NULL);
@@ -35,6 +37,8 @@ _mongocrypt_log_init (_mongocrypt_log_t *log)
 void
 _mongocrypt_log_cleanup (_mongocrypt_log_t *log)
 {
+   BSON_ASSERT_PARAM (log);
+
    _mongocrypt_mutex_cleanup (&log->mutex);
    memset (log, 0, sizeof (*log));
 }
@@ -74,6 +78,8 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
                         mongocrypt_log_fn_t fn,
                         void *ctx)
 {
+   BSON_ASSERT_PARAM (log);
+
    _mongocrypt_mutex_lock (&log->mutex);
    log->fn = fn;
    log->ctx = ctx;
@@ -89,6 +95,8 @@ _mongocrypt_log (_mongocrypt_log_t *log,
 {
    va_list args;
    char *message;
+
+   BSON_ASSERT_PARAM (log);
 
    if (level == MONGOCRYPT_LOG_LEVEL_TRACE && !log->trace_enabled) {
       return;

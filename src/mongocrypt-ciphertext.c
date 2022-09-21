@@ -20,6 +20,8 @@
 void
 _mongocrypt_ciphertext_init (_mongocrypt_ciphertext_t *ciphertext)
 {
+   BSON_ASSERT_PARAM (ciphertext);
+
    memset (ciphertext, 0, sizeof (*ciphertext));
 }
 
@@ -27,6 +29,8 @@ _mongocrypt_ciphertext_init (_mongocrypt_ciphertext_t *ciphertext)
 void
 _mongocrypt_ciphertext_cleanup (_mongocrypt_ciphertext_t *ciphertext)
 {
+   BSON_ASSERT_PARAM (ciphertext);
+
    _mongocrypt_buffer_cleanup (&ciphertext->key_id);
    _mongocrypt_buffer_cleanup (&ciphertext->data);
 }
@@ -159,7 +163,7 @@ _mongocrypt_ciphertext_serialize_associated_data (
 {
    int32_t bytes_written = 0;
 
-   if (!out) {
+   if (!ciphertext || !out) {
       return false;
    }
 

@@ -61,6 +61,8 @@ _recurse (_recurse_state_t *state)
 {
    mongocrypt_status_t *status;
 
+   BSON_ASSERT_PARAM (state);
+
    status = state->status;
    while (bson_iter_next (&state->iter)) {
       if (BSON_ITER_HOLDS_BINARY (&state->iter)) {

@@ -23,8 +23,8 @@ static bool
 _one_key_alt_name_equal (_mongocrypt_key_alt_name_t *ptr_a,
                          _mongocrypt_key_alt_name_t *ptr_b)
 {
-   BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
-   BSON_ASSERT (ptr_b->value.value_type == BSON_TYPE_UTF8);
+   BSON_ASSERT (ptr_a && ptr_a->value.value_type == BSON_TYPE_UTF8);
+   BSON_ASSERT (ptr_b && ptr_b->value.value_type == BSON_TYPE_UTF8);
    return 0 == strcmp (_mongocrypt_key_alt_name_get_string (ptr_a),
                        _mongocrypt_key_alt_name_get_string (ptr_b));
 }
@@ -32,6 +32,10 @@ _one_key_alt_name_equal (_mongocrypt_key_alt_name_t *ptr_a,
 static bool
 _find (_mongocrypt_key_alt_name_t *list, _mongocrypt_key_alt_name_t *entry)
 {
+   if (!list || !entry) {
+      return false;
+   }
+
    for (; NULL != list; list = list->next) {
       if (_one_key_alt_name_equal (list, entry)) {
          return true;
@@ -73,6 +77,9 @@ _parse_masterkey (bson_iter_t *iter,
    uint32_t len;
    bson_t kek_doc;
 
+   BSON_ASSERT_PARAM (iter);
+   BSON_ASSERT_PARAM (out);
+
    if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
       CLIENT_ERR ("invalid 'masterKey', expected document");
       return false;
@@ -95,6 +102,8 @@ _mongocrypt_key_alt_name_from_iter (const bson_iter_t *iter_in,
    _mongocrypt_key_alt_name_t *key_alt_names = NULL, *tmp;
    bson_iter_t iter;
 
+   BSON_ASSERT_PARAM (iter_in);
+   BSON_ASSERT_PARAM (out);
 
    memcpy (&iter, iter_in, sizeof (iter));
    *out = NULL;
@@ -119,6 +128,7 @@ _mongocrypt_key_alt_name_from_iter (const bson_iter_t *iter_in,
       }
 
       tmp = _mongocrypt_key_alt_name_new (bson_iter_value (&iter));
+      BSON_ASSERT (tmp);
       tmp->next = key_alt_names;
       key_alt_names = tmp;
    }
@@ -143,6 +153,9 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
    bool has_id = false, has_key_material = false, has_status = false,
         has_creation_date = false, has_update_date = false,
         has_master_key = false;
+
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (out);
 
    if (!bson_validate (bson, BSON_VALIDATE_NONE, NULL) ||
        !bson_iter_init (&iter, bson)) {
@@ -289,6 +302,7 @@ _mongocrypt_key_new ()
    _mongocrypt_key_doc_t *key_doc;
 
    key_doc = (_mongocrypt_key_doc_t *) bson_malloc0 (sizeof *key_doc);
+   BSON_ASSERT (key_doc);
    bson_init (&key_doc->bson);
 
    return key_doc;
@@ -299,6 +313,13 @@ bool
 _mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
                        const _mongocrypt_key_doc_t *b)
 {
+   BSON_ASSERT_PARAM (a);
+   BSON_ASSERT_PARAM (b);
+   /* TODO: or this instead? */
+   if (!a || !b) {
+      return false;
+   }
+
    return bson_equal (&a->bson, &b->bson);
 }
 
@@ -324,8 +345,8 @@ void
 _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,
                              _mongocrypt_key_doc_t *dst)
 {
-   BSON_ASSERT (src);
-   BSON_ASSERT (dst);
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
 
    _mongocrypt_buffer_copy_to (&src->id, &dst->id);
    _mongocrypt_buffer_copy_to (&src->key_material, &dst->key_material);
@@ -378,6 +399,11 @@ _mongocrypt_key_alt_name_intersects (_mongocrypt_key_alt_name_t *ptr_a,
                                      _mongocrypt_key_alt_name_t *ptr_b)
 {
    _mongocrypt_key_alt_name_t *orig_ptr_b = ptr_b;
+
+   if (!ptr_a || !ptr_b) {
+      return false;
+   }
+
    for (; ptr_a; ptr_a = ptr_a->next) {
       for (ptr_b = orig_ptr_b; ptr_b; ptr_b = ptr_b->next) {
          if (_one_key_alt_name_equal (ptr_a, ptr_b)) {
@@ -426,6 +452,8 @@ _mongocrypt_key_alt_name_create (const char *name, ...)
 _mongocrypt_key_alt_name_t *
 _mongocrypt_key_alt_name_new (const bson_value_t *value)
 {
+   BSON_ASSERT_PARAM (value);
+
    _mongocrypt_key_alt_name_t *name = bson_malloc0 (sizeof (*name));
    BSON_ASSERT (name);
 
@@ -445,6 +473,7 @@ _mongocrypt_key_alt_name_unique_list_equal (_mongocrypt_key_alt_name_t *list_a,
       return false;
    }
    for (ptr = list_a; NULL != ptr; ptr = ptr->next) {
+      BSON_ASSERT (ptr);
       if (!_find (list_b, ptr)) {
          return false;
       }
@@ -455,5 +484,7 @@ _mongocrypt_key_alt_name_unique_list_equal (_mongocrypt_key_alt_name_t *list_a,
 const char *
 _mongocrypt_key_alt_name_get_string (_mongocrypt_key_alt_name_t *key_alt_name)
 {
+   BSON_ASSERT_PARAM (key_alt_name);
+
    return key_alt_name->value.value.v_utf8.str;
 }

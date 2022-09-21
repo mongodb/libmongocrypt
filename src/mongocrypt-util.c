@@ -46,7 +46,7 @@
 bool
 size_to_uint32 (size_t in, uint32_t *out)
 {
-   if (in > UINT32_MAX) {
+   if (in > UINT32_MAX || !out) {
       return false;
    }
    *out = (uint32_t) in;

@@ -67,7 +67,7 @@ _native_crypto_init ()
 }
 
 
-bool
+static bool
 _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
    BSON_ASSERT (args.iv);
@@ -158,7 +158,7 @@ _native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
 
 /* Note, the decrypt function is almost exactly the same as the encrypt
  * functions except for the kCCDecrypt and the error message. */
-bool
+static bool
 _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
    BSON_ASSERT (args.iv);
@@ -265,7 +265,6 @@ _hmac_with_algorithm (CCHmacAlgorithm algorithm,
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (status);
 
    if (out->len != expect_out_len) {
       CLIENT_ERR ("out does not contain %" PRIu32 " bytes", expect_out_len);
@@ -300,7 +299,6 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (status);
 
    CCRNGStatus ret = CCRandomGenerateBytes (out->data, (size_t) count);
    if (ret != kCCSuccess) {
