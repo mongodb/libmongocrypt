@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import os
 
 try:
     from pymongo_auth_aws.auth import aws_temp_credentials
@@ -37,6 +38,9 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  sha_256,
                                  secure_random,
                                  sign_rsaes_pkcs1_v1_5)
+
+import requests
+
 
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
@@ -120,14 +124,15 @@ class MongoCryptOptions(object):
             gcp = kms_providers['gcp']
             if not isinstance(gcp, dict):
                 raise ValueError("kms_providers['gcp'] must be a dict")
-            if 'email' not in gcp or 'privateKey' not in gcp:
-                raise ValueError("kms_providers['gcp'] must contain "
-                                 "'email' and 'privateKey'")
-            if not isinstance(kms_providers['gcp']['privateKey'],
-                              (bytes, unicode_type)):
-                raise TypeError("kms_providers['gcp']['privateKey'] must "
-                                "be an instance of bytes or str "
-                                "(unicode in Python 2)")
+            if len(gcp):
+                if 'email' not in gcp or 'privateKey' not in gcp:
+                    raise ValueError("kms_providers['gcp'] must contain "
+                                     "'email' and 'privateKey'")
+                if not isinstance(kms_providers['gcp']['privateKey'],
+                                  (bytes, unicode_type)):
+                    raise TypeError("kms_providers['gcp']['privateKey'] must "
+                                    "be an instance of bytes or str "
+                                    "(unicode in Python 2)")
 
         if 'kmip' in kms_providers:
             kmip = kms_providers['kmip']
@@ -254,8 +259,9 @@ class MongoCrypt(object):
 
         if not self.__opts.bypass_encryption:
             lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
-
-        if 'aws' in kms_providers and not len(kms_providers['aws']):
+        on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
+        on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
+        if on_demand_aws or on_demand_gcp:
             lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
         if not lib.mongocrypt_init(self.__crypt):
@@ -794,21 +800,51 @@ class RewrapManyDataKeyContext(MongoCryptContext):
             raise
 
 
+def _get_gcp_credentials():
+    """Get on-demand GCP credentials"""
+    metadata_host = "metadata.google.internal"
+    if os.getenv("GCE_METADATA_HOST"):
+        metadata_host = os.environ["GCE_METADATA_HOST"]
+    url = f"http://{metadata_host}/computeMetadata/v1/instance/service-accounts/default/token"
+
+    headers = {"Metadata-Flavor": "Google"}
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        msg = f"Unable to retrieve GCP credentials: expected StatusCode 200, got StatusCode: {response.status_code}. Response body:\n{response.content}"
+        raise ValueError(msg)
+    try:
+        data = response.json()
+    except Exception :
+        raise ValueError(f"unable to retrieve GCP credentials: error reading response body\n{response.content}")
+
+    if not data.get("access_token"):
+        msg = f"unable to retrieve GCP credentials: got unexpected empty accessToken from GCP Metadata Server. Response body: {response.content}"
+        raise ValueError(msg)
+
+    return {'accessToken': data['access_token']}
+
+
+
 def _ask_for_kms_credentials(kms_providers):
     """Get on-demand kms credentials.
 
     This is a separate function so it can be overridden in unit tests."""
-    if 'aws' not in kms_providers:
+    on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
+    on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
+    if not on_demand_aws and not on_demand_gcp:
         return
-    if len(kms_providers['aws']):
-        return
-    if not _HAVE_AUTH_AWS:
-        raise RuntimeError(
-            "On-demand AWS credentials require pymongo-auth-aws: "
-            "install with: python -m pip install 'pymongo[aws]'"
-        )
-    creds = aws_temp_credentials()
-    creds_dict = {"accessKeyId": creds.username, "secretAccessKey": creds.password}
-    if creds.token:
-        creds_dict["sessionToken"] = creds.token
-    return { 'aws': creds_dict }
+    creds = {}
+    if on_demand_aws:
+        if not _HAVE_AUTH_AWS:
+            raise RuntimeError(
+                "On-demand AWS credentials require pymongo-auth-aws: "
+                "install with: python -m pip install 'pymongo[aws]'"
+            )
+        creds = aws_temp_credentials()
+        creds_dict = {"accessKeyId": creds.username, "secretAccessKey": creds.password}
+        if creds.token:
+            creds_dict["sessionToken"] = creds.token
+        creds['aws'] = creds_dict
+    if on_demand_gcp:
+        creds['gcp'] = _get_gcp_credentials()
+    return creds
