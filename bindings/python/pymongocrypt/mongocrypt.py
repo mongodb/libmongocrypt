@@ -805,7 +805,7 @@ def _get_gcp_credentials():
     metadata_host = "metadata.google.internal"
     if os.getenv("GCE_METADATA_HOST"):
         metadata_host = os.environ["GCE_METADATA_HOST"]
-    url = f"http://{metadata_host}/computeMetadata/v1/instance/service-accounts/default/token"
+    url = "http://%s/computeMetadata/v1/instance/service-accounts/default/token" % metadata_host
 
     headers = {"Metadata-Flavor": "Google"}
     response = requests.get(url, headers=headers)
