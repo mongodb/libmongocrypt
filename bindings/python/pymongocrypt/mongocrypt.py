@@ -810,15 +810,15 @@ def _get_gcp_credentials():
     headers = {"Metadata-Flavor": "Google"}
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        msg = f"Unable to retrieve GCP credentials: expected StatusCode 200, got StatusCode: {response.status_code}. Response body:\n{response.content}"
+        msg = "Unable to retrieve GCP credentials: expected StatusCode 200, got StatusCode: %s. Response body:\n%s" % (response.status_code, response.content)
         raise ValueError(msg)
     try:
         data = response.json()
     except Exception :
-        raise ValueError(f"unable to retrieve GCP credentials: error reading response body\n{response.content}")
+        raise ValueError("unable to retrieve GCP credentials: error reading response body\n%s" % response.content)
 
     if not data.get("access_token"):
-        msg = f"unable to retrieve GCP credentials: got unexpected empty accessToken from GCP Metadata Server. Response body: {response.content}"
+        msg = "unable to retrieve GCP credentials: got unexpected empty accessToken from GCP Metadata Server. Response body: %s" % response.content
         raise ValueError(msg)
 
     return {'accessToken': data['access_token']}
