@@ -40,7 +40,9 @@ mc_mincover_destroy (mc_mincover_t *mincover);
 
 typedef struct {
    int32_t lowerBound;
+   bool includeLowerBound;
    int32_t upperBound;
+   bool includeUpperBound;
    mc_optional_int32_t min;
    mc_optional_int32_t max;
    size_t sparsity;
@@ -54,7 +56,9 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
 
 typedef struct {
    int64_t lowerBound;
+   bool includeLowerBound;
    int64_t upperBound;
+   bool includeUpperBound;
    mc_optional_int64_t min;
    mc_optional_int64_t max;
    size_t sparsity;
