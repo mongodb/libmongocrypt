@@ -68,8 +68,8 @@ expectMincover_cleanup (mc_array_t *expectMincover)
 }
 
 typedef struct {
-   int32_t range_min;
-   int32_t range_max;
+   int32_t lowerBound;
+   int32_t upperBound;
    mc_optional_int32_t min;
    mc_optional_int32_t max;
    size_t sparsity;
@@ -80,8 +80,8 @@ typedef struct {
 } Int32Test;
 
 typedef struct {
-   int64_t range_min;
-   int64_t range_max;
+   int64_t lowerBound;
+   int64_t upperBound;
    mc_optional_int64_t min;
    mc_optional_int64_t max;
    size_t sparsity;
@@ -109,8 +109,8 @@ _test_getMincover32 (void *tests, size_t idx, mongocrypt_status_t *status)
    Int32Test *test = (Int32Test *) tests + idx;
 
    return mc_getMincoverInt32 (
-      (mc_getMincoverInt32_args_t){.range_min = test->range_min,
-                                   .range_max = test->range_max,
+      (mc_getMincoverInt32_args_t){.lowerBound = test->lowerBound,
+                                   .upperBound = test->upperBound,
                                    .min = test->min,
                                    .max = test->max,
                                    .sparsity = test->sparsity},
@@ -125,8 +125,8 @@ _test_getMincover64 (void *tests, size_t idx, mongocrypt_status_t *status)
    Int64Test *const test = (Int64Test *) tests + idx;
 
    return mc_getMincoverInt64 (
-      (mc_getMincoverInt64_args_t){.range_min = test->range_min,
-                                   .range_max = test->range_max,
+      (mc_getMincoverInt64_args_t){.lowerBound = test->lowerBound,
+                                   .upperBound = test->upperBound,
                                    .min = test->min,
                                    .max = test->max,
                                    .sparsity = test->sparsity},
@@ -184,9 +184,9 @@ _test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
    Int32Test *const test = (Int32Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: range_min=%" PRId32 " range_max=%" PRId32,
-            test->range_min,
-            test->range_max);
+            "testcase: lowerBound=%" PRId32 " upperBound=%" PRId32,
+            test->lowerBound,
+            test->upperBound);
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId32, test->min.value);
    }
@@ -211,9 +211,9 @@ _test_dump_64 (void *tests, size_t idx, mc_mincover_t *got)
    Int64Test *const test = (Int64Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: range_min=%" PRId64 " range_max=%" PRId64,
-            test->range_min,
-            test->range_max);
+            "testcase: lowerBound=%" PRId64 " upperBound=%" PRId64,
+            test->lowerBound,
+            test->upperBound);
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId64, test->min.value);
    }
@@ -289,27 +289,27 @@ static void
 _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
 {
    Int32Test tests[] = {
-      {.range_min = 1,
-       .range_max = 3,
+      {.lowerBound = 1,
+       .upperBound = 3,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "01\n"},
-      {.range_min = 3,
-       .range_max = 3,
+      {.lowerBound = 3,
+       .upperBound = 3,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
        .expectMincoverString = "011\n"},
-      {.range_min = 4,
-       .range_max = 3,
+      {.lowerBound = 4,
+       .upperBound = 3,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
        .expectError = "must be less than or equal to"},
-      {.range_min = 1,
-       .range_max = 8,
+      {.lowerBound = 1,
+       .upperBound = 8,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
@@ -334,27 +334,27 @@ static void
 _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
 {
    Int64Test tests[] = {
-      {.range_min = 1,
-       .range_max = 3,
+      {.lowerBound = 1,
+       .upperBound = 3,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "01\n"},
-      {.range_min = 3,
-       .range_max = 3,
+      {.lowerBound = 3,
+       .upperBound = 3,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
        .expectMincoverString = "011\n"},
-      {.range_min = 4,
-       .range_max = 3,
+      {.lowerBound = 4,
+       .upperBound = 3,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
        .expectError = "must be less than or equal to"},
-      {.range_min = 1,
-       .range_max = 8,
+      {.lowerBound = 1,
+       .upperBound = 8,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
