@@ -192,9 +192,11 @@ _test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
    Int32Test *const test = (Int32Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: lowerBound=%" PRId32 " upperBound=%" PRId32,
+            "testcase: lowerBound=%" PRId32 " %s upperBound=%" PRId32 " %s",
             test->lowerBound,
-            test->upperBound);
+            test->includeLowerBound ? "included" : "excluded",
+            test->upperBound,
+            test->includeUpperBound ? "included" : "excluded");
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId32, test->min.value);
    }
@@ -219,9 +221,11 @@ _test_dump_64 (void *tests, size_t idx, mc_mincover_t *got)
    Int64Test *const test = (Int64Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: lowerBound=%" PRId64 " upperBound=%" PRId64,
+            "testcase: lowerBound=%" PRId64 " %s upperBound=%" PRId64 " %s",
             test->lowerBound,
-            test->upperBound);
+            test->includeLowerBound ? "included" : "excluded",
+            test->upperBound,
+            test->includeUpperBound ? "included" : "excluded");
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId64, test->min.value);
    }
@@ -298,6 +302,23 @@ _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
 {
    Int32Test tests[] = {
       {.lowerBound = 1,
+       .includeLowerBound = false,
+       .upperBound = 3,
+       .includeUpperBound = true,
+       .min = OPT_I32 (0),
+       .max = OPT_I32 (7),
+       .sparsity = 1,
+       .expectMincoverString = "01\n"},
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = false,
+       .min = OPT_I32 (0),
+       .max = OPT_I32 (7),
+       .sparsity = 1,
+       .expectMincoverString = "001\n"
+                               "010\n"},
+      {.lowerBound = 1,
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = true,
@@ -350,6 +371,23 @@ static void
 _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
 {
    Int64Test tests[] = {
+      {.lowerBound = 1,
+       .includeLowerBound = false,
+       .upperBound = 3,
+       .includeUpperBound = true,
+       .min = OPT_I64 (0),
+       .max = OPT_I64 (7),
+       .sparsity = 1,
+       .expectMincoverString = "01\n"},
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = false,
+       .min = OPT_I64 (0),
+       .max = OPT_I64 (7),
+       .sparsity = 1,
+       .expectMincoverString = "001\n"
+                               "010\n"},
       {.lowerBound = 1,
        .includeLowerBound = true,
        .upperBound = 3,
