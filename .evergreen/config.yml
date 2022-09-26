@@ -27,9 +27,12 @@ functions:
 
           # determine if we have a release tag present on HEAD
           head_tag=$(run_chdir libmongocrypt/ git tag -l --points-at HEAD '[0-9].*' || true)
-          echo "tag_upload_location: $head_tag"
-
-          echo "tag_upload_location: \"$head_tag\"" > tag_expansion.yml
+          use_tag=""
+          if test "${is_patch}" != "true"; then
+            echo "Setting tag_upload_location to '$head_tag'"
+            use_tag="$head_tag"
+          fi
+          echo "tag_upload_location: '$use_tag'" > tag_expansions.yml
     - command: expansions.update
       params:
         ignore_missing_file: true
