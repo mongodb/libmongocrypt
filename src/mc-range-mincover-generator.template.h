@@ -73,6 +73,11 @@ static inline WITH_BITS (MinCoverGenerator) *
                   max);
       return NULL;
    }
+
+   if (sparsity == 0) {
+      CLIENT_ERR ("Sparsity must be > 0");
+      return NULL;
+   }
    WITH_BITS (MinCoverGenerator) *mcg =
       bson_malloc0 (sizeof (WITH_BITS (MinCoverGenerator)));
    mcg->_rangeMin = rangeMin;
