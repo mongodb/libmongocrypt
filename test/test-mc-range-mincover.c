@@ -232,7 +232,7 @@ _test_dump_64 (void *tests, size_t idx, mc_mincover_t *got)
    if (test->max.set) {
       fprintf (stderr, " max=%" PRId64, test->max.value);
    }
-   fprintf (stderr, " sparsity=%zu", test->sparsity);
+   fprintf (stderr, " sparsity=%zu\n", test->sparsity);
    fprintf (stderr, "mincover expected ... begin\n");
    fprintf (stderr, "%s", test->expectMincoverString);
    fprintf (stderr, "mincover expected ... end\n");
