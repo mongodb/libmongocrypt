@@ -70,8 +70,7 @@ _key_returned_find_one (key_returned_t *list,
 {
    key_returned_t *key_returned;
 
-   /* list is not checked explicitly, rather it is checked by the assertion on
-    * key_returned the first time through the loop. list can be NULL. */
+   /* list can be NULL. */
    /* key_id and key_alt_names are not dereferenced in this function and they
     * are checked just before being passed on as parameters. */
 
