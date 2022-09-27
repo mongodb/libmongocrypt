@@ -676,9 +676,6 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    _FLE2EncryptedPayloadCommon_t common = {{0}};
    _mongocrypt_buffer_t value = {0};
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
-   if (!placeholder) {
-      return false;
-   }
    mc_FLE2InsertUpdatePayload_t payload;
    bool res = false;
    mc_edges_t *edges = NULL;
