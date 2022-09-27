@@ -1346,6 +1346,7 @@ _sign_rsaes_pkcs1_v1_5_trampoline (void *ctx,
 
    BSON_ASSERT_PARAM (ctx);
    BSON_ASSERT_PARAM (input);
+   BSON_ASSERT_PARAM (private_key);
    BSON_ASSERT_PARAM (signature_out);
 
    ctx_with_status = (ctx_with_status_t *) ctx;
