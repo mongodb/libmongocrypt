@@ -305,7 +305,6 @@ _mongocrypt_cache_dump (_mongocrypt_cache_t *cache)
    _mongocrypt_mutex_lock (&cache->mutex);
    count = 0;
    for (pair = cache->pair; pair != NULL; pair = pair->next) {
-      BSON_ASSERT (pair);
       printf ("entry:%d last_updated:%d\n", count, (int) pair->last_updated);
       if (cache->dump_attr) {
          printf ("- attr:");
