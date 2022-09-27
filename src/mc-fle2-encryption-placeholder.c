@@ -16,6 +16,8 @@
 
 #include <bson/bson.h>
 
+#include <limits.h> // SIZE_MAX
+
 #include "mc-fle2-encryption-placeholder-private.h"
 #include "mongocrypt.h"
 #include "mongocrypt-buffer-private.h"
@@ -197,6 +199,11 @@ mc_validate_sparsity (int64_t sparsity, mongocrypt_status_t *status)
 {
    if (sparsity < 0) {
       CLIENT_ERR ("sparsity must be non-negative, got: %" PRId64, sparsity);
+      return false;
+   }
+   // mc_getEdgesInt expects a size_t sparsity.
+   if (sparsity >= SIZE_MAX) {
+      CLIENT_ERR ("sparsity must be < %zu, got: %" PRId64, SIZE_MAX, sparsity);
       return false;
    }
    return true;

@@ -742,7 +742,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
 
    // g:= array<EdgeTokenSet>
    {
-      edges = get_edges (&insertSpec, placeholder->sparsity, status);
+      edges = get_edges (&insertSpec, (size_t) placeholder->sparsity, status);
       if (!edges) {
          goto fail;
       }

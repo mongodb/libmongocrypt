@@ -2111,7 +2111,7 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
       ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
       _mongocrypt_buffer_cleanup (&expect_user_key_id);
 
-      ASSERT_CMPINT32 (placeholder.sparsity, ==, 1);
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
 
       // Parse FLE2RangeInsertSpec.
       {
@@ -2173,7 +2173,7 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
       ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
       _mongocrypt_buffer_cleanup (&expect_user_key_id);
 
-      ASSERT_CMPINT32 (placeholder.sparsity, ==, 1);
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
 
       // Parse FLE2RangeFindSpec.
       {
