@@ -149,15 +149,8 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
 {
    bson_t bson;
 
-   if (!in) {
-      CLIENT_ERR ("input buffer not provided");
-      return false;
-   }
-
-   if (!out) {
-      CLIENT_ERR ("argument 'out' is required");
-      return false;
-   }
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
 
    _mongocrypt_marking_init (out);
    /* 5 for minimal BSON object, plus one for blob subtype */
@@ -195,9 +188,7 @@ _mongocrypt_marking_init (_mongocrypt_marking_t *marking)
 void
 _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 {
-   BSON_ASSERT_PARAM (marking);
-
-   if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
+   if (!marking || marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
       mc_FLE2EncryptionPlaceholder_cleanup (&marking->fle2);
       return;
    }
@@ -231,6 +222,11 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
       int64_t counter,                                                         \
       mongocrypt_status_t *status)                                             \
    {                                                                           \
+      BSON_ASSERT_PARAM (crypto);                                              \
+      BSON_ASSERT_PARAM (out);                                                 \
+      BSON_ASSERT_PARAM (level1Token);                                         \
+      BSON_ASSERT_PARAM (value);                                               \
+                                                                               \
       _mongocrypt_buffer_init (out);                                           \
                                                                                \
       mc_##Name##Token_t *token =                                              \
@@ -284,9 +280,12 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status)
 {
-   if (!kb || !kb->crypt || !in) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT (kb->crypt);
+
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv;
    const uint32_t cipherlen =
@@ -319,9 +318,12 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
                                 _mongocrypt_buffer_t *out,
                                 mongocrypt_status_t *status)
 {
-   if (!kb || !kb->crypt || !in) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (keyId);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT (kb->crypt);
+
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv, key;
    const uint32_t cipherlen =
@@ -368,7 +370,10 @@ typedef struct {
 static void
 _FLE2EncryptedPayloadCommon_cleanup (_FLE2EncryptedPayloadCommon_t *common)
 {
-   BSON_ASSERT_PARAM (common);
+   if (!common) {
+      return;
+   }
+
    _mongocrypt_buffer_cleanup (&common->tokenKey);
    mc_CollectionsLevel1Token_destroy (common->collectionsLevel1Token);
    _mongocrypt_buffer_cleanup (&common->edcDerivedToken);
@@ -387,9 +392,12 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                      int64_t maxContentionCounter,
                                      mongocrypt_status_t *status)
 {
-   if (!kb || !kb->crypt || !ret) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (ret);
+   BSON_ASSERT_PARAM (indexKeyId);
+   BSON_ASSERT_PARAM (value);
+   BSON_ASSERT (kb->crypt);
+
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t indexKey = {0};
    memset (ret, 0, sizeof (*ret));
@@ -472,16 +480,15 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
-   if (!kb || !kb->crypt || !marking) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
+
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _FLE2EncryptedPayloadCommon_t common = {{0}};
    _mongocrypt_buffer_t value = {0};
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
-   if (!placeholder) {
-      return false;
-   }
    mc_FLE2InsertUpdatePayload_t payload;
    bool res = false;
 
@@ -580,9 +587,6 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
       mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
    }
 
-   if (!ciphertext) {
-      goto fail;
-   }
    {
       bson_t out;
       bson_init (&out);
@@ -610,9 +614,8 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
            size_t sparsity,
            mongocrypt_status_t *status)
 {
-   if (!insertSpec) {
-      return NULL;
-   }
+   BSON_ASSERT_PARAM (insertSpec);
+
    bson_type_t value_type = bson_iter_type (&insertSpec->v);
 
 #define GET_AND_RETURN_EDGES(BITS)                                       \
@@ -669,9 +672,11 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
-   if (!kb || !kb->crypt || !marking) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
+
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _FLE2EncryptedPayloadCommon_t common = {{0}};
    _mongocrypt_buffer_t value = {0};
@@ -861,9 +866,6 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
       }
    }
 
-   if (!ciphertext) {
-      goto fail;
-   }
    // Serialize.
    {
       bson_t out;
@@ -903,10 +905,6 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
    mc_FLE2FindEqualityPayload_t payload;
    bool res = false;
-
-   if (!placeholder) {
-      goto fail;
-   }
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
@@ -978,18 +976,14 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
-   if (!kb || !marking || !ciphertext) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
 
    _mongocrypt_buffer_t plaintext = {0};
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
    _mongocrypt_buffer_t user_key = {0};
    bool res = false;
-
-   if (!placeholder) {
-      goto fail;
-   }
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED);
@@ -1041,9 +1035,9 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
    bool key_found;
    uint32_t bytes_written;
 
-   if (!kb || !marking || !ciphertext) {
-      goto fail;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
 
    BSON_ASSERT ((marking->type == MONGOCRYPT_MARKING_FLE1_BY_ID) ||
                 (marking->type == MONGOCRYPT_MARKING_FLE1_BY_ALTNAME));
@@ -1166,10 +1160,11 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
                                    _mongocrypt_ciphertext_t *ciphertext,
                                    mongocrypt_status_t *status)
 {
-   _mongocrypt_key_broker_t *kb = (_mongocrypt_key_broker_t *) ctx;
    BSON_ASSERT_PARAM (marking);
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (ctx);
+
+   _mongocrypt_key_broker_t *kb = (_mongocrypt_key_broker_t *) ctx;
 
    if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
       if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED) {

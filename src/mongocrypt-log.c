@@ -49,6 +49,8 @@ _mongocrypt_stdout_log_fn (mongocrypt_log_level_t level,
                            uint32_t message_len,
                            void *ctx)
 {
+   BSON_ASSERT_PARAM (message);
+
    switch (level) {
    case MONGOCRYPT_LOG_LEVEL_FATAL:
       printf ("FATAL");

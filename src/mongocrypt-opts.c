@@ -131,11 +131,14 @@ _mongocrypt_opts_kms_providers_validate (
    _mongocrypt_opts_kms_providers_t *kms_providers,
    mongocrypt_status_t *status)
 {
+   if (!opts) {
+      CLIENT_ERR ("argument 'opts' is required");
+      return false;
+   }
    if (!kms_providers) {
       CLIENT_ERR ("argument 'kms_providers' is required");
       return false;
    }
-    BSON_ASSERT_PARAM (opts);
    if (!kms_providers->configured_providers &&
        !kms_providers->need_credentials) {
       CLIENT_ERR ("no kms provider set");
@@ -220,17 +223,19 @@ _validate_encrypted_field_config_map_and_schema_map (
    _mongocrypt_buffer_t *schema_map,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (encrypted_field_config_map);
+   BSON_ASSERT_PARAM (schema_map);
+
    const char *found;
    bson_t schema_map_bson;
    bson_t encrypted_field_config_map_bson;
 
    /* If either map is unset, there is nothing to validate. Return true to
     * signal no error. */
-   if (!encrypted_field_config_map ||
-       _mongocrypt_buffer_empty (encrypted_field_config_map)) {
+   if (_mongocrypt_buffer_empty (encrypted_field_config_map)) {
       return true;
    }
-   if (!schema_map || _mongocrypt_buffer_empty (schema_map)) {
+   if (_mongocrypt_buffer_empty (schema_map)) {
       return true;
    }
 
@@ -280,13 +285,17 @@ _mongocrypt_parse_optional_utf8 (const bson_t *bson,
    bson_iter_t iter;
    bson_iter_t child;
 
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
+
    *out = NULL;
 
-   if (!bson || !bson_iter_init (&iter, bson)) {
+   if (!bson_iter_init (&iter, bson)) {
       CLIENT_ERR ("invalid BSON");
       return false;
    }
-   if (!dotkey || !bson_iter_find_descendant (&iter, dotkey, &child)) {
+   if (!bson_iter_find_descendant (&iter, dotkey, &child)) {
       /* Not found. Not an error. */
       return true;
    }
@@ -306,6 +315,10 @@ _mongocrypt_parse_required_utf8 (const bson_t *bson,
                                  char **out,
                                  mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
+
    if (!_mongocrypt_parse_optional_utf8 (bson, dotkey, out, status)) {
       return false;
    }
@@ -326,6 +339,10 @@ _mongocrypt_parse_optional_endpoint (const bson_t *bson,
                                      mongocrypt_status_t *status)
 {
    char *endpoint_raw;
+
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
 
    *out = NULL;
 
@@ -350,6 +367,10 @@ _mongocrypt_parse_required_endpoint (const bson_t *bson,
                                      _mongocrypt_endpoint_parse_opts_t *opts,
                                      mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
+
    if (!_mongocrypt_parse_optional_endpoint (bson, dotkey, out, opts, status)) {
       return false;
    }
@@ -376,11 +397,13 @@ _mongocrypt_parse_optional_binary (const bson_t *bson,
       CLIENT_ERR ("argument 'out' is required");
       return false;
    }
-   
+
+   BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (dotkey);
+
    _mongocrypt_buffer_init (out);
 
-   if (!bson || !bson_iter_init (&iter, bson)) {
+   if (!bson_iter_init (&iter, bson)) {
       CLIENT_ERR ("invalid BSON");
       return false;
    }
@@ -423,6 +446,14 @@ _mongocrypt_parse_required_binary (const bson_t *bson,
       CLIENT_ERR ("argument 'out' is required");
       return false;
    }
+   if (!bson) {
+      CLIENT_ERR ("argument 'bson' is required");
+      return false;
+   }
+   if (!dotkey) {
+      CLIENT_ERR ("argument 'dotkey' is required");
+      return false;
+   }
 
    if (!_mongocrypt_parse_optional_binary (bson, dotkey, out, status)) {
       return false;
@@ -445,6 +476,8 @@ _mongocrypt_check_allowed_fields_va (const bson_t *bson,
    va_list args;
    const char *field;
    bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (bson);
 
    if (dotkey) {
       bson_iter_t parent;

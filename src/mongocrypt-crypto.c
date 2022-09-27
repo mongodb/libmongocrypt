@@ -701,14 +701,14 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
                         intermediate_hmac = {0}, empty_buffer = {0};
    uint32_t intermediate_bytes_written = 0;
 
-   memset (ciphertext->data, 0, ciphertext->len);
-
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iv);
    /* associated_data is checked at the point it is used, so it can be NULL */
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (ciphertext);
+
+   memset (ciphertext->data, 0, ciphertext->len);
 
    if (ciphertext->len !=
        _mongocrypt_calculate_ciphertext_len (plaintext->len)) {

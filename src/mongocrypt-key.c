@@ -309,21 +309,6 @@ _mongocrypt_key_new ()
 }
 
 
-bool
-_mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
-                       const _mongocrypt_key_doc_t *b)
-{
-   BSON_ASSERT_PARAM (a);
-   BSON_ASSERT_PARAM (b);
-   /* TODO: or this instead? */
-   if (!a || !b) {
-      return false;
-   }
-
-   return bson_equal (&a->bson, &b->bson);
-}
-
-
 void
 _mongocrypt_key_destroy (_mongocrypt_key_doc_t *key)
 {
