@@ -39,7 +39,6 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
          bson_t bson;
          bson_t elem = BSON_INITIALIZER;
 
-         BSON_ASSERT (iter);
 
          if (!mongocrypt_ctx_finalize (iter->dkctx, &bin)) {
             return _mongocrypt_ctx_fail_w_msg (
