@@ -920,7 +920,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (plaintext);
-   BSON_ASSERT (bytes_written);
+   BSON_ASSERT_PARAM (bytes_written);
 
    if (plaintext->len !=
        _mongocrypt_calculate_plaintext_len (ciphertext->len)) {
