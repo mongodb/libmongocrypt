@@ -391,7 +391,6 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
    bson_init (&ids);
 
    for (req = kb->key_requests; NULL != req; req = req->next) {
-      BSON_ASSERT (req);
       if (req->satisfied) {
          continue;
       }
