@@ -1191,7 +1191,6 @@ generate_delete_tokens (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (efc);
 
    for (ef = efc->fields; ef != NULL; ef = ef->next) {
-      BSON_ASSERT (ef);
 
       _mongocrypt_buffer_t IndexKey = {0};
       _mongocrypt_buffer_t TokenKey = {0};
