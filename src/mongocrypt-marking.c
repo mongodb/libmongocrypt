@@ -409,27 +409,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
    _mongocrypt_buffer_t indexKey = {0};
    memset (ret, 0, sizeof (*ret));
 
-   if (!_mongocrypt_key_broker_decrypted_key_by_id (
-          kb, indexKeyId, &indexKey)) {
-      CLIENT_ERR ("unable to retrieve key");
-      goto fail;
-   }
-
-   if (indexKey.len != MONGOCRYPT_KEY_LEN) {
-      CLIENT_ERR ("invalid indexKey, expected len=%" PRIu32
-                  ", got len=%" PRIu32,
-                  MONGOCRYPT_KEY_LEN,
-                  indexKey.len);
-      goto fail;
-   }
-
-   // indexKey is 3 equal sized keys: [Ke][Km][TokenKey]
-   BSON_ASSERT (MONGOCRYPT_KEY_LEN == (3 * MONGOCRYPT_TOKEN_KEY_LEN));
-   if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &ret->tokenKey,
-          indexKey.data + (2 * MONGOCRYPT_TOKEN_KEY_LEN),
-          MONGOCRYPT_TOKEN_KEY_LEN)) {
-      CLIENT_ERR ("failed allocating memory for token key");
+   if (!_get_tokenKey (kb, indexKeyId, &ret->tokenKey, status)) {
       goto fail;
    }
 
