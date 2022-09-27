@@ -528,7 +528,6 @@ _fle2_collect_keys_for_compact (mongocrypt_ctx_t *ctx)
    mc_EncryptedField_t *field;
 
    for (field = ectx->efc.fields; field != NULL; field = field->next) {
-      BSON_ASSERT (field);
       if (!_mongocrypt_key_broker_request_id (&ctx->kb, &field->keyId)) {
          _mongocrypt_key_broker_status (&ctx->kb, ctx->status);
          _mongocrypt_ctx_fail (ctx);
