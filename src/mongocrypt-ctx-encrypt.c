@@ -1053,7 +1053,8 @@ _marking_to_bson_value (void *ctx,
    }
 
    if ((ciphertext.blob_subtype == MC_SUBTYPE_FLE2InsertUpdatePayload) ||
-       (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindEqualityPayload)) {
+       (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindEqualityPayload) ||
+       (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindRangePayload)) {
       /* ciphertext_data is already a BSON object, just need to prepend
        * blob_subtype */
       _mongocrypt_buffer_init_size (&serialized_ciphertext,
@@ -1236,6 +1237,11 @@ _check_for_payload_requiring_encryptionInformation (void *ctx,
    }
 
    if (in->data[0] == MC_SUBTYPE_FLE2FindEqualityPayload) {
+      *out = true;
+      return true;
+   }
+
+   if (in->data[0] == MC_SUBTYPE_FLE2FindRangePayload) {
       *out = true;
       return true;
    }
