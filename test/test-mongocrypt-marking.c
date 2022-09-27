@@ -183,8 +183,131 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
 }
 
 
+#define RAW_STRING(...) #__VA_ARGS__
+
+#define ASSERT_MINCOVER_EQ(got, expectString)                                  \
+   if (1) {                                                                    \
+      bson_string_t *gotStr = bson_string_new ("");                            \
+      for (size_t i = 0; i < mc_mincover_len (got); i++) {                     \
+         bson_string_append_printf (gotStr, "%s\n", mc_mincover_get (got, i)); \
+      }                                                                        \
+      ASSERT_STREQUAL (gotStr->str, expectString);                             \
+      bson_string_free (gotStr, true);                                         \
+   } else                                                                      \
+      ((void) 0)
+
+/* test_mc_get_mincover_from_FLE2RangeFindSpec tests processing an
+ * FLE2RangeFindSpec into a mincover. It is is analogous to the
+ * MinCoverInterfaceTest in the server code:
+ * https://github.com/mongodb/mongo/blob/a4a3eba2a0e0a839ca6213491361269b42e12761/src/mongo/crypto/fle_crypto_test.cpp#L2585
+ */
+static void
+test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_status_t *status = mongocrypt_status_new ();
+   bson_error_t error;
+
+   typedef struct {
+      const char *description; // May be NULL.
+      const char *findSpecJSON;
+      const char *expectedMinCover;
+   } testcase_t;
+
+   testcase_t tests[] = {
+      {.description = "Int32 Bounds included",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberInt" : "32"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedMinCover = "000111\n"
+                           "001\n"
+                           "01\n"
+                           "100000\n"},
+
+      {.description = "Int32 Bounds excluded",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberInt" : "32"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedMinCover = "001\n"
+                           "01\n"},
+      {.description = "Int32 Infinite upper bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberDouble" : "Infinity"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedMinCover = "000111\n"
+                           "001\n"
+                           "01\n"
+                           "100000\n"},
+      {.description = "Int32 Infinite lower bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberDouble" : "-Infinity"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberInt" : "8"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedMinCover = "000\n"
+                           "001000\n"},
+
+   };
+
+   for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      testcase_t *test = tests + i;
+      mc_FLE2RangeFindSpec_t findSpec;
+
+      if (test->description) {
+         printf ("  %zu: %s\n", i, test->description);
+      } else {
+         printf ("  %zu\n", i);
+      }
+
+      bson_t *findSpecVal =
+         bson_new_from_json ((const uint8_t *) test->findSpecJSON, -1, &error);
+      if (!findSpecVal) {
+         TEST_ERROR ("failed to parse JSON: %s", error.message);
+      }
+
+      bson_t *findSpecDoc = bson_new ();
+      BSON_APPEND_DOCUMENT (findSpecDoc, "findSpec", findSpecVal);
+
+      bson_iter_t findSpecIter;
+      ASSERT (bson_iter_init_find (&findSpecIter, findSpecDoc, "findSpec"));
+
+      ASSERT_OK_STATUS (
+         mc_FLE2RangeFindSpec_parse (&findSpec, &findSpecIter, status), status);
+
+      mc_mincover_t *mc =
+         mc_get_mincover_from_FLE2RangeFindSpec (&findSpec, 1, status);
+
+      ASSERT_OK_STATUS (mc, status);
+      ASSERT_MINCOVER_EQ (mc, test->expectedMinCover);
+      mc_mincover_destroy (mc);
+
+      bson_destroy (findSpecDoc);
+      bson_destroy (findSpecVal);
+   }
+   mongocrypt_status_destroy (status);
+}
+
+
 void
 _mongocrypt_tester_install_marking (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (test_mongocrypt_marking_parse);
+   INSTALL_TEST (test_mc_get_mincover_from_FLE2RangeFindSpec);
 }
