@@ -717,7 +717,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   BSON_ASSERT (bytes_written);
+   BSON_ASSERT_PARAM (bytes_written);
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
