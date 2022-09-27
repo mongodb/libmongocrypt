@@ -476,7 +476,7 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
 
    _mongocrypt_buffer_init (&to_encrypt);
 
-   BSON_ASSERT (bytes_written);
+   BSON_ASSERT_PARAM (bytes_written);
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
