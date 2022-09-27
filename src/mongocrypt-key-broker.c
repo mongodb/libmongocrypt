@@ -134,7 +134,6 @@ _all_key_requests_satisfied (_mongocrypt_key_broker_t *kb)
 
    for (key_request = kb->key_requests; NULL != key_request;
         key_request = key_request->next) {
-      BSON_ASSERT (key_request);
       if (!key_request->satisfied) {
          return false;
       }
