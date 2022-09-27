@@ -77,7 +77,6 @@ _key_returned_find_one (key_returned_t *list,
 
    for (key_returned = list; NULL != key_returned;
         key_returned = key_returned->next) {
-      BSON_ASSERT (key_returned);
       if (key_id) {
          BSON_ASSERT (key_returned->doc);
          if (0 == _mongocrypt_buffer_cmp (key_id, &key_returned->doc->id)) {
