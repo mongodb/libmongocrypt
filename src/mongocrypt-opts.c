@@ -135,7 +135,7 @@ _mongocrypt_opts_kms_providers_validate (
       CLIENT_ERR ("argument 'kms_providers is required");
       return false;
    }
-
+    BSON_ASSERT_PARAM (opts);
    if (!kms_providers->configured_providers &&
        !kms_providers->need_credentials) {
       CLIENT_ERR ("no kms provider set");
