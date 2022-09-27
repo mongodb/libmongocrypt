@@ -2335,7 +2335,7 @@ _check_cmd_for_auto_encrypt (mongocrypt_binary_t *cmd,
 
    BSON_ASSERT_PARAM (cmd);
    BSON_ASSERT_PARAM (bypass);
-   /* collname is treated as uninitialized and is explicitly set below */
+   BSON_ASSERT_PARAM (collname);
 
    *bypass = false;
 
