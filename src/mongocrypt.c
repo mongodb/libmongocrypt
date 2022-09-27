@@ -1608,6 +1608,7 @@ mongocrypt_setopt_set_crypt_shared_lib_path_override (mongocrypt_t *crypt,
                                                       const char *path)
 {
    BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (path);
 
    mstr_assign (&crypt->opts.crypt_shared_lib_override_path,
                 mstr_copy_cstr (path));
