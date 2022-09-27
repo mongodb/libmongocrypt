@@ -830,7 +830,7 @@ _decrypt_step (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (plaintext);
 
-   BSON_ASSERT (bytes_written);
+   BSON_ASSERT_PARAM (bytes_written);
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
