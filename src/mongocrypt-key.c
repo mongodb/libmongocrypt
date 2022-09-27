@@ -473,7 +473,6 @@ _mongocrypt_key_alt_name_unique_list_equal (_mongocrypt_key_alt_name_t *list_a,
       return false;
    }
    for (ptr = list_a; NULL != ptr; ptr = ptr->next) {
-      BSON_ASSERT (ptr);
       if (!_find (list_b, ptr)) {
          return false;
       }
