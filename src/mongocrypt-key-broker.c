@@ -417,7 +417,6 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
            key_alt_name = key_alt_name->next) {
          char *key_str;
 
-         BSON_ASSERT (key_alt_name);
 
          key_str = bson_strdup_printf ("%d", name_index++);
          BSON_ASSERT (key_str);
