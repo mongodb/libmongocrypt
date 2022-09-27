@@ -98,6 +98,16 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
    BSON_ASSERT (a.min == b.min);
    BSON_ASSERT (a.max == b.max);
 
+   if (!adjustBounds_u32 (&a.value,
+                          args.includeLowerBound,
+                          a.min,
+                          &b.value,
+                          args.includeUpperBound,
+                          b.max,
+                          status)) {
+      return NULL;
+   }
+
    MinCoverGenerator_u32 *mcg = MinCoverGenerator_new_u32 (
       a.value, b.value, a.max, args.sparsity, status);
    if (!mcg) {
@@ -135,6 +145,16 @@ mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
 
    BSON_ASSERT (a.min == b.min);
    BSON_ASSERT (a.max == b.max);
+
+   if (!adjustBounds_u64 (&a.value,
+                          args.includeLowerBound,
+                          a.min,
+                          &b.value,
+                          args.includeUpperBound,
+                          b.max,
+                          status)) {
+      return NULL;
+   }
 
    MinCoverGenerator_u64 *mcg = MinCoverGenerator_new_u64 (
       a.value, b.value, a.max, args.sparsity, status);
