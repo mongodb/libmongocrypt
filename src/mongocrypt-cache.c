@@ -131,6 +131,7 @@ _find_pair (_mongocrypt_cache_t *cache,
 
    BSON_ASSERT_PARAM (cache);
    BSON_ASSERT_PARAM (attr);
+   BSON_ASSERT_PARAM (out);
 
    *out = NULL;
 
