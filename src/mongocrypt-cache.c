@@ -328,7 +328,6 @@ _mongocrypt_cache_num_entries (_mongocrypt_cache_t *cache)
    _mongocrypt_mutex_lock (&cache->mutex);
    count = 0;
    for (pair = cache->pair; pair != NULL; pair = pair->next) {
-      BSON_ASSERT (pair);
       count++;
    }
 
