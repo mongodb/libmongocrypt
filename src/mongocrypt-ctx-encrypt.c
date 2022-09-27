@@ -1412,7 +1412,6 @@ _fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
 
    mc_EncryptedField_t *ptr;
    for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
-      BSON_ASSERT (ptr);
 
       /* Append ECOC token. */
       _mongocrypt_buffer_t key = {0};
