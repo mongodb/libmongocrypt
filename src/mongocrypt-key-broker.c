@@ -109,7 +109,6 @@ _key_request_find_one (_mongocrypt_key_broker_t *kb,
 
    for (key_request = kb->key_requests; NULL != key_request;
         key_request = key_request->next) {
-      BSON_ASSERT (key_request);
       if (key_id) {
          if (0 == _mongocrypt_buffer_cmp (key_id, &key_request->id)) {
             return key_request;
