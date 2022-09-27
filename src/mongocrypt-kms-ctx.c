@@ -1214,7 +1214,7 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
    if (!plaintext_key_material) {
       CLIENT_ERR ("argument 'plaintext_key_material' is required");
-      return false;
+      goto fail;
    }
    kms->req =
       kms_azure_request_wrapkey_new (host,
