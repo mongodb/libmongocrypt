@@ -112,7 +112,6 @@ _kms_done_encrypt (mongocrypt_ctx_t *ctx)
       _mongocrypt_ctx_rmd_datakey_t *iter;
 
       for (iter = rmdctx->datakeys; iter; iter = iter->next) {
-         BSON_ASSERT (iter);
          if (iter->dkctx->state == MONGOCRYPT_CTX_NEED_KMS &&
              !mongocrypt_ctx_kms_done (iter->dkctx)) {
             _mongocrypt_status_copy_to (iter->dkctx->status, ctx->status);
