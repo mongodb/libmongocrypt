@@ -132,7 +132,7 @@ _mongocrypt_opts_kms_providers_validate (
    mongocrypt_status_t *status)
 {
    if (!kms_providers) {
-      CLIENT_ERR ("argument 'kms_providers is required");
+      CLIENT_ERR ("argument 'kms_providers' is required");
       return false;
    }
     BSON_ASSERT_PARAM (opts);
