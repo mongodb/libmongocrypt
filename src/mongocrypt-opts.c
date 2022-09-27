@@ -376,6 +376,8 @@ _mongocrypt_parse_optional_binary (const bson_t *bson,
       CLIENT_ERR ("argument 'out' is required");
       return false;
    }
+   
+   BSON_ASSERT_PARAM (dotkey);
    _mongocrypt_buffer_init (out);
 
    if (!bson || !bson_iter_init (&iter, bson)) {
