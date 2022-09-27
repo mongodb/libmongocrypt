@@ -180,6 +180,7 @@ _shares_bson_fields (bson_t *one,
    bson_iter_t iter1;
    bson_iter_t iter2;
 
+   BSON_ASSERT_PARAM (found);
    *found = NULL;
    if (!one) {
       CLIENT_ERR ("argument 'one' is required");
