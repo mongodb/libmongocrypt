@@ -32,7 +32,6 @@ struct _mc_edges_t {
 static mc_edges_t *
 mc_edges_new (const char *leaf, size_t sparsity, mongocrypt_status_t *status)
 {
-   BSON_ASSERT_PARAM (leaf);
 
    BSON_ASSERT_PARAM (leaf);
    if (sparsity < 1) {
