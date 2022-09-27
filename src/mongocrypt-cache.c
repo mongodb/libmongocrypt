@@ -197,6 +197,7 @@ _mongocrypt_cache_get (_mongocrypt_cache_t *cache,
 
    BSON_ASSERT_PARAM (cache);
    BSON_ASSERT_PARAM (attr);
+   BSON_ASSERT_PARAM (value);
 
    *value = NULL;
 
