@@ -211,6 +211,7 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
       const char *description; // May be NULL.
       const char *findSpecJSON;
       const char *expectedMinCover;
+      mc_optional_int64_t sparsity;
    } testcase_t;
 
    testcase_t tests[] = {
@@ -239,6 +240,30 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
        }),
        .expectedMinCover = "001\n"
                            "01\n"},
+      {.description = "Int32 Upper bound excluded",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberInt" : "32"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedMinCover = "000111\n"
+                           "001\n"
+                           "01\n"},
+      {.description = "Int32 Lower bound excluded",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberInt" : "32"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedMinCover = "001\n"
+                           "01\n"
+                           "100000\n"},
       {.description = "Int32 Infinite upper bound",
        .findSpecJSON = RAW_STRING ({
           "lowerBound" : {"$numberInt" : "7"},
@@ -263,7 +288,155 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
        }),
        .expectedMinCover = "000\n"
                            "001000\n"},
+      {.description = "Int32 Infinite both bounds",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberDouble" : "-Infinity"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberDouble" : "Infinity"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedMinCover = "0\n"
+                           "100000\n"},
+      {.description = "Int64 Bounds included",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "0"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberLong" : "823"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberLong" : "-1000000000000000"},
+          "indexMax" : {"$numberLong" : "8070450532247928832"}
+       }),
+       .expectedMinCover =
+          "000000000000011100011010111111010100100110001101000000\n"
+          "00000000000001110001101011111101010010011000110100000100\n"
+          "00000000000001110001101011111101010010011000110100000101\n"
+          "0000000000000111000110101111110101001001100011010000011000\n"
+          "000000000000011100011010111111010100100110001101000001100100\n"
+          "000000000000011100011010111111010100100110001101000001100101\n"
+          "000000000000011100011010111111010100100110001101000001100110\n",
+       .sparsity = OPT_I64 (2)},
 
+      {.description = "Int64 Bounds excluded",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "0"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberLong" : "823"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberLong" : "-1000000000000000"},
+          "indexMax" : {"$numberLong" : "8070450532247928832"}
+       }),
+       .expectedMinCover =
+          "000000000000011100011010111111010100100110001101000000000000001\n"
+          "00000000000001110001101011111101010010011000110100000000000001\n"
+          "00000000000001110001101011111101010010011000110100000000000010\n"
+          "00000000000001110001101011111101010010011000110100000000000011\n"
+          "000000000000011100011010111111010100100110001101000000000001\n"
+          "000000000000011100011010111111010100100110001101000000000010\n"
+          "000000000000011100011010111111010100100110001101000000000011\n"
+          "0000000000000111000110101111110101001001100011010000000001\n"
+          "0000000000000111000110101111110101001001100011010000000010\n"
+          "0000000000000111000110101111110101001001100011010000000011\n"
+          "00000000000001110001101011111101010010011000110100000001\n"
+          "00000000000001110001101011111101010010011000110100000010\n"
+          "00000000000001110001101011111101010010011000110100000011\n"
+          "00000000000001110001101011111101010010011000110100000100\n"
+          "00000000000001110001101011111101010010011000110100000101\n"
+          "0000000000000111000110101111110101001001100011010000011000\n"
+          "000000000000011100011010111111010100100110001101000001100100\n"
+          "000000000000011100011010111111010100100110001101000001100101\n"
+          "00000000000001110001101011111101010010011000110100000110011000\n"
+          "00000000000001110001101011111101010010011000110100000110011001\n"
+          "00000000000001110001101011111101010010011000110100000110011010\n"
+          "000000000000011100011010111111010100100110001101000001100110110\n",
+       .sparsity = OPT_I64 (2)},
+
+      {.description = "Int64 Upper bound excluded",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "0"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberLong" : "823"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberLong" : "-1000000000000000"},
+          "indexMax" : {"$numberLong" : "8070450532247928832"}
+       }),
+       .expectedMinCover =
+          "000000000000011100011010111111010100100110001101000000\n"
+          "00000000000001110001101011111101010010011000110100000100\n"
+          "00000000000001110001101011111101010010011000110100000101\n"
+          "0000000000000111000110101111110101001001100011010000011000\n"
+          "000000000000011100011010111111010100100110001101000001100100\n"
+          "000000000000011100011010111111010100100110001101000001100101\n"
+          "00000000000001110001101011111101010010011000110100000110011000\n"
+          "00000000000001110001101011111101010010011000110100000110011001\n"
+          "00000000000001110001101011111101010010011000110100000110011010\n"
+          "000000000000011100011010111111010100100110001101000001100110110\n",
+       .sparsity = OPT_I64 (2)},
+
+      {.description = "Int64 Lower bound excluded",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "0"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberLong" : "823"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberLong" : "-1000000000000000"},
+          "indexMax" : {"$numberLong" : "8070450532247928832"}
+       }),
+       .expectedMinCover =
+          "000000000000011100011010111111010100100110001101000000000000001\n"
+          "00000000000001110001101011111101010010011000110100000000000001\n"
+          "00000000000001110001101011111101010010011000110100000000000010\n"
+          "00000000000001110001101011111101010010011000110100000000000011\n"
+          "000000000000011100011010111111010100100110001101000000000001\n"
+          "000000000000011100011010111111010100100110001101000000000010\n"
+          "000000000000011100011010111111010100100110001101000000000011\n"
+          "0000000000000111000110101111110101001001100011010000000001\n"
+          "0000000000000111000110101111110101001001100011010000000010\n"
+          "0000000000000111000110101111110101001001100011010000000011\n"
+          "00000000000001110001101011111101010010011000110100000001\n"
+          "00000000000001110001101011111101010010011000110100000010\n"
+          "00000000000001110001101011111101010010011000110100000011\n"
+          "00000000000001110001101011111101010010011000110100000100\n"
+          "00000000000001110001101011111101010010011000110100000101\n"
+          "0000000000000111000110101111110101001001100011010000011000\n"
+          "000000000000011100011010111111010100100110001101000001100100\n"
+          "000000000000011100011010111111010100100110001101000001100101\n"
+          "000000000000011100011010111111010100100110001101000001100110\n",
+       .sparsity = OPT_I64 (2)},
+      {.description = "Int64 Infinite upper bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "1"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberDouble" : "Infinity"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberLong" : "0"},
+          "indexMax" : {"$numberLong" : "7"}
+       }),
+       .expectedMinCover = "001\n"
+                           "01\n"
+                           "1\n"},
+      {.description = "Int64 Infinite lower bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberDouble" : "-Infinity"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberLong" : "5"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberLong" : "0"},
+          "indexMax" : {"$numberLong" : "7"}
+       }),
+       .expectedMinCover = "0\n"
+                           "10\n"},
+      {.description = "Int64 Infinite both bounds",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberDouble" : "-Infinity"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberDouble" : "Infinity"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberLong" : "0"},
+          "indexMax" : {"$numberLong" : "7"}
+       }),
+       .expectedMinCover = "root\n"},
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
@@ -291,8 +464,13 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
       ASSERT_OK_STATUS (
          mc_FLE2RangeFindSpec_parse (&findSpec, &findSpecIter, status), status);
 
+      size_t sparsity = 1;
+      if (test->sparsity.set) {
+         sparsity = (size_t) test->sparsity.value;
+      }
+
       mc_mincover_t *mc =
-         mc_get_mincover_from_FLE2RangeFindSpec (&findSpec, 1, status);
+         mc_get_mincover_from_FLE2RangeFindSpec (&findSpec, sparsity, status);
 
       ASSERT_OK_STATUS (mc, status);
       ASSERT_MINCOVER_EQ (mc, test->expectedMinCover);
