@@ -214,7 +214,7 @@ WITH_BITS (adjustBounds) (UINT_T *lowerBound,
    }
    if (!includeUpperBound) {
       if (*upperBound <= min) {
-         CLIENT_ERR ("Upper bound bound (%" FMT_UINT_T
+         CLIENT_ERR ("Upper bound (%" FMT_UINT_T
                      ") must be greater than the range minimum (%" FMT_UINT_T
                      ") if upper bound is excluded from range.",
                      *upperBound,
