@@ -204,7 +204,6 @@ test_mongocrypt_marking_parse (_mongocrypt_tester_t *tester)
 static void
 test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_status_t *status = mongocrypt_status_new ();
    bson_error_t error;
 
    typedef struct {
@@ -212,6 +211,7 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
       const char *findSpecJSON;
       const char *expectedMinCover;
       mc_optional_int64_t sparsity;
+      const char *expectedError;
    } testcase_t;
 
    testcase_t tests[] = {
@@ -437,11 +437,92 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
           "indexMax" : {"$numberLong" : "7"}
        }),
        .expectedMinCover = "root\n"},
+      {.description = "Mismatched types",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "1"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberLong" : "2"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberLong" : "0"},
+          "indexMax" : {"$numberLong" : "7"}
+       }),
+       .expectedError = "expected lowerBound to match index type"},
+      {.description = "Int32 exclusive lower bound > upper bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberInt" : "7"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedError = "must be less than or equal to range max"},
+      {.description = "Int64 exclusive lower bound > upper bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "7"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberLong" : "7"},
+          "ubIncluded" : true,
+          "indexMin" : {"$numberLong" : "0"},
+          "indexMax" : {"$numberLong" : "32"}
+       }),
+       .expectedError = "must be less than or equal to range max"},
+      {.description = "Int32 exclusive upper bound < lower bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberInt" : "7"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedError = "must be less than or equal to range max"},
+      {.description = "Int64 exclusive upper bound < lower bound",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "7"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberLong" : "7"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberLong" : "0"},
+          "indexMax" : {"$numberLong" : "32"}
+       }),
+       .expectedError = "must be less than or equal to range max"},
+      {.description = "Int32 exclusive bounds cross",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "7"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberInt" : "7"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedError = "must be less than or equal to range max"},
+      {.description = "Int64 exclusive bounds cross",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberLong" : "7"},
+          "lbIncluded" : false,
+          "upperBound" : {"$numberLong" : "7"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberLong" : "0"},
+          "indexMax" : {"$numberLong" : "32"}
+       }),
+       .expectedError = "must be less than or equal to range max"},
+      {.description = "Int32 exclusive upper bound is 0",
+       .findSpecJSON = RAW_STRING ({
+          "lowerBound" : {"$numberInt" : "0"},
+          "lbIncluded" : true,
+          "upperBound" : {"$numberInt" : "0"},
+          "ubIncluded" : false,
+          "indexMin" : {"$numberInt" : "0"},
+          "indexMax" : {"$numberInt" : "32"}
+       }),
+       .expectedError = "must be greater than the range minimum"},
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       testcase_t *test = tests + i;
       mc_FLE2RangeFindSpec_t findSpec;
+      mongocrypt_status_t *status = mongocrypt_status_new ();
 
       if (test->description) {
          printf ("  %zu: %s\n", i, test->description);
@@ -472,14 +553,19 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
       mc_mincover_t *mc =
          mc_get_mincover_from_FLE2RangeFindSpec (&findSpec, sparsity, status);
 
-      ASSERT_OK_STATUS (mc, status);
-      ASSERT_MINCOVER_EQ (mc, test->expectedMinCover);
+      if (test->expectedError) {
+         ASSERT (NULL == mc);
+         ASSERT_STATUS_CONTAINS (status, test->expectedError);
+      } else {
+         ASSERT_OK_STATUS (mc, status);
+         ASSERT_MINCOVER_EQ (mc, test->expectedMinCover);
+      }
       mc_mincover_destroy (mc);
 
       bson_destroy (findSpecDoc);
       bson_destroy (findSpecVal);
+      mongocrypt_status_destroy (status);
    }
-   mongocrypt_status_destroy (status);
 }
 
 
