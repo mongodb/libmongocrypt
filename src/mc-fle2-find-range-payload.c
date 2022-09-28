@@ -23,6 +23,7 @@
 void
 mc_FLE2FindRangePayload_init (mc_FLE2FindRangePayload_t *payload)
 {
+   BSON_ASSERT_PARAM (payload);
    memset (payload, 0, sizeof (mc_FLE2FindRangePayload_t));
    _mc_array_init (&payload->edgeFindTokenSetArray,
                    sizeof (mc_EdgeFindTokenSet_t));
@@ -31,6 +32,7 @@ mc_FLE2FindRangePayload_init (mc_FLE2FindRangePayload_t *payload)
 static void
 mc_EdgeFindTokenSet_cleanup (mc_EdgeFindTokenSet_t *etc)
 {
+   BSON_ASSERT_PARAM (etc);
    _mongocrypt_buffer_cleanup (&etc->edcDerivedToken);
    _mongocrypt_buffer_cleanup (&etc->escDerivedToken);
    _mongocrypt_buffer_cleanup (&etc->eccDerivedToken);
@@ -39,6 +41,7 @@ mc_EdgeFindTokenSet_cleanup (mc_EdgeFindTokenSet_t *etc)
 void
 mc_FLE2FindRangePayload_cleanup (mc_FLE2FindRangePayload_t *payload)
 {
+   BSON_ASSERT_PARAM (payload);
    _mongocrypt_buffer_cleanup (&payload->serverEncryptionToken);
    // Free all EdgeFindTokenSet entries.
    for (size_t i = 0; i < payload->edgeFindTokenSetArray.len; i++) {
@@ -59,6 +62,8 @@ bool
 mc_FLE2FindRangePayload_serialize (bson_t *out,
                                    const mc_FLE2FindRangePayload_t *payload)
 {
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (payload);
    // Append "g" array of EdgeTokenSets.
    bson_t g_bson;
    if (!BSON_APPEND_ARRAY_BEGIN (out, "g", &g_bson)) {

@@ -198,6 +198,9 @@ WITH_BITS (adjustBounds) (UINT_T *lowerBound,
                           UINT_T max,
                           mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (lowerBound);
+   BSON_ASSERT_PARAM (upperBound);
+
    if (!includeLowerBound) {
       if (*lowerBound >= max) {
          CLIENT_ERR ("Lower bound (%" FMT_UINT_T

@@ -364,6 +364,10 @@ _get_tokenKey (_mongocrypt_key_broker_t *kb,
                _mongocrypt_buffer_t *tokenKey,
                mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (indexKeyId);
+   BSON_ASSERT_PARAM (tokenKey);
+
    _mongocrypt_buffer_t indexKey = {0};
    _mongocrypt_buffer_init (tokenKey);
 
@@ -405,6 +409,11 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                      int64_t maxContentionCounter,
                                      mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (ret);
+   BSON_ASSERT_PARAM (indexKeyId);
+   BSON_ASSERT_PARAM (value);
+
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t indexKey = {0};
    memset (ret, 0, sizeof (*ret));
@@ -952,10 +961,10 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
                                         size_t sparsity,
                                         mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (findSpec);
+
    mc_mincover_t *ret = NULL;
    bson_type_t bsonType = bson_iter_type (&findSpec->indexMin);
-
-   BSON_ASSERT_PARAM (findSpec);
 
    if (bson_iter_type (&findSpec->indexMin) !=
        bson_iter_type (&findSpec->indexMax)) {
