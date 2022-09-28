@@ -1037,6 +1037,21 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
       break;
 
    case BSON_TYPE_INT64:
+      BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_INT64);
+      ret = mc_getMincoverInt64 (
+         (mc_getMincoverInt64_args_t){
+            .lowerBound = bson_iter_int64 (&lowerBound),
+            .includeLowerBound = includeLowerBound,
+            .upperBound = bson_iter_int64 (&upperBound),
+            .includeUpperBound = includeUpperBound,
+            .min = OPT_I64 (bson_iter_int64 (&findSpec->indexMin)),
+            .max = OPT_I64 (bson_iter_int64 (&findSpec->indexMax)),
+            .sparsity = sparsity},
+         status);
+      break;
    case BSON_TYPE_DATE_TIME:
    case BSON_TYPE_DOUBLE:
    case BSON_TYPE_DECIMAL128:
