@@ -82,14 +82,14 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
    mc_OSTType_Int32 a, b;
    if (!mc_getTypeInfo32 ((mc_getTypeInfo32_args_t){.min = args.min,
                                                     .max = args.max,
-                                                    .value = args.range_min},
+                                                    .value = args.lowerBound},
                           &a,
                           status)) {
       return NULL;
    }
    if (!mc_getTypeInfo32 ((mc_getTypeInfo32_args_t){.min = args.min,
                                                     .max = args.max,
-                                                    .value = args.range_max},
+                                                    .value = args.upperBound},
                           &b,
                           status)) {
       return NULL;
@@ -120,14 +120,14 @@ mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
    mc_OSTType_Int64 a, b;
    if (!mc_getTypeInfo64 ((mc_getTypeInfo64_args_t){.min = args.min,
                                                     .max = args.max,
-                                                    .value = args.range_min},
+                                                    .value = args.lowerBound},
                           &a,
                           status)) {
       return NULL;
    }
    if (!mc_getTypeInfo64 ((mc_getTypeInfo64_args_t){.min = args.min,
                                                     .max = args.max,
-                                                    .value = args.range_max},
+                                                    .value = args.upperBound},
                           &b,
                           status)) {
       return NULL;

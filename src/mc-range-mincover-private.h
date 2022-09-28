@@ -39,8 +39,8 @@ void
 mc_mincover_destroy (mc_mincover_t *mincover);
 
 typedef struct {
-   int32_t range_min;
-   int32_t range_max;
+   int32_t lowerBound;
+   int32_t upperBound;
    mc_optional_int32_t min;
    mc_optional_int32_t max;
    size_t sparsity;
@@ -53,8 +53,8 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
                      mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 typedef struct {
-   int64_t range_min;
-   int64_t range_max;
+   int64_t lowerBound;
+   int64_t upperBound;
    mc_optional_int64_t min;
    mc_optional_int64_t max;
    size_t sparsity;

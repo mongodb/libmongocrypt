@@ -575,33 +575,33 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
 {
    bson_type_t value_type = bson_iter_type (&insertSpec->v);
 
-#define GET_AND_RETURN_EDGES(BITS)                                       \
-   if (1) {                                                              \
-      mc_OSTType_Int##BITS OSTType;                                      \
-      {                                                                  \
-         mc_getTypeInfo##BITS##_args_t args = {                          \
-            .value = bson_iter_int##BITS (&insertSpec->v),               \
-            .min = OPT_I##BITS (bson_iter_int##BITS (&insertSpec->lb)),  \
-            .max = OPT_I##BITS (bson_iter_int##BITS (&insertSpec->ub))}; \
-                                                                         \
-         if (!mc_getTypeInfo##BITS (args, &OSTType, status)) {           \
-            return NULL;                                                 \
-         }                                                               \
-      }                                                                  \
-                                                                         \
-      mc_edges_t *edges;                                                 \
-      {                                                                  \
-         mc_getEdgesInt##BITS##_args_t args = {                          \
-            .value = OSTType.value,                                      \
-            .min = OPT_I##BITS (OSTType.min),                            \
-            .max = OPT_I##BITS (OSTType.max),                            \
-            .sparsity = sparsity};                                       \
-         if (!(edges = mc_getEdgesInt##BITS (args, status))) {           \
-            return NULL;                                                 \
-         }                                                               \
-      }                                                                  \
-      return edges;                                                      \
-   } else                                                                \
+#define GET_AND_RETURN_EDGES(BITS)                                        \
+   if (1) {                                                               \
+      mc_OSTType_Int##BITS OSTType;                                       \
+      {                                                                   \
+         mc_getTypeInfo##BITS##_args_t args = {                           \
+            .value = bson_iter_int##BITS (&insertSpec->v),                \
+            .min = OPT_I##BITS (bson_iter_int##BITS (&insertSpec->min)),  \
+            .max = OPT_I##BITS (bson_iter_int##BITS (&insertSpec->max))}; \
+                                                                          \
+         if (!mc_getTypeInfo##BITS (args, &OSTType, status)) {            \
+            return NULL;                                                  \
+         }                                                                \
+      }                                                                   \
+                                                                          \
+      mc_edges_t *edges;                                                  \
+      {                                                                   \
+         mc_getEdgesInt##BITS##_args_t args = {                           \
+            .value = OSTType.value,                                       \
+            .min = OPT_I##BITS (OSTType.min),                             \
+            .max = OPT_I##BITS (OSTType.max),                             \
+            .sparsity = sparsity};                                        \
+         if (!(edges = mc_getEdgesInt##BITS (args, status))) {            \
+            return NULL;                                                  \
+         }                                                                \
+      }                                                                   \
+      return edges;                                                       \
+   } else                                                                 \
       ((void) (0))
 
    if (value_type == BSON_TYPE_INT32) {
@@ -643,7 +643,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    _mongocrypt_ciphertext_init (ciphertext);
    mc_FLE2InsertUpdatePayload_init (&payload);
 
-   // Parse the value ("v"), lower bound ("lb"), and upper bound ("ub") from
+   // Parse the value ("v"), min ("min"), and max ("max") from
    // FLE2EncryptionPlaceholder for range insert.
    mc_FLE2RangeInsertSpec_t insertSpec;
    if (!mc_FLE2RangeInsertSpec_parse (
@@ -742,7 +742,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
 
    // g:= array<EdgeTokenSet>
    {
-      edges = get_edges (&insertSpec, placeholder->sparsity, status);
+      edges = get_edges (&insertSpec, (size_t) placeholder->sparsity, status);
       if (!edges) {
          goto fail;
       }

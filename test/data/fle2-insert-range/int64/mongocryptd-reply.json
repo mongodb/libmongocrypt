@@ -9,7 +9,7 @@
                 "plainText": "sample",
                 "encrypted": {
                     "$binary": {
-                        "base64": "A4MAAAAQdAABAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASA3YAKAAAABJ2AIdLa11U3CsAEmxiAAAAAAAAAAAAEnViABWB6X30ECIRABJjbQAAAAAAAAAAABBzAAEAAAAA",
+                        "base64": "A4kAAAAQdAABAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASA3YAKgAAABJ2AIdLa11U3CsAEm1pbgAAAAAAAAAAABJtYXgAFYHpffQQIhEAEmNtAAAAAAAAAAAAEnMAAQAAAAAAAAAA",
                         "subType": "6"
                     }
                 }
