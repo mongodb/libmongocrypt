@@ -773,7 +773,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
 
    // g:= array<EdgeTokenSet>
    {
-      edges = get_edges (&insertSpec, (size_t) placeholder->sparsity, status);
+      edges = get_edges (&insertSpec, placeholder->sparsity_sz, status);
       if (!edges) {
          goto fail;
       }
@@ -1129,7 +1129,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    // g:= array<EdgeFindTokenSet>
    {
       mincover = mc_get_mincover_from_FLE2RangeFindSpec (
-         &findSpec, placeholder->sparsity, status);
+         &findSpec, placeholder->sparsity_sz, status);
       if (!mincover) {
          goto fail;
       }
