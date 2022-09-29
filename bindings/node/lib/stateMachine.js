@@ -111,6 +111,7 @@ module.exports = function (modules) {
       debug(`[context#${context.id}] ${stateToString.get(context.state) || context.state}`);
       switch (context.state) {
         case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: {
+          console.log('sm need collinfo');
           const filter = bson.deserialize(context.nextMongoOperation());
           this.fetchCollectionInfo(metaDataClient, context.ns, filter, (err, collInfo) => {
             if (err) {
@@ -129,6 +130,7 @@ module.exports = function (modules) {
         }
 
         case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: {
+          console.log('sm need markings');
           const command = context.nextMongoOperation();
           this.markCommand(mongocryptdClient, context.ns, command, (err, markedCommand) => {
             if (err) {
@@ -163,6 +165,7 @@ module.exports = function (modules) {
         }
 
         case MONGOCRYPT_CTX_NEED_MONGO_KEYS: {
+          console.log('sm need keys');
           const filter = context.nextMongoOperation();
           this.fetchKeys(keyVaultClient, keyVaultNamespace, filter, (err, keys) => {
             if (err) return callback(err, null);
@@ -178,6 +181,7 @@ module.exports = function (modules) {
         }
 
         case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS: {
+          console.log('sm need kms credentials');
           autoEncrypter
             .askForKMSCredentials()
             .then(kmsProviders => {
@@ -194,6 +198,7 @@ module.exports = function (modules) {
         }
 
         case MONGOCRYPT_CTX_NEED_KMS: {
+          console.log('sm need kms');
           const promises = [];
 
           let request;
@@ -215,6 +220,7 @@ module.exports = function (modules) {
 
         // terminal states
         case MONGOCRYPT_CTX_READY: {
+          console.log('sm ready');
           const finalizedContext = context.finalize();
           // TODO: Maybe rework the logic here so that instead of doing
           // the callback here, finalize stores the result, and then
@@ -228,12 +234,14 @@ module.exports = function (modules) {
           return;
         }
         case MONGOCRYPT_CTX_ERROR: {
+          console.log('sm error');
           const message = context.status.message;
           callback(new MongoCryptError(message));
           return;
         }
 
         case MONGOCRYPT_CTX_DONE:
+          console.log('sm done');
           callback();
           return;
 

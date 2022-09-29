@@ -99,6 +99,7 @@ module.exports = function (modules) {
      * });
      */
     constructor(client, options) {
+      console.log('options', options);
       this._client = client;
       this._bson = options.bson || BSON || client.topology.bson;
       this._proxyOptions = options.proxyOptions;
