@@ -2390,6 +2390,17 @@ _test_encrypt_fle2_insert_range_payload_int64 (_mongocrypt_tester_t *tester)
 }
 #undef RNG_DATA
 
+#include "./data/fle2-insert-range/date/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_date (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {
+      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/date", &source);
+}
+#undef RNG_DATA
+
 // FLE2FindRangePayload only uses deterministic token generation.
 static void
 _test_encrypt_fle2_find_range_payload_int32 (_mongocrypt_tester_t *tester)
@@ -2406,6 +2417,15 @@ _test_encrypt_fle2_find_range_payload_int64 (_mongocrypt_tester_t *tester)
    _test_rng_data_source source = {{0}};
    _test_encrypt_fle2_encryption_placeholder (
       tester, "fle2-find-range/int64", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_date (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/date", &source);
 }
 
 static mongocrypt_t *
@@ -4673,6 +4693,8 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_FLE2EncryptionPlaceholder_range_parse);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int32);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int64);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_date);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int32);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int64);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_date);
 }

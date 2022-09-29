@@ -1,0 +1,13 @@
+{
+    "insert": "test",
+    "documents": [
+        {
+            "plainText": "sample",
+            "encrypted": {
+                "$date": {
+                    "$numberLong": "12345"
+                }
+            }
+        }
+    ]
+}
