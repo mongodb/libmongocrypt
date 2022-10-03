@@ -332,6 +332,10 @@ module.exports = function (modules) {
     get cryptSharedLibVersionInfo() {
       return this._mongocrypt.cryptSharedLibVersionInfo;
     }
+
+    static get libmongocryptVersion() {
+      return mc.MongoCrypt.libmongocryptVersion;
+    }
   }
 
   return { AutoEncrypter };

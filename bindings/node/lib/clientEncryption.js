@@ -687,6 +687,10 @@ module.exports = function (modules) {
     async askForKMSCredentials() {
       return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
     }
+
+    static get libmongocryptVersion() {
+      return mc.MongoCrypt.libmongocryptVersion;
+    }
   }
 
   return { ClientEncryption };
