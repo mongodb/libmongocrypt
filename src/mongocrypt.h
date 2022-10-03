@@ -740,6 +740,8 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 #define MONGOCRYPT_ALGORITHM_INDEXED_STR "Indexed"
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 #define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
+/// String constant for setopt_algorithm "Range" explicit encryption
+#define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
 
 
 /**
