@@ -188,7 +188,10 @@ _mongocrypt_marking_init (_mongocrypt_marking_t *marking)
 void
 _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
 {
-   if (!marking || marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
+   if (!marking) {
+      return;
+   }
+   if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
       mc_FLE2EncryptionPlaceholder_cleanup (&marking->fle2);
       return;
    }
