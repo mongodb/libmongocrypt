@@ -37,7 +37,9 @@ _mongocrypt_log_init (_mongocrypt_log_t *log)
 void
 _mongocrypt_log_cleanup (_mongocrypt_log_t *log)
 {
-   BSON_ASSERT_PARAM (log);
+   if (!log) {
+      return;
+   }
 
    _mongocrypt_mutex_cleanup (&log->mutex);
    memset (log, 0, sizeof (*log));
@@ -99,12 +101,12 @@ _mongocrypt_log (_mongocrypt_log_t *log,
    char *message;
 
    BSON_ASSERT_PARAM (log);
+   BSON_ASSERT_PARAM (format);
 
    if (level == MONGOCRYPT_LOG_LEVEL_TRACE && !log->trace_enabled) {
       return;
    }
 
-   BSON_ASSERT (format);
 
    va_start (args, format);
    message = bson_strdupv_printf (format, args);

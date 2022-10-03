@@ -116,12 +116,14 @@ _crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 
    BSON_ASSERT_PARAM (crypto);
 
-   if (!args.key || args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
+   BSON_ASSERT (args.key);
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }
 
-   if (!args.iv || args.iv->len != MONGOCRYPT_IV_LEN) {
+   BSON_ASSERT (args.iv);
+   if (args.iv->len != MONGOCRYPT_IV_LEN) {
       CLIENT_ERR ("invalid iv length");
       return false;
    }
@@ -154,12 +156,14 @@ _crypto_aes_256_ctr_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 
    BSON_ASSERT_PARAM (crypto);
 
-   if (!args.key || args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
+   BSON_ASSERT (args.key);
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }
 
-   if (!args.iv || args.iv->len != MONGOCRYPT_IV_LEN) {
+   BSON_ASSERT (args.iv);
+   if (args.iv->len != MONGOCRYPT_IV_LEN) {
       CLIENT_ERR ("invalid iv length");
       return false;
    }
@@ -198,7 +202,8 @@ _crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 
    BSON_ASSERT_PARAM (crypto);
 
-   if (!args.key || args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
+   BSON_ASSERT (args.key);
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }
@@ -231,7 +236,8 @@ _crypto_aes_256_ctr_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 
    BSON_ASSERT_PARAM (crypto);
 
-   if (!args.key || args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
+   BSON_ASSERT (args.key);
+   if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }

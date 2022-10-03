@@ -159,6 +159,9 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    _mongocrypt_crypto_t *crypto)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (kms_providers);
+   BSON_ASSERT_PARAM (crypto);
 
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
@@ -169,11 +172,6 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    status = kms->status;
    ctx_with_status.ctx = crypto;
    ctx_with_status.status = mongocrypt_status_new ();
-
-   if (!key) {
-      CLIENT_ERR ("no key provided");
-      goto done;
-   }
 
    if (!key->kek.kms_provider) {
       CLIENT_ERR ("no kms provider specified on key");
@@ -187,11 +185,6 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
 
    if (!key->kek.provider.aws.region) {
       CLIENT_ERR ("no key region provided");
-      goto done;
-   }
-
-   if (!kms_providers) {
-      CLIENT_ERR ("no kms providers were specified");
       goto done;
    }
 
@@ -214,11 +207,6 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    /* create the KMS request. */
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
-
-   if (!crypto) {
-      CLIENT_ERR ("no crypto hooks structure specified");
-      goto done;
-   }
 
    _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
@@ -309,6 +297,10 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _mongocrypt_crypto_t *crypto)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (ctx_opts);
+   BSON_ASSERT_PARAM (kms_providers);
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (plaintext_key_material);
 
    kms_request_opt_t *opt;
    mongocrypt_status_t *status;
@@ -319,11 +311,6 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    status = kms->status;
    ctx_with_status.ctx = crypto;
    ctx_with_status.status = mongocrypt_status_new ();
-
-   if (!ctx_opts) {
-      CLIENT_ERR ("no context options provided");
-      goto done;
-   }
 
    if (MONGOCRYPT_KMS_PROVIDER_AWS != ctx_opts->kek.kms_provider) {
       CLIENT_ERR ("expected aws kms provider");
@@ -337,11 +324,6 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
 
    if (!ctx_opts->kek.provider.aws.cmk) {
       CLIENT_ERR ("no aws cmk provided");
-      goto done;
-   }
-
-   if (!kms_providers) {
-      CLIENT_ERR ("no kms providers were specified");
       goto done;
    }
 
@@ -365,20 +347,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    opt = kms_request_opt_new ();
    BSON_ASSERT (opt);
 
-   if (!crypto) {
-      CLIENT_ERR ("no crypto hooks structure specified");
-      _mongocrypt_status_append (status, ctx_with_status.status);
-      goto done;
-   }
-
    _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
-
-   if (!plaintext_key_material) {
-      CLIENT_ERR ("plaintext key material not provided");
-      _mongocrypt_status_append (status, ctx_with_status.status);
-      goto done;
-   }
 
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
                                        plaintext_key_material->len,
@@ -509,6 +479,7 @@ static bool
 _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (json_field);
 
    kms_response_t *response = NULL;
    const char *body;
@@ -544,11 +515,6 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
                   http_status,
                   body);
       bson_init (&body_bson);
-      goto fail;
-   }
-
-   if (!json_field) {
-      CLIENT_ERR ("JSON field was not specified");
       goto fail;
    }
 
@@ -881,7 +847,9 @@ done:
 bool
 mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
 {
-   BSON_ASSERT_PARAM (kms);
+   if (!kms) {
+      return false;
+   }
 
    mongocrypt_status_t *status = kms->status;
    if (!mongocrypt_status_ok (status)) {
@@ -1064,6 +1032,7 @@ _mongocrypt_kms_ctx_init_azure_auth (
    _mongocrypt_endpoint_t *key_vault_endpoint)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (kms_providers);
 
    kms_request_opt_t *opt = NULL;
    mongocrypt_status_t *status;
@@ -1076,10 +1045,6 @@ _mongocrypt_kms_ctx_init_azure_auth (
    _init_common (kms, log, MONGOCRYPT_KMS_AZURE_OAUTH);
    status = kms->status;
 
-   if (!kms_providers) {
-      CLIENT_ERR ("argument 'kms_providers' is required");
-      return false;
-   }
    identity_platform_endpoint = kms_providers->azure.identity_platform_endpoint;
 
    if (identity_platform_endpoint) {
@@ -1145,6 +1110,8 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    _mongocrypt_buffer_t *plaintext_key_material)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (ctx_opts);
+   BSON_ASSERT_PARAM (plaintext_key_material);
 
    kms_request_opt_t *opt = NULL;
    mongocrypt_status_t *status;
@@ -1157,15 +1124,7 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    _init_common (kms, log, MONGOCRYPT_KMS_AZURE_WRAPKEY);
    status = kms->status;
 
-   if (!ctx_opts) {
-      CLIENT_ERR ("argument 'ctx_opts' is required");
-      return false;
-   }
-
-   if (!ctx_opts->kek.provider.azure.key_vault_endpoint) {
-      CLIENT_ERR ("a valid Azure key vault endpoint is required");
-      return false;
-   }
+   BSON_ASSERT (ctx_opts->kek.provider.azure.key_vault_endpoint);
 
    kms->endpoint = bson_strdup (
       ctx_opts->kek.provider.azure.key_vault_endpoint->host_and_port);
@@ -1176,10 +1135,6 @@ _mongocrypt_kms_ctx_init_azure_wrapkey (
    BSON_ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
-   if (!plaintext_key_material) {
-      CLIENT_ERR ("argument 'plaintext_key_material' is required");
-      goto fail;
-   }
    kms->req =
       kms_azure_request_wrapkey_new (host,
                                      access_token,
@@ -1223,6 +1178,7 @@ _mongocrypt_kms_ctx_init_azure_unwrapkey (
    _mongocrypt_log_t *log)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (key);
 
    kms_request_opt_t *opt = NULL;
    mongocrypt_status_t *status;
@@ -1235,15 +1191,7 @@ _mongocrypt_kms_ctx_init_azure_unwrapkey (
    _init_common (kms, log, MONGOCRYPT_KMS_AZURE_UNWRAPKEY);
    status = kms->status;
 
-   if (!key) {
-      CLIENT_ERR ("argument 'key' is required");
-      return false;
-   }
-
-   if (!key->kek.provider.azure.key_vault_endpoint) {
-      CLIENT_ERR ("a valid Azure key vault endpoint is required");
-      return false;
-   }
+   BSON_ASSERT (key->kek.provider.azure.key_vault_endpoint);
 
    kms->endpoint =
       bson_strdup (key->kek.provider.azure.key_vault_endpoint->host_and_port);
@@ -1338,6 +1286,8 @@ _mongocrypt_kms_ctx_init_gcp_auth (
    _mongocrypt_endpoint_t *kms_endpoint)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (kms_providers);
+   BSON_ASSERT_PARAM (crypt_opts);
 
    kms_request_opt_t *opt = NULL;
    mongocrypt_status_t *status;
@@ -1353,11 +1303,6 @@ _mongocrypt_kms_ctx_init_gcp_auth (
    status = kms->status;
    ctx_with_status.ctx = crypt_opts;
    ctx_with_status.status = mongocrypt_status_new ();
-
-   if (!kms_providers) {
-      CLIENT_ERR ("argument 'kms_providers' is required");
-      goto fail;
-   }
 
    auth_endpoint = kms_providers->gcp.endpoint;
    if (auth_endpoint) {
@@ -1383,10 +1328,6 @@ _mongocrypt_kms_ctx_init_gcp_auth (
    BSON_ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
-   if (!crypt_opts) {
-      CLIENT_ERR ("argument 'crypt_opts' is required");
-      goto fail;
-   }
    if (crypt_opts->sign_rsaes_pkcs1_v1_5) {
       kms_request_opt_set_crypto_hook_sign_rsaes_pkcs1_v1_5 (
          opt, _sign_rsaes_pkcs1_v1_5_trampoline, &ctx_with_status);
@@ -1437,6 +1378,8 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    _mongocrypt_buffer_t *plaintext_key_material)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (ctx_opts);
+   BSON_ASSERT_PARAM (plaintext_key_material);
 
    kms_request_opt_t *opt = NULL;
    mongocrypt_status_t *status;
@@ -1448,11 +1391,6 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
 
    _init_common (kms, log, MONGOCRYPT_KMS_GCP_ENCRYPT);
    status = kms->status;
-
-   if (!ctx_opts) {
-      CLIENT_ERR ("argument 'ctx_opts' is required");
-      goto fail;
-   }
 
    if (ctx_opts->kek.provider.gcp.endpoint) {
       kms->endpoint =
@@ -1468,10 +1406,6 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
    BSON_ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
-   if (!plaintext_key_material) {
-      CLIENT_ERR ("argument 'plaintext_key_material' is required");
-      return false;
-   }
    kms->req =
       kms_gcp_request_encrypt_new (hostname,
                                    access_token,
@@ -1518,6 +1452,7 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (
    _mongocrypt_log_t *log)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (key);
 
    kms_request_opt_t *opt = NULL;
    mongocrypt_status_t *status;
@@ -1529,11 +1464,6 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (
 
    _init_common (kms, log, MONGOCRYPT_KMS_GCP_DECRYPT);
    status = kms->status;
-
-   if (!key) {
-      CLIENT_ERR ("argument 'key' is required");
-      return false;
-   }
 
    if (key->kek.provider.gcp.endpoint) {
       kms->endpoint =
@@ -1592,6 +1522,7 @@ _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
                                         _mongocrypt_log_t *log)
 {
    BSON_ASSERT_PARAM (kms_ctx);
+   BSON_ASSERT_PARAM (endpoint);
 
    mongocrypt_status_t *status;
    bool ret = false;
@@ -1600,11 +1531,6 @@ _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
 
    _init_common (kms_ctx, log, MONGOCRYPT_KMS_KMIP_REGISTER);
    status = kms_ctx->status;
-
-   if (!endpoint) {
-      CLIENT_ERR ("argument 'endpoint' is required");
-      goto done;
-   }
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
    _mongocrypt_apply_default_port (&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
@@ -1636,6 +1562,7 @@ _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
                                         _mongocrypt_log_t *log)
 {
    BSON_ASSERT_PARAM (kms_ctx);
+   BSON_ASSERT_PARAM (endpoint);
 
    mongocrypt_status_t *status;
    bool ret = false;
@@ -1644,11 +1571,6 @@ _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
 
    _init_common (kms_ctx, log, MONGOCRYPT_KMS_KMIP_ACTIVATE);
    status = kms_ctx->status;
-
-   if (!endpoint) {
-      CLIENT_ERR ("argument 'endpoint' is required");
-      goto done;
-   }
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
    _mongocrypt_apply_default_port (&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
@@ -1680,6 +1602,7 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
                                    _mongocrypt_log_t *log)
 {
    BSON_ASSERT_PARAM (kms_ctx);
+   BSON_ASSERT_PARAM (endpoint);
 
    mongocrypt_status_t *status;
    bool ret = false;
@@ -1688,11 +1611,6 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
 
    _init_common (kms_ctx, log, MONGOCRYPT_KMS_KMIP_GET);
    status = kms_ctx->status;
-
-   if (!endpoint) {
-      CLIENT_ERR ("argument 'endpoint' is required");
-      goto done;
-   }
 
    kms_ctx->endpoint = bson_strdup (endpoint->host_and_port);
    _mongocrypt_apply_default_port (&kms_ctx->endpoint, DEFAULT_KMIP_PORT);

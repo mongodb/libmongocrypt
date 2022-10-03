@@ -899,9 +899,9 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
-   if (!kb || !marking || !ciphertext) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
 
    _FLE2EncryptedPayloadCommon_t common = {{0}};
    _mongocrypt_buffer_t value = {0};

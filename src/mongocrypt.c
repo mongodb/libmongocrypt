@@ -925,10 +925,11 @@ static bool
 _try_enable_csfle (mongocrypt_t *crypt)
 {
    mongocrypt_status_t *status;
-
-   _loaded_csfle found = _try_find_csfle (crypt);
+   _loaded_csfle found;
 
    BSON_ASSERT_PARAM (crypt);
+
+   found = _try_find_csfle (crypt);
 
    status = crypt->status;
 
@@ -1548,9 +1549,11 @@ void
 mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
                                                        const char *path)
 {
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (path);
+
    // Dup the path string for us to manage
    mstr pathdup = mstr_copy_cstr (path);
-   BSON_ASSERT_PARAM (crypt);
    // Increase array len
    const int new_len = crypt->opts.n_crypt_shared_lib_search_paths + 1;
    mstr *const new_array = bson_realloc (

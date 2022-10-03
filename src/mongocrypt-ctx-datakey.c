@@ -184,13 +184,13 @@ fail:
 static bool
 _kms_start (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    bool ret = false;
    _mongocrypt_ctx_datakey_t *dkctx;
    char *access_token = NULL;
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       _mongocrypt_ctx_kms_providers (ctx);
-
-   BSON_ASSERT_PARAM (ctx);
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
 

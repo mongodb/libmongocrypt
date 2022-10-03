@@ -23,8 +23,10 @@ static bool
 _one_key_alt_name_equal (_mongocrypt_key_alt_name_t *ptr_a,
                          _mongocrypt_key_alt_name_t *ptr_b)
 {
-   BSON_ASSERT (ptr_a && ptr_a->value.value_type == BSON_TYPE_UTF8);
-   BSON_ASSERT (ptr_b && ptr_b->value.value_type == BSON_TYPE_UTF8);
+   BSON_ASSERT_PARAM (ptr_a);
+   BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
+   BSON_ASSERT_PARAM (ptr_b);
+   BSON_ASSERT (ptr_b->value.value_type == BSON_TYPE_UTF8);
    return 0 == strcmp (_mongocrypt_key_alt_name_get_string (ptr_a),
                        _mongocrypt_key_alt_name_get_string (ptr_b));
 }
@@ -32,9 +34,7 @@ _one_key_alt_name_equal (_mongocrypt_key_alt_name_t *ptr_a,
 static bool
 _find (_mongocrypt_key_alt_name_t *list, _mongocrypt_key_alt_name_t *entry)
 {
-   if (!list || !entry) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (entry);
 
    for (; NULL != list; list = list->next) {
       if (_one_key_alt_name_equal (list, entry)) {
@@ -128,7 +128,6 @@ _mongocrypt_key_alt_name_from_iter (const bson_iter_t *iter_in,
       }
 
       tmp = _mongocrypt_key_alt_name_new (bson_iter_value (&iter));
-      BSON_ASSERT (tmp);
       tmp->next = key_alt_names;
       key_alt_names = tmp;
    }
@@ -302,7 +301,6 @@ _mongocrypt_key_new ()
    _mongocrypt_key_doc_t *key_doc;
 
    key_doc = (_mongocrypt_key_doc_t *) bson_malloc0 (sizeof *key_doc);
-   BSON_ASSERT (key_doc);
    bson_init (&key_doc->bson);
 
    return key_doc;

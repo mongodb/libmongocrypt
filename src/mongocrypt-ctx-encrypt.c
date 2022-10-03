@@ -1056,6 +1056,7 @@ _try_run_csfle_marking (mongocrypt_ctx_t *ctx)
       ((void) 0)
 
    mongo_crypt_v1_status *status = csfle.status_create ();
+   BSON_ASSERT (status);
 
    mongo_crypt_v1_query_analyzer *qa =
       csfle.query_analyzer_create (csfle_lib, status);
@@ -1880,7 +1881,9 @@ _cleanup (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
 
-   BSON_ASSERT_PARAM (ctx);
+   if (!ctx) {
+      return;
+   }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
    bson_free (ectx->ns);

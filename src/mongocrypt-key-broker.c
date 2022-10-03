@@ -547,7 +547,6 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    }
 
    key_returned = _key_returned_prepend (kb, &kb->keys_returned, key_doc);
-   BSON_ASSERT (key_returned);
 
    /* Check that the returned key doc's provider matches. */
    kek_provider = key_doc->kek.kms_provider;
@@ -1180,10 +1179,7 @@ _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
 bool
 _mongocrypt_key_broker_restart (_mongocrypt_key_broker_t *kb)
 {
-   if (!kb) {
-      return _key_broker_fail_w_msg (
-         kb, "_mongocrypt_key_broker_restart called with NULL key broker");
-   }
+   BSON_ASSERT_PARAM (kb);
    if (kb->state != KB_DONE) {
       return _key_broker_fail_w_msg (
          kb, "_mongocrypt_key_broker_restart called in wrong state");

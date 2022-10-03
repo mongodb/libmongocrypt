@@ -393,13 +393,9 @@ _mongocrypt_parse_optional_binary (const bson_t *bson,
    bson_iter_t iter;
    bson_iter_t child;
 
-   if (!out) {
-      CLIENT_ERR ("argument 'out' is required");
-      return false;
-   }
-
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
 
    _mongocrypt_buffer_init (out);
 
@@ -442,18 +438,9 @@ _mongocrypt_parse_required_binary (const bson_t *bson,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status)
 {
-   if (!out) {
-      CLIENT_ERR ("argument 'out' is required");
-      return false;
-   }
-   if (!bson) {
-      CLIENT_ERR ("argument 'bson' is required");
-      return false;
-   }
-   if (!dotkey) {
-      CLIENT_ERR ("argument 'dotkey' is required");
-      return false;
-   }
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
 
    if (!_mongocrypt_parse_optional_binary (bson, dotkey, out, status)) {
       return false;

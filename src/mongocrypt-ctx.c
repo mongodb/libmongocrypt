@@ -411,10 +411,12 @@ _next_kms_ctx (mongocrypt_ctx_t *ctx)
 static bool
 _kms_done (mongocrypt_ctx_t *ctx)
 {
-   _mongocrypt_opts_kms_providers_t *kms_providers =
-      _mongocrypt_ctx_kms_providers (ctx);
+   _mongocrypt_opts_kms_providers_t *kms_providers;
 
    BSON_ASSERT_PARAM (ctx);
+
+   kms_providers =
+      _mongocrypt_ctx_kms_providers (ctx);
 
    if (!_mongocrypt_key_broker_kms_done (&ctx->kb, kms_providers)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
