@@ -854,7 +854,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * }
  *
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success. If false, and error status is set.
+ * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
  */
 MONGOCRYPT_EXPORT
@@ -1231,8 +1231,8 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * at initialization are used.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] kms_providers A BSON document mapping the KMS provider names
- * to credentials.
+ * @param[in] kms_providers_definition A BSON document mapping the KMS provider
+ * names to credentials.
  *
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
