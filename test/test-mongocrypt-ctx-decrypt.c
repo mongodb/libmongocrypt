@@ -931,17 +931,10 @@ _test_decrypt_wrong_binary_subtype (_mongocrypt_tester_t *tester)
 static void
 _test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
 {
-   _mongocrypt_buffer_t S_KeyId;
-   _mongocrypt_buffer_t K_KeyId;
-
    if (!_aes_ctr_is_supported_by_os) {
       printf ("Common Crypto with no CTR support detected. Skipping.");
       return;
    }
-   _mongocrypt_buffer_copy_from_hex (&S_KeyId,
-                                     "12345678123498761234123456789012");
-   _mongocrypt_buffer_copy_from_hex (&K_KeyId,
-                                     "ABCDEFAB123498761234123456789012");
 
    /* Test success with an FLE2IndexedEqualityEncryptedValue payload. */
    {
@@ -1006,9 +999,6 @@ _test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);
    }
-
-   _mongocrypt_buffer_cleanup (&K_KeyId);
-   _mongocrypt_buffer_cleanup (&S_KeyId);
 }
 
 // Test explicitly decrypting an FLE2IndexedRangeEncryptedValue.

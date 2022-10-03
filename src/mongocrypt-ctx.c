@@ -302,6 +302,10 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                  algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_UNINDEXED_STR))) {
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_NONE;
       ctx->opts.index_type.set = true;
+   } else if (mstr_eq_ignore_case (
+                 algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANGE_STR))) {
+      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGE;
+      ctx->opts.index_type.set = true;
    } else {
       char *error = bson_strdup_printf ("unsupported algorithm string \"%.*s\"",
                                         (int) algo_str.len,
@@ -735,6 +739,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       ctx->vtable.cleanup (ctx);
    }
 
+   mc_RangeOpts_cleanup (&ctx->opts.rangeopts.value);
    _mongocrypt_opts_kms_providers_cleanup (&ctx->per_ctx_kms_providers);
    _mongocrypt_kek_cleanup (&ctx->opts.kek);
    mongocrypt_status_destroy (ctx->status);
@@ -951,6 +956,11 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    if (opts_spec->algorithm == OPT_PROHIBITED &&
        ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm prohibited");
+   }
+
+   if (opts_spec->rangeopts == OPT_PROHIBITED && ctx->opts.rangeopts.set) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "range opts are prohibited on this context");
    }
 
    _mongocrypt_key_broker_init (&ctx->kb, ctx->crypt);
@@ -1178,6 +1188,10 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
                             mstrv_lit (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR))) {
       ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_EQUALITY;
       ctx->opts.query_type.set = true;
+   } else if (mstr_eq_ignore_case (
+                 qt_str, mstrv_lit (MONGOCRYPT_QUERY_TYPE_RANGE_STR))) {
+      ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGE;
+      ctx->opts.query_type.set = true;
    } else {
       char *error = bson_strdup_printf (
          "Unsupported query_type \"%.*s\"", (int) qt_str.len, qt_str.data);
@@ -1185,5 +1199,68 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
       bson_free (error);
       return false;
    }
+   return true;
+}
+
+const char *
+_mongocrypt_index_type_to_string (mongocrypt_index_type_t val)
+{
+   switch (val) {
+   case MONGOCRYPT_INDEX_TYPE_NONE:
+      return "None";
+   case MONGOCRYPT_INDEX_TYPE_EQUALITY:
+      return "Equality";
+   case MONGOCRYPT_INDEX_TYPE_RANGE:
+      return "Range";
+   default:
+      return "Unknown";
+   }
+}
+
+const char *
+_mongocrypt_query_type_to_string (mongocrypt_query_type_t val)
+{
+   switch (val) {
+   case MONGOCRYPT_QUERY_TYPE_EQUALITY:
+      return "Equality";
+   case MONGOCRYPT_QUERY_TYPE_RANGE:
+      return "Range";
+   default:
+      return "Unknown";
+   }
+}
+
+bool
+mongocrypt_ctx_setopt_range (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts)
+{
+   bson_t as_bson;
+
+   if (!ctx) {
+      return false;
+   }
+
+   if (ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
+   }
+
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+
+   if (ctx->opts.rangeopts.set) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "RangeOpts already set");
+   }
+
+
+   if (!_mongocrypt_binary_to_bson (opts, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON");
+   }
+
+   if (!mc_RangeOpts_parse (
+          &ctx->opts.rangeopts.value, &as_bson, ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   ctx->opts.rangeopts.set = true;
    return true;
 }

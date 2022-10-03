@@ -975,6 +975,8 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_range_encoding (&tester);
    _mongocrypt_tester_install_range_edge_generation (&tester);
    _mongocrypt_tester_install_range_mincover (&tester);
+   _mongocrypt_tester_install_mc_RangeOpts (&tester);
+   _mongocrypt_tester_install_mc_FLE2RangeFindDriverSpec (&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
    char osversion[32];

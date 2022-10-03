@@ -1293,13 +1293,7 @@ _mongocrypt_parse_kms_providers (
       bson_t field_bson;
 
       field_name = bson_iter_key (&iter);
-      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         uint32_t len;
-         const uint8_t *data = NULL;
-         bson_iter_document (&iter, &len, &data);
-         bson_init_static (&field_bson, data, len);
-      } else {
-         CLIENT_ERR ("'%s' value must be a BSON document", field_name);
+      if (!mc_iter_document_as_bson (&iter, &field_bson, status)) {
          return false;
       }
 
