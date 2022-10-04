@@ -99,7 +99,8 @@ module.exports = function (modules) {
      * });
      */
     constructor(client, options) {
-      console.log('options', options);
+      console.log('kms providers on construction', options.kmsProviders);
+      console.log('refresh fn', options.onKmsProviderRefresh);
       this._client = client;
       this._bson = options.bson || BSON || client.topology.bson;
       this._proxyOptions = options.proxyOptions;
