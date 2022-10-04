@@ -963,7 +963,6 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
 {
    BSON_ASSERT_PARAM (findSpec);
 
-   mc_mincover_t *ret = NULL;
    bson_type_t bsonType = bson_iter_type (&findSpec->indexMin);
 
    if (bson_iter_type (&findSpec->indexMin) !=
@@ -973,7 +972,7 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
          "%s indexMax",
          mc_bson_type_to_string (bson_iter_type (&findSpec->indexMin)),
          mc_bson_type_to_string (bson_iter_type (&findSpec->indexMax)));
-      goto fail;
+      return NULL;
    }
 
    bson_iter_t lowerBound = findSpec->lowerBound;
@@ -997,14 +996,14 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
       CLIENT_ERR ("expected lowerBound to match index type %s, got %s",
                   mc_bson_type_to_string (bsonType),
                   mc_bson_type_to_string (bson_iter_type (&lowerBound)));
-      goto fail;
+      return NULL;
    }
 
    if (bson_iter_type (&upperBound) != bsonType) {
       CLIENT_ERR ("expected upperBound to match index type %s, got %s",
                   mc_bson_type_to_string (bsonType),
                   mc_bson_type_to_string (bson_iter_type (&upperBound)));
-      goto fail;
+      return NULL;
    }
 
    switch (bsonType) {
@@ -1013,7 +1012,7 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT32);
       BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_INT32);
       BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_INT32);
-      ret = mc_getMincoverInt32 (
+      return mc_getMincoverInt32 (
          (mc_getMincoverInt32_args_t){
             .lowerBound = bson_iter_int32 (&lowerBound),
             .includeLowerBound = includeLowerBound,
@@ -1023,14 +1022,13 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
             .max = OPT_I32 (bson_iter_int32 (&findSpec->indexMax)),
             .sparsity = sparsity},
          status);
-      break;
 
    case BSON_TYPE_INT64:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT64);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT64);
       BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_INT64);
       BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_INT64);
-      ret = mc_getMincoverInt64 (
+      return mc_getMincoverInt64 (
          (mc_getMincoverInt64_args_t){
             .lowerBound = bson_iter_int64 (&lowerBound),
             .includeLowerBound = includeLowerBound,
@@ -1040,13 +1038,12 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
             .max = OPT_I64 (bson_iter_int64 (&findSpec->indexMax)),
             .sparsity = sparsity},
          status);
-      break;
    case BSON_TYPE_DATE_TIME:
    case BSON_TYPE_DOUBLE:
    case BSON_TYPE_DECIMAL128:
       CLIENT_ERR ("FLE2 find not yet implemented for type: %s",
                   mc_bson_type_to_string (bsonType));
-      goto fail;
+      return NULL;
 
    case BSON_TYPE_EOD:
    case BSON_TYPE_UTF8:
@@ -1068,11 +1065,8 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
    default:
       CLIENT_ERR ("FLE2 find is not supported for type: %s",
                   mc_bson_type_to_string (bsonType));
-      goto fail;
+      return NULL;
    }
-
-fail:
-   return ret;
 }
 
 static bool
