@@ -520,7 +520,6 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       bson_error_t error = {0};
       testcase_t *test = tests + i;
-      mc_FLE2RangeFindSpec_t findSpec;
       mongocrypt_status_t *status = mongocrypt_status_new ();
 
       if (test->description) {
@@ -541,6 +540,7 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
       bson_iter_t findSpecIter;
       ASSERT (bson_iter_init_find (&findSpecIter, findSpecDoc, "findSpec"));
 
+      mc_FLE2RangeFindSpec_t findSpec;
       ASSERT_OK_STATUS (
          mc_FLE2RangeFindSpec_parse (&findSpec, &findSpecIter, status), status);
 
