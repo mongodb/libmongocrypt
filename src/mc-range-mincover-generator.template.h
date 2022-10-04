@@ -210,7 +210,7 @@ WITH_BITS (adjustBounds) (UINT_T *lowerBound,
                      max);
          return false;
       }
-      *lowerBound += 1;
+      *lowerBound += 1u;
    }
    if (!includeUpperBound) {
       if (*upperBound <= min) {
@@ -221,7 +221,7 @@ WITH_BITS (adjustBounds) (UINT_T *lowerBound,
                      max);
          return false;
       }
-      *upperBound -= 1;
+      *upperBound -= 1u;
    }
    return true;
 }
