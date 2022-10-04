@@ -33,6 +33,7 @@ typedef enum {
    MC_SUBTYPE_FLE2FindEqualityPayload = 5,
    MC_SUBTYPE_FLE2UnindexedEncryptedValue = 6,
    MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue = 7,
+   MC_SUBTYPE_FLE2IndexedRangeEncryptedValue = 9,
    MC_SUBTYPE_FLE2FindRangePayload = 10
 } mc_fle_blob_subtype_t;
 
