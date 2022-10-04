@@ -95,9 +95,6 @@ typedef struct {
    int64_t maxContentionCounter;
    // sparsity is the Queryable Encryption range hypergraph sparsity factor
    int64_t sparsity;
-   // sparsity_sz is the size_t representation of sparsity. It is set after
-   // validation.
-   size_t sparsity_sz;
 } mc_FLE2EncryptionPlaceholder_t;
 
 void

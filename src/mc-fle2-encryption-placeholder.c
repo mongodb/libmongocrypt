@@ -150,7 +150,6 @@ mc_FLE2EncryptionPlaceholder_parse (mc_FLE2EncryptionPlaceholder_t *out,
          if (!mc_validate_sparsity (out->sparsity, status)) {
             goto fail;
          }
-         out->sparsity_sz = (size_t) out->sparsity;
       }
       END_IF_FIELD
    }
