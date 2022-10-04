@@ -24,7 +24,7 @@ void
 mc_FLE2FindRangePayload_init (mc_FLE2FindRangePayload_t *payload)
 {
    BSON_ASSERT_PARAM (payload);
-   *payload = (mc_FLE2FindRangePayload_t){0};
+   *payload = (mc_FLE2FindRangePayload_t){{0}};
    _mc_array_init (&payload->edgeFindTokenSetArray,
                    sizeof (mc_EdgeFindTokenSet_t));
 }
