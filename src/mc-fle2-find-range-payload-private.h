@@ -65,8 +65,8 @@ void
 mc_FLE2FindRangePayload_init (mc_FLE2FindRangePayload_t *payload);
 
 bool
-mc_FLE2FindRangePayload_serialize (bson_t *out,
-                                   const mc_FLE2FindRangePayload_t *payload);
+mc_FLE2FindRangePayload_serialize (const mc_FLE2FindRangePayload_t *payload,
+                                   bson_t *out);
 
 void
 mc_FLE2FindRangePayload_cleanup (mc_FLE2FindRangePayload_t *payload);

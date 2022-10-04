@@ -581,7 +581,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    {
       bson_t out;
       bson_init (&out);
-      mc_FLE2InsertUpdatePayload_serialize (&out, &payload);
+      mc_FLE2InsertUpdatePayload_serialize (&payload, &out);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
    // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
@@ -853,7 +853,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    {
       bson_t out;
       bson_init (&out);
-      mc_FLE2InsertUpdatePayload_serializeForRange (&out, &payload);
+      mc_FLE2InsertUpdatePayload_serializeForRange (&payload, &out);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
    // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
@@ -929,7 +929,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    {
       bson_t out;
       bson_init (&out);
-      mc_FLE2FindEqualityPayload_serialize (&out, &payload);
+      mc_FLE2FindEqualityPayload_serialize (&payload, &out);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
    // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
@@ -1183,7 +1183,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    // Serialize.
    {
       bson_t out = BSON_INITIALIZER;
-      mc_FLE2FindRangePayload_serialize (&out, &payload);
+      mc_FLE2FindRangePayload_serialize (&payload, &out);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
    _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->index_key_id);
