@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.6.1
+## Fixed
+- Fix libbson dependency in pkg-config for PPA.
 ## 1.6.0
 ## New Features
 - Support accessToken to authenticate with Azure.
