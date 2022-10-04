@@ -1382,29 +1382,33 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    BSON_ASSERT (status);
    BSON_ASSERT (ctx);
 
-   if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
-      if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED) {
+   switch (marking->type) {
+   case MONGOCRYPT_MARKING_FLE2_ENCRYPTION:
+      switch (marking->fle2.algorithm) {
+      case MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED:
          return _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
             kb, marking, ciphertext, status);
-      } else if (marking->fle2.type ==
-                 MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
-         if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE) {
+      case MONGOCRYPT_FLE2_ALGORITHM_RANGE:
+         switch (marking->fle2.type) {
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT:
             return _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
                kb, marking, ciphertext, status);
-         }
-         return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
-            kb, marking, ciphertext, status);
-      } else {
-         BSON_ASSERT (marking->fle2.type ==
-                      MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
-         if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE) {
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
             return _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
                kb, marking, ciphertext, status);
          }
-         return _mongocrypt_fle2_placeholder_to_find_ciphertext (
-            kb, marking, ciphertext, status);
+      case MONGOCRYPT_FLE2_ALGORITHM_EQUALITY:
+         switch (marking->fle2.type) {
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT:
+            return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
+               kb, marking, ciphertext, status);
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
+            return _mongocrypt_fle2_placeholder_to_find_ciphertext (
+               kb, marking, ciphertext, status);
+         }
       }
-   } else {
+   case MONGOCRYPT_MARKING_FLE1_BY_ID:
+   case MONGOCRYPT_MARKING_FLE1_BY_ALTNAME:
       return _mongocrypt_fle1_marking_to_ciphertext (
          kb, marking, ciphertext, status);
    }
