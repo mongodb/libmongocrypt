@@ -1396,6 +1396,9 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
          case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
             return _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
                kb, marking, ciphertext, status);
+         default:
+            CLIENT_ERR ("unexpected fle2 type: %d", (int) marking->fle2.type);
+            return false;
          }
       case MONGOCRYPT_FLE2_ALGORITHM_EQUALITY:
          switch (marking->fle2.type) {
@@ -1405,11 +1408,20 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
          case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
             return _mongocrypt_fle2_placeholder_to_find_ciphertext (
                kb, marking, ciphertext, status);
+         default:
+            CLIENT_ERR ("unexpected fle2 type: %d", (int) marking->fle2.type);
+            return false;
          }
+      default:
+         CLIENT_ERR ("unexpected algorithm: %d", (int) marking->algorithm);
+         return false;
       }
    case MONGOCRYPT_MARKING_FLE1_BY_ID:
    case MONGOCRYPT_MARKING_FLE1_BY_ALTNAME:
       return _mongocrypt_fle1_marking_to_ciphertext (
          kb, marking, ciphertext, status);
+   default:
+      CLIENT_ERR ("unexpected marking type: %d", (int) marking->type);
+      return false;
    }
 }
