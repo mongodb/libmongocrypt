@@ -416,7 +416,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t indexKey = {0};
-   memset (ret, 0, sizeof (*ret));
+   *ret = (_FLE2EncryptedPayloadCommon_t){{0}};
 
    if (!_get_tokenKey (kb, indexKeyId, &ret->tokenKey, status)) {
       goto fail;
