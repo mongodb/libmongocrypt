@@ -948,9 +948,6 @@ fail:
 static bool
 isInfinite (bson_iter_t iter)
 {
-   if (!BSON_ITER_HOLDS_DOUBLE (&iter)) {
-      return false;
-   }
    return isinf (bson_iter_double (&iter));
 }
 
