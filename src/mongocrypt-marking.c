@@ -17,8 +17,10 @@
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-encryption-placeholder-private.h"
 #include "mc-fle2-find-equality-payload-private.h"
+#include "mc-fle2-find-range-payload-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
 #include "mc-fle2-payload-uev-private.h"
+#include "mc-range-mincover-private.h"
 #include "mc-range-encoding-private.h"
 #include "mc-range-edge-generation-private.h"
 #include "mc-tokens-private.h"
@@ -29,6 +31,8 @@
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-util-private.h" // mc_bson_type_to_string
+
+#include <math.h> // isinf
 
 static bool
 _mongocrypt_marking_parse_fle1_placeholder (const bson_t *in,
@@ -352,6 +356,49 @@ _FLE2EncryptedPayloadCommon_cleanup (_FLE2EncryptedPayloadCommon_t *common)
    memset (common, 0, sizeof (*common));
 }
 
+// _get_tokenKey returns the tokenKey identified by indexKeyId.
+// Returns false on error.
+static bool
+_get_tokenKey (_mongocrypt_key_broker_t *kb,
+               const _mongocrypt_buffer_t *indexKeyId,
+               _mongocrypt_buffer_t *tokenKey,
+               mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (indexKeyId);
+   BSON_ASSERT_PARAM (tokenKey);
+
+   _mongocrypt_buffer_t indexKey = {0};
+   _mongocrypt_buffer_init (tokenKey);
+
+   if (!_mongocrypt_key_broker_decrypted_key_by_id (
+          kb, indexKeyId, &indexKey)) {
+      CLIENT_ERR ("unable to retrieve key");
+      return false;
+   }
+
+   if (indexKey.len != MONGOCRYPT_KEY_LEN) {
+      CLIENT_ERR ("invalid indexKey, expected len=%" PRIu32
+                  ", got len=%" PRIu32,
+                  MONGOCRYPT_KEY_LEN,
+                  indexKey.len);
+      _mongocrypt_buffer_cleanup (&indexKey);
+      return false;
+   }
+
+   // indexKey is 3 equal sized keys: [Ke][Km][TokenKey]
+   BSON_ASSERT (MONGOCRYPT_KEY_LEN == (3 * MONGOCRYPT_TOKEN_KEY_LEN));
+   if (!_mongocrypt_buffer_copy_from_data_and_size (
+          tokenKey,
+          indexKey.data + (2 * MONGOCRYPT_TOKEN_KEY_LEN),
+          MONGOCRYPT_TOKEN_KEY_LEN)) {
+      CLIENT_ERR ("failed allocating memory for token key");
+      _mongocrypt_buffer_cleanup (&indexKey);
+      return false;
+   }
+   _mongocrypt_buffer_cleanup (&indexKey);
+   return true;
+}
 
 static bool
 _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
@@ -362,31 +409,16 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
                                      int64_t maxContentionCounter,
                                      mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (ret);
+   BSON_ASSERT_PARAM (indexKeyId);
+   BSON_ASSERT_PARAM (value);
+
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t indexKey = {0};
-   memset (ret, 0, sizeof (*ret));
+   *ret = (_FLE2EncryptedPayloadCommon_t){{0}};
 
-   if (!_mongocrypt_key_broker_decrypted_key_by_id (
-          kb, indexKeyId, &indexKey)) {
-      CLIENT_ERR ("unable to retrieve key");
-      goto fail;
-   }
-
-   if (indexKey.len != MONGOCRYPT_KEY_LEN) {
-      CLIENT_ERR ("invalid indexKey, expected len=%" PRIu32
-                  ", got len=%" PRIu32,
-                  MONGOCRYPT_KEY_LEN,
-                  indexKey.len);
-      goto fail;
-   }
-
-   // indexKey is 3 equal sized keys: [Ke][Km][TokenKey]
-   BSON_ASSERT (MONGOCRYPT_KEY_LEN == (3 * MONGOCRYPT_TOKEN_KEY_LEN));
-   if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &ret->tokenKey,
-          indexKey.data + (2 * MONGOCRYPT_TOKEN_KEY_LEN),
-          MONGOCRYPT_TOKEN_KEY_LEN)) {
-      CLIENT_ERR ("failed allocating memory for token key");
+   if (!_get_tokenKey (kb, indexKeyId, &ret->tokenKey, status)) {
       goto fail;
    }
 
@@ -549,12 +581,11 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    {
       bson_t out;
       bson_init (&out);
-      mc_FLE2InsertUpdatePayload_serialize (&out, &payload);
+      mc_FLE2InsertUpdatePayload_serialize (&payload, &out);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
-   _mongocrypt_buffer_steal (&ciphertext->key_id, &payload.indexKeyId);
-   ciphertext->original_bson_type =
-      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2InsertUpdatePayload.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;
 
    res = true;
@@ -822,12 +853,11 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    {
       bson_t out;
       bson_init (&out);
-      mc_FLE2InsertUpdatePayload_serializeForRange (&out, &payload);
+      mc_FLE2InsertUpdatePayload_serializeForRange (&payload, &out);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
-   _mongocrypt_buffer_steal (&ciphertext->key_id, &payload.indexKeyId);
-   ciphertext->original_bson_type =
-      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2InsertUpdatePayload.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayload;
 
    res = true;
@@ -899,12 +929,11 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    {
       bson_t out;
       bson_init (&out);
-      mc_FLE2FindEqualityPayload_serialize (&out, &payload);
+      mc_FLE2FindEqualityPayload_serialize (&payload, &out);
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
-   _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->index_key_id);
-   ciphertext->original_bson_type =
-      (uint8_t) bson_iter_type (&placeholder->v_iter);
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2FindEqualityPayload.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindEqualityPayload;
 
    res = true;
@@ -912,6 +941,253 @@ fail:
    mc_FLE2FindEqualityPayload_cleanup (&payload);
    _mongocrypt_buffer_cleanup (&value);
    _FLE2EncryptedPayloadCommon_cleanup (&common);
+
+   return res;
+}
+
+static bool
+isInfinite (bson_iter_t iter)
+{
+   return isinf (bson_iter_double (&iter));
+}
+
+// mc_get_mincover_from_FLE2RangeFindSpec creates and returns a mincover from an
+// FLE2RangeFindSpec. Returns NULL on error.
+mc_mincover_t *
+mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
+                                        size_t sparsity,
+                                        mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (findSpec);
+
+   bson_type_t bsonType = bson_iter_type (&findSpec->indexMin);
+
+   if (bson_iter_type (&findSpec->indexMin) !=
+       bson_iter_type (&findSpec->indexMax)) {
+      CLIENT_ERR (
+         "indexMin and indexMax must have the same type. Got: %s indexMin and "
+         "%s indexMax",
+         mc_bson_type_to_string (bson_iter_type (&findSpec->indexMin)),
+         mc_bson_type_to_string (bson_iter_type (&findSpec->indexMax)));
+      return NULL;
+   }
+
+   bson_iter_t lowerBound = findSpec->lowerBound;
+   bson_iter_t upperBound = findSpec->upperBound;
+   bool includeLowerBound = findSpec->lbIncluded;
+   bool includeUpperBound = findSpec->ubIncluded;
+
+   // Open-ended ranges are represented with infinity as the other endpoint.
+   // Resolve infinite bounds at this point to end at the min or max for this
+   // index.
+   if (isInfinite (lowerBound)) {
+      lowerBound = findSpec->indexMin;
+      includeLowerBound = true;
+   }
+   if (isInfinite (upperBound)) {
+      upperBound = findSpec->indexMax;
+      includeUpperBound = true;
+   }
+
+   if (bson_iter_type (&lowerBound) != bsonType) {
+      CLIENT_ERR ("expected lowerBound to match index type %s, got %s",
+                  mc_bson_type_to_string (bsonType),
+                  mc_bson_type_to_string (bson_iter_type (&lowerBound)));
+      return NULL;
+   }
+
+   if (bson_iter_type (&upperBound) != bsonType) {
+      CLIENT_ERR ("expected upperBound to match index type %s, got %s",
+                  mc_bson_type_to_string (bsonType),
+                  mc_bson_type_to_string (bson_iter_type (&upperBound)));
+      return NULL;
+   }
+
+   switch (bsonType) {
+   case BSON_TYPE_INT32:
+      BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT32);
+      BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT32);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_INT32);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_INT32);
+      return mc_getMincoverInt32 (
+         (mc_getMincoverInt32_args_t){
+            .lowerBound = bson_iter_int32 (&lowerBound),
+            .includeLowerBound = includeLowerBound,
+            .upperBound = bson_iter_int32 (&upperBound),
+            .includeUpperBound = includeUpperBound,
+            .min = OPT_I32 (bson_iter_int32 (&findSpec->indexMin)),
+            .max = OPT_I32 (bson_iter_int32 (&findSpec->indexMax)),
+            .sparsity = sparsity},
+         status);
+
+   case BSON_TYPE_INT64:
+      BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_INT64);
+      return mc_getMincoverInt64 (
+         (mc_getMincoverInt64_args_t){
+            .lowerBound = bson_iter_int64 (&lowerBound),
+            .includeLowerBound = includeLowerBound,
+            .upperBound = bson_iter_int64 (&upperBound),
+            .includeUpperBound = includeUpperBound,
+            .min = OPT_I64 (bson_iter_int64 (&findSpec->indexMin)),
+            .max = OPT_I64 (bson_iter_int64 (&findSpec->indexMax)),
+            .sparsity = sparsity},
+         status);
+   case BSON_TYPE_DATE_TIME:
+   case BSON_TYPE_DOUBLE:
+   case BSON_TYPE_DECIMAL128:
+      CLIENT_ERR ("FLE2 find not yet implemented for type: %s",
+                  mc_bson_type_to_string (bsonType));
+      return NULL;
+
+   case BSON_TYPE_EOD:
+   case BSON_TYPE_UTF8:
+   case BSON_TYPE_DOCUMENT:
+   case BSON_TYPE_ARRAY:
+   case BSON_TYPE_BINARY:
+   case BSON_TYPE_UNDEFINED:
+   case BSON_TYPE_OID:
+   case BSON_TYPE_BOOL:
+   case BSON_TYPE_NULL:
+   case BSON_TYPE_REGEX:
+   case BSON_TYPE_DBPOINTER:
+   case BSON_TYPE_CODE:
+   case BSON_TYPE_SYMBOL:
+   case BSON_TYPE_CODEWSCOPE:
+   case BSON_TYPE_TIMESTAMP:
+   case BSON_TYPE_MAXKEY:
+   case BSON_TYPE_MINKEY:
+   default:
+      CLIENT_ERR ("FLE2 find is not supported for type: %s",
+                  mc_bson_type_to_string (bsonType));
+      return NULL;
+   }
+}
+
+static bool
+_mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+
+   _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+   mc_FLE2FindRangePayload_t payload;
+   bool res = false;
+   mc_mincover_t *mincover = NULL;
+   _mongocrypt_buffer_t tokenKey = {0};
+
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+   BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+   _mongocrypt_ciphertext_init (ciphertext);
+   mc_FLE2FindRangePayload_init (&payload);
+
+   // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
+   // range find.
+   mc_FLE2RangeFindSpec_t findSpec;
+   if (!mc_FLE2RangeFindSpec_parse (&findSpec, &placeholder->v_iter, status)) {
+      goto fail;
+   }
+
+   // cm := Queryable Encryption max counter
+   payload.maxContentionCounter = placeholder->maxContentionCounter;
+
+   // e := ServerDataEncryptionLevel1Token
+   {
+      if (!_get_tokenKey (kb, &placeholder->index_key_id, &tokenKey, status)) {
+         goto fail;
+      }
+
+      mc_ServerDataEncryptionLevel1Token_t *serverToken =
+         mc_ServerDataEncryptionLevel1Token_new (crypto, &tokenKey, status);
+      if (!serverToken) {
+         goto fail;
+      }
+      _mongocrypt_buffer_copy_to (
+         mc_ServerDataEncryptionLevel1Token_get (serverToken),
+         &payload.serverEncryptionToken);
+      mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
+   }
+
+   // g:= array<EdgeFindTokenSet>
+   {
+      mincover = mc_get_mincover_from_FLE2RangeFindSpec (
+         &findSpec, (size_t) placeholder->sparsity, status);
+      if (!mincover) {
+         goto fail;
+      }
+
+      for (size_t i = 0; i < mc_mincover_len (mincover); i++) {
+         // Create a EdgeFindTokenSet from each edge.
+         bool loop_ok = false;
+         const char *edge = mc_mincover_get (mincover, i);
+         _mongocrypt_buffer_t edge_buf = {0};
+         _FLE2EncryptedPayloadCommon_t edge_tokens = {{0}};
+         mc_EdgeFindTokenSet_t eftc = {{0}};
+
+         if (!_mongocrypt_buffer_from_string (&edge_buf, edge)) {
+            CLIENT_ERR ("failed to copy edge to buffer");
+            goto fail_loop;
+         }
+
+         if (!_mongocrypt_fle2_placeholder_common (
+                kb,
+                &edge_tokens,
+                &placeholder->index_key_id,
+                &edge_buf,
+                false, /* derive tokens using counter */
+                placeholder->maxContentionCounter,
+                status)) {
+            goto fail_loop;
+         }
+
+         // d := EDCDerivedToken
+         _mongocrypt_buffer_steal (&eftc.edcDerivedToken,
+                                   &edge_tokens.edcDerivedToken);
+         // s := ESCDerivedToken
+         _mongocrypt_buffer_steal (&eftc.escDerivedToken,
+                                   &edge_tokens.escDerivedToken);
+         // c := ECCDerivedToken
+         _mongocrypt_buffer_steal (&eftc.eccDerivedToken,
+                                   &edge_tokens.eccDerivedToken);
+
+         _mc_array_append_val (&payload.edgeFindTokenSetArray, eftc);
+
+         loop_ok = true;
+      fail_loop:
+         _FLE2EncryptedPayloadCommon_cleanup (&edge_tokens);
+         _mongocrypt_buffer_cleanup (&edge_buf);
+         if (!loop_ok) {
+            goto fail;
+         }
+      }
+   }
+
+   // Serialize.
+   {
+      bson_t out = BSON_INITIALIZER;
+      mc_FLE2FindRangePayload_serialize (&payload, &out);
+      _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
+   }
+   _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->index_key_id);
+
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2FindRangePayload.
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindRangePayload;
+
+   res = true;
+fail:
+   mc_mincover_destroy (mincover);
+   mc_FLE2FindRangePayload_cleanup (&payload);
+   _mongocrypt_buffer_cleanup (&tokenKey);
 
    return res;
 }
@@ -1103,26 +1379,46 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
    BSON_ASSERT (status);
    BSON_ASSERT (ctx);
 
-   if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
-      if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED) {
+   switch (marking->type) {
+   case MONGOCRYPT_MARKING_FLE2_ENCRYPTION:
+      switch (marking->fle2.algorithm) {
+      case MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED:
          return _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
             kb, marking, ciphertext, status);
-      } else if (marking->fle2.type ==
-                 MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT) {
-         if (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE) {
+      case MONGOCRYPT_FLE2_ALGORITHM_RANGE:
+         switch (marking->fle2.type) {
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT:
             return _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
                kb, marking, ciphertext, status);
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
+            return _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
+               kb, marking, ciphertext, status);
+         default:
+            CLIENT_ERR ("unexpected fle2 type: %d", (int) marking->fle2.type);
+            return false;
          }
-         return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
-            kb, marking, ciphertext, status);
-      } else {
-         BSON_ASSERT (marking->fle2.type ==
-                      MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
-         return _mongocrypt_fle2_placeholder_to_find_ciphertext (
-            kb, marking, ciphertext, status);
+      case MONGOCRYPT_FLE2_ALGORITHM_EQUALITY:
+         switch (marking->fle2.type) {
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT:
+            return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
+               kb, marking, ciphertext, status);
+         case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
+            return _mongocrypt_fle2_placeholder_to_find_ciphertext (
+               kb, marking, ciphertext, status);
+         default:
+            CLIENT_ERR ("unexpected fle2 type: %d", (int) marking->fle2.type);
+            return false;
+         }
+      default:
+         CLIENT_ERR ("unexpected algorithm: %d", (int) marking->algorithm);
+         return false;
       }
-   } else {
+   case MONGOCRYPT_MARKING_FLE1_BY_ID:
+   case MONGOCRYPT_MARKING_FLE1_BY_ALTNAME:
       return _mongocrypt_fle1_marking_to_ciphertext (
          kb, marking, ciphertext, status);
+   default:
+      CLIENT_ERR ("unexpected marking type: %d", (int) marking->type);
+      return false;
    }
 }

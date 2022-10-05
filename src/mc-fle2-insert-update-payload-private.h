@@ -112,11 +112,11 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
 
 bool
 mc_FLE2InsertUpdatePayload_serialize (
-   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload);
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out);
 
 bool
 mc_FLE2InsertUpdatePayload_serializeForRange (
-   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload);
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out);
 
 void
 mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload);

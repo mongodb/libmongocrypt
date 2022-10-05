@@ -2390,6 +2390,24 @@ _test_encrypt_fle2_insert_range_payload_int64 (_mongocrypt_tester_t *tester)
 }
 #undef RNG_DATA
 
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_int32 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/int32", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_int64 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/int64", &source);
+}
+
 static mongocrypt_t *
 _crypt_with_rng (_test_rng_data_source *rng_source)
 {
@@ -4655,4 +4673,6 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_FLE2EncryptionPlaceholder_range_parse);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int32);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int64);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int32);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int64);
 }

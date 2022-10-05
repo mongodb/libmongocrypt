@@ -73,6 +73,11 @@ static inline WITH_BITS (MinCoverGenerator) *
                   max);
       return NULL;
    }
+
+   if (sparsity == 0) {
+      CLIENT_ERR ("Sparsity must be > 0");
+      return NULL;
+   }
    WITH_BITS (MinCoverGenerator) *mcg =
       bson_malloc0 (sizeof (WITH_BITS (MinCoverGenerator)));
    mcg->_rangeMin = rangeMin;
@@ -178,6 +183,47 @@ WITH_BITS (MinCoverGenerator_minCover) (WITH_BITS (MinCoverGenerator) * mcg)
    WITH_BITS (MinCoverGenerator_minCoverRec)
    (mcg, &mc->mincover, 0, mcg->_maxlen);
    return mc;
+}
+
+// adjustBounds increments *lowerBound if includeLowerBound is false and
+// decrements *upperBound if includeUpperBound is false.
+// lowerBound, min, upperBound, and max are expected to come from the result
+// of mc_getTypeInfo.
+static bool
+WITH_BITS (adjustBounds) (UINT_T *lowerBound,
+                          bool includeLowerBound,
+                          UINT_T min,
+                          UINT_T *upperBound,
+                          bool includeUpperBound,
+                          UINT_T max,
+                          mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (lowerBound);
+   BSON_ASSERT_PARAM (upperBound);
+
+   if (!includeLowerBound) {
+      if (*lowerBound >= max) {
+         CLIENT_ERR ("Lower bound (%" FMT_UINT_T
+                     ") must be less than the range maximum (%" FMT_UINT_T
+                     ") if lower bound is excluded from range.",
+                     *lowerBound,
+                     max);
+         return false;
+      }
+      *lowerBound += 1u;
+   }
+   if (!includeUpperBound) {
+      if (*upperBound <= min) {
+         CLIENT_ERR ("Upper bound (%" FMT_UINT_T
+                     ") must be greater than the range minimum (%" FMT_UINT_T
+                     ") if upper bound is excluded from range.",
+                     *upperBound,
+                     max);
+         return false;
+      }
+      *upperBound -= 1u;
+   }
+   return true;
 }
 
 #undef UINT_T
