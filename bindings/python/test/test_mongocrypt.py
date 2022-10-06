@@ -16,6 +16,7 @@
 
 import base64
 import copy
+import json
 import os
 import sys
 
@@ -41,6 +42,8 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
 from pymongocrypt.state_machine import MongoCryptCallback
 
 from test import unittest, mock
+
+import requests_mock
 
 
 # Data for testing libbmongocrypt binding.
@@ -95,6 +98,7 @@ class TestMongoCryptOptions(unittest.TestCase):
               'local': {'key': b'1' * 96}}, None),
             ({'local': {'key': to_base64(b'1' * 96)}}, None),
             ({'local': {'key': Binary(b'1' * 96)}}, None),
+            ({'gcp': {}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
                       'privateKey': b'1'}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
@@ -123,16 +127,16 @@ class TestMongoCryptOptions(unittest.TestCase):
                 {'aws': {'accessKeyId': 'foo'}},
                 {'aws': {'secretAccessKey': 'foo'}}]:
             with self.assertRaisesRegex(
-                    ValueError, "kms_providers\['aws'\] must contain "
+                    ValueError, r"kms_providers\['aws'\] must contain "
                                 "'accessKeyId' and 'secretAccessKey'"):
                 MongoCryptOptions(invalid_kms_providers)
         with self.assertRaisesRegex(
-                TypeError, "kms_providers\['local'\]\['key'\] must be an "
-                           "instance of bytes or str \(unicode in Python 2\)"):
+                TypeError, r"kms_providers\['local'\]\['key'\] must be an "
+                           r"instance of bytes or str \(unicode in Python 2\)"):
             MongoCryptOptions({'local': {'key': None}})
         with self.assertRaisesRegex(
-                TypeError, "kms_providers\['gcp'\]\['privateKey'\] must be an "
-                           "instance of bytes or str \(unicode in Python 2\)"):
+                TypeError, r"kms_providers\['gcp'\]\['privateKey'\] must be an "
+                           r"instance of bytes or str \(unicode in Python 2\)"):
             MongoCryptOptions({'gcp': {'email': "foo@bar.baz",
                                        "privateKey": None}})
 
@@ -431,7 +435,7 @@ class TestMongoCryptCallback(unittest.TestCase):
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
 
-    def test_need_kms_credentials(self):
+    def test_need_kms_aws_credentials(self):
         kms_providers = { 'aws': {} }
         opts = MongoCryptOptions(kms_providers)
         callback = MockCallback(
@@ -444,6 +448,29 @@ class TestMongoCryptCallback(unittest.TestCase):
 
         with mock.patch("pymongocrypt.mongocrypt._ask_for_kms_credentials") as m:
             m.return_value = { "aws": { "accessKeyId": "example", "secretAccessKey": "example"} }
+            decrypted = encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
+        self.assertEqual(bson.decode(decrypted, OPTS),
+                         json_data('command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+    def test_need_kms_gcp_credentials(self):
+        kms_providers = { 'gcp': {} }
+        opts = MongoCryptOptions(kms_providers)
+        callback = MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document-gcp.json')],
+            kms_reply=http_data('kms-reply-gcp.txt'))
+        encrypter = AutoEncrypter(callback, opts)
+        self.addCleanup(encrypter.close)
+
+        with requests_mock.Mocker() as m:
+            data = {"access_token": "foo"}
+            url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+            m.get(url, text=json.dumps(data))
             decrypted = encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
             self.assertTrue(m.called)
