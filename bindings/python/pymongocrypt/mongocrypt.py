@@ -835,7 +835,7 @@ def _ask_for_kms_credentials(kms_providers):
     on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
     on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
     if not on_demand_aws and not on_demand_gcp:
-        return None
+        return {}
     creds = {}
     if on_demand_aws:
         if not _HAVE_AUTH_AWS:
