@@ -1,5 +1,3 @@
-This Repository is NOT a supported MongoDB product
-
 # kms-message
 Library used to generate requests for:
 - Amazon Web Services Key Management Service (KMS)
