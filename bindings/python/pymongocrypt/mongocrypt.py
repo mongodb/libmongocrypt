@@ -802,24 +802,27 @@ class RewrapManyDataKeyContext(MongoCryptContext):
 
 def _get_gcp_credentials():
     """Get on-demand GCP credentials"""
-    metadata_host = "metadata.google.internal"
-    if os.getenv("GCE_METADATA_HOST"):
-        metadata_host = os.environ["GCE_METADATA_HOST"]
+    metadata_host = os.getenv("GCE_METADATA_HOST") or "metadata.google.internal"
     url = "http://%s/computeMetadata/v1/instance/service-accounts/default/token" % metadata_host
 
     headers = {"Metadata-Flavor": "Google"}
-    response = requests.get(url, headers=headers)
+    try:
+        response = requests.get(url, headers=headers)
+    except Exception as e:
+        msg = "unable to retrieve GCP credentials: %s" % e
+        raise MongoCryptError(msg)
+
     if response.status_code != 200:
         msg = "Unable to retrieve GCP credentials: expected StatusCode 200, got StatusCode: %s. Response body:\n%s" % (response.status_code, response.content)
-        raise ValueError(msg)
+        raise MongoCryptError(msg)
     try:
         data = response.json()
-    except Exception :
-        raise ValueError("unable to retrieve GCP credentials: error reading response body\n%s" % response.content)
+    except Exception:
+        raise MongoCryptError("unable to retrieve GCP credentials: error reading response body\n%s" % response.content)
 
     if not data.get("access_token"):
         msg = "unable to retrieve GCP credentials: got unexpected empty accessToken from GCP Metadata Server. Response body: %s" % response.content
-        raise ValueError(msg)
+        raise MongoCryptError(msg)
 
     return {'accessToken': data['access_token']}
 
@@ -832,7 +835,7 @@ def _ask_for_kms_credentials(kms_providers):
     on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
     on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
     if not on_demand_aws and not on_demand_gcp:
-        return
+        return None
     creds = {}
     if on_demand_aws:
         if not _HAVE_AUTH_AWS:
