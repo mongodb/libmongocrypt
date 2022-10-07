@@ -647,7 +647,7 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
       GET_AND_RETURN_EDGES (64, date_time);
    }
 
-#undef GET_EDGES
+#undef GET_AND_RETURN_EDGES
 
    CLIENT_ERR ("unsupported BSON type: %s for range",
                mc_bson_type_to_string (value_type));
