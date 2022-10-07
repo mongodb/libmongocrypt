@@ -18,6 +18,8 @@
 #include "mc-check-conversions-private.h"
 #include "mc-range-encoding-private.h"
 
+#include <math.h> // INFINITY, NAN
+
 /* Enable -Wconversion as error for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
 MC_BEGIN_CONVERSION_ERRORS
@@ -270,11 +272,95 @@ _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
+typedef struct {
+   double value;
+   uint64_t expect;
+   const char *expectError;
+} DoubleTest;
+
+static void
+_test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
+{
+   DoubleTest tests[] = {
+      /* Test cases copied from server Double_Bounds test ... begin */
+      // Larger numbers map to larger uint64
+      {.value = -1111, .expect = UINT64_C (4570770991734587392)},
+      {.value = -111, .expect = UINT64_C (4585860689314185216)},
+      {.value = -11, .expect = UINT64_C (4600989969312382976)},
+      {.value = -10, .expect = UINT64_C (4601552919265804288)},
+      {.value = -3, .expect = UINT64_C (4609434218613702656)},
+      {.value = -2, .expect = UINT64_C (4611686018427387904)},
+
+      {.value = -1, .expect = UINT64_C (4616189618054758400)},
+      {.value = 1, .expect = UINT64_C (13830554455654793216)},
+      {.value = 22, .expect = UINT64_C (13850257704024539136)},
+      {.value = 333, .expect = UINT64_C (13867937850999177216)},
+
+      // Larger exponents map to larger uint64
+      {.value = 33E56, .expect = UINT64_C (14690973652625833878)},
+      {.value = 22E57, .expect = UINT64_C (14703137697061005818)},
+      {.value = 11E58, .expect = UINT64_C (14713688953586463292)},
+
+      // Smaller exponents map to smaller uint64
+      {.value = 1E-6, .expect = UINT64_C (13740701229962882445)},
+      {.value = 1E-7, .expect = UINT64_C (13725520251343122248)},
+      {.value = 1E-8, .expect = UINT64_C (13710498295186492474)},
+      {.value = 1E-56, .expect = UINT64_C (12992711961033031890)},
+      {.value = 1E-57, .expect = UINT64_C (12977434315086142017)},
+      {.value = 1E-58, .expect = UINT64_C (12962510038552207822)},
+
+      // Smaller negative exponents map to smaller uint64
+      {.value = -1E-06, .expect = UINT64_C (4706042843746669171)},
+      {.value = -1E-07, .expect = UINT64_C (4721223822366429368)},
+      {.value = -1E-08, .expect = UINT64_C (4736245778523059142)},
+      {.value = -1E-56, .expect = UINT64_C (5454032112676519726)},
+      {.value = -1E-57, .expect = UINT64_C (5469309758623409599)},
+      {.value = -1E-58, .expect = UINT64_C (5484234035157343794)},
+
+      // Larger exponents map to larger uint64
+      {.value = -33E+56, .expect = UINT64_C (3755770421083717738)},
+      {.value = -22E+57, .expect = UINT64_C (3743606376648545798)},
+      {.value = -11E+58, .expect = UINT64_C (3733055120123088324)},
+
+      {.value = 0, .expect = UINT64_C (9223372036854775808)},
+      {.value = -0.0, .expect = UINT64_C (9223372036854775808)},
+      /* Test cases copied from server Double_Bounds test ... end */
+      /* Test cases copied from server Double_Errors test ... begin */
+      {.value = INFINITY,
+       .expectError = "Infinity and Nan double values are not supported."},
+      {.value = NAN,
+       .expectError = "Infinity and Nan double values are not supported."}
+      /* Test cases copied from server Double_Errors test ... end */
+   };
+
+   for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      DoubleTest *test = tests + i;
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
+
+      printf ("_test_RangeTest_Encode_Double: value=%f\n", test->value);
+      mc_OSTType_Double got;
+      bool ok = mc_getTypeInfoDouble (
+         (mc_getTypeInfoDouble_args_t){.value = test->value}, &got, status);
+      if (NULL != test->expectError) {
+         ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
+         ASSERT_STATUS_CONTAINS (status, test->expectError);
+         mongocrypt_status_destroy (status);
+         continue;
+      }
+      ASSERT_OK_STATUS (ok, status);
+      ASSERT_CMPUINT64 (got.value, ==, test->expect);
+      ASSERT_CMPUINT64 (got.min, ==, 0);
+      ASSERT_CMPUINT64 (got.max, ==, UINT64_MAX);
+      mongocrypt_status_destroy (status);
+   }
+}
+
 void
 _mongocrypt_tester_install_range_encoding (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_RangeTest_Encode_Int32);
    INSTALL_TEST (_test_RangeTest_Encode_Int64);
+   INSTALL_TEST (_test_RangeTest_Encode_Double);
 }
 
 MC_END_CONVERSION_ERRORS

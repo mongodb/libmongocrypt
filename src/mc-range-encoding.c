@@ -18,6 +18,8 @@
 #include "mc-range-encoding-private.h"
 #include "mongocrypt-private.h"
 
+#include <math.h> // isinf
+
 /* mc-range-encoding.c assumes integers are encoded with two's complement for
  * correctness. */
 #if (-1 & 3) != 3
@@ -172,6 +174,55 @@ mc_getTypeInfo64 (mc_getTypeInfo64_args_t args,
    max_u64 -= min_u64;
 
    *out = (mc_OSTType_Int64){v_u64, 0, max_u64};
+   return true;
+}
+
+bool
+mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
+                      mc_OSTType_Double *out,
+                      mongocrypt_status_t *status)
+{
+   if (isinf (args.value) || isnan (args.value)) {
+      CLIENT_ERR ("Infinity and Nan double values are not supported.");
+      return false;
+   }
+   bool is_neg = args.value < 0;
+
+   // Map negative 0 to zero so sign bit is 0.
+   if (args.value == 0) {
+      args.value = 0;
+   }
+
+   // Translate double to uint64 by modifying the bit representation and copying
+   // into a uint64. Double is assumed to be a IEEE 754 Binary 64.
+   // It is bit-encoded as sign, exponent, and fraction:
+   // s eeeeeeee ffffffffffffffffffffffffffffffffffffffffffffffffffff
+
+   // When we translate the double into "bits", the sign bit means that the
+   // negative numbers get mapped into the higher 63 bits of a 64-bit integer.
+   // We want them to  map into the lower 64-bits so we invert the sign bit.
+   args.value *= -1;
+
+   // On Endianness, we support two sets of architectures
+   // 1. Little Endian (ppc64le, x64, aarch64) - in these architectures, int64
+   // and double are both 64-bits and both arranged in little endian byte order.
+   // 2. Big Endian (s390x) - in these architectures, int64 and double are both
+   // 64-bits and both arranged in big endian byte order.
+   //
+   // Therefore, since the order of bytes on each platform is consistent with
+   // itself, the conversion below converts a double into correct 64-bit integer
+   // that produces the same behavior across plaforms.
+   uint64_t uv;
+   memcpy (&uv, &args.value, sizeof (uint64_t));
+
+   if (is_neg) {
+      uint64_t new_zero = UINT64_C (1) << 63;
+      BSON_ASSERT (uv <= new_zero);
+      uv = new_zero - uv;
+   }
+
+   *out = (mc_OSTType_Double){.min = 0, .max = UINT64_MAX, .value = uv};
+
    return true;
 }
 

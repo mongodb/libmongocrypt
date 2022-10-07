@@ -42,4 +42,15 @@ typedef struct {
       .set = true, .value = val \
    }
 
+typedef struct {
+   bool set;
+   double value;
+} mc_optional_double_t;
+
+#define OPT_DOUBLE(val)         \
+   (mc_optional_double_t)       \
+   {                            \
+      .set = true, .value = val \
+   }
+
 #endif /* MC_OPTIONAL_PRIVATE_H */
