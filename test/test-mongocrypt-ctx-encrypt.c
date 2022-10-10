@@ -2445,6 +2445,15 @@ _test_encrypt_fle2_find_range_payload_date (_mongocrypt_tester_t *tester)
       tester, "fle2-find-range/date", &source);
 }
 
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_double (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/double", &source);
+}
+
 static mongocrypt_t *
 _crypt_with_rng (_test_rng_data_source *rng_source)
 {
@@ -4720,4 +4729,5 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int32);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int64);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_date);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_double);
 }
