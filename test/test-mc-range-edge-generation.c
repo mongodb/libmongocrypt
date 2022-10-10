@@ -20,6 +20,8 @@
 #include "mc-optional-private.h"
 #include "mc-range-edge-generation-private.h"
 
+#include <float.h> // DBL_MIN
+
 /* Enable -Wconversion as error for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
 MC_BEGIN_CONVERSION_ERRORS
@@ -197,6 +199,72 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
    }
 }
 
+#define MAX_DOUBLE_EDGES 65
+typedef struct {
+   double value;
+   size_t sparsity;
+   // expectEdges includes a trailing NULL pointer.
+   const char *expectEdges[MAX_DOUBLE_EDGES + 1];
+   const char *expectError;
+} DoubleTest;
+#undef MAX_DOUBLE_EDGES
+
+static void
+_test_getEdgesDouble (_mongocrypt_tester_t *tester)
+{
+   DoubleTest tests[] = {
+#include "data/range-edge-generation/edges_double.cstruct"
+   };
+
+   for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
+      DoubleTest *test = tests + i;
+      mc_getEdgesDouble_args_t args = {.value = test->value,
+                                       .sparsity = test->sparsity};
+      mc_edges_t *got = mc_getEdgesDouble (args, status);
+
+      if (test->expectError != NULL) {
+         if (NULL != got) {
+            TEST_ERROR ("test %zu expected error, got success", i);
+         }
+         ASSERT_STATUS_CONTAINS (status, test->expectError);
+         mongocrypt_status_destroy (status);
+         continue;
+      }
+      ASSERT_OK_STATUS (got != NULL, status);
+
+      size_t numGot = mc_edges_len (got);
+      size_t numExpected = 0;
+      while (test->expectEdges[numExpected] != NULL) {
+         numExpected += 1;
+      }
+
+      if (numExpected != numGot) {
+         print_edges_compared (got, test->expectEdges);
+         TEST_ERROR ("test %zu got %zu edges, expected %zu edges\n",
+                     i,
+                     numGot,
+                     numExpected);
+      }
+
+      for (size_t gotI = 0; gotI < numGot; gotI++) {
+         const char *edgeGot = mc_edges_get (got, gotI);
+         const char *edgeExpected = test->expectEdges[gotI];
+         if (0 == strcmp (edgeGot, edgeExpected)) {
+            continue;
+         }
+         print_edges_compared (got, test->expectEdges);
+         TEST_ERROR ("test %zu got edge mismatch at index %zu. %s != %s\n",
+                     i,
+                     gotI,
+                     edgeGot,
+                     edgeExpected);
+      }
+      mc_edges_destroy (got);
+      mongocrypt_status_destroy (status);
+   }
+}
+
 static void
 _test_count_leading_zeros (_mongocrypt_tester_t *tester)
 {
@@ -271,6 +339,7 @@ _mongocrypt_tester_install_range_edge_generation (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_getEdgesInt32);
    INSTALL_TEST (_test_getEdgesInt64);
+   INSTALL_TEST (_test_getEdgesDouble);
    INSTALL_TEST (_test_count_leading_zeros);
    INSTALL_TEST (_test_convert_to_bitstring);
 }
