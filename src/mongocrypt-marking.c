@@ -1055,6 +1055,18 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
             .sparsity = sparsity},
          status);
    case BSON_TYPE_DOUBLE:
+      BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DOUBLE);
+      BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DOUBLE);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_DOUBLE);
+      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_DOUBLE);
+      return mc_getMincoverDouble (
+         (mc_getMincoverDouble_args_t){
+            .lowerBound = bson_iter_double (&lowerBound),
+            .includeLowerBound = includeLowerBound,
+            .upperBound = bson_iter_double (&upperBound),
+            .includeUpperBound = includeUpperBound,
+            .sparsity = sparsity},
+         status);
    case BSON_TYPE_DECIMAL128:
       CLIENT_ERR ("FLE2 find not yet implemented for type: %s",
                   mc_bson_type_to_string (bsonType));
