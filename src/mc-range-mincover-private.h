@@ -70,4 +70,19 @@ mc_mincover_t *
 mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
                      mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
+typedef struct {
+   double lowerBound;
+   bool includeLowerBound;
+   double upperBound;
+   bool includeUpperBound;
+   size_t sparsity;
+} mc_getMincoverDouble_args_t;
+
+// mc_getMincoverDouble implements the Mincover Generation algorithm described
+// in SERVER-68600 for double.
+mc_mincover_t *
+mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
+                      mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
+
 #endif /* MC_RANGE_MINCOVER_PRIVATE_H */
