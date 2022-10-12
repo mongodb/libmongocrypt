@@ -186,11 +186,11 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
       CLIENT_ERR ("Infinity and Nan double values are not supported.");
       return false;
    }
-   bool is_neg = args.value < 0;
+   const bool is_neg = args.value < 0.0;
 
    // Map negative 0 to zero so sign bit is 0.
-   if (args.value == 0) {
-      args.value = 0;
+   if (args.value == 0.0) {
+      args.value = 0.0;
    }
 
    // Translate double to uint64 by modifying the bit representation and copying
@@ -201,7 +201,7 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
    // When we translate the double into "bits", the sign bit means that the
    // negative numbers get mapped into the higher 63 bits of a 64-bit integer.
    // We want them to  map into the lower 64-bits so we invert the sign bit.
-   args.value *= -1;
+   args.value *= -1.0;
 
    // On Endianness, we support two sets of architectures
    // 1. Little Endian (ppc64le, x64, aarch64) - in these architectures, int64
