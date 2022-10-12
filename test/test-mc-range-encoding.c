@@ -128,7 +128,7 @@ _test_RangeTest_Encode_Int32 (_mongocrypt_tester_t *tester)
       }
       printf ("\n");
       mc_OSTType_Int32 got;
-      bool ok = mc_getTypeInfo32 (test->args, &got, status);
+      const bool ok = mc_getTypeInfo32 (test->args, &got, status);
       if (NULL != test->expectError) {
          ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
@@ -257,7 +257,7 @@ _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
       }
       printf ("\n");
       mc_OSTType_Int64 got;
-      bool ok = mc_getTypeInfo64 (test->args, &got, status);
+      const bool ok = mc_getTypeInfo64 (test->args, &got, status);
       if (NULL != test->expectError) {
          ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
@@ -339,7 +339,7 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
 
       printf ("_test_RangeTest_Encode_Double: value=%f\n", test->value);
       mc_OSTType_Double got;
-      bool ok = mc_getTypeInfoDouble (
+      const bool ok = mc_getTypeInfoDouble (
          (mc_getTypeInfoDouble_args_t){.value = test->value}, &got, status);
       if (NULL != test->expectError) {
          ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
