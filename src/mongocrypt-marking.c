@@ -606,60 +606,40 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
 {
    bson_type_t value_type = bson_iter_type (&insertSpec->v);
 
-#define GET_AND_RETURN_EDGES(BITS, bsonType)                               \
-   if (1) {                                                                \
-      mc_OSTType_Int##BITS OSTType;                                        \
-      {                                                                    \
-         mc_getTypeInfo##BITS##_args_t args = {                            \
-            .value = bson_iter_##bsonType (&insertSpec->v),                \
-            .min = OPT_I##BITS (bson_iter_##bsonType (&insertSpec->min)),  \
-            .max = OPT_I##BITS (bson_iter_##bsonType (&insertSpec->max))}; \
-                                                                           \
-         if (!mc_getTypeInfo##BITS (args, &OSTType, status)) {             \
-            return NULL;                                                   \
-         }                                                                 \
-      }                                                                    \
-                                                                           \
-      mc_edges_t *edges;                                                   \
-      {                                                                    \
-         mc_getEdgesInt##BITS##_args_t args = {                            \
-            .value = OSTType.value,                                        \
-            .min = OPT_I##BITS (OSTType.min),                              \
-            .max = OPT_I##BITS (OSTType.max),                              \
-            .sparsity = sparsity};                                         \
-         if (!(edges = mc_getEdgesInt##BITS (args, status))) {             \
-            return NULL;                                                   \
-         }                                                                 \
-      }                                                                    \
-      return edges;                                                        \
-   } else                                                                  \
-      ((void) (0))
 
    if (value_type == BSON_TYPE_INT32) {
-      GET_AND_RETURN_EDGES (32, int32);
+      mc_getEdgesInt32_args_t args = {
+         .value = bson_iter_int32 (&insertSpec->v),
+         .min = OPT_I32 (bson_iter_int32 (&insertSpec->min)),
+         .max = OPT_I32 (bson_iter_int32 (&insertSpec->max)),
+         .sparsity = sparsity};
+      return mc_getEdgesInt32 (args, status);
    }
 
    else if (value_type == BSON_TYPE_INT64) {
-      GET_AND_RETURN_EDGES (64, int64);
+      mc_getEdgesInt64_args_t args = {
+         .value = bson_iter_int64 (&insertSpec->v),
+         .min = OPT_I64 (bson_iter_int64 (&insertSpec->min)),
+         .max = OPT_I64 (bson_iter_int64 (&insertSpec->max)),
+         .sparsity = sparsity};
+      return mc_getEdgesInt64 (args, status);
    }
 
    else if (value_type == BSON_TYPE_DATE_TIME) {
-      GET_AND_RETURN_EDGES (64, date_time);
+      mc_getEdgesInt64_args_t args = {
+         .value = bson_iter_date_time (&insertSpec->v),
+         .min = OPT_I64 (bson_iter_date_time (&insertSpec->min)),
+         .max = OPT_I64 (bson_iter_date_time (&insertSpec->max)),
+         .sparsity = sparsity};
+      return mc_getEdgesInt64 (args, status);
    }
 
    else if (value_type == BSON_TYPE_DOUBLE) {
-      mc_edges_t *edges;
-      {
-         mc_getEdgesDouble_args_t args = {
-            .value = bson_iter_double (&insertSpec->v), .sparsity = sparsity};
-         if (!(edges = mc_getEdgesDouble (args, status))) {
-            return NULL;
-         }
-      }
-      return edges;
+      mc_getEdgesDouble_args_t args = {
+         .value = bson_iter_double (&insertSpec->v), .sparsity = sparsity};
+      return mc_getEdgesDouble (args, status);
    }
 
-#undef GET_AND_RETURN_EDGES
 
    CLIENT_ERR ("unsupported BSON type: %s for range",
                mc_bson_type_to_string (value_type));
