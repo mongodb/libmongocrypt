@@ -608,36 +608,40 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
 
 
    if (value_type == BSON_TYPE_INT32) {
-      mc_getEdgesInt32_args_t args = {
-         .value = bson_iter_int32 (&insertSpec->v),
-         .min = OPT_I32 (bson_iter_int32 (&insertSpec->min)),
-         .max = OPT_I32 (bson_iter_int32 (&insertSpec->max)),
-         .sparsity = sparsity};
-      return mc_getEdgesInt32 (args, status);
+      return mc_getEdgesInt32 (
+         (mc_getEdgesInt32_args_t){
+            .value = bson_iter_int32 (&insertSpec->v),
+            .min = OPT_I32 (bson_iter_int32 (&insertSpec->min)),
+            .max = OPT_I32 (bson_iter_int32 (&insertSpec->max)),
+            .sparsity = sparsity},
+         status);
    }
 
    else if (value_type == BSON_TYPE_INT64) {
-      mc_getEdgesInt64_args_t args = {
-         .value = bson_iter_int64 (&insertSpec->v),
-         .min = OPT_I64 (bson_iter_int64 (&insertSpec->min)),
-         .max = OPT_I64 (bson_iter_int64 (&insertSpec->max)),
-         .sparsity = sparsity};
-      return mc_getEdgesInt64 (args, status);
+      return mc_getEdgesInt64 (
+         (mc_getEdgesInt64_args_t){
+            .value = bson_iter_int64 (&insertSpec->v),
+            .min = OPT_I64 (bson_iter_int64 (&insertSpec->min)),
+            .max = OPT_I64 (bson_iter_int64 (&insertSpec->max)),
+            .sparsity = sparsity},
+         status);
    }
 
    else if (value_type == BSON_TYPE_DATE_TIME) {
-      mc_getEdgesInt64_args_t args = {
-         .value = bson_iter_date_time (&insertSpec->v),
-         .min = OPT_I64 (bson_iter_date_time (&insertSpec->min)),
-         .max = OPT_I64 (bson_iter_date_time (&insertSpec->max)),
-         .sparsity = sparsity};
-      return mc_getEdgesInt64 (args, status);
+      return mc_getEdgesInt64 (
+         (mc_getEdgesInt64_args_t){
+            .value = bson_iter_date_time (&insertSpec->v),
+            .min = OPT_I64 (bson_iter_date_time (&insertSpec->min)),
+            .max = OPT_I64 (bson_iter_date_time (&insertSpec->max)),
+            .sparsity = sparsity},
+         status);
    }
 
    else if (value_type == BSON_TYPE_DOUBLE) {
-      mc_getEdgesDouble_args_t args = {
-         .value = bson_iter_double (&insertSpec->v), .sparsity = sparsity};
-      return mc_getEdgesDouble (args, status);
+      return mc_getEdgesDouble (
+         (mc_getEdgesDouble_args_t){.value = bson_iter_double (&insertSpec->v),
+                                    .sparsity = sparsity},
+         status);
    }
 
 
