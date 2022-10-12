@@ -96,7 +96,7 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
       size_t numGot = mc_edges_len (got);
       size_t numExpected = 0;
       while (test->expectEdges[numExpected] != NULL) {
-         numExpected += 1;
+         ++numExpected;
       }
 
       if (numExpected != numGot) {
@@ -173,7 +173,7 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
       size_t numGot = mc_edges_len (got);
       size_t numExpected = 0;
       while (test->expectEdges[numExpected] != NULL) {
-         numExpected += 1;
+         ++numExpected;
       }
 
       if (numExpected != numGot) {
@@ -236,7 +236,7 @@ _test_getEdgesDouble (_mongocrypt_tester_t *tester)
       size_t numGot = mc_edges_len (got);
       size_t numExpected = 0;
       while (test->expectEdges[numExpected] != NULL) {
-         numExpected += 1;
+         ++numExpected;
       }
 
       if (numExpected != numGot) {
