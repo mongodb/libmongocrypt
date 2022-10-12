@@ -245,11 +245,11 @@ _test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
    Int32Test *const test = (Int32Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: lowerBound=%" PRId32 " %s upperBound=%" PRId32 " %s",
+            "testcase: lowerBound=%" PRId32 " (%s) upperBound=%" PRId32 " (%s)",
             test->lowerBound,
-            test->includeLowerBound ? "included" : "excluded",
+            test->includeLowerBound ? "inclusive" : "exclusive",
             test->upperBound,
-            test->includeUpperBound ? "included" : "excluded");
+            test->includeUpperBound ? "inclusive" : "exclusive");
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId32, test->min.value);
    }
@@ -274,11 +274,11 @@ _test_dump_64 (void *tests, size_t idx, mc_mincover_t *got)
    Int64Test *const test = (Int64Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: lowerBound=%" PRId64 " %s upperBound=%" PRId64 " %s",
+            "testcase: lowerBound=%" PRId64 " (%s) upperBound=%" PRId64 " (%s)",
             test->lowerBound,
-            test->includeLowerBound ? "included" : "excluded",
+            test->includeLowerBound ? "inclusive" : "exclusive",
             test->upperBound,
-            test->includeUpperBound ? "included" : "excluded");
+            test->includeUpperBound ? "inclusive" : "exclusive");
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId64, test->min.value);
    }
@@ -303,11 +303,11 @@ _test_dump_Double (void *tests, size_t idx, mc_mincover_t *got)
    DoubleTest *const test = (DoubleTest *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: lowerBound=%f %s upperBound=%f %s",
+            "testcase: lowerBound=%f (%s) upperBound=%f (%s)",
             test->lowerBound,
-            test->includeLowerBound ? "included" : "excluded",
+            test->includeLowerBound ? "inclusive" : "exclusive",
             test->upperBound,
-            test->includeUpperBound ? "included" : "excluded");
+            test->includeUpperBound ? "inclusive" : "exclusive");
    fprintf (stderr, " sparsity=%zu\n", test->sparsity);
    fprintf (stderr, "mincover expected ... begin\n");
    fprintf (stderr, "%s", test->expectMincoverString);
