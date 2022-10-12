@@ -647,6 +647,18 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
       GET_AND_RETURN_EDGES (64, date_time);
    }
 
+   else if (value_type == BSON_TYPE_DOUBLE) {
+      mc_edges_t *edges;
+      {
+         mc_getEdgesDouble_args_t args = {
+            .value = bson_iter_double (&insertSpec->v), .sparsity = sparsity};
+         if (!(edges = mc_getEdgesDouble (args, status))) {
+            return NULL;
+         }
+      }
+      return edges;
+   }
+
 #undef GET_AND_RETURN_EDGES
 
    CLIENT_ERR ("unsupported BSON type: %s for range",
