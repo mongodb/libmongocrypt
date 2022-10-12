@@ -33,7 +33,6 @@ typedef struct {
 static void
 _test_RangeTest_Encode_Int32 (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_status_t *const status = mongocrypt_status_new ();
    Int32Test tests[] = {
       /* Test cases copied from server Int32_NoBounds test ... begin */
       {.args = {.value = INT32_C (2147483647)},
@@ -117,6 +116,7 @@ _test_RangeTest_Encode_Int32 (_mongocrypt_tester_t *tester)
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       Int32Test *test = tests + i;
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
 
       // Print a description of the test case.
       printf ("_test_RangeTest_Encode_Int32: value=%" PRId32, test->args.value);
@@ -129,18 +129,17 @@ _test_RangeTest_Encode_Int32 (_mongocrypt_tester_t *tester)
       printf ("\n");
       mc_OSTType_Int32 got;
       const bool ok = mc_getTypeInfo32 (test->args, &got, status);
-      if (NULL != test->expectError) {
+      if (test->expectError) {
          ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
-         continue;
+      } else {
+         ASSERT_OK_STATUS (ok, status);
+         ASSERT_CMPUINT32 (got.value, ==, test->expect.value);
+         ASSERT_CMPUINT32 (got.min, ==, test->expect.min);
+         ASSERT_CMPUINT32 (got.max, ==, test->expect.max);
       }
-      ASSERT_OK_STATUS (ok, status);
-      ASSERT_CMPUINT32 (got.value, ==, test->expect.value);
-      ASSERT_CMPUINT32 (got.min, ==, test->expect.min);
-      ASSERT_CMPUINT32 (got.max, ==, test->expect.max);
+      mongocrypt_status_destroy (status);
    }
-
-   mongocrypt_status_destroy (status);
 }
 
 typedef struct {
@@ -152,7 +151,6 @@ typedef struct {
 static void
 _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
 {
-   mongocrypt_status_t *const status = mongocrypt_status_new ();
    Int64Test tests[] = {
       /* Test cases copied from server Int64_NoBounds test ... begin */
       {.args = {.value = INT64_C (9223372036854775807)},
@@ -246,6 +244,7 @@ _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       Int64Test *test = tests + i;
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
 
       // Print a description of the test case.
       printf ("_test_RangeTest_Encode_Int64: value=%" PRId64, test->args.value);
@@ -258,18 +257,17 @@ _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
       printf ("\n");
       mc_OSTType_Int64 got;
       const bool ok = mc_getTypeInfo64 (test->args, &got, status);
-      if (NULL != test->expectError) {
+      if (test->expectError) {
          ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
-         continue;
+      } else {
+         ASSERT_OK_STATUS (ok, status);
+         ASSERT_CMPUINT64 (got.value, ==, test->expect.value);
+         ASSERT_CMPUINT64 (got.min, ==, test->expect.min);
+         ASSERT_CMPUINT64 (got.max, ==, test->expect.max);
       }
-      ASSERT_OK_STATUS (ok, status);
-      ASSERT_CMPUINT64 (got.value, ==, test->expect.value);
-      ASSERT_CMPUINT64 (got.min, ==, test->expect.min);
-      ASSERT_CMPUINT64 (got.max, ==, test->expect.max);
+      mongocrypt_status_destroy (status);
    }
-
-   mongocrypt_status_destroy (status);
 }
 
 typedef struct {
@@ -341,16 +339,15 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
       mc_OSTType_Double got;
       const bool ok = mc_getTypeInfoDouble (
          (mc_getTypeInfoDouble_args_t){.value = test->value}, &got, status);
-      if (NULL != test->expectError) {
+      if (test->expectError) {
          ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
-         mongocrypt_status_destroy (status);
-         continue;
+      } else {
+         ASSERT_OK_STATUS (ok, status);
+         ASSERT_CMPUINT64 (got.value, ==, test->expect);
+         ASSERT_CMPUINT64 (got.min, ==, 0);
+         ASSERT_CMPUINT64 (got.max, ==, UINT64_MAX);
       }
-      ASSERT_OK_STATUS (ok, status);
-      ASSERT_CMPUINT64 (got.value, ==, test->expect);
-      ASSERT_CMPUINT64 (got.min, ==, 0);
-      ASSERT_CMPUINT64 (got.max, ==, UINT64_MAX);
       mongocrypt_status_destroy (status);
    }
 }
