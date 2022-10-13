@@ -57,10 +57,20 @@ typedef struct {
    size_t sparsity;
 } mc_getEdgesInt64_args_t;
 
-// mc_getEdgesInt64 implements the Edge Generation algorithm described in 
+// mc_getEdgesInt64 implements the Edge Generation algorithm described in
 // SERVER-67751 for int64_t.
 mc_edges_t *
 mc_getEdgesInt64 (mc_getEdgesInt64_args_t args, mongocrypt_status_t *status);
+
+typedef struct {
+   double value;
+   size_t sparsity;
+} mc_getEdgesDouble_args_t;
+
+// mc_getEdgesDouble implements the Edge Generation algorithm described in
+// SERVER-67751 for double.
+mc_edges_t *
+mc_getEdgesDouble (mc_getEdgesDouble_args_t args, mongocrypt_status_t *status);
 
 // count_leading_zeros_u64 returns the number of leading 0 bits of `in`.
 size_t

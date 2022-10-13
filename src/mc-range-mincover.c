@@ -166,4 +166,48 @@ mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
    return mc;
 }
 
+// mc_getMincoverDouble implements the Mincover Generation algorithm described
+// in SERVER-68600 for double.
+mc_mincover_t *
+mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
+                      mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (status);
+   mc_OSTType_Double a, b;
+   if (!mc_getTypeInfoDouble (
+          (mc_getTypeInfoDouble_args_t){.value = args.lowerBound},
+          &a,
+          status)) {
+      return NULL;
+   }
+   if (!mc_getTypeInfoDouble (
+          (mc_getTypeInfoDouble_args_t){.value = args.upperBound},
+          &b,
+          status)) {
+      return NULL;
+   }
+
+   BSON_ASSERT (a.min == b.min);
+   BSON_ASSERT (a.max == b.max);
+
+   if (!adjustBounds_u64 (&a.value,
+                          args.includeLowerBound,
+                          a.min,
+                          &b.value,
+                          args.includeUpperBound,
+                          b.max,
+                          status)) {
+      return NULL;
+   }
+
+   MinCoverGenerator_u64 *mcg = MinCoverGenerator_new_u64 (
+      a.value, b.value, a.max, args.sparsity, status);
+   if (!mcg) {
+      return NULL;
+   }
+   mc_mincover_t *mc = MinCoverGenerator_minCover_u64 (mcg);
+   MinCoverGenerator_destroy_u64 (mcg);
+   return mc;
+}
+
 MC_END_CONVERSION_ERRORS
