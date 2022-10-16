@@ -1510,6 +1510,33 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+// Regression test for MONGOCRYPT-488.
+static void
+_test_encrypt_per_ctx_credentials_given_empty (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}"));
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+   ASSERT_FAILS (mongocrypt_ctx_provide_kms_providers (ctx, TEST_BSON ("{}")),
+                 ctx,
+                 "no kms provider set");
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
 static void
 _test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
 {
@@ -4689,6 +4716,7 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_caches_empty_collinfo);
    INSTALL_TEST (_test_encrypt_caches_collinfo_without_jsonschema);
    INSTALL_TEST (_test_encrypt_per_ctx_credentials);
+   INSTALL_TEST (_test_encrypt_per_ctx_credentials_given_empty);
    INSTALL_TEST (_test_encrypt_per_ctx_credentials_local);
    INSTALL_TEST (_test_encrypt_with_encrypted_field_config_map);
    INSTALL_TEST (_test_encrypt_with_encrypted_field_config_map_bypassed);
