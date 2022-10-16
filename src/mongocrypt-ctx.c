@@ -583,7 +583,7 @@ mongocrypt_ctx_provide_kms_providers (
                                          &ctx->per_ctx_kms_providers,
                                          ctx->status,
                                          &ctx->crypt->log)) {
-      return false;
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    if (!_mongocrypt_opts_kms_providers_validate (
@@ -592,7 +592,7 @@ mongocrypt_ctx_provide_kms_providers (
       _mongocrypt_opts_kms_providers_cleanup (&ctx->per_ctx_kms_providers);
       memset (
          &ctx->per_ctx_kms_providers, 0, sizeof (ctx->per_ctx_kms_providers));
-      return false;
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    memcpy (&ctx->kms_providers,
