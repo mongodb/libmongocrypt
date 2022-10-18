@@ -513,7 +513,7 @@ _test_mongocrypt_kms_ctx_feed_empty_bytes (_mongocrypt_tester_t *tester)
    mongocrypt_kms_ctx_t kms_ctx = {0};
    mongocrypt_status_t *status;
    _mongocrypt_endpoint_t *endpoint;
-   mongocrypt_binary_t *bytes = mongocrypt_binary_new();
+   mongocrypt_binary_t *bytes = mongocrypt_binary_new ();
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    status = mongocrypt_status_new ();
@@ -528,10 +528,12 @@ _test_mongocrypt_kms_ctx_feed_empty_bytes (_mongocrypt_tester_t *tester)
                  (char *) SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
                  &crypt->log),
               &kms_ctx);
-   
+
    /* Test KMS Feed. Expect to fail with empty bytes */
-   ASSERT_FAILS (mongocrypt_kms_ctx_feed(&kms_ctx, bytes), &kms_ctx, "argument 'bytes' cannot be empty");
-   
+   ASSERT_FAILS (mongocrypt_kms_ctx_feed (&kms_ctx, bytes),
+                 &kms_ctx,
+                 "argument 'bytes' cannot be empty");
+
    mongocrypt_binary_destroy (bytes);
    _mongocrypt_kms_ctx_cleanup (&kms_ctx);
    _mongocrypt_endpoint_destroy (endpoint);
