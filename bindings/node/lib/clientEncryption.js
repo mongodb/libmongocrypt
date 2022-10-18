@@ -64,7 +64,7 @@ module.exports = function (modules) {
    */
 
   /**
-   * The public interface for explicit in use encryption
+   * The public interface for explicit in-use encryption
    */
   class ClientEncryption {
     /**

@@ -68,7 +68,7 @@ module.exports = function (modules) {
      *
      * **Note**: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.
      * It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
-     * Schemas supplied in the schemaMap only apply to configuring automatic encryption for in use encryption.
+     * Schemas supplied in the schemaMap only apply to configuring automatic encryption for Client-Side Field Level Encryption.
      * Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
      * @param {MongoClient} client The client autoEncryption is enabled on
      * @param {AutoEncrypter~AutoEncryptionOptions} [options] Optional settings

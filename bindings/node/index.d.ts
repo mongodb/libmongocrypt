@@ -354,7 +354,7 @@ export interface ClientEncryptionEncryptOptions {
 }
 
 /**
- * The public interface for explicit in use encryption
+ * The public interface for explicit in-use encryption
  */
 export class ClientEncryption {
   /**
