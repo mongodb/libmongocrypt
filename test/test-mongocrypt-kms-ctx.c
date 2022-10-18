@@ -530,7 +530,7 @@ _test_mongocrypt_kms_ctx_feed_empty_bytes (_mongocrypt_tester_t *tester)
               &kms_ctx);
    
    /* Test KMS Feed. Expect to fail with empty bytes */
-   ASSERT_FAILS(mongocrypt_kms_ctx_feed(&kms_ctx, bytes), &kms_ctx, "argument 'bytes' cannot be empty");
+   ASSERT_FAILS (mongocrypt_kms_ctx_feed(&kms_ctx, bytes), &kms_ctx, "argument 'bytes' cannot be empty");
    
    mongocrypt_binary_destroy (bytes);
    _mongocrypt_kms_ctx_cleanup (&kms_ctx);
