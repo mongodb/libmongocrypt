@@ -453,6 +453,7 @@ _test_mongocrypt_kms_ctx_get_kms_provider (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+
 static void
 _test_mongocrypt_kms_ctx_default_port (_mongocrypt_tester_t *tester)
 {
