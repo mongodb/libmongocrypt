@@ -21,12 +21,10 @@ async function loadCredentials(kmsProviders) {
     if (!aws || Object.keys(aws).length === 0) {
       const { fromNodeProviderChain } = awsCredentialProviders;
       const provider = fromNodeProviderChain();
-      try {
-        const awsCreds = await provider();
-        return { ...kmsProviders, aws: awsCreds };
-      } catch {
-        return kmsProviders;
-      }
+      // The state machine is the only place calling this so it will
+      // catch if there is a rejection here.
+      const awsCreds = await provider();
+      return { ...kmsProviders, aws: awsCreds };
     }
   }
   return kmsProviders;

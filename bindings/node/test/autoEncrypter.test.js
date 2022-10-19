@@ -329,7 +329,7 @@ describe('AutoEncrypter', function () {
       });
     });
 
-    context('when no refresh function is provided', function (done) {
+    context('when no refresh function is provided', function () {
       const accessKey = 'example';
       const secretKey = 'example';
 
