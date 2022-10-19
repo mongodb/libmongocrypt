@@ -9,6 +9,7 @@ module.exports = function (modules) {
   const MongoClient = modules.mongodb.MongoClient;
   const MongoError = modules.mongodb.MongoError;
   const BSON = modules.mongodb.BSON;
+  const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
@@ -101,6 +102,7 @@ module.exports = function (modules) {
       this._proxyOptions = options.proxyOptions || {};
       this._tlsOptions = options.tlsOptions || {};
       this._onKmsProviderRefresh = options.onKmsProviderRefresh;
+      this._kmsProviders = options.kmsProviders || {};
 
       const mongoCryptOptions = {};
       if (options.schemaMap) {
@@ -115,13 +117,9 @@ module.exports = function (modules) {
           : this._bson.serialize(options.encryptedFieldsMap);
       }
 
-      if (options.kmsProviders) {
-        mongoCryptOptions.kmsProviders = !Buffer.isBuffer(options.kmsProviders)
-          ? this._bson.serialize(options.kmsProviders)
-          : options.kmsProviders;
-      } else if (!options.onKmsProviderRefresh) {
-        throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
-      }
+      mongoCryptOptions.kmsProviders = !Buffer.isBuffer(this._kmsProviders)
+        ? this._bson.serialize(this._kmsProviders)
+        : this._kmsProviders;
 
       if (options.logger) {
         mongoCryptOptions.logger = options.logger;
@@ -321,7 +319,9 @@ module.exports = function (modules) {
      * the original ones.
      */
     async askForKMSCredentials() {
-      return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
+      return this._onKmsProviderRefresh
+        ? this._onKmsProviderRefresh()
+        : loadCredentials(this._kmsProviders);
     }
 
     /**

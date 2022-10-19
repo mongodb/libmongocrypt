@@ -207,6 +207,9 @@ export interface ClientEncryptionOptions {
 
   /**
    * Optional callback to override KMS providers per-context.
+   *
+   * @deprecated Installing optional dependencies will automatically refresh kms
+   *             provider credentials.
    */
   onKmsProviderRefresh?: () => Promise<KMSProviders>;
 
