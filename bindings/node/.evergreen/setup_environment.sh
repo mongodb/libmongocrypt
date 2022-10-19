@@ -63,7 +63,7 @@ EOT
   echo "Running: nvm use lts"
   nvm use lts
   echo "Running: npm install -g npm@8.3.1"
-  npm install -g npm@8.3.1 ${NPM_OPTIONS} # https://github.com/npm/cli/issues/4341
+  npm install -g npm@8.3.1 # https://github.com/npm/cli/issues/4341
   set -o xtrace
 else
   set +o xtrace

@@ -484,6 +484,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test node"
+    - func: "build and test node no optional dependencies"
     - func: "attach node xunit results"
 
 # Note: keep this disabled unless you want master to force-push
