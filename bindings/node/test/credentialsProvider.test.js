@@ -10,9 +10,9 @@ const originalSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const originalSessionToken = process.env.AWS_SESSION_TOKEN;
 
 describe('#loadCredentials', function () {
-  const accessKey = 'accessKey';
-  const secretKey = 'secretKey';
-  const sessionToken = 'sessionToken';
+  const accessKey = 'example';
+  const secretKey = 'example';
+  const sessionToken = 'example';
 
   after(function () {
     // After the entire suite runs, set the env back for the rest of the test run.
