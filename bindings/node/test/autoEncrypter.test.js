@@ -368,7 +368,7 @@ describe('AutoEncrypter', function () {
       });
     });
 
-    context('when no refresh function is provided', function () {
+    context('when no refresh function is provided and no optional sdk', function () {
       const accessKey = 'example';
       const secretKey = 'example';
 
@@ -399,8 +399,10 @@ describe('AutoEncrypter', function () {
             aws: {}
           }
         });
-        mc.decrypt(input, (err) => {
-          expect(err.message).to.equal('client not configured with KMS provider necessary to decrypt');
+        mc.decrypt(input, err => {
+          expect(err.message).to.equal(
+            'client not configured with KMS provider necessary to decrypt'
+          );
           done();
         });
       });

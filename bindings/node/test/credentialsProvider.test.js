@@ -23,11 +23,6 @@ describe('#loadCredentials', function () {
 
   context('when the credential provider finds credentials', function () {
     before(function () {
-      if (process.env.NPM_OPTIONS === '--no-optional') {
-        this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
-        this.currentTest.skip();
-        return;
-      }
       process.env.AWS_ACCESS_KEY_ID = accessKey;
       process.env.AWS_SECRET_ACCESS_KEY = secretKey;
       process.env.AWS_SESSION_TOKEN = sessionToken;
@@ -35,6 +30,14 @@ describe('#loadCredentials', function () {
 
     context('when the credentials are empty', function () {
       const kmsProviders = {};
+
+      before(function () {
+        if (process.env.NPM_OPTIONS === '--no-optional') {
+          this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
+          this.currentTest.skip();
+          return;
+        }
+      });
 
       it('refreshes the aws credentials', async function () {
         const providers = await loadCredentials(kmsProviders);
@@ -56,6 +59,14 @@ describe('#loadCredentials', function () {
           },
           aws: {}
         };
+
+        before(function () {
+          if (process.env.NPM_OPTIONS === '--no-optional') {
+            this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
+            this.currentTest.skip();
+            return;
+          }
+        });
 
         it('refreshes only the aws credentials', async function () {
           const providers = await loadCredentials(kmsProviders);
@@ -82,6 +93,14 @@ describe('#loadCredentials', function () {
           }
         };
 
+        before(function () {
+          if (process.env.NPM_OPTIONS === '--no-optional') {
+            this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
+            this.currentTest.skip();
+            return;
+          }
+        });
+
         it('does not refresh credentials', async function () {
           const providers = await loadCredentials(kmsProviders);
           expect(providers).to.deep.equal(kmsProviders);
@@ -94,6 +113,14 @@ describe('#loadCredentials', function () {
             key: Buffer.alloc(96)
           }
         };
+
+        before(function () {
+          if (process.env.NPM_OPTIONS === '--no-optional') {
+            this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
+            this.currentTest.skip();
+            return;
+          }
+        });
 
         it('refreshes ony the aws credentials', async function () {
           const providers = await loadCredentials(kmsProviders);
