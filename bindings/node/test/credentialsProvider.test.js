@@ -21,12 +21,13 @@ describe('#loadCredentials', function () {
     process.env.AWS_SESSION_TOKEN = originalSessionToken;
   });
 
-  // Note that the aws credential provider caches the credentials and there is no way
-  // to clear it, so the opposite case for this context isn't really testable when
-  // deleting the env vars and mocking out the aws sdk internals is not a viable
-  // solution.
   context('when the credential provider finds credentials', function () {
     before(function () {
+      if (process.env.NPM_OPTIONS === '--no-optional') {
+        this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
+        this.currentTest.skip();
+        return;
+      }
       process.env.AWS_ACCESS_KEY_ID = accessKey;
       process.env.AWS_SECRET_ACCESS_KEY = secretKey;
       process.env.AWS_SESSION_TOKEN = sessionToken;
@@ -108,6 +109,28 @@ describe('#loadCredentials', function () {
           });
         });
       });
+    });
+  });
+
+  context('when the sdk is not installed', function () {
+    const kmsProviders = {
+      local: {
+        key: Buffer.alloc(96)
+      },
+      aws: {}
+    };
+
+    before(function () {
+      if (!process.env.NPM_OPTIONS) {
+        this.currentTest.skipReason = 'Credentials will be loaded when sdk present';
+        this.currentTest.skip();
+        return;
+      }
+    });
+
+    it('does not refresh credentials', async function () {
+      const providers = await loadCredentials(kmsProviders);
+      expect(providers).to.deep.equal(kmsProviders);
     });
   });
 });

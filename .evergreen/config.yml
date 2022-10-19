@@ -138,6 +138,20 @@ functions:
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
 
+  "build and test node no optional dependencies":
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt/bindings/node"
+        args:
+          - "./.evergreen/test.sh"
+        env:
+          PROJECT_DIRECTORY: ${project_directory}
+          NODE_GITHUB_TOKEN: ${node_github_token}
+          DISTRO_ID: ${distro_id}
+          BUILD_VARIANT: ${build_variant}
+          NPM_OPTIONS: "--no-optional"
+
   "attach node xunit results":
     - command: attach.xunit_results
       params:

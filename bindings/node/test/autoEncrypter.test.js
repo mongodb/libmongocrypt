@@ -334,6 +334,11 @@ describe('AutoEncrypter', function () {
       const secretKey = 'example';
 
       before(function () {
+        if (process.env.NPM_OPTIONS === '--no-optional') {
+          this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
+          this.currentTest.skip();
+          return;
+        }
         // After the entire suite runs, set the env back for the rest of the test run.
         process.env.AWS_ACCESS_KEY_ID = accessKey;
         process.env.AWS_SECRET_ACCESS_KEY = secretKey;
@@ -358,6 +363,44 @@ describe('AutoEncrypter', function () {
         mc.decrypt(input, (err, decrypted) => {
           if (err) return done(err);
           expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+          done();
+        });
+      });
+    });
+
+    context('when no refresh function is provided', function () {
+      const accessKey = 'example';
+      const secretKey = 'example';
+
+      before(function () {
+        if (!process.env.NPM_OPTIONS) {
+          this.currentTest.skipReason = 'With optional sdk installed credentials would be loaded.';
+          this.currentTest.skip();
+          return;
+        }
+        // After the entire suite runs, set the env back for the rest of the test run.
+        process.env.AWS_ACCESS_KEY_ID = accessKey;
+        process.env.AWS_SECRET_ACCESS_KEY = secretKey;
+      });
+
+      after(function () {
+        // After the entire suite runs, set the env back for the rest of the test run.
+        process.env.AWS_ACCESS_KEY_ID = originalAccessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = originalSecretAccessKey;
+      });
+
+      it('errors without the optional sdk credential provider', function (done) {
+        const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+        const client = new MockClient();
+        const mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: {}
+          }
+        });
+        mc.decrypt(input, (err) => {
+          expect(err.message).to.equal('client not configured with KMS provider necessary to decrypt');
           done();
         });
       });

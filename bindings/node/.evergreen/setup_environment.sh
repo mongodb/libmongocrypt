@@ -10,6 +10,7 @@ NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
 BIN_DIR="$(pwd)/bin"
 NVM_WINDOWS_URL="https://github.com/coreybutler/nvm-windows/releases/download/1.1.9/nvm-noinstall.zip"
 NVM_URL="https://raw.githubusercontent.com/creationix/nvm/v0.38.0/install.sh"
+NPM_OPTIONS="${NPM_OPTIONS}"
 
 # create node artifacts path if needed
 mkdir -p "${NODE_ARTIFACTS_PATH}"
@@ -62,7 +63,7 @@ EOT
   echo "Running: nvm use lts"
   nvm use lts
   echo "Running: npm install -g npm@8.3.1"
-  npm install -g npm@8.3.1 # https://github.com/npm/cli/issues/4341
+  npm install -g npm@8.3.1 ${NPM_OPTIONS} # https://github.com/npm/cli/issues/4341
   set -o xtrace
 else
   set +o xtrace
