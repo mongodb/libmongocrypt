@@ -709,14 +709,6 @@ tasks:
           set -o errexit
           set -o verbose
 
-          # Find cmake.
-          if [ "$OS" == "Windows_NT" ]; then
-            CMAKE=/cygdrive/c/cmake/bin/cmake
-          else
-            # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-            IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
-          fi
-
           if [ "${is_patch}" = "true" ]; then
             echo "patch build, skipping packaging publication"
             exit 0
