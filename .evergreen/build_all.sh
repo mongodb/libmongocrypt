@@ -22,7 +22,6 @@ if [ "$OS_NAME" = "windows" ]; then
     fi
 fi
 
-: "${CTEST:="${CMAKE%cmake*}ctest"}"
 # Have CTest print test failure info to stderr
 export CTEST_OUTPUT_ON_FAILURE=1
 
