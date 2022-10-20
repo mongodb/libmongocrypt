@@ -14,21 +14,11 @@ _cxxflags=""
 
 : "${CONFIGURE_ONLY:=}"
 
-# Use C driver helper script to find cmake binary, stored in $CMAKE.
 if [ "$OS_NAME" = "windows" ]; then
-    : "${CMAKE:=/cygdrive/c/cmake/bin/cmake}"
     # Enable exception handling for MSVC
     _cxxflags="-EHsc"
     if [ "${WINDOWS_32BIT-}" != "ON" ]; then
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
-    fi
-else
-    # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-    IGNORE_SYSTEM_CMAKE=1 . "$EVG_DIR/find-cmake.sh"
-    # Check if on macOS with arm64. Use system cmake. See BUILD-14565.
-    MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-    if [ "darwin" = "$OS_NAME" -a "arm64" = "$MARCH" ]; then
-        CMAKE=cmake
     fi
 fi
 
@@ -70,7 +60,7 @@ common_cmake_args=(
 )
 
 # Build and install libmongocrypt.
-"$CMAKE" \
+run_cmake \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX" \
     "${common_cmake_args[@]}"
 
@@ -79,10 +69,10 @@ if [ "$CONFIGURE_ONLY" ]; then
     exit 0;
 fi
 echo "Installing libmongocrypt"
-$CMAKE --build "$build_dir" --target install --config RelWithDebInfo
-$CMAKE --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
-$CMAKE --build "$build_dir" --target test_kms_request --config RelWithDebInfo
-run_chdir "$build_dir" "$CTEST" -C RelWithDebInfo
+run_cmake --build "$build_dir" --target install --config RelWithDebInfo
+run_cmake --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
+run_cmake --build "$build_dir" --target test_kms_request --config RelWithDebInfo
+run_chdir "$build_dir" run_ctest -C RelWithDebInfo
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if [ "$MACOS_UNIVERSAL" = "ON" ]; then
@@ -107,21 +97,21 @@ if "${DEFAULT_BUILD_ONLY:-false}"; then
 fi
 
 # Build and install libmongocrypt with no native crypto.
-"$CMAKE" \
+run_cmake \
     -DDISABLE_NATIVE_CRYPTO=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
     "${common_cmake_args[@]}"
 
-$CMAKE --build "$build_dir" --target install --config RelWithDebInfo
-$CMAKE --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
-run_chdir "$build_dir" "$CTEST" -C RelWithDebInfo
+run_cmake --build "$build_dir" --target install --config RelWithDebInfo
+run_cmake --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
+run_chdir "$build_dir" run_ctest -C RelWithDebInfo
 
 # Build and install libmongocrypt without statically linking libbson
-"$CMAKE" \
+run_cmake \
     -UDISABLE_NATIVE_CRYPTO \
     -DUSE_SHARED_LIBBSON=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
     "${common_cmake_args[@]}"
 
-"$CMAKE" --build "$build_dir" --target install  --config RelWithDebInfo
-run_chdir "$build_dir" "$CTEST" -C RelWithDebInfo
+run_cmake --build "$build_dir" --target install  --config RelWithDebInfo
+run_chdir "$build_dir" run_ctest -C RelWithDebInfo
