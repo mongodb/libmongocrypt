@@ -29,21 +29,8 @@ mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build
 run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
 MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
-# Use C driver helper script to find cmake binary, stored in $CMAKE.
-if [ "$OS_NAME" = "windows" ]; then
-    CMAKE=/cygdrive/c/cmake/bin/cmake
-    if [ "${WINDOWS_32BIT-}" != "ON" ]; then
-        ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
-    fi
-else
-    # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-    IGNORE_SYSTEM_CMAKE=1 . "$EVG_DIR/find-cmake.sh"
-    # Check if on macOS with arm64. Use system cmake. See BUILD-14565.
-    OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
-    MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-    if [ "darwin" = "$OS_NAME" -a "arm64" = "$MARCH" ]; then
-        CMAKE=cmake
-    fi
+if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON"; then
+    ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 
 if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
@@ -55,14 +42,14 @@ run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/b
 BUILD_PATH="$MONGOC_DIR/cmake-build"
 BSON1_INSTALL_PATH="$linker_tests_root/install/bson1"
 SRC_PATH="$MONGOC_DIR"
-$CMAKE \
+run_cmake \
   -DENABLE_MONGOC=OFF \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   $ADDITIONAL_CMAKE_FLAGS \
   -DCMAKE_INSTALL_PREFIX="$BSON1_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_PATH"
-$CMAKE --build "$BUILD_PATH" --target install --config RelWithDebInfo
+run_cmake --build "$BUILD_PATH" --target install --config RelWithDebInfo
 
 # Prepare libbson2
 run_chdir "$MONGOC_DIR" git reset --hard
@@ -73,14 +60,14 @@ LIBBSON2_SRC_DIR="$MONGOC_DIR"
 BUILD_DIR="$linker_tests_root/libmongocrypt-cmake-build"
 LMC_INSTALL_PATH="$linker_tests_root/install/libmongocrypt"
 SRC_PATH="$LIBMONGOCRYPT_DIR"
-$CMAKE \
+run_cmake \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   "-DMONGOCRYPT_MONGOC_DIR=$LIBBSON2_SRC_DIR" \
   $ADDITIONAL_CMAKE_FLAGS \
   -DCMAKE_INSTALL_PREFIX="$LMC_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
-$CMAKE --build "$BUILD_DIR" --target install --config RelWithDebInfo
+run_cmake --build "$BUILD_DIR" --target install --config RelWithDebInfo
 
 echo "Test case: Modelling libmongoc's use"
 # app links against libbson1.so
@@ -88,13 +75,13 @@ echo "Test case: Modelling libmongoc's use"
 BUILD_DIR="$linker_tests_root/app-cmake-build"
 PREFIX_PATH="$LMC_INSTALL_PATH;$BSON1_INSTALL_PATH"
 SRC_PATH="$linker_tests_deps_root/app"
-$CMAKE \
+run_cmake \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   $ADDITIONAL_CMAKE_FLAGS \
   -DCMAKE_PREFIX_PATH="$PREFIX_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
-$CMAKE --build "$BUILD_DIR" --target app --config RelWithDebInfo
+run_cmake --build "$BUILD_DIR" --target app --config RelWithDebInfo
 
 if [ "$OS_NAME" = "windows" ]; then
     export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
