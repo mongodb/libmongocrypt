@@ -190,3 +190,35 @@ _init_sh_evg_dir="$(dirname "${_init_sh_this_file}")"
 # this one, and will therefore remain as native paths
 EVG_DIR="$(native_path "${_init_sh_evg_dir}")"
 LIBMONGOCRYPT_DIR="$(dirname "${EVG_DIR}")"
+
+
+EXE_SUFFIX=""
+if test "$OS_NAME" = "windows"; then
+    EXE_SUFFIX=".exe"
+fi
+
+if test "${USER_CACHES_DIR:=${XDG_CACHE_HOME:-}}" = ""; then
+    case "$OS_NAME" in
+    linux)
+        USER_CACHES_DIR=$HOME/.cache
+        ;;
+    darwin)
+        USER_CACHES_DIR=$HOME/Library/Caches
+        ;;
+    windows)
+        USER_CACHES_DIR=${LOCALAPPDATA:-$USERPROFILE/.cache}
+        ;;
+    *)
+        log "Using ~/.cache as fallback user caching directory"
+        USER_CACHES_DIR="$(abspath ~/.cache)"
+    esac
+fi
+
+# Ensure we are dealing with a complete path
+USER_CACHES_DIR="$(abspath "$USER_CACHES_DIR")"
+
+: "${BUILD_CACHE_BUST:=1}"
+: "${BUILD_CACHE_DIR:="$USER_CACHES_DIR/libmongocrypt/build.$BUILD_CACHE_BUST"}"
+
+# Silence shellcheck:
+: "$LIBMONGOCRYPT_DIR,$EXE_SUFFIX"
