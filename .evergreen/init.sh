@@ -202,7 +202,7 @@ if test "${USER_CACHES_DIR:=${XDG_CACHE_HOME:-}}" = ""; then
     linux)
         USER_CACHES_DIR=$HOME/.cache
         ;;
-    darwin)
+    macos)
         USER_CACHES_DIR=$HOME/Library/Caches
         ;;
     windows)
