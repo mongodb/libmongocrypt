@@ -20,7 +20,7 @@ mkdir -p "$MONGOCRYPT_INSTALL_PREFIX"
 if test -f /proc/cpuinfo; then
     # Count the number of lines beginning with "processor" in the cpuinfo
     jobs="$(grep -c '^processor' /proc/cpuinfo)"
-    if command -v bc; then
+    if have_command bc; then
         # Add two (hueristic to compensate for I/O latency)
         jobs="$(echo "$jobs+2" | bc)"
     fi
