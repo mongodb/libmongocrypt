@@ -81,7 +81,7 @@ function run_chdir() {
     shift
     pushd "$_dir" > /dev/null
     debug "Run in directory [$_dir]:" "$@"
-    command "$@"
+    "$@"
     local _rc=$?
     popd > /dev/null
     return $_rc
@@ -191,6 +191,15 @@ _init_sh_evg_dir="$(dirname "${_init_sh_this_file}")"
 EVG_DIR="$(native_path "${_init_sh_evg_dir}")"
 LIBMONGOCRYPT_DIR="$(dirname "${EVG_DIR}")"
 
+# Executes CMake via the cache-managing script
+run_cmake() {
+    command bash "$EVG_DIR/cmake.sh" "$@"
+}
+
+# Executes CTest via the cache-managing script
+run_ctest() {
+    command bash "$EVG_DIR/ctest.sh" "$@"
+}
 
 EXE_SUFFIX=""
 if test "$OS_NAME" = "windows"; then
