@@ -9,3 +9,4 @@ cryptography>=2,<2.9;platform_python_implementation=='PyPy'
 cryptography>=2;platform_python_implementation!='PyPy'
 mock;python_version=='2.7'
 requests_mock>=1.10
+six>=1.5
