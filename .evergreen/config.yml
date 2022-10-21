@@ -138,6 +138,20 @@ functions:
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
 
+  "build and test node no optional dependencies":
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt/bindings/node"
+        args:
+          - "./.evergreen/test.sh"
+        env:
+          PROJECT_DIRECTORY: ${project_directory}
+          NODE_GITHUB_TOKEN: ${node_github_token}
+          DISTRO_ID: ${distro_id}
+          BUILD_VARIANT: ${build_variant}
+          NPM_OPTIONS: "--no-optional"
+
   "attach node xunit results":
     - command: attach.xunit_results
       params:
@@ -470,6 +484,12 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build and test node"
+    - func: "attach node xunit results"
+
+- name: build-and-test-node-no-optional-dependencies
+  commands:
+    - func: "fetch source"
+    - func: "build and test node no optional dependencies"
     - func: "attach node xunit results"
 
 # Note: keep this disabled unless you want master to force-push
@@ -890,6 +910,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -902,6 +923,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan-mac
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - build-and-test-csharp
   - test-python
   - test-java
@@ -933,6 +955,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-csharp
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - windows-upload-check
 - name: windows-test-python
@@ -957,6 +980,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -973,6 +997,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -989,6 +1014,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1004,6 +1030,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1020,6 +1047,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1063,6 +1091,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-python
   - test-java
   - name: publish-packages
@@ -1093,6 +1122,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1109,6 +1139,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1125,6 +1156,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1141,6 +1173,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1157,6 +1190,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - build-and-test-csharp
   - test-java
   - name: publish-packages
@@ -1174,6 +1208,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1191,6 +1226,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - build-and-test-csharp
   - test-java
   - upload-java
@@ -1207,6 +1243,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1231,6 +1268,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-python
   - test-java
 - name: windows-vs2017-32bit

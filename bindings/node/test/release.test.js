@@ -16,6 +16,7 @@ const REQUIRED_FILES = [
   'package/lib/buffer_pool.js',
   'package/lib/clientEncryption.js',
   'package/lib/common.js',
+  'package/lib/credentialsProvider.js',
   'package/lib/cryptoCallbacks.js',
   'package/lib/mongocryptdManager.js',
   'package/lib/stateMachine.js',
