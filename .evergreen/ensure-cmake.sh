@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
 
+## This script ensures the presence of a CMake executable matching a specific
+## version. After sourcing this script, a variable "$CMAKE_EXE" will refer to
+## the CMake executable to be used.
+##
+## The following environment variables are defined by this script, and can also
+## be defined by a caller to control this script. All variables are optional
+## and have defaults for this file:
+##
+##  - CMAKE_VERSION: The CMake version to obtain
+##  - CMAKE_CACHES_ROOT: The directory where all obtained CMake versions will be cached
+##  - CMAKE_CACHE_DIR: The directory where we will expect/write the CMake that we obtain.
+##  - CMAKE_EXE: A CMake executable to use. If set, no obtaining logic will execute.
+##  - CTEST_EXE: The CTest executable for the CMAKE_EXE.
+
+
 . "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 # The version that we will attempt to obtain:
@@ -141,4 +156,6 @@ _ensure_cmake() {
     esac
 }
 
-_ensure_cmake
+if test -z "${CMAKE_EXE-}"; then
+    _ensure_cmake
+fi
