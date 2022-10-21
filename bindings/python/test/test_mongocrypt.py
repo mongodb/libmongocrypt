@@ -30,6 +30,7 @@ from bson.son import SON
 
 sys.path[0:0] = [""]
 
+from pymongo_auth_aws.auth import AwsCredential
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
 from pymongocrypt.compat import unicode_type, PY3
@@ -446,8 +447,8 @@ class TestMongoCryptCallback(unittest.TestCase):
         encrypter = AutoEncrypter(callback, opts)
         self.addCleanup(encrypter.close)
 
-        with mock.patch("pymongocrypt.mongocrypt._ask_for_kms_credentials") as m:
-            m.return_value = { "aws": { "accessKeyId": "example", "secretAccessKey": "example"} }
+        with mock.patch("pymongocrypt.mongocrypt.aws_temp_credentials") as m:
+            m.return_value = AwsCredential("example", "example", None)
             decrypted = encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
             self.assertTrue(m.called)
