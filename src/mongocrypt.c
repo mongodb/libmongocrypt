@@ -185,11 +185,6 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       &crypt->opts.kms_providers;
 
-   if (!kms_providers) {
-      CLIENT_ERR ("parameter kms_providers must not be null");
-      return false;
-   }
-
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
       return false;
@@ -373,11 +368,6 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
    mongocrypt_status_t *status = crypt->status;
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       &crypt->opts.kms_providers;
-
-   if (!kms_providers) {
-      CLIENT_ERR ("parameter kms_providers must not be null");
-      return false;
-   }
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -1086,11 +1076,9 @@ _mongocrypt_validate_and_copy_string (const char *in,
                                       int32_t in_len,
                                       char **out)
 {
-   if (!in || !out) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (out);
 
-   if (in_len < -1) {
+   if (!in || in_len < -1) {
       return false;
    }
 

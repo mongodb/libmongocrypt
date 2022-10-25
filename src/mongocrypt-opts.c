@@ -178,16 +178,10 @@ _shares_bson_fields (bson_t *one,
    bson_iter_t iter1;
    bson_iter_t iter2;
 
+   BSON_ASSERT_PARAM (one);
+   BSON_ASSERT_PARAM (two);
    BSON_ASSERT_PARAM (found);
    *found = NULL;
-   if (!one) {
-      CLIENT_ERR ("argument 'one' is required");
-      return false;
-   }
-   if (!two) {
-      CLIENT_ERR ("argument 'two' is required");
-      return false;
-   }
    if (!bson_iter_init (&iter1, one)) {
       CLIENT_ERR ("error iterating one BSON in _shares_bson_fields");
       return false;
