@@ -1192,7 +1192,6 @@ generate_delete_tokens (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (efc);
 
    for (ef = efc->fields; ef != NULL; ef = ef->next) {
-
       _mongocrypt_buffer_t IndexKey = {0};
       _mongocrypt_buffer_t TokenKey = {0};
       mc_ServerDataEncryptionLevel1Token_t *sdel1t = NULL;

@@ -283,9 +283,7 @@ _mongocrypt_cache_cleanup (_mongocrypt_cache_t *cache)
 {
    _mongocrypt_cache_pair_t *pair, *tmp;
 
-   if (!cache) {
-      return;
-   }
+   BSON_ASSERT_PARAM (cache);
 
    pair = cache->pair;
    while (pair) {

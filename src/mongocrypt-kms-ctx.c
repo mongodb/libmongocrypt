@@ -1379,6 +1379,8 @@ _mongocrypt_kms_ctx_init_gcp_encrypt (
 {
    BSON_ASSERT_PARAM (kms);
    BSON_ASSERT_PARAM (ctx_opts);
+   BSON_ASSERT_PARAM (kms_providers);
+   BSON_ASSERT_PARAM (access_token);
    BSON_ASSERT_PARAM (plaintext_key_material);
 
    kms_request_opt_t *opt = NULL;
@@ -1452,6 +1454,8 @@ _mongocrypt_kms_ctx_init_gcp_decrypt (
    _mongocrypt_log_t *log)
 {
    BSON_ASSERT_PARAM (kms);
+   BSON_ASSERT_PARAM (kms_providers);
+   BSON_ASSERT_PARAM (access_token);
    BSON_ASSERT_PARAM (key);
 
    kms_request_opt_t *opt = NULL;
@@ -1523,6 +1527,7 @@ _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
 {
    BSON_ASSERT_PARAM (kms_ctx);
    BSON_ASSERT_PARAM (endpoint);
+   BSON_ASSERT_PARAM (secretdata);
 
    mongocrypt_status_t *status;
    bool ret = false;
@@ -1563,6 +1568,7 @@ _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
 {
    BSON_ASSERT_PARAM (kms_ctx);
    BSON_ASSERT_PARAM (endpoint);
+   BSON_ASSERT_PARAM (unique_identifier);
 
    mongocrypt_status_t *status;
    bool ret = false;
@@ -1603,6 +1609,7 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
 {
    BSON_ASSERT_PARAM (kms_ctx);
    BSON_ASSERT_PARAM (endpoint);
+   BSON_ASSERT_PARAM (unique_identifier);
 
    mongocrypt_status_t *status;
    bool ret = false;
@@ -1638,8 +1645,9 @@ done:
 static const char *
 set_and_ret (const char *what, uint32_t *len)
 {
+   BSON_ASSERT_PARAM (what);
+
    if (len) {
-      BSON_ASSERT_PARAM (what);
       BSON_ASSERT (size_to_uint32 (strlen (what), len));
    }
    return what;

@@ -1267,6 +1267,7 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                                  mongocrypt_binary_t *kms_providers_definition)
 {
    BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (kms_providers_definition);
 
    mongocrypt_status_t *const status = crypt->status;
 
@@ -1291,10 +1292,8 @@ _mongocrypt_parse_kms_providers (
    bson_t as_bson;
    bson_iter_t iter;
 
-   if (!kms_providers) {
-      CLIENT_ERR ("argument 'kms_providers' is required");
-      return false;
-   }
+   BSON_ASSERT_PARAM (kms_providers_definition);
+   BSON_ASSERT_PARAM (kms_providers);
    if (!_mongocrypt_binary_to_bson (kms_providers_definition, &as_bson) ||
        !bson_iter_init (&iter, &as_bson)) {
       CLIENT_ERR ("invalid BSON");

@@ -24,8 +24,8 @@ _one_key_alt_name_equal (_mongocrypt_key_alt_name_t *ptr_a,
                          _mongocrypt_key_alt_name_t *ptr_b)
 {
    BSON_ASSERT_PARAM (ptr_a);
-   BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
    BSON_ASSERT_PARAM (ptr_b);
+   BSON_ASSERT (ptr_a->value.value_type == BSON_TYPE_UTF8);
    BSON_ASSERT (ptr_b->value.value_type == BSON_TYPE_UTF8);
    return 0 == strcmp (_mongocrypt_key_alt_name_get_string (ptr_a),
                        _mongocrypt_key_alt_name_get_string (ptr_b));

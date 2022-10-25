@@ -1160,11 +1160,9 @@ _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
    BSON_ASSERT_PARAM (key_id);
 
    key_doc = _mongocrypt_key_new ();
-   BSON_ASSERT (key_doc);
    _mongocrypt_buffer_copy_to (key_id, &key_doc->id);
 
    key_returned = _key_returned_prepend (kb, &kb->keys_returned, key_doc);
-   BSON_ASSERT (key_returned);
    key_returned->decrypted = true;
    _mongocrypt_buffer_init (&key_returned->decrypted_key_material);
    _mongocrypt_buffer_resize (&key_returned->decrypted_key_material,
