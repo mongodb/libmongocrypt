@@ -61,10 +61,11 @@ set (MONGOCRYPT_SOURCES
    src/crypto/none.c
    src/mc-array.c
    src/mc-efc.c
+   src/mc-fle2-find-range-payload.c
    src/mc-fle2-insert-update-payload.c
    src/mc-fle2-encryption-placeholder.c
    src/mc-fle2-find-equality-payload.c
-   src/mc-fle2-payload-ieev.c
+   src/mc-fle2-payload-iev.c
    src/mc-fle2-payload-uev.c
    src/mc-range-edge-generation.c
    src/mc-range-mincover.c
@@ -305,7 +306,7 @@ if (CMAKE_DL_LIBS)
 endif ()
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libkms_message-static.a")
 if (ENABLE_BUILD_FOR_PPA)
-   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
+   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-for-libmongocrypt.a")
    #librt needed for libbson on linux for clock_gettime
    find_library (RT_LIBRARY rt)
    if (RT_LIBRARY)
@@ -394,7 +395,7 @@ endif ()
 set (TEST_MONGOCRYPT_SOURCES
    test/test-gcp-auth.c
    test/test-mc-efc.c
-   test/test-mc-fle2-payload-ieev.c
+   test/test-mc-fle2-payload-iev.c
    test/test-mc-fle2-payload-iup.c
    test/test-mc-fle2-payload-uev.c
    test/test-mc-range-edge-generation.c
@@ -539,7 +540,7 @@ set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
 set (PKG_CONFIG_LIBS "-L\${libdir} -lmongocrypt")
 if (ENABLE_BUILD_FOR_PPA)
-   set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
+   set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-for-libmongocrypt.a")
    #librt needed for libbson on linux for clock_gettime
    find_library (RT_LIBRARY rt)
    if (RT_LIBRARY)

@@ -861,6 +861,11 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes)
       return false;
    }
 
+   if (0 == bytes->len) {
+      CLIENT_ERR ("argument 'bytes' cannot be empty");
+      return false;
+   }
+
    if (bytes->len > mongocrypt_kms_ctx_bytes_needed (kms)) {
       CLIENT_ERR ("KMS response fed too much data");
       return false;

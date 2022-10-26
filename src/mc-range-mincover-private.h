@@ -39,8 +39,10 @@ void
 mc_mincover_destroy (mc_mincover_t *mincover);
 
 typedef struct {
-   int32_t range_min;
-   int32_t range_max;
+   int32_t lowerBound;
+   bool includeLowerBound;
+   int32_t upperBound;
+   bool includeUpperBound;
    mc_optional_int32_t min;
    mc_optional_int32_t max;
    size_t sparsity;
@@ -53,8 +55,10 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
                      mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 typedef struct {
-   int64_t range_min;
-   int64_t range_max;
+   int64_t lowerBound;
+   bool includeLowerBound;
+   int64_t upperBound;
+   bool includeUpperBound;
    mc_optional_int64_t min;
    mc_optional_int64_t max;
    size_t sparsity;
@@ -65,5 +69,20 @@ typedef struct {
 mc_mincover_t *
 mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
                      mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+
+typedef struct {
+   double lowerBound;
+   bool includeLowerBound;
+   double upperBound;
+   bool includeUpperBound;
+   size_t sparsity;
+} mc_getMincoverDouble_args_t;
+
+// mc_getMincoverDouble implements the Mincover Generation algorithm described
+// in SERVER-68600 for double.
+mc_mincover_t *
+mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
+                      mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MC_RANGE_MINCOVER_PRIVATE_H */

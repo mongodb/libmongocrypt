@@ -1,71 +1,89 @@
 // This is a copy of test vectors from the mongodb/mongo repository.
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000011100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -100,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -100,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000011100011010111111010100100110001100111111110011100\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 1,
@@ -74,8 +92,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 2,
@@ -85,8 +105,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 3,
@@ -96,8 +118,10 @@
         "111000110101111110101001001100011001111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 4,
@@ -113,8 +137,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 1,
@@ -123,8 +149,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 2,
@@ -134,8 +162,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 3,
@@ -145,8 +175,10 @@
         "111000110101111110101001001100011001111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 4,
@@ -162,8 +194,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -172,8 +206,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -183,8 +219,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 3,
@@ -194,8 +232,10 @@
         "111000110101111110101001001100011001111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 4,
@@ -211,8 +251,10 @@
         "11100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -221,8 +263,10 @@
         "000000000000011100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -233,8 +277,10 @@
         "0000000000000111000110101111110101001001100011001111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = -1,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -249,8 +295,10 @@
         "000000000000011100011010111111010100100110001100111111111\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 0,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 1,
@@ -260,8 +308,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 0,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 2,
@@ -272,8 +322,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 0,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -283,8 +335,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 0,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -295,8 +349,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 0,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -306,8 +362,10 @@
         "000000000000011100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 0,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -323,8 +381,10 @@
         "000000000000011100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 823,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -338,8 +398,10 @@
         "11100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 823,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -357,8 +419,10 @@
         "111000110101111110101001001100011010000011001101\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 823,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 3,
@@ -378,8 +442,10 @@
         "111000110101111110101001001100011010000011001101\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 823,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 4,
@@ -421,8 +487,10 @@
         "111000110101111110101001001100011010000011001101\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 823,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -436,8 +504,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 823,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -455,8 +525,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 823,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -483,8 +555,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 1024,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -495,8 +569,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 1024,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -508,8 +584,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 1024,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -520,8 +598,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 1024,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -539,8 +619,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 1879048192,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -567,8 +649,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = -100,
-    .range_max = 1879048192,
+    .lowerBound = -100,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -619,104 +703,130 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(-1),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000011100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000011100011010111111010100100110001100111111111111111\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(0),
     .sparsity = 1,
     .expectMincoverString = "0\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "00000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = -1,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = -1,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 1,
@@ -724,8 +834,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 2,
@@ -733,8 +845,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -742,8 +856,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -751,8 +867,10 @@
         "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -760,8 +878,10 @@
         "000000000000011100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -769,72 +889,90 @@
         "000000000000011100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(0),
     .sparsity = 1,
     .expectMincoverString = "root\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(0),
     .sparsity = 2,
     .expectMincoverString = "root\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(0),
     .sparsity = 3,
     .expectMincoverString = "root\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(0),
     .sparsity = 4,
     .expectMincoverString = "root\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "0000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 2,
     .expectMincoverString = "0000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "00000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
     .expectMincoverString = "00000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 0,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -842,8 +980,10 @@
         "000000000000000000000000000000000000000000000000000000000000001\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 823,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -855,8 +995,10 @@
         "11100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 823,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -871,8 +1013,10 @@
         "111000110101111110101001001100011010000011001101\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 823,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -884,8 +1028,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 823,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -904,8 +1050,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 823,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -917,8 +1065,10 @@
         "01100111000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 823,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -930,8 +1080,10 @@
         "000000000000000000000000000000000000000000000000000001100111000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 823,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -950,8 +1102,10 @@
         "000000000000000000000000000000000000000000000000000001100111000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -960,8 +1114,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -970,8 +1126,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -980,8 +1138,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -991,8 +1151,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1000,8 +1162,10 @@
         "1000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -1010,8 +1174,10 @@
         "1000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1019,8 +1185,10 @@
         "00000000000000000000000000000000000000000000000000001000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -1029,8 +1197,10 @@
         "00000000000000000000000000000000000000000000000000001000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1024,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1040,8 +1210,10 @@
         "000000000000000000000000000000000000000000000000000010000000001\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1879048192,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1066,8 +1238,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1879048192,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1110,8 +1284,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1879048192,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1121,8 +1297,10 @@
         "00000000000000000000000000000000111000000000000000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1879048192,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -1134,8 +1312,10 @@
         "00000000000000000000000000000000111000000000000000000000000000\n" 
 },
 {
-    .range_min = -1,
-    .range_max = 1879048192,
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1150,112 +1330,140 @@
         "000000000000000000000000000000001110000000000000000000000000001\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(0),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000011100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000011100011010111111010100100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(0),
     .sparsity = 1,
     .expectMincoverString = "1\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "00000000001\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000001\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000001\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "00000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 0,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1266,8 +1474,10 @@
         "11100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -1281,8 +1491,10 @@
         "111000110101111110101001001100011010000011001101\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 3,
@@ -1298,8 +1510,10 @@
         "111000110101111110101001001100011010000011001101\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 4,
@@ -1331,8 +1545,10 @@
         "111000110101111110101001001100011010000011001101\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1343,8 +1559,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -1357,8 +1575,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1376,8 +1596,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 4,
@@ -1396,8 +1618,10 @@
         "000000000000011100011010111111010100100110001101000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1417,8 +1641,10 @@
         "01100111000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1438,8 +1664,10 @@
         "000000000000000000000000000000000000000000000000000001100111000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1478,8 +1706,10 @@
         "000000000000000000000000000000000000000000000000000001100111000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1490,8 +1720,10 @@
         "01100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -1504,8 +1736,10 @@
         "01100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 3,
@@ -1521,8 +1755,10 @@
         "011001101\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 4,
@@ -1541,8 +1777,10 @@
         "01100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1553,8 +1791,10 @@
         "000000000000000000000000000000000000000000000000000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -1567,8 +1807,10 @@
         "000000000000000000000000000000000000000000000000000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1586,8 +1828,10 @@
         "000000000000000000000000000000000000000000000000000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 823,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 4,
@@ -1606,8 +1850,10 @@
         "000000000000000000000000000000000000000000000000000001100110\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1615,8 +1861,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -1624,8 +1872,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1633,8 +1883,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1643,8 +1895,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1661,8 +1915,10 @@
         "1000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1679,8 +1935,10 @@
         "00000000000000000000000000000000000000000000000000001000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1710,8 +1968,10 @@
         "000000000000000000000000000000000000000000000000000010000000001\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1719,8 +1979,10 @@
         "10000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1728,8 +1990,10 @@
         "000000000000000000000000000000000000000000000000000010000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1024,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1738,8 +2002,10 @@
         "000000000000000000000000000000000000000000000000000010000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1879048192,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1763,8 +2029,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1879048192,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1806,8 +2074,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1879048192,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1846,8 +2116,10 @@
         "00000000000000000000000000000000111000000000000000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1879048192,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1857,8 +2129,10 @@
         "000000000000000000000000000000001110000000000000000000000000000\n" 
 },
 {
-    .range_min = 0,
-    .range_max = 1879048192,
+    .lowerBound = 0,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -1872,88 +2146,110 @@
         "000000000000000000000000000000001110000000000000000000000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001101000001100110111\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001101000001100110111\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000011100011010111111010100100110001101000001100110111\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000011100011010111111010100100110001101000001100110111\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "01100111000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000001100111000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000001100111000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "01100110111\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000001100110111\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 823,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 823,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000001100110111\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -1964,8 +2260,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -1978,8 +2276,10 @@
         "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -1990,8 +2290,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -2003,8 +2305,10 @@
         "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -2014,8 +2318,10 @@
         "1000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 2,
@@ -2026,8 +2332,10 @@
         "1000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2037,8 +2345,10 @@
         "00000000000000000000000000000000000000000000000000001000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -2049,8 +2359,10 @@
         "00000000000000000000000000000000000000000000000000001000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -2062,8 +2374,10 @@
         "000000000000000000000000000000000000000000000000000010000000001\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 1,
@@ -2074,8 +2388,10 @@
         "10000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2086,8 +2402,10 @@
         "000000000000000000000000000000000000000000000000000010000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1024,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -2099,8 +2417,10 @@
         "000000000000000000000000000000000000000000000000000010000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1879048192,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2132,8 +2452,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1879048192,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2165,8 +2487,10 @@
         "00000000000000000000000000000000111000000000000000000000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1879048192,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 2,
@@ -2210,8 +2534,10 @@
         "00000000000000000000000000000000111000000000000000000000000000\n" 
 },
 {
-    .range_min = 823,
-    .range_max = 1879048192,
+    .lowerBound = 823,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2244,104 +2570,130 @@
         "000000000000000000000000000000001110000000000000000000000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(1024),
     .sparsity = 2,
     .expectMincoverString = "11100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000011100011010111111010100100110001101000010000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "10000000001\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000010000000001\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000010000000001\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(1024),
     .sparsity = 1,
     .expectMincoverString = "10000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000010000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000010000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(1024),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1024,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1024,
+    .includeUpperBound = true,
     .min = OPT_I64(1024),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000000000000000000000000000000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1879048192,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2369,8 +2721,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1879048192,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -2424,8 +2778,10 @@
         "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1879048192,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2463,8 +2819,10 @@
         "00000000000000000000000000000000111000000000000000000000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1879048192,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2493,8 +2851,10 @@
         "000000000000000000000000000000001110000000000000000000000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1879048192,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(1024),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
@@ -2521,8 +2881,10 @@
         "000000000000000000000000000000001101111111111111111110000000000\n" 
 },
 {
-    .range_min = 1024,
-    .range_max = 1879048192,
+    .lowerBound = 1024,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(1024),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
@@ -2576,64 +2938,80 @@
         "000000000000000000000000000000001101111111111111111110000000000\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1000000000000000),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000011100011010111111100010100110001101000000000000000\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000001110000000000000000000000000001\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(-1),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000001110000000000000000000000000001\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000001110000000000000000000000000000\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(0),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000001110000000000000000000000000000\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(1024),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000000001101111111111111111110000000000\n" 
 },
 {
-    .range_min = 1879048192,
-    .range_max = 1879048192,
+    .lowerBound = 1879048192,
+    .includeLowerBound = true,
+    .upperBound = 1879048192,
+    .includeUpperBound = true,
     .min = OPT_I64(1024),
     .max = OPT_I64(8070450532247928832),
     .sparsity = 3,

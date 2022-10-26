@@ -28,7 +28,7 @@
  * STate".
  */
 
-/* mc_OSTType_Int32 describes the encoding of an BSON int32. */
+/* mc_OSTType_Int32 describes the encoding of a BSON int32. */
 typedef struct {
    uint32_t value;
    uint32_t min;
@@ -49,7 +49,7 @@ mc_getTypeInfo32 (mc_getTypeInfo32_args_t args,
                   mc_OSTType_Int32 *out,
                   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
-/* mc_OSTType_Int64 describes the encoding of an BSON int64. */
+/* mc_OSTType_Int64 describes the encoding of a BSON int64. */
 typedef struct {
    uint64_t value;
    uint64_t min;
@@ -69,5 +69,25 @@ bool
 mc_getTypeInfo64 (mc_getTypeInfo64_args_t args,
                   mc_OSTType_Int64 *out,
                   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+
+/* mc_OSTType_Double describes the encoding of a BSON double. */
+typedef struct {
+   uint64_t value;
+   uint64_t min;
+   uint64_t max;
+} mc_OSTType_Double;
+
+typedef struct {
+   double value;
+   /* Double does not support 'min' or 'max' arguments. See SERVER-70066. */
+} mc_getTypeInfoDouble_args_t;
+
+/* mc_getTypeInfoDouble encodes the double `args.value` into an OSTType_Double
+ * `out`. Returns false and sets `status` on error. */
+bool
+mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
+                      mc_OSTType_Double *out,
+                      mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MC_RANGE_ENCODING_PRIVATE_H */

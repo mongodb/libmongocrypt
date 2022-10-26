@@ -18,6 +18,7 @@
 #define MONGOCRYPT_MARKING_PRIVATE_H
 
 #include "mc-fle2-encryption-placeholder-private.h"
+#include "mc-range-mincover-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-ciphertext-private.h"
 
@@ -64,5 +65,10 @@ _mongocrypt_marking_to_ciphertext (void *ctx,
                                    mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
+mc_mincover_t *
+mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
+                                        size_t sparsity,
+                                        mongocrypt_status_t *status)
+   MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_MARKING_PRIVATE_H */

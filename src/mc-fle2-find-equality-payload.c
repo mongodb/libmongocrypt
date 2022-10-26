@@ -140,7 +140,7 @@ fail:
 
 bool
 mc_FLE2FindEqualityPayload_serialize (
-   bson_t *out, const mc_FLE2FindEqualityPayload_t *payload)
+   const mc_FLE2FindEqualityPayload_t *payload, bson_t *out)
 {
    BSON_ASSERT_PARAM (payload);
 

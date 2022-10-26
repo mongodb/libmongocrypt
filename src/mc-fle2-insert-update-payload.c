@@ -196,7 +196,7 @@ fail:
 
 bool
 mc_FLE2InsertUpdatePayload_serialize (
-   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload)
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out)
 {
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (payload);
@@ -222,12 +222,12 @@ mc_FLE2InsertUpdatePayload_serialize (
 
 bool
 mc_FLE2InsertUpdatePayload_serializeForRange (
-   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload)
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out)
 {
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (payload);
 
-   if (!mc_FLE2InsertUpdatePayload_serialize (out, payload)) {
+   if (!mc_FLE2InsertUpdatePayload_serialize (payload, out)) {
       return false;
    }
    // Append "g" array of EdgeTokenSets.

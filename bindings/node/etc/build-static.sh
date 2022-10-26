@@ -5,6 +5,8 @@ BUILD_DIR=$DEPS_PREFIX/tmp
 LIBMONGOCRYPT_DIR="$(pwd)/../../"
 TOP_DIR="$(pwd)/../../../"
 
+export NPM_OPTIONS="${NPM_OPTIONS}"
+
 if [[ -z $CMAKE ]]; then
   CMAKE=`type -P cmake`
 fi
@@ -32,4 +34,4 @@ popd #./
 # build the `mongodb-client-encryption` addon
 # note the --unsafe-perm parameter to make the build work
 # when running as root. See https://github.com/npm/npm/issues/3497
-BUILD_TYPE=static npm install --unsafe-perm --build-from-source
+BUILD_TYPE=static npm install --unsafe-perm --build-from-source ${NPM_OPTIONS}

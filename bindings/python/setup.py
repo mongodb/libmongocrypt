@@ -50,14 +50,13 @@ setup(
     package_data={'pymongocrypt': ['*.dll', '*.so', '*.dylib']},
     zip_safe=False,
     # Note cryptography is uncapped because it does not follow semver.
-    install_requires=["cffi>=1.12.0,<2", "cryptography>=2.0"],
+    install_requires=["cffi>=1.12.0,<2", "cryptography>=2.0", "requests<3.0.0"],
     author="Shane Harvey",
     author_email="mongodb-user@googlegroups.com",
     url="https://github.com/mongodb/libmongocrypt/tree/master/bindings/python",
     keywords=["mongo", "mongodb", "pymongocrypt", "pymongo", "mongocrypt",
               "bson"],
     test_suite="test",
-    tests_require=["pymongo>=3.11", "mock;python_version=='2.7'",],
     license="Apache License, Version 2.0",
     python_requires=">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*",
     classifiers=[

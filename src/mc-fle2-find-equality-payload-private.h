@@ -39,7 +39,7 @@ mc_FLE2FindEqualityPayload_parse (mc_FLE2FindEqualityPayload_t *out,
 
 bool
 mc_FLE2FindEqualityPayload_serialize (
-   bson_t *out, const mc_FLE2FindEqualityPayload_t *payload);
+   const mc_FLE2FindEqualityPayload_t *payload, bson_t *out);
 
 void
 mc_FLE2FindEqualityPayload_cleanup (mc_FLE2FindEqualityPayload_t *payload);

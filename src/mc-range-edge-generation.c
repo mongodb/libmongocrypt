@@ -204,4 +204,27 @@ mc_getEdgesInt64 (mc_getEdgesInt64_args_t args, mongocrypt_status_t *status)
    return ret;
 }
 
+
+mc_edges_t *
+mc_getEdgesDouble (mc_getEdgesDouble_args_t args, mongocrypt_status_t *status)
+{
+   mc_OSTType_Double got;
+   if (!mc_getTypeInfoDouble (
+          (mc_getTypeInfoDouble_args_t){.value = args.value}, &got, status)) {
+      return NULL;
+   }
+
+   // `max` is the domain of values. `max` is used to determine the maximum bit
+   // length. `min` is expected to be zero. The `min` and `max` terms are kept
+   // for consistency with the server implementation.
+   BSON_ASSERT (got.min == 0);
+
+   char *valueBin = mc_convert_to_bitstring_u64 (got.value);
+   size_t offset = mc_count_leading_zeros_u64 (got.max);
+   const char *leaf = valueBin + offset;
+   mc_edges_t *ret = mc_edges_new (leaf, args.sparsity, status);
+   bson_free (valueBin);
+   return ret;
+}
+
 MC_END_CONVERSION_ERRORS

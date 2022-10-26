@@ -68,8 +68,10 @@ expectMincover_cleanup (mc_array_t *expectMincover)
 }
 
 typedef struct {
-   int32_t range_min;
-   int32_t range_max;
+   int32_t lowerBound;
+   bool includeLowerBound;
+   int32_t upperBound;
+   bool includeUpperBound;
    mc_optional_int32_t min;
    mc_optional_int32_t max;
    size_t sparsity;
@@ -80,8 +82,10 @@ typedef struct {
 } Int32Test;
 
 typedef struct {
-   int64_t range_min;
-   int64_t range_max;
+   int64_t lowerBound;
+   bool includeLowerBound;
+   int64_t upperBound;
+   bool includeUpperBound;
    mc_optional_int64_t min;
    mc_optional_int64_t max;
    size_t sparsity;
@@ -90,6 +94,18 @@ typedef struct {
    mc_array_t expectMincover;
    const char *expectError;
 } Int64Test;
+
+typedef struct {
+   double lowerBound;
+   bool includeLowerBound;
+   double upperBound;
+   bool includeUpperBound;
+   size_t sparsity;
+   /* expectMincoverString is newline delimitted list of strings. */
+   const char *expectMincoverString;
+   mc_array_t expectMincover;
+   const char *expectError;
+} DoubleTest;
 
 typedef struct _test_getMincover_args {
    mc_mincover_t *(*getMincover) (void *tests,
@@ -109,8 +125,10 @@ _test_getMincover32 (void *tests, size_t idx, mongocrypt_status_t *status)
    Int32Test *test = (Int32Test *) tests + idx;
 
    return mc_getMincoverInt32 (
-      (mc_getMincoverInt32_args_t){.range_min = test->range_min,
-                                   .range_max = test->range_max,
+      (mc_getMincoverInt32_args_t){.lowerBound = test->lowerBound,
+                                   .includeLowerBound = test->includeLowerBound,
+                                   .upperBound = test->upperBound,
+                                   .includeUpperBound = test->includeUpperBound,
                                    .min = test->min,
                                    .max = test->max,
                                    .sparsity = test->sparsity},
@@ -125,11 +143,32 @@ _test_getMincover64 (void *tests, size_t idx, mongocrypt_status_t *status)
    Int64Test *const test = (Int64Test *) tests + idx;
 
    return mc_getMincoverInt64 (
-      (mc_getMincoverInt64_args_t){.range_min = test->range_min,
-                                   .range_max = test->range_max,
+      (mc_getMincoverInt64_args_t){.lowerBound = test->lowerBound,
+                                   .includeLowerBound = test->includeLowerBound,
+                                   .upperBound = test->upperBound,
+                                   .includeUpperBound = test->includeUpperBound,
                                    .min = test->min,
                                    .max = test->max,
                                    .sparsity = test->sparsity},
+      status);
+}
+
+static mc_mincover_t *
+_test_getMincoverDouble_helper (void *tests,
+                                size_t idx,
+                                mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (tests);
+
+   DoubleTest *const test = (DoubleTest *) tests + idx;
+
+   return mc_getMincoverDouble (
+      (mc_getMincoverDouble_args_t){
+         .lowerBound = test->lowerBound,
+         .includeLowerBound = test->includeLowerBound,
+         .upperBound = test->upperBound,
+         .includeUpperBound = test->includeUpperBound,
+         .sparsity = test->sparsity},
       status);
 }
 
@@ -145,6 +184,13 @@ _test_expectError64 (void *tests, size_t idx)
 {
    BSON_ASSERT_PARAM (tests);
    return ((Int64Test *) tests + idx)->expectError;
+}
+
+static const char *
+_test_expectErrorDouble (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return ((DoubleTest *) tests + idx)->expectError;
 }
 
 static void
@@ -163,6 +209,14 @@ _test_expectMincover_init64 (void *tests, size_t idx)
    expectMincover_init (&test->expectMincover, test->expectMincoverString);
 }
 
+static void
+_test_expectMincover_initDouble (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   DoubleTest *const test = (DoubleTest *) tests + idx;
+   expectMincover_init (&test->expectMincover, test->expectMincoverString);
+}
+
 static mc_array_t *
 _test_expectMincover32 (void *tests, size_t idx)
 {
@@ -177,6 +231,13 @@ _test_expectMincover64 (void *tests, size_t idx)
    return &((Int64Test *) tests + idx)->expectMincover;
 }
 
+static mc_array_t *
+_test_expectMincoverDouble (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return &((DoubleTest *) tests + idx)->expectMincover;
+}
+
 static void
 _test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
 {
@@ -184,9 +245,11 @@ _test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
    Int32Test *const test = (Int32Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: range_min=%" PRId32 " range_max=%" PRId32,
-            test->range_min,
-            test->range_max);
+            "testcase: lowerBound=%" PRId32 " (%s) upperBound=%" PRId32 " (%s)",
+            test->lowerBound,
+            test->includeLowerBound ? "inclusive" : "exclusive",
+            test->upperBound,
+            test->includeUpperBound ? "inclusive" : "exclusive");
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId32, test->min.value);
    }
@@ -211,16 +274,41 @@ _test_dump_64 (void *tests, size_t idx, mc_mincover_t *got)
    Int64Test *const test = (Int64Test *) tests + idx;
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr,
-            "testcase: range_min=%" PRId64 " range_max=%" PRId64,
-            test->range_min,
-            test->range_max);
+            "testcase: lowerBound=%" PRId64 " (%s) upperBound=%" PRId64 " (%s)",
+            test->lowerBound,
+            test->includeLowerBound ? "inclusive" : "exclusive",
+            test->upperBound,
+            test->includeUpperBound ? "inclusive" : "exclusive");
    if (test->min.set) {
       fprintf (stderr, " min=%" PRId64, test->min.value);
    }
    if (test->max.set) {
       fprintf (stderr, " max=%" PRId64, test->max.value);
    }
-   fprintf (stderr, " sparsity=%zu", test->sparsity);
+   fprintf (stderr, " sparsity=%zu\n", test->sparsity);
+   fprintf (stderr, "mincover expected ... begin\n");
+   fprintf (stderr, "%s", test->expectMincoverString);
+   fprintf (stderr, "mincover expected ... end\n");
+   fprintf (stderr, "mincover got ... begin\n");
+   for (size_t i = 0; i < mc_mincover_len (got); i++) {
+      fprintf (stderr, "  %s\n", mc_mincover_get (got, i));
+   }
+   fprintf (stderr, "mincover got ... end\n");
+}
+
+static void
+_test_dump_Double (void *tests, size_t idx, mc_mincover_t *got)
+{
+   BSON_ASSERT_PARAM (tests);
+   DoubleTest *const test = (DoubleTest *) tests + idx;
+   fflush (stdout); // Avoid incomplete stdout output from prior tests on error
+   fprintf (stderr,
+            "testcase: lowerBound=%f (%s) upperBound=%f (%s)",
+            test->lowerBound,
+            test->includeLowerBound ? "inclusive" : "exclusive",
+            test->upperBound,
+            test->includeUpperBound ? "inclusive" : "exclusive");
+   fprintf (stderr, " sparsity=%zu\n", test->sparsity);
    fprintf (stderr, "mincover expected ... begin\n");
    fprintf (stderr, "%s", test->expectMincoverString);
    fprintf (stderr, "mincover expected ... end\n");
@@ -289,27 +377,52 @@ static void
 _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
 {
    Int32Test tests[] = {
-      {.range_min = 1,
-       .range_max = 3,
+      {.lowerBound = 1,
+       .includeLowerBound = false,
+       .upperBound = 3,
+       .includeUpperBound = true,
+       .min = OPT_I32 (0),
+       .max = OPT_I32 (7),
+       .sparsity = 1,
+       .expectMincoverString = "01\n"},
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = false,
+       .min = OPT_I32 (0),
+       .max = OPT_I32 (7),
+       .sparsity = 1,
+       .expectMincoverString = "001\n"
+                               "010\n"},
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = true,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "01\n"},
-      {.range_min = 3,
-       .range_max = 3,
+      {.lowerBound = 3,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = true,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
        .expectMincoverString = "011\n"},
-      {.range_min = 4,
-       .range_max = 3,
+      {.lowerBound = 4,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = true,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
        .expectError = "must be less than or equal to"},
-      {.range_min = 1,
-       .range_max = 8,
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 8,
+       .includeUpperBound = true,
        .min = OPT_I32 (0),
        .max = OPT_I32 (7),
        .sparsity = 1,
@@ -334,27 +447,52 @@ static void
 _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
 {
    Int64Test tests[] = {
-      {.range_min = 1,
-       .range_max = 3,
+      {.lowerBound = 1,
+       .includeLowerBound = false,
+       .upperBound = 3,
+       .includeUpperBound = true,
+       .min = OPT_I64 (0),
+       .max = OPT_I64 (7),
+       .sparsity = 1,
+       .expectMincoverString = "01\n"},
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = false,
+       .min = OPT_I64 (0),
+       .max = OPT_I64 (7),
+       .sparsity = 1,
+       .expectMincoverString = "001\n"
+                               "010\n"},
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = true,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "01\n"},
-      {.range_min = 3,
-       .range_max = 3,
+      {.lowerBound = 3,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = true,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
        .expectMincoverString = "011\n"},
-      {.range_min = 4,
-       .range_max = 3,
+      {.lowerBound = 4,
+       .includeLowerBound = true,
+       .upperBound = 3,
+       .includeUpperBound = true,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
        .expectError = "must be less than or equal to"},
-      {.range_min = 1,
-       .range_max = 8,
+      {.lowerBound = 1,
+       .includeLowerBound = true,
+       .upperBound = 8,
+       .includeUpperBound = true,
        .min = OPT_I64 (0),
        .max = OPT_I64 (7),
        .sparsity = 1,
@@ -375,11 +513,30 @@ _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
                                .dump = _test_dump_64});
 }
 
+static void
+_test_getMincoverDouble (_mongocrypt_tester_t *tester)
+{
+   DoubleTest tests[] = {
+#include "./data/range-min-cover/mincover_double.cstruct"
+   };
+
+   _test_getMincover_impl (
+      tests,
+      sizeof (tests) / sizeof (tests[0]),
+      (_test_getMincover_args){.getMincover = _test_getMincoverDouble_helper,
+                               .expectMincover_init =
+                                  _test_expectMincover_initDouble,
+                               .expectMincover = _test_expectMincoverDouble,
+                               .expectError = _test_expectErrorDouble,
+                               .dump = _test_dump_Double});
+}
+
 void
 _mongocrypt_tester_install_range_mincover (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_getMincoverInt32);
    INSTALL_TEST (_test_getMincoverInt64);
+   INSTALL_TEST (_test_getMincoverDouble);
 }
 
 MC_END_CONVERSION_ERRORS

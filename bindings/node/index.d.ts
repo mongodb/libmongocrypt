@@ -207,6 +207,9 @@ export interface ClientEncryptionOptions {
 
   /**
    * Optional callback to override KMS providers per-context.
+   *
+   * @deprecated Installing optional dependencies will automatically refresh kms
+   *             provider credentials.
    */
   onKmsProviderRefresh?: () => Promise<KMSProviders>;
 
@@ -354,7 +357,7 @@ export interface ClientEncryptionEncryptOptions {
 }
 
 /**
- * The public interface for explicit client side encrption.
+ * The public interface for explicit in-use encryption
  */
 export class ClientEncryption {
   /**
@@ -404,7 +407,7 @@ export class ClientEncryption {
     callback: ClientEncryptionCreateDataKeyCallback
   ): void;
 
-  /** 
+  /**
    * Searches the keyvault for any data keys matching the provided filter.  If there are matches, rewrapManyDataKey then attempts to re-wrap the data keys using the provided options.
    *
    * If no matches are found, then no bulk write is performed.
@@ -507,4 +510,6 @@ export class ClientEncryption {
     value: Buffer | Binary,
     callback: ClientEncryptionDecryptCallback
   ): void;
+
+  static readonly libmongocryptVersion: string;
 }

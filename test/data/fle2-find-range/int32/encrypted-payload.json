@@ -1,0 +1,42 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$binary": {
+                "base64": "CsEEAAAEZwCFBAAAAzAAfQAAAAVkACAAAAAAp9HzvqPvsGYdpbEV/s/H8Hr3lGfskA3e6mcSloSoVP4FcwAgAAAAAJeqgPXr9Dy00NFHuA/bbYPFXRIE5JnhuqzFggujxr/TBWMAIAAAAAAUCn3aRftgj6YPw81iqbjUp3c/XX6M5/AYjKuOWtAETQADMQB9AAAABWQAIAAAAACWkWJqPM6iNgRFM3UsKeLVUaT5lVrH8nZGDd1B4ekzLgVzACAAAAAAHg+pg50Hi5WwvYtLFYBPPkR+svnveDiUNLSdD725VUoFYwAgAAAAAClIWEreJ771H2zYDydhO/UnIlWdGc286Gdpyq+HsDS7AAMyAH0AAAAFZAAgAAAAAISgN1Hid7IWvDESN/3tywFZiBsZPYapOUx9/QjDDxLfBXMAIAAAAAA7lxpEz3+CGdv6/WKIAlIwRYURREKgn7+StwNoVekkDwVjACAAAAAAPGHY4CG4AdLTLaTaAEeGZp/9Awz9uSYc5jnv+H+HDlUAAzMAfQAAAAVkACAAAAAAIVKf0tscgagkQPFCb6X9WEHVCnawMcQMMf+f9zwXyfwFcwAgAAAAAIE7huFFiQBbxM6/LrlQeXtg1Mr7i+B777vpyfUbz926BWMAIAAAAAAx9kjRAm4iMQ/7aHuEzIAOXrcMu0BZfA7uS7r3i2OPCwADNAB9AAAABWQAIAAAAAAaPbb/5oWv7yX0IuesNnk2HMKDP76ayi3CM+ZIX04z6AVzACAAAAAAL1yonL//+MBjN0qC3AVLHvnBj5ZfjsM46k9FuRvvw48FYwAgAAAAAHTV+kYRgvLycMVdR+3vrP/71n0oDYSJFwBD3vOvS72XAAM1AH0AAAAFZAAgAAAAANtnkAP/k69i6SrAPWi4ibUkKJyqd4Xwiurqw+GBF7bTBXMAIAAAAAB0/TeuDQTjB9EBR27pJppA5mLgnGhf1tQAUQ1K4HfzBAVjACAAAAAAfKnxQGZchtWB6NSJ44qlAet9sesYZFSeVqPn2iOcHCMAAzYAfQAAAAVkACAAAAAAJJu3lxW1WM/sEYBYrT0dELADJX0i3fOwVXTFpJVOQJgFcwAgAAAAAHagPLnElf0/PBDEORP+ZlwvgvwwQfaIBCRsVElfy4OfBWMAIAAAAADfOGopcSU1aD2XfHc3dbvuF5Jan8sA9+SFZgiPfTLK3wADNwB9AAAABWQAIAAAAAA8uMbBD4MFwcTpdIf6SesgVOqrXMKBuW1S8VbvBDCJvQVzACAAAAAA5+P+U/djGYehkFiWnrRk6fHHfwmkx6i6Bw0FShZB+XQFYwAgAAAAAF1rRQ3CEi4u1bF/wKqcVktlMEKSACPl7LJiFB3db6E6AAM4AH0AAAAFZAAgAAAAAMCDivXFvBdpcRif1dzSBn9lMOopHJ7nZHj4z3LDUmgzBXMAIAAAAAA+Ck5FgJyhL5IoIx/YgLVvuwdgUbQu2ZYmZOWiCyXzVgVjACAAAAAAHn0BRhexKb8sTHVDfl+JTjgn7bnCt3FmzUOtkJz6REEAAAVlACAAAAAA65pz95EthqQpfoHS9nWvdCh05AV+OokP7GUaI+7j8+wSY20AAAAAAAAAAAAA",
+                "subType": "6"
+            }
+        }
+    },
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+            "db.test": {
+                "escCollection": "fle2.test.esc",
+                "eccCollection": "fle2.test.ecc",
+                "ecocCollection": "fle2.test.ecoc",
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "encrypted",
+                        "bsonType": "int",
+                        "queries": {
+                            "queryType": "range",
+                            "contention": {
+                                "$numberInt": "0"
+                            },
+                            "sparsity": {
+                                "$numberInt": "1"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

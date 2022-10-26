@@ -8,6 +8,7 @@ module.exports = function (modules) {
   const promiseOrCallback = common.promiseOrCallback;
   const StateMachine = modules.stateMachine.StateMachine;
   const BSON = modules.mongodb.BSON;
+  const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
   const { promisify } = require('util');
 
@@ -64,7 +65,7 @@ module.exports = function (modules) {
    */
 
   /**
-   * The public interface for explicit client side encryption
+   * The public interface for explicit in-use encryption
    */
   class ClientEncryption {
     /**
@@ -103,24 +104,22 @@ module.exports = function (modules) {
       this._bson = options.bson || BSON || client.topology.bson;
       this._proxyOptions = options.proxyOptions;
       this._tlsOptions = options.tlsOptions;
+      this._kmsProviders = options.kmsProviders || {};
 
       if (options.keyVaultNamespace == null) {
         throw new TypeError('Missing required option `keyVaultNamespace`');
       }
 
-      Object.assign(options, { cryptoCallbacks });
+      const mongoCryptOptions = { ...options, cryptoCallbacks };
 
-      // kmsProviders will be parsed by libmongocrypt, must be provided as BSON binary data
-      if (options.kmsProviders && !Buffer.isBuffer(options.kmsProviders)) {
-        options.kmsProviders = this._bson.serialize(options.kmsProviders);
-      } else if (!options.onKmsProviderRefresh) {
-        throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
-      }
+      mongoCryptOptions.kmsProviders = !Buffer.isBuffer(this._kmsProviders)
+        ? this._bson.serialize(this._kmsProviders)
+        : this._kmsProviders;
 
       this._onKmsProviderRefresh = options.onKmsProviderRefresh;
       this._keyVaultNamespace = options.keyVaultNamespace;
       this._keyVaultClient = options.keyVaultClient || client;
-      this._mongoCrypt = new mc.MongoCrypt(options);
+      this._mongoCrypt = new mc.MongoCrypt(mongoCryptOptions);
     }
 
     /**
@@ -685,7 +684,13 @@ module.exports = function (modules) {
      * the original ones.
      */
     async askForKMSCredentials() {
-      return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
+      return this._onKmsProviderRefresh
+        ? this._onKmsProviderRefresh()
+        : loadCredentials(this._kmsProviders);
+    }
+
+    static get libmongocryptVersion() {
+      return mc.MongoCrypt.libmongocryptVersion;
     }
   }
 

@@ -694,4 +694,8 @@ describe('ClientEncryption', function () {
         });
     });
   });
+
+  it('should provide the libmongocrypt version', function () {
+    expect(ClientEncryption.libmongocryptVersion).to.be.a('string');
+  });
 });

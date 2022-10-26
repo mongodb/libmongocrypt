@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "lib/index.js",
   "types": "index.d.ts",
@@ -58,6 +58,9 @@
     "sinon-chai": "^3.7.0",
     "standard-version": "^9.3.2",
     "tar": "^6.1.11"
+  },
+  "optionalDependencies": {
+    "@aws-sdk/credential-providers": "^3.186.0"
   },
   "peerDependencies": {
     "mongodb": ">=3.4.0"

@@ -32,7 +32,7 @@
  *
  * struct {
  *   uint8_t fle_blob_subtype = 4;
- *   uint8_t bson[16];
+ *   uint8_t bson[];
  * } FLE2InsertUpdatePayload;
  *
  * bson is a BSON document of this form:
@@ -112,11 +112,11 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
 
 bool
 mc_FLE2InsertUpdatePayload_serialize (
-   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload);
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out);
 
 bool
 mc_FLE2InsertUpdatePayload_serializeForRange (
-   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload);
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out);
 
 void
 mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload);

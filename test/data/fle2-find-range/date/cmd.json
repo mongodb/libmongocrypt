@@ -1,0 +1,10 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$date": {
+                "$numberLong": "12345"
+            }
+        }
+    }
+}

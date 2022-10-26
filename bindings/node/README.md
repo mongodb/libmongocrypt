@@ -49,7 +49,7 @@ npm test
 <strong>NOTE</strong>: Not meant to be instantiated directly, this is for internal use only.</p>
 </dd>
 <dt><a href="#ClientEncryption">ClientEncryption</a></dt>
-<dd><p>The public interface for explicit client side encryption</p>
+<dd><p>The public interface for explicit in-use encryption</p>
 </dd>
 <dt><a href="#MongoCryptError">MongoCryptError</a></dt>
 <dd><p>An error indicating that something went wrong specifically with MongoDB Client Encryption</p>
@@ -143,7 +143,7 @@ Create an AutoEncrypter
 
 **Note**: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.
 It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
-Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.
+Schemas supplied in the schemaMap only apply to configuring automatic encryption for Client-Side Field Level Encryption.
 Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
 **Example**  
@@ -239,7 +239,7 @@ the underlying C++ Bindings.
 <a name="ClientEncryption"></a>
 
 ## ClientEncryption
-The public interface for explicit client side encryption
+The public interface for explicit in-use encryption
 
 
 * [ClientEncryption](#ClientEncryption)

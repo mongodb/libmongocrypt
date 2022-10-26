@@ -506,6 +506,41 @@ _test_mongocrypt_kms_ctx_default_port (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
+static void
+_test_mongocrypt_kms_ctx_feed_empty_bytes (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_kms_ctx_t kms_ctx = {0};
+   mongocrypt_status_t *status;
+   _mongocrypt_endpoint_t *endpoint;
+   mongocrypt_binary_t *bytes = mongocrypt_binary_new ();
+
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   status = mongocrypt_status_new ();
+
+   endpoint =
+      _mongocrypt_endpoint_new ("example.com", -1, NULL /* opts */, status);
+   ASSERT_OK_STATUS (endpoint != NULL, status);
+
+   ASSERT_OK (_mongocrypt_kms_ctx_init_kmip_activate (
+                 &kms_ctx,
+                 endpoint,
+                 (char *) SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
+                 &crypt->log),
+              &kms_ctx);
+
+   /* Test KMS Feed. Expect to fail with empty bytes */
+   ASSERT_FAILS (mongocrypt_kms_ctx_feed (&kms_ctx, bytes),
+                 &kms_ctx,
+                 "argument 'bytes' cannot be empty");
+
+   mongocrypt_binary_destroy (bytes);
+   _mongocrypt_kms_ctx_cleanup (&kms_ctx);
+   _mongocrypt_endpoint_destroy (endpoint);
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
 void
 _mongocrypt_tester_install_kms_ctx (_mongocrypt_tester_t *tester)
 {
@@ -514,4 +549,5 @@ _mongocrypt_tester_install_kms_ctx (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_mongocrypt_kms_ctx_kmip_get);
    INSTALL_TEST (_test_mongocrypt_kms_ctx_get_kms_provider);
    INSTALL_TEST (_test_mongocrypt_kms_ctx_default_port);
+   INSTALL_TEST (_test_mongocrypt_kms_ctx_feed_empty_bytes);
 }
