@@ -21,6 +21,7 @@
 
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
+#include "mc-fle2-find-range-payload-private.h"
 
 /** FLE2RangeFindSpecEdgesInfo represents the information needed to generate
  * edges for a range find query. It is encoded inside an FLE2RangeFindSpec. See
@@ -46,14 +47,6 @@ typedef struct {
    // using.
    bson_iter_t indexMax;
 } mc_FLE2RangeFindSpecEdgesInfo_t;
-
-typedef enum {
-   FLE2RangeOperator_kNone = 0,
-   FLE2RangeOperator_kGt = 1,
-   FLE2RangeOperator_kGte = 2,
-   FLE2RangeOperator_kLt = 3,
-   FLE2RangeOperator_kLte = 4
-} mc_FLE2RangeOperator_t;
 
 /** FLE2RangeFindSpec represents the range find specification that is encoded
  * inside of a FLE2EncryptionPlaceholder. See
