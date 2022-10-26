@@ -297,6 +297,8 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
    bool has_edgesInfo = false, has_payloadId = false, has_firstOperator = false,
         has_secondOperator = false;
 
+   *out = (mc_FLE2RangeFindSpec_t){0};
+
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       CLIENT_ERR (
          "invalid FLE2RangeFindSpec: must be an iterator to a document");
