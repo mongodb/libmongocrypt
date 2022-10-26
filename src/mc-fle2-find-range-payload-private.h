@@ -22,6 +22,18 @@
 #include "mongocrypt-buffer-private.h"
 
 #include "mc-array-private.h"
+#include "mc-fle2-range-operator-private.h"
+
+/** FLE2FindRangePayloadEdgesInfo represents the token information for a range
+ * find query. It is encoded inside an FLE2FindRangePayload. See
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl
+ * for the representation in the MongoDB server.
+ */
+typedef struct {
+   mc_array_t edgeFindTokenSetArray;           // g
+   _mongocrypt_buffer_t serverEncryptionToken; // e
+   int64_t maxContentionCounter;               // cm
+} mc_FLE2FindRangePayloadEdgesInfo_t;
 
 /**
  * FLE2FindRangePayload represents an FLE2 payload of a range indexed field to
@@ -40,9 +52,15 @@
  * cm: <int64> // Queryable Encryption max counter
  */
 typedef struct {
-   mc_array_t edgeFindTokenSetArray;           // g
-   _mongocrypt_buffer_t serverEncryptionToken; // e
-   int64_t maxContentionCounter;               // cm
+   mc_FLE2FindRangePayloadEdgesInfo_t payload;
+   // payloadId Id of payload - must be paired with another payload.
+   int32_t payloadId;
+   // firstOperator represents the first query operator for which this payload
+   // was generated.
+   mc_FLE2RangeOperator_t firstOperator;
+   // secondOperator represents the second query operator for which this payload
+   // was generated. Only populated for two-sided ranges. It is 0 if unset.
+   mc_FLE2RangeOperator_t secondOperator;
 } mc_FLE2FindRangePayload_t;
 
 /**
