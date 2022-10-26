@@ -294,7 +294,8 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
                             mongocrypt_status_t *status)
 {
    bson_iter_t iter = *in;
-   bool has_edgesInfo = false, has_payloadId = false, has_operatorType = false;
+   bool has_edgesInfo = false, has_payloadId = false, has_firstOperator = false,
+        has_secondOperator = false;
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       CLIENT_ERR (
@@ -327,21 +328,33 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
       }
       END_IF_FIELD
 
-      IF_FIELD (operatorType)
+      IF_FIELD (firstOperator)
       {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
             CLIENT_ERR (
-               "invalid FLE2RangeFindSpec: 'operatorType' must be a utf8");
+               "invalid FLE2RangeFindSpec: 'firstOperator' must be an int32");
             goto fail;
          }
-         out->operatorType = bson_iter_utf8 (&iter, NULL);
+         out->firstOperator = bson_iter_int32 (&iter);
+      }
+      END_IF_FIELD
+
+      IF_FIELD (secondOperator)
+      {
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+            CLIENT_ERR (
+               "invalid FLE2RangeFindSpec: 'secondOperator' must be an int32");
+            goto fail;
+         }
+         out->secondOperator = bson_iter_int32 (&iter);
       }
       END_IF_FIELD
    }
 
    // edgesInfo is optional. Do not require it.
    CHECK_HAS (payloadId)
-   CHECK_HAS (operatorType)
+   CHECK_HAS (firstOperator)
+   // secondOperator is optional. Do not require it.
    return true;
 
 fail:

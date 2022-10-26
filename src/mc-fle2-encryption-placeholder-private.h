@@ -47,6 +47,14 @@ typedef struct {
    bson_iter_t indexMax;
 } mc_FLE2RangeFindSpecEdgesInfo_t;
 
+typedef enum {
+   FLE2RangeOperator_kNone = 0,
+   FLE2RangeOperator_kGt = 1,
+   FLE2RangeOperator_kGte = 2,
+   FLE2RangeOperator_kLt = 3,
+   FLE2RangeOperator_kLte = 4
+} mc_FLE2RangeOperator_t;
+
 /** FLE2RangeFindSpec represents the range find specification that is encoded
  * inside of a FLE2EncryptionPlaceholder. See
  * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl
@@ -57,8 +65,12 @@ typedef struct {
    mc_FLE2RangeFindSpecEdgesInfo_t edgesInfo;
    // payloadId Id of payload - must be paired with another payload.
    int32_t payloadId;
-   // operatorType is one of gt, lt, gte, lte.
-   const char *operatorType;
+   // firstOperator represents the first query operator for which this payload
+   // was generated.
+   mc_FLE2RangeOperator_t firstOperator;
+   // secondOperator represents the second query operator for which this payload
+   // was generated. Only populated for two-sided ranges. It is 0 if unset.
+   mc_FLE2RangeOperator_t secondOperator;
 } mc_FLE2RangeFindSpec_t;
 
 bool
