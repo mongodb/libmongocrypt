@@ -687,8 +687,17 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
          TEST_ERROR ("failed to parse JSON: %s", error.message);
       }
 
-      bson_t *findSpecDoc = bson_new ();
-      BSON_APPEND_DOCUMENT (findSpecDoc, "findSpec", findSpecVal);
+      bson_t *findSpecDoc = BCON_NEW (
+         "findSpec",
+         "{",
+         "edgesInfo",
+         BCON_DOCUMENT (findSpecVal),
+         "operatorType", // Use a dummy operatorType. It is not used for
+                         // minCover.
+         "gt",
+         "payloadId", // Use a dummy payloadId. It is not used for minCover.
+         BCON_INT32 (1234),
+         "}");
 
       bson_iter_t findSpecIter;
       ASSERT (bson_iter_init_find (&findSpecIter, findSpecDoc, "findSpec"));
