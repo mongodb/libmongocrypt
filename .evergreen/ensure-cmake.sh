@@ -26,6 +26,7 @@
 : "${CMAKE_CACHE_DIR:="$CMAKE_CACHES_ROOT/$CMAKE_VERSION"}"
 
 # The executable that we want to use (can be overriden by an invoker)
+_prev_cmake_exe=${CMAKE_EXE-}
 : "${CMAKE_EXE:="$CMAKE_CACHE_DIR/bin/cmake$EXE_SUFFIX"}"
 : "${CTEST_EXE:="${CMAKE_EXE%cmake*}ctest"}"
 
@@ -133,6 +134,7 @@ _ensure_cmake() {
     debug "Expecting CMake executable [$CMAKE_EXE]"
     debug "Expecting CTest executable [$CTEST_EXE]"
     if test -f "$CMAKE_EXE"; then
+        debug "CMake executable [$CMAKE_EXE] is already present. Nothing to to."
         return 0
     fi
 
@@ -156,6 +158,10 @@ _ensure_cmake() {
     esac
 }
 
-if test -z "${CMAKE_EXE-}"; then
+if test -z "$_prev_cmake_exe"; then
     _ensure_cmake
+elif ! test -f "$_prev_cmake_exe"; then
+    log "ensure-cmake.sh: CMAKE_EXE is set and refers to a non-existent file [$_prev_cmake_exe]"
+else
+    debug "Using existing CMAKE_EXE [$_prev_cmake_exe]"
 fi
