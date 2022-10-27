@@ -46,6 +46,8 @@
 bool
 size_to_uint32 (size_t in, uint32_t *out)
 {
+   BSON_ASSERT_PARAM (out);
+
    if (in > UINT32_MAX) {
       return false;
    }

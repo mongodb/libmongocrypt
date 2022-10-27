@@ -44,6 +44,7 @@ _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
    mongocrypt_status_t *status)
 {
    BSON_ASSERT (args.iv && args.iv->len);
+   BSON_ASSERT (args.in);
    BSON_ASSERT (args.out);
 
    if (args.out->len < args.in->len) {
@@ -112,11 +113,16 @@ static bool
 _crypto_aes_256_cbc_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 {
    mongocrypt_status_t *status = args.status;
+
+   BSON_ASSERT_PARAM (crypto);
+
+   BSON_ASSERT (args.key);
    if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }
 
+   BSON_ASSERT (args.iv);
    if (args.iv->len != MONGOCRYPT_IV_LEN) {
       CLIENT_ERR ("invalid iv length");
       return false;
@@ -147,11 +153,16 @@ static bool
 _crypto_aes_256_ctr_encrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 {
    mongocrypt_status_t *status = args.status;
+
+   BSON_ASSERT_PARAM (crypto);
+
+   BSON_ASSERT (args.key);
    if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
    }
 
+   BSON_ASSERT (args.iv);
    if (args.iv->len != MONGOCRYPT_IV_LEN) {
       CLIENT_ERR ("invalid iv length");
       return false;
@@ -188,6 +199,10 @@ static bool
 _crypto_aes_256_cbc_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 {
    mongocrypt_status_t *status = args.status;
+
+   BSON_ASSERT_PARAM (crypto);
+
+   BSON_ASSERT (args.key);
    if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
@@ -218,6 +233,10 @@ static bool
 _crypto_aes_256_ctr_decrypt (_mongocrypt_crypto_t *crypto, aes_256_args_t args)
 {
    mongocrypt_status_t *status = args.status;
+
+   BSON_ASSERT_PARAM (crypto);
+
+   BSON_ASSERT (args.key);
    if (args.key->len != MONGOCRYPT_ENC_KEY_LEN) {
       CLIENT_ERR ("invalid encryption key length");
       return false;
@@ -257,6 +276,11 @@ _crypto_hmac_sha_512 (_mongocrypt_crypto_t *crypto,
                       _mongocrypt_buffer_t *out,
                       mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (hmac_key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+
    if (hmac_key->len != MONGOCRYPT_MAC_KEY_LEN) {
       CLIENT_ERR ("invalid hmac key length");
       return false;
@@ -289,6 +313,9 @@ _crypto_random (_mongocrypt_crypto_t *crypto,
                 uint32_t count,
                 mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (out);
+
    if (out->len != count) {
       CLIENT_ERR ("out does not contain %u bytes", count);
       return false;
@@ -312,6 +339,9 @@ _mongocrypt_memequal (const void *const b1, const void *const b2, size_t len)
 {
    const unsigned char *p1 = b1, *p2 = b2;
    int ret = 0;
+
+   BSON_ASSERT_PARAM (b1);
+   BSON_ASSERT_PARAM (b2);
 
    for (; len > 0; len--) {
       ret |= *p1++ ^ *p2++;
@@ -444,9 +474,15 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
    uint8_t final_block_storage[MONGOCRYPT_BLOCK_SIZE];
    bool ret = false;
 
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (iv);
+   BSON_ASSERT_PARAM (enc_key);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (ciphertext);
+
    _mongocrypt_buffer_init (&to_encrypt);
 
-   BSON_ASSERT (bytes_written);
+   BSON_ASSERT_PARAM (bytes_written);
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
@@ -565,6 +601,12 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t tag;
    bool ret = false;
 
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (mac_key);
+   BSON_ASSERT_PARAM (associated_data);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (out);
+
    _mongocrypt_buffer_init (&to_hmac);
 
    if (MONGOCRYPT_MAC_KEY_LEN != mac_key->len) {
@@ -665,12 +707,15 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
                         intermediate_hmac = {0}, empty_buffer = {0};
    uint32_t intermediate_bytes_written = 0;
 
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (iv);
+   /* associated_data is checked at the point it is used, so it can be NULL */
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (ciphertext);
+
    memset (ciphertext->data, 0, ciphertext->len);
 
-   BSON_ASSERT (iv);
-   BSON_ASSERT (key);
-   BSON_ASSERT (plaintext);
-   BSON_ASSERT (ciphertext);
    if (ciphertext->len !=
        _mongocrypt_calculate_ciphertext_len (plaintext->len)) {
       CLIENT_ERR ("output ciphertext should have been allocated with %d bytes",
@@ -678,6 +723,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   BSON_ASSERT_PARAM (bytes_written);
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
@@ -784,7 +830,13 @@ _decrypt_step (_mongocrypt_crypto_t *crypto,
 {
    uint8_t padding_byte;
 
-   BSON_ASSERT (bytes_written);
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (iv);
+   BSON_ASSERT_PARAM (enc_key);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (plaintext);
+
+   BSON_ASSERT_PARAM (bytes_written);
    *bytes_written = 0;
 
    if (MONGOCRYPT_IV_LEN != iv->len) {
@@ -869,11 +921,12 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
                         hmac_tag = {0}, iv = {0}, empty_buffer = {0};
    uint8_t hmac_tag_storage[MONGOCRYPT_HMAC_LEN];
 
-   BSON_ASSERT (key);
-   BSON_ASSERT (ciphertext);
-   BSON_ASSERT (plaintext);
-   BSON_ASSERT (bytes_written);
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (crypto);
+   /* associated_data is checked at the point it is used, so it can be NULL */
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (bytes_written);
 
    if (plaintext->len !=
        _mongocrypt_calculate_plaintext_len (ciphertext->len)) {
@@ -978,8 +1031,9 @@ _mongocrypt_random (_mongocrypt_crypto_t *crypto,
                     uint32_t count,
                     mongocrypt_status_t *status)
 {
-   BSON_ASSERT (out);
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (out);
+
    if (count != out->len) {
       CLIENT_ERR (
          "out should have length %d, but has length %d", count, out->len);
@@ -1031,11 +1085,11 @@ _mongocrypt_calculate_deterministic_iv (
 
    _mongocrypt_buffer_init (&to_hmac);
 
-   BSON_ASSERT (key);
-   BSON_ASSERT (plaintext);
-   BSON_ASSERT (associated_data);
-   BSON_ASSERT (out);
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (associated_data);
+   BSON_ASSERT_PARAM (out);
 
    if (MONGOCRYPT_KEY_LEN != key->len) {
       CLIENT_ERR ("key should have length %d, but has length %d\n",
@@ -1101,6 +1155,11 @@ _mongocrypt_wrap_key (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t iv = {0};
    bool ret = false;
 
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (kek);
+   BSON_ASSERT_PARAM (dek);
+   BSON_ASSERT_PARAM (encrypted_dek);
+
    _mongocrypt_buffer_init (encrypted_dek);
 
    if (dek->len != MONGOCRYPT_KEY_LEN) {
@@ -1145,6 +1204,11 @@ _mongocrypt_unwrap_key (_mongocrypt_crypto_t *crypto,
 {
    uint32_t bytes_written;
 
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (kek);
+   BSON_ASSERT_PARAM (dek);
+   BSON_ASSERT_PARAM (encrypted_dek);
+
    _mongocrypt_buffer_init (dek);
    _mongocrypt_buffer_resize (
       dek, _mongocrypt_calculate_plaintext_len (encrypted_dek->len));
@@ -1177,6 +1241,11 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
                           _mongocrypt_buffer_t *out,
                           mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+
    if (key->len != MONGOCRYPT_MAC_KEY_LEN) {
       CLIENT_ERR ("invalid hmac_sha_256 key length. Got %" PRIu32
                   ", expected: %" PRIu32,
@@ -1214,7 +1283,6 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (bytes_written);
-   BSON_ASSERT_PARAM (status);
 
    if (ciphertext->len !=
        _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len)) {
@@ -1353,7 +1421,6 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (bytes_written);
-   BSON_ASSERT_PARAM (status);
 
    if (ciphertext->len <= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN) {
       CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32
@@ -1495,7 +1562,6 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (bytes_written);
-   BSON_ASSERT_PARAM (status);
 
    if (ciphertext->len !=
        _mongocrypt_fle2_calculate_ciphertext_len (plaintext->len)) {
@@ -1587,7 +1653,6 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (bytes_written);
-   BSON_ASSERT_PARAM (status);
 
    if (ciphertext->len <= MONGOCRYPT_IV_LEN) {
       CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32
@@ -1668,6 +1733,9 @@ _mongocrypt_random_uint64 (_mongocrypt_crypto_t *crypto,
                            uint64_t *out,
                            mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (out);
+
    *out = 0;
 
    if (exclusive_upper_bound < 2) {
@@ -1709,6 +1777,9 @@ _mongocrypt_random_int64 (_mongocrypt_crypto_t *crypto,
                           int64_t *out,
                           mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (out);
+
    if (exclusive_upper_bound <= 0) {
       CLIENT_ERR ("Expected exclusive_upper_bound > 0");
       return false;

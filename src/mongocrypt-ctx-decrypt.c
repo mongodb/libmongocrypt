@@ -35,6 +35,10 @@ _replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
    _mongocrypt_buffer_t S_Key = {0};
    _mongocrypt_buffer_t K_Key = {0};
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+
    if (!mc_FLE2IndexedEncryptedValue_parse (iev, in, status)) {
       goto fail;
    }
@@ -112,6 +116,10 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
       mc_FLE2UnindexedEncryptedValue_new ();
    _mongocrypt_buffer_t key = {0};
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+
    if (!mc_FLE2UnindexedEncryptedValue_parse (uev, in, status)) {
       goto fail;
    }
@@ -165,6 +173,10 @@ _replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
    mc_FLE2InsertUpdatePayload_t iup;
    _mongocrypt_buffer_t key = {0};
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+
    mc_FLE2InsertUpdatePayload_init (&iup);
 
    if (!mc_FLE2InsertUpdatePayload_parse (&iup, in, status)) {
@@ -212,9 +224,9 @@ _replace_ciphertext_with_plaintext (void *ctx,
    uint32_t bytes_written;
    bool ret = false;
 
-   BSON_ASSERT (ctx);
-   BSON_ASSERT (in);
-   BSON_ASSERT (out);
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
 
    if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue ||
        in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
@@ -346,6 +358,9 @@ _collect_S_KeyID_from_FLE2IndexedEncryptedValue (void *ctx,
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2IndexedEncryptedValue_t *iev;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+
    iev = mc_FLE2IndexedEncryptedValue_new ();
 
    if (!mc_FLE2IndexedEncryptedValue_parse (iev, in, status)) {
@@ -378,6 +393,9 @@ _collect_K_KeyID_from_FLE2IndexedEncryptedValue (void *ctx,
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2IndexedEncryptedValue_t *iev;
    _mongocrypt_buffer_t S_Key = {0};
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
 
    /* Ignore other ciphertext types. */
    if (in->data[0] != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue &&
@@ -433,6 +451,8 @@ fail:
 static bool
 _check_for_K_KeyId (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    if (ctx->kb.state != KB_DONE) {
       return true;
    }
@@ -476,6 +496,9 @@ _collect_key_uuid_from_FLE2UnindexedEncryptedValue (void *ctx,
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2UnindexedEncryptedValue_t *uev;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+
    uev = mc_FLE2UnindexedEncryptedValue_new ();
 
    if (!mc_FLE2UnindexedEncryptedValue_parse (uev, in, status)) {
@@ -508,6 +531,9 @@ _collect_key_uuid_from_FLE2InsertUpdatePayload (void *ctx,
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2InsertUpdatePayload_t iup;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+
    mc_FLE2InsertUpdatePayload_init (&iup);
 
    if (!mc_FLE2InsertUpdatePayload_parse (&iup, in, status)) {
@@ -533,8 +559,8 @@ _collect_key_from_ciphertext (void *ctx,
    _mongocrypt_ciphertext_t ciphertext;
    _mongocrypt_key_broker_t *kb;
 
-   BSON_ASSERT (ctx);
-   BSON_ASSERT (in);
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
@@ -569,6 +595,9 @@ _cleanup (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_decrypt_t *dctx;
 
+   if (!ctx) {
+      return;
+   }
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
    _mongocrypt_buffer_cleanup (&dctx->original_doc);
    _mongocrypt_buffer_cleanup (&dctx->decrypted_doc);
@@ -644,6 +673,8 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
 static bool
 _mongo_done_keys (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    (void) _mongocrypt_key_broker_docs_done (&ctx->kb);
    if (!_check_for_K_KeyId (ctx)) {
       return false;
@@ -654,8 +685,12 @@ _mongo_done_keys (mongocrypt_ctx_t *ctx)
 static bool
 _kms_done (mongocrypt_ctx_t *ctx)
 {
-   _mongocrypt_opts_kms_providers_t *kms_providers =
-      _mongocrypt_ctx_kms_providers (ctx);
+   _mongocrypt_opts_kms_providers_t *kms_providers;
+
+   BSON_ASSERT_PARAM (ctx);
+
+   kms_providers = _mongocrypt_ctx_kms_providers (ctx);
+
    if (!_mongocrypt_key_broker_kms_done (&ctx->kb, kms_providers)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
       return _mongocrypt_ctx_fail (ctx);

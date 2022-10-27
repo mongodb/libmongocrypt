@@ -35,6 +35,8 @@ mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len)
 {
    mongocrypt_binary_t *binary;
 
+   BSON_ASSERT_PARAM (data);
+
    binary = (mongocrypt_binary_t *) bson_malloc0 (sizeof *binary);
    BSON_ASSERT (binary);
    binary->data = data;
@@ -47,6 +49,9 @@ mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len)
 bool
 _mongocrypt_binary_to_bson (mongocrypt_binary_t *binary, bson_t *out)
 {
+   BSON_ASSERT_PARAM (binary);
+   BSON_ASSERT_PARAM (out);
+
    return bson_init_static (out, binary->data, binary->len);
 }
 

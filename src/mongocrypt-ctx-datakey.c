@@ -24,6 +24,8 @@ _cleanup (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_datakey_t *dkctx;
 
+   BSON_ASSERT_PARAM (ctx);
+
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
    _mongocrypt_buffer_cleanup (&dkctx->key_doc);
    _mongocrypt_kms_ctx_cleanup (&dkctx->kms);
@@ -37,6 +39,8 @@ static mongocrypt_kms_ctx_t *
 _next_kms_ctx (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_datakey_t *dkctx;
+
+   BSON_ASSERT_PARAM (ctx);
 
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
    if (dkctx->kms_returned) {
@@ -55,6 +59,8 @@ _kms_kmip_start (mongocrypt_ctx_t *ctx)
    _mongocrypt_endpoint_t *endpoint = NULL;
    mongocrypt_status_t *status = ctx->status;
    _mongocrypt_buffer_t secretdata = {0};
+
+   BSON_ASSERT_PARAM (ctx);
 
    if (ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_KMIP) {
       CLIENT_ERR ("KMS provider is not KMIP");
@@ -178,6 +184,8 @@ fail:
 static bool
 _kms_start (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    bool ret = false;
    _mongocrypt_ctx_datakey_t *dkctx;
    char *access_token = NULL;
@@ -302,6 +310,8 @@ _kms_done (mongocrypt_ctx_t *ctx)
    _mongocrypt_ctx_datakey_t *dkctx;
    mongocrypt_status_t *status;
 
+   BSON_ASSERT_PARAM (ctx);
+
    dkctx = (_mongocrypt_ctx_datakey_t *) ctx;
    status = ctx->status;
    if (!mongocrypt_kms_ctx_status (&dkctx->kms, ctx->status)) {
@@ -369,6 +379,9 @@ _append_id (mongocrypt_t *crypt, bson_t *bson, mongocrypt_status_t *status)
 {
    _mongocrypt_buffer_t uuid;
 
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (bson);
+
    _mongocrypt_buffer_init (&uuid);
    uuid.data = bson_malloc (UUID_LEN);
    BSON_ASSERT (uuid.data);
@@ -400,6 +413,9 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    _mongocrypt_ctx_datakey_t *dkctx;
    bson_t key_doc, child;
    struct timeval tp;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
 
 #define BSON_CHECK(_stmt)                                                      \
    if (!(_stmt)) {                                                             \

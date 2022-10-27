@@ -23,6 +23,8 @@
 void
 mc_FLE2InsertUpdatePayload_init (mc_FLE2InsertUpdatePayload_t *payload)
 {
+   BSON_ASSERT_PARAM (payload);
+
    memset (payload, 0, sizeof (mc_FLE2InsertUpdatePayload_t));
    _mc_array_init (&payload->edgeTokenSetArray, sizeof (mc_EdgeTokenSet_t));
 }
@@ -30,6 +32,8 @@ mc_FLE2InsertUpdatePayload_init (mc_FLE2InsertUpdatePayload_t *payload)
 static void
 mc_EdgeTokenSet_cleanup (mc_EdgeTokenSet_t *etc)
 {
+   BSON_ASSERT_PARAM (etc);
+
    _mongocrypt_buffer_cleanup (&etc->edcDerivedToken);
    _mongocrypt_buffer_cleanup (&etc->escDerivedToken);
    _mongocrypt_buffer_cleanup (&etc->eccDerivedToken);
@@ -39,6 +43,8 @@ mc_EdgeTokenSet_cleanup (mc_EdgeTokenSet_t *etc)
 void
 mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload)
 {
+   BSON_ASSERT_PARAM (payload);
+
    _mongocrypt_buffer_cleanup (&payload->edcDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->escDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->eccDerivedToken);
@@ -113,6 +119,9 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
    bool has_p = false, has_u = false, has_t = false;
    bool has_v = false, has_e = false;
    bson_t in_bson;
+
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (in);
 
    if (in->len < 1) {
       CLIENT_ERR ("FLE2InsertUpdatePayload_parse got too short input");
@@ -189,6 +198,9 @@ bool
 mc_FLE2InsertUpdatePayload_serialize (
    const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out)
 {
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (payload);
+
    IUPS_APPEND_BINDATA (
       out, "d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
    IUPS_APPEND_BINDATA (
@@ -212,6 +224,9 @@ bool
 mc_FLE2InsertUpdatePayload_serializeForRange (
    const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out)
 {
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (payload);
+
    if (!mc_FLE2InsertUpdatePayload_serialize (payload, out)) {
       return false;
    }
@@ -265,6 +280,10 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
                                     const _mongocrypt_buffer_t *user_key,
                                     mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (iup);
+   BSON_ASSERT_PARAM (user_key);
+
    if (iup->value.len == 0) {
       CLIENT_ERR ("FLE2InsertUpdatePayload value not parsed");
       return NULL;

@@ -52,6 +52,8 @@ _make_owned (_mongocrypt_buffer_t *buf)
 void
 _mongocrypt_buffer_init (_mongocrypt_buffer_t *buf)
 {
+   BSON_ASSERT_PARAM (buf);
+
    memset (buf, 0, sizeof (*buf));
 }
 
@@ -81,6 +83,8 @@ _mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len)
 void
 _mongocrypt_buffer_init_size (_mongocrypt_buffer_t *buf, uint32_t len)
 {
+   BSON_ASSERT_PARAM (buf);
+
    _mongocrypt_buffer_init (buf);
    _mongocrypt_buffer_resize (buf, len);
 }
@@ -89,6 +93,9 @@ _mongocrypt_buffer_init_size (_mongocrypt_buffer_t *buf, uint32_t len)
 void
 _mongocrypt_buffer_steal (_mongocrypt_buffer_t *buf, _mongocrypt_buffer_t *src)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (src);
+
    if (!src->owned) {
       _mongocrypt_buffer_copy_to (src, buf);
       _mongocrypt_buffer_init (src);
@@ -105,6 +112,9 @@ bool
 _mongocrypt_buffer_from_binary_iter (_mongocrypt_buffer_t *buf,
                                      bson_iter_t *iter)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (iter);
+
    if (!BSON_ITER_HOLDS_BINARY (iter)) {
       return false;
    }
@@ -120,6 +130,9 @@ bool
 _mongocrypt_buffer_copy_from_binary_iter (_mongocrypt_buffer_t *buf,
                                           bson_iter_t *iter)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (iter);
+
    if (!_mongocrypt_buffer_from_binary_iter (buf, iter)) {
       return false;
    }
@@ -133,6 +146,9 @@ bool
 _mongocrypt_buffer_from_document_iter (_mongocrypt_buffer_t *buf,
                                        bson_iter_t *iter)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (iter);
+
    if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
       return false;
    }
@@ -147,6 +163,9 @@ bool
 _mongocrypt_buffer_copy_from_document_iter (_mongocrypt_buffer_t *buf,
                                             bson_iter_t *iter)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (iter);
+
    if (!_mongocrypt_buffer_from_document_iter (buf, iter)) {
       return false;
    }
@@ -158,6 +177,9 @@ _mongocrypt_buffer_copy_from_document_iter (_mongocrypt_buffer_t *buf,
 void
 _mongocrypt_buffer_steal_from_bson (_mongocrypt_buffer_t *buf, bson_t *bson)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (bson);
+
    _mongocrypt_buffer_init (buf);
    buf->data = bson_destroy_with_steal (bson, true, &buf->len);
    buf->owned = true;
@@ -167,6 +189,9 @@ _mongocrypt_buffer_steal_from_bson (_mongocrypt_buffer_t *buf, bson_t *bson)
 void
 _mongocrypt_buffer_from_bson (_mongocrypt_buffer_t *buf, const bson_t *bson)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (bson);
+
    _mongocrypt_buffer_init (buf);
    buf->data = (uint8_t *) bson_get_data (bson);
    buf->len = bson->len;
@@ -177,8 +202,8 @@ _mongocrypt_buffer_from_bson (_mongocrypt_buffer_t *buf, const bson_t *bson)
 bool
 _mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf, bson_t *bson)
 {
-   BSON_ASSERT (buf);
-   BSON_ASSERT (bson);
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (bson);
 
    return bson_init_static (bson, buf->data, buf->len);
 }
@@ -190,6 +215,10 @@ _mongocrypt_buffer_append (const _mongocrypt_buffer_t *buf,
                            const char *key,
                            uint32_t key_len)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (key);
+
    return bson_append_binary (
       bson, key, key_len, buf->subtype, buf->data, buf->len);
 }
@@ -199,6 +228,9 @@ void
 _mongocrypt_buffer_from_binary (_mongocrypt_buffer_t *buf,
                                 const mongocrypt_binary_t *binary)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (binary);
+
    _mongocrypt_buffer_init (buf);
    buf->data = binary->data;
    buf->len = binary->len;
@@ -210,8 +242,8 @@ void
 _mongocrypt_buffer_copy_from_binary (_mongocrypt_buffer_t *buf,
                                      const struct _mongocrypt_binary_t *binary)
 {
-   BSON_ASSERT (buf);
-   BSON_ASSERT (binary);
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (binary);
 
    _mongocrypt_buffer_from_binary (buf, binary);
    _make_owned (buf);
@@ -222,6 +254,9 @@ void
 _mongocrypt_buffer_to_binary (const _mongocrypt_buffer_t *buf,
                               mongocrypt_binary_t *binary)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (binary);
+
    binary->data = buf->data;
    binary->len = buf->len;
 }
@@ -235,8 +270,8 @@ _mongocrypt_buffer_copy_to (const _mongocrypt_buffer_t *src,
       return;
    }
 
-   BSON_ASSERT (src);
-   BSON_ASSERT (dst);
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
 
    _mongocrypt_buffer_cleanup (dst);
    if (src->len == 0) {
@@ -261,8 +296,8 @@ _mongocrypt_buffer_set_to (const _mongocrypt_buffer_t *src,
       return;
    }
 
-   BSON_ASSERT (src);
-   BSON_ASSERT (dst);
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
 
    dst->data = src->data;
    dst->len = src->len;
@@ -275,6 +310,9 @@ int
 _mongocrypt_buffer_cmp (const _mongocrypt_buffer_t *a,
                         const _mongocrypt_buffer_t *b)
 {
+   BSON_ASSERT_PARAM (a);
+   BSON_ASSERT_PARAM (b);
+
    if (a->len != b->len) {
       return a->len - b->len;
    }
@@ -297,6 +335,8 @@ _mongocrypt_buffer_cleanup (_mongocrypt_buffer_t *buf)
 bool
 _mongocrypt_buffer_empty (const _mongocrypt_buffer_t *buf)
 {
+   BSON_ASSERT_PARAM (buf);
+
    return buf->data == NULL;
 }
 
@@ -312,6 +352,9 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    uint32_t le_data_len;
    uint8_t *data;
    uint8_t data_prefix;
+
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (out);
 
    data_prefix = INT32_LEN        /* adds document size */
                  + TYPE_LEN       /* element type */
@@ -367,6 +410,9 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
 
    uint8_t *wrapper_data;
 
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (iter);
+
    /* It is not straightforward to transform a bson_value_t to a string of
     * bytes. As a workaround, we wrap the value in a bson document with an empty
     * key, then use the raw buffer from inside the new bson_t, skipping the
@@ -392,6 +438,9 @@ _mongocrypt_buffer_from_uuid_iter (_mongocrypt_buffer_t *buf, bson_iter_t *iter)
    bson_subtype_t subtype;
    uint32_t len;
 
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (iter);
+
    if (!BSON_ITER_HOLDS_BINARY (iter)) {
       return false;
    }
@@ -415,6 +464,9 @@ bool
 _mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
                                         bson_iter_t *iter)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (iter);
+
    if (!_mongocrypt_buffer_from_uuid_iter (buf, iter)) {
       return false;
    }
@@ -425,6 +477,8 @@ _mongocrypt_buffer_copy_from_uuid_iter (_mongocrypt_buffer_t *buf,
 bool
 _mongocrypt_buffer_is_uuid (_mongocrypt_buffer_t *buf)
 {
+   BSON_ASSERT_PARAM (buf);
+
    return buf->len == UUID_LEN && buf->subtype == BSON_SUBTYPE_UUID;
 }
 
@@ -432,6 +486,9 @@ void
 _mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex)
 {
    uint32_t i;
+
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (hex);
 
    if (strlen (hex) == 0) {
       _mongocrypt_buffer_init (buf);
@@ -456,6 +513,9 @@ _mongocrypt_buffer_cmp_hex (_mongocrypt_buffer_t *buf, const char *hex)
    _mongocrypt_buffer_t tmp;
    int res;
 
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (hex);
+
    _mongocrypt_buffer_copy_from_hex (&tmp, hex);
    res = _mongocrypt_buffer_cmp (buf, &tmp);
    _mongocrypt_buffer_cleanup (&tmp);
@@ -465,6 +525,8 @@ _mongocrypt_buffer_cmp_hex (_mongocrypt_buffer_t *buf, const char *hex)
 char *
 _mongocrypt_buffer_to_hex (_mongocrypt_buffer_t *buf)
 {
+   BSON_ASSERT_PARAM (buf);
+
    char *hex = bson_malloc0 (buf->len * 2 + 1);
    BSON_ASSERT (hex);
 
@@ -484,6 +546,9 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
    uint32_t total = 0;
    uint32_t offset;
    uint32_t i;
+
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (srcs);
 
    for (i = 0; i < num_srcs; i++) {
       uint32_t old_total = total;
@@ -509,6 +574,8 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
 struct _mongocrypt_binary_t *
 _mongocrypt_buffer_as_binary (_mongocrypt_buffer_t *buf)
 {
+   BSON_ASSERT_PARAM (buf);
+
    buf->bin.data = buf->data;
    buf->bin.len = buf->len;
    return &buf->bin;
@@ -519,6 +586,9 @@ _mongocrypt_buffer_copy_from_data_and_size (_mongocrypt_buffer_t *buf,
                                             const uint8_t *data,
                                             size_t len)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (data);
+
    _mongocrypt_buffer_init (buf);
 
    if (!size_to_uint32 (len, &buf->len)) {
@@ -535,6 +605,9 @@ _mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_buffer_t *buf,
                                              uint8_t *data,
                                              size_t len)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (data);
+
    _mongocrypt_buffer_init (buf);
    if (!size_to_uint32 (len, &buf->len)) {
       return false;
@@ -547,6 +620,9 @@ _mongocrypt_buffer_steal_from_data_and_size (_mongocrypt_buffer_t *buf,
 bool
 _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (str);
+
    _mongocrypt_buffer_init (buf);
    if (!size_to_uint32 (strlen (str), &buf->len)) {
       return false;
@@ -559,6 +635,9 @@ _mongocrypt_buffer_steal_from_string (_mongocrypt_buffer_t *buf, char *str)
 bool
 _mongocrypt_buffer_from_string (_mongocrypt_buffer_t *buf, const char *str)
 {
+   BSON_ASSERT_PARAM (buf);
+   BSON_ASSERT_PARAM (str);
+
    _mongocrypt_buffer_init (buf);
    if (!size_to_uint32 (strlen (str), &buf->len)) {
       return false;
@@ -573,6 +652,9 @@ _mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
                                         uint64_t value)
 {
    uint64_t value_le = MONGOCRYPT_UINT64_TO_LE (value);
+
+   BSON_ASSERT_PARAM (buf);
+
    _mongocrypt_buffer_init (buf);
    _mongocrypt_buffer_resize (buf, sizeof (value));
    memcpy (buf->data, &value_le, buf->len);

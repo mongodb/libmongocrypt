@@ -319,7 +319,6 @@ _hmac_with_algorithm (BCRYPT_ALG_HANDLE hAlgorithm,
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (status);
 
    if (out->len != expect_out_len) {
       CLIENT_ERR ("out does not contain " PRIu32 " bytes", expect_out_len);
@@ -369,7 +368,6 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (status);
 
    NTSTATUS nt_status = BCryptGenRandom (_random, out->data, count, 0);
    if (nt_status != STATUS_SUCCESS) {
@@ -396,7 +394,6 @@ _cng_ctr_crypto_generate (cng_ctr_encrypt_state *state,
                           mongocrypt_status_t *status)
 {
    BSON_ASSERT (state);
-   BSON_ASSERT (status);
 
    uint32_t bytesEncrypted = 0;
    NTSTATUS nt_status = BCryptEncrypt (state->key_handle,
@@ -437,7 +434,6 @@ _cng_ctr_crypto_next (cng_ctr_encrypt_state *state,
                       unsigned char *mask)
 {
    BSON_ASSERT (state);
-   BSON_ASSERT (status);
    BSON_ASSERT (mask);
 
    if (state->output_block_ptr >= state->output_block_len) {
@@ -469,7 +465,6 @@ _cng_ctr_crypto_state_init (const _mongocrypt_buffer_t *key,
 
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (iv);
-   BSON_ASSERT_PARAM (status);
 
    keyBlob = NULL;
 

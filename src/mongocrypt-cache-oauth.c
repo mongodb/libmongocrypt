@@ -37,6 +37,8 @@ _mongocrypt_cache_oauth_new (void)
 void
 _mongocrypt_cache_oauth_destroy (_mongocrypt_cache_oauth_t *cache)
 {
+   BSON_ASSERT_PARAM (cache);
+
    _mongocrypt_mutex_cleanup (&cache->mutex);
    bson_destroy (cache->entry);
    bson_free (cache->access_token);
@@ -52,6 +54,9 @@ _mongocrypt_cache_oauth_add (_mongocrypt_cache_oauth_t *cache,
    int64_t expiration_time_us;
    int64_t cache_time_us;
    const char *access_token;
+
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (oauth_response);
 
    if (!bson_iter_init_find (&iter, oauth_response, "expires_in") ||
        !BSON_ITER_HOLDS_INT (&iter)) {
@@ -88,6 +93,8 @@ char *
 _mongocrypt_cache_oauth_get (_mongocrypt_cache_oauth_t *cache)
 {
    char *access_token;
+
+   BSON_ASSERT_PARAM (cache);
 
    _mongocrypt_mutex_lock (&cache->mutex);
    if (!cache->entry) {

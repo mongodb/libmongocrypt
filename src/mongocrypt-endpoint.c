@@ -55,6 +55,8 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    char *host_start;
    char *host_end;
 
+   /* opts is checked where it is used below, to allow a more precise error */
+
    endpoint = bson_malloc0 (sizeof (_mongocrypt_endpoint_t));
    _mongocrypt_status_reset (status);
    BSON_ASSERT (endpoint);
@@ -191,8 +193,8 @@ _mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src)
 }
 
 void _mongocrypt_apply_default_port (char **endpoint_raw, char *port) {
-   BSON_ASSERT (endpoint_raw);
-   BSON_ASSERT (port);
+   BSON_ASSERT_PARAM (endpoint_raw);
+   BSON_ASSERT_PARAM (port);
    BSON_ASSERT (*endpoint_raw);
 
    if (strstr (*endpoint_raw, ":") == NULL) {
