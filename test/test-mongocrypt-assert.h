@@ -96,6 +96,8 @@
    do {                                                                    \
       const char *_str_a = (_expr_a);                                      \
       const char *_str_b = (_expr_b);                                      \
+      ASSERT (_str_a);                                                     \
+      ASSERT (_str_b);                                                     \
       int _ret = strcmp (_str_a, _str_b);                                  \
       if (_ret != 0) {                                                     \
          TEST_ERROR ("strings not equal:\n%s\nvs.\n%s\n", _str_a, _str_b); \
