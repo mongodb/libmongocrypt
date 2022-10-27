@@ -871,10 +871,10 @@ mstr_win32_narrow (const wchar_t *wstring)
 struct _mstr_split_iter_ {
    /// What hasn't been parsed yet
    mstr_view remaining;
-   /// The current part
-   mstr_view part;
    /// The string that we split on
    mstr_view splitter;
+   /// The current part
+   mstr_view part;
    /// A once-var for the inner loop. Set to 1 by iter_next, then decremented
    int once;
    /// The loop state. Starts at zero. Set to one when we part the final split.
