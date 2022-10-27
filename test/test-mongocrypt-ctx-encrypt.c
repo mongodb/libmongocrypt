@@ -2173,12 +2173,13 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
       status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (
          &buf,
-         "03ba0000001074000200000010610003000000056b690010000000041234567812349"
+         "03ee0000001074000200000010610003000000056b690010000000041234567812349"
          "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-         "0376005b000000106c6f776572426f756e640000000000086c62496e636c756465640"
-         "001107570706572426f756e640087d61200087562496e636c75646564000110696e64"
-         "65784d696e000000000010696e6465784d61780087d612000012636d0000000000000"
-         "00000127300010000000000000000");
+         "0376008f000000036564676573496e666f005b000000106c6f776572426f756e64000"
+         "0000000086c62496e636c756465640001107570706572426f756e640087d612000875"
+         "62496e636c75646564000110696e6465784d696e000000000010696e6465784d61780"
+         "087d6120000107061796c6f6164496400d2040000026f70657261746f725479706500"
+         "030000006774000012636d000000000000000000127300010000000000000000");
       ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
       mc_FLE2EncryptionPlaceholder_init (&placeholder);
       ASSERT_OK_STATUS (
@@ -2210,21 +2211,27 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
             mc_FLE2RangeFindSpec_parse (&spec, &placeholder.v_iter, status),
             status);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.lowerBound));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.lowerBound), ==, 0);
-         ASSERT (spec.lbIncluded);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.lowerBound));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.edgesInfo.lowerBound), ==, 0);
+         ASSERT (spec.edgesInfo.lbIncluded);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.upperBound));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.upperBound), ==, 1234567);
-         ASSERT (spec.ubIncluded);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.upperBound));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.upperBound), ==, 1234567);
+         ASSERT (spec.edgesInfo.ubIncluded);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.indexMin));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.indexMin), ==, 0);
-         ASSERT (spec.ubIncluded);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.indexMin));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.edgesInfo.indexMin), ==, 0);
+         ASSERT (spec.edgesInfo.ubIncluded);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.indexMax));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.indexMax), ==, 1234567);
-         ASSERT (spec.ubIncluded);
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.indexMax));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.indexMax), ==, 1234567);
+         ASSERT (spec.edgesInfo.ubIncluded);
+
+         ASSERT_CMPINT32 (spec.payloadId, ==, 1234);
+
+         ASSERT_STREQUAL (spec.operatorType, "gt");
       }
 
       mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);

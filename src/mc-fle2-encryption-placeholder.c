@@ -209,18 +209,18 @@ mc_validate_sparsity (int64_t sparsity, mongocrypt_status_t *status)
    return true;
 }
 
-bool
-mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
-                            const bson_iter_t *in,
-                            mongocrypt_status_t *status)
+static bool
+mc_FLE2RangeFindSpecEdgesInfo_parse (mc_FLE2RangeFindSpecEdgesInfo_t *out,
+                                     const bson_iter_t *in,
+                                     mongocrypt_status_t *status)
 {
    bson_iter_t iter = *in;
    bool has_lowerBound = false, has_lbIncluded = false, has_upperBound = false,
         has_ubIncluded = false, has_indexMin = false, has_indexMax = false;
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      CLIENT_ERR (
-         "invalid FLE2RangeFindSpec: must be an iterator to a document");
+      CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: must be an iterator to "
+                  "a document");
       return false;
    }
    bson_iter_recurse (&iter, &iter);
@@ -238,8 +238,8 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
       IF_FIELD (lbIncluded)
       {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            CLIENT_ERR (
-               "invalid FLE2RangeFindSpec: 'lbIncluded' must be a bool");
+            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'lbIncluded' must "
+                        "be a bool");
             goto fail;
          }
          out->lbIncluded = bson_iter_bool (&iter);
@@ -255,8 +255,8 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
       IF_FIELD (ubIncluded)
       {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            CLIENT_ERR (
-               "invalid FLE2RangeFindSpec: 'ubIncluded' must be a bool");
+            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'ubIncluded' must "
+                        "be a bool");
             goto fail;
          }
          out->ubIncluded = bson_iter_bool (&iter);
@@ -282,6 +282,66 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
    CHECK_HAS (ubIncluded)
    CHECK_HAS (indexMin)
    CHECK_HAS (indexMax)
+   return true;
+
+fail:
+   return false;
+}
+
+bool
+mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
+                            const bson_iter_t *in,
+                            mongocrypt_status_t *status)
+{
+   bson_iter_t iter = *in;
+   bool has_edgesInfo = false, has_payloadId = false, has_operatorType = false;
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      CLIENT_ERR (
+         "invalid FLE2RangeFindSpec: must be an iterator to a document");
+      return false;
+   }
+   bson_iter_recurse (&iter, &iter);
+
+   while (bson_iter_next (&iter)) {
+      const char *field = bson_iter_key (&iter);
+      BSON_ASSERT (field);
+
+      IF_FIELD (edgesInfo)
+      {
+         if (!mc_FLE2RangeFindSpecEdgesInfo_parse (
+                &out->edgesInfo, &iter, status)) {
+            goto fail;
+         }
+      }
+      END_IF_FIELD
+
+      IF_FIELD (payloadId)
+      {
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+            CLIENT_ERR (
+               "invalid FLE2RangeFindSpec: 'payloadId' must be an int32");
+            goto fail;
+         }
+         out->payloadId = bson_iter_int32 (&iter);
+      }
+      END_IF_FIELD
+
+      IF_FIELD (operatorType)
+      {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            CLIENT_ERR (
+               "invalid FLE2RangeFindSpec: 'operatorType' must be a utf8");
+            goto fail;
+         }
+         out->operatorType = bson_iter_utf8 (&iter, NULL);
+      }
+      END_IF_FIELD
+   }
+
+   // edgesInfo is optional. Do not require it.
+   CHECK_HAS (payloadId)
+   CHECK_HAS (operatorType)
    return true;
 
 fail:

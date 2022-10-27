@@ -960,32 +960,34 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
 {
    BSON_ASSERT_PARAM (findSpec);
 
-   bson_type_t bsonType = bson_iter_type (&findSpec->indexMin);
+   bson_type_t bsonType = bson_iter_type (&findSpec->edgesInfo.indexMin);
 
-   if (bson_iter_type (&findSpec->indexMin) !=
-       bson_iter_type (&findSpec->indexMax)) {
+   if (bson_iter_type (&findSpec->edgesInfo.indexMin) !=
+       bson_iter_type (&findSpec->edgesInfo.indexMax)) {
       CLIENT_ERR (
          "indexMin and indexMax must have the same type. Got: %s indexMin and "
          "%s indexMax",
-         mc_bson_type_to_string (bson_iter_type (&findSpec->indexMin)),
-         mc_bson_type_to_string (bson_iter_type (&findSpec->indexMax)));
+         mc_bson_type_to_string (
+            bson_iter_type (&findSpec->edgesInfo.indexMin)),
+         mc_bson_type_to_string (
+            bson_iter_type (&findSpec->edgesInfo.indexMax)));
       return NULL;
    }
 
-   bson_iter_t lowerBound = findSpec->lowerBound;
-   bson_iter_t upperBound = findSpec->upperBound;
-   bool includeLowerBound = findSpec->lbIncluded;
-   bool includeUpperBound = findSpec->ubIncluded;
+   bson_iter_t lowerBound = findSpec->edgesInfo.lowerBound;
+   bson_iter_t upperBound = findSpec->edgesInfo.upperBound;
+   bool includeLowerBound = findSpec->edgesInfo.lbIncluded;
+   bool includeUpperBound = findSpec->edgesInfo.ubIncluded;
 
    // Open-ended ranges are represented with infinity as the other endpoint.
    // Resolve infinite bounds at this point to end at the min or max for this
    // index.
    if (isInfinite (lowerBound)) {
-      lowerBound = findSpec->indexMin;
+      lowerBound = findSpec->edgesInfo.indexMin;
       includeLowerBound = true;
    }
    if (isInfinite (upperBound)) {
-      upperBound = findSpec->indexMax;
+      upperBound = findSpec->edgesInfo.indexMax;
       includeUpperBound = true;
    }
 
@@ -1007,54 +1009,64 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
    case BSON_TYPE_INT32:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT32);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT32);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_INT32);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_INT32);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+                   BSON_TYPE_INT32);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+                   BSON_TYPE_INT32);
       return mc_getMincoverInt32 (
          (mc_getMincoverInt32_args_t){
             .lowerBound = bson_iter_int32 (&lowerBound),
             .includeLowerBound = includeLowerBound,
             .upperBound = bson_iter_int32 (&upperBound),
             .includeUpperBound = includeUpperBound,
-            .min = OPT_I32 (bson_iter_int32 (&findSpec->indexMin)),
-            .max = OPT_I32 (bson_iter_int32 (&findSpec->indexMax)),
+            .min = OPT_I32 (bson_iter_int32 (&findSpec->edgesInfo.indexMin)),
+            .max = OPT_I32 (bson_iter_int32 (&findSpec->edgesInfo.indexMax)),
             .sparsity = sparsity},
          status);
 
    case BSON_TYPE_INT64:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT64);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT64);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_INT64);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+                   BSON_TYPE_INT64);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+                   BSON_TYPE_INT64);
       return mc_getMincoverInt64 (
          (mc_getMincoverInt64_args_t){
             .lowerBound = bson_iter_int64 (&lowerBound),
             .includeLowerBound = includeLowerBound,
             .upperBound = bson_iter_int64 (&upperBound),
             .includeUpperBound = includeUpperBound,
-            .min = OPT_I64 (bson_iter_int64 (&findSpec->indexMin)),
-            .max = OPT_I64 (bson_iter_int64 (&findSpec->indexMax)),
+            .min = OPT_I64 (bson_iter_int64 (&findSpec->edgesInfo.indexMin)),
+            .max = OPT_I64 (bson_iter_int64 (&findSpec->edgesInfo.indexMax)),
             .sparsity = sparsity},
          status);
    case BSON_TYPE_DATE_TIME:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DATE_TIME);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DATE_TIME);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_DATE_TIME);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_DATE_TIME);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+                   BSON_TYPE_DATE_TIME);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+                   BSON_TYPE_DATE_TIME);
       return mc_getMincoverInt64 (
          (mc_getMincoverInt64_args_t){
             .lowerBound = bson_iter_date_time (&lowerBound),
             .includeLowerBound = includeLowerBound,
             .upperBound = bson_iter_date_time (&upperBound),
             .includeUpperBound = includeUpperBound,
-            .min = OPT_I64 (bson_iter_date_time (&findSpec->indexMin)),
-            .max = OPT_I64 (bson_iter_date_time (&findSpec->indexMax)),
+            .min =
+               OPT_I64 (bson_iter_date_time (&findSpec->edgesInfo.indexMin)),
+            .max =
+               OPT_I64 (bson_iter_date_time (&findSpec->edgesInfo.indexMax)),
             .sparsity = sparsity},
          status);
    case BSON_TYPE_DOUBLE:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DOUBLE);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DOUBLE);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMin) == BSON_TYPE_DOUBLE);
-      BSON_ASSERT (bson_iter_type (&findSpec->indexMax) == BSON_TYPE_DOUBLE);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+                   BSON_TYPE_DOUBLE);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+                   BSON_TYPE_DOUBLE);
       return mc_getMincoverDouble (
          (mc_getMincoverDouble_args_t){
             .lowerBound = bson_iter_double (&lowerBound),

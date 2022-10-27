@@ -22,9 +22,9 @@
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
 
-/** FLE2RangeFindSpec represents the range find specification that is encoded
- * inside of a FLE2EncryptionPlaceholder. See
- * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl#L346
+/** FLE2RangeFindSpecEdgesInfo represents the information needed to generate
+ * edges for a range find query. It is encoded inside an FLE2RangeFindSpec. See
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl
  * for the representation in the MongoDB server.
  *
  * Bounds on range queries are referred to as lowerBound or lb, and upperBound
@@ -45,6 +45,20 @@ typedef struct {
    // indexMax is the maximum value for the encrypted index that this query is
    // using.
    bson_iter_t indexMax;
+} mc_FLE2RangeFindSpecEdgesInfo_t;
+
+/** FLE2RangeFindSpec represents the range find specification that is encoded
+ * inside of a FLE2EncryptionPlaceholder. See
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl
+ * for the representation in the MongoDB server.
+ */
+typedef struct {
+   // edgesInfo is the information about the edges in an FLE2 find payload.
+   mc_FLE2RangeFindSpecEdgesInfo_t edgesInfo;
+   // payloadId Id of payload - must be paired with another payload.
+   int32_t payloadId;
+   // operatorType is one of gt, lt, gte, lte.
+   const char *operatorType;
 } mc_FLE2RangeFindSpec_t;
 
 bool

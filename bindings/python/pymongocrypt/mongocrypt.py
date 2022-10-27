@@ -843,10 +843,10 @@ def _ask_for_kms_credentials(kms_providers):
                 "On-demand AWS credentials require pymongo-auth-aws: "
                 "install with: python -m pip install 'pymongo[aws]'"
             )
-        creds = aws_temp_credentials()
-        creds_dict = {"accessKeyId": creds.username, "secretAccessKey": creds.password}
-        if creds.token:
-            creds_dict["sessionToken"] = creds.token
+        aws_creds = aws_temp_credentials()
+        creds_dict = {"accessKeyId": aws_creds.username, "secretAccessKey": aws_creds.password}
+        if aws_creds.token:
+            creds_dict["sessionToken"] = aws_creds.token
         creds['aws'] = creds_dict
     if on_demand_gcp:
         creds['gcp'] = _get_gcp_credentials()
