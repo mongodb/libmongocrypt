@@ -24,8 +24,8 @@ void
 mc_FLE2FindRangePayload_init (mc_FLE2FindRangePayload_t *payload)
 {
    BSON_ASSERT_PARAM (payload);
-   *payload = (mc_FLE2FindRangePayload_t){{0}};
-   _mc_array_init (&payload->edgeFindTokenSetArray,
+   *payload = (mc_FLE2FindRangePayload_t){{{0}}};
+   _mc_array_init (&payload->payload.edgeFindTokenSetArray,
                    sizeof (mc_EdgeFindTokenSet_t));
 }
 
@@ -46,14 +46,14 @@ mc_FLE2FindRangePayload_cleanup (mc_FLE2FindRangePayload_t *payload)
    if (!payload) {
       return;
    }
-   _mongocrypt_buffer_cleanup (&payload->serverEncryptionToken);
+   _mongocrypt_buffer_cleanup (&payload->payload.serverEncryptionToken);
    // Free all EdgeFindTokenSet entries.
-   for (size_t i = 0; i < payload->edgeFindTokenSetArray.len; i++) {
+   for (size_t i = 0; i < payload->payload.edgeFindTokenSetArray.len; i++) {
       mc_EdgeFindTokenSet_t entry = _mc_array_index (
-         &payload->edgeFindTokenSetArray, mc_EdgeFindTokenSet_t, i);
+         &payload->payload.edgeFindTokenSetArray, mc_EdgeFindTokenSet_t, i);
       mc_EdgeFindTokenSet_cleanup (&entry);
    }
-   _mc_array_destroy (&payload->edgeFindTokenSetArray);
+   _mc_array_destroy (&payload->payload.edgeFindTokenSetArray);
 }
 
 #define APPEND_BINDATA(out, name, subtype, value)           \
@@ -68,16 +68,22 @@ mc_FLE2FindRangePayload_serialize (const mc_FLE2FindRangePayload_t *payload,
 {
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (payload);
-   // Append "g" array of EdgeTokenSets.
+
+   bson_t payload_bson;
+   // Append "payload".
+   if (!BSON_APPEND_DOCUMENT_BEGIN (out, "payload", &payload_bson)) {
+      return false;
+   }
+   // Append "payload.g" array of EdgeTokenSets.
    bson_t g_bson;
-   if (!BSON_APPEND_ARRAY_BEGIN (out, "g", &g_bson)) {
+   if (!BSON_APPEND_ARRAY_BEGIN (&payload_bson, "g", &g_bson)) {
       return false;
    }
 
    uint32_t g_index = 0;
-   for (size_t i = 0; i < payload->edgeFindTokenSetArray.len; i++) {
+   for (size_t i = 0; i < payload->payload.edgeFindTokenSetArray.len; i++) {
       mc_EdgeFindTokenSet_t etc = _mc_array_index (
-         &payload->edgeFindTokenSetArray, mc_EdgeFindTokenSet_t, i);
+         &payload->payload.edgeFindTokenSetArray, mc_EdgeFindTokenSet_t, i);
       bson_t etc_bson;
 
       const char *g_index_string;
@@ -99,13 +105,37 @@ mc_FLE2FindRangePayload_serialize (const mc_FLE2FindRangePayload_t *payload,
       g_index++;
    }
 
-   if (!bson_append_array_end (out, &g_bson)) {
+   if (!bson_append_array_end (&payload_bson, &g_bson)) {
       return false;
    }
 
-   APPEND_BINDATA (
-      out, "e", BSON_SUBTYPE_BINARY, payload->serverEncryptionToken);
-   if (!BSON_APPEND_INT64 (out, "cm", payload->maxContentionCounter)) {
+   // Append "payload.e" and "payload.cm".
+   APPEND_BINDATA (&payload_bson,
+                   "e",
+                   BSON_SUBTYPE_BINARY,
+                   payload->payload.serverEncryptionToken);
+   if (!BSON_APPEND_INT64 (
+          &payload_bson, "cm", payload->payload.maxContentionCounter)) {
+      return false;
+   }
+
+   if (!bson_append_document_end (out, &payload_bson)) {
+      return false;
+   }
+
+   // Append "payloadId"
+   if (!BSON_APPEND_INT32 (out, "payloadId", payload->payloadId)) {
+      return false;
+   }
+
+   // Append "firstOperator".
+   if (!BSON_APPEND_INT32 (out, "firstOperator", payload->firstOperator)) {
+      return false;
+   }
+
+   // Append "secondOperator" if present.
+   if (payload->secondOperator != FLE2RangeOperator_kNone &&
+       !BSON_APPEND_INT32 (out, "secondOperator", payload->secondOperator)) {
       return false;
    }
 

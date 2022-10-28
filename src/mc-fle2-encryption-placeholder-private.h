@@ -21,6 +21,7 @@
 
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
+#include "mc-fle2-find-range-payload-private.h"
 
 /** FLE2RangeFindSpecEdgesInfo represents the information needed to generate
  * edges for a range find query. It is encoded inside an FLE2RangeFindSpec. See
@@ -57,8 +58,12 @@ typedef struct {
    mc_FLE2RangeFindSpecEdgesInfo_t edgesInfo;
    // payloadId Id of payload - must be paired with another payload.
    int32_t payloadId;
-   // operatorType is one of gt, lt, gte, lte.
-   const char *operatorType;
+   // firstOperator represents the first query operator for which this payload
+   // was generated.
+   mc_FLE2RangeOperator_t firstOperator;
+   // secondOperator represents the second query operator for which this payload
+   // was generated. Only populated for two-sided ranges. It is 0 if unset.
+   mc_FLE2RangeOperator_t secondOperator;
 } mc_FLE2RangeFindSpec_t;
 
 bool

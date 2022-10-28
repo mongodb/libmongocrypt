@@ -692,9 +692,9 @@ test_mc_get_mincover_from_FLE2RangeFindSpec (_mongocrypt_tester_t *tester)
          "{",
          "edgesInfo",
          BCON_DOCUMENT (findSpecVal),
-         "operatorType", // Use a dummy operatorType. It is not used for
-                         // minCover.
-         "gt",
+         "firstOperator", // Use a dummy firstOperator. It is not used for
+                          // minCover.
+         BCON_INT32 (1),
          "payloadId", // Use a dummy payloadId. It is not used for minCover.
          BCON_INT32 (1234),
          "}");

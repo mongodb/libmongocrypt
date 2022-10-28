@@ -1188,7 +1188,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    }
 
    // cm := Queryable Encryption max counter
-   payload.maxContentionCounter = placeholder->maxContentionCounter;
+   payload.payload.maxContentionCounter = placeholder->maxContentionCounter;
 
    // e := ServerDataEncryptionLevel1Token
    {
@@ -1203,7 +1203,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
       }
       _mongocrypt_buffer_copy_to (
          mc_ServerDataEncryptionLevel1Token_get (serverToken),
-         &payload.serverEncryptionToken);
+         &payload.payload.serverEncryptionToken);
       mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
    }
 
@@ -1249,7 +1249,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
          _mongocrypt_buffer_steal (&eftc.eccDerivedToken,
                                    &edge_tokens.eccDerivedToken);
 
-         _mc_array_append_val (&payload.edgeFindTokenSetArray, eftc);
+         _mc_array_append_val (&payload.payload.edgeFindTokenSetArray, eftc);
 
          loop_ok = true;
       fail_loop:
@@ -1260,6 +1260,10 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
          }
       }
    }
+
+   payload.payloadId = findSpec.payloadId;
+   payload.firstOperator = findSpec.firstOperator;
+   payload.secondOperator = findSpec.secondOperator;
 
    // Serialize.
    {
