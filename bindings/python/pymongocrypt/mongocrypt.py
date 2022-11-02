@@ -116,9 +116,10 @@ class MongoCryptOptions(object):
             azure = kms_providers["azure"]
             if not isinstance(azure, dict):
                 raise ValueError("kms_providers['azure'] must be a dict")
-            if 'clientId' not in azure or 'clientSecret' not in azure:
-                raise ValueError("kms_providers['azure'] must contain "
-                                 "'clientId' and 'clientSecret'")
+            if len(azure):
+                if 'clientId' not in azure or 'clientSecret' not in azure:
+                    raise ValueError("kms_providers['azure'] must contain "
+                                     "'clientId' and 'clientSecret'")
 
         if 'gcp' in kms_providers:
             gcp = kms_providers['gcp']
@@ -261,7 +262,8 @@ class MongoCrypt(object):
             lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
         on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
         on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
-        if on_demand_aws or on_demand_gcp:
+        on_demand_azure = 'azure' in kms_providers and not len(kms_providers['azure'])
+        if any([on_demand_aws, on_demand_gcp, on_demand_azure]):
             lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
         if not lib.mongocrypt_init(self.__crypt):
@@ -452,7 +454,7 @@ class MongoCryptContext(object):
 
     def ask_for_kms_credentials(self):
         """Get on-demand kms credentials"""
-        return _ask_for_kms_credentials(self.__kms_providers)
+        return _ask_for_kms_credentials(self.__kms_providers, self)
 
     def provide_kms_providers(self, providers):
         """Provide a map of KMS providers."""
@@ -508,7 +510,7 @@ class EncryptionContext(MongoCryptContext):
 
 
 class DecryptionContext(MongoCryptContext):
-    __slots__ = ()
+    __slots__ = ('__weakref__',)
 
     def __init__(self, ctx, kms_providers, command):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
@@ -827,14 +829,53 @@ def _get_gcp_credentials():
     return {'accessToken': data['access_token']}
 
 
+import weakref
+_azure_creds_cache = weakref.WeakKeyDictionary()
 
-def _ask_for_kms_credentials(kms_providers):
+
+def _get_azure_credentials(owner):
+    """Get on-demand Azure credentials"""
+    # if owner in _azure_creds_cache:
+    #     return _azure_creds_cache[owner]
+
+    url = "http://169.254.169.254/metadata/identity/oauth2/token"
+    url += "?api-version=2018-02-01"
+    url += "&resource=https://vault.azure.net/"
+    headers = { "Metadata": "true", "Accept": "application/json" }
+    try:
+        response = requests.get(url, headers=headers)
+    except Exception as e:
+        msg = "unable to retrieve Azure credentials: %s" % e
+        raise MongoCryptError(msg)
+
+    if response.status_code != 200:
+        msg = "Unable to retrieve Azure credentials: expected StatusCode 200, got StatusCode: %s. Response body:\n%s" % (response.status_code, response.content)
+        raise MongoCryptError(msg)
+    try:
+        data = response.json()
+    except Exception:
+        raise MongoCryptError("unable to retrieve Azure credentials: error reading response body\n%s" % response.content)
+
+    if not data.get("access_token"):
+        msg = "unable to retrieve GCP credentials: got unexpected empty accessToken from GCP Metadata Server. Response body: %s" % response.content
+        raise MongoCryptError(msg)
+
+    # TODO: calculate expiration here.
+
+    # value = {'accessToken': data['access_token'], 'expires_in': data['expires_in']}
+    # _azure_creds_cache[owner] = value
+    return data
+
+
+def _ask_for_kms_credentials(kms_providers, owner):
     """Get on-demand kms credentials.
 
     This is a separate function so it can be overridden in unit tests."""
     on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
     on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
-    if not on_demand_aws and not on_demand_gcp:
+    on_demand_azure = 'azure' in kms_providers and not len(kms_providers['azure'])
+
+    if not any([on_demand_aws, on_demand_gcp, on_demand_azure]):
         return {}
     creds = {}
     if on_demand_aws:
@@ -850,4 +891,6 @@ def _ask_for_kms_credentials(kms_providers):
         creds['aws'] = creds_dict
     if on_demand_gcp:
         creds['gcp'] = _get_gcp_credentials()
+    if on_demand_azure:
+        creds['azure'] = _get_azure_credentials(owner)
     return creds

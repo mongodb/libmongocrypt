@@ -480,6 +480,29 @@ class TestMongoCryptCallback(unittest.TestCase):
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
 
+    def test_need_kms_azure_credentials(self):
+        kms_providers = { 'azure': {} }
+        opts = MongoCryptOptions(kms_providers)
+        callback = MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document-azure.json')],
+            kms_reply=http_data('kms-reply-azure.txt'))
+        encrypter = AutoEncrypter(callback, opts)
+        self.addCleanup(encrypter.close)
+
+        with requests_mock.Mocker() as m:
+            data = {"access_token": "foo", "expires_in": 4000, "tenantId": "foo", "clientId": "foo", "clientSecret": "foo" }
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, text=json.dumps(data))
+            decrypted = encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
+        self.assertEqual(bson.decode(decrypted, OPTS),
+                         json_data('command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
+
 
 class KeyVaultCallback(MockCallback):
     def __init__(self, kms_reply=None):
