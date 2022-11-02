@@ -101,6 +101,8 @@ class TestMongoCryptOptions(unittest.TestCase):
               'local': {'key': b'1' * 96}}, None),
             ({'local': {'key': to_base64(b'1' * 96)}}, None),
             ({'local': {'key': Binary(b'1' * 96)}}, None),
+            ({'azure': {}}, None),
+            ({'azure': {'clientId': 'foo', 'clientSecret': 'bar'}}, None),
             ({'gcp': {}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
                       'privateKey': b'1'}}, None),
