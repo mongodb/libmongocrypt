@@ -503,7 +503,7 @@ class EncryptionContext(MongoCryptContext):
 
 
 class DecryptionContext(MongoCryptContext):
-    __slots__ = ('__weakref__',)
+    __slots__ = ()
 
     def __init__(self, ctx, kms_providers, command):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
