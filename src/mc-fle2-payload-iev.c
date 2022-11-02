@@ -44,6 +44,9 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
                                     const _mongocrypt_buffer_t *buf,
                                     mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (iev);
+   BSON_ASSERT_PARAM (buf);
+
    if (iev->parsed) {
       CLIENT_ERR (
          "mc_FLE2IndexedEncryptedValue_parse must not be called twice");
@@ -117,6 +120,8 @@ const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValue_get_S_KeyId (
    const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (iev);
+
    if (!iev->parsed) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_get_S_KeyId must be "
                   "called after mc_FLE2IndexedEncryptedValue_parse");
@@ -132,6 +137,10 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
                                         const _mongocrypt_buffer_t *S_Key,
                                         mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (iev);
+   BSON_ASSERT_PARAM (S_Key);
+
    if (!iev->parsed) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key must be "
                   "called after mc_FLE2IndexedEncryptedValue_parse");
@@ -251,6 +260,8 @@ const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValue_get_K_KeyId (
    const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (iev);
+
    if (!iev->inner_decrypted) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_get_K_KeyId must be called "
                   "after mc_FLE2IndexedEncryptedValue_add_S_Key");
@@ -266,6 +277,10 @@ mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    const _mongocrypt_buffer_t *K_Key,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (iev);
+   BSON_ASSERT_PARAM (K_Key);
+
    if (!iev->inner_decrypted) {
       CLIENT_ERR (
          "mc_FLE2IndexedEqualityEncryptedValue_add_K_Key must be called after "
@@ -299,6 +314,8 @@ const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValue_get_ClientValue (
    const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (iev);
+
    if (!iev->client_value_decrypted) {
       CLIENT_ERR (
          "mc_FLE2IndexedEqualityEncryptedValue_getClientValue must be called "
@@ -327,6 +344,8 @@ bson_type_t
 mc_FLE2IndexedEncryptedValue_get_original_bson_type (
    const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (iev);
+
    if (!iev->parsed) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_get_original_bson_type must be "
                   "called after mc_FLE2IndexedEncryptedValue_parse");

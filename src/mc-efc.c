@@ -27,6 +27,10 @@ _parse_field (mc_EncryptedFieldConfig_t *efc,
 {
    bool has_queries = false;
    bson_iter_t field_iter;
+
+   BSON_ASSERT_PARAM (efc);
+   BSON_ASSERT_PARAM (field);
+
    if (!bson_iter_init_find (&field_iter, field, "keyId")) {
       CLIENT_ERR ("unable to find 'keyId' in 'field' document");
       return false;
@@ -74,8 +78,12 @@ mc_EncryptedFieldConfig_parse (mc_EncryptedFieldConfig_t *efc,
                                const bson_t *efc_bson,
                                mongocrypt_status_t *status)
 {
-   memset (efc, 0, sizeof (*efc));
    bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (efc);
+   BSON_ASSERT_PARAM (efc_bson);
+
+   memset (efc, 0, sizeof (*efc));
    if (!bson_iter_init_find (&iter, efc_bson, "fields")) {
       CLIENT_ERR ("unable to find 'fields' in encrypted_field_config");
       return false;

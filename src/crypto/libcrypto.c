@@ -214,7 +214,7 @@ _native_crypto_aes_256_ecb_encrypt (aes_256_args_t args)
  * @out is the output. @out must be allocated by the caller with
  * the exact length for the output. E.g. for HMAC 256, @out->len must be 32.
  * Returns false and sets @status on error. @status is required. */
-bool
+static bool
 _hmac_with_hash (const EVP_MD *hash,
                  const _mongocrypt_buffer_t *key,
                  const _mongocrypt_buffer_t *in,
@@ -225,7 +225,6 @@ _hmac_with_hash (const EVP_MD *hash,
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (status);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    if (!HMAC (hash,
@@ -292,7 +291,6 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (status);
 
    int ret = RAND_bytes (out->data, count);
    /* From man page: "RAND_bytes() and RAND_priv_bytes() return 1 on success, -1

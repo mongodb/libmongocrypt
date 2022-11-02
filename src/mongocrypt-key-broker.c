@@ -20,6 +20,9 @@
 void
 _mongocrypt_key_broker_init (_mongocrypt_key_broker_t *kb, mongocrypt_t *crypt)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (crypt);
+
    memset (kb, 0, sizeof (*kb));
    kb->crypt = crypt;
    kb->state = KB_REQUESTING;
@@ -39,7 +42,9 @@ _key_returned_prepend (_mongocrypt_key_broker_t *kb,
 {
    key_returned_t *key_returned;
 
-   BSON_ASSERT (key_doc);
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (list);
+   BSON_ASSERT_PARAM (key_doc);
 
    key_returned = bson_malloc0 (sizeof (*key_returned));
    BSON_ASSERT (key_returned);
@@ -65,14 +70,20 @@ _key_returned_find_one (key_returned_t *list,
 {
    key_returned_t *key_returned;
 
+   /* list can be NULL. */
+   /* key_id and key_alt_names are not dereferenced in this function and they
+    * are checked just before being passed on as parameters. */
+
    for (key_returned = list; NULL != key_returned;
         key_returned = key_returned->next) {
       if (key_id) {
+         BSON_ASSERT (key_returned->doc);
          if (0 == _mongocrypt_buffer_cmp (key_id, &key_returned->doc->id)) {
             return key_returned;
          }
       }
       if (key_alt_names) {
+         BSON_ASSERT (key_returned->doc);
          if (_mongocrypt_key_alt_name_intersects (
                 key_alt_names, key_returned->doc->key_alt_names)) {
             return key_returned;
@@ -91,6 +102,10 @@ _key_request_find_one (_mongocrypt_key_broker_t *kb,
                        _mongocrypt_key_alt_name_t *key_alt_names)
 {
    key_request_t *key_request;
+
+   BSON_ASSERT_PARAM (kb);
+   /* key_id and key_alt_names are not dereferenced in this function and they
+    * are checked just before being passed on as parameters. */
 
    for (key_request = kb->key_requests; NULL != key_request;
         key_request = key_request->next) {
@@ -115,6 +130,8 @@ _all_key_requests_satisfied (_mongocrypt_key_broker_t *kb)
 {
    key_request_t *key_request;
 
+   BSON_ASSERT_PARAM (kb);
+
    for (key_request = kb->key_requests; NULL != key_request;
         key_request = key_request->next) {
       if (!key_request->satisfied) {
@@ -129,6 +146,9 @@ _key_broker_fail_w_msg (_mongocrypt_key_broker_t *kb, const char *msg)
 {
    mongocrypt_status_t *status;
 
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (msg);
+
    kb->state = KB_ERROR;
    status = kb->status;
    CLIENT_ERR (msg);
@@ -138,6 +158,8 @@ _key_broker_fail_w_msg (_mongocrypt_key_broker_t *kb, const char *msg)
 static bool
 _key_broker_fail (_mongocrypt_key_broker_t *kb)
 {
+   BSON_ASSERT_PARAM (kb);
+
    if (mongocrypt_status_ok (kb->status)) {
       return _key_broker_fail_w_msg (
          kb, "unexpected, failing but no error status set");
@@ -152,6 +174,9 @@ _try_satisfying_from_cache (_mongocrypt_key_broker_t *kb, key_request_t *req)
    _mongocrypt_cache_key_attr_t *attr = NULL;
    _mongocrypt_cache_key_value_t *value = NULL;
    bool ret = false;
+
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (req);
 
    if (kb->state != KB_REQUESTING && kb->state != KB_ADDING_DOCS_ANY) {
       _key_broker_fail_w_msg (
@@ -202,6 +227,9 @@ _store_to_cache (_mongocrypt_key_broker_t *kb, key_returned_t *key_returned)
    _mongocrypt_cache_key_attr_t *attr;
    bool ret;
 
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (key_returned);
+
    if (!key_returned->decrypted) {
       return _key_broker_fail_w_msg (kb, "cannot cache non-decrypted key");
    }
@@ -228,6 +256,9 @@ _mongocrypt_key_broker_request_id (_mongocrypt_key_broker_t *kb,
                                    const _mongocrypt_buffer_t *key_id)
 {
    key_request_t *req;
+
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (key_id);
 
    if (kb->state != KB_REQUESTING) {
       return _key_broker_fail_w_msg (
@@ -262,6 +293,9 @@ _mongocrypt_key_broker_request_name (_mongocrypt_key_broker_t *kb,
    key_request_t *req;
    _mongocrypt_key_alt_name_t *key_alt_name;
 
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (key_alt_name_value);
+
    if (kb->state != KB_REQUESTING) {
       return _key_broker_fail_w_msg (
          kb, "attempting to request a key name, but in wrong state");
@@ -290,6 +324,8 @@ _mongocrypt_key_broker_request_name (_mongocrypt_key_broker_t *kb,
 bool
 _mongocrypt_key_broker_request_any (_mongocrypt_key_broker_t *kb)
 {
+   BSON_ASSERT_PARAM (kb);
+
    if (kb->state != KB_REQUESTING) {
       return _key_broker_fail_w_msg (
          kb, "attempting to request any keys, but in wrong state");
@@ -308,6 +344,8 @@ _mongocrypt_key_broker_request_any (_mongocrypt_key_broker_t *kb)
 bool
 _mongocrypt_key_broker_requests_done (_mongocrypt_key_broker_t *kb)
 {
+   BSON_ASSERT_PARAM (kb);
+
    if (kb->state != KB_REQUESTING) {
       return _key_broker_fail_w_msg (
          kb, "attempting to finish adding requests, but in wrong state");
@@ -336,7 +374,8 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
    bson_t ids, names;
    bson_t *filter;
 
-   BSON_ASSERT (kb);
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (out);
 
    if (kb->state != KB_ADDING_DOCS) {
       return _key_broker_fail_w_msg (
@@ -377,6 +416,7 @@ _mongocrypt_key_broker_filter (_mongocrypt_key_broker_t *kb,
       for (key_alt_name = req->alt_name; NULL != key_alt_name;
            key_alt_name = key_alt_name->next) {
          char *key_str;
+
 
          key_str = bson_strdup_printf ("%d", name_index++);
          BSON_ASSERT (key_str);
@@ -438,6 +478,9 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
    key_returned_t *key_returned;
    _mongocrypt_kms_provider_t kek_provider;
    char *access_token = NULL;
+
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (kms_providers);
 
    if (kb->state != KB_ADDING_DOCS && kb->state != KB_ADDING_DOCS_ANY) {
       _key_broker_fail_w_msg (
@@ -667,6 +710,8 @@ _mongocrypt_key_broker_docs_done (_mongocrypt_key_broker_t *kb)
    bool needs_decryption;
    bool needs_auth;
 
+   BSON_ASSERT_PARAM (kb);
+
    if (kb->state != KB_ADDING_DOCS && kb->state != KB_ADDING_DOCS_ANY) {
       return _key_broker_fail_w_msg (
          kb, "attempting to finish adding docs, but in wrong state");
@@ -712,6 +757,8 @@ _mongocrypt_key_broker_docs_done (_mongocrypt_key_broker_t *kb)
 mongocrypt_kms_ctx_t *
 _mongocrypt_key_broker_next_kms (_mongocrypt_key_broker_t *kb)
 {
+   BSON_ASSERT_PARAM (kb);
+
    if (kb->state != KB_DECRYPTING_KEY_MATERIAL &&
        kb->state != KB_AUTHENTICATING) {
       _key_broker_fail_w_msg (
@@ -765,6 +812,9 @@ _mongocrypt_key_broker_kms_done (
    _mongocrypt_opts_kms_providers_t *kms_providers)
 {
    key_returned_t *key_returned;
+
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (kms_providers);
 
    if (kb->state != KB_DECRYPTING_KEY_MATERIAL &&
        kb->state != KB_AUTHENTICATING) {
@@ -944,7 +994,7 @@ _mongocrypt_key_broker_kms_done (
 }
 
 
-bool
+static bool
 _get_decrypted_key_material (_mongocrypt_key_broker_t *kb,
                              _mongocrypt_buffer_t *key_id,
                              _mongocrypt_key_alt_name_t *key_alt_name,
@@ -952,6 +1002,12 @@ _get_decrypted_key_material (_mongocrypt_key_broker_t *kb,
                              _mongocrypt_buffer_t *key_id_out)
 {
    key_returned_t *key_returned;
+
+   BSON_ASSERT_PARAM (kb);
+   /* key_id can be NULL */
+   /* key_alt_name can be NULL */
+   BSON_ASSERT_PARAM (out);
+   /* key_id_out is checked before each use, so it can be NULL */
 
    _mongocrypt_buffer_init (out);
    if (key_id_out) {
@@ -987,6 +1043,10 @@ _mongocrypt_key_broker_decrypted_key_by_id (_mongocrypt_key_broker_t *kb,
                                             const _mongocrypt_buffer_t *key_id,
                                             _mongocrypt_buffer_t *out)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (key_id);
+   BSON_ASSERT_PARAM (out);
+
    if (kb->state != KB_DONE && kb->state != KB_REQUESTING) {
       return _key_broker_fail_w_msg (
          kb, "attempting retrieve decrypted key material, but in wrong state");
@@ -1008,6 +1068,11 @@ _mongocrypt_key_broker_decrypted_key_by_name (
    bool ret;
    _mongocrypt_key_alt_name_t *key_alt_name;
 
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (key_alt_name_value);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (key_id_out);
+
    if (kb->state != KB_DONE) {
       return _key_broker_fail_w_msg (
          kb, "attempting retrieve decrypted key material, but in wrong state");
@@ -1023,7 +1088,8 @@ bool
 _mongocrypt_key_broker_status (_mongocrypt_key_broker_t *kb,
                                mongocrypt_status_t *out)
 {
-   BSON_ASSERT (kb);
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (out);
 
    if (!mongocrypt_status_ok (kb->status)) {
       _mongocrypt_status_copy_to (kb->status, out);
@@ -1070,6 +1136,9 @@ _destroy_keys_returned (key_returned_t *head)
 void
 _mongocrypt_key_broker_cleanup (_mongocrypt_key_broker_t *kb)
 {
+   if (!kb) {
+      return;
+   }
    mongocrypt_status_destroy (kb->status);
    _mongocrypt_buffer_cleanup (&kb->filter);
    /* Delete all linked lists */
@@ -1087,7 +1156,9 @@ _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
    key_returned_t *key_returned;
    _mongocrypt_key_doc_t *key_doc;
 
-   BSON_ASSERT (kb);
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (key_id);
+
    key_doc = _mongocrypt_key_new ();
    _mongocrypt_buffer_copy_to (key_id, &key_doc->id);
 
@@ -1106,6 +1177,7 @@ _mongocrypt_key_broker_add_test_key (_mongocrypt_key_broker_t *kb,
 bool
 _mongocrypt_key_broker_restart (_mongocrypt_key_broker_t *kb)
 {
+   BSON_ASSERT_PARAM (kb);
    if (kb->state != KB_DONE) {
       return _key_broker_fail_w_msg (
          kb, "_mongocrypt_key_broker_restart called in wrong state");

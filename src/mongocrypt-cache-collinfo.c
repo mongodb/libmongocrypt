@@ -25,6 +25,10 @@
 static bool
 _cmp_attr (void *a, void *b, int *out)
 {
+   BSON_ASSERT_PARAM (a);
+   BSON_ASSERT_PARAM (b);
+   BSON_ASSERT_PARAM (out);
+
    *out = strcmp ((char *) a, (char *) b);
    return true;
 }
@@ -33,6 +37,8 @@ _cmp_attr (void *a, void *b, int *out)
 static void *
 _copy_attr (void *ns)
 {
+   BSON_ASSERT_PARAM (ns);
+
    return bson_strdup ((const char *) ns);
 }
 
@@ -47,6 +53,8 @@ _destroy_attr (void *ns)
 static void *
 _copy_value (void *bson)
 {
+   BSON_ASSERT_PARAM (bson);
+
    return bson_copy (bson);
 }
 
@@ -61,6 +69,8 @@ _destroy_value (void *bson)
 void
 _mongocrypt_cache_collinfo_init (_mongocrypt_cache_t *cache)
 {
+   BSON_ASSERT_PARAM (cache);
+
    cache->cmp_attr = _cmp_attr;
    cache->copy_attr = _copy_attr;
    cache->destroy_attr = _destroy_attr;

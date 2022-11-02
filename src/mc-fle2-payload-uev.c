@@ -39,6 +39,9 @@ mc_FLE2UnindexedEncryptedValue_parse (mc_FLE2UnindexedEncryptedValue_t *uev,
                                       const _mongocrypt_buffer_t *buf,
                                       mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (uev);
+   BSON_ASSERT_PARAM (buf);
+
    if (uev->parsed) {
       CLIENT_ERR (
          "mc_FLE2UnindexedEncryptedValue_parse must not be called twice");
@@ -109,6 +112,8 @@ bson_type_t
 mc_FLE2UnindexedEncryptedValue_get_original_bson_type (
    const mc_FLE2UnindexedEncryptedValue_t *uev, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (uev);
+
    if (!uev->parsed) {
       CLIENT_ERR (
          "mc_FLE2UnindexedEncryptedValue_get_original_bson_type must be "
@@ -122,6 +127,8 @@ const _mongocrypt_buffer_t *
 mc_FLE2UnindexedEncryptedValue_get_key_uuid (
    const mc_FLE2UnindexedEncryptedValue_t *uev, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (uev);
+
    if (!uev->parsed) {
       CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_get_key_uuid must be "
                   "called after mc_FLE2UnindexedEncryptedValue_parse");
@@ -136,6 +143,10 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
                                         const _mongocrypt_buffer_t *key,
                                         mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (uev);
+   BSON_ASSERT_PARAM (key);
+
    if (!uev->parsed) {
       CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_decrypt must be "
                   "called after mc_FLE2UnindexedEncryptedValue_parse");
@@ -184,6 +195,12 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t iv = {0};
    _mongocrypt_buffer_t AD = {0};
    bool res = false;
+
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (key_uuid);
+   BSON_ASSERT_PARAM (plaintext);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (out);
 
    _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
    if (!_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status)) {

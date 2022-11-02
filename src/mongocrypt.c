@@ -77,6 +77,8 @@ tmp_json (const bson_t *bson)
    static char storage[1024];
    char *json;
 
+   BSON_ASSERT_PARAM (bson);
+
    memset (storage, 0, 1024);
    json = bson_as_canonical_extended_json (bson, NULL);
    bson_snprintf (storage, sizeof (storage), "%s", json);
@@ -90,6 +92,8 @@ tmp_buf (const _mongocrypt_buffer_t *buf)
 {
    static char storage[1024];
    uint32_t i, n;
+
+   BSON_ASSERT_PARAM (buf);
 
    memset (storage, 0, 1024);
    /* capped at two characters per byte, minus 1 for trailing \0 */
@@ -105,7 +109,7 @@ tmp_buf (const _mongocrypt_buffer_t *buf)
    return (const char *) storage;
 }
 
-void
+static void
 _mongocrypt_do_init (void)
 {
    (void) kms_message_init ();
@@ -175,14 +179,11 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_secret_access_key,
                                     int32_t aws_secret_access_key_len)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
+
+   mongocrypt_status_t *status = crypt->status;
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       &crypt->opts.kms_providers;
-
-   if (!crypt) {
-      return false;
-   }
-   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -259,6 +260,8 @@ _mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary)
    bson_t bson;
    uint32_t len;
 
+   BSON_ASSERT_PARAM (binary);
+
    if (!_mongocrypt_binary_to_bson (binary, &bson) ||
        !bson_validate (&bson, BSON_VALIDATE_NONE, NULL)) {
       char *hex;
@@ -276,14 +279,11 @@ bool
 mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
                               mongocrypt_binary_t *schema_map)
 {
+   BSON_ASSERT_PARAM (crypt);
+
    bson_t tmp;
    bson_error_t bson_err;
-   mongocrypt_status_t *status;
-
-   if (!crypt) {
-      return false;
-   }
-   status = crypt->status;
+   mongocrypt_status_t *status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -320,14 +320,11 @@ bool
 mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
                                               mongocrypt_binary_t *efc_map)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
+
+   mongocrypt_status_t *status = crypt->status;
    bson_t as_bson;
    bson_error_t bson_err;
-
-   if (!crypt) {
-      return false;
-   }
-   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -366,14 +363,11 @@ bool
 mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
                                       mongocrypt_binary_t *key)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
+
+   mongocrypt_status_t *status = crypt->status;
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       &crypt->opts.kms_providers;
-
-   if (!crypt) {
-      return false;
-   }
-   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -502,10 +496,13 @@ _try_load_csfle (const char *filepath, _mongocrypt_log_t *log)
  * @return true If no error occurred and the path is valid
  * @return false If there was an error and `filepath` cannot be processed
  */
-bool
+static bool
 _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
 {
    const mstr_view dollar_origin = mstrv_lit ("$ORIGIN");
+
+   BSON_ASSERT_PARAM (filepath);
+
    if (!mstr_starts_with (filepath->view, dollar_origin)) {
       // Nothing to replace
       return true;
@@ -536,11 +533,14 @@ _try_replace_dollar_origin (mstr *filepath, _mongocrypt_log_t *log)
    return true;
 }
 
-_loaded_csfle
+static _loaded_csfle
 _try_find_csfle (mongocrypt_t *crypt)
 {
    _loaded_csfle candidate_csfle = {0};
    mstr csfle_cand_filepath = MSTR_NULL;
+
+   BSON_ASSERT_PARAM (crypt);
+
    if (crypt->opts.crypt_shared_lib_override_path.data) {
       // If an override path was specified, skip the library searching behavior
       csfle_cand_filepath =
@@ -628,7 +628,12 @@ mlib_once_flag g_csfle_init_flag = MLIB_ONCE_INITIALIZER;
 static bool
 _validate_csfle_singleton (mongocrypt_t *crypt, _loaded_csfle found)
 {
-   mongocrypt_status_t *status = crypt->status;
+   mongocrypt_status_t *status;
+
+   BSON_ASSERT_PARAM (crypt);
+
+   status = crypt->status;
+
    // Path to the existing loaded csfle:
    mcr_dll_path_result existing_path_ = mcr_dll_path (g_csfle_state.dll);
    assert (existing_path_.path.data &&
@@ -757,6 +762,10 @@ _csfle_replace_or_take_validate_singleton (mongocrypt_t *crypt,
    // If we have a loaded library, create a csfle_status object to use with
    // lib_create
    mongo_crypt_v1_status *csfle_status = NULL;
+
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (found);
+
    if (found->okay) {
       // Create the status. Note that this may fail, so do not assume
       // csfle_status is non-null.
@@ -882,6 +891,8 @@ _csfle_replace_or_take_validate_singleton (mongocrypt_t *crypt,
 static bool
 _wants_csfle (mongocrypt_t *c)
 {
+   BSON_ASSERT_PARAM (c);
+
    if (c->opts.bypass_query_analysis) {
       return false;
    }
@@ -903,9 +914,14 @@ _wants_csfle (mongocrypt_t *c)
 static bool
 _try_enable_csfle (mongocrypt_t *crypt)
 {
-   mongocrypt_status_t *status = crypt->status;
+   mongocrypt_status_t *status;
+   _loaded_csfle found;
 
-   _loaded_csfle found = _try_find_csfle (crypt);
+   BSON_ASSERT_PARAM (crypt);
+
+   found = _try_find_csfle (crypt);
+
+   status = crypt->status;
 
    // If a crypt_shared override path was specified, but we did not succeed in
    // loading crypt_shared, that is a hard-error.
@@ -934,12 +950,9 @@ _try_enable_csfle (mongocrypt_t *crypt)
 bool
 mongocrypt_init (mongocrypt_t *crypt)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
 
-   if (!crypt) {
-      return false;
-   }
-   status = crypt->status;
+   mongocrypt_status_t *status = crypt->status;
    if (crypt->initialized) {
       CLIENT_ERR ("already initialized");
       return false;
@@ -984,9 +997,7 @@ mongocrypt_init (mongocrypt_t *crypt)
 bool
 mongocrypt_status (mongocrypt_t *crypt, mongocrypt_status_t *out)
 {
-   if (!crypt) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (crypt);
 
    if (!out) {
       mongocrypt_status_t *status = crypt->status;
@@ -1033,6 +1044,8 @@ const char *
 mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
                                             uint32_t *len)
 {
+   BSON_ASSERT_PARAM (crypt);
+
    if (!crypt->csfle.okay) {
       if (len) {
          *len = 0;
@@ -1049,6 +1062,8 @@ mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
 uint64_t
 mongocrypt_crypt_shared_lib_version (const mongocrypt_t *crypt)
 {
+   BSON_ASSERT_PARAM (crypt);
+
    if (!crypt->csfle.okay) {
       return 0;
    }
@@ -1061,11 +1076,9 @@ _mongocrypt_validate_and_copy_string (const char *in,
                                       int32_t in_len,
                                       char **out)
 {
-   if (!in) {
-      return false;
-   }
+   BSON_ASSERT_PARAM (out);
 
-   if (in_len < -1) {
+   if (!in || in_len < -1) {
       return false;
    }
 
@@ -1091,13 +1104,9 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
 
-   if (!crypt) {
-      return false;
-   }
-
-   status = crypt->status;
+   mongocrypt_status_t *status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -1157,13 +1166,9 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
    void *sign_ctx)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
 
-   if (!crypt) {
-      return false;
-   }
-
-   status = crypt->status;
+   mongocrypt_status_t *status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -1186,18 +1191,14 @@ mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
                                mongocrypt_crypto_fn aes_256_ctr_decrypt,
                                void *ctx)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
 
-   if (!crypt) {
-      return false;
-   }
+   mongocrypt_status_t *status = crypt->status;
 
    if (!crypt->crypto) {
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
       BSON_ASSERT (crypt->crypto);
    }
-
-   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -1225,18 +1226,14 @@ mongocrypt_setopt_aes_256_ecb (mongocrypt_t *crypt,
                                mongocrypt_crypto_fn aes_256_ecb_encrypt,
                                void *ctx)
 {
-   mongocrypt_status_t *status;
+   BSON_ASSERT_PARAM (crypt);
 
-   if (!crypt) {
-      return false;
-   }
+   mongocrypt_status_t *status = crypt->status;
 
    if (!crypt->crypto) {
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
       BSON_ASSERT (crypt->crypto);
    }
-
-   status = crypt->status;
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -1257,10 +1254,10 @@ bool
 mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                                  mongocrypt_binary_t *kms_providers_definition)
 {
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (kms_providers_definition);
+
    mongocrypt_status_t *const status = crypt->status;
-   if (!crypt) {
-      return false;
-   }
 
    if (crypt->initialized) {
       CLIENT_ERR ("options cannot be set after initialization");
@@ -1283,6 +1280,8 @@ _mongocrypt_parse_kms_providers (
    bson_t as_bson;
    bson_iter_t iter;
 
+   BSON_ASSERT_PARAM (kms_providers_definition);
+   BSON_ASSERT_PARAM (kms_providers);
    if (!_mongocrypt_binary_to_bson (kms_providers_definition, &as_bson) ||
        !bson_iter_init (&iter, &as_bson)) {
       CLIENT_ERR ("invalid BSON");
@@ -1518,7 +1517,7 @@ _mongocrypt_parse_kms_providers (
       }
    }
 
-   if (log->trace_enabled) {
+   if (log && log->trace_enabled) {
       char *as_str = bson_as_json (&as_bson, NULL);
       _mongocrypt_log (log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
@@ -1537,12 +1536,16 @@ void
 mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
                                                        const char *path)
 {
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (path);
+
    // Dup the path string for us to manage
    mstr pathdup = mstr_copy_cstr (path);
    // Increase array len
    const int new_len = crypt->opts.n_crypt_shared_lib_search_paths + 1;
    mstr *const new_array = bson_realloc (
       crypt->opts.crypt_shared_lib_search_paths, sizeof (mstr) * new_len);
+
    // Store the path
    new_array[new_len - 1] = pathdup;
    // Write back opts
@@ -1554,6 +1557,8 @@ mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
 void
 mongocrypt_setopt_use_need_kms_credentials_state (mongocrypt_t *crypt)
 {
+   BSON_ASSERT_PARAM (crypt);
+
    crypt->opts.use_need_kms_credentials_state = true;
 }
 
@@ -1562,6 +1567,9 @@ void
 mongocrypt_setopt_set_crypt_shared_lib_path_override (mongocrypt_t *crypt,
                                                       const char *path)
 {
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (path);
+
    mstr_assign (&crypt->opts.crypt_shared_lib_override_path,
                 mstr_copy_cstr (path));
 }
@@ -1569,6 +1577,8 @@ mongocrypt_setopt_set_crypt_shared_lib_path_override (mongocrypt_t *crypt,
 bool
 _mongocrypt_needs_credentials (mongocrypt_t *crypt)
 {
+   BSON_ASSERT_PARAM (crypt);
+
    if (!crypt->opts.use_need_kms_credentials_state) {
       return false;
    }
@@ -1580,6 +1590,8 @@ bool
 _mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
                                             _mongocrypt_kms_provider_t provider)
 {
+   BSON_ASSERT_PARAM (crypt);
+
    if (!crypt->opts.use_need_kms_credentials_state) {
       return false;
    }
@@ -1590,5 +1602,7 @@ _mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
 void
 mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt)
 {
+   BSON_ASSERT_PARAM (crypt);
+
    crypt->opts.bypass_query_analysis = true;
 }

@@ -23,6 +23,8 @@
 void
 _mongocrypt_log_init (_mongocrypt_log_t *log)
 {
+   BSON_ASSERT_PARAM (log);
+
    _mongocrypt_mutex_init (&log->mutex);
    /* Initially, no log function is set. */
    _mongocrypt_log_set_fn (log, NULL, NULL);
@@ -35,6 +37,10 @@ _mongocrypt_log_init (_mongocrypt_log_t *log)
 void
 _mongocrypt_log_cleanup (_mongocrypt_log_t *log)
 {
+   if (!log) {
+      return;
+   }
+
    _mongocrypt_mutex_cleanup (&log->mutex);
    memset (log, 0, sizeof (*log));
 }
@@ -45,6 +51,8 @@ _mongocrypt_stdout_log_fn (mongocrypt_log_level_t level,
                            uint32_t message_len,
                            void *ctx)
 {
+   BSON_ASSERT_PARAM (message);
+
    switch (level) {
    case MONGOCRYPT_LOG_LEVEL_FATAL:
       printf ("FATAL");
@@ -74,6 +82,8 @@ _mongocrypt_log_set_fn (_mongocrypt_log_t *log,
                         mongocrypt_log_fn_t fn,
                         void *ctx)
 {
+   BSON_ASSERT_PARAM (log);
+
    _mongocrypt_mutex_lock (&log->mutex);
    log->fn = fn;
    log->ctx = ctx;
@@ -90,11 +100,13 @@ _mongocrypt_log (_mongocrypt_log_t *log,
    va_list args;
    char *message;
 
+   BSON_ASSERT_PARAM (log);
+   BSON_ASSERT_PARAM (format);
+
    if (level == MONGOCRYPT_LOG_LEVEL_TRACE && !log->trace_enabled) {
       return;
    }
 
-   BSON_ASSERT (format);
 
    va_start (args, format);
    message = bson_strdupv_printf (format, args);

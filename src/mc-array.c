@@ -23,7 +23,7 @@
 void
 _mc_array_init (mc_array_t *array, size_t element_size)
 {
-   BSON_ASSERT (array);
+   BSON_ASSERT_PARAM (array);
    BSON_ASSERT (element_size);
 
    array->len = 0;
@@ -52,6 +52,9 @@ _mc_array_init (mc_array_t *array, size_t element_size)
 void
 _mc_array_copy (mc_array_t *dst, const mc_array_t *src)
 {
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (src);
+
    _mc_array_destroy (dst);
 
    dst->len = src->len;
@@ -78,8 +81,8 @@ _mc_array_append_vals (mc_array_t *array, const void *data, uint32_t n_elements)
    size_t off;
    size_t next_size;
 
-   BSON_ASSERT (array);
-   BSON_ASSERT (data);
+   BSON_ASSERT_PARAM (array);
+   BSON_ASSERT_PARAM (data);
 
    off = array->element_size * array->len;
    len = (size_t) n_elements * array->element_size;

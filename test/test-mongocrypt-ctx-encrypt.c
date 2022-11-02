@@ -2173,13 +2173,13 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
       status = mongocrypt_status_new ();
       _mongocrypt_buffer_copy_from_hex (
          &buf,
-         "03ee0000001074000200000010610003000000056b690010000000041234567812349"
+         "03ec0000001074000200000010610003000000056b690010000000041234567812349"
          "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-         "0376008f000000036564676573496e666f005b000000106c6f776572426f756e64000"
+         "0376008d000000036564676573496e666f005b000000106c6f776572426f756e64000"
          "0000000086c62496e636c756465640001107570706572426f756e640087d612000875"
          "62496e636c75646564000110696e6465784d696e000000000010696e6465784d61780"
-         "087d6120000107061796c6f6164496400d2040000026f70657261746f725479706500"
-         "030000006774000012636d000000000000000000127300010000000000000000");
+         "087d6120000107061796c6f6164496400d20400001066697273744f70657261746f72"
+         "00010000000012636d000000000000000000127300010000000000000000");
       ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
       mc_FLE2EncryptionPlaceholder_init (&placeholder);
       ASSERT_OK_STATUS (
@@ -2231,7 +2231,8 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
 
          ASSERT_CMPINT32 (spec.payloadId, ==, 1234);
 
-         ASSERT_STREQUAL (spec.operatorType, "gt");
+         ASSERT_CMPINT (spec.firstOperator, ==, FLE2RangeOperator_kGt);
+         ASSERT_CMPINT (spec.secondOperator, ==, FLE2RangeOperator_kNone);
       }
 
       mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
