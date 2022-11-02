@@ -102,7 +102,7 @@ def _get_azure_credentials():
     return { 'accessToken': data['access_token'] }
 
 
-def _ask_for_kms_credentials(kms_providers, owner):
+def _ask_for_kms_credentials(kms_providers):
     """Get on-demand kms credentials.
 
     This is a separate function so it can be overridden in unit tests."""

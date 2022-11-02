@@ -447,7 +447,7 @@ class MongoCryptContext(object):
 
     def ask_for_kms_credentials(self):
         """Get on-demand kms credentials"""
-        return _ask_for_kms_credentials(self.__kms_providers, self)
+        return _ask_for_kms_credentials(self.__kms_providers)
 
     def provide_kms_providers(self, providers):
         """Provide a map of KMS providers."""
