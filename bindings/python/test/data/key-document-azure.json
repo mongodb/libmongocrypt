@@ -10,7 +10,8 @@
     },
     "masterKey": {
         "provider": "azure",
-        "tenantId": "foo"
+        "keyVaultEndpoint": "example.com",
+        "keyName": "foo"
     },
     "updateDate": {
         "$date": {
