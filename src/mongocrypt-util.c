@@ -78,7 +78,7 @@ current_module_path ()
       }
       free (path);
    }
-#elif defined(_GNU_SOURCE) || defined(_DARWIN_C_SOURCE)
+#elif defined(_GNU_SOURCE) || defined(_DARWIN_C_SOURCE) || defined(__FreeBSD__)
    // Darwin/BSD/glibc define extensions for finding dynamic library info from
    // the address of a symbol.
    Dl_info info;
