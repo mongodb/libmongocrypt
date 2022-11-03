@@ -58,6 +58,16 @@ common_cmake_args=(
     -B"$build_dir"
 )
 
+if "${USE_NINJA-false}"; then
+    export NINJA_EXE
+    : "${NINJA_EXE:="$build_dir/ninja$EXE_SUFFIX"}"
+    common_cmake_args+=(
+        -GNinja
+        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
+    )
+    bash "$EVG_DIR/ensure-ninja.sh"
+fi
+
 # Build and install libmongocrypt.
 run_cmake \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX" \
