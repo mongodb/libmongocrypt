@@ -70,7 +70,7 @@ def _get_azure_credentials():
 
     url = "http://169.254.169.254/metadata/identity/oauth2/token"
     url += "?api-version=2018-02-01"
-    url += "&resource=https://vault.azure.net/"
+    url += "&resource=https://vault.azure.net"
     headers = { "Metadata": "true", "Accept": "application/json" }
     try:
         response = requests.get(url, headers=headers)
