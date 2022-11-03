@@ -376,21 +376,21 @@ _test_getMincover_impl (void *tests,
 static void
 _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
 {
-   Int32Test tests[] = {
+   static Int32Test tests[] = {
       {.lowerBound = 1,
        .includeLowerBound = false,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 1,
        .expectMincoverString = "01\n"},
       {.lowerBound = 1,
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = false,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "010\n"},
@@ -398,8 +398,8 @@ _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "01\n"},
@@ -407,24 +407,24 @@ _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 1,
        .expectMincoverString = "011\n"},
       {.lowerBound = 4,
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 1,
        .expectError = "must be less than or equal to"},
       {.lowerBound = 1,
        .includeLowerBound = true,
        .upperBound = 8,
        .includeUpperBound = true,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 1,
        .expectError = "less than or equal to the maximum value"},
 
@@ -446,21 +446,21 @@ _test_getMincoverInt32 (_mongocrypt_tester_t *tester)
 static void
 _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
 {
-   Int64Test tests[] = {
+   static Int64Test tests[] = {
       {.lowerBound = 1,
        .includeLowerBound = false,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 1,
        .expectMincoverString = "01\n"},
       {.lowerBound = 1,
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = false,
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "010\n"},
@@ -468,8 +468,8 @@ _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 1,
        .expectMincoverString = "001\n"
                                "01\n"},
@@ -477,24 +477,24 @@ _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 1,
        .expectMincoverString = "011\n"},
       {.lowerBound = 4,
        .includeLowerBound = true,
        .upperBound = 3,
        .includeUpperBound = true,
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 1,
        .expectError = "must be less than or equal to"},
       {.lowerBound = 1,
        .includeLowerBound = true,
        .upperBound = 8,
        .includeUpperBound = true,
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 1,
        .expectError = "less than or equal to the maximum value"},
 
@@ -516,7 +516,7 @@ _test_getMincoverInt64 (_mongocrypt_tester_t *tester)
 static void
 _test_getMincoverDouble (_mongocrypt_tester_t *tester)
 {
-   DoubleTest tests[] = {
+   static DoubleTest tests[] = {
 #include "./data/range-min-cover/mincover_double.cstruct"
    };
 

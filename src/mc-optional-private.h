@@ -31,6 +31,11 @@ typedef struct {
       .set = true, .value = val \
    }
 
+#define OPT_I32_C(val)          \
+   {                            \
+      .set = true, .value = val \
+   }
+
 typedef struct {
    bool set;
    int64_t value;
@@ -42,6 +47,11 @@ typedef struct {
       .set = true, .value = val \
    }
 
+#define OPT_I64_C(val)          \
+   {                            \
+      .set = true, .value = val \
+   }
+
 typedef struct {
    bool set;
    double value;
@@ -49,6 +59,11 @@ typedef struct {
 
 #define OPT_DOUBLE(val)         \
    (mc_optional_double_t)       \
+   {                            \
+      .set = true, .value = val \
+   }
+
+#define OPT_DOUBLE_C(val)       \
    {                            \
       .set = true, .value = val \
    }
