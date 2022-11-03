@@ -130,7 +130,7 @@ def _ask_for_kms_credentials(kms_providers):
     if on_demand_azure:
         try:
             creds['azure'] = _get_azure_credentials()
-        except Exception as e:
+        except Exception:
             _azure_creds_cache = None
-            raise e
+            raise
     return creds
