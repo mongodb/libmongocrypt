@@ -37,6 +37,21 @@ if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
+common_cmake_args=(
+  $ADDITIONAL_CMAKE_FLAGS
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo
+)
+
+if "${USE_NINJA-false}"; then
+    export NINJA_EXE
+    : "${NINJA_EXE:="$linker_tests_root/ninja$EXE_SUFFIX"}"
+    common_cmake_args+=(
+        -GNinja
+        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
+    )
+    bash "$EVG_DIR/ensure-ninja.sh"
+fi
+
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
 
 BUILD_PATH="$MONGOC_DIR/cmake-build"
@@ -44,8 +59,7 @@ BSON1_INSTALL_PATH="$linker_tests_root/install/bson1"
 SRC_PATH="$MONGOC_DIR"
 run_cmake \
   -DENABLE_MONGOC=OFF \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  $ADDITIONAL_CMAKE_FLAGS \
+  "${common_cmake_args[@]}" \
   -DCMAKE_INSTALL_PREFIX="$BSON1_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_PATH"
@@ -61,9 +75,8 @@ BUILD_DIR="$linker_tests_root/libmongocrypt-cmake-build"
 LMC_INSTALL_PATH="$linker_tests_root/install/libmongocrypt"
 SRC_PATH="$LIBMONGOCRYPT_DIR"
 run_cmake \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   "-DMONGOCRYPT_MONGOC_DIR=$LIBBSON2_SRC_DIR" \
-  $ADDITIONAL_CMAKE_FLAGS \
+  "${common_cmake_args[@]}" \
   -DCMAKE_INSTALL_PREFIX="$LMC_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
@@ -76,8 +89,7 @@ BUILD_DIR="$linker_tests_root/app-cmake-build"
 PREFIX_PATH="$LMC_INSTALL_PATH;$BSON1_INSTALL_PATH"
 SRC_PATH="$linker_tests_deps_root/app"
 run_cmake \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  $ADDITIONAL_CMAKE_FLAGS \
+  "${common_cmake_args[@]}" \
   -DCMAKE_PREFIX_PATH="$PREFIX_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"

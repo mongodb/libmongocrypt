@@ -27,6 +27,16 @@ common_cmake_flags=(
     $ADDITIONAL_CMAKE_FLAGS
 )
 
+if "${USE_NINJA-false}"; then
+    export NINJA_EXE
+    : "${NINJA_EXE:="$pkgconfig_tests_root/ninja$EXE_SUFFIX"}"
+    common_cmake_args+=(
+        -GNinja
+        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
+    )
+    bash "$EVG_DIR/ensure-ninja.sh"
+fi
+
 libbson_install_dir="$pkgconfig_tests_root/install/libbson"
 build_dir="$mongoc_src_dir/_build"
 run_cmake -DENABLE_MONGOC=OFF \

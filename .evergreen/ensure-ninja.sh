@@ -26,6 +26,7 @@ _download_ninja() {
 
     declare url="$url_base/$fname"
     log "Downloading Ninja Zip [$url]"
+    mkdir -p "$BUILD_CACHE_DIR"
     curl --retry 5 -LsS --max-time 120 --fail --output "$archive" "$url"
 
     unzip -qq -o "$archive" "ninja$EXE_SUFFIX" -d "$extract_dir"
@@ -41,6 +42,7 @@ _build_ninja() {
     mkdir -p -- "$extract_dir"
 
     log "Downloading Ninja source [$url]"
+    mkdir -p "$BUILD_CACHE_DIR"
     curl --retry 5 -LsS --max-time 120 --fail --output "$src_tgz" "$url"
     tar -x -f "$src_tgz" -C "$extract_dir" --strip-components=1
 
