@@ -14,7 +14,7 @@ mongoc_src_dir="$pkgconfig_tests_root/mongo-c-driver"
 mkdir -p "$mongoc_src_dir"
 run_chdir "$pkgconfig_tests_root" "$EVG_DIR/prep_c_driver_source.sh"
 
-if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON"; then
+if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON" && ! "${USE_NINJA-false}"; then
     ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 

@@ -17,7 +17,7 @@ _cxxflags=""
 if [ "$OS_NAME" = "windows" ]; then
     # Enable exception handling for MSVC
     _cxxflags="-EHsc"
-    if [ "${WINDOWS_32BIT-}" != "ON" ]; then
+    if test "${WINDOWS_32BIT-}" != "ON" && ! "${USE_NINJA-false}" ; then
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
 fi

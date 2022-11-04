@@ -29,7 +29,7 @@ mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build
 run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
 MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
-if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON"; then
+if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON" && ! "${USE_NINJA-false}"; then
     ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 
@@ -95,8 +95,8 @@ run_cmake \
   "-B$BUILD_DIR"
 run_cmake --build "$BUILD_DIR" --target app --config RelWithDebInfo
 
-if [ "$OS_NAME" = "windows" ]; then
-    export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
+export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
+if "$IS_MULTICONF"; then
     APP_CMD="$BUILD_DIR/RelWithDebInfo/app.exe"
 else
     APP_CMD="$BUILD_DIR/app"

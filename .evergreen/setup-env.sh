@@ -10,6 +10,13 @@
 : "${WINDOWS_32BIT:=}"
 : "${OS:=unspecified}"
 
+IS_MULTICONF=false
+if test "$OS_NAME" = "windows" && ! "${USE_NINJA-false}"; then
+    IS_MULTICONF=true
+fi
+
+: "$IS_MULTICONF"  # Silence shellcheck
+
 evergreen_root="$(dirname "$LIBMONGOCRYPT_DIR")"
 
 : "${MONGOCRYPT_INSTALL_PREFIX:="$evergreen_root/install/libmongocrypt"}"
