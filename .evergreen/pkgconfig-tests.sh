@@ -22,7 +22,7 @@ if [ "$MACOS_UNIVERSAL" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
-common_cmake_flags=(
+common_cmake_args=(
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     $ADDITIONAL_CMAKE_FLAGS
 )
@@ -40,7 +40,7 @@ fi
 libbson_install_dir="$pkgconfig_tests_root/install/libbson"
 build_dir="$mongoc_src_dir/_build"
 run_cmake -DENABLE_MONGOC=OFF \
-       "${common_cmake_flags[@]}" \
+       "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$libbson_install_dir" \
        -H"$mongoc_src_dir" \
        -B"$build_dir"
@@ -52,7 +52,7 @@ mongocrypt_install_dir="$pkgconfig_tests_root/install/libmongocrypt"
 build_dir=$pkgconfig_tests_root/mongocrypt-build
 run_cmake -DUSE_SHARED_LIBBSON=OFF \
        -DENABLE_BUILD_FOR_PPA=ON \
-       "${common_cmake_flags[@]}" \
+       "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
        -B"$build_dir"
@@ -105,7 +105,7 @@ rm -r "$mongocrypt_install_dir"
 # Build libmongocrypt, dynamic linking against libbson
 run_cmake -DUSE_SHARED_LIBBSON=ON \
        -DENABLE_BUILD_FOR_PPA=OFF \
-       "${common_cmake_flags[@]}" \
+       "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
        -B"$build_dir"

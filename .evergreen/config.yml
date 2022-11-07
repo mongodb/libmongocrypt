@@ -70,10 +70,18 @@ functions:
         script: |-
           . libmongocrypt/.evergreen/init.sh
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
-          env ${compile_env|} bash "$EVG_DIR/build_all.sh"
-          env ${compile_env|} bash "$EVG_DIR/linker-tests.sh"
-          env ${compile_env|} bash "$EVG_DIR/pkgconfig-tests.sh"
-
+          export VS_VERSION=${vs_version|}
+          export VS_TARGET_ARCH=${vs_target_arch|amd64}
+          export USE_NINJA=true
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/build_all.sh"
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/linker-tests.sh"
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/pkgconfig-tests.sh"
 
   "create packages and repos":
     - command: "shell.exec"
@@ -937,12 +945,18 @@ buildvariants:
 - name: windows-vs2015-compile
   display_name: "Windows VS 2015 compile"
   run_on: windows-64-vs2015-test
+  expansions:
+    vs_version: "14"
+    vs_target_arch: amd64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
 - name: windows-test
   display_name: "Windows 2016"
   run_on: windows-64-vs2017-test
+  expansions:
+    vs_version: "15"
+    vs_target_arch: amd64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1271,5 +1285,7 @@ buildvariants:
   run_on: windows-64-vs2017-small
   expansions:
     compile_env: WINDOWS_32BIT=ON
+    vs_version: "15"
+    vs_target_arch: x86
   tasks:
   - build-and-test-and-upload
