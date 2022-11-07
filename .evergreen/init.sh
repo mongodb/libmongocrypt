@@ -201,6 +201,14 @@ run_ctest() {
     command bash "$EVG_DIR/ctest.sh" "$@"
 }
 
+run_python() {
+    if have_command py; then
+        py "$@"
+    else
+        python "$@"
+    fi
+}
+
 EXE_SUFFIX=""
 if test "$OS_NAME" = "windows"; then
     EXE_SUFFIX=".exe"
