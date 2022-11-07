@@ -52,7 +52,10 @@ typedef struct {
  * cm: <int64> // Queryable Encryption max counter
  */
 typedef struct {
-   mc_FLE2FindRangePayloadEdgesInfo_t payload;
+   struct {
+      mc_FLE2FindRangePayloadEdgesInfo_t value;
+      bool set;
+   } payload;
    // payloadId Id of payload - must be paired with another payload.
    int32_t payloadId;
    // firstOperator represents the first query operator for which this payload

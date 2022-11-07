@@ -55,7 +55,10 @@ typedef struct {
  */
 typedef struct {
    // edgesInfo is the information about the edges in an FLE2 find payload.
-   mc_FLE2RangeFindSpecEdgesInfo_t edgesInfo;
+   struct {
+      mc_FLE2RangeFindSpecEdgesInfo_t value;
+      bool set;
+   } edgesInfo;
    // payloadId Id of payload - must be paired with another payload.
    int32_t payloadId;
    // firstOperator represents the first query operator for which this payload

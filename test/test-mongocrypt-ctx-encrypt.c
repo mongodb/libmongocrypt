@@ -2211,23 +2211,27 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
             mc_FLE2RangeFindSpec_parse (&spec, &placeholder.v_iter, status),
             status);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.lowerBound));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.edgesInfo.lowerBound), ==, 0);
-         ASSERT (spec.edgesInfo.lbIncluded);
+         ASSERT (spec.edgesInfo.set);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.upperBound));
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.lowerBound));
          ASSERT_CMPINT32 (
-            bson_iter_int32 (&spec.edgesInfo.upperBound), ==, 1234567);
-         ASSERT (spec.edgesInfo.ubIncluded);
+            bson_iter_int32 (&spec.edgesInfo.value.lowerBound), ==, 0);
+         ASSERT (spec.edgesInfo.value.lbIncluded);
 
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.indexMin));
-         ASSERT_CMPINT32 (bson_iter_int32 (&spec.edgesInfo.indexMin), ==, 0);
-         ASSERT (spec.edgesInfo.ubIncluded);
-
-         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.indexMax));
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.upperBound));
          ASSERT_CMPINT32 (
-            bson_iter_int32 (&spec.edgesInfo.indexMax), ==, 1234567);
-         ASSERT (spec.edgesInfo.ubIncluded);
+            bson_iter_int32 (&spec.edgesInfo.value.upperBound), ==, 1234567);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.indexMin));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.value.indexMin), ==, 0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.indexMax));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.value.indexMax), ==, 1234567);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
 
          ASSERT_CMPINT32 (spec.payloadId, ==, 1234);
 
