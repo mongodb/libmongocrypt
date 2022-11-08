@@ -39,7 +39,7 @@ typedef struct {
 #undef MAX_INT32_EDGES
 
 static void
-print_edges_compared (mc_edges_t *edgesGot, const char *edgesExpected[])
+print_edges_compared (mc_edges_t *edgesGot, const char *const *edgesExpected)
 {
    fflush (stdout); // Avoid incomplete stdout output from prior tests on error
    fprintf (stderr, "edges got ... begin\n");
@@ -49,7 +49,7 @@ print_edges_compared (mc_edges_t *edgesGot, const char *edgesExpected[])
    fprintf (stderr, "edges got ... end\n");
 
    fprintf (stderr, "edges expected ... begin\n");
-   const char **iter = edgesExpected;
+   const char *const *iter = edgesExpected;
    while (*iter != NULL) {
       fprintf (stderr, "  %s\n", *iter);
       iter++;
@@ -60,15 +60,15 @@ print_edges_compared (mc_edges_t *edgesGot, const char *edgesExpected[])
 static void
 _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
 {
-   Int32Test tests[] = {
+   static const Int32Test tests[] = {
       {.value = 2,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 1,
        .expectEdges = {"root", "010", "0", "01"}},
       {.value = 2,
-       .min = OPT_I32 (0),
-       .max = OPT_I32 (7),
+       .min = OPT_I32_C (0),
+       .max = OPT_I32_C (7),
        .sparsity = 2,
        .expectEdges = {"root", "010", "01"}},
       {.value = 1,
@@ -79,7 +79,7 @@ _test_getEdgesInt32 (_mongocrypt_tester_t *tester)
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_status_t *const status = mongocrypt_status_new ();
-      Int32Test *test = tests + i;
+      const Int32Test *test = tests + i;
       mc_getEdgesInt32_args_t args = {.value = test->value,
                                       .min = test->min,
                                       .max = test->max,
@@ -137,15 +137,15 @@ typedef struct {
 static void
 _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
 {
-   Int64Test tests[] = {
+   static const Int64Test tests[] = {
       {.value = INT64_C (2),
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 1,
        .expectEdges = {"root", "010", "0", "01"}},
       {.value = INT64_C (2),
-       .min = OPT_I64 (0),
-       .max = OPT_I64 (7),
+       .min = OPT_I64_C (0),
+       .max = OPT_I64_C (7),
        .sparsity = 2,
        .expectEdges = {"root", "010", "01"}},
       {.value = 1,
@@ -156,7 +156,7 @@ _test_getEdgesInt64 (_mongocrypt_tester_t *tester)
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_status_t *const status = mongocrypt_status_new ();
-      Int64Test *test = tests + i;
+      const Int64Test *test = tests + i;
       mc_getEdgesInt64_args_t args = {.value = test->value,
                                       .min = test->min,
                                       .max = test->max,
@@ -212,13 +212,13 @@ typedef struct {
 static void
 _test_getEdgesDouble (_mongocrypt_tester_t *tester)
 {
-   DoubleTest tests[] = {
+   static const DoubleTest tests[] = {
 #include "data/range-edge-generation/edges_double.cstruct"
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       mongocrypt_status_t *const status = mongocrypt_status_new ();
-      DoubleTest *test = tests + i;
+      const DoubleTest *test = tests + i;
       mc_getEdgesDouble_args_t args = {.value = test->value,
                                        .sparsity = test->sparsity};
       mc_edges_t *got = mc_getEdgesDouble (args, status);
