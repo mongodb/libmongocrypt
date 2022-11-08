@@ -177,12 +177,12 @@ addPlaceholders_recursive (bson_iter_t iter,
       if (BSON_ITER_HOLDS_UTF8 (&iter)) {
          if (strcmp (bson_iter_utf8 (&iter, NULL), "<placeholder1>") == 0) {
             ASSERT (p1->data);
-            ASSERT (_mongocrypt_buffer_append (p1, out, key, strlen (key)));
+            ASSERT (_mongocrypt_buffer_append (p1, out, key, -1));
             continue;
          }
          if (strcmp (bson_iter_utf8 (&iter, NULL), "<placeholder2>") == 0) {
             ASSERT (p2->data);
-            ASSERT (_mongocrypt_buffer_append (p2, out, key, strlen (key)));
+            ASSERT (_mongocrypt_buffer_append (p2, out, key, -1));
             continue;
          }
          // Otherwise the value is not a placeholder. Fall through.

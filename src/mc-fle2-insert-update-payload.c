@@ -188,10 +188,9 @@ fail:
    return false;
 }
 
-#define IUPS_APPEND_BINDATA(dst, name, subtype, value)      \
-   if (!_mongocrypt_buffer_append (                         \
-          &(value), dst, name, (uint32_t) strlen (name))) { \
-      return false;                                         \
+#define IUPS_APPEND_BINDATA(dst, name, subtype, value)         \
+   if (!_mongocrypt_buffer_append (&(value), dst, name, -1)) { \
+      return false;                                            \
    }
 
 bool

@@ -566,7 +566,7 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
       bson_t operator;
       TRY (BSON_APPEND_DOCUMENT_BEGIN (&elem, spec->field, &operator));
       const char *op_str = mc_FLE2RangeOperator_to_string (spec->firstOp);
-      TRY (_mongocrypt_buffer_append (&p1, &operator, op_str, strlen (op_str)));
+      TRY (_mongocrypt_buffer_append (&p1, &operator, op_str, -1));
       TRY (bson_append_document_end (&elem, &operator));
       TRY (bson_append_document_end (&and, &elem));
 
@@ -574,8 +574,7 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
          TRY (BSON_APPEND_DOCUMENT_BEGIN (&and, "1", &elem));
          TRY (BSON_APPEND_DOCUMENT_BEGIN (&elem, spec->field, &operator));
          const char *op_str = mc_FLE2RangeOperator_to_string (spec->secondOp);
-         TRY (_mongocrypt_buffer_append (
-            &p2, &operator, op_str, strlen (op_str)));
+         TRY (_mongocrypt_buffer_append (&p2, &operator, op_str, -1));
          TRY (bson_append_document_end (&elem, &operator));
          TRY (bson_append_document_end (&and, &elem));
       }

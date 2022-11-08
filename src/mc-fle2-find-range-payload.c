@@ -59,10 +59,9 @@ mc_FLE2FindRangePayload_cleanup (mc_FLE2FindRangePayload_t *payload)
    _mc_array_destroy (&payload->payload.value.edgeFindTokenSetArray);
 }
 
-#define APPEND_BINDATA(out, name, subtype, value)           \
-   if (!_mongocrypt_buffer_append (                         \
-          &(value), out, name, (uint32_t) strlen (name))) { \
-      return false;                                         \
+#define APPEND_BINDATA(out, name, subtype, value)              \
+   if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
+      return false;                                            \
    }
 
 bool
