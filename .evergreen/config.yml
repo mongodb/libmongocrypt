@@ -69,6 +69,7 @@ functions:
         shell: bash
         script: |-
           . libmongocrypt/.evergreen/init.sh
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=true; fi
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
           export VS_VERSION=${vs_version|}
           export VS_TARGET_ARCH=${vs_target_arch|amd64}
@@ -115,6 +116,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=true; fi
           env ${compile_env|} CONFIGURE_ONLY=ON CC=clang CXX=clang++ \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
@@ -250,6 +252,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=true; fi
           env ${compile_env|} DEFAULT_BUILD_ONLY=true \
             bash ./libmongocrypt/.evergreen/build_all.sh
           env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
