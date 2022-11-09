@@ -67,36 +67,40 @@ is_supported_operator (const char *key)
    return get_operator_type (key) != FLE2RangeOperator_kNone;
 }
 
+// Suffix an error message with the JSON string form of bson.
+#define ERR_WITH_BSON(bson, fmt, ...)                            \
+   if (1) {                                                      \
+      char *_str = bson_as_canonical_extended_json (bson, NULL); \
+      CLIENT_ERR (fmt ": %s", __VA_ARGS__, _str);                \
+      bson_free (_str);                                          \
+   } else                                                        \
+      (void) 0
+
 // Parses a document like {$and: []} and outputs an iterator to the array.
 static bool
-parse_and (const bson_t *in,
-           bson_iter_t *out,
-           const char *str,
-           mongocrypt_status_t *status)
+parse_and (const bson_t *in, bson_iter_t *out, mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (str);
    BSON_ASSERT (status || true);
 
    bson_iter_t and;
    if (!bson_iter_init (&and, in) || !bson_iter_next (&and) ||
        0 != strcmp (bson_iter_key (&and), "$and")) {
-      CLIENT_ERR ("error unable to find '$and' in: %s", str);
+      ERR_WITH_BSON (in, "%s", "error unable to find '$and'");
       return false;
    }
 
    if (!BSON_ITER_HOLDS_ARRAY (&and)) {
-      CLIENT_ERR ("expected '$and' to be array in: %s", str);
+      ERR_WITH_BSON (in, "%s", "expected '$and' to be array");
       return false;
    }
 
    *out = and;
 
    if (bson_iter_next (&and)) {
-      CLIENT_ERR ("unexpected extra key '%s' after '$and' in: %s",
-                  bson_iter_key (&and),
-                  str);
+      ERR_WITH_BSON (
+         in, "unexpected extra key '%s' after '$and'", bson_iter_key (&and));
       return false;
    }
    return true;
@@ -111,12 +115,12 @@ typedef struct {
 
 // Parses a document like {$gt: ["$age", 5]}.
 static bool
-parse_aggregate_expression (bson_iter_t in,
-                            const char *str,
+parse_aggregate_expression (const bson_t *orig,
+                            bson_iter_t in,
                             operator_value_t *out,
                             mongocrypt_status_t *status)
 {
-   BSON_ASSERT_PARAM (str);
+   BSON_ASSERT_PARAM (orig);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
@@ -126,38 +130,38 @@ parse_aggregate_expression (bson_iter_t in,
    const char *field;
 
    if (!BSON_ITER_HOLDS_ARRAY (&in)) {
-      CLIENT_ERR ("expected argument to be array: %s", str);
+      ERR_WITH_BSON (orig, "%s", "expected argument to be array");
       goto fail;
    }
 
    if (!bson_iter_recurse (&in, &array)) {
-      CLIENT_ERR ("failed to recurse into array: %s", str);
+      ERR_WITH_BSON (orig, "%s", "failed to recurse into array");
       goto fail;
    }
 
    // Expect exactly 2 elements, like ["$age", 5]. The first element is the
    // field path. The second element is the value.
    if (!bson_iter_next (&array)) {
-      CLIENT_ERR (
-         "expected 2 elements in operand %s, got 0: %s", op_type_str, str);
+      ERR_WITH_BSON (
+         orig, "expected 2 elements in operand %s, got 0", op_type_str);
       goto fail;
    }
    if (!BSON_ITER_HOLDS_UTF8 (&array)) {
-      CLIENT_ERR (
-         "expected UTF-8 as first element in %s: %s", op_type_str, str);
+      ERR_WITH_BSON (
+         orig, "expected UTF-8 as first element in %s", op_type_str);
       goto fail;
    }
    field = bson_iter_utf8 (&array, NULL);
 
    if (!bson_iter_next (&array)) {
-      CLIENT_ERR (
-         "expected 2 elements in operand %s, got 1: %s", op_type_str, str);
+      ERR_WITH_BSON (
+         orig, "expected 2 elements in operand %s, got 1", op_type_str);
       goto fail;
    }
    value = array;
    if (bson_iter_next (&array)) {
-      CLIENT_ERR (
-         "expected 2 elements in operand %s, got > 2: %s", op_type_str, str);
+      ERR_WITH_BSON (
+         orig, "expected 2 elements in operand %s, got > 2", op_type_str);
       goto fail;
    }
 
@@ -172,12 +176,12 @@ fail:
 
 // Parses a document like {age: {$gt: 5}}.
 static bool
-parse_match_expression (bson_iter_t in,
-                        const char *str,
+parse_match_expression (const bson_t *orig,
+                        bson_iter_t in,
                         operator_value_t *out,
                         mongocrypt_status_t *status)
 {
-   BSON_ASSERT_PARAM (str);
+   BSON_ASSERT_PARAM (orig);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
@@ -187,29 +191,29 @@ parse_match_expression (bson_iter_t in,
    const char *field = bson_iter_key (&in);
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&in)) {
-      CLIENT_ERR ("expected argument to be document: %s", str);
+      ERR_WITH_BSON (orig, "%s", "expected argument to be document");
       goto fail;
    }
 
    if (!bson_iter_recurse (&in, &document)) {
-      CLIENT_ERR ("failed to recurse into document: %s", str);
+      ERR_WITH_BSON (orig, "%s", "failed to recurse into document");
       goto fail;
    }
 
    // Expect exactly 1 elements, like {$gt: 5}.
    if (!bson_iter_next (&document)) {
-      CLIENT_ERR ("expected 1 elements in operand %s, got 0: %s", field, str);
+      ERR_WITH_BSON (orig, "expected 1 elements in operand %s, got 0", field);
       goto fail;
    }
    op_type_str = bson_iter_key (&document);
    if (!is_supported_operator (op_type_str)) {
-      CLIENT_ERR ("unsupported operator: %s", op_type_str);
+      ERR_WITH_BSON (orig, "unsupported operator: %s", op_type_str);
       goto fail;
    }
    value = document;
 
    if (bson_iter_next (&document)) {
-      CLIENT_ERR ("expected 1 elements in operand %s, got > 1: %s", field, str);
+      ERR_WITH_BSON (orig, "expected 1 elements in operand %s, got > 1", field);
       goto fail;
    }
 
@@ -235,15 +239,14 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
    // {$and: [{age: {$gt: 5}}, {age: {$lt: 50}} ]}
    bson_iter_t and, array;
    bool ok = false;
-   char *str = bson_as_canonical_extended_json (in, NULL);
 
-   if (!parse_and (in, &and, str, status)) {
+   if (!parse_and (in, &and, status)) {
       goto fail;
    }
 
    // Iterate over array elements.
    if (!bson_iter_recurse (&and, &array)) {
-      CLIENT_ERR ("failed to recurse into '$and': %s", str);
+      ERR_WITH_BSON (in, "%s", "failed to recurse into '$and'");
       goto fail;
    }
 
@@ -253,17 +256,17 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
       bson_iter_t doc;
 
       if (!BSON_ITER_HOLDS_DOCUMENT (&array)) {
-         CLIENT_ERR ("expected document in '$and' array: %s", str);
+         ERR_WITH_BSON (in, "%s", "expected document in '$and' array");
          goto fail;
       }
 
       if (!bson_iter_recurse (&array, &doc)) {
-         CLIENT_ERR ("failed to recurse into '$and' element: %s", str);
+         ERR_WITH_BSON (in, "%s", "failed to recurse into '$and' element");
          goto fail;
       }
 
       if (!bson_iter_next (&doc)) {
-         CLIENT_ERR ("unexpected empty '$and' array document: %s", str);
+         ERR_WITH_BSON (in, "%s", "unexpected empty '$and' array document");
          goto fail;
       }
 
@@ -284,26 +287,25 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
       operator_value_t op;
       switch (arg_type) {
       case AGGREGATE_EXPRESSION:
-         if (!parse_aggregate_expression (doc, str, &op, status)) {
+         if (!parse_aggregate_expression (in, doc, &op, status)) {
             goto fail;
          }
          break;
       case MATCH_EXPRESSION:
-         if (!parse_match_expression (doc, str, &op, status)) {
+         if (!parse_match_expression (in, doc, &op, status)) {
             goto fail;
          }
          break;
       case UNKNOWN:
       default:
-         CLIENT_ERR ("unexpected unknown expression type");
+         ERR_WITH_BSON (in, "%s", "unexpected unknown expression type");
          goto fail;
       }
 
       switch (op.op_type) {
       case FLE2RangeOperator_kGt:
          if (spec->lower.set) {
-            CLIENT_ERR (
-               "unexpected duplicate bound %s: %s", op.op_type_str, str);
+            ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
             goto fail;
          }
          spec->lower.set = true;
@@ -311,8 +313,7 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          break;
       case FLE2RangeOperator_kGte:
          if (spec->lower.set) {
-            CLIENT_ERR (
-               "unexpected duplicate bound %s: %s", op.op_type_str, str);
+            ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
             goto fail;
          }
          spec->lower.set = true;
@@ -321,8 +322,7 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          break;
       case FLE2RangeOperator_kLt:
          if (spec->upper.set) {
-            CLIENT_ERR (
-               "unexpected duplicate bound %s: %s", op.op_type_str, str);
+            ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
             goto fail;
          }
          spec->upper.set = true;
@@ -330,8 +330,7 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          break;
       case FLE2RangeOperator_kLte:
          if (spec->upper.set) {
-            CLIENT_ERR (
-               "unexpected duplicate bound %s: %s", op.op_type_str, str);
+            ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
             goto fail;
          }
          spec->upper.set = true;
@@ -340,17 +339,19 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          break;
       case FLE2RangeOperator_kNone:
       default:
-         CLIENT_ERR ("unsupported operator type %s: %s", op.op_type_str, str);
+         ERR_WITH_BSON (in, "unsupported operator type %s", op.op_type_str);
          goto fail;
          break;
       }
 
       if (spec->field) {
          if (0 != strcmp (spec->field, op.field)) {
-            CLIENT_ERR ("unexpected field mismatch. Expected all fields to be "
-                        "%s, but got %s",
-                        spec->field,
-                        op.field);
+            ERR_WITH_BSON (
+               in,
+               "unexpected field mismatch. Expected all fields to be "
+               "%s, but got %s",
+               spec->field,
+               op.field);
             goto fail;
          }
       }
@@ -362,8 +363,8 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
       } else if (spec->nOps == 2) {
          spec->secondOp = op.op_type;
       } else {
-         CLIENT_ERR (
-            "expected 1 or 2 operators, got > 2: %s: %s", op.op_type_str, str);
+         ERR_WITH_BSON (
+            in, "expected 1 or 2 operators, got > 2: %s", op.op_type_str);
          goto fail;
       }
 
@@ -372,7 +373,6 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
 
    ok = true;
 fail:
-   bson_free (str);
    return ok;
 }
 
