@@ -304,13 +304,6 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
 
       switch (op.op_type) {
       case FLE2RangeOperator_kGt:
-         if (spec->lower.set) {
-            ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
-            goto fail;
-         }
-         spec->lower.set = true;
-         spec->lower.value = op.value;
-         break;
       case FLE2RangeOperator_kGte:
          if (spec->lower.set) {
             ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
@@ -318,16 +311,9 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          }
          spec->lower.set = true;
          spec->lower.value = op.value;
-         spec->lower.included = true;
+         spec->lower.included = op.op_type == FLE2RangeOperator_kGte;
          break;
       case FLE2RangeOperator_kLt:
-         if (spec->upper.set) {
-            ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
-            goto fail;
-         }
-         spec->upper.set = true;
-         spec->upper.value = op.value;
-         break;
       case FLE2RangeOperator_kLte:
          if (spec->upper.set) {
             ERR_WITH_BSON (in, "unexpected duplicate bound %s", op.op_type_str);
@@ -335,7 +321,7 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          }
          spec->upper.set = true;
          spec->upper.value = op.value;
-         spec->upper.included = true;
+         spec->lower.included = op.op_type == FLE2RangeOperator_kLte;
          break;
       case FLE2RangeOperator_kNone:
       default:
