@@ -321,7 +321,7 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          }
          spec->upper.set = true;
          spec->upper.value = op.value;
-         spec->lower.included = op.op_type == FLE2RangeOperator_kLte;
+         spec->upper.included = op.op_type == FLE2RangeOperator_kLte;
          break;
       case FLE2RangeOperator_kNone:
       default:
