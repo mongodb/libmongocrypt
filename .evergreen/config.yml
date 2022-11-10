@@ -253,6 +253,7 @@ functions:
   "build csharp and test":
     - command: "shell.exec"
       params:
+        shell: bash
         script: |-
           . libmongocrypt/.evergreen/init.sh
           if test "$OS_NAME" != "windows"; then export USE_NINJA=true; fi
