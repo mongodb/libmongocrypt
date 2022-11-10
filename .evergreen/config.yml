@@ -254,6 +254,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
+          . libmongocrypt/.evergreen/init.sh
           if test "$OS_NAME" != "windows"; then export USE_NINJA=true; fi
           env ${compile_env|} DEFAULT_BUILD_ONLY=true \
             bash ./libmongocrypt/.evergreen/build_all.sh
