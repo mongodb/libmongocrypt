@@ -21,6 +21,9 @@ mkdir -p "${BIN_DIR}"
 # Add mongodb toolchain to path
 export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
 
+test -n "${NODE_NVM_USE_VERSION-}" || echo "Defaulting to using the current Node LTS Release. Set NODE_NVM_USE_VERSION to change."
+: "${NODE_NVM_USE_VERSION:="lts"}"
+
 # locate cmake
 if [ "$OS" == "Windows_NT" ]; then
   CMAKE=/cygdrive/c/cmake/bin/cmake
@@ -58,10 +61,10 @@ root: $NVM_HOME
 path: $NVM_SYMLINK
 EOT
 
-  echo "Running: nvm install lts"
-  nvm install lts
-  echo "Running: nvm use lts"
-  nvm use lts
+  echo "Running: nvm install $NODE_NVM_USE_VERSION"
+  nvm install $NODE_NVM_USE_VERSION
+  echo "Running: nvm use $NODE_NVM_USE_VERSION"
+  nvm use $NODE_NVM_USE_VERSION
   echo "Running: npm install -g npm@8.3.1"
   npm install -g npm@8.3.1 # https://github.com/npm/cli/issues/4341
   set -o xtrace
@@ -72,10 +75,14 @@ else
   curl -o- $NVM_URL | bash
   [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
 
-  echo "Running: nvm install --lts --latest-npm"
-  nvm install --lts --latest-npm
-  echo "Running: nvm use --lts"
-  nvm use --lts
+  declare _arg="$NODE_NVM_USE_VERSION"
+  if test "$NODE_NVM_USE_VERSION" = "lts"; then _arg="--lts"; fi
+
+  echo "Running: nvm install \"$_arg\" --latest-npm"
+  nvm install "$_arg" --latest-npm
+  echo "Running: nvm use \"$_arg\""
+  nvm use "$_arg"
+  node --version
 
   set -o xtrace
 fi

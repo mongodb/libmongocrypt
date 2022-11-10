@@ -105,7 +105,7 @@ mcr_dll_path (mcr_dll dll)
       .error_string = mstr_copy_cstr ("Handle not found in loaded modules")};
 }
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
 
 #include <link.h>
 

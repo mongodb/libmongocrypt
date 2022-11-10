@@ -4,203 +4,203 @@
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011000011100\n" 
+    .expectMincoverString = "100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -100,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000100110001001011000011100\n" 
+    .expectMincoverString = "0000000100110001001011000011100\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -210,15 +210,15 @@
         "100110001001011000101\n" \
         "100110001001011000110\n" \
         "100110001001011000111\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -229,40 +229,40 @@
         "10011000100101100100\n" \
         "10011000100101100101\n" \
         "10011000100101100110\n" \
-        "10011000100101100111\n" 
+        "10011000100101100111\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -272,15 +272,15 @@
         "100110001001011000101\n" \
         "100110001001011000110\n" \
         "100110001001011000111\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -291,40 +291,40 @@
         "10011000100101100100\n" \
         "10011000100101100101\n" \
         "10011000100101100110\n" \
-        "10011000100101100111\n" 
+        "10011000100101100111\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -334,15 +334,15 @@
         "100110001001011000101\n" \
         "100110001001011000110\n" \
         "100110001001011000111\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -353,40 +353,40 @@
         "10011000100101100100\n" \
         "10011000100101100101\n" \
         "10011000100101100110\n" \
-        "10011000100101100111\n" 
+        "10011000100101100111\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -396,15 +396,15 @@
         "100110001001011000101\n" \
         "100110001001011000110\n" \
         "100110001001011000111\n" \
-        "100110001001011001\n" 
+        "100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -415,41 +415,41 @@
         "10011000100101100100\n" \
         "10011000100101100101\n" \
         "10011000100101100110\n" \
-        "10011000100101100111\n" 
+        "10011000100101100111\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000001001100010010110000111\n" \
         "00000001001100010010110001\n" \
-        "0000000100110001001011001\n" 
+        "0000000100110001001011001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "000000010011000100101100001110\n" \
         "000000010011000100101100001111\n" \
         "00000001001100010010110001\n" \
         "00000001001100010010110010\n" \
-        "00000001001100010010110011\n" 
+        "00000001001100010010110011\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000000010011000100101100001110\n" \
         "000000010011000100101100001111\n" \
@@ -458,42 +458,42 @@
         "000000010011000100101100100\n" \
         "000000010011000100101100101\n" \
         "000000010011000100101100110\n" \
-        "000000010011000100101100111\n" 
+        "000000010011000100101100111\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -504,15 +504,15 @@
         "100110001001011000110\n" \
         "100110001001011000111\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -524,42 +524,42 @@
         "10011000100101100101\n" \
         "10011000100101100110\n" \
         "10011000100101100111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -570,15 +570,15 @@
         "100110001001011000110\n" \
         "100110001001011000111\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -590,42 +590,42 @@
         "10011000100101100101\n" \
         "10011000100101100110\n" \
         "10011000100101100111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -636,15 +636,15 @@
         "100110001001011000110\n" \
         "100110001001011000111\n" \
         "100110001001011001\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -656,56 +656,56 @@
         "10011000100101100101\n" \
         "10011000100101100110\n" \
         "10011000100101100111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000001001100010010110000111\n" \
         "00000001001100010010110001\n" \
         "0000000100110001001011001\n" \
-        "0000000100110001001011010000000\n" 
+        "0000000100110001001011010000000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
         "100110001001011001\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
         "100110001001011001\n" \
         "1001100010010110100000\n" \
-        "1001100010010110100001\n" 
+        "1001100010010110100001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -716,15 +716,15 @@
         "100110001001011000110\n" \
         "100110001001011000111\n" \
         "100110001001011001\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -743,43 +743,43 @@
         "100110001001011010000100\n" \
         "100110001001011010000101\n" \
         "100110001001011010000110\n" \
-        "100110001001011010000111\n" 
+        "100110001001011010000111\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
         "100110001001011001\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
         "10011000100101100011\n" \
         "100110001001011001\n" \
         "1001100010010110100000\n" \
-        "1001100010010110100001\n" 
+        "1001100010010110100001\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -790,15 +790,15 @@
         "100110001001011000110\n" \
         "100110001001011000111\n" \
         "100110001001011001\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -817,43 +817,43 @@
         "100110001001011010000100\n" \
         "100110001001011010000101\n" \
         "100110001001011010000110\n" \
-        "100110001001011010000111\n" 
+        "100110001001011010000111\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000001001100010010110000111\n" \
         "00000001001100010010110001\n" \
         "0000000100110001001011001\n" \
-        "0000000100110001001011010000\n" 
+        "0000000100110001001011010000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "000000010011000100101100001110\n" \
         "000000010011000100101100001111\n" \
         "00000001001100010010110001\n" \
         "00000001001100010010110010\n" \
         "00000001001100010010110011\n" \
-        "0000000100110001001011010000\n" 
+        "0000000100110001001011010000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000000010011000100101100001110\n" \
         "000000010011000100101100001111\n" \
@@ -866,29 +866,29 @@
         "000000010011000100101101000000\n" \
         "000000010011000100101101000001\n" \
         "000000010011000100101101000010\n" \
-        "000000010011000100101101000011\n" 
+        "000000010011000100101101000011\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110000111\n" \
         "1001100010010110001\n" \
         "100110001001011001\n" \
         "1001100010010110100\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110000111\n" \
         "10011000100101100010\n" \
@@ -896,15 +896,15 @@
         "100110001001011001\n" \
         "10011000100101101000\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -919,15 +919,15 @@
         "100110001001011010001\n" \
         "100110001001011010010\n" \
         "100110001001011010011\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011000011100\n" \
         "100110001001011000011101\n" \
@@ -941,29 +941,29 @@
         "10011000100101100111\n" \
         "10011000100101101000\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000001001100010010110000111\n" \
         "00000001001100010010110001\n" \
         "0000000100110001001011001\n" \
         "00000001001100010010110100\n" \
-        "0000000100110001001011010100000\n" 
+        "0000000100110001001011010100000\n"
 },
 {
     .lowerBound = -100,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000001001100010010110000111\n" \
         "00000001001100010010110001\n" \
@@ -994,586 +994,586 @@
         "111000010011000100100\n" \
         "1110000100110001001010\n" \
         "111000010011000100101100\n" \
-        "1110000100110001001011010000000\n" 
+        "1110000100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(-1),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(-1),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011001111111\n" 
+    .expectMincoverString = "100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000100110001001011001111111\n" 
+    .expectMincoverString = "0000000100110001001011001111111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
-    .expectMincoverString = "0\n" 
+    .expectMincoverString = "0\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "0000\n" 
+    .expectMincoverString = "0000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "0000\n" 
+    .expectMincoverString = "0000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "0000\n" 
+    .expectMincoverString = "0000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "000000\n" 
+    .expectMincoverString = "000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "000000\n" 
+    .expectMincoverString = "000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "000000\n" 
+    .expectMincoverString = "000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = -1,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000000000\n" 
+    .expectMincoverString = "0000000000000000000000000000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 2,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
-    .sparsity = 3,
-    .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
-},
-{
-    .lowerBound = -1,
-    .includeLowerBound = true,
-    .upperBound = 0,
-    .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
-    .sparsity = 4,
-    .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
-},
-{
-    .lowerBound = -1,
-    .includeLowerBound = true,
-    .upperBound = 0,
-    .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
-    .sparsity = 1,
-    .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
-},
-{
-    .lowerBound = -1,
-    .includeLowerBound = true,
-    .upperBound = 0,
-    .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
-    .sparsity = 2,
-    .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
-},
-{
-    .lowerBound = -1,
-    .includeLowerBound = true,
-    .upperBound = 0,
-    .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 3,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 4,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000000\n" 
+        "100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
+    .sparsity = 1,
+    .expectMincoverString = "100110001001011001111111\n" \
+        "100110001001011010000000\n"
+},
+{
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
+    .sparsity = 2,
+    .expectMincoverString = "100110001001011001111111\n" \
+        "100110001001011010000000\n"
+},
+{
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
+    .sparsity = 3,
+    .expectMincoverString = "100110001001011001111111\n" \
+        "100110001001011010000000\n"
+},
+{
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
+    .sparsity = 4,
+    .expectMincoverString = "100110001001011001111111\n" \
+        "100110001001011010000000\n"
+},
+{
+    .lowerBound = -1,
+    .includeLowerBound = true,
+    .upperBound = 0,
+    .includeUpperBound = true,
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000100110001001011001111111\n" \
-        "0000000100110001001011010000000\n" 
+        "0000000100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(0),
     .sparsity = 2,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(0),
     .sparsity = 3,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(0),
     .sparsity = 4,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "000\n" 
+    .expectMincoverString = "000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "0000\n" \
-        "0001\n" 
+        "0001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "000\n" 
+    .expectMincoverString = "000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "0000\n" \
-        "0001\n" 
+        "0001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "00000\n" 
+    .expectMincoverString = "00000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "000000\n" \
-        "000001\n" 
+        "000001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "000000\n" \
-        "000001\n" 
+        "000001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "000000000000000000000000000000\n" 
+    .expectMincoverString = "000000000000000000000000000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
-    .expectMincoverString = "000000000000000000000000000000\n" 
+    .expectMincoverString = "000000000000000000000000000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
-    .expectMincoverString = "000000000000000000000000000000\n" 
+    .expectMincoverString = "000000000000000000000000000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "100110001001011001111111\n" \
         "1001100010010110100000\n" \
-        "1001100010010110100001\n" 
+        "1001100010010110100001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "100110001001011001111111\n" \
         "100110001001011010000000\n" \
@@ -1583,49 +1583,49 @@
         "100110001001011010000100\n" \
         "100110001001011010000101\n" \
         "100110001001011010000110\n" \
-        "100110001001011010000111\n" 
+        "100110001001011010000111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "100110001001011001111111\n" \
         "1001100010010110100000\n" \
-        "1001100010010110100001\n" 
+        "1001100010010110100001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011001111111\n" \
-        "100110001001011010000\n" 
+        "100110001001011010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011001111111\n" \
         "100110001001011010000000\n" \
@@ -1635,49 +1635,49 @@
         "100110001001011010000100\n" \
         "100110001001011010000101\n" \
         "100110001001011010000110\n" \
-        "100110001001011010000111\n" 
+        "100110001001011010000111\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000100110001001011001111111\n" \
-        "0000000100110001001011010000\n" 
+        "0000000100110001001011010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
-        "1000\n" 
+        "1000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "00\n" \
         "01\n" \
-        "1000\n" 
+        "1000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "0000\n" \
         "0001\n" \
@@ -1687,198 +1687,198 @@
         "0101\n" \
         "0110\n" \
         "0111\n" \
-        "1000\n" 
+        "1000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "000\n" \
-        "001000\n" 
+        "001000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "0000\n" \
         "0001\n" \
-        "001000\n" 
+        "001000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "000\n" \
-        "001000\n" 
+        "001000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000000\n" \
-        "0000000000000000000000000001000\n" 
+        "0000000000000000000000000001000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "100110001001011001111111\n" \
         "1001100010010110100\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "100110001001011001111111\n" \
         "10011000100101101000\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011001111111\n" \
         "100110001001011010000\n" \
         "100110001001011010001\n" \
         "100110001001011010010\n" \
         "100110001001011010011\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011001111111\n" \
         "10011000100101101000\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000100110001001011001111111\n" \
         "00000001001100010010110100\n" \
-        "0000000100110001001011010100000\n" 
+        "0000000100110001001011010100000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
-        "10000\n" 
+        "10000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "00\n" \
         "01\n" \
         "100000\n" \
-        "100001\n" 
+        "100001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "000\n" \
         "001\n" \
         "010\n" \
         "011\n" \
         "100000\n" \
-        "100001\n" 
+        "100001\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000000000000000000000000\n" \
-        "000000000000000000000000010000\n" 
+        "000000000000000000000000010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "00000000000000000000000000\n" \
-        "000000000000000000000000010000\n" 
+        "000000000000000000000000010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000\n" \
         "000000000000000000000000001\n" \
-        "000000000000000000000000010000\n" 
+        "000000000000000000000000010000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000100110001001011001111111\n" \
         "000000010011000100101101\n" \
@@ -1907,43 +1907,43 @@
         "111000010011000100100\n" \
         "1110000100110001001010\n" \
         "111000010011000100101100\n" \
-        "1110000100110001001011010000000\n" 
+        "1110000100110001001011010000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
         "10\n" \
         "110\n" \
-        "111000000000000000000000000000\n" 
+        "111000000000000000000000000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "00\n" \
         "01\n" \
         "10\n" \
         "1100\n" \
         "1101\n" \
-        "111000000000000000000000000000\n" 
+        "111000000000000000000000000000\n"
 },
 {
     .lowerBound = -1,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000\n" \
         "001\n" \
@@ -1952,316 +1952,316 @@
         "100\n" \
         "101\n" \
         "110\n" \
-        "111000000000000000000000000000\n" 
+        "111000000000000000000000000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(0),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011010000000\n" 
+    .expectMincoverString = "100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000100110001001011010000000\n" 
+    .expectMincoverString = "0000000100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(0),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(0),
     .sparsity = 1,
-    .expectMincoverString = "1\n" 
+    .expectMincoverString = "1\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "0001\n" 
+    .expectMincoverString = "0001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "0001\n" 
+    .expectMincoverString = "0001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "0001\n" 
+    .expectMincoverString = "0001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "000001\n" 
+    .expectMincoverString = "000001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "000001\n" 
+    .expectMincoverString = "000001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "000001\n" 
+    .expectMincoverString = "000001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000000001\n" 
+    .expectMincoverString = "0000000000000000000000000000001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "000\n" 
+    .expectMincoverString = "000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "000\n" 
+    .expectMincoverString = "000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "000000\n" 
+    .expectMincoverString = "000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "000000\n" 
+    .expectMincoverString = "000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "000000\n" 
+    .expectMincoverString = "000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 0,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000000000\n" 
+    .expectMincoverString = "0000000000000000000000000000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010000\n" 
+    .expectMincoverString = "100110001001011010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110100000\n" \
-        "1001100010010110100001\n" 
+        "1001100010010110100001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010000\n" 
+    .expectMincoverString = "100110001001011010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "100110001001011010000000\n" \
         "100110001001011010000001\n" \
@@ -2270,46 +2270,46 @@
         "100110001001011010000100\n" \
         "100110001001011010000101\n" \
         "100110001001011010000110\n" \
-        "100110001001011010000111\n" 
+        "100110001001011010000111\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010000\n" 
+    .expectMincoverString = "100110001001011010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "1001100010010110100000\n" \
-        "1001100010010110100001\n" 
+        "1001100010010110100001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010000\n" 
+    .expectMincoverString = "100110001001011010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011010000000\n" \
         "100110001001011010000001\n" \
@@ -2318,85 +2318,85 @@
         "100110001001011010000100\n" \
         "100110001001011010000101\n" \
         "100110001001011010000110\n" \
-        "100110001001011010000111\n" 
+        "100110001001011010000111\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000100110001001011010000\n" 
+    .expectMincoverString = "0000000100110001001011010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
-    .expectMincoverString = "0000000100110001001011010000\n" 
+    .expectMincoverString = "0000000100110001001011010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000000010011000100101101000000\n" \
         "000000010011000100101101000001\n" \
         "000000010011000100101101000010\n" \
-        "000000010011000100101101000011\n" 
+        "000000010011000100101101000011\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 4,
-    .expectMincoverString = "0000000100110001001011010000\n" 
+    .expectMincoverString = "0000000100110001001011010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
     .expectMincoverString = "0001\n" \
         "001\n" \
         "01\n" \
-        "1000\n" 
+        "1000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
     .expectMincoverString = "0001\n" \
         "0010\n" \
         "0011\n" \
         "01\n" \
-        "1000\n" 
+        "1000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
     .expectMincoverString = "0001\n" \
         "0010\n" \
@@ -2405,42 +2405,42 @@
         "0101\n" \
         "0110\n" \
         "0111\n" \
-        "1000\n" 
+        "1000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "000001\n" \
         "00001\n" \
         "0001\n" \
-        "001000\n" 
+        "001000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "000001\n" \
         "000010\n" \
         "000011\n" \
         "0001\n" \
-        "001000\n" 
+        "001000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "000001\n" \
         "000010\n" \
@@ -2449,228 +2449,228 @@
         "000101\n" \
         "000110\n" \
         "000111\n" \
-        "001000\n" 
+        "001000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000000001\n" \
         "000000000000000000000000000001\n" \
         "00000000000000000000000000001\n" \
-        "0000000000000000000000000001000\n" 
+        "0000000000000000000000000001000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "root\n" 
+    .expectMincoverString = "root\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "000\n" 
+    .expectMincoverString = "000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "0000\n" \
-        "0001\n" 
+        "0001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "000\n" 
+    .expectMincoverString = "000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "0000\n" \
-        "0001\n" 
+        "0001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000000\n" 
+    .expectMincoverString = "0000000000000000000000000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
-    .expectMincoverString = "0000000000000000000000000000\n" 
+    .expectMincoverString = "0000000000000000000000000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000000\n" \
         "000000000000000000000000000001\n" \
         "000000000000000000000000000010\n" \
-        "000000000000000000000000000011\n" 
+        "000000000000000000000000000011\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 4,
-    .expectMincoverString = "0000000000000000000000000000\n" 
+    .expectMincoverString = "0000000000000000000000000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "1001100010010110100\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "10011000100101101000\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011010000\n" \
         "100110001001011010001\n" \
         "100110001001011010010\n" \
         "100110001001011010011\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "10011000100101101000\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000001001100010010110100\n" \
-        "0000000100110001001011010100000\n" 
+        "0000000100110001001011010100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "000001\n" \
         "00001\n" \
         "0001\n" \
         "001\n" \
         "01\n" \
-        "10000\n" 
+        "10000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "000001\n" \
         "000010\n" \
@@ -2680,15 +2680,15 @@
         "0011\n" \
         "01\n" \
         "100000\n" \
-        "100001\n" 
+        "100001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "000001\n" \
         "000010\n" \
@@ -2701,78 +2701,78 @@
         "010\n" \
         "011\n" \
         "100000\n" \
-        "100001\n" 
+        "100001\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000000001\n" \
         "000000000000000000000000000001\n" \
         "00000000000000000000000000001\n" \
         "0000000000000000000000000001\n" \
         "000000000000000000000000001\n" \
-        "000000000000000000000000010000\n" 
+        "000000000000000000000000010000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
-        "100000\n" 
+        "100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "00\n" \
         "01\n" \
-        "100000\n" 
+        "100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "000\n" \
         "001\n" \
         "010\n" \
         "011\n" \
-        "100000\n" 
+        "100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000000000000000000000000\n" \
-        "0000000000000000000000000100000\n" 
+        "0000000000000000000000000100000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "000000010011000100101101\n" \
         "00000001001100010010111\n" \
@@ -2800,15 +2800,15 @@
         "111000010011000100100\n" \
         "1110000100110001001010\n" \
         "111000010011000100101100\n" \
-        "1110000100110001001011010000000\n" 
+        "1110000100110001001011010000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000000001\n" \
         "000000000000000000000000000001\n" \
@@ -2842,309 +2842,309 @@
         "01\n" \
         "10\n" \
         "110\n" \
-        "111000000000000000000000000000\n" 
+        "111000000000000000000000000000\n"
 },
 {
     .lowerBound = 0,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
         "10\n" \
         "110\n" \
-        "1110000000000000000000000000000\n" 
+        "1110000000000000000000000000000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011010000111\n" 
+    .expectMincoverString = "100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000100110001001011010000111\n" 
+    .expectMincoverString = "0000000100110001001011010000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "1000\n" 
+    .expectMincoverString = "1000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 2,
-    .expectMincoverString = "1000\n" 
+    .expectMincoverString = "1000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(7),
     .sparsity = 4,
-    .expectMincoverString = "1000\n" 
+    .expectMincoverString = "1000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "001000\n" 
+    .expectMincoverString = "001000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "001000\n" 
+    .expectMincoverString = "001000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "001000\n" 
+    .expectMincoverString = "001000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000001000\n" 
+    .expectMincoverString = "0000000000000000000000000001000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 1,
-    .expectMincoverString = "111\n" 
+    .expectMincoverString = "111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(7),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(7),
     .sparsity = 3,
-    .expectMincoverString = "111\n" 
+    .expectMincoverString = "111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "000111\n" 
+    .expectMincoverString = "000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "000111\n" 
+    .expectMincoverString = "000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "000111\n" 
+    .expectMincoverString = "000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000000111\n" 
+    .expectMincoverString = "0000000000000000000000000000111\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "00000\n" 
+    .expectMincoverString = "00000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 7,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000000000\n" 
+    .expectMincoverString = "0000000000000000000000000000000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "100110001001011010000111\n" \
         "100110001001011010001\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "100110001001011010000111\n" \
         "1001100010010110100010\n" \
         "1001100010010110100011\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "100110001001011010000111\n" \
         "100110001001011010001\n" \
         "100110001001011010010\n" \
         "100110001001011010011\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "100110001001011010000111\n" \
         "100110001001011010001000\n" \
@@ -3156,187 +3156,187 @@
         "100110001001011010001110\n" \
         "100110001001011010001111\n" \
         "10011000100101101001\n" \
-        "100110001001011010100000\n" 
+        "100110001001011010100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000100110001001011010000111\n" \
         "0000000100110001001011010001\n" \
         "000000010011000100101101001\n" \
-        "0000000100110001001011010100000\n" 
+        "0000000100110001001011010100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "001\n" \
         "01\n" \
-        "10000\n" 
+        "10000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "0010\n" \
         "0011\n" \
         "01\n" \
         "100000\n" \
-        "100001\n" 
+        "100001\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "001\n" \
         "010\n" \
         "011\n" \
         "100000\n" \
-        "100001\n" 
+        "100001\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000001\n" \
         "000000000000000000000000001\n" \
-        "000000000000000000000000010000\n" 
+        "000000000000000000000000010000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "0000000000000000000000000001\n" \
         "0000000000000000000000000010\n" \
         "0000000000000000000000000011\n" \
-        "000000000000000000000000010000\n" 
+        "000000000000000000000000010000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000100\n" \
         "000000000000000000000000000101\n" \
         "000000000000000000000000000110\n" \
         "000000000000000000000000000111\n" \
         "000000000000000000000000001\n" \
-        "000000000000000000000000010000\n" 
+        "000000000000000000000000010000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "000111\n" \
         "001\n" \
         "01\n" \
-        "100000\n" 
+        "100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "000111\n" \
         "0010\n" \
         "0011\n" \
         "01\n" \
-        "100000\n" 
+        "100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
     .expectMincoverString = "000111\n" \
         "001\n" \
         "010\n" \
         "011\n" \
-        "100000\n" 
+        "100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000000111\n" \
         "0000000000000000000000000001\n" \
         "000000000000000000000000001\n" \
-        "0000000000000000000000000100000\n" 
+        "0000000000000000000000000100000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
         "10\n" \
-        "1100\n" 
+        "1100\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
     .expectMincoverString = "00\n" \
         "01\n" \
         "10\n" \
-        "1100\n" 
+        "1100\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
     .expectMincoverString = "0000\n" \
         "0001\n" \
@@ -3350,55 +3350,55 @@
         "1001\n" \
         "1010\n" \
         "1011\n" \
-        "1100\n" 
+        "1100\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "000000000000000000000000000\n" \
         "0000000000000000000000000010\n" \
-        "000000000000000000000000001100\n" 
+        "000000000000000000000000001100\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "0000000000000000000000000000\n" \
         "0000000000000000000000000001\n" \
         "0000000000000000000000000010\n" \
-        "000000000000000000000000001100\n" 
+        "000000000000000000000000001100\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 3,
     .expectMincoverString = "000000000000000000000000000\n" \
         "000000000000000000000000001000\n" \
         "000000000000000000000000001001\n" \
         "000000000000000000000000001010\n" \
         "000000000000000000000000001011\n" \
-        "000000000000000000000000001100\n" 
+        "000000000000000000000000001100\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000100110001001011010000111\n" \
         "0000000100110001001011010001\n" \
@@ -3430,15 +3430,15 @@
         "111000010011000100100\n" \
         "1110000100110001001010\n" \
         "111000010011000100101100\n" \
-        "1110000100110001001011010000000\n" 
+        "1110000100110001001011010000000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000001\n" \
         "000000000000000000000000001\n" \
@@ -3469,15 +3469,15 @@
         "01\n" \
         "10\n" \
         "110\n" \
-        "111000000000000000000000000000\n" 
+        "111000000000000000000000000000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "0000000000000000000000000001\n" \
         "0000000000000000000000000010\n" \
@@ -3522,15 +3522,15 @@
         "10\n" \
         "1100\n" \
         "1101\n" \
-        "111000000000000000000000000000\n" 
+        "111000000000000000000000000000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000000111\n" \
         "0000000000000000000000000001\n" \
@@ -3562,15 +3562,15 @@
         "01\n" \
         "10\n" \
         "110\n" \
-        "1110000000000000000000000000000\n" 
+        "1110000000000000000000000000000\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
         "10\n" \
@@ -3599,15 +3599,15 @@
         "11011111111111111111111110\n" \
         "110111111111111111111111110\n" \
         "1101111111111111111111111110\n" \
-        "110111111111111111111111111100\n" 
+        "110111111111111111111111111100\n"
 },
 {
     .lowerBound = 7,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 2,
     .expectMincoverString = "00\n" \
         "01\n" \
@@ -3649,175 +3649,175 @@
         "1101111111111111111111111100\n" \
         "1101111111111111111111111101\n" \
         "1101111111111111111111111110\n" \
-        "110111111111111111111111111100\n" 
+        "110111111111111111111111111100\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100110001001011010100000\n" 
+    .expectMincoverString = "100110001001011010100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "100110001001011010100000\n" 
+    .expectMincoverString = "100110001001011010100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100110001001011010100000\n" 
+    .expectMincoverString = "100110001001011010100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(32),
     .sparsity = 4,
-    .expectMincoverString = "100110001001011010100000\n" 
+    .expectMincoverString = "100110001001011010100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000100110001001011010100000\n" 
+    .expectMincoverString = "0000000100110001001011010100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100001\n" 
+    .expectMincoverString = "100001\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "100001\n" 
+    .expectMincoverString = "100001\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100001\n" 
+    .expectMincoverString = "100001\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000100001\n" 
+    .expectMincoverString = "0000000000000000000000000100001\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "100000\n" 
+    .expectMincoverString = "100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 2,
-    .expectMincoverString = "100000\n" 
+    .expectMincoverString = "100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(32),
     .sparsity = 3,
-    .expectMincoverString = "100000\n" 
+    .expectMincoverString = "100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000100000\n" 
+    .expectMincoverString = "0000000000000000000000000100000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(32),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(32),
     .sparsity = 1,
-    .expectMincoverString = "11001\n" 
+    .expectMincoverString = "11001\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000011001\n" 
+    .expectMincoverString = "0000000000000000000000000011001\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 32,
     .includeUpperBound = true,
-    .min = OPT_I32(32),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(32),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "0000000000000000000000000000000\n" 
+    .expectMincoverString = "0000000000000000000000000000000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000001001100010010110101\n" \
         "0000000100110001001011011\n" \
@@ -3846,15 +3846,15 @@
         "111000010011000100100\n" \
         "1110000100110001001010\n" \
         "111000010011000100101100\n" \
-        "1110000100110001001011010000000\n" 
+        "1110000100110001001011010000000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0000000000000000000000000100001\n" \
         "000000000000000000000000010001\n" \
@@ -3887,15 +3887,15 @@
         "01\n" \
         "10\n" \
         "110\n" \
-        "111000000000000000000000000000\n" 
+        "111000000000000000000000000000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "00000000000000000000000001\n" \
         "0000000000000000000000001\n" \
@@ -3924,15 +3924,15 @@
         "01\n" \
         "10\n" \
         "110\n" \
-        "1110000000000000000000000000000\n" 
+        "1110000000000000000000000000000\n"
 },
 {
     .lowerBound = 32,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(32),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(32),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
     .expectMincoverString = "0\n" \
         "10\n" \
@@ -3959,55 +3959,55 @@
         "110111111111111111111110\n" \
         "1101111111111111111111110\n" \
         "11011111111111111111111110\n" \
-        "1101111111111111111111111100000\n" 
+        "1101111111111111111111111100000\n"
 },
 {
     .lowerBound = 1879048192,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-10000000),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-10000000),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "1110000100110001001011010000000\n" 
+    .expectMincoverString = "1110000100110001001011010000000\n"
 },
 {
     .lowerBound = 1879048192,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(-1),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(-1),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "1110000000000000000000000000001\n" 
+    .expectMincoverString = "1110000000000000000000000000001\n"
 },
 {
     .lowerBound = 1879048192,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(0),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(0),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "1110000000000000000000000000000\n" 
+    .expectMincoverString = "1110000000000000000000000000000\n"
 },
 {
     .lowerBound = 1879048192,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(7),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(7),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "1101111111111111111111111111001\n" 
+    .expectMincoverString = "1101111111111111111111111111001\n"
 },
 {
     .lowerBound = 1879048192,
     .includeLowerBound = true,
     .upperBound = 1879048192,
     .includeUpperBound = true,
-    .min = OPT_I32(32),
-    .max = OPT_I32(1879048192),
+    .min = OPT_I32_C(32),
+    .max = OPT_I32_C(1879048192),
     .sparsity = 1,
-    .expectMincoverString = "1101111111111111111111111100000\n" 
+    .expectMincoverString = "1101111111111111111111111100000\n"
 },

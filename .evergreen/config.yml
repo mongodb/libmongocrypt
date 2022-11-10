@@ -137,6 +137,7 @@ functions:
           NODE_GITHUB_TOKEN: ${node_github_token}
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
+          NODE_NVM_USE_VERSION: ${nvm_use_version|lts}
 
   "build and test node no optional dependencies":
     - command: "subprocess.exec"
@@ -151,6 +152,7 @@ functions:
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
           NPM_OPTIONS: "--no-optional"
+          NODE_NVM_USE_VERSION: ${nvm_use_version|lts}
 
   "attach node xunit results":
     - command: attach.xunit_results
@@ -898,6 +900,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -969,6 +972,7 @@ buildvariants:
     has_packages: true
     packager_distro: amazon
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -985,6 +989,7 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1002,6 +1007,7 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: arm64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1035,6 +1041,7 @@ buildvariants:
     has_packages: true
     packager_distro: debian92
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1081,6 +1088,7 @@ buildvariants:
     has_packages: true
     packager_distro: rhel70
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1128,6 +1136,7 @@ buildvariants:
     has_packages: true
     packager_distro: suse12
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1162,6 +1171,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: arm64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1179,6 +1189,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1197,6 +1208,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: arm64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
