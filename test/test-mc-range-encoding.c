@@ -18,7 +18,8 @@
 #include "mc-check-conversions-private.h"
 #include "mc-range-encoding-private.h"
 
-#include <math.h> // INFINITY, NAN
+#include <float.h> // DBL_MIN
+#include <math.h>  // INFINITY, NAN
 
 /* Enable -Wconversion as error for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
@@ -272,7 +273,11 @@ _test_RangeTest_Encode_Int64 (_mongocrypt_tester_t *tester)
 
 typedef struct {
    double value;
+   mc_optional_double_t min;
+   mc_optional_double_t max;
+   mc_optional_uint32_t precision;
    uint64_t expect;
+   mc_optional_uint64_t expectMax;
    const char *expectError;
 } DoubleTest;
 
@@ -327,18 +332,177 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
       {.value = INFINITY,
        .expectError = "Infinity and Nan double values are not supported."},
       {.value = NAN,
-       .expectError = "Infinity and Nan double values are not supported."}
+       .expectError = "Infinity and Nan double values are not supported."},
       /* Test cases copied from server Double_Errors test ... end */
+
+      /* Test cases copied from Double_Bounds_Precision ... begin */
+      {.value = 3.141592653589,
+       .precision = OPT_U32_C (1),
+       .min = OPT_DOUBLE_C (-100000),
+       .max = OPT_DOUBLE_C (100000),
+       .expect = UINT64_C (1000031),
+       .expectMax = OPT_U64_C (2097151)},
+      {.value = 3.141592653589,
+       .precision = OPT_U32_C (2),
+       .min = OPT_DOUBLE_C (-100000),
+       .max = OPT_DOUBLE_C (100000),
+       .expect = 10000314,
+       .expectMax = OPT_U64_C (33554431)},
+      {.value = 3.141592653589,
+       .precision = OPT_U32_C (3),
+       .min = OPT_DOUBLE_C (-100000),
+       .max = OPT_DOUBLE_C (100000),
+       .expect = 100003141,
+       .expectMax = OPT_U64_C (268435455)},
+      {.value = 3.141592653589,
+       .precision = OPT_U32_C (4),
+       .min = OPT_DOUBLE_C (-100000),
+       .max = OPT_DOUBLE_C (100000),
+       .expect = 1000031415,
+       .expectMax = OPT_U64_C (2147483647)},
+      {.value = 3.141592653589,
+       .precision = OPT_U32_C (5),
+       .min = OPT_DOUBLE_C (-100000),
+       .max = OPT_DOUBLE_C (100000),
+       .expect = 10000314159,
+       .expectMax = OPT_U64_C (34359738367)},
+      {.value = 3.141592653589,
+       .precision = OPT_U32_C (6),
+       .min = OPT_DOUBLE_C (-100000),
+       .max = OPT_DOUBLE_C (100000),
+       .expect = 100003141592,
+       .expectMax = OPT_U64_C (274877906943)},
+      {.value = 3.141592653589,
+       .precision = OPT_U32_C (7),
+       .min = OPT_DOUBLE_C (-100000),
+       .max = OPT_DOUBLE_C (100000),
+       .expect = 1000031415926,
+       .expectMax = OPT_U64_C (2199023255551)},
+      {.value = 0,
+       .max = OPT_DOUBLE_C (1),
+       .min = OPT_DOUBLE_C (-1),
+       .precision = OPT_U32_C (3),
+       .expect = 1000,
+       .expectMax = OPT_U64_C (4095)},
+      {.value = 0,
+       .max = OPT_DOUBLE_C (1),
+       .min = OPT_DOUBLE_C (-1E5),
+       .precision = OPT_U32_C (3),
+       .expect = 100000000,
+       .expectMax = OPT_U64_C (134217727)},
+      {.value = -1E-33,
+       .max = OPT_DOUBLE_C (1),
+       .min = OPT_DOUBLE_C (-1E5),
+       .precision = OPT_U32_C (3),
+       .expect = 100000000,
+       .expectMax = OPT_U64_C (134217727)},
+      {.value = 0,
+       .max = OPT_DOUBLE_C (DBL_MAX),
+       .min = OPT_DOUBLE_C (DBL_MIN),
+       .precision = OPT_U32_C (3),
+       .expect = UINT64_C (9223372036854775808),
+       // Expect precision not to be used.
+       .expectMax = OPT_U64_C (UINT64_MAX)},
+      {.value = 3.141592653589,
+       .max = OPT_DOUBLE_C (5),
+       .min = OPT_DOUBLE_C (0),
+       .precision = OPT_U32_C (0),
+       .expect = 3,
+       .expectMax = OPT_U64_C (7)},
+      {.value = 3.141592653589,
+       .max = OPT_DOUBLE_C (5),
+       .min = OPT_DOUBLE_C (0),
+       .precision = OPT_U32_C (1),
+       .expect = 31,
+       .expectMax = OPT_U64_C (63)},
+      {.value = 3.141592653589,
+       .max = OPT_DOUBLE_C (5),
+       .min = OPT_DOUBLE_C (0),
+       .precision = OPT_U32_C (2),
+       .expect = 314,
+       .expectMax = OPT_U64_C (1023)},
+      {.value = 3.141592653589,
+       .max = OPT_DOUBLE_C (5),
+       .min = OPT_DOUBLE_C (0),
+       .precision = OPT_U32_C (3),
+       .expect = 3141,
+       .expectMax = OPT_U64_C (8191)},
+      {.value = 3.141592653589,
+       .max = OPT_DOUBLE_C (5),
+       .min = OPT_DOUBLE_C (0),
+       .precision = OPT_U32_C (16),
+       .expect = 31415926535890000,
+       .expectMax = OPT_U64_C (72057594037927935)},
+      {.value = -5,
+       .max = OPT_DOUBLE_C (-1),
+       .min = OPT_DOUBLE_C (-10),
+       .precision = OPT_U32_C (3),
+       .expect = 5000,
+       .expectMax = OPT_U64_C (16383)},
+      {.value = 1E100,
+       .max = OPT_DOUBLE_C (DBL_MAX),
+       .min = OPT_DOUBLE_C (DBL_MIN),
+       .precision = OPT_U32_C (3),
+       .expect = 15326393489903895421ULL,
+       // Expect precision not to be used.
+       .expectMax = OPT_U64_C (UINT64_MAX)},
+      {.value = 1E9,
+       .max = OPT_DOUBLE_C (1E10),
+       .min = OPT_DOUBLE_C (0),
+       .precision = OPT_U32_C (3),
+       .expect = 1000000000000,
+       .expectMax = OPT_U64_C (17592186044415)},
+      {.value = 1E9,
+       .max = OPT_DOUBLE_C (1E10),
+       .min = OPT_DOUBLE_C (0),
+       .precision = OPT_U32_C (0),
+       .expect = 1000000000,
+       .expectMax = OPT_U64_C (17179869183)},
+      {.value = -5,
+       .max = OPT_DOUBLE_C (10),
+       .min = OPT_DOUBLE_C (-10),
+       .precision = OPT_U32_C (0),
+       .expect = 5,
+       .expectMax = OPT_U64_C (31)},
+      {.value = -5,
+       .max = OPT_DOUBLE_C (10),
+       .min = OPT_DOUBLE_C (-10),
+       .precision = OPT_U32_C (2),
+       .expect = 500,
+       .expectMax = OPT_U64_C (4095)},
+      {.value = 1E-30,
+       .max = OPT_DOUBLE_C (10E-30),
+       .min = OPT_DOUBLE_C (1E-30),
+       .precision = OPT_U32_C (35),
+       .expect = 13381399884061196960ULL,
+       // Expect precision not to be used.
+       .expectMax = OPT_U64_C (UINT64_MAX)}
+      /* Test cases copied from Double_Bounds_Precision ... end */
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       DoubleTest *test = tests + i;
       mongocrypt_status_t *const status = mongocrypt_status_new ();
 
-      printf ("_test_RangeTest_Encode_Double: value=%f\n", test->value);
+      if (test->min.set && test->max.set && test->precision.set) {
+         printf ("_test_RangeTest_Encode_Double: value=%f, min=%f, max=%f, "
+                 "precision=%" PRIu32 "\n",
+                 test->value,
+                 test->min.value,
+                 test->max.value,
+                 test->precision.value);
+      } else {
+         printf ("_test_RangeTest_Encode_Double: value=%f\n", test->value);
+      }
+
       mc_OSTType_Double got;
       const bool ok = mc_getTypeInfoDouble (
-         (mc_getTypeInfoDouble_args_t){.value = test->value}, &got, status);
+         (mc_getTypeInfoDouble_args_t){.value = test->value,
+                                       .min = test->min,
+                                       .max = test->max,
+                                       .precision = test->precision},
+         &got,
+         status);
       if (test->expectError) {
          ASSERT_OR_PRINT_MSG (!ok, "expected error, but got none");
          ASSERT_STATUS_CONTAINS (status, test->expectError);
@@ -346,7 +510,10 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
          ASSERT_OK_STATUS (ok, status);
          ASSERT_CMPUINT64 (got.value, ==, test->expect);
          ASSERT_CMPUINT64 (got.min, ==, 0);
-         ASSERT_CMPUINT64 (got.max, ==, UINT64_MAX);
+         ASSERT_CMPUINT64 (got.max,
+                           ==,
+                           test->expectMax.set ? test->expectMax.value
+                                               : UINT64_MAX);
       }
       mongocrypt_status_destroy (status);
    }
