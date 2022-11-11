@@ -741,6 +741,8 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 #define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
 /// String constant for setopt_algorithm "Range" explicit encryption
+/// NOTE: The Range algorithm is experimental only. It is not intended for
+/// public use.
 #define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
 
 
@@ -1538,6 +1540,8 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
 
 /**
  * Set options for explicit encryption with the "range" algorithm.
+ * NOTE: The Range algorithm is experimental only. It is not intended for public
+ * use.
  *
  * @p opts is a BSON document of the form:
  * {
@@ -1558,6 +1562,8 @@ mongocrypt_ctx_setopt_range (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
+// NOTE: The Range algorithm is experimental only. It is not intended for public
+// use.
 #define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
 
 #endif /* MONGOCRYPT_H */
