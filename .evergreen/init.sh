@@ -193,7 +193,8 @@ LIBMONGOCRYPT_DIR="$(dirname "${EVG_DIR}")"
 
 is_true() {
     declare var="$1"
-    declare val="${!var-@L}"  # Convert to lowercase, default is '' empty
+    declare val="${!var-,,}"  # Convert to lowercase, default is '' empty
+    val="${val,,}"
     case "$val" in
     1|true|yes|on)
         return 0;;
