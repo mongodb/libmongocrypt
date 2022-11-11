@@ -17,7 +17,7 @@ _cxxflags=""
 if [ "$OS_NAME" = "windows" ]; then
     # Enable exception handling for MSVC
     _cxxflags="-EHsc"
-    if test "${WINDOWS_32BIT-}" != "ON" && ! "${USE_NINJA-false}" ; then
+    if is_false WINDOWS_32BIT && is_false USE_NINJA; then
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
 fi
@@ -58,7 +58,7 @@ common_cmake_args=(
     -B"$build_dir"
 )
 
-if "${USE_NINJA-false}"; then
+if is_true USE_NINJA; then
     export NINJA_EXE
     : "${NINJA_EXE:="$build_dir/ninja$EXE_SUFFIX"}"
     common_cmake_args+=(

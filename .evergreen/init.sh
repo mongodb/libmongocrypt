@@ -191,6 +191,24 @@ _init_sh_evg_dir="$(dirname "${_init_sh_this_file}")"
 EVG_DIR="$(native_path "${_init_sh_evg_dir}")"
 LIBMONGOCRYPT_DIR="$(dirname "${EVG_DIR}")"
 
+is_true() {
+    declare var="$1"
+    declare val="${!var-@L}"  # Convert to lowercase, default is '' empty
+    case "$val" in
+    1|true|yes|on)
+        return 0;;
+    0|false|no|off|"")
+        return 1;;
+    *)
+        log "Unknown 'boolean' value for \$$var: '$val'"
+        return 2;;
+    esac
+}
+
+is_false() {
+    ! is_true "$@"
+}
+
 # Executes CMake via the cache-managing script
 run_cmake() {
     command bash "$EVG_DIR/cmake.sh" "$@"

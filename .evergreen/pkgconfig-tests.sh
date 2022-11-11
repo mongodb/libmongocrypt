@@ -14,7 +14,7 @@ mongoc_src_dir="$pkgconfig_tests_root/mongo-c-driver"
 mkdir -p "$mongoc_src_dir"
 run_chdir "$pkgconfig_tests_root" "$EVG_DIR/prep_c_driver_source.sh"
 
-if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON" && ! "${USE_NINJA-false}"; then
+if test "$OS_NAME" = "windows" && is_false WINDOWS_32BIT && is_false USE_NINJA; then
     ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 
@@ -27,7 +27,7 @@ common_cmake_args=(
     $ADDITIONAL_CMAKE_FLAGS
 )
 
-if "${USE_NINJA-false}"; then
+if is_true USE_NINJA; then
     export NINJA_EXE
     : "${NINJA_EXE:="$pkgconfig_tests_root/ninja$EXE_SUFFIX"}"
     common_cmake_args+=(

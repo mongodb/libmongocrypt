@@ -29,7 +29,7 @@ mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build
 run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
 MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
-if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON" && ! "${USE_NINJA-false}"; then
+if test "$OS_NAME" = "windows" && is_false WINDOWS_32BIT && is_false USE_NINJA; then
     ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 
@@ -42,7 +42,7 @@ common_cmake_args=(
   -DCMAKE_BUILD_TYPE=RelWithDebInfo
 )
 
-if "${USE_NINJA-false}"; then
+if is_true USE_NINJA; then
     export NINJA_EXE
     : "${NINJA_EXE:="$linker_tests_root/ninja$EXE_SUFFIX"}"
     common_cmake_args+=(
@@ -96,7 +96,7 @@ run_cmake \
 run_cmake --build "$BUILD_DIR" --target app --config RelWithDebInfo
 
 export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
-if "$IS_MULTICONF"; then
+if is_true IS_MULTICONF; then
     APP_CMD="$BUILD_DIR/RelWithDebInfo/app.exe"
 else
     APP_CMD="$BUILD_DIR/app"
