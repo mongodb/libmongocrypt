@@ -193,12 +193,11 @@ LIBMONGOCRYPT_DIR="$(dirname "${EVG_DIR}")"
 
 is_true() {
     declare var="$1"
-    declare val="${!var-,,}"  # Convert to lowercase, default is '' empty
-    val="${val,,}"
+    declare val="${!var-}"  # Default is '' empty
     case "$val" in
-    1|true|yes|on)
+    1|true|TRUE|True|yes|YES|Yes|on|ON|On)
         return 0;;
-    0|false|no|off|"")
+    0|false|FALSE|False|no|NO|No|off|OFF|Off|"")
         return 1;;
     *)
         log "Unknown 'boolean' value for \$$var: '$val'"
