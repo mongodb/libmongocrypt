@@ -54,11 +54,6 @@ else
              "/opt/python/3.4/bin/python3"
              "/opt/python/3.5/bin/python3"
              "/opt/python/3.6/bin/python3"
-             "/opt/python/3.7/bin/python3"
-             "/opt/python/3.8/bin/python3"
-             "/opt/python/3.9/bin/python3"
-             "/opt/python/3.10/bin/python3"
-             "/opt/python/3.11/bin/python3"
              "/opt/python/pypy/bin/pypy"
              "/opt/python/pypy3.6/bin/pypy3")
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
