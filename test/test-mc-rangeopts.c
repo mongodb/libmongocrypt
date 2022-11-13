@@ -101,7 +101,7 @@ test_mc_RangeOpts_to_FLE2RangeInsertSpec (_mongocrypt_tester_t *tester)
               test->desc);
       ASSERT_OK_STATUS (mc_RangeOpts_parse (&ro, TMP_BSON (test->in), status),
                         status);
-      bson_t out;
+      bson_t out = BSON_INITIALIZER;
       bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec (
          &ro, TMP_BSON (test->v), &out, status);
       if (!test->expectError) {

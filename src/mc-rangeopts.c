@@ -109,8 +109,6 @@ mc_RangeOpts_to_FLE2RangeInsertSpec (const mc_RangeOpts_t *ro,
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
-   bson_init (out);
-
    const char *const error_prefix = "Error making FLE2RangeInsertSpec: ";
    bson_iter_t v_iter;
    if (!bson_iter_init_find (&v_iter, v, "v")) {

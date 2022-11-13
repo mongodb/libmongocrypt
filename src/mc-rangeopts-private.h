@@ -50,7 +50,7 @@ mc_RangeOpts_parse (mc_RangeOpts_t *ro,
  * v is expect to be a BSON document of the form:
  * { "v": BSON value to encrypt }.
  *
- * out is always initialized.
+ * Preconditions: out must be initialized by caller.
  */
 bool
 mc_RangeOpts_to_FLE2RangeInsertSpec (const mc_RangeOpts_t *ro,
