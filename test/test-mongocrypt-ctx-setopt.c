@@ -803,7 +803,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 
       REFRESH;
       ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-      ASSERT_OK (mongocrypt_ctx_setopt_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (
          bson, "cannot set both key alt name and range opts");
    }
@@ -844,7 +844,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
        * error */
       ASSERT_KEY_ID_OK (uuid);
       ASSERT_ALGORITHM_OK (RAND, -1);
-      ASSERT_OK (mongocrypt_ctx_setopt_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
                                     "cannot set both algorithm and range opts");
    }
@@ -880,7 +880,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
       ASSERT_KEY_ID_OK (uuid);
-      ASSERT_OK (mongocrypt_ctx_setopt_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
                  ctx);
@@ -895,7 +895,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
       ASSERT_KEY_ID_OK (uuid);
-      ASSERT_OK (mongocrypt_ctx_setopt_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
                  ctx);
@@ -938,7 +938,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
       ASSERT_KEY_ID_OK (uuid);
-      ASSERT_OK (mongocrypt_ctx_setopt_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1),
                  ctx);
@@ -965,7 +965,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
        * error */
       ASSERT_KEY_ID_OK (uuid);
       ASSERT_OK (
-         mongocrypt_ctx_setopt_range (
+         mongocrypt_ctx_setopt_algorithm_range (
             ctx,
             TEST_BSON (
                "{'min': 0, 'max': 1, 'sparsity': { '$numberLong': '-1'}}")),
@@ -1103,7 +1103,7 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    // Range opts are prohibited.
    REFRESH;
    ASSERT_OK (
-      mongocrypt_ctx_setopt_range (
+      mongocrypt_ctx_setopt_algorithm_range (
          ctx,
          TEST_BSON ("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),
       ctx);

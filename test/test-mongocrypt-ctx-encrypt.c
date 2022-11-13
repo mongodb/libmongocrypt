@@ -3028,7 +3028,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                  ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (
-         mongocrypt_ctx_setopt_range (
+         mongocrypt_ctx_setopt_algorithm_range (
             ctx,
             TEST_FILE (
                "./test/data/fle2-insert-range-explicit/int32/rangeopts.json")),
@@ -3093,7 +3093,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                     ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_range (
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (
                     ctx,
                     TEST_FILE ("./test/data/fle2-insert-range-explicit/"
                                "sparsity-2/rangeopts.json")),
@@ -3158,7 +3158,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                     ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 4), ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_range (
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (
                     ctx,
                     TEST_FILE ("./test/data/fle2-find-range-explicit/"
                                "int32/rangeopts.json")),
@@ -3212,7 +3212,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
                  ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (
-         mongocrypt_ctx_setopt_range (
+         mongocrypt_ctx_setopt_algorithm_range (
             ctx,
             TEST_BSON (
                "{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),

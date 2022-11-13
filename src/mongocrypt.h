@@ -939,7 +939,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_index_key_id
  * - @ref mongocrypt_ctx_setopt_contention_factor
  * - @ref mongocrypt_ctx_setopt_query_type
- * - @ref mongocrypt_ctx_setopt_range
+ * - @ref mongocrypt_ctx_setopt_algorithm_range
  *
  * An error is returned if FLE 1 and Queryable Encryption incompatible options
  * are set.
@@ -1558,7 +1558,8 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
  */
 MONGOCRYPT_EXPORT
 bool
-mongocrypt_ctx_setopt_range (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
+mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t *ctx,
+                                       mongocrypt_binary_t *opts);
 
 /// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"

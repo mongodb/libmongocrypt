@@ -419,8 +419,7 @@ _kms_done (mongocrypt_ctx_t *ctx)
 
    BSON_ASSERT_PARAM (ctx);
 
-   kms_providers =
-      _mongocrypt_ctx_kms_providers (ctx);
+   kms_providers = _mongocrypt_ctx_kms_providers (ctx);
 
    if (!_mongocrypt_key_broker_kms_done (&ctx->kb, kms_providers)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
@@ -607,8 +606,7 @@ mongocrypt_ctx_provide_kms_providers (
 
    if (!kms_providers_definition) {
       _mongocrypt_ctx_fail_w_msg (
-         ctx,
-         "KMS provider credential mapping not provided");
+         ctx, "KMS provider credential mapping not provided");
       return false;
    }
 
@@ -1099,8 +1097,7 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
 
    if (!bin) {
       return _mongocrypt_ctx_fail_w_msg (
-         ctx,
-         "invalid NULL key encryption key document");
+         ctx, "invalid NULL key encryption key document");
    }
 
    if (!_mongocrypt_binary_to_bson (bin, &as_bson)) {
@@ -1231,7 +1228,8 @@ _mongocrypt_query_type_to_string (mongocrypt_query_type_t val)
 }
 
 bool
-mongocrypt_ctx_setopt_range (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts)
+mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t *ctx,
+                                       mongocrypt_binary_t *opts)
 {
    bson_t as_bson;
 
