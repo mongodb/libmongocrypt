@@ -16,8 +16,13 @@
 
 #include "mc-rangeopts-private.h"
 
+#include "mc-check-conversions-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_bson_type_to_string
+
+/* Enable -Wconversion as error for only this file.
+ * Other libmongocrypt files warn for -Wconversion. */
+MC_BEGIN_CONVERSION_ERRORS
 
 // Common logic for testing field name, tracking duplication, and presence.
 #define IF_FIELD(Name, ErrorPrefix)                                            \
@@ -146,3 +151,5 @@ mc_RangeOpts_cleanup (mc_RangeOpts_t *ro)
 
    bson_destroy (ro->bson);
 }
+
+MC_END_CONVERSION_ERRORS

@@ -16,11 +16,16 @@
 
 #include "mc-fle2-rfds-private.h"
 
-#include "mongocrypt-private.h"          // CLIENT_ERR
+#include "mongocrypt-private.h" // CLIENT_ERR
+#include "mc-check-conversions-private.h"
 #include "mc-fle-blob-subtype-private.h" // MC_SUBTYPE_FLE2EncryptionPlaceholder
 
 #include <math.h>        // INFINITY
 #include "mlib/thread.h" // mlib_once_flag
+
+/* Enable -Wconversion as error for only this file.
+ * Other libmongocrypt files warn for -Wconversion. */
+MC_BEGIN_CONVERSION_ERRORS
 
 static mc_FLE2RangeOperator_t
 get_operator_type (const char *key)
@@ -614,3 +619,5 @@ mc_getNextPayloadId (void)
    }
    return ret;
 }
+
+MC_END_CONVERSION_ERRORS
