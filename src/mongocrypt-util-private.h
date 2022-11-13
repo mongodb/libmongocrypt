@@ -17,6 +17,8 @@
 #ifndef MONGOCRYPT_UTIL_PRIVATE_H
 #define MONGOCRYPT_UTIL_PRIVATE_H
 
+#include "mongocrypt-status-private.h"
+
 #include "mlib/str.h"
 
 #include <bson/bson.h>
@@ -24,7 +26,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "mongocrypt-status-private.h"
 
 /* A utility for safely casting from size_t to uint32_t.
  * Returns false if @in exceeds the maximum value of a uint32_t. */
