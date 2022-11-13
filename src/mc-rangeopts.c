@@ -45,7 +45,7 @@ mc_RangeOpts_parse (mc_RangeOpts_t *ro,
 {
    bson_iter_t iter;
    bool has_min = false, has_max = false, has_sparsity = false;
-   const char *error_prefix = "Error parsing RangeOpts: ";
+   const char *const error_prefix = "Error parsing RangeOpts: ";
 
    BSON_ASSERT_PARAM (ro);
    BSON_ASSERT_PARAM (in);
@@ -66,9 +66,11 @@ mc_RangeOpts_parse (mc_RangeOpts_t *ro,
       IF_FIELD (min, error_prefix)
       ro->min = iter;
       END_IF_FIELD
+
       IF_FIELD (max, error_prefix)
       ro->max = iter;
       END_IF_FIELD
+
       IF_FIELD (sparsity, error_prefix)
       if (!BSON_ITER_HOLDS_INT64 (&iter)) {
          CLIENT_ERR ("%sExpected int64 for sparsity, got: %s",
@@ -104,7 +106,7 @@ mc_RangeOpts_to_FLE2RangeInsertSpec (const mc_RangeOpts_t *ro,
 
    bson_init (out);
 
-   const char *error_prefix = "Error making FLE2RangeInsertSpec: ";
+   const char *const error_prefix = "Error making FLE2RangeInsertSpec: ";
    bson_iter_t v_iter;
    if (!bson_iter_init_find (&v_iter, v, "v")) {
       CLIENT_ERR ("Unable to find 'v' in input");
@@ -135,27 +137,12 @@ mc_RangeOpts_to_FLE2RangeInsertSpec (const mc_RangeOpts_t *ro,
    return true;
 }
 
-typedef struct {
-   struct {
-      bson_iter_t iter;
-      bool set;
-   } gt;
-   struct {
-      bson_iter_t iter;
-      bool set;
-   } gte;
-   struct {
-      bson_iter_t iter;
-      bool set;
-   } lt;
-   struct {
-      bson_iter_t iter;
-      bool set;
-   } lte;
-} mc_FLE2RangeFindDriverSpec_t;
-
 void
 mc_RangeOpts_cleanup (mc_RangeOpts_t *ro)
 {
+   if (!ro) {
+      return;
+   }
+
    bson_destroy (ro->bson);
 }

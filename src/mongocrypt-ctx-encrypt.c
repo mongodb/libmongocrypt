@@ -1721,17 +1721,15 @@ FLE2RangeFindDriverSpec_to_ciphertexts (mongocrypt_ctx_t *ctx,
    }
 
    // Parse FLE2RangeFindDriverSpec.
-   mc_FLE2RangeFindDriverSpec_t rfds;
    {
+      mc_FLE2RangeFindDriverSpec_t rfds;
+
       if (!mc_FLE2RangeFindDriverSpec_parse (&rfds, &v_doc, ctx->status)) {
          _mongocrypt_ctx_fail (ctx);
          goto fail;
       }
-   }
 
-   // Convert FLE2RangeFindDriverSpec into a document with placeholders.
-   {
-      int32_t payloadId = mc_getNextPayloadId ();
+      // Convert FLE2RangeFindDriverSpec into a document with placeholders.
       if (!mc_FLE2RangeFindDriverSpec_to_placeholders (
              &rfds,
              &ctx->opts.rangeopts.value,
@@ -1740,7 +1738,7 @@ FLE2RangeFindDriverSpec_to_ciphertexts (mongocrypt_ctx_t *ctx,
              _mongocrypt_buffer_empty (&ctx->opts.index_key_id)
                 ? &ctx->opts.key_id
                 : &ctx->opts.index_key_id,
-             payloadId,
+             mc_getNextPayloadId (),
              &with_placholders,
              ctx->status)) {
          _mongocrypt_ctx_fail (ctx);
@@ -2422,16 +2420,16 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "cannot set query type with no index type");
    }
 
-   if (ctx->opts.rangeopts.set && ctx->opts.index_type.set &&
-       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "cannot set range opts with no index type");
-   }
+   if (ctx->opts.rangeopts.set && ctx->opts.index_type.set) {
+      if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "cannot set range opts with no index type");
+      }
 
-   if (ctx->opts.rangeopts.set && ctx->opts.index_type.set &&
-       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "cannot set range opts with equality index type");
+      if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "cannot set range opts with equality index type");
+      }
    }
 
    if (ctx->opts.contention_factor.set &&
@@ -2448,23 +2446,22 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    }
 
    if (ctx->opts.index_type.set &&
-       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE &&
-       !ctx->opts.contention_factor.set) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "contention factor is required for range indexed algorithm");
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE) {
+      if (!ctx->opts.contention_factor.set) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "contention factor is required for range indexed algorithm");
+      }
+
+      if (!ctx->opts.rangeopts.set) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "range opts are required for range indexed algorithm");
+      }
    }
 
    if (ctx->opts.rangeopts.set &&
        !mc_validate_sparsity (ctx->opts.rangeopts.value.sparsity,
                               ctx->status)) {
       return _mongocrypt_ctx_fail (ctx);
-   }
-
-   if (ctx->opts.index_type.set &&
-       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE &&
-       !ctx->opts.rangeopts.set) {
-      return _mongocrypt_ctx_fail_w_msg (
-         ctx, "range opts are required for range indexed algorithm");
    }
 
    // If query type is set, it must match the index type.

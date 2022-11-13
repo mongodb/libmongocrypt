@@ -1546,8 +1546,8 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
  * @p opts is a BSON document of the form:
  * {
  *    "min": BSON value,
- *    "max": BSON value
- *    "sparsity": Int64,
+ *    "max": BSON value,
+ *    "sparsity": Int64
  * }
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.

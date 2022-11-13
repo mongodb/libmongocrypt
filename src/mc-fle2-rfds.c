@@ -57,7 +57,6 @@ mc_FLE2RangeOperator_to_string (mc_FLE2RangeOperator_t op)
    default:
       return "Unknown";
    }
-   return "Unknown";
 }
 
 static bool
@@ -68,12 +67,12 @@ is_supported_operator (const char *key)
 }
 
 // Suffix an error message with the JSON string form of bson.
-#define ERR_WITH_BSON(bson, fmt, ...)                            \
-   if (1) {                                                      \
-      char *_str = bson_as_canonical_extended_json (bson, NULL); \
-      CLIENT_ERR (fmt ": %s", __VA_ARGS__, _str);                \
-      bson_free (_str);                                          \
-   } else                                                        \
+#define ERR_WITH_BSON(bson, fmt, ...)                              \
+   if (1) {                                                        \
+      char *_str = bson_as_canonical_extended_json ((bson), NULL); \
+      CLIENT_ERR (fmt ": %s", __VA_ARGS__, _str);                  \
+      bson_free (_str);                                            \
+   } else                                                          \
       (void) 0
 
 // Parses a document like {$and: []} and outputs an iterator to the array.
@@ -165,10 +164,13 @@ parse_aggregate_expression (const bson_t *orig,
       goto fail;
    }
 
-   out->field = field;
-   out->op_type_str = op_type_str;
-   out->op_type = get_operator_type (op_type_str);
-   out->value = value;
+   *out = (operator_value_t){
+      .field = field,
+      .op_type_str = op_type_str,
+      .op_type = get_operator_type (op_type_str),
+      .value = value,
+   };
+
    ok = true;
 fail:
    return ok;
@@ -217,10 +219,12 @@ parse_match_expression (const bson_t *orig,
       goto fail;
    }
 
-   out->field = field;
-   out->op_type_str = op_type_str;
-   out->op_type = get_operator_type (op_type_str);
-   out->value = value;
+   *out = (operator_value_t){
+      .field = field,
+      .op_type_str = op_type_str,
+      .op_type = get_operator_type (op_type_str),
+      .value = value,
+   };
 
    ok = true;
 fail:
@@ -330,25 +334,25 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
          break;
       }
 
-      if (spec->field) {
-         if (0 != strcmp (spec->field, op.field)) {
-            ERR_WITH_BSON (
-               in,
-               "unexpected field mismatch. Expected all fields to be "
-               "%s, but got %s",
-               spec->field,
-               op.field);
-            goto fail;
-         }
+      if (spec->field && 0 != strcmp (spec->field, op.field)) {
+         ERR_WITH_BSON (in,
+                        "unexpected field mismatch. Expected all fields to be "
+                        "%s, but got %s",
+                        spec->field,
+                        op.field);
+         goto fail;
       }
 
       spec->nOps++;
 
-      if (spec->nOps == 1) {
+      switch (spec->nOps) {
+      case 1:
          spec->firstOp = op.op_type;
-      } else if (spec->nOps == 2) {
+         break;
+      case 2:
          spec->secondOp = op.op_type;
-      } else {
+         break;
+      default:
          ERR_WITH_BSON (
             in, "expected 1 or 2 operators, got > 2: %s", op.op_type_str);
          goto fail;
@@ -397,9 +401,9 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t args,
 
    // create v.
    TRY (BSON_APPEND_INT32 (v, "payloadId", args.payloadId));
-   TRY (BSON_APPEND_INT32 (v, "firstOperator", args.firstOp));
+   TRY (BSON_APPEND_INT32 (v, "firstOperator", (int32_t) args.firstOp));
    if (args.secondOp) {
-      TRY (BSON_APPEND_INT32 (v, "secondOperator", args.secondOp));
+      TRY (BSON_APPEND_INT32 (v, "secondOperator", (int32_t) args.secondOp));
    }
 
    // create placeholder.
@@ -412,7 +416,7 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t args,
    TRY (BSON_APPEND_INT64 (p, "s", args.sparsity));
 #undef TRY
 
-   _mongocrypt_buffer_resize (out, p->len + 1);
+   _mongocrypt_buffer_resize (out, p->len + 1u);
    out->subtype = BSON_SUBTYPE_ENCRYPTED;
    out->data[0] = MC_SUBTYPE_FLE2EncryptionPlaceholder;
    memcpy (out->data + 1, bson_get_data (p), p->len);
@@ -605,11 +609,8 @@ mc_getNextPayloadId (void)
    int32_t ret;
    MONGOCRYPT_WITH_MUTEX (payloadId_mutex)
    {
-      if (payloadId >= INT32_MAX) {
-         payloadId = 0;
-      }
       ret = payloadId;
-      payloadId++;
+      payloadId = payloadId < INT32_MAX ? payloadId + 1 : 0;
    }
    return ret;
 }

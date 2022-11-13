@@ -156,6 +156,10 @@ mc_iter_document_as_bson (const bson_iter_t *iter,
                           bson_t *bson,
                           mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (iter);
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT (status || true);
+
    uint32_t len;
    const uint8_t *data;
 
