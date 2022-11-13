@@ -1792,7 +1792,6 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bool ret = false;
    _mongocrypt_marking_t marking;
    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
-   bson_t new_v = BSON_INITIALIZER;
 
    BSON_ASSERT_PARAM (ctx);
    BSON_ASSERT_PARAM (out);
@@ -1802,9 +1801,10 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    if (ctx->opts.rangeopts.set && ctx->opts.query_type.set) {
       // RangeOpts with query type is a special case. The result contains two
       // ciphertext values.
-      bson_destroy (&new_v);
       return FLE2RangeFindDriverSpec_to_ciphertexts (ctx, out);
    }
+
+   bson_t new_v = BSON_INITIALIZER;
 
    _mongocrypt_marking_init (&marking);
    marking.type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
