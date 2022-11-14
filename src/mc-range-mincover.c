@@ -175,13 +175,19 @@ mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
    BSON_ASSERT_PARAM (status);
    mc_OSTType_Double a, b;
    if (!mc_getTypeInfoDouble (
-          (mc_getTypeInfoDouble_args_t){.value = args.lowerBound},
+          (mc_getTypeInfoDouble_args_t){.value = args.lowerBound,
+                                        .min = args.min,
+                                        .max = args.max,
+                                        .precision = args.precision},
           &a,
           status)) {
       return NULL;
    }
    if (!mc_getTypeInfoDouble (
-          (mc_getTypeInfoDouble_args_t){.value = args.upperBound},
+          (mc_getTypeInfoDouble_args_t){.value = args.upperBound,
+                                        .min = args.min,
+                                        .max = args.max,
+                                        .precision = args.precision},
           &b,
           status)) {
       return NULL;
