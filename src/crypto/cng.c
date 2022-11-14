@@ -36,7 +36,7 @@ static BCRYPT_ALG_HANDLE _random;
 bool _native_crypto_initialized = false;
 
 void
-_native_crypto_init ()
+_native_crypto_init (void)
 {
    DWORD cbOutput;
    NTSTATUS nt_status;

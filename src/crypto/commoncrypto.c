@@ -61,7 +61,7 @@ CCCryptorStatus_to_string (CCCryptorStatus status)
 bool _native_crypto_initialized = false;
 
 void
-_native_crypto_init ()
+_native_crypto_init (void)
 {
    _native_crypto_initialized = true;
 }

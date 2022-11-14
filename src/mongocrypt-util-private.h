@@ -55,7 +55,7 @@ typedef struct current_module_result {
  * mtsr_free()
  */
 current_module_result
-current_module_path ();
+current_module_path (void);
 
 /* mc_bson_type_to_string returns the string representation of a BSON type. */
 const char *

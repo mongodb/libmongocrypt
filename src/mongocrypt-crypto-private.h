@@ -247,7 +247,7 @@ _mongocrypt_hmac_sha_256 (_mongocrypt_crypto_t *crypto,
 extern bool _native_crypto_initialized;
 
 void
-_native_crypto_init ();
+_native_crypto_init (void);
 
 typedef struct {
    const _mongocrypt_buffer_t *key;

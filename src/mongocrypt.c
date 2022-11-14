@@ -680,7 +680,7 @@ _validate_csfle_singleton (mongocrypt_t *crypt, _loaded_csfle found)
  * successful loading of csfle.
  */
 static void
-_csfle_drop_global_ref ()
+_csfle_drop_global_ref (void)
 {
    mlib_call_once (&g_csfle_init_flag, init_csfle_state);
 

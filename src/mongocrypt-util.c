@@ -56,7 +56,7 @@ size_to_uint32 (size_t in, uint32_t *out)
 }
 
 current_module_result
-current_module_path ()
+current_module_path (void)
 {
    mstr ret_str = MSTR_NULL;
    int ret_error = 0;
