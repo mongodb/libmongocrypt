@@ -53,7 +53,7 @@ HMAC_CTX_free (HMAC_CTX *ctx)
 bool _native_crypto_initialized = false;
 
 void
-_native_crypto_init ()
+_native_crypto_init (void)
 {
    _native_crypto_initialized = true;
 }

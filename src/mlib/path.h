@@ -64,7 +64,7 @@ mpath_preferred_sep (mpath_format f)
  * @return mstr A new string which must be freed with mstr_free()
  */
 static inline mstr
-mpath_current_path ()
+mpath_current_path (void)
 {
 #if _WIN32
    while (1) {

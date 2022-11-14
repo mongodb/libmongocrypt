@@ -59,7 +59,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 _mongocrypt_key_doc_t *
-_mongocrypt_key_new ();
+_mongocrypt_key_new (void);
 
 void
 _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,

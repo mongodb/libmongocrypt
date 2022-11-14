@@ -47,7 +47,7 @@ static BCRYPT_ALG_HANDLE _algoRSA = 0;
 #define SHA_256_HASH_LEN 32
 
 int
-kms_crypto_init ()
+kms_crypto_init (void)
 {
    if (BCryptOpenAlgorithmProvider (
           &_algoSHA256, BCRYPT_SHA256_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0) !=
@@ -73,7 +73,7 @@ kms_crypto_init ()
 }
 
 void
-kms_crypto_cleanup ()
+kms_crypto_cleanup (void)
 {
    (void) BCryptCloseAlgorithmProvider (_algoSHA256, 0);
    (void) BCryptCloseAlgorithmProvider (_algoSHA256Hmac, 0);

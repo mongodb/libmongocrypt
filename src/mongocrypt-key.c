@@ -296,7 +296,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
 
 
 _mongocrypt_key_doc_t *
-_mongocrypt_key_new ()
+_mongocrypt_key_new (void)
 {
    _mongocrypt_key_doc_t *key_doc;
 
