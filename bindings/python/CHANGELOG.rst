@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Changes in Version 1.4.0
+------------------------
+
+- Bundle libmongocrypt 1.6.1 in release wheels.
+- Support GCP attached service accounts when using GCP KMS.
+- Support Azure VM-assigned Managed Identity for Automatic KMS Credentials.
+- Support obtaining AWS credentials for CSFLE in the same way as for
+  MONGODB-AWS.
+
 Changes in Version 1.3.1
 ------------------------
 
