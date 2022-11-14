@@ -998,9 +998,9 @@ fail:
 }
 
 static bool
-isInfinite (bson_iter_t iter)
+isInfinite (bson_iter_t *iter)
 {
-   return isinf (bson_iter_double (&iter));
+   return isinf (bson_iter_double (iter));
 }
 
 // mc_get_mincover_from_FLE2RangeFindSpec creates and returns a mincover from an
@@ -1034,11 +1034,11 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
    // Open-ended ranges are represented with infinity as the other endpoint.
    // Resolve infinite bounds at this point to end at the min or max for this
    // index.
-   if (isInfinite (lowerBound)) {
+   if (isInfinite (&lowerBound)) {
       lowerBound = findSpec->edgesInfo.indexMin;
       includeLowerBound = true;
    }
-   if (isInfinite (upperBound)) {
+   if (isInfinite (&upperBound)) {
       upperBound = findSpec->edgesInfo.indexMax;
       includeUpperBound = true;
    }
