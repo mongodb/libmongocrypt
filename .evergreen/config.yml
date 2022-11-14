@@ -71,8 +71,8 @@ functions:
           . libmongocrypt/.evergreen/init.sh
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
           env ${compile_env|} bash "$EVG_DIR/build_all.sh"
-          bash "$EVG_DIR/linker-tests.sh"
-          bash "$EVG_DIR/pkgconfig-tests.sh"
+          env ${compile_env|} bash "$EVG_DIR/linker-tests.sh"
+          env ${compile_env|} bash "$EVG_DIR/pkgconfig-tests.sh"
 
 
   "create packages and repos":
@@ -365,7 +365,7 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
+      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
 
 - name: build-and-test-asan
   commands:
@@ -373,6 +373,7 @@ tasks:
   - func: "build and test"
     vars:
       compile_env: >
+        ${compile_env|}
         LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
         ASAN_OPTIONS="detect_leaks=1"
 
@@ -381,14 +382,14 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
 - name: build-and-test-asan-s390x
   commands:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
 - name: test-java
   depends_on:
@@ -731,14 +732,6 @@ tasks:
           set -o errexit
           set -o verbose
 
-          # Find cmake.
-          if [ "$OS" == "Windows_NT" ]; then
-            CMAKE=/cygdrive/c/cmake/bin/cmake
-          else
-            # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-            IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
-          fi
-
           if [ "${is_patch}" = "true" ]; then
             echo "patch build, skipping packaging publication"
             exit 0
@@ -1080,6 +1073,7 @@ buildvariants:
     has_packages: true
     packager_distro: rhel67
     packager_arch: s390x
+    compile_env: CMAKE_EXE=/opt/cmake/bin/cmake
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
