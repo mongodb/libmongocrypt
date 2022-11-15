@@ -740,6 +740,10 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 #define MONGOCRYPT_ALGORITHM_INDEXED_STR "Indexed"
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 #define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
+/// String constant for setopt_algorithm "Range" explicit encryption
+/// NOTE: The Range algorithm is experimental only. It is not intended for
+/// public use.
+#define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
 
 
 /**
@@ -910,7 +914,20 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * corresponding mongocrypt_setopt methods before calling this.
  *
  * This method expects the passed-in BSON to be of the form:
- * { "v" : BSON value to encrypt }
+ * { "v" : BSON value to encrypt | FLE2RangeFindDriverSpec }
+ *
+ * FLE2RangeFindDriverSpec may only be used when query_type is "range".
+ * FLE2RangeFindDriverSpec is a BSON document with one of these forms:
+ *
+ * 1. A Match Expression of this form:
+ *    {$and: [{<field>: {<op>: <value1>, {<field>: {<op>: <value2> }}]}
+ * 2. An Aggregate Expression of this form:
+ *    {$and: [{<op>: [<fieldpath>, <value1>]}, {<op>: [<fieldpath>, <value2>]}]
+ *
+ * <op> may be $lt, $lte, $gt, or $gte.
+ *
+ * The value of "v" is expected to be the BSON value passed to a driver
+ * ClientEncryption.encrypt helper.
  *
  * Associated options for FLE 1:
  * - @ref mongocrypt_ctx_setopt_key_id
@@ -922,6 +939,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_index_key_id
  * - @ref mongocrypt_ctx_setopt_contention_factor
  * - @ref mongocrypt_ctx_setopt_query_type
+ * - @ref mongocrypt_ctx_setopt_algorithm_range
  *
  * An error is returned if FLE 1 and Queryable Encryption incompatible options
  * are set.
@@ -1520,7 +1538,33 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
                                   const char *query_type,
                                   int len);
 
-/// String constant for setopt_query_type_v2, "equality" query type
+/**
+ * Set options for explicit encryption with the "range" algorithm.
+ * NOTE: The Range algorithm is experimental only. It is not intended for public
+ * use.
+ *
+ * @p opts is a BSON document of the form:
+ * {
+ *    "min": BSON value,
+ *    "max": BSON value,
+ *    "sparsity": Int64
+ * }
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] opts BSON.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+MONGOCRYPT_EXPORT
+bool
+mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t *ctx,
+                                       mongocrypt_binary_t *opts);
+
+/// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
+// NOTE: The Range algorithm is experimental only. It is not intended for public
+// use.
+#define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
 
 #endif /* MONGOCRYPT_H */

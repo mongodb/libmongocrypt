@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#ifndef MC_FLE2_RANGE_OPERATOR_PRIVATE_H
+#define MC_FLE2_RANGE_OPERATOR_PRIVATE_H
 typedef enum {
    FLE2RangeOperator_kNone = 0,
    FLE2RangeOperator_kGt = 1,
@@ -21,3 +23,5 @@ typedef enum {
    FLE2RangeOperator_kLt = 3,
    FLE2RangeOperator_kLte = 4
 } mc_FLE2RangeOperator_t;
+
+#endif // MC_FLE2_RANGE_OPERATOR_PRIVATE_H

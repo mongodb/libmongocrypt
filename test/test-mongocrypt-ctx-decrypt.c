@@ -867,18 +867,6 @@ _test_decrypt_wrong_binary_subtype (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
-/* Test decrypting FLE2IndexedRangeEncryptedValue */
-static void
-_test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
-{
-   _mongocrypt_buffer_t S_KeyId;
-   _mongocrypt_buffer_t K_KeyId;
-
-   if (!_aes_ctr_is_supported_by_os) {
-      printf ("Common Crypto with no CTR support detected. Skipping.");
-      return;
-   }
-
 #define TEST_IREV_BASE64                                                       \
    "CRI0VngSNJh2EjQSNFZ4kBIQsPF0Ii0Hfv7ZMhnNt/yt+mviydF8EUw0YlO+amC3IF8dX2J/"  \
    "GmRZRnihW3VqJYoLMk0BIit0x9YQiQEEQPxPcTXnCx4t1fquOY7cRGqIAWTDHuQ9AdUw94EY1" \
@@ -939,10 +927,14 @@ _test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
    "SJDkS1nhiHOR/7FpIhae8fggAD+StXR7725vzcwIOX21ozRcE2iWw6OP99vDoqLQ8VYzYS0/"  \
    "f3WMME6b5ndYz25uC0AiULXYI="
 
-   _mongocrypt_buffer_copy_from_hex (&S_KeyId,
-                                     "12345678123498761234123456789012");
-   _mongocrypt_buffer_copy_from_hex (&K_KeyId,
-                                     "ABCDEFAB123498761234123456789012");
+/* Test decrypting FLE2IndexedRangeEncryptedValue */
+static void
+_test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
+{
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
 
    /* Test success with an FLE2IndexedEqualityEncryptedValue payload. */
    {
@@ -1007,11 +999,118 @@ _test_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
       mongocrypt_ctx_destroy (ctx);
       mongocrypt_destroy (crypt);
    }
+}
 
-   _mongocrypt_buffer_cleanup (&K_KeyId);
-   _mongocrypt_buffer_cleanup (&S_KeyId);
+// Test explicitly decrypting an FLE2IndexedRangeEncryptedValue.
+static void
+_test_explicit_decrypt_fle2_irev (_mongocrypt_tester_t *tester)
+{
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
+
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *out;
+   bson_t out_bson;
+
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (
+                 ctx,
+                 TEST_BSON ("{'v': {'$binary':{'base64':'" TEST_IREV_BASE64
+                            "','subType':'6'}}}")),
+              ctx);
+   /* The first transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests S_Key.
+    */
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      mongocrypt_binary_t *filter = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle2-decrypt-ieev/first-filter.json"), filter);
+      mongocrypt_binary_destroy (filter);
+   }
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx,
+                 TEST_FILE ("./test/data/keys/"
+                            "12345678123498761234123456789012-local-"
+                            "document.json")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   /* The second transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests K_Key.
+    */
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      mongocrypt_binary_t *filter = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_mongo_op (ctx, filter), ctx);
+      ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
+         TEST_FILE ("./test/data/fle2-decrypt-ieev/second-filter.json"),
+         filter);
+      mongocrypt_binary_destroy (filter);
+   }
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx,
+                 TEST_FILE ("./test/data/keys/"
+                            "ABCDEFAB123498761234123456789012-local-"
+                            "document.json")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   out = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+   ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+   _assert_match_bson (&out_bson, TMP_BSON ("{'v': 123456}"));
+   mongocrypt_binary_destroy (out);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
 
 #undef TEST_IREV_BASE64
+
+// Test explicitly decrypting an FLE2InsertUpdatePayload with edges.
+static void
+_test_explicit_decrypt_fle2_iup_with_edges (_mongocrypt_tester_t *tester)
+{
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
+
+   /* Test success with an FLE2IndexedEqualityEncryptedValue payload. */
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx;
+   mongocrypt_binary_t *out;
+   bson_t out_bson;
+
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (
+                 ctx,
+                 TEST_FILE ("./test/data/fle2-insert-range-explicit/int32/"
+                            "encrypted-payload.json")),
+              ctx);
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (
+                 ctx,
+                 TEST_FILE ("./test/data/keys/"
+                            "ABCDEFAB123498761234123456789012-local-"
+                            "document.json")),
+              ctx);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   out = mongocrypt_binary_new ();
+   ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+   ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+   _assert_match_bson (&out_bson, TMP_BSON ("{'v': 123456}"));
+   mongocrypt_binary_destroy (out);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
 }
 
 void
@@ -1030,4 +1129,6 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_decrypt_fle2_iup);
    INSTALL_TEST (_test_decrypt_wrong_binary_subtype);
    INSTALL_TEST (_test_decrypt_fle2_irev);
+   INSTALL_TEST (_test_explicit_decrypt_fle2_irev);
+   INSTALL_TEST (_test_explicit_decrypt_fle2_iup_with_edges);
 }

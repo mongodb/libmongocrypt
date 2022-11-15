@@ -24,6 +24,8 @@
 #include "mongocrypt-key-private.h"
 #include "mongocrypt-endpoint-private.h"
 #include "mc-efc-private.h"
+#include "mc-optional-private.h"
+#include "mc-rangeopts-private.h"
 
 typedef enum {
    _MONGOCRYPT_TYPE_NONE,
@@ -36,10 +38,20 @@ typedef enum {
 
 typedef enum {
    MONGOCRYPT_INDEX_TYPE_NONE = 1,
-   MONGOCRYPT_INDEX_TYPE_EQUALITY = 2
+   MONGOCRYPT_INDEX_TYPE_EQUALITY = 2,
+   MONGOCRYPT_INDEX_TYPE_RANGE = 3
 } mongocrypt_index_type_t;
 
-typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1 } mongocrypt_query_type_t;
+const char *
+_mongocrypt_index_type_to_string (mongocrypt_index_type_t val);
+
+typedef enum {
+   MONGOCRYPT_QUERY_TYPE_EQUALITY = 1,
+   MONGOCRYPT_QUERY_TYPE_RANGE = 2
+} mongocrypt_query_type_t;
+
+const char *
+_mongocrypt_query_type_to_string (mongocrypt_query_type_t val);
 
 /* Option values are validated when set.
  * Different contexts accept/require different options,
@@ -64,6 +76,10 @@ typedef struct __mongocrypt_ctx_opts_t {
       mongocrypt_query_type_t value;
       bool set;
    } query_type;
+   struct {
+      mc_RangeOpts_t value;
+      bool set;
+   } rangeopts;
 } _mongocrypt_ctx_opts_t;
 
 
@@ -231,6 +247,7 @@ typedef struct {
    _mongocrypt_ctx_opt_spec_t key_alt_names;
    _mongocrypt_ctx_opt_spec_t key_material;
    _mongocrypt_ctx_opt_spec_t algorithm;
+   _mongocrypt_ctx_opt_spec_t rangeopts;
 } _mongocrypt_ctx_opts_spec_t;
 
 /* Common initialization. */
