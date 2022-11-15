@@ -70,7 +70,8 @@ Docker and a Windows machine.
 
      $ python3 -m twine upload dist/*
 
-#. Create a new PR to update version to a ``.dev0`` version.
+#. Create a new PR against the same ticket to update version to a ``.dev0``
+   version.
 
 
 Manually Creating Wheels
