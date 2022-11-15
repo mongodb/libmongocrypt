@@ -680,10 +680,18 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
    }
 
    else if (value_type == BSON_TYPE_DOUBLE) {
-      return mc_getEdgesDouble (
-         (mc_getEdgesDouble_args_t){.value = bson_iter_double (&insertSpec->v),
-                                    .sparsity = sparsity},
-         status);
+      mc_getEdgesDouble_args_t args = {
+         .value = bson_iter_double (&insertSpec->v), .sparsity = sparsity};
+      if (insertSpec->precision.set) {
+         // If precision is set, pass min/max/precision to mc_getEdgesDouble.
+         // Do not pass min/max if precision is not set. All three must be set
+         // or all three must be unset in mc_getTypeInfoDouble.
+         args.min = OPT_DOUBLE (bson_iter_double (&insertSpec->min));
+         args.max = OPT_DOUBLE (bson_iter_double (&insertSpec->max));
+         args.precision = insertSpec->precision;
+      }
+
+      return mc_getEdgesDouble (args, status);
    }
 
 
