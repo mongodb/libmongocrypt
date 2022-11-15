@@ -1,0 +1,11 @@
+{
+    "insert": "test",
+    "documents": [
+        {
+            "plainText": "sample",
+            "encrypted": {
+                "$numberDouble": "123.456"
+            }
+        }
+    ]
+}

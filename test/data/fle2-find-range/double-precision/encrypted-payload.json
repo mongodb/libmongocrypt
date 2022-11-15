@@ -1,0 +1,45 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$binary": {
+                "base64": "CnEDAAADcGF5bG9hZABBAwAABGcABQMAAAMwAH0AAAAFZAAgAAAAAKfR876j77BmHaWxFf7Px/B695Rn7JAN3upnEpaEqFT+BXMAIAAAAACXqoD16/Q8tNDRR7gP222DxV0SBOSZ4bqsxYILo8a/0wVjACAAAAAAFAp92kX7YI+mD8PNYqm41Kd3P11+jOfwGIyrjlrQBE0AAzEAfQAAAAVkACAAAAAAlpFiajzOojYERTN1LCni1VGk+ZVax/J2Rg3dQeHpMy4FcwAgAAAAAB4PqYOdB4uVsL2LSxWATz5EfrL573g4lDS0nQ+9uVVKBWMAIAAAAAApSFhK3ie+9R9s2A8nYTv1JyJVnRnNvOhnacqvh7A0uwADMgB9AAAABWQAIAAAAAAGWed/HKDT8MkY4RMK+T/F8N9qFjiRfkfp3whoMtqjtwVzACAAAAAAjjy5yZSsBjTwwUXkSpx37XqtMBW93s4a3OwVV7PEVB8FYwAgAAAAAMwiApD2QJH04g9DFLdeeXSD4CyeP3tKhUzNhUdFNutWAAMzAH0AAAAFZAAgAAAAAFH9l9GGA1I52atJV5jNUf1lx8jBjoEoVoME97v5GFJiBXMAIAAAAAC1qH3Kd78Dr9NGbw7y9D/XYBwv5h1LLO8la5OU7g8UkQVjACAAAAAAn27H0Mpwatgc1R/4nXSRjsG2PzB0ol5YR9f3mCb2y/0AAzQAfQAAAAVkACAAAAAAO1tUQja12SujAQx2RpwPbDRjdPc5+Ls8foeYDqw/Rz8FcwAgAAAAAO4FJE6dkcD42BQ8fx3QudYWIOwzZtjxvOMLX56VKwjKBWMAIAAAAAAyKccS7jCRt46l1ltdD3irmjmkgS5updQOtNFg4aYkLQADNQB9AAAABWQAIAAAAAAId1qXjFZYpDxWI/YS4/n5iKlbeqJgkhe+Vt0zxMclqQVzACAAAAAALEJEZsKnlY9oBhNN6K2+j7ayMw7enQ1N4YEkIvBNsCoFYwAgAAAAAL5WaPEI93gHcc2cTebByocYvmvTaY+3GQufqROqqzmsAAAFZQAgAAAAAOuac/eRLYakKX6B0vZ1r3QodOQFfjqJD+xlGiPu4/PsEmNtAAAAAAAAAAAAABBwYXlsb2FkSWQA0gQAABBmaXJzdE9wZXJhdG9yAAEAAAAA",
+                "subType": "6"
+            }
+        }
+    },
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+            "db.test": {
+                "escCollection": "fle2.test.esc",
+                "eccCollection": "fle2.test.ecc",
+                "ecocCollection": "fle2.test.ecoc",
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "encrypted",
+                        "bsonType": "double",
+                        "queries": {
+                            "queryType": "range",
+                            "contention": {
+                                "$numberInt": "0"
+                            },
+                            "sparsity": {
+                                "$numberInt": "1"
+                            },
+                            "min": 0.0,
+                            "max": 200.0,
+                            "precision": 2
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
