@@ -31,6 +31,9 @@ PyMongoCrypt ships wheels for macOS, Windows, and manylinux2010 that include
 an embedded libmongocrypt build. Releasing a new version requires macOS with
 Docker and a Windows machine.
 
+#. Create a ticket for the release and create a PR.  The PR needs to include
+   the next steps including the version change because the branch is protected
+   from directly pushing commits.
 #. Edit the release.sh script to embed the most recent libmongocrypt tag into
    our wheels, for example::
 
@@ -39,16 +42,14 @@ Docker and a Windows machine.
      +REVISION=$(git rev-list -n 1 1.0.1)
 
 #. Add a changlog entry for this release in CHANGELOG.rst.
-#. Bump "__version__" in pymongocrypt/version.py. Commit the change and tag
-   the release. Immediately bump the "__version__" to "dev0" in a new commit::
+#. Bump "__version__" in ``pymongocrypt/version.py``.
+#. After merging the PR, clone the repository and check out the commit
+   with the version change.
 
-     $ # Bump to release version number
-     $ git commit -a -m "pymongocrypt <release version number>"
-     $ git tag -a "pymongocrypt <release version number>"
-     $ # Bump to dev version number
-     $ git commit -a -m "BUMP pymongocrypt <release version number>"
-     $ git push
-     $ git push --tags
+#. Create and push tag::
+
+   $ git tag -a "pymongocrypt-<version>" -m "pymongocrypt-<version"
+   $ git push --tags
 
 #. Pushing a tag will trigger a release process in Evergreen which builds
    wheels for manylinux, macOS, and Windows. Wait for the "release-python-combine"
@@ -68,6 +69,9 @@ Docker and a Windows machine.
 #. Upload all the release packages to PyPI with twine::
 
      $ python3 -m twine upload dist/*
+
+#. Create a new PR to update version to a ``.dev0`` version.
+
 
 Manually Creating Wheels
 ------------------------
