@@ -1139,15 +1139,15 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
          .upperBound = bson_iter_double (&upperBound),
          .includeUpperBound = includeUpperBound,
          .sparsity = sparsity};
-      if (findSpec->edgesInfo.precision.set) {
+      if (findSpec->edgesInfo.value.precision.set) {
          // If precision is set, pass min/max/precision to mc_getMincoverDouble.
          // Do not pass min/max if precision is not set. All three must be set
          // or all three must be unset in mc_getTypeInfoDouble.
          args.min =
-            OPT_DOUBLE (bson_iter_double (&findSpec->edgesInfo.indexMin));
+            OPT_DOUBLE (bson_iter_double (&findSpec->edgesInfo.value.indexMin));
          args.max =
-            OPT_DOUBLE (bson_iter_double (&findSpec->edgesInfo.indexMax));
-         args.precision = findSpec->edgesInfo.precision;
+            OPT_DOUBLE (bson_iter_double (&findSpec->edgesInfo.value.indexMax));
+         args.precision = findSpec->edgesInfo.value.precision;
       }
       return mc_getMincoverDouble (args, status);
    }

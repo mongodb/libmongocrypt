@@ -2293,30 +2293,33 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
             mc_FLE2RangeFindSpec_parse (&spec, &placeholder.v_iter, status),
             status);
 
-         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.lowerBound));
-         ASSERT_CMPDOUBLE (
-            bson_iter_double (&spec.edgesInfo.lowerBound), ==, 0.0);
-         ASSERT (spec.edgesInfo.lbIncluded);
+         ASSERT (spec.edgesInfo.set);
 
-         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.upperBound));
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.lowerBound));
          ASSERT_CMPDOUBLE (
-            bson_iter_double (&spec.edgesInfo.upperBound), ==, 200.0);
-         ASSERT (spec.edgesInfo.ubIncluded);
+            bson_iter_double (&spec.edgesInfo.value.lowerBound), ==, 0.0);
+         ASSERT (spec.edgesInfo.value.lbIncluded);
 
-         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.indexMin));
-         ASSERT_CMPDOUBLE (bson_iter_double (&spec.edgesInfo.indexMin), ==, 0);
-         ASSERT (spec.edgesInfo.ubIncluded);
-
-         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.indexMax));
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.upperBound));
          ASSERT_CMPDOUBLE (
-            bson_iter_double (&spec.edgesInfo.indexMax), ==, 200.0);
-         ASSERT (spec.edgesInfo.ubIncluded);
+            bson_iter_double (&spec.edgesInfo.value.upperBound), ==, 200.0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.indexMin));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.value.indexMin), ==, 0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.indexMax));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.value.indexMax), ==, 200.0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
 
          ASSERT_CMPDOUBLE (spec.payloadId, ==, 1234);
 
          ASSERT_CMPINT (spec.firstOperator, ==, FLE2RangeOperator_kGt);
-         ASSERT (spec.edgesInfo.precision.set);
-         ASSERT_CMPUINT32 (spec.edgesInfo.precision.value, ==, 2);
+         ASSERT (spec.edgesInfo.value.precision.set);
+         ASSERT_CMPUINT32 (spec.edgesInfo.value.precision.value, ==, 2);
       }
 
       mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
