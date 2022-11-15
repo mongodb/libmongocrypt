@@ -2243,6 +2243,150 @@ _test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_cleanup (&buf);
       mongocrypt_status_destroy (status);
    }
+
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND with precision.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "030b0100001074000200000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "037600ac000000036564676573496e666f007a000000016c6f776572426f756e64000"
+         "000000000000000086c62496e636c756465640001017570706572426f756e64000000"
+         "000000006940087562496e636c75646564000110707265636973696f6e00020000000"
+         "1696e6465784d696e00000000000000000001696e6465784d61780000000000000069"
+         "4000107061796c6f6164496400d20400001066697273744f70657261746f720001000"
+         "0000012636d000000000000000000127300010000000000000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeFindSpec.
+      {
+         mc_FLE2RangeFindSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeFindSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.lowerBound));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.lowerBound), ==, 0.0);
+         ASSERT (spec.edgesInfo.lbIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.upperBound));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.upperBound), ==, 200.0);
+         ASSERT (spec.edgesInfo.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.indexMin));
+         ASSERT_CMPDOUBLE (bson_iter_double (&spec.edgesInfo.indexMin), ==, 0);
+         ASSERT (spec.edgesInfo.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.indexMax));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.indexMax), ==, 200.0);
+         ASSERT (spec.edgesInfo.ubIncluded);
+
+         ASSERT_CMPDOUBLE (spec.payloadId, ==, 1234);
+
+         ASSERT_CMPINT (spec.firstOperator, ==, FLE2RangeOperator_kGt);
+         ASSERT (spec.edgesInfo.precision.set);
+         ASSERT_CMPUINT32 (spec.edgesInfo.precision.value, ==, 2);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
+
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT with precision.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "03980000001074000100000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "0376003900000001760077be9f1a2fdd5e40016d696e000000000000000000016d617"
+         "800000000000000694010707265636973696f6e00020000000012636d000000000000"
+         "000000127300010000000000000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeInsertSpec.
+      {
+         mc_FLE2RangeInsertSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeInsertSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.v));
+         ASSERT_CMPDOUBLE (bson_iter_double (&spec.v), ==, 123.456);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.min));
+         ASSERT_CMPDOUBLE (bson_iter_double (&spec.min), ==, 0.0);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.max));
+         ASSERT_CMPDOUBLE (bson_iter_double (&spec.max), ==, 200.0);
+
+         ASSERT (spec.precision.set);
+         ASSERT_CMPUINT32 (spec.precision.value, ==, 2);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
 }
 
 

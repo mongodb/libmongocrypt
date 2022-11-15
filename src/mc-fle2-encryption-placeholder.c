@@ -221,7 +221,8 @@ mc_FLE2RangeFindSpecEdgesInfo_parse (mc_FLE2RangeFindSpecEdgesInfo_t *out,
 {
    bson_iter_t iter;
    bool has_lowerBound = false, has_lbIncluded = false, has_upperBound = false,
-        has_ubIncluded = false, has_indexMin = false, has_indexMax = false;
+        has_ubIncluded = false, has_indexMin = false, has_indexMax = false,
+        has_precision = false;
 
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (in);
@@ -284,6 +285,23 @@ mc_FLE2RangeFindSpecEdgesInfo_parse (mc_FLE2RangeFindSpecEdgesInfo_t *out,
          out->indexMax = iter;
       }
       END_IF_FIELD
+
+      IF_FIELD (precision)
+      {
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must "
+                        "be an int32");
+            goto fail;
+         }
+         int32_t val = bson_iter_int32 (&iter);
+         if (val < 0) {
+            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must "
+                        "non-negative");
+            goto fail;
+         }
+         out->precision = OPT_U32 ((uint32_t) val);
+      }
+      END_IF_FIELD
    }
 
    CHECK_HAS (lowerBound)
@@ -292,6 +310,8 @@ mc_FLE2RangeFindSpecEdgesInfo_parse (mc_FLE2RangeFindSpecEdgesInfo_t *out,
    CHECK_HAS (ubIncluded)
    CHECK_HAS (indexMin)
    CHECK_HAS (indexMax)
+   // Do not error if precision is not present. Precision optional and only
+   // applies to double/decimal128.
    return true;
 
 fail:
@@ -383,7 +403,7 @@ mc_FLE2RangeInsertSpec_parse (mc_FLE2RangeInsertSpec_t *out,
    BSON_ASSERT_PARAM (in);
 
    bson_iter_t iter = *in;
-   bool has_v = false, has_min = false, has_max = false;
+   bool has_v = false, has_min = false, has_max = false, has_precision = false;
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       CLIENT_ERR (
@@ -413,11 +433,30 @@ mc_FLE2RangeInsertSpec_parse (mc_FLE2RangeInsertSpec_t *out,
          out->max = iter;
       }
       END_IF_FIELD
+
+      IF_FIELD (precision)
+      {
+         if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must "
+                        "be an int32");
+            goto fail;
+         }
+         int32_t val = bson_iter_int32 (&iter);
+         if (val < 0) {
+            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must "
+                        "non-negative");
+            goto fail;
+         }
+         out->precision = OPT_U32 ((uint32_t) val);
+      }
+      END_IF_FIELD
    }
 
    CHECK_HAS (v)
    CHECK_HAS (min)
    CHECK_HAS (max)
+   // Do not error if precision is not present. Precision optional and only
+   // applies to double/decimal128.
    return true;
 
 fail:
