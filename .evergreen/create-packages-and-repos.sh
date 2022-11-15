@@ -5,13 +5,6 @@
 # Generate an error if these are unset:
 : "$PACKAGER_DISTRO" "$PACKAGER_ARCH"
 
-
-if [ "$OS" = "Windows_NT" ]; then
-  CMAKE="/cygdrive/c/cmake/bin/cmake"
-else
-  IGNORE_SYSTEM_CMAKE=1 . "$LIBMONGOCRYPT_DIR/.evergreen/find-cmake.sh"
-fi
-
 if ! "${HAS_PACKAGES:-false}"; then
   echo "'HAS_PACKAGES' is not 'true': Skipping package build"
   exit 0

@@ -1011,35 +1011,36 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
                                         mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (findSpec);
+   BSON_ASSERT (findSpec->edgesInfo.set);
 
-   bson_type_t bsonType = bson_iter_type (&findSpec->edgesInfo.indexMin);
+   bson_type_t bsonType = bson_iter_type (&findSpec->edgesInfo.value.indexMin);
 
-   if (bson_iter_type (&findSpec->edgesInfo.indexMin) !=
-       bson_iter_type (&findSpec->edgesInfo.indexMax)) {
+   if (bson_iter_type (&findSpec->edgesInfo.value.indexMin) !=
+       bson_iter_type (&findSpec->edgesInfo.value.indexMax)) {
       CLIENT_ERR (
          "indexMin and indexMax must have the same type. Got: %s indexMin and "
          "%s indexMax",
          mc_bson_type_to_string (
-            bson_iter_type (&findSpec->edgesInfo.indexMin)),
+            bson_iter_type (&findSpec->edgesInfo.value.indexMin)),
          mc_bson_type_to_string (
-            bson_iter_type (&findSpec->edgesInfo.indexMax)));
+            bson_iter_type (&findSpec->edgesInfo.value.indexMax)));
       return NULL;
    }
 
-   bson_iter_t lowerBound = findSpec->edgesInfo.lowerBound;
-   bson_iter_t upperBound = findSpec->edgesInfo.upperBound;
-   bool includeLowerBound = findSpec->edgesInfo.lbIncluded;
-   bool includeUpperBound = findSpec->edgesInfo.ubIncluded;
+   bson_iter_t lowerBound = findSpec->edgesInfo.value.lowerBound;
+   bson_iter_t upperBound = findSpec->edgesInfo.value.upperBound;
+   bool includeLowerBound = findSpec->edgesInfo.value.lbIncluded;
+   bool includeUpperBound = findSpec->edgesInfo.value.ubIncluded;
 
    // Open-ended ranges are represented with infinity as the other endpoint.
    // Resolve infinite bounds at this point to end at the min or max for this
    // index.
    if (isInfinite (&lowerBound)) {
-      lowerBound = findSpec->edgesInfo.indexMin;
+      lowerBound = findSpec->edgesInfo.value.indexMin;
       includeLowerBound = true;
    }
    if (isInfinite (&upperBound)) {
-      upperBound = findSpec->edgesInfo.indexMax;
+      upperBound = findSpec->edgesInfo.value.indexMax;
       includeUpperBound = true;
    }
 
@@ -1061,9 +1062,9 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
    case BSON_TYPE_INT32:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT32);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT32);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMin) ==
                    BSON_TYPE_INT32);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMax) ==
                    BSON_TYPE_INT32);
       return mc_getMincoverInt32 (
          (mc_getMincoverInt32_args_t){
@@ -1071,17 +1072,19 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
             .includeLowerBound = includeLowerBound,
             .upperBound = bson_iter_int32 (&upperBound),
             .includeUpperBound = includeUpperBound,
-            .min = OPT_I32 (bson_iter_int32 (&findSpec->edgesInfo.indexMin)),
-            .max = OPT_I32 (bson_iter_int32 (&findSpec->edgesInfo.indexMax)),
+            .min =
+               OPT_I32 (bson_iter_int32 (&findSpec->edgesInfo.value.indexMin)),
+            .max =
+               OPT_I32 (bson_iter_int32 (&findSpec->edgesInfo.value.indexMax)),
             .sparsity = sparsity},
          status);
 
    case BSON_TYPE_INT64:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_INT64);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_INT64);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMin) ==
                    BSON_TYPE_INT64);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMax) ==
                    BSON_TYPE_INT64);
       return mc_getMincoverInt64 (
          (mc_getMincoverInt64_args_t){
@@ -1089,16 +1092,18 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
             .includeLowerBound = includeLowerBound,
             .upperBound = bson_iter_int64 (&upperBound),
             .includeUpperBound = includeUpperBound,
-            .min = OPT_I64 (bson_iter_int64 (&findSpec->edgesInfo.indexMin)),
-            .max = OPT_I64 (bson_iter_int64 (&findSpec->edgesInfo.indexMax)),
+            .min =
+               OPT_I64 (bson_iter_int64 (&findSpec->edgesInfo.value.indexMin)),
+            .max =
+               OPT_I64 (bson_iter_int64 (&findSpec->edgesInfo.value.indexMax)),
             .sparsity = sparsity},
          status);
    case BSON_TYPE_DATE_TIME:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DATE_TIME);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DATE_TIME);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMin) ==
                    BSON_TYPE_DATE_TIME);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMax) ==
                    BSON_TYPE_DATE_TIME);
       return mc_getMincoverInt64 (
          (mc_getMincoverInt64_args_t){
@@ -1106,18 +1111,18 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
             .includeLowerBound = includeLowerBound,
             .upperBound = bson_iter_date_time (&upperBound),
             .includeUpperBound = includeUpperBound,
-            .min =
-               OPT_I64 (bson_iter_date_time (&findSpec->edgesInfo.indexMin)),
-            .max =
-               OPT_I64 (bson_iter_date_time (&findSpec->edgesInfo.indexMax)),
+            .min = OPT_I64 (
+               bson_iter_date_time (&findSpec->edgesInfo.value.indexMin)),
+            .max = OPT_I64 (
+               bson_iter_date_time (&findSpec->edgesInfo.value.indexMax)),
             .sparsity = sparsity},
          status);
    case BSON_TYPE_DOUBLE:
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DOUBLE);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DOUBLE);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMin) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMin) ==
                    BSON_TYPE_DOUBLE);
-      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.indexMax) ==
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMax) ==
                    BSON_TYPE_DOUBLE);
       return mc_getMincoverDouble (
          (mc_getMincoverDouble_args_t){
@@ -1187,78 +1192,84 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
       goto fail;
    }
 
-   // cm := Queryable Encryption max counter
-   payload.payload.maxContentionCounter = placeholder->maxContentionCounter;
+   if (findSpec.edgesInfo.set) {
+      // cm := Queryable Encryption max counter
+      payload.payload.value.maxContentionCounter =
+         placeholder->maxContentionCounter;
 
-   // e := ServerDataEncryptionLevel1Token
-   {
-      if (!_get_tokenKey (kb, &placeholder->index_key_id, &tokenKey, status)) {
-         goto fail;
-      }
-
-      mc_ServerDataEncryptionLevel1Token_t *serverToken =
-         mc_ServerDataEncryptionLevel1Token_new (crypto, &tokenKey, status);
-      if (!serverToken) {
-         goto fail;
-      }
-      _mongocrypt_buffer_copy_to (
-         mc_ServerDataEncryptionLevel1Token_get (serverToken),
-         &payload.payload.serverEncryptionToken);
-      mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
-   }
-
-   // g:= array<EdgeFindTokenSet>
-   {
-      mincover = mc_get_mincover_from_FLE2RangeFindSpec (
-         &findSpec, (size_t) placeholder->sparsity, status);
-      if (!mincover) {
-         goto fail;
-      }
-
-      for (size_t i = 0; i < mc_mincover_len (mincover); i++) {
-         // Create a EdgeFindTokenSet from each edge.
-         bool loop_ok = false;
-         const char *edge = mc_mincover_get (mincover, i);
-         _mongocrypt_buffer_t edge_buf = {0};
-         _FLE2EncryptedPayloadCommon_t edge_tokens = {{0}};
-         mc_EdgeFindTokenSet_t eftc = {{0}};
-
-         if (!_mongocrypt_buffer_from_string (&edge_buf, edge)) {
-            CLIENT_ERR ("failed to copy edge to buffer");
-            goto fail_loop;
-         }
-
-         if (!_mongocrypt_fle2_placeholder_common (
-                kb,
-                &edge_tokens,
-                &placeholder->index_key_id,
-                &edge_buf,
-                false, /* derive tokens using counter */
-                placeholder->maxContentionCounter,
-                status)) {
-            goto fail_loop;
-         }
-
-         // d := EDCDerivedToken
-         _mongocrypt_buffer_steal (&eftc.edcDerivedToken,
-                                   &edge_tokens.edcDerivedToken);
-         // s := ESCDerivedToken
-         _mongocrypt_buffer_steal (&eftc.escDerivedToken,
-                                   &edge_tokens.escDerivedToken);
-         // c := ECCDerivedToken
-         _mongocrypt_buffer_steal (&eftc.eccDerivedToken,
-                                   &edge_tokens.eccDerivedToken);
-
-         _mc_array_append_val (&payload.payload.edgeFindTokenSetArray, eftc);
-
-         loop_ok = true;
-      fail_loop:
-         _FLE2EncryptedPayloadCommon_cleanup (&edge_tokens);
-         _mongocrypt_buffer_cleanup (&edge_buf);
-         if (!loop_ok) {
+      // e := ServerDataEncryptionLevel1Token
+      {
+         if (!_get_tokenKey (
+                kb, &placeholder->index_key_id, &tokenKey, status)) {
             goto fail;
          }
+
+         mc_ServerDataEncryptionLevel1Token_t *serverToken =
+            mc_ServerDataEncryptionLevel1Token_new (crypto, &tokenKey, status);
+         if (!serverToken) {
+            goto fail;
+         }
+         _mongocrypt_buffer_copy_to (
+            mc_ServerDataEncryptionLevel1Token_get (serverToken),
+            &payload.payload.value.serverEncryptionToken);
+         mc_ServerDataEncryptionLevel1Token_destroy (serverToken);
       }
+
+      // g:= array<EdgeFindTokenSet>
+      {
+         mincover = mc_get_mincover_from_FLE2RangeFindSpec (
+            &findSpec, (size_t) placeholder->sparsity, status);
+         if (!mincover) {
+            goto fail;
+         }
+
+         for (size_t i = 0; i < mc_mincover_len (mincover); i++) {
+            // Create a EdgeFindTokenSet from each edge.
+            bool loop_ok = false;
+            const char *edge = mc_mincover_get (mincover, i);
+            _mongocrypt_buffer_t edge_buf = {0};
+            _FLE2EncryptedPayloadCommon_t edge_tokens = {{0}};
+            mc_EdgeFindTokenSet_t eftc = {{0}};
+
+            if (!_mongocrypt_buffer_from_string (&edge_buf, edge)) {
+               CLIENT_ERR ("failed to copy edge to buffer");
+               goto fail_loop;
+            }
+
+            if (!_mongocrypt_fle2_placeholder_common (
+                   kb,
+                   &edge_tokens,
+                   &placeholder->index_key_id,
+                   &edge_buf,
+                   false, /* derive tokens using counter */
+                   placeholder->maxContentionCounter,
+                   status)) {
+               goto fail_loop;
+            }
+
+            // d := EDCDerivedToken
+            _mongocrypt_buffer_steal (&eftc.edcDerivedToken,
+                                      &edge_tokens.edcDerivedToken);
+            // s := ESCDerivedToken
+            _mongocrypt_buffer_steal (&eftc.escDerivedToken,
+                                      &edge_tokens.escDerivedToken);
+            // c := ECCDerivedToken
+            _mongocrypt_buffer_steal (&eftc.eccDerivedToken,
+                                      &edge_tokens.eccDerivedToken);
+
+            _mc_array_append_val (&payload.payload.value.edgeFindTokenSetArray,
+                                  eftc);
+
+            loop_ok = true;
+         fail_loop:
+            _FLE2EncryptedPayloadCommon_cleanup (&edge_tokens);
+            _mongocrypt_buffer_cleanup (&edge_buf);
+            if (!loop_ok) {
+               goto fail;
+            }
+         }
+      }
+      payload.payload.set = true;
    }
 
    payload.payloadId = findSpec.payloadId;

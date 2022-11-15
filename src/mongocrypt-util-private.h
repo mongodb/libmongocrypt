@@ -17,6 +17,8 @@
 #ifndef MONGOCRYPT_UTIL_PRIVATE_H
 #define MONGOCRYPT_UTIL_PRIVATE_H
 
+#include "mongocrypt-status-private.h"
+
 #include "mlib/str.h"
 
 #include <bson/bson.h>
@@ -55,10 +57,17 @@ typedef struct current_module_result {
  * mtsr_free()
  */
 current_module_result
-current_module_path ();
+current_module_path (void);
 
 /* mc_bson_type_to_string returns the string representation of a BSON type. */
 const char *
 mc_bson_type_to_string (bson_type_t bson_type);
+
+/* mc_iter_document_as_bson attempts to read the document from @iter into
+ * @bson. */
+bool
+mc_iter_document_as_bson (const bson_iter_t *iter,
+                          bson_t *bson,
+                          mongocrypt_status_t *status);
 
 #endif /* MONGOCRYPT_UTIL_PRIVATE_H */

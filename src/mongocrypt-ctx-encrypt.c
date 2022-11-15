@@ -20,7 +20,9 @@
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-traverse-util-private.h"
+#include "mc-fle2-rfds-private.h"
 #include "mc-tokens-private.h"
+#include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 
 /* _fle2_append_encryptedFieldConfig copies encryptedFieldConfig and applies
  * default state collection names for escCollection, eccCollection, and
@@ -258,10 +260,9 @@ _fle2_insert_encryptionInformation (const char *cmd_name,
 
    {
       bson_t tmp;
-      const uint8_t *data;
-      uint32_t len;
-      bson_iter_document (&iter, &len, &data);
-      bson_init_static (&tmp, data, (size_t) len);
+      if (!mc_iter_document_as_bson (&iter, &tmp, status)) {
+         goto fail;
+      }
       bson_copy_to (&tmp, &explain);
    }
 
@@ -944,10 +945,9 @@ _add_dollar_db (const char *cmd_name,
 
    {
       bson_t tmp;
-      const uint8_t *data;
-      uint32_t len;
-      bson_iter_document (&iter, &len, &data);
-      bson_init_static (&tmp, data, (size_t) len);
+      if (!mc_iter_document_as_bson (&iter, &tmp, status)) {
+         goto fail;
+      }
       bson_copy_to (&tmp, &explain);
    }
 
@@ -1418,7 +1418,6 @@ _fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
 
    mc_EncryptedField_t *ptr;
    for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
-
       /* Append ECOC token. */
       _mongocrypt_buffer_t key = {0};
       _mongocrypt_buffer_t tokenkey = {0};
@@ -1514,10 +1513,9 @@ _fle2_strip_encryptionInformation (const char *cmd_name,
 
    {
       bson_t tmp;
-      const uint8_t *data;
-      uint32_t len;
-      bson_iter_document (&iter, &len, &data);
-      bson_init_static (&tmp, data, (size_t) len);
+      if (!mc_iter_document_as_bson (&iter, &tmp, status)) {
+         goto fail;
+      }
       bson_init (&explain);
       bson_copy_to_excluding_noinit (
          &tmp, &explain, "encryptionInformation", NULL);
@@ -1674,6 +1672,121 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 }
 
 static bool
+FLE2RangeFindDriverSpec_to_ciphertexts (mongocrypt_ctx_t *ctx,
+                                        mongocrypt_binary_t *out)
+{
+   bool ok = false;
+   _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *) ctx;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
+
+   if (!ctx->opts.rangeopts.set) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "Expected RangeOpts to be set for Range Find");
+      goto fail;
+   }
+   if (!ctx->opts.contention_factor.set) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "Expected Contention Factor to be set for Range Find");
+      goto fail;
+   }
+
+   bson_t with_placholders = BSON_INITIALIZER;
+   bson_t with_ciphertexts = BSON_INITIALIZER;
+   bson_t in_bson;
+   if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &in_bson)) {
+      _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert input to BSON");
+      goto fail;
+   }
+
+   bson_t v_doc;
+   // Parse 'v' document from input.
+   {
+      bson_iter_t v_iter;
+      if (!bson_iter_init_find (&v_iter, &in_bson, "v")) {
+         _mongocrypt_ctx_fail_w_msg (ctx,
+                                     "invalid input BSON, must contain 'v'");
+         goto fail;
+      }
+      if (!BSON_ITER_HOLDS_DOCUMENT (&v_iter)) {
+         _mongocrypt_ctx_fail_w_msg (
+            ctx, "invalid input BSON, expected 'v' to be document");
+         goto fail;
+      }
+      if (!mc_iter_document_as_bson (&v_iter, &v_doc, ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto fail;
+      }
+   }
+
+   // Parse FLE2RangeFindDriverSpec.
+   {
+      mc_FLE2RangeFindDriverSpec_t rfds;
+
+      if (!mc_FLE2RangeFindDriverSpec_parse (&rfds, &v_doc, ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto fail;
+      }
+
+      // Convert FLE2RangeFindDriverSpec into a document with placeholders.
+      if (!mc_FLE2RangeFindDriverSpec_to_placeholders (
+             &rfds,
+             &ctx->opts.rangeopts.value,
+             ctx->opts.contention_factor.value,
+             &ctx->opts.key_id,
+             _mongocrypt_buffer_empty (&ctx->opts.index_key_id)
+                ? &ctx->opts.key_id
+                : &ctx->opts.index_key_id,
+             mc_getNextPayloadId (),
+             &with_placholders,
+             ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto fail;
+      }
+   }
+
+   // Convert document with placeholders into document with ciphertexts.
+   {
+      bson_iter_t iter;
+      if (!bson_iter_init (&iter, &with_placholders)) {
+         _mongocrypt_ctx_fail_w_msg (
+            ctx, "unable to iterate into placeholder document");
+         goto fail;
+      }
+      if (!_mongocrypt_transform_binary_in_bson (
+             _replace_marking_with_ciphertext,
+             &ctx->kb,
+             TRAVERSE_MATCH_MARKING,
+             &iter,
+             &with_ciphertexts,
+             ctx->status)) {
+         goto fail;
+      }
+   }
+
+   // Wrap result in the document: { 'v': <result> }.
+   {
+      /* v_wrapped is the BSON document { 'v': <v_out> }. */
+      bson_t v_wrapped = BSON_INITIALIZER;
+      if (!bson_append_document (
+             &v_wrapped, MONGOCRYPT_STR_AND_LEN ("v"), &with_ciphertexts)) {
+         _mongocrypt_ctx_fail_w_msg (ctx, "unable to append document to 'v'");
+         goto fail;
+      }
+      _mongocrypt_buffer_steal_from_bson (&ectx->encrypted_cmd, &v_wrapped);
+      _mongocrypt_buffer_to_binary (&ectx->encrypted_cmd, out);
+      ctx->state = MONGOCRYPT_CTX_DONE;
+   }
+
+   ok = true;
+fail:
+   bson_destroy (&with_ciphertexts);
+   bson_destroy (&with_placholders);
+   return ok;
+}
+
+static bool
 _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
    bool ret = false;
@@ -1685,10 +1798,19 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    BSON_ASSERT (ctx->opts.index_type.set);
 
+   if (ctx->opts.rangeopts.set && ctx->opts.query_type.set) {
+      // RangeOpts with query type is a special case. The result contains two
+      // ciphertext values.
+      return FLE2RangeFindDriverSpec_to_ciphertexts (ctx, out);
+   }
+
+   bson_t new_v = BSON_INITIALIZER;
+
    _mongocrypt_marking_init (&marking);
    marking.type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
    if (ctx->opts.query_type.set) {
       switch (ctx->opts.query_type.value) {
+      case MONGOCRYPT_QUERY_TYPE_RANGE:
       case MONGOCRYPT_QUERY_TYPE_EQUALITY:
          marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND;
          break;
@@ -1708,6 +1830,9 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    case MONGOCRYPT_INDEX_TYPE_NONE:
       marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED;
       break;
+   case MONGOCRYPT_INDEX_TYPE_RANGE:
+      marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE;
+      break;
    default:
       // This might be unreachable because of other validation. Better safe than
       // sorry.
@@ -1716,10 +1841,38 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
       goto fail;
    }
 
-   /* Get iterator to input 'v' BSON value. */
-   {
+   if (ctx->opts.rangeopts.set) {
+      // Process the RangeOpts and the input 'v' document into a new 'v'.
+      // The new 'v' document will be a FLE2RangeFindSpec or
+      // FLE2RangeInsertSpec.
+      bson_t old_v;
+
+      if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &old_v)) {
+         _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert input to BSON");
+         goto fail;
+      }
+
+      // RangeOpts with query_type is handled above.
+      BSON_ASSERT (!ctx->opts.query_type.set);
+      if (!mc_RangeOpts_to_FLE2RangeInsertSpec (
+             &ctx->opts.rangeopts.value, &old_v, &new_v, ctx->status)) {
+         _mongocrypt_ctx_fail (ctx);
+         goto fail;
+      }
+
+
+      if (!bson_iter_init_find (&marking.v_iter, &new_v, "v")) {
+         _mongocrypt_ctx_fail_w_msg (ctx,
+                                     "invalid input BSON, must contain 'v'");
+         goto fail;
+      }
+
+      marking.fle2.sparsity = ctx->opts.rangeopts.value.sparsity;
+
+   } else {
       bson_t as_bson;
 
+      /* Get iterator to input 'v' BSON value. */
       if (!_mongocrypt_buffer_to_bson (&ectx->original_cmd, &as_bson)) {
          _mongocrypt_ctx_fail_w_msg (ctx, "unable to convert input to BSON");
          goto fail;
@@ -1770,6 +1923,7 @@ _fle2_finalize_explicit (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    ret = true;
 fail:
+   bson_destroy (&new_v);
    _mongocrypt_marking_cleanup (&marking);
    return ret;
 }
@@ -2196,6 +2350,7 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
    memset (&opts_spec, 0, sizeof (opts_spec));
    opts_spec.key_descriptor = OPT_REQUIRED;
    opts_spec.algorithm = OPT_OPTIONAL;
+   opts_spec.rangeopts = OPT_OPTIONAL;
 
    if (!_mongocrypt_ctx_init (ctx, &opts_spec)) {
       return false;
@@ -2221,6 +2376,10 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
             return _mongocrypt_ctx_fail_w_msg (
                ctx, "cannot set both key alt name and query type");
          }
+         if (ctx->opts.rangeopts.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both key alt name and range opts");
+         }
       }
       /* algorithm is FLE 1 only. */
       if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
@@ -2235,6 +2394,10 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
          if (ctx->opts.query_type.set) {
             return _mongocrypt_ctx_fail_w_msg (
                ctx, "cannot set both algorithm and query type");
+         }
+         if (ctx->opts.rangeopts.set) {
+            return _mongocrypt_ctx_fail_w_msg (
+               ctx, "cannot set both algorithm and range opts");
          }
       }
    }
@@ -2257,6 +2420,18 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
          ctx, "cannot set query type with no index type");
    }
 
+   if (ctx->opts.rangeopts.set && ctx->opts.index_type.set) {
+      if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "cannot set range opts with no index type");
+      }
+
+      if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "cannot set range opts with equality index type");
+      }
+   }
+
    if (ctx->opts.contention_factor.set &&
        !mc_validate_contention (ctx->opts.contention_factor.value,
                                 ctx->status)) {
@@ -2268,6 +2443,53 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
        !ctx->opts.contention_factor.set) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "contention factor is required for indexed algorithm");
+   }
+
+   if (ctx->opts.index_type.set &&
+       ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE) {
+      if (!ctx->opts.contention_factor.set) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "contention factor is required for range indexed algorithm");
+      }
+
+      if (!ctx->opts.rangeopts.set) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "range opts are required for range indexed algorithm");
+      }
+   }
+
+   if (ctx->opts.rangeopts.set &&
+       !mc_validate_sparsity (ctx->opts.rangeopts.value.sparsity,
+                              ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   // If query type is set, it must match the index type.
+   if (ctx->opts.query_type.set && ctx->opts.index_type.set) {
+      mongocrypt_status_t *const status = ctx->status;
+      bool matches = false;
+
+      switch (ctx->opts.query_type.value) {
+      case MONGOCRYPT_QUERY_TYPE_RANGE:
+         matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE);
+         break;
+      case MONGOCRYPT_QUERY_TYPE_EQUALITY:
+         matches =
+            (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
+         break;
+      default:
+         CLIENT_ERR ("unsupported value for query_type: %d",
+                     ctx->opts.query_type.value);
+         return _mongocrypt_ctx_fail (ctx);
+      }
+
+      if (!matches) {
+         CLIENT_ERR (
+            "query_type (%s) must match index_type (%s)",
+            _mongocrypt_query_type_to_string (ctx->opts.query_type.value),
+            _mongocrypt_index_type_to_string (ctx->opts.index_type.value));
+         return _mongocrypt_ctx_fail (ctx);
+      }
    }
 
    ectx = (_mongocrypt_ctx_encrypt_t *) ctx;

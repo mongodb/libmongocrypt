@@ -68,7 +68,7 @@ print_field_info (bson_t *bson, std::string path)
    for (bson_iter_init (&iter, bson); bson_iter_next (&iter);) {
       auto key = bson_iter_key (&iter);
       auto child_path = path + "/" + key;
-      if (BSON_ITER_HOLDS_ARRAY (&iter) or BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (BSON_ITER_HOLDS_ARRAY (&iter) || BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          bson_t child;
          bson_child (&child, &iter);
          print_field_info (&child, child_path);
@@ -100,7 +100,7 @@ print_field_info (bson_t *bson, std::string path)
 int
 do_main (int argc, const char *const *argv)
 {
-   if (argc < 2 or argc > 3) {
+   if (argc < 2 || argc > 3) {
       print_usage ();
       return 2;
    }

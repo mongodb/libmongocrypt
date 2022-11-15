@@ -96,6 +96,8 @@
    do {                                                                    \
       const char *_str_a = (_expr_a);                                      \
       const char *_str_b = (_expr_b);                                      \
+      ASSERT (_str_a);                                                     \
+      ASSERT (_str_b);                                                     \
       int _ret = strcmp (_str_a, _str_b);                                  \
       if (_ret != 0) {                                                     \
          TEST_ERROR ("strings not equal:\n%s\nvs.\n%s\n", _str_a, _str_b); \
@@ -165,6 +167,21 @@
 #define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "zd", ssize_t)
 #define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "f", double)
 #define ASSERT_CMPPTR(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "p", const void *)
+
+#define ASSERT_EQUAL_BSON(expected, actual)                                   \
+   do {                                                                       \
+      bson_t *_expected_bson = expected, *_actual_bson = actual;              \
+      char *_expected_str, *_actual_str;                                      \
+      _expected_str = bson_as_canonical_extended_json (_expected_bson, NULL); \
+      _actual_str = bson_as_canonical_extended_json (_actual_bson, NULL);     \
+      if (!bson_equal (_expected_bson, _actual_bson)) {                       \
+         TEST_ERROR ("BSON unequal.\nExpected: %s\n     Got: %s",             \
+                     _expected_str,                                           \
+                     _actual_str);                                            \
+      }                                                                       \
+      bson_free (_actual_str);                                                \
+      bson_free (_expected_str);                                              \
+   } while (0)
 
 #define ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expected, actual)                  \
    do {                                                                        \

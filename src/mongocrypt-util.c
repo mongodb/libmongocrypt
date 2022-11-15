@@ -32,6 +32,7 @@
 #endif
 
 #include "mongocrypt-util-private.h"
+#include "mongocrypt-private.h" // CLIENT_ERR
 
 #include "mlib/thread.h"
 
@@ -56,7 +57,7 @@ size_to_uint32 (size_t in, uint32_t *out)
 }
 
 current_module_result
-current_module_path ()
+current_module_path (void)
 {
    mstr ret_str = MSTR_NULL;
    int ret_error = 0;
@@ -148,4 +149,31 @@ mc_bson_type_to_string (bson_type_t t)
    default:
       return "Unknown";
    }
+}
+
+bool
+mc_iter_document_as_bson (const bson_iter_t *iter,
+                          bson_t *bson,
+                          mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (iter);
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT (status || true);
+
+   uint32_t len;
+   const uint8_t *data;
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      CLIENT_ERR ("expected BSON document for field: %s", bson_iter_key (iter));
+      return false;
+   }
+
+   bson_iter_document (iter, &len, &data);
+   if (!bson_init_static (bson, data, len)) {
+      CLIENT_ERR ("unable to initialize BSON document from field: %s",
+                  bson_iter_key (iter));
+      return false;
+   }
+
+   return true;
 }

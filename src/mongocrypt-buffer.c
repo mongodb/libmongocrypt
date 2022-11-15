@@ -213,7 +213,7 @@ bool
 _mongocrypt_buffer_append (const _mongocrypt_buffer_t *buf,
                            bson_t *bson,
                            const char *key,
-                           uint32_t key_len)
+                           int key_len)
 {
    BSON_ASSERT_PARAM (buf);
    BSON_ASSERT_PARAM (bson);
