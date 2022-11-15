@@ -29,6 +29,7 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
       int32_t expectMin;
       int32_t expectMax;
       int64_t expectSparsity;
+      mc_optional_uint32_t expectPrecision;
    } testcase;
 
    testcase tests[] = {
@@ -38,6 +39,15 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
        .expectSparsity = 1,
        .expectMin = 123,
        .expectMax = 456},
+      {.desc = "Errors if precision is set with int min/max",
+       .in = RAW_STRING ({
+          "min" : 123,
+          "max" : 456,
+          "precision" : 2,
+          "sparsity" : {"$numberLong" : "1"}
+       }),
+       .expectError =
+          "expected 'precision' to be set with double or decimal128 index"},
       {.desc = "Errors on missing fields",
        .in = RAW_STRING ({"min" : 123, "max" : 456}),
        .expectError = "Missing field 'sparsity'"},
@@ -49,6 +59,10 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
           "foo" : 1
        }),
        .expectError = "Unrecognized field: 'foo'"},
+      {.desc = "Errors if min/max types mismatch",
+       .in = RAW_STRING (
+          {"min" : 123, "max" : 456.0, "sparsity" : {"$numberLong" : "1"}}),
+       .expectError = "expected 'min' and 'max' to be same type"},
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
@@ -62,6 +76,8 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
          ASSERT_CMPINT32 (test->expectMin, ==, bson_iter_int32 (&ro.min));
          ASSERT_CMPINT32 (test->expectMax, ==, bson_iter_int32 (&ro.max));
          ASSERT_CMPINT64 (test->expectSparsity, ==, ro.sparsity);
+         ASSERT_CMPINT (test->expectPrecision.set, ==, ro.precision.set);
+         ASSERT_CMPINT (test->expectPrecision.value, ==, ro.precision.value);
       } else {
          ASSERT_FAILS_STATUS (ret, status, test->expectError);
       }
@@ -87,6 +103,17 @@ test_mc_RangeOpts_to_FLE2RangeInsertSpec (_mongocrypt_tester_t *tester)
           {"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
        .v = RAW_STRING ({"v" : 789}),
        .expect = RAW_STRING ({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
+      {.desc = "Works with precision",
+       .in = RAW_STRING ({
+          "min" : 123.0,
+          "max" : 456.0,
+          "precision" : 2,
+          "sparsity" : {"$numberLong" : "1"}
+       }),
+       .v = RAW_STRING ({"v" : 789.0}),
+       .expect = RAW_STRING ({
+          "v" : {"v" : 789.0, "min" : 123.0, "max" : 456.0, "precision" : 2}
+       })},
       {.desc = "Errors with missing 'v'",
        .in = RAW_STRING (
           {"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),

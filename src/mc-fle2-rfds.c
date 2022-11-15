@@ -401,6 +401,11 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t args,
       TRY (BSON_APPEND_BOOL (edgesInfo, "ubIncluded", args.ubIncluded));
       TRY (bson_append_iter (edgesInfo, "indexMin", -1, &args.indexMin));
       TRY (bson_append_iter (edgesInfo, "indexMax", -1, &args.indexMax));
+      if (args.precision.set) {
+         BSON_ASSERT (args.precision.value < INT32_MAX);
+         TRY (BSON_APPEND_INT32 (
+            edgesInfo, "precision", (int32_t) args.precision.value));
+      }
       TRY (BSON_APPEND_DOCUMENT (v, "edgesInfo", edgesInfo));
    }
 
@@ -485,6 +490,7 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
       .secondOp = spec->secondOp,
       .indexMin = range_opts->min,
       .indexMax = range_opts->max,
+      .precision = range_opts->precision,
       .maxContentionCounter = maxContentionCounter,
       .sparsity = range_opts->sparsity};
 

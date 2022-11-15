@@ -295,10 +295,12 @@ mc_FLE2RangeFindSpecEdgesInfo_parse (mc_FLE2RangeFindSpecEdgesInfo_t *out,
          }
          int32_t val = bson_iter_int32 (&iter);
          if (val < 0) {
-            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must "
-                        "non-negative");
+            CLIENT_ERR (
+               "invalid FLE2RangeFindSpecEdgesInfo: 'precision' must be"
+               "non-negative");
             goto fail;
          }
+
          out->precision = OPT_U32 ((uint32_t) val);
       }
       END_IF_FIELD
@@ -443,8 +445,9 @@ mc_FLE2RangeInsertSpec_parse (mc_FLE2RangeInsertSpec_t *out,
          }
          int32_t val = bson_iter_int32 (&iter);
          if (val < 0) {
-            CLIENT_ERR ("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must "
-                        "non-negative");
+            CLIENT_ERR (
+               "invalid FLE2RangeFindSpecEdgesInfo: 'precision' must be"
+               "non-negative");
             goto fail;
          }
          out->precision = OPT_U32 ((uint32_t) val);

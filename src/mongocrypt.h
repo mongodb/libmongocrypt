@@ -1547,7 +1547,8 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
  * {
  *    "min": BSON value,
  *    "max": BSON value,
- *    "sparsity": Int64
+ *    "sparsity": Int64,
+ *    "precision": Optional<Int32>
  * }
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.

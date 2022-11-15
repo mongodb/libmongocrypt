@@ -19,6 +19,7 @@
 
 #include <bson/bson.h>
 
+#include "mc-optional-private.h"
 #include "mongocrypt-status-private.h"
 
 typedef struct {
@@ -26,11 +27,17 @@ typedef struct {
    bson_iter_t min;
    bson_iter_t max;
    int64_t sparsity;
+   mc_optional_uint32_t precision;
 } mc_RangeOpts_t;
 
 /* mc_RangeOpts_parse parses a BSON document into mc_RangeOpts_t.
  * The document is expected to have the form:
- * { "min": BSON value, "max": BSON value, "sparsity": Int64 }
+ * {
+ *    "min": BSON value,
+ *    "max": BSON value,
+ *    "sparsity": Int64,
+ *    "precision": Optional<Int32>
+ * }
  */
 bool
 mc_RangeOpts_parse (mc_RangeOpts_t *ro,
@@ -44,7 +51,8 @@ mc_RangeOpts_parse (mc_RangeOpts_t *ro,
  * {
  *    "v": BSON value to encrypt,
  *    "min": BSON value,
- *    "max": BSON value
+ *    "max": BSON value,
+ *    "precision": Optional<Int32>
  * }
  *
  * v is expect to be a BSON document of the form:
