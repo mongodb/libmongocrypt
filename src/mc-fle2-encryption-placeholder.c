@@ -404,6 +404,8 @@ mc_FLE2RangeInsertSpec_parse (mc_FLE2RangeInsertSpec_t *out,
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (in);
 
+   *out = (mc_FLE2RangeInsertSpec_t){{0}};
+
    bson_iter_t iter = *in;
    bool has_v = false, has_min = false, has_max = false, has_precision = false;
 
