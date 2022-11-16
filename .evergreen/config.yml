@@ -16,7 +16,7 @@ functions:
 
   "fetch source":
     - command: git.get_project
-      params: {directory: libmongocrypt}
+      params: { directory: libmongocrypt }
     - command: shell.exec
       params:
         shell: bash
@@ -46,22 +46,22 @@ functions:
         include: [./**]
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        aws_key: "${aws_key}"
+        aws_secret: "${aws_secret}"
+        remote_file: "${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz"
         bucket: mciuploads
         permissions: public-read
-        local_file: 'libmongocrypt.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+        local_file: "libmongocrypt.tar.gz"
+        content_type: "${content_type|application/x-gzip}"
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
+        aws_key: "${aws_key}"
+        aws_secret: "${aws_secret}"
+        remote_file: "${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz"
         bucket: mciuploads
         permissions: public-read
-        local_file: 'libmongocrypt.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+        local_file: "libmongocrypt.tar.gz"
+        content_type: "${content_type|application/x-gzip}"
 
   "build and test":
     - command: "shell.exec"
@@ -102,13 +102,13 @@ functions:
         include: [./**]
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
+        aws_key: "${aws_key}"
+        aws_secret: "${aws_secret}"
+        remote_file: "${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz"
         bucket: mciuploads
         permissions: public-read
-        local_file: 'libmongocrypt-distro-packages.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+        local_file: "libmongocrypt-distro-packages.tar.gz"
+        content_type: "${content_type|application/x-gzip}"
         optional: true
 
   "run clang-tidy":
@@ -170,7 +170,7 @@ functions:
 
   "publish snapshot":
     - command: git.get_project
-      params: {directory: libmongocrypt}
+      params: { directory: libmongocrypt }
     - command: shell.exec
       params:
         script: |-
@@ -201,18 +201,18 @@ functions:
   "download tarball":
     - command: s3.get
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${variant_name}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        aws_key: "${aws_key}"
+        aws_secret: "${aws_secret}"
+        remote_file: "${project}/${variant_name}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz"
         bucket: mciuploads
         extract_to: all/${variant_name}
 
   "download distro package tarball":
     - command: s3.get
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
+        aws_key: "${aws_key}"
+        aws_secret: "${aws_secret}"
+        remote_file: "${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz"
         bucket: mciuploads
         extract_to: libmongocrypt/repo
 
@@ -303,7 +303,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: release-files.tgz
-        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
+        remote_file: "${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz"
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/gzip}
@@ -353,517 +353,530 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: release-files-all.tgz
-        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
+        remote_file: "${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz"
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
 
 tasks:
-- name: build-and-test-and-upload
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-  - func: "tar and upload libmongocrypt libraries"
-  - func: "create packages and repos"
+  - name: build-and-test-and-upload
+    commands:
+      - func: "fetch source"
+      - func: "build and test"
+      - func: "tar and upload libmongocrypt libraries"
+      - func: "create packages and repos"
 
-- name: clang-tidy
-  commands:
-  - func: "fetch source"
-  - func: "run clang-tidy"
+  - name: clang-tidy
+    commands:
+      - func: "fetch source"
+      - func: "run clang-tidy"
 
-- name: build-and-test-shared-bson
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-    vars:
-      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
+  - name: build-and-test-shared-bson
+    commands:
+      - func: "fetch source"
+      - func: "build and test"
+        vars:
+          compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
 
-- name: build-and-test-asan
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-    vars:
-      compile_env: >
-        ${compile_env|}
-        LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
-        ASAN_OPTIONS="detect_leaks=1"
+  - name: build-and-test-asan
+    commands:
+      - func: "fetch source"
+      - func: "build and test"
+        vars:
+          compile_env: >
+            LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
+            ASAN_OPTIONS="detect_leaks=1"
 
-- name: build-and-test-asan-mac
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-    vars:
-      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+  - name: build-and-test-asan-mac
+    commands:
+      - func: "fetch source"
+      - func: "build and test"
+        vars:
+          compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
-- name: build-and-test-asan-s390x
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-    vars:
-      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+  - name: build-and-test-asan-s390x
+    commands:
+      - func: "fetch source"
+      - func: "build and test"
+        vars:
+          compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
-- name: test-java
-  depends_on:
-    - variant: ubuntu2004-64
-      name: upload-java
-  commands:
-    - func: "fetch source"
-    - func: "test java"
-      vars: { variant_name: "${build_variant}" }
+  - name: test-java
+    depends_on:
+      - variant: ubuntu2004-64
+        name: upload-java
+    commands:
+      - func: "fetch source"
+      - func: "test java"
+        vars: { variant_name: "${build_variant}" }
 
-- name: test-python
-  depends_on:
-  - build-and-test-and-upload
-  commands:
-    - func: "fetch source"
-    - func: "download tarball"
-      vars: { variant_name: "${build_variant}" }
-    - func: "test python"
-      vars: { variant_name: "${build_variant}" }
+  - name: test-python
+    depends_on:
+      - build-and-test-and-upload
+    commands:
+      - func: "fetch source"
+      - func: "download tarball"
+        vars: { variant_name: "${build_variant}" }
+      - func: "test python"
+        vars: { variant_name: "${build_variant}" }
 
-- name: test-python-windows
-  depends_on:
-  # Depends on the windows-64-vs2017-test upload.
-  - variant: windows-test
-    name: build-and-test-and-upload
-  commands:
-    - func: "fetch source"
-    - func: "download tarball"
-      vars: { variant_name: windows-test }
-    - func: "test python"
-      vars: { variant_name: windows-test }
+  - name: test-python-windows
+    depends_on:
+      # Depends on the windows-64-vs2017-test upload.
+      - variant: windows-test
+        name: build-and-test-and-upload
+    commands:
+      - func: "fetch source"
+      - func: "download tarball"
+        vars: { variant_name: windows-test }
+      - func: "test python"
+        vars: { variant_name: windows-test }
 
-- name: "release-python-macos-1100"
-  tags: ["release_python_tag"]
-  run_on: macos-1100
-  commands:
-    - func: "fetch source"
-    - func: "build python release macos"
-    - func: "test python release"
-      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
-    - func: "upload python release"
+  - name: "release-python-macos-1100"
+    tags: ["release_python_tag"]
+    run_on: macos-1100
+    commands:
+      - func: "fetch source"
+      - func: "build python release macos"
+      - func: "test python release"
+        vars:
+          {
+            PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3,
+          }
+      - func: "upload python release"
 
-- name: "release-python-macos-1014"
-  tags: ["release_python_tag"]
-  run_on: macos-1014
-  commands:
-    - func: "fetch source"
-    - func: "build python release macos"
-      vars:
-        PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3
-        MACOS_TARGET: macos_x86_64
-    - func: "test python release"
-      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
-    - func: "upload python release"
+  - name: "release-python-macos-1014"
+    tags: ["release_python_tag"]
+    run_on: macos-1014
+    commands:
+      - func: "fetch source"
+      - func: "build python release macos"
+        vars:
+          PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3
+          MACOS_TARGET: macos_x86_64
+      - func: "test python release"
+        vars:
+          {
+            PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3,
+          }
+      - func: "upload python release"
 
-- name: "release-python-linux"
-  tags: ["release_python_tag"]
-  run_on: ubuntu2004-small
-  exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
-  commands:
-    - func: "fetch source"
-    - func: "build python release"
-    - func: "test python release"
-      vars: { PYTHON: python }
-    - func: "upload python release"
+  - name: "release-python-linux"
+    tags: ["release_python_tag"]
+    run_on: ubuntu2004-small
+    exec_timeout_secs: 216000 # 60 minutes (manylinux task is slow).
+    commands:
+      - func: "fetch source"
+      - func: "build python release"
+      - func: "test python release"
+        vars: { PYTHON: python }
+      - func: "upload python release"
 
-- name: "release-python-windows"
-  tags: ["release_python_tag"]
-  run_on: windows-64-vsMulti-small
-  commands:
-    - func: "fetch source"
-    - func: "build python release"
-    - func: "test python release"
-      vars: { PYTHON: python }
-    - func: "upload python release"
+  - name: "release-python-windows"
+    tags: ["release_python_tag"]
+    run_on: windows-64-vsMulti-small
+    commands:
+      - func: "fetch source"
+      - func: "build python release"
+      - func: "test python release"
+        vars: { PYTHON: python }
+      - func: "upload python release"
 
-- name: "release-python-combine"
-  tags: ["release_python_tag"]
-  run_on: ubuntu2004-small
-  depends_on:
-    - name: "*"
-      variant: ".release_python_tag"
-      patch_optional: true
-  commands:
-    - func: "download and merge python releases"
+  - name: "release-python-combine"
+    tags: ["release_python_tag"]
+    run_on: ubuntu2004-small
+    depends_on:
+      - name: "*"
+        variant: ".release_python_tag"
+        patch_optional: true
+    commands:
+      - func: "download and merge python releases"
 
-- name: build-and-test-csharp
-  commands:
-  - func: "fetch source"
-  - func: "build csharp and test"
-    vars:
-      test_env: PROJECT_DIRECTORY=${project_directory}
+  - name: build-and-test-csharp
+    commands:
+      - func: "fetch source"
+      - func: "build csharp and test"
+        vars:
+          test_env: PROJECT_DIRECTORY=${project_directory}
 
-- name: build-and-test-node
-  commands:
-    - func: "fetch source"
-    - func: "build and test node"
-    - func: "attach node xunit results"
+  - name: build-and-test-node
+    commands:
+      - func: "fetch source"
+      - func: "build and test node"
+      - func: "attach node xunit results"
 
-- name: build-and-test-node-no-optional-dependencies
-  commands:
-    - func: "fetch source"
-    - func: "build and test node no optional dependencies"
-    - func: "attach node xunit results"
+  - name: build-and-test-node-no-optional-dependencies
+    commands:
+      - func: "fetch source"
+      - func: "build and test node no optional dependencies"
+      - func: "attach node xunit results"
 
-# Note: keep this disabled unless you want master to force-push
-- name: build-and-test-node-force-publish
-  commands:
-    - func: "fetch source"
-    - func: "build and test node"
-    - func: "attach node xunit results"
+  # Note: keep this disabled unless you want master to force-push
+  - name: build-and-test-node-force-publish
+    commands:
+      - func: "fetch source"
+      - func: "build and test node"
+      - func: "attach node xunit results"
 
-- name: publish-snapshot
-  depends_on:
-    - name: upload-java
-  commands:
-    - func: "publish snapshot"
+  - name: publish-snapshot
+    depends_on:
+      - name: upload-java
+    commands:
+      - func: "publish snapshot"
 
-- name: upload-java
-  depends_on:
-    - variant: rhel-62-64-bit
-      name: build-and-test-and-upload
-    - variant: rhel-67-s390x
-      name: build-and-test-and-upload
-    - variant: rhel-71-ppc64el
-      name: build-and-test-and-upload
-    - variant: ubuntu1604-arm64
-      name: build-and-test-and-upload
-    - variant: windows-test
-      name: build-and-test-and-upload
-    - variant: macos_x86_64
-      name: build-and-test-and-upload
-    - variant: macos
-      name: build-and-test-and-upload
-  commands:
-    - command: shell.exec
-      params:
-        script: mkdir all
-    - func: "download tarball"
-      vars: { variant_name: "rhel-62-64-bit" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-67-s390x" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-71-ppc64el" }
-    - func: "download tarball"
-      vars: { variant_name: "ubuntu1604-arm64" }
-    - func: "download tarball"
-      vars: { variant_name: "windows-test" }
-    - func: "download tarball"
-      vars: { variant_name: "macos_x86_64" }
-    - func: "download tarball"
-      vars: { variant_name: "macos" }
-    - command: archive.targz_pack
-      params:
-        target: libmongocrypt-java.tar.gz
-        source_dir: all
-        include: [./**]
-    - command: shell.exec
-      params:
-        script: |-
-          set -o errexit
-          if [ -n "${tag_upload_location}" ]; then
-            # the "fetch source" step detected a release tag on HEAD, so we
-            # prepare a local file for upload to a location based on the tag
-            cp -a libmongocrypt-java.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
-          fi
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: 'libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-java.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        optional: true
-        display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
-        local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+  - name: upload-java
+    depends_on:
+      - variant: rhel-62-64-bit
+        name: build-and-test-and-upload
+      - variant: rhel-67-s390x
+        name: build-and-test-and-upload
+      - variant: rhel-71-ppc64el
+        name: build-and-test-and-upload
+      - variant: ubuntu1604-arm64
+        name: build-and-test-and-upload
+      - variant: windows-test
+        name: build-and-test-and-upload
+      - variant: macos_x86_64
+        name: build-and-test-and-upload
+      - variant: macos
+        name: build-and-test-and-upload
+    commands:
+      - command: shell.exec
+        params:
+          script: mkdir all
+      - func: "download tarball"
+        vars: { variant_name: "rhel-62-64-bit" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel-67-s390x" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel-71-ppc64el" }
+      - func: "download tarball"
+        vars: { variant_name: "ubuntu1604-arm64" }
+      - func: "download tarball"
+        vars: { variant_name: "windows-test" }
+      - func: "download tarball"
+        vars: { variant_name: "macos_x86_64" }
+      - func: "download tarball"
+        vars: { variant_name: "macos" }
+      - command: archive.targz_pack
+        params:
+          target: libmongocrypt-java.tar.gz
+          source_dir: all
+          include: [./**]
+      - command: shell.exec
+        params:
+          script: |-
+            set -o errexit
+            if [ -n "${tag_upload_location}" ]; then
+              # the "fetch source" step detected a release tag on HEAD, so we
+              # prepare a local file for upload to a location based on the tag
+              cp -a libmongocrypt-java.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
+            fi
+      - command: s3.put
+        params:
+          aws_key: "${aws_key}"
+          aws_secret: "${aws_secret}"
+          remote_file: "libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz"
+          bucket: mciuploads
+          permissions: public-read
+          local_file: "libmongocrypt-java.tar.gz"
+          content_type: "${content_type|application/x-gzip}"
+      - command: s3.put
+        params:
+          aws_key: "${aws_key}"
+          aws_secret: "${aws_secret}"
+          remote_file: "libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz"
+          bucket: mciuploads
+          permissions: public-read
+          optional: true
+          display_name: "libmongocrypt-java-${tag_upload_location}.tar.gz"
+          local_file: "libmongocrypt-java-${tag_upload_location}.tar.gz"
+          content_type: "${content_type|application/x-gzip}"
 
-- name: upload-all
-  depends_on:
-    - variant: ubuntu1604
-      name: build-and-test-and-upload
-    - variant: macos_x86_64
-      name: build-and-test-and-upload
-    - variant: rhel72-zseries-test
-      name: build-and-test-and-upload
-    - variant: windows-test
-      name: build-and-test-and-upload
-    - variant: linux-64-amazon-ami
-      name: build-and-test-and-upload
-    - variant: amazon2
-      name: build-and-test-and-upload
-    - variant: amazon2-arm64
-      name: build-and-test-and-upload
-    - variant: debian10
-      name: build-and-test-and-upload
-    - variant: debian92
-      name: build-and-test-and-upload
-    - variant: rhel-62-64-bit
-      name: build-and-test-and-upload
-    - variant: rhel-67-s390x
-      name: build-and-test-and-upload
-    - variant: rhel-70-64-bit
-      name: build-and-test-and-upload
-    - variant: rhel-71-ppc64el
-      name: build-and-test-and-upload
-    - variant: rhel-80-64-bit
-      name: build-and-test-and-upload
-    - variant: suse12-64
-      name: build-and-test-and-upload
-    - variant: suse15-64
-      name: build-and-test-and-upload
-    - variant: ubuntu1604-arm64
-      name: build-and-test-and-upload
-    - variant: ubuntu1804-64
-      name: build-and-test-and-upload
-    - variant: ubuntu1804-arm64
-      name: build-and-test-and-upload
-    - variant: ubuntu2004-64
-      name: build-and-test-and-upload
-    - variant: ubuntu2004-arm64
-      name: build-and-test-and-upload
-    - variant: macos
-      name: build-and-test-and-upload
-  commands:
-    - func: "fetch source"
-    - command: shell.exec
-      params:
-        script: mkdir all
-    - func: "download tarball"
-      vars: { variant_name: ubuntu1604 }
-    - func: "download tarball"
-      vars: { variant_name: "macos" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel72-zseries-test" }
-    - func: "download tarball"
-      vars: { variant_name: "windows-test" }
-    - func: "download tarball"
-      vars: { variant_name: "linux-64-amazon-ami" }
-    - func: "download tarball"
-      vars: { variant_name: "amazon2" }
-    - func: "download tarball"
-      vars: { variant_name: "amazon2-arm64" }
-    - func: "download tarball"
-      vars: { variant_name: "debian10" }
-    - func: "download tarball"
-      vars: { variant_name: "debian92" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-62-64-bit" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-67-s390x" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-70-64-bit" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-71-ppc64el" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-80-64-bit" }
-    - func: "download tarball"
-      vars: { variant_name: "suse12-64" }
-    - func: "download tarball"
-      vars: { variant_name: "suse15-64" }
-    - func: "download tarball"
-      vars: { variant_name: "ubuntu1604-arm64" }
-    - func: "download tarball"
-      vars: { variant_name: "ubuntu1804-64" }
-    - func: "download tarball"
-      vars: { variant_name: "ubuntu1804-arm64" }
-    - func: "download tarball"
-      vars: { variant_name: "ubuntu2004-64" }
-    - func: "download tarball"
-      vars: { variant_name: "ubuntu2004-arm64" }
-    - func: "download tarball"
-      vars: { variant_name: "macos" }
-    - command: archive.targz_pack
-      params:
-        target: libmongocrypt-all.tar.gz
-        source_dir: all
-        include: [./**]
-    - command: shell.exec
-      params:
-        script: |-
-          set -o errexit
-          if [ -n "${tag_upload_location}" ]; then
-            # the "fetch source" step detected a release tag on HEAD, so we
-            # prepare a local file for upload to a location based on the tag
-            cp -a libmongocrypt-all.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
-          fi
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-all.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-all.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        optional: true
-        display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
-        local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+  - name: upload-all
+    depends_on:
+      - variant: ubuntu1604
+        name: build-and-test-and-upload
+      - variant: macos_x86_64
+        name: build-and-test-and-upload
+      - variant: rhel72-zseries-test
+        name: build-and-test-and-upload
+      - variant: windows-test
+        name: build-and-test-and-upload
+      - variant: linux-64-amazon-ami
+        name: build-and-test-and-upload
+      - variant: amazon2
+        name: build-and-test-and-upload
+      - variant: amazon2-arm64
+        name: build-and-test-and-upload
+      - variant: debian10
+        name: build-and-test-and-upload
+      - variant: debian92
+        name: build-and-test-and-upload
+      - variant: rhel-62-64-bit
+        name: build-and-test-and-upload
+      - variant: rhel-67-s390x
+        name: build-and-test-and-upload
+      - variant: rhel-70-64-bit
+        name: build-and-test-and-upload
+      - variant: rhel-71-ppc64el
+        name: build-and-test-and-upload
+      - variant: rhel-80-64-bit
+        name: build-and-test-and-upload
+      - variant: suse12-64
+        name: build-and-test-and-upload
+      - variant: suse15-64
+        name: build-and-test-and-upload
+      - variant: ubuntu1604-arm64
+        name: build-and-test-and-upload
+      - variant: ubuntu1804-64
+        name: build-and-test-and-upload
+      - variant: ubuntu1804-arm64
+        name: build-and-test-and-upload
+      - variant: ubuntu2004-64
+        name: build-and-test-and-upload
+      - variant: ubuntu2004-arm64
+        name: build-and-test-and-upload
+      - variant: macos
+        name: build-and-test-and-upload
+    commands:
+      - func: "fetch source"
+      - command: shell.exec
+        params:
+          script: mkdir all
+      - func: "download tarball"
+        vars: { variant_name: ubuntu1604 }
+      - func: "download tarball"
+        vars: { variant_name: "macos" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel72-zseries-test" }
+      - func: "download tarball"
+        vars: { variant_name: "windows-test" }
+      - func: "download tarball"
+        vars: { variant_name: "linux-64-amazon-ami" }
+      - func: "download tarball"
+        vars: { variant_name: "amazon2" }
+      - func: "download tarball"
+        vars: { variant_name: "amazon2-arm64" }
+      - func: "download tarball"
+        vars: { variant_name: "debian10" }
+      - func: "download tarball"
+        vars: { variant_name: "debian92" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel-62-64-bit" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel-67-s390x" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel-70-64-bit" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel-71-ppc64el" }
+      - func: "download tarball"
+        vars: { variant_name: "rhel-80-64-bit" }
+      - func: "download tarball"
+        vars: { variant_name: "suse12-64" }
+      - func: "download tarball"
+        vars: { variant_name: "suse15-64" }
+      - func: "download tarball"
+        vars: { variant_name: "ubuntu1604-arm64" }
+      - func: "download tarball"
+        vars: { variant_name: "ubuntu1804-64" }
+      - func: "download tarball"
+        vars: { variant_name: "ubuntu1804-arm64" }
+      - func: "download tarball"
+        vars: { variant_name: "ubuntu2004-64" }
+      - func: "download tarball"
+        vars: { variant_name: "ubuntu2004-arm64" }
+      - func: "download tarball"
+        vars: { variant_name: "macos" }
+      - command: archive.targz_pack
+        params:
+          target: libmongocrypt-all.tar.gz
+          source_dir: all
+          include: [./**]
+      - command: shell.exec
+        params:
+          script: |-
+            set -o errexit
+            if [ -n "${tag_upload_location}" ]; then
+              # the "fetch source" step detected a release tag on HEAD, so we
+              # prepare a local file for upload to a location based on the tag
+              cp -a libmongocrypt-all.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
+            fi
+      - command: s3.put
+        params:
+          aws_key: "${aws_key}"
+          aws_secret: "${aws_secret}"
+          remote_file: "libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz"
+          bucket: mciuploads
+          permissions: public-read
+          local_file: "libmongocrypt-all.tar.gz"
+          content_type: "${content_type|application/x-gzip}"
+      - command: s3.put
+        params:
+          aws_key: "${aws_key}"
+          aws_secret: "${aws_secret}"
+          remote_file: "libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz"
+          bucket: mciuploads
+          permissions: public-read
+          local_file: "libmongocrypt-all.tar.gz"
+          content_type: "${content_type|application/x-gzip}"
+      - command: s3.put
+        params:
+          aws_key: "${aws_key}"
+          aws_secret: "${aws_secret}"
+          remote_file: "libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz"
+          bucket: mciuploads
+          permissions: public-read
+          optional: true
+          display_name: "libmongocrypt-all-${tag_upload_location}.tar.gz"
+          local_file: "libmongocrypt-all-${tag_upload_location}.tar.gz"
+          content_type: "${content_type|application/x-gzip}"
 
-- name: publish-packages
-  depends_on: build-and-test-and-upload
-  commands:
-    - func: "fetch source"
-    - func: "download distro package tarball"
-    - func: "setup packaging credentials"
-    - command: shell.exec
-      params:
-        working_dir: libmongocrypt
-        shell: bash
-        script: |-
-          [ -f ~/.notary_env.sh ] && . ~/.notary_env.sh
-          set -o xtrace
-          set -o errexit
-          set -o verbose
+  - name: publish-packages
+    depends_on: build-and-test-and-upload
+    commands:
+      - func: "fetch source"
+      - func: "download distro package tarball"
+      - func: "setup packaging credentials"
+      - command: shell.exec
+        params:
+          working_dir: libmongocrypt
+          shell: bash
+          script: |-
+            [ -f ~/.notary_env.sh ] && . ~/.notary_env.sh
+            set -o xtrace
+            set -o errexit
+            set -o verbose
 
-          if [ "${is_patch}" = "true" ]; then
-            echo "patch build, skipping packaging publication"
-            exit 0
-          fi
+            # Find cmake.
+            if [ "$OS" == "Windows_NT" ]; then
+              CMAKE=/cygdrive/c/cmake/bin/cmake
+            else
+              # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
+              IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
+            fi
 
-          if [ "${has_packages|}" != "true" ] ; then
-            echo "'has_packages' is not 'true', skipping package publication"
-            exit 0
-          fi
+            if [ "${is_patch}" = "true" ]; then
+              echo "patch build, skipping packaging publication"
+              exit 0
+            fi
 
-          # Some venv-activate scripts are not nounset-clean
-          set +u
+            if [ "${has_packages|}" != "true" ] ; then
+              echo "'has_packages' is not 'true', skipping package publication"
+              exit 0
+            fi
 
-          # Need requests and poster for notary-client.py
-          python -m virtualenv venv
-          cd venv
-          . bin/activate
-          ./bin/pip install requests
-          ./bin/pip install poster
-          ./bin/pip install pycrypto
-          cd ..
-          # Get the current version of libmongocrypt.
-          pkg_version="$(python etc/calc_release_version.py)"
-          CURATOR_RELEASE=${curator_release|"e0b5f66fc89ec0acddcd40ea5f447a8300ded2b9"}
-          curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
-          tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
-          ./curator version
-          ./curator repo --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --packages repo
+            # Some venv-activate scripts are not nounset-clean
+            set +u
 
-- name: windows-upload-check
-  depends_on: build-and-test-and-upload
-  commands:
-    - func: "fetch source"
-    - command: shell.exec
-      params:
-        working_dir: libmongocrypt
-        script: |-
-          set -o xtrace
-          set -o errexit
+            # Need requests and poster for notary-client.py
+            python -m virtualenv venv
+            cd venv
+            . bin/activate
+            ./bin/pip install requests
+            ./bin/pip install poster
+            ./bin/pip install pycrypto
+            cd ..
+            # Get the current version of libmongocrypt.
+            pkg_version="$(python etc/calc_release_version.py)"
+            CURATOR_RELEASE=${curator_release|"e0b5f66fc89ec0acddcd40ea5f447a8300ded2b9"}
+            curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
+            tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
+            ./curator version
+            ./curator repo --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --packages repo
 
-          CMAKE=/cygdrive/c/cmake/bin/cmake
-          mongocrypt_version="$(python etc/calc_release_version.py)"
-          case "$mongocrypt_version" in
-            *+*)
-              # Not a tagged release.
-              echo "{}" > ./.evergreen/windows-upload.json
-              ;;
-            *-*)
-              # This is an unstable release, like 1.1.0-beta1 or 1.0.1-rc0
-              cp ./.evergreen/windows-upload-doit-unstable.json ./.evergreen/windows-upload.json
-              ;;
-            *)
-              # It is a tagged release.
-              cp ./.evergreen/windows-upload-doit.json ./.evergreen/windows-upload.json
-              ;;
-          esac
-    - command: generate.tasks
-      params:
-        files:
-          - libmongocrypt/.evergreen/windows-upload.json
+  - name: windows-upload-check
+    depends_on: build-and-test-and-upload
+    commands:
+      - func: "fetch source"
+      - command: shell.exec
+        params:
+          working_dir: libmongocrypt
+          script: |-
+            set -o xtrace
+            set -o errexit
 
-- name: windows-upload
-  commands:
-    - command: s3.get
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/windows-test/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
-        bucket: mciuploads
-        extract_to: libmongocrypt_download
-    - command: shell.exec
-      params:
-        script: |-
-          set -o xtrace
-          set -o errexit
+            CMAKE=/cygdrive/c/cmake/bin/cmake
+            mongocrypt_version="$(python etc/calc_release_version.py)"
+            case "$mongocrypt_version" in
+              *+*)
+                # Not a tagged release.
+                echo "{}" > ./.evergreen/windows-upload.json
+                ;;
+              *-*)
+                # This is an unstable release, like 1.1.0-beta1 or 1.0.1-rc0
+                cp ./.evergreen/windows-upload-doit-unstable.json ./.evergreen/windows-upload.json
+                ;;
+              *)
+                # It is a tagged release.
+                cp ./.evergreen/windows-upload-doit.json ./.evergreen/windows-upload.json
+                ;;
+            esac
+      - command: generate.tasks
+        params:
+          files:
+            - libmongocrypt/.evergreen/windows-upload.json
 
-          # Move just the mongocrypt files needed into the final upload
-          mkdir libmongocrypt_upload
-          mkdir libmongocrypt_upload/bin
-          mkdir libmongocrypt_upload/include
-          mv libmongocrypt_download/bin/mongocrypt.dll libmongocrypt_upload/bin/mongocrypt.dll
-          mv libmongocrypt_download/include/mongocrypt libmongocrypt_upload/include
-    - command: archive.targz_pack
-      params:
-        target: libmongocrypt_upload.tar.gz
-        source_dir: libmongocrypt_upload
-        include: [./**]
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt_upload.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+  - name: windows-upload
+    commands:
+      - command: s3.get
+        params:
+          aws_key: "${aws_key}"
+          aws_secret: "${aws_secret}"
+          remote_file: "${project}/windows-test/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz"
+          bucket: mciuploads
+          extract_to: libmongocrypt_download
+      - command: shell.exec
+        params:
+          script: |-
+            set -o xtrace
+            set -o errexit
 
-- name: debian-package-build
-  commands:
-    - func: "fetch source"
-    - command: shell.exec
-      type: test
-      params:
-        working_dir: "libmongocrypt"
-        shell: bash
-        script: |-
-          set -o errexit
-          set -o xtrace
-          export IS_PATCH="${is_patch}"
-          bash .evergreen/debian_package_build.sh
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: deb.tar.gz
-        remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
-        display_name: "deb.tar.gz"
+            # Move just the mongocrypt files needed into the final upload
+            mkdir libmongocrypt_upload
+            mkdir libmongocrypt_upload/bin
+            mkdir libmongocrypt_upload/include
+            mv libmongocrypt_download/bin/mongocrypt.dll libmongocrypt_upload/bin/mongocrypt.dll
+            mv libmongocrypt_download/include/mongocrypt libmongocrypt_upload/include
+      - command: archive.targz_pack
+        params:
+          target: libmongocrypt_upload.tar.gz
+          source_dir: libmongocrypt_upload
+          include: [./**]
+      - command: s3.put
+        params:
+          aws_key: "${aws_key}"
+          aws_secret: "${aws_secret}"
+          remote_file: "libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz"
+          bucket: mciuploads
+          permissions: public-read
+          local_file: "libmongocrypt_upload.tar.gz"
+          content_type: "${content_type|application/x-gzip}"
+
+  - name: debian-package-build
+    commands:
+      - func: "fetch source"
+      - command: shell.exec
+        type: test
+        params:
+          working_dir: "libmongocrypt"
+          shell: bash
+          script: |-
+            set -o errexit
+            set -o xtrace
+            export IS_PATCH="${is_patch}"
+            bash .evergreen/debian_package_build.sh
+      - command: s3.put
+        params:
+          aws_key: ${aws_key}
+          aws_secret: ${aws_secret}
+          local_file: deb.tar.gz
+          remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
+          bucket: mciuploads
+          permissions: public-read
+          content_type: ${content_type|application/x-gzip}
+          display_name: "deb.tar.gz"
 
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
@@ -905,404 +918,403 @@ post:
 
 # NOTE: When adding a new variant, update the "upload-all" task.
 buildvariants:
-- name: ubuntu1604
-  display_name: "Ubuntu 16.04 64-bit"
-  run_on: ubuntu1604-test
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu1604
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: macos_x86_64
-  display_name: "macOS (x86_64) 10.14"
-  run_on: macos-1014
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan-mac
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - build-and-test-csharp
-  - test-python
-  - test-java
-- name: rhel72-zseries-test
-  display_name: "RHEL 7.2 on zSeries"
-  run_on: rhel72-zseries-test
-  expansions:
-    has_packages: true
-    packager_distro: rhel72
-    packager_arch: s390x
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: windows-vs2015-compile
-  display_name: "Windows VS 2015 compile"
-  run_on: windows-64-vs2015-test
-  expansions:
-    vs_version: "14"
-    vs_target_arch: amd64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-- name: windows-test
-  display_name: "Windows 2016"
-  run_on: windows-64-vs2017-test
-  expansions:
-    vs_version: "15"
-    vs_target_arch: amd64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-csharp
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - windows-upload-check
-- name: windows-test-python
-  display_name: "Windows Python"
-  run_on: windows-64-vsMulti-small
-  tasks:
-  - test-python-windows
-- name: python-release
-  display_name: Python Release
-  batchtime: 20160 # 14 days
-  tags: ["release_python_tag"]
-  tasks:
-  - ".release_python_tag"
-- name: linux-64-amazon-ami
-  display_name: "Amazon Linux"
-  run_on: amazon1-2018-test
-  expansions:
-    has_packages: true
-    packager_distro: amazon
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: amazon2
-  display_name: "Amazon Linux 2"
-  run_on: amazon2-test
-  expansions:
-    has_packages: true
-    packager_distro: amazon2
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: amazon2-arm64
-  display_name: "Amazon Linux 2 (arm64)"
-  run_on: amazon2-arm64
-  expansions:
-    has_packages: true
-    packager_distro: amazon2
-    packager_arch: arm64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: debian10
-  display_name: "Debian 10.0"
-  run_on: debian10-test
-  expansions:
-    has_packages: true
-    packager_distro: debian10
-    packager_arch: x86_64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: debian92
-  display_name: "Debian 9.2"
-  run_on: debian92-test
-  expansions:
-    has_packages: true
-    packager_distro: debian92
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: rhel-62-64-bit
-  display_name: "RHEL 6.2 64-bit"
-  run_on: rhel62-small
-  expansions:
-    has_packages: true
-    packager_distro: rhel62
-    packager_arch: x86_64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: rhel-67-s390x
-  display_name: "RHEL 6.7 s390x"
-  run_on: rhel67-zseries-test
-  expansions:
-    has_packages: true
-    packager_distro: rhel67
-    packager_arch: s390x
-    compile_env: CMAKE_EXE=/opt/cmake/bin/cmake
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: rhel-70-64-bit
-  display_name: "RHEL 7.0 64-bit"
-  run_on: rhel70-small
-  expansions:
-    has_packages: true
-    packager_distro: rhel70
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-python
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: rhel-71-ppc64el
-  display_name: "RHEL 7.1 ppc64el"
-  run_on: rhel71-power8-test
-  expansions:
-    has_packages: true
-    packager_distro: rhel71
-    packager_arch: ppc64le
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: rhel-80-64-bit
-  display_name: "RHEL 8.0 64-bit"
-  run_on: rhel80-test
-  expansions:
-    has_packages: true
-    packager_distro: rhel80
-    packager_arch: x86_64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: suse12-64
-  display_name: "SLES 12 64-bit"
-  run_on: suse12-sp5-small
-  expansions:
-    has_packages: true
-    packager_distro: suse12
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: suse15-64
-  display_name: "SLES 15 64-bit"
-  run_on: suse15-test
-  expansions:
-    has_packages: true
-    packager_distro: suse15
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: ubuntu1604-arm64
-  display_name: "Ubuntu 16.04 arm64"
-  run_on: ubuntu1604-arm64-large
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu1604
-    packager_arch: arm64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: ubuntu1804-64
-  display_name: "Ubuntu 18.04 64-bit"
-  run_on: ubuntu1804-test
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu1804
-    packager_arch: x86_64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - build-and-test-csharp
-  - test-java
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: ubuntu1804-arm64
-  display_name: "Ubuntu 18.04 arm64"
-  run_on: ubuntu1804-arm64-build
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu1804
-    packager_arch: arm64
-    nvm_use_version: 16
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: ubuntu2004-64
-  display_name: "Ubuntu 20.04 64-bit"
-  run_on: ubuntu2004-small
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu2004
-    packager_arch: x86_64
-  tasks:
-  - clang-tidy
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - build-and-test-csharp
-  - test-java
-  - upload-java
-  - publish-packages
-- name: ubuntu2004-arm64
-  display_name: "Ubuntu 20.04 arm64"
-  run_on: ubuntu2004-arm64-small
-  expansions:
-    has_packages: true
-    packager_distro: ubuntu2004
-    packager_arch: arm64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-java
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: publish-snapshot
-  display_name: "Publish"
-  run_on: ubuntu1804-test
-  tasks:
-    - name: "upload-java"
-    - name: "publish-snapshot"
-    - name: "upload-all"
-- name: packaging
-  display_name: "Linux Distro Packaging"
-  run_on: ubuntu2004-small
-  tasks:
-  - name: debian-package-build
-- name: macos
-  display_name: macOS m1 (Apple LLVM)
-  run_on: macos-1100-arm64
-  expansions:
-    compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
-  - test-python
-  - test-java
-- name: windows-vs2017-32bit
-  # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
-  display_name: "Windows VS 2017 32-bit compile"
-  run_on: windows-64-vs2017-small
-  expansions:
-    compile_env: WINDOWS_32BIT=ON
-    vs_version: "15"
-    vs_target_arch: x86
-  tasks:
-  - build-and-test-and-upload
+  - name: ubuntu1604
+    display_name: "Ubuntu 16.04 64-bit"
+    run_on: ubuntu1604-test
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu1604
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - ubuntu2004-small
+  - name: macos_x86_64
+    display_name: "macOS (x86_64) 10.14"
+    run_on: macos-1014
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan-mac
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - build-and-test-csharp
+      - test-python
+      - test-java
+  - name: rhel72-zseries-test
+    display_name: "RHEL 7.2 on zSeries"
+    run_on: rhel72-zseries-test
+    expansions:
+      has_packages: true
+      packager_distro: rhel72
+      packager_arch: s390x
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: windows-vs2015-compile
+    display_name: "Windows VS 2015 compile"
+    run_on: windows-64-vs2015-test
+    expansions:
+      vs_version: "14"
+      vs_target_arch: amd64
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+  - name: windows-test
+    display_name: "Windows 2016"
+    run_on: windows-64-vs2017-test
+    expansions:
+      vs_version: "15"
+      vs_target_arch: amd64
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-csharp
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - windows-upload-check
+  - name: windows-test-python
+    display_name: "Windows Python"
+    run_on: windows-64-vsMulti-small
+    tasks:
+      - test-python-windows
+  - name: python-release
+    display_name: Python Release
+    batchtime: 20160 # 14 days
+    tags: ["release_python_tag"]
+    tasks:
+      - ".release_python_tag"
+  - name: linux-64-amazon-ami
+    display_name: "Amazon Linux"
+    run_on: amazon1-2018-test
+    expansions:
+      has_packages: true
+      packager_distro: amazon
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: amazon2
+    display_name: "Amazon Linux 2"
+    run_on: amazon2-test
+    expansions:
+      has_packages: true
+      packager_distro: amazon2
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: amazon2-arm64
+    display_name: "Amazon Linux 2 (arm64)"
+    run_on: amazon2-arm64
+    expansions:
+      has_packages: true
+      packager_distro: amazon2
+      packager_arch: arm64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: debian10
+    display_name: "Debian 10.0"
+    run_on: debian10-test
+    expansions:
+      has_packages: true
+      packager_distro: debian10
+      packager_arch: x86_64
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - ubuntu2004-small
+  - name: debian92
+    display_name: "Debian 9.2"
+    run_on: debian92-test
+    expansions:
+      has_packages: true
+      packager_distro: debian92
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - ubuntu2004-small
+  - name: rhel-62-64-bit
+    display_name: "RHEL 6.2 64-bit"
+    run_on: rhel62-small
+    expansions:
+      has_packages: true
+      packager_distro: rhel62
+      packager_arch: x86_64
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: rhel-67-s390x
+    display_name: "RHEL 6.7 s390x"
+    run_on: rhel67-zseries-test
+    expansions:
+      has_packages: true
+      packager_distro: rhel67
+      packager_arch: s390x
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: rhel-70-64-bit
+    display_name: "RHEL 7.0 64-bit"
+    run_on: rhel70-small
+    expansions:
+      has_packages: true
+      packager_distro: rhel70
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-python
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: rhel-71-ppc64el
+    display_name: "RHEL 7.1 ppc64el"
+    run_on: rhel71-power8-test
+    expansions:
+      has_packages: true
+      packager_distro: rhel71
+      packager_arch: ppc64le
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: rhel-80-64-bit
+    display_name: "RHEL 8.0 64-bit"
+    run_on: rhel80-test
+    expansions:
+      has_packages: true
+      packager_distro: rhel80
+      packager_arch: x86_64
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: suse12-64
+    display_name: "SLES 12 64-bit"
+    run_on: suse12-sp5-small
+    expansions:
+      has_packages: true
+      packager_distro: suse12
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: suse15-64
+    display_name: "SLES 15 64-bit"
+    run_on: suse15-test
+    expansions:
+      has_packages: true
+      packager_distro: suse15
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - rhel70-small
+  - name: ubuntu1604-arm64
+    display_name: "Ubuntu 16.04 arm64"
+    run_on: ubuntu1604-arm64-large
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu1604
+      packager_arch: arm64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - ubuntu2004-small
+  - name: ubuntu1804-64
+    display_name: "Ubuntu 18.04 64-bit"
+    run_on: ubuntu1804-test
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu1804
+      packager_arch: x86_64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - build-and-test-csharp
+      - test-java
+      - name: publish-packages
+        distros:
+          - ubuntu2004-small
+  - name: ubuntu1804-arm64
+    display_name: "Ubuntu 18.04 arm64"
+    run_on: ubuntu1804-arm64-build
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu1804
+      packager_arch: arm64
+      nvm_use_version: 16
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - ubuntu2004-small
+  - name: ubuntu2004-64
+    display_name: "Ubuntu 20.04 64-bit"
+    run_on: ubuntu2004-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2004
+      packager_arch: x86_64
+    tasks:
+      - clang-tidy
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - build-and-test-csharp
+      - test-java
+      - upload-java
+      - publish-packages
+  - name: ubuntu2004-arm64
+    display_name: "Ubuntu 20.04 arm64"
+    run_on: ubuntu2004-arm64-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2004
+      packager_arch: arm64
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-shared-bson
+      - build-and-test-asan
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-java
+      - name: publish-packages
+        distros:
+          - ubuntu2004-small
+  - name: publish-snapshot
+    display_name: "Publish"
+    run_on: ubuntu1804-test
+    tasks:
+      - name: "upload-java"
+      - name: "publish-snapshot"
+      - name: "upload-all"
+  - name: packaging
+    display_name: "Linux Distro Packaging"
+    run_on: ubuntu2004-small
+    tasks:
+      - name: debian-package-build
+  - name: macos
+    display_name: macOS m1 (Apple LLVM)
+    run_on: macos-1100-arm64
+    expansions:
+      compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
+    tasks:
+      - build-and-test-and-upload
+      - build-and-test-node
+      - build-and-test-node-no-optional-dependencies
+      - test-python
+      - test-java
+  - name: windows-vs2017-32bit
+    # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
+    display_name: "Windows VS 2017 32-bit compile"
+    run_on: windows-64-vs2017-small
+    expansions:
+      compile_env: WINDOWS_32BIT=ON
+      vs_version: "15"
+      vs_target_arch: x86
+    tasks:
+      - build-and-test-and-upload

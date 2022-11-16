@@ -16,6 +16,7 @@
 
 #include "mongocrypt-private.h"
 #include "mongocrypt-key-private.h"
+#include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 
 
 /* Check if two single entries are equal (i.e. ignore the 'next' pointer). */
@@ -73,8 +74,6 @@ _parse_masterkey (bson_iter_t *iter,
                   _mongocrypt_key_doc_t *out,
                   mongocrypt_status_t *status)
 {
-   const uint8_t *data;
-   uint32_t len;
    bson_t kek_doc;
 
    BSON_ASSERT_PARAM (iter);
@@ -85,8 +84,10 @@ _parse_masterkey (bson_iter_t *iter,
       return false;
    }
 
-   bson_iter_document (iter, &len, &data);
-   bson_init_static (&kek_doc, data, len);
+   if (!mc_iter_document_as_bson (iter, &kek_doc, status)) {
+      return false;
+   }
+
    if (!_mongocrypt_kek_parse_owned (&kek_doc, &out->kek, status)) {
       return false;
    }
@@ -296,7 +297,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
 
 
 _mongocrypt_key_doc_t *
-_mongocrypt_key_new ()
+_mongocrypt_key_new (void)
 {
    _mongocrypt_key_doc_t *key_doc;
 

@@ -664,11 +664,13 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *bson, *uuid;
+   mongocrypt_binary_t *bson, *uuid, *rangeopts;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    uuid = TEST_BIN (16);
    bson = TEST_BSON ("{'v': 'hello'}");
+   rangeopts =
+      TEST_BSON ("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
 
    /* Test required and prohibited options. */
    REFRESH;
@@ -768,7 +770,8 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
    ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "unsupported algorithm");
 
    /* It is an error to set the FLE 1 keyAltName option with any of the FLE 2
-    * options (index_type, index_key_id, contention_factor, or query_type). */
+    * options (index_type, index_key_id, contention_factor, query_type, or
+    * range opts). */
    {
       REFRESH;
       ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
@@ -797,10 +800,17 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
                  ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (
          bson, "cannot set both key alt name and query type");
+
+      REFRESH;
+      ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both key alt name and range opts");
    }
 
    /* It is an error to set the FLE 1 algorithm option with any of the FLE 2
-    * options (index_type, index_key_id, contention_factor, or query_type). */
+    * options (index_type, index_key_id, contention_factor, query_type, or
+    * range opts). */
    {
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
@@ -829,6 +839,14 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
                  ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
                                     "cannot set both algorithm and query type");
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (RAND, -1);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                    "cannot set both algorithm and range opts");
    }
 
    /* Require either index_type or algorithm */
@@ -853,6 +871,36 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
                  ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (
          bson, "cannot set contention factor with no index type");
+   }
+
+   /* It is an error to set range opts with index_type ==
+    * MONGOCRYPT_INDEX_TYPE_NONE */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                    "cannot set range opts with no index type");
+   }
+
+   /* It is an error to set range opts with index_type ==
+    * MONGOCRYPT_INDEX_TYPE_EQUALITY */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set range opts with equality index type");
    }
 
    /* It is an error to set query_type with index_type ==
@@ -882,6 +930,61 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
                     ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
                  ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
+   }
+
+   /* Contention factor is required for "Range" algorithm. */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
+   }
+
+   /* Range opts is required for "Range" algorithm. */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "range opts are required");
+   }
+
+   /* Negative sparsity is prohibited. */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_algorithm_range (
+            ctx,
+            TEST_BSON (
+               "{'min': 0, 'max': 1, 'sparsity': { '$numberLong': '-1'}}")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "sparsity must be non-negative");
+   }
+
+   /* Error if query_type == "range" and algorithm != "range". */
+   {
+      REFRESH;
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_INDEXED_STR, -1);
+      ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "must match index_type");
    }
 
    mongocrypt_ctx_destroy (ctx);
@@ -996,6 +1099,15 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
    REFRESH;
    ASSERT_ALGORITHM_OK (DET, -1);
    ASSERT_EX_DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
+
+   // Range opts are prohibited.
+   REFRESH;
+   ASSERT_OK (
+      mongocrypt_ctx_setopt_algorithm_range (
+         ctx,
+         TEST_BSON ("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),
+      ctx);
+   ASSERT_EX_DECRYPT_INIT_FAILS (bson, "range opts are prohibited");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
