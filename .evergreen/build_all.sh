@@ -18,6 +18,9 @@ if [ "$OS_NAME" = "windows" ]; then
     # Enable exception handling for MSVC
     _cxxflags="-EHsc"
     if is_false WINDOWS_32BIT && is_false USE_NINJA; then
+        # These options are only needed for VS CMake generators to force it to
+        # generate a 64-bit build. Default is 32-bit. Ninja inherits settings
+        # from the build environment variables.
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
 fi

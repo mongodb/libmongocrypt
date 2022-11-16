@@ -78,7 +78,7 @@ param (
     #         return $found | Where-Object { $_ -like "$wordToComplete*" }
     #     })]
     $WinSDKVersion,
-    # The host architecture to use. Not usually needed. Detaults to x86
+    # The host architecture to use. Not usually needed. Detaults to x86.
     [ValidateSet("x86", "amd64", IgnoreCase = $false)]
     [string]
     $HostArch = "x86",
@@ -95,7 +95,6 @@ param (
     # The directory to store ephemeral files
     [string]
     $ScratchDir,
-
     # The command to execute within the VS environment. May be any invocable object.
     [Parameter(Mandatory, Position = 1)]
     $Command
