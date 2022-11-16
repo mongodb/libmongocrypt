@@ -78,7 +78,7 @@ param (
     #         return $found | Where-Object { $_ -like "$wordToComplete*" }
     #     })]
     $WinSDKVersion,
-    # The host architecture to use. Not usually needed. Detaults to x86.
+    # The host architecture to use. Not usually needed. Defaults to x86.
     [ValidateSet("x86", "amd64", IgnoreCase = $false)]
     [string]
     $HostArch = "x86",
