@@ -231,7 +231,8 @@ _test_createdatakey_with_accesstoken (_mongocrypt_tester_t *tester)
 }
 
 static void
-_test_createdatakey_with_wrong_kms_provider (_mongocrypt_tester_t *tester)
+_test_createdatakey_with_wrong_kms_provider_helper (
+   _mongocrypt_tester_t *tester, mongocrypt_binary_t *initial_kms)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
@@ -242,9 +243,7 @@ _test_createdatakey_with_wrong_kms_provider (_mongocrypt_tester_t *tester)
                      "}";
 
    crypt = mongocrypt_new ();
-   ASSERT_OK (
-      mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'gcp': {}}")),
-      crypt);
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, initial_kms), crypt);
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    ctx = mongocrypt_ctx_new (crypt);
@@ -258,6 +257,21 @@ _test_createdatakey_with_wrong_kms_provider (_mongocrypt_tester_t *tester)
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
+}
+
+static void
+_test_createdatakey_with_wrong_kms_provider_configured (
+   _mongocrypt_tester_t *tester)
+{
+   _test_createdatakey_with_wrong_kms_provider_helper (
+      tester, TEST_BSON ("{'gcp': { 'accessToken': '1234' } }"));
+}
+
+static void
+_test_createdatakey_with_wrong_kms_provider_empty (_mongocrypt_tester_t *tester)
+{
+   _test_createdatakey_with_wrong_kms_provider_helper (
+      tester, TEST_BSON ("{'gcp': {}}"));
 }
 
 static void
@@ -341,5 +355,6 @@ _mongocrypt_tester_install_gcp_auth (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_with_credentials);
    INSTALL_TEST (_test_createdatakey_with_accesstoken);
    INSTALL_TEST (_test_encrypt_with_accesstoken);
-   INSTALL_TEST (_test_createdatakey_with_wrong_kms_provider);
+   INSTALL_TEST (_test_createdatakey_with_wrong_kms_provider_configured);
+   INSTALL_TEST (_test_createdatakey_with_wrong_kms_provider_empty);
 }
