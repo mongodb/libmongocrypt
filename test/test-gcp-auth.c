@@ -231,6 +231,36 @@ _test_createdatakey_with_accesstoken (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_createdatakey_with_wrong_kms_provider (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   const char *kek = "{"
+                     "'provider': 'azure',"
+                     "'keyName': 'foo',"
+                     "'keyVaultEndpoint': 'example.com'"
+                     "}";
+
+   crypt = mongocrypt_new ();
+   ASSERT_OK (
+      mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'gcp': {}}")),
+      crypt);
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (ctx, TEST_BSON (kek)),
+              ctx);
+   ASSERT_FAILS (
+      mongocrypt_ctx_datakey_init (ctx),
+      ctx,
+      "Invalid encryption key: datakey provider does not match the provider "
+      "set in mongocrypt_setopt_kms_providers");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
 _test_encrypt_with_accesstoken (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
@@ -311,4 +341,5 @@ _mongocrypt_tester_install_gcp_auth (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_with_credentials);
    INSTALL_TEST (_test_createdatakey_with_accesstoken);
    INSTALL_TEST (_test_encrypt_with_accesstoken);
+   INSTALL_TEST (_test_createdatakey_with_wrong_kms_provider);
 }
