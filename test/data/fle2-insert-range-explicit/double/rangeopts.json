@@ -1,10 +1,4 @@
 {
-    "min": {
-        "$numberDouble": "0.0"
-    },
-    "max": {
-        "$numberDouble": "200.0"
-    },
     "sparsity": {
         "$numberLong": "1"
     }

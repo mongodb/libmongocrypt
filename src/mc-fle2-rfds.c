@@ -460,6 +460,8 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
    _mongocrypt_buffer_t p1 = {0}, p2 = {0};
    bson_t infDoc = BSON_INITIALIZER;
    bson_iter_t negInf, posInf;
+   bson_t minMaxDoc = BSON_INITIALIZER;
+   bson_iter_t indexMin, indexMax;
    bool ok = false;
 
    BCON_APPEND (
@@ -470,6 +472,33 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
       CLIENT_ERR ("error transforming BSON for FLE2RangeFindDriverSpec: %s", \
                   #stmt);                                                    \
       goto fail;                                                             \
+   }
+
+   TRY (bson_iter_init_find (&posInf, &infDoc, "p"));
+   TRY (bson_iter_init_find (&negInf, &infDoc, "n"));
+
+   // Apply default index min/max values.
+   {
+      bson_type_t index_type;
+      if (spec->lower.set) {
+         index_type = bson_iter_type (&spec->lower.value);
+      } else if (spec->upper.set) {
+         index_type = bson_iter_type (&spec->upper.value);
+      } else {
+         CLIENT_ERR ("expected lower or upper bound to be set");
+         goto fail;
+      }
+      if (!mc_RangeOpts_appendMin (
+             range_opts, index_type, "indexMin", &minMaxDoc, status)) {
+         goto fail;
+      }
+      if (!mc_RangeOpts_appendMax (
+             range_opts, index_type, "indexMax", &minMaxDoc, status)) {
+         goto fail;
+      }
+
+      TRY (bson_iter_init_find (&indexMin, &minMaxDoc, "indexMin"));
+      TRY (bson_iter_init_find (&indexMax, &minMaxDoc, "indexMax"));
    }
 
    TRY (bson_iter_init_find (&posInf, &infDoc, "p"));
@@ -488,8 +517,8 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
       .payloadId = payloadId,
       .firstOp = spec->firstOp,
       .secondOp = spec->secondOp,
-      .indexMin = range_opts->min,
-      .indexMax = range_opts->max,
+      .indexMin = indexMin,
+      .indexMax = indexMax,
       .precision = range_opts->precision,
       .maxContentionCounter = maxContentionCounter,
       .sparsity = range_opts->sparsity};
@@ -588,6 +617,7 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
 fail:
    _mongocrypt_buffer_cleanup (&p2);
    _mongocrypt_buffer_cleanup (&p1);
+   bson_destroy (&minMaxDoc);
    bson_destroy (&infDoc);
    return ok;
 }

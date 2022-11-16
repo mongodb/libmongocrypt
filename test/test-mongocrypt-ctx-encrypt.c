@@ -3078,7 +3078,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
          TEST_BSON ("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
       tc.msg = TEST_BSON ("{'v': 'abc'}");
       tc.keys_to_feed[0] = keyABC;
-      tc.expect_finalize_error = "unsupported BSON type: UTF8";
+      tc.expect_finalize_error = "expected matching 'min' and value type";
       ee_testcase_run (&tc);
    }
 
@@ -3149,7 +3149,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 
    {
       ee_testcase tc = {0};
-      tc.desc = "algorithm='Range' with double precision without precision";
+      tc.desc = "algorithm='Range' with double without precision";
 #include "./data/fle2-insert-range-explicit/double/RNG_DATA.h"
       tc.rng_data = (_test_rng_data_source){
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
@@ -3167,6 +3167,46 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.keys_to_feed[1] = key123;
       tc.expect = TEST_FILE ("./test/data/fle2-insert-range-explicit/double/"
                              "encrypted-payload.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with int32 with default min/max";
+#include "./data/fle2-insert-range-explicit/int32-nominmax/RNG_DATA.h"
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+#undef RNG_DATA
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-insert-range-explicit/"
+                                 "int32-nominmax/rangeopts.json");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-insert-range-explicit/double/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect =
+         TEST_FILE ("./test/data/fle2-insert-range-explicit/int32-nominmax/"
+                    "encrypted-payload.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' and query_type='range' with int32 with "
+                "default min/max";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                                 "int32-nominmax/rangeopts.json");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-find-range-explicit/double/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect =
+         TEST_FILE ("./test/data/fle2-find-range-explicit/int32-nominmax/"
+                    "encrypted-payload.json");
       ee_testcase_run (&tc);
    }
 

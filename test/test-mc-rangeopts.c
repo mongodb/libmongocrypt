@@ -26,8 +26,8 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
       const char *desc;
       const char *in;
       const char *expectError;
-      int32_t expectMin;
-      int32_t expectMax;
+      mc_optional_int32_t expectMin;
+      mc_optional_int32_t expectMax;
       int64_t expectSparsity;
       mc_optional_uint32_t expectPrecision;
    } testcase;
@@ -37,8 +37,8 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
        .in = RAW_STRING (
           {"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
        .expectSparsity = 1,
-       .expectMin = 123,
-       .expectMax = 456},
+       .expectMin = OPT_I32_C (123),
+       .expectMax = OPT_I32_C (456)},
       {.desc = "Errors if precision is set with int min/max",
        .in = RAW_STRING ({
           "min" : 123,
@@ -63,6 +63,21 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
        .in = RAW_STRING (
           {"min" : 123, "max" : 456.0, "sparsity" : {"$numberLong" : "1"}}),
        .expectError = "expected 'min' and 'max' to be same type"},
+      {
+         .desc = "Does not require min/max",
+         .in = RAW_STRING ({"sparsity" : {"$numberLong" : "1"}}),
+         .expectSparsity = 1,
+      },
+      {.desc = "Requires precision for double when min/max is set",
+       .in = RAW_STRING (
+          {"min" : 0.0, "max" : 1.0, "sparsity" : {"$numberLong" : "1"}}),
+       .expectError = "expected 'precision'"},
+      {.desc = "Requires min/max for double when precision is set",
+       .in = RAW_STRING ({"precision" : 1, "sparsity" : {"$numberLong" : "1"}}),
+       .expectError = "setting precision requires min"},
+      {.desc = "Requires precision for double when only min is set",
+       .in = RAW_STRING ({"min" : 0.0, "sparsity" : {"$numberLong" : "1"}}),
+       .expectError = "expected 'precision'"},
    };
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
@@ -73,8 +88,16 @@ test_mc_RangeOpts_parse (_mongocrypt_tester_t *tester)
       bool ret = mc_RangeOpts_parse (&ro, TMP_BSON (test->in), status);
       if (!test->expectError) {
          ASSERT_OK_STATUS (ret, status);
-         ASSERT_CMPINT32 (test->expectMin, ==, bson_iter_int32 (&ro.min));
-         ASSERT_CMPINT32 (test->expectMax, ==, bson_iter_int32 (&ro.max));
+         ASSERT_CMPINT (test->expectMin.set, ==, ro.min.set);
+         if (test->expectMin.set) {
+            ASSERT_CMPINT32 (
+               test->expectMin.value, ==, bson_iter_int32 (&ro.min.value));
+         }
+         ASSERT_CMPINT (test->expectMax.set, ==, ro.max.set);
+         if (test->expectMax.set) {
+            ASSERT_CMPINT32 (
+               test->expectMax.value, ==, bson_iter_int32 (&ro.max.value));
+         }
          ASSERT_CMPINT64 (test->expectSparsity, ==, ro.sparsity);
          ASSERT_CMPINT (test->expectPrecision.set, ==, ro.precision.set);
          ASSERT_CMPINT (test->expectPrecision.value, ==, ro.precision.value);
