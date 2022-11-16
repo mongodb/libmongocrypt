@@ -253,7 +253,7 @@ _test_createdatakey_with_wrong_kms_provider (_mongocrypt_tester_t *tester)
    ASSERT_FAILS (
       mongocrypt_ctx_datakey_init (ctx),
       ctx,
-      "Invalid encryption key: datakey provider does not match the provider "
+      "Invalid data key: datakey provider does not match the provider "
       "set in mongocrypt_setopt_kms_providers");
 
    mongocrypt_ctx_destroy (ctx);

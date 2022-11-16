@@ -496,14 +496,14 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx)
          ctx->opts.kek.kms_provider)) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx,
-         "Invalid encryption key: datakey provider does not match the provider "
+         "Invalid data key: datakey provider does not match the provider "
          "set in mongocrypt_setopt_kms_providers");
 
    } else if (!(ctx->crypt->opts.kms_providers.configured_providers &
                 ctx->opts.kek.kms_provider)) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx,
-         "Invalid encryption key: datakey provider does not match the provider "
+         "Invalid data key: datakey provider does not match the provider "
          "set in mongocrypt_setopt_kms_providers");
    }
 
