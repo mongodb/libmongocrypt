@@ -109,7 +109,7 @@ mc_RangeOpts_parse (mc_RangeOpts_t *ro,
    CHECK_HAS (min, error_prefix);
    CHECK_HAS (max, error_prefix);
    CHECK_HAS (sparsity, error_prefix);
-   // Do not error if precision is not present. Precision optional and only
+   // Do not error if precision is not present. Precision is optional and only
    // applies to double/decimal128.
 
    // Expect precision only to be set for double or decimal128.
