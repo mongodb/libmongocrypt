@@ -148,46 +148,46 @@ typedef struct {
 } placeholder_args_t;
 
 static void
-addPlaceholders_recursive (bson_iter_t iter,
+addPlaceholders_recursive (bson_iter_t *iter,
                            bson_t *out,
                            _mongocrypt_buffer_t *p1,
                            _mongocrypt_buffer_t *p2)
 {
-   while (bson_iter_next (&iter)) {
-      const char *key = bson_iter_key (&iter);
+   while (bson_iter_next (iter)) {
+      const char *key = bson_iter_key (iter);
 
-      if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+      if (BSON_ITER_HOLDS_ARRAY (iter)) {
          bson_t child;
          bson_iter_t iter_child;
          ASSERT (BSON_APPEND_ARRAY_BEGIN (out, key, &child));
-         ASSERT (bson_iter_recurse (&iter, &iter_child));
-         addPlaceholders_recursive (iter_child, &child, p1, p2);
+         ASSERT (bson_iter_recurse (iter, &iter_child));
+         addPlaceholders_recursive (&iter_child, &child, p1, p2);
          ASSERT (bson_append_array_end (out, &child));
          continue;
       }
-      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
          bson_t child;
          bson_iter_t iter_child;
          ASSERT (BSON_APPEND_DOCUMENT_BEGIN (out, key, &child));
-         ASSERT (bson_iter_recurse (&iter, &iter_child));
-         addPlaceholders_recursive (iter_child, &child, p1, p2);
+         ASSERT (bson_iter_recurse (iter, &iter_child));
+         addPlaceholders_recursive (&iter_child, &child, p1, p2);
          ASSERT (bson_append_document_end (out, &child));
          continue;
       }
-      if (BSON_ITER_HOLDS_UTF8 (&iter)) {
-         if (strcmp (bson_iter_utf8 (&iter, NULL), "<placeholder1>") == 0) {
+      if (BSON_ITER_HOLDS_UTF8 (iter)) {
+         if (strcmp (bson_iter_utf8 (iter, NULL), "<placeholder1>") == 0) {
             ASSERT (p1->data);
             ASSERT (_mongocrypt_buffer_append (p1, out, key, -1));
             continue;
          }
-         if (strcmp (bson_iter_utf8 (&iter, NULL), "<placeholder2>") == 0) {
+         if (strcmp (bson_iter_utf8 (iter, NULL), "<placeholder2>") == 0) {
             ASSERT (p2->data);
             ASSERT (_mongocrypt_buffer_append (p2, out, key, -1));
             continue;
          }
          // Otherwise the value is not a placeholder. Fall through.
       }
-      ASSERT (BSON_APPEND_VALUE (out, key, bson_iter_value (&iter)));
+      ASSERT (BSON_APPEND_VALUE (out, key, bson_iter_value (iter)));
    }
 }
 
@@ -201,7 +201,7 @@ addPlaceholders (bson_t **in,
    bson_t out = BSON_INITIALIZER;
    bson_iter_t iter;
    ASSERT (bson_iter_init (&iter, *in));
-   addPlaceholders_recursive (iter, &out, p1, p2);
+   addPlaceholders_recursive (&iter, &out, p1, p2);
    bson_destroy (*in);
    bson_steal (*in, &out);
 }
@@ -448,7 +448,7 @@ test_mc_FLE2RangeFindDriverSpec_to_placeholders (_mongocrypt_tester_t *tester)
                .sparsity = sparsity};
 
             ASSERT_OK_STATUS (
-               mc_makeRangeFindPlaceholder (p1_args_full, &p1, status), status);
+               mc_makeRangeFindPlaceholder (&p1_args_full, &p1, status), status);
          }
 
          if (test->p2.firstOp) {
@@ -470,7 +470,7 @@ test_mc_FLE2RangeFindDriverSpec_to_placeholders (_mongocrypt_tester_t *tester)
 
 
             ASSERT_OK_STATUS (
-               mc_makeRangeFindPlaceholder (p2_args_full, &p2, status), status);
+               mc_makeRangeFindPlaceholder (&p2_args_full, &p2, status), status);
          }
          addPlaceholders (&expected, &p1, &p2);
          _mongocrypt_buffer_cleanup (&p2);

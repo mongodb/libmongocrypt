@@ -80,7 +80,7 @@ typedef struct {
 // libmongocrypt to encrypt a range find query. It is included in the header to
 // be used by tests.
 bool
-mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t args,
+mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t *args,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status);
 

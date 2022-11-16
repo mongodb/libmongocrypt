@@ -120,7 +120,7 @@ typedef struct {
 // Parses a document like {$gt: ["$age", 5]}.
 static bool
 parse_aggregate_expression (const bson_t *orig,
-                            bson_iter_t in,
+                            bson_iter_t *in,
                             operator_value_t *out,
                             mongocrypt_status_t *status)
 {
@@ -129,16 +129,16 @@ parse_aggregate_expression (const bson_t *orig,
    BSON_ASSERT (status || true);
 
    bson_iter_t array, value;
-   const char *op_type_str = bson_iter_key (&in);
+   const char *op_type_str = bson_iter_key (in);
    bool ok = false;
    const char *field;
 
-   if (!BSON_ITER_HOLDS_ARRAY (&in)) {
+   if (!BSON_ITER_HOLDS_ARRAY (in)) {
       ERR_WITH_BSON (orig, "%s", "expected argument to be array");
       goto fail;
    }
 
-   if (!bson_iter_recurse (&in, &array)) {
+   if (!bson_iter_recurse (in, &array)) {
       ERR_WITH_BSON (orig, "%s", "failed to recurse into array");
       goto fail;
    }
@@ -184,7 +184,7 @@ fail:
 // Parses a document like {age: {$gt: 5}}.
 static bool
 parse_match_expression (const bson_t *orig,
-                        bson_iter_t in,
+                        bson_iter_t *in,
                         operator_value_t *out,
                         mongocrypt_status_t *status)
 {
@@ -195,14 +195,14 @@ parse_match_expression (const bson_t *orig,
    bson_iter_t document, value;
    const char *op_type_str;
    bool ok = false;
-   const char *field = bson_iter_key (&in);
+   const char *field = bson_iter_key (in);
 
-   if (!BSON_ITER_HOLDS_DOCUMENT (&in)) {
+   if (!BSON_ITER_HOLDS_DOCUMENT (in)) {
       ERR_WITH_BSON (orig, "%s", "expected argument to be document");
       goto fail;
    }
 
-   if (!bson_iter_recurse (&in, &document)) {
+   if (!bson_iter_recurse (in, &document)) {
       ERR_WITH_BSON (orig, "%s", "failed to recurse into document");
       goto fail;
    }
@@ -296,12 +296,12 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
       operator_value_t op;
       switch (arg_type) {
       case AGGREGATE_EXPRESSION:
-         if (!parse_aggregate_expression (in, doc, &op, status)) {
+         if (!parse_aggregate_expression (in, &doc, &op, status)) {
             goto fail;
          }
          break;
       case MATCH_EXPRESSION:
-         if (!parse_match_expression (in, doc, &op, status)) {
+         if (!parse_match_expression (in, &doc, &op, status)) {
             goto fail;
          }
          break;
@@ -374,7 +374,7 @@ fail:
 // mc_makeRangeFindPlaceholder creates a placeholder to be consumed by
 // libmongocrypt for encryption.
 bool
-mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t args,
+mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t *args,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status)
 {
@@ -394,36 +394,37 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t args,
    }
 
    // create edgesInfo.
-   if (!args.isStub) {
-      TRY (bson_append_iter (edgesInfo, "lowerBound", -1, &args.lowerBound));
-      TRY (BSON_APPEND_BOOL (edgesInfo, "lbIncluded", args.lbIncluded));
-      TRY (bson_append_iter (edgesInfo, "upperBound", -1, &args.upperBound));
-      TRY (BSON_APPEND_BOOL (edgesInfo, "ubIncluded", args.ubIncluded));
-      TRY (bson_append_iter (edgesInfo, "indexMin", -1, &args.indexMin));
-      TRY (bson_append_iter (edgesInfo, "indexMax", -1, &args.indexMax));
-      if (args.precision.set) {
-         BSON_ASSERT (args.precision.value < INT32_MAX);
+
+   if (!args->isStub) {
+      TRY (bson_append_iter (edgesInfo, "lowerBound", -1, &args->lowerBound));
+      TRY (BSON_APPEND_BOOL (edgesInfo, "lbIncluded", args->lbIncluded));
+      TRY (bson_append_iter (edgesInfo, "upperBound", -1, &args->upperBound));
+      TRY (BSON_APPEND_BOOL (edgesInfo, "ubIncluded", args->ubIncluded));
+      TRY (bson_append_iter (edgesInfo, "indexMin", -1, &args->indexMin));
+      TRY (bson_append_iter (edgesInfo, "indexMax", -1, &args->indexMax));
+      if (args->precision.set) {
+         BSON_ASSERT (args->precision.value < INT32_MAX);
          TRY (BSON_APPEND_INT32 (
-            edgesInfo, "precision", (int32_t) args.precision.value));
+            edgesInfo, "precision", (int32_t) args->precision.value));
       }
       TRY (BSON_APPEND_DOCUMENT (v, "edgesInfo", edgesInfo));
    }
 
    // create v.
-   TRY (BSON_APPEND_INT32 (v, "payloadId", args.payloadId));
-   TRY (BSON_APPEND_INT32 (v, "firstOperator", (int32_t) args.firstOp));
-   if (args.secondOp) {
-      TRY (BSON_APPEND_INT32 (v, "secondOperator", (int32_t) args.secondOp));
+   TRY (BSON_APPEND_INT32 (v, "payloadId", args->payloadId));
+   TRY (BSON_APPEND_INT32 (v, "firstOperator", (int32_t) args->firstOp));
+   if (args->secondOp) {
+      TRY (BSON_APPEND_INT32 (v, "secondOperator", (int32_t) args->secondOp));
    }
 
    // create placeholder.
    TRY (BSON_APPEND_INT32 (p, "t", MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND));
    TRY (BSON_APPEND_INT32 (p, "a", MONGOCRYPT_FLE2_ALGORITHM_RANGE));
-   TRY (_mongocrypt_buffer_append (args.index_key_id, p, "ki", 2));
-   TRY (_mongocrypt_buffer_append (args.user_key_id, p, "ku", 2));
+   TRY (_mongocrypt_buffer_append (args->index_key_id, p, "ki", 2));
+   TRY (_mongocrypt_buffer_append (args->user_key_id, p, "ku", 2));
    TRY (BSON_APPEND_DOCUMENT (p, "v", v));
-   TRY (BSON_APPEND_INT64 (p, "cm", args.maxContentionCounter));
-   TRY (BSON_APPEND_INT64 (p, "s", args.sparsity));
+   TRY (BSON_APPEND_INT64 (p, "cm", args->maxContentionCounter));
+   TRY (BSON_APPEND_INT64 (p, "s", args->sparsity));
 #undef TRY
 
    _mongocrypt_buffer_resize (out, p->len + 1u);
@@ -524,7 +525,7 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
       .sparsity = range_opts->sparsity};
 
    // First operator is the non-stub.
-   if (!mc_makeRangeFindPlaceholder (args, &p1, status)) {
+   if (!mc_makeRangeFindPlaceholder (&args, &p1, status)) {
       goto fail;
    }
 
@@ -541,7 +542,7 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
          .sparsity = range_opts->sparsity};
 
       // First operator is the non-stub.
-      if (!mc_makeRangeFindPlaceholder (args, &p2, status)) {
+      if (!mc_makeRangeFindPlaceholder (&args, &p2, status)) {
          goto fail;
       }
    }
