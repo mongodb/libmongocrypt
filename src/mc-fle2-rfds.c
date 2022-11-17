@@ -502,9 +502,6 @@ mc_FLE2RangeFindDriverSpec_to_placeholders (
       TRY (bson_iter_init_find (&indexMax, &minMaxDoc, "indexMax"));
    }
 
-   TRY (bson_iter_init_find (&posInf, &infDoc, "p"));
-   TRY (bson_iter_init_find (&negInf, &infDoc, "n"));
-
    bson_init (out);
 
    mc_makeRangeFindPlaceholder_args_t args = {
