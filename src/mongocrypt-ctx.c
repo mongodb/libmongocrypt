@@ -904,10 +904,8 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    /* Check that the kms provider initially set and the datakey kms provider
     * match. */
    if (ctx->opts.kek.kms_provider) {
-      if (!(ctx->crypt->opts.kms_providers.need_credentials &
-            ctx->opts.kek.kms_provider) &&
-
-          !(ctx->crypt->opts.kms_providers.configured_providers &
+      if (!((ctx->crypt->opts.kms_providers.need_credentials |
+             ctx->crypt->opts.kms_providers.configured_providers) &
             ctx->opts.kek.kms_provider)) {
          return _mongocrypt_ctx_fail_w_msg (
             ctx,

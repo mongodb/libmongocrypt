@@ -232,7 +232,7 @@ _test_createdatakey_with_accesstoken (_mongocrypt_tester_t *tester)
 
 static void
 _test_createdatakey_with_wrong_kms_provider_helper (
-   _mongocrypt_tester_t *tester, mongocrypt_binary_t *initial_kms)
+   _mongocrypt_tester_t *tester, mongocrypt_binary_t *kms_provider)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx;
@@ -243,7 +243,7 @@ _test_createdatakey_with_wrong_kms_provider_helper (
                      "}";
 
    crypt = mongocrypt_new ();
-   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, initial_kms), crypt);
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, kms_provider), crypt);
    mongocrypt_setopt_use_need_kms_credentials_state (crypt);
    ASSERT_OK (mongocrypt_init (crypt), crypt);
    ctx = mongocrypt_ctx_new (crypt);
