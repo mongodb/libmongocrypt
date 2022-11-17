@@ -905,6 +905,16 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "master key prohibited");
    }
 
+   /* Check that the kms provider required by the datakey is configured.  */
+   if (ctx->opts.kek.kms_provider) {
+      if (!((ctx->crypt->opts.kms_providers.need_credentials |
+             ctx->crypt->opts.kms_providers.configured_providers) &
+            ctx->opts.kek.kms_provider)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "kms provider required by datakey is not configured");
+      }
+   }
+
    /* Special case. key_descriptor applies to explicit encryption. It must be
     * either a key id or *one* key alt name, but not both.
     * key_alt_names applies to creating a data key. It may be one or multiple
