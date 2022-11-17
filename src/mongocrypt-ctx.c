@@ -303,8 +303,8 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_NONE;
       ctx->opts.index_type.set = true;
    } else if (mstr_eq_ignore_case (
-                 algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANGE_STR))) {
-      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGE;
+                 algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR))) {
+      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW;
       ctx->opts.index_type.set = true;
    } else {
       char *error = bson_strdup_printf ("unsupported algorithm string \"%.*s\"",
@@ -1196,8 +1196,8 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
       ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_EQUALITY;
       ctx->opts.query_type.set = true;
    } else if (mstr_eq_ignore_case (
-                 qt_str, mstrv_lit (MONGOCRYPT_QUERY_TYPE_RANGE_STR))) {
-      ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGE;
+                 qt_str, mstrv_lit (MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR))) {
+      ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW;
       ctx->opts.query_type.set = true;
    } else {
       char *error = bson_strdup_printf (
@@ -1217,8 +1217,8 @@ _mongocrypt_index_type_to_string (mongocrypt_index_type_t val)
       return "None";
    case MONGOCRYPT_INDEX_TYPE_EQUALITY:
       return "Equality";
-   case MONGOCRYPT_INDEX_TYPE_RANGE:
-      return "Range";
+   case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW:
+      return "RangePreview";
    default:
       return "Unknown";
    }
@@ -1230,8 +1230,8 @@ _mongocrypt_query_type_to_string (mongocrypt_query_type_t val)
    switch (val) {
    case MONGOCRYPT_QUERY_TYPE_EQUALITY:
       return "Equality";
-   case MONGOCRYPT_QUERY_TYPE_RANGE:
-      return "Range";
+   case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW:
+      return "RangePreview";
    default:
       return "Unknown";
    }

@@ -3012,7 +3012,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.rng_data = (_test_rng_data_source){
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.index_key_id = &key123_id;
       tc.contention_factor = OPT_I64 (0);
@@ -3034,7 +3034,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.rng_data = (_test_rng_data_source){
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.index_key_id = &key123_id;
       tc.contention_factor = OPT_I64 (0);
@@ -3053,11 +3053,11 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    {
       ee_testcase tc = {0};
       tc.desc = "algorithm='Range' with query_type='range' with int32";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.index_key_id = &keyABC_id;
       tc.contention_factor = OPT_I64 (4);
-      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
       tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"
                                  "int32/rangeopts.json");
       tc.msg = TEST_FILE ("./test/data/fle2-find-range-explicit/int32/"
@@ -3071,7 +3071,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    {
       ee_testcase tc = {0};
       tc.desc = "An unsupported range BSON type is an error";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.contention_factor = OPT_I64 (0);
       tc.range_opts =
@@ -3086,11 +3086,11 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ee_testcase tc = {0};
       tc.desc = "algorithm='Range' with query_type='range' with double with "
                 "precision";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.index_key_id = &key123_id;
       tc.contention_factor = OPT_I64 (0);
-      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
       tc.range_opts =
          TEST_FILE ("./test/data/fle2-find-range-explicit/double-precision/"
                     "rangeopts.json");
@@ -3110,7 +3110,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.rng_data = (_test_rng_data_source){
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.index_key_id = &key123_id;
       tc.contention_factor = OPT_I64 (0);
@@ -3131,11 +3131,11 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ee_testcase tc = {0};
       tc.desc = "algorithm='Range' with query_type='range' with double without "
                 "precision";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.index_key_id = &key123_id;
       tc.contention_factor = OPT_I64 (0);
-      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
       tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/double/"
                                  "rangeopts.json");
       tc.msg = TEST_FILE (
@@ -3154,7 +3154,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.rng_data = (_test_rng_data_source){
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.index_key_id = &key123_id;
       tc.contention_factor = OPT_I64 (0);
@@ -3177,7 +3177,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.rng_data = (_test_rng_data_source){
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.contention_factor = OPT_I64 (0);
       tc.range_opts = TEST_FILE ("./test/data/fle2-insert-range-explicit/"
@@ -3195,8 +3195,8 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ee_testcase tc = {0};
       tc.desc = "algorithm='Range' and query_type='range' with int32 with "
                 "default min/max";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.contention_factor = OPT_I64 (0);
       tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"
@@ -3213,7 +3213,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    {
       ee_testcase tc = {0};
       tc.desc = "min > max for insert";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.contention_factor = OPT_I64 (0);
       tc.range_opts =
@@ -3229,8 +3229,8 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    {
       ee_testcase tc = {0};
       tc.desc = "min > max for find";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.contention_factor = OPT_I64 (0);
       tc.range_opts =
@@ -3246,8 +3246,8 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    {
       ee_testcase tc = {0};
       tc.desc = "open interval";
-      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
       tc.user_key_id = &keyABC_id;
       tc.contention_factor = OPT_I64 (0);
       tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"

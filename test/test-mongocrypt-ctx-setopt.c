@@ -932,7 +932,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
    }
 
-   /* Contention factor is required for "Range" algorithm. */
+   /* Contention factor is required for "rangePreview" algorithm. */
    {
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
@@ -940,12 +940,12 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       ASSERT_KEY_ID_OK (uuid);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1),
+                    ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1),
                  ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
    }
 
-   /* Range opts is required for "Range" algorithm. */
+   /* Range opts is required for "rangePreview" algorithm. */
    {
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
@@ -953,7 +953,7 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       ASSERT_KEY_ID_OK (uuid);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1),
+                    ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1),
                  ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "range opts are required");
    }
@@ -972,17 +972,17 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
          ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1),
+                    ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1),
                  ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "sparsity must be non-negative");
    }
 
-   /* Error if query_type == "range" and algorithm != "range". */
+   /* Error if query_type == "rangePreview" and algorithm != "rangePreview". */
    {
       REFRESH;
       ASSERT_KEY_ID_OK (uuid);
       ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_INDEXED_STR, -1);
-      ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
+      ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR, -1);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "must match index_type");
    }
