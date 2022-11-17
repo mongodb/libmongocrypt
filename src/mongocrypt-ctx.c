@@ -901,20 +901,18 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       }
    }
 
-   /* Check that the kms provider set and the datakey kms provider match. */
+   if (opts_spec->kek == OPT_PROHIBITED && ctx->opts.kek.kms_provider) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "master key prohibited");
+   }
+
+   /* Check that the kms provider required by the datakey is configured.  */
    if (ctx->opts.kek.kms_provider) {
       if (!((ctx->crypt->opts.kms_providers.need_credentials |
              ctx->crypt->opts.kms_providers.configured_providers) &
             ctx->opts.kek.kms_provider)) {
          return _mongocrypt_ctx_fail_w_msg (
-            ctx,
-            "datakey provider does not match the provider set in "
-            "mongocrypt_setopt_kms_providers");
+            ctx, "kms provider required by datakey is not configured");
       }
-   }
-
-   if (opts_spec->kek == OPT_PROHIBITED && ctx->opts.kek.kms_provider) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "master key prohibited");
    }
 
    /* Special case. key_descriptor applies to explicit encryption. It must be
