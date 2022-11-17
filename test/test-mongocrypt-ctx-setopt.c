@@ -1178,6 +1178,49 @@ _test_setopt_endpoint (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+static void
+_test_createdatakey_with_wrong_kms_provider_helper (
+   _mongocrypt_tester_t *tester, mongocrypt_binary_t *kms_provider)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   const char *const kek = "{"
+                           "'provider': 'azure',"
+                           "'keyName': 'foo',"
+                           "'keyVaultEndpoint': 'example.com'"
+                           "}";
+
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, kms_provider), crypt);
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (ctx, TEST_BSON (kek)),
+              ctx);
+   ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx),
+                 ctx,
+                 "kms provider required by datakey is not configured");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_setopt_createdatakey_wrong_kms_provider_configured (
+   _mongocrypt_tester_t *tester)
+{
+   _test_createdatakey_with_wrong_kms_provider_helper (
+      tester, TEST_BSON ("{'gcp': { 'accessToken': '1234' } }"));
+}
+
+static void
+_test_setopt_createdatakey_wrong_kms_provider_empty (
+   _mongocrypt_tester_t *tester)
+{
+   _test_createdatakey_with_wrong_kms_provider_helper (
+      tester, TEST_BSON ("{'gcp': {}}"));
+}
+
 
 static void
 _test_options (_mongocrypt_tester_t *tester)
@@ -1193,6 +1236,8 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_key_encryption_key_azure (tester);
    _test_setopt_key_encryption_key_gcp (tester);
    _test_setopt_query_type (tester);
+   _test_setopt_createdatakey_wrong_kms_provider_empty (tester);
+   _test_setopt_createdatakey_wrong_kms_provider_configured (tester);
 
    /* Test options on different contexts */
    _test_setopt_for_datakey (tester);
