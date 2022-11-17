@@ -196,10 +196,9 @@ _test_createdatakey_with_accesstoken (_mongocrypt_tester_t *tester)
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
    {
-      ASSERT_OK (
-         mongocrypt_ctx_provide_kms_providers (
-            ctx, TEST_BSON ("{'gcp': { 'accessToken': { 'foobar' } } }")),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                    ctx, TEST_BSON ("{'gcp': { 'accessToken': 'foobar' } }")),
+                 ctx);
    }
 
    /* Assert first CTX_NEED_KMS state requests encryption. */
@@ -301,10 +300,9 @@ _test_encrypt_with_accesstoken (_mongocrypt_tester_t *tester)
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
                        MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
    {
-      ASSERT_OK (
-         mongocrypt_ctx_provide_kms_providers (
-            ctx, TEST_BSON ("{'gcp': { 'accessToken': { 'foobar' } } }")),
-         ctx);
+      ASSERT_OK (mongocrypt_ctx_provide_kms_providers (
+                    ctx, TEST_BSON ("{'gcp': { 'accessToken': 'foobar' } }")),
+                 ctx);
    }
 
    ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
