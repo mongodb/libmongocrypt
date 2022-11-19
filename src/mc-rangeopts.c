@@ -20,7 +20,7 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_bson_type_to_string
 
-#include <float.h> // DBL_MIN
+#include <float.h> // DBL_MAX
 
 /* Enable -Wconversion as error for only this file.
  * Other libmongocrypt files warn for -Wconversion. */
@@ -282,7 +282,7 @@ mc_RangeOpts_appendMin (const mc_RangeOpts_t *ro,
          return false;
       }
    } else if (valueType == BSON_TYPE_DOUBLE) {
-      if (!BSON_APPEND_DOUBLE (out, fieldName, DBL_MIN)) {
+      if (!BSON_APPEND_DOUBLE (out, fieldName, -DBL_MAX)) {
          CLIENT_ERR ("failed to append BSON");
          return false;
       }
