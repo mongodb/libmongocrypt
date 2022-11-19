@@ -18,7 +18,7 @@
 #include "mc-check-conversions-private.h"
 #include "mc-range-encoding-private.h"
 
-#include <float.h> // DBL_MIN
+#include <float.h> // DBL_MAX
 #include <math.h>  // INFINITY, NAN
 
 /* Enable -Wconversion as error for only this file.
@@ -398,7 +398,7 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
        .expectMax = OPT_U64_C (134217727)},
       {.value = 0,
        .max = OPT_DOUBLE_C (DBL_MAX),
-       .min = OPT_DOUBLE_C (DBL_MIN),
+       .min = OPT_DOUBLE_C (-DBL_MAX),
        .precision = OPT_U32_C (3),
        .expect = UINT64_C (9223372036854775808),
        // Expect precision not to be used.
@@ -441,7 +441,7 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
        .expectMax = OPT_U64_C (16383)},
       {.value = 1E100,
        .max = OPT_DOUBLE_C (DBL_MAX),
-       .min = OPT_DOUBLE_C (DBL_MIN),
+       .min = OPT_DOUBLE_C (-DBL_MAX),
        .precision = OPT_U32_C (3),
        .expect = 15326393489903895421ULL,
        // Expect precision not to be used.
@@ -476,9 +476,18 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
        .precision = OPT_U32_C (35),
        .expect = 13381399884061196960ULL,
        // Expect precision not to be used.
-       .expectMax = OPT_U64_C (UINT64_MAX)}
+       .expectMax = OPT_U64_C (UINT64_MAX)},
       /* Test cases copied from Double_Bounds_Precision ... end */
-   };
+      {.value = -1,
+       .min = OPT_DOUBLE_C (0),
+       .max = OPT_DOUBLE_C (200),
+       .precision = OPT_U32_C (1),
+       .expectError = "greater than or equal to the minimum value"},
+      {.value = -1,
+       .min = OPT_DOUBLE_C (0),
+       .max = OPT_DOUBLE_C (201),
+       .precision = OPT_U32_C (1),
+       .expectError = "less than or equal to the maximum value"}};
 
    for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
       DoubleTest *test = tests + i;

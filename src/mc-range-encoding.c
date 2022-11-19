@@ -194,6 +194,28 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
       CLIENT_ERR ("Infinity and Nan double values are not supported.");
       return false;
    }
+
+   if (args.min.set) {
+      if (args.min.value >= args.max.value) {
+         CLIENT_ERR (
+            "The minimum value must be less than the maximum value, got "
+            "min: %g, max: %g",
+            args.min.value,
+            args.max.value);
+         return false;
+      }
+
+      if (args.value > args.max.value || args.value < args.min.value) {
+         CLIENT_ERR ("Value must be greater than or equal to the minimum value "
+                     "and less than or equal to the maximum value, got "
+                     "min: %g, max: %g, value: %g",
+                     args.min.value,
+                     args.max.value,
+                     args.value);
+         return false;
+      }
+   }
+
    const bool is_neg = args.value < 0.0;
 
    // Map negative 0 to zero so sign bit is 0.
