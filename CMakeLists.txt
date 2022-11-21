@@ -25,6 +25,7 @@ list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include (GNUInstallDirs)
 
 include (ImportBSON)
+include (IntelDFP)
 
 if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
    message (FATAL_ERROR "PPA build requires static linking to libbson")
@@ -249,6 +250,7 @@ target_link_libraries (
       _mongocrypt::libbson_for_shared
       Threads::Threads
       kms_message_static
+      mongocrypt::intel_dfp
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
       ${CMAKE_DL_LIBS}
@@ -306,6 +308,7 @@ target_link_libraries (
    PRIVATE
       _mongocrypt::libbson_for_static
       kms_message_static
+      mongocrypt::intel_dfp
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
       ${CMAKE_THREAD_LIBS_INIT}
@@ -492,10 +495,21 @@ foreach (test IN ITEMS path str)
 endforeach ()
 
 if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
-   add_executable(mlib.int128.test src/mlib/int128.test.cpp src/mlib/int128.test.c)
-   add_test (mlib.int128 mlib.int128.test)
-   target_link_libraries (mlib.int128.test PRIVATE mongo::mlib Threads::Threads)
-   target_compile_features (mlib.int128.test PRIVATE cxx_relaxed_constexpr)
+   file (GLOB_RECURSE test_files CONFIGURE_DEPENDS src/*.test.cpp)
+   foreach (file IN LISTS test_files)
+      # Compute a nice test name
+      file (RELATIVE_PATH relpath "${CMAKE_CURRENT_LIST_DIR}/src" "${file}")
+      file (TO_CMAKE_PATH "${relpath}" relpath)
+      string (REPLACE "src/" "" relpath "${relpath}")
+      string (REPLACE "/" "." test_name "${relpath}")
+      string (REGEX REPLACE "\\.test\\.cpp$" "" test_name "${test_name}")
+      # Generate a test executable:
+      set (exe_name "${test_name}.test")
+      add_executable ("${exe_name}" "${file}")
+      target_compile_features ("${exe_name}" PRIVATE cxx_relaxed_constexpr)
+      target_link_libraries ("${exe_name}" PRIVATE mongocrypt mongo::mlib mongocrypt::intel_dfp Threads::Threads)
+      add_test ("${test_name}" "${exe_name}")
+   endforeach ()
 endif ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
