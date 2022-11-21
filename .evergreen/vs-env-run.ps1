@@ -87,7 +87,7 @@ param (
     $VCToolsetVersion,
     # Prefer Visual C++ libraries with Spectre mitigations
     [switch]
-    $UseSpectreMiticationLibraries,
+    $UseSpectreMitigationLibraries,
     # The app platform to load. Default is "Desktop"
     [ValidateSet("Desktop", "UWP", IgnoreCase = $false)]
     [string]
@@ -111,19 +111,21 @@ if ([string]::IsNullOrEmpty($ScratchDir)) {
 New-Item $ScratchDir -ItemType Directory -ErrorAction Ignore
 $vswhere = Join-Path $ScratchDir "vswhere.exe"
 
-$ProgressPreference = "SilentlyContinue"
-[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11'
-Invoke-WebRequest `
-    -UseBasicParsing `
-    -Uri "https://github.com/microsoft/vswhere/releases/download/3.0.3/vswhere.exe" `
-    -OutFile $vswhere
+if (!(Test-Path $vswhere)) {
+    $ProgressPreference = "SilentlyContinue"
+    [Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11'
+    Invoke-WebRequest `
+        -UseBasicParsing `
+        -Uri "https://github.com/microsoft/vswhere/releases/download/3.0.3/vswhere.exe" `
+        -OutFile $vswhere
+}
 
 # Ask vswhere for all the installed products:
 $vswhere_json = & $vswhere -utf8 -nologo -format json -all -legacy -prerelease -products * | Out-String
 $vs_versions = $vswhere_json | ConvertFrom-Json
 Write-Debug "Detected VS versions: $vs_versions"
 
-# Pick the produce that matches the pattern
+# Pick the product that matches the pattern
 $selected = @($vs_versions | Where-Object { $_.installationVersion -like $Version })
 
 if ($selected.Length -eq 0) {
@@ -186,8 +188,8 @@ if ($null -eq $vsdevcmd_bat) {
 else {
     # Build up the argument string to load the appropriate environment
     $argstr = "-no_logo -arch=$TargetArch -host_arch=$HostArch -app_platform=$AppPlatform"
-    if ($UseSpectreMiticationLibraries) {
-        $argstr += " -vcvars_specter_libs=spectre"
+    if ($UseSpectreMitigationLibraries) {
+        $argstr += " -vcvars_spectre_libs=spectre"
     }
     if ($WinSDKVersion) {
         $argstr += " -winsdk=$WinSDKVersion"
