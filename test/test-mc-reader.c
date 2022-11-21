@@ -33,13 +33,13 @@ _test_mc_reader (_mongocrypt_tester_t *tester)
    uint8_t value;
    ASSERT_OK_STATUS (mc_reader_read_u8 (&reader, &value, status), status);
    ASSERT_CMPUINT (value, ==, 0xAB);
-   ASSERT_CMPUINT (mc_reader_get_consumed_length (&reader), ==, 1);
-   ASSERT_CMPUINT (mc_reader_get_remaining_length (&reader), ==, 1);
+   ASSERT_CMPSIZE_T (mc_reader_get_consumed_length (&reader), ==, 1);
+   ASSERT_CMPSIZE_T (mc_reader_get_remaining_length (&reader), ==, 1);
 
    ASSERT_OK_STATUS (mc_reader_read_u8 (&reader, &value, status), status);
    ASSERT_CMPUINT (value, ==, 0xCD);
-   ASSERT_CMPUINT (mc_reader_get_consumed_length (&reader), ==, 2);
-   ASSERT_CMPUINT (mc_reader_get_remaining_length (&reader), ==, 0);
+   ASSERT_CMPSIZE_T (mc_reader_get_consumed_length (&reader), ==, 2);
+   ASSERT_CMPSIZE_T (mc_reader_get_remaining_length (&reader), ==, 0);
 
    ASSERT_FAILS_STATUS (mc_reader_read_u8 (&reader, &value, status),
                         status,

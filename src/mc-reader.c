@@ -225,7 +225,7 @@ mc_reader_read_buffer_to_end (mc_reader_t *reader,
    BSON_ASSERT_PARAM (status);
 
    const uint8_t *ptr;
-   uint32_t length = reader->len - reader->pos;
+   size_t length = reader->len - reader->pos;
    CHECK_AND_RETURN (mc_reader_read_bytes (reader, &ptr, length, status));
 
    if (!_mongocrypt_buffer_copy_from_data_and_size (buf, ptr, length)) {
