@@ -3210,6 +3210,38 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ee_testcase_run (&tc);
    }
 
+   {
+      ee_testcase tc = {0};
+      tc.desc = "min > max for insert";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts =
+         TEST_BSON ("{'min': 1, 'max': 0, 'sparsity': {'$numberLong': '1'}}");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-insert-range-explicit/int32/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect_finalize_error =
+         "minimum value must be less than the maximum value";
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "min > max for find";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts =
+         TEST_BSON ("{'min': 25, 'max': 24, 'sparsity': {'$numberLong': '1'}}");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-find-range-explicit/int32/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect_finalize_error = "foobar";
+      ee_testcase_run (&tc);
+   }
+
    _mongocrypt_buffer_cleanup (&keyABC_id);
    _mongocrypt_buffer_cleanup (&key123_id);
 }
