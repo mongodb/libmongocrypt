@@ -3238,7 +3238,11 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.msg = TEST_FILE (
          "./test/data/fle2-find-range-explicit/int32/value-to-encrypt.json");
       tc.keys_to_feed[0] = keyABC;
-      tc.expect_finalize_error = "foobar";
+      tc.expect_finalize_error =
+         "minimum value must be less than the maximum value";
+      ee_testcase_run (&tc);
+   }
+
       ee_testcase_run (&tc);
    }
 
