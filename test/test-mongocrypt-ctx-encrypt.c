@@ -3243,6 +3243,20 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       ee_testcase_run (&tc);
    }
 
+   {
+      ee_testcase tc = {0};
+      tc.desc = "open interval";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                                 "int32-openinterval/rangeopts.json");
+      tc.msg = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                          "int32-openinterval/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                             "int32-openinterval/encrypted-payload.json");
       ee_testcase_run (&tc);
    }
 
