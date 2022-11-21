@@ -124,7 +124,7 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
                      mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (status);
-   CHECK_BOUNDS (args, "%" PRId32);
+   CHECK_BOUNDS (args, PRId32);
    mc_OSTType_Int32 a, b;
    if (!mc_getTypeInfo32 ((mc_getTypeInfo32_args_t){.min = args.min,
                                                     .max = args.max,
@@ -173,7 +173,7 @@ mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
                      mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (status);
-   CHECK_BOUNDS (args, "%" PRId64);
+   CHECK_BOUNDS (args, PRId64);
    mc_OSTType_Int64 a, b;
    if (!mc_getTypeInfo64 ((mc_getTypeInfo64_args_t){.min = args.min,
                                                     .max = args.max,
@@ -220,7 +220,7 @@ mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
                       mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (status);
-   CHECK_BOUNDS (args, "%g");
+   CHECK_BOUNDS (args, "g");
 
    mc_OSTType_Double a, b;
    if (!mc_getTypeInfoDouble (
