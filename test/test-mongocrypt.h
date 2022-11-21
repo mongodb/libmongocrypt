@@ -247,6 +247,10 @@ void
 _mongocrypt_tester_install_mc_FLE2RangeFindDriverSpec (
    _mongocrypt_tester_t *tester);
 
+void
+_mongocrypt_tester_install_mc_reader(
+   _mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
