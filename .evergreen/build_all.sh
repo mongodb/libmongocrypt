@@ -17,7 +17,10 @@ _cxxflags=""
 if [ "$OS_NAME" = "windows" ]; then
     # Enable exception handling for MSVC
     _cxxflags="-EHsc"
-    if [ "${WINDOWS_32BIT-}" != "ON" ]; then
+    if is_false WINDOWS_32BIT && is_false USE_NINJA; then
+        # These options are only needed for VS CMake generators to force it to
+        # generate a 64-bit build. Default is 32-bit. Ninja inherits settings
+        # from the build environment variables.
         ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
     fi
 fi
@@ -57,6 +60,16 @@ common_cmake_args=(
     -H"$LIBMONGOCRYPT_DIR"
     -B"$build_dir"
 )
+
+if is_true USE_NINJA; then
+    export NINJA_EXE
+    : "${NINJA_EXE:="$build_dir/ninja$EXE_SUFFIX"}"
+    common_cmake_args+=(
+        -GNinja
+        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
+    )
+    bash "$EVG_DIR/ensure-ninja.sh"
+fi
 
 # Build and install libmongocrypt.
 run_cmake \
