@@ -51,8 +51,8 @@
  */
 struct _mc_reader_t {
    const uint8_t *ptr;
-   size_t pos;
-   size_t len;
+   uint32_t pos;
+   uint32_t len;
 
    const char *parser_name;
 };
@@ -79,10 +79,10 @@ mc_reader_destroy (mc_reader_t *reader);
 bool
 mc_reader_has_data (mc_reader_t *reader);
 
-size_t
+uint32_t
 mc_reader_get_remaining_length (mc_reader_t *reader);
 
-size_t
+uint32_t
 mc_reader_get_consumed_length (mc_reader_t *reader);
 
 bool
@@ -103,13 +103,13 @@ mc_reader_read_u64 (mc_reader_t *reader,
 bool
 mc_reader_read_bytes (mc_reader_t *reader,
                       const uint8_t **ptr,
-                      size_t length,
+                      uint32_t length,
                       mongocrypt_status_t *status);
 
 bool
 mc_reader_read_buffer (mc_reader_t *reader,
                        _mongocrypt_buffer_t *buf,
-                       size_t length,
+                       uint32_t length,
                        mongocrypt_status_t *status);
 
 bool

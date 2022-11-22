@@ -193,9 +193,9 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
 
 
    /* Read ClientEncryptedValue. */
-   size_t expected_length =
-      mc_reader_get_consumed_length (&reader) + length - 16;
-   if (length > iev->Inner.len || expected_length > iev->Inner.len) {
+   uint32_t expected_length =
+      mc_reader_get_consumed_length (&reader) + (uint32_t)length - 16;
+   if (length > LONG_MAX || length > iev->Inner.len || expected_length > iev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
                   "Inner byte length >= %" PRIu32 " got: %" PRIu32,
                   expected_length,
@@ -204,7 +204,7 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
    }
 
    CHECK_AND_RETURN (mc_reader_read_buffer (
-      &reader, &iev->ClientEncryptedValue, length - 16, status));
+      &reader, &iev->ClientEncryptedValue, (uint32_t)length - 16, status));
 
 
    iev->inner_decrypted = true;
