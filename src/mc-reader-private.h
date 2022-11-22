@@ -62,7 +62,7 @@ typedef struct _mc_reader_t mc_reader_t;
 void
 mc_reader_init (mc_reader_t *reader,
                 const uint8_t *ptr,
-                size_t len,
+                uint32_t len,
                 const char *parser_name);
 
 void
@@ -71,7 +71,7 @@ mc_reader_init_from_buffer (mc_reader_t *reader,
                             const char *parser_name);
 
 mc_reader_t *
-mc_reader_new (const uint8_t *ptr, size_t len, const char *parser_name);
+mc_reader_new (const uint8_t *ptr, uint32_t len, const char *parser_name);
 
 void
 mc_reader_destroy (mc_reader_t *reader);
