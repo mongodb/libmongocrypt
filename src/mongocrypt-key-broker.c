@@ -557,6 +557,7 @@ _mongocrypt_key_broker_add_doc (_mongocrypt_key_broker_t *kb,
 
    /* If the KMS provider is local, decrypt immediately. Otherwise, create the
     * HTTP KMS request. */
+   BSON_ASSERT (kb->crypt);
    if (kek_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
       if (!_mongocrypt_unwrap_key (kb->crypt->crypto,
                                    &kms_providers->local.key,

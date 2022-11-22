@@ -125,6 +125,7 @@ parse_aggregate_expression (const bson_t *orig,
                             mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (orig);
+   BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
@@ -189,6 +190,7 @@ parse_match_expression (const bson_t *orig,
                         mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (orig);
+   BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
@@ -241,6 +243,9 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
                                   const bson_t *in,
                                   mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT (status || true);
+
    *spec = (mc_FLE2RangeFindDriverSpec_t){0};
    // `in` may be an Aggregate Expression with this form:
    // {$and: [{$gt: ["$age", 5]}, {$lt:["$age", 50]}]}
@@ -378,6 +383,7 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t *args,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (args);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 

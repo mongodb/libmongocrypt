@@ -418,7 +418,7 @@ _cng_ctr_crypto_generate (cng_ctr_encrypt_state *state,
 static void
 _cng_ctr_crypto_advance (cng_ctr_encrypt_state *state)
 {
-   BSON_ASSERT (state);
+   BSON_ASSERT_PARAM (state);
 
    uint32_t carry = 1;
    for (int i = state->input_block_len - 1; i >= 0 && carry != 0; --i) {
@@ -433,8 +433,8 @@ _cng_ctr_crypto_next (cng_ctr_encrypt_state *state,
                       mongocrypt_status_t *status,
                       unsigned char *mask)
 {
-   BSON_ASSERT (state);
-   BSON_ASSERT (mask);
+   BSON_ASSERT_PARAM (state);
+   BSON_ASSERT_PARAM (mask);
 
    if (state->output_block_ptr >= state->output_block_len) {
       _cng_ctr_crypto_advance (state);

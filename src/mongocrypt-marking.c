@@ -1190,6 +1190,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    BSON_ASSERT_PARAM (kb);
    BSON_ASSERT_PARAM (marking);
    BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
 
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
@@ -1199,6 +1200,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    _mongocrypt_buffer_t tokenKey = {0};
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
    BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
    _mongocrypt_ciphertext_init (ciphertext);
@@ -1333,6 +1335,7 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    bool res = false;
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder);
    BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED);
    _mongocrypt_ciphertext_init (ciphertext);
    _mongocrypt_buffer_from_iter (&plaintext, &placeholder->v_iter);

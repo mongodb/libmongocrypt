@@ -31,7 +31,7 @@ _make_owned (_mongocrypt_buffer_t *buf)
 {
    uint8_t *tmp;
 
-   BSON_ASSERT (buf);
+   BSON_ASSERT_PARAM (buf);
    if (buf->owned) {
       return;
    }
@@ -61,7 +61,7 @@ _mongocrypt_buffer_init (_mongocrypt_buffer_t *buf)
 void
 _mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len)
 {
-   BSON_ASSERT (buf);
+   BSON_ASSERT_PARAM (buf);
 
    /* Currently this just wipes whatever was in data before,
       but a fancier implementation could copy over up to 'len'

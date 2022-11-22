@@ -70,6 +70,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                         NULL);
 
          /* Preserve key ID of original document. */
+         BSON_ASSERT (iter->doc);
          BSON_ASSERT (BSON_APPEND_BINARY (&elem,
                                           "_id",
                                           BSON_SUBTYPE_UUID,
