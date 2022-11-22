@@ -680,10 +680,18 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
    }
 
    else if (value_type == BSON_TYPE_DOUBLE) {
-      return mc_getEdgesDouble (
-         (mc_getEdgesDouble_args_t){.value = bson_iter_double (&insertSpec->v),
-                                    .sparsity = sparsity},
-         status);
+      mc_getEdgesDouble_args_t args = {
+         .value = bson_iter_double (&insertSpec->v), .sparsity = sparsity};
+      if (insertSpec->precision.set) {
+         // If precision is set, pass min/max/precision to mc_getEdgesDouble.
+         // Do not pass min/max if precision is not set. All three must be set
+         // or all three must be unset in mc_getTypeInfoDouble.
+         args.min = OPT_DOUBLE (bson_iter_double (&insertSpec->min));
+         args.max = OPT_DOUBLE (bson_iter_double (&insertSpec->max));
+         args.precision = insertSpec->precision;
+      }
+
+      return mc_getEdgesDouble (args, status);
    }
 
 
@@ -1117,21 +1125,32 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
                bson_iter_date_time (&findSpec->edgesInfo.value.indexMax)),
             .sparsity = sparsity},
          status);
-   case BSON_TYPE_DOUBLE:
+   case BSON_TYPE_DOUBLE: {
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DOUBLE);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DOUBLE);
       BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMin) ==
                    BSON_TYPE_DOUBLE);
       BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMax) ==
                    BSON_TYPE_DOUBLE);
-      return mc_getMincoverDouble (
-         (mc_getMincoverDouble_args_t){
-            .lowerBound = bson_iter_double (&lowerBound),
-            .includeLowerBound = includeLowerBound,
-            .upperBound = bson_iter_double (&upperBound),
-            .includeUpperBound = includeUpperBound,
-            .sparsity = sparsity},
-         status);
+
+      mc_getMincoverDouble_args_t args = {
+         .lowerBound = bson_iter_double (&lowerBound),
+         .includeLowerBound = includeLowerBound,
+         .upperBound = bson_iter_double (&upperBound),
+         .includeUpperBound = includeUpperBound,
+         .sparsity = sparsity};
+      if (findSpec->edgesInfo.value.precision.set) {
+         // If precision is set, pass min/max/precision to mc_getMincoverDouble.
+         // Do not pass min/max if precision is not set. All three must be set
+         // or all three must be unset in mc_getTypeInfoDouble.
+         args.min =
+            OPT_DOUBLE (bson_iter_double (&findSpec->edgesInfo.value.indexMin));
+         args.max =
+            OPT_DOUBLE (bson_iter_double (&findSpec->edgesInfo.value.indexMax));
+         args.precision = findSpec->edgesInfo.value.precision;
+      }
+      return mc_getMincoverDouble (args, status);
+   }
    case BSON_TYPE_DECIMAL128:
       CLIENT_ERR ("FLE2 find not yet implemented for type: %s",
                   mc_bson_type_to_string (bsonType));
