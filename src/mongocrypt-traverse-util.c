@@ -72,7 +72,7 @@ _recurse (_recurse_state_t *state)
          BSON_ASSERT (
             _mongocrypt_buffer_from_binary_iter (&value, &state->iter));
 
-         if (value.subtype == 6 && value.len > 0 &&
+         if (value.subtype == BSON_SUBTYPE_ENCRYPTED && value.len > 0 &&
              _check_first_byte (value.data[0], state->match)) {
             bool ret;
             /* call the right callback. */
@@ -197,7 +197,8 @@ _mongocrypt_transform_binary_in_bson (_mongocrypt_transform_callback_t cb,
  * _mongocrypt_traverse_binary_in_bson
  *
  *    Traverse the BSON being iterated with iter, and call cb for every binary
- *    subtype 06 value where the first byte corresponds to 'match'.
+ *    subtype 06 (BSON_SUBTYPE_ENCRYPTED) value where the first byte corresponds
+ *    to 'match'.
  *
  * Return:
  *    True on success. Returns false on failure and sets error.

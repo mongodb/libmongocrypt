@@ -1141,7 +1141,7 @@ _marking_to_bson_value (void *ctx,
    out->value_type = BSON_TYPE_BINARY;
    out->value.v_binary.data = serialized_ciphertext.data;
    out->value.v_binary.data_len = serialized_ciphertext.len;
-   out->value.v_binary.subtype = (bson_subtype_t) 6;
+   out->value.v_binary.subtype = (bson_subtype_t) BSON_SUBTYPE_ENCRYPTED;
 
    ret = true;
 
@@ -2295,7 +2295,7 @@ _permitted_for_encryption (bson_iter_t *iter,
       CLIENT_ERR ("BSON type invalid for encryption");
       goto fail;
    case BSON_TYPE_BINARY:
-      if (bson_value->value.v_binary.subtype == 6) {
+      if (bson_value->value.v_binary.subtype == BSON_SUBTYPE_ENCRYPTED) {
          CLIENT_ERR ("BSON binary subtype 6 is invalid for encryption");
          goto fail;
       }
