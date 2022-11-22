@@ -29,12 +29,30 @@ mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build
 run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
 MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
-if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON"; then
+if test "$OS_NAME" = "windows" && is_false WINDOWS_32BIT && is_false USE_NINJA; then
+    # These options are only needed for VS CMake generators to force it to
+    # generate a 64-bit build. Default is 32-bit. Ninja inherits settings
+    # from the build environment variables.
     ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 
 if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
+fi
+
+common_cmake_args=(
+  $ADDITIONAL_CMAKE_FLAGS
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo
+)
+
+if is_true USE_NINJA; then
+    export NINJA_EXE
+    : "${NINJA_EXE:="$linker_tests_root/ninja$EXE_SUFFIX"}"
+    common_cmake_args+=(
+        -GNinja
+        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
+    )
+    bash "$EVG_DIR/ensure-ninja.sh"
 fi
 
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
@@ -44,8 +62,7 @@ BSON1_INSTALL_PATH="$linker_tests_root/install/bson1"
 SRC_PATH="$MONGOC_DIR"
 run_cmake \
   -DENABLE_MONGOC=OFF \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  $ADDITIONAL_CMAKE_FLAGS \
+  "${common_cmake_args[@]}" \
   -DCMAKE_INSTALL_PREFIX="$BSON1_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_PATH"
@@ -61,9 +78,8 @@ BUILD_DIR="$linker_tests_root/libmongocrypt-cmake-build"
 LMC_INSTALL_PATH="$linker_tests_root/install/libmongocrypt"
 SRC_PATH="$LIBMONGOCRYPT_DIR"
 run_cmake \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   "-DMONGOCRYPT_MONGOC_DIR=$LIBBSON2_SRC_DIR" \
-  $ADDITIONAL_CMAKE_FLAGS \
+  "${common_cmake_args[@]}" \
   -DCMAKE_INSTALL_PREFIX="$LMC_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
@@ -76,15 +92,14 @@ BUILD_DIR="$linker_tests_root/app-cmake-build"
 PREFIX_PATH="$LMC_INSTALL_PATH;$BSON1_INSTALL_PATH"
 SRC_PATH="$linker_tests_deps_root/app"
 run_cmake \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  $ADDITIONAL_CMAKE_FLAGS \
+  "${common_cmake_args[@]}" \
   -DCMAKE_PREFIX_PATH="$PREFIX_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
 run_cmake --build "$BUILD_DIR" --target app --config RelWithDebInfo
 
-if [ "$OS_NAME" = "windows" ]; then
-    export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
+export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
+if is_true IS_MULTICONF; then
     APP_CMD="$BUILD_DIR/RelWithDebInfo/app.exe"
 else
     APP_CMD="$BUILD_DIR/app"

@@ -70,10 +70,18 @@ functions:
         script: |-
           . libmongocrypt/.evergreen/init.sh
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
-          env ${compile_env|} bash "$EVG_DIR/build_all.sh"
-          env ${compile_env|} bash "$EVG_DIR/linker-tests.sh"
-          env ${compile_env|} bash "$EVG_DIR/pkgconfig-tests.sh"
-
+          export VS_VERSION=${vs_version|}
+          export VS_TARGET_ARCH=${vs_target_arch|amd64}
+          export USE_NINJA=ON
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/build_all.sh"
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/linker-tests.sh"
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/pkgconfig-tests.sh"
 
   "create packages and repos":
     - command: "shell.exec"
@@ -107,6 +115,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
           env ${compile_env|} CONFIGURE_ONLY=ON CC=clang CXX=clang++ \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
@@ -243,7 +252,10 @@ functions:
   "build csharp and test":
     - command: "shell.exec"
       params:
+        shell: bash
         script: |-
+          . libmongocrypt/.evergreen/init.sh
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
           env ${compile_env|} DEFAULT_BUILD_ONLY=true \
             bash ./libmongocrypt/.evergreen/build_all.sh
           env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
@@ -940,12 +952,18 @@ buildvariants:
 - name: windows-vs2015-compile
   display_name: "Windows VS 2015 compile"
   run_on: windows-64-vs2015-test
+  expansions:
+    vs_version: "14"
+    vs_target_arch: amd64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
 - name: windows-test
   display_name: "Windows 2016"
   run_on: windows-64-vs2017-test
+  expansions:
+    vs_version: "15"
+    vs_target_arch: amd64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1284,5 +1302,7 @@ buildvariants:
   run_on: windows-64-vs2017-small
   expansions:
     compile_env: WINDOWS_32BIT=ON
+    vs_version: "15"
+    vs_target_arch: x86
   tasks:
   - build-and-test-and-upload

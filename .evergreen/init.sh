@@ -191,6 +191,24 @@ _init_sh_evg_dir="$(dirname "${_init_sh_this_file}")"
 EVG_DIR="$(native_path "${_init_sh_evg_dir}")"
 LIBMONGOCRYPT_DIR="$(dirname "${EVG_DIR}")"
 
+is_true() {
+    declare var="$1"
+    declare val="${!var-}"  # Default is '' empty
+    case "$val" in
+    1|true|TRUE|True|yes|YES|Yes|on|ON|On)
+        return 0;;
+    0|false|FALSE|False|no|NO|No|off|OFF|Off|"")
+        return 1;;
+    *)
+        log "Unknown 'boolean' value for \$$var: '$val'"
+        return 2;;
+    esac
+}
+
+is_false() {
+    ! is_true "$@"
+}
+
 # Executes CMake via the cache-managing script
 run_cmake() {
     command bash "$EVG_DIR/cmake.sh" "$@"
@@ -199,6 +217,14 @@ run_cmake() {
 # Executes CTest via the cache-managing script
 run_ctest() {
     command bash "$EVG_DIR/ctest.sh" "$@"
+}
+
+run_python() {
+    if have_command py; then
+        py "$@"
+    else
+        python "$@"
+    fi
 }
 
 EXE_SUFFIX=""

@@ -14,7 +14,10 @@ mongoc_src_dir="$pkgconfig_tests_root/mongo-c-driver"
 mkdir -p "$mongoc_src_dir"
 run_chdir "$pkgconfig_tests_root" "$EVG_DIR/prep_c_driver_source.sh"
 
-if test "$OS_NAME" = "windows" && test "${WINDOWS_32BIT-}" != "ON"; then
+if test "$OS_NAME" = "windows" && is_false WINDOWS_32BIT && is_false USE_NINJA; then
+    # These options are only needed for VS CMake generators to force it to
+    # generate a 64-bit build. Default is 32-bit. Ninja inherits settings
+    # from the build environment variables.
     ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 
@@ -22,15 +25,25 @@ if [ "$MACOS_UNIVERSAL" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
-common_cmake_flags=(
+common_cmake_args=(
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     $ADDITIONAL_CMAKE_FLAGS
 )
 
+if is_true USE_NINJA; then
+    export NINJA_EXE
+    : "${NINJA_EXE:="$pkgconfig_tests_root/ninja$EXE_SUFFIX"}"
+    common_cmake_args+=(
+        -GNinja
+        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
+    )
+    bash "$EVG_DIR/ensure-ninja.sh"
+fi
+
 libbson_install_dir="$pkgconfig_tests_root/install/libbson"
 build_dir="$mongoc_src_dir/_build"
 run_cmake -DENABLE_MONGOC=OFF \
-       "${common_cmake_flags[@]}" \
+       "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$libbson_install_dir" \
        -H"$mongoc_src_dir" \
        -B"$build_dir"
@@ -42,7 +55,7 @@ mongocrypt_install_dir="$pkgconfig_tests_root/install/libmongocrypt"
 build_dir=$pkgconfig_tests_root/mongocrypt-build
 run_cmake -DUSE_SHARED_LIBBSON=OFF \
        -DENABLE_BUILD_FOR_PPA=ON \
-       "${common_cmake_flags[@]}" \
+       "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
        -B"$build_dir"
@@ -95,7 +108,7 @@ rm -r "$mongocrypt_install_dir"
 # Build libmongocrypt, dynamic linking against libbson
 run_cmake -DUSE_SHARED_LIBBSON=ON \
        -DENABLE_BUILD_FOR_PPA=OFF \
-       "${common_cmake_flags[@]}" \
+       "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
        -B"$build_dir"
