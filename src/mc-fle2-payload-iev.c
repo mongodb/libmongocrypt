@@ -239,7 +239,7 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
    /* Read ClientEncryptedValue. */
    if (offset + (length - 16) > iev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
-                  "Inner byte length >= %" PRIu32 " got: %" PRIu32,
+                  "Inner byte length >= %" PRIu64 " got: %" PRIu32,
                   offset + (length - 16),
                   iev->Inner.len);
       return false;
@@ -247,7 +247,7 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
    if (!_mongocrypt_buffer_copy_from_data_and_size (&iev->ClientEncryptedValue,
                                                     iev->Inner.data + offset,
                                                     (size_t) (length - 16))) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse failed to copy "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key failed to copy "
                   "data for ClientEncryptedValue");
       return false;
    }

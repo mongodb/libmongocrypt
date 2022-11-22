@@ -245,7 +245,7 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
       // We can overflow if max = max double and min = min double so make sure
       // we have finite number after we do subtraction
       if (isfinite (range)) {
-         // This creates a range which is wider then we permit by our min/max
+         // This creates a range which is wider than we permit by our min/max
          // bounds check with the +1 but it is as the algorithm is written in
          // WRITING-11907.
          double rangeAndPrecision =
