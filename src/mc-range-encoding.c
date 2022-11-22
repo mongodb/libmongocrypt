@@ -177,20 +177,110 @@ mc_getTypeInfo64 (mc_getTypeInfo64_args_t args,
    return true;
 }
 
+#define exp10Double(x) pow (10, x)
+
 bool
 mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
                       mc_OSTType_Double *out,
                       mongocrypt_status_t *status)
 {
+   if (args.min.set != args.max.set || args.min.set != args.precision.set) {
+      CLIENT_ERR (
+         "min, max, and precision must all be set or must all be unset");
+      return false;
+   }
+
    if (isinf (args.value) || isnan (args.value)) {
       CLIENT_ERR ("Infinity and Nan double values are not supported.");
       return false;
    }
+
+   if (args.min.set) {
+      if (args.min.value >= args.max.value) {
+         CLIENT_ERR (
+            "The minimum value must be less than the maximum value, got "
+            "min: %g, max: %g",
+            args.min.value,
+            args.max.value);
+         return false;
+      }
+
+      if (args.value > args.max.value || args.value < args.min.value) {
+         CLIENT_ERR ("Value must be greater than or equal to the minimum value "
+                     "and less than or equal to the maximum value, got "
+                     "min: %g, max: %g, value: %g",
+                     args.min.value,
+                     args.max.value,
+                     args.value);
+         return false;
+      }
+   }
+
    const bool is_neg = args.value < 0.0;
 
    // Map negative 0 to zero so sign bit is 0.
    if (args.value == 0.0) {
       args.value = 0.0;
+   }
+
+   // When we use precision mode, we try to represent as a double value that
+   // fits in [-2^63, 2^63] (i.e. is a valid int64)
+   //
+   // This check determines if we can represent the precision truncated value as
+   // a 64-bit integer I.e. Is ((ub - lb) * 10^precision) < 64 bits.
+   //
+   bool use_precision_mode = false;
+   uint32_t bits_range;
+   if (args.precision.set) {
+      // Subnormal representations can support up to 5x10^-324 as a number
+      if (args.precision.value < 0 || args.precision.value > 324) {
+         CLIENT_ERR (
+            "Precision must be between 0 and 324 inclusive, got: %" PRIu32,
+            args.precision.value);
+         return false;
+      }
+
+      double range = args.max.value - args.min.value;
+
+      // We can overflow if max = max double and min = min double so make sure
+      // we have finite number after we do subtraction
+      if (isfinite (range)) {
+         // This creates a range which is wider then we permit by our min/max
+         // bounds check with the +1 but it is as the algorithm is written in
+         // WRITING-11907.
+         double rangeAndPrecision =
+            (range + 1) * exp10Double (args.precision.value);
+
+         if (isfinite (rangeAndPrecision)) {
+            double bits_range_double = log2 (rangeAndPrecision);
+            bits_range = (uint32_t) ceil (bits_range_double);
+
+            if (bits_range < 64) {
+               use_precision_mode = true;
+            }
+         }
+      }
+   }
+
+   if (use_precision_mode) {
+      // Take a number of xxxx.ppppp and truncate it xxxx.ppp if precision = 3.
+      // We do not change the digits before the decimal place.
+      double v_prime = trunc (args.value * exp10Double (args.precision.value)) /
+                       exp10Double (args.precision.value);
+      int64_t v_prime2 = (int64_t) ((v_prime - args.min.value) *
+                                    exp10Double (args.precision.value));
+
+      BSON_ASSERT (v_prime2 < INT64_MAX && v_prime2 >= 0);
+
+      uint64_t ret = (uint64_t) v_prime2;
+
+      // Adjust maximum value to be the max bit range. This will be used by
+      // getEdges/minCover to trim bits.
+      uint64_t max_value = (UINT64_C (1) << bits_range) - 1;
+      BSON_ASSERT (ret <= max_value);
+
+      *out = (mc_OSTType_Double){ret, 0, max_value};
+      return true;
    }
 
    // Translate double to uint64 by modifying the bit representation and copying

@@ -101,6 +101,9 @@ typedef struct {
    double upperBound;
    bool includeUpperBound;
    size_t sparsity;
+   mc_optional_double_t min;
+   mc_optional_double_t max;
+   mc_optional_uint32_t precision;
    /* expectMincoverString is newline delimitted list of strings. */
    const char *expectMincoverString;
    mc_array_t expectMincover;
@@ -168,7 +171,10 @@ _test_getMincoverDouble_helper (void *tests,
          .includeLowerBound = test->includeLowerBound,
          .upperBound = test->upperBound,
          .includeUpperBound = test->includeUpperBound,
-         .sparsity = test->sparsity},
+         .sparsity = test->sparsity,
+         .min = test->min,
+         .max = test->max,
+         .precision = test->precision},
       status);
 }
 
@@ -308,6 +314,15 @@ _test_dump_Double (void *tests, size_t idx, mc_mincover_t *got)
             test->includeLowerBound ? "inclusive" : "exclusive",
             test->upperBound,
             test->includeUpperBound ? "inclusive" : "exclusive");
+   if (test->min.set) {
+      fprintf (stderr, " min=%f", test->min.value);
+   }
+   if (test->max.set) {
+      fprintf (stderr, " max=%f", test->max.value);
+   }
+   if (test->precision.set) {
+      fprintf (stderr, " precision=%" PRIu32, test->precision.value);
+   }
    fprintf (stderr, " sparsity=%zu\n", test->sparsity);
    fprintf (stderr, "mincover expected ... begin\n");
    fprintf (stderr, "%s", test->expectMincoverString);
@@ -518,6 +533,7 @@ _test_getMincoverDouble (_mongocrypt_tester_t *tester)
 {
    static DoubleTest tests[] = {
 #include "./data/range-min-cover/mincover_double.cstruct"
+#include "./data/range-min-cover/mincover_double_precision.cstruct"
    };
 
    _test_getMincover_impl (

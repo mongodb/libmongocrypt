@@ -337,6 +337,21 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lssl -lcrypto")
 endif ()
 
+# Link to libm for math functions (pow, log, etc.)
+# Do not link on Apple. On macOS Big Sur, libm resolves to the SDK's tbd file, like:
+# /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libm.tbd
+# Not all consumers can easily link to a tbd file (notably golang will reject a tbd suffix by default)
+# macOS includes libm as part of libSystem (along with libc).
+# It does not need to be explicitly linked.
+if (NOT APPLE)
+   find_library (M_LIBRARY m)
+   if (M_LIBRARY)
+      target_link_libraries (mongocrypt PRIVATE ${M_LIBRARY})
+      target_link_libraries (mongocrypt_static PRIVATE ${M_LIBRARY})
+      set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lm")
+   endif ()
+endif ()
+
 set_target_properties (mongocrypt PROPERTIES
    SOVERSION 0
    VERSION "0.0.0"

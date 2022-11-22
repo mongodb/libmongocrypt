@@ -1,0 +1,48 @@
+{
+    "insert": "test",
+    "documents": [
+        {
+            "plainText": "sample",
+            "encrypted": {
+                "$binary": {
+                    "base64": "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",
+                    "subType": "6"
+                }
+            }
+        }
+    ],
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+            "db.test": {
+                "escCollection": "fle2.test.esc",
+                "eccCollection": "fle2.test.ecc",
+                "ecocCollection": "fle2.test.ecoc",
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "encrypted",
+                        "bsonType": "double",
+                        "queries": {
+                            "queryType": "range",
+                            "contention": {
+                                "$numberInt": "0"
+                            },
+                            "sparsity": {
+                                "$numberInt": "1"
+                            },
+                            "min": 0.0,
+                            "max": 200.0,
+                            "precision": 2
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
