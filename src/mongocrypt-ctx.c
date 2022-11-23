@@ -93,6 +93,8 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
 
    if (ctx->crypt->log.trace_enabled && key_id && key_id->data) {
       char *key_id_val;
+      /* this should never happen, so assert rather than return false */
+      BSON_ASSERT (key_id->len <= INT_MAX);
       key_id_val =
          _mongocrypt_new_string_from_bytes (key_id->data, key_id->len);
       _mongocrypt_log (&ctx->crypt->log,
@@ -278,6 +280,7 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 
    const size_t calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
    if (ctx->crypt->log.trace_enabled) {
+      BSON_ASSERT (calculated_len <= INT_MAX);
       _mongocrypt_log (&ctx->crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
                        "%s (%s=\"%.*s\")",
@@ -307,6 +310,7 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGE;
       ctx->opts.index_type.set = true;
    } else {
+      BSON_ASSERT (algo_str.len <= INT_MAX);
       char *error = bson_strdup_printf ("unsupported algorithm string \"%.*s\"",
                                         (int) algo_str.len,
                                         algo_str.data);
@@ -803,8 +807,10 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
    bson_append_utf8 (&as_bson,
                      MONGOCRYPT_STR_AND_LEN ("provider"),
                      MONGOCRYPT_STR_AND_LEN ("aws"));
+   BSON_ASSERT (region_len <= INT_MAX);
    bson_append_utf8 (
       &as_bson, MONGOCRYPT_STR_AND_LEN ("region"), region, region_len);
+   BSON_ASSERT (cmk_len <= INT_MAX);
    bson_append_utf8 (&as_bson, MONGOCRYPT_STR_AND_LEN ("key"), cmk, cmk_len);
    bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&as_bson),
                                           as_bson.len);
@@ -1200,6 +1206,7 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
       ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGE;
       ctx->opts.query_type.set = true;
    } else {
+      /* don't check if qt_str.len fits in int; we want the diagnostic output */
       char *error = bson_strdup_printf (
          "Unsupported query_type \"%.*s\"", (int) qt_str.len, qt_str.data);
       _mongocrypt_ctx_fail_w_msg (ctx, error);

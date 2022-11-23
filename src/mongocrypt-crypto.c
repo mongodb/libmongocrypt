@@ -88,6 +88,8 @@ _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
 
       /* Increment value in CTR buffer */
       uint32_t carry = 1;
+      /* assert rather than return since this should never happen */
+      BSON_ASSERT (ctr_bin.len == 0 || ctr_bin.len - 1 <= INT_MAX);
       for (int i = ctr_bin.len - 1; i >= 0 && carry != 0; --i) {
          uint32_t bpp = carry + ctr_bin.data[i];
          carry = bpp >> 8;
@@ -373,12 +375,16 @@ _mongocrypt_memequal (const void *const b1, const void *const b2, size_t len)
 uint32_t
 _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len)
 {
+   BSON_ASSERT ((plaintext_len / 16) <=
+                ((UINT32_MAX - MONGOCRYPT_HMAC_LEN) / 16) - 2);
    return 16 * ((plaintext_len / 16) + 2) + MONGOCRYPT_HMAC_LEN;
 }
 
 uint32_t
 _mongocrypt_fle2aead_calculate_ciphertext_len (uint32_t plaintext_len)
 {
+   BSON_ASSERT (plaintext_len <=
+                UINT32_MAX - MONGOCRYPT_IV_LEN - MONGOCRYPT_HMAC_LEN);
    /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
    return MONGOCRYPT_IV_LEN + plaintext_len + MONGOCRYPT_HMAC_LEN;
 }
@@ -386,6 +392,7 @@ _mongocrypt_fle2aead_calculate_ciphertext_len (uint32_t plaintext_len)
 uint32_t
 _mongocrypt_fle2_calculate_ciphertext_len (uint32_t plaintext_len)
 {
+   BSON_ASSERT (plaintext_len <= UINT32_MAX - MONGOCRYPT_IV_LEN);
    /* FLE2 AEAD uses CTR mode. CTR mode does not pad. */
    return MONGOCRYPT_IV_LEN + plaintext_len;
 }
@@ -509,6 +516,7 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_init (&intermediates[0]);
    _mongocrypt_buffer_init (&intermediates[1]);
    intermediates[0].data = (uint8_t *) plaintext->data;
+   BSON_ASSERT (plaintext->len >= unaligned);
    intermediates[0].len = plaintext->len - unaligned;
    intermediates[1].data = final_block_storage;
    intermediates[1].len = sizeof (final_block_storage);
@@ -522,6 +530,7 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
               plaintext->data + (plaintext->len - unaligned),
               unaligned);
       /* Fill the rest with the padding byte. */
+      BSON_ASSERT (MONGOCRYPT_BLOCK_SIZE >= unaligned);
       padding_byte = MONGOCRYPT_BLOCK_SIZE - unaligned;
       memset (intermediates[1].data + unaligned, padding_byte, padding_byte);
    } else {
@@ -641,6 +650,7 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
    intermediates[1].data = ciphertext->data;
    intermediates[1].len = ciphertext->len;
    /* Add associated data length in bits. */
+   /* multiplying a uint32_t by 8 won't bring it anywhere close to UINT64_MAX */
    associated_data_len_be = 8 * (uint64_t) associated_data->len;
    associated_data_len_be = BSON_UINT64_TO_BE (associated_data_len_be);
    intermediates[2].data = (uint8_t *) &associated_data_len_be;
@@ -713,6 +723,8 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (ciphertext);
+   /* no need to check iv->len and ciphertext->len, as they are passed where a
+    * size_t is expected */
 
    memset (ciphertext->data, 0, ciphertext->len);
 
@@ -753,7 +765,9 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
    /* Prepend the IV. */
    memcpy (intermediate.data, iv->data, iv->len);
    intermediate.data += iv->len;
+   BSON_ASSERT (intermediate.len >= iv->len);
    intermediate.len -= iv->len;
+   BSON_ASSERT (*bytes_written <= UINT32_MAX - iv->len);
    *bytes_written += iv->len;
 
    /* [MCGREW]: Steps 2 & 3. */
@@ -767,6 +781,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   BSON_ASSERT (*bytes_written <= UINT32_MAX - intermediate_bytes_written);
    *bytes_written += intermediate_bytes_written;
 
    /* Append the HMAC tag. */
@@ -869,6 +884,7 @@ _decrypt_step (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   BSON_ASSERT (*bytes_written > 0);
    padding_byte = plaintext->data[*bytes_written - 1];
    if (padding_byte > 16) {
       CLIENT_ERR ("error, ciphertext malformed padding");
@@ -961,6 +977,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
    iv.len = MONGOCRYPT_IV_LEN;
 
    intermediate.data = (uint8_t *) ciphertext->data;
+   BSON_ASSERT (ciphertext->len >= MONGOCRYPT_HMAC_LEN);
    intermediate.len = ciphertext->len - MONGOCRYPT_HMAC_LEN;
 
    hmac_tag.data = hmac_tag_storage;
@@ -987,6 +1004,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
 
    /* Decrypt data excluding IV + HMAC. */
    intermediate.data = (uint8_t *) ciphertext->data + MONGOCRYPT_IV_LEN;
+   BSON_ASSERT (ciphertext->len >= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
    intermediate.len =
       ciphertext->len - (MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
 
@@ -1115,6 +1133,7 @@ _mongocrypt_calculate_deterministic_iv (
    intermediates[0].data = associated_data->data;
    intermediates[0].len = associated_data->len;
    /* Add associated data length in bits. */
+   /* multiplying a uint32_t by 8 won't bring it anywhere close to UINT64_MAX */
    associated_data_len_be = 8 * (uint64_t) associated_data->len;
    associated_data_len_be = BSON_UINT64_TO_BE (associated_data_len_be);
    intermediates[1].data = (uint8_t *) &associated_data_len_be;
@@ -1310,6 +1329,8 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   /* no need to check ciphertext->len, as it is passed where a size_t is
+    * expected */
    memset (ciphertext->data, 0, ciphertext->len);
    *bytes_written = 0;
 
@@ -1357,6 +1378,7 @@ _mongocrypt_fle2aead_do_encryption (_mongocrypt_crypto_t *crypto,
    }
    /* S is the output of the symmetric cipher. It is appended after IV in C. */
    _mongocrypt_buffer_t S;
+   BSON_ASSERT (C.len >= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
    if (!_mongocrypt_buffer_from_subrange (&S,
                                           &C,
                                           MONGOCRYPT_IV_LEN,
@@ -1444,6 +1466,8 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   /* no need to check plaintext->len, as it is passed where a size_t is
+    * expected */
    memset (plaintext->data, 0, plaintext->len);
    *bytes_written = 0;
 
@@ -1465,6 +1489,7 @@ _mongocrypt_fle2aead_do_decryption (_mongocrypt_crypto_t *crypto,
    }
    /* S is the symmetric cipher output from C. It is after the IV in C. */
    _mongocrypt_buffer_t S;
+   BSON_ASSERT (C.len >= MONGOCRYPT_IV_LEN + MONGOCRYPT_HMAC_LEN);
    if (!_mongocrypt_buffer_from_subrange (&S,
                                           ciphertext,
                                           MONGOCRYPT_IV_LEN,
@@ -1588,6 +1613,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   BSON_ASSERT (ciphertext->len >= MONGOCRYPT_IV_LEN);
    memset (ciphertext->data + MONGOCRYPT_IV_LEN,
            0,
            ciphertext->len - MONGOCRYPT_IV_LEN);
@@ -1606,6 +1632,7 @@ _mongocrypt_fle2_do_encryption (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_t C = *ciphertext;
    /* S is the output of the symmetric cipher. It is appended after IV in C. */
    _mongocrypt_buffer_t S;
+   BSON_ASSERT (C.len >= MONGOCRYPT_IV_LEN);
    if (!_mongocrypt_buffer_from_subrange (
           &S, &C, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN)) {
       CLIENT_ERR ("unable to create S view from C");
@@ -1675,6 +1702,8 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
+   /* no need to check plaintext->len, as it is passed where a size_t is
+    * expected */
    memset (plaintext->data, 0, plaintext->len);
    *bytes_written = 0;
 
@@ -1692,6 +1721,7 @@ _mongocrypt_fle2_do_decryption (_mongocrypt_crypto_t *crypto,
    }
    /* S is the symmetric cipher output from C. It is after the IV in C. */
    _mongocrypt_buffer_t S;
+   BSON_ASSERT (C.len >= MONGOCRYPT_IV_LEN);
    if (!_mongocrypt_buffer_from_subrange (
           &S, ciphertext, MONGOCRYPT_IV_LEN, C.len - MONGOCRYPT_IV_LEN)) {
       CLIENT_ERR ("unable to create S view from C");

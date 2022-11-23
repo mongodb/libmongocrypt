@@ -91,7 +91,7 @@ const char *
 tmp_buf (const _mongocrypt_buffer_t *buf)
 {
    static char storage[1024];
-   uint32_t i, n;
+   size_t i, n;
 
    BSON_ASSERT_PARAM (buf);
 
@@ -267,6 +267,7 @@ _mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary)
       char *hex;
       char *full_str;
 
+      BSON_ASSERT (binary->len <= INT_MAX);
       hex = _mongocrypt_new_string_from_bytes (binary->data, binary->len);
       full_str = bson_strdup_printf ("(malformed) %s", hex);
       bson_free (hex);
@@ -392,6 +393,7 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
 
    if (crypt->log.trace_enabled) {
       char *key_val;
+      BSON_ASSERT (key->len <= INT_MAX);
       key_val = _mongocrypt_new_string_from_bytes (key->data, key->len);
 
       _mongocrypt_log (&crypt->log,
@@ -1536,7 +1538,9 @@ mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
    // Dup the path string for us to manage
    mstr pathdup = mstr_copy_cstr (path);
    // Increase array len
+   BSON_ASSERT (crypt->opts.n_crypt_shared_lib_search_paths < INT_MAX);
    const int new_len = crypt->opts.n_crypt_shared_lib_search_paths + 1;
+   BSON_ASSERT (new_len > 0 && sizeof (mstr) <= SIZE_MAX / new_len);
    mstr *const new_array = bson_realloc (
       crypt->opts.crypt_shared_lib_search_paths, sizeof (mstr) * new_len);
 

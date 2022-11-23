@@ -433,6 +433,7 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t *args,
    TRY (BSON_APPEND_INT64 (p, "s", args->sparsity));
 #undef TRY
 
+   BSON_ASSERT (p->len < UINT32_MAX);
    _mongocrypt_buffer_resize (out, p->len + 1u);
    out->subtype = BSON_SUBTYPE_ENCRYPTED;
    out->data[0] = MC_SUBTYPE_FLE2EncryptionPlaceholder;

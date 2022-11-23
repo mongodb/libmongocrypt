@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <limits.h> /* INT_MAX */
 #include <stdbool.h>
 
 #if defined(MLIB_HAVE_STRINGS_H)
@@ -150,6 +151,7 @@ static inline mstr_mut
 mstr_new (size_t len)
 {
 #ifndef __clang_analyzer__
+   assert (len < SIZE_MAX);
    return MLIB_INIT (mstr_mut){{{(char *) calloc (1, len + 1), len}}};
 #else
    // Clang-analyzer is smart enough to see the calloc(), but not smart enough
@@ -254,9 +256,11 @@ mstrm_resize (mstr_mut *s, size_t new_len)
 #ifndef __clang_analyzer__
       // Clang-analyzer is smart enough to see the calloc(), but not smart
       // enough to link it to the free() in mstr_free()
+      assert (new_len < SIZE_MAX);
       s->data = (char *) realloc ((char *) s->data, new_len + 1);
 #endif
       s->len = new_len;
+      assert (new_len >= old_len);
       memset (s->data + old_len, 0, new_len - old_len);
    }
    s->data[new_len] = (char) 0;
@@ -310,6 +314,7 @@ mstr_find (mstr_view given, mstr_view needle)
    const char *const scan_end = given.data + given.len;
    const char *const needle_end = needle.data + needle.len;
    for (const char *scan = given.data; scan != scan_end; ++scan) {
+      assert (scan_end >= scan);
       size_t remain = scan_end - scan;
       if (remain < needle.len) {
          break;
@@ -384,6 +389,8 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
    if (del_count > remain) {
       del_count = remain;
    }
+   /* at this point, it is absolutely necessary that del_count <= s.len */
+   assert (s.len - del_count + insert.len <= SIZE_MAX);
    const size_t new_size = s.len - del_count + insert.len;
    mstr_mut ret = mstr_new (new_size);
    char *p = ret.data;
@@ -393,6 +400,8 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
       memcpy (p, insert.data, insert.len);
       p += insert.len;
    }
+   /* 'at <= s.len' was already asserted earlier */
+   assert (s.len - at >= del_count);
    memcpy (p, s.data + at + del_count, s.len - at - del_count);
    return ret.mstr;
 }
@@ -458,6 +467,7 @@ mstr_remove_prefix (mstr_view s, size_t len)
 static inline mstr
 mstr_remove_suffix (mstr_view s, size_t len)
 {
+   assert (s.len >= len);
    return mstr_erase (s, s.len - len, len);
 }
 
@@ -520,6 +530,7 @@ mstrv_remove_prefix (mstr_view s, size_t len)
 static inline mstr_view
 mstrv_remove_suffix (mstr_view s, size_t len)
 {
+   assert (s.len >= len);
    return mstrv_subview (s, 0, s.len - len);
 }
 
@@ -571,6 +582,7 @@ mstr_replace (const mstr_view string,
          break;
       }
       // Do the replacement
+      assert (whence <= SIZE_MAX - (size_t) pos);
       mstr_assign (
          &ret, mstr_splice (ret.view, (size_t) pos + whence, find.len, subst));
       // Advance our position by how many chars we skipped and how many we
@@ -804,12 +816,14 @@ typedef struct mstr_widen_result {
 static inline mstr_widen_result
 mstr_win32_widen (mstr_view str)
 {
+   assert (str.len <= INT_MAX);
    int length = MultiByteToWideChar (
       CP_UTF8, MB_ERR_INVALID_CHARS, str.data, (int) str.len, NULL, 0);
    if (length == 0 && str.len != 0) {
       return MLIB_INIT (mstr_widen_result){NULL, (int) GetLastError ()};
    }
    wchar_t *ret = (wchar_t *) calloc (length + 1, sizeof (wchar_t));
+   assert (length < INT_MAX);
    int got_length = MultiByteToWideChar (
       CP_UTF8, MB_ERR_INVALID_CHARS, str.data, (int) str.len, ret, length + 1);
    assert (got_length == length);
@@ -908,6 +922,7 @@ _mstr_split_iter_next_ (struct _mstr_split_iter_ *iter)
    } else {
       // Advance our parts:
       iter->part = mstrv_subview (iter->remaining, 0, pos);
+      assert (iter->splitter.len <= SIZE_MAX - pos);
       iter->remaining =
          mstrv_subview (iter->remaining, pos + iter->splitter.len, ~0);
    }

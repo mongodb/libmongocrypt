@@ -1124,9 +1124,12 @@ _marking_to_bson_value (void *ctx,
        (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindRangePayload)) {
       /* ciphertext_data is already a BSON object, just need to prepend
        * blob_subtype */
+      BSON_ASSERT (ciphertext.data.len <= UINT32_MAX - 1);
       _mongocrypt_buffer_init_size (&serialized_ciphertext,
                                     ciphertext.data.len + 1);
       serialized_ciphertext.data[0] = ciphertext.blob_subtype;
+      /* no need to check ciphertext.data.len, as it is passed where a size_t
+       * is expected */
       memcpy (serialized_ciphertext.data + 1,
               ciphertext.data.data,
               ciphertext.data.len);
@@ -1211,6 +1214,7 @@ generate_delete_tokens (_mongocrypt_crypto_t *crypto,
       }
 
       /* Get the TokenKey from the last 32 bytes of IndexKey */
+      BSON_ASSERT (IndexKey.len >= MONGOCRYPT_TOKEN_KEY_LEN);
       if (!_mongocrypt_buffer_from_subrange (&TokenKey,
                                              &IndexKey,
                                              IndexKey.len -
@@ -1430,6 +1434,7 @@ _fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
          goto ecoc_fail;
       }
       /* The last 32 bytes of the user key are the token key. */
+      BSON_ASSERT (key.len >= MONGOCRYPT_TOKEN_KEY_LEN);
       if (!_mongocrypt_buffer_from_subrange (&tokenkey,
                                              &key,
                                              key.len - MONGOCRYPT_TOKEN_KEY_LEN,

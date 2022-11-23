@@ -157,6 +157,13 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
     * original_bson_type */
    _mongocrypt_buffer_t AD;
    _mongocrypt_buffer_init (&AD);
+   if (uev->key_uuid.len > UINT32_MAX - 2) {
+      CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_decrypt expected "
+                  "key UUID length <= %" PRIu32 " got: %" PRIu32,
+                  UINT32_MAX - 2,
+                  uev->key_uuid.len);
+      return NULL;
+   }
    _mongocrypt_buffer_resize (&AD, 1 + uev->key_uuid.len + 1);
 
    AD.data[0] = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
@@ -210,6 +217,13 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
    /* Serialize associated data: fle_blob_subtype || key_uuid ||
     * original_bson_type */
    {
+      if (key_uuid->len > UINT32_MAX - 2) {
+         CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_encrypt expected "
+                     "key UUID length <= %" PRIu32 " got: %" PRIu32,
+                     UINT32_MAX - 2,
+                     key_uuid->len);
+         goto fail;
+      }
       _mongocrypt_buffer_resize (&AD, 1 + key_uuid->len + 1);
       AD.data[0] = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
       memcpy (AD.data + 1, key_uuid->data, key_uuid->len);

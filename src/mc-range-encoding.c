@@ -270,6 +270,9 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
       int64_t v_prime2 = (int64_t) ((v_prime - args.min.value) *
                                     exp10Double (args.precision.value));
 
+      // This assertion can be made after the calculation. If the calculation
+      // overflowed, then the value of v_prime2 will evidence that by being
+      // negative.
       BSON_ASSERT (v_prime2 < INT64_MAX && v_prime2 >= 0);
 
       uint64_t ret = (uint64_t) v_prime2;

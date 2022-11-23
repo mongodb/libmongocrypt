@@ -43,7 +43,7 @@ const char *
 mc_mincover_get (mc_mincover_t *mincover, size_t index)
 {
    BSON_ASSERT_PARAM (mincover);
-   if (index > mincover->mincover.len - 1) {
+   if (mincover->mincover.len == 0 || index > mincover->mincover.len - 1) {
       return NULL;
    }
    return _mc_array_index (&mincover->mincover, char *, index);

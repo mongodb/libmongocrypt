@@ -44,6 +44,8 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                ctx, "failed to encrypt datakey with new provider");
          }
 
+         /* no need to check bin.len, as it is passed where a size_t is
+          * expected */
          BSON_ASSERT (bson_init_static (&bson, bin.data, bin.len));
 
          /* Among all (possible) fields in key document, the only fields

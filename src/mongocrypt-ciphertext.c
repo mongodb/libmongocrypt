@@ -130,6 +130,10 @@ _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
    if (ciphertext->key_id.len != 16) {
       return false;
    }
+   if (ciphertext->key_id.len > (UINT32_MAX - ciphertext->data.len - 1)
+         || ciphertext->key_id.len > (SIZE_MAX - ciphertext->data.len - 1)) {
+      return false;
+   }
 
    _mongocrypt_buffer_init (out);
    offset = 0;
@@ -184,6 +188,10 @@ _mongocrypt_ciphertext_serialize_associated_data (
    if ((ciphertext->blob_subtype !=
         MC_SUBTYPE_FLE1DeterministicEncryptedValue) &&
        (ciphertext->blob_subtype != MC_SUBTYPE_FLE1RandomEncryptedValue)) {
+      return false;
+   }
+
+   if (ciphertext->key_id.len > (UINT32_MAX - 2)) {
       return false;
    }
 

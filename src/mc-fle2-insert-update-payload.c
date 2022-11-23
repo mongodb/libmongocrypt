@@ -127,6 +127,8 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
       CLIENT_ERR ("FLE2InsertUpdatePayload_parse got too short input");
       return false;
    }
+   /* no need to check the upper bound of in->len, as it is passed where a
+    * size_t is expected */
 
    if (!bson_init_static (&in_bson, in->data + 1, in->len - 1)) {
       CLIENT_ERR ("FLE2InsertUpdatePayload_parse got invalid BSON");
@@ -262,6 +264,7 @@ mc_FLE2InsertUpdatePayload_serializeForRange (
       if (!bson_append_document_end (&g_bson, &etc_bson)) {
          return false;
       }
+      if (g_index == UINT32_MAX) break;
       g_index++;
    }
 
@@ -289,6 +292,7 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
    }
 
    _mongocrypt_buffer_t ciphertext;
+   BSON_ASSERT (iup->value.len >= UUID_LEN);
    if (!_mongocrypt_buffer_from_subrange (
           &ciphertext, &iup->value, UUID_LEN, iup->value.len - UUID_LEN)) {
       CLIENT_ERR ("Failed to create ciphertext buffer");

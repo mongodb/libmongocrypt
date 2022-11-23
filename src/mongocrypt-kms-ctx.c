@@ -28,6 +28,13 @@
 #include <kms_message/kms_gcp_request.h>
 #include "mongocrypt.h"
 
+/* Sadly, Windows does not define SSIZE_MAX. It is defined in bson-compat.h,
+ * but only since 1.22.x, so copy this from bson-compat.h for now. */
+#ifndef SSIZE_MAX
+#define SSIZE_MAX (ssize_t) \
+   ((((size_t) 0x01u) << (sizeof (ssize_t) * (size_t) CHAR_BIT - 1u)) - 1u)
+#endif
+
 typedef struct {
    mongocrypt_status_t *status;
    void *ctx;
@@ -56,6 +63,7 @@ _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
 
    crypto = (_mongocrypt_crypto_t *) ctx_with_status->ctx;
    BSON_ASSERT (crypto);
+   BSON_ASSERT (len <= INT32_MAX);
    plaintext =
       mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
@@ -91,8 +99,10 @@ _sha256_hmac (void *ctx,
    crypto = (_mongocrypt_crypto_t *) ctx_with_status->ctx;
    BSON_ASSERT (crypto);
 
+   BSON_ASSERT (key_len <= INT32_MAX);
    key = mongocrypt_binary_new_from_data ((uint8_t *) key_input,
                                           (uint32_t) key_len);
+   BSON_ASSERT (len <= INT32_MAX);
    plaintext =
       mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
@@ -211,6 +221,8 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
 
+   /* no need to check key_material.len, as it is passed where a size_t is
+    * expected */
    kms->req = kms_decrypt_request_new (
       key->key_material.data, key->key_material.len, opt);
 
@@ -350,6 +362,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
 
+   /* no need to check plaintext_key_material->len, as it is passed where a
+    * size_t is expected */
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
                                        plaintext_key_material->len,
                                        ctx_opts->kek.provider.aws.cmk,
@@ -531,7 +545,7 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
 
    b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
    BSON_ASSERT (b64_str);
-   kms->result.data = bson_malloc (b64_strlen + 1);
+   kms->result.data = bson_malloc ((size_t) b64_strlen + 1);
    BSON_ASSERT (kms->result.data);
 
    kms->result.len =
@@ -643,6 +657,7 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
       goto fail;
    }
 
+   BSON_ASSERT (body_len <= SSIZE_MAX);
    bson_body =
       bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
    if (!bson_body) {
@@ -670,6 +685,7 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
    }
 
    b64url_data = bson_iter_utf8 (&iter, &b64url_len);
+   BSON_ASSERT (b64url_len <= UINT32_MAX - 4);
    /* add four for padding. */
    b64_len = b64url_len + 4;
    b64_data = bson_malloc0 (b64_len);
@@ -750,6 +766,7 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    b64_str = (char *) bson_iter_utf8 (&iter, NULL);
    BSON_ASSERT (b64_str);
    kms->result.data = kms_message_b64_to_raw (b64_str, &outlen);
+   BSON_ASSERT (outlen <= UINT32_MAX);
    kms->result.len = (uint32_t) outlen;
    kms->result.owned = true;
    ret = true;
@@ -1268,8 +1285,10 @@ _sign_rsaes_pkcs1_v1_5_trampoline (void *ctx,
    crypt_opts = (_mongocrypt_opts_t *) ctx_with_status->ctx;
    BSON_ASSERT (crypt_opts);
    private_key_bin.data = (uint8_t *) private_key;
+   BSON_ASSERT (private_key_len <= UINT32_MAX);
    private_key_bin.len = (uint32_t) private_key_len;
    input_bin.data = (uint8_t *) input;
+   BSON_ASSERT (input_len <= UINT32_MAX);
    input_bin.len = (uint32_t) input_len;
    output_bin.data = (uint8_t *) signature_out;
    output_bin.len = RSAES_PKCS1_V1_5_SIGNATURE_LEN;

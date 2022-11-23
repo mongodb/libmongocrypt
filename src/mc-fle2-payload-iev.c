@@ -237,6 +237,7 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
    iev->K_KeyId.subtype = BSON_SUBTYPE_UUID;
 
    /* Read ClientEncryptedValue. */
+   /* the compiler will promote the calculation to uint64_t, no check needed */
    if (offset + (length - 16) > iev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
                   "Inner byte length >= %" PRIu64 " got: %" PRIu32,
