@@ -1788,7 +1788,8 @@ _mongocrypt_random_int64 (_mongocrypt_crypto_t *crypto,
    uint64_t u64_exclusive_upper_bound = (uint64_t) exclusive_upper_bound;
    uint64_t u64_out;
 
-   if (!_mongocrypt_random_uint64 (crypto, u64_exclusive_upper_bound, &u64_out, status)) {
+   if (!_mongocrypt_random_uint64 (
+          crypto, u64_exclusive_upper_bound, &u64_out, status)) {
       return false;
    }
 
