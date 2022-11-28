@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.7.0-alpha0
+### New Features
+- Support range index for int32, int64, double, and date. NOTE: The Range algorithm is experimental only. It is not intended for public use.
+
 ## 1.6.1
 ## Fixed
 - Fix libbson dependency in pkg-config for PPA.
