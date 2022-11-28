@@ -740,10 +740,10 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 #define MONGOCRYPT_ALGORITHM_INDEXED_STR "Indexed"
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 #define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
-/// String constant for setopt_algorithm "Range" explicit encryption
-/// NOTE: The Range algorithm is experimental only. It is not intended for
-/// public use.
-#define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
+/// String constant for setopt_algorithm "rangePreview" explicit encryption
+/// NOTE: The RangePreview algorithm is experimental only. It is not intended
+/// for public use.
+#define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR "RangePreview"
 
 
 /**
@@ -916,7 +916,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * This method expects the passed-in BSON to be of the form:
  * { "v" : BSON value to encrypt | FLE2RangeFindDriverSpec }
  *
- * FLE2RangeFindDriverSpec may only be used when query_type is "range".
+ * FLE2RangeFindDriverSpec may only be used when query_type is "rangePreview".
  * FLE2RangeFindDriverSpec is a BSON document with one of these forms:
  *
  * 1. A Match Expression of this form:
@@ -1539,9 +1539,9 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
                                   int len);
 
 /**
- * Set options for explicit encryption with the "range" algorithm.
- * NOTE: The Range algorithm is experimental only. It is not intended for public
- * use.
+ * Set options for explicit encryption with the "rangePreview" algorithm.
+ * NOTE: The RangePreview algorithm is experimental only. It is not intended for
+ * public use.
  *
  * @p opts is a BSON document of the form:
  * {
@@ -1564,8 +1564,8 @@ mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t *ctx,
 
 /// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
-// NOTE: The Range algorithm is experimental only. It is not intended for public
-// use.
-#define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
+// NOTE: The RangePreview algorithm is experimental only. It is not intended for
+// public use.
+#define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR "rangePreview"
 
 #endif /* MONGOCRYPT_H */
