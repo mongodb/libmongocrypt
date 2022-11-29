@@ -1220,6 +1220,16 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+- name: ubuntu1804-64-clang7
+  # ubuntu1804-64-clang7 is used to test Ubuntu 18.04 with Clang 7.0.1.
+  # This is a supported configuration built by the MongoDB Server.
+  # The MongoDB Server vendors libmongocrypt. Refer: MONGOCRYPT-501.
+  display_name: "Ubuntu 18.04 64-bit clang7"
+  run_on: ubuntu1804-test
+  expansions:
+    compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DCMAKE_C_COMPILER=/opt/mongodbtoolchain/v3/bin/clang -DCMAKE_CXX_COMPILER=/opt/mongodbtoolchain/v3/bin/clang++"
+  tasks:
+  - build-and-test-and-upload
 - name: ubuntu1804-arm64
   display_name: "Ubuntu 18.04 arm64"
   run_on: ubuntu1804-arm64-build
