@@ -248,8 +248,7 @@ _mongocrypt_tester_install_mc_FLE2RangeFindDriverSpec (
    _mongocrypt_tester_t *tester);
 
 void
-_mongocrypt_tester_install_mc_reader(
-   _mongocrypt_tester_t *tester);
+_mongocrypt_tester_install_mc_reader (_mongocrypt_tester_t *tester);
 
 /* Conveniences for getting test data. */
 

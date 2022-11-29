@@ -37,22 +37,22 @@
  *  mongocrypt_status_t *status
  *
  *  mc_reader_t reader;
- *  mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+ *  mc_reader_init_from_buffer (&reader, buf, __FUNCTION__);
  *
  *  _mongocrypt_buffer_t in;
- *  if(!mc_reader_read_uuid_buffer(&reader, &in, status)) {
- *    abort();
+ *  if (!mc_reader_read_uuid_buffer (&reader, &in, status)) {
+ *     abort ();
  *  }
  *
  *  uint8_t value;
- *  if(!mc_reader_read_u8(&reader, value, status )) {
- *    abort();
+ *  if (!mc_reader_read_u8 (&reader, value, status)) {
+ *     abort ();
  *  }
  */
 struct _mc_reader_t {
    const uint8_t *ptr;
-   uint32_t pos;
-   uint32_t len;
+   uint64_t pos;
+   uint64_t len;
 
    const char *parser_name;
 };
@@ -62,7 +62,7 @@ typedef struct _mc_reader_t mc_reader_t;
 void
 mc_reader_init (mc_reader_t *reader,
                 const uint8_t *ptr,
-                uint32_t len,
+                uint64_t len,
                 const char *parser_name);
 
 void
@@ -71,19 +71,19 @@ mc_reader_init_from_buffer (mc_reader_t *reader,
                             const char *parser_name);
 
 mc_reader_t *
-mc_reader_new (const uint8_t *ptr, uint32_t len, const char *parser_name);
+mc_reader_new (const uint8_t *ptr, uint64_t len, const char *parser_name);
 
 void
 mc_reader_destroy (mc_reader_t *reader);
 
 bool
-mc_reader_has_data (mc_reader_t *reader);
+mc_reader_has_data (const mc_reader_t *reader);
 
-uint32_t
-mc_reader_get_remaining_length (mc_reader_t *reader);
+uint64_t
+mc_reader_get_remaining_length (const mc_reader_t *reader);
 
-uint32_t
-mc_reader_get_consumed_length (mc_reader_t *reader);
+uint64_t
+mc_reader_get_consumed_length (const mc_reader_t *reader);
 
 bool
 mc_reader_read_u8 (mc_reader_t *reader,
@@ -103,13 +103,13 @@ mc_reader_read_u64 (mc_reader_t *reader,
 bool
 mc_reader_read_bytes (mc_reader_t *reader,
                       const uint8_t **ptr,
-                      uint32_t length,
+                      uint64_t length,
                       mongocrypt_status_t *status);
 
 bool
 mc_reader_read_buffer (mc_reader_t *reader,
                        _mongocrypt_buffer_t *buf,
-                       uint32_t length,
+                       uint64_t length,
                        mongocrypt_status_t *status);
 
 bool

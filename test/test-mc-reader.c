@@ -33,13 +33,13 @@ _test_mc_reader (_mongocrypt_tester_t *tester)
    uint8_t value;
    ASSERT_OK_STATUS (mc_reader_read_u8 (&reader, &value, status), status);
    ASSERT_CMPUINT (value, ==, 0xAB);
-   ASSERT_CMPSIZE_T (mc_reader_get_consumed_length (&reader), ==, 1);
-   ASSERT_CMPSIZE_T (mc_reader_get_remaining_length (&reader), ==, 1);
+   ASSERT_CMPUINT64 (mc_reader_get_consumed_length (&reader), ==, 1);
+   ASSERT_CMPUINT64 (mc_reader_get_remaining_length (&reader), ==, 1);
 
    ASSERT_OK_STATUS (mc_reader_read_u8 (&reader, &value, status), status);
    ASSERT_CMPUINT (value, ==, 0xCD);
-   ASSERT_CMPSIZE_T (mc_reader_get_consumed_length (&reader), ==, 2);
-   ASSERT_CMPSIZE_T (mc_reader_get_remaining_length (&reader), ==, 0);
+   ASSERT_CMPUINT64 (mc_reader_get_consumed_length (&reader), ==, 2);
+   ASSERT_CMPUINT64 (mc_reader_get_remaining_length (&reader), ==, 0);
 
    ASSERT_FAILS_STATUS (mc_reader_read_u8 (&reader, &value, status),
                         status,
@@ -52,23 +52,23 @@ _test_mc_reader (_mongocrypt_tester_t *tester)
 static void
 _test_mc_reader_uuid (_mongocrypt_tester_t *tester)
 {
-   uint8_t expected_bytes[] = {0x12,
-                               0x34,
-                               0x56,
-                               0x78,
-                               0x90,
-                               0x12,
-                               0x34,
-                               0x56,
-                               0x78,
-                               0x90,
-                               0x12,
-                               0x34,
-                               0x56,
-                               0x78,
-                               0x90,
-                               0x12};
-   size_t expected_len = sizeof (expected_bytes);
+   const uint8_t expected_bytes[] = {0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x90,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x90,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x90,
+                                     0x12};
+   uint64_t expected_len = sizeof (expected_bytes);
 
    _mongocrypt_buffer_t input_buf;
    _mongocrypt_buffer_copy_from_hex (&input_buf,
@@ -125,23 +125,23 @@ _test_mc_reader_ints (_mongocrypt_tester_t *tester)
 static void
 _test_mc_reader_bytes (_mongocrypt_tester_t *tester)
 {
-   uint8_t expected_bytes[] = {0x12,
-                               0x34,
-                               0x56,
-                               0x78,
-                               0x90,
-                               0x12,
-                               0x34,
-                               0x56,
-                               0x78,
-                               0x90,
-                               0x12,
-                               0x34,
-                               0x56,
-                               0x78,
-                               0x90,
-                               0x12};
-   size_t expected_len = sizeof (expected_bytes);
+   const uint8_t expected_bytes[] = {0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x90,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x90,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x90,
+                                     0x12};
+   uint64_t expected_len = sizeof (expected_bytes);
 
    _mongocrypt_buffer_t input_buf;
    _mongocrypt_buffer_copy_from_hex (&input_buf,
@@ -153,8 +153,8 @@ _test_mc_reader_bytes (_mongocrypt_tester_t *tester)
    mc_reader_t reader;
    mc_reader_init_from_buffer (&reader, &input_buf, __FUNCTION__);
 
-   uint8_t *ptr;
-   size_t len = 4;
+   const uint8_t *ptr;
+   const uint64_t len = 4;
    ASSERT_OK_STATUS (
       mc_reader_read_bytes (&reader, (const uint8_t **) &ptr, len, status),
       status);
