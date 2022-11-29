@@ -259,10 +259,11 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
          return true;                                                          \
       }                                                                        \
                                                                                \
+      BSON_ASSERT (counter >= 0);                                              \
       /* InsertUpdatePayload continues through *fromDataTokenAndCounter */     \
       mc_##Name##DerivedFromDataTokenAndCounter_t *fromTokenAndCounter =       \
          mc_##Name##DerivedFromDataTokenAndCounter_new (                       \
-            crypto, fromDataToken, counter, status);                           \
+            crypto, fromDataToken, (uint64_t) counter, status);                \
       mc_##Name##DerivedFromDataToken_destroy (fromDataToken);                 \
       if (!fromTokenAndCounter) {                                              \
          return false;                                                         \

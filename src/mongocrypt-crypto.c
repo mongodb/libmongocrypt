@@ -90,7 +90,7 @@ _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
       uint32_t carry = 1;
       /* assert rather than return since this should never happen */
       BSON_ASSERT (ctr_bin.len == 0 || ctr_bin.len - 1 <= INT_MAX);
-      for (int i = ctr_bin.len - 1; i >= 0 && carry != 0; --i) {
+      for (int i = (int) ctr_bin.len - 1; i >= 0 && carry != 0; --i) {
          uint32_t bpp = carry + ctr_bin.data[i];
          carry = bpp >> 8;
          ctr_bin.data[i] = bpp & 0xFF;
@@ -516,7 +516,8 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
    _mongocrypt_buffer_init (&intermediates[0]);
    _mongocrypt_buffer_init (&intermediates[1]);
    intermediates[0].data = (uint8_t *) plaintext->data;
-   BSON_ASSERT (plaintext->len >= unaligned);
+   /* don't check plaintext->len, as the above modulo operation guarantees
+    * that unaligned will be smaller */
    intermediates[0].len = plaintext->len - unaligned;
    intermediates[1].data = final_block_storage;
    intermediates[1].len = sizeof (final_block_storage);
@@ -532,11 +533,14 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
       /* Fill the rest with the padding byte. */
       BSON_ASSERT (MONGOCRYPT_BLOCK_SIZE >= unaligned);
       padding_byte = MONGOCRYPT_BLOCK_SIZE - unaligned;
-      memset (intermediates[1].data + unaligned, padding_byte, padding_byte);
+      /* it is certain that padding_byte is in range for a cast to int */
+      memset (intermediates[1].data + unaligned,
+              (int) padding_byte,
+              padding_byte);
    } else {
       /* Fill the rest with the padding byte. */
       padding_byte = MONGOCRYPT_BLOCK_SIZE;
-      memset (intermediates[1].data, padding_byte, padding_byte);
+      memset (intermediates[1].data, (int) padding_byte, padding_byte);
    }
 
    if (!_mongocrypt_buffer_concat (&to_encrypt, intermediates, 2)) {

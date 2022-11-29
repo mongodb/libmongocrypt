@@ -103,7 +103,7 @@ _encrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
                            args.out->data,
                            &intermediate_bytes_written,
                            args.in->data,
-                           args.in->len)) {
+                           (int) args.in->len)) {
       CLIENT_ERR ("error in EVP_EncryptUpdate: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -170,7 +170,7 @@ _decrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
                            args.out->data,
                            &intermediate_bytes_written,
                            args.in->data,
-                           args.in->len)) {
+                           (int) args.in->len)) {
       CLIENT_ERR ("error in EVP_DecryptUpdate: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -237,7 +237,7 @@ _hmac_with_hash (const EVP_MD *hash,
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    if (!HMAC (hash,
               key->data,
-              key->len,
+              (int) key->len,
               in->data,
               in->len,
               out->data,
@@ -258,7 +258,7 @@ _hmac_with_hash (const EVP_MD *hash,
       return false;
    }
 
-   if (!HMAC_Init_ex (ctx, key->data, key->len, hash, NULL /* engine */)) {
+   if (!HMAC_Init_ex (ctx, key->data, (int) key->len, hash, NULL /* engine */)) {
       CLIENT_ERR ("error initializing HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -299,8 +299,9 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (out);
+   BSON_ASSERT (count <= INT_MAX);
 
-   int ret = RAND_bytes (out->data, count);
+   int ret = RAND_bytes (out->data, (int) count);
    /* From man page: "RAND_bytes() and RAND_priv_bytes() return 1 on success, -1
     * if not supported by the current RAND method, or 0 on other failure. The
     * error code can be obtained by ERR_get_error(3)" */

@@ -431,7 +431,7 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
    wrapper_data = ((uint8_t *) bson_get_data (&wrapper));
    BSON_ASSERT (wrapper.len >= (uint32_t) offset + NULL_BYTE_LEN);
    plaintext->len =
-      wrapper.len - offset - NULL_BYTE_LEN; /* the final null byte */
+      wrapper.len - (uint32_t) offset - NULL_BYTE_LEN; /* the final null byte */
    /* no need to check plaintext->len, as it is passed where a size_t is
     * expected */
    plaintext->data = bson_malloc (plaintext->len);

@@ -444,6 +444,8 @@ done:
 uint32_t
 mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms)
 {
+   int want_bytes;
+
    if (!kms) {
       return 0;
    }
@@ -453,8 +455,10 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms)
        !_mongocrypt_buffer_empty (&kms->result)) {
       return 0;
    }
-   return kms_response_parser_wants_bytes (kms->parser,
-                                           DEFAULT_MAX_KMS_BYTE_REQUEST);
+   want_bytes = kms_response_parser_wants_bytes (kms->parser,
+                                                 DEFAULT_MAX_KMS_BYTE_REQUEST);
+   BSON_ASSERT (want_bytes >= 0);
+   return (uint32_t) want_bytes;
 }
 
 static void
@@ -505,6 +509,7 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    char *b64_str;
    int http_status;
    size_t body_len;
+   int result_len;
    mongocrypt_status_t *status;
 
    status = kms->status;
@@ -522,7 +527,9 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    /* If HTTP response succeeded (status 200) then body should contain JSON.
     */
    bson_destroy (&body_bson);
-   if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
+   BSON_ASSERT (body_len <= SSIZE_MAX);
+   if (!bson_init_from_json (
+          &body_bson, body, (ssize_t) body_len, &bson_error)) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
                   "HTTP status=%d. Response body=\n%s",
                   bson_error.message,
@@ -548,8 +555,9 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    kms->result.data = bson_malloc ((size_t) b64_strlen + 1);
    BSON_ASSERT (kms->result.data);
 
-   kms->result.len =
-      kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
+   result_len = kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
+   BSON_ASSERT (result_len >= 0);
+   kms->result.len = (uint32_t) result_len;
    kms->result.owned = true;
    ret = true;
 fail:
@@ -587,8 +595,9 @@ _ctx_done_oauth (mongocrypt_kms_ctx_t *kms)
       goto fail;
    }
 
-   bson_body =
-      bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
+   BSON_ASSERT (body_len <= SSIZE_MAX);
+   bson_body = bson_new_from_json (
+      (const uint8_t *) body, (ssize_t) body_len, &bson_error);
    if (!bson_body) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
                   "HTTP status=%d. Response body=\n%s",
@@ -644,6 +653,7 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
    uint32_t b64url_len;
    char *b64_data = NULL;
    uint32_t b64_len;
+   int result_len;
 
    status = kms->status;
    ret = false;
@@ -658,8 +668,8 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
    }
 
    BSON_ASSERT (body_len <= SSIZE_MAX);
-   bson_body =
-      bson_new_from_json ((const uint8_t *) body, body_len, &bson_error);
+   bson_body = bson_new_from_json (
+      (const uint8_t *) body, (ssize_t) body_len, &bson_error);
    if (!bson_body) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
                   "HTTP status=%d. Response body=\n%s",
@@ -695,7 +705,9 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
       goto fail;
    }
    kms->result.data = bson_malloc0 (b64_len);
-   kms->result.len = kms_message_b64_pton (b64_data, kms->result.data, b64_len);
+   result_len = kms_message_b64_pton (b64_data, kms->result.data, b64_len);
+   BSON_ASSERT (result_len >= 0);
+   kms->result.len = (uint32_t) result_len;
    kms->result.owned = true;
 
    ret = true;
@@ -741,7 +753,9 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    /* If HTTP response succeeded (status 200) then body should contain JSON.
     */
    bson_destroy (&body_bson);
-   if (!bson_init_from_json (&body_bson, body, body_len, &bson_error)) {
+   BSON_ASSERT (body_len <= SSIZE_MAX);
+   if (!bson_init_from_json (
+          &body_bson, body, (ssize_t) body_len, &bson_error)) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
                   "HTTP status=%d. Response body=\n%s",
                   bson_error.message,

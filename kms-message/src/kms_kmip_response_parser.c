@@ -21,6 +21,10 @@
 #include "kms_message_private.h"
 #include "kms_request_str.h"
 
+#define Assert(Cond) \
+   if (!(Cond))      \
+   abort ()
+
 struct _kms_kmip_response_parser_t {
    uint32_t first_len;
    uint32_t bytes_fed;
@@ -66,11 +70,22 @@ kms_kmip_response_parser_wants_bytes (const kms_kmip_response_parser_t *parser,
 {
    int32_t wants_bytes;
    if (parser->bytes_fed < KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) {
-      wants_bytes = KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH - parser->bytes_fed;
-   } else {
       wants_bytes =
+         KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH - (int32_t) parser->bytes_fed;
+   } else {
+      Assert (parser->first_len <=
+              UINT32_MAX - KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH);
+      Assert (parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH >=
+              parser->bytes_fed);
+      Assert ((parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) -
+                    parser->bytes_fed <=
+                 (uint32_t) INT32_MAX &&
+              (int64_t) (
+                 (parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) -
+                 parser->bytes_fed) >= (int64_t) INT32_MIN);
+      wants_bytes = (int32_t) (
          (parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH) -
-         parser->bytes_fed;
+         parser->bytes_fed);
    }
    if (max < wants_bytes) {
       return max;

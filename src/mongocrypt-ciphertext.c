@@ -169,7 +169,7 @@ _mongocrypt_ciphertext_serialize_associated_data (
 {
    BSON_ASSERT_PARAM (ciphertext);
 
-   int32_t bytes_written = 0;
+   uint32_t bytes_written = 0;
 
    if (!out) {
       return false;

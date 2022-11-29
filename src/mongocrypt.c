@@ -240,8 +240,8 @@ _mongocrypt_new_string_from_bytes (const void *in, int len)
    char *out;
    char *ret;
 
-   out_size += len > max_bytes ? sizeof ("...") : 1 /* for null */;
-   out = bson_malloc0 (out_size);
+   out_size += len > max_bytes ? (int) sizeof ("...") : 1 /* for null */;
+   out = bson_malloc0 ((size_t) out_size);
    BSON_ASSERT (out);
 
    ret = out;
@@ -268,7 +268,7 @@ _mongocrypt_new_json_string_from_binary (mongocrypt_binary_t *binary)
       char *full_str;
 
       BSON_ASSERT (binary->len <= (uint32_t) INT_MAX);
-      hex = _mongocrypt_new_string_from_bytes (binary->data, binary->len);
+      hex = _mongocrypt_new_string_from_bytes (binary->data, (int) binary->len);
       full_str = bson_strdup_printf ("(malformed) %s", hex);
       bson_free (hex);
       return full_str;
@@ -394,7 +394,7 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
    if (crypt->log.trace_enabled) {
       char *key_val;
       BSON_ASSERT (key->len <= (uint32_t) INT_MAX);
-      key_val = _mongocrypt_new_string_from_bytes (key->data, key->len);
+      key_val = _mongocrypt_new_string_from_bytes (key->data, (int) key->len);
 
       _mongocrypt_log (&crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
@@ -1085,13 +1085,13 @@ _mongocrypt_validate_and_copy_string (const char *in,
    }
 
    if (in_len == -1) {
-      in_len = (uint32_t) strlen (in);
+      in_len = (int32_t) strlen (in);
    }
 
-   if (!bson_utf8_validate (in, in_len, false)) {
+   if (!bson_utf8_validate (in, (size_t) in_len, false)) {
       return false;
    }
-   *out = bson_strndup (in, in_len);
+   *out = bson_strndup (in, (size_t) in_len);
    return true;
 }
 
@@ -1595,7 +1595,7 @@ _mongocrypt_needs_credentials_for_provider (mongocrypt_t *crypt,
       return false;
    }
 
-   return (crypt->opts.kms_providers.need_credentials & provider) != 0;
+   return (crypt->opts.kms_providers.need_credentials & (int) provider) != 0;
 }
 
 void

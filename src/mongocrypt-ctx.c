@@ -96,7 +96,7 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
       /* this should never happen, so assert rather than return false */
       BSON_ASSERT (key_id->len <= INT_MAX);
       key_id_val =
-         _mongocrypt_new_string_from_bytes (key_id->data, key_id->len);
+         _mongocrypt_new_string_from_bytes (key_id->data, (int) key_id->len);
       _mongocrypt_log (&ctx->crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
                        "%s (%s=\"%s\")",
@@ -900,7 +900,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
          return _mongocrypt_ctx_fail_w_msg (ctx, "master key required");
       }
       if (!ctx->crypt->opts.use_need_kms_credentials_state &&
-          !(ctx->opts.kek.kms_provider &
+          !((int) ctx->opts.kek.kms_provider &
             _mongocrypt_ctx_kms_providers (ctx)->configured_providers)) {
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "requested kms provider not configured");
@@ -915,7 +915,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
    if (ctx->opts.kek.kms_provider) {
       if (!((ctx->crypt->opts.kms_providers.need_credentials |
              ctx->crypt->opts.kms_providers.configured_providers) &
-            ctx->opts.kek.kms_provider)) {
+            (int) ctx->opts.kek.kms_provider)) {
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "kms provider required by datakey is not configured");
       }

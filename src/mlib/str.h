@@ -315,7 +315,7 @@ mstr_find (mstr_view given, mstr_view needle)
    const char *const needle_end = needle.data + needle.len;
    for (const char *scan = given.data; scan != scan_end; ++scan) {
       assert (scan_end >= scan);
-      size_t remain = scan_end - scan;
+      size_t remain = (size_t) (scan_end - scan);
       if (remain < needle.len) {
          break;
       }
@@ -574,7 +574,7 @@ mstr_replace (const mstr_view string,
    size_t whence = 0;
    for (;;) {
       // Chop off the front that has already been processed
-      mstr_view tail = mstrv_subview (ret.view, whence, ~0);
+      mstr_view tail = mstrv_subview (ret.view, whence, SIZE_MAX);
       // Find where in that tail is the next needle
       int pos = mstr_find (tail, find);
       if (pos == -1) {
@@ -587,7 +587,7 @@ mstr_replace (const mstr_view string,
          &ret, mstr_splice (ret.view, (size_t) pos + whence, find.len, subst));
       // Advance our position by how many chars we skipped and how many we
       // inserted
-      whence += pos + subst.len;
+      whence += (size_t) pos + subst.len;
    }
    return ret;
 }
@@ -721,7 +721,7 @@ mstr_ends_with (mstr_view given, mstr_view suffix)
    if (suffix.len > given.len) {
       return false;
    }
-   given = mstrv_subview (given, given.len - suffix.len, ~0);
+   given = mstrv_subview (given, given.len - suffix.len, SIZE_MAX);
    return mstr_eq (given, suffix);
 }
 
@@ -921,10 +921,10 @@ _mstr_split_iter_next_ (struct _mstr_split_iter_ *iter)
       iter->state = 1;
    } else {
       // Advance our parts:
-      iter->part = mstrv_subview (iter->remaining, 0, pos);
-      assert (iter->splitter.len <= SIZE_MAX - pos);
-      iter->remaining =
-         mstrv_subview (iter->remaining, pos + iter->splitter.len, ~0);
+      iter->part = mstrv_subview (iter->remaining, 0, (size_t) pos);
+      assert (iter->splitter.len <= SIZE_MAX - (size_t) pos);
+      iter->remaining = mstrv_subview (
+         iter->remaining, (size_t) pos + iter->splitter.len, SIZE_MAX);
    }
    // Prime the inner "loop" to execute once
    iter->once = 1;
