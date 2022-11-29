@@ -215,7 +215,6 @@ mc_reader_read_buffer_to_end (mc_reader_t *reader,
    BSON_ASSERT_PARAM (reader);
    BSON_ASSERT_PARAM (buf);
 
-   const uint8_t *ptr;
    uint64_t length = reader->len - reader->pos;
    return mc_reader_read_buffer (reader, buf, length, status);
 }
