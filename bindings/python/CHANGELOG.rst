@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.4.1
+------------------------
+
+- Fixed spurious exception traceback at interpreter shutdown:
+  ``AttributeError: 'NoneType' object has no attribute 'mongocrypt_destroy'``
+
 Changes in Version 1.4.0
 ------------------------
 
