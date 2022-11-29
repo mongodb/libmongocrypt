@@ -182,7 +182,7 @@ mc_reader_read_buffer (mc_reader_t *reader,
    const uint8_t *ptr;
    CHECK_AND_RETURN (mc_reader_read_bytes (reader, &ptr, length, status));
 
-   if (!_mongocrypt_buffer_copy_from_data_and_size (buf, ptr, length)) {
+   if (!_mongocrypt_buffer_copy_from_data_and_size (buf, ptr, (size_t)length)) {
       CLIENT_ERR ("%s failed to copy "
                   "data of length %" PRIu32,
                   reader->parser_name);
