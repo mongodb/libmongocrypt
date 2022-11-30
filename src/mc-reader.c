@@ -26,7 +26,7 @@
 #define CHECK_REMAINING_BUFFER_AND_RET(read_size)        \
    if ((reader->pos + (read_size)) > reader->len) {      \
       CLIENT_ERR ("%s expected byte "                    \
-                  "length >= %" PRIu32 " got: %" PRIu32, \
+                  "length >= %" PRIu64 " got: %" PRIu64, \
                   reader->parser_name,                   \
                   reader->pos + (read_size),             \
                   reader->len);                          \
