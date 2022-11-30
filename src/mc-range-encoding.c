@@ -192,7 +192,7 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
    }
 
    if (mc_isinf (args.value) || mc_isnan (args.value)) {
-      CLIENT_ERR ("Infinity and Nan double values are not supported.");
+      CLIENT_ERR ("Infinity and NaN double values are not supported.");
       return false;
    }
 
