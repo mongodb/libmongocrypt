@@ -192,7 +192,9 @@ _mongocrypt_endpoint_copy (_mongocrypt_endpoint_t *src)
    return endpoint;
 }
 
-void _mongocrypt_apply_default_port (char **endpoint_raw, char *port) {
+void
+_mongocrypt_apply_default_port (char **endpoint_raw, char *port)
+{
    BSON_ASSERT_PARAM (endpoint_raw);
    BSON_ASSERT_PARAM (port);
    BSON_ASSERT (*endpoint_raw);
