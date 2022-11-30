@@ -330,9 +330,9 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
       /* Test cases copied from server Double_Bounds test ... end */
       /* Test cases copied from server Double_Errors test ... begin */
       {.value = INFINITY,
-       .expectError = "Infinity and Nan double values are not supported."},
+       .expectError = "Infinity and NaN double values are not supported."},
       {.value = NAN,
-       .expectError = "Infinity and Nan double values are not supported."},
+       .expectError = "Infinity and NaN double values are not supported."},
       /* Test cases copied from server Double_Errors test ... end */
 
       /* Test cases copied from Double_Bounds_Precision ... begin */
