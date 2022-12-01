@@ -17,8 +17,9 @@ var downloadedMongocryptDirectory=buildDirectory.Combine("downloadedMongocryptDi
 var localReleaseVersion = "local-0.0.0";
 var releaseVersion = GetSettingValue("releaseVersion", localReleaseVersion);
 var fork = GetSettingValue("fork", "https://github.com/mongodb/libmongocrypt.git");
-var branch = GetSettingValue("branch", "master"); 
-var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/1.6.0/libmongocrypt-all.tar.gz");
+var branch = GetSettingValue("branch", "master");
+// 1.7.0- alpha1
+var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/master/2cd2f77ae806a3a4c12750b39b0be92b0ca3b2c1/libmongocrypt-all.tar.gz");
 var csharpBindingsGitTagName = $"csharp-v{releaseVersion}";
 var csharpBindingsDirectory = buildDirectory.Combine(csharpBindingsGitTagName);
 var libmongocryptRelWithDebInfoDirectory = csharpBindingsDirectory.Combine("cmake-build").Combine("RelWithDebInfo");
