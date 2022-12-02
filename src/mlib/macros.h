@@ -27,7 +27,9 @@
 /// End a C-language-linkage section
 #define MLIB_C_LINKAGE_END _mlibCLinkageEnd
 
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 201304L
+#if (defined(__cpp_constexpr) && __cpp_constexpr >= 201304L) || \
+   (defined(__cplusplus) && __cplusplus >= 201402L) ||          \
+   (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
 #define _mlibConstexprFn constexpr inline
 #else
 #define _mlibConstexprFn inline

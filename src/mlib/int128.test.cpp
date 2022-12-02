@@ -2,70 +2,108 @@
 
 #include <iostream>
 #include <random>
-#include <string_view>
+#include <string>
 
+#if (defined(__GNUC__) && __GNUC__ < 7) || \
+   (defined(_MSC_VER) && _MSC_VER < 1920)
+// Old GCC and old MSVC have partially-broken constexpr that prevents us from
+// properly using static_assert with from_string()
+#define BROKEN_CONSTEXPR
+#endif
+
+#ifndef BROKEN_CONSTEXPR
 // Basic checks with static_asserts, check constexpr correctness and fail fast
-static_assert (mlib_int128_eq (MLIB_INT128 (0), MLIB_INT128_FROM_PARTS (0, 0)));
-static_assert (mlib_int128_eq (MLIB_INT128 (4), MLIB_INT128_FROM_PARTS (4, 0)));
+static_assert (mlib_int128_eq (MLIB_INT128 (0), MLIB_INT128_FROM_PARTS (0, 0)),
+               "fail");
+static_assert (mlib_int128_eq (MLIB_INT128 (4), MLIB_INT128_FROM_PARTS (4, 0)),
+               "fail");
 static_assert (mlib_int128_eq (MLIB_INT128 (34),
-                               MLIB_INT128_FROM_PARTS (34, 0)));
+                               MLIB_INT128_FROM_PARTS (34, 0)),
+               "fail");
 static_assert (mlib_int128_eq (MLIB_INT128 (34 + 8),
-                               MLIB_INT128_FROM_PARTS (42, 0)));
+                               MLIB_INT128_FROM_PARTS (42, 0)),
+               "fail");
 static_assert (mlib_int128_eq (MLIB_INT128_CAST (94),
-                               MLIB_INT128_FROM_PARTS (94, 0)));
+                               MLIB_INT128_FROM_PARTS (94, 0)),
+               "fail");
 static_assert (mlib_int128_eq (mlib_int128_lshift (MLIB_INT128_CAST (1), 64),
-                               MLIB_INT128_FROM_PARTS (0, 1)));
+                               MLIB_INT128_FROM_PARTS (0, 1)),
+               "fail");
 static_assert (mlib_int128_eq (mlib_int128_lshift (MLIB_INT128_CAST (1), 127),
-                               MLIB_INT128_FROM_PARTS (0, 1ull << 63)));
+                               MLIB_INT128_FROM_PARTS (0, 1ull << 63)),
+               "fail");
 
-static_assert (mlib_int128_scmp (MLIB_INT128_CAST (2), MLIB_INT128 (0)) > 0);
-static_assert (mlib_int128_scmp (MLIB_INT128_CAST (-2), MLIB_INT128 (0)) < 0);
-static_assert (mlib_int128_scmp (MLIB_INT128_CAST (0), MLIB_INT128 (0)) == 0);
+static_assert (mlib_int128_scmp (MLIB_INT128_CAST (2), MLIB_INT128 (0)) > 0,
+               "fail");
+static_assert (mlib_int128_scmp (MLIB_INT128_CAST (-2), MLIB_INT128 (0)) < 0,
+               "fail");
+static_assert (mlib_int128_scmp (MLIB_INT128_CAST (0), MLIB_INT128 (0)) == 0,
+               "fail");
 // Unsigned compare doesn't believe in negative numbers:
-static_assert (mlib_int128_ucmp (MLIB_INT128_CAST (-2), MLIB_INT128 (0)) > 0);
+static_assert (mlib_int128_ucmp (MLIB_INT128_CAST (-2), MLIB_INT128 (0)) > 0,
+               "fail");
+#endif // BROKEN_CONSTEXPR
 
 // Literals, for test convenience:
-constexpr mlib_int128 operator""_i128 (const char *s)
+#ifndef BROKEN_CONSTEXPR
+constexpr
+#endif
+   mlib_int128
+   operator""_i128 (const char *s)
 {
    return mlib_int128_from_string (s);
 }
 
-static_assert (mlib_int128_eq (MLIB_INT128 (0), 0_i128));
-static_assert (mlib_int128_eq (MLIB_INT128 (65025), 65025_i128));
+#ifndef BROKEN_CONSTEXPR
+static_assert (mlib_int128_eq (MLIB_INT128 (0), 0_i128), "fail");
+static_assert (mlib_int128_eq (MLIB_INT128 (65025), 65025_i128), "fail");
 static_assert (mlib_int128_eq (MLIB_INT128_FROM_PARTS (0, 1),
-                               18446744073709551616_i128));
+                               18446744073709551616_i128),
+               "fail");
 static_assert (mlib_int128_eq (MLIB_INT128_UMAX,
-                               340282366920938463463374607431768211455_i128));
+                               340282366920938463463374607431768211455_i128),
+               "fail");
 
-
-static_assert (mlib_int128_scmp (MLIB_INT128_SMIN, MLIB_INT128_SMAX) < 0);
-static_assert (mlib_int128_scmp (MLIB_INT128_SMAX, MLIB_INT128_SMIN) > 0);
-static_assert (mlib_int128_scmp (MLIB_INT128 (-12), MLIB_INT128 (0)) < 0);
-static_assert (mlib_int128_scmp (MLIB_INT128 (12), MLIB_INT128 (0)) > 0);
+static_assert (mlib_int128_scmp (MLIB_INT128_SMIN, MLIB_INT128_SMAX) < 0,
+               "fail");
+static_assert (mlib_int128_scmp (MLIB_INT128_SMAX, MLIB_INT128_SMIN) > 0,
+               "fail");
+static_assert (mlib_int128_scmp (MLIB_INT128_CAST (-12), MLIB_INT128_CAST (0)) <
+                  0,
+               "fail");
+static_assert (mlib_int128_scmp (MLIB_INT128_CAST (12), MLIB_INT128_CAST (0)) >
+                  0,
+               "fail");
 
 // Simple arithmetic:
 static_assert (mlib_int128_scmp (mlib_int128_add (MLIB_INT128_SMAX, 1_i128),
-                                 MLIB_INT128_SMIN) == 0);
-static_assert (mlib_int128_scmp (mlib_int128_negate (MLIB_INT128 (-42)),
-                                 MLIB_INT128 (42)) == 0);
-static_assert (mlib_int128_scmp (mlib_int128_sub (5_i128, 3_i128), 2_i128) ==
-               0);
+                                 MLIB_INT128_SMIN) == 0,
+               "fail");
+static_assert (mlib_int128_scmp (mlib_int128_negate (MLIB_INT128_CAST (-42)),
+                                 MLIB_INT128 (42)) == 0,
+               "fail");
+static_assert (mlib_int128_scmp (mlib_int128_sub (5_i128, 3_i128), 2_i128) == 0,
+               "fail");
 static_assert (mlib_int128_scmp (mlib_int128_sub (3_i128, 5_i128),
-                                 mlib_int128_negate (2_i128)) == 0);
+                                 mlib_int128_negate (2_i128)) == 0,
+               "fail");
 static_assert (mlib_int128_ucmp (mlib_int128_sub (3_i128, 5_i128),
                                  mlib_int128_sub (MLIB_INT128_UMAX, 1_i128)) ==
-               0);
+                  0,
+               "fail");
 
 static_assert (mlib_int128_scmp (mlib_int128_lshift (1_i128, 127),
-                                 MLIB_INT128_SMIN) == 0);
+                                 MLIB_INT128_SMIN) == 0,
+               "fail");
 
 static_assert (
    mlib_int128_scmp (mlib_int128_rshift (mlib_int128_lshift (1_i128, 127), 127),
-                     1_i128) == 0);
-
+                     1_i128) == 0,
+   "fail");
+#endif // BROKEN_CONSTEXPR
 
 inline std::ostream &
-operator<< (std::ostream &out, mlib_int128 v)
+operator<< (std::ostream &out, const mlib_int128 &v)
 {
    out << mlib_int128_format (v).str;
    return out;
@@ -77,24 +115,27 @@ struct check_info {
    const char *expr;
 };
 
-template <typename Left> struct [[nodiscard]] bound_lhs {
+struct nil {
+};
+
+template <typename Left> struct bound_lhs {
    check_info info;
    Left value;
 
-#define DEFOP(Oper)                                              \
-   template <typename Rhs> void operator Oper (Rhs rhs) noexcept \
-   {                                                             \
-      if (value Oper rhs) {                                      \
-         return;                                                 \
-      }                                                          \
-      fprintf (stderr,                                           \
-               "%s:%d: CHECK( %s ) failed!\n",                   \
-               info.filename,                                    \
-               info.line,                                        \
-               info.expr);                                       \
-      fprintf (stderr, "Expanded expression: ");                 \
-      std::cerr << value << " " #Oper " " << rhs << '\n';        \
-      exit (2);                                                  \
+#define DEFOP(Oper)                                                   \
+   template <typename Rhs> nil operator Oper (Rhs rhs) const noexcept \
+   {                                                                  \
+      if (value Oper rhs) {                                           \
+         return {};                                                   \
+      }                                                               \
+      fprintf (stderr,                                                \
+               "%s:%d: CHECK( %s ) failed!\n",                        \
+               info.filename,                                         \
+               info.line,                                             \
+               info.expr);                                            \
+      fprintf (stderr, "Expanded expression: ");                      \
+      std::cerr << value << " " #Oper " " << rhs << '\n';             \
+      exit (2);                                                       \
    }
    DEFOP (==)
    DEFOP (!=)
@@ -116,8 +157,23 @@ struct check_magic {
    }
 };
 
+struct check_consume {
+   void
+   operator= (nil)
+   {
+   }
+
+   void
+   operator= (bound_lhs<bool> const &l)
+   {
+      // Invoke the test for truthiness:
+      (void) (l == true);
+   }
+};
+
 #undef CHECK
-#define CHECK(Cond) check_magic{check_info{__FILE__, __LINE__, #Cond}}->*Cond
+#define CHECK(Cond) \
+   check_consume{} = check_magic{check_info{__FILE__, __LINE__, #Cond}}->*Cond
 
 
 // Operators, for test convenience
@@ -132,25 +188,31 @@ operator<(mlib_int128 l, mlib_int128 r)
 {
    return mlib_int128_scmp (l, r) < 0;
 }
+
+#ifndef BROKEN_CONSTEXPR
 static_assert (mlib_int128 (MLIB_INT128_UMAX) ==
-               340282366920938463463374607431768211455_i128);
+                  340282366920938463463374607431768211455_i128,
+               "fail");
 
 // Check sign extension works correctly:
 static_assert (mlib_int128 (MLIB_INT128_CAST (INT64_MIN)) ==
-               mlib_int128_negate (9223372036854775808_i128));
+                  mlib_int128_negate (9223372036854775808_i128),
+               "fail");
 static_assert (mlib_int128 (MLIB_INT128_CAST (INT64_MIN)) <
-               mlib_int128_negate (9223372036854775807_i128));
+                  mlib_int128_negate (9223372036854775807_i128),
+               "fail");
 static_assert (mlib_int128_negate (9223372036854775809_i128) <
-               mlib_int128 (MLIB_INT128_CAST (INT64_MIN)));
+                  mlib_int128 (MLIB_INT128_CAST (INT64_MIN)),
+               "fail");
+#endif
 
 // Runtime checks, easier to debug that static_asserts
 int
 main ()
 {
    mlib_int128 zero = MLIB_INT128 (0);
-   CHECK (true == mlib_int128_eq (zero, MLIB_INT128 (0)));
-   CHECK (true == mlib_int128_eq (zero, 0_i128));
-   CHECK (zero == mlib_int128{0});
+   CHECK (mlib_int128_eq (zero, MLIB_INT128 (0)));
+   CHECK (mlib_int128_eq (zero, 0_i128));
    CHECK (zero == 0_i128);
 
    auto two = MLIB_INT128 (2);
@@ -165,7 +227,7 @@ main ()
    CHECK (more == mlib_int128_add (MLIB_INT128_SMIN, MLIB_INT128 (3)));
 
    // "Wrap" around zero:
-   auto ntwo = MLIB_INT128 (-2);
+   auto ntwo = MLIB_INT128_CAST (-2);
    auto sum = mlib_int128_add (ntwo, four);
    CHECK (sum == two);
 
@@ -216,7 +278,7 @@ main ()
    CHECK (std::string (mlib_int128_format (_2pow127).str) ==
           "170141183460469231731687303715884105728");
 
-   for (int i = 0; i < 1'000'000; ++i) {
+   for (int i = 0; i < 100000; ++i) {
       std::uniform_int_distribution<std::uint64_t> dist;
       std::random_device r;
       auto bits = r ();

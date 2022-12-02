@@ -3,7 +3,6 @@
 
 #include "./macros.h"
 
-#include <assert.h>
 #include <stdbool.h>
 #include <inttypes.h>
 #include <string.h>
@@ -14,12 +13,12 @@ MLIB_C_LINKAGE_BEGIN
 /**
  * @brief A 128-bit binary integer
  */
-typedef union mlib_int128_ {
+typedef union {
    struct {
       uint64_t lo;
       uint64_t hi;
-   };
-#ifdef __SIZEOF_INT128__
+   } r;
+#if defined(__SIZEOF_INT128__)
    // These union members are only for the purpoes of debugging visualization
    // and testing, and will only appear correctly on little-endian platforms.
    __int128_t signed_;
@@ -73,13 +72,13 @@ typedef union mlib_int128_ {
 static mlib_constexpr_fn int
 mlib_int128_ucmp (mlib_int128 left, mlib_int128 right)
 {
-   if (left.hi > right.hi) {
+   if (left.r.hi > right.r.hi) {
       return 1;
-   } else if (left.hi < right.hi) {
+   } else if (left.r.hi < right.r.hi) {
       return -1;
-   } else if (left.lo > right.lo) {
+   } else if (left.r.lo > right.r.lo) {
       return 1;
-   } else if (left.lo < right.lo) {
+   } else if (left.r.lo < right.r.lo) {
       return -1;
    } else {
       return 0;
@@ -96,10 +95,10 @@ mlib_int128_ucmp (mlib_int128 left, mlib_int128 right)
 static mlib_constexpr_fn int
 mlib_int128_scmp (mlib_int128 left, mlib_int128 right)
 {
-   if ((left.hi & (1ull << 63)) == (right.hi & (1ull << 63))) {
+   if ((left.r.hi & (1ull << 63)) == (right.r.hi & (1ull << 63))) {
       // Same signed-ness, so they are as comparable as unsigned
       return mlib_int128_ucmp (left, right);
-   } else if (left.hi & (1ull << 63)) {
+   } else if (left.r.hi & (1ull << 63)) {
       // The left is negative
       return -1;
    } else {
@@ -128,11 +127,11 @@ mlib_int128_eq (mlib_int128 left, mlib_int128 right)
 static mlib_constexpr_fn mlib_int128
 mlib_int128_add (mlib_int128 left, mlib_int128 right)
 {
-   uint64_t losum = left.lo + right.lo;
+   uint64_t losum = left.r.lo + right.r.lo;
    // Overflow check
-   int carry = (losum < left.lo || losum < right.lo);
-   uint64_t hisum = left.hi + right.hi + carry;
-   return (mlib_int128) MLIB_INT128_FROM_PARTS (losum, hisum);
+   int carry = (losum < left.r.lo || losum < right.r.lo);
+   uint64_t hisum = left.r.hi + right.r.hi + carry;
+   return MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (losum, hisum);
 }
 
 /**
@@ -142,7 +141,7 @@ mlib_int128_add (mlib_int128 left, mlib_int128 right)
 static mlib_constexpr_fn mlib_int128
 mlib_int128_negate (mlib_int128 v)
 {
-   mlib_int128 r = MLIB_INT128_FROM_PARTS (~v.lo, ~v.hi);
+   mlib_int128 r = MLIB_INT128_FROM_PARTS (~v.r.lo, ~v.r.hi);
    r = mlib_int128_add (r, MLIB_INT128 (1));
    return r;
 }
@@ -155,11 +154,11 @@ mlib_int128_negate (mlib_int128 v)
 static mlib_constexpr_fn mlib_int128
 mlib_int128_sub (mlib_int128 from, mlib_int128 less)
 {
-   int borrow = from.lo < less.lo;
-   uint64_t low = from.lo - less.lo;
-   uint64_t high = from.hi - less.hi;
+   int borrow = from.r.lo < less.r.lo;
+   uint64_t low = from.r.lo - less.r.lo;
+   uint64_t high = from.r.hi - less.r.hi;
    high -= borrow;
-   return (mlib_int128) MLIB_INT128_FROM_PARTS (low, high);
+   return MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (low, high);
 }
 
 /**
@@ -175,25 +174,25 @@ mlib_int128_lshift (mlib_int128 val, int off)
    if (off > 0) {
       if (off >= 64) {
          off -= 64;
-         uint64_t high = val.lo << off;
-         return (mlib_int128) MLIB_INT128_FROM_PARTS (0, high);
+         uint64_t high = val.r.lo << off;
+         return MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (0, high);
       } else {
-         uint64_t low = val.lo << off;
-         uint64_t high = val.hi << off;
-         high |= val.lo >> (64 - off);
-         return (mlib_int128) MLIB_INT128_FROM_PARTS (low, high);
+         uint64_t low = val.r.lo << off;
+         uint64_t high = val.r.hi << off;
+         high |= val.r.lo >> (64 - off);
+         return MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (low, high);
       }
    } else if (off < 0) {
       off = -off;
       if (off >= 64) {
          off -= 64;
-         uint64_t low = val.hi >> off;
-         return (mlib_int128) MLIB_INT128_FROM_PARTS (low, 0);
+         uint64_t low = val.r.hi >> off;
+         return MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (low, 0);
       } else {
-         uint64_t high = val.hi >> off;
-         uint64_t low = val.lo >> off;
-         low |= val.hi << (64 - off);
-         return (mlib_int128) MLIB_INT128_FROM_PARTS (low, high);
+         uint64_t high = val.r.hi >> off;
+         uint64_t low = val.r.lo >> off;
+         low |= val.r.hi << (64 - off);
+         return MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (low, high);
       }
    } else {
       return val;
@@ -219,7 +218,8 @@ mlib_int128_rshift (mlib_int128 val, int off)
 static mlib_constexpr_fn mlib_int128
 mlib_int128_bitor (mlib_int128 l, mlib_int128 r)
 {
-   return (mlib_int128) MLIB_INT128_FROM_PARTS (l.lo | r.lo, l.hi | r.hi);
+   return MLIB_INIT (mlib_int128)
+      MLIB_INT128_FROM_PARTS (l.r.lo | r.r.lo, l.r.hi | r.r.hi);
 }
 
 // Multiply two 64bit integers to get a 128-bit result without overflow
@@ -241,8 +241,8 @@ _mlibUnsignedMult128 (uint64_t left, uint64_t right)
       w[j + 2] = (uint32_t) t;
    }
 
-   return (mlib_int128) MLIB_INT128_FROM_PARTS (((uint64_t) w[1] << 32) | w[0],
-                                                ((uint64_t) w[3] << 32) | w[2]);
+   return MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (
+      ((uint64_t) w[1] << 32) | w[0], ((uint64_t) w[3] << 32) | w[2]);
 }
 
 /**
@@ -252,10 +252,10 @@ static mlib_constexpr_fn mlib_int128
 mlib_int128_mul (mlib_int128 l, mlib_int128 r)
 {
    // Multiply the low-order word
-   mlib_int128 ret = _mlibUnsignedMult128 (l.lo, r.lo);
+   mlib_int128 ret = _mlibUnsignedMult128 (l.r.lo, r.r.lo);
    // Accumulate the high-order parts:
-   ret.hi += l.lo * r.hi;
-   ret.hi += l.hi * r.lo;
+   ret.r.hi += l.r.lo * r.r.hi;
+   ret.r.hi += l.r.hi * r.r.lo;
    return ret;
 }
 
@@ -359,18 +359,19 @@ static mlib_constexpr_fn struct mlib_int128_divmod_result
 _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
 {
    mlib_int128 adjusted = numer;
-   adjusted.hi %= denom;
+   adjusted.r.hi %= denom;
    int d = _mlibCountLeadingZeros_u64 (denom >> 32) - 32;
 
    if (d == 32) {
       // jk: We're dividing by less than UINT32_MAX: We can take a shortcut
-      uint64_t rem = adjusted.hi << 32 | adjusted.lo >> 32;
+      uint64_t rem = adjusted.r.hi << 32 | adjusted.r.lo >> 32;
       uint64_t quo = rem / (uint32_t) denom;
-      rem = ((rem % (uint32_t) denom) << 32) | (uint32_t) adjusted.lo;
+      rem = ((rem % (uint32_t) denom) << 32) | (uint32_t) adjusted.r.lo;
       quo = quo << 32 | rem / (uint32_t) denom;
       rem = rem % (uint32_t) denom;
       return MLIB_INIT (mlib_int128_divmod_result){
-         MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (quo, numer.hi / denom),
+         MLIB_INIT (mlib_int128)
+            MLIB_INT128_FROM_PARTS (quo, numer.r.hi / denom),
          MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (rem, 0),
       };
    }
@@ -378,17 +379,17 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
    // Normalize for a Knuth 4.3.1D division. Convert the integers into two
    // base-32 numbers, with u and v being arrays of digits:
    uint32_t u[5] = {
-      (uint32_t) (adjusted.lo << d),
-      (uint32_t) (adjusted.lo >> (32 - d)),
-      (uint32_t) (adjusted.hi << d),
-      (uint32_t) (adjusted.hi >> (32 - d)),
+      (uint32_t) (adjusted.r.lo << d),
+      (uint32_t) (adjusted.r.lo >> (32 - d)),
+      (uint32_t) (adjusted.r.hi << d),
+      (uint32_t) (adjusted.r.hi >> (32 - d)),
       0,
    };
 
    if (d != 0) {
       // Extra bits from overlap:
-      u[2] |= (uint32_t) (adjusted.lo >> (64 - d));
-      u[4] |= (uint32_t) (adjusted.lo >> (64 - d));
+      u[2] |= (uint32_t) (adjusted.r.lo >> (64 - d));
+      u[4] |= (uint32_t) (adjusted.r.lo >> (64 - d));
    }
 
    uint32_t v[2] = {
@@ -403,8 +404,8 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
    uint64_t rem = ((uint64_t) u[1] << (32 - d)) | (u[0] >> d);
    uint64_t quo = ((uint64_t) qparts[1] << 32) | qparts[0];
    return MLIB_INIT (mlib_int128_divmod_result){
-      MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (quo, numer.hi / denom),
-      MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (rem, numer.hi % denom),
+      MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (quo, numer.r.hi / denom),
+      MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (rem, numer.r.hi % denom),
    };
 }
 
@@ -418,10 +419,10 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
 static mlib_constexpr_fn mlib_int128_divmod_result
 mlib_int128_divmod (mlib_int128 numer, mlib_int128 denom)
 {
-   const uint64_t nhi = numer.hi;
-   const uint64_t nlo = numer.lo;
-   const uint64_t dhi = denom.hi;
-   const uint64_t dlo = denom.lo;
+   const uint64_t nhi = numer.r.hi;
+   const uint64_t nlo = numer.r.lo;
+   const uint64_t dhi = denom.r.hi;
+   const uint64_t dlo = denom.r.lo;
    if (dhi > nhi) {
       // Denominator is definitely larger than numerator. Quotient is zero,
       // remainder is full numerator.
@@ -443,8 +444,8 @@ mlib_int128_divmod (mlib_int128 numer, mlib_int128 denom)
             mlib_int128_sub (numer, denom),
          };
       } else if (nlo < dlo) {
-         // numer.low < denom.low and denom.high > denom.low, so the integer
-         // division becomes zero
+         // numer.r.lo < denom.r.lo and denom.r.hi > denom.r.lo, so the
+         // integer division becomes zero
          return MLIB_INIT (mlib_int128_divmod_result){
             MLIB_INT128 (0),
             numer,
@@ -456,32 +457,32 @@ mlib_int128_divmod (mlib_int128 numer, mlib_int128 denom)
       }
    } else if (dhi == 0) {
       // No high in denominator. We can use a u128/u64
-      return _mlibDivide_u128_by_u64 (numer, denom.lo);
+      return _mlibDivide_u128_by_u64 (numer, denom.r.lo);
    } else {
       // We'll need to do a full u128/u128 division
       // Normalize for Knuth 4.3.1D
-      int d = _mlibCountLeadingZeros_u64 (denom.hi);
+      int d = _mlibCountLeadingZeros_u64 (denom.r.hi);
       // Does the denom have only three base32 digits?
       const bool has_three = d >= 32;
       d &= 31;
 
       uint32_t u[5] = {
-         (uint32_t) (numer.lo << d),
-         (uint32_t) (numer.lo >> (32 - d)),
-         (uint32_t) (numer.hi << d),
-         (uint32_t) (numer.hi >> (32 - d)),
+         (uint32_t) (numer.r.lo << d),
+         (uint32_t) (numer.r.lo >> (32 - d)),
+         (uint32_t) (numer.r.hi << d),
+         (uint32_t) (numer.r.hi >> (32 - d)),
          0,
       };
       uint32_t v[4] = {
-         (uint32_t) (denom.lo << d),
-         (uint32_t) (denom.lo >> (32 - d)),
-         (uint32_t) (denom.hi << d),
-         (uint32_t) (denom.hi >> (32 - d)),
+         (uint32_t) (denom.r.lo << d),
+         (uint32_t) (denom.r.lo >> (32 - d)),
+         (uint32_t) (denom.r.hi << d),
+         (uint32_t) (denom.r.hi >> (32 - d)),
       };
       if (d != 0) {
-         u[2] |= numer.lo >> (64 - d);
-         u[4] |= numer.hi >> (64 - d);
-         v[2] |= denom.lo >> (64 - d);
+         u[2] |= numer.r.lo >> (64 - d);
+         u[4] |= numer.r.hi >> (64 - d);
+         v[2] |= denom.r.lo >> (64 - d);
       };
 
       uint32_t q[2] = {0};
@@ -489,8 +490,6 @@ mlib_int128_divmod (mlib_int128 numer, mlib_int128 denom)
          _mlibKnuth431D (u, 5, v, 3, q);
       } else {
          _mlibKnuth431D (u, 5, v, 4, q);
-         // This quotient will always fit in 32 bits
-         assert (q[1] == 0);
       }
 
       mlib_int128 remainder = MLIB_INT128_FROM_PARTS (
@@ -569,7 +568,7 @@ mlib_int128_from_string (const char *s)
 static mlib_constexpr_fn uint64_t
 mlib_int128_to_u64 (mlib_int128 v)
 {
-   return v.lo;
+   return v.r.lo;
 }
 
 /// The result type of formatting a 128-bit number
@@ -596,16 +595,16 @@ mlib_int128_format (mlib_int128 i)
    while (!mlib_int128_eq (i, MLIB_INT128 (0))) {
       mlib_int128_divmod_result dm = mlib_int128_divmod (i, MLIB_INT128 (10));
       uint64_t v = mlib_int128_to_u64 (dm.remainder);
-      assert (v >= 0 && v <= 9);
       char digits[] = "0123456789";
       char d = digits[v];
       *out = d;
       --out;
       i = dm.quotient;
       ++len;
-      assert (len < sizeof into.str);
    }
-   memmove (into.str, out + 1, len);
+   for (int i = 0; i < len; ++i) {
+      into.str[i] = out[i + 1];
+   }
    into.str[len] = 0;
    return into;
 }

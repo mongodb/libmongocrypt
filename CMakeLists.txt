@@ -480,10 +480,11 @@ foreach (test IN ITEMS path str)
    target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
 endforeach ()
 
-if ("cxx_std_14" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable(mlib.int128.test src/mlib/int128.test.cpp)
    add_Test (mlib.int128 mlib.int128.test)
    target_link_libraries (mlib.int128.test PRIVATE mongo::mlib)
+   target_compile_features (mlib.int128.test PRIVATE cxx_relaxed_constexpr)
 endif ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
