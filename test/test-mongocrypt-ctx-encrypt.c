@@ -2707,6 +2707,7 @@ typedef struct {
    mongocrypt_binary_t *expect;
    const char *expect_finalize_error;
    const char *expect_init_error;
+   bool is_expression;
 } ee_testcase;
 
 static void
@@ -2754,7 +2755,12 @@ ee_testcase_run (ee_testcase *tc)
    }
    BSON_ASSERT (tc->msg);
    {
-      bool ret = mongocrypt_ctx_explicit_encrypt_init (ctx, tc->msg);
+      bool ret;
+      if (tc->is_expression) {
+         ret = mongocrypt_ctx_explicit_encrypt_expression_init (ctx, tc->msg);
+      } else {
+         ret = mongocrypt_ctx_explicit_encrypt_init (ctx, tc->msg);
+      }
       if (tc->expect_init_error) {
          ASSERT_FAILS (ret, ctx, tc->expect_init_error);
          goto cleanup;
@@ -3065,6 +3071,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.keys_to_feed[0] = keyABC;
       tc.expect = TEST_FILE ("./test/data/fle2-find-range-explicit/int32/"
                              "encrypted-payload.json");
+      tc.is_expression = true;
       ee_testcase_run (&tc);
    }
 
@@ -3100,6 +3107,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.keys_to_feed[1] = key123;
       tc.expect = TEST_FILE ("./test/data/fle2-find-range-explicit/"
                              "double-precision/encrypted-payload.json");
+      tc.is_expression = true;
       ee_testcase_run (&tc);
    }
 
@@ -3144,6 +3152,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.keys_to_feed[1] = key123;
       tc.expect = TEST_FILE (
          "./test/data/fle2-find-range-explicit/double/encrypted-payload.json");
+      tc.is_expression = true;
       ee_testcase_run (&tc);
    }
 
@@ -3207,6 +3216,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.expect =
          TEST_FILE ("./test/data/fle2-find-range-explicit/int32-nominmax/"
                     "encrypted-payload.json");
+      tc.is_expression = true;
       ee_testcase_run (&tc);
    }
 
@@ -3240,6 +3250,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.keys_to_feed[0] = keyABC;
       tc.expect_finalize_error =
          "minimum value must be less than the maximum value";
+      tc.is_expression = true;
       ee_testcase_run (&tc);
    }
 
@@ -3257,6 +3268,7 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
       tc.keys_to_feed[0] = keyABC;
       tc.expect = TEST_FILE ("./test/data/fle2-find-range-explicit/"
                              "int32-openinterval/encrypted-payload.json");
+      tc.is_expression = true;
       ee_testcase_run (&tc);
    }
 

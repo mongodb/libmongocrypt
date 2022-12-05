@@ -2335,9 +2335,11 @@ fail:
    return ret;
 }
 
-bool
-mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
-                                      mongocrypt_binary_t *msg)
+// explicit_encrypt_init is common code shared by
+// mongocrypt_ctx_explicit_encrypt_init and
+// mongocrypt_ctx_explicit_encrypt_expression_init.
+static bool
+explicit_encrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *msg)
 {
    _mongocrypt_ctx_encrypt_t *ectx;
    bson_t as_bson;
@@ -2551,6 +2553,37 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
 
    (void) _mongocrypt_key_broker_requests_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
+}
+
+bool
+mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
+                                      mongocrypt_binary_t *msg)
+{
+   if (!explicit_encrypt_init (ctx, msg)) {
+      return false;
+   }
+   if (ctx->opts.query_type.set &&
+       ctx->opts.query_type.value == MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx,
+         "Encrypt may not be used for range queries. Use EncryptExpression.");
+   }
+   return true;
+}
+
+bool
+mongocrypt_ctx_explicit_encrypt_expression_init (mongocrypt_ctx_t *ctx,
+                                                 mongocrypt_binary_t *msg)
+{
+   if (!explicit_encrypt_init (ctx, msg)) {
+      return false;
+   }
+   if (!ctx->opts.query_type.set ||
+       ctx->opts.query_type.value != MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "EncryptExpression may only be used for range queries.");
+   }
+   return true;
 }
 
 static bool

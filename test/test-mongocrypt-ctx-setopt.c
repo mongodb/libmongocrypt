@@ -98,6 +98,12 @@ static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
 #define ASSERT_EX_ENCRYPT_INIT_FAILS(bin, msg) \
    ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, bin), ctx, msg);
 
+#define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bin) \
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_expression_init (ctx, bin), ctx);
+#define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bin, msg) \
+   ASSERT_FAILS (                                         \
+      mongocrypt_ctx_explicit_encrypt_expression_init (ctx, bin), ctx, msg);
+
 #define ASSERT_DECRYPT_INIT_OK(bin) \
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
 #define ASSERT_DECRYPT_INIT_FAILS(bin, msg) \
@@ -985,6 +991,42 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR, -1);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "must match index_type");
+   }
+
+   /* Error if query_type == "rangePreview" for
+    * mongocrypt_ctx_explicit_encrypt_init. */
+   {
+      REFRESH;
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1);
+      ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR, -1);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_algorithm_range (
+            ctx,
+            TEST_BSON (
+               "{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson,
+         "Encrypt may not be used for range queries. Use EncryptExpression.");
+   }
+
+   /* Error if query_type is unset for
+    * mongocrypt_ctx_explicit_encrypt_expression_init. */
+   {
+      REFRESH;
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_algorithm_range (
+            ctx,
+            TEST_BSON (
+               "{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS (
+         bson, "EncryptExpression may only be used for range queries.");
    }
 
    mongocrypt_ctx_destroy (ctx);
