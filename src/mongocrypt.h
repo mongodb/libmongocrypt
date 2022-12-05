@@ -947,8 +947,8 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg);
 
 /**
- * Explicit helper method to encrypt BSON document expression. Contexts
- * created for explicit encryption will not go through mongocryptd.
+ * Explicit helper method to encrypt a Match Expression or Aggregate Expression
+ * Contexts created for explicit encryption will not go through mongocryptd.
  * Requires query_type to be "rangePreview".
  * NOTE: The RangePreview algorithm is experimental only. It is not intended for
  * public use.
