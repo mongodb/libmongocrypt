@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.6.2
+## Fixed
+- Fix build on FreeBSD.
+- Set context error state during KMS provider validation.
 ## 1.6.1
 ## Fixed
 - Fix libbson dependency in pkg-config for PPA.
