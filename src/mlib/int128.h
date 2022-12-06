@@ -19,7 +19,7 @@ typedef union {
       uint64_t hi;
    } r;
 #if defined(__SIZEOF_INT128__)
-   // These union members are only for the purpoes of debugging visualization
+   // These union members are only for the purpose of debugging visualization
    // and testing, and will only appear correctly on little-endian platforms.
    __int128_t signed_;
    __uint128_t unsigned_;
