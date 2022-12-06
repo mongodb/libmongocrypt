@@ -3,6 +3,10 @@
 ### New Features
 - Support range index for int32, int64, double, and date. NOTE: The Range algorithm is experimental only. It is not intended for public use.
 
+## 1.6.2
+## Fixed
+- Fix build on FreeBSD.
+- Set context error state during KMS provider validation.
 ## 1.6.1
 ## Fixed
 - Fix libbson dependency in pkg-config for PPA.
