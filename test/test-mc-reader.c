@@ -85,7 +85,8 @@ _test_mc_reader_uuid (_mongocrypt_tester_t *tester)
                      status);
    ASSERT (value.subtype == BSON_SUBTYPE_UUID);
 
-   ASSERT_CMPBYTES (expected_bytes, (size_t)expected_len, value.data, value.len);
+   ASSERT_CMPBYTES (
+      expected_bytes, (size_t) expected_len, value.data, value.len);
 
 
    uint8_t ui;
@@ -158,13 +159,13 @@ _test_mc_reader_bytes (_mongocrypt_tester_t *tester)
    ASSERT_OK_STATUS (
       mc_reader_read_bytes (&reader, (const uint8_t **) &ptr, len, status),
       status);
-   ASSERT_CMPBYTES (expected_bytes, 4, ptr, (size_t)len);
+   ASSERT_CMPBYTES (expected_bytes, 4, ptr, (size_t) len);
 
    _mongocrypt_buffer_t value_buf;
    ASSERT_OK_STATUS (mc_reader_read_buffer_to_end (&reader, &value_buf, status),
                      status);
    ASSERT_CMPBYTES (
-      expected_bytes + 4, (size_t)expected_len - 4, value_buf.data, value_buf.len);
+      expected_bytes + 4u, expected_len - 4u, value_buf.data, value_buf.len);
 
    _mongocrypt_buffer_cleanup (&input_buf);
    _mongocrypt_buffer_cleanup (&value_buf);
