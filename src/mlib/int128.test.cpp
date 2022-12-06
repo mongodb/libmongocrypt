@@ -293,8 +293,8 @@ main ()
       // Attempt a division, even if we have no "reference" value
       auto q = mlib_int128_divmod (num, denom);
       (void) q;
+
 #ifdef __SIZEOF_INT128__
-      std::cerr << "Testing: " << num << " ÷ " << denom << '\n';
       // When we have an existing i128 impl, test against that:
       mlib_int128 exp = {.unsigned_ = (num.unsigned_ / denom.unsigned_)};
       mlib_int128 exp2 = {.unsigned_ = (num.unsigned_ % denom.unsigned_)};
