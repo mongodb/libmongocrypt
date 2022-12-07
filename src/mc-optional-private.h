@@ -20,6 +20,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "./mc-dec128.h"
+#include "./mlib/int128.h"
+
 typedef struct {
    bool set;
    int32_t value;
@@ -99,5 +102,33 @@ typedef struct {
    {                            \
       .set = true, .value = val \
    }
+
+typedef struct {
+   bool set;
+   mc_dec128 value;
+} mc_optional_dec128_t;
+
+#define OPT_MC_DEC128(...)              \
+   (mc_optional_dec128_t)               \
+   {                                    \
+      .set = true, .value = __VA_ARGS__ \
+   }
+
+
+#define OPT_NULLOPT \
+   {                \
+      .set = false  \
+   }
+
+typedef struct {
+   bool set;
+   mlib_int128 value;
+} mc_optional_int128_t;
+
+#define OPT_MC_INT128(...)                     \
+   ((mc_optional_int128_t){                    \
+      .set = true,                             \
+      .value = MLIB_INT128_CAST (__VA_ARGS__), \
+   })
 
 #endif /* MC_OPTIONAL_PRIVATE_H */

@@ -2,6 +2,7 @@
 #define MC_DEC128_H_INCLUDED
 
 #include <mlib/macros.h>
+#include <mlib/int128.h>
 
 #include <inttypes.h>
 #include <string.h>
@@ -493,22 +494,29 @@ enum {
    MC_DEC128_COMBO_NONCANONICAL = 3 << 15,
    /// Least combination value indicating infinity
    MC_DEC128_COMBO_INFINITY = 0x1e << 12,
+   /// The greatest Decimal128 biased exponent
+   MC_DEC128_MAX_BIASED_EXPONENT = 6143 + 6144,
    /// The exponent bias of Decimal128
-   MC_DEC128_EXPONENT_BIAS = 6143 + 33,
-   /// The greatest Decimal128 exponent, adjusted for exponent bias
-   MC_DEC128_MAX_BIASED_EXPONENT = MC_DEC128_EXPONENT_BIAS + 6111,
+   MC_DEC128_EXPONENT_BIAS = 6143 + 33, // +33 to include the 34 decimal digits
+   /// Minimum exponent value (without bias)
+   MC_DEC_MIN_EXPONENT = -6143,
+   /// Maximum exponent value (without bias)
+   MC_DEC_MAX_EXPONENT = 6144,
 };
 
 /// Obtain the value of the combination bits of a decimal128
 static inline uint32_t
 mc_dec128_combination (mc_dec128 d)
 {
+   // Grab the high 64 bits:
+   uint64_t hi = 0;
+   memcpy (&hi, d._bid_bytes + 8, sizeof hi);
+   // Sign is the 64th bit:
    int signpos = 64 - 1;
+   // Combo is the next 16 bits:
    int fieldpos = signpos - 17;
    int fieldmask = (1 << 17) - 1;
-   uint32_t hi = 0;
-   memcpy (&hi, d._bid_bytes + 8, sizeof hi);
-   return (hi >> fieldpos) & fieldmask;
+   return (uint32_t) ((hi >> fieldpos) & fieldmask);
 }
 
 /**
@@ -545,7 +553,28 @@ mc_dec128_coeff_low (mc_dec128 d)
 }
 
 /**
+ * @brief Obtain the full coefficient of the given Decimal128 number. Requires a
+ * 128-bit integer.
+ */
+static inline mlib_int128
+mc_dec128_coeff (mc_dec128 d)
+{
+   // Hi bits
+   uint64_t hi = mc_dec128_coeff_high (d);
+   // Lo bits
+   uint64_t lo = mc_dec128_coeff_low (d);
+   // Shift and add
+   mlib_int128 hi_128 = mlib_int128_lshift (MLIB_INT128_CAST (hi), 64);
+   return mlib_int128_add (hi_128, MLIB_INT128_CAST (lo));
+}
+
+/**
  * @brief Obtain the biased value of the Decimal128 exponent.
+ *
+ * The value is "biased" in that its binary value not actually zero for 10^0. It
+ * is offset by half the exponent range (the "bias") so it can encode the full
+ * positive and negative exponent range. The bias value is defined as
+ * MC_DEC128_EXPONENT_BIAS.
  */
 static inline int32_t
 mc_dec128_get_biased_exp (mc_dec128 d)
