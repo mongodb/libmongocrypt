@@ -340,9 +340,10 @@ dec128_to_int128 (mc_dec128 dec)
 
    // Scale the resulting number by a power of ten matching the exponent of the
    // Decimal128:
-   int32_t exp = mc_dec128_get_biased_exp (dec) - MC_DEC128_EXPONENT_BIAS;
+   int32_t exp =
+      ((int32_t) mc_dec128_get_biased_exp (dec)) - MC_DEC128_EXPONENT_BIAS;
    // We will scale up/down based on whether it is negative:
-   mlib_int128 e1 = mlib_int128_pow10 (labs (exp));
+   mlib_int128 e1 = mlib_int128_pow10 ((uint8_t) abs (exp));
    if (exp < 0) {
       ret = mlib_int128_div (ret, e1);
    } else {
@@ -414,7 +415,7 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
    // is incompatible with normal decimal128 values.
    bool use_precision_mode = false;
    // The number of bits required to hold the result (uesd for precision mode)
-   int bits_range = 0;
+   uint8_t bits_range = 0;
    if (args.precision.set) {
       // Subnormal representations can support up to 5x10^-6182 as a number
       if (args.precision.value < 0 || args.precision.value > 6182) {
@@ -448,9 +449,9 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
             int64_t r = mc_dec128_to_int64 (
                mc_dec128_round_integral_positive (bits_range_dec));
             BSON_ASSERT (r >= 0);
-            BSON_ASSERT (r <= INT_MAX);
+            BSON_ASSERT (r <= UINT8_MAX);
             // We've computed the proper 'bits_range'
-            bits_range = (int) r;
+            bits_range = (uint8_t) r;
 
             if (bits_range < 128) {
                use_precision_mode = true;
@@ -561,10 +562,10 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
 
    // The biased exponent from the decimal number. The paper refers to the
    // expression (e - e_min), which is the value of the biased exponent.
-   const int exp_biased = mc_dec128_get_biased_exp (args.value);
+   const uint32_t exp_biased = mc_dec128_get_biased_exp (args.value);
 
    // ρ (rho) is the greatest integer such that: coeff×10^ρ <= cMax
-   int rho = 0;
+   unsigned rho = 0;
    // Keep track of the subexpression coeff×10^ρ rather than recalculating it
    // time.
    // Initially: (ρ = 0) -> (10^ρ = 1) -> (coeff×10^ρ = coeff×1 = coeff):
@@ -588,14 +589,14 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
 
       // Diff between the biased exponent and ρ.
       // Value in paper is spelled "e - e_min - ρ"
-      const int exp_diff = exp_biased - rho;
+      const uint32_t exp_diff = exp_biased - (uint32_t) rho;
       // cMax * (exp_diff)
       const mlib_int128 cmax_scaled =
          mlib_int128_mul (cMax, MLIB_INT128_CAST (exp_diff));
       // coeff * 10^rho * cMax * (exp_biased - rho)
       result = mlib_int128_add (coeff_scaled, cmax_scaled);
    } else {
-      const mlib_int128 biased_scale = mlib_int128_pow10 (exp_biased);
+      const mlib_int128 biased_scale = mlib_int128_pow10 ((uint8_t) exp_biased);
       result = mlib_int128_mul (biased_scale, coeff);
    }
 

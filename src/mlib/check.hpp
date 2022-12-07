@@ -5,7 +5,9 @@
 #include <cstdio>
 #include <string>
 
-namespace mlib::detail
+namespace mlib
+{
+namespace detail
 {
 struct check_info {
    const char *filename;
@@ -26,14 +28,14 @@ template <typename Left> struct bound_lhs {
       if (value Oper rhs) {                                                 \
          return {};                                                         \
       }                                                                     \
-      fprintf (stderr,                                                      \
-               "%s:%d: CHECK( %s ) failed!\n",                              \
-               info.filename,                                               \
-               info.line,                                                   \
-               info.expr);                                                  \
+      std::fprintf (stderr,                                                 \
+                    "%s:%d: CHECK( %s ) failed!\n",                         \
+                    info.filename,                                          \
+                    info.line,                                              \
+                    info.expr);                                             \
       std::cerr << "Expanded expression: " << value << " " #Oper " " << rhs \
                 << '\n';                                                    \
-      exit (2);                                                             \
+      std::exit (2);                                                        \
    }
    DEFOP (==)
    DEFOP (!=)
@@ -81,6 +83,7 @@ struct check_consume {
          ::mlib::detail::check_info{__FILE__, __LINE__, #Cond}} \
          ->*Cond
 
-} // namespace mlib::detail
+} // namespace detail
+} // namespace mlib
 
 #endif // MLIB_CHECK_HPP_INCLUDED
