@@ -42,7 +42,7 @@ export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
 mkdir -p ${NVM_DIR}
 
 # install Node.js
-echo "Installing Node ${NODE_LTS_NAME}"
+echo "Installing Latest Node for Major Version ${NODE_NVM_USE_VERSION}"
 if [ "$OS" == "Windows_NT" ]; then
   set +o xtrace
 
