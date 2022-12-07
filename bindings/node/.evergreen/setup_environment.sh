@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "$NODE_NVM_USE_VERSION" ]; then 
+  echo "NODE_NVM_USE_VERSION environment variable must be set."
+  exit 1
+fi
+
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
@@ -22,7 +27,7 @@ mkdir -p "${BIN_DIR}"
 export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
 
 test -n "${NODE_NVM_USE_VERSION-}" || echo "Defaulting to using the current Node LTS Release. Set NODE_NVM_USE_VERSION to change."
-: "${NODE_NVM_USE_VERSION:="lts"}"
+: "${NODE_NVM_USE_VERSION:="18"}"
 
 # locate cmake
 if [ "$OS" == "Windows_NT" ]; then
