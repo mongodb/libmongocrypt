@@ -1,13 +1,16 @@
 #ifndef MC_DEC128_H_INCLUDED
 #define MC_DEC128_H_INCLUDED
 
+#include <mlib/macros.h>
+
 #include <inttypes.h>
 #include <string.h>
+#include <stdlib.h>
+#include <float.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+MLIB_C_LINKAGE_BEGIN
 
+/// Rounding controls for Decimal128 operations
 typedef enum mc_dec128_rounding_mode {
    MC_DEC128_ROUND_NEAREST_EVEN = 0,
    MC_DEC128_ROUND_DOWNWARD = 1,
@@ -17,6 +20,7 @@ typedef enum mc_dec128_rounding_mode {
    MC_DEC128_ROUND_DEFAULT = MC_DEC128_ROUND_NEAREST_EVEN,
 } mc_dec128_rounding_mode;
 
+/// Status indication flags returned by some Decimal128 operations
 typedef enum mc_dec128_flags {
    MC_DEC128_FLAG_INVALID = 0x1,
    MC_DEC128_FLAG_ZERODIV = 0x4,
@@ -30,7 +34,8 @@ typedef struct mc_dec128_flagset {
    int bits;
 } mc_dec128_flagset;
 
-// This alignment conditional is the same conditions used in Intel's DFP library
+// This alignment conditional is the same conditions used in Intel's DFP
+// library, ensuring we match the ABI of the library without pulling the header
 #if defined _MSC_VER
 #if defined _M_IX86 && !defined __INTEL_COMPILER
 #define _mcDec128Align(n)
@@ -45,11 +50,18 @@ typedef struct mc_dec128_flagset {
 #endif
 #endif
 
-typedef struct _mcDec128Align (16) mc_dec128
+typedef union _mcDec128Align (16)
 {
    uint8_t _bid_bytes[16];
+#if !defined(_MSC_VER) && !defined(__INTELLISENSE__)
+   // If supported by the compiler, emit a field that can be used to visualize
+   // the value in a debugger.
+   float value_ __attribute__ ((mode (TD)));
+#endif
 }
 mc_dec128;
+
+#undef _mcDec128Align
 
 /// Expands to a dec128 constant value.
 #ifdef __cplusplus
@@ -59,6 +71,8 @@ mc_dec128;
 #define MC_DEC128_C(N) \
    _mcDec128Const (((N) < 0 ? -(N) : (N)), ((N) < 0 ? 1 : 0))
 #endif
+
+#define MC_DEC128(N) MLIB_INIT (mc_dec128) MC_DEC128_C (N)
 
 #define _mcDec128Const(N, Negate)                                   \
    {                                                                \
@@ -86,11 +100,113 @@ static const mc_dec128 MC_DEC128_ZERO = MC_DEC128_C (0);
 static const mc_dec128 MC_DEC128_ONE = MC_DEC128_C (1);
 static const mc_dec128 MC_DEC128_MINUSONE = MC_DEC128_C (-1);
 
-typedef struct mc_dec128_string {
-   char str[48];
-} mc_dec128_string;
+/// The greatest-magnitude finite negative value representable in a Decimal128
+#define MC_DEC128_LARGEST_NEGATIVE \
+   mc_dec128_from_string ("-9999999999999999999999999999999999E6111")
+/// The least-magnitude non-zero negative value representable in a Decimal128
+#define MC_DEC128_SMALLEST_NEGATIVE mc_dec128_from_string ("-1E-6176")
+/// The greatest-magnitude finite positive value representable in a Decimal128
+#define MC_DEC128_LARGEST_POSITIVE \
+   mc_dec128_from_string ("9999999999999999999999999999999999E6111")
+/// The least-magnitude non-zero positive value representable in a Decimal128
+#define MC_DEC128_SMALLEST_POSITIVE mc_dec128_from_string ("1E-6176")
+/// The normalized zero of Decimal128
+#define MC_DEC128_NORMALIZED_ZERO MC_DEC128_C (0)
+/// A zero of Decimal128 with the least exponent
+#define MC_DEC128_NEGATIVE_EXPONENT_ZERO mc_dec128_from_string ("0E-6176")
+/// Positive infinity of Decimal128
+#define MC_DEC128_POSITIVE_INFINITY           \
+   {                                          \
+      {                                       \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         0,                                   \
+         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3), \
+      },                                      \
+   }
+/// Negative infinity of Decimal128
+#define MC_DEC128_NEGATIVE_INFINITY                    \
+   {                                                   \
+      {                                                \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0, /* Set the sign bit:*/                     \
+         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 7), \
+      },                                               \
+   }
+/// Positve quiet NaN of Decimal128
+#define MC_DEC128_POSITIVE_NAN                         \
+   {                                                   \
+      {                                                \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0,                                            \
+         0, /* Set the quiet NaN bit:*/                \
+         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 2), \
+      },                                               \
+   }
+/// Negative quiet NaN of Decimal128
+#define MC_DEC128_NEGATIVE_NAN                                  \
+   {                                                            \
+      {                                                         \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0,                                                     \
+         0, /* Set the quiet NaN bit and the sign bit:*/        \
+         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 2 | 1 << 7), \
+      },                                                        \
+   }
 
-/// Convert a double-precision binary floating point into a dec128
+/**
+ * @brief Convert a double-precision binary floating point value into the
+ * nearest Decimal128 value
+ */
 static inline mc_dec128
 mc_dec128_from_double (double d)
 {
@@ -101,7 +217,10 @@ mc_dec128_from_double (double d)
       d, MC_DEC128_ROUND_DEFAULT, &zero_flags);
 }
 
-/// Parse a decimal string into a dec128
+/**
+ * @brief Convert a string representation of a number into the nearest
+ * Decimal128 value
+ */
 static inline mc_dec128
 mc_dec128_from_string (const char *s)
 {
@@ -111,7 +230,18 @@ mc_dec128_from_string (const char *s)
    return __mongocrypt_bid128_from_string (s, MC_DEC128_ROUND_DEFAULT, &flags);
 }
 
-/// Render a dec128 as an engineering-notation string.
+/**
+ * @brief A type capable of holding a string rendering of a Decimal128 in
+ * engineering notation.
+ */
+typedef struct mc_dec128_string {
+   /// The character array of the rendered value. Null-terminated
+   char str[48];
+} mc_dec128_string;
+
+/**
+ * @brief Render a Decimal128 value as a string (in engineering notation)
+ */
 static inline mc_dec128_string
 mc_dec128_to_string (mc_dec128 d)
 {
@@ -190,9 +320,11 @@ DECL_IDF_BINOP_WRAPPER (add)
 DECL_IDF_BINOP_WRAPPER (mul)
 DECL_IDF_BINOP_WRAPPER (div)
 DECL_IDF_BINOP_WRAPPER (sub)
+DECL_IDF_BINOP_WRAPPER (pow)
 
 #undef DECL_IDF_BINOP_WRAPPER
 
+/// Unary arithmetic operations on two Decimal128 numbers
 #define DECL_IDF_UNOP_WRAPPER(Oper)                                         \
    static inline mc_dec128 mc_dec128_##Oper##_ex (mc_dec128 operand,        \
                                                   mc_dec128_flagset *flags) \
@@ -209,7 +341,11 @@ DECL_IDF_BINOP_WRAPPER (sub)
       return mc_dec128_##Oper##_ex (operand, NULL);                         \
    }
 
-DECL_IDF_UNOP_WRAPPER (floor)
+DECL_IDF_UNOP_WRAPPER (round_integral_zero)
+DECL_IDF_UNOP_WRAPPER (round_integral_positive)
+DECL_IDF_UNOP_WRAPPER (round_integral_negative)
+DECL_IDF_UNOP_WRAPPER (round_integral_exact)
+DECL_IDF_UNOP_WRAPPER (log2)
 DECL_IDF_UNOP_WRAPPER (log10)
 DECL_IDF_UNOP_WRAPPER (negate)
 DECL_IDF_UNOP_WRAPPER (abs)
@@ -258,6 +394,15 @@ typedef struct mc_dec128_modf_result {
    mc_dec128 frac;
 } mc_dec128_modf_result;
 
+/**
+ * @brief Split a Decimal128 into its whole and fractional parts.
+ *
+ * The "whole" value is the integral value of the Decimal128 rounded towards
+ * zero. The "frac" part is the remainder after removing the whole.
+ *
+ * @param d The value to inspect
+ * @param flags Results status flags
+ */
 static inline mc_dec128_modf_result
 mc_dec128_modf_ex (mc_dec128 d, mc_dec128_flagset *flags)
 {
@@ -270,14 +415,30 @@ mc_dec128_modf_ex (mc_dec128 d, mc_dec128_flagset *flags)
    return res;
 }
 
+/**
+ * @brief Split a Decimal128 into its whole and fractional parts.
+ *
+ * The "whole" value is the integral value of the Decimal128 rounded towards
+ * zero. The "frac" part is the remainder after removing the whole.
+ *
+ * @param d The value to inspect
+ */
 static inline mc_dec128_modf_result
 mc_dec128_modf (mc_dec128 d)
 {
    return mc_dec128_modf_ex (d, NULL);
 }
 
+/**
+ * @brief Compute the "fmod", the remainder after decimal division rounding
+ * towards zero.
+ *
+ * @param numer The dividend of the modulus
+ * @param denom The divisor of the modulus
+ * @param flags Control/status flags
+ */
 static inline mc_dec128
-mc_dec128_rem_ex (mc_dec128 numer, mc_dec128 denom, mc_dec128_flagset *flags)
+mc_dec128_fmod_ex (mc_dec128 numer, mc_dec128 denom, mc_dec128_flagset *flags)
 {
    extern mc_dec128 __mongocrypt_bid128_fmod (
       mc_dec128 numer, mc_dec128 denom, mc_dec128_flagset *);
@@ -285,12 +446,26 @@ mc_dec128_rem_ex (mc_dec128 numer, mc_dec128 denom, mc_dec128_flagset *flags)
    return __mongocrypt_bid128_fmod (numer, denom, flags ? flags : &zero_flags);
 }
 
+/**
+ * @brief Compute the "fmod", the remainder after decimal division rounding
+ * towards zero.
+ *
+ * @param numer The dividend of the modulus
+ * @param denom The divisor of the modulus
+ */
 static inline mc_dec128
-mc_dec128_rem (mc_dec128 numer, mc_dec128 denom)
+mc_dec128_fmod (mc_dec128 numer, mc_dec128 denom)
 {
-   return mc_dec128_rem_ex (numer, denom, NULL);
+   return mc_dec128_fmod_ex (numer, denom, NULL);
 }
 
+/**
+ * @brief Obtain the a 64-bit binary integer value for the given Decimal128
+ * value, nearest rounding toward zero.
+ *
+ * @param d The value to inspect
+ * @param flags Control/status flags
+ */
 static inline int64_t
 mc_dec128_to_int64_ex (mc_dec128 d, mc_dec128_flagset *flags)
 {
@@ -300,10 +475,90 @@ mc_dec128_to_int64_ex (mc_dec128 d, mc_dec128_flagset *flags)
    return __mongocrypt_bid128_to_int64_int (d, flags ? flags : &zero_flags);
 }
 
+/**
+ * @brief Obtain the a 64-bit binary integer value for the given Decimal128
+ * value, nearest rounding toward zero.
+ *
+ * @param d The value to inspect
+ */
 static inline int64_t
 mc_dec128_to_int64 (mc_dec128 d)
 {
    return mc_dec128_to_int64_ex (d, NULL);
+}
+
+/// Constants for inspection/deconstruction of Decimal128
+enum {
+   /// Least non-canonical combination bits value
+   MC_DEC128_COMBO_NONCANONICAL = 3 << 15,
+   /// Least combination value indicating infinity
+   MC_DEC128_COMBO_INFINITY = 0x1e << 12,
+   /// The exponent bias of Decimal128
+   MC_DEC128_EXPONENT_BIAS = 6143 + 33,
+   /// The greatest Decimal128 exponent, adjusted for exponent bias
+   MC_DEC128_MAX_BIASED_EXPONENT = MC_DEC128_EXPONENT_BIAS + 6111,
+};
+
+/// Obtain the value of the combination bits of a decimal128
+static inline uint32_t
+mc_dec128_combination (mc_dec128 d)
+{
+   int signpos = 64 - 1;
+   int fieldpos = signpos - 17;
+   int fieldmask = (1 << 17) - 1;
+   uint32_t hi = 0;
+   memcpy (&hi, d._bid_bytes + 8, sizeof hi);
+   return (hi >> fieldpos) & fieldmask;
+}
+
+/**
+ * @brief Obtain the value of the high 49 bits of the Decimal128 coefficient
+ */
+static inline uint64_t
+mc_dec128_coeff_high (mc_dec128 d)
+{
+   uint64_t hi_field_mask = (1ull << 49) - 1;
+   uint64_t combo = mc_dec128_combination (d);
+   if (combo < MC_DEC128_COMBO_NONCANONICAL) {
+      uint64_t hi = 0;
+      memcpy (&hi, d._bid_bytes + 8, sizeof hi);
+      return hi & hi_field_mask;
+   } else {
+      return 0;
+   }
+}
+
+/**
+ * @brief Obtain the value of the low 49 bits of the Decimal128 coefficient
+ */
+static inline uint64_t
+mc_dec128_coeff_low (mc_dec128 d)
+{
+   uint64_t combo = mc_dec128_combination (d);
+   if (combo < MC_DEC128_COMBO_NONCANONICAL) {
+      uint64_t lo = 0;
+      memcpy (&lo, d._bid_bytes, sizeof lo);
+      return lo;
+   } else {
+      return 0;
+   }
+}
+
+/**
+ * @brief Obtain the biased value of the Decimal128 exponent.
+ */
+static inline int32_t
+mc_dec128_get_biased_exp (mc_dec128 d)
+{
+   uint64_t combo = mc_dec128_combination (d);
+   if (combo < MC_DEC128_COMBO_NONCANONICAL) {
+      return combo >> 3;
+   }
+   if (combo >= MC_DEC128_COMBO_INFINITY) {
+      return MC_DEC128_MAX_BIASED_EXPONENT + 1;
+   } else {
+      return (combo >> 1) & ((1 << 14) - 1);
+   }
 }
 
 /// Create a decimal string from a dec128 number. The result must be freed.
@@ -351,11 +606,8 @@ mc_dec128_to_new_decimal_string (mc_dec128 d)
       // Write the string backwards:
       char *optr = strbuf + ndigits - 1;
       while (!mc_dec128_is_zero (modf.whole)) {
-         mc_dec128 rem = mc_dec128_rem (modf.whole, TEN);
+         mc_dec128 rem = mc_dec128_fmod (modf.whole, TEN);
          int64_t remi = mc_dec128_to_int64 (rem);
-         if (remi < 0) {
-            remi = 10 + remi;
-         }
          *optr-- = DIGITS[remi];
          // Divide ten
          modf = mc_dec128_modf (mc_dec128_div (modf.whole, TEN));
@@ -390,10 +642,6 @@ mc_dec128_to_new_decimal_string (mc_dec128 d)
    }
 }
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
-#undef _mcDec128Align
+MLIB_C_LINKAGE_END
 
 #endif // MC_DEC128_H_INCLUDED
