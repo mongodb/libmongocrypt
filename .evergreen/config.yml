@@ -1059,6 +1059,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1325,6 +1326,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - build-and-test-csharp
   - test-java
   - upload-java
@@ -1343,6 +1345,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
   - test-java
   - name: publish-packages
     distros:
