@@ -26,9 +26,6 @@ mkdir -p "${BIN_DIR}"
 # Add mongodb toolchain to path
 export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
 
-test -n "${NODE_NVM_USE_VERSION-}" || echo "Defaulting to using the current Node LTS Release. Set NODE_NVM_USE_VERSION to change."
-: "${NODE_NVM_USE_VERSION:="18"}"
-
 # locate cmake
 if [ "$OS" == "Windows_NT" ]; then
   CMAKE=/cygdrive/c/cmake/bin/cmake
