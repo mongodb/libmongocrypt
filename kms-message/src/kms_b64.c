@@ -285,8 +285,8 @@ kms_message_b64_initialize_rmap (void)
    }
 
    /* Fill reverse mapping for base64 chars */
-   for (j = 0; Base64[j] != '\0'; ++j)
-      b64rmap[(uint8_t) Base64[j]] = j;
+   for (i = 0; Base64[i] != '\0'; ++i)
+      b64rmap[(uint8_t) Base64[i]] = (uint8_t) i;
 }
 
 static int

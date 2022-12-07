@@ -31,8 +31,9 @@
 /* Sadly, Windows does not define SSIZE_MAX. It is defined in bson-compat.h,
  * but only since 1.22.x, so copy this from bson-compat.h for now. */
 #ifndef SSIZE_MAX
-#define SSIZE_MAX (ssize_t) \
-   ((((size_t) 0x01u) << (sizeof (ssize_t) * (size_t) CHAR_BIT - 1u)) - 1u)
+#define SSIZE_MAX \
+   (ssize_t) (    \
+      (((size_t) 0x01u) << (sizeof (ssize_t) * (size_t) CHAR_BIT - 1u)) - 1u)
 #endif
 
 typedef struct {
@@ -63,7 +64,7 @@ _sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out)
 
    crypto = (_mongocrypt_crypto_t *) ctx_with_status->ctx;
    BSON_ASSERT (crypto);
-   BSON_ASSERT (len <= INT32_MAX);
+   BSON_ASSERT (len <= UINT32_MAX);
    plaintext =
       mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
@@ -99,10 +100,10 @@ _sha256_hmac (void *ctx,
    crypto = (_mongocrypt_crypto_t *) ctx_with_status->ctx;
    BSON_ASSERT (crypto);
 
-   BSON_ASSERT (key_len <= INT32_MAX);
+   BSON_ASSERT (key_len <= UINT32_MAX);
    key = mongocrypt_binary_new_from_data ((uint8_t *) key_input,
                                           (uint32_t) key_len);
-   BSON_ASSERT (len <= INT32_MAX);
+   BSON_ASSERT (len <= UINT32_MAX);
    plaintext =
       mongocrypt_binary_new_from_data ((uint8_t *) input, (uint32_t) len);
    out = mongocrypt_binary_new ();
@@ -527,7 +528,13 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    /* If HTTP response succeeded (status 200) then body should contain JSON.
     */
    bson_destroy (&body_bson);
-   BSON_ASSERT (body_len <= SSIZE_MAX);
+   if (body_len > (size_t) SSIZE_MAX) {
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                  "Response body exceeds maximum supported length",
+                  bson_error.message);
+      bson_init (&body_bson);
+      goto fail;
+   }
    if (!bson_init_from_json (
           &body_bson, body, (ssize_t) body_len, &bson_error)) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
@@ -552,7 +559,7 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
 
    b64_str = (char *) bson_iter_utf8 (&iter, &b64_strlen);
    BSON_ASSERT (b64_str);
-   kms->result.data = bson_malloc ((size_t) b64_strlen + 1);
+   kms->result.data = bson_malloc ((size_t) b64_strlen + 1u);
    BSON_ASSERT (kms->result.data);
 
    result_len = kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
@@ -695,7 +702,7 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
    }
 
    b64url_data = bson_iter_utf8 (&iter, &b64url_len);
-   BSON_ASSERT (b64url_len <= UINT32_MAX - 4);
+   BSON_ASSERT (b64url_len <= UINT32_MAX - 4u);
    /* add four for padding. */
    b64_len = b64url_len + 4;
    b64_data = bson_malloc0 (b64_len);

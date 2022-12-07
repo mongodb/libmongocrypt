@@ -89,7 +89,7 @@ _crypto_aes_256_ctr_encrypt_decrypt_via_ecb (
       /* Increment value in CTR buffer */
       uint32_t carry = 1;
       /* assert rather than return since this should never happen */
-      BSON_ASSERT (ctr_bin.len == 0 || ctr_bin.len - 1 <= INT_MAX);
+      BSON_ASSERT (ctr_bin.len == 0u || ctr_bin.len - 1u <= INT_MAX);
       for (int i = (int) ctr_bin.len - 1; i >= 0 && carry != 0; --i) {
          uint32_t bpp = carry + ctr_bin.data[i];
          carry = bpp >> 8;
@@ -375,8 +375,8 @@ _mongocrypt_memequal (const void *const b1, const void *const b2, size_t len)
 uint32_t
 _mongocrypt_calculate_ciphertext_len (uint32_t plaintext_len)
 {
-   BSON_ASSERT ((plaintext_len / 16) <=
-                ((UINT32_MAX - MONGOCRYPT_HMAC_LEN) / 16) - 2);
+   BSON_ASSERT ((plaintext_len / 16u) <=
+                ((UINT32_MAX - (uint32_t) MONGOCRYPT_HMAC_LEN) / 16u) - 2u);
    return 16 * ((plaintext_len / 16) + 2) + MONGOCRYPT_HMAC_LEN;
 }
 

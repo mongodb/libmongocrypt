@@ -69,7 +69,6 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
    /* Parse optional protocol. */
    pos = strstr (endpoint->original, "://");
    if (pos) {
-      BSON_ASSERT (pos >= endpoint->original);
       endpoint->protocol =
          bson_strndup (endpoint->original, (size_t) (pos - endpoint->original));
       pos += 3;

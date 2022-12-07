@@ -12,8 +12,9 @@
 /* Sadly, Windows does not define SSIZE_MAX. It is defined in bson-compat.h,
  * but only since 1.22.x, so copy this from bson-compat.h for now. */
 #ifndef SSIZE_MAX
-#define SSIZE_MAX (ssize_t) \
-   ((((size_t) 0x01u) << (sizeof (ssize_t) * (size_t) CHAR_BIT - 1u)) - 1u)
+#define SSIZE_MAX \
+   (ssize_t) (    \
+      (((size_t) 0x01u) << (sizeof (ssize_t) * (size_t) CHAR_BIT - 1u)) - 1u)
 #endif
 
 static bool

@@ -390,7 +390,7 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
       del_count = remain;
    }
    /* at this point, it is absolutely necessary that del_count <= s.len */
-   assert (s.len - del_count + insert.len <= SIZE_MAX);
+   assert (s.len - del_count <= SIZE_MAX - insert.len);
    const size_t new_size = s.len - del_count + insert.len;
    mstr_mut ret = mstr_new (new_size);
    char *p = ret.data;

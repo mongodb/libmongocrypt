@@ -510,8 +510,8 @@ _mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex)
       return;
    }
 
-   BSON_ASSERT (hex_len / 2 <= INT32_MAX);
-   buf->len = (uint32_t) (hex_len / 2);
+   BSON_ASSERT (hex_len / 2u <= UINT32_MAX);
+   buf->len = (uint32_t) (hex_len / 2u);
    /* no need to check buf->len, as it is passed where a size_t is expected */
    buf->data = bson_malloc (buf->len);
    BSON_ASSERT (buf->data);
