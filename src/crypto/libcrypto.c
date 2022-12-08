@@ -232,7 +232,6 @@ _hmac_with_hash (const EVP_MD *hash,
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (key->len <= INT_MAX);
-   /* no need to check in->len, as it is passed where a size_t is expected */
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    if (!HMAC (hash,

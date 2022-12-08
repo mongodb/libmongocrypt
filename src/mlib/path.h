@@ -143,7 +143,6 @@ mpath_filename (mstr_view path, mpath_format f)
    while (it != path.data && !mpath_is_sep (it[-1], f)) {
       --it;
    }
-   assert (it >= path.data);
    size_t off = (size_t) (it - path.data);
    mstr_view fname = mstrv_subview (path, off, path.len);
    if (fname.len == 0) {
@@ -180,7 +179,7 @@ mpath_join (mstr_view base, mstr_view suffix, mpath_format f)
       return mstr_append (base, suffix);
    }
    // We must insert a path separator between the two strings
-   assert (base.len <= SIZE_MAX - suffix.len - 1);
+   assert (base.len <= SIZE_MAX - suffix.len - 1u);
    mstr_mut r = mstr_new (base.len + suffix.len + 1);
    char *p = r.data;
    memcpy (p, base.data, base.len);

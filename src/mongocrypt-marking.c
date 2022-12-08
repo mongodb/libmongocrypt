@@ -299,7 +299,7 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv;
    const uint32_t cipherlen =
-      _mongocrypt_fle2_calculate_ciphertext_len (in->len);
+      _mongocrypt_fle2_calculate_ciphertext_len (in->len, status);
    uint32_t written = 0;
 
    _mongocrypt_buffer_init_size (out, cipherlen);
@@ -337,7 +337,7 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv, key;
    const uint32_t cipherlen =
-      _mongocrypt_fle2aead_calculate_ciphertext_len (in->len);
+      _mongocrypt_fle2aead_calculate_ciphertext_len (in->len, status);
    uint32_t written = 0;
    bool res;
 
@@ -829,7 +829,8 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
 
    // g:= array<EdgeTokenSet>
    {
-      BSON_ASSERT (placeholder->sparsity <= SIZE_MAX);
+      BSON_ASSERT (placeholder->sparsity >= 0 &&
+                   placeholder->sparsity <= SIZE_MAX);
       edges = get_edges (&insertSpec, (size_t) placeholder->sparsity, status);
       if (!edges) {
          goto fail;
@@ -1240,7 +1241,8 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
 
       // g:= array<EdgeFindTokenSet>
       {
-         BSON_ASSERT (placeholder->sparsity <= SIZE_MAX);
+         BSON_ASSERT (placeholder->sparsity >= 0 &&
+                      placeholder->sparsity <= SIZE_MAX);
          mincover = mc_get_mincover_from_FLE2RangeFindSpec (
             &findSpec, (size_t) placeholder->sparsity, status);
          if (!mincover) {
@@ -1436,7 +1438,8 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
    }
 
    _mongocrypt_buffer_from_iter (&plaintext, &marking->v_iter);
-   ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
+   ciphertext->data.len =
+      _mongocrypt_calculate_ciphertext_len (plaintext.len, status);
    ciphertext->data.data = bson_malloc (ciphertext->data.len);
    BSON_ASSERT (ciphertext->data.data);
 

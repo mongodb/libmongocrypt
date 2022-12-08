@@ -222,8 +222,6 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
 
-   /* no need to check key_material.len, as it is passed where a size_t is
-    * expected */
    kms->req = kms_decrypt_request_new (
       key->key_material.data, key->key_material.len, opt);
 
@@ -363,8 +361,6 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _set_kms_crypto_hooks (crypto, &ctx_with_status, opt);
    kms_request_opt_set_connection_close (opt, true);
 
-   /* no need to check plaintext_key_material->len, as it is passed where a
-    * size_t is expected */
    kms->req = kms_encrypt_request_new (plaintext_key_material->data,
                                        plaintext_key_material->len,
                                        ctx_opts->kek.provider.aws.cmk,
@@ -602,7 +598,12 @@ _ctx_done_oauth (mongocrypt_kms_ctx_t *kms)
       goto fail;
    }
 
-   BSON_ASSERT (body_len <= SSIZE_MAX);
+   if (body_len > (size_t) SSIZE_MAX) {
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                  "Response body exceeds maximum supported length",
+                  bson_error.message);
+      goto fail;
+   }
    bson_body = bson_new_from_json (
       (const uint8_t *) body, (ssize_t) body_len, &bson_error);
    if (!bson_body) {
@@ -674,7 +675,12 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
       goto fail;
    }
 
-   BSON_ASSERT (body_len <= SSIZE_MAX);
+   if (body_len > (size_t) SSIZE_MAX) {
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                  "Response body exceeds maximum supported length",
+                  bson_error.message);
+      goto fail;
+   }
    bson_body = bson_new_from_json (
       (const uint8_t *) body, (ssize_t) body_len, &bson_error);
    if (!bson_body) {
@@ -760,7 +766,13 @@ _ctx_done_gcp (mongocrypt_kms_ctx_t *kms, const char *json_field)
    /* If HTTP response succeeded (status 200) then body should contain JSON.
     */
    bson_destroy (&body_bson);
-   BSON_ASSERT (body_len <= SSIZE_MAX);
+   if (body_len > (size_t) SSIZE_MAX) {
+      CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "
+                  "Response body exceeds maximum supported length",
+                  bson_error.message);
+      bson_init (&body_bson);
+      goto fail;
+   }
    if (!bson_init_from_json (
           &body_bson, body, (ssize_t) body_len, &bson_error)) {
       CLIENT_ERR ("Error parsing JSON in KMS response '%s'. "

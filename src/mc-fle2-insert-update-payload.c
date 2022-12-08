@@ -127,8 +127,6 @@ mc_FLE2InsertUpdatePayload_parse (mc_FLE2InsertUpdatePayload_t *out,
       CLIENT_ERR ("FLE2InsertUpdatePayload_parse got too short input");
       return false;
    }
-   /* no need to check the upper bound of in->len, as it is passed where a
-    * size_t is expected */
 
    if (!bson_init_static (&in_bson, in->data + 1, in->len - 1)) {
       CLIENT_ERR ("FLE2InsertUpdatePayload_parse got invalid BSON");
@@ -301,7 +299,7 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
 
    _mongocrypt_buffer_resize (
       &iup->plaintext,
-      _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext.len));
+      _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext.len, status));
    uint32_t bytes_written; /* ignored */
 
    if (!_mongocrypt_fle2aead_do_decryption (crypto,

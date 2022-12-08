@@ -32,7 +32,6 @@ _make_owned (_mongocrypt_buffer_t *buf)
    uint8_t *tmp;
 
    BSON_ASSERT_PARAM (buf);
-   /* no need to check buf->len, as it is passed where a size_t is expected */
    if (buf->owned) {
       return;
    }
@@ -63,7 +62,6 @@ void
 _mongocrypt_buffer_resize (_mongocrypt_buffer_t *buf, uint32_t len)
 {
    BSON_ASSERT_PARAM (buf);
-   /* no need to check len, as it is passed where a size_t is expected */
 
    /* Currently this just wipes whatever was in data before,
       but a fancier implementation could copy over up to 'len'
@@ -206,7 +204,6 @@ _mongocrypt_buffer_to_bson (const _mongocrypt_buffer_t *buf, bson_t *bson)
 {
    BSON_ASSERT_PARAM (buf);
    BSON_ASSERT_PARAM (bson);
-   /* no need to check buf->len, as it is passed where a size_t is expected */
 
    return bson_init_static (bson, buf->data, buf->len);
 }
@@ -275,7 +272,6 @@ _mongocrypt_buffer_copy_to (const _mongocrypt_buffer_t *src,
 
    BSON_ASSERT_PARAM (src);
    BSON_ASSERT_PARAM (dst);
-   /* no need to check src->len, as it is passed where a size_t is expected */
 
    _mongocrypt_buffer_cleanup (dst);
    if (src->len == 0) {
@@ -323,7 +319,6 @@ _mongocrypt_buffer_cmp (const _mongocrypt_buffer_t *a,
    if (0 == a->len) {
       return 0;
    }
-   /* no need to check a->len, as it is passed where a size_t is expected */
    return memcmp (a->data, b->data, a->len);
 }
 
@@ -360,8 +355,6 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
 
    BSON_ASSERT_PARAM (plaintext);
    BSON_ASSERT_PARAM (out);
-   /* no need to check plaintext->len, as it is passed where a size_t is
-    * expected */
 
    data_prefix = INT32_LEN        /* adds document size */
                  + TYPE_LEN       /* element type */
@@ -370,7 +363,6 @@ _mongocrypt_buffer_to_bson_value (_mongocrypt_buffer_t *plaintext,
    BSON_ASSERT (plaintext->len <= UINT32_MAX - data_prefix - NULL_BYTE_LEN);
 
    data_len = (plaintext->len + data_prefix + NULL_BYTE_LEN);
-   /* no need to check data_len, as it is passed where a size_t is expected */
    le_data_len = BSON_UINT32_TO_LE (data_len);
 
    data = bson_malloc0 (data_len);
@@ -432,8 +424,6 @@ _mongocrypt_buffer_from_iter (_mongocrypt_buffer_t *plaintext,
    BSON_ASSERT (wrapper.len >= (uint32_t) offset + NULL_BYTE_LEN);
    plaintext->len =
       wrapper.len - (uint32_t) offset - NULL_BYTE_LEN; /* the final null byte */
-   /* no need to check plaintext->len, as it is passed where a size_t is
-    * expected */
    plaintext->data = bson_malloc (plaintext->len);
    BSON_ASSERT (plaintext->data);
 
@@ -512,7 +502,6 @@ _mongocrypt_buffer_copy_from_hex (_mongocrypt_buffer_t *buf, const char *hex)
 
    BSON_ASSERT (hex_len / 2u <= UINT32_MAX);
    buf->len = (uint32_t) (hex_len / 2u);
-   /* no need to check buf->len, as it is passed where a size_t is expected */
    buf->data = bson_malloc (buf->len);
    BSON_ASSERT (buf->data);
 
@@ -588,8 +577,6 @@ _mongocrypt_buffer_concat (_mongocrypt_buffer_t *dst,
       if (srcs[i].len) {
          memcpy (dst->data + offset, srcs[i].data, srcs[i].len);
       }
-      /* No need to check overflow here since if the earlier loop completed
-       * there is no possibility of overflow here. */
       offset += srcs[i].len;
    }
    return true;
@@ -678,7 +665,6 @@ _mongocrypt_buffer_copy_from_uint64_le (_mongocrypt_buffer_t *buf,
    uint64_t value_le = MONGOCRYPT_UINT64_TO_LE (value);
 
    BSON_ASSERT_PARAM (buf);
-   /* no need to check buf->len, as it is passed where a size_t is expected */
 
    _mongocrypt_buffer_init (buf);
    _mongocrypt_buffer_resize (buf, sizeof (value));

@@ -186,9 +186,9 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
          mc_ServerDataEncryptionLevel1Token_get (token);
       uint32_t bytes_written;
 
-      _mongocrypt_buffer_resize (
-         &iev->Inner,
-         _mongocrypt_fle2_calculate_plaintext_len (iev->InnerEncrypted.len));
+      _mongocrypt_buffer_resize (&iev->Inner,
+                                 _mongocrypt_fle2_calculate_plaintext_len (
+                                    iev->InnerEncrypted.len, status));
 
       /* Decrypt InnerEncrypted. */
       if (!_mongocrypt_fle2_do_decryption (crypto,
@@ -238,7 +238,7 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
 
    /* Read ClientEncryptedValue. */
    /* the compiler will promote the calculation to uint64_t, no check needed */
-   if (offset + (length - 16) > iev->Inner.len) {
+   if (offset + (length - 16u) > iev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
                   "Inner byte length >= %" PRIu64 " got: %" PRIu32,
                   offset + (length - 16),
@@ -296,7 +296,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    /* Attempt to decrypt ClientEncryptedValue */
    _mongocrypt_buffer_resize (&iev->ClientValue,
                               _mongocrypt_fle2aead_calculate_plaintext_len (
-                                 iev->ClientEncryptedValue.len));
+                                 iev->ClientEncryptedValue.len, status));
    uint32_t bytes_written;
    if (!_mongocrypt_fle2aead_do_decryption (crypto,
                                             &iev->K_KeyId,

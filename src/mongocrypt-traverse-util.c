@@ -60,7 +60,6 @@ _check_first_byte (uint8_t byte, traversal_match_t match)
 static bool
 _recurse (_recurse_state_t *state)
 {
-   uint32_t key_len;
    mongocrypt_status_t *status;
 
    BSON_ASSERT_PARAM (state);
@@ -82,7 +81,7 @@ _recurse (_recurse_state_t *state)
                ret =
                   state->transform_cb (state->ctx, &value, &value_out, status);
                if (ret) {
-                  key_len = bson_iter_key_len (&state->iter);
+                  const uint32_t key_len = bson_iter_key_len (&state->iter);
                   BSON_ASSERT (key_len <= INT_MAX);
                   bson_append_value (state->copy,
                                      bson_iter_key (&state->iter),
@@ -113,7 +112,7 @@ _recurse (_recurse_state_t *state)
          }
 
          if (state->copy) {
-            key_len = bson_iter_key_len (&state->iter);
+            const uint32_t key_len = bson_iter_key_len (&state->iter);
             BSON_ASSERT (key_len <= INT_MAX);
             bson_append_array_begin (state->copy,
                                      bson_iter_key (&state->iter),
@@ -143,7 +142,7 @@ _recurse (_recurse_state_t *state)
          }
          /* TODO: check for errors everywhere. */
          if (state->copy) {
-            key_len = bson_iter_key_len (&state->iter);
+            const uint32_t key_len = bson_iter_key_len (&state->iter);
             BSON_ASSERT (key_len <= INT_MAX);
             bson_append_document_begin (state->copy,
                                         bson_iter_key (&state->iter),
@@ -168,7 +167,7 @@ _recurse (_recurse_state_t *state)
       }
 
       if (state->copy) {
-         key_len = bson_iter_key_len (&state->iter);
+         const uint32_t key_len = bson_iter_key_len (&state->iter);
          BSON_ASSERT (key_len <= INT_MAX);
          bson_append_value (state->copy,
                             bson_iter_key (&state->iter),

@@ -153,7 +153,6 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
    bool has_id = false, has_key_material = false, has_status = false,
         has_creation_date = false, has_update_date = false,
         has_master_key = false;
-   int64_t key_date;
 
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (out);
@@ -242,13 +241,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
             return false;
          }
 
-         key_date = bson_iter_date_time (&iter);
-         if (key_date < 0) {
-            /* the creation date is expected to be non-negative, but it comes
-             * from user data so don't assert and fail loudly */
-            key_date = 0;
-         }
-         out->creation_date = (uint64_t) key_date;
+         out->creation_date = bson_iter_date_time (&iter);
          continue;
       }
 
@@ -260,13 +253,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
             return false;
          }
 
-         key_date = bson_iter_date_time (&iter);
-         if (key_date < 0) {
-            /* the creation date is expected to be non-negative, but it comes
-             * from user data so don't assert and fail loudly */
-            key_date = 0;
-         }
-         out->update_date = (uint64_t) key_date;
+         out->update_date = bson_iter_date_time (&iter);
          continue;
       }
 

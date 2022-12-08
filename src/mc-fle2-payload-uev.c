@@ -160,7 +160,7 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
    if (uev->key_uuid.len > UINT32_MAX - 2) {
       CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_decrypt expected "
                   "key UUID length <= %" PRIu32 " got: %" PRIu32,
-                  UINT32_MAX - 2,
+                  UINT32_MAX - 2u,
                   uev->key_uuid.len);
       return NULL;
    }
@@ -169,9 +169,9 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
    AD.data[0] = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
    memcpy (AD.data + 1, uev->key_uuid.data, uev->key_uuid.len);
    AD.data[1 + uev->key_uuid.len] = uev->original_bson_type;
-   _mongocrypt_buffer_resize (
-      &uev->plaintext,
-      _mongocrypt_fle2aead_calculate_plaintext_len (uev->ciphertext.len));
+   _mongocrypt_buffer_resize (&uev->plaintext,
+                              _mongocrypt_fle2aead_calculate_plaintext_len (
+                                 uev->ciphertext.len, status));
 
    uint32_t bytes_written;
 
@@ -220,7 +220,7 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
       if (key_uuid->len > UINT32_MAX - 2) {
          CLIENT_ERR ("mc_FLE2UnindexedEncryptedValue_encrypt expected "
                      "key UUID length <= %" PRIu32 " got: %" PRIu32,
-                     UINT32_MAX - 2,
+                     UINT32_MAX - 2u,
                      key_uuid->len);
          goto fail;
       }
@@ -232,8 +232,9 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
 
    /* Encrypt. */
    {
-      _mongocrypt_buffer_resize (
-         out, _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len));
+      _mongocrypt_buffer_resize (out,
+                                 _mongocrypt_fle2aead_calculate_ciphertext_len (
+                                    plaintext->len, status));
       uint32_t bytes_written; /* unused. */
       if (!_mongocrypt_fle2aead_do_encryption (
              crypto, &iv, &AD, key, plaintext, out, &bytes_written, status)) {

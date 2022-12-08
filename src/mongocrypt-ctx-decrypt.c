@@ -261,7 +261,8 @@ _replace_ciphertext_with_plaintext (void *ctx,
       goto fail;
    }
 
-   plaintext.len = _mongocrypt_calculate_plaintext_len (ciphertext.data.len);
+   plaintext.len =
+      _mongocrypt_calculate_plaintext_len (ciphertext.data.len, status);
    plaintext.data = bson_malloc0 (plaintext.len);
    BSON_ASSERT (plaintext.data);
 

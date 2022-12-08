@@ -422,7 +422,8 @@ _cng_ctr_crypto_advance (cng_ctr_encrypt_state *state)
    BSON_ASSERT_PARAM (state);
 
    /* Assert rather than return false/NULL since this function's type is void */
-   BSON_ASSERT (state->input_block_len <= INT_MAX);
+   BSON_ASSERT (sizeof (BCRYPT_KEY_DATA_BLOB_HEADER) <=
+                UINT32_MAX - state->input_block_len);
 
    uint32_t carry = 1;
    for (int i = (int) state->input_block_len - 1; i >= 0 && carry != 0; --i) {
@@ -470,14 +471,15 @@ _cng_ctr_crypto_state_init (const _mongocrypt_buffer_t *key,
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (iv);
 
-   if (UINT32_MAX - key->len <= sizeof (BCRYPT_KEY_DATA_BLOB_HEADER)) {
-      CLIENT_ERR ("key is too long");
-      goto fail;
-   }
    keyBlob = NULL;
 
    state = bson_malloc0 (sizeof (*state));
    BSON_ASSERT (state);
+
+   if (UINT32_MAX - key->len < sizeof (BCRYPT_KEY_DATA_BLOB_HEADER)) {
+      CLIENT_ERR ("key is too long");
+      goto fail;
+   }
 
    state->key_handle = INVALID_HANDLE_VALUE;
 

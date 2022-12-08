@@ -30,16 +30,17 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    bool ret;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   status = mongocrypt_status_new ();
    plaintext.data = (uint8_t *) "test";
    plaintext.len = 5; /* include NULL. */
 
-   ciphertext.len = _mongocrypt_calculate_ciphertext_len (5);
+   ciphertext.len = _mongocrypt_calculate_ciphertext_len (5, status);
    ciphertext.data = bson_malloc (ciphertext.len);
    BSON_ASSERT (ciphertext.data);
 
    ciphertext.owned = true;
 
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
+   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len, status);
    decrypted.data = bson_malloc (decrypted.len);
    BSON_ASSERT (decrypted.data);
 
@@ -84,7 +85,7 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    ciphertext.data[ciphertext.len - 1] ^= 1;
 
    _mongocrypt_buffer_cleanup (&decrypted);
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
+   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len, status);
    decrypted.data = bson_malloc (decrypted.len);
    BSON_ASSERT (decrypted.data);
 
@@ -191,8 +192,10 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
       "96b2e2e6609e31e6e02cc837f053d21f37ff4f51950bbe2638d09dd7a4930"
       "930806d0703b1f64dd3b4c088a7f45c216839645b2012bf2e6269a8c56a81"
       "6dbc1b267761955bc5");
+   status = mongocrypt_status_new ();
 
-   ciphertext_actual.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
+   ciphertext_actual.len =
+      _mongocrypt_calculate_ciphertext_len (plaintext.len, status);
    ciphertext_actual.data = bson_malloc (ciphertext_actual.len);
    BSON_ASSERT (ciphertext_actual.data);
 
@@ -560,9 +563,10 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
          _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
       }
       _mongocrypt_buffer_init (&ciphertext_got);
+      status = mongocrypt_status_new ();
       _mongocrypt_buffer_resize (
          &ciphertext_got,
-         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext.len));
+         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext.len, status));
       status = mongocrypt_status_new ();
 
       /* Test encrypt. */
@@ -785,9 +789,10 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
          _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
       }
       _mongocrypt_buffer_init (&ciphertext_got);
+      status = mongocrypt_status_new ();
       _mongocrypt_buffer_resize (
          &ciphertext_got,
-         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
       status = mongocrypt_status_new ();
 
       /* Test encrypt. */

@@ -127,7 +127,6 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
       qmark = strstr (pos, "?");
       slash = strstr (pos, "/");
       if (slash) {
-         BSON_ASSERT (slash >= prev);
          endpoint->port = bson_strndup (prev, (size_t) (slash - prev));
       } else if (qmark) {
          BSON_ASSERT (qmark >= prev);
@@ -144,7 +143,6 @@ _mongocrypt_endpoint_new (const char *endpoint_raw,
       prev = slash + 1;
       qmark = strstr (prev, "?");
       if (qmark) {
-         BSON_ASSERT (qmark >= prev);
          endpoint->path = bson_strndup (prev, (size_t) (qmark - prev));
       } else {
          endpoint->path = bson_strdup (prev);

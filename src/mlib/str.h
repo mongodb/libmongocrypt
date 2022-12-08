@@ -314,7 +314,6 @@ mstr_find (mstr_view given, mstr_view needle)
    const char *const scan_end = given.data + given.len;
    const char *const needle_end = needle.data + needle.len;
    for (const char *scan = given.data; scan != scan_end; ++scan) {
-      assert (scan_end >= scan);
       size_t remain = (size_t) (scan_end - scan);
       if (remain < needle.len) {
          break;

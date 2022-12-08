@@ -280,13 +280,13 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 
    const size_t calculated_len = len == -1 ? strlen (algorithm) : (size_t) len;
    if (ctx->crypt->log.trace_enabled) {
-      BSON_ASSERT (calculated_len <= INT_MAX);
       _mongocrypt_log (&ctx->crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
                        "%s (%s=\"%.*s\")",
                        BSON_FUNC,
                        "algorithm",
-                       (int) calculated_len,
+                       calculated_len <= (size_t) INT_MAX ? (int) calculated_len
+                                                          : INT_MAX,
                        algorithm);
    }
 
@@ -310,10 +310,10 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGE;
       ctx->opts.index_type.set = true;
    } else {
-      BSON_ASSERT (algo_str.len <= INT_MAX);
-      char *error = bson_strdup_printf ("unsupported algorithm string \"%.*s\"",
-                                        (int) algo_str.len,
-                                        algo_str.data);
+      char *error = bson_strdup_printf (
+         "unsupported algorithm string \"%.*s\"",
+         algo_str.len <= (size_t) INT_MAX ? (int) algo_str.len : INT_MAX,
+         algo_str.data);
       _mongocrypt_ctx_fail_w_msg (ctx, error);
       bson_free (error);
       return false;
@@ -1208,7 +1208,9 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
    } else {
       /* don't check if qt_str.len fits in int; we want the diagnostic output */
       char *error = bson_strdup_printf (
-         "Unsupported query_type \"%.*s\"", (int) qt_str.len, qt_str.data);
+         "Unsupported query_type \"%.*s\"",
+         qt_str.len <= (size_t) INT_MAX ? (int) qt_str.len : INT_MAX,
+         qt_str.data);
       _mongocrypt_ctx_fail_w_msg (ctx, error);
       bson_free (error);
       return false;

@@ -1084,14 +1084,12 @@ _mongocrypt_validate_and_copy_string (const char *in,
       return false;
    }
 
-   if (in_len == -1) {
-      in_len = (int32_t) strlen (in);
-   }
+   const size_t len = in_len < 0 ? strlen (in) : (size_t) in_len;
 
-   if (!bson_utf8_validate (in, (size_t) in_len, false)) {
+   if (!bson_utf8_validate (in, len, false)) {
       return false;
    }
-   *out = bson_strndup (in, (size_t) in_len);
+   *out = bson_strndup (in, len);
    return true;
 }
 
