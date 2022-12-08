@@ -265,7 +265,6 @@ void
 kms_message_b64_initialize_rmap (void)
 {
    uint16_t i;
-   uint8_t j;
    unsigned char ch;
 
    /* Null: end of string, stop parsing */

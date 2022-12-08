@@ -70,7 +70,7 @@ mcr_dll_path (mcr_dll dll)
       GetModuleFileNameW (dll._native_handle, path, acc_size);
       if (GetLastError () == ERROR_INSUFFICIENT_BUFFER) {
          // Try again with more buffer
-         /* DOWRD is a 32-bit unsigned integer */
+         /* DWORD is a 32-bit unsigned integer */
          assert (acc_size <= UINT32_MAX / 2u);
          acc_size *= 2;
       } else if (GetLastError () != 0) {
