@@ -263,6 +263,11 @@ if (NOT USE_SHARED_LIBBSON)
    endif ()
 endif ()
 
+if (NOT WIN32)
+   target_compile_options (mongocrypt PRIVATE -Wconversion -Wsign-conversion)
+   target_compile_options (kms_message_static PRIVATE -Wconversion -Wsign-conversion)
+endif ()
+
 generate_export_header (mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
