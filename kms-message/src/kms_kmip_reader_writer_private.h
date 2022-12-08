@@ -125,7 +125,7 @@ bool
 kmip_reader_read_string (kmip_reader_t *reader, uint8_t **ptr, size_t length);
 
 /* kmip_reader_find does not descend structures.
- * To find and descend into a structure use kmip_reader_find_and_get_struct_reader. */
+ * To find and descend into a structure use kmip_reader_find_and_recurse. */
 bool
 kmip_reader_find (kmip_reader_t *reader,
                   kmip_tag_type_t search_tag,
