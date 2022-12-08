@@ -141,7 +141,12 @@ function (_import_bson)
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
-      add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
+      # SYSTEM (on applicable CMake versions) to prevent warnings from the C driver code
+      if (CMAKE_VERSION VERSION_GREATER 3.25)
+         add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL SYSTEM)
+      else ()
+         add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
+      endif ()
       # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
       target_include_directories (mongoc_static
          PUBLIC
