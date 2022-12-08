@@ -446,7 +446,7 @@ kmip_reader_find (kmip_reader_t *reader,
 }
 
 bool
-kmip_reader_find_and_recurse (kmip_reader_t *reader, size_t tag)
+kmip_reader_find_and_recurse (kmip_reader_t *reader, kmip_tag_type_t tag)
 {
    size_t pos;
    size_t length;
@@ -463,7 +463,7 @@ kmip_reader_find_and_recurse (kmip_reader_t *reader, size_t tag)
 
 bool
 kmip_reader_find_and_read_enum (kmip_reader_t *reader,
-                                size_t tag,
+                                kmip_tag_type_t tag,
                                 uint32_t *value)
 {
    size_t pos;
@@ -483,7 +483,7 @@ kmip_reader_find_and_read_enum (kmip_reader_t *reader,
 
 bool
 kmip_reader_find_and_read_bytes (kmip_reader_t *reader,
-                                 size_t tag,
+                                 kmip_tag_type_t tag,
                                  uint8_t **out_ptr,
                                  size_t *out_len)
 {

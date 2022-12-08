@@ -122,7 +122,8 @@ _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
                   (int) cc_status);
       goto done;
    }
-   *args.bytes_written = intermediate_bytes_written;
+   BSON_ASSERT (intermediate_bytes_written <= UINT32_MAX);
+   *args.bytes_written = (uint32_t) intermediate_bytes_written;
 
    BSON_ASSERT (args.out->len >= *args.bytes_written);
    cc_status = CCCryptorFinal (ctx,
@@ -214,7 +215,7 @@ _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
       goto done;
    }
    BSON_ASSERT (intermediate_bytes_written <= UINT32_MAX);
-   *args.bytes_written = intermediate_bytes_written;
+   *args.bytes_written = (uint32_t) intermediate_bytes_written;
 
    BSON_ASSERT (args.out->len >= *args.bytes_written);
    cc_status = CCCryptorFinal (ctx,

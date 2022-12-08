@@ -143,7 +143,8 @@ _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
 
    out->owned = true;
 
-   out->data[offset] = ciphertext->blob_subtype;
+   /* ciphertext->blob_subtype is an enum and easily fits in uint8_t */
+   out->data[offset] = (uint8_t) ciphertext->blob_subtype;
    offset += 1;
 
    memcpy (out->data + offset, ciphertext->key_id.data, ciphertext->key_id.len);

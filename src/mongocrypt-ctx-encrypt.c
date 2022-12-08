@@ -1130,7 +1130,8 @@ _marking_to_bson_value (void *ctx,
       }
       _mongocrypt_buffer_init_size (&serialized_ciphertext,
                                     ciphertext.data.len + 1);
-      serialized_ciphertext.data[0] = ciphertext.blob_subtype;
+      /* ciphertext->blob_subtype is an enum and easily fits in uint8_t */
+      serialized_ciphertext.data[0] = (uint8_t) ciphertext.blob_subtype;
       memcpy (serialized_ciphertext.data + 1,
               ciphertext.data.data,
               ciphertext.data.len);
