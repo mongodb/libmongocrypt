@@ -215,8 +215,9 @@ _test_mc_tokens_raw_buffer (_mongocrypt_tester_t *tester)
 
    /* Make a token from a raw buffer */
    token = mc_ServerDataEncryptionLevel1Token_new_from_buffer (&test_input);
-   /* Assert the new_from_buffer does not steal the buffer */
-   ASSERT (test_input.owned == true);
+
+   /* Assert new_from_buffer did not steal ownership. */
+   ASSERT (test_input.owned);
    ASSERT (test_input.len == MONGOCRYPT_HMAC_SHA256_LEN);
 
    _mongocrypt_buffer_copy_from_hex (
