@@ -7,6 +7,8 @@ const spawn = require('child_process').spawn;
  * An internal class that handles spawning a mongocryptd.
  */
 class MongocryptdManager {
+  static DEFAULT_MONGOCRYPTD_URI = 'mongodb://localhost:27020/?serverSelectionTimeoutMS=1000';
+
   /**
    * @ignore
    * Creates a new Mongocryptd Manager
@@ -22,7 +24,7 @@ class MongocryptdManager {
     } else {
       // TODO: eventually support connecting on Linux Socket for non-windows,
       // blocked by SERVER-41029
-      this.uri = 'mongodb://localhost:27020/?serverSelectionTimeoutMS=1000';
+      this.uri = MongocryptdManager.DEFAULT_MONGOCRYPTD_URI;
     }
 
     this.bypassSpawn = !!extraOptions.mongocryptdBypassSpawn;
@@ -44,7 +46,7 @@ class MongocryptdManager {
   /**
    * @ignore
    * Will check to see if a mongocryptd is up. If it is not up, it will attempt
-   * to spawn a mongocryptd in a detached process, and then wait for it to be up.
+   * to spawn a mongocryptd in a detached plocess, and then wait for it to be up.
    * @param {Function} callback Invoked when we think a mongocryptd is up
    */
   spawn(callback) {
