@@ -141,7 +141,7 @@ function (_import_bson)
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
-      # SYSTEM (on applicable CMake versions) to prevent warnings from the C driver code
+      # SYSTEM (on applicable CMake versions) to prevent warnings (particularly from -Wconversion/-Wsign-conversion) from the C driver code
       if (CMAKE_VERSION VERSION_GREATER 3.25)
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL SYSTEM)
       else ()
