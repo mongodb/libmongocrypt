@@ -46,8 +46,6 @@
 #include <dlfcn.h>
 #endif
 
-MC_BEGIN_CONVERSION_ERRORS
-
 bool
 size_to_uint32 (size_t in, uint32_t *out)
 {
@@ -184,7 +182,7 @@ mc_iter_document_as_bson (const bson_iter_t *iter,
 
 /* Avoid a conversion warning on glibc for isnan, isinf, and isfinite. Refer:
  * MONGOCRYPT-501. */
-MC_END_CONVERSION_ERRORS
+MC_BEGIN_CONVERSION_IGNORE
 
 bool
 mc_isnan (double d)
@@ -202,6 +200,4 @@ mc_isfinite (double d)
    return isfinite (d);
 }
 
-MC_BEGIN_CONVERSION_ERRORS
-
-MC_END_CONVERSION_ERRORS
+MC_END_CONVERSION_IGNORE

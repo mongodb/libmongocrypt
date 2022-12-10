@@ -22,10 +22,6 @@
 
 #include <float.h> // DBL_MIN
 
-/* Enable -Wconversion as error for only this file.
- * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CONVERSION_ERRORS
-
 #define MAX_INT32_EDGES 33
 typedef struct {
    int32_t value;
@@ -343,5 +339,3 @@ _mongocrypt_tester_install_range_edge_generation (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_count_leading_zeros);
    INSTALL_TEST (_test_convert_to_bitstring);
 }
-
-MC_END_CONVERSION_ERRORS

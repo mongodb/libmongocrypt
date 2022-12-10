@@ -21,10 +21,6 @@
 #include "mc-range-mincover-private.h"
 #include "mc-array-private.h"
 
-/* Enable -Wconversion as error for only this file.
- * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CONVERSION_ERRORS
-
 static void
 expectMincover_init (mc_array_t *expectMincover,
                      const char *expectMincoverString)
@@ -554,5 +550,3 @@ _mongocrypt_tester_install_range_mincover (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_getMincoverInt64);
    INSTALL_TEST (_test_getMincoverDouble);
 }
-
-MC_END_CONVERSION_ERRORS

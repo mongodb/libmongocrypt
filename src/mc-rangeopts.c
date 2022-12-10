@@ -22,10 +22,6 @@
 
 #include <float.h> // DBL_MAX
 
-/* Enable -Wconversion as error for only this file.
- * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CONVERSION_ERRORS
-
 // Common logic for testing field name, tracking duplication, and presence.
 #define IF_FIELD(Name, ErrorPrefix)                                            \
    if (0 == strcmp (field, #Name)) {                                           \
@@ -358,5 +354,3 @@ mc_RangeOpts_cleanup (mc_RangeOpts_t *ro)
 
    bson_destroy (ro->bson);
 }
-
-MC_END_CONVERSION_ERRORS

@@ -23,10 +23,6 @@
 #include <math.h>        // INFINITY
 #include "mlib/thread.h" // mlib_once_flag
 
-/* Enable -Wconversion as error for only this file.
- * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CONVERSION_ERRORS
-
 static mc_FLE2RangeOperator_t
 get_operator_type (const char *key)
 {
@@ -660,5 +656,3 @@ mc_getNextPayloadId (void)
    }
    return ret;
 }
-
-MC_END_CONVERSION_ERRORS
