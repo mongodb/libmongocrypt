@@ -1011,7 +1011,7 @@ fail:
 static bool
 isInfinite (bson_iter_t *iter)
 {
-   return isinf (bson_iter_double (iter));
+   return mc_isinf (bson_iter_double (iter));
 }
 
 // mc_get_mincover_from_FLE2RangeFindSpec creates and returns a mincover from an

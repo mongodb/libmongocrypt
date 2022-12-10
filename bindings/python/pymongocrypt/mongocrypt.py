@@ -289,7 +289,11 @@ class MongoCrypt(object):
         """Cleanup resources."""
         if self.__crypt is None:
             return
-        lib.mongocrypt_destroy(self.__crypt)
+        # Since close is called by __del__, we need to be sure to guard
+        # against the case where global variables are set to None at
+        # interpreter shutdown, see PYTHON-3530.
+        if lib is not None:
+            lib.mongocrypt_destroy(self.__crypt)
         self.__crypt = None
 
     def __del__(self):

@@ -135,7 +135,7 @@ Do the following when releasing:
    - `windows-upload`. It is scheduled from the `windows-upload-check` task.
 - Create the release from the GitHub releases page from the new tag.
 - Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/135)).
-- File a DOCSP ticket to update the dependent version of bindings in the [CSFLE guide](https://github.com/mongodb-university/csfle-guides). ([Example](https://jira.mongodb.org/browse/DOCSP-19476))
+- If this is a new minor release (e.g. `x.y.0`), file a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-26877))
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 
 ## Installing libmongocrypt From Distribution Packages ##
@@ -152,13 +152,13 @@ First, import the public key used to sign the package repositories:
 sudo sh -c 'curl -s --location https://www.mongodb.org/static/pgp/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
 ```
 
-Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial` or `bionic`, as appropriate to your system):
+Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial`, `bionic`, `focal`, or `jammy`, as appropriate to your system):
 
 ```
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.6 universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
-For Debian systems (be sure to change `<release>` to `stretch` or `buster`, as appropriate to your system):
+For Debian systems (be sure to change `<release>` to `stretch`, `buster`, or `bullseye`, as appropriate to your system):
 
 ```
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/1.6 main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list

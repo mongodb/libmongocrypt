@@ -116,7 +116,7 @@ functions:
       params:
         script: |-
           if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
-          env ${compile_env|} CONFIGURE_ONLY=ON CC=clang CXX=clang++ \
+          env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
 
@@ -146,7 +146,7 @@ functions:
           NODE_GITHUB_TOKEN: ${node_github_token}
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
-          NODE_NVM_USE_VERSION: ${nvm_use_version|lts}
+          NODE_NVM_USE_VERSION: ${nvm_use_version|18}
 
   "build and test node no optional dependencies":
     - command: "subprocess.exec"
@@ -161,7 +161,7 @@ functions:
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
           NPM_OPTIONS: "--no-optional"
-          NODE_NVM_USE_VERSION: ${nvm_use_version|lts}
+          NODE_NVM_USE_VERSION: ${nvm_use_version|18}
 
   "attach node xunit results":
     - command: attach.xunit_results
@@ -605,6 +605,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: amazon2-arm64
       name: build-and-test-and-upload
+    - variant: debian11
+      name: build-and-test-and-upload
     - variant: debian10
       name: build-and-test-and-upload
     - variant: debian92
@@ -633,6 +635,10 @@ tasks:
       name: build-and-test-and-upload
     - variant: ubuntu2004-arm64
       name: build-and-test-and-upload
+    - variant: ubuntu2204-64
+      name: build-and-test-and-upload
+    - variant: ubuntu2204-arm64
+      name: build-and-test-and-upload
     - variant: macos
       name: build-and-test-and-upload
   commands:
@@ -654,6 +660,8 @@ tasks:
       vars: { variant_name: "amazon2" }
     - func: "download tarball"
       vars: { variant_name: "amazon2-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "debian11" }
     - func: "download tarball"
       vars: { variant_name: "debian10" }
     - func: "download tarball"
@@ -682,6 +690,10 @@ tasks:
       vars: { variant_name: "ubuntu2004-64" }
     - func: "download tarball"
       vars: { variant_name: "ubuntu2004-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2204-64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2204-arm64" }
     - func: "download tarball"
       vars: { variant_name: "macos" }
     - command: archive.targz_pack
@@ -1035,6 +1047,23 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+- name: debian11
+  display_name: "Debian 11.0"
+  run_on: debian11-large
+  expansions:
+    has_packages: true
+    packager_distro: debian11
+    packager_arch: x86_64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
+  - test-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
 - name: debian10
   display_name: "Debian 10.0"
   run_on: debian10-test
@@ -1220,6 +1249,16 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+- name: ubuntu1804-64-clang7
+  # ubuntu1804-64-clang7 is used to test Ubuntu 18.04 with Clang 7.0.1.
+  # This is a supported configuration built by the MongoDB Server.
+  # The MongoDB Server vendors libmongocrypt. Refer: MONGOCRYPT-501.
+  display_name: "Ubuntu 18.04 64-bit clang7"
+  run_on: ubuntu1804-test
+  expansions:
+    compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DCMAKE_C_COMPILER=/opt/mongodbtoolchain/v3/bin/clang -DCMAKE_CXX_COMPILER=/opt/mongodbtoolchain/v3/bin/clang++"
+  tasks:
+  - build-and-test-and-upload
 - name: ubuntu1804-arm64
   display_name: "Ubuntu 18.04 arm64"
   run_on: ubuntu1804-arm64-build
@@ -1262,6 +1301,44 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: ubuntu2004
+    packager_arch: arm64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
+  - test-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
+- name: ubuntu2204-64
+  display_name: "Ubuntu 22.04 64-bit"
+  run_on: ubuntu2204-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2204
+    packager_arch: x86_64
+    clang_env: CC=clang-12 CXX=clang++-12
+  tasks:
+  - clang-tidy
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - build-and-test-node-no-optional-dependencies
+  - build-and-test-csharp
+  - test-java
+  - upload-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
+- name: ubuntu2204-arm64
+  display_name: "Ubuntu 22.04 arm64"
+  run_on: ubuntu2204-arm64-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2204
     packager_arch: arm64
   tasks:
   - build-and-test-and-upload

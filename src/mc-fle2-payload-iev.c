@@ -19,7 +19,13 @@
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-iev-private.h"
 #include "mc-tokens-private.h"
+#include "mc-reader-private.h"
+#include <stdint.h>
 
+#define CHECK_AND_RETURN(x) \
+   if (!(x)) {              \
+      return false;         \
+   }
 struct _mc_FLE2IndexedEqualityEncryptedValue_t {
    _mongocrypt_buffer_t S_KeyId;
    _mongocrypt_buffer_t InnerEncrypted;
@@ -53,16 +59,13 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
       return false;
    }
 
-   uint32_t offset = 0;
-   /* Read fle_blob_subtype. */
-   if (offset + 1 > buf->len) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected byte "
-                  "length >= %" PRIu32 " got: %" PRIu32,
-                  offset + 1,
-                  buf->len);
-      return false;
-   }
-   uint8_t fle_blob_subtype = buf->data[offset];
+   mc_reader_t reader;
+   mc_reader_init_from_buffer (&reader, buf, __FUNCTION__);
+
+   uint8_t fle_blob_subtype = 0;
+
+   CHECK_AND_RETURN (mc_reader_read_u8 (&reader, &fle_blob_subtype, status));
+
    if (fle_blob_subtype != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue &&
        fle_blob_subtype != MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected "
@@ -72,45 +75,18 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
                   fle_blob_subtype);
       return false;
    }
-   offset += 1;
 
    /* Read S_KeyId. */
-   if (offset + 16 > buf->len) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected byte "
-                  "length >= %" PRIu32 " got: %" PRIu32,
-                  offset + 16,
-                  buf->len);
-      return false;
-   }
-   if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &iev->S_KeyId, buf->data + offset, 16)) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse failed to copy "
-                  "data for S_KeyId");
-      return false;
-   }
-   iev->S_KeyId.subtype = BSON_SUBTYPE_UUID;
-   offset += 16;
+   CHECK_AND_RETURN (
+      mc_reader_read_uuid_buffer (&reader, &iev->S_KeyId, status));
 
    /* Read original_bson_type. */
-   if (offset + 1 > buf->len) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected byte "
-                  "length >= %" PRIu32 " got: %" PRIu32,
-                  offset + 1,
-                  buf->len);
-      return false;
-   }
-   iev->original_bson_type = buf->data[offset];
-   offset += 1;
+   CHECK_AND_RETURN (
+      mc_reader_read_u8 (&reader, &iev->original_bson_type, status));
 
    /* Read InnerEncrypted. */
-   if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &iev->InnerEncrypted,
-          buf->data + offset,
-          (size_t) (buf->len - offset))) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse failed to copy "
-                  "data for InnerEncrypted");
-      return false;
-   }
+   CHECK_AND_RETURN (
+      mc_reader_read_buffer_to_end (&reader, &iev->InnerEncrypted, status));
 
    iev->parsed = true;
    return true;
@@ -203,55 +179,33 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
       mc_ServerDataEncryptionLevel1Token_destroy (token);
    }
 
+   mc_reader_t reader;
+   mc_reader_init_from_buffer (&reader, &iev->Inner, __FUNCTION__);
+
    /* Parse Inner for K_KeyId. */
-   uint32_t offset = 0;
-   /* Read uint64_t length. */
-   if (offset + 8 > iev->Inner.len) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
-                  "Inner byte length >= %" PRIu32 " got: %" PRIu32,
-                  offset + 8,
-                  iev->Inner.len);
-      return false;
-   }
    uint64_t
       length; /* length is sizeof(K_KeyId) + ClientEncryptedValue_length. */
-   memcpy (&length, iev->Inner.data, sizeof (uint64_t));
-   length = BSON_UINT64_FROM_LE (length);
-   offset += 8;
+   CHECK_AND_RETURN (mc_reader_read_u64 (&reader, &length, status));
+
 
    /* Read K_KeyId. */
-   if (offset + UUID_LEN > iev->Inner.len) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
-                  "Inner byte length >= %" PRIu32 " got: %" PRIu32,
-                  offset + UUID_LEN,
-                  iev->Inner.len);
-      return false;
-   }
-   if (!_mongocrypt_buffer_copy_from_data_and_size (
-          &iev->K_KeyId, iev->Inner.data + offset, 16)) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key failed to "
-                  "copy data for K_KeyId");
-      return false;
-   }
-   offset += 16;
-   iev->K_KeyId.subtype = BSON_SUBTYPE_UUID;
+   CHECK_AND_RETURN (
+      mc_reader_read_uuid_buffer (&reader, &iev->K_KeyId, status));
+
 
    /* Read ClientEncryptedValue. */
-   /* the compiler will promote the calculation to uint64_t, no check needed */
-   if (offset + (length - 16u) > iev->Inner.len) {
+   uint64_t expected_length =
+      mc_reader_get_consumed_length (&reader) + length - 16;
+   if (length > iev->Inner.len || expected_length > iev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key expected "
-                  "Inner byte length >= %" PRIu64 " got: %" PRIu32,
-                  offset + (length - 16),
+                  "Inner byte length >= %" PRIu32 " got: %" PRIu32,
+                  expected_length,
                   iev->Inner.len);
       return false;
    }
-   if (!_mongocrypt_buffer_copy_from_data_and_size (&iev->ClientEncryptedValue,
-                                                    iev->Inner.data + offset,
-                                                    (size_t) (length - 16))) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key failed to copy "
-                  "data for ClientEncryptedValue");
-      return false;
-   }
+
+   CHECK_AND_RETURN (mc_reader_read_buffer (
+      &reader, &iev->ClientEncryptedValue, length - 16, status));
 
    iev->inner_decrypted = true;
    return true;

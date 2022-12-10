@@ -1,3 +1,9 @@
+libmongocrypt (1.6.2-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 06 Dec 2022 23:50:00 -0500
+
 libmongocrypt (1.6.0-1) unstable; urgency=medium
 
   * New upstream release.

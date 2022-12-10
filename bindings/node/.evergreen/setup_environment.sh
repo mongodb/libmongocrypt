@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "$NODE_NVM_USE_VERSION" ]; then 
+  echo "NODE_NVM_USE_VERSION environment variable must be set."
+  exit 1
+fi
+
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
@@ -8,7 +13,7 @@ NODE_ARTIFACTS_PATH="${NODE_BINDINGS_PATH}/node-artifacts"
 NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
 NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
 BIN_DIR="$(pwd)/bin"
-NVM_WINDOWS_URL="https://github.com/coreybutler/nvm-windows/releases/download/1.1.9/nvm-noinstall.zip"
+NVM_WINDOWS_URL="https://github.com/coreybutler/nvm-windows/releases/download/1.1.10/nvm-noinstall.zip"
 NVM_URL="https://raw.githubusercontent.com/creationix/nvm/v0.38.0/install.sh"
 NPM_OPTIONS="${NPM_OPTIONS}"
 
@@ -20,9 +25,6 @@ mkdir -p "${BIN_DIR}"
 
 # Add mongodb toolchain to path
 export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
-
-test -n "${NODE_NVM_USE_VERSION-}" || echo "Defaulting to using the current Node LTS Release. Set NODE_NVM_USE_VERSION to change."
-: "${NODE_NVM_USE_VERSION:="lts"}"
 
 # locate cmake
 if [ "$OS" == "Windows_NT" ]; then
@@ -40,7 +42,7 @@ export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
 mkdir -p ${NVM_DIR}
 
 # install Node.js
-echo "Installing Node ${NODE_LTS_NAME}"
+echo "Installing Latest Node for Major Version ${NODE_NVM_USE_VERSION}"
 if [ "$OS" == "Windows_NT" ]; then
   set +o xtrace
 

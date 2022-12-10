@@ -17,8 +17,9 @@
 #include "mc-check-conversions-private.h"
 #include "mc-range-encoding-private.h"
 #include "mongocrypt-private.h"
+#include "mongocrypt-util-private.h" // mc_isinf
 
-#include <math.h> // isinf
+#include <math.h> // pow
 
 /* mc-range-encoding.c assumes integers are encoded with two's complement for
  * correctness. */
@@ -190,8 +191,8 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
       return false;
    }
 
-   if (isinf (args.value) || isnan (args.value)) {
-      CLIENT_ERR ("Infinity and Nan double values are not supported.");
+   if (mc_isinf (args.value) || mc_isnan (args.value)) {
+      CLIENT_ERR ("Infinity and NaN double values are not supported.");
       return false;
    }
 
@@ -244,14 +245,15 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
 
       // We can overflow if max = max double and min = min double so make sure
       // we have finite number after we do subtraction
-      if (isfinite (range)) {
-         // This creates a range which is wider than we permit by our min/max
+      // Ignore conversion warnings to fix error with glibc.
+      if (mc_isfinite (range)) {
+         // This creates a range which is wider then we permit by our min/max
          // bounds check with the +1 but it is as the algorithm is written in
          // WRITING-11907.
          double rangeAndPrecision =
             (range + 1) * exp10Double (args.precision.value);
 
-         if (isfinite (rangeAndPrecision)) {
+         if (mc_isfinite (rangeAndPrecision)) {
             double bits_range_double = log2 (rangeAndPrecision);
             bits_range = (uint32_t) ceil (bits_range_double);
 
