@@ -76,8 +76,7 @@ kms_kmip_response_parser_wants_bytes (const kms_kmip_response_parser_t *parser,
       first_len = parser->first_len + KMS_KMIP_RESPONSE_PARSER_FIRST_LENGTH;
       KMS_ASSERT (first_len >= parser->bytes_fed);
       want_bytes_pending = first_len - parser->bytes_fed;
-      KMS_ASSERT (want_bytes_pending <= (uint32_t) INT32_MAX &&
-                  (int64_t) want_bytes_pending >= (int64_t) INT32_MIN);
+      KMS_ASSERT (want_bytes_pending <= (uint32_t) INT32_MAX);
       wants_bytes = (int32_t) want_bytes_pending;
    }
    if (max < wants_bytes) {
