@@ -59,8 +59,7 @@ const MOCK_KEYDOCUMENT_RESPONSE = readExtendedJsonToBuffer(`${__dirname}/data/ke
 const MOCK_KMS_DECRYPT_REPLY = readHttpResponse(`${__dirname}/data/kms-decrypt-reply.txt`);
 
 class MockClient {
-  constructor(uri) {
-    this.uri = uri;
+  constructor() {
     this.topology = {
       bson: BSON
     };
