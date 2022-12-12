@@ -294,6 +294,17 @@ main ()
    auto four_v2 = mlib_int128_lshift (eight, -1);
    CHECK (four == four_v2);
 
+   CHECK (mlib_int128_mul (1_i128, 2_i128) == 2_i128);
+   CHECK (mlib_int128_mul (1_i128, 0_i128) == 0_i128);
+   CHECK (mlib_int128_mul (0_i128, 0_i128) == 0_i128);
+   CHECK (mlib_int128_mul (2_i128, 73_i128) == 146_i128);
+   CHECK (mlib_int128_mul (28468554863115876158655557_i128, 73_i128) ==
+          2078204505007458959581855661_i128);
+   CHECK (mlib_int128_mul (MLIB_INT128_CAST (-7), 4_i128) ==
+          MLIB_INT128_CAST (-28));
+   CHECK (mlib_int128_mul (MLIB_INT128_CAST (-7), MLIB_INT128_CAST (-7)) ==
+          49_i128);
+
    // It's useful it specify bit patterns directly
    auto in_binary =
       0b110101010110100100001101111001111010100010111100100101101011010110101001010110110011000100000100011110010101101001111110001000_i128;
