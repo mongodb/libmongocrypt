@@ -547,17 +547,51 @@ mlib_int128_pow2 (long nth)
  * @brief Read a 128-bit unsigned integer from a base-10 string
  */
 static mlib_constexpr_fn mlib_int128
-mlib_int128_from_string (const char *s)
+mlib_int128_from_string (const char *s, const char **end)
 {
+   int radix = 10;
+   if (strlen (s) > 2 && s[0] == '0') {
+      // Check for a different radix
+      char b = s[1];
+      if (b == 'b' || b == 'B') {
+         radix = 2;
+         s += 2;
+      } else if (b == 'c' || b == 'C') {
+         radix = 8;
+         s += 2;
+      } else if (b == 'x' || b == 'X') {
+         radix = 16;
+         s += 2;
+      } else {
+         radix = 8;
+         s += 1;
+      }
+   }
+
    mlib_int128 ret = MLIB_INT128 (0);
-   while (*s) {
-      int dig = *s - '0';
-      if (dig > 9 || dig < 0) {
+   for (; *s; ++s) {
+      char c = *s;
+      if (c == '\'') {
+         // Digit separator. Skip it;
+         continue;
+      }
+      if (c >= 'a') {
+         c -= 'a' - 'A'; // Uppercase (if a letter, otherwise some other punct)
+      }
+      int digit = c - '0';
+      if (c >= 'A') {
+         // It's actually a letter (or garbage, which we'll catch later)
+         digit = (c - 'A') + 10;
+      }
+      if (digit > radix || digit < 0) {
+         // The digit is outside of our radix, or garbage
          break;
       }
-      ret = mlib_int128_mul (ret, MLIB_INT128 (10));
-      ret = mlib_int128_add (ret, MLIB_INT128_CAST (dig));
-      ++s;
+      ret = mlib_int128_mul (ret, MLIB_INT128_CAST (radix));
+      ret = mlib_int128_add (ret, MLIB_INT128_CAST (digit));
+   }
+   if (end) {
+      *end = s;
    }
    return ret;
 }
