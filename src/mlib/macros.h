@@ -38,8 +38,8 @@
 /**
  * @brief Mark a function as constexpr
  *
- * Expands to `constexpr` in C++14 and above (and someday C26...?). "inline"
- * otherwise.
+ * Expands to `constexpr inline` in C++14 and above (and someday C26...?).
+ * "inline" otherwise.
  */
 #define mlib_constexpr_fn _mlibConstexprFn
 
