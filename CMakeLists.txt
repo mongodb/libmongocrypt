@@ -481,9 +481,9 @@ foreach (test IN ITEMS path str)
 endforeach ()
 
 if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
-   add_executable(mlib.int128.test src/mlib/int128.test.cpp)
-   add_Test (mlib.int128 mlib.int128.test)
-   target_link_libraries (mlib.int128.test PRIVATE mongo::mlib)
+   add_executable(mlib.int128.test src/mlib/int128.test.cpp src/mlib/int128.test.c)
+   add_test (mlib.int128 mlib.int128.test)
+   target_link_libraries (mlib.int128.test PRIVATE mongo::mlib Threads::Threads)
    target_compile_features (mlib.int128.test PRIVATE cxx_relaxed_constexpr)
 endif ()
 
