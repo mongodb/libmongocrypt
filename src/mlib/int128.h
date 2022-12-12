@@ -282,13 +282,15 @@ _mlibKnuth431D (uint32_t *const u,
                 const int vlen,
                 uint32_t *quotient)
 {
-   // Part D1 (normalization) is done by caller, normalized in u and v (b is
-   // 1<<32)
+   // Part D1 (normalization) is done by caller, normalized in u and v (b is 32)
    typedef uint64_t u64;
    typedef int64_t i64;
    typedef uint32_t u32;
    const int m = ulen - vlen - 1;
    const int n = vlen;
+
+   // 'd' is 2^32. Shifting left and right is equivalent to mult and division by
+   // d, respectively.
 
    // D2
    int j = m;
@@ -362,47 +364,78 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
    adjusted.r.hi %= denom;
    int d = _mlibCountLeadingZeros_u64 (denom);
 
+   typedef uint32_t u32;
+   typedef uint64_t u64;
+
    if (d >= 32) {
-      // jk: We're dividing by less than UINT32_MAX: We can take a shortcut
-      uint64_t rem = adjusted.r.hi << 32 | adjusted.r.lo >> 32;
-      uint64_t quo = rem / (uint32_t) denom;
-      rem = ((rem % (uint32_t) denom) << 32) | (uint32_t) adjusted.r.lo;
-      quo = quo << 32 | rem / (uint32_t) denom;
-      rem = rem % (uint32_t) denom;
+      // jk: We're dividing by less than UINT32_MAX: We can do a simple short
+      // division of two base32 numbers.
+      // Treat the denominator as a single base32 digit:
+      const u32 d0 = (u32) denom;
+
+      // And the numerator as four base32 digits:
+      const u64 n0 = (u32) (numer.r.lo);
+      const u64 n1 = (u32) (numer.r.lo >> 32);
+
+      // We don't need to split n2 and n3. (n3,n2) will be the first parital
+      // dividend
+      const u64 n3_n2 = numer.r.hi;
+
+      // First partial remainder: (n3,n2) % d0
+      const u64 r1 = n3_n2 % d0;
+      // Second partial dividend: (r1,n1)
+      const u64 r1_n1 = (r1 << 32) + n1;
+      // Second partial remainder: (r1,n1) % d0
+      const u64 r0 = r1_n1 % d0;
+      // Final partial dividend: (r0,n0)
+      const u64 r0_n0 = (r0 << 32) + n0;
+      // Final remainder: (r0,n0) % d0
+      const u64 rem = r0_n0 % d0;
+
+      // Form the quotient as four base32 digits:
+      // Least quotient digit: (r0,n0) / d0
+      const u64 q0 = r0_n0 / d0;
+      // Second quotient digit: (r1,n1) / d0
+      const u64 q1 = r1_n1 / d0;
+      // Third and fourth quotient digit: (n3,n2) / d0
+      const u64 q3_q2 = n3_n2 / d0;
+
+      // Low word of the quotient: (q1,q0)
+      const u64 q1_q0 = (q1 << 32) + q0;
+
       return MLIB_INIT (mlib_int128_divmod_result){
-         MLIB_INIT (mlib_int128)
-            MLIB_INT128_FROM_PARTS (quo, numer.r.hi / denom),
+         MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (q1_q0, q3_q2),
          MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (rem, 0),
       };
    }
 
    // Normalize for a Knuth 4.3.1D division. Convert the integers into two
    // base-32 numbers, with u and v being arrays of digits:
-   uint32_t u[5] = {
-      (uint32_t) (adjusted.r.lo << d),
-      (uint32_t) (adjusted.r.lo >> (32 - d)),
-      (uint32_t) (adjusted.r.hi << d),
-      (uint32_t) (adjusted.r.hi >> (32 - d)),
+   u32 u[5] = {
+      (u32) (adjusted.r.lo << d),
+      (u32) (adjusted.r.lo >> (32 - d)),
+      (u32) (adjusted.r.hi << d),
+      (u32) (adjusted.r.hi >> (32 - d)),
       0,
    };
 
    if (d != 0) {
       // Extra bits from overlap:
-      u[2] |= (uint32_t) (adjusted.r.lo >> (64 - d));
-      u[4] |= (uint32_t) (adjusted.r.hi >> (64 - d));
+      u[2] |= (u32) (adjusted.r.lo >> (64 - d));
+      u[4] |= (u32) (adjusted.r.hi >> (64 - d));
    }
 
-   uint32_t v[2] = {
-      (uint32_t) (denom << d),
-      (uint32_t) (denom >> (32 - d)),
+   u32 v[2] = {
+      (u32) (denom << d),
+      (u32) (denom >> (32 - d)),
    };
 
-   uint32_t qparts[3] = {0};
+   u32 qparts[3] = {0};
 
    _mlibKnuth431D (u, 5, v, 2, qparts);
 
-   uint64_t rem = ((uint64_t) u[1] << (32 - d)) | (u[0] >> d);
-   uint64_t quo = ((uint64_t) qparts[1] << 32) | qparts[0];
+   u64 rem = ((u64) u[1] << (32 - d)) | (u[0] >> d);
+   u64 quo = ((u64) qparts[1] << 32) | qparts[0];
    return MLIB_INIT (mlib_int128_divmod_result){
       MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (quo, numer.r.hi / denom),
       MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (rem, 0),

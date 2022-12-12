@@ -64,6 +64,19 @@ constexpr
    return mlib_int128_from_string (s, NULL);
 }
 
+// Operators, for test convenience
+constexpr bool
+operator== (mlib_int128 l, mlib_int128 r)
+{
+   return mlib_int128_eq (l, r);
+}
+
+constexpr bool
+operator<(mlib_int128 l, mlib_int128 r)
+{
+   return mlib_int128_scmp (l, r) < 0;
+}
+
 #ifndef BROKEN_CONSTEXPR
 static_assert (mlib_int128_eq (MLIB_INT128 (0), 0_i128), "fail");
 static_assert (mlib_int128_eq (MLIB_INT128 (65025), 65025_i128), "fail");
@@ -110,6 +123,24 @@ static_assert (
    mlib_int128_scmp (mlib_int128_rshift (mlib_int128_lshift (1_i128, 127), 127),
                      1_i128) == 0,
    "fail");
+
+// With no high-32 bits in the denominator
+static_assert (mlib_int128_div (316356263640858117670580590964547584140_i128,
+                                13463362962560749016052695684_i128) ==
+               23497566285_i128);
+
+// Remainder correctness with high bit set:
+static_assert (mlib_int128_mod (292590981272581782572061492191999425232_i128,
+                                221673222198185508195462959065350495048_i128) ==
+               70917759074396274376598533126648930184_i128);
+
+// Remainder with 64bit denom:
+static_assert (mlib_int128_mod (2795722437127403543495742528_i128,
+                                708945413_i128) == 619266642_i128);
+
+// 10-div:
+static_assert (mlib_int128_div (MLIB_INT128_SMAX, 10_i128) ==
+               17014118346046923173168730371588410572_i128);
 #endif // BROKEN_CONSTEXPR
 
 inline std::ostream &
@@ -185,20 +216,6 @@ struct check_consume {
 #undef CHECK
 #define CHECK(Cond) \
    check_consume{} = check_magic{check_info{__FILE__, __LINE__, #Cond}}->*Cond
-
-
-// Operators, for test convenience
-constexpr bool
-operator== (mlib_int128 l, mlib_int128 r)
-{
-   return mlib_int128_eq (l, r);
-}
-
-constexpr bool
-operator<(mlib_int128 l, mlib_int128 r)
-{
-   return mlib_int128_scmp (l, r) < 0;
-}
 
 #ifndef BROKEN_CONSTEXPR
 static_assert (mlib_int128 (MLIB_INT128_UMAX) ==
