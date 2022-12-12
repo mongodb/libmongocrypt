@@ -360,9 +360,9 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
 {
    mlib_int128 adjusted = numer;
    adjusted.r.hi %= denom;
-   int d = _mlibCountLeadingZeros_u64 (denom >> 32) - 32;
+   int d = _mlibCountLeadingZeros_u64 (denom);
 
-   if (d == 32) {
+   if (d >= 32) {
       // jk: We're dividing by less than UINT32_MAX: We can take a shortcut
       uint64_t rem = adjusted.r.hi << 32 | adjusted.r.lo >> 32;
       uint64_t quo = rem / (uint32_t) denom;
@@ -389,7 +389,7 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
    if (d != 0) {
       // Extra bits from overlap:
       u[2] |= (uint32_t) (adjusted.r.lo >> (64 - d));
-      u[4] |= (uint32_t) (adjusted.r.lo >> (64 - d));
+      u[4] |= (uint32_t) (adjusted.r.hi >> (64 - d));
    }
 
    uint32_t v[2] = {
@@ -405,7 +405,7 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
    uint64_t quo = ((uint64_t) qparts[1] << 32) | qparts[0];
    return MLIB_INIT (mlib_int128_divmod_result){
       MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (quo, numer.r.hi / denom),
-      MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (rem, numer.r.hi % denom),
+      MLIB_INIT (mlib_int128) MLIB_INT128_FROM_PARTS (rem, 0),
    };
 }
 
