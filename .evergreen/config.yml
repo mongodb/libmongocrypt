@@ -524,7 +524,7 @@ tasks:
   depends_on:
     - variant: rhel-62-64-bit
       name: build-and-test-and-upload
-    - variant: rhel-67-s390x
+    - variant: rhel72-zseries-test
       name: build-and-test-and-upload
     - variant: rhel-71-ppc64el
       name: build-and-test-and-upload
@@ -543,7 +543,7 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "rhel-62-64-bit" }
     - func: "download tarball"
-      vars: { variant_name: "rhel-67-s390x" }
+      vars: { variant_name: "rhel72-zseries-test" }
     - func: "download tarball"
       vars: { variant_name: "rhel-71-ppc64el" }
     - func: "download tarball"
