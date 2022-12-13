@@ -165,7 +165,7 @@ module.exports = function (modules) {
           serverSelectionTimeoutMS: 10000
         };
 
-        const wasURIProvided = typeof options.extraOptions === 'object' && !!options.extraOptions.mongocryptdURI;
+        const wasURIProvided = options.extraOptions && !!options.extraOptions.mongocryptdURI;
         if (!wasURIProvided) {
           clientOptions.family = 4;
         }
