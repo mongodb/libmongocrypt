@@ -165,7 +165,10 @@ module.exports = function (modules) {
           serverSelectionTimeoutMS: 10000
         };
 
-        if (options.extraOptions == null || typeof options.extraOptions.mongocryptdURI !== 'string')
+        if (
+          options.extraOptions == null ||
+          typeof options.extraOptions.mongocryptdURI !== 'string'
+        ) {
           clientOptions.family = 4;
         }
 
