@@ -834,14 +834,14 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
       mongocrypt_status_t *const status = mongocrypt_status_new ();
 
       if (test->min.set && test->max.set && test->precision.set) {
-         printf ("_test_RangeTest_Encode_Double: value=%s, min=%s, max=%s, "
+         printf ("_test_RangeTest_Encode_Decimal128: value=%s, min=%s, max=%s, "
                  "precision=%" PRIu32 "\n",
                  mc_dec128_to_string (test->value).str,
                  mc_dec128_to_string (test->min.value).str,
                  mc_dec128_to_string (test->max.value).str,
                  test->precision.value);
       } else {
-         printf ("_test_RangeTest_Encode_Double: value=%s\n",
+         printf ("_test_RangeTest_Encode_Decimal128: value=%s\n",
                  mc_dec128_to_string (test->value).str);
       }
       fflush (stdout);

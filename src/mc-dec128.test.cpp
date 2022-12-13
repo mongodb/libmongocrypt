@@ -63,4 +63,10 @@ main ()
    char *str = mc_dec128_to_new_decimal_string (c);
    CHECK (std::string (str) == "2.5");
    free (str);
+
+   mc_dec128 infin = MC_DEC128_POSITIVE_INFINITY;
+   CHECK (mc_dec128_is_inf (infin));
+
+   mc_dec128 nan = MC_DEC128_POSITIVE_NAN;
+   CHECK (mc_dec128_is_nan (nan));
 }

@@ -3,6 +3,7 @@
 
 #include <mlib/macros.h>
 #include <mlib/int128.h>
+#include <mlib/endian.h>
 
 #include <inttypes.h>
 #include <string.h>
@@ -53,7 +54,7 @@ typedef struct mc_dec128_flagset {
 
 typedef union _mcDec128Align (16)
 {
-   uint8_t _bid_bytes[16];
+   uint64_t _words[2];
 #if !defined(__INTELLISENSE__) && defined(__GNUC__) && defined(__amd64) && \
    !defined(__APPLE__)
    // If supported by the compiler, emit a field that can be used to visualize
@@ -76,26 +77,19 @@ mc_dec128;
 
 #define MC_DEC128(N) MLIB_INIT (mc_dec128) MC_DEC128_C (N)
 
-#define _mcDec128Const(N, Negate)                                   \
-   {                                                                \
-      {                                                             \
-         (((uint64_t) N) & 0xff),                                   \
-         (((uint64_t) N) >> 8 & 0xff),                              \
-         (((uint64_t) N) >> 16 & 0xff),                             \
-         (((uint64_t) N) >> 24 & 0xff),                             \
-         (((uint64_t) N) >> 32 & 0xff),                             \
-         (((uint64_t) N) >> 40 & 0xff),                             \
-         (((uint64_t) N) >> 48 & 0xff),                             \
-         (((uint64_t) N) >> 56 & 0xff),                             \
-         0,                                                         \
-         0,                                                         \
-         0,                                                         \
-         0,                                                         \
-         0,                                                         \
-         0,                                                         \
-         1 << 6 /* 0b0010'0000 */,                                  \
-         (1 << 5 | 1 << 4) | /* Set the sign bit: */ (Negate << 7), \
-      },                                                            \
+#define _mcDec128Combination(Bits) ((uint64_t) (Bits) << (47))
+#define _mcDec128ZeroExpCombo _mcDec128Combination (1 << 7 | 1 << 13 | 1 << 14)
+#define _mcDec128Const(N, Negate) \
+   _mcDec128ConstFromParts (      \
+      N, (_mcDec128ZeroExpCombo | ((uint64_t) (Negate) << 63)))
+#define _mcDec128ConstFromParts(CoeffLow, HighWord)     \
+   {                                                    \
+      {                                                 \
+         MLIB_IS_LITTLE_ENDIAN ? (uint64_t) (CoeffLow)  \
+                               : (uint64_t) (HighWord), \
+         MLIB_IS_LITTLE_ENDIAN ? (uint64_t) (HighWord)  \
+                               : (uint64_t) (CoeffLow), \
+      },                                                \
    }
 
 static const mc_dec128 MC_DEC128_ZERO = MC_DEC128_C (0);
@@ -116,94 +110,23 @@ static const mc_dec128 MC_DEC128_MINUSONE = MC_DEC128_C (-1);
 #define MC_DEC128_NORMALIZED_ZERO MC_DEC128_C (0)
 /// A zero of Decimal128 with the least exponent
 #define MC_DEC128_NEGATIVE_EXPONENT_ZERO mc_dec128_from_string ("0E-6176")
+#define _mcDec128InfCombo \
+   _mcDec128Combination (1 << 15 | 1 << 14 | 1 << 13 | 1 << 12)
+#define _mcDec128QuietNaNCombo \
+   _mcDec128Combination (1 << 15 | 1 << 14 | 1 << 13 | 1 << 12 | 1 << 11)
+
 /// Positive infinity of Decimal128
-#define MC_DEC128_POSITIVE_INFINITY           \
-   {                                          \
-      {                                       \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         0,                                   \
-         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3), \
-      },                                      \
-   }
+#define MC_DEC128_POSITIVE_INFINITY \
+   _mcDec128ConstFromParts (0, _mcDec128InfCombo)
 /// Negative infinity of Decimal128
-#define MC_DEC128_NEGATIVE_INFINITY                    \
-   {                                                   \
-      {                                                \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0, /* Set the sign bit:*/                     \
-         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 7), \
-      },                                               \
-   }
+#define MC_DEC128_NEGATIVE_INFINITY \
+   _mcDec128ConstFromParts (0, _mcDec128InfCombo | 1ull << 63)
 /// Positve quiet NaN of Decimal128
-#define MC_DEC128_POSITIVE_NAN                         \
-   {                                                   \
-      {                                                \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0,                                            \
-         0, /* Set the quiet NaN bit:*/                \
-         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 2), \
-      },                                               \
-   }
+#define MC_DEC128_POSITIVE_NAN \
+   _mcDec128ConstFromParts (0, _mcDec128QuietNaNCombo)
 /// Negative quiet NaN of Decimal128
-#define MC_DEC128_NEGATIVE_NAN                                  \
-   {                                                            \
-      {                                                         \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0,                                                     \
-         0, /* Set the quiet NaN bit and the sign bit:*/        \
-         (1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 2 | 1 << 7), \
-      },                                                        \
-   }
+#define MC_DEC128_NEGATIVE_NAN \
+   _mcDec128ConstFromParts (0, _mcDec128QuietNaNCombo | 1ull << 63)
 
 /**
  * @brief Convert a double-precision binary floating point value into the
@@ -510,8 +433,7 @@ static inline uint32_t
 mc_dec128_combination (mc_dec128 d)
 {
    // Grab the high 64 bits:
-   uint64_t hi = 0;
-   memcpy (&hi, d._bid_bytes + 8, sizeof hi);
+   uint64_t hi = d._words[MLIB_IS_LITTLE_ENDIAN ? 1 : 0];
    // Sign is the 64th bit:
    int signpos = 64 - 1;
    // Combo is the next 16 bits:
@@ -529,8 +451,7 @@ mc_dec128_coeff_high (mc_dec128 d)
    uint64_t hi_field_mask = (1ull << 49) - 1;
    uint32_t combo = mc_dec128_combination (d);
    if (combo < MC_DEC128_COMBO_NONCANONICAL) {
-      uint64_t hi = 0;
-      memcpy (&hi, d._bid_bytes + 8, sizeof hi);
+      uint64_t hi = d._words[MLIB_IS_LITTLE_ENDIAN ? 1 : 0];
       return hi & hi_field_mask;
    } else {
       return 0;
@@ -545,8 +466,7 @@ mc_dec128_coeff_low (mc_dec128 d)
 {
    uint32_t combo = mc_dec128_combination (d);
    if (combo < MC_DEC128_COMBO_NONCANONICAL) {
-      uint64_t lo = 0;
-      memcpy (&lo, d._bid_bytes, sizeof lo);
+      uint64_t lo = d._words[MLIB_IS_LITTLE_ENDIAN ? 0 : 1];
       return lo;
    } else {
       return 0;
