@@ -1,0 +1,53 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "insert": "test",
+        "documents": [
+            {
+                "plainText": "sample",
+                "encrypted": {
+                    "$binary": {
+                        "base64": "A7AAAAAQdAABAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASA3YAUQAAABN2AACABMa6ngEAAAAAAAAAJDATbWluAAAAAAAAAAAAAAAAAAAAQDATbWF4ABWB6X30ECIRAAAAAAAAQDAQcHJlY2lzaW9uAAIAAAAAEmNtAAAAAAAAAAAAEnMAAQAAAAAAAAAA",
+                        "subType": "6"
+                    }
+                }
+            }
+        ],
+        "encryptionInformation": {
+            "type": {
+                "$numberInt": "1"
+            },
+            "schema": {
+                "db.test": {
+                    "escCollection": "fle2.test.esc",
+                    "eccCollection": "fle2.test.ecc",
+                    "ecocCollection": "fle2.test.ecoc",
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "encrypted",
+                            "bsonType": "long",
+                            "queries": {
+                                "queryType": "rangePreview",
+                                "contention": {
+                                    "$numberInt": "0"
+                                },
+                                "sparsity": {
+                                    "$numberInt": "1"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "hasEncryptedPlaceholders": true
+}

@@ -2617,6 +2617,32 @@ _test_encrypt_fle2_insert_range_payload_double_precision (
 }
 #undef RNG_DATA
 
+#include "./data/fle2-insert-range/decimal128/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_decimal128 (
+   _mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/decimal128", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/decimal128-precision/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_decimal128_precision (
+   _mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/decimal128-precision", &source);
+}
+#undef RNG_DATA
+
 // FLE2FindRangePayload only uses deterministic token generation.
 static void
 _test_encrypt_fle2_find_range_payload_int32 (_mongocrypt_tester_t *tester)
@@ -2661,6 +2687,25 @@ _test_encrypt_fle2_find_range_payload_double_precision (
    _test_rng_data_source source = {{0}};
    _test_encrypt_fle2_encryption_placeholder (
       tester, "fle2-find-range/double-precision", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_decimal128 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/decimal128", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_decimal128_precision (
+   _mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/decimal128-precision", &source);
 }
 
 static mongocrypt_t *
@@ -5031,9 +5076,13 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_date);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_double);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_double_precision);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_decimal128);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_decimal128_precision);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int32);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int64);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_date);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_double);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_double_precision);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_decimal128);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_decimal128_precision);
 }
