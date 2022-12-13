@@ -2,6 +2,7 @@
 #define MLIB_INT128_H_INCLUDED
 
 #include "./macros.h"
+#include "./str.h"
 
 #include <stdbool.h>
 #include <inttypes.h>
@@ -584,7 +585,7 @@ static mlib_constexpr_fn mlib_int128
 mlib_int128_from_string (const char *s, const char **end)
 {
    int radix = 10;
-   if (strlen (s) > 2 && s[0] == '0') {
+   if (mlib_strlen (s) > 2 && s[0] == '0') {
       // Check for a different radix
       char b = s[1];
       if (b == 'b' || b == 'B') {
