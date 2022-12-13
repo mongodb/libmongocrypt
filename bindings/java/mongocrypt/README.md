@@ -7,7 +7,7 @@ The Java wrapper for the companion C library for client side encryption in drive
 To test against a local build:
 `/gradlew check -DjnaLibsPath=../../../../libmongocrypt/cmake-build`
 
-Note: libmongocrypt and the java library are [continuously built on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
+Note: libmongocrypt and the java library are continuously built on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
 
 ### Publishing ####
 

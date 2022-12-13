@@ -104,8 +104,7 @@ First, install PyMongoCrypt from source::
 
 Next, install libmongocrypt.
 
-libmongocrypt is
-`continuously built and published on evergreen <https://evergreen.mongodb.com/waterfall/libmongocrypt>`_.
+libmongocrypt is continuously built and published on evergreen.
 The latest tarball containing libmongocrypt built on all supported variants is
 `published here <https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz>`_.
 Download and extract ``libmongocrypt-all.tar.gz`` and set
