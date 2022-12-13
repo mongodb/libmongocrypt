@@ -61,8 +61,6 @@ class MongocryptdManager {
   }
 }
 
-Object.defineProperty(MongocryptdManager, 'DEFAULT_MONGOCRYPTD_URI', {
-  value: 'mongodb://localhost:27020'
-});
+MongocryptdManager.DEFAULT_MONGOCRYPTD_URI = 'mongodb://localhost:27020';
 
 module.exports = { MongocryptdManager };
