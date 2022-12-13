@@ -26,9 +26,10 @@ typedef union {
 #endif
 } mlib_int128;
 
-/// Construct an mlib_in128 from an integer literal
+/// Define an int128 from a literal within [INT64_MIN, INT64_MAX]
 #define MLIB_INT128(N) MLIB_INIT (mlib_int128) MLIB_INT128_C (N)
-/// Construct an mlib_in128 from an integer literal (usable as a constant init)
+/// Define an int128 from a literal within [INT64_MIN, INT64_MAX] (usable as a
+/// constant init)
 #define MLIB_INT128_C(N)                 \
    MLIB_INT128_FROM_PARTS (UINT64_C (N), \
                            (UINT64_C (N) > INT64_MAX ? UINT64_MAX : 0))
@@ -200,10 +201,10 @@ mlib_int128_lshift (mlib_int128 val, int off)
 }
 
 /**
- * @brief Bitwise righ-shift a 128-bit integer
+ * @brief Bitwise logical right-shift a 128-bit integer
  *
- * @param val The value to modify
- * @param off The offset to shift righ. If negative, shifts left
+ * @param val The value to modify. No "sign bit" is respected.
+ * @param off The offset to shift right. If negative, shifts left
  * @return The result of the shift operation
  */
 static mlib_constexpr_fn mlib_int128
@@ -226,7 +227,7 @@ mlib_int128_bitor (mlib_int128 l, mlib_int128 r)
 static mlib_constexpr_fn mlib_int128
 _mlibUnsignedMult128 (uint64_t left, uint64_t right)
 {
-   // Perform a Knuth 4.2.1M multiplication
+   // Perform a Knuth 4.3.1M multiplication
    uint32_t u[2] = {(uint32_t) left, (uint32_t) (left >> 32)};
    uint32_t v[2] = {(uint32_t) right, (uint32_t) (right >> 32)};
    uint32_t w[4] = {0};

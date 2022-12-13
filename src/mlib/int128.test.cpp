@@ -294,6 +294,9 @@ main ()
    auto four_v2 = mlib_int128_lshift (eight, -1);
    CHECK (four == four_v2);
 
+   // Negative literals:
+   CHECK (MLIB_INT128 (-64) == mlib_int128_negate (64_i128));
+
    CHECK (mlib_int128_mul (1_i128, 2_i128) == 2_i128);
    CHECK (mlib_int128_mul (1_i128, 0_i128) == 0_i128);
    CHECK (mlib_int128_mul (0_i128, 0_i128) == 0_i128);
