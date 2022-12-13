@@ -7,8 +7,6 @@ const spawn = require('child_process').spawn;
  * An internal class that handles spawning a mongocryptd.
  */
 class MongocryptdManager {
-  static DEFAULT_MONGOCRYPTD_URI = 'mongodb://localhost:27020';
-
   /**
    * @ignore
    * Creates a new Mongocryptd Manager
@@ -62,5 +60,9 @@ class MongocryptdManager {
     process.nextTick(callback);
   }
 }
+
+Object.defineProperty(MongocryptdManager, 'DEFAULT_MONGOCRYPTD_URI', {
+  value: 'mongodb://localhost:27020'
+});
 
 module.exports = { MongocryptdManager };
