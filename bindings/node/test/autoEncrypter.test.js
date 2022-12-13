@@ -208,6 +208,60 @@ describe('AutoEncrypter', function () {
         });
       });
     });
+
+    context('when using mongocryptd', function () {
+      const client = new MockClient();
+      const autoEncrypterOptions = {
+        mongocryptdBypassSpawn: true,
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        }
+      };
+      const autoEncrypter = new AutoEncrypter(client, autoEncrypterOptions);
+
+      it('instantiates a mongo client on the auto encrypter', function () {
+        expect(autoEncrypter)
+          .to.have.property('_mongocryptdClient')
+          .to.be.instanceOf(mongodb.MongoClient);
+      });
+
+      it('sets the 3x legacy client options on the mongo client', function () {
+        expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+        const options = autoEncrypter._mongocryptdClient.s.options;
+        expect(options).to.have.property('useUnifiedTopology', true);
+        expect(options).to.have.property('useNewUrlParser', true);
+      });
+
+      it('sets serverSelectionTimeoutMS to 10000ms', function () {
+        expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+        const options = autoEncrypter._mongocryptdClient.s.options;
+        expect(options).to.have.property('serverSelectionTimeoutMS', 10000);
+      });
+
+      context('when mongocryptdURI is not specified', () => {
+        it('sets the ip address family to ipv4', function () {
+          expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+          const options = autoEncrypter._mongocryptdClient.s.options;
+          expect(options).to.have.property('family', 4);
+        });
+      });
+
+      context('when mongocryptdURI is specified', () => {
+        it('does not set the ip address family to ipv4', function () {
+          const autoEncrypter = new AutoEncrypter(client, {
+            ...autoEncrypterOptions,
+            extraOptions: { mongocryptdURI: MongocryptdManager.DEFAULT_MONGOCRYPTD_URI }
+          });
+
+          expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+          const options = autoEncrypter._mongocryptdClient.s.options;
+          expect(options).not.to.have.property('family', 4);
+        });
+      });
+    });
   });
 
   it('should support `bypassAutoEncryption`', function (done) {
@@ -227,23 +281,6 @@ describe('AutoEncrypter', function () {
       expect(err).to.not.exist;
       expect(encrypted).to.eql({ test: 'command' });
       done();
-    });
-  });
-
-  context('when checking serverSelectionTimeoutMS on the mongocryptd client', function () {
-    const client = new MockClient();
-    const autoEncrypter = new AutoEncrypter(client, {
-      mongocryptdBypassSpawn: true,
-      keyVaultNamespace: 'admin.datakeys',
-      logger: () => {},
-      kmsProviders: {
-        aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-        local: { key: Buffer.alloc(96) }
-      }
-    });
-
-    it('defaults to 10000', function () {
-      expect(autoEncrypter._mongocryptdClient.s.options.serverSelectionTimeoutMS).to.equal(10000);
     });
   });
 

@@ -159,11 +159,20 @@ module.exports = function (modules) {
       // that we are not using the CSFLE shared library.
       if (!this._bypassMongocryptdAndCryptShared && !this.cryptSharedLibVersionInfo) {
         this._mongocryptdManager = new MongocryptdManager(options.extraOptions);
-        this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, {
+        const clientOptions = {
           useNewUrlParser: true,
           useUnifiedTopology: true,
           serverSelectionTimeoutMS: 10000
-        });
+        };
+
+        if (
+          options.extraOptions == null ||
+          typeof options.extraOptions.mongocryptdURI !== 'string'
+        ) {
+          clientOptions.family = 4;
+        }
+
+        this._mongocryptdClient = new MongoClient(this._mongocryptdManager.uri, clientOptions);
       }
     }
 

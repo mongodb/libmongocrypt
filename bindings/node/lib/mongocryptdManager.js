@@ -15,15 +15,10 @@ class MongocryptdManager {
   constructor(extraOptions) {
     extraOptions = extraOptions || {};
 
-    // TODO: this is not actually supported by the spec, so we should clarify
-    // with the spec or get rid of this
-    if (extraOptions.mongocryptdURI) {
-      this.uri = extraOptions.mongocryptdURI;
-    } else {
-      // TODO: eventually support connecting on Linux Socket for non-windows,
-      // blocked by SERVER-41029
-      this.uri = 'mongodb://localhost:27020/?serverSelectionTimeoutMS=1000';
-    }
+    this.uri =
+      typeof extraOptions.mongocryptdURI === 'string' && extraOptions.mongocryptdURI.length > 0
+        ? extraOptions.mongocryptdURI
+        : MongocryptdManager.DEFAULT_MONGOCRYPTD_URI;
 
     this.bypassSpawn = !!extraOptions.mongocryptdBypassSpawn;
 
@@ -65,5 +60,7 @@ class MongocryptdManager {
     process.nextTick(callback);
   }
 }
+
+MongocryptdManager.DEFAULT_MONGOCRYPTD_URI = 'mongodb://localhost:27020';
 
 module.exports = { MongocryptdManager };
