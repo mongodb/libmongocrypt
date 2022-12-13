@@ -31,9 +31,9 @@ typedef union {
 #define MLIB_INT128(N) MLIB_INIT (mlib_int128) MLIB_INT128_C (N)
 /// Define an int128 from a literal within [INT64_MIN, INT64_MAX] (usable as a
 /// constant init)
-#define MLIB_INT128_C(N)                 \
-   MLIB_INT128_FROM_PARTS (UINT64_C (N), \
-                           (UINT64_C (N) > INT64_MAX ? UINT64_MAX : 0))
+#define MLIB_INT128_C(N)                           \
+   MLIB_INT128_FROM_PARTS ((uint64_t) INT64_C (N), \
+                           (INT64_C (N) < 0 ? UINT64_MAX : 0))
 /**
  * @brief Cast an integral value to an mlib_int128
  *
