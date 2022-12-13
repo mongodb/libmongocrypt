@@ -17,7 +17,10 @@ class MongocryptdManager {
   constructor(extraOptions) {
     extraOptions = extraOptions || {};
 
-    this.uri = extraOptions.mongocryptdURI ?? MongocryptdManager.DEFAULT_MONGOCRYPTD_URI;
+    this.uri =
+      typeof extraOptions.mongocryptdURI === 'string' && extraOptions.mongocryptdURI.length > 0
+        ? extraOptions.mongocryptdURI
+        : MongocryptdManager.DEFAULT_MONGOCRYPTD_URI;
 
     this.bypassSpawn = !!extraOptions.mongocryptdBypassSpawn;
 
