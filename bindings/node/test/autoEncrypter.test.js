@@ -241,7 +241,7 @@ describe('AutoEncrypter', function () {
         expect(options).to.have.property('serverSelectionTimeoutMS', 10000);
       });
 
-      context('when no uri is specified', () => {
+      context('when mongocryptdURI is not specified', () => {
         it('sets the ip address family to ipv4', function () {
           expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
           const options = autoEncrypter._mongocryptdClient.s.options;
@@ -249,20 +249,7 @@ describe('AutoEncrypter', function () {
         });
       });
 
-      context('when the default mongocryptd uri is specified', function () {
-        it('does not set the ip address family to ipv4', function () {
-          const autoEncrypter = new AutoEncrypter(client, {
-            ...autoEncrypterOptions,
-            extraOptions: { mongocryptdURI: MongocryptdManager.DEFAULT_MONGOCRYPTD_URI }
-          });
-
-          expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
-          const options = autoEncrypter._mongocryptdClient.s.options;
-          expect(options).not.to.have.property('family', 4);
-        });
-      });
-
-      context('when a uri is specified', () => {
+      context('when mongocryptdURI is specified', () => {
         it('does not set the ip address family to ipv4', function () {
           const autoEncrypter = new AutoEncrypter(client, {
             ...autoEncrypterOptions,
