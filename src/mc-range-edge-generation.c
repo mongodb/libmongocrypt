@@ -123,6 +123,19 @@ mc_convert_to_bitstring_u32 (uint32_t in)
    return ret;
 }
 
+mc_bitstring
+mc_convert_to_bitstring_u128 (mlib_int128 i)
+{
+   const uint64_t lo = mlib_int128_to_u64 (i);
+   const uint64_t hi = mlib_int128_to_u64 (mlib_int128_rshift (i, 64));
+   mc_bitstring his = mc_convert_to_bitstring_u64 (hi);
+   mc_bitstring los = mc_convert_to_bitstring_u64 (lo);
+   mc_bitstring ret = {0};
+   strcpy (ret.str + 00, his.str);
+   strcpy (ret.str + 64, los.str);
+   return ret;
+}
+
 mc_edges_t *
 mc_getEdgesInt32 (mc_getEdgesInt32_args_t args, mongocrypt_status_t *status)
 {

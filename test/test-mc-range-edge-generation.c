@@ -273,6 +273,13 @@ _test_count_leading_zeros (_mongocrypt_tester_t *tester)
    ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 (UINT32_C (1)), ==, 31);
    ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 (UINT32_MAX), ==, 0);
    ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 ((~UINT32_C (0)) >> 1), ==, 1);
+
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u128 (MLIB_INT128 (0)), ==, 128);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u128 (MLIB_INT128 (8)), ==, 124);
+   ASSERT_CMPSIZE_T (
+      mc_count_leading_zeros_u128 ((mlib_int128) MLIB_INT128_FROM_PARTS (0, 8)),
+      ==,
+      60);
 }
 
 typedef struct {
@@ -284,6 +291,11 @@ typedef struct {
    uint64_t in;
    const char *expect;
 } bitstring_u64_test;
+
+typedef struct {
+   mlib_int128 in;
+   const char *expect;
+} bitstring_u128_test;
 
 static void
 _test_convert_to_bitstring (_mongocrypt_tester_t *tester)
@@ -323,6 +335,44 @@ _test_convert_to_bitstring (_mongocrypt_tester_t *tester)
       for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
          bitstring_u64_test *test = tests + i;
          mc_bitstring got = mc_convert_to_bitstring_u64 (test->in);
+         ASSERT_STREQUAL (test->expect, got.str);
+      }
+   }
+   // Tests for u128
+   {
+      bitstring_u128_test tests[] = {
+         {
+            .in = MLIB_INT128 (0),
+            .expect = "00000000000000000000000000000000000000000000000000000000"
+                      "00000000000000000000000000000000000000000000000000000000"
+                      "0000000000000000",
+         },
+         {
+            .in = MLIB_INT128 (1),
+            .expect = "00000000000000000000000000000000000000000000000000000000"
+                      "00000000000000000000000000000000000000000000000000000000"
+                      "0000000000000001",
+         },
+         {
+            .in = MLIB_INT128 (256),
+            .expect = "00000000000000000000000000000000000000000000000000000000"
+                      "00000000000000000000000000000000000000000000000000000000"
+                      "0000000100000000",
+         },
+         {
+            .in = mlib_int128_from_string (
+               "0b1011010010001011101010010100101010010101010101001010010100100"
+               "101010101010010001010011010110110100110010101010010101001111010"
+               "1011",
+               NULL),
+            .expect = "10110100100010111010100101001010100101010101010010100101"
+                      "00100101010101010010001010011010110110100110010101010010"
+                      "1010011110101011",
+         },
+      };
+      for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+         bitstring_u128_test *test = tests + i;
+         mc_bitstring got = mc_convert_to_bitstring_u128 (test->in);
          ASSERT_STREQUAL (test->expect, got.str);
       }
    }

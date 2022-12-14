@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include "mc-optional-private.h"
 #include "mongocrypt-status-private.h"
+#include <mlib/int128.h>
 
 // mc_edges_t represents a list of edges.
 typedef struct _mc_edges_t mc_edges_t;
@@ -81,7 +82,9 @@ mc_count_leading_zeros_u64 (uint64_t in)
 {
 #ifdef __has_builtin
 #if __has_builtin(__builtin_clzl)
-   return __builtin_clzl (in);
+   // Pointer-cast to ensure we are speaking the right type
+   unsigned long *p = &in;
+   return in ? __builtin_clzl (*p) : 64;
 #endif
 #endif
    uint64_t bit = UINT64_C (1) << 63;
@@ -99,7 +102,9 @@ mc_count_leading_zeros_u32 (uint32_t in)
 {
 #ifdef __has_builtin
 #if __has_builtin(__builtin_clz)
-   return __builtin_clz (in);
+   // Pointer-cast to ensure we are speaking the right type
+   unsigned int *p = &in;
+   return in ? __builtin_clz (*p) : 32;
 #endif
 #endif
    uint32_t bit = UINT32_C (1) << 31;
@@ -109,6 +114,15 @@ mc_count_leading_zeros_u32 (uint32_t in)
       ++count;
    }
    return count;
+}
+
+static inline size_t
+mc_count_leading_zeros_u128 (mlib_int128 in)
+{
+   size_t hi = mc_count_leading_zeros_u64 (
+      mlib_int128_to_u64 (mlib_int128_rshift (in, 64)));
+   size_t lo = mc_count_leading_zeros_u64 (mlib_int128_to_u64 (in));
+   return hi + ((hi == 64) * lo);
 }
 
 typedef struct mc_bitstring {
@@ -126,5 +140,8 @@ mc_convert_to_bitstring_u64 (uint64_t in);
 // value.
 mc_bitstring
 mc_convert_to_bitstring_u32 (uint32_t in);
+
+mc_bitstring
+mc_convert_to_bitstring_u128 (mlib_int128 i);
 
 #endif /* MC_RANGE_EDGE_GENERATION_PRIVATE_H */
