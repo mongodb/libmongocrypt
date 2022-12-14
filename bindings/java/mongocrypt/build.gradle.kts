@@ -100,7 +100,7 @@ val downloadUrl: String = "https://mciuploads.s3.amazonaws.com/libmongocrypt/jav
 
 val jnaMapping: Map<String, String> = mapOf(
     "rhel-62-64-bit" to "linux-x86-64",
-    "rhel-67-s390x" to "linux-s390x",
+    "rhel72-zseries-test" to "linux-s390x",
     "rhel-71-ppc64el" to "linux-ppc64le",
     "ubuntu1604-arm64" to "linux-aarch64",
     "windows-test" to "win32-x86-64",

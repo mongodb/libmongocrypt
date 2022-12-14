@@ -524,7 +524,7 @@ tasks:
   depends_on:
     - variant: rhel-62-64-bit
       name: build-and-test-and-upload
-    - variant: rhel-67-s390x
+    - variant: rhel72-zseries-test
       name: build-and-test-and-upload
     - variant: rhel-71-ppc64el
       name: build-and-test-and-upload
@@ -543,7 +543,7 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "rhel-62-64-bit" }
     - func: "download tarball"
-      vars: { variant_name: "rhel-67-s390x" }
+      vars: { variant_name: "rhel72-zseries-test" }
     - func: "download tarball"
       vars: { variant_name: "rhel-71-ppc64el" }
     - func: "download tarball"
@@ -613,8 +613,6 @@ tasks:
       name: build-and-test-and-upload
     - variant: rhel-62-64-bit
       name: build-and-test-and-upload
-    - variant: rhel-67-s390x
-      name: build-and-test-and-upload
     - variant: rhel-70-64-bit
       name: build-and-test-and-upload
     - variant: rhel-71-ppc64el
@@ -668,8 +666,6 @@ tasks:
       vars: { variant_name: "debian92" }
     - func: "download tarball"
       vars: { variant_name: "rhel-62-64-bit" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-67-s390x" }
     - func: "download tarball"
       vars: { variant_name: "rhel-70-64-bit" }
     - func: "download tarball"
@@ -1106,21 +1102,6 @@ buildvariants:
     has_packages: true
     packager_distro: rhel62
     packager_arch: x86_64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
-- name: rhel-67-s390x
-  display_name: "RHEL 6.7 s390x"
-  run_on: rhel67-zseries-test
-  expansions:
-    has_packages: true
-    packager_distro: rhel67
-    packager_arch: s390x
-    compile_env: CMAKE_EXE=/opt/cmake/bin/cmake
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
