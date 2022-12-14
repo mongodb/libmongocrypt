@@ -87,7 +87,7 @@ cd libmongocrypt
 ./cmake-build/test-mongocrypt
 ```
 
-libmongocrypt is [continuously built and published on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
+libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
 The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
 
 ### Troubleshooting ###
@@ -118,7 +118,7 @@ Do the following when releasing:
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, and `CHANGELOG.md`)
    - Create a branch named `rx.y`.
-   - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project to set `Branch Name` to `rx.y`.
+   - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"` or with `version = "1.0.0"` (depending on whether this is a pre-release or a final release).
 - Commit, create a new git tag, like `1.0.0-rc123` or `1.0.0`, and push.
    - Push both the branch ref and tag ref in the same command: `git push origin master 1.0.0-rc123` or `git push origin r1.0 1.0.0`

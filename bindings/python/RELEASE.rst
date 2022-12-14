@@ -55,6 +55,7 @@ Docker and a Windows machine.
    wheels for manylinux, macOS, and Windows. Wait for the "release-python-combine"
    task to complete and then download the "Release Python files all" archive. See:
    https://evergreen.mongodb.com/waterfall/libmongocrypt?bv_filter=release
+   (requires auth)
 
    The contents should look like this::
 
