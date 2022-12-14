@@ -76,23 +76,55 @@ mc_edges_t *
 mc_getEdgesDouble (mc_getEdgesDouble_args_t args, mongocrypt_status_t *status);
 
 // count_leading_zeros_u64 returns the number of leading 0 bits of `in`.
-size_t
-mc_count_leading_zeros_u64 (uint64_t in);
+static inline size_t
+mc_count_leading_zeros_u64 (uint64_t in)
+{
+#ifdef __has_builtin
+#if __has_builtin(__builtin_clzl)
+   return __builtin_clzl (in);
+#endif
+#endif
+   uint64_t bit = UINT64_C (1) << 63;
+   size_t count = 0;
+   while ((bit & in) == 0 && bit > 0) {
+      bit >>= 1;
+      ++count;
+   }
+   return count;
+}
 
 // count_leading_zeros_u32 returns the number of leading 0 bits of `in`.
-size_t
-mc_count_leading_zeros_u32 (uint32_t in);
+static inline size_t
+mc_count_leading_zeros_u32 (uint32_t in)
+{
+#ifdef __has_builtin
+#if __has_builtin(__builtin_clz)
+   return __builtin_clz (in);
+#endif
+#endif
+   uint32_t bit = UINT32_C (1) << 31;
+   int count = 0;
+   while ((bit & in) == 0 && bit > 0) {
+      bit >>= 1;
+      ++count;
+   }
+   return count;
+}
+
+typedef struct mc_bitstring {
+   char str[129];
+} mc_bitstring;
 
 // mc_convert_to_bitstring_u64 returns a 64 character string of 1's and 0's
 // representing the bits of `in`. Caller must call `bson_free` on returned
 // value.
-char *
+mc_bitstring
 mc_convert_to_bitstring_u64 (uint64_t in);
 
 // mc_convert_to_bitstring_u32 returns a 32 character string of 1's and 0's
 // representing the bits of `in`. Caller must call `bson_free` on returned
 // value.
-char *
+mc_bitstring
 mc_convert_to_bitstring_u32 (uint32_t in);
 
 #endif /* MC_RANGE_EDGE_GENERATION_PRIVATE_H */
