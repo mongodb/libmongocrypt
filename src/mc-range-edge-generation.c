@@ -92,7 +92,7 @@ mc_edges_destroy (mc_edges_t *edges)
 mc_bitstring
 mc_convert_to_bitstring_u64 (uint64_t in)
 {
-   mc_bitstring ret = {0};
+   mc_bitstring ret = {{0}};
    char *out = ret.str;
    uint64_t bit = UINT64_C (1) << 63;
    while (bit > 0) {
@@ -109,7 +109,7 @@ mc_convert_to_bitstring_u64 (uint64_t in)
 mc_bitstring
 mc_convert_to_bitstring_u32 (uint32_t in)
 {
-   mc_bitstring ret = {0};
+   mc_bitstring ret = {{0}};
    char *out = ret.str;
    uint32_t bit = UINT32_C (1) << 31;
    while (bit > 0) {
@@ -130,7 +130,7 @@ mc_convert_to_bitstring_u128 (mlib_int128 i)
    const uint64_t hi = mlib_int128_to_u64 (mlib_int128_rshift (i, 64));
    mc_bitstring his = mc_convert_to_bitstring_u64 (hi);
    mc_bitstring los = mc_convert_to_bitstring_u64 (lo);
-   mc_bitstring ret = {0};
+   mc_bitstring ret = {{0}};
    strcpy (ret.str + 00, his.str);
    strcpy (ret.str + 64, los.str);
    return ret;
@@ -207,6 +207,32 @@ mc_getEdgesDouble (mc_getEdgesDouble_args_t args, mongocrypt_status_t *status)
    mc_bitstring valueBin = mc_convert_to_bitstring_u64 (got.value);
    size_t offset = mc_count_leading_zeros_u64 (got.max);
    const char *leaf = valueBin.str + offset;
+   mc_edges_t *ret = mc_edges_new (leaf, args.sparsity, status);
+   return ret;
+}
+
+mc_edges_t *
+mc_getEdgesDecimal128 (mc_getEdgesDecimal128_args_t args,
+                       mongocrypt_status_t *status)
+{
+   mc_OSTType_Decimal128 got;
+   if (!mc_getTypeInfoDecimal128 (
+          (mc_getTypeInfoDecimal128_args_t){
+             .value = args.value,
+             .min = args.min,
+             .max = args.max,
+             .precision = args.precision,
+          },
+          &got,
+          status)) {
+      return NULL;
+   }
+
+   BSON_ASSERT (mlib_int128_eq (got.min, MLIB_INT128 (0)));
+
+   mc_bitstring bits = mc_convert_to_bitstring_u128 (got.value);
+   size_t offset = mc_count_leading_zeros_u128 (got.max);
+   const char *leaf = bits.str + offset;
    mc_edges_t *ret = mc_edges_new (leaf, args.sparsity, status);
    return ret;
 }

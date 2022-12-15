@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include "mc-optional-private.h"
 #include "mongocrypt-status-private.h"
+#include "mc-dec128.h"
 #include <mlib/int128.h>
 
 // mc_edges_t represents a list of edges.
@@ -76,15 +77,32 @@ typedef struct {
 mc_edges_t *
 mc_getEdgesDouble (mc_getEdgesDouble_args_t args, mongocrypt_status_t *status);
 
+typedef struct {
+   mc_dec128 value;
+   size_t sparsity;
+   mc_optional_dec128_t min, max;
+   mc_optional_uint32_t precision;
+} mc_getEdgesDecimal128_args_t;
+
+mc_edges_t *
+mc_getEdgesDecimal128 (mc_getEdgesDecimal128_args_t args,
+                       mongocrypt_status_t *status);
+
+
 // count_leading_zeros_u64 returns the number of leading 0 bits of `in`.
 static inline size_t
 mc_count_leading_zeros_u64 (uint64_t in)
 {
 #ifdef __has_builtin
 #if __has_builtin(__builtin_clzl)
-   // Pointer-cast to ensure we are speaking the right type
+// Pointer-cast to ensure we are speaking the right type
+#ifdef __APPLE__
+   unsigned long long *p = &in;
+   return in ? __builtin_clzll (*p) : 64;
+#else
    unsigned long *p = &in;
    return in ? __builtin_clzl (*p) : 64;
+#endif
 #endif
 #endif
    uint64_t bit = UINT64_C (1) << 63;

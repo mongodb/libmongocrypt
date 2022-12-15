@@ -56,7 +56,7 @@ typedef union _mcDec128Align (16)
 {
    uint64_t _words[2];
 #if !defined(__INTELLISENSE__) && defined(__GNUC__) && defined(__amd64) && \
-   !defined(__APPLE__)
+   !defined(__APPLE__) && !defined(__clang__)
    // If supported by the compiler, emit a field that can be used to visualize
    // the value in a debugger.
    float value_ __attribute__ ((mode (TD)));
