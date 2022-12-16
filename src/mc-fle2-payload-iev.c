@@ -162,9 +162,13 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
          mc_ServerDataEncryptionLevel1Token_get (token);
       uint32_t bytes_written;
 
-      _mongocrypt_buffer_resize (&iev->Inner,
-                                 _mongocrypt_fle2_calculate_plaintext_len (
-                                    iev->InnerEncrypted.len, status));
+      uint32_t plaintext_len = _mongocrypt_fle2_calculate_plaintext_len (
+         iev->InnerEncrypted.len, status);
+      if (!plaintext_len) {
+         mc_ServerDataEncryptionLevel1Token_destroy (token);
+         return false;
+      }
+      _mongocrypt_buffer_resize (&iev->Inner, plaintext_len);
 
       /* Decrypt InnerEncrypted. */
       if (!_mongocrypt_fle2_do_decryption (crypto,
