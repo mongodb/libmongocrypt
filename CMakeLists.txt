@@ -264,7 +264,11 @@ if (NOT USE_SHARED_LIBBSON)
    endif ()
 endif ()
 
-if (NOT WIN32)
+if (NOT WIN32 AND CMAKE_VERSION VERSION_GREATER 3.25)
+   # Do not enable conversion warnings with older cmake. Older cmake does not support
+   # including headers as system headers when the headers are added to the project via
+   # the add_subdirectory() CMake command. libbson produces conversion warnings and is
+   # included in ImportBSON.cmake.
    target_compile_options (mongocrypt PRIVATE -Wconversion -Wsign-conversion)
    target_compile_options (kms_message_static PRIVATE -Wconversion -Wsign-conversion)
 endif ()

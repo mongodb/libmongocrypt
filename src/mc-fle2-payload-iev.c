@@ -162,10 +162,11 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
          mc_ServerDataEncryptionLevel1Token_get (token);
       uint32_t bytes_written;
 
-      uint32_t plaintext_len = _mongocrypt_fle2_calculate_plaintext_len (
+      const uint32_t plaintext_len = _mongocrypt_fle2_calculate_plaintext_len (
          iev->InnerEncrypted.len, status);
       if (!plaintext_len) {
          mc_ServerDataEncryptionLevel1Token_destroy (token);
+         CLIENT_ERR ("plaintext length must be greater than 0");
          return false;
       }
       _mongocrypt_buffer_resize (&iev->Inner, plaintext_len);
@@ -252,9 +253,13 @@ mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
       return false;
    }
    /* Attempt to decrypt ClientEncryptedValue */
-   _mongocrypt_buffer_resize (&iev->ClientValue,
-                              _mongocrypt_fle2aead_calculate_plaintext_len (
-                                 iev->ClientEncryptedValue.len, status));
+   uint32_t plaintext_len = _mongocrypt_fle2aead_calculate_plaintext_len (
+      iev->ClientEncryptedValue.len, status);
+   if (plaintext_len == 0) {
+      CLIENT_ERR ("plaintext length must be greater than 0");
+      return false;
+   }
+   _mongocrypt_buffer_resize (&iev->ClientValue, plaintext_len);
    uint32_t bytes_written;
    if (!_mongocrypt_fle2aead_do_decryption (crypto,
                                             &iev->K_KeyId,

@@ -268,7 +268,7 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
       int64_t v_prime2 = (int64_t) ((v_prime - args.min.value) *
                                     exp10Double (args.precision.value));
 
-      BSON_ASSERT (v_prime2 >= 0);
+      BSON_ASSERT (v_prime2 < INT64_MAX && v_prime2 >= 0);
 
       uint64_t ret = (uint64_t) v_prime2;
 

@@ -169,9 +169,13 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
    AD.data[0] = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
    memcpy (AD.data + 1, uev->key_uuid.data, uev->key_uuid.len);
    AD.data[1 + uev->key_uuid.len] = uev->original_bson_type;
-   _mongocrypt_buffer_resize (&uev->plaintext,
-                              _mongocrypt_fle2aead_calculate_plaintext_len (
-                                 uev->ciphertext.len, status));
+   const uint32_t plaintext_len = _mongocrypt_fle2aead_calculate_plaintext_len (
+      uev->ciphertext.len, status);
+   if (plaintext_len == 0) {
+      CLIENT_ERR ("plaintext length must be greater than 0");
+      return NULL;
+   }
+   _mongocrypt_buffer_resize (&uev->plaintext, plaintext_len);
 
    uint32_t bytes_written;
 
@@ -232,9 +236,13 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
 
    /* Encrypt. */
    {
-      _mongocrypt_buffer_resize (out,
-                                 _mongocrypt_fle2aead_calculate_ciphertext_len (
-                                    plaintext->len, status));
+      const uint32_t cipherlen = _mongocrypt_fle2aead_calculate_ciphertext_len (
+         plaintext->len, status);
+      if (cipherlen == 0) {
+         CLIENT_ERR ("ciphertext length must be greater than 0");
+         goto fail;
+      }
+      _mongocrypt_buffer_resize (out, cipherlen);
       uint32_t bytes_written; /* unused. */
       if (!_mongocrypt_fle2aead_do_encryption (
              crypto, &iv, &AD, key, plaintext, out, &bytes_written, status)) {
