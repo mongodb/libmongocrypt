@@ -68,15 +68,25 @@ mc_mincover_destroy (mc_mincover_t *mincover)
    bson_free (mincover);
 }
 
-#define BITS 32
+#define UINT_T uint32_t
+#define UINT_C UINT32_C
+#define UINT_FMT_S PRIu32
+#define DECORATE_NAME(N) N##_u32
 #include "mc-range-mincover-generator.template.h"
-#undef BITS
+
+#define UINT_T uint64_t
+#define UINT_C UINT64_C
+#define UINT_FMT_S PRIu64
+#define DECORATE_NAME(N) N##_u64
+#include "mc-range-mincover-generator.template.h"
 
 // Check bounds and return an error message including the original inputs.
-#define CHECK_BOUNDS(args, FMT)                                                \
+#define IDENTITY(X) X
+#define LESSTHAN(L, R) ((L) < (R))
+#define CHECK_BOUNDS(args, FMT, FormatArg, LessThan)                           \
    if (1) {                                                                    \
       if ((args).min.set) {                                                    \
-         if ((args).upperBound < (args).min.value) {                           \
+         if (LessThan ((args).upperBound, (args).min.value)) {                 \
             CLIENT_ERR (                                                       \
                "Upper bound (%" FMT                                            \
                ") must be greater than or equal to the range minimum (%" FMT   \
@@ -86,7 +96,7 @@ mc_mincover_destroy (mc_mincover_t *mincover)
             return false;                                                      \
          }                                                                     \
          if (!(args).includeUpperBound &&                                      \
-             (args).upperBound <= (args).min.value) {                          \
+             !LessThan ((args.min.value), (args.upperBound))) {                \
             CLIENT_ERR ("Upper bound (%" FMT                                   \
                         ") must be greater than the range minimum (%" FMT      \
                         ") if upper bound is excluded from range",             \
@@ -96,7 +106,7 @@ mc_mincover_destroy (mc_mincover_t *mincover)
          }                                                                     \
       }                                                                        \
       if ((args).max.set) {                                                    \
-         if ((args).lowerBound > (args).max.value) {                           \
+         if (LessThan ((args).max.value, (args).lowerBound)) {                 \
             CLIENT_ERR (                                                       \
                "Lower bound (%" FMT                                            \
                ") must be less than or equal to the range maximum (%" FMT ")", \
@@ -105,7 +115,7 @@ mc_mincover_destroy (mc_mincover_t *mincover)
             return false;                                                      \
          }                                                                     \
          if (!(args).includeLowerBound &&                                      \
-             (args).lowerBound >= (args).max.value) {                          \
+             !LessThan ((args).lowerBound, (args).max.value)) {                \
             CLIENT_ERR ("Lower bound (%" FMT                                   \
                         ") must be less than the range maximum (%" FMT         \
                         ") if lower bound is excluded from range",             \
@@ -122,7 +132,7 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
                      mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (status);
-   CHECK_BOUNDS (args, PRId32);
+   CHECK_BOUNDS (args, PRId32, IDENTITY, LESSTHAN);
    mc_OSTType_Int32 a, b;
    if (!mc_getTypeInfo32 ((mc_getTypeInfo32_args_t){.min = args.min,
                                                     .max = args.max,
@@ -162,16 +172,12 @@ mc_getMincoverInt32 (mc_getMincoverInt32_args_t args,
    return mc;
 }
 
-#define BITS 64
-#include "mc-range-mincover-generator.template.h"
-#undef BITS
-
 mc_mincover_t *
 mc_getMincoverInt64 (mc_getMincoverInt64_args_t args,
                      mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (status);
-   CHECK_BOUNDS (args, PRId64);
+   CHECK_BOUNDS (args, PRId64, IDENTITY, LESSTHAN);
    mc_OSTType_Int64 a, b;
    if (!mc_getTypeInfo64 ((mc_getTypeInfo64_args_t){.min = args.min,
                                                     .max = args.max,
@@ -218,7 +224,7 @@ mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
                       mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (status);
-   CHECK_BOUNDS (args, "g");
+   CHECK_BOUNDS (args, "g", IDENTITY, LESSTHAN);
 
    mc_OSTType_Double a, b;
    if (!mc_getTypeInfoDouble (
