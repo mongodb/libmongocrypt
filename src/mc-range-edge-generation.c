@@ -21,8 +21,6 @@
 #include "mc-range-encoding-private.h"
 #include "mongocrypt-private.h"
 
-MC_BEGIN_CONVERSION_ERRORS
-
 struct _mc_edges_t {
    size_t sparsity;
    /* edges is an array of `char*` edge strings. */
@@ -64,7 +62,7 @@ const char *
 mc_edges_get (mc_edges_t *edges, size_t index)
 {
    BSON_ASSERT_PARAM (edges);
-   if (index > edges->edges.len - 1u) {
+   if (edges->edges.len == 0 || index > edges->edges.len - 1u) {
       return NULL;
    }
    return _mc_array_index (&edges->edges, char *, index);
@@ -230,5 +228,3 @@ mc_getEdgesDouble (mc_getEdgesDouble_args_t args, mongocrypt_status_t *status)
    bson_free (valueBin);
    return ret;
 }
-
-MC_END_CONVERSION_ERRORS

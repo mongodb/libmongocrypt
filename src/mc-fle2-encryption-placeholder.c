@@ -370,7 +370,16 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
                "invalid FLE2RangeFindSpec: 'firstOperator' must be an int32");
             goto fail;
          }
-         out->firstOperator = bson_iter_int32 (&iter);
+         const int32_t first_op = bson_iter_int32 (&iter);
+         if (first_op < FLE2RangeOperator_min_val ||
+             first_op > FLE2RangeOperator_max_val) {
+            CLIENT_ERR ("invalid FLE2RangeFindSpec: 'firstOperator' must be "
+                        "between %d and %d",
+                        FLE2RangeOperator_min_val,
+                        FLE2RangeOperator_max_val);
+            goto fail;
+         }
+         out->firstOperator = (mc_FLE2RangeOperator_t) first_op;
       }
       END_IF_FIELD
 
@@ -381,7 +390,16 @@ mc_FLE2RangeFindSpec_parse (mc_FLE2RangeFindSpec_t *out,
                "invalid FLE2RangeFindSpec: 'secondOperator' must be an int32");
             goto fail;
          }
-         out->secondOperator = bson_iter_int32 (&iter);
+         const int32_t second_op = bson_iter_int32 (&iter);
+         if (second_op < FLE2RangeOperator_min_val ||
+             second_op > FLE2RangeOperator_max_val) {
+            CLIENT_ERR ("invalid FLE2RangeFindSpec: 'secondOperator' must be "
+                        "between %d and %d",
+                        FLE2RangeOperator_min_val,
+                        FLE2RangeOperator_max_val);
+            goto fail;
+         }
+         out->secondOperator = (mc_FLE2RangeOperator_t) second_op;
       }
       END_IF_FIELD
    }

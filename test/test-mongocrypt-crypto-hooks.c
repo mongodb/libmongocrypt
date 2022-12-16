@@ -336,7 +336,7 @@ _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
       _mongocrypt_buffer_init (&ciphertext);
       _mongocrypt_buffer_resize (
          &ciphertext,
-         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
       ret = _mongocrypt_fle2_do_encryption (crypt->crypto,
                                             &iv,
                                             &key,
@@ -348,7 +348,8 @@ _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
       _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
       _mongocrypt_buffer_init (&ciphertext);
       _mongocrypt_buffer_resize (
-         &ciphertext, _mongocrypt_calculate_ciphertext_len (plaintext.len));
+         &ciphertext,
+         _mongocrypt_calculate_ciphertext_len (plaintext.len, status));
       ret = _mongocrypt_do_encryption (crypt->crypto,
                                        &iv,
                                        &associated_data,
@@ -441,7 +442,8 @@ _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
       _mongocrypt_buffer_copy_from_hex (&key, ENCRYPTION_KEY_HEX);
       _mongocrypt_buffer_init (&plaintext);
       _mongocrypt_buffer_resize (
-         &plaintext, _mongocrypt_fle2_calculate_plaintext_len (ciphertext.len));
+         &plaintext,
+         _mongocrypt_fle2_calculate_plaintext_len (ciphertext.len, status));
 
       ret = _mongocrypt_fle2_do_decryption (
          crypt->crypto, &key, &ciphertext, &plaintext, &bytes_written, status);
@@ -449,7 +451,8 @@ _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
       _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
       _mongocrypt_buffer_init (&plaintext);
       _mongocrypt_buffer_resize (
-         &plaintext, _mongocrypt_calculate_plaintext_len (ciphertext.len));
+         &plaintext,
+         _mongocrypt_calculate_plaintext_len (ciphertext.len, status));
 
       ret = _mongocrypt_do_decryption (crypt->crypto,
                                        &associated_data,
@@ -838,7 +841,7 @@ _test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_init (&ciphertext_reg);
    _mongocrypt_buffer_resize (
       &ciphertext_reg,
-      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
    ret = _mongocrypt_fle2_do_encryption (crypt_reg->crypto,
                                          &iv,
                                          &key,
@@ -854,7 +857,7 @@ _test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_init (&ciphertext_ecb);
    _mongocrypt_buffer_resize (
       &ciphertext_ecb,
-      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
+      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
    ret = _mongocrypt_fle2_do_encryption (crypt_ecb->crypto,
                                          &iv,
                                          &key,
@@ -871,7 +874,7 @@ _test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_init (&plaintext_ecb);
    _mongocrypt_buffer_resize (
       &plaintext_ecb,
-      _mongocrypt_fle2_calculate_plaintext_len (ciphertext_ecb.len));
+      _mongocrypt_fle2_calculate_plaintext_len (ciphertext_ecb.len, status));
    ret = _mongocrypt_fle2_do_decryption (crypt_ecb->crypto,
                                          &key,
                                          &ciphertext_ecb,

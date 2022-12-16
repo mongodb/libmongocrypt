@@ -21,10 +21,6 @@
 #include <float.h> // DBL_MAX
 #include <math.h>  // INFINITY, NAN
 
-/* Enable -Wconversion as error for only this file.
- * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CONVERSION_ERRORS
-
 typedef struct {
    mc_getTypeInfo32_args_t args;
    mc_OSTType_Int32 expect;
@@ -535,5 +531,3 @@ _mongocrypt_tester_install_range_encoding (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_RangeTest_Encode_Int64);
    INSTALL_TEST (_test_RangeTest_Encode_Double);
 }
-
-MC_END_CONVERSION_ERRORS

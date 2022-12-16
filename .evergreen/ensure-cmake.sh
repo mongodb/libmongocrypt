@@ -18,7 +18,7 @@
 . "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 # The version that we will attempt to obtain:
-: "${CMAKE_VERSION:=3.21.4}"
+: "${CMAKE_VERSION:=3.25.1}"
 
 # Root of all cached versions
 : "${CMAKE_CACHES_ROOT:="$BUILD_CACHE_DIR/cmake"}"

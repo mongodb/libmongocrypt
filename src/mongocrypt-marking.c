@@ -259,10 +259,11 @@ _mongocrypt_marking_cleanup (_mongocrypt_marking_t *marking)
          return true;                                                          \
       }                                                                        \
                                                                                \
+      BSON_ASSERT (counter >= 0);                                              \
       /* InsertUpdatePayload continues through *fromDataTokenAndCounter */     \
       mc_##Name##DerivedFromDataTokenAndCounter_t *fromTokenAndCounter =       \
          mc_##Name##DerivedFromDataTokenAndCounter_new (                       \
-            crypto, fromDataToken, counter, status);                           \
+            crypto, fromDataToken, (uint64_t) counter, status);                \
       mc_##Name##DerivedFromDataToken_destroy (fromDataToken);                 \
       if (!fromTokenAndCounter) {                                              \
          return false;                                                         \
@@ -298,7 +299,10 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv;
    const uint32_t cipherlen =
-      _mongocrypt_fle2_calculate_ciphertext_len (in->len);
+      _mongocrypt_fle2_calculate_ciphertext_len (in->len, status);
+   if (cipherlen == 0) {
+      return false;
+   }
    uint32_t written = 0;
 
    _mongocrypt_buffer_init_size (out, cipherlen);
@@ -336,7 +340,10 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv, key;
    const uint32_t cipherlen =
-      _mongocrypt_fle2aead_calculate_ciphertext_len (in->len);
+      _mongocrypt_fle2aead_calculate_ciphertext_len (in->len, status);
+   if (cipherlen == 0) {
+      return false;
+   }
    uint32_t written = 0;
    bool res;
 
@@ -828,6 +835,8 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
 
    // g:= array<EdgeTokenSet>
    {
+      BSON_ASSERT (placeholder->sparsity >= 0 &&
+                   (uint64_t) placeholder->sparsity <= (uint64_t) SIZE_MAX);
       edges = get_edges (&insertSpec, (size_t) placeholder->sparsity, status);
       if (!edges) {
          goto fail;
@@ -1190,6 +1199,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    BSON_ASSERT_PARAM (kb);
    BSON_ASSERT_PARAM (marking);
    BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
 
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
@@ -1199,6 +1209,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    _mongocrypt_buffer_t tokenKey = {0};
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
    BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
    _mongocrypt_ciphertext_init (ciphertext);
@@ -1236,6 +1247,8 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
 
       // g:= array<EdgeFindTokenSet>
       {
+         BSON_ASSERT (placeholder->sparsity >= 0 &&
+                      (uint64_t) placeholder->sparsity <= (uint64_t) SIZE_MAX);
          mincover = mc_get_mincover_from_FLE2RangeFindSpec (
             &findSpec, (size_t) placeholder->sparsity, status);
          if (!mincover) {
@@ -1333,6 +1346,7 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    bool res = false;
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder);
    BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED);
    _mongocrypt_ciphertext_init (ciphertext);
    _mongocrypt_buffer_from_iter (&plaintext, &placeholder->v_iter);
@@ -1430,7 +1444,11 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
    }
 
    _mongocrypt_buffer_from_iter (&plaintext, &marking->v_iter);
-   ciphertext->data.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
+   ciphertext->data.len =
+      _mongocrypt_calculate_ciphertext_len (plaintext.len, status);
+   if (ciphertext->data.len == 0) {
+      goto fail;
+   }
    ciphertext->data.data = bson_malloc (ciphertext->data.len);
    BSON_ASSERT (ciphertext->data.data);
 

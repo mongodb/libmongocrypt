@@ -23,10 +23,6 @@
 #include <math.h>        // INFINITY
 #include "mlib/thread.h" // mlib_once_flag
 
-/* Enable -Wconversion as error for only this file.
- * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CONVERSION_ERRORS
-
 static mc_FLE2RangeOperator_t
 get_operator_type (const char *key)
 {
@@ -125,6 +121,7 @@ parse_aggregate_expression (const bson_t *orig,
                             mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (orig);
+   BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
@@ -189,6 +186,7 @@ parse_match_expression (const bson_t *orig,
                         mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (orig);
+   BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
@@ -241,6 +239,9 @@ mc_FLE2RangeFindDriverSpec_parse (mc_FLE2RangeFindDriverSpec_t *spec,
                                   const bson_t *in,
                                   mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT (status || true);
+
    *spec = (mc_FLE2RangeFindDriverSpec_t){0};
    // `in` may be an Aggregate Expression with this form:
    // {$and: [{$gt: ["$age", 5]}, {$lt:["$age", 50]}]}
@@ -378,6 +379,7 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t *args,
                              _mongocrypt_buffer_t *out,
                              mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (args);
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT (status || true);
 
@@ -427,6 +429,7 @@ mc_makeRangeFindPlaceholder (mc_makeRangeFindPlaceholder_args_t *args,
    TRY (BSON_APPEND_INT64 (p, "s", args->sparsity));
 #undef TRY
 
+   BSON_ASSERT (p->len < UINT32_MAX);
    _mongocrypt_buffer_resize (out, p->len + 1u);
    out->subtype = BSON_SUBTYPE_ENCRYPTED;
    out->data[0] = MC_SUBTYPE_FLE2EncryptionPlaceholder;
@@ -653,5 +656,3 @@ mc_getNextPayloadId (void)
    }
    return ret;
 }
-
-MC_END_CONVERSION_ERRORS

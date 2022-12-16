@@ -24,8 +24,6 @@
 #include "mc-range-mincover-private.h"
 #include "mongocrypt-private.h"
 
-MC_BEGIN_CONVERSION_ERRORS
-
 struct _mc_mincover_t {
    /* mincover is an array of `char*` edge strings. */
    mc_array_t mincover;
@@ -43,7 +41,7 @@ const char *
 mc_mincover_get (mc_mincover_t *mincover, size_t index)
 {
    BSON_ASSERT_PARAM (mincover);
-   if (index > mincover->mincover.len - 1) {
+   if (mincover->mincover.len == 0 || index > mincover->mincover.len - 1u) {
       return NULL;
    }
    return _mc_array_index (&mincover->mincover, char *, index);
@@ -264,5 +262,3 @@ mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
    MinCoverGenerator_destroy_u64 (mcg);
    return mc;
 }
-
-MC_END_CONVERSION_ERRORS

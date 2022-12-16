@@ -1124,9 +1124,14 @@ _marking_to_bson_value (void *ctx,
        (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindRangePayload)) {
       /* ciphertext_data is already a BSON object, just need to prepend
        * blob_subtype */
+      if (ciphertext.data.len > UINT32_MAX - 1u) {
+         CLIENT_ERR ("ciphertext too long");
+         goto fail;
+      }
       _mongocrypt_buffer_init_size (&serialized_ciphertext,
                                     ciphertext.data.len + 1);
-      serialized_ciphertext.data[0] = ciphertext.blob_subtype;
+      /* ciphertext->blob_subtype is an enum and easily fits in uint8_t */
+      serialized_ciphertext.data[0] = (uint8_t) ciphertext.blob_subtype;
       memcpy (serialized_ciphertext.data + 1,
               ciphertext.data.data,
               ciphertext.data.len);
@@ -1141,7 +1146,7 @@ _marking_to_bson_value (void *ctx,
    out->value_type = BSON_TYPE_BINARY;
    out->value.v_binary.data = serialized_ciphertext.data;
    out->value.v_binary.data_len = serialized_ciphertext.len;
-   out->value.v_binary.subtype = (bson_subtype_t) 6;
+   out->value.v_binary.subtype = (bson_subtype_t) BSON_SUBTYPE_ENCRYPTED;
 
    ret = true;
 
@@ -1211,6 +1216,10 @@ generate_delete_tokens (_mongocrypt_crypto_t *crypto,
       }
 
       /* Get the TokenKey from the last 32 bytes of IndexKey */
+      if (IndexKey.len < MONGOCRYPT_TOKEN_KEY_LEN) {
+         CLIENT_ERR ("IndexKey too short");
+         goto loop_fail;
+      }
       if (!_mongocrypt_buffer_from_subrange (&TokenKey,
                                              &IndexKey,
                                              IndexKey.len -
@@ -1430,6 +1439,10 @@ _fle2_append_compactionTokens (_mongocrypt_crypto_t *crypto,
          goto ecoc_fail;
       }
       /* The last 32 bytes of the user key are the token key. */
+      if (key.len < MONGOCRYPT_TOKEN_KEY_LEN) {
+         CLIENT_ERR ("key too short");
+         goto ecoc_fail;
+      }
       if (!_mongocrypt_buffer_from_subrange (&tokenkey,
                                              &key,
                                              key.len - MONGOCRYPT_TOKEN_KEY_LEN,
@@ -2295,7 +2308,7 @@ _permitted_for_encryption (bson_iter_t *iter,
       CLIENT_ERR ("BSON type invalid for encryption");
       goto fail;
    case BSON_TYPE_BINARY:
-      if (bson_value->value.v_binary.subtype == 6) {
+      if (bson_value->value.v_binary.subtype == BSON_SUBTYPE_ENCRYPTED) {
          CLIENT_ERR ("BSON binary subtype 6 is invalid for encryption");
          goto fail;
       }

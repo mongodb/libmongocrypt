@@ -83,7 +83,7 @@ _replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
       goto fail;
    }
 
-   uint8_t original_bson_type =
+   uint8_t original_bson_type = (uint8_t)
       mc_FLE2IndexedEncryptedValue_get_original_bson_type (iev, status);
    if (0 == original_bson_type) {
       goto fail;
@@ -143,7 +143,7 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
       goto fail;
    }
 
-   uint8_t original_bson_type =
+   uint8_t original_bson_type = (uint8_t)
       mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev, status);
    if (0 == original_bson_type) {
       goto fail;
@@ -261,7 +261,11 @@ _replace_ciphertext_with_plaintext (void *ctx,
       goto fail;
    }
 
-   plaintext.len = _mongocrypt_calculate_plaintext_len (ciphertext.data.len);
+   plaintext.len =
+      _mongocrypt_calculate_plaintext_len (ciphertext.data.len, status);
+   if (plaintext.len == 0) {
+      goto fail;
+   }
    plaintext.data = bson_malloc0 (plaintext.len);
    BSON_ASSERT (plaintext.data);
 

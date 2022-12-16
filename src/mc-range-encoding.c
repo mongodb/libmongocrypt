@@ -27,10 +27,6 @@
 #error Error: Twos complement integer representation is required.
 #endif
 
-/* Enable -Wconversion as error for only this file.
- * Other libmongocrypt files warn for -Wconversion. */
-MC_BEGIN_CONVERSION_ERRORS
-
 /**
  * Encode a signed 32-bit integer as an unsigned 32-bit integer by adding 2^31.
  * Some documentation references this as making the value "unbiased".
@@ -317,5 +313,3 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
 
    return true;
 }
-
-MC_END_CONVERSION_ERRORS
