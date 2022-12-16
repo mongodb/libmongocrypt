@@ -80,6 +80,20 @@ mc_mincover_destroy (mc_mincover_t *mincover)
 #define DECORATE_NAME(N) N##_u64
 #include "mc-range-mincover-generator.template.h"
 
+#define UINT_T mlib_int128
+#define UINT_C MLIB_INT128
+#define UINT_FMT_S "s"
+#define UINT_FMT_ARG(X) (mlib_int128_format (X).str)
+#define DECORATE_NAME(N) N##_u128
+#define UINT_LESSTHAN(L, R) (mlib_int128_ucmp (L, R) < 0)
+#define UINT_ADD mlib_int128_add
+#define UINT_SUB mlib_int128_sub
+#define UINT_LSHIFT mlib_int128_lshift
+#define MC_UINT_MAX MLIB_INT128_UMAX
+#define UINT_BITOR mlib_int128_bitor
+#include "mc-range-mincover-generator.template.h"
+
+
 // Check bounds and return an error message including the original inputs.
 #define IDENTITY(X) X
 #define LESSTHAN(L, R) ((L) < (R))
@@ -266,5 +280,56 @@ mc_getMincoverDouble (mc_getMincoverDouble_args_t args,
    }
    mc_mincover_t *mc = MinCoverGenerator_minCover_u64 (mcg);
    MinCoverGenerator_destroy_u64 (mcg);
+   return mc;
+}
+
+mc_mincover_t *
+mc_getMincoverDecimal128 (mc_getMincoverDecimal128_args_t args,
+                          mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (status);
+#define ToString(Dec) (mc_dec128_to_string (Dec).str)
+   CHECK_BOUNDS (args, "s", ToString, mc_dec128_less);
+
+   mc_OSTType_Decimal128 a, b;
+   if (!mc_getTypeInfoDecimal128 (
+          (mc_getTypeInfoDecimal128_args_t){.value = args.lowerBound,
+                                            .min = args.min,
+                                            .max = args.max,
+                                            .precision = args.precision},
+          &a,
+          status)) {
+      return NULL;
+   }
+   if (!mc_getTypeInfoDecimal128 (
+          (mc_getTypeInfoDecimal128_args_t){.value = args.upperBound,
+                                            .min = args.min,
+                                            .max = args.max,
+                                            .precision = args.precision},
+          &b,
+          status)) {
+      return NULL;
+   }
+
+   BSON_ASSERT (mlib_int128_eq (a.min, b.min));
+   BSON_ASSERT (mlib_int128_eq (a.max, b.max));
+
+   if (!adjustBounds_u128 (&a.value,
+                           args.includeLowerBound,
+                           a.min,
+                           &b.value,
+                           args.includeUpperBound,
+                           b.max,
+                           status)) {
+      return NULL;
+   }
+
+   MinCoverGenerator_u128 *mcg = MinCoverGenerator_new_u128 (
+      a.value, b.value, a.max, args.sparsity, status);
+   if (!mcg) {
+      return NULL;
+   }
+   mc_mincover_t *mc = MinCoverGenerator_minCover_u128 (mcg);
+   MinCoverGenerator_destroy_u128 (mcg);
    return mc;
 }

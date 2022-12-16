@@ -106,6 +106,21 @@ typedef struct {
    const char *expectError;
 } DoubleTest;
 
+typedef struct {
+   mc_dec128 lowerBound;
+   bool includeLowerBound;
+   mc_dec128 upperBound;
+   bool includeUpperBound;
+   size_t sparsity;
+   mc_optional_dec128_t min;
+   mc_optional_dec128_t max;
+   mc_optional_uint32_t precision;
+   /* expectMincoverString is newline delimitted list of strings. */
+   const char *expectMincoverString;
+   mc_array_t expectMincover;
+   const char *expectError;
+} Decimal128Test;
+
 typedef struct _test_getMincover_args {
    mc_mincover_t *(*getMincover) (void *tests,
                                   size_t idx,
@@ -174,6 +189,28 @@ _test_getMincoverDouble_helper (void *tests,
       status);
 }
 
+static mc_mincover_t *
+_test_getMincoverDecimal128_helper (void *tests,
+                                    size_t idx,
+                                    mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (tests);
+
+   Decimal128Test *const test = (Decimal128Test *) tests + idx;
+
+   return mc_getMincoverDecimal128 (
+      (mc_getMincoverDecimal128_args_t){
+         .lowerBound = test->lowerBound,
+         .includeLowerBound = test->includeLowerBound,
+         .upperBound = test->upperBound,
+         .includeUpperBound = test->includeUpperBound,
+         .sparsity = test->sparsity,
+         .min = test->min,
+         .max = test->max,
+         .precision = test->precision},
+      status);
+}
+
 static const char *
 _test_expectError32 (void *tests, size_t idx)
 {
@@ -193,6 +230,13 @@ _test_expectErrorDouble (void *tests, size_t idx)
 {
    BSON_ASSERT_PARAM (tests);
    return ((DoubleTest *) tests + idx)->expectError;
+}
+
+static const char *
+_test_expectErrorDecimal128 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return ((Decimal128Test *) tests + idx)->expectError;
 }
 
 static void
@@ -219,6 +263,14 @@ _test_expectMincover_initDouble (void *tests, size_t idx)
    expectMincover_init (&test->expectMincover, test->expectMincoverString);
 }
 
+static void
+_test_expectMincover_initDecimal128 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   Decimal128Test *const test = (Decimal128Test *) tests + idx;
+   expectMincover_init (&test->expectMincover, test->expectMincoverString);
+}
+
 static mc_array_t *
 _test_expectMincover32 (void *tests, size_t idx)
 {
@@ -238,6 +290,13 @@ _test_expectMincoverDouble (void *tests, size_t idx)
 {
    BSON_ASSERT_PARAM (tests);
    return &((DoubleTest *) tests + idx)->expectMincover;
+}
+
+static mc_array_t *
+_test_expectMincoverDecimal128 (void *tests, size_t idx)
+{
+   BSON_ASSERT_PARAM (tests);
+   return &((Decimal128Test *) tests + idx)->expectMincover;
 }
 
 static void
@@ -315,6 +374,38 @@ _test_dump_Double (void *tests, size_t idx, mc_mincover_t *got)
    }
    if (test->max.set) {
       fprintf (stderr, " max=%f", test->max.value);
+   }
+   if (test->precision.set) {
+      fprintf (stderr, " precision=%" PRIu32, test->precision.value);
+   }
+   fprintf (stderr, " sparsity=%zu\n", test->sparsity);
+   fprintf (stderr, "mincover expected ... begin\n");
+   fprintf (stderr, "%s", test->expectMincoverString);
+   fprintf (stderr, "mincover expected ... end\n");
+   fprintf (stderr, "mincover got ... begin\n");
+   for (size_t i = 0; i < mc_mincover_len (got); i++) {
+      fprintf (stderr, "  %s\n", mc_mincover_get (got, i));
+   }
+   fprintf (stderr, "mincover got ... end\n");
+}
+
+static void
+_test_dump_Decimal128 (void *tests, size_t idx, mc_mincover_t *got)
+{
+   BSON_ASSERT_PARAM (tests);
+   Decimal128Test *const test = (Decimal128Test *) tests + idx;
+   fflush (stdout); // Avoid incomplete stdout output from prior tests on error
+   fprintf (stderr,
+            "testcase: lowerBound=%s (%s) upperBound=%s (%s)",
+            mc_dec128_to_string (test->lowerBound).str,
+            test->includeLowerBound ? "inclusive" : "exclusive",
+            mc_dec128_to_string (test->upperBound).str,
+            test->includeUpperBound ? "inclusive" : "exclusive");
+   if (test->min.set) {
+      fprintf (stderr, " min=%s", mc_dec128_to_string (test->min.value).str);
+   }
+   if (test->max.set) {
+      fprintf (stderr, " max=%s", mc_dec128_to_string (test->max.value).str);
    }
    if (test->precision.set) {
       fprintf (stderr, " precision=%" PRIu32, test->precision.value);
@@ -543,10 +634,30 @@ _test_getMincoverDouble (_mongocrypt_tester_t *tester)
                                .dump = _test_dump_Double});
 }
 
+static void
+_test_getMincoverDecimal128 (_mongocrypt_tester_t *tester)
+{
+   Decimal128Test tests[] = {
+// #include "./data/range-min-cover/mincover_decimal128.cstruct"
+#include "./data/range-min-cover/mincover_decimal128_precision.cstruct"
+   };
+
+   _test_getMincover_impl (
+      tests,
+      sizeof (tests) / sizeof (tests[0]),
+      (_test_getMincover_args){
+         .getMincover = _test_getMincoverDecimal128_helper,
+         .expectMincover_init = _test_expectMincover_initDecimal128,
+         .expectMincover = _test_expectMincoverDecimal128,
+         .expectError = _test_expectErrorDecimal128,
+         .dump = _test_dump_Decimal128});
+}
+
 void
 _mongocrypt_tester_install_range_mincover (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_getMincoverInt32);
    INSTALL_TEST (_test_getMincoverInt64);
    INSTALL_TEST (_test_getMincoverDouble);
+   INSTALL_TEST (_test_getMincoverDecimal128);
 }
