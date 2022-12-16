@@ -166,7 +166,6 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
          iev->InnerEncrypted.len, status);
       if (!plaintext_len) {
          mc_ServerDataEncryptionLevel1Token_destroy (token);
-         CLIENT_ERR ("plaintext length must be greater than 0");
          return false;
       }
       _mongocrypt_buffer_resize (&iev->Inner, plaintext_len);

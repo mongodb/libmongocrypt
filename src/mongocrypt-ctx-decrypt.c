@@ -264,7 +264,6 @@ _replace_ciphertext_with_plaintext (void *ctx,
    plaintext.len =
       _mongocrypt_calculate_plaintext_len (ciphertext.data.len, status);
    if (plaintext.len == 0) {
-      CLIENT_ERR ("plaintext length must be greater than 0");
       goto fail;
    }
    plaintext.data = bson_malloc0 (plaintext.len);

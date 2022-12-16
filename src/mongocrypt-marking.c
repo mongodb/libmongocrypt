@@ -301,7 +301,6 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
    const uint32_t cipherlen =
       _mongocrypt_fle2_calculate_ciphertext_len (in->len, status);
    if (cipherlen == 0) {
-      CLIENT_ERR ("ciphertext length must be greater than 0");
       return false;
    }
    uint32_t written = 0;
@@ -343,7 +342,6 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
    const uint32_t cipherlen =
       _mongocrypt_fle2aead_calculate_ciphertext_len (in->len, status);
    if (cipherlen == 0) {
-      CLIENT_ERR ("ciphertext length must be greater than 0");
       return false;
    }
    uint32_t written = 0;
@@ -1449,7 +1447,6 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
    ciphertext->data.len =
       _mongocrypt_calculate_ciphertext_len (plaintext.len, status);
    if (ciphertext->data.len == 0) {
-      CLIENT_ERR ("ciphertext length must be greater than 0");
       goto fail;
    }
    ciphertext->data.data = bson_malloc (ciphertext->data.len);

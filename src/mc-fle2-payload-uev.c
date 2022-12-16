@@ -172,7 +172,6 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
    const uint32_t plaintext_len = _mongocrypt_fle2aead_calculate_plaintext_len (
       uev->ciphertext.len, status);
    if (plaintext_len == 0) {
-      CLIENT_ERR ("plaintext length must be greater than 0");
       return NULL;
    }
    _mongocrypt_buffer_resize (&uev->plaintext, plaintext_len);
@@ -239,7 +238,6 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
       const uint32_t cipherlen = _mongocrypt_fle2aead_calculate_ciphertext_len (
          plaintext->len, status);
       if (cipherlen == 0) {
-         CLIENT_ERR ("ciphertext length must be greater than 0");
          goto fail;
       }
       _mongocrypt_buffer_resize (out, cipherlen);
