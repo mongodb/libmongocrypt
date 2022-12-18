@@ -567,7 +567,6 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_resize (
          &ciphertext_got,
          _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext.len, status));
-      status = mongocrypt_status_new ();
 
       /* Test encrypt. */
       ret = _mongocrypt_fle2aead_do_encryption (crypt->crypto,

@@ -225,7 +225,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       ASSERT_FAILS_STATUS (mc_FLE2IndexedEncryptedValue_add_S_Key (
                               crypt->crypto, iev, &incorrect_S_Key, status),
                            status,
-                           "expected Inner byte length");
+                           "expected byte length");
       mc_FLE2IndexedEncryptedValue_destroy (iev);
       _mongocrypt_buffer_cleanup (&incorrect_S_Key);
       mongocrypt_status_destroy (status);
