@@ -30,7 +30,7 @@
                                 }
                             },
                             "path": "encrypted",
-                            "bsonType": "double",
+                            "bsonType": "decimal",
                             "queries": {
                                 "queryType": "rangePreview",
                                 "contention": {

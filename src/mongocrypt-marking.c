@@ -1176,10 +1176,30 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
       }
       return mc_getMincoverDouble (args, status);
    }
-   case BSON_TYPE_DECIMAL128:
-      CLIENT_ERR ("FLE2 find not yet implemented for type: %s",
-                  mc_bson_type_to_string (bsonType));
-      return NULL;
+   case BSON_TYPE_DECIMAL128: {
+      BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DECIMAL128);
+      BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DECIMAL128);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMin) ==
+                   BSON_TYPE_DECIMAL128);
+      BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMax) ==
+                   BSON_TYPE_DECIMAL128);
+
+      mc_getMincoverDecimal128_args_t args = {
+         .lowerBound = mc_dec128_from_bson_iter (&lowerBound),
+         .includeLowerBound = includeLowerBound,
+         .upperBound = mc_dec128_from_bson_iter (&upperBound),
+         .includeUpperBound = includeUpperBound,
+         .sparsity = sparsity,
+      };
+      if (findSpec->edgesInfo.value.precision.set) {
+         args.min = OPT_MC_DEC128 (
+            mc_dec128_from_bson_iter (&findSpec->edgesInfo.value.indexMin));
+         args.max = OPT_MC_DEC128 (
+            mc_dec128_from_bson_iter (&findSpec->edgesInfo.value.indexMax));
+         args.precision = findSpec->edgesInfo.value.precision;
+      }
+      return mc_getMincoverDecimal128 (args, status);
+   }
 
    case BSON_TYPE_EOD:
    case BSON_TYPE_UTF8:
