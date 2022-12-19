@@ -1,6 +1,8 @@
 #ifndef MC_DEC128_H_INCLUDED
 #define MC_DEC128_H_INCLUDED
 
+#include <bson/bson.h>
+
 #include <mlib/macros.h>
 #include <mlib/int128.h>
 #include <mlib/endian.h>
@@ -590,6 +592,27 @@ mc_dec128_to_new_decimal_string (mc_dec128 d)
       free (frac);
       return ret;
    }
+}
+
+static inline mc_dec128
+mc_dec128_from_bson_iter (bson_iter_t *it)
+{
+   bson_decimal128_t b;
+   if (!bson_iter_decimal128 (it, &b)) {
+      mc_dec128 nan = MC_DEC128_POSITIVE_NAN;
+      return nan;
+   }
+   mc_dec128 ret;
+   memcpy (&ret, &b, sizeof b);
+   return ret;
+}
+
+static inline bson_decimal128_t
+mc_dec128_to_bson_decimal128 (mc_dec128 v)
+{
+   bson_decimal128_t ret;
+   memcpy (&ret, &v, sizeof ret);
+   return ret;
 }
 
 MLIB_C_LINKAGE_END

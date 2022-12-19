@@ -701,6 +701,22 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
       return mc_getEdgesDouble (args, status);
    }
 
+   else if (value_type == BSON_TYPE_DECIMAL128) {
+      const mc_dec128 value = mc_dec128_from_bson_iter (&insertSpec->v);
+      mc_getEdgesDecimal128_args_t args = {
+         .value = value,
+         .sparsity = sparsity,
+      };
+      if (insertSpec->precision.set) {
+         const mc_dec128 min = mc_dec128_from_bson_iter (&insertSpec->min);
+         const mc_dec128 max = mc_dec128_from_bson_iter (&insertSpec->max);
+         args.min = OPT_MC_DEC128 (min);
+         args.max = OPT_MC_DEC128 (max);
+         args.precision = insertSpec->precision;
+      }
+      return mc_getEdgesDecimal128 (args, status);
+   }
+
 
    CLIENT_ERR ("unsupported BSON type: %s for range",
                mc_bson_type_to_string (value_type));

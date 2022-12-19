@@ -33,7 +33,7 @@
                                 }
                             },
                             "path": "encrypted",
-                            "bsonType": "long",
+                            "bsonType": "decimal",
                             "queries": {
                                 "queryType": "rangePreview",
                                 "contention": {

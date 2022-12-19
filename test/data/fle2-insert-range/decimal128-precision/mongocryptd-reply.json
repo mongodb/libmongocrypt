@@ -33,7 +33,7 @@
                                 }
                             },
                             "path": "encrypted",
-                            "bsonType": "long",
+                            "bsonType": "decimal",
                             "queries": {
                                 "queryType": "rangePreview",
                                 "contention": {
@@ -41,6 +41,15 @@
                                 },
                                 "sparsity": {
                                     "$numberInt": "1"
+                                },
+                                "min": {
+                                    "$numberDecimal": "0"
+                                },
+                                "max": {
+                                    "$numberDecimal": "1234567890123456789"
+                                },
+                                "precision": {
+                                    "$numberInt": "2"
                                 }
                             }
                         }
