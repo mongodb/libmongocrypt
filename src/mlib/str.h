@@ -17,6 +17,8 @@
 #include <strings.h> /* For strncasecmp. */
 #endif
 
+MLIB_C_LINKAGE_BEGIN
+
 /**
  * @brief A simple non-owning string-view type.
  *
@@ -960,5 +962,19 @@ _mstr_split_iter_done_ (struct _mstr_split_iter_ *iter)
            _iter_var_.once;                                       \
            --_iter_var_.once)
 // clang-format on
+
+/**
+ * @brief Equivalent to strlen(), but has a constexpr annotation.
+ */
+static mlib_constexpr_fn size_t
+mlib_strlen (const char *s)
+{
+   size_t r = 0;
+   for (; *s; ++r, ++s) {
+   }
+   return r;
+}
+
+MLIB_C_LINKAGE_END
 
 #endif // MONGOCRYPT_STR_PRIVATE_H
