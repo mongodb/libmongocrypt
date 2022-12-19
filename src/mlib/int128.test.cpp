@@ -4,6 +4,7 @@
 #include <random>
 #include <thread>
 #include <string>
+#include <vector>
 
 #if (defined(__GNUC__) && __GNUC__ < 7 && !defined(__clang__)) || \
    (defined(_MSC_VER) && _MSC_VER < 1920)
@@ -312,7 +313,7 @@ main ()
    CHECK (mlib_int128_mul (MLIB_INT128_CAST (-7), MLIB_INT128_CAST (-7)) ==
           49_i128);
 
-   // It's useful it specify bit patterns directly
+   // It's useful to specify bit patterns directly
    auto in_binary =
       0b110101010110100100001101111001111010100010111100100101101011010110101001010110110011000100000100011110010101101001111110001000_i128;
    CHECK (in_binary == 70917759074396274376598533126648930184_i128);
@@ -379,14 +380,13 @@ main ()
       // division checks. It doesn't need to be rigorous or optimal, it only
       // needs to "just work."
       std::vector<std::thread> threads;
-      threads.resize (15);
       // Pick every denominator bit pattern from 0b00'01 to 0b11'11:
       for (auto dbits = 1u; dbits < 16u; ++dbits) {
          // Randomness:
          std::mt19937 random;
          random.seed (seed);
          // Spawn a thread for this denominator bit pattern:
-         threads[dbits - 1] = std::thread{[nbits, dbits, random] () mutable {
+         threads.emplace_back ([nbits, dbits, random] () mutable {
             std::uniform_int_distribution<std::uint32_t> dist;
             // 100k random divisions:
             for (auto i = 0; i < 100000; ++i) {
@@ -412,7 +412,7 @@ main ()
                // Divide them:
                div_check (num, den);
             }
-         }};
+         });
       }
       // Join the threads that are dividing:
       for (auto &t : threads) {

@@ -284,7 +284,8 @@ _mlibKnuth431D (uint32_t *const u,
                 const int vlen,
                 uint32_t *quotient)
 {
-   // Part D1 (normalization) is done by caller, normalized in u and v (b is 32)
+   // Part D1 (normalization) is done by caller,
+   // normalized in u and v (radix b is 2^32)
    typedef uint64_t u64;
    typedef int64_t i64;
    typedef uint32_t u32;
@@ -347,7 +348,7 @@ _mlibKnuth431D (uint32_t *const u,
       }
    }
 
-   // Denomralization (D8) is done by caller.
+   // Denormalization (D8) is done by caller.
 }
 
 /// The result of 128-bit division
@@ -379,7 +380,7 @@ _mlibDivide_u128_by_u64 (const mlib_int128 numer, const uint64_t denom)
       const u64 n0 = (u32) (numer.r.lo);
       const u64 n1 = (u32) (numer.r.lo >> 32);
 
-      // We don't need to split n2 and n3. (n3,n2) will be the first parital
+      // We don't need to split n2 and n3. (n3,n2) will be the first partial
       // dividend
       const u64 n3_n2 = numer.r.hi;
 
@@ -655,7 +656,7 @@ static mlib_constexpr_fn mlib_int128_charbuf
 mlib_int128_format (mlib_int128 i)
 {
    mlib_int128_charbuf into = {0};
-   char *out = into.str + sizeof into - 1;
+   char *out = into.str + (sizeof into) - 1;
    int len = 0;
    if (mlib_int128_eq (i, MLIB_INT128 (0))) {
       *out-- = '0';
