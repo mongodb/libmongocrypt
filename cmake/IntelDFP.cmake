@@ -4,7 +4,7 @@ find_program (GIT_EXECUTABLE git)
 
 set (_default_url "https://netlib.org/misc/intel/IntelRDFPMathLib20U2.tar.gz")
 
-set (INTEL_DFP_LIBRARY_URL "${default_url}"
+set (INTEL_DFP_LIBRARY_URL "${_default_url}"
      CACHE STRING "The URL of an Intel DFP library to use")
 set (INTEL_DFP_LIBRARY_URL_HASH
      "SHA256=93c0c78e0989df88f8540bf38d6743734804cef1e40706fd8fe5c6a03f79e173"
