@@ -98,10 +98,10 @@ mc_count_leading_zeros_u64 (uint64_t in)
 // Pointer-cast to ensure we are speaking the right type
 #ifdef __APPLE__
    unsigned long long *p = &in;
-   return in ? __builtin_clzll (*p) : 64;
+   return (size_t) (in ? __builtin_clzll (*p) : 64);
 #else
    unsigned long *p = &in;
-   return in ? __builtin_clzl (*p) : 64;
+   return (size_t) (in ? __builtin_clzl (*p) : 64);
 #endif
 #endif
 #endif
@@ -122,7 +122,7 @@ mc_count_leading_zeros_u32 (uint32_t in)
 #if __has_builtin(__builtin_clz)
    // Pointer-cast to ensure we are speaking the right type
    unsigned int *p = &in;
-   return in ? __builtin_clz (*p) : 32;
+   return (size_t) (in ? __builtin_clz (*p) : 32);
 #endif
 #endif
    uint32_t bit = UINT32_C (1) << 31;

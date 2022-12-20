@@ -656,7 +656,7 @@ typedef struct {
 static mlib_constexpr_fn mlib_int128_charbuf
 mlib_int128_format (mlib_int128 i)
 {
-   mlib_int128_charbuf into = {0};
+   mlib_int128_charbuf into = {{0}};
    char *out = into.str + (sizeof into) - 1;
    int len = 0;
    if (mlib_int128_eq (i, MLIB_INT128 (0))) {
