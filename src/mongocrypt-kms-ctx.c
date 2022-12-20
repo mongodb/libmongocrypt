@@ -192,11 +192,22 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
       key->key_material.data, key->key_material.len, opt);
 
    kms_request_opt_destroy (opt);
-   kms_request_set_service (kms->req, "kms");
+   if (!kms_request_set_service (kms->req, "kms")) {
+      CLIENT_ERR ("failed to set service: %s",
+                  kms_request_get_error (kms->req));
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
+   }
 
    if (kms_providers->aws.session_token) {
-      kms_request_add_header_field (
-         kms->req, "X-Amz-Security-Token", kms_providers->aws.session_token);
+      if (!kms_request_add_header_field (kms->req,
+                                         "X-Amz-Security-Token",
+                                         kms_providers->aws.session_token)) {
+         CLIENT_ERR ("failed to set session token: %s",
+                     kms_request_get_error (kms->req));
+         _mongocrypt_status_append (status, ctx_with_status.status);
+         goto done;
+      }
    }
 
    if (kms_request_get_error (kms->req)) {
@@ -218,20 +229,22 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    }
 
    if (!kms_request_set_region (kms->req, key->kek.provider.aws.region)) {
-      CLIENT_ERR ("failed to set region");
+      CLIENT_ERR ("failed to set region: %s", kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
    if (!kms_request_set_access_key_id (kms->req,
                                        kms_providers->aws.access_key_id)) {
-      CLIENT_ERR ("failed to set aws access key id");
+      CLIENT_ERR ("failed to set aws access key id: %s",
+                  kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
    if (!kms_request_set_secret_key (kms->req,
                                     kms_providers->aws.secret_access_key)) {
-      CLIENT_ERR ("failed to set aws secret access key");
+      CLIENT_ERR ("failed to set aws secret access key: %s",
+                  kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
@@ -239,7 +252,8 @@ _mongocrypt_kms_ctx_init_aws_decrypt (
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
    if (!kms->msg.data) {
-      CLIENT_ERR ("failed to create KMS message");
+      CLIENT_ERR ("failed to create KMS message: %s",
+                  kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
@@ -328,11 +342,22 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
                                        opt);
 
    kms_request_opt_destroy (opt);
-   kms_request_set_service (kms->req, "kms");
+   if (!kms_request_set_service (kms->req, "kms")) {
+      CLIENT_ERR ("failed to set service: %s",
+                  kms_request_get_error (kms->req));
+      _mongocrypt_status_append (status, ctx_with_status.status);
+      goto done;
+   }
 
    if (kms_providers->aws.session_token) {
-      kms_request_add_header_field (
-         kms->req, "X-Amz-Security-Token", kms_providers->aws.session_token);
+      if (!kms_request_add_header_field (kms->req,
+                                         "X-Amz-Security-Token",
+                                         kms_providers->aws.session_token)) {
+         CLIENT_ERR ("failed to set session token: %s",
+                     kms_request_get_error (kms->req));
+         _mongocrypt_status_append (status, ctx_with_status.status);
+         goto done;
+      }
    }
 
    if (kms_request_get_error (kms->req)) {
@@ -354,20 +379,22 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    }
 
    if (!kms_request_set_region (kms->req, ctx_opts->kek.provider.aws.region)) {
-      CLIENT_ERR ("failed to set region");
+      CLIENT_ERR ("failed to set region: %s", kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
 
    if (!kms_request_set_access_key_id (kms->req,
                                        kms_providers->aws.access_key_id)) {
-      CLIENT_ERR ("failed to set aws access key id");
+      CLIENT_ERR ("failed to set aws access key id: %s",
+                  kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
    if (!kms_request_set_secret_key (kms->req,
                                     kms_providers->aws.secret_access_key)) {
-      CLIENT_ERR ("failed to set aws secret access key");
+      CLIENT_ERR ("failed to set aws secret access key: %s",
+                  kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
@@ -375,7 +402,8 @@ _mongocrypt_kms_ctx_init_aws_encrypt (
    _mongocrypt_buffer_init (&kms->msg);
    kms->msg.data = (uint8_t *) kms_request_get_signed (kms->req);
    if (!kms->msg.data) {
-      CLIENT_ERR ("failed to create KMS message");
+      CLIENT_ERR ("failed to create KMS message: %s",
+                  kms_request_get_error (kms->req));
       _mongocrypt_status_append (status, ctx_with_status.status);
       goto done;
    }
