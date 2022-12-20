@@ -131,8 +131,8 @@ mc_convert_to_bitstring_u128 (mlib_int128 i)
    mc_bitstring his = mc_convert_to_bitstring_u64 (hi);
    mc_bitstring los = mc_convert_to_bitstring_u64 (lo);
    mc_bitstring ret = {{0}};
-   strcpy (ret.str + 00, his.str);
-   strcpy (ret.str + 64, los.str);
+   strncpy (ret.str + 00, his.str, sizeof ret.str);
+   strncpy (ret.str + 64, los.str, (sizeof ret.str) - 64);
    return ret;
 }
 

@@ -583,7 +583,7 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
    // No multiplication by 10 should ever send us from N < cMax/10 to N > cMax
    BSON_ASSERT (mlib_int128_ucmp (coeff_scaled, cMax) <= 0);
 
-   mlib_int128 result = i128_zero;
+   mlib_int128 result;
    if (rho <= exp_biased) {
       // ρ is less-than/equal to the exponent with bias.
 
