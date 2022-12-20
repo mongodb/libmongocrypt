@@ -131,7 +131,7 @@ mc_count_leading_zeros_u32 (uint32_t in)
       bit >>= 1;
       ++count;
    }
-   return count;
+   return (size_t) count;
 }
 
 static inline size_t

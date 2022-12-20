@@ -612,7 +612,8 @@ mlib_int128_from_string (const char *s, const char **end)
          continue;
       }
       if (c >= 'a') {
-         c -= 'a' - 'A'; // Uppercase (if a letter, otherwise some other punct)
+         // Uppercase (if a letter, otherwise some other punct):
+         c = (char) (c - ('a' - 'A'));
       }
       int digit = c - '0';
       if (c >= 'A') {
