@@ -100,6 +100,74 @@ _test_mc_reader_uuid (_mongocrypt_tester_t *tester)
 }
 
 static void
+_test_mc_reader_prfblock (_mongocrypt_tester_t *tester)
+{
+   const uint8_t expected_bytes[] = {0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78, // 4
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78, // 8
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78, // 16
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78,
+                                     0x12,
+                                     0x34,
+                                     0x56,
+                                     0x78};
+   uint64_t expected_len = sizeof (expected_bytes);
+
+   _mongocrypt_buffer_t input_buf;
+   _mongocrypt_buffer_copy_from_hex (&input_buf,
+                                     "12345678123456781234567812345678"
+                                     "12345678123456781234567812345678");
+
+   mongocrypt_status_t *status;
+   status = mongocrypt_status_new ();
+
+   mc_reader_t reader;
+   mc_reader_init_from_buffer (&reader, &input_buf, __FUNCTION__);
+
+   _mongocrypt_buffer_t value;
+   ASSERT_OK_STATUS (mc_reader_read_prfblock_buffer (&reader, &value, status),
+                     status);
+   ASSERT (value.subtype == BSON_SUBTYPE_ENCRYPTED);
+
+   ASSERT_CMPBYTES (
+      expected_bytes, (size_t) expected_len, value.data, value.len);
+
+
+   uint8_t ui;
+   ASSERT_FAILS_STATUS (mc_reader_read_u8 (&reader, &ui, status),
+                        status,
+                        "expected byte length >= 33 got: 32");
+
+   _mongocrypt_buffer_cleanup (&input_buf);
+   _mongocrypt_buffer_cleanup (&value);
+   mongocrypt_status_destroy (status);
+}
+
+
+static void
 _test_mc_reader_ints (_mongocrypt_tester_t *tester)
 {
    _mongocrypt_buffer_t input_buf;
@@ -177,6 +245,7 @@ _mongocrypt_tester_install_mc_reader (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_mc_reader);
    INSTALL_TEST (_test_mc_reader_uuid);
+   INSTALL_TEST (_test_mc_reader_prfblock);
    INSTALL_TEST (_test_mc_reader_ints);
    INSTALL_TEST (_test_mc_reader_bytes);
 }

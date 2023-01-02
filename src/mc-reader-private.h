@@ -118,6 +118,11 @@ mc_reader_read_uuid_buffer (mc_reader_t *reader,
                             mongocrypt_status_t *status);
 
 bool
+mc_reader_read_prfblock_buffer (mc_reader_t *reader,
+                                _mongocrypt_buffer_t *buf,
+                                mongocrypt_status_t *status);
+
+bool
 mc_reader_read_buffer_to_end (mc_reader_t *reader,
                               _mongocrypt_buffer_t *buf,
                               mongocrypt_status_t *status);
