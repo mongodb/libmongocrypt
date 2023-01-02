@@ -1308,7 +1308,8 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-node
   - build-and-test-node-no-optional-dependencies
-  - build-and-test-csharp
+  # see https://jira.mongodb.org/browse/MONGOCRYPT-515
+  #- build-and-test-csharp
   - test-java
   - upload-java
   - name: publish-packages
