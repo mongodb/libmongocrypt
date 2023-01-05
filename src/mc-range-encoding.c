@@ -332,11 +332,7 @@ dec128_to_int128 (mc_dec128 dec)
    // There is no fractional part:
    BSON_ASSERT (mc_dec128_is_zero (mc_dec128_modf (dec).frac));
 
-   // Compose the two coefficient parts:
-   uint64_t hi = mc_dec128_coeff_high (dec);
-   uint64_t lo = mc_dec128_coeff_low (dec);
-   mlib_int128 ret = mlib_int128_bitor (
-      mlib_int128_lshift (MLIB_INT128_CAST (hi), 64), MLIB_INT128_CAST (lo));
+   mlib_int128 ret = mc_dec128_coeff (dec);
 
    // Scale the resulting number by a power of ten matching the exponent of the
    // Decimal128:
@@ -394,12 +390,6 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
                      args.value);
          return false;
       }
-   }
-
-   // Normalize the many possible zeros to the canonical normalized zero bit
-   // pattern.
-   if (mc_dec128_is_zero (args.value)) {
-      args.value = MC_DEC128_ZERO;
    }
 
    // Should we use precision mode?
