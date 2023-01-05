@@ -143,17 +143,17 @@ class Token(NamedTuple):
     line: int
 
     @property
-    def isid(self) -> bool:
+    def is_id(self) -> bool:
         """Is this an identifier?"""
         return IDENT_RE.match(self.spell) is not None
 
     @property
-    def isnum(self) -> bool:
+    def is_num(self) -> bool:
         """Is this a number?"""
         return NUM_RE.match(self.spell) is not None
 
     @property
-    def isstr(self) -> bool:
+    def is_str(self) -> bool:
         """Is this a string literal?"""
         return STRING_RE.match(self.spell) is not None
 
@@ -222,7 +222,7 @@ def cquote(s: str) -> str:
 
 def join_with(items: Iterable[T], by: Iterable[T]) -> Iterable[T]:
     """
-    Yield ever item X in 'items'. Between each X, yield each item in `by`.
+    Yield every item X in 'items'. Between each X, yield each item in `by`.
     """
     STOP = object()
     # Iterate each item, and yield the sentinel STOP when we finish.
@@ -240,6 +240,9 @@ def join_with(items: Iterable[T], by: Iterable[T]) -> Iterable[T]:
 
 
 class Scanner:
+    """
+    Consumes a given string, keeping track of line and column position information.
+    """
 
     def __init__(self, s: str) -> None:
         self._str = s
@@ -263,6 +266,9 @@ class Scanner:
         return self._col
 
     def consume(self, n: int) -> None:
+        """
+        Discard n characters from the input
+        """
         skipped = self.string[:n]
         self._line += skipped.count('\n')
         nlpos = skipped.rfind('\n')
@@ -271,6 +277,9 @@ class Scanner:
         self._off += n
 
     def skipws(self):
+        """
+        Consume all whitespace at the beginning of the current input
+        """
         ws = WHITESPACE_RE.match(self.string)
         if not ws:
             return
@@ -279,28 +288,36 @@ class Scanner:
 
 def tokenize(sc: Scanner) -> Iterable[Token]:
     "Extract the tokens from the given code"
+    # Discard leading space, of course:
     sc.skipws()
     while sc.string:
+        # If we have a comment, just skip it:
         comment = LINE_COMMENT_RE.match(sc.string)
         if comment:
             sc.consume(len(comment[0]))
             continue
 
+        # Try to match basic primary tokens. A "real" C++ tokenizer needs to be
+        # context-sensitive, but we only implement "just enough" to be useful.
         mat = (
             STRING_RE.match(sc.string)  #
             or IDENT_RE.match(sc.string)  #
             or NUM_RE.match(sc.string))
         if mat:
+            # A basic token: Strings, identifiers, and number literals.
             tok = mat[0]
             yield Token(tok, sc.line)
             sc.consume(len(tok))
         elif sc.string.startswith('::'):
+            # Scope resolution operator
             yield Token(sc.string[:2], sc.line)
             sc.consume(2)
         elif sc.string[0] in ',&{}[]().-<>+':
+            # Basic one-character punctuators. We don't handle any digraphs.
             yield Token(sc.string[0], sc.line)
             sc.consume(1)
         else:
+            # Unknown. Generate an error:
             snippet = sc.string[:min(len(sc.string), 30)]
             raise RuntimeError(f'Unknown token at {cquote(snippet)} '
                                f'(Line {sc.line}, column {sc.col})"')
@@ -308,6 +325,10 @@ def tokenize(sc: Scanner) -> Iterable[Token]:
 
 
 class LazyList(Generic[T]):
+    """
+    Create a forward-only list that lazily advances an iterable as items are
+    requested, and drops items as they are discarded.
+    """
 
     def __init__(self, it: Iterable[T]) -> None:
         self._iter = iter(it)
@@ -326,10 +347,10 @@ class LazyList(Generic[T]):
 
 
 Tokenizer = LazyList[Token]
-"A token-consumer sequence"
+"A token-generating lazy list"
 
 
-def parse_ilist(toks: Tokenizer) -> Expression:
+def parse_ilist(toks: Tokenizer) -> InitList:
     "Parse a braced init-list, e.g. {1, 2, 3}"
     lbr = toks.at(0)
     assert lbr and lbr.spell == '{', f'Expected left-brace "{{" (Got {lbr=})'
@@ -352,7 +373,7 @@ def parse_ilist(toks: Tokenizer) -> Expression:
             '}', ','
         ), f'Expected comma or closing brace following init-list element (Got "{peek=}")'
         if peek.spell == ',':
-            # Just skip the comma
+            # Just skip the comma. This may or may not be followed by another element.
             toks.adv()
     return InitList(acc)
 
@@ -360,7 +381,10 @@ def parse_ilist(toks: Tokenizer) -> Expression:
 def parse_call_args(toks: Tokenizer,
                     open: str = '(',
                     close: str = ')') -> Sequence[Expression]:
-    "Parse the argument list of a function/template call."
+    """
+    Parse the argument list of a function/template call. The tokenizer must be
+    positioned at the opening token
+    """
     lpar = toks.at(0)
     assert lpar and lpar.spell == open, f'Expected opening "{open}" (Got {lpar=})'
     toks.adv()
@@ -371,7 +395,7 @@ def parse_call_args(toks: Tokenizer,
         # Parse an argument:
         x = parse_expr(toks)
         acc.append(x)
-        # We expect either a comma or a closing paren next:
+        # We expect either a comma or a closing token next:
         peek = toks.at(0)
         assert peek, 'Unexpected EOF following argument in call expression'
         assert peek.spell in (
@@ -382,17 +406,28 @@ def parse_call_args(toks: Tokenizer,
             # Consume the comma:
             toks.adv()
     assert peek and peek.spell == close
+    # Discard the closing token:
     toks.adv()
     return acc
 
 
 def parse_nameid(toks: Tokenizer) -> Ident | TmplIdent:
+    """
+    Parse a name-id. This may be a bare identifier, or an identifier followed by
+    template arguments. We don't handle less-than expressions correctly, but this
+    dosen't matter for our current inputs. A more sofisticated system may be
+    required later on.
+    """
     idn = toks.at(0)
-    assert idn and idn.isid, f'Expected identifier beginning a nameid (Got {idn=}'
+    assert idn and idn.is_id, f'Expected identifier beginning a nameid (Got {idn=}'
     toks.adv()
     angle = toks.at(0)
     if not angle or angle.spell != '<':
+        # A regular identifier
         return Ident(idn.spell)
+    # An identifier with template arguments:
+    # (Or, an itentifier followed by a less-than symbol. We don't handle that
+    # case, and don't currently need to.)
     targs = parse_call_args(toks, '<', '>')
     return TmplIdent(idn.spell, targs)
 
@@ -403,27 +438,49 @@ def parse_expr(toks: Tokenizer) -> Expression:
 
 
 def parse_infix(toks: Tokenizer) -> Expression:
-    x = parse_suffixexpr(toks)
+    "Parse a binary infix-expression"
+    x = parse_prefix_expr(toks)
     peek = toks.at(0)
     while peek:
         s = peek.spell
-        if s in '+-':
-            toks.adv()
-            rhs = parse_suffixexpr(toks)
-            x = InfixExpr(x, s, rhs)
-        else:
+        if s not in '+-':
             break
+        # Binary "+" or "-" (We don't care about other operators (yet))
+        toks.adv()
+        rhs = parse_prefix_expr(toks)
+        x = InfixExpr(x, s, rhs)
         peek = toks.at(0)
     return x
 
 
+def parse_prefix_expr(toks: Tokenizer) -> Expression:
+    "Parse a unary prefix expression (currently, only '&' and '-' are handled)"
+    peek = toks.at(0)
+    if peek and peek.spell in '-&':
+        toks.adv()
+        x = parse_prefix_expr(toks)
+        return PrefixExpr(peek.spell, x)
+    return parse_suffixexpr(toks)
+
+
 def parse_suffixexpr(toks: Tokenizer) -> Expression:
+    "Parse a suffix-expression. (For now, that only includes call expressions.)"
     x = parse_primary_expr(toks)
     peek = toks.at(0)
-
-    while peek and peek.spell == '(':
-        args = parse_call_args(toks)
-        x = CallExpr(x, args)
+    # Look ahead for scope resolution or function call (could also handle
+    # dot '.' and subscript, but we don't care (yet))
+    while peek:
+        if peek.spell == '::':
+            # Scope resolution:
+            toks.adv()
+            name = parse_nameid(toks)
+            x = ScopeExpr(x, name)
+        elif peek.spell == '(':
+            # Function call:
+            args = parse_call_args(toks)
+            x = CallExpr(x, args)
+        else:
+            break
         peek = toks.at(0)
     return x
 
@@ -434,30 +491,16 @@ def parse_primary_expr(toks: Tokenizer) -> Expression:
     assert peek, f'Unexpected EOF when expected an expression'
     if peek.spell == '{':
         x = parse_ilist(toks)
-    elif peek.spell in '-&':
-        toks.adv()
-        oper = parse_suffixexpr(toks)
-        x = PrefixExpr(peek.spell, oper)
-    elif peek.isstr:
+    elif peek.is_str:
         x = String(peek.spell)
         toks.adv()
-    elif peek.isid:
+    elif peek.is_id:
         x = parse_nameid(toks)
-    elif peek.isnum:
+    elif peek.is_num:
         x = Number(peek.spell)
         toks.adv()
     else:
         raise RuntimeError(f'Unknown expression beginning with token "{peek}"')
-    # Look ahead for suffix expressions
-    peek = toks.at(0)
-    while peek and peek.spell in ('::', ):
-        if peek.spell == '::':
-            toks.adv()
-            name = parse_nameid(toks)
-            x = ScopeExpr(x, name)
-        else:
-            assert False, f'Unreachable? {peek=}'
-        peek = toks.at(0)
     return x
 
 
@@ -465,7 +508,9 @@ def parse_edges(toks: Tokenizer) -> Iterable[EdgeInfo]:
     "Parse the edges from the given sequence of C++ tokens"
     while toks.at(0):
         ilist = parse_expr(toks)
-        assert isinstance(ilist, InitList), ilist
+        assert isinstance(
+            ilist, InitList
+        ), f'Expected init-list for an edge element (Got {ilist!r})'
         fn, val, lb, ub, sparse, edges = ilist.elems
         yield EdgeInfo(
             fn,
@@ -478,14 +523,16 @@ def parse_edges(toks: Tokenizer) -> Iterable[EdgeInfo]:
             edges,
         )
         peek = toks.at(0)
-        assert peek and peek.spell == ',', f'Expect a comma following edge element'
+        assert peek and peek.spell == ',', f'Expect a comma following edge element (Got {peek=})'
         toks.adv()
 
 
 def parse_mincovers(toks: Tokenizer) -> Iterable[MinCoverInfo]:
     while toks.at(0):
         ilist = parse_expr(toks)
-        assert isinstance(ilist, InitList), ilist
+        assert isinstance(
+            ilist, InitList
+        ), f'Expected init-list for a mincover element (Got {ilist!r})'
         lb, ub, mn, mx, sparsity = ilist.elems[:5]
         has_precision = len(ilist.elems) == 7
         prec = ilist.elems[5] if has_precision else BOOST_NONE
@@ -497,6 +544,9 @@ def parse_mincovers(toks: Tokenizer) -> Iterable[MinCoverInfo]:
 
 
 def _render_limit(typ: Expression, limit: Ident) -> Iterable[str]:
+    """
+    Render a value from std::numeric_limits<>. We only use a few of them so far.
+    """
     if isinstance(typ, ScopeExpr) and str(typ.left) == 'std':
         typ = typ.name
     assert isinstance(typ,
@@ -507,87 +557,93 @@ def _render_limit(typ: Expression, limit: Ident) -> Iterable[str]:
         ('double', 'min'): Ident('DBL_MIN'),
     }
     e = mapping[(typ.spell, limit.spell)]
-    yield from _render_expr(e)
+    return _render_expr(e)
 
 
 def _render_call(c: CallExpr) -> Iterable[str]:
-    base = c.fn
+    """
+    Render a function call expression. This may render as some other arbitrary
+    expression since we need to handle C++-isms.
+    """
     # Intercept calls to numeric_limits:
-    if isinstance(base, ScopeExpr) and c.args == []:
-        par = base.left
-        if (isinstance(par, ScopeExpr)  #
-                and str(par.left) == 'std'  #
-                and isinstance(par.name, TmplIdent)  #
-                and par.name.name == 'numeric_limits'):
-            # We're looking for numeric limits
-            assert isinstance(base.name, Ident), f'Unimplemented limit: {c=}'
-            yield from _render_limit(par.name.targs[0], base.name)
+    if (isinstance(c.fn, ScopeExpr)  #
+            and c.args == []  #
+            and isinstance(c.fn.left, ScopeExpr)  #
+            and str(c.fn.left.left) == 'std'  #
+            and isinstance(c.fn.left.name, TmplIdent)  #
+            and c.fn.left.name.name == 'numeric_limits'):
+        # We're looking for numeric limits
+        assert isinstance(c.fn.name, Ident), f'Unimplemented limit: {c=}'
+        return _render_limit(c.fn.left.name.targs[0], c.fn.name)
 
-    if str(base) == 'std::string':
+    if str(c.fn) == 'std::string':
         # We're constructing a std::string. All our inputs just use inline literals, so just render
         # those.
         assert len(c.args) == 1, c
-        yield from _render_expr(c.args[0])
-        return
+        assert isinstance(c.args[0], String), c
+        return _render_string(c.args[0])
 
     # Intercept calls to "Decimal128"
-    elif base == Ident('Decimal128'):
-        assert len(c.args) == 1, f'Too many args for Decimal128? {c.args=}'
+    if c.fn == Ident('Decimal128'):
+        assert len(c.args) == 1, f'Too many args for Decimal128? {c=}'
         arg = c.args[0]
         if isinstance(arg, Number) and '.' not in arg.spell:
             # We can convert from an integer driectly
-            yield from _render_call(CallExpr(Ident('MC_DEC128'), [arg]))
-        elif isinstance(arg, String):
+            return _render_call(CallExpr(Ident('MC_DEC128'), [arg]))
+        if isinstance(arg, String):
             # They're passing a string to Decimal128(), so we do the same
-            yield from _render_call(
-                CallExpr(Ident('mc_dec128_from_string'), [arg]))
-        else:
-            assert isinstance(
-                arg,
-                (Number,
-                 PrefixExpr)), f'Unimplemented argument to Decimal128: {arg=}'
-            # Wrap the argument in a string, since a double literal may lose precision and generate an incorrect value:
-            call = CallExpr(Ident('mc_dec128_from_string'),
-                            [String(cquote(str(arg)))])
-            yield from _render_call(call)
-    else:
-        yield from _render_expr(base)
-        yield '('
-        args = ', '.join(''.join(_render_expr(arg)) for arg in c.args)
-        yield args
-        yield ')'
+            return _render_call(CallExpr(Ident('mc_dec128_from_string'),
+                                         [arg]))
+        # Other argument:
+        assert isinstance(
+            arg, (Number,
+                  PrefixExpr)), f'Unimplemented argument to Decimal128: {arg=}'
+        # Wrap the argument in a string, since a double literal may lose precision and generate an incorrect value:
+        call = CallExpr(Ident('mc_dec128_from_string'),
+                        [String(cquote(str(arg)))])
+        return _render_call(call)
+    # Otherwise: Render anything else as just a function call:
+    fn = _render_expr(c.fn)
+    each_arg = map(_render_expr, c.args)
+    comma_args = join_with(each_arg, ', ')
+    args = chain.from_iterable(comma_args)
+    return chain(fn, '(', args, ')')
 
 
 def _render_scope(e: ScopeExpr) -> Iterable[str]:
-    "Render a scope resolution"
-    if e.left == Ident('Decimal128'):
-        # Probably looking up a constant?
+    """
+    Render a scope resolution expression. This only cares about constants of
+    Decimal128 yet.
+    """
+    if e.left == Ident('Decimal128') and isinstance(e.name, Ident):
+        # Looking up a constant on Decimal128, presumably
         attr = e.name
-        assert isinstance(attr, Ident)
         const = {
             'kLargestPositive': 'MC_DEC128_LARGEST_POSITIVE',
             'kLargestNegative': 'MC_DEC128_LARGEST_NEGATIVE',
         }[attr.spell]
-        yield const
-    else:
-        assert False, f'Unimplemented scope-resolution expression: {e=}'
+        return [const]
+    assert False, f'Unimplemented scope-resolution expression: {e=}'
 
 
 def _render_infix(e: InfixExpr) -> Iterable[str]:
     if isinstance(e.rhs, String) and e.oper == '+':
-        # We're building a string. We don't have a special "string concat" to
-        # use, so just do preprocessor string splicing (for now)
-        yield from _render_expr(e.lhs)
-        yield from _render_expr(e.rhs)
-    else:
-        assert False, f'Unimplemented infix expression: {e=}'
+        # We're building a string with operator+. We don't have a special
+        # "string concat" to use, so just do preprocessor string splicing
+        # (for now). This also assumes that the operands are also string literals or other string
+        # concatenations, but that's all we need for now.
+        return chain(_render_expr(e.lhs), _render_expr(e.rhs))
+    # We don't implement any other infix expressions yet.
+    assert False, f'Unimplemented infix expression: {e=}'
 
 
 def _render_string(s: String) -> Iterable[str]:
+    """
+    Render a string literal.
+    """
     if not s.spell.startswith('R'):
         # Just a regular string. We are safe to emit this
-        yield s.spell
-        return
+        return [s.spell]
     # C doesn't support the R"()" 'raw string' (yet). We'll un-prettify it:
     mat = STRING_RE.match(s.spell)
     assert mat, s
@@ -595,34 +651,37 @@ def _render_string(s: String) -> Iterable[str]:
     lines = c.splitlines()
     with_nl = (f'{l}\n' for l in lines)
     quoted = map(cquote, with_nl)
-    yield from join_with(quoted, (s for s in '\n    '))
+    return join_with(quoted, '\n    ')
 
 
 def _render_expr(e: Expression) -> Iterable[str]:
+    """
+    Generate a rendering of an arbitrary expression
+    """
     if isinstance(e, (Number, Ident)):
-        yield e.spell
+        return [e.spell]
     elif isinstance(e, String):
-        yield from _render_string(e)
+        return _render_string(e)
     elif isinstance(e, CallExpr):
-        yield from _render_call(e)
-    elif isinstance(e, PrefixExpr) and e.operator == '-':
-        yield '-'
-        yield from _render_expr(e.operand)
+        return _render_call(e)
+    elif isinstance(e, PrefixExpr):
+        return chain(e.operator, _render_expr(e.operand))
     elif isinstance(e, ScopeExpr):
-        yield from _render_scope(e)
+        return _render_scope(e)
     elif isinstance(e, InfixExpr):
-        yield from _render_infix(e)
+        return _render_infix(e)
     else:
         assert False, f'Do not know how to render expression: {e=}'
 
 
 def _render_opt_wrap(e: Expression) -> Iterable[str]:
+    """
+    Render a value that is wrapped as an optional. If boost::none, emits a
+    braced-init "{.set = false}", otherwise "{.set=true, .value = render(e) }"
+    """
     if e == BOOST_NONE:
-        yield '{ .set = false }'
-        return
-    yield '{ .set = true, .value = '
-    yield from _render_expr(e)
-    yield ' }'
+        return '{ .set = false }'
+    return chain('{ .set = true, .value = ', _render_expr(e), ' }')
 
 
 def designit(attr: str, x: Iterable[str]) -> Iterable[str]:
@@ -630,7 +689,7 @@ def designit(attr: str, x: Iterable[str]) -> Iterable[str]:
     Render a 2-space indented designated initializer, with a trailing comma
     and newline
     """
-    yield from chain(f'  .{attr} = ', x, ',\n')
+    return chain(f'  .{attr} = ', x, ',\n')
 
 
 def render_edge(e: EdgeInfo) -> Iterable[str]:
@@ -644,7 +703,7 @@ def render_edge(e: EdgeInfo) -> Iterable[str]:
     wrapped = (chain('\n    ', _render_expr(e), ',') for e in reordered)
     braced_edges = chain('{', chain.from_iterable(wrapped), '\n  }')
 
-    yield from chain(
+    return chain(
         '{\n',
         designit('value', _render_expr(e.value)),
         designit('min', _render_opt_wrap(e.min)),
@@ -658,7 +717,7 @@ def render_edge(e: EdgeInfo) -> Iterable[str]:
 
 
 def render_mincover(mc: MinCoverInfo) -> Iterable[str]:
-    yield from chain(
+    return chain(
         '{\n',
         designit('lowerBound', _render_expr(mc.lb)),
         designit('includeLowerBound', 'true'),
@@ -675,10 +734,19 @@ def render_mincover(mc: MinCoverInfo) -> Iterable[str]:
 
 
 def generate(code: str, parser: Callable[[Tokenizer], Iterable[T]],
-             render: Callable[[T], Iterable[str]]) -> Sequence[EdgeInfo]:
+             render: Callable[[T], Iterable[str]]):
+    """
+    Generate code.
+
+    :param code: The input code to parse.
+    :param parser: A parsing function that accepts a tokenizer and emits objects of type T.
+    :param render: A renderer that accepts instances of T and returns an iterable of strings.
+
+    For every object V yielded by parse(tokens), every string
+    yielded from render(V) will be written to stdout.
+    """
     scan = Scanner(code)
     toks = LazyList(tokenize(scan))
-    edges: list[EdgeInfo] = []
     print('// This code is GENERATED! Do not edit!')
     print('// clang-format off')
     items = parser(toks)
@@ -686,7 +754,6 @@ def generate(code: str, parser: Callable[[Tokenizer], Iterable[T]],
     strings = chain.from_iterable(each_rendered)
     for s in strings:
         sys.stdout.write(s)
-    return edges
 
 
 def main(argv: Sequence[str]):
