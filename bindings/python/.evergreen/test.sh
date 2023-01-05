@@ -42,7 +42,8 @@ elif [ "Darwin" = "$(uname -s)" ]; then
                "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
-               "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3")
+               "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3")
     fi
 
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
