@@ -571,10 +571,13 @@ namespace MongoDB.Libmongocrypt
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_decrypt_init(ContextSafeHandle handle, BinarySafeHandle binary);
 
+            /// <summary>
+            /// bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* msg)
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_explicit_encrypt_init(ContextSafeHandle handle, BinarySafeHandle binary);
             /// <summary>
-            /// bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* msg)
+            /// bool mongocrypt_ctx_explicit_encrypt_expression_init(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* msg)
             /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_explicit_encrypt_expression_init(ContextSafeHandle handle, BinarySafeHandle msg);

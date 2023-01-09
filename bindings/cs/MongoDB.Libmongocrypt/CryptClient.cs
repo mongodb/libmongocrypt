@@ -105,7 +105,7 @@ namespace MongoDB.Libmongocrypt
         /// <summary>
         /// Starts an explicit encryption context.
         /// </summary>
-        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, string queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message, byte[] rangeOptions, bool expressionMode = false)
+        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, string queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message, byte[] rangeOptions, bool isExpressionMode = false)
         {
             var handle = Library.mongocrypt_ctx_new(_handle);
 
@@ -142,7 +142,7 @@ namespace MongoDB.Libmongocrypt
                 _status, 
                 (h, pb) =>
                 {
-                    if (expressionMode)
+                    if (isExpressionMode)
                     {
                         // mongocrypt_ctx_explicit_encrypt_expression_init shares the same code as mongocrypt_ctx_explicit_encrypt_init.
                         // The only difference is the validation of the queryType argument:
