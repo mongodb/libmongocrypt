@@ -130,8 +130,8 @@ _mongocrypt_serialize_ciphertext (_mongocrypt_ciphertext_t *ciphertext,
    if (ciphertext->key_id.len != 16) {
       return false;
    }
-   if (ciphertext->key_id.len > (UINT32_MAX - ciphertext->data.len - 1)
-         || ciphertext->key_id.len > (SIZE_MAX - ciphertext->data.len - 1)) {
+   if (ciphertext->key_id.len > (UINT32_MAX - ciphertext->data.len - 1) ||
+       ciphertext->key_id.len > (SIZE_MAX - ciphertext->data.len - 1)) {
       return false;
    }
 

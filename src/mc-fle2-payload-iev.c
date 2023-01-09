@@ -34,7 +34,7 @@ struct _mc_FLE2IndexedEqualityEncryptedValue_t {
    _mongocrypt_buffer_t ClientValue;
    _mongocrypt_buffer_t ClientEncryptedValue;
    uint8_t original_bson_type;
-      uint8_t fle_blob_subtype;
+   uint8_t fle_blob_subtype;
    bool parsed;
    bool inner_decrypted;
    bool client_value_decrypted;
@@ -69,15 +69,16 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
    mc_reader_t reader;
    mc_reader_init_from_buffer (&reader, buf, __FUNCTION__);
 
-   CHECK_AND_RETURN (mc_reader_read_u8 (&reader, &iev->fle_blob_subtype , status));
+   CHECK_AND_RETURN (
+      mc_reader_read_u8 (&reader, &iev->fle_blob_subtype, status));
 
-   if (iev->fle_blob_subtype  != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue &&
-       iev->fle_blob_subtype  != MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
+   if (iev->fle_blob_subtype != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue &&
+       iev->fle_blob_subtype != MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_parse expected "
                   "fle_blob_subtype %d or %d got: %" PRIu8,
                   MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue,
                   MC_SUBTYPE_FLE2IndexedRangeEncryptedValue,
-                  iev->fle_blob_subtype );
+                  iev->fle_blob_subtype);
       return false;
    }
 
@@ -88,7 +89,14 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
    /* Read original_bson_type. */
    CHECK_AND_RETURN (
       mc_reader_read_u8 (&reader, &iev->original_bson_type, status));
-// TODO - should we validate this, server did
+
+   /* Check that original_bson_type is a valid bson type. */
+   if ((iev->original_bson_type < 0) || (iev->original_bson_type > 0xFF)) {
+      CLIENT_ERR ("Field 't' must be a valid BSON type, got: %d", iev->original_bson_type);
+      return false;
+   }
+
+
 
    /* Read InnerEncrypted. */
    CHECK_AND_RETURN (
@@ -114,12 +122,12 @@ mc_FLE2IndexedEncryptedValue_get_S_KeyId (
 }
 
 static bool
-mc_FLE2IndexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
-                                        mc_FLE2IndexedEncryptedValue_t *iev,
-                                        mc_ServerDataEncryptionLevel1Token_t* token,
-                                       bool(callback)(mc_reader_t*, void*, mongocrypt_status_t* status),
-                                        void* callback_data,
-                                        mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_decrypt (
+   _mongocrypt_crypto_t *crypto,
+   mc_FLE2IndexedEncryptedValue_t *iev,
+   mc_ServerDataEncryptionLevel1Token_t *token,
+   mc_FLE2IndexedEqualityEncryptedValueTokens *indexed_tokens,
+   mongocrypt_status_t *status);
 
 bool
 mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
@@ -160,33 +168,34 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   bool ret = mc_FLE2IndexedEncryptedValue_decrypt(crypto, iev, token, NULL, NULL, status);
-   
+   bool ret = mc_FLE2IndexedEncryptedValue_decrypt (
+      crypto, iev, token, NULL, status);
+
    mc_ServerDataEncryptionLevel1Token_destroy (token);
 
    return ret;
 }
 
 static bool
-mc_FLE2IndexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
-                                        mc_FLE2IndexedEncryptedValue_t *iev,
-                                        mc_ServerDataEncryptionLevel1Token_t* token,
-                                       bool(callback)(mc_reader_t*, void*, mongocrypt_status_t* status),
-                                        void* callback_data,
-                                        mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_decrypt (
+   _mongocrypt_crypto_t *crypto,
+   mc_FLE2IndexedEncryptedValue_t *iev,
+   mc_ServerDataEncryptionLevel1Token_t *token,
+   mc_FLE2IndexedEqualityEncryptedValueTokens *indexed_tokens,
+   mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iev);
    BSON_ASSERT_PARAM (token);
 
    if (!iev->parsed) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key must be "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_decrypt must be "
                   "called after mc_FLE2IndexedEncryptedValue_parse");
       return false;
    }
 
    if (iev->inner_decrypted) {
-      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_S_Key must not be "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_decrypt must not be "
                   "called twice");
       return false;
    }
@@ -195,9 +204,9 @@ mc_FLE2IndexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
       mc_ServerDataEncryptionLevel1Token_get (token);
    uint32_t bytes_written;
 
-   _mongocrypt_buffer_resize (
-      &iev->Inner,
-      _mongocrypt_fle2_calculate_plaintext_len (iev->InnerEncrypted.len, status));
+   _mongocrypt_buffer_resize (&iev->Inner,
+                              _mongocrypt_fle2_calculate_plaintext_len (
+                                 iev->InnerEncrypted.len, status));
 
    /* Decrypt InnerEncrypted. */
    if (!_mongocrypt_fle2_do_decryption (crypto,
@@ -238,38 +247,36 @@ mc_FLE2IndexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
       &reader, &iev->ClientEncryptedValue, length - 16, status));
 
    // Caller has asked us to parse the other tokens
-   if(callback != NULL) {
-      if(!callback(&reader, callback_data, status)) {
-         return false;
-      }
+   if (indexed_tokens != NULL) {
+      CHECK_AND_RETURN (mc_reader_read_u64 (&reader, &indexed_tokens->counter, status));
+
+      CHECK_AND_RETURN (
+         mc_reader_read_prfblock_buffer (&reader, &indexed_tokens->edc, status));
+
+      CHECK_AND_RETURN (
+         mc_reader_read_prfblock_buffer (&reader, &indexed_tokens->esc, status));
+
+      CHECK_AND_RETURN (
+         mc_reader_read_prfblock_buffer (&reader, &indexed_tokens->ecc, status));
    }
 
    iev->inner_decrypted = true;
    return true;
 }
 
-static bool mc_equality_parser(mc_reader_t* reader, void* callback_data, mongocrypt_status_t* status) {
-   mc_FLE2IndexedEqualityEncryptedValueTokens* tokens = (mc_FLE2IndexedEqualityEncryptedValueTokens*)(callback_data);
-   CHECK_AND_RETURN(mc_reader_read_u64(reader, &tokens->count, status));
-
-   CHECK_AND_RETURN(mc_reader_read_prfblock_buffer(reader, &tokens->edc, status));
-
-   CHECK_AND_RETURN(mc_reader_read_prfblock_buffer(reader, &tokens->esc, status));
-
-   CHECK_AND_RETURN(mc_reader_read_prfblock_buffer(reader, &tokens->ecc, status));
-
-   return true;
-}
-
 bool
-mc_FLE2IndexedEncryptedValue_decrypt_equality (_mongocrypt_crypto_t *crypto,
-                                        mc_FLE2IndexedEncryptedValue_t *iev,
-                                        mc_ServerDataEncryptionLevel1Token_t* token,
-                                        mc_FLE2IndexedEqualityEncryptedValueTokens* indexed_tokens,
-                                        mongocrypt_status_t *status) {
-   BSON_ASSERT(iev->fle_blob_subtype == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue);
+mc_FLE2IndexedEncryptedValue_decrypt_equality (
+   _mongocrypt_crypto_t *crypto,
+   mc_FLE2IndexedEncryptedValue_t *iev,
+   mc_ServerDataEncryptionLevel1Token_t *token,
+   mc_FLE2IndexedEqualityEncryptedValueTokens *indexed_tokens,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT (iev->fle_blob_subtype ==
+                MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue);
 
-   return mc_FLE2IndexedEncryptedValue_decrypt(crypto, iev, token, mc_equality_parser, indexed_tokens, status);
+   return mc_FLE2IndexedEncryptedValue_decrypt (
+      crypto, iev, token, indexed_tokens, status);
 }
 
 const _mongocrypt_buffer_t *
@@ -311,8 +318,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    /* Attempt to decrypt ClientEncryptedValue */
    _mongocrypt_buffer_resize (&iev->ClientValue,
                               _mongocrypt_fle2aead_calculate_plaintext_len (
-                                 iev->ClientEncryptedValue.len,
-                                 status));
+                                 iev->ClientEncryptedValue.len, status));
    uint32_t bytes_written;
    if (!_mongocrypt_fle2aead_do_decryption (crypto,
                                             &iev->K_KeyId,
@@ -358,7 +364,9 @@ mc_FLE2IndexedEncryptedValue_destroy (mc_FLE2IndexedEncryptedValue_t *iev)
 }
 
 void
-mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (mc_FLE2IndexedEqualityEncryptedValueTokens *tokens) {
+mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (
+   mc_FLE2IndexedEqualityEncryptedValueTokens *tokens)
+{
    if (!tokens) {
       return;
    }
@@ -366,7 +374,7 @@ mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (mc_FLE2IndexedEqualityEncryp
    _mongocrypt_buffer_cleanup (&tokens->edc);
    _mongocrypt_buffer_cleanup (&tokens->esc);
    _mongocrypt_buffer_cleanup (&tokens->ecc);
-   bson_free(tokens);
+   bson_free (tokens);
 }
 
 bson_type_t

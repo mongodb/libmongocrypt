@@ -74,9 +74,8 @@ _mongocrypt_cache_oauth_add (_mongocrypt_cache_oauth_t *cache,
    BSON_ASSERT (expires_in_us <= INT64_MAX - cache_time_us &&
                 expires_in_us + cache_time_us >
                    MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US);
-   expiration_time_us = expires_in_us +
-                        cache_time_us -
-                        MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US;
+   expiration_time_us =
+      expires_in_us + cache_time_us - MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US;
 
    if (!bson_iter_init_find (&iter, oauth_response, "access_token") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {

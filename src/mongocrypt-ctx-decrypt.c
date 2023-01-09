@@ -83,8 +83,9 @@ _replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
       goto fail;
    }
 
-   uint8_t original_bson_type = (uint8_t)
-      mc_FLE2IndexedEncryptedValue_get_original_bson_type (iev, status);
+   uint8_t original_bson_type =
+      (uint8_t) mc_FLE2IndexedEncryptedValue_get_original_bson_type (iev,
+                                                                     status);
    if (0 == original_bson_type) {
       goto fail;
    }
@@ -143,8 +144,9 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
       goto fail;
    }
 
-   uint8_t original_bson_type = (uint8_t)
-      mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev, status);
+   uint8_t original_bson_type =
+      (uint8_t) mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev,
+                                                                       status);
    if (0 == original_bson_type) {
       goto fail;
    }

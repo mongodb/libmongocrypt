@@ -261,6 +261,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       ASSERT_CMPBUF(expected_edc_token, tokens->edc);
       ASSERT_CMPBUF(expected_esc_token, tokens->esc);
       ASSERT_CMPBUF(expected_ecc_token, tokens->ecc);
+      ASSERT_CMPUINT64(123456, ==, tokens->counter);
 
       mc_ServerDataEncryptionLevel1Token_destroy (token);
       mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
@@ -436,7 +437,7 @@ test_FLE2IndexedRangeEncryptedValue_parse (_mongocrypt_tester_t *tester)
 void
 _mongocrypt_tester_install_fle2_payloads (_mongocrypt_tester_t *tester)
 {
-   // INSTALL_TEST (test_FLE2IndexedEqualityEncryptedValue_parse);
+   INSTALL_TEST (test_FLE2IndexedEqualityEncryptedValue_parse);
    INSTALL_TEST (test_FLE2IndexedEqualityEncryptedValue_decrypt);
    INSTALL_TEST (test_FLE2IndexedRangeEncryptedValue_parse);
 }

@@ -257,7 +257,8 @@ _hmac_with_hash (const EVP_MD *hash,
       return false;
    }
 
-   if (!HMAC_Init_ex (ctx, key->data, (int) key->len, hash, NULL /* engine */)) {
+   if (!HMAC_Init_ex (
+          ctx, key->data, (int) key->len, hash, NULL /* engine */)) {
       CLIENT_ERR ("error initializing HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;

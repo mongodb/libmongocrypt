@@ -235,8 +235,8 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
 
    /* Encrypt. */
    {
-      const uint32_t cipherlen = _mongocrypt_fle2aead_calculate_ciphertext_len (
-         plaintext->len, status);
+      const uint32_t cipherlen =
+         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext->len, status);
       if (cipherlen == 0) {
          goto fail;
       }
