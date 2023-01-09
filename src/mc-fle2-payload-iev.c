@@ -92,10 +92,10 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
 
    /* Check that original_bson_type is a valid bson type. */
    if ((iev->original_bson_type < 0) || (iev->original_bson_type > 0xFF)) {
-      CLIENT_ERR ("Field 't' must be a valid BSON type, got: %d", iev->original_bson_type);
+      CLIENT_ERR ("Field 't' must be a valid BSON type, got: %d",
+                  iev->original_bson_type);
       return false;
    }
-
 
 
    /* Read InnerEncrypted. */
@@ -168,8 +168,8 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   bool ret = mc_FLE2IndexedEncryptedValue_decrypt (
-      crypto, iev, token, NULL, status);
+   bool ret =
+      mc_FLE2IndexedEncryptedValue_decrypt (crypto, iev, token, NULL, status);
 
    mc_ServerDataEncryptionLevel1Token_destroy (token);
 
@@ -248,16 +248,17 @@ mc_FLE2IndexedEncryptedValue_decrypt (
 
    // Caller has asked us to parse the other tokens
    if (indexed_tokens != NULL) {
-      CHECK_AND_RETURN (mc_reader_read_u64 (&reader, &indexed_tokens->counter, status));
-
       CHECK_AND_RETURN (
-         mc_reader_read_prfblock_buffer (&reader, &indexed_tokens->edc, status));
+         mc_reader_read_u64 (&reader, &indexed_tokens->counter, status));
 
-      CHECK_AND_RETURN (
-         mc_reader_read_prfblock_buffer (&reader, &indexed_tokens->esc, status));
+      CHECK_AND_RETURN (mc_reader_read_prfblock_buffer (
+         &reader, &indexed_tokens->edc, status));
 
-      CHECK_AND_RETURN (
-         mc_reader_read_prfblock_buffer (&reader, &indexed_tokens->ecc, status));
+      CHECK_AND_RETURN (mc_reader_read_prfblock_buffer (
+         &reader, &indexed_tokens->esc, status));
+
+      CHECK_AND_RETURN (mc_reader_read_prfblock_buffer (
+         &reader, &indexed_tokens->ecc, status));
    }
 
    iev->inner_decrypted = true;
