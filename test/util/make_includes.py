@@ -1,6 +1,12 @@
 """
 Script to convert the MongoDB server test vector #include files into their
-C-equivalent counterpart
+libmongocrypt C-equivalent counterpart.
+
+Pass a single argument naming the "kind" of objects to parse.
+Code is read from stdin and written to stdout::
+
+    > python make_includes.py edges < from_server/edges.cstruct > for_libmongocrypt/edges.cstruct
+    > python make_includes.py mincovers < from_server/mincovers.cstruct > for_libmongocrypt/mincovers.cstruct
 """
 
 from __future__ import annotations
@@ -18,7 +24,7 @@ T = TypeVar('T')
 
 
 class Number(NamedTuple):
-    "A numeric literal (integer or float)"
+    """Stores a numeric literal (integer or float)."""
     spell: str
 
     def __str__(self) -> str:
@@ -26,7 +32,7 @@ class Number(NamedTuple):
 
 
 class String(NamedTuple):
-    "A quoted string literal"
+    """Stores a quoted string literal."""
     spell: str
 
     def __str__(self) -> str:
@@ -34,7 +40,7 @@ class String(NamedTuple):
 
 
 class Ident(NamedTuple):
-    "An identifier"
+    """Stores a bare C-style identifier"""
     spell: str
 
     def __str__(self) -> str:
@@ -42,53 +48,68 @@ class Ident(NamedTuple):
 
 
 class TmplIdent(NamedTuple):
+    """
+    Stores a template-specialization identifier.
+    """
     name: str
+    "The C identifier of the template's name"
     targs: Sequence[Expression]
+    "The argument expressions given for the template specialization"
 
     def __str__(self) -> str:
         return f'{self.name}<{", ".join(map(str, self.targs))}>'
 
 
 class PrefixExpr(NamedTuple):
-    "A unary prefix expression"
+    """Stores a unary prefix expression"""
     operator: str
+    "The spelling of the prefix operator"
     operand: Expression
+    "The expression on the right-hand side of the operator"
 
     def __str__(self) -> str:
         return f'{self.operator}{self.operand}'
 
 
 class InfixExpr(NamedTuple):
-    "An infix expression"
+    """Stores a binary infix expression"""
     lhs: Expression
+    "The left-hand operand of the expression"
     oper: str
+    "The spelling of the infix operator"
     rhs: Expression
+    "The right-hand operand of the expression"
 
     def __str__(self) -> str:
         return f'{self.lhs} {self.oper} {self.rhs}'
 
 
 class CallExpr(NamedTuple):
-    "A call expression"
+    """Stores a function-call expression"""
     fn: Expression
+    "The callable expression being used as the function"
     args: Sequence[Expression]
+    "The arguments being passed to the function"
 
     def __str__(self) -> str:
         return f'{self.fn}<{", ".join(map(str, self.args))}>'
 
 
 class ScopeExpr(NamedTuple):
-    "A scope-resolution '::' infix expression"
+    """A scope-resolution '::' infix expression"""
     left: Expression
+    "The left-hand operand of the scope-resolution"
     name: Ident | TmplIdent
+    "The inner name being resolved"
 
     def __str__(self) -> str:
         return f'{self.left}::{self.name}'
 
 
 class InitList(NamedTuple):
-    "A braced initializer-list"
+    """Stores a brace-enclosed initializer-list"""
     elems: Sequence[Expression]
+    "The elements of the init-list"
 
     def __str__(self) -> str:
         return f'{{{", ".join(map(str, self.elems))}}}'
@@ -99,10 +120,11 @@ Expression = Union[PrefixExpr, CallExpr, String, Number, InitList, ScopeExpr,
 "An arbitrary expression (from a small subset of C++)"
 
 BOOST_NONE = ScopeExpr(Ident('boost'), Ident('none'))
+"Shorthand for the encoded 'boost::none' expression"
 
 
 class EdgeInfo(NamedTuple):
-    "Edge information from a C++ #include file"
+    """Represents a single edge test vector from a C++ #include file"""
     func: Expression
     "The function that is used to generate the edge"
     value: Expression
@@ -120,7 +142,7 @@ class EdgeInfo(NamedTuple):
 
 
 class MinCoverInfo(NamedTuple):
-    "Information about a mincover generation"
+    """Represents a single mincover test vector"""
     lb: Expression
     "Lower bound for the operation, if provided"
     ub: Expression
@@ -138,9 +160,11 @@ class MinCoverInfo(NamedTuple):
 
 
 class Token(NamedTuple):
-    "A token consumed from the input"
+    """A token consumed from the input"""
     spell: str
+    "The spelling of the token"
     line: int
+    "The line on which the token appears"
 
     @property
     def is_id(self) -> bool:
@@ -194,7 +218,7 @@ NUM_RE = re.compile(
         [lL]{0,2}   # Long, or VERY long
     )
 ''', re.VERBOSE)
-"Matches a base10 numeric literal"
+"Matches an integer or float numeric literal"
 STRING_RE = re.compile(
     r'''
     # Regular strings:
@@ -212,10 +236,11 @@ STRING_RE = re.compile(
 "Matches a string literal"
 LINE_COMMENT_RE = re.compile(r'^//.*?\n\s*')
 WHITESPACE_RE = re.compile(r'[ \n\t\r\f]+')
+"Matches one or more whitespace tokens"
 
 
 def cquote(s: str) -> str:
-    "Enquote a string to be used as a C string literal"
+    """Enquote a string to be used as a C string literal"""
     # Coincidentally, JSON strings are valid C strings
     return json.dumps(s)
 
@@ -287,7 +312,7 @@ class Scanner:
 
 
 def tokenize(sc: Scanner) -> Iterable[Token]:
-    "Extract the tokens from the given code"
+    """Lazily extracts and yields tokens from the given code string"""
     # Discard leading space, of course:
     sc.skipws()
     while sc.string:
@@ -295,6 +320,7 @@ def tokenize(sc: Scanner) -> Iterable[Token]:
         comment = LINE_COMMENT_RE.match(sc.string)
         if comment:
             sc.consume(len(comment[0]))
+            sc.skipws()
             continue
 
         # Try to match basic primary tokens. A "real" C++ tokenizer needs to be
@@ -312,7 +338,7 @@ def tokenize(sc: Scanner) -> Iterable[Token]:
             # Scope resolution operator
             yield Token(sc.string[:2], sc.line)
             sc.consume(2)
-        elif sc.string[0] in ',&{}[]().-<>+':
+        elif sc.string[0] in ',&}{[]().-<>+':
             # Basic one-character punctuators. We don't handle any digraphs.
             yield Token(sc.string[0], sc.line)
             sc.consume(1)
@@ -335,14 +361,14 @@ class LazyList(Generic[T]):
         self._acc: list[T | None] = []
 
     def at(self, n: int) -> T | None:
-        "Obtain the Nth element from the sequence, or 'None' if at the end"
+        """Return the Nth element from the sequence, or 'None' if at the end."""
         while n >= len(self._acc):
             # We need to add to the list. Append 'None' if there's nothing left
             self._acc.append(next(self._iter, None))
         return self._acc[n]
 
     def adv(self, n: int = 1) -> None:
-        "Discard N elements from the beginning of the list"
+        """Discard N elements from the beginning of the sequence."""
         self._acc = self._acc[n:]
 
 
@@ -351,14 +377,14 @@ Tokenizer = LazyList[Token]
 
 
 def parse_ilist(toks: Tokenizer) -> InitList:
-    "Parse a braced init-list, e.g. {1, 2, 3}"
+    """Parse a braced init-list, e.g. {1, 2, 3}"""
     lbr = toks.at(0)
     assert lbr and lbr.spell == '{', f'Expected left-brace "{{" (Got {lbr=})'
     toks.adv()
     acc: list[Expression] = []
     while 1:
         peek = toks.at(0)
-        assert peek, f'Unexpected EOF parsing init-list'
+        assert peek, 'Unexpected EOF parsing init-list'
         # If we see a closing brace, that's the end
         if peek.spell == '}':
             toks.adv()
@@ -367,7 +393,7 @@ def parse_ilist(toks: Tokenizer) -> InitList:
         expr = parse_expr(toks)
         acc.append(expr)
         peek = toks.at(0)
-        assert peek, f'Unexpected EOF parsing init-list'
+        assert peek, 'Unexpected EOF parsing init-list'
         # We expect either a comma or a closing brace:
         assert peek.spell in (
             '}', ','
@@ -379,19 +405,20 @@ def parse_ilist(toks: Tokenizer) -> InitList:
 
 
 def parse_call_args(toks: Tokenizer,
-                    open: str = '(',
-                    close: str = ')') -> Sequence[Expression]:
+                    begin: str = '(',
+                    end: str = ')') -> Sequence[Expression]:
     """
     Parse the argument list of a function/template call. The tokenizer must be
-    positioned at the opening token
+    positioned at the opening token. This function expects and will consume the
+    closing token from the input.
     """
     lpar = toks.at(0)
-    assert lpar and lpar.spell == open, f'Expected opening "{open}" (Got {lpar=})'
+    assert lpar and lpar.spell == begin, f'Expected opening "{begin}" (Got {lpar=})'
     toks.adv()
     acc: list[Expression] = []
 
     peek = toks.at(0)
-    while peek and peek.spell != close:
+    while peek and peek.spell != end:
         # Parse an argument:
         x = parse_expr(toks)
         acc.append(x)
@@ -399,13 +426,13 @@ def parse_call_args(toks: Tokenizer,
         peek = toks.at(0)
         assert peek, 'Unexpected EOF following argument in call expression'
         assert peek.spell in (
-            ',', close
-        ), f'Expected comma or "{close}" following argument (Got "{peek}")'
+            ',', end
+        ), f'Expected comma or "{end}" following argument (Got "{peek}")'
         # Skip over the comma, if present
         if peek.spell == ',':
             # Consume the comma:
             toks.adv()
-    assert peek and peek.spell == close
+    assert peek and peek.spell == end
     # Discard the closing token:
     toks.adv()
     return acc
@@ -433,12 +460,12 @@ def parse_nameid(toks: Tokenizer) -> Ident | TmplIdent:
 
 
 def parse_expr(toks: Tokenizer) -> Expression:
-    "Parse an arbitrary expression"
+    """Parses an arbitrary C++-ish expression."""
     return parse_infix(toks)
 
 
 def parse_infix(toks: Tokenizer) -> Expression:
-    "Parse a binary infix-expression"
+    """Parse a binary infix-expression. Only handles leff-associativity."""
     x = parse_prefix_expr(toks)
     peek = toks.at(0)
     while peek:
@@ -454,17 +481,17 @@ def parse_infix(toks: Tokenizer) -> Expression:
 
 
 def parse_prefix_expr(toks: Tokenizer) -> Expression:
-    "Parse a unary prefix expression (currently, only '&' and '-' are handled)"
+    """Parses a unary prefix expression (currently, only '&' and '-' are handled)."""
     peek = toks.at(0)
     if peek and peek.spell in '-&':
         toks.adv()
         x = parse_prefix_expr(toks)
         return PrefixExpr(peek.spell, x)
-    return parse_suffixexpr(toks)
+    return parse_suffix_expr(toks)
 
 
-def parse_suffixexpr(toks: Tokenizer) -> Expression:
-    "Parse a suffix-expression. (For now, that only includes call expressions.)"
+def parse_suffix_expr(toks: Tokenizer) -> Expression:
+    """Parses a suffix-expression (For now, that only includes call expressions and scope resolution)."""
     x = parse_primary_expr(toks)
     peek = toks.at(0)
     # Look ahead for scope resolution or function call (could also handle
@@ -486,9 +513,10 @@ def parse_suffixexpr(toks: Tokenizer) -> Expression:
 
 
 def parse_primary_expr(toks: Tokenizer) -> Expression:
+    """Parses a primary expression (IDs, literals, parentheticals, and init-lists)."""
     x: Expression
     peek = toks.at(0)
-    assert peek, f'Unexpected EOF when expected an expression'
+    assert peek, 'Unexpected EOF when expected an expression'
     if peek.spell == '{':
         x = parse_ilist(toks)
     elif peek.is_str:
@@ -505,7 +533,7 @@ def parse_primary_expr(toks: Tokenizer) -> Expression:
 
 
 def parse_edges(toks: Tokenizer) -> Iterable[EdgeInfo]:
-    "Parse the edges from the given sequence of C++ tokens"
+    """Lazily parses the edges from the given sequence of C++ tokens."""
     while toks.at(0):
         ilist = parse_expr(toks)
         assert isinstance(
@@ -528,14 +556,18 @@ def parse_edges(toks: Tokenizer) -> Iterable[EdgeInfo]:
 
 
 def parse_mincovers(toks: Tokenizer) -> Iterable[MinCoverInfo]:
+    """Lazily parse MinCovert test vectors from the given C++ tokens."""
     while toks.at(0):
         ilist = parse_expr(toks)
         assert isinstance(
             ilist, InitList
         ), f'Expected init-list for a mincover element (Got {ilist!r})'
+        # Grab the first five params:
         lb, ub, mn, mx, sparsity = ilist.elems[:5]
+        # The precision element is optional, and may not be present:
         has_precision = len(ilist.elems) == 7
         prec = ilist.elems[5] if has_precision else BOOST_NONE
+        # The final element is teh expectation:
         expect = ilist.elems[-1]
         yield MinCoverInfo(lb, ub, mn, mx, sparsity, prec, expect)
         peek = toks.at(0)
