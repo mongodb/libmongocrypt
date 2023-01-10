@@ -461,7 +461,7 @@ mc_dec128_coeff_high (mc_dec128 d)
 }
 
 /**
- * @brief Obtain the value of the low 49 bits of the Decimal128 coefficient
+ * @brief Obtain the value of the low 64 bits of the Decimal128 coefficient
  */
 static inline uint64_t
 mc_dec128_coeff_low (mc_dec128 d)

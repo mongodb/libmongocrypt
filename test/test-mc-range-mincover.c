@@ -638,7 +638,7 @@ static void
 _test_getMincoverDecimal128 (_mongocrypt_tester_t *tester)
 {
    Decimal128Test tests[] = {
-// #include "./data/range-min-cover/mincover_decimal128.cstruct"
+#include "./data/range-min-cover/mincover_decimal128.cstruct"
 #include "./data/range-min-cover/mincover_decimal128_precision.cstruct"
    };
 

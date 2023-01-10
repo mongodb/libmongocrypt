@@ -7,9 +7,9 @@ NODE_DIR="$(abspath "$THIS_DIR/..")"
 
 DEPS_PREFIX="$NODE_DIR/deps"
 BUILD_DIR=$DEPS_PREFIX/tmp
-: "${CMAKE_FLAGS:=}" \
-  "${WINDOWS_CMAKE_FLAGS:=}" \
-  "${NPM_OPTIONS:=}"
+: "${CMAKE_FLAGS:=}"
+: "${WINDOWS_CMAKE_FLAGS:=}"
+: "${NPM_OPTIONS:=}"
 
 export NPM_OPTIONS="${NPM_OPTIONS}"
 

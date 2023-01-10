@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-if [ -z "$NODE_NVM_USE_VERSION" ]; then
-  echo "NODE_NVM_USE_VERSION environment variable must be set."
-  exit 1
-fi
-
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 

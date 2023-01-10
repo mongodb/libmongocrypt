@@ -824,7 +824,7 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
       ASSERT_EIBB (5E-30, 10E-30, 1E-30, 35, 400000),
 
 #undef ASSERT_EIBB
-#undef ASSERT_EIBB_overflow
+#undef ASSERT_EIBB_OVERFLOW
 
       /* Test cases copied from Decimal128_Bounds_Precision ... end */
    };

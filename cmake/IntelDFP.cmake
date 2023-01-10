@@ -24,7 +24,7 @@ if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
 endif ()
 
 # NOTE: The applying of the patch expects the correct input directly from the
-#       expanded archive. If the patch needs to re-apply, you may see errors
+#       expanded archive. If the patch needs to be reapplied, you may see errors
 #       about trying to update the intel_dfp component. If you are seeing such
 #       errors, delete the `_deps/` subdirectory in the build tree and
 #       re-run CMake the project.
@@ -48,6 +48,7 @@ endif ()
 
 # This list of sources matches the ones used within MongoDB server. The
 # "<library>" prefix is replaced below.
+# Refer: https://github.com/mongodb/mongo/blob/e9be40f47a77af1931773ad671d4927c0fe6969a/src/third_party/IntelRDFPMathLib20U1/SConscript
 set (_dfp_sources
     "<library>/float128/dpml_exception.c"
     "<library>/float128/dpml_four_over_pi.c"
@@ -291,7 +292,7 @@ set (_dfp_sources
 string (REPLACE "<library>" "${intel_dfp_SOURCE_DIR}/LIBRARY" _dfp_sources "${_dfp_sources}")
 
 #[[
-    Intel DFP gives us a very blunt yet powerfull hammer to avoid symbol
+    Intel DFP gives us a very blunt yet powerful hammer to avoid symbol
     collision, since other library may also want a conflicting
     DFP version: Just rename everything!
 
@@ -367,7 +368,7 @@ target_compile_definitions (intel_dfp_obj PRIVATE
     >
     )
 
-# Suppress warnings in the Intel library. It can generate many
+# Suppress warnings in the Intel library, as it generates a lot that aren't of interest
 target_compile_options (intel_dfp_obj PRIVATE -w)
 
 # Define an interface library that attaches the built TUs to the consumer
