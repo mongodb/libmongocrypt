@@ -823,6 +823,12 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
 
       ASSERT_EIBB (5E-30, 10E-30, 1E-30, 35, 400000),
 
+      // Test a range that requires > 64 bits.
+      ASSERT_EIBB (5, 18446744073709551616, .1, 1, 49),
+      // Test a range that requires > 64 bits.
+      // min has more places after the decimal than precision.
+      ASSERT_EIBB (5, 18446744073709551616, .01, 1, 49),
+
 #undef ASSERT_EIBB
 #undef ASSERT_EIBB_OVERFLOW
 

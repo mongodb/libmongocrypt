@@ -485,6 +485,11 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
       // Returns 3141.0
       mc_dec128 v_prime2 = mc_dec128_scale (
          mc_dec128_sub (v_prime, args.min.value), args.precision.value);
+      // Round the number down again. min may have a fractional value with more
+      // decimal places than the precision (e.g. .001). Subtracting min may have
+      // resulted in v_prime2 with a non-zero fraction. v_prime2 is expected to
+      // have no fractional value when converting to int128.
+      v_prime2 = mc_dec128_round_integral_zero (v_prime2);
 
       BSON_ASSERT (mc_dec128_less (mc_dec128_log2 (v_prime2), MC_DEC128 (128)));
 
