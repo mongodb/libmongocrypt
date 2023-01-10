@@ -373,9 +373,9 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
       if (mc_dec128_greater_equal (args.min.value, args.max.value)) {
          CLIENT_ERR (
             "The minimum value must be less than the maximum value, got "
-            "min: %g, max: %g",
-            args.min.value,
-            args.max.value);
+            "min: %s, max: %s",
+            mc_dec128_to_string (args.min.value).str,
+            mc_dec128_to_string (args.max.value).str);
          return false;
       }
 
@@ -384,10 +384,10 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
           mc_dec128_less (args.value, args.min.value)) {
          CLIENT_ERR ("Value must be greater than or equal to the minimum value "
                      "and less than or equal to the maximum value, got "
-                     "min: %g, max: %g, value: %g",
-                     args.min.value,
-                     args.max.value,
-                     args.value);
+                     "min: %s, max: %s, value: %s",
+                     mc_dec128_to_string (args.min.value).str,
+                     mc_dec128_to_string (args.max.value).str,
+                     mc_dec128_to_string (args.value).str);
          return false;
       }
    }
@@ -415,9 +415,9 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
          return false;
       }
 
-      // min - max
+      // max - min
       mc_dec128 bounds_n1 = mc_dec128_sub (args.max.value, args.min.value);
-      // The size of [min, max]: (min - max) + 1
+      // The size of [min, max]: (max - min) + 1
       mc_dec128 bounds = mc_dec128_add (bounds_n1, MC_DEC128_ONE);
 
       // We can overflow if max = max_dec128 and min = min_dec128 so make sure
