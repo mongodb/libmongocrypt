@@ -363,7 +363,7 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
 
    // We only accept normal numbers
    if (mc_dec128_is_inf (args.value) || mc_dec128_is_nan (args.value)) {
-      CLIENT_ERR ("Infinity and Nan double values are not supported.");
+      CLIENT_ERR ("Infinity and Nan Decimal128 values are not supported.");
       return false;
    }
 
@@ -397,14 +397,15 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
    // When we use precision mode, we try to represent as a decimal128 value that
    // fits in [-2^127, 2^127] (i.e. is a valid int128)
    //
-   // This check determines if we can represent the precision truncated value as
+   // This check determines if we can represent any precision-truncated value as
    // a 128-bit integer I.e. Is ((ub - lb) * 10^precision) < 128 bits.
    //
-   // It is important we determine whether a range and its precision fit without
-   // looking that value because the encoding for precision truncated decimal128
-   // is incompatible with normal decimal128 values.
+   // It is important that we determine whether a range and its precision would
+   // fit, regardless of the value to be encoded, because the encoding for
+   // precision-truncated-decimal128 is incompatible with the encoding of the
+   // full range.
    bool use_precision_mode = false;
-   // The number of bits required to hold the result (uesd for precision mode)
+   // The number of bits required to hold the result (used for precision mode)
    uint8_t bits_range = 0;
    if (args.precision.set) {
       // Subnormal representations can support up to 5x10^-6182 as a number

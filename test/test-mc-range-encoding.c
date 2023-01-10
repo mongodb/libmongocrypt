@@ -678,24 +678,24 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
                   OPT_NULLOPT,
                   OPT_NULLOPT,
                   OPT_NULLOPT,
-                  "Infinity and Nan double values are not supported."),
+                  "Infinity and Nan Decimal128 values are not supported."),
       ERROR_CASE (MC_DEC128_NEGATIVE_INFINITY,
                   OPT_NULLOPT,
                   OPT_NULLOPT,
                   OPT_NULLOPT,
-                  "Infinity and Nan double values are not supported."),
+                  "Infinity and Nan Decimal128 values are not supported."),
 
       ERROR_CASE (MC_DEC128_POSITIVE_NAN,
                   OPT_NULLOPT,
                   OPT_NULLOPT,
                   OPT_NULLOPT,
-                  "Infinity and Nan double values are not supported."),
+                  "Infinity and Nan Decimal128 values are not supported."),
 
       ERROR_CASE (MC_DEC128_NEGATIVE_NAN,
                   OPT_NULLOPT,
                   OPT_NULLOPT,
                   OPT_NULLOPT,
-                  "Infinity and Nan double values are not supported."),
+                  "Infinity and Nan Decimal128 values are not supported."),
 
 /* Test cases copied from Decimal128_Bounds_Precision ... begin */
 #define ASSERT_EIBP(Value, Precision, Expect)       \
