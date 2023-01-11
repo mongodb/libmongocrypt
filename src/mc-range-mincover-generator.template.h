@@ -284,7 +284,7 @@ DECORATE_NAME (adjustBounds) (UINT_T *lowerBound,
                      ") must be greater than the range minimum (%" UINT_FMT_S
                      ") if upper bound is excluded from range.",
                      UINT_FMT_ARG (*upperBound),
-                     UINT_FMT_ARG (max));
+                     UINT_FMT_ARG (min));
          return false;
       }
       *upperBound = UINT_SUB (*upperBound, UINT_C (1));
