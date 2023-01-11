@@ -262,7 +262,7 @@ _test_getEdgesDouble (_mongocrypt_tester_t *tester)
 }
 
 
-#define MAX_DEC128_EDGES 128
+#define MAX_DEC128_EDGES 256
 typedef struct {
    mc_dec128 value;
    mc_optional_dec128_t min;

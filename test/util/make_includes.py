@@ -669,21 +669,48 @@ def _render_infix(e: InfixExpr) -> Iterable[str]:
     assert False, f'Unimplemented infix expression: {e=}'
 
 
+def _get_stdstring_concat_content(s: InfixExpr) -> str:
+    left = get_string_content(s.lhs)
+    right = get_string_content(s.rhs)
+    return left + right
+
+
+def get_string_content(s: Expression) -> str:
+    if isinstance(s, InfixExpr):
+        return _get_stdstring_concat_content(s)
+    if isinstance(s, CallExpr) and str(s.fn) == 'std::string':
+        # We're constructing a std::string. All our inputs just use inline literals, so just render
+        # those.
+        assert len(s.args) == 1, s
+        return get_string_content(s.args[0])
+    assert isinstance(
+        s, String
+    ), f'Attempting to pull the content of a non-string expression: {s!r}'
+    if not s.spell.startswith('R'):
+        # Just a regular string.
+        return json.loads(s.spell)
+    # C doesn't support the R"()" 'raw string' (yet). We'll un-prettify it:
+    mat = STRING_RE.match(s.spell)
+    assert mat, s
+    return mat.group('raw_content')
+
+
 def _render_string(s: String) -> Iterable[str]:
     """
     Render a string literal.
     """
-    if not s.spell.startswith('R'):
-        # Just a regular string. We are safe to emit this
-        return [s.spell]
-    # C doesn't support the R"()" 'raw string' (yet). We'll un-prettify it:
-    mat = STRING_RE.match(s.spell)
-    assert mat, s
-    c = mat.group('raw_content')
+    c = get_string_content(s)
     lines = c.splitlines()
-    with_nl = (f'{l}\n' for l in lines)
-    quoted = map(cquote, with_nl)
+    if '\n' in c:
+        lines = (f'{l}\n' for l in lines)
+    quoted = map(cquote, lines)
     return join_with(quoted, '\n    ')
+
+
+def _render_initlist(i: InitList) -> Iterable[str]:
+    exprs = map(_render_expr, i.elems)
+    with_comma = chain.from_iterable(chain('\n    ', x, ',') for x in exprs)
+    return chain('{', with_comma, '\n  }')
 
 
 def _render_expr(e: Expression) -> Iterable[str]:
@@ -702,6 +729,8 @@ def _render_expr(e: Expression) -> Iterable[str]:
         return _render_scope(e)
     elif isinstance(e, InfixExpr):
         return _render_infix(e)
+    elif isinstance(e, InitList):
+        return _render_initlist(e)
     else:
         assert False, f'Do not know how to render expression: {e=}'
 
@@ -748,6 +777,14 @@ def render_edge(e: EdgeInfo) -> Iterable[str]:
     )
 
 
+def split_mincover_string(s: Expression) -> Iterable[str]:
+    content = get_string_content(s)
+    lines = content.splitlines()
+    quoted = map(cquote, lines)
+    as_exprs = map(String, quoted)
+    return _render_expr(InitList(list(as_exprs)))
+
+
 def render_mincover(mc: MinCoverInfo) -> Iterable[str]:
     return chain(
         '{\n',
@@ -758,9 +795,10 @@ def render_mincover(mc: MinCoverInfo) -> Iterable[str]:
         designit('sparsity', _render_expr(mc.sparsity)),
         designit('min', _render_opt_wrap(mc.min)),
         designit('max', _render_opt_wrap(mc.max)),
-        designit('precision', _render_opt_wrap(mc.precision)),
-        designit('expectMincoverString',
-                 chain('\n    ', _render_expr(mc.expect_string))),
+        () if mc.precision is BOOST_NONE  #
+        else designit('precision', _render_opt_wrap(mc.precision)),
+        designit('expectMincoverStrings',
+                 split_mincover_string(mc.expect_string)),
         '},\n',
     )
 
