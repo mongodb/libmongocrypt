@@ -90,14 +90,6 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
    CHECK_AND_RETURN (
       mc_reader_read_u8 (&reader, &iev->original_bson_type, status));
 
-   /* Check that original_bson_type is a valid bson type. */
-   if ((iev->original_bson_type < 0) || (iev->original_bson_type > 0xFF)) {
-      CLIENT_ERR ("Field 't' must be a valid BSON type, got: %d",
-                  iev->original_bson_type);
-      return false;
-   }
-
-
    /* Read InnerEncrypted. */
    CHECK_AND_RETURN (
       mc_reader_read_buffer_to_end (&reader, &iev->InnerEncrypted, status));
