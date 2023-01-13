@@ -182,7 +182,7 @@ mc_reader_read_buffer (mc_reader_t *reader,
    CHECK_AND_RETURN (mc_reader_read_bytes (reader, &ptr, length, status));
 
    if (length > SIZE_MAX || !_mongocrypt_buffer_copy_from_data_and_size (
-          buf, ptr, (size_t) length)) {
+                               buf, ptr, (size_t) length)) {
       CLIENT_ERR ("%s failed to copy "
                   "data of length %" PRIu64,
                   reader->parser_name);
@@ -203,6 +203,20 @@ mc_reader_read_uuid_buffer (mc_reader_t *reader,
 
    CHECK_AND_RETURN (mc_reader_read_buffer (reader, buf, 16, status));
    buf->subtype = BSON_SUBTYPE_UUID;
+
+   return true;
+}
+
+bool
+mc_reader_read_prfblock_buffer (mc_reader_t *reader,
+                                _mongocrypt_buffer_t *buf,
+                                mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (reader);
+   BSON_ASSERT_PARAM (buf);
+
+   CHECK_AND_RETURN (mc_reader_read_buffer (reader, buf, 32, status));
+   buf->subtype = BSON_SUBTYPE_ENCRYPTED;
 
    return true;
 }

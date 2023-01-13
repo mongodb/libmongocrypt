@@ -84,8 +84,8 @@ mc_RangeOpts_appendMin (const mc_RangeOpts_t *ro,
                         mongocrypt_status_t *status);
 
 /* mc_RangeOpts_appendMax appends the maximum value of the range for a given
- * type. If `ro->max` is unset, uses the highest representable value of the value
- * type. Errors if `valueType` does not match the type of `ro->max`. */
+ * type. If `ro->max` is unset, uses the highest representable value of the
+ * value type. Errors if `valueType` does not match the type of `ro->max`. */
 bool
 mc_RangeOpts_appendMax (const mc_RangeOpts_t *ro,
                         bson_type_t valueType,
