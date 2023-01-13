@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt-private.h"
 
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-iev-private.h"
 #include "mc-tokens-private.h"
 #include "mc-reader-private.h"
+#include "mc-writer-private.h"
 #include <stdint.h>
 
 #define CHECK_AND_RETURN(x) \
@@ -50,6 +52,106 @@ mc_FLE2IndexedEqualityEncryptedValueTokens *
 mc_FLE2IndexedEqualityEncryptedValueTokens_new (void)
 {
    return bson_malloc0 (sizeof (mc_FLE2IndexedEqualityEncryptedValueTokens));
+}
+
+static bool
+mc_fle2IndexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
+                                      mc_FLE2IndexedEncryptedValue_t *iev,
+                                      mc_ServerDataEncryptionLevel1Token_t *token,
+                                      mc_FLE2IndexedEqualityEncryptedValueTokens *index_tokens,
+                                      mongocrypt_status_t *status);
+
+bool
+mc_FLE2IndexedEncryptedValue_write (_mongocrypt_crypto_t *crypto,
+                                    mc_FLE2IndexedEncryptedValue_t *iev,
+                                    mc_ServerDataEncryptionLevel1Token_t *token,
+                                    mc_FLE2IndexedEqualityEncryptedValueTokens *index_tokens,
+                                    _mongocrypt_buffer_t *buf,
+                                    mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (iev);
+   BSON_ASSERT_PARAM (buf);
+
+   if (iev->ClientEncryptedValue.len == 0) {
+      CLIENT_ERR (
+         "mc_FLE2IndexedEncryptedValue_write iev must have an encrypted value");
+      return false;
+   }
+
+   if (iev->S_KeyId.len == 0) {
+      CLIENT_ERR (
+         "mc_FLE2IndexedEncryptedValue_write iev SKeyId must have value");
+      return false;
+   }
+
+   if (!mc_fle2IndexedEncryptedValue_encrypt (crypto, iev, token, index_tokens, status)) {
+      return false;
+   }
+
+   uint32_t expected_plaintext_size = iev->ClientEncryptedValue.len + sizeof (uint64_t) * 2 + sizeof (uint32_t) * 3;
+   uint32_t expected_cipher_size = _mongocrypt_fle2_calculate_ciphertext_len(expected_plaintext_size, status);
+   uint32_t expected_buf_size = 1 + sizeof(iev->S_KeyId) + expected_cipher_size;
+
+   if (buf->len < expected_buf_size) {
+      CLIENT_ERR (
+         "mc_FLE2IndexedEncryptedValue_write buf is not large enough for iev");
+      return false;
+   }
+
+   mc_writer_t writer;
+   mc_writer_init_from_buffer (&writer, buf, __FUNCTION__);
+
+   mc_writer_write_u8 (&writer, &iev->fle_blob_subtype, status);
+   mc_writer_write_buffer (&writer, &iev->S_KeyId, iev->S_KeyId.len, status);
+   mc_writer_write_u8 (&writer, &iev->original_bson_type, status);
+
+   mc_writer_write_buffer (&writer, &iev->InnerEncrypted, iev->InnerEncrypted.len, status);
+
+   return true;
+}
+
+static bool
+mc_fle2IndexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
+                                      mc_FLE2IndexedEncryptedValue_t *iev,
+                                      mc_ServerDataEncryptionLevel1Token_t *token,
+                                      mc_FLE2IndexedEqualityEncryptedValueTokens *index_tokens,
+                                      mongocrypt_status_t *status) {
+
+   uint32_t expected_buf_size = iev->ClientEncryptedValue.len + sizeof (uint64_t) * 2 + (32 * 3);
+   _mongocrypt_buffer_resize(&iev->Inner, expected_buf_size);
+
+   uint32_t ciphertext_len = _mongocrypt_fle2_calculate_ciphertext_len(expected_buf_size, status);
+   _mongocrypt_buffer_resize(&iev->InnerEncrypted, ciphertext_len);
+
+   mc_writer_t writer;
+   mc_writer_init_from_buffer (&writer, &iev->Inner, __FUNCTION__);
+
+   uint64_t length;
+   length = iev->ClientEncryptedValue.len;
+   mc_writer_write_u64 (&writer, &length, status);
+
+   mc_writer_write_buffer (&writer, &iev->ClientEncryptedValue, iev->ClientEncryptedValue.len, status);
+
+   mc_writer_write_u64 (&writer, &index_tokens->counter, status);
+
+   mc_writer_write_prfblock_buffer (&writer, &index_tokens->edc, status);
+
+   mc_writer_write_prfblock_buffer (&writer, &index_tokens->esc, status);
+
+   mc_writer_write_prfblock_buffer (&writer, &index_tokens->ecc, status);
+
+   const _mongocrypt_buffer_t *token_buf =
+      mc_ServerDataEncryptionLevel1Token_get (token);
+
+   uint32_t bytes_written;
+
+   _mongocrypt_buffer_t iv;
+   _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
+   if (!_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
+      return false;
+   }
+
+   return _mongocrypt_fle2_do_encryption(crypto, &iv, token_buf, &iev->Inner, &iev->InnerEncrypted, &bytes_written, status);
 }
 
 bool

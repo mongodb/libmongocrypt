@@ -108,6 +108,14 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
                                     const _mongocrypt_buffer_t *buf,
                                     mongocrypt_status_t *status);
 
+bool
+mc_FLE2IndexedEncryptedValue_write (_mongocrypt_crypto_t *crypto,
+                                    mc_FLE2IndexedEncryptedValue_t *iev,
+                                    mc_ServerDataEncryptionLevel1Token_t *token,
+                                    mc_FLE2IndexedEqualityEncryptedValueTokens *index_tokens,
+                                    _mongocrypt_buffer_t *buf,
+                                    mongocrypt_status_t *status);
+
 /* mc_FLE2IndexedEncryptedValue_get_original_bson_type returns
  * original_bson_type. Returns 0 and sets @status on error.
  * It is an error to call before mc_FLE2IndexedEncryptedValue_parse. */

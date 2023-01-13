@@ -269,6 +269,60 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       mongocrypt_status_destroy (status);
    }
 
+   /* Test that parse and write work correctly. */
+   {
+      mongocrypt_status_t *status = mongocrypt_status_new ();
+      iev = mc_FLE2IndexedEncryptedValue_new ();
+      mc_FLE2IndexedEqualityEncryptedValueTokens *tokens = mc_FLE2IndexedEqualityEncryptedValueTokens_new ();
+
+      ASSERT_OK_STATUS (
+         mc_FLE2IndexedEncryptedValue_parse (iev, &input_with_tokens, status), status);
+
+            _mongocrypt_buffer_t TokenKey;
+      ASSERT (_mongocrypt_buffer_from_subrange (&TokenKey,
+                                                &correct_S_Key,
+                                                correct_S_Key.len - MONGOCRYPT_TOKEN_KEY_LEN,
+                                                MONGOCRYPT_TOKEN_KEY_LEN));
+
+      mc_ServerDataEncryptionLevel1Token_t *token =
+         mc_ServerDataEncryptionLevel1Token_new (crypt->crypto, &TokenKey, status);
+
+      ASSERT (token);
+
+      ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValue_decrypt_equality(
+                           crypt->crypto, iev, token, tokens, status), 
+                        status);
+
+      _mongocrypt_buffer_t write_buffer;
+      _mongocrypt_buffer_init_size (&write_buffer, input_with_tokens.len);
+
+      mc_FLE2IndexedEncryptedValue_write(crypt->crypto, iev, token, tokens, &write_buffer, status);
+
+      mc_FLE2IndexedEncryptedValue_t *iev2;
+      iev2 = mc_FLE2IndexedEncryptedValue_new ();
+      
+      ASSERT_OK_STATUS (
+         mc_FLE2IndexedEncryptedValue_parse (iev2, &write_buffer, status), status);
+
+      mc_FLE2IndexedEqualityEncryptedValueTokens *tokens2 = mc_FLE2IndexedEqualityEncryptedValueTokens_new ();
+
+      ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValue_decrypt_equality(
+                           crypt->crypto, iev2, token, tokens2, status), 
+                        status);
+
+      ASSERT_CMPBUF (tokens->edc, tokens2->edc);
+      ASSERT_CMPBUF (tokens->esc, tokens2->esc);
+      ASSERT_CMPBUF (tokens->ecc, tokens2->ecc);
+
+      _mongocrypt_buffer_cleanup(&write_buffer);
+      mc_ServerDataEncryptionLevel1Token_destroy (token);
+      mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
+      mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens2);
+      mc_FLE2IndexedEncryptedValue_destroy (iev);
+      mc_FLE2IndexedEncryptedValue_destroy (iev2);
+      mongocrypt_status_destroy (status);
+   }
+
    /* Test an incorrect S_Key. */
    {
       mongocrypt_status_t *status = mongocrypt_status_new ();
