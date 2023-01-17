@@ -255,6 +255,16 @@ div_check (mlib_int128 num, mlib_int128 den)
    mlib_int128_divmod_result expect;
    memcpy (&expect.quotient.r, &q, sizeof q);
    memcpy (&expect.remainder.r, &r, sizeof r);
+   if (!mlib_int128_eq (expect.quotient, res.quotient) ||
+       !mlib_int128_eq (expect.remainder, res.remainder)) {
+      std::cout << "unexpected result in division"
+                << " num=" << mlib_int128_format (num).str
+                << " den=" << mlib_int128_format (den).str
+                << " expect.quotient="
+                << mlib_int128_format (expect.quotient).str
+                << " expect.remainder="
+                << mlib_int128_format (expect.remainder).str << std::endl;
+   }
    CHECK (expect.quotient == res.quotient);
    CHECK (expect.remainder == res.remainder);
 #endif
