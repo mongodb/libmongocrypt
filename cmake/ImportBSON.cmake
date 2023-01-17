@@ -134,6 +134,8 @@ function (_import_bson)
       set (ENABLE_STATIC BUILD_ONLY)
       # Disable libzstd, which isn't necessary for libmongocrypt and isn't necessarily available.
       set (ENABLE_ZSTD OFF CACHE BOOL "Toggle libzstd for the mongoc subproject (not required by libmongocrypt)")
+      # Disable snappy, which isn't necessary for libmongocrypt and isn't necessarily available.
+      set (ENABLE_SNAPPY OFF CACHE BOOL "Toggle snappy for the mongoc subproject (not required by libmongocrypt)")
       # Disable deprecated automatic init and cleanup. (May be overridden by the user)
       set (ENABLE_AUTOMATIC_INIT_AND_CLEANUP OFF CACHE BOOL "Enable automatic init and cleanup (GCC only)")
       # Disable over-alignment of bson types. (May be overridden by the user)

@@ -209,6 +209,20 @@ mc_reader_read_uuid_buffer (mc_reader_t *reader,
 }
 
 bool
+mc_reader_read_prfblock_buffer (mc_reader_t *reader,
+                                _mongocrypt_buffer_t *buf,
+                                mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (reader);
+   BSON_ASSERT_PARAM (buf);
+
+   CHECK_AND_RETURN (mc_reader_read_buffer (reader, buf, 32, status));
+   buf->subtype = BSON_SUBTYPE_ENCRYPTED;
+
+   return true;
+}
+
+bool
 mc_reader_read_buffer_to_end (mc_reader_t *reader,
                               _mongocrypt_buffer_t *buf,
                               mongocrypt_status_t *status)

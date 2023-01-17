@@ -262,7 +262,8 @@ mc_FLE2InsertUpdatePayload_serializeForRange (
       if (!bson_append_document_end (&g_bson, &etc_bson)) {
          return false;
       }
-      if (g_index == UINT32_MAX) break;
+      if (g_index == UINT32_MAX)
+         break;
       g_index++;
    }
 

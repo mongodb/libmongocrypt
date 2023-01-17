@@ -560,9 +560,8 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
       BSON_ASSERT (MONGOCRYPT_BLOCK_SIZE >= unaligned);
       padding_byte = MONGOCRYPT_BLOCK_SIZE - unaligned;
       /* it is certain that padding_byte is in range for a cast to int */
-      memset (intermediates[1].data + unaligned,
-              (int) padding_byte,
-              padding_byte);
+      memset (
+         intermediates[1].data + unaligned, (int) padding_byte, padding_byte);
    } else {
       /* Fill the rest with the padding byte. */
       padding_byte = MONGOCRYPT_BLOCK_SIZE;
