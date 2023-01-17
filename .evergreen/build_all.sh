@@ -13,6 +13,7 @@ echo "Begin compile process"
 _cxxflags=""
 
 : "${CONFIGURE_ONLY:=}"
+: "${LIBMONGOCRYPT_BUILD_TYPE:=RelWithDebInfo}"
 
 if [ "$OS_NAME" = "windows" ]; then
     # Enable exception handling for MSVC
@@ -56,7 +57,7 @@ common_cmake_args=(
     -DCMAKE_C_FLAGS="$LIBMONGOCRYPT_EXTRA_CFLAGS"
     -DCMAKE_CXX_FLAGS="$LIBMONGOCRYPT_EXTRA_CFLAGS $_cxxflags"
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    -DCMAKE_BUILD_TYPE="$LIBMONGOCRYPT_BUILD_TYPE"
     -H"$LIBMONGOCRYPT_DIR"
     -B"$build_dir"
 )
@@ -81,10 +82,10 @@ if [ "$CONFIGURE_ONLY" ]; then
     exit 0;
 fi
 echo "Installing libmongocrypt"
-run_cmake --build "$build_dir" --target install --config RelWithDebInfo
-run_cmake --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
-run_cmake --build "$build_dir" --target test_kms_request --config RelWithDebInfo
-run_chdir "$build_dir" run_ctest -C RelWithDebInfo
+run_cmake --build "$build_dir" --target install --config "$LIBMONGOCRYPT_BUILD_TYPE"
+run_cmake --build "$build_dir" --target test-mongocrypt --config "$LIBMONGOCRYPT_BUILD_TYPE"
+run_cmake --build "$build_dir" --target test_kms_request --config "$LIBMONGOCRYPT_BUILD_TYPE"
+run_chdir "$build_dir" run_ctest -C "$LIBMONGOCRYPT_BUILD_TYPE"
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if [ "$MACOS_UNIVERSAL" = "ON" ]; then
@@ -114,9 +115,9 @@ run_cmake \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
     "${common_cmake_args[@]}"
 
-run_cmake --build "$build_dir" --target install --config RelWithDebInfo
-run_cmake --build "$build_dir" --target test-mongocrypt --config RelWithDebInfo
-run_chdir "$build_dir" run_ctest -C RelWithDebInfo
+run_cmake --build "$build_dir" --target install --config "$LIBMONGOCRYPT_BUILD_TYPE"
+run_cmake --build "$build_dir" --target test-mongocrypt --config "$LIBMONGOCRYPT_BUILD_TYPE"
+run_chdir "$build_dir" run_ctest -C "$LIBMONGOCRYPT_BUILD_TYPE"
 
 # Build and install libmongocrypt without statically linking libbson
 run_cmake \
@@ -125,5 +126,5 @@ run_cmake \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
     "${common_cmake_args[@]}"
 
-run_cmake --build "$build_dir" --target install  --config RelWithDebInfo
-run_chdir "$build_dir" run_ctest -C RelWithDebInfo
+run_cmake --build "$build_dir" --target install  --config "$LIBMONGOCRYPT_BUILD_TYPE"
+run_chdir "$build_dir" run_ctest -C "$LIBMONGOCRYPT_BUILD_TYPE"
