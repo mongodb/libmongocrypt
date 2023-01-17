@@ -22,7 +22,13 @@
 #include "mc-array-private.h"
 
 
-enum { MAX_MINCOVER_STRINGS = 4500 };
+enum {
+   /// Why this number? The Decimal128 tests generate thousands of test strings,
+   /// but we can't set this arbitrarily high, since we'll bump up on stack
+   /// overflow on MSVC. This is large enough to capture all strings in all
+   /// Decimal128 tests without overflowing the stack.
+   MAX_MINCOVER_STRINGS = 4500
+};
 
 typedef struct {
    int32_t lowerBound;
