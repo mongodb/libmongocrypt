@@ -140,7 +140,7 @@ mc_count_leading_zeros_u128 (mlib_int128 in)
    size_t hi = mc_count_leading_zeros_u64 (
       mlib_int128_to_u64 (mlib_int128_rshift (in, 64)));
    size_t lo = mc_count_leading_zeros_u64 (mlib_int128_to_u64 (in));
-   return hi + ((hi == 64) * lo);
+   return hi + ((hi == 64 ? 1u : 0u) * lo);
 }
 
 typedef struct mc_bitstring {
@@ -148,14 +148,12 @@ typedef struct mc_bitstring {
 } mc_bitstring;
 
 // mc_convert_to_bitstring_u64 returns a 64 character string of 1's and 0's
-// representing the bits of `in`. Caller must call `bson_free` on returned
-// value.
+// representing the bits of `in`
 mc_bitstring
 mc_convert_to_bitstring_u64 (uint64_t in);
 
 // mc_convert_to_bitstring_u32 returns a 32 character string of 1's and 0's
-// representing the bits of `in`. Caller must call `bson_free` on returned
-// value.
+// representing the bits of `in`.
 mc_bitstring
 mc_convert_to_bitstring_u32 (uint32_t in);
 

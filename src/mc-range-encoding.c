@@ -506,9 +506,9 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
       if (bits_range < 64) {
          // Try conversion to int64, it may fail but since it is easy we try
          // this first.
-         mc_dec128_flagset flags = {MC_DEC128_FLAG_NONE};
+         mc_dec128_flagset flags = {0};
          int64_t as64 = mc_dec128_to_int64_ex (v_prime2, &flags);
-         if (flags.bits == MC_DEC128_FLAG_NONE) {
+         if (flags.bits == 0) {
             // No error. It fits
             *out = (mc_OSTType_Decimal128){
                .value = MLIB_INT128_CAST (as64),

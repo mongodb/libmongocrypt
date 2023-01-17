@@ -1,9 +1,9 @@
+#include <mc-dec128.h>
+
 #include <stdlib.h>
 
 #include <mlib/check.hpp>
 #define CHECK MLIB_CHECK
-
-#include "./mc-dec128.h"
 
 inline std::ostream &
 operator<< (std::ostream &out, mc_dec128 d) noexcept

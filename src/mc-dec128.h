@@ -24,16 +24,6 @@ typedef enum mc_dec128_rounding_mode {
    MC_DEC128_ROUND_DEFAULT = MC_DEC128_ROUND_NEAREST_EVEN,
 } mc_dec128_rounding_mode;
 
-/// Status indication flags returned by some Decimal128 operations
-typedef enum mc_dec128_flags {
-   MC_DEC128_FLAG_INVALID = 0x1,
-   MC_DEC128_FLAG_ZERODIV = 0x4,
-   MC_DEC128_FLAG_OVERFLOW = 0x8,
-   MC_DEC128_FLAG_UNDERFLOW = 0x10,
-   MC_DEC128_FLAG_INEXACT = 0x20,
-   MC_DEC128_FLAG_NONE = 0,
-} mc_dec128_flags;
-
 typedef struct mc_dec128_flagset {
    int bits;
 } mc_dec128_flagset;
@@ -130,6 +120,26 @@ static const mc_dec128 MC_DEC128_MINUSONE = MC_DEC128_C (-1);
 #define MC_DEC128_NEGATIVE_NAN \
    _mcDec128ConstFromParts (0, _mcDec128QuietNaNCombo | 1ull << 63)
 
+
+/**
+ * @brief Convert a double-precision binary floating point value into the
+ * nearest Decimal128 value
+ *
+ * @param d The number to conver
+ * @param rnd The rounding mode in case the value is not exactly representable
+ * @param flags Out param for exception/error flags (Optional)
+ */
+static inline mc_dec128
+mc_dec128_from_double_ex (double d,
+                          mc_dec128_rounding_mode rnd,
+                          mc_dec128_flagset *flags)
+{
+   extern mc_dec128 __mongocrypt_binary64_to_bid128 (
+      double d, mc_dec128_rounding_mode, mc_dec128_flagset *);
+   mc_dec128_flagset zero_flags = {0};
+   return __mongocrypt_binary64_to_bid128 (d, rnd, flags ? flags : &zero_flags);
+}
+
 /**
  * @brief Convert a double-precision binary floating point value into the
  * nearest Decimal128 value
@@ -137,11 +147,26 @@ static const mc_dec128 MC_DEC128_MINUSONE = MC_DEC128_C (-1);
 static inline mc_dec128
 mc_dec128_from_double (double d)
 {
-   extern mc_dec128 __mongocrypt_binary64_to_bid128 (
-      double d, mc_dec128_rounding_mode, mc_dec128_flagset *);
+   return mc_dec128_from_double_ex (d, MC_DEC128_ROUND_DEFAULT, NULL);
+}
+
+/**
+ * @brief Convert a string representation of a number into the nearest
+ * Decimal128 value
+ *
+ * @param s The string to parse. MUST be null-terminated
+ * @param rnd The rounding mode to use if the result is not representable
+ * @param flags Out param for exception/error flags (Optional)
+ */
+static inline mc_dec128
+mc_dec128_from_string_ex (const char *s,
+                          mc_dec128_rounding_mode rnd,
+                          mc_dec128_flagset *flags)
+{
+   extern mc_dec128 __mongocrypt_bid128_from_string (
+      const char *, mc_dec128_rounding_mode, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
-   return __mongocrypt_binary64_to_bid128 (
-      d, MC_DEC128_ROUND_DEFAULT, &zero_flags);
+   return __mongocrypt_bid128_from_string (s, rnd, flags ? flags : &zero_flags);
 }
 
 /**
@@ -151,10 +176,7 @@ mc_dec128_from_double (double d)
 static inline mc_dec128
 mc_dec128_from_string (const char *s)
 {
-   extern mc_dec128 __mongocrypt_bid128_from_string (
-      const char *, mc_dec128_rounding_mode, mc_dec128_flagset *);
-   mc_dec128_flagset flags = {0};
-   return __mongocrypt_bid128_from_string (s, MC_DEC128_ROUND_DEFAULT, &flags);
+   return mc_dec128_from_string_ex (s, MC_DEC128_ROUND_DEFAULT, NULL);
 }
 
 /**
@@ -168,26 +190,45 @@ typedef struct mc_dec128_string {
 
 /**
  * @brief Render a Decimal128 value as a string (in engineering notation)
+ *
+ * @param d The number to represent
+ * @param flags Output parameter for exception/error flags (optional)
+ */
+static inline mc_dec128_string
+mc_dec128_to_string_ex (mc_dec128 d, mc_dec128_flagset *flags)
+{
+   extern void __mongocrypt_bid128_to_string (
+      char *, mc_dec128 d, mc_dec128_flagset *);
+   mc_dec128_flagset zero_flags = {0};
+   mc_dec128_string out = {{0}};
+   __mongocrypt_bid128_to_string (out.str, d, flags ? flags : &zero_flags);
+   return out;
+}
+
+/**
+ * @brief Render a Decimal128 value as a string (in engineering notation)
  */
 static inline mc_dec128_string
 mc_dec128_to_string (mc_dec128 d)
 {
-   extern void __mongocrypt_bid128_to_string (
-      char *, mc_dec128 d, mc_dec128_flagset *);
-   mc_dec128_flagset flags = {0};
-   mc_dec128_string out = {{0}};
-   __mongocrypt_bid128_to_string (out.str, d, &flags);
-   return out;
+   return mc_dec128_to_string_ex (d, NULL);
 }
 
 /// Compare two dec128 numbers
-#define DECL_IDF_COMPARE_1(Oper)                                               \
-   static inline bool mc_dec128_##Oper (mc_dec128 left, mc_dec128 right)       \
-   {                                                                           \
-      extern int __mongocrypt_bid128_quiet_##Oper (                            \
-         mc_dec128 left, mc_dec128 right, mc_dec128_flagset *);                \
-      mc_dec128_flagset zero_flags = {0};                                      \
-      return 0 != __mongocrypt_bid128_quiet_##Oper (left, right, &zero_flags); \
+#define DECL_IDF_COMPARE_1(Oper)                                         \
+   static inline bool mc_dec128_##Oper##_ex (                            \
+      mc_dec128 left, mc_dec128 right, mc_dec128_flagset *flags)         \
+   {                                                                     \
+      extern int __mongocrypt_bid128_quiet_##Oper (                      \
+         mc_dec128 left, mc_dec128 right, mc_dec128_flagset *);          \
+      mc_dec128_flagset zero_flags = {0};                                \
+      return 0 != __mongocrypt_bid128_quiet_##Oper (                     \
+                     left, right, flags ? flags : &zero_flags);          \
+   }                                                                     \
+                                                                         \
+   static inline bool mc_dec128_##Oper (mc_dec128 left, mc_dec128 right) \
+   {                                                                     \
+      return mc_dec128_##Oper##_ex (left, right, NULL);                  \
    }
 
 #define DECL_IDF_COMPARE(Op) \

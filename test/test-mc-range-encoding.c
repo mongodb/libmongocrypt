@@ -531,7 +531,6 @@ typedef struct {
    mc_optional_dec128_t max;
    mc_optional_uint32_t precision;
    mlib_int128 expect;
-   mc_optional_int128_t expectMax;
    const char *expectError;
 } Decimal128Test;
 
@@ -867,9 +866,6 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
 
          ASSERT_CMPINT128_EQ (got.value, test->expect);
          ASSERT_CMPINT128_EQ (got.min, MLIB_INT128 (0));
-         if (test->expectMax.set) {
-            ASSERT_CMPINT128_EQ (got.max, test->expectMax.value);
-         }
       }
       mongocrypt_status_destroy (status);
    }

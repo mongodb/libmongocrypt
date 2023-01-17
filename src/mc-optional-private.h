@@ -120,15 +120,4 @@ typedef struct {
       .set = false  \
    }
 
-typedef struct {
-   bool set;
-   mlib_int128 value;
-} mc_optional_int128_t;
-
-#define OPT_MC_INT128(...)                     \
-   ((mc_optional_int128_t){                    \
-      .set = true,                             \
-      .value = MLIB_INT128_CAST (__VA_ARGS__), \
-   })
-
 #endif /* MC_OPTIONAL_PRIVATE_H */
