@@ -230,7 +230,7 @@ mc_getTypeInfoDouble (mc_getTypeInfoDouble_args_t args,
    uint32_t bits_range;
    if (args.precision.set) {
       // Subnormal representations can support up to 5x10^-324 as a number
-      if (args.precision.value < 0 || args.precision.value > 324) {
+      if (args.precision.value > 324) {
          CLIENT_ERR (
             "Precision must be between 0 and 324 inclusive, got: %" PRIu32,
             args.precision.value);
@@ -409,7 +409,7 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
    uint8_t bits_range = 0;
    if (args.precision.set) {
       // Subnormal representations can support up to 5x10^-6182 as a number
-      if (args.precision.value < 0 || args.precision.value > 6182) {
+      if (args.precision.value > 6182) {
          CLIENT_ERR (
             "Precision must be between 0 and 6182 inclusive, got: %" PRIu32,
             args.precision.value);
