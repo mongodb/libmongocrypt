@@ -340,8 +340,8 @@ class MongoCrypt(object):
         :Returns:
           A :class:`ExplicitEncryptionContext`.
         """
-        return ExplicitEncryptionContext(self._create_context(),
-            self.__opts.kms_providers, value, opts)
+        return ExplicitEncryptionContext(
+            self._create_context(), self.__opts.kms_providers, value, opts)
 
     def explicit_decryption_context(self, value):
         """Creates a context to use for explicit decryption.
@@ -568,9 +568,18 @@ class ExplicitEncryptionContext(MongoCryptContext):
                 if not lib.mongocrypt_ctx_setopt_contention_factor(ctx, opts.contention_factor):
                     self._raise_from_status()
 
+            if opts.range_options is not None:
+                with MongoCryptBinaryIn(opts.range_options) as range_options:
+                    if not lib.mongocrypt_ctx_setopt_algorithm_range(ctx, range_options.bin):
+                        self._raise_from_status()
+
             with MongoCryptBinaryIn(value) as binary:
-                if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx, binary.bin):
-                    self._raise_from_status()
+                if opts.encrypt_expression:
+                    if not lib.mongocrypt_ctx_explicit_encrypt_expression_init(ctx, binary.bin):
+                        self._raise_from_status()
+                else:
+                    if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx, binary.bin):
+                        self._raise_from_status()
         except Exception:
             # Destroy the context on error.
             self._close()

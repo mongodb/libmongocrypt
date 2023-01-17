@@ -774,6 +774,24 @@ class TestExplicitEncryption(unittest.TestCase):
         raw_doc = RawBSONDocument(result)
         assert len(raw_doc['v']) == 2
 
+    def test_range_query_int32(self):
+        key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+        key_id = json_data(key_path)['_id']
+        encrypter = ExplicitEncrypter(MockCallback(
+            key_docs=[bson_data(key_path)],
+            kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        range_opts = bson_data("fle2-find-range-explicit/int32/rangeopts.json")
+        value = bson_data("fle2-find-range-explicit/int32/value-to-encrypt.json")
+        expected = json_data("fle2-find-range-explicit/int32/encrypted-payload.json")
+        encrypted = encrypter.encrypt(
+            value, "rangePreview", key_id=key_id, query_type="rangePreview",
+            contention_factor=4, range_options=range_opts, encrypt_expression=True)
+        encrypted_val = bson.decode(encrypted, OPTS)
+        self.assertEqual(encrypted_val, expected)
+
+
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:
         return fp.read()
