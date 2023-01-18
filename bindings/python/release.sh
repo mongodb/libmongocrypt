@@ -14,9 +14,9 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # The libmongocrypt git revision release to embed in our wheels.
-REVISION=$(git rev-list -n 1 1.6.1)
+REVISION=$(git rev-list -n 1 1.7.0-alpha1)
 # The libmongocrypt release branch.
-BRANCH="r1.6"
+BRANCH="master"
 MACOS_TARGET=${MACOS_TARGET:="macos"}
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
@@ -25,7 +25,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
 
     # Build the Windows wheel.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/windows-test/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/windows-test/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dll
@@ -51,7 +51,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     # Install the sdist.
     $PYTHON setup.py sdist
 
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/${MACOS_TARGET}/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/${MACOS_TARGET}/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     NOCRYPTO_SO=libmongocrypt/nocrypto/lib/libmongocrypt.dylib
@@ -67,7 +67,7 @@ fi
 if [ $(command -v docker) ]; then
     # Build the manylinux2010 wheels.
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     NOCRYPTO_SO=libmongocrypt/nocrypto/lib64/libmongocrypt.so

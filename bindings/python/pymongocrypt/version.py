@@ -14,4 +14,4 @@
 
 __version__ = '1.4.2.dev0'
 
-_MIN_LIBMONGOCRYPT_VERSION = '1.5.2'
+_MIN_LIBMONGOCRYPT_VERSION = '1.7.0-alpha1'

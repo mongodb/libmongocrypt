@@ -18,7 +18,8 @@ from pymongocrypt.state_machine import run_state_machine
 
 class ExplicitEncryptOpts(object):
     def __init__(self, algorithm, key_id=None, key_alt_name=None,
-                 query_type=None, contention_factor=None):
+                 query_type=None, contention_factor=None, range_opts=None,
+                 is_expression=False):
         """Options for explicit encryption.
 
         :Parameters:
@@ -30,9 +31,15 @@ class ExplicitEncryptOpts(object):
           - `query_type` (str): The query type to execute.
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
+          - `range_opts` (bytes): Options for explicit encryption
+            with the "rangePreview" algorithm encoded as a BSON document.
+          - `is_expression` (boolean): True if this is an encryptExpression()
+            context. Defaults to False.
 
         .. versionchanged:: 1.3
            Added the `query_type` and `contention_factor` parameters.
+        .. versionchanged:: 1.5
+           Added the `range_opts` and `is_expression` parameters.
         """
         self.algorithm = algorithm
         self.key_id = key_id
@@ -46,6 +53,11 @@ class ExplicitEncryptOpts(object):
             raise TypeError(
                 'contention_factor must be an int or None, not: %r' % (type(contention_factor),))
         self.contention_factor = contention_factor
+        if range_opts is not None and not isinstance(range_opts, bytes):
+            raise TypeError(
+                'range_opts must be an bytes or None, not: %r' % (type(contention_factor),))
+        self.range_opts = range_opts
+        self.is_expression = is_expression
 
 
 class DataKeyOpts(object):
@@ -177,7 +189,8 @@ class ExplicitEncrypter(object):
             return run_state_machine(ctx, self.callback)
 
     def encrypt(self, value, algorithm, key_id=None, key_alt_name=None,
-                query_type=None, contention_factor=None):
+                query_type=None, contention_factor=None, range_opts=None,
+                is_expression=False):
         """Encrypts a BSON value.
 
         Note that exactly one of ``key_id`` or  ``key_alt_name`` must be
@@ -194,19 +207,26 @@ class ExplicitEncrypter(object):
           - `query_type` (str): The query type to execute.
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
+          - `range_opts` (bytes): Options for explicit encryption
+            with the "rangePreview" algorithm encoded as a BSON document.
+          - `is_expression` (boolean): True if this is an encryptExpression()
+            context. Defaults to False.
 
         :Returns:
           The encrypted BSON value.
 
         .. versionchanged:: 1.3
            Added the `query_type` and `contention_factor` parameters.
+        .. versionchanged:: 1.5
+           Added the `range_opts` and `is_expression` parameters.
         """
         # CDRIVER-3275 key_alt_name needs to be wrapped in a bson document.
         if key_alt_name is not None:
             key_alt_name = self.callback.bson_encode(
                 {'keyAltName': key_alt_name})
         opts = ExplicitEncryptOpts(
-            algorithm, key_id, key_alt_name, query_type, contention_factor)
+            algorithm, key_id, key_alt_name, query_type, contention_factor,
+            range_opts, is_expression)
         with self.mongocrypt.explicit_encryption_context(value, opts) as ctx:
             return run_state_machine(ctx, self.callback)
 
