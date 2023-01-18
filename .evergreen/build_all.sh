@@ -39,8 +39,6 @@ if [ "$MACOS_UNIVERSAL" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
-: "${CMAKE:=cmake}"
-
 for suffix in "dll" "dylib" "so"; do
     cand="$(abspath "$LIBMONGOCRYPT_DIR/../mongocrypt_v1.$suffix")"
     if test -f "$cand"; then
