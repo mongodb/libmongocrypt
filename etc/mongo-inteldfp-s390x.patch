@@ -105,3 +105,21 @@ index afb77da454c2..24e91685de52 100755
  
  unsigned int expected_status;
  
+diff --git a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux_ops.c b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux_ops.c
+--- a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux_ops.c
++++ b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux_ops.c
+@@ -666,3 +666,3 @@
+         }
+-    return fp_class | ((WORD) 1 << (BITS_PER_WORD - 1));
++    return fp_class | ((U_WORD) 1 << (BITS_PER_WORD - 1));
+     }
+ 
+diff --git a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux.h b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux.h
+--- a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux.h
++++ b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux.h
+@@ -129,3 +129,3 @@
+ #define UX_UNDERFLOW_EXPONENT (- UX_OVERFLOW_EXPONENT)
+-#define UX_ZERO_EXPONENT      (- (UX_EXPONENT_TYPE) 1 << (F_EXP_WIDTH + 2))
++#define UX_ZERO_EXPONENT      (- ((UX_EXPONENT_TYPE) 1 << (F_EXP_WIDTH + 2)))
+ #define UX_INFINITY_EXPONENT  (-(UX_ZERO_EXPONENT + 1)) 
+
