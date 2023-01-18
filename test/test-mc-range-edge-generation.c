@@ -261,6 +261,80 @@ _test_getEdgesDouble (_mongocrypt_tester_t *tester)
    }
 }
 
+
+#define MAX_DEC128_EDGES 129
+typedef struct {
+   mc_dec128 value;
+   mc_optional_dec128_t min;
+   mc_optional_dec128_t max;
+   int sparsity;
+   // expectEdges includes a trailing NULL pointer.
+   const char *expectEdges[MAX_DEC128_EDGES + 1];
+   const char *expectError;
+} Decimal128Test;
+#undef MAX_DEC128_EDGES
+
+static void
+_test_getEdgesDecimal128 (_mongocrypt_tester_t *tester)
+{
+   Decimal128Test tests[] = {
+#include "data/range-edge-generation/edges_decimal128.cstruct"
+   };
+
+   for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      const Decimal128Test *test = tests + i;
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
+      mc_getEdgesDecimal128_args_t args = {
+         .value = test->value,
+         // Some edges specify min/max values, but we don't use them (yet)
+         //  .min = test->min,
+         //  .max = test->max,
+         .sparsity = (size_t) test->sparsity,
+      };
+      mc_edges_t *got = mc_getEdgesDecimal128 (args, status);
+
+      if (test->expectError != NULL) {
+         if (NULL != got) {
+            TEST_ERROR ("test %zu expected error, got success", i);
+         }
+         ASSERT_STATUS_CONTAINS (status, test->expectError);
+         mongocrypt_status_destroy (status);
+         continue;
+      }
+      ASSERT_OK_STATUS (got != NULL, status);
+
+      size_t numGot = mc_edges_len (got);
+      size_t numExpected = 0;
+      while (test->expectEdges[numExpected] != NULL) {
+         ++numExpected;
+      }
+
+      if (numExpected != numGot) {
+         print_edges_compared (got, test->expectEdges);
+         TEST_ERROR ("test %zu got %zu edges, expected %zu edges\n",
+                     i,
+                     numGot,
+                     numExpected);
+      }
+      for (size_t gotI = 0; gotI < numGot; gotI++) {
+         const char *edgeGot = mc_edges_get (got, gotI);
+         const char *edgeExpected = test->expectEdges[gotI];
+         if (0 == strcmp (edgeGot, edgeExpected)) {
+            continue;
+         }
+         print_edges_compared (got, test->expectEdges);
+         TEST_ERROR ("test %zu got edge mismatch at index %zu. (actual) '%s' "
+                     "!= '%s' (expected)\n",
+                     i,
+                     gotI,
+                     edgeGot,
+                     edgeExpected);
+      }
+      mc_edges_destroy (got);
+      mongocrypt_status_destroy (status);
+   }
+}
+
 static void
 _test_count_leading_zeros (_mongocrypt_tester_t *tester)
 {
@@ -273,6 +347,13 @@ _test_count_leading_zeros (_mongocrypt_tester_t *tester)
    ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 (UINT32_C (1)), ==, 31);
    ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 (UINT32_MAX), ==, 0);
    ASSERT_CMPSIZE_T (mc_count_leading_zeros_u32 ((~UINT32_C (0)) >> 1), ==, 1);
+
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u128 (MLIB_INT128 (0)), ==, 128);
+   ASSERT_CMPSIZE_T (mc_count_leading_zeros_u128 (MLIB_INT128 (8)), ==, 124);
+   ASSERT_CMPSIZE_T (
+      mc_count_leading_zeros_u128 ((mlib_int128) MLIB_INT128_FROM_PARTS (0, 8)),
+      ==,
+      60);
 }
 
 typedef struct {
@@ -284,6 +365,11 @@ typedef struct {
    uint64_t in;
    const char *expect;
 } bitstring_u64_test;
+
+typedef struct {
+   mlib_int128 in;
+   const char *expect;
+} bitstring_u128_test;
 
 static void
 _test_convert_to_bitstring (_mongocrypt_tester_t *tester)
@@ -298,9 +384,8 @@ _test_convert_to_bitstring (_mongocrypt_tester_t *tester)
          {.in = UINT32_MAX - 1u, .expect = "11111111111111111111111111111110"}};
       for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
          bitstring_u32_test *test = tests + i;
-         char *got = mc_convert_to_bitstring_u32 (test->in);
-         ASSERT_STREQUAL (test->expect, got);
-         bson_free (got);
+         mc_bitstring got = mc_convert_to_bitstring_u32 (test->in);
+         ASSERT_STREQUAL (test->expect, got.str);
       }
    }
    // Test uint64_t.
@@ -323,9 +408,46 @@ _test_convert_to_bitstring (_mongocrypt_tester_t *tester)
                     "111110"}};
       for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
          bitstring_u64_test *test = tests + i;
-         char *got = mc_convert_to_bitstring_u64 (test->in);
-         ASSERT_STREQUAL (test->expect, got);
-         bson_free (got);
+         mc_bitstring got = mc_convert_to_bitstring_u64 (test->in);
+         ASSERT_STREQUAL (test->expect, got.str);
+      }
+   }
+   // Tests for u128
+   {
+      bitstring_u128_test tests[] = {
+         {
+            .in = MLIB_INT128 (0),
+            .expect = "00000000000000000000000000000000000000000000000000000000"
+                      "00000000000000000000000000000000000000000000000000000000"
+                      "0000000000000000",
+         },
+         {
+            .in = MLIB_INT128 (1),
+            .expect = "00000000000000000000000000000000000000000000000000000000"
+                      "00000000000000000000000000000000000000000000000000000000"
+                      "0000000000000001",
+         },
+         {
+            .in = MLIB_INT128 (256),
+            .expect = "00000000000000000000000000000000000000000000000000000000"
+                      "00000000000000000000000000000000000000000000000000000000"
+                      "0000000100000000",
+         },
+         {
+            .in = mlib_int128_from_string (
+               "0b1011010010001011101010010100101010010101010101001010010100100"
+               "101010101010010001010011010110110100110010101010010101001111010"
+               "1011",
+               NULL),
+            .expect = "10110100100010111010100101001010100101010101010010100101"
+                      "00100101010101010010001010011010110110100110010101010010"
+                      "1010011110101011",
+         },
+      };
+      for (size_t i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+         bitstring_u128_test *test = tests + i;
+         mc_bitstring got = mc_convert_to_bitstring_u128 (test->in);
+         ASSERT_STREQUAL (test->expect, got.str);
       }
    }
 }
@@ -336,6 +458,7 @@ _mongocrypt_tester_install_range_edge_generation (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_getEdgesInt32);
    INSTALL_TEST (_test_getEdgesInt64);
    INSTALL_TEST (_test_getEdgesDouble);
+   INSTALL_TEST (_test_getEdgesDecimal128);
    INSTALL_TEST (_test_count_leading_zeros);
    INSTALL_TEST (_test_convert_to_bitstring);
 }

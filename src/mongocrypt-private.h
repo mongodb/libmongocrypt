@@ -33,6 +33,8 @@
 
 #include "mongo_crypt-v1.h"
 
+#include <mlib/macros.h>
+
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
@@ -65,6 +67,7 @@ const char *
 tmp_buf (const _mongocrypt_buffer_t *buf);
 
 
+MLIB_ANNOTATE_PRINTF (4, 5)
 void
 _mongocrypt_set_error (mongocrypt_status_t *status,
                        mongocrypt_status_type_t type,
