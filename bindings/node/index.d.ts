@@ -1,4 +1,4 @@
-import type { Document, Binary } from 'bson';
+import type { Document, Binary, Long } from 'bson';
 import type { MongoClient, BulkWriteResult, ClientSession, DeleteResult, FindCursor } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
@@ -331,13 +331,25 @@ export interface ClientEncryptionRewrapManyDataKeyResult {
 }
 
 /**
+ * RangeOpts specifies index options for a Queryable Encryption field supporting "rangePreview" queries.
+ * min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
+ * For double and decimal128, min/max/precision must all be set, or all be unset.
+*/
+interface RangeOptions {
+  min?: any;
+  max?: any;
+  sparsity: Long;
+  precision?: number;
+}
+
+/**
  * Options to provide when encrypting data.
  */
 export interface ClientEncryptionEncryptOptions {
   /**
    * The algorithm to use for encryption.
    */
-  algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' | 'AEAD_AES_256_CBC_HMAC_SHA_512-Random' | 'Indexed' | 'Unindexed';
+  algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' | 'AEAD_AES_256_CBC_HMAC_SHA_512-Random' | 'Indexed' | 'Unindexed' | 'RangePreview';
 
   /**
    * The id of the Binary dataKey to use for encryption
@@ -353,7 +365,10 @@ export interface ClientEncryptionEncryptOptions {
   contentionFactor?: bigint | number;
 
   /** @experimental Public Technical Preview: The query type supported */
-  queryType?: 'equality';
+  queryType?: 'equality' | 'rangePreview';
+
+  /** @experimental Public Technical Preview: The index options for a Queryable Encryption field supporting "rangePreview" queries.*/
+  rangeOpts?: RangeOptions;
 }
 
 /**
@@ -492,6 +507,26 @@ export class ClientEncryption {
     options: ClientEncryptionEncryptOptions,
     callback: ClientEncryptionEncryptCallback
   ): void;
+
+  /**
+   * Encrypts a Match Expression or Aggregate Expression to query a range index.
+   *
+   * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
+   *
+   * @experimental The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form
+   *
+   * The expression to encrypt must be one of the following:
+   *  1. A Match Expression of this form:
+   *      `{$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}`
+   *  2. An Aggregate Expression of this form:
+   *      `{$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]}`
+   *
+   *    `$gt` may also be `$gte`. `$lt` may also be `$lte`.
+   */
+  encryptExpression(
+    value: Document,
+    options: ClientEncryptionOptions
+  ): Promise<Document>
 
   /**
    * Explicitly decrypt a provided encrypted value

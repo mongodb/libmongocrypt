@@ -42,10 +42,7 @@ describe('ClientEncryption', function () {
   }
 
   async function setup() {
-    client = new MongoClient('mongodb://localhost:27017/test', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/test');
     await client.connect();
     try {
       await client.db('client').collection('encryption').drop();
@@ -692,6 +689,142 @@ describe('ClientEncryption', function () {
         .then(decrypted => {
           expect(decrypted).to.equal('value123');
         });
+    });
+  });
+
+  describe('encrypt()', function () {
+    let clientEncryption;
+    let completeOptions;
+    let dataKey;
+
+    beforeEach(async () => {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.test.skip();
+        return;
+      }
+
+      await setup();
+      clientEncryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      dataKey = await clientEncryption.createDataKey('local', {
+        name: 'local',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      completeOptions = {
+        algorithm: 'RangePreview',
+        contentionFactor: 0,
+        rangeOptions: {
+          sparsity: new BSON.Long(1)
+        },
+        keyId: dataKey
+      };
+    });
+
+    afterEach(() => teardown());
+
+    context('when expressionMode is incorrectly provided as an argument', function () {
+      it('overrides the provided option with the correct value for expression mode', async function () {
+        const optionsWithExpressionMode = { ...completeOptions, expressionMode: true };
+        const result = await clientEncryption.encrypt(
+          new mongodb.Long(0),
+          optionsWithExpressionMode
+        );
+
+        expect(result).to.be.instanceof(Binary);
+      });
+    });
+  });
+
+  describe('encryptExpression()', function () {
+    let clientEncryption;
+    let completeOptions;
+    let dataKey;
+    const expression = {
+      $and: [{ someField: { $gt: 1 } }]
+    };
+
+    beforeEach(async () => {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.test.skip();
+        return;
+      }
+
+      await setup();
+      clientEncryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      dataKey = await clientEncryption.createDataKey('local', {
+        name: 'local',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      completeOptions = {
+        algorithm: 'RangePreview',
+        queryType: 'rangePreview',
+        contentionFactor: 0,
+        rangeOptions: {
+          sparsity: new BSON.Long(1)
+        },
+        keyId: dataKey
+      };
+    });
+
+    afterEach(() => teardown());
+
+    it('throws if rangeOptions is not provided', async function () {
+      delete completeOptions['rangeOptions'];
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult).to.be.instanceof(Error);
+    });
+
+    it('throws if algorithm is not provided', async function () {
+      delete completeOptions['algorithm'];
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult).to.be.instanceof(Error);
+    });
+
+    it(`throws if algorithm does not equal 'rangePreview'`, async function () {
+      completeOptions['algorithm'] = 'equality';
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult, errorOrResult.message).to.be.instanceof(Error);
+    });
+
+    it(`does not throw if algorithm has different casing than 'rangePreview'`, async function () {
+      completeOptions['algorithm'] = 'rAnGePrEvIeW';
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult).not.to.be.instanceof(Error);
+    });
+
+    context('when expressionMode is incorrectly provided as an argument', function () {
+      it('overrides the provided option with the correct value for expression mode', async function () {
+        const optionsWithExpressionMode = { ...completeOptions, expressionMode: false };
+        const result = await clientEncryption.encryptExpression(
+          expression,
+          optionsWithExpressionMode
+        );
+
+        expect(result).not.to.be.instanceof(Binary);
+      });
     });
   });
 

@@ -46,6 +46,19 @@ class MongoCryptError extends Error {
   }
 }
 
+function maybeCallback(promiseFn, callback) {
+  const promise = promiseFn();
+  if (callback == null) {
+    return promise;
+  }
+
+  promise.then(
+    result => callback(undefined, result),
+    error => callback(error)
+  );
+  return;
+}
+
 /**
  * @ignore
  * A helper function. Invokes a function that takes a callback as the final
@@ -96,5 +109,6 @@ module.exports = {
   databaseNamespace,
   collectionNamespace,
   MongoCryptError,
-  promiseOrCallback
+  promiseOrCallback,
+  maybeCallback
 };
