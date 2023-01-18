@@ -957,6 +957,13 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+- name: rhel83-zseries
+  # rhel83-zseries has a new enough g++ to build the C++ tests.
+  # rhel72-zseries-test does not build the C++ tests.
+  display_name: "RHEL 8.3 on zSeries"
+  run_on: rhel83-zseries-small
+  tasks:
+  - build-and-test-and-upload
 - name: windows-vs2015-compile
   display_name: "Windows VS 2015 compile"
   run_on: windows-64-vs2015-test
