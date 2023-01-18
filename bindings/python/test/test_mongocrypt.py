@@ -787,7 +787,7 @@ class TestExplicitEncryption(unittest.TestCase):
         expected = json_data("fle2-find-range-explicit/int32/encrypted-payload.json")
         encrypted = encrypter.encrypt(
             value, "rangePreview", key_id=key_id, query_type="rangePreview",
-            contention_factor=4, range_opts=range_opts, encrypt_expression=True)
+            contention_factor=4, range_opts=range_opts, is_expression=True)
         encrypted_val = bson.decode(encrypted, OPTS)
         self.assertEqual(encrypted_val, expected)
 

@@ -574,7 +574,7 @@ class ExplicitEncryptionContext(MongoCryptContext):
                         self._raise_from_status()
 
             with MongoCryptBinaryIn(value) as binary:
-                if opts.encrypt_expression:
+                if opts.is_expression:
                     if not lib.mongocrypt_ctx_explicit_encrypt_expression_init(ctx, binary.bin):
                         self._raise_from_status()
                 else:
