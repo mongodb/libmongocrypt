@@ -137,19 +137,51 @@ _test_mc_writer_buffer (_mongocrypt_tester_t *tester)
 static void
 _test_mc_writer_prf (_mongocrypt_tester_t *tester)
 {
+    mongocrypt_status_t *status;
+    status = mongocrypt_status_new ();
+
+    _mongocrypt_buffer_t input_buffer;
+    _mongocrypt_buffer_copy_from_hex (
+        &input_buffer,
+        "c03cd1d0536aa07d4ffaa0301656222fc03cd1d0536aa07d4ffaa0301656222f");
+
     _mongocrypt_buffer_t write_buffer;
-    // _mongocrypt_buffer_copy_from_hex ();
+    _mongocrypt_buffer_init_size (&write_buffer, input_buffer.len);
 
+    mc_writer_t writer;
+    mc_writer_init_from_buffer (&writer, &write_buffer, __FUNCTION__);
 
+    ASSERT (mc_writer_write_prfblock_buffer (&writer, &input_buffer, status));
+    ASSERT_CMPBUF(input_buffer, write_buffer);
 
+    _mongocrypt_buffer_cleanup (&input_buffer);
+    _mongocrypt_buffer_cleanup (&write_buffer);
+    mongocrypt_status_destroy (status);
 }
 
 static void
 _test_mc_writer_uuid (_mongocrypt_tester_t *tester)
 {
-    _mongocrypt_buffer_t write_buffer;
-    // _mongocrypt_buffer_copy_from_hex ();
+    mongocrypt_status_t *status;
+    status = mongocrypt_status_new ();
 
+    _mongocrypt_buffer_t input_buffer;
+    _mongocrypt_buffer_copy_from_hex (
+        &input_buffer,
+        "c03cd1d0536aa07d4ffaa0301656222f");
+
+    _mongocrypt_buffer_t write_buffer;
+    _mongocrypt_buffer_init_size (&write_buffer, input_buffer.len);
+
+    mc_writer_t writer;
+    mc_writer_init_from_buffer (&writer, &write_buffer, __FUNCTION__);
+
+    ASSERT (mc_writer_write_uuid_buffer (&writer, &input_buffer, status));
+    ASSERT_CMPBUF(input_buffer, write_buffer);
+
+    _mongocrypt_buffer_cleanup (&input_buffer);
+    _mongocrypt_buffer_cleanup (&write_buffer);
+    mongocrypt_status_destroy (status);
 }
 
 void
@@ -157,4 +189,6 @@ _mongocrypt_tester_install_mc_writer (_mongocrypt_tester_t *tester)
 {
     INSTALL_TEST (_test_mc_writer_ints);
     INSTALL_TEST (_test_mc_writer_buffer);
+    INSTALL_TEST (_test_mc_writer_prf);
+    INSTALL_TEST (_test_mc_writer_uuid);
 }
