@@ -568,9 +568,9 @@ class ExplicitEncryptionContext(MongoCryptContext):
                 if not lib.mongocrypt_ctx_setopt_contention_factor(ctx, opts.contention_factor):
                     self._raise_from_status()
 
-            if opts.range_options is not None:
-                with MongoCryptBinaryIn(opts.range_options) as range_options:
-                    if not lib.mongocrypt_ctx_setopt_algorithm_range(ctx, range_options.bin):
+            if opts.range_opts is not None:
+                with MongoCryptBinaryIn(opts.range_opts) as range_opts:
+                    if not lib.mongocrypt_ctx_setopt_algorithm_range(ctx, range_opts.bin):
                         self._raise_from_status()
 
             with MongoCryptBinaryIn(value) as binary:
