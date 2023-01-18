@@ -243,10 +243,11 @@ static_assert (mlib_int128_negate (9223372036854775809_i128) <
 #ifdef __SIZEOF_INT128__
 // mlib_int128_to_native converts mlib_int128 to native __uint128_t.
 // Endian-ness is accounted for.
-static void
-mlib_int128_to_native (mlib_int128 in, __uint128_t *out)
+static __uint128_t
+mlib_int128_to_native (mlib_int128 in)
 {
-   uint8_t *out_u8 = (uint8_t *) out;
+   __uint128_t out;
+   uint8_t *out_u8 = (uint8_t *) &out;
    if (MLIB_IS_BIG_ENDIAN) {
       // Copy hi, then lo.
       memcpy (out_u8, &in.r.hi, sizeof (in.r.hi));
@@ -256,23 +257,26 @@ mlib_int128_to_native (mlib_int128 in, __uint128_t *out)
       memcpy (out_u8, &in.r.lo, sizeof (in.r.lo));
       memcpy (out_u8 + sizeof (in.r.lo), &in.r.hi, sizeof (in.r.hi));
    }
+   return out;
 }
 
 // native_to_mlib_int128 converts native __uint128_t to mlib_int128.
 // Endian-ness is accounted for.
-static void
-native_to_mlib_int128 (__uint128_t in, mlib_int128 *out)
+static mlib_int128
+native_to_mlib_int128 (__uint128_t in)
 {
+   mlib_int128 out;
    uint8_t *in_u8 = (uint8_t *) &in;
    if (MLIB_IS_BIG_ENDIAN) {
       // Copy hi, then lo.
-      memcpy (&out->r.hi, in_u8, sizeof (out->r.hi));
-      memcpy (&out->r.lo, in_u8 + sizeof (out->r.hi), sizeof (out->r.lo));
+      memcpy (&out.r.hi, in_u8, sizeof (out.r.hi));
+      memcpy (&out.r.lo, in_u8 + sizeof (out.r.hi), sizeof (out.r.lo));
    } else {
       // Copy lo, then hi.
-      memcpy (&out->r.lo, in_u8, sizeof (out->r.lo));
-      memcpy (&out->r.hi, in_u8 + sizeof (out->r.lo), sizeof (out->r.hi));
+      memcpy (&out.r.lo, in_u8, sizeof (out.r.lo));
+      memcpy (&out.r.hi, in_u8 + sizeof (out.r.lo), sizeof (out.r.hi));
    }
+   return out;
 }
 #endif // __SIZEOF_INT128__
 
@@ -283,15 +287,13 @@ div_check (mlib_int128 num, mlib_int128 den)
    mlib_int128_divmod_result res = mlib_int128_divmod (num, den);
 #ifdef __SIZEOF_INT128__
    // When we have an existing i128 impl, test against that:
-   __uint128_t num1;
-   __uint128_t den1;
-   mlib_int128_to_native (num, &num1);
-   mlib_int128_to_native (den, &den1);
+   __uint128_t num1 = mlib_int128_to_native (num);
+   __uint128_t den1 = mlib_int128_to_native (den);
    __uint128_t q = num1 / den1;
    __uint128_t r = num1 % den1;
    mlib_int128_divmod_result expect;
-   native_to_mlib_int128 (q, &expect.quotient);
-   native_to_mlib_int128 (r, &expect.remainder);
+   expect.quotient = native_to_mlib_int128 (q);
+   expect.remainder = native_to_mlib_int128 (r);
    if (!mlib_int128_eq (expect.quotient, res.quotient) ||
        !mlib_int128_eq (expect.remainder, res.remainder)) {
       std::cout << "unexpected result in division"
