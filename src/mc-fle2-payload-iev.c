@@ -414,7 +414,8 @@ mc_FLE2IndexedEncryptedValue_decrypt (
       mc_reader_get_consumed_length (&reader) + length - 16;
    if (length > iev->Inner.len || expected_length > iev->Inner.len) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_decrypt expected "
-                  "byte length >= %" PRIu32 " got: %" PRIu32,
+                  "byte length >= %" PRIu32 " got: %" PRIu32
+                  " with length: %" PRIu32,
                   expected_length,
                   iev->Inner.len);
       return false;

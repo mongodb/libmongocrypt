@@ -110,7 +110,7 @@ mc_writer_write_u64 (mc_writer_t *writer,
 {
    CHECK_REMAINING_BUFFER_AND_RET (sizeof (uint64_t));
 
-   uint64_t temp = BSON_UINT32_TO_LE (*value);
+   uint64_t temp = BSON_UINT64_TO_LE (*value);
    memcpy (writer->ptr + writer->pos, &temp, sizeof (uint64_t));
    writer->pos += sizeof (uint64_t);
 

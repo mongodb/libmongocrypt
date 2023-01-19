@@ -91,7 +91,7 @@ _test_mc_writer_ints (_mongocrypt_tester_t *tester)
         uint64_t out;
         mc_reader_read_u64 (&reader, &out, status);
 
-        ASSERT_CMPUINT (out, ==, num);
+        ASSERT_CMPUINT64 (out, ==, num);
 
         _mongocrypt_buffer_cleanup (&write_buffer);
         mongocrypt_status_destroy (status);
