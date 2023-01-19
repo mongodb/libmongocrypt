@@ -2,12 +2,12 @@
 include (FetchContent)
 find_program (GIT_EXECUTABLE git)
 
-set (_default_url "https://netlib.org/misc/intel/IntelRDFPMathLib20U2.tar.gz")
+set (_default_url "${PROJECT_SOURCE_DIR}/third-party/IntelRDFPMathLib20U2.tar.xz")
 
 set (INTEL_DFP_LIBRARY_URL "${_default_url}"
      CACHE STRING "The URL of an Intel DFP library to use")
 set (INTEL_DFP_LIBRARY_URL_HASH
-     "SHA256=93c0c78e0989df88f8540bf38d6743734804cef1e40706fd8fe5c6a03f79e173"
+     "SHA256=ac157e69c05556f3fa468ab34caeb1114a3b88ae18241bd41cc57b85a02dd314"
      CACHE STRING "The hash of the archive that lives at INTEL_DFP_LIBRARY_URL (Spelled: <ALGO>=<digest>)")
 option (INTEL_DFP_LIBRARY_PATCH_ENABLED
         "Whether to apply the s390x compatibility patch to the Intel DFP library" ON)
