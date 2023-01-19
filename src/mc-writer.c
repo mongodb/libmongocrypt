@@ -128,7 +128,15 @@ mc_writer_write_buffer (mc_writer_t *writer,
 
    CHECK_REMAINING_BUFFER_AND_RET (length);
 
-   memcpy (writer->ptr + writer->pos, buf->data, length);
+   if (length > SIZE_MAX) {
+      CLIENT_ERR ("%s failed to copy "
+                  "data of length %" PRIu64,
+                  writer->parser_name,
+                  length);
+      return false;
+   }
+
+   memcpy (writer->ptr + writer->pos, buf->data, (size_t) length);
    writer->pos += length;
 
    return true;
