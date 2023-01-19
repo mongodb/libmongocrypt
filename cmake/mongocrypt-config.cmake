@@ -30,3 +30,13 @@ if (_using_shared_libbson AND DEFINED MONGOCRYPT_LIBBSON_SHARED_USE)
         APPEND PROPERTY INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:${MONGOCRYPT_LIBBSON_SHARED_USE}>"
     )
 endif ()
+
+set (_using_system_intel_dfp "@USE_SYSTEM_INTEL_DFP@")
+
+if (_using_system_intel_dfp)
+   find_library (_MONGOCRYPT_SYSTEM_INTEL_DFP_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bidgcc000${CMAKE_STATIC_LIBRARY_SUFFIX}")
+   set_property (
+      TARGET mongo::_mongocrypt-intel_dfp
+      PROPERTY IMPORTED_LOCATION "${_MONGOCRYPT_SYSTEM_INTEL_DFP_STATIC}"
+      )
+endif ()
