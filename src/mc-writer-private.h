@@ -22,8 +22,8 @@
 #include <stdlib.h>
 
 /**
- * 
- * 
+ *
+ *
  */
 
 struct _mc_writer_t {
@@ -55,35 +55,34 @@ mc_writer_destroy (mc_writer_t *writer);
 
 bool
 mc_writer_write_u8 (mc_writer_t *writer,
-                   uint8_t *value,
-                   mongocrypt_status_t *status);
+                    const uint8_t *value,
+                    mongocrypt_status_t *status);
 
 bool
 mc_writer_write_u32 (mc_writer_t *writer,
-                     uint32_t *value,
+                     const uint32_t *value,
                      mongocrypt_status_t *status);
 
 bool
 mc_writer_write_u64 (mc_writer_t *writer,
-                     uint64_t *value,
+                     const uint64_t *value,
                      mongocrypt_status_t *status);
 
 bool
 mc_writer_write_buffer (mc_writer_t *writer,
-                        _mongocrypt_buffer_t *buf,
+                        const _mongocrypt_buffer_t *buf,
                         uint64_t length,
                         mongocrypt_status_t *status);
 
 
-
 bool
 mc_writer_write_uuid_buffer (mc_writer_t *writer,
-                             _mongocrypt_buffer_t *buf,
+                             const _mongocrypt_buffer_t *buf,
                              mongocrypt_status_t *status);
 
 bool
 mc_writer_write_prfblock_buffer (mc_writer_t *writer,
-                                 _mongocrypt_buffer_t *buf,
+                                 const _mongocrypt_buffer_t *buf,
                                  mongocrypt_status_t *status);
 
 #endif /* MONGOCRYPT_READER_PRIVATE_H */

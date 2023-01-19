@@ -296,7 +296,18 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_t write_buffer;
       _mongocrypt_buffer_init_size (&write_buffer, input_with_tokens.len);
 
-      mc_FLE2IndexedEncryptedValue_write(crypt->crypto, iev, token, tokens, &write_buffer, status);
+      const bson_type_t bson_type = mc_FLE2IndexedEncryptedValue_get_original_bson_type(iev, status);
+      const _mongocrypt_buffer_t *S_KeyId = mc_FLE2IndexedEncryptedValue_get_S_KeyId(iev, status);
+      const _mongocrypt_buffer_t *ClientEncryptedValue = mc_FLE2IndexedEncryptedValue_get_ClientEncryptedValue(iev, status);
+
+      ASSERT (mc_FLE2IndexedEncryptedValue_write(crypt->crypto,
+                                                 bson_type,
+                                                 S_KeyId,
+                                                 ClientEncryptedValue,
+                                                 token,
+                                                 tokens,
+                                                 &write_buffer,
+                                                 status));
 
       mc_FLE2IndexedEncryptedValue_t *iev2;
       iev2 = mc_FLE2IndexedEncryptedValue_new ();

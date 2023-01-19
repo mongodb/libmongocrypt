@@ -55,12 +55,13 @@ mc_writer_init_from_buffer (mc_writer_t *writer,
    BSON_ASSERT_PARAM (writer);
    BSON_ASSERT_PARAM (buf);
    BSON_ASSERT_PARAM (parser_name);
-   
+
    mc_writer_init (writer, buf->data, buf->len, parser_name);
 }
 
 mc_writer_t *
-mc_writer_new (uint8_t *ptr, uint64_t len, const char *parser_name) {
+mc_writer_new (uint8_t *ptr, uint64_t len, const char *parser_name)
+{
    BSON_ASSERT_PARAM (ptr);
    BSON_ASSERT_PARAM (parser_name);
 
@@ -70,17 +71,18 @@ mc_writer_new (uint8_t *ptr, uint64_t len, const char *parser_name) {
 }
 
 void
-mc_writer_destroy (mc_writer_t *writer) {
+mc_writer_destroy (mc_writer_t *writer)
+{
    bson_free (writer);
 }
 
 bool
 mc_writer_write_u8 (mc_writer_t *writer,
-                   uint8_t *value,
-                   mongocrypt_status_t *status)
+                    const uint8_t *value,
+                    mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (writer);
-   CHECK_REMAINING_BUFFER_AND_RET(sizeof (uint8_t));
+   CHECK_REMAINING_BUFFER_AND_RET (sizeof (uint8_t));
    memcpy (writer->ptr + writer->pos, value, sizeof (uint8_t));
 
    writer->pos += sizeof (uint8_t);
@@ -89,7 +91,7 @@ mc_writer_write_u8 (mc_writer_t *writer,
 
 bool
 mc_writer_write_u32 (mc_writer_t *writer,
-                     uint32_t *value,
+                     const uint32_t *value,
                      mongocrypt_status_t *status)
 {
    CHECK_REMAINING_BUFFER_AND_RET (sizeof (uint32_t));
@@ -103,7 +105,7 @@ mc_writer_write_u32 (mc_writer_t *writer,
 
 bool
 mc_writer_write_u64 (mc_writer_t *writer,
-                     uint64_t *value,
+                     const uint64_t *value,
                      mongocrypt_status_t *status)
 {
    CHECK_REMAINING_BUFFER_AND_RET (sizeof (uint64_t));
@@ -117,7 +119,7 @@ mc_writer_write_u64 (mc_writer_t *writer,
 
 bool
 mc_writer_write_buffer (mc_writer_t *writer,
-                        _mongocrypt_buffer_t *buf,
+                        const _mongocrypt_buffer_t *buf,
                         uint64_t length,
                         mongocrypt_status_t *status)
 {
@@ -134,10 +136,9 @@ mc_writer_write_buffer (mc_writer_t *writer,
 
 bool
 mc_writer_write_uuid_buffer (mc_writer_t *writer,
-                             _mongocrypt_buffer_t *buf,
+                             const _mongocrypt_buffer_t *buf,
                              mongocrypt_status_t *status)
 {
-
    BSON_ASSERT_PARAM (writer);
    BSON_ASSERT_PARAM (buf);
 
@@ -147,10 +148,9 @@ mc_writer_write_uuid_buffer (mc_writer_t *writer,
 
 bool
 mc_writer_write_prfblock_buffer (mc_writer_t *writer,
-                                 _mongocrypt_buffer_t *buf,
+                                 const _mongocrypt_buffer_t *buf,
                                  mongocrypt_status_t *status)
 {
-
    BSON_ASSERT_PARAM (writer);
    BSON_ASSERT_PARAM (buf);
 
