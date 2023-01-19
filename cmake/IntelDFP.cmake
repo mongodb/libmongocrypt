@@ -387,6 +387,9 @@ target_sources (_mongocrypt_intel_dfp
     ]]
     INTERFACE $<BUILD_INTERFACE:$<TARGET_OBJECTS:intel_dfp_obj>>
     )
+target_include_directories (_mongocrypt_intel_dfp
+    INTERFACE $<BUILD_INTERFACE:${intel_dfp_SOURCE_DIR}/LIBRARY/src>
+    )
 # We do want to propagate an interface requirement: Some platforms need a
 # separate link library to support special math functions.
 target_link_libraries(_mongocrypt_intel_dfp INTERFACE $<$<PLATFORM_ID:Linux>:m>)

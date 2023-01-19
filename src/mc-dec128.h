@@ -7,6 +7,10 @@
 #include <mlib/int128.h>
 #include <mlib/endian.h>
 
+// Include the header that declares the DFP functions, which may be macros that
+// expand to renamed symbols:
+#include <bid_conf.h>
+
 #include <inttypes.h>
 #include <string.h>
 #include <stdlib.h>
@@ -134,10 +138,10 @@ mc_dec128_from_double_ex (double d,
                           mc_dec128_rounding_mode rnd,
                           mc_dec128_flagset *flags)
 {
-   extern mc_dec128 __mongocrypt_binary64_to_bid128 (
+   extern mc_dec128 binary64_to_bid128 (
       double d, mc_dec128_rounding_mode, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
-   return __mongocrypt_binary64_to_bid128 (d, rnd, flags ? flags : &zero_flags);
+   return binary64_to_bid128 (d, rnd, flags ? flags : &zero_flags);
 }
 
 /**
@@ -163,10 +167,10 @@ mc_dec128_from_string_ex (const char *s,
                           mc_dec128_rounding_mode rnd,
                           mc_dec128_flagset *flags)
 {
-   extern mc_dec128 __mongocrypt_bid128_from_string (
+   extern mc_dec128 bid128_from_string (
       const char *, mc_dec128_rounding_mode, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
-   return __mongocrypt_bid128_from_string (s, rnd, flags ? flags : &zero_flags);
+   return bid128_from_string (s, rnd, flags ? flags : &zero_flags);
 }
 
 /**
@@ -197,11 +201,10 @@ typedef struct mc_dec128_string {
 static inline mc_dec128_string
 mc_dec128_to_string_ex (mc_dec128 d, mc_dec128_flagset *flags)
 {
-   extern void __mongocrypt_bid128_to_string (
-      char *, mc_dec128 d, mc_dec128_flagset *);
+   extern void bid128_to_string (char *, mc_dec128 d, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
    mc_dec128_string out = {{0}};
-   __mongocrypt_bid128_to_string (out.str, d, flags ? flags : &zero_flags);
+   bid128_to_string (out.str, d, flags ? flags : &zero_flags);
    return out;
 }
 
@@ -215,20 +218,20 @@ mc_dec128_to_string (mc_dec128 d)
 }
 
 /// Compare two dec128 numbers
-#define DECL_IDF_COMPARE_1(Oper)                                         \
-   static inline bool mc_dec128_##Oper##_ex (                            \
-      mc_dec128 left, mc_dec128 right, mc_dec128_flagset *flags)         \
-   {                                                                     \
-      extern int __mongocrypt_bid128_quiet_##Oper (                      \
-         mc_dec128 left, mc_dec128 right, mc_dec128_flagset *);          \
-      mc_dec128_flagset zero_flags = {0};                                \
-      return 0 != __mongocrypt_bid128_quiet_##Oper (                     \
-                     left, right, flags ? flags : &zero_flags);          \
-   }                                                                     \
-                                                                         \
-   static inline bool mc_dec128_##Oper (mc_dec128 left, mc_dec128 right) \
-   {                                                                     \
-      return mc_dec128_##Oper##_ex (left, right, NULL);                  \
+#define DECL_IDF_COMPARE_1(Oper)                                             \
+   static inline bool mc_dec128_##Oper##_ex (                                \
+      mc_dec128 left, mc_dec128 right, mc_dec128_flagset *flags)             \
+   {                                                                         \
+      extern int bid128_quiet_##Oper (                                       \
+         mc_dec128 left, mc_dec128 right, mc_dec128_flagset *);              \
+      mc_dec128_flagset zero_flags = {0};                                    \
+      return 0 !=                                                            \
+             bid128_quiet_##Oper (left, right, flags ? flags : &zero_flags); \
+   }                                                                         \
+                                                                             \
+   static inline bool mc_dec128_##Oper (mc_dec128 left, mc_dec128 right)     \
+   {                                                                         \
+      return mc_dec128_##Oper##_ex (left, right, NULL);                      \
    }
 
 #define DECL_IDF_COMPARE(Op) \
@@ -245,11 +248,11 @@ DECL_IDF_COMPARE (less_equal)
 #undef DECL_IDF_COMPARE_1
 
 /// Test properties of Decimal128 numbers
-#define DECL_PREDICATE(Name, BIDName)                         \
-   static inline bool mc_dec128_##Name (mc_dec128 d)          \
-   {                                                          \
-      extern int __mongocrypt_bid128_##BIDName (mc_dec128 d); \
-      return 0 != __mongocrypt_bid128_##BIDName (d);          \
+#define DECL_PREDICATE(Name, BIDName)                \
+   static inline bool mc_dec128_##Name (mc_dec128 d) \
+   {                                                 \
+      extern int bid128_##BIDName (mc_dec128 d);     \
+      return 0 != bid128_##BIDName (d);              \
    }
 
 DECL_PREDICATE (is_zero, isZero)
@@ -268,14 +271,12 @@ DECL_PREDICATE (is_nan, isNaN)
       mc_dec128_rounding_mode mode,                                           \
       mc_dec128_flagset *flags)                                               \
    {                                                                          \
-      extern mc_dec128 __mongocrypt_bid128_##Oper (                           \
-         mc_dec128 left,                                                      \
-         mc_dec128 right,                                                     \
-         mc_dec128_rounding_mode rounding,                                    \
-         mc_dec128_flagset *flags);                                           \
+      extern mc_dec128 bid128_##Oper (mc_dec128 left,                         \
+                                      mc_dec128 right,                        \
+                                      mc_dec128_rounding_mode rounding,       \
+                                      mc_dec128_flagset *flags);              \
       mc_dec128_flagset zero_flags = {0};                                     \
-      return __mongocrypt_bid128_##Oper (                                     \
-         left, right, mode, flags ? flags : &zero_flags);                     \
+      return bid128_##Oper (left, right, mode, flags ? flags : &zero_flags);  \
    }                                                                          \
                                                                               \
    static inline mc_dec128 mc_dec128_##Oper (mc_dec128 left, mc_dec128 right) \
@@ -297,10 +298,10 @@ DECL_IDF_BINOP_WRAPPER (pow)
    static inline mc_dec128 mc_dec128_##Oper##_ex (mc_dec128 operand,        \
                                                   mc_dec128_flagset *flags) \
    {                                                                        \
-      extern mc_dec128 __mongocrypt_bid128_##Oper (                         \
+      extern mc_dec128 bid128_##Oper (                                      \
          mc_dec128 v, mc_dec128_rounding_mode, mc_dec128_flagset *);        \
       mc_dec128_flagset zero_flags = {0};                                   \
-      return __mongocrypt_bid128_##Oper (                                   \
+      return bid128_##Oper (                                                \
          operand, MC_DEC128_ROUND_DEFAULT, flags ? flags : &zero_flags);    \
    }                                                                        \
                                                                             \
@@ -334,11 +335,10 @@ mc_dec128_scale_ex (mc_dec128 fac,
                     mc_dec128_rounding_mode rounding,
                     mc_dec128_flagset *flags)
 {
-   extern mc_dec128 __mongocrypt_bid128_scalbln (
+   extern mc_dec128 bid128_scalbln (
       mc_dec128 fac, long int, mc_dec128_rounding_mode, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
-   return __mongocrypt_bid128_scalbln (
-      fac, exp, rounding, flags ? flags : &zero_flags);
+   return bid128_scalbln (fac, exp, rounding, flags ? flags : &zero_flags);
 }
 
 /**
@@ -374,12 +374,11 @@ typedef struct mc_dec128_modf_result {
 static inline mc_dec128_modf_result
 mc_dec128_modf_ex (mc_dec128 d, mc_dec128_flagset *flags)
 {
-   extern mc_dec128 __mongocrypt_bid128_modf (
+   extern mc_dec128 bid128_modf (
       mc_dec128 d, mc_dec128 * iptr, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
    mc_dec128_modf_result res;
-   res.frac =
-      __mongocrypt_bid128_modf (d, &res.whole, flags ? flags : &zero_flags);
+   res.frac = bid128_modf (d, &res.whole, flags ? flags : &zero_flags);
    return res;
 }
 
@@ -408,10 +407,10 @@ mc_dec128_modf (mc_dec128 d)
 static inline mc_dec128
 mc_dec128_fmod_ex (mc_dec128 numer, mc_dec128 denom, mc_dec128_flagset *flags)
 {
-   extern mc_dec128 __mongocrypt_bid128_fmod (
+   extern mc_dec128 bid128_fmod (
       mc_dec128 numer, mc_dec128 denom, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
-   return __mongocrypt_bid128_fmod (numer, denom, flags ? flags : &zero_flags);
+   return bid128_fmod (numer, denom, flags ? flags : &zero_flags);
 }
 
 /**
@@ -437,10 +436,9 @@ mc_dec128_fmod (mc_dec128 numer, mc_dec128 denom)
 static inline int64_t
 mc_dec128_to_int64_ex (mc_dec128 d, mc_dec128_flagset *flags)
 {
-   extern int64_t __mongocrypt_bid128_to_int64_int (mc_dec128 d,
-                                                    mc_dec128_flagset *);
+   extern int64_t bid128_to_int64_int (mc_dec128 d, mc_dec128_flagset *);
    mc_dec128_flagset zero_flags = {0};
-   return __mongocrypt_bid128_to_int64_int (d, flags ? flags : &zero_flags);
+   return bid128_to_int64_int (d, flags ? flags : &zero_flags);
 }
 
 /**
