@@ -230,7 +230,14 @@ module.exports = function (modules) {
      */
     teardown(force, callback) {
       if (this._mongocryptdClient) {
-        this._mongocryptdClient.close(force).then(callback);
+        this._mongocryptdClient.close(force).then(
+          result => {
+            return callback(null, result);
+          },
+          error => {
+            callback(error);
+          }
+        );
       } else {
         callback();
       }
