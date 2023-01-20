@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.7.0
+### New Features
+- Add encryptExpression helper
+- Support for range index. NOTE: The Range algorithm is experimental only. It is not intended for public use.
 ## 1.7.0-alpha2
 ### New Features
 - Support range index for decimal128. NOTE: The Range algorithm is experimental only. It is not intended for public use.
