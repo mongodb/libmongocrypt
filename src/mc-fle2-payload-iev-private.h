@@ -104,6 +104,9 @@ mc_FLE2IndexedEqualityEncryptedValueTokens *
 mc_FLE2IndexedEqualityEncryptedValueTokens_new (void);
 
 bool
+mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf (mc_FLE2IndexedEqualityEncryptedValueTokens *tokens, _mongocrypt_buffer_t *buf, mongocrypt_status_t *status);
+
+bool
 mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
                                     const _mongocrypt_buffer_t *buf,
                                     mongocrypt_status_t *status);

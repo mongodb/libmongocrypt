@@ -55,6 +55,27 @@ mc_FLE2IndexedEqualityEncryptedValueTokens_new (void)
    return bson_malloc0 (sizeof (mc_FLE2IndexedEqualityEncryptedValueTokens));
 }
 
+bool
+mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf (mc_FLE2IndexedEqualityEncryptedValueTokens *tokens, _mongocrypt_buffer_t *buf, mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM(tokens);
+   BSON_ASSERT_PARAM(buf);
+
+   mc_reader_t reader;
+   mc_reader_init_from_buffer (&reader, buf, __FUNCTION__);
+
+   CHECK_AND_RETURN (
+      mc_reader_read_prfblock_buffer(&reader, &tokens->edc, status));
+
+   CHECK_AND_RETURN (
+      mc_reader_read_prfblock_buffer(&reader, &tokens->esc, status));
+
+   CHECK_AND_RETURN (
+      mc_reader_read_prfblock_buffer(&reader, &tokens->ecc, status));
+
+   return true;
+}
+
 static bool
 mc_fle2IndexedEncryptedValue_encrypt (
    _mongocrypt_crypto_t *crypto,

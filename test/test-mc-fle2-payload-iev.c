@@ -137,6 +137,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t expected_edc_token;
    _mongocrypt_buffer_t expected_esc_token;
    _mongocrypt_buffer_t expected_ecc_token;
+   _mongocrypt_buffer_t expected_token_set;
    _mongocrypt_buffer_t correct_S_Key;
    _mongocrypt_buffer_t correct_K_Key;
    mc_FLE2IndexedEncryptedValue_t *iev;
@@ -184,6 +185,12 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
 
    _mongocrypt_buffer_copy_from_hex (
       &expected_ecc_token,
+      "A1DF0BB04C977BD4BC0B487FFFD2E3BBB96078354DE9F204EE5872BB10F01971");
+
+   _mongocrypt_buffer_copy_from_hex (
+      &expected_token_set,
+      "97C8DFE394D80A4EE335E3F9FDC024D18BE4B92F9444FCA316FF9896D7BF455D"
+      "EBB22F74BE0FA4AD863188D3F33AF0B95CB4CA4ED0091E1A43513DB20E9D59AE"
       "A1DF0BB04C977BD4BC0B487FFFD2E3BBB96078354DE9F204EE5872BB10F01971");
 
    _mongocrypt_buffer_copy_from_hex (&expect_S_KeyId,
@@ -266,6 +273,20 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       mc_ServerDataEncryptionLevel1Token_destroy (token);
       mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
       mc_FLE2IndexedEncryptedValue_destroy (iev);
+      mongocrypt_status_destroy (status);
+   }
+
+   /* Test function mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf. */
+   {
+      mongocrypt_status_t *status = mongocrypt_status_new ();
+      mc_FLE2IndexedEqualityEncryptedValueTokens *tokens = mc_FLE2IndexedEqualityEncryptedValueTokens_new ();
+      
+      ASSERT (mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf(tokens, &expected_token_set, status));
+      ASSERT_CMPBUF(expected_edc_token, tokens->edc);
+      ASSERT_CMPBUF(expected_esc_token, tokens->esc);
+      ASSERT_CMPBUF(expected_ecc_token, tokens->ecc);
+
+      mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
       mongocrypt_status_destroy (status);
    }
 
@@ -393,6 +414,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&expected_ecc_token);
    _mongocrypt_buffer_cleanup (&expected_esc_token);
    _mongocrypt_buffer_cleanup (&expected_edc_token);
+   _mongocrypt_buffer_cleanup (&expected_token_set);
    _mongocrypt_buffer_cleanup (&input_with_tokens);
    _mongocrypt_buffer_cleanup (&input);
    mongocrypt_destroy (crypt);
