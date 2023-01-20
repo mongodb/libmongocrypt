@@ -260,6 +260,7 @@ tasks.register("publishSnapshots") {
     if (version.toString().endsWith("-SNAPSHOT")) {
         dependsOn("downloadJnaLibs")
         dependsOn(tasks.withType<PublishToMavenRepository>())
+        tasks.withType<PublishToMavenRepository>().forEach { t -> t.mustRunAfter("downloadJnaLibs") }
     }
 }
 

@@ -43,10 +43,12 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_decrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_decrypt_init;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_expression_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_explicit_encrypt_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_rewrap_many_datakey_init;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_algorithm_range;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_contention_factor;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_alt_name;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_encryption_key;
@@ -258,33 +260,23 @@ class MongoCryptImpl implements MongoCrypt {
     @Override
     public MongoCryptContext createExplicitEncryptionContext(final BsonDocument document, final MongoExplicitEncryptOptions options) {
         isTrue("open", !closed.get());
-        mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
-        if (context == null) {
-            throwExceptionFromStatus();
-        }
-
-        if (options.getKeyId() != null) {
-            try (BinaryHolder keyIdBinaryHolder = toBinary(ByteBuffer.wrap(options.getKeyId().getData()))) {
-                configure(() -> mongocrypt_ctx_setopt_key_id(context, keyIdBinaryHolder.getBinary()), context);
-            }
-        } else if (options.getKeyAltName() != null) {
-            try (BinaryHolder keyAltNameBinaryHolder = toBinary(new BsonDocument("keyAltName", new BsonString(options.getKeyAltName())))) {
-                configure(() -> mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary()), context);
-            }
-        }
-
-        configure(() -> mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1), context);
-        if (options.getQueryType() != null) {
-            configure(() -> mongocrypt_ctx_setopt_query_type(context, new cstring(options.getQueryType()), -1), context);
-        }
-        if (options.getContentionFactor() != null) {
-            configure(() -> mongocrypt_ctx_setopt_contention_factor(context, options.getContentionFactor()), context);
-        }
+        mongocrypt_ctx_t context = configureExplicitEncryption(options);
 
         try (BinaryHolder documentBinaryHolder = toBinary(document)) {
             configure(() -> mongocrypt_ctx_explicit_encrypt_init(context, documentBinaryHolder.getBinary()), context);
         }
 
+        return new MongoCryptContextImpl(context);
+    }
+
+    @Override
+    public MongoCryptContext createEncryptExpressionContext(final BsonDocument document, final MongoExplicitEncryptOptions options) {
+        isTrue("open", !closed.get());
+        mongocrypt_ctx_t context = configureExplicitEncryption(options);
+
+        try (BinaryHolder documentBinaryHolder = toBinary(document)) {
+            configure(() -> mongocrypt_ctx_explicit_encrypt_expression_init(context, documentBinaryHolder.getBinary()), context);
+        }
         return new MongoCryptContextImpl(context);
     }
 
@@ -338,6 +330,38 @@ class MongoCryptImpl implements MongoCrypt {
             mongocrypt_destroy(wrapped);
         }
     }
+
+    private mongocrypt_ctx_t configureExplicitEncryption(final MongoExplicitEncryptOptions options) {
+        mongocrypt_ctx_t context = mongocrypt_ctx_new(wrapped);
+        if (context == null) {
+            throwExceptionFromStatus();
+        }
+
+        if (options.getKeyId() != null) {
+            try (BinaryHolder keyIdBinaryHolder = toBinary(ByteBuffer.wrap(options.getKeyId().getData()))) {
+                configure(() -> mongocrypt_ctx_setopt_key_id(context, keyIdBinaryHolder.getBinary()), context);
+            }
+        } else if (options.getKeyAltName() != null) {
+            try (BinaryHolder keyAltNameBinaryHolder = toBinary(new BsonDocument("keyAltName", new BsonString(options.getKeyAltName())))) {
+                configure(() -> mongocrypt_ctx_setopt_key_alt_name(context, keyAltNameBinaryHolder.getBinary()), context);
+            }
+        }
+
+        configure(() -> mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1), context);
+        if (options.getQueryType() != null) {
+            configure(() -> mongocrypt_ctx_setopt_query_type(context, new cstring(options.getQueryType()), -1), context);
+        }
+        if (options.getContentionFactor() != null) {
+            configure(() -> mongocrypt_ctx_setopt_contention_factor(context, options.getContentionFactor()), context);
+        }
+        if (options.getRangeOptions() != null) {
+            try (BinaryHolder rangeOptionsHolder = toBinary(options.getRangeOptions())) {
+                configure(() -> mongocrypt_ctx_setopt_algorithm_range(context, rangeOptionsHolder.getBinary()), context);
+            }
+        }
+        return context;
+    }
+
 
     private void configure(final Supplier<Boolean> successSupplier) {
         if (!successSupplier.get()) {

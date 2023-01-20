@@ -557,6 +557,27 @@ public class CAPI {
     mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, cstring query_type, int len);
 
     /**
+     * Set options for explicit encryption with the "rangePreview" algorithm.
+     * NOTE: The RangePreview algorithm is experimental only. It is not intended for
+     * public use.
+     *
+     * opts is a BSON document of the form:
+     * {
+     *    "min": Optional<BSON value>,
+     *    "max": Optional<BSON value>,
+     *    "sparsity": Int64,
+     *    "precision": Optional<Int32>
+     * }
+     *
+     * @param ctx The @ref mongocrypt_ctx_t object.
+     * @param opts BSON.
+     * @return A boolean indicating success. If false, an error status is set.
+     * @since 1.7
+     */
+    public static native boolean
+    mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t ctx, mongocrypt_binary_t opts);
+
+    /**
      * Initialize new @ref mongocrypt_t object.
      *
      * @param crypt The @ref mongocrypt_t object.
@@ -824,6 +845,52 @@ public class CAPI {
     public static native boolean
     mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t ctx,
                                           mongocrypt_binary_t msg);
+
+    /**
+     * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
+     * Contexts created for explicit encryption will not go through mongocryptd.
+     * Requires query_type to be "rangePreview".
+     * NOTE: The RangePreview algorithm is experimental only. It is not intended for
+     * public use.
+     *
+     * This method expects the passed-in BSON to be of the form:
+     * { "v" : FLE2RangeFindDriverSpec }
+     *
+     * FLE2RangeFindDriverSpec is a BSON document with one of these forms:
+     *
+     * 1. A Match Expression of this form:
+     *    {$and: [{<field>: {<op>: <value1>, {<field>: {<op>: <value2> }}]}
+     * 2. An Aggregate Expression of this form:
+     *    {$and: [{<op>: [<fieldpath>, <value1>]}, {<op>: [<fieldpath>, <value2>]}]
+     *
+     * may be $lt, $lte, $gt, or $gte.
+     *
+     * The value of "v" is expected to be the BSON value passed to a driver
+     * ClientEncryption.encryptExpression helper.
+     *
+     * Associated options for FLE 1:
+     * - @ref mongocrypt_ctx_setopt_key_id
+     * - @ref mongocrypt_ctx_setopt_key_alt_name
+     * - @ref mongocrypt_ctx_setopt_algorithm
+     *
+     * Associated options for Queryable Encryption:
+     * - @ref mongocrypt_ctx_setopt_key_id
+     * - @ref mongocrypt_ctx_setopt_index_key_id
+     * - @ref mongocrypt_ctx_setopt_contention_factor
+     * - @ref mongocrypt_ctx_setopt_query_type
+     * - @ref mongocrypt_ctx_setopt_algorithm_range
+     *
+     * An error is returned if FLE 1 and Queryable Encryption incompatible options
+     * are set.
+     *
+     * @param ctx A @ref mongocrypt_ctx_t.
+     * @param msg A @ref mongocrypt_binary_t the plaintext BSON value.
+     * @return A boolean indicating success.
+     * @since 1.7
+     */
+    public static native boolean
+    mongocrypt_ctx_explicit_encrypt_expression_init (mongocrypt_ctx_t ctx,
+                                                     mongocrypt_binary_t msg);
 
     /**
      * Initialize a context for decryption.
