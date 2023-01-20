@@ -262,14 +262,15 @@ module.exports = function (modules) {
           this._keyVaultClient
             .db(dbName)
             .collection(collectionName)
-            .insertOne(dataKey, { writeConcern: { w: 'majority' } }, (err, result) => {
-              if (err) {
+            .insertOne(dataKey, { writeConcern: { w: 'majority' } })
+            .then(
+              result => {
+                return cb(null, result.insertedId);
+              },
+              err => {
                 cb(err, null);
-                return;
               }
-
-              cb(null, result.insertedId);
-            });
+            );
         });
       });
     }

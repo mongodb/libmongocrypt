@@ -410,15 +410,16 @@ module.exports = function (modules) {
           promoteValues: false,
           session: this.options.session
         })
-        .toArray((err, collections) => {
-          if (err) {
+        .toArray()
+        .then(
+          collections => {
+            const info = collections.length > 0 ? bson.serialize(collections[0]) : null;
+            return callback(null, info);
+          },
+          err => {
             callback(err, null);
-            return;
           }
-
-          const info = collections.length > 0 ? bson.serialize(collections[0]) : null;
-          callback(null, info);
-        });
+        );
     }
 
     /**
@@ -437,13 +438,17 @@ module.exports = function (modules) {
       const dbName = databaseNamespace(ns);
       const rawCommand = bson.deserialize(command, options);
 
-      client.db(dbName).command(rawCommand, options, (err, response) => {
-        if (err) {
-          callback(err, null);
-          return;
-        }
-        callback(err, bson.serialize(response, this.options));
-      });
+      client
+        .db(dbName)
+        .command(rawCommand, options)
+        .then(
+          response => {
+            return callback(null, bson.serialize(response, this.options));
+          },
+          err => {
+            callback(err, null);
+          }
+        );
     }
 
     /**
@@ -466,14 +471,15 @@ module.exports = function (modules) {
         .db(dbName)
         .collection(collectionName, { readConcern: { level: 'majority' } })
         .find(filter, { session: this.options.session })
-        .toArray((err, keys) => {
-          if (err) {
+        .toArray()
+        .then(
+          keys => {
+            return callback(null, keys);
+          },
+          err => {
             callback(err, null);
-            return;
           }
-
-          callback(null, keys);
-        });
+        );
     }
   }
 
