@@ -202,10 +202,26 @@ module.exports = function (modules) {
       };
 
       if (this._mongocryptdManager.bypassSpawn) {
-        return this._mongocryptdClient.connect(_callback);
+        return this._mongocryptdClient.connect().then(
+          result => {
+            return _callback(null, result);
+          },
+          error => {
+            _callback(error, null);
+          }
+        );
       }
 
-      this._mongocryptdManager.spawn(() => this._mongocryptdClient.connect(_callback));
+      this._mongocryptdManager.spawn(() => {
+        this._mongocryptdClient.connect().then(
+          result => {
+            return _callback(null, result);
+          },
+          error => {
+            _callback(error, null);
+          }
+        );
+      });
     }
 
     /**
@@ -214,7 +230,7 @@ module.exports = function (modules) {
      */
     teardown(force, callback) {
       if (this._mongocryptdClient) {
-        this._mongocryptdClient.close(force, callback);
+        this._mongocryptdClient.close(force).then(callback);
       } else {
         callback();
       }

@@ -263,12 +263,14 @@ module.exports = function (modules) {
             .db(dbName)
             .collection(collectionName)
             .insertOne(dataKey, { writeConcern: { w: 'majority' } })
-            .then(result => {
-              cb(null, result.insertedId);
-            })
-            .catch(err => {
-              cb(err, null);
-            });
+            .then(
+              result => {
+                return cb(null, result.insertedId);
+              },
+              err => {
+                cb(err, null);
+              }
+            );
         });
       });
     }
