@@ -79,6 +79,9 @@ _build_ninja() {
 _ensure_ninja() {
     declare arch
     arch="$(uname -m)"
+    if test -f /etc/alpine-release; then
+        arch="$arch-musl"
+    fi
 
     case "$OS_NAME-$arch" in
     linux-x86_64|windows-x86_64|macos-*)
