@@ -245,9 +245,9 @@ target_link_libraries (
       _mongocrypt::libbson_for_shared
       Threads::Threads
       kms_message_static
-      mongocrypt::intel_dfp
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
+      mongocrypt::intel_dfp
       ${CMAKE_DL_LIBS}
    )
 
@@ -303,9 +303,9 @@ target_link_libraries (
    PRIVATE
       _mongocrypt::libbson_for_static
       kms_message_static
-      mongocrypt::intel_dfp
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
+      mongocrypt::intel_dfp
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
