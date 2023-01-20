@@ -437,13 +437,15 @@ module.exports = function (modules) {
       const dbName = databaseNamespace(ns);
       const rawCommand = bson.deserialize(command, options);
 
-      client.db(dbName).command(rawCommand, options, (err, response) => {
-        if (err) {
+      client
+        .db(dbName)
+        .command(rawCommand, options)
+        .then(response => {
+          callback(null, bson.serialize(response, this.options));
+        })
+        .catch(err => {
           callback(err, null);
-          return;
-        }
-        callback(err, bson.serialize(response, this.options));
-      });
+        });
     }
 
     /**
