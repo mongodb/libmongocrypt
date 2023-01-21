@@ -133,6 +133,9 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_ctx_setopt_algorithm = new Lazy<Delegates.mongocrypt_ctx_setopt_algorithm>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_algorithm>(
                     ("mongocrypt_ctx_setopt_algorithm")), true);
+            _mongocrypt_ctx_setopt_algorithm_range = new Lazy<Delegates.mongocrypt_ctx_setopt_algorithm_range>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_algorithm_range>(
+                    ("mongocrypt_ctx_setopt_algorithm_range")), true);
             _mongocrypt_ctx_setopt_contention_factor = new Lazy<Delegates.mongocrypt_ctx_setopt_contention_factor>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_contention_factor>(
                     ("mongocrypt_ctx_setopt_contention_factor")), true);
@@ -151,6 +154,9 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_ctx_explicit_encrypt_init = new Lazy<Delegates.mongocrypt_ctx_explicit_encrypt_init>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_explicit_encrypt_init>(
                     ("mongocrypt_ctx_explicit_encrypt_init")), true);
+            _mongocrypt_ctx_explicit_encrypt_expression_init = new Lazy<Delegates.mongocrypt_ctx_explicit_encrypt_expression_init>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_explicit_encrypt_expression_init>(
+                    ("mongocrypt_ctx_explicit_encrypt_expression_init")), true);
             _mongocrypt_ctx_explicit_decrypt_init = new Lazy<Delegates.mongocrypt_ctx_explicit_decrypt_init>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_explicit_decrypt_init>(
                     ("mongocrypt_ctx_explicit_decrypt_init")), true);
@@ -263,6 +269,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_ctx_encrypt_init mongocrypt_ctx_encrypt_init => _mongocrypt_ctx_encrypt_init.Value;
         internal static Delegates.mongocrypt_ctx_decrypt_init mongocrypt_ctx_decrypt_init => _mongocrypt_ctx_decrypt_init.Value;
         internal static Delegates.mongocrypt_ctx_explicit_encrypt_init mongocrypt_ctx_explicit_encrypt_init => _mongocrypt_ctx_explicit_encrypt_init.Value;
+        internal static Delegates.mongocrypt_ctx_explicit_encrypt_expression_init mongocrypt_ctx_explicit_encrypt_expression_init => _mongocrypt_ctx_explicit_encrypt_expression_init.Value;
         internal static Delegates.mongocrypt_ctx_explicit_decrypt_init mongocrypt_ctx_explicit_decrypt_init => _mongocrypt_ctx_explicit_decrypt_init.Value;
         internal static Delegates.mongocrypt_ctx_datakey_init mongocrypt_ctx_datakey_init => _mongocrypt_ctx_datakey_init.Value;
         internal static Delegates.mongocrypt_ctx_provide_kms_providers mongocrypt_ctx_provide_kms_providers => _mongocrypt_ctx_provide_kms_providers.Value;
@@ -270,6 +277,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_ctx_setopt_key_id mongocrypt_ctx_setopt_key_id => _mongocrypt_ctx_setopt_key_id.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_alt_name mongocrypt_ctx_setopt_key_alt_name => _mongocrypt_ctx_setopt_key_alt_name.Value;
         internal static Delegates.mongocrypt_ctx_setopt_algorithm mongocrypt_ctx_setopt_algorithm => _mongocrypt_ctx_setopt_algorithm.Value;
+        internal static Delegates.mongocrypt_ctx_setopt_algorithm_range mongocrypt_ctx_setopt_algorithm_range => _mongocrypt_ctx_setopt_algorithm_range.Value;
         internal static Delegates.mongocrypt_ctx_setopt_contention_factor mongocrypt_ctx_setopt_contention_factor => _mongocrypt_ctx_setopt_contention_factor.Value;
         internal static Delegates.mongocrypt_ctx_setopt_query_type mongocrypt_ctx_setopt_query_type => _mongocrypt_ctx_setopt_query_type.Value;
 
@@ -342,6 +350,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_decrypt_init> _mongocrypt_ctx_decrypt_init;
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_explicit_encrypt_init> _mongocrypt_ctx_explicit_encrypt_init;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_explicit_encrypt_expression_init> _mongocrypt_ctx_explicit_encrypt_expression_init;        
 
         private static readonly Lazy<Delegates.mongocrypt_ctx_explicit_decrypt_init> _mongocrypt_ctx_explicit_decrypt_init;
 
@@ -353,6 +362,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_id> _mongocrypt_ctx_setopt_key_id;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_alt_name> _mongocrypt_ctx_setopt_key_alt_name;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_algorithm> _mongocrypt_ctx_setopt_algorithm;
+        private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_algorithm_range> _mongocrypt_ctx_setopt_algorithm_range;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_contention_factor> _mongocrypt_ctx_setopt_contention_factor;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_query_type> _mongocrypt_ctx_setopt_query_type;
 
@@ -561,9 +571,16 @@ namespace MongoDB.Libmongocrypt
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_decrypt_init(ContextSafeHandle handle, BinarySafeHandle binary);
 
+            /// <summary>
+            /// bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* msg)
+            /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
-            public delegate bool
-                mongocrypt_ctx_explicit_encrypt_init(ContextSafeHandle handle, BinarySafeHandle binary);
+            public delegate bool mongocrypt_ctx_explicit_encrypt_init(ContextSafeHandle handle, BinarySafeHandle binary);
+            /// <summary>
+            /// bool mongocrypt_ctx_explicit_encrypt_expression_init(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* msg)
+            /// </summary>
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_explicit_encrypt_expression_init(ContextSafeHandle handle, BinarySafeHandle msg);
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool
@@ -595,6 +612,11 @@ namespace MongoDB.Libmongocrypt
             /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_ctx_setopt_algorithm(ContextSafeHandle handle, [MarshalAs(UnmanagedType.LPStr)] string algorithm, int length);
+            /// <summary>
+            /// bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t* ctx, mongocrypt_binary_t* opts);
+            /// </summary>
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_ctx_setopt_algorithm_range(ContextSafeHandle handle, BinarySafeHandle opts);
             /// <summary>
             /// bool mongocrypt_ctx_setopt_contention_factor(mongocrypt_ctx_t* ctx, int64_t contention_factor);
             /// </summary>
