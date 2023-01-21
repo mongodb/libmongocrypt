@@ -202,7 +202,7 @@ describe('ClientEncryption', function () {
         options: { masterKey: { region: 'region', key: 'cmk' } }
       }
     ].forEach(providerTest => {
-      it(`should create a data key with the "${providerTest.name}" KMS provider`, function (done) {
+      it(`should create a data key with the "${providerTest.name}" KMS provider`, async function () {
         const providerName = providerTest.name;
         const encryption = new ClientEncryption(client, {
           keyVaultNamespace: 'client.encryption',
@@ -210,24 +210,16 @@ describe('ClientEncryption', function () {
         });
 
         const dataKeyOptions = providerTest.options || {};
-        encryption.createDataKey(providerName, dataKeyOptions, (err, dataKey) => {
-          expect(err).to.not.exist;
-          expect(dataKey._bsontype).to.equal('Binary');
 
-          client
-            .db('client')
-            .collection('encryption')
-            .findOne({ _id: dataKey }, (err, doc) => {
-              expect(err).to.not.exist;
-              expect(doc).to.have.property('masterKey');
-              expect(doc.masterKey).to.have.property('provider');
-              expect(doc.masterKey.provider).to.eql(providerName);
-              done();
-            });
-        });
+        const dataKey = await encryption.createDataKey(providerName, dataKeyOptions);
+        expect(dataKey).property('_bsontype', 'Binary');
+
+        const doc = await client.db('client').collection('encryption').findOne({ _id: dataKey });
+        expect(doc).to.have.property('masterKey');
+        expect(doc.masterKey).property('provider', providerName);
       });
 
-      it(`should create a data key with the "${providerTest.name}" KMS provider (fixed key material)`, function (done) {
+      it(`should create a data key with the "${providerTest.name}" KMS provider (fixed key material)`, async function () {
         const providerName = providerTest.name;
         const encryption = new ClientEncryption(client, {
           keyVaultNamespace: 'client.encryption',
@@ -238,21 +230,13 @@ describe('ClientEncryption', function () {
           ...providerTest.options,
           keyMaterial: new BSON.Binary(Buffer.alloc(96))
         };
-        encryption.createDataKey(providerName, dataKeyOptions, (err, dataKey) => {
-          expect(err).to.not.exist;
-          expect(dataKey._bsontype).to.equal('Binary');
 
-          client
-            .db('client')
-            .collection('encryption')
-            .findOne({ _id: dataKey }, (err, doc) => {
-              expect(err).to.not.exist;
-              expect(doc).to.have.property('masterKey');
-              expect(doc.masterKey).to.have.property('provider');
-              expect(doc.masterKey.provider).to.eql(providerName);
-              done();
-            });
-        });
+        const dataKey = await encryption.createDataKey(providerName, dataKeyOptions);
+        expect(dataKey).property('_bsontype', 'Binary');
+
+        const doc = await client.db('client').collection('encryption').findOne({ _id: dataKey });
+        expect(doc).to.have.property('masterKey');
+        expect(doc.masterKey).property('provider', providerName);
       });
     });
 
