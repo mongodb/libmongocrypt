@@ -511,7 +511,7 @@ describe('ClientEncryption', function () {
     beforeEach(function () {
       if (requirements.SKIP_AWS_TESTS) {
         this.currentTest.skipReason = `requirements.SKIP_AWS_TESTS=${requirements.SKIP_AWS_TESTS}`;
-        this.skip();
+        this.currentTest.skip();
         return;
       }
 
@@ -697,7 +697,7 @@ describe('ClientEncryption', function () {
     let completeOptions;
     let dataKey;
 
-    beforeEach(async () => {
+    beforeEach(async function () {
       if (requirements.SKIP_LIVE_TESTS) {
         this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
         this.test.skip();
@@ -748,7 +748,7 @@ describe('ClientEncryption', function () {
       $and: [{ someField: { $gt: 1 } }]
     };
 
-    beforeEach(async () => {
+    beforeEach(async function () {
       if (requirements.SKIP_LIVE_TESTS) {
         this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
         this.test.skip();
