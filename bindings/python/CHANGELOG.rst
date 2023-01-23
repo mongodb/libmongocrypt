@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Changes in Version 1.5.0
+------------------------
+
+- Add support for range-based Queryable Encryption with the new "rangePreview"
+  algorithm. NOTE: The "rangePreview" algorithm is experimental only. It is
+  not intended for public use.
+- Bundle libmongocrypt 1.7.0 in release wheels.
+- **Remove support for libmongocrypt <=1.7.0, libmongocrypt >=1.7.0 is now
+  required.** Note this is only relevant for users that install from
+  source or use the ``PYMONGOCRYPT_LIB`` environment variable.
+
 Changes in Version 1.4.1
 ------------------------
 
