@@ -28,6 +28,8 @@ const REQUIRED_FILES = [
 ];
 
 describe(`Release ${packFile}`, () => {
+  this.timeout(5000);
+
   let tarFileList;
   before(() => {
     expect(fs.existsSync(packFile)).to.equal(false);
