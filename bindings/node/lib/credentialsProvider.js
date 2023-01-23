@@ -14,6 +14,8 @@ try {
  *
  * @param {Object} kmsProviders - The user provided KMS providers.
  * @returns {Promise} The new kms providers.
+ *
+ * @ignore
  */
 async function loadCredentials(kmsProviders) {
   if (awsCredentialProviders) {

@@ -689,8 +689,6 @@ module.exports = function (modules) {
      * This returns anything that looks like the kmsProviders original input
      * option. It can be empty, and any provider specified here will override
      * the original ones.
-     *
-     * @ignore
      */
     async askForKMSCredentials() {
       return this._onKmsProviderRefresh

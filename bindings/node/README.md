@@ -56,16 +56,6 @@ npm test
 </dd>
 </dl>
 
-## Functions
-
-<dl>
-<dt><a href="#loadCredentials">loadCredentials(kmsProviders)</a> ⇒ <code>Promise</code></dt>
-<dd><p>Load cloud provider credentials for the user provided KMS providers.
-Credentials will only attempt to get loaded if they do not exist
-and no existing credentials will get overwritten.</p>
-</dd>
-</dl>
-
 ## Typedefs
 
 <dl>
@@ -291,6 +281,8 @@ The public interface for explicit in-use encryption
         * [.encryptExpression(expression, options)](#ClientEncryption+encryptExpression)
 
         * [.decrypt(value, callback)](#ClientEncryption+decrypt)
+
+        * [.askForKMSCredentials()](#ClientEncryption+askForKMSCredentials)
 
     * _inner_
         * [~decryptCallback](#ClientEncryption..decryptCallback)
@@ -633,6 +625,15 @@ async function decryptMyValue(value) {
   return clientEncryption.decrypt(value);
 }
 ```
+<a name="ClientEncryption+askForKMSCredentials"></a>
+
+### *clientEncryption*.askForKMSCredentials()
+Ask the user for KMS credentials.
+
+This returns anything that looks like the kmsProviders original input
+option. It can be empty, and any provider specified here will override
+the original ones.
+
 <a name="ClientEncryption..decryptCallback"></a>
 
 ### *ClientEncryption*~decryptCallback
@@ -647,19 +648,6 @@ async function decryptMyValue(value) {
 ## MongoCryptError
 An error indicating that something went wrong specifically with MongoDB Client Encryption
 
-<a name="loadCredentials"></a>
-
-## loadCredentials(kmsProviders)
-
-| Param | Type | Description |
-| --- | --- | --- |
-| kmsProviders | <code>Object</code> | The user provided KMS providers. |
-
-Load cloud provider credentials for the user provided KMS providers.
-Credentials will only attempt to get loaded if they do not exist
-and no existing credentials will get overwritten.
-
-**Returns**: <code>Promise</code> - The new kms providers.  
 <a name="BSONValue"></a>
 
 ## BSONValue
