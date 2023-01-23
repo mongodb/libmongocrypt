@@ -55,7 +55,7 @@ class ExplicitEncryptOpts(object):
         self.contention_factor = contention_factor
         if range_opts is not None and not isinstance(range_opts, bytes):
             raise TypeError(
-                'range_opts must be an bytes or None, not: %r' % (type(contention_factor),))
+                'range_opts must be an bytes or None, not: %r' % (type(range_opts),))
         self.range_opts = range_opts
         self.is_expression = is_expression
 
