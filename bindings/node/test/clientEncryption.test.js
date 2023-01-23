@@ -780,21 +780,21 @@ describe('ClientEncryption', function () {
     afterEach(() => teardown());
 
     it('throws if rangeOptions is not provided', async function () {
-      delete completeOptions['rangeOptions'];
+      expect(delete completeOptions.rangeOptions).to.be.true;
       const errorOrResult = await clientEncryption
         .encryptExpression(expression, completeOptions)
         .catch(e => e);
 
-      expect(errorOrResult).to.be.instanceof(Error);
+      expect(errorOrResult).to.be.instanceof(TypeError);
     });
 
     it('throws if algorithm is not provided', async function () {
-      delete completeOptions['algorithm'];
+      expect(delete completeOptions.algorithm).to.be.true;
       const errorOrResult = await clientEncryption
         .encryptExpression(expression, completeOptions)
         .catch(e => e);
 
-      expect(errorOrResult).to.be.instanceof(Error);
+      expect(errorOrResult).to.be.instanceof(TypeError);
     });
 
     it(`throws if algorithm does not equal 'rangePreview'`, async function () {
@@ -803,7 +803,7 @@ describe('ClientEncryption', function () {
         .encryptExpression(expression, completeOptions)
         .catch(e => e);
 
-      expect(errorOrResult, errorOrResult.message).to.be.instanceof(Error);
+      expect(errorOrResult).to.be.instanceof(TypeError);
     });
 
     it(`does not throw if algorithm has different casing than 'rangePreview'`, async function () {
