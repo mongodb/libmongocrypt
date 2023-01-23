@@ -618,7 +618,7 @@ module.exports = function (modules) {
      *
      * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
      *
-     * @experimental The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form
+     * @experimental The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.
      *
      * @param {object} expression a BSON document of one of the following forms:
      *  1. A Match Expression of this form:
@@ -689,6 +689,8 @@ module.exports = function (modules) {
      * This returns anything that looks like the kmsProviders original input
      * option. It can be empty, and any provider specified here will override
      * the original ones.
+     *
+     * @ignore
      */
     async askForKMSCredentials() {
       return this._onKmsProviderRefresh
@@ -705,13 +707,14 @@ module.exports = function (modules) {
      * Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
      * be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
      *
-     * @internal
-     *
      * @param {*} value The value that you wish to encrypt. Must be of a type that can be serialized into BSON
      * @param {boolean} expressionMode - a boolean that indicates whether or not to encrypt the value as an expression
      * @param {EncryptOptions} options
      * @returns the raw result of the call to stateMachine.execute().  When expressionMode is set to true, the return
      *          value will be a bson document.  When false, the value will be a BSON Binary.
+     *
+     * @ignore
+     *
      */
     async _encrypt(value, expressionMode, options) {
       const bson = this._bson;
@@ -733,11 +736,6 @@ module.exports = function (modules) {
         }
 
         contextOptions.keyAltName = bson.serialize({ keyAltName });
-      }
-
-      const rangePreviewRegex = /^rangepreview$/i;
-      if (typeof options.algorithm === 'string' && rangePreviewRegex.test(options.algorithm)) {
-        contextOptions.algorithm = 'rangepreview';
       }
 
       if ('rangeOptions' in options) {

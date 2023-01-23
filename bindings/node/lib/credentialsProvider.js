@@ -8,11 +8,11 @@ try {
 } catch {} // eslint-disable-line
 
 /**
- * Load cloud provider credentials for the user provided kms providers.
+ * Load cloud provider credentials for the user provided KMS providers.
  * Credentials will only attempt to get loaded if they do not exist
  * and no existing credentials will get overwritten.
  *
- * @param {Object} kmsProviders - The user provided kms providers.
+ * @param {Object} kmsProviders - The user provided KMS providers.
  * @returns {Promise} The new kms providers.
  */
 async function loadCredentials(kmsProviders) {

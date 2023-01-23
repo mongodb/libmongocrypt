@@ -564,7 +564,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
             throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
 
-        if (algorithm == "rangepreview") {
+        if (strcasecmp(algorithm.c_str(), "rangepreview") == 0) {
             if (!options.Has("rangeOptions")) {
                 throw TypeError::New(Env(), "`rangeOptions` must be provided if `algorithm` is set to RangePreview");
             }

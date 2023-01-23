@@ -60,7 +60,7 @@ npm test
 
 <dl>
 <dt><a href="#loadCredentials">loadCredentials(kmsProviders)</a> ⇒ <code>Promise</code></dt>
-<dd><p>Load cloud provider credentials for the user provided kms providers.
+<dd><p>Load cloud provider credentials for the user provided KMS providers.
 Credentials will only attempt to get loaded if they do not exist
 and no existing credentials will get overwritten.</p>
 </dd>
@@ -291,10 +291,6 @@ The public interface for explicit in-use encryption
         * [.encryptExpression(expression, options)](#ClientEncryption+encryptExpression)
 
         * [.decrypt(value, callback)](#ClientEncryption+decrypt)
-
-        * [.askForKMSCredentials()](#ClientEncryption+askForKMSCredentials)
-
-        * [._encrypt(value, expressionMode, options)](#ClientEncryption+_encrypt)
 
     * _inner_
         * [~decryptCallback](#ClientEncryption..decryptCallback)
@@ -599,7 +595,7 @@ async function encryptMyData(value) {
 <a name="ClientEncryption+encryptExpression"></a>
 
 ### *clientEncryption*.encryptExpression(expression, options)
-**Experimental**: The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form  
+**Experimental**: The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -637,32 +633,6 @@ async function decryptMyValue(value) {
   return clientEncryption.decrypt(value);
 }
 ```
-<a name="ClientEncryption+askForKMSCredentials"></a>
-
-### *clientEncryption*.askForKMSCredentials()
-Ask the user for KMS credentials.
-
-This returns anything that looks like the kmsProviders original input
-option. It can be empty, and any provider specified here will override
-the original ones.
-
-<a name="ClientEncryption+_encrypt"></a>
-
-### *clientEncryption*._encrypt(value, expressionMode, options)
-**Internal**:   
-
-| Param | Type | Description |
-| --- | --- | --- |
-| value | <code>\*</code> | The value that you wish to encrypt. Must be of a type that can be serialized into BSON |
-| expressionMode | <code>boolean</code> | a boolean that indicates whether or not to encrypt the value as an expression |
-| options | [<code>EncryptOptions</code>](#EncryptOptions) |  |
-
-A helper that perform explicit encryption of values and expressions.
-Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
-be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
-
-**Returns**: the raw result of the call to stateMachine.execute().  When expressionMode is set to true, the return
-         value will be a bson document.  When false, the value will be a BSON Binary.  
 <a name="ClientEncryption..decryptCallback"></a>
 
 ### *ClientEncryption*~decryptCallback
@@ -683,9 +653,9 @@ An error indicating that something went wrong specifically with MongoDB Client E
 
 | Param | Type | Description |
 | --- | --- | --- |
-| kmsProviders | <code>Object</code> | The user provided kms providers. |
+| kmsProviders | <code>Object</code> | The user provided KMS providers. |
 
-Load cloud provider credentials for the user provided kms providers.
+Load cloud provider credentials for the user provided KMS providers.
 Credentials will only attempt to get loaded if they do not exist
 and no existing credentials will get overwritten.
 
