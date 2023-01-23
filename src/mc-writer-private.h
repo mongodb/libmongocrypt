@@ -22,8 +22,12 @@
 #include <stdlib.h>
 
 /**
+ * A non-owning forward-only cursor api to write to a buffer.
  *
+ * Tracks length of buffer and current position of buffer. parser_name is
+ * typically __FUNCTION__ to provide useful error messages automatically.
  *
+ * All numbers are read as little endian.
  */
 
 struct _mc_writer_t {
@@ -55,17 +59,17 @@ mc_writer_destroy (mc_writer_t *writer);
 
 bool
 mc_writer_write_u8 (mc_writer_t *writer,
-                    const uint8_t *value,
+                    const uint8_t value,
                     mongocrypt_status_t *status);
 
 bool
 mc_writer_write_u32 (mc_writer_t *writer,
-                     const uint32_t *value,
+                     const uint32_t value,
                      mongocrypt_status_t *status);
 
 bool
 mc_writer_write_u64 (mc_writer_t *writer,
-                     const uint64_t *value,
+                     const uint64_t value,
                      mongocrypt_status_t *status);
 
 bool

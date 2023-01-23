@@ -33,15 +33,15 @@ _test_mc_writer_ints (_mongocrypt_tester_t *tester)
         mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
         uint8_t num = 4;
-        mc_writer_write_u8 (&writer, &num, status);
+        ASSERT_OK_STATUS (mc_writer_write_u8 (&writer, num, status), status);
         
         mc_reader_t reader;
         mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
 
         uint8_t out;
-        mc_reader_read_u8 (&reader, &out, status);
+        ASSERT_OK_STATUS (mc_reader_read_u8 (&reader, &out, status), status);
 
-        ASSERT_CMPUINT (out, ==, num);
+        ASSERT_CMPUINT8 (out, ==, num);
 
         _mongocrypt_buffer_cleanup (&write_buffer);
         mongocrypt_status_destroy (status);
@@ -58,15 +58,15 @@ _test_mc_writer_ints (_mongocrypt_tester_t *tester)
         mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
         uint32_t num = 23832405;
-        mc_writer_write_u32 (&writer, &num, status);
+        ASSERT_OK_STATUS (mc_writer_write_u32 (&writer, num, status), status);
 
         mc_reader_t reader;
         mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
 
         uint32_t out;
-        mc_reader_read_u32 (&reader, &out, status);
+        ASSERT_OK_STATUS (mc_reader_read_u32 (&reader, &out, status), status);
 
-        ASSERT_CMPUINT (out, ==, num);
+        ASSERT_CMPUINT32 (out, ==, num);
 
         _mongocrypt_buffer_cleanup (&write_buffer);
         mongocrypt_status_destroy (status);
@@ -83,13 +83,13 @@ _test_mc_writer_ints (_mongocrypt_tester_t *tester)
         mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
         uint64_t num = 23832405;
-        mc_writer_write_u64 (&writer, &num, status);
+        ASSERT_OK_STATUS (mc_writer_write_u64 (&writer, num, status), status);
 
         mc_reader_t reader;
         mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
 
         uint64_t out;
-        mc_reader_read_u64 (&reader, &out, status);
+        ASSERT_OK_STATUS (mc_reader_read_u64 (&reader, &out, status), status);
 
         ASSERT_CMPUINT64 (out, ==, num);
 
@@ -117,14 +117,12 @@ _test_mc_writer_buffer (_mongocrypt_tester_t *tester)
     mc_writer_t writer;
     mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
-    mc_writer_write_buffer(&writer, &input_buffer, input_buffer.len, status);
+    ASSERT_OK_STATUS (mc_writer_write_buffer(&writer, &input_buffer, input_buffer.len, status), status);
 
     _mongocrypt_buffer_t read_buffer;
-    _mongocrypt_buffer_init_size (&read_buffer, input_buffer.len);
-
     mc_reader_t reader;
     mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
-    mc_reader_read_buffer (&reader, &read_buffer, read_buffer.len, status);
+    ASSERT_OK_STATUS (mc_reader_read_buffer (&reader, &read_buffer, write_buffer.len, status), status);
 
     ASSERT_CMPBUF(input_buffer, read_buffer);
 
@@ -151,7 +149,7 @@ _test_mc_writer_prf (_mongocrypt_tester_t *tester)
     mc_writer_t writer;
     mc_writer_init_from_buffer (&writer, &write_buffer, __FUNCTION__);
 
-    ASSERT (mc_writer_write_prfblock_buffer (&writer, &input_buffer, status));
+    ASSERT_OK_STATUS (mc_writer_write_prfblock_buffer (&writer, &input_buffer, status), status);
     ASSERT_CMPBUF(input_buffer, write_buffer);
 
     _mongocrypt_buffer_cleanup (&input_buffer);
@@ -176,7 +174,7 @@ _test_mc_writer_uuid (_mongocrypt_tester_t *tester)
     mc_writer_t writer;
     mc_writer_init_from_buffer (&writer, &write_buffer, __FUNCTION__);
 
-    ASSERT (mc_writer_write_uuid_buffer (&writer, &input_buffer, status));
+    ASSERT_OK_STATUS (mc_writer_write_uuid_buffer (&writer, &input_buffer, status), status);
     ASSERT_CMPBUF(input_buffer, write_buffer);
 
     _mongocrypt_buffer_cleanup (&input_buffer);

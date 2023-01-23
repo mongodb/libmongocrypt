@@ -78,12 +78,12 @@ mc_writer_destroy (mc_writer_t *writer)
 
 bool
 mc_writer_write_u8 (mc_writer_t *writer,
-                    const uint8_t *value,
+                    const uint8_t value,
                     mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (writer);
    CHECK_REMAINING_BUFFER_AND_RET (sizeof (uint8_t));
-   memcpy (writer->ptr + writer->pos, value, sizeof (uint8_t));
+   memcpy (writer->ptr + writer->pos, &value, sizeof (uint8_t));
 
    writer->pos += sizeof (uint8_t);
    return true;
@@ -91,12 +91,12 @@ mc_writer_write_u8 (mc_writer_t *writer,
 
 bool
 mc_writer_write_u32 (mc_writer_t *writer,
-                     const uint32_t *value,
+                     const uint32_t value,
                      mongocrypt_status_t *status)
 {
    CHECK_REMAINING_BUFFER_AND_RET (sizeof (uint32_t));
 
-   uint32_t temp = BSON_UINT32_TO_LE (*value);
+   uint32_t temp = BSON_UINT32_TO_LE (value);
    memcpy (writer->ptr + writer->pos, &temp, sizeof (uint32_t));
    writer->pos += sizeof (uint32_t);
 
@@ -105,12 +105,12 @@ mc_writer_write_u32 (mc_writer_t *writer,
 
 bool
 mc_writer_write_u64 (mc_writer_t *writer,
-                     const uint64_t *value,
+                     const uint64_t value,
                      mongocrypt_status_t *status)
 {
    CHECK_REMAINING_BUFFER_AND_RET (sizeof (uint64_t));
 
-   uint64_t temp = BSON_UINT64_TO_LE (*value);
+   uint64_t temp = BSON_UINT64_TO_LE (value);
    memcpy (writer->ptr + writer->pos, &temp, sizeof (uint64_t));
    writer->pos += sizeof (uint64_t);
 

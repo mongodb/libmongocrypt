@@ -103,6 +103,9 @@ mc_FLE2IndexedEncryptedValue_new (void);
 mc_FLE2IndexedEqualityEncryptedValueTokens *
 mc_FLE2IndexedEqualityEncryptedValueTokens_new (void);
 
+/**
+ * This function is used by the server codebase.
+ */
 bool
 mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf (
    mc_FLE2IndexedEqualityEncryptedValueTokens *tokens,

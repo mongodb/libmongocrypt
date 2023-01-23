@@ -130,6 +130,66 @@ test_FLE2IndexedEqualityEncryptedValue_parse (_mongocrypt_tester_t *tester)
 }
 
 static void
+test_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf (_mongocrypt_tester_t *tester)
+{
+   uint64_t counter = 45;
+   _mongocrypt_buffer_t expected_edc_token;
+   _mongocrypt_buffer_t expected_esc_token;
+   _mongocrypt_buffer_t expected_ecc_token;
+   _mongocrypt_buffer_t input_token_set;
+
+
+   _mongocrypt_buffer_copy_from_hex (
+      &expected_edc_token,
+      "97C8DFE394D80A4EE335E3F9FDC024D18BE4B92F9444FCA316FF9896D7BF455D");
+
+
+   _mongocrypt_buffer_copy_from_hex (
+      &expected_esc_token,
+      "EBB22F74BE0FA4AD863188D3F33AF0B95CB4CA4ED0091E1A43513DB20E9D59AE");
+
+
+   _mongocrypt_buffer_copy_from_hex (
+      &expected_ecc_token,
+      "A1DF0BB04C977BD4BC0B487FFFD2E3BBB96078354DE9F204EE5872BB10F01971");
+
+   // _mongocrypt_buffer_init (&input_token_set);
+
+   // {
+   //    _mongocrypt_buffer_t input_tokens[3] = {
+   //       expected_edc_token,
+   //       expected_esc_token,
+   //       expected_ecc_token
+   //    };
+   //    ASSERT (_mongocrypt_buffer_concat (&input_token_set, input_tokens, 3));
+   //    _mongocrypt_buffer_cleanup (&input_tokens);
+   // }
+
+   _mongocrypt_buffer_copy_from_hex (
+      &input_token_set,
+      "2D00000000000000"
+      "97C8DFE394D80A4EE335E3F9FDC024D18BE4B92F9444FCA316FF9896D7BF455D"
+      "EBB22F74BE0FA4AD863188D3F33AF0B95CB4CA4ED0091E1A43513DB20E9D59AE"
+      "A1DF0BB04C977BD4BC0B487FFFD2E3BBB96078354DE9F204EE5872BB10F01971");
+
+   /* Test function mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf. */
+   {
+      mongocrypt_status_t *status = mongocrypt_status_new ();
+      mc_FLE2IndexedEqualityEncryptedValueTokens *tokens = mc_FLE2IndexedEqualityEncryptedValueTokens_new ();
+      
+      ASSERT (mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf(tokens, &input_token_set, status));
+      ASSERT_CMPBUF(expected_edc_token, tokens->edc);
+      ASSERT_CMPBUF(expected_esc_token, tokens->esc);
+      ASSERT_CMPBUF(expected_ecc_token, tokens->ecc);
+
+      mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
+      mongocrypt_status_destroy (status);
+   }
+
+   _mongocrypt_buffer_cleanup (&input_token_set);
+}
+
+static void
 test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
 {
    _mongocrypt_buffer_t input;
@@ -137,7 +197,6 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t expected_edc_token;
    _mongocrypt_buffer_t expected_esc_token;
    _mongocrypt_buffer_t expected_ecc_token;
-   _mongocrypt_buffer_t expected_token_set;
    _mongocrypt_buffer_t correct_S_Key;
    _mongocrypt_buffer_t correct_K_Key;
    mc_FLE2IndexedEncryptedValue_t *iev;
@@ -185,12 +244,6 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
 
    _mongocrypt_buffer_copy_from_hex (
       &expected_ecc_token,
-      "A1DF0BB04C977BD4BC0B487FFFD2E3BBB96078354DE9F204EE5872BB10F01971");
-
-   _mongocrypt_buffer_copy_from_hex (
-      &expected_token_set,
-      "97C8DFE394D80A4EE335E3F9FDC024D18BE4B92F9444FCA316FF9896D7BF455D"
-      "EBB22F74BE0FA4AD863188D3F33AF0B95CB4CA4ED0091E1A43513DB20E9D59AE"
       "A1DF0BB04C977BD4BC0B487FFFD2E3BBB96078354DE9F204EE5872BB10F01971");
 
    _mongocrypt_buffer_copy_from_hex (&expect_S_KeyId,
@@ -276,20 +329,6 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       mongocrypt_status_destroy (status);
    }
 
-   /* Test function mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf. */
-   {
-      mongocrypt_status_t *status = mongocrypt_status_new ();
-      mc_FLE2IndexedEqualityEncryptedValueTokens *tokens = mc_FLE2IndexedEqualityEncryptedValueTokens_new ();
-      
-      ASSERT (mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf(tokens, &expected_token_set, status));
-      ASSERT_CMPBUF(expected_edc_token, tokens->edc);
-      ASSERT_CMPBUF(expected_esc_token, tokens->esc);
-      ASSERT_CMPBUF(expected_ecc_token, tokens->ecc);
-
-      mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
-      mongocrypt_status_destroy (status);
-   }
-
    /* Test that parse and write work correctly. */
    {
       mongocrypt_status_t *status = mongocrypt_status_new ();
@@ -342,6 +381,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
                            crypt->crypto, iev2, token, tokens2, status), 
                         status);
 
+      ASSERT_CMPUINT64 (tokens->counter, ==, tokens2->counter);
       ASSERT_CMPBUF (tokens->edc, tokens2->edc);
       ASSERT_CMPBUF (tokens->esc, tokens2->esc);
       ASSERT_CMPBUF (tokens->ecc, tokens2->ecc);
@@ -414,7 +454,6 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_cleanup (&expected_ecc_token);
    _mongocrypt_buffer_cleanup (&expected_esc_token);
    _mongocrypt_buffer_cleanup (&expected_edc_token);
-   _mongocrypt_buffer_cleanup (&expected_token_set);
    _mongocrypt_buffer_cleanup (&input_with_tokens);
    _mongocrypt_buffer_cleanup (&input);
    mongocrypt_destroy (crypt);
@@ -525,6 +564,7 @@ void
 _mongocrypt_tester_install_fle2_payloads (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (test_FLE2IndexedEqualityEncryptedValue_parse);
+   INSTALL_TEST (test_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf);
    INSTALL_TEST (test_FLE2IndexedEqualityEncryptedValue_decrypt);
    INSTALL_TEST (test_FLE2IndexedRangeEncryptedValue_parse);
 }
