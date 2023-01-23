@@ -528,64 +528,86 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
         throw TypeError::New(Env(), "Parameter `value` must be a Buffer");
     }
 
-    if (info.Length() > 1) {
-        Object options = info[1].ToObject();
+    Object options = info.Length() > 1 ? info[1].ToObject() : Object::New(info.Env());
 
-        if (options.Has("keyId")) {
-            Napi::Value keyId = options["keyId"];
+    if (options.Has("keyId")) {
+        Napi::Value keyId = options["keyId"];
 
-            if (!keyId.IsBuffer()) {
-                throw TypeError::New(Env(), "`keyId` must be a Buffer");
-            }
-
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(keyId.As<Uint8Array>()));
-            if (!mongocrypt_ctx_setopt_key_id(context.get(), binary.get())) {
-                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
-            }
+        if (!keyId.IsBuffer()) {
+            throw TypeError::New(Env(), "`keyId` must be a Buffer");
         }
 
-        if (options.Has("keyAltName")) {
-            Napi::Value keyAltName = options["keyAltName"];
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(keyId.As<Uint8Array>()));
+        if (!mongocrypt_ctx_setopt_key_id(context.get(), binary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+        }
+    }
 
-            if (!keyAltName.IsBuffer()) {
-                throw TypeError::New(Env(), "`keyAltName` must be a Buffer");
-            }
+    if (options.Has("keyAltName")) {
+        Napi::Value keyAltName = options["keyAltName"];
 
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-                BufferToBinary(keyAltName.As<Uint8Array>()));
-            if (!mongocrypt_ctx_setopt_key_alt_name(context.get(), binary.get())) {
-                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
-            }
+        if (!keyAltName.IsBuffer()) {
+            throw TypeError::New(Env(), "`keyAltName` must be a Buffer");
         }
 
-        if (options.Has("algorithm")) {
-            std::string algorithm = options.Get("algorithm").ToString();
-            if (!mongocrypt_ctx_setopt_algorithm(
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
+            BufferToBinary(keyAltName.As<Uint8Array>()));
+        if (!mongocrypt_ctx_setopt_key_alt_name(context.get(), binary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+        }
+    }
+
+    if (options.Has("algorithm")) {
+        std::string algorithm = options.Get("algorithm").ToString();
+        if (!mongocrypt_ctx_setopt_algorithm(
                     context.get(), algorithm.c_str(), algorithm.size())) {
-                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
-            }
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
 
-        if (options.Has("contentionFactor")) {
-            Napi::Value contention_factor_value = options["contentionFactor"];
-            int64_t contention_factor = contention_factor_value.IsBigInt() ?
-                contention_factor_value.As<BigInt>().Int64Value(nullptr) :
-                contention_factor_value.ToNumber().Int64Value();
-            if (!mongocrypt_ctx_setopt_contention_factor(context.get(), contention_factor)) {
-                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+        if (strcasecmp(algorithm.c_str(), "rangepreview") == 0) {
+            if (!options.Has("rangeOptions")) {
+                throw TypeError::New(Env(), "`rangeOptions` must be provided if `algorithm` is set to RangePreview");
             }
-        }
 
-        if (options.Has("queryType")) {
-            std::string query_type_str = options.Get("queryType").ToString();
-            if (!mongocrypt_ctx_setopt_query_type(context.get(), query_type_str.data(), -1)) {
+            Napi::Value rangeOptions = options["rangeOptions"];
+
+            if (!rangeOptions.IsBuffer()) {
+                throw TypeError::New(Env(), "`rangeOptions` must be a Buffer");
+            }
+
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(rangeOptions.As<Uint8Array>()));
+            if (!mongocrypt_ctx_setopt_algorithm_range(context.get(), binary.get())) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
         }
     }
 
+    if (options.Has("contentionFactor")) {
+        Napi::Value contention_factor_value = options["contentionFactor"];
+        int64_t contention_factor = contention_factor_value.IsBigInt() ?
+            contention_factor_value.As<BigInt>().Int64Value(nullptr) :
+            contention_factor_value.ToNumber().Int64Value();
+        if (!mongocrypt_ctx_setopt_contention_factor(context.get(), contention_factor)) {
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+        }
+    }
+
+    if (options.Has("queryType")) {
+        std::string query_type_str = options.Get("queryType").ToString();
+        if (!mongocrypt_ctx_setopt_query_type(context.get(), query_type_str.data(), -1)) {
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
+        }
+    }
+
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(BufferToBinary(valueBuffer.As<Uint8Array>()));
-    if (!mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get())) {
+
+    const bool isExpressionMode = options.Get("expressionMode").ToBoolean();
+
+    const bool status = isExpressionMode
+                        ? mongocrypt_ctx_explicit_encrypt_expression_init(context.get(), binaryValue.get())
+                        : mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get());
+
+    if (!status) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 

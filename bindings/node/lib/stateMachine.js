@@ -1,5 +1,7 @@
 'use strict';
 
+const { promisify } = require('util');
+
 module.exports = function (modules) {
   const tls = require('tls');
   const net = require('net');
@@ -90,6 +92,10 @@ module.exports = function (modules) {
     constructor(options) {
       this.options = options || {};
       this.bson = options.bson;
+
+      this.executeAsync = promisify((autoEncrypter, context, callback) =>
+        this.execute(autoEncrypter, context, callback)
+      );
     }
 
     /**
