@@ -53,8 +53,8 @@ function maybeCallback(promiseFn, callback) {
   }
 
   promise.then(
-    result => callback(undefined, result),
-    error => callback(error)
+    result => process.nextTick(callback, undefined, result),
+    error => process.nextTick(callback, error)
   );
   return;
 }
