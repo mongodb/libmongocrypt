@@ -88,10 +88,10 @@ typedef struct _mc_FLE2IndexedEqualityEncryptedValue_t
    mc_FLE2IndexedEncryptedValue_t;
 
 struct _mc_FLE2IndexedEqualityEncryptedValueTokens {
+   uint64_t counter;
    _mongocrypt_buffer_t edc;
    _mongocrypt_buffer_t esc;
    _mongocrypt_buffer_t ecc;
-   uint64_t counter;
 };
 
 typedef struct _mc_FLE2IndexedEqualityEncryptedValueTokens
@@ -117,6 +117,9 @@ mc_FLE2IndexedEncryptedValue_parse (mc_FLE2IndexedEncryptedValue_t *iev,
                                     const _mongocrypt_buffer_t *buf,
                                     mongocrypt_status_t *status);
 
+/**
+ * This function is used by the server codebase.
+ */
 bool
 mc_FLE2IndexedEncryptedValue_write (
    _mongocrypt_crypto_t *crypto,
@@ -154,7 +157,10 @@ mc_FLE2IndexedEncryptedValue_add_S_Key (_mongocrypt_crypto_t *crypto,
 /* mc_FLE2IndexedEncryptedValue_decrypt decrypts InnerEncrypted with the
  * ServerDataEncryptionLevel1Token on the server-side. Returns false and sets
  * @status on error. It is an error to call before
- * mc_FLE2IndexedEncryptedValue_parse. */
+ * mc_FLE2IndexedEncryptedValue_parse.
+ *
+ * This function is used by the server codebase.
+ */
 bool
 mc_FLE2IndexedEncryptedValue_decrypt_equality (
    _mongocrypt_crypto_t *crypto,
@@ -188,6 +194,9 @@ const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValue_get_ClientValue (
    const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status);
 
+/**
+ * This function is used by the server codebase.
+ */
 const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValue_get_ClientEncryptedValue (
    const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status);

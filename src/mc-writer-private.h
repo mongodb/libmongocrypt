@@ -27,7 +27,7 @@
  * Tracks length of buffer and current position of buffer. parser_name is
  * typically __FUNCTION__ to provide useful error messages automatically.
  *
- * All numbers are read as little endian.
+ * All numbers are written as little endian.
  */
 
 struct _mc_writer_t {

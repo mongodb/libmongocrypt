@@ -265,9 +265,7 @@ mc_fle2IndexedEncryptedValue_encrypt (
 
    uint32_t bytes_written;
 
-   if (!_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
-      return false;
-   }
+   CHECK_AND_GOTO (_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status));
 
    CHECK_AND_GOTO (_mongocrypt_fle2_do_encryption (
       crypto, &iv, token_buf, &in, out, &bytes_written, status));
