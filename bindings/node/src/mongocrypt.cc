@@ -1,6 +1,11 @@
 #include "mongocrypt.h"
 #include <cassert>
 
+#ifdef _MSC_VER 
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 namespace node_mongocrypt {
 
 using namespace Napi;
