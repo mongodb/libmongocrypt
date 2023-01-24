@@ -40,6 +40,7 @@
     "socks": "^2.6.1"
   },
   "devDependencies": {
+    "@aws-sdk/credential-providers": "^3.257.0",
     "chai": "^4.3.6",
     "chai-subset": "^1.6.0",
     "chalk": "^4.1.2",
