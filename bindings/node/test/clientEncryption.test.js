@@ -42,7 +42,7 @@ describe('ClientEncryption', function () {
   }
 
   async function setup() {
-    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/test');
+    client = new MongoClient('mongodb://localhost:27017/test');
     await client.connect();
     try {
       await client.db('client').collection('encryption').drop();
