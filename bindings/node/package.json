@@ -59,11 +59,14 @@
     "standard-version": "^9.3.2",
     "tar": "^6.1.11"
   },
-  "optionalDependencies": {
-    "@aws-sdk/credential-providers": "^3.186.0"
-  },
   "peerDependencies": {
+    "@aws-sdk/credential-providers": "^3.186.0",
     "mongodb": ">=3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/credential-providers": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=12.9.0"
