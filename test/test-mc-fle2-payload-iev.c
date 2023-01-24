@@ -166,10 +166,10 @@ test_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf (_mongocrypt_tester_t
       mc_FLE2IndexedEqualityEncryptedValueTokens *tokens = mc_FLE2IndexedEqualityEncryptedValueTokens_new ();
       
       ASSERT (mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf(tokens, &input_token_set, status));
+      ASSERT_CMPUINT64 (counter, ==, tokens->counter);
       ASSERT_CMPBUF(expected_edc_token, tokens->edc);
       ASSERT_CMPBUF(expected_esc_token, tokens->esc);
       ASSERT_CMPBUF(expected_ecc_token, tokens->ecc);
-      ASSERT_CMPUINT64 (counter, ==, tokens->counter);
 
       mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
       mongocrypt_status_destroy (status);
@@ -310,10 +310,10 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
                            crypt->crypto, iev, token, tokens, status), 
                         status);
 
+      ASSERT_CMPUINT64(123456, ==, tokens->counter);
       ASSERT_CMPBUF(expected_edc_token, tokens->edc);
       ASSERT_CMPBUF(expected_esc_token, tokens->esc);
       ASSERT_CMPBUF(expected_ecc_token, tokens->ecc);
-      ASSERT_CMPUINT64(123456, ==, tokens->counter);
 
       mc_ServerDataEncryptionLevel1Token_destroy (token);
       mc_FLE2IndexedEqualityEncryptedValueTokens_destroy (tokens);
