@@ -27,7 +27,7 @@ const REQUIRED_FILES = [
   'package/src/mongocrypt.h'
 ];
 
-describe(`Release ${packFile}`, () => {
+describe(`Release ${packFile}`, function () {
   this.timeout(5000);
 
   let tarFileList;
