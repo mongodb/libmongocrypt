@@ -1,7 +1,7 @@
 'use strict';
 
 const { expect } = require('chai');
-const { awsCredentialProvidersIsInstalled } = require('./tools/utils');
+const requirements = require('./requirements.helper');
 const { loadCredentials } = require('../lib/credentialsProvider');
 
 const originalAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
@@ -31,7 +31,7 @@ describe('#loadCredentials', function () {
       const kmsProviders = {};
 
       before(function () {
-        if (!awsCredentialProvidersIsInstalled()) {
+        if (!requirements.isAWSCredentialsProviderInstalled) {
           this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
           this.currentTest.skip();
           return;
@@ -60,7 +60,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (!awsCredentialProvidersIsInstalled()) {
+          if (!requirements.isAWSCredentialsProviderInstalled) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -93,7 +93,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (!awsCredentialProvidersIsInstalled()) {
+          if (!requirements.isAWSCredentialsProviderInstalled) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -114,7 +114,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (!awsCredentialProvidersIsInstalled()) {
+          if (!requirements.isAWSCredentialsProviderInstalled) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -147,7 +147,7 @@ describe('#loadCredentials', function () {
     };
 
     before(function () {
-      if (awsCredentialProvidersIsInstalled()) {
+      if (requirements.isAWSCredentialsProviderInstalled) {
         this.currentTest.skipReason = 'Credentials will be loaded when sdk present';
         this.currentTest.skip();
         return;
