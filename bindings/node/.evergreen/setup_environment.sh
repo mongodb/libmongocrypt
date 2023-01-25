@@ -10,7 +10,6 @@ NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
 BIN_DIR="$(pwd)/bin"
 NVM_WINDOWS_URL="https://github.com/coreybutler/nvm-windows/releases/download/1.1.10/nvm-noinstall.zip"
 NVM_URL="https://raw.githubusercontent.com/creationix/nvm/v0.38.0/install.sh"
-NPM_OPTIONS="${NPM_OPTIONS}"
 
 # create node artifacts path if needed
 mkdir -p "${NODE_ARTIFACTS_PATH}"

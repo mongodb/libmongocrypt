@@ -1,11 +1,6 @@
 'use strict';
 
-let awsCredentialProviders;
-
-try {
-  // Ensure you always wrap an optional require in the try block NODE-3199
-  awsCredentialProviders = require('@aws-sdk/credential-providers');
-} catch {} // eslint-disable-line
+let awsCredentialProviders = null;
 
 /**
  * Load cloud provider credentials for the user provided KMS providers.
@@ -18,7 +13,15 @@ try {
  * @ignore
  */
 async function loadCredentials(kmsProviders) {
-  if (awsCredentialProviders) {
+  if (awsCredentialProviders == null) {
+    try {
+      // Ensure you always wrap an optional require in the try block NODE-3199
+      awsCredentialProviders = require('@aws-sdk/credential-providers');
+      // eslint-disable-next-line no-empty
+    } catch {}
+  }
+
+  if (awsCredentialProviders != null) {
     const aws = kmsProviders.aws;
     if (!aws || Object.keys(aws).length === 0) {
       const { fromNodeProviderChain } = awsCredentialProviders;
@@ -29,6 +32,7 @@ async function loadCredentials(kmsProviders) {
       return { ...kmsProviders, aws: awsCreds };
     }
   }
+
   return kmsProviders;
 }
 

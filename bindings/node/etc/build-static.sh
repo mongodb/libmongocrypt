@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -o errexit
+
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 . "$THIS_DIR/../../../.evergreen/init.sh"
 
@@ -9,9 +11,6 @@ DEPS_PREFIX="$NODE_DIR/deps"
 BUILD_DIR=$DEPS_PREFIX/tmp
 : "${CMAKE_FLAGS:=}"
 : "${WINDOWS_CMAKE_FLAGS:=}"
-: "${NPM_OPTIONS:=}"
-
-export NPM_OPTIONS="${NPM_OPTIONS}"
 
 # build and install libmongocrypt
 mkdir -p $BUILD_DIR/libmongocrypt-build
@@ -34,6 +33,4 @@ run_cmake --build . --target install --config RelWithDebInfo
 popd #./
 
 # build the `mongodb-client-encryption` addon
-# note the --unsafe-perm parameter to make the build work
-# when running as root. See https://github.com/npm/npm/issues/3497
-BUILD_TYPE=static npm install --unsafe-perm --build-from-source ${NPM_OPTIONS}
+env BUILD_TYPE=static npm install
