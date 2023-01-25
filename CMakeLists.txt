@@ -70,6 +70,7 @@ set (MONGOCRYPT_SOURCES
    src/mc-rangeopts.c
    src/mc-reader.c
    src/mc-tokens.c
+   src/mc-writer.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
    src/mongocrypt-cache.c
@@ -430,6 +431,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-reader.c
    test/test-mc-tokens.c
    test/test-mc-range-encoding.c
+   test/test-mc-writer.c
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
    test/test-mongocrypt-cache.c
