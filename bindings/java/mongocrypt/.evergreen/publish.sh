@@ -21,5 +21,7 @@ export ORG_GRADLE_PROJECT_signing_secretKeyRingFile=${PROJECT_DIRECTORY}/secring
 echo "Publishing snapshot with jdk8"
 export JAVA_HOME="/opt/java/jdk8"
 
+SYSTEM_PROPERTIES="-Dorg.gradle.internal.publish.checksums.insecure=true -Dorg.gradle.internal.http.connectionTimeout=120000 -Dorg.gradle.internal.http.socketTimeout=120000"
+
 ./gradlew -version
-./gradlew publishSnapshots -DgitRevision=${GIT_REVISION}
+./gradlew ${SYSTEM_PROPERTIES} --stacktrace --info  publishToSonatype

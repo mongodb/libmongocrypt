@@ -43,7 +43,7 @@ repositories {
 }
 
 group = "org.mongodb"
-version = "1.8.0-SNAPSHOT"
+version = "1.7.0-SNAPSHOT"
 description = "MongoDB client-side crypto support"
 
 java {
@@ -66,15 +66,20 @@ dependencies {
 /*
  * Git version information
  */
-val gitVersion: String by lazy {
+
+// Returns a Pair<Boolean, String> representing if the current tag is a `java-<version>` tag and the version
+val gitDescribe by lazy {
     val describeStdOut = ByteArrayOutputStream()
     exec {
         commandLine = listOf("git", "describe", "--tags", "--always", "--dirty")
         standardOutput = describeStdOut
     }
     val gv: String = describeStdOut.toString().trim()
-    gv.subSequence(gv.toCharArray().indexOfFirst { it.isDigit() }, gv.length).toString()
+    gv.startsWith("java") to gv.subSequence(gv.toCharArray().indexOfFirst { it.isDigit() }, gv.length).toString()
 }
+
+val isJavaTag by lazy { gitDescribe.first }
+val gitVersion by lazy { gitDescribe.second }
 
 val gitHash: String by lazy {
     val describeStdOut = ByteArrayOutputStream()
@@ -120,7 +125,7 @@ tasks.register<Copy>("unzipJava") {
         listOf("${it}/nocrypto/**/libmongocrypt.so", "${it}/nocrypto/**/libmongocrypt.dylib", "${it}/nocrypto/**/mongocrypt.dll" )
     })
     eachFile {
-        path = "${jnaMapping.get(path.substringBefore("/"))}/${name}"
+        path = "${jnaMapping[path.substringBefore("/")]}/${name}"
     }
     into(jnaResourcesDir)
     mustRunAfter("downloadJava")
@@ -254,40 +259,46 @@ tasks.javadoc {
     }
 }
 
-tasks.register("publishSnapshots") {
+tasks.register("publishToSonatype") {
     group = "publishing"
-    description = "Publishes snapshots to Sonatype"
-    if (version.toString().endsWith("-SNAPSHOT")) {
-        dependsOn("downloadJnaLibs")
-        dependsOn(tasks.withType<PublishToMavenRepository>())
-        tasks.withType<PublishToMavenRepository>().forEach { t -> t.mustRunAfter("downloadJnaLibs") }
-    }
-}
-
-tasks.register("publishArchives") {
-    group = "publishing"
-    description = "Publishes a release and uploads to Sonatype / Maven Central"
+    description = """Publishes to Sonatype.
+        |
+        | - If the version string ends with SNAPSHOT then publishes to the Snapshots repo.
+        |   Note: Uses the JNA libs from the current build.
+        |
+        | - If is a release then publishes the release to maven central staging.
+        |   A release is when the current git tag is prefixed with java (eg: java-1.7.0)
+        |   AND the git tag version matches the version the build.gradle.kts.
+        |   Note: Uses the JNA libs from the associated tag.
+        |   Eg: Tag java-1.7.0 will use the JNA libs created by the 1.7.0 release tag.
+        |
+        | To override the JNA library downloaded use -DgitRevision=<git hash>
+    """.trimMargin()
+    val isRelease = version.toString().endsWith("-SNAPSHOT") || (isJavaTag && gitVersion == version)
 
     doFirst {
-        if (gitVersion != version) {
-            val cause = """
+        if (isRelease) {
+            println("Publishing: ${project.name} : $gitVersion")
+        } else {
+            println("""
+                | Not a Java release:
+                |
                 | Version mismatch:
                 | =================
                 |
                 | $version != $gitVersion
                 |
                 | The project version does not match the git tag.
-                |""".trimMargin()
-            throw GradleException(cause)
-        } else {
-            println("Publishing: ${project.name} : $gitVersion")
+                |""".trimMargin())
         }
     }
 
-    if (gitVersion == version) {
+    if (isRelease) {
+        dependsOn("downloadJnaLibs")
         dependsOn(tasks.withType<PublishToMavenRepository>())
     }
 }
+
 
 /*
 For security we allow the signing-related project properties to be passed in as environment variables, which
