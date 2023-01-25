@@ -160,12 +160,12 @@ test_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf (_mongocrypt_tester_t
       "EBB22F74BE0FA4AD863188D3F33AF0B95CB4CA4ED0091E1A43513DB20E9D59AE"
       "A1DF0BB04C977BD4BC0B487FFFD2E3BBB96078354DE9F204EE5872BB10F01971");
 
-   /* Test function mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf. */
+   /* Test function mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buffer. */
    {
       mongocrypt_status_t *status = mongocrypt_status_new ();
       mc_FLE2IndexedEqualityEncryptedValueTokens *tokens = mc_FLE2IndexedEqualityEncryptedValueTokens_new ();
       
-      ASSERT (mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buf(tokens, &input_token_set, status));
+      ASSERT (mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buffer(tokens, &input_token_set, status));
       ASSERT_CMPUINT64 (counter, ==, tokens->counter);
       ASSERT_CMPBUF(expected_edc_token, tokens->edc);
       ASSERT_CMPBUF(expected_esc_token, tokens->esc);

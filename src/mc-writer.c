@@ -24,12 +24,12 @@
    }
 
 #define CHECK_REMAINING_BUFFER_AND_RET(write_size)       \
-   if ((writer->pos + (write_size)) > writer->len) {     \
-      CLIENT_ERR ("%s expected byte "                    \
-                  "length >= %" PRIu64 " got: %" PRIu64, \
+   if ((write_size) > writer->len - writer->pos) {       \
+      CLIENT_ERR ("%s expected at least %" PRIu64        \
+                  " bytes, got: %" PRIu64,               \
                   writer->parser_name,                   \
-                  writer->pos + (write_size),            \
-                  writer->len);                          \
+                  (write_size),                          \
+                  (writer->len - writer->pos));          \
       return false;                                      \
    }
 
@@ -126,6 +126,16 @@ mc_writer_write_buffer (mc_writer_t *writer,
    BSON_ASSERT_PARAM (writer);
    BSON_ASSERT_PARAM (buf);
 
+   if (length > buf->len) {
+      CLIENT_ERR ("%s cannot write %" PRIu64
+                  " bytes from buffer with length %" PRIu32,
+                  writer->parser_name,
+                  length,
+                  buf->len);
+
+      return false; 
+   }
+
    CHECK_REMAINING_BUFFER_AND_RET (length);
 
    if (length > SIZE_MAX) {
@@ -150,7 +160,7 @@ mc_writer_write_uuid_buffer (mc_writer_t *writer,
    BSON_ASSERT_PARAM (writer);
    BSON_ASSERT_PARAM (buf);
 
-   CHECK_AND_RETURN (mc_writer_write_buffer (writer, buf, 16, status));
+   CHECK_AND_RETURN (mc_writer_write_buffer (writer, buf, UUID_LEN, status));
    return true;
 }
 
@@ -162,6 +172,6 @@ mc_writer_write_prfblock_buffer (mc_writer_t *writer,
    BSON_ASSERT_PARAM (writer);
    BSON_ASSERT_PARAM (buf);
 
-   CHECK_AND_RETURN (mc_writer_write_buffer (writer, buf, 32, status));
+   CHECK_AND_RETURN (mc_writer_write_buffer (writer, buf, PRF_LEN, status));
    return true;
 }
