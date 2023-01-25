@@ -148,7 +148,7 @@ functions:
           BUILD_VARIANT: ${build_variant}
           NODE_NVM_USE_VERSION: ${nvm_use_version|18}
 
-  "build and test node no optional dependencies":
+  "build and test node no peer dependencies":
     - command: "subprocess.exec"
       params:
         binary: bash
@@ -160,7 +160,7 @@ functions:
           NODE_GITHUB_TOKEN: ${node_github_token}
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
-          NPM_OPTIONS: "--no-optional"
+          OMIT_PEER_DEPS: "true"
           NODE_NVM_USE_VERSION: ${nvm_use_version|18}
 
   "attach node xunit results":
@@ -501,10 +501,10 @@ tasks:
     - func: "build and test node"
     - func: "attach node xunit results"
 
-- name: build-and-test-node-no-optional-dependencies
+- name: build-and-test-node-no-peer-dependencies
   commands:
     - func: "fetch source"
-    - func: "build and test node no optional dependencies"
+    - func: "build and test node no peer dependencies"
     - func: "attach node xunit results"
 
 # Note: keep this disabled unless you want master to force-push

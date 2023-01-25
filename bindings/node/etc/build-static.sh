@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -o errexit
+
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 . "$THIS_DIR/../../../.evergreen/init.sh"
 
@@ -34,6 +36,4 @@ run_cmake --build . --target install --config RelWithDebInfo
 popd #./
 
 # build the `mongodb-client-encryption` addon
-# note the --unsafe-perm parameter to make the build work
-# when running as root. See https://github.com/npm/npm/issues/3497
-BUILD_TYPE=static npm install --unsafe-perm --build-from-source ${NPM_OPTIONS}
+env BUILD_TYPE=static npm install
