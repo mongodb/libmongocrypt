@@ -1,0 +1,26 @@
+{
+    "v": {
+        "$and": [
+            {
+                "age": {
+                    "$gte": {
+                        "$binary": {
+                            "base64": "CgUCAAADcGF5bG9hZADBAQAABGcAhQEAAAMwAH0AAAAFZAAgAAAAAInd0noBhIiJMv8QTjcfgRqnnVhxRJRRACLfvgT+CTR/BXMAIAAAAADm0EjqF/T4EmR6Dw6NaPLrL0OuzS4AFvm90czFluAAygVjACAAAAAA0d8XgDtErXhD2Il47RZ6es9tJjjenynp6roL00NDzzwAAzEAfQAAAAVkACAAAAAA7lkNtT6RLw91aJ07K/blwlFs5wi9pQjqUXDcaCTxe98FcwAgAAAAAPwySffuLQihmF70Ot93KtaUMNU8KpmA+niyPRcvarNMBWMAIAAAAADH7BDBCS/7LwB7NYkxPNDb5QXXROFnh2+7z8JFwX7wnQADMgB9AAAABWQAIAAAAACcMWVTbZC4ox5VdjWeYKLgf4oBjpPlbTTAkucm9JPK0wVzACAAAAAA3tIww4ZTytkxFsUKyJbc3zwQ2w7DhkOqaNvX9g8pi3gFYwAgAAAAAOK5ETACEX4i+2e0dDtUeGozbxKNlqmkRK5IEZCrv7M5AAAFZQAgAAAAAL7iv5ju6p02+CadotQZUkgqtSIYD2HaywGsizUpIBYMEmNtAAQAAAAAAAAAABBwYXlsb2FkSWQAAAAAABBmaXJzdE9wZXJhdG9yAAIAAAAQc2Vjb25kT3BlcmF0b3IABAAAAAA=",
+                            "subType": "6"
+                        }
+                    }
+                }
+            },
+            {
+                "age": {
+                    "$lte": {
+                        "$binary": {
+                            "base64": "CjsAAAAQcGF5bG9hZElkAAAAAAAQZmlyc3RPcGVyYXRvcgACAAAAEHNlY29uZE9wZXJhdG9yAAQAAAAA",
+                            "subType": "6"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
