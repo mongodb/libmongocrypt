@@ -112,11 +112,11 @@ public class MongoExplicitEncryptOptions {
         }
 
         /**
-         * The QueryType.
+         * The Range Options.
          *
          * <p>It is an error to set rangeOptions when the algorithm is not "rangePreview".</p>
          *
-         * @param rangeOptions the query type
+         * @param rangeOptions the range options
          * @return this
          * @since 1.7
          */
