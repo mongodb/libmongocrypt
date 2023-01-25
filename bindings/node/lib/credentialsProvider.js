@@ -19,7 +19,9 @@ async function loadCredentials(kmsProviders) {
       awsCredentialProviders = require('@aws-sdk/credential-providers');
       // eslint-disable-next-line no-empty
     } catch {}
-  } else {
+  }
+
+  if (awsCredentialProviders != null) {
     const aws = kmsProviders.aws;
     if (!aws || Object.keys(aws).length === 0) {
       const { fromNodeProviderChain } = awsCredentialProviders;
@@ -30,6 +32,7 @@ async function loadCredentials(kmsProviders) {
       return { ...kmsProviders, aws: awsCreds };
     }
   }
+
   return kmsProviders;
 }
 
