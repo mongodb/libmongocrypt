@@ -12,6 +12,7 @@ const MongoError = mongodb.MongoError;
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
 const MongocryptdManager = require('../lib/mongocryptdManager').MongocryptdManager;
+const { awsCredentialProvidersIsInstalled } = require('./tools/utils');
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -371,7 +372,7 @@ describe('AutoEncrypter', function () {
       const secretKey = 'example';
 
       before(function () {
-        if (process.env.NPM_OPTIONS === '--no-optional') {
+        if (!awsCredentialProvidersIsInstalled()) {
           this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
           this.currentTest.skip();
           return;
@@ -410,7 +411,7 @@ describe('AutoEncrypter', function () {
       const secretKey = 'example';
 
       before(function () {
-        if (!process.env.NPM_OPTIONS) {
+        if (awsCredentialProvidersIsInstalled()) {
           this.currentTest.skipReason = 'With optional sdk installed credentials would be loaded.';
           this.currentTest.skip();
           return;

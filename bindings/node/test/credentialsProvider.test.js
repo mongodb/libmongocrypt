@@ -1,8 +1,7 @@
 'use strict';
 
-const chai = require('chai');
-const expect = chai.expect;
-
+const { expect } = require('chai');
+const { awsCredentialProvidersIsInstalled } = require('./tools/utils');
 const { loadCredentials } = require('../lib/credentialsProvider');
 
 const originalAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
@@ -32,7 +31,7 @@ describe('#loadCredentials', function () {
       const kmsProviders = {};
 
       before(function () {
-        if (process.env.NPM_OPTIONS === '--no-optional') {
+        if (!awsCredentialProvidersIsInstalled()) {
           this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
           this.currentTest.skip();
           return;
@@ -61,7 +60,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (process.env.NPM_OPTIONS === '--no-optional') {
+          if (!awsCredentialProvidersIsInstalled()) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -94,7 +93,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (process.env.NPM_OPTIONS === '--no-optional') {
+          if (!awsCredentialProvidersIsInstalled()) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -115,7 +114,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (process.env.NPM_OPTIONS === '--no-optional') {
+          if (!awsCredentialProvidersIsInstalled()) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -148,7 +147,7 @@ describe('#loadCredentials', function () {
     };
 
     before(function () {
-      if (!process.env.NPM_OPTIONS) {
+      if (awsCredentialProvidersIsInstalled()) {
         this.currentTest.skipReason = 'Credentials will be loaded when sdk present';
         this.currentTest.skip();
         return;

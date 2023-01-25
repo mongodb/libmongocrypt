@@ -11,9 +11,6 @@ DEPS_PREFIX="$NODE_DIR/deps"
 BUILD_DIR=$DEPS_PREFIX/tmp
 : "${CMAKE_FLAGS:=}"
 : "${WINDOWS_CMAKE_FLAGS:=}"
-: "${NPM_OPTIONS:=}"
-
-export NPM_OPTIONS="${NPM_OPTIONS}"
 
 # build and install libmongocrypt
 mkdir -p $BUILD_DIR/libmongocrypt-build
