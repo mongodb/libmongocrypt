@@ -47,7 +47,6 @@
     #   • deb10 - Debian 10.0
     #   • deb11 - Debian 11.0
     #   • sles15 - OpenSUSE Leap 15.0
-    #   • sles15 - OpenSUSE Leap 15.0
     #   • alpine - Alpine Linux 3.18
     #
     # When adding new environments, always pull from a fully-qualified image ID:
@@ -79,10 +78,10 @@ init:
 # individual tasks.
 
 DEBIAN_SETUP:
-    # Setup for a debian-like build environment. Used for both Debain and Ubuntu
+    # Setup for a debian-like build environment. Used for both Debian and Ubuntu
     COMMAND
-    RUN __install build-essential g++ libssl-dev curl unzip python3 \
-                  libbson-dev pkg-config git ccache findutils ca-certificates
+    RUN __install build-essential g++ libssl-dev curl unzip python3 pkg-config \
+                  git ccache findutils ca-certificates
 
 REDHAT_SETUP:
     # Setup for a redhat-like build environment. Used for CentOS and RockyLinux.
@@ -229,7 +228,6 @@ COPY_SOURCE:
         src/ \
         etc/ \
         LICENSE \
-        VERSION_CURRENT \
         .evergreen/ \
         CMakeLists.txt \
         "/s/libmongocrypt"
