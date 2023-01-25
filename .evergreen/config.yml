@@ -926,7 +926,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -939,7 +939,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan-mac
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - build-and-test-csharp
   - test-python
   - test-java
@@ -984,7 +984,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-csharp
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - windows-upload-check
 - name: windows-test-python
@@ -1010,7 +1010,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1028,7 +1028,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1046,7 +1046,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1062,7 +1062,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1079,7 +1079,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1097,7 +1097,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1128,7 +1128,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-python
   - test-java
   - name: publish-packages
@@ -1159,7 +1159,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1177,7 +1177,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1195,7 +1195,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1213,7 +1213,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1231,7 +1231,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - build-and-test-csharp
   - test-java
   - name: publish-packages
@@ -1260,7 +1260,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1278,7 +1278,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - build-and-test-csharp
   - test-java
   - upload-java
@@ -1295,7 +1295,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1314,7 +1314,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   # see https://jira.mongodb.org/browse/MONGOCRYPT-515
   #- build-and-test-csharp
   - test-java
@@ -1334,7 +1334,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1359,7 +1359,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
-  - build-and-test-node-no-optional-dependencies
+  - build-and-test-node-no-peer-dependencies
   - test-python
   - test-java
 - name: windows-vs2017-32bit
