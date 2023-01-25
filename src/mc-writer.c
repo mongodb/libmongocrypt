@@ -26,7 +26,7 @@
 #define CHECK_REMAINING_BUFFER_AND_RET(write_size)       \
    if ((write_size) > writer->len - writer->pos) {       \
       CLIENT_ERR ("%s expected at most %" PRIu64         \
-                  " bytes, got: %" PRIu64,               \
+                  " bytes, got: %" PRIu32,               \
                   writer->parser_name,                   \
                   (writer->len - writer->pos),           \
                   (write_size));                         \
