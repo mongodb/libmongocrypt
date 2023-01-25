@@ -59,6 +59,12 @@ npm test
 ## Typedefs
 
 <dl>
+<dt><a href="#BSONValue">BSONValue</a> : <code>*</code></dt>
+<dd><p>any serializable BSON value</p>
+</dd>
+<dt><a href="#Long">Long</a> : <code>BSON.Long</code></dt>
+<dd><p>A 64 bit integer, represented by the js-bson Long type.</p>
+</dd>
 <dt><a href="#KMSProviders">KMSProviders</a> : <code>object</code></dt>
 <dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
 </dd>
@@ -100,6 +106,13 @@ query for the data key itself against the key vault namespace.</p>
 <dd></dd>
 <dt><a href="#ClientEncryptionEncryptCallback">ClientEncryptionEncryptCallback</a> : <code>function</code></dt>
 <dd></dd>
+<dt><a href="#RangeOptions">RangeOptions</a> : <code>object</code></dt>
+<dd><p>min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
+For double and decimal128, min/max/precision must all be set, or all be unset.</p>
+</dd>
+<dt><a href="#EncryptOptions">EncryptOptions</a> : <code>object</code></dt>
+<dd><p>Options to provide when encrypting data.</p>
+</dd>
 </dl>
 
 <a name="AutoEncrypter"></a>
@@ -264,6 +277,8 @@ The public interface for explicit in-use encryption
         * [.removeKeyAltName(_id, keyAltName)](#ClientEncryption+removeKeyAltName)
 
         * [.encrypt(value, options, [callback])](#ClientEncryption+encrypt)
+
+        * [.encryptExpression(expression, options)](#ClientEncryption+encryptExpression)
 
         * [.decrypt(value, callback)](#ClientEncryption+decrypt)
 
@@ -534,10 +549,7 @@ if (!oldKey) {
 | Param | Type | Description |
 | --- | --- | --- |
 | value | <code>\*</code> | The value that you wish to serialize. Must be of a type that can be serialized into BSON |
-| options | <code>object</code> |  |
-| [options.keyId] | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the Binary dataKey to use for encryption |
-| [options.keyAltName] | <code>string</code> | A unique string name corresponding to an already existing dataKey. |
-| [options.algorithm] |  | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'` |
+| options | [<code>EncryptOptions</code>](#EncryptOptions) |  |
 | [callback] | [<code>ClientEncryptionEncryptCallback</code>](#ClientEncryptionEncryptCallback) | Optional callback to invoke when value is encrypted |
 
 Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
@@ -572,6 +584,21 @@ async function encryptMyData(value) {
   return clientEncryption.encrypt(value, { keyAltName: 'mySpecialKey', algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
 }
 ```
+<a name="ClientEncryption+encryptExpression"></a>
+
+### *clientEncryption*.encryptExpression(expression, options)
+**Experimental**: The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| expression | <code>object</code> | a BSON document of one of the following forms:  1. A Match Expression of this form:      `{$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}`  2. An Aggregate Expression of this form:      `{$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]}`    `$gt` may also be `$gte`. `$lt` may also be `$lte`. |
+| options | [<code>EncryptOptions</code>](#EncryptOptions) |  |
+
+Encrypts a Match Expression or Aggregate Expression to query a range index.
+
+Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
+
+**Returns**: <code>Promise.&lt;object&gt;</code> - Returns a Promise that either resolves with the encrypted value or rejects with an error.  
 <a name="ClientEncryption+decrypt"></a>
 
 ### *clientEncryption*.decrypt(value, callback)
@@ -620,6 +647,16 @@ the original ones.
 
 ## MongoCryptError
 An error indicating that something went wrong specifically with MongoDB Client Encryption
+
+<a name="BSONValue"></a>
+
+## BSONValue
+any serializable BSON value
+
+<a name="Long"></a>
+
+## Long
+A 64 bit integer, represented by the js-bson Long type.
 
 <a name="KMSProviders"></a>
 
@@ -770,4 +807,35 @@ Configuration options for making an Azure encryption key
 | --- | --- | --- |
 | [err] | <code>Error</code> | If present, indicates an error that occurred in the process of encryption |
 | [result] | <code>Buffer</code> | If present, is the encrypted result |
+
+<a name="RangeOptions"></a>
+
+## RangeOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| min | [<code>BSONValue</code>](#BSONValue) | is required if precision is set. |
+| max | [<code>BSONValue</code>](#BSONValue) | is required if precision is set. |
+| sparsity | <code>BSON.Long</code> |  |
+| precision | <code>number</code> \| <code>undefined</code> | (may only be set for double or decimal128). |
+
+min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
+For double and decimal128, min/max/precision must all be set, or all be unset.
+
+<a name="EncryptOptions"></a>
+
+## EncryptOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [keyId] | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the Binary dataKey to use for encryption. |
+| [keyAltName] | <code>string</code> | A unique string name corresponding to an already existing dataKey. |
+| [algorithm] | <code>string</code> | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'` |
+| [contentionFactor] | <code>bigint</code> \| <code>number</code> | (experimental) - the contention factor. |
+| queryType | <code>&#x27;equality&#x27;</code> \| <code>&#x27;rangePreview&#x27;</code> | (experimental) - the query type supported. |
+| [rangeOptions] | [<code>RangeOptions</code>](#RangeOptions) | (experimental) The index options for a Queryable Encryption field supporting "rangePreview" queries. |
+
+Options to provide when encrypting data.
 

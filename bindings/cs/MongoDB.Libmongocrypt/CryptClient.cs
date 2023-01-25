@@ -105,11 +105,7 @@ namespace MongoDB.Libmongocrypt
         /// <summary>
         /// Starts an explicit encryption context.
         /// </summary>
-        /// <param name="key">The key id.</param>
-        /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
-        /// <param name="message">The BSON message.</param>
-        /// <returns>A encryption context. </returns>
-        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, string queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message)
+        public CryptContext StartExplicitEncryptionContext(byte[] keyId, byte[] keyAltName, string queryType, long? contentionFactor, string encryptionAlgorithm, byte[] message, byte[] rangeOptions, bool isExpressionMode = false)
         {
             var handle = Library.mongocrypt_ctx_new(_handle);
 
@@ -120,6 +116,11 @@ namespace MongoDB.Libmongocrypt
             else if (keyAltName != null)
             {
                 PinnedBinary.RunAsPinnedBinary(handle, keyAltName, _status, (h, pb) => Library.mongocrypt_ctx_setopt_key_alt_name(h, pb));
+            }
+
+            if (rangeOptions != null)
+            {
+                PinnedBinary.RunAsPinnedBinary(handle, rangeOptions, _status, (h, pb) => Library.mongocrypt_ctx_setopt_algorithm_range(h, pb));
             }
 
             handle.Check(_status, Library.mongocrypt_ctx_setopt_algorithm(handle, encryptionAlgorithm, -1));
@@ -135,7 +136,25 @@ namespace MongoDB.Libmongocrypt
                 handle.Check(_status, Library.mongocrypt_ctx_setopt_contention_factor(handle, contentionFactorInt));
             }
 
-            PinnedBinary.RunAsPinnedBinary(handle, message, _status, (h, pb) => Library.mongocrypt_ctx_explicit_encrypt_init(h, pb));
+            PinnedBinary.RunAsPinnedBinary(
+                handle, 
+                message, 
+                _status, 
+                (h, pb) =>
+                {
+                    if (isExpressionMode)
+                    {
+                        // mongocrypt_ctx_explicit_encrypt_expression_init shares the same code as mongocrypt_ctx_explicit_encrypt_init.
+                        // The only difference is the validation of the queryType argument:
+                        // * mongocrypt_ctx_explicit_encrypt_expression_init requires queryType of "rangePreview".
+                        // * mongocrypt_ctx_explicit_encrypt_init rejects queryType of "rangePreview".
+                        return Library.mongocrypt_ctx_explicit_encrypt_expression_init(h, pb);
+                    }
+                    else
+                    {
+                        return Library.mongocrypt_ctx_explicit_encrypt_init(h, pb);
+                    }
+                });
 
             return new CryptContext(handle);
         }

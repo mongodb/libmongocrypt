@@ -690,6 +690,9 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
 /// String constant for setopt_algorithm "Random" encryption
 /// String constant for setopt_algorithm "Indexed" explicit encryption
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
+/// String constant for setopt_algorithm "rangePreview" explicit encryption
+/// NOTE: The RangePreview algorithm is experimental only. It is not intended
+/// for public use.
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -782,7 +785,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  *    location: <string>,
  *    keyRing: <string>,
  *    keyName: <string>,
- *    keyVersion: <string>,
+ *    keyVersion: <optional string>,
  *    endpoint: <optional string>
  * }
  *
@@ -799,7 +802,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * }
  *
  * @pre @p ctx has not been initialized.
- * @returns A boolean indicating success. If false, and error status is set.
+ * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
  */
 bool
@@ -853,6 +856,9 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * This method expects the passed-in BSON to be of the form:
  * { "v" : BSON value to encrypt }
  *
+ * The value of "v" is expected to be the BSON value passed to a driver
+ * ClientEncryption.encrypt helper.
+ *
  * Associated options for FLE 1:
  * - @ref mongocrypt_ctx_setopt_key_id
  * - @ref mongocrypt_ctx_setopt_key_alt_name
@@ -863,6 +869,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * - @ref mongocrypt_ctx_setopt_index_key_id
  * - @ref mongocrypt_ctx_setopt_contention_factor
  * - @ref mongocrypt_ctx_setopt_query_type
+ * - @ref mongocrypt_ctx_setopt_algorithm_range
  *
  * An error is returned if FLE 1 and Queryable Encryption incompatible options
  * are set.
@@ -877,6 +884,54 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
 bool
 mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
                                       mongocrypt_binary_t *msg);
+
+/**
+ * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
+ * Contexts created for explicit encryption will not go through mongocryptd.
+ * Requires query_type to be "rangePreview".
+ * NOTE: The RangePreview algorithm is experimental only. It is not intended for
+ * public use.
+ *
+ * This method expects the passed-in BSON to be of the form:
+ * { "v" : FLE2RangeFindDriverSpec }
+ *
+ * FLE2RangeFindDriverSpec is a BSON document with one of these forms:
+ *
+ * 1. A Match Expression of this form:
+ *    {$and: [{<field>: {<op>: <value1>, {<field>: {<op>: <value2> }}]}
+ * 2. An Aggregate Expression of this form:
+ *    {$and: [{<op>: [<fieldpath>, <value1>]}, {<op>: [<fieldpath>, <value2>]}]
+ *
+ * <op> may be $lt, $lte, $gt, or $gte.
+ *
+ * The value of "v" is expected to be the BSON value passed to a driver
+ * ClientEncryption.encryptExpression helper.
+ *
+ * Associated options for FLE 1:
+ * - @ref mongocrypt_ctx_setopt_key_id
+ * - @ref mongocrypt_ctx_setopt_key_alt_name
+ * - @ref mongocrypt_ctx_setopt_algorithm
+ *
+ * Associated options for Queryable Encryption:
+ * - @ref mongocrypt_ctx_setopt_key_id
+ * - @ref mongocrypt_ctx_setopt_index_key_id
+ * - @ref mongocrypt_ctx_setopt_contention_factor
+ * - @ref mongocrypt_ctx_setopt_query_type
+ * - @ref mongocrypt_ctx_setopt_algorithm_range
+ *
+ * An error is returned if FLE 1 and Queryable Encryption incompatible options
+ * are set.
+ *
+ * @param[in] ctx A @ref mongocrypt_ctx_t.
+ * @param[in] msg A @ref mongocrypt_binary_t the plaintext BSON value. The
+ * viewed data is copied. It is valid to destroy @p msg with @ref
+ * mongocrypt_binary_destroy immediately after.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+bool
+mongocrypt_ctx_explicit_encrypt_expression_init (mongocrypt_ctx_t *ctx,
+                                                 mongocrypt_binary_t *msg);
 
 /**
  * Initialize a context for decryption.
@@ -1139,8 +1194,8 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * at initialization are used.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] kms_providers A BSON document mapping the KMS provider names
- * to credentials.
+ * @param[in] kms_providers_definition A BSON document mapping the KMS provider
+ * names to credentials.
  *
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
@@ -1176,9 +1231,11 @@ mongocrypt_ctx_provide_kms_providers (
  * the key vault collection.
  *
  * If @p ctx was initialized with @ref mongocrypt_ctx_rewrap_many_datakey_init,
- * then this BSON has the form { "v": [(BSON document), ...] } where each BSON
- * document in the array is a document containing a rewrapped datakey to be
- * bulk-updated into the key vault collection.
+ * then this BSON has the form:
+ *   { "v": [{ "_id": ..., "keyMaterial": ..., "masterKey": ... }, ...] }
+ * where each BSON document in the array contains the updated fields of a
+ * rewrapped datakey to be bulk-updated into the key vault collection.
+ * Note: the updateDate field should be updated using the $currentDate operator.
  *
  * @returns a bool indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
@@ -1412,7 +1469,32 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
                                   const char *query_type,
                                   int len);
 
-/// String constant for setopt_query_type_v2, "equality" query type
+/**
+ * Set options for explicit encryption with the "rangePreview" algorithm.
+ * NOTE: The RangePreview algorithm is experimental only. It is not intended for
+ * public use.
+ *
+ * @p opts is a BSON document of the form:
+ * {
+ *    "min": Optional<BSON value>,
+ *    "max": Optional<BSON value>,
+ *    "sparsity": Int64,
+ *    "precision": Optional<Int32>
+ * }
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] opts BSON.
+ * @pre @p ctx has not been initialized.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+bool
+mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t *ctx,
+                                       mongocrypt_binary_t *opts);
+
+/// String constants for setopt_query_type
+// NOTE: The RangePreview algorithm is experimental only. It is not intended for
+// public use.
 """)
 
 if PY3:

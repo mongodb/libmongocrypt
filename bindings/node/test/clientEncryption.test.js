@@ -42,10 +42,7 @@ describe('ClientEncryption', function () {
   }
 
   async function setup() {
-    client = new MongoClient('mongodb://localhost:27017/test', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/test');
     await client.connect();
     try {
       await client.db('client').collection('encryption').drop();
@@ -202,7 +199,7 @@ describe('ClientEncryption', function () {
         options: { masterKey: { region: 'region', key: 'cmk' } }
       }
     ].forEach(providerTest => {
-      it(`should create a data key with the "${providerTest.name}" KMS provider`, function (done) {
+      it(`should create a data key with the "${providerTest.name}" KMS provider`, async function () {
         const providerName = providerTest.name;
         const encryption = new ClientEncryption(client, {
           keyVaultNamespace: 'client.encryption',
@@ -210,24 +207,16 @@ describe('ClientEncryption', function () {
         });
 
         const dataKeyOptions = providerTest.options || {};
-        encryption.createDataKey(providerName, dataKeyOptions, (err, dataKey) => {
-          expect(err).to.not.exist;
-          expect(dataKey._bsontype).to.equal('Binary');
 
-          client
-            .db('client')
-            .collection('encryption')
-            .findOne({ _id: dataKey }, (err, doc) => {
-              expect(err).to.not.exist;
-              expect(doc).to.have.property('masterKey');
-              expect(doc.masterKey).to.have.property('provider');
-              expect(doc.masterKey.provider).to.eql(providerName);
-              done();
-            });
-        });
+        const dataKey = await encryption.createDataKey(providerName, dataKeyOptions);
+        expect(dataKey).property('_bsontype', 'Binary');
+
+        const doc = await client.db('client').collection('encryption').findOne({ _id: dataKey });
+        expect(doc).to.have.property('masterKey');
+        expect(doc.masterKey).property('provider', providerName);
       });
 
-      it(`should create a data key with the "${providerTest.name}" KMS provider (fixed key material)`, function (done) {
+      it(`should create a data key with the "${providerTest.name}" KMS provider (fixed key material)`, async function () {
         const providerName = providerTest.name;
         const encryption = new ClientEncryption(client, {
           keyVaultNamespace: 'client.encryption',
@@ -238,21 +227,13 @@ describe('ClientEncryption', function () {
           ...providerTest.options,
           keyMaterial: new BSON.Binary(Buffer.alloc(96))
         };
-        encryption.createDataKey(providerName, dataKeyOptions, (err, dataKey) => {
-          expect(err).to.not.exist;
-          expect(dataKey._bsontype).to.equal('Binary');
 
-          client
-            .db('client')
-            .collection('encryption')
-            .findOne({ _id: dataKey }, (err, doc) => {
-              expect(err).to.not.exist;
-              expect(doc).to.have.property('masterKey');
-              expect(doc.masterKey).to.have.property('provider');
-              expect(doc.masterKey.provider).to.eql(providerName);
-              done();
-            });
-        });
+        const dataKey = await encryption.createDataKey(providerName, dataKeyOptions);
+        expect(dataKey).property('_bsontype', 'Binary');
+
+        const doc = await client.db('client').collection('encryption').findOne({ _id: dataKey });
+        expect(doc).to.have.property('masterKey');
+        expect(doc.masterKey).property('provider', providerName);
       });
     });
 
@@ -514,7 +495,7 @@ describe('ClientEncryption', function () {
     beforeEach(function () {
       if (requirements.SKIP_AWS_TESTS) {
         this.currentTest.skipReason = `requirements.SKIP_AWS_TESTS=${requirements.SKIP_AWS_TESTS}`;
-        this.skip();
+        this.currentTest.skip();
         return;
       }
 
@@ -692,6 +673,142 @@ describe('ClientEncryption', function () {
         .then(decrypted => {
           expect(decrypted).to.equal('value123');
         });
+    });
+  });
+
+  describe('encrypt()', function () {
+    let clientEncryption;
+    let completeOptions;
+    let dataKey;
+
+    beforeEach(async function () {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.test.skip();
+        return;
+      }
+
+      await setup();
+      clientEncryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      dataKey = await clientEncryption.createDataKey('local', {
+        name: 'local',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      completeOptions = {
+        algorithm: 'RangePreview',
+        contentionFactor: 0,
+        rangeOptions: {
+          sparsity: new BSON.Long(1)
+        },
+        keyId: dataKey
+      };
+    });
+
+    afterEach(() => teardown());
+
+    context('when expressionMode is incorrectly provided as an argument', function () {
+      it('overrides the provided option with the correct value for expression mode', async function () {
+        const optionsWithExpressionMode = { ...completeOptions, expressionMode: true };
+        const result = await clientEncryption.encrypt(
+          new mongodb.Long(0),
+          optionsWithExpressionMode
+        );
+
+        expect(result).to.be.instanceof(Binary);
+      });
+    });
+  });
+
+  describe('encryptExpression()', function () {
+    let clientEncryption;
+    let completeOptions;
+    let dataKey;
+    const expression = {
+      $and: [{ someField: { $gt: 1 } }]
+    };
+
+    beforeEach(async function () {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.test.skip();
+        return;
+      }
+
+      await setup();
+      clientEncryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      dataKey = await clientEncryption.createDataKey('local', {
+        name: 'local',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      completeOptions = {
+        algorithm: 'RangePreview',
+        queryType: 'rangePreview',
+        contentionFactor: 0,
+        rangeOptions: {
+          sparsity: new BSON.Long(1)
+        },
+        keyId: dataKey
+      };
+    });
+
+    afterEach(() => teardown());
+
+    it('throws if rangeOptions is not provided', async function () {
+      expect(delete completeOptions.rangeOptions).to.be.true;
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult).to.be.instanceof(TypeError);
+    });
+
+    it('throws if algorithm is not provided', async function () {
+      expect(delete completeOptions.algorithm).to.be.true;
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult).to.be.instanceof(TypeError);
+    });
+
+    it(`throws if algorithm does not equal 'rangePreview'`, async function () {
+      completeOptions['algorithm'] = 'equality';
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult).to.be.instanceof(TypeError);
+    });
+
+    it(`does not throw if algorithm has different casing than 'rangePreview'`, async function () {
+      completeOptions['algorithm'] = 'rAnGePrEvIeW';
+      const errorOrResult = await clientEncryption
+        .encryptExpression(expression, completeOptions)
+        .catch(e => e);
+
+      expect(errorOrResult).not.to.be.instanceof(Error);
+    });
+
+    context('when expressionMode is incorrectly provided as an argument', function () {
+      it('overrides the provided option with the correct value for expression mode', async function () {
+        const optionsWithExpressionMode = { ...completeOptions, expressionMode: false };
+        const result = await clientEncryption.encryptExpression(
+          expression,
+          optionsWithExpressionMode
+        );
+
+        expect(result).not.to.be.instanceof(Binary);
+      });
     });
   });
 

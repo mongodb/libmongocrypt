@@ -1,14 +1,9 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.12)
 
-if (CMAKE_VERSION VERSION_EQUAL 3.12 OR CMAKE_VERSION VERSION_GREATER 3.12)
-   project (mongocrypt C)
+project (mongocrypt C)
 
-   # Used for the csfle-markup util:
-   enable_language (CXX OPTIONAL)
-else ()
-   # GenerateExportHeader only works with C with 3.12 - https://gitlab.kitware.com/cmake/cmake/commit/de348a9638bd51af4523f36c68884b901d4aff18
-   project (mongocrypt C CXX)
-endif ()
+# Used for the csfle-markup util:
+enable_language (CXX OPTIONAL)
 
 set (CMAKE_C_STANDARD 99)
 
@@ -25,6 +20,7 @@ list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include (GNUInstallDirs)
 
 include (ImportBSON)
+include (IntelDFP)
 
 if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
    message (FATAL_ERROR "PPA build requires static linking to libbson")
@@ -252,6 +248,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
+      mongocrypt::intel_dfp
       ${CMAKE_DL_LIBS}
    )
 
@@ -309,6 +306,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
+      mongocrypt::intel_dfp
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
@@ -494,10 +492,27 @@ foreach (test IN ITEMS path str)
 endforeach ()
 
 if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
-   add_executable(mlib.int128.test src/mlib/int128.test.cpp src/mlib/int128.test.c)
-   add_test (mlib.int128 mlib.int128.test)
-   target_link_libraries (mlib.int128.test PRIVATE mongo::mlib Threads::Threads)
-   target_compile_features (mlib.int128.test PRIVATE cxx_relaxed_constexpr)
+   file (GLOB_RECURSE test_files CONFIGURE_DEPENDS src/*.test.cpp)
+   foreach (file IN LISTS test_files)
+      # Compute a nice test name
+      file (RELATIVE_PATH relpath "${CMAKE_CURRENT_LIST_DIR}/src" "${file}")
+      file (TO_CMAKE_PATH "${relpath}" relpath)
+      string (REPLACE "src/" "" relpath "${relpath}")
+      string (REPLACE "/" "." test_name "${relpath}")
+      string (REGEX REPLACE "\\.test\\.cpp$" "" test_name "${test_name}")
+      # Generate a test executable:
+      set (exe_name "${test_name}.test")
+      add_executable ("${exe_name}" "${file}")
+      target_compile_features ("${exe_name}" PRIVATE cxx_relaxed_constexpr)
+      target_link_libraries ("${exe_name}" PRIVATE
+         mongocrypt
+         mongo::mlib
+         mongocrypt::intel_dfp
+         Threads::Threads
+         bson_static
+         )
+      add_test ("${test_name}" "${exe_name}")
+   endforeach ()
 endif ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)

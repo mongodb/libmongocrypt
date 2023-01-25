@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-if [ -z "$NODE_NVM_USE_VERSION" ]; then 
-  echo "NODE_NVM_USE_VERSION environment variable must be set."
-  exit 1
-fi
-
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
@@ -26,16 +21,8 @@ mkdir -p "${BIN_DIR}"
 # Add mongodb toolchain to path
 export PATH="$BIN_DIR:/opt/mongodbtoolchain/v2/bin:$PATH"
 
-# locate cmake
-if [ "$OS" == "Windows_NT" ]; then
-  CMAKE=/cygdrive/c/cmake/bin/cmake
-  if [ "$WINDOWS_32BIT" != "ON" ]; then
-      ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
-  fi
-else
-  chmod u+x ./.evergreen/find_cmake.sh
-  IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find_cmake.sh
-fi
+test -n "${NODE_NVM_USE_VERSION-}" || echo "Defaulting to using the current Node LTS Release. Set NODE_NVM_USE_VERSION to change."
+: "${NODE_NVM_USE_VERSION:="lts"}"
 
 # this needs to be explicitly exported for the nvm install below
 export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"

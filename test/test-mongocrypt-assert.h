@@ -170,6 +170,21 @@
 #define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "f", double)
 #define ASSERT_CMPPTR(a, eq, b) ASSERT_CMP_HELPER (a, eq, b, "p", const void *)
 
+#define ASSERT_CMPINT128_EQ(A, B)                              \
+   if (1) {                                                    \
+      mlib_int128 left = (A);                                  \
+      mlib_int128 right = (B);                                 \
+      const bool result = mlib_int128_eq (left, right);        \
+      if (!result) {                                           \
+         TEST_ERROR ("Comparison failed: %s == %s (%s != %s)", \
+                     #A,                                       \
+                     #B,                                       \
+                     mlib_int128_format (left).str,            \
+                     mlib_int128_format (right).str);          \
+      }                                                        \
+   } else                                                      \
+      ((void) 0)
+
 #define ASSERT_EQUAL_BSON(expected, actual)                                   \
    do {                                                                       \
       bson_t *_expected_bson = expected, *_actual_bson = actual;              \

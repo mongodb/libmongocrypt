@@ -18,6 +18,7 @@
 package com.mongodb.crypt.capi;
 
 import org.bson.BsonBinary;
+import org.bson.BsonDocument;
 
 import java.util.Objects;
 
@@ -30,6 +31,7 @@ public class MongoExplicitEncryptOptions {
     private final String algorithm;
     private final Long contentionFactor;
     private final String queryType;
+    private final BsonDocument rangeOptions;
 
     /**
      * The builder for the options
@@ -40,6 +42,7 @@ public class MongoExplicitEncryptOptions {
         private String algorithm;
         private Long contentionFactor;
         private String queryType;
+        private BsonDocument rangeOptions;
 
         private Builder() {
         }
@@ -109,6 +112,20 @@ public class MongoExplicitEncryptOptions {
         }
 
         /**
+         * The Range Options.
+         *
+         * <p>It is an error to set rangeOptions when the algorithm is not "rangePreview".</p>
+         *
+         * @param rangeOptions the range options
+         * @return this
+         * @since 1.7
+         */
+        public Builder rangeOptions(final BsonDocument rangeOptions) {
+            this.rangeOptions = rangeOptions;
+            return this;
+        }
+
+        /**
          * Build the options.
          *
          * @return the options
@@ -169,17 +186,27 @@ public class MongoExplicitEncryptOptions {
         return queryType;
     }
 
+    /**
+     * Gets the range options
+     * @return the range options
+     * @since 1.7
+     */
+    public BsonDocument getRangeOptions() {
+        return rangeOptions;
+    }
+
     private MongoExplicitEncryptOptions(Builder builder) {
         this.keyId = builder.keyId;
         this.keyAltName = builder.keyAltName;
         this.algorithm = builder.algorithm;
         this.contentionFactor = builder.contentionFactor;
         this.queryType = builder.queryType;
-        if (!Objects.equals(algorithm, "Indexed")) {
+        this.rangeOptions = builder.rangeOptions;
+        if (!(Objects.equals(algorithm, "Indexed") || Objects.equals(algorithm, "RangePreview"))) {
             if (contentionFactor != null) {
-                throw new IllegalStateException("Invalid configuration, contentionFactor can only be set if algorithm is 'Indexed'");
+                throw new IllegalStateException("Invalid configuration, contentionFactor can only be set if algorithm is 'Indexed' or 'RangePreview'");
             } else if (queryType != null) {
-                throw new IllegalStateException("Invalid configuration, queryType can only be set if algorithm is 'Indexed'");
+                throw new IllegalStateException("Invalid configuration, queryType can only be set if algorithm is 'Indexed'  or 'RangePreview'");
             }
         }
     }
@@ -191,7 +218,8 @@ public class MongoExplicitEncryptOptions {
                 ", keyAltName='" + keyAltName + '\'' +
                 ", algorithm='" + algorithm + '\'' +
                 ", contentionFactor=" + contentionFactor +
-                ", queryType=" + queryType +
+                ", queryType='" + queryType + '\'' +
+                ", rangeOptions=" + rangeOptions +
                 '}';
     }
 }

@@ -679,7 +679,7 @@ namespace MongoDB.Libmongocrypt.Test
 
         public CryptContext StartExplicitEncryptionContextWithKeyId(CryptClient client, byte[] keyId, string encryptionAlgorithm, byte[] message)
         {
-            return client.StartExplicitEncryptionContext(keyId, keyAltName: null, queryType: null, contentionFactor: null, encryptionAlgorithm, message);
+            return client.StartExplicitEncryptionContext(keyId, keyAltName: null, queryType: null, contentionFactor: null, encryptionAlgorithm, message, rangeOptions: null);
         }
 
         static IEnumerable<string> FindTestDirectories()

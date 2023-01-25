@@ -43,7 +43,7 @@ repositories {
 }
 
 group = "org.mongodb"
-version = "1.7.0-SNAPSHOT"
+version = "1.8.0-SNAPSHOT"
 description = "MongoDB client-side crypto support"
 
 java {
@@ -260,6 +260,7 @@ tasks.register("publishSnapshots") {
     if (version.toString().endsWith("-SNAPSHOT")) {
         dependsOn("downloadJnaLibs")
         dependsOn(tasks.withType<PublishToMavenRepository>())
+        tasks.withType<PublishToMavenRepository>().forEach { t -> t.mustRunAfter("downloadJnaLibs") }
     }
 }
 
