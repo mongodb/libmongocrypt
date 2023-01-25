@@ -29,7 +29,7 @@
                   " bytes, got: %" PRIu64,               \
                   writer->parser_name,                   \
                   (writer->len - writer->pos),           \
-                  (write_size));                         \
+                  (uint64_t) (write_size));              \
       return false;                                      \
    }
 
