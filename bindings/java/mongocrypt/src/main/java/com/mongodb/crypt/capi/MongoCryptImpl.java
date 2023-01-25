@@ -347,7 +347,9 @@ class MongoCryptImpl implements MongoCrypt {
             }
         }
 
-        configure(() -> mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1), context);
+        if (options.getAlgorithm() != null) {
+            configure(() -> mongocrypt_ctx_setopt_algorithm(context, new cstring(options.getAlgorithm()), -1), context);
+        }
         if (options.getQueryType() != null) {
             configure(() -> mongocrypt_ctx_setopt_query_type(context, new cstring(options.getQueryType()), -1), context);
         }
