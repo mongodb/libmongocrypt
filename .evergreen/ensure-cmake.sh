@@ -140,6 +140,9 @@ _ensure_cmake() {
 
     declare arch
     arch="$(uname -m)"
+    if test -f /etc/alpine-release; then
+        arch="$arch-musl"
+    fi
 
     # Otherwise we need to obtain it
     log "Obtaining CMake $CMAKE_VERSION for $OS_NAME-$arch"
