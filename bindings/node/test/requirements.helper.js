@@ -15,14 +15,14 @@ const SKIP_LIVE_TESTS = !!process.env.MONGODB_NODE_SKIP_LIVE_TESTS;
 const SKIP_AWS_TESTS =
   SKIP_LIVE_TESTS || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION || !AWS_CMK_ID;
 
-const isAWSCredentialsProviderInstalled = (function () {
+function isAWSCredentialProviderInstalled() {
   try {
     require.resolve('@aws-sdk/credential-providers');
     return true;
   } catch {
     return false;
   }
-})();
+}
 
 module.exports = {
   SKIP_LIVE_TESTS,
@@ -35,5 +35,7 @@ module.exports = {
   },
   awsKmsProviders,
   awsDataKeyOptions,
-  isAWSCredentialsProviderInstalled
+  credentialProvidersInstalled: {
+    aws: isAWSCredentialProviderInstalled()
+  }
 };

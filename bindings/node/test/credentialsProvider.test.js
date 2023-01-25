@@ -31,7 +31,7 @@ describe('#loadCredentials', function () {
       const kmsProviders = {};
 
       before(function () {
-        if (!requirements.isAWSCredentialsProviderInstalled) {
+        if (!requirements.credentialProvidersInstalled.aws) {
           this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
           this.currentTest.skip();
           return;
@@ -60,7 +60,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (!requirements.isAWSCredentialsProviderInstalled) {
+          if (!requirements.credentialProvidersInstalled.aws) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -93,7 +93,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (!requirements.isAWSCredentialsProviderInstalled) {
+          if (!requirements.credentialProvidersInstalled.aws) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -114,7 +114,7 @@ describe('#loadCredentials', function () {
         };
 
         before(function () {
-          if (!requirements.isAWSCredentialsProviderInstalled) {
+          if (!requirements.credentialProvidersInstalled.aws) {
             this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
             this.currentTest.skip();
             return;
@@ -147,7 +147,7 @@ describe('#loadCredentials', function () {
     };
 
     before(function () {
-      if (requirements.isAWSCredentialsProviderInstalled) {
+      if (requirements.credentialProvidersInstalled.aws) {
         this.currentTest.skipReason = 'Credentials will be loaded when sdk present';
         this.currentTest.skip();
         return;

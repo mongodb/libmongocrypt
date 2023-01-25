@@ -371,7 +371,7 @@ describe('AutoEncrypter', function () {
       const secretKey = 'example';
 
       before(function () {
-        if (!requirements.isAWSCredentialsProviderInstalled) {
+        if (!requirements.credentialProvidersInstalled.aws) {
           this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
           this.currentTest.skip();
           return;
@@ -410,7 +410,7 @@ describe('AutoEncrypter', function () {
       const secretKey = 'example';
 
       before(function () {
-        if (requirements.isAWSCredentialsProviderInstalled) {
+        if (requirements.credentialProvidersInstalled.aws) {
           this.currentTest.skipReason = 'With optional sdk installed credentials would be loaded.';
           this.currentTest.skip();
           return;
