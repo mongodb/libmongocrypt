@@ -103,7 +103,7 @@ describe('AutoEncrypter', function () {
       });
 
     sandbox.stub(StateMachine.prototype, 'fetchKeys').callsFake((client, ns, filter, callback) => {
-      // mock data is already seriaized, our action deals with the result of a cursor
+      // mock data is already serialized, our action deals with the result of a cursor
       const deserializedKey = BSON.deserialize(MOCK_KEYDOCUMENT_RESPONSE);
       callback(null, [deserializedKey]);
     });

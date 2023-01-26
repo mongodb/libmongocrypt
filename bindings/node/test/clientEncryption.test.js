@@ -1,6 +1,8 @@
 'use strict';
 const fs = require('fs');
-const expect = require('chai').expect;
+const chai = require('chai');
+chai.config.truncateThreshold = 0;
+const expect = chai.expect;
 const sinon = require('sinon');
 const mongodb = require('mongodb');
 const BSON = mongodb.BSON;
@@ -30,9 +32,11 @@ class MockClient {
 }
 
 const requirements = require('./requirements.helper');
+const { MongoCryptError } = require('../lib/common');
 
 describe('ClientEncryption', function () {
   this.timeout(12000);
+  /** @type {MongoClient} */
   let client;
 
   function throwIfNotNsNotFoundError(err) {
@@ -814,5 +818,93 @@ describe('ClientEncryption', function () {
 
   it('should provide the libmongocrypt version', function () {
     expect(ClientEncryption.libmongocryptVersion).to.be.a('string');
+  });
+
+  describe('createEncryptedCollection()', () => {
+    /** @type {InstanceType<ClientEncryption>} */
+    let clientEncryption;
+    let db;
+    const collectionName = 'secure';
+    let createDataKeySpy;
+
+    beforeEach(async function () {
+      if (requirements.SKIP_LIVE_TESTS) {
+        this.currentTest.skipReason = `requirements.SKIP_LIVE_TESTS=${requirements.SKIP_LIVE_TESTS}`;
+        this.test.skip();
+        return;
+      }
+
+      await setup();
+      clientEncryption = new ClientEncryption(client, {
+        keyVaultNamespace: 'client.encryption',
+        kmsProviders: { local: { key: Buffer.alloc(96) } }
+      });
+
+      createDataKeySpy = sinon.spy(clientEncryption, 'createDataKey');
+
+      db = client.db('createEncryptedCollectionDb');
+      await db.dropDatabase().catch(() => null);
+    });
+
+    afterEach(async () => {
+      await db.dropDatabase().catch(() => null);
+      await teardown();
+    });
+
+    describe('prose tests', () => {});
+
+    describe('nodejs tests', () => {
+      it('throws if options are omitted', async () => {
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName)
+          .catch(error => error);
+        expect(error).to.be.instanceOf(TypeError, /Cannot destructure/);
+      });
+
+      it('throws if options.encryptedFields are omitted', async () => {
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName, {})
+          .catch(error => error);
+        expect(error).to.be.instanceOf(MongoCryptError);
+      });
+
+      it('creates keyIds for any ones that are missing', async () => {
+        const encryptedFields = {
+          escCollection: 'esc',
+          eccCollection: 'ecc',
+          ecocCollection: 'ecoc',
+          fields: [
+            {
+              keyId: null,
+              path: 'value',
+              bsonType: 'int',
+              queries: {
+                queryType: 'equality',
+                contention: BigInt('0')
+              }
+            }
+          ]
+        };
+
+        const result = await clientEncryption.createEncryptedCollection(db, collectionName, {
+          provider: 'local',
+          createCollectionOptions: {
+            encryptedFields
+          }
+        });
+
+        expect(result).to.be.instanceOf(mongodb.Collection);
+        expect(encryptedFields).nested.property('fields[0].keyId', null);
+
+        const firstDataKeyCreated = await createDataKeySpy.getCall(0).returnValue;
+
+        const [collectionMetaData] = await db.listCollections({ name: collectionName }).toArray();
+        expect(collectionMetaData).property('name', collectionName);
+        expect(collectionMetaData).deep.nested.property(
+          'options.encryptedFields.fields[0].keyId',
+          firstDataKeyCreated
+        );
+      });
+    });
   });
 });

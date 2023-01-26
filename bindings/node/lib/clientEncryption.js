@@ -168,7 +168,7 @@ module.exports = function (modules) {
      *
      * @param {string} provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
      * @param {object} [options] Options for creating the data key
-     * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key
+     * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Identifies a new KMS-specific key used to encrypt the new data key
      * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
      * @param {ClientEncryptionCreateDataKeyCallback} [callback] Optional callback to invoke when key is created
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with {@link ClientEncryption~dataKeyId the id of the created data key}, or rejects with an error. If a callback is provided, returns nothing.
@@ -550,6 +550,57 @@ module.exports = function (modules) {
     }
 
     /**
+     * Create a collection that has encrypted document fields
+     *
+     * @param {Db} db - A database to create the collection in
+     * @param {string} name - The name of the collection to be created
+     * @param {} options - idk
+     */
+    async createEncryptedCollection(
+      db,
+      name,
+      { provider, createDataKeyOptions = {}, createCollectionOptions = {} }
+    ) {
+      const { encryptedFields } = createCollectionOptions;
+      if (encryptedFields == null) {
+        throw new common.MongoCryptError(
+          'EncryptedFields must be provided to create an encrypted collection'
+        );
+      }
+      const encryptedFieldsClone = { ...encryptedFields };
+      const { fields } = encryptedFieldsClone;
+
+      encryptedFieldsClone.fields = [];
+
+      if (Array.isArray(fields)) {
+        for (const field of fields) {
+          const fieldClone = { ...field };
+          encryptedFieldsClone.fields.push(fieldClone);
+          if (fieldClone.keyId != null) {
+            continue;
+          }
+          try {
+            const dataKey = await this.createDataKey(provider, createDataKeyOptions);
+            fieldClone.keyId = dataKey;
+          } catch (createDataKeyError) {
+            throw new common.MongoCryptCreateEncryptedCollectionError(
+              'Could not complete creating data keys',
+              {
+                encryptedFields: encryptedFieldsClone,
+                cause: createDataKeyError
+              }
+            );
+          }
+        }
+      }
+
+      return db.createCollection(name, {
+        ...createCollectionOptions,
+        encryptedFields: encryptedFieldsClone
+      });
+    }
+
+    /**
      * @callback ClientEncryptionEncryptCallback
      * @param {Error} [err] If present, indicates an error that occurred in the process of encryption
      * @param {Buffer} [result] If present, is the encrypted result
@@ -646,7 +697,7 @@ module.exports = function (modules) {
      *
      * @param {Buffer | Binary} value An encrypted value
      * @param {ClientEncryption~decryptCallback} callback Optional callback to invoke when value is decrypted
-     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.
+     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decrypted value, or rejects with an error. If a callback is provided, returns nothing.
      *
      * @example
      * // Decrypting value with callback API
