@@ -337,7 +337,7 @@ set (is_unix $<NOT:${is_windows}>)
 
 # These compiler definitions may seem a bit strange, but the whole DFP library's
 # config process is strange. These options match those used in MongoDB server.
-target_compile_definitions (intel_dfp_obj PRIVATE
+target_compile_definitions (intel_dfp_obj PUBLIC
     DECIMAL_CALL_BY_REFERENCE=0
     DECIMAL_GLOBAL_ROUNDING=0
     DECIMAL_GLOBAL_EXCEPTION_FLAGS=0
@@ -370,6 +370,7 @@ target_compile_definitions (intel_dfp_obj PRIVATE
 
 # Suppress warnings in the Intel library, as it generates a lot that aren't of interest
 target_compile_options (intel_dfp_obj PRIVATE -w)
+target_include_directories(intel_dfp_obj PUBLIC ${intel_dfp_SOURCE_DIR}/LIBRARY/src)
 
 # Define an interface library that attaches the built TUs to the consumer
 add_library (_mongocrypt_intel_dfp INTERFACE)
@@ -387,12 +388,13 @@ target_sources (_mongocrypt_intel_dfp
     ]]
     INTERFACE $<BUILD_INTERFACE:$<TARGET_OBJECTS:intel_dfp_obj>>
     )
-target_include_directories (_mongocrypt_intel_dfp
-    INTERFACE $<BUILD_INTERFACE:${intel_dfp_SOURCE_DIR}/LIBRARY/src>
+target_link_libraries (_mongocrypt_intel_dfp
+    INTERFACE
+        $<BUILD_INTERFACE:intel_dfp_obj>
+        # We do want to propagate an interface requirement: Some platforms need a
+        # separate link library to support special math functions.
+        $<$<PLATFORM_ID:Linux>:m>
     )
-# We do want to propagate an interface requirement: Some platforms need a
-# separate link library to support special math functions.
-target_link_libraries(_mongocrypt_intel_dfp INTERFACE $<$<PLATFORM_ID:Linux>:m>)
 
 # Give the installed target a name to indicate its hidden-ness
 set_property (TARGET _mongocrypt_intel_dfp PROPERTY EXPORT_NAME private::intel_dfp_interface)
