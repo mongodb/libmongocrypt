@@ -19,6 +19,7 @@ list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 include (GNUInstallDirs)
 
+include (LTO)
 include (ImportBSON)
 include (IntelDFP)
 
@@ -35,6 +36,7 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       gnu-like:-Wall gnu-like:-Werror
       gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
       )
+   add_link_options ($<IF:$<C_COMPILER_ID:MSVC>,/WX,-Werror>)
 endif ()
 
 find_package (Threads REQUIRED)
