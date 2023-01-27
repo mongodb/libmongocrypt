@@ -516,11 +516,11 @@ export class ClientEncryption {
    * @param options - Options for createDataKey and for createCollection. A provider and partially created encryptedFields **must** be provided.
    * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
    */
-  createEncryptedCollection(db: Db, name: string, options: {
+  createEncryptedCollection<TSchema>(db: Db, name: string, options: {
     provider: ClientEncryptionDataKeyProvider;
     createCollectionOptions: CreateCollectionOptions;
     createDataKeyOptions?: ClientEncryptionCreateDataKeyProviderOptions;
-  }): Promise<Collection>;
+  }): Promise<{collection: Collection<TSchema>, encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']> }>;
 
   /**
    * Explicitly encrypt a provided value.

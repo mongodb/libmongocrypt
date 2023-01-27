@@ -563,6 +563,7 @@ module.exports = function (modules) {
      * @param {string} options.provider - provider name
      * @param {ClientEncryptionCreateDataKeyProviderOptions} options.createDataKeyOptions - options to pass to createDataKey
      * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
+     * @returns {Promise<{collection: Collection, encryptedFields: Document }>} - created collection and generated encryptedFields
      * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
      */
     async createEncryptedCollection(
@@ -608,10 +609,12 @@ module.exports = function (modules) {
         }
       }
 
-      return db.createCollection(name, {
+      const collection = await db.createCollection(name, {
         ...createCollectionOptions,
         encryptedFields: encryptedFieldsClone
       });
+
+      return { collection, encryptedFields: encryptedFieldsClone };
     }
 
     /**

@@ -922,20 +922,21 @@ describe('ClientEncryption', function () {
       const keyId = new Binary(Buffer.alloc(16, 0), 4);
       sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
 
-      const result = await clientEncryption.createEncryptedCollection(db, collectionName, {
-        provider: 'local',
-        createCollectionOptions: {
-          encryptedFields
-        }
-      });
+      const { collection, encryptedFields: resultEncryptedFields } =
+        await clientEncryption.createEncryptedCollection(db, collectionName, {
+          provider: 'local',
+          createCollectionOptions: {
+            encryptedFields
+          }
+        });
 
-      expect(result).to.have.property('namespace', 'createEncryptedCollectionDb.secure');
+      expect(collection).to.have.property('namespace', 'createEncryptedCollectionDb.secure');
       expect(encryptedFields, 'original encryptedFields should be unmodified').nested.property(
         'fields[0].keyId',
         false
       );
       expect(
-        result.options.encryptedFields,
+        resultEncryptedFields,
         'encryptedFields created by helper should have replaced nullish keyId'
       ).nested.property('fields[1].keyId', keyId);
     });
