@@ -578,18 +578,26 @@ module.exports = function (modules) {
       }
 
       const { encryptedFields } = createCollectionOptions;
+      const { fields } = encryptedFields;
       const encryptedFieldsClone = { ...encryptedFields };
-      const { fields } = encryptedFieldsClone;
-
-      encryptedFieldsClone.fields = [];
 
       if (Array.isArray(fields)) {
+        encryptedFieldsClone.fields = [];
+
         for (const field of fields) {
-          const fieldClone = { ...field };
-          encryptedFieldsClone.fields.push(fieldClone);
-          if (fieldClone.keyId != null) {
+          if (typeof field !== 'object') {
+            encryptedFieldsClone.fields.push(field);
             continue;
           }
+
+          if (field.keyId != null) {
+            encryptedFieldsClone.fields.push(field);
+            continue;
+          }
+
+          const fieldClone = { ...field };
+          encryptedFieldsClone.fields.push(fieldClone);
+
           try {
             const dataKey = await this.createDataKey(provider, createDataKeyOptions);
             fieldClone.keyId = dataKey;
