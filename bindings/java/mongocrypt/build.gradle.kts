@@ -67,7 +67,7 @@ dependencies {
  * Git version information
  */
 
-// Returns a Pair<Boolean, String> representing if the current tag is a `java-<version>` tag and the version
+// Returns a String representing the output of `git describe`
 val gitDescribe by lazy {
     val describeStdOut = ByteArrayOutputStream()
     exec {
