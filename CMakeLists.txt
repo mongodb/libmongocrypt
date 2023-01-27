@@ -39,7 +39,9 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       gnu-like:-Wall gnu-like:-Werror
       gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
       )
-   add_link_options ($<IF:$<C_COMPILER_ID:MSVC>,/WX,-Werror>)
+   add_link_options (
+      "$<IF:$<C_COMPILER_ID:MSVC>,/WX;/ignore:4217,-Werror>"
+      )
 endif ()
 
 find_package (Threads REQUIRED)
