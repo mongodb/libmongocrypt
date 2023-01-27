@@ -40,7 +40,7 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
       )
    add_link_options (
-      "$<IF:$<C_COMPILER_ID:MSVC>,/WX;/ignore:4217,-Werror>"
+      "$<IF:$<C_COMPILER_ID:MSVC>,/WX;/ignore:4217;/ignore:4049,-Werror>"
       )
 endif ()
 
