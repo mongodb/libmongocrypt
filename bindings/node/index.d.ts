@@ -3,7 +3,10 @@ import type {
   MongoClient,
   BulkWriteResult,
   DeleteResult,
-  FindCursor
+  FindCursor,
+  Collection,
+  Db,
+  CreateCollectionOptions
 } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
@@ -26,6 +29,13 @@ export interface DataKey {
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
  */
 export class MongoCryptError extends Error {}
+
+/**
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
+ */
+export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
+  encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']>;
+}
 
 /**
  * A set of options for specifying a Socks5 proxy.
@@ -308,7 +318,7 @@ export interface AzureEncryptionKeyOptions {
  */
 export interface ClientEncryptionCreateDataKeyProviderOptions {
   /**
-   * Idenfities a new KMS-specific key used to encrypt the new data key
+   * Identifies a new KMS-specific key used to encrypt the new data key
    */
   masterKey?:
     | AWSEncryptionKeyOptions
@@ -496,6 +506,21 @@ export class ClientEncryption {
    * @param keyAltName - a keyAltName to search for a key
    */
   removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
+
+  /**
+   * Creates a collection that has encrypted document fields.
+   * Will create dataKeys for any fields missing a `keyId`
+   *
+   * @param db - The database to create the collection within
+   * @param name - The name of the new collection
+   * @param options - Options for createDataKey and for createCollection. A provider and partially created encryptedFields **must** be provided.
+   * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
+   */
+  createEncryptedCollection(db: Db, name: string, options: {
+    provider: ClientEncryptionDataKeyProvider;
+    createCollectionOptions: CreateCollectionOptions;
+    createDataKeyOptions?: ClientEncryptionCreateDataKeyProviderOptions;
+  }): Promise<Collection>;
 
   /**
    * Explicitly encrypt a provided value.

@@ -17,6 +17,13 @@ module.exports = function (modules) {
   /** @typedef {BSON.Long} Long A 64 bit integer, represented by the js-bson Long type.*/
 
   /**
+   * @typedef {object} ClientEncryptionCreateDataKeyProviderOptions Options to provide when creating a new data key.
+   * @property {object} [masterKey] Identifies a new KMS-specific key used to encrypt the new data key
+   * @property {string[]} [keyAltNames] An optional list of string alternate names used to reference a key.
+   * @property {Binary} [keyMaterial] experimental
+   */
+
+  /**
    * @typedef {object} KMSProviders Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
    * @property {object} [aws] Configuration options for using 'aws' as your KMS provider
    * @property {string} [aws.accessKeyId] The access key used for the AWS KMS provider
@@ -166,10 +173,8 @@ module.exports = function (modules) {
     /**
      * Creates a data key used for explicit encryption and inserts it into the key vault namespace
      *
-     * @param {string} provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
-     * @param {object} [options] Options for creating the data key
-     * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Identifies a new KMS-specific key used to encrypt the new data key
-     * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
+     * @param {string} provider The KMS provider used for this data key.
+     * @param {ClientEncryptionCreateDataKeyProviderOptions} [options] Options for creating the data key
      * @param {ClientEncryptionCreateDataKeyCallback} [callback] Optional callback to invoke when key is created
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with {@link ClientEncryption~dataKeyId the id of the created data key}, or rejects with an error. If a callback is provided, returns nothing.
      * @example
@@ -550,23 +555,28 @@ module.exports = function (modules) {
     }
 
     /**
-     * Create a collection that has encrypted document fields
+     * Creates a collection that has encrypted document fields
      *
      * @param {Db} db - A database to create the collection in
      * @param {string} name - The name of the collection to be created
-     * @param {} options - idk
+     * @param {object} options - Options for createDataKey and for createCollection.
+     * @param {string} options.provider - provider name
+     * @param {ClientEncryptionCreateDataKeyProviderOptions} options.createDataKeyOptions - options to pass to createDataKey
+     * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
+     * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
      */
     async createEncryptedCollection(
       db,
       name,
-      { provider, createDataKeyOptions = {}, createCollectionOptions = {} }
+      { provider, createDataKeyOptions = {}, createCollectionOptions }
     ) {
-      const { encryptedFields } = createCollectionOptions;
-      if (encryptedFields == null) {
+      if (createCollectionOptions == null || createCollectionOptions.encryptedFields == null) {
         throw new common.MongoCryptError(
           'EncryptedFields must be provided to create an encrypted collection'
         );
       }
+
+      const { encryptedFields } = createCollectionOptions;
       const encryptedFieldsClone = { ...encryptedFields };
       const { fields } = encryptedFieldsClone;
 
@@ -583,6 +593,10 @@ module.exports = function (modules) {
             const dataKey = await this.createDataKey(provider, createDataKeyOptions);
             fieldClone.keyId = dataKey;
           } catch (createDataKeyError) {
+            encryptedFieldsClone.fields = [
+              ...encryptedFieldsClone.fields,
+              ...fields.slice(encryptedFieldsClone.fields.length)
+            ];
             throw new common.MongoCryptCreateEncryptedCollectionError(
               'Could not complete creating data keys',
               {

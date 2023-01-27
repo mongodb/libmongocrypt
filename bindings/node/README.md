@@ -65,6 +65,9 @@ npm test
 <dt><a href="#Long">Long</a> : <code>BSON.Long</code></dt>
 <dd><p>A 64 bit integer, represented by the js-bson Long type.</p>
 </dd>
+<dt><a href="#ClientEncryptionCreateDataKeyProviderOptions">ClientEncryptionCreateDataKeyProviderOptions</a> : <code>object</code></dt>
+<dd><p>Options to provide when creating a new data key.</p>
+</dd>
 <dt><a href="#KMSProviders">KMSProviders</a> : <code>object</code></dt>
 <dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
 </dd>
@@ -276,6 +279,8 @@ The public interface for explicit in-use encryption
 
         * [.removeKeyAltName(_id, keyAltName)](#ClientEncryption+removeKeyAltName)
 
+        * [.createEncryptedCollection(db, name, options)](#ClientEncryption+createEncryptedCollection)
+
         * [.encrypt(value, options, [callback])](#ClientEncryption+encrypt)
 
         * [.encryptExpression(expression, options)](#ClientEncryption+encryptExpression)
@@ -332,10 +337,8 @@ new ClientEncryption(mongoClient, {
 
 | Param | Type | Description |
 | --- | --- | --- |
-| provider | <code>string</code> | The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'` |
-| [options] | <code>object</code> | Options for creating the data key |
-| [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | Idenfities a new KMS-specific key used to encrypt the new data key |
-| [options.keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id. |
+| provider | <code>string</code> | The KMS provider used for this data key. |
+| [options] | [<code>ClientEncryptionCreateDataKeyProviderOptions</code>](#ClientEncryptionCreateDataKeyProviderOptions) | Options for creating the data key |
 | [callback] | [<code>ClientEncryptionCreateDataKeyCallback</code>](#ClientEncryptionCreateDataKeyCallback) | Optional callback to invoke when key is created |
 
 Creates a data key used for explicit encryption and inserts it into the key vault namespace
@@ -542,6 +545,25 @@ if (!oldKey) {
  // null is returned if there is no matching document with an id matching the supplied id
 }
 ```
+<a name="ClientEncryption+createEncryptedCollection"></a>
+
+### *clientEncryption*.createEncryptedCollection(db, name, options)
+**Throws**:
+
+- <code>MongoCryptCreateEncryptedCollectionError</code> - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| db | <code>Db</code> | A database to create the collection in |
+| name | <code>string</code> | The name of the collection to be created |
+| options | <code>object</code> | Options for createDataKey and for createCollection. |
+| options.provider | <code>string</code> | provider name |
+| options.createDataKeyOptions | [<code>ClientEncryptionCreateDataKeyProviderOptions</code>](#ClientEncryptionCreateDataKeyProviderOptions) | options to pass to createDataKey |
+| options.createCollectionOptions | <code>CreateCollectionOptions</code> | options to pass to createCollection, must include `encryptedFields` |
+
+Creates a collection that has encrypted document fields
+
 <a name="ClientEncryption+encrypt"></a>
 
 ### *clientEncryption*.encrypt(value, options, [callback])
@@ -610,7 +632,7 @@ Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
 
 Explicitly decrypt a provided encrypted value
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.  
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decrypted value, or rejects with an error. If a callback is provided, returns nothing.  
 **Example**  
 ```js
 // Decrypting value with callback API
@@ -657,6 +679,19 @@ any serializable BSON value
 
 ## Long
 A 64 bit integer, represented by the js-bson Long type.
+
+<a name="ClientEncryptionCreateDataKeyProviderOptions"></a>
+
+## ClientEncryptionCreateDataKeyProviderOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [masterKey] | <code>object</code> | Identifies a new KMS-specific key used to encrypt the new data key |
+| [keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. |
+| [keyMaterial] | <code>Binary</code> | experimental |
+
+Options to provide when creating a new data key.
 
 <a name="KMSProviders"></a>
 
