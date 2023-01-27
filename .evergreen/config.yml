@@ -168,7 +168,7 @@ functions:
       params:
         file: ./libmongocrypt/bindings/node/xunit.xml
 
-  "publish snapshot":
+  "publish java":
     - command: git.get_project
       params: {directory: libmongocrypt}
     - command: shell.exec
@@ -184,18 +184,12 @@ functions:
             echo "Patch build detected, skipping"
             exit 0
           fi
-          if [ "${branch_name}" != "master" ]; then
-            echo "publish snapshot is only run on master branch."
-            echo "Detected branch '${branch_name}', skipping."
-            exit 0
-          fi
           export PROJECT_DIRECTORY=${project_directory}
           export NEXUS_USERNAME=${nexus_username}
           export NEXUS_PASSWORD=${nexus_password}
           export SIGNING_PASSWORD=${signing_password}
           export SIGNING_KEY_ID=${signing_keyId}
           export RING_FILE_GPG_BASE64=${ring_file_gpg_base64}
-          export GIT_REVISION=${revision}
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/publish.sh
 
   "download tarball":
@@ -514,11 +508,12 @@ tasks:
     - func: "build and test node"
     - func: "attach node xunit results"
 
-- name: publish-snapshot
+- name: publish-java
   depends_on:
-    - name: upload-java
+    - variant: ubuntu2004-64
+      name: upload-java
   commands:
-    - func: "publish snapshot"
+    - func: "publish java"
 
 - name: upload-java
   depends_on:
@@ -1339,13 +1334,17 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
-- name: publish-snapshot
+- name: publish
   display_name: "Publish"
   run_on: ubuntu1804-test
   tasks:
     - name: "upload-java"
-    - name: "publish-snapshot"
     - name: "upload-all"
+- name: java-release
+  display_name: Java Release
+  run_on: ubuntu2004-small
+  tasks:
+    - "publish-java"
 - name: packaging
   display_name: "Linux Distro Packaging"
   run_on: ubuntu2004-small
