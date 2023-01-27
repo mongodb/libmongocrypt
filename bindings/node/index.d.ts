@@ -34,6 +34,7 @@ export class MongoCryptError extends Error {}
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
 export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
+  /** @experimental The partial `encryptedFields` that was completed while attempting createEncryptedCollection */
   encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']>;
 }
 
