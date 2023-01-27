@@ -1,3 +1,10 @@
+libmongocrypt (1.6.2-2) UNRELEASED; urgency=medium
+
+  * Add libintelrdfpmath-dev to Build-Depends rather than using embedded
+    sources.
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 26 Jan 2023 11:07:52 -0500
+
 libmongocrypt (1.6.2-1) unstable; urgency=medium
 
   * New upstream release.
