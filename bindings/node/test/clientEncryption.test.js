@@ -888,14 +888,20 @@ describe('ClientEncryption', function () {
       expect(error.encryptedFields.fields).to.have.lengthOf(3);
       expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
       expect(error.encryptedFields.fields).to.not.have.nested.property('[1].keyId');
-      expect(error.encryptedFields.fields).to.not.have.nested.property('[2].keyId', 'cool id!');
+      expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');
     });
 
     it('creates keyIds where they are nullish without editing input', async () => {
       const encryptedFields = {
-        escCollection: 'esc',
-        eccCollection: 'ecc',
-        ecocCollection: 'ecoc',
+        set escCollection(v) {
+          throw new Error('should not modify escCollection');
+        },
+        set eccCollection(v) {
+          throw new Error('should not modify eccCollection');
+        },
+        set ecocCollection(v) {
+          throw new Error('should not modify ecocCollection');
+        },
         fields: [
           { keyId: false },
           {
@@ -926,12 +932,12 @@ describe('ClientEncryption', function () {
       expect(result).to.have.property('namespace', 'createEncryptedCollectionDb.secure');
       expect(encryptedFields, 'original encryptedFields should be unmodified').nested.property(
         'fields[0].keyId',
-        null
+        false
       );
       expect(
         result.options.encryptedFields,
         'encryptedFields created by helper should have replaced nullish keyId'
-      ).nested.property('fields[0].keyId', keyId);
+      ).nested.property('fields[1].keyId', keyId);
     });
   });
 });
