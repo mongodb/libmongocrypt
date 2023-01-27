@@ -74,12 +74,11 @@ val gitDescribe by lazy {
         commandLine = listOf("git", "describe", "--tags", "--always", "--dirty")
         standardOutput = describeStdOut
     }
-    val gv: String = describeStdOut.toString().trim()
-    gv.startsWith("java") to gv.subSequence(gv.toCharArray().indexOfFirst { it.isDigit() }, gv.length).toString()
+    describeStdOut.toString().trim()
 }
 
-val isJavaTag by lazy { gitDescribe.first }
-val gitVersion by lazy { gitDescribe.second }
+val isJavaTag by lazy { gitDescribe.startsWith("java") }
+val gitVersion by lazy { gitDescribe.subSequence(gitDescribe.toCharArray().indexOfFirst { it.isDigit() }, gitDescribe.length).toString() }
 
 val gitHash: String by lazy {
     val describeStdOut = ByteArrayOutputStream()
@@ -274,19 +273,32 @@ tasks.register("publishToSonatype") {
         |
         | To override the JNA library downloaded use -DgitRevision=<git hash>
     """.trimMargin()
-    val isRelease = version.toString().endsWith("-SNAPSHOT") || (isJavaTag && gitVersion == version)
+    val isSnapshot = version.toString().endsWith("-SNAPSHOT")
+    val isRelease = isSnapshot || (isJavaTag && gitVersion == version)
 
     doFirst {
+        if (isSnapshot && isJavaTag) {
+                throw GradleException("""
+                | Invalid Release
+                | ===============
+                |
+                | Version: $version 
+                | GitVersion: $gitVersion
+                | isJavaTag: $isJavaTag
+                |
+                |""".trimMargin())
+        }
+
         if (isRelease) {
             println("Publishing: ${project.name} : $gitVersion")
         } else {
             println("""
                 | Not a Java release:
                 |
-                | Version mismatch:
-                | =================
+                | Version:
+                | ========
                 |
-                | $version != $gitVersion
+                | $gitDescribe
                 |
                 | The project version does not match the git tag.
                 |""".trimMargin())
