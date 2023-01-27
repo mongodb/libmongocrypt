@@ -573,7 +573,7 @@ module.exports = function (modules) {
     ) {
       if (createCollectionOptions == null || createCollectionOptions.encryptedFields == null) {
         throw new common.MongoCryptError(
-          'EncryptedFields must be provided to create an encrypted collection'
+          'encryptedFields must be provided to create an encrypted collection'
         );
       }
 
