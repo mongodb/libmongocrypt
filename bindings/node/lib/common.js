@@ -37,7 +37,8 @@ function collectionNamespace(ns) {
  */
 class MongoCryptError extends Error {
   constructor(message, options = {}) {
-    super(message, options);
+    super(message);
+    this.cause = options.cause;
   }
 
   get name() {
@@ -46,9 +47,14 @@ class MongoCryptError extends Error {
 }
 
 class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
-  constructor(message, { encryptedFields, cause }) {
-    super(message, { cause });
+  constructor(message, { encryptedFields, errors }) {
+    super(message);
     this.encryptedFields = encryptedFields;
+    this.errors = errors;
+  }
+
+  get name() {
+    return 'MongoCryptCreateEncryptedCollectionError';
   }
 }
 
