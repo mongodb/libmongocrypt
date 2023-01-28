@@ -1,4 +1,3 @@
-import type { Document, Binary, Long } from 'bson';
 import type {
   MongoClient,
   BulkWriteResult,
@@ -6,7 +5,10 @@ import type {
   FindCursor,
   Collection,
   Db,
-  CreateCollectionOptions
+  CreateCollectionOptions,
+  Document,
+  Binary,
+  Long
 } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
@@ -517,9 +519,9 @@ export class ClientEncryption {
    * @param options - Options for createDataKey and for createCollection. A provider and partially created encryptedFields **must** be provided.
    * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
    */
-  createEncryptedCollection<TSchema>(db: Db, name: string, options: {
+  createEncryptedCollection<TSchema extends Document = Document>(db: Db, name: string, options: {
     provider: ClientEncryptionDataKeyProvider;
-    createCollectionOptions: CreateCollectionOptions;
+    createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & { encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']> };
     createDataKeyOptions?: ClientEncryptionCreateDataKeyProviderOptions;
   }): Promise<{ collection: Collection<TSchema>, encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']> }>;
 

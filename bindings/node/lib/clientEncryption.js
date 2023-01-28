@@ -570,16 +570,15 @@ module.exports = function (modules) {
     async createEncryptedCollection(
       db,
       name,
-      { provider, createDataKeyOptions = {}, createCollectionOptions }
-    ) {
-      if (createCollectionOptions == null || createCollectionOptions.encryptedFields == null) {
-        throw new common.MongoCryptError(
-          'encryptedFields must be provided to create an encrypted collection'
-        );
+      {
+        provider,
+        createDataKeyOptions = {},
+        createCollectionOptions: {
+          encryptedFields: { ...encryptedFields },
+          ...createCollectionOptions
+        }
       }
-
-      const encryptedFields = { ...createCollectionOptions.encryptedFields };
-
+    ) {
       if (Array.isArray(encryptedFields.fields)) {
         encryptedFields.fields = [...encryptedFields.fields];
 

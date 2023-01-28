@@ -851,14 +851,21 @@ describe('ClientEncryption', function () {
       const error = await clientEncryption
         .createEncryptedCollection(db, collectionName)
         .catch(error => error);
-      expect(error).to.be.instanceOf(TypeError, /Cannot destructure/);
+      expect(error).to.be.instanceOf(TypeError);
     });
 
-    it('throws if options.encryptedFields are omitted', async () => {
+    it('throws if options.createCollectionOptions are omitted', async () => {
       const error = await clientEncryption
         .createEncryptedCollection(db, collectionName, {})
         .catch(error => error);
-      expect(error).to.be.instanceOf(MongoCryptError);
+      expect(error).to.be.instanceOf(TypeError);
+    });
+
+    it('throws if options.createCollectionOptions.encryptedFields are omitted', async () => {
+      const error = await clientEncryption
+        .createEncryptedCollection(db, collectionName, { createCollectionOptions: {} })
+        .catch(error => error);
+      expect(error).to.be.instanceOf(TypeError);
     });
 
     it('when options.encryptedFields.fields is not an array no key generation is performed', async () => {
