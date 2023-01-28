@@ -36,9 +36,8 @@ function collectionNamespace(ns) {
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
  */
 class MongoCryptError extends Error {
-  constructor(message, options = {}) {
+  constructor(message) {
     super(message);
-    this.cause = options.cause;
   }
 
   get name() {
