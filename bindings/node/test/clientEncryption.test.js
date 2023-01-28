@@ -896,6 +896,7 @@ describe('ClientEncryption', function () {
       const keyId = new Binary(Buffer.alloc(16, 0), 4);
       stub.onCall(0).resolves(keyId);
       stub.onCall(1).rejects(customError);
+      stub.onCall(2).resolves(keyId);
 
       const error = await clientEncryption
         .createEncryptedCollection(db, collectionName, {
@@ -907,7 +908,8 @@ describe('ClientEncryption', function () {
         .catch(error => error);
 
       expect(error).to.be.instanceOf(MongoCryptCreateEncryptedCollectionError);
-      expect(error.cause).to.equal(customError);
+      expect(error.errors).to.have.lengthOf(1);
+      expect(error.errors[0]).to.equal(customError);
       expect(error.encryptedFields).property('fields').that.is.an('array');
       expect(error.encryptedFields.fields).to.have.lengthOf(3);
       expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);

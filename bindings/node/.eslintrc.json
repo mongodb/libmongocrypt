@@ -9,9 +9,6 @@
     "mocha": true,
     "es6": true
   },
-  "globals": {
-    "BigInt": "readonly"
-  },
   "parserOptions": {
     "ecmaVersion": 2019
   },
@@ -37,17 +34,8 @@
     "prettier/prettier": "error",
     "no-console": "error",
     "valid-typeof": "error",
-    "eqeqeq": [
-      "error",
-      "always",
-      {
-        "null": "ignore"
-      }
-    ],
-    "strict": [
-      "error",
-      "global"
-    ],
+    "eqeqeq": ["error", "always", {"null": "ignore"}],
+    "strict": ["error", "global"],
     "no-restricted-syntax": [
       "error",
       {

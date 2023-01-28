@@ -521,7 +521,7 @@ export class ClientEncryption {
     provider: ClientEncryptionDataKeyProvider;
     createCollectionOptions: CreateCollectionOptions;
     createDataKeyOptions?: ClientEncryptionCreateDataKeyProviderOptions;
-  }): Promise<{collection: Collection<TSchema>, encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']> }>;
+  }): Promise<{ collection: Collection<TSchema>, encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']> }>;
 
   /**
    * Explicitly encrypt a provided value.

@@ -564,6 +564,7 @@ if (!oldKey) {
 
 Creates a collection that has encrypted document fields
 
+**Returns**: <code>Promise.&lt;{collection: Collection.&lt;TSchema&gt;, encryptedFields: Document}&gt;</code> - - created collection and generated encryptedFields  
 <a name="ClientEncryption+encrypt"></a>
 
 ### *clientEncryption*.encrypt(value, options, [callback])

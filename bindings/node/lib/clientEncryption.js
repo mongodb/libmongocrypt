@@ -557,13 +557,14 @@ module.exports = function (modules) {
     /**
      * Creates a collection that has encrypted document fields
      *
+     * @template {TSchema} - Schema for the collection being created
      * @param {Db} db - A database to create the collection in
      * @param {string} name - The name of the collection to be created
      * @param {object} options - Options for createDataKey and for createCollection.
      * @param {string} options.provider - provider name
      * @param {ClientEncryptionCreateDataKeyProviderOptions} options.createDataKeyOptions - options to pass to createDataKey
      * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
-     * @returns {Promise<{collection: Collection, encryptedFields: Document }>} - created collection and generated encryptedFields
+     * @returns {Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>} - created collection and generated encryptedFields
      * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
      */
     async createEncryptedCollection(
@@ -577,52 +578,52 @@ module.exports = function (modules) {
         );
       }
 
-      const { encryptedFields } = createCollectionOptions;
-      const { fields } = encryptedFields;
-      const encryptedFieldsClone = { ...encryptedFields };
+      const encryptedFields = { ...createCollectionOptions.encryptedFields };
 
-      if (Array.isArray(fields)) {
-        encryptedFieldsClone.fields = [];
+      if (Array.isArray(encryptedFields.fields)) {
+        encryptedFields.fields = [...encryptedFields.fields];
 
-        for (const field of fields) {
-          if (typeof field !== 'object') {
-            encryptedFieldsClone.fields.push(field);
+        const createDataKeyPromises = [];
+        for (const [index, field] of encryptedFields.fields.entries()) {
+          if (typeof field !== 'object' || field.keyId != null) {
             continue;
           }
 
-          if (field.keyId != null) {
-            encryptedFieldsClone.fields.push(field);
-            continue;
-          }
+          createDataKeyPromises.push(
+            (async () => {
+              const keyId = await this.createDataKey(provider, createDataKeyOptions);
+              return { nullKeyIdOffset: index, keyId };
+            })()
+          );
+        }
 
-          const fieldClone = { ...field };
-          encryptedFieldsClone.fields.push(fieldClone);
+        const createDataKeyResolutions = await Promise.allSettled(createDataKeyPromises);
+        const errors = [];
 
-          try {
-            const dataKey = await this.createDataKey(provider, createDataKeyOptions);
-            fieldClone.keyId = dataKey;
-          } catch (createDataKeyError) {
-            encryptedFieldsClone.fields = [
-              ...encryptedFieldsClone.fields,
-              ...fields.slice(encryptedFieldsClone.fields.length)
-            ];
-            throw new common.MongoCryptCreateEncryptedCollectionError(
-              'Could not complete creating data keys',
-              {
-                encryptedFields: encryptedFieldsClone,
-                cause: createDataKeyError
-              }
-            );
+        for (const resolution of createDataKeyResolutions) {
+          if (resolution.status === 'fulfilled') {
+            const { nullKeyIdOffset, keyId } = resolution.value;
+            const field = encryptedFields.fields[nullKeyIdOffset];
+            encryptedFields.fields[nullKeyIdOffset] = { ...field, keyId };
+          } else {
+            errors.push(resolution.reason);
           }
+        }
+
+        if (errors.length !== 0) {
+          throw new common.MongoCryptCreateEncryptedCollectionError(
+            'Could not complete creating data keys',
+            { encryptedFields, errors }
+          );
         }
       }
 
       const collection = await db.createCollection(name, {
         ...createCollectionOptions,
-        encryptedFields: encryptedFieldsClone
+        encryptedFields
       });
 
-      return { collection, encryptedFields: encryptedFieldsClone };
+      return { collection, encryptedFields };
     }
 
     /**
