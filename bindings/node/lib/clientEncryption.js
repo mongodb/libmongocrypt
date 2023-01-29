@@ -567,18 +567,16 @@ module.exports = function (modules) {
      * @returns {Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>} - created collection and generated encryptedFields
      * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
      */
-    async createEncryptedCollection(
-      db,
-      name,
-      {
+    async createEncryptedCollection(db, name, options) {
+      const {
         provider,
         createDataKeyOptions = {},
         createCollectionOptions: {
           encryptedFields: { ...encryptedFields },
           ...createCollectionOptions
         }
-      }
-    ) {
+      } = options;
+
       if (Array.isArray(encryptedFields.fields)) {
         encryptedFields.fields = [...encryptedFields.fields];
 
