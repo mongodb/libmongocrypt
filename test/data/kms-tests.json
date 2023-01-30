@@ -279,5 +279,19 @@
       "HTTP status=200. Response body=\n",
       "{\"x\": 1}"
     ]
+  },
+  {
+    "description": "Encryption response with invalid base64",
+    "ctx": ["datakey"],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "x-amzn-RequestId: deeb35e5-4ecb-4bf1-9af5-84a54ff0af0e\r\n",
+      "Content-Type: application/x-amz-json-1.1\r\n",
+      "Content-Length: 111\r\n",
+      "Connection: close\r\n",
+      "\r\n",
+      "{\"KeyId\": \"arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0\", \"CiphertextBlob\": \"A\"}"
+    ],
+    "expect": "Failed to base64 decode"
   }
 ]
