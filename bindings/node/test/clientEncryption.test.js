@@ -37,7 +37,7 @@ class MockClient {
 }
 
 const requirements = require('./requirements.helper');
-const { MongoCryptError, MongoCryptCreateEncryptedCollectionError } = require('../lib/common');
+const { MongoCryptCreateEncryptedCollectionError } = require('../lib/common');
 
 describe('ClientEncryption', function () {
   this.timeout(12000);
