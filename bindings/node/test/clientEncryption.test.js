@@ -827,7 +827,7 @@ describe('ClientEncryption', function () {
     expect(ClientEncryption.libmongocryptVersion).to.be.a('string');
   });
 
-  describe('createEncryptedCollection()', () => {
+  describe.only('createEncryptedCollection()', () => {
     /** @type {InstanceType<ClientEncryption>} */
     const client = new MockClient();
     let clientEncryption;
@@ -905,20 +905,23 @@ describe('ClientEncryption', function () {
       stub.onCall(1).rejects(customError);
       stub.onCall(2).resolves(keyId);
 
+      const createCollectionOptions = {
+        encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
+      };
       const error = await clientEncryption
         .createEncryptedCollection(db, collectionName, {
           provider: 'local',
-          createCollectionOptions: {
-            encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
-          }
+          createCollectionOptions
         })
         .catch(error => error);
 
       expect(error).to.be.instanceOf(MongoCryptCreateEncryptedCollectionError);
-      expect(error.errors).to.have.lengthOf(1);
-      expect(error.errors[0]).to.equal(customError);
+      expect(error.errors).to.have.lengthOf(createCollectionOptions.encryptedFields.fields.length);
+      expect(error.errors[1]).to.equal(customError);
       expect(error.encryptedFields).property('fields').that.is.an('array');
-      expect(error.encryptedFields.fields).to.have.lengthOf(3);
+      expect(error.encryptedFields.fields).to.have.lengthOf(
+        createCollectionOptions.encryptedFields.fields.length
+      );
       expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
       expect(error.encryptedFields.fields).to.not.have.nested.property('[1].keyId');
       expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');

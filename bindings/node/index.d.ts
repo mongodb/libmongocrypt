@@ -38,6 +38,29 @@ export class MongoCryptError extends Error {}
 export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
   /** @experimental The partial `encryptedFields` that was completed while attempting createEncryptedCollection */
   encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']>;
+  /**
+   * An array of errors that is the same length as `encryptedFields.fields`
+   *
+   * The position of an error in this array corresponds to the position in `fields` array that encountered an issue.
+   * Successful creations will have a null value in this array.
+   *
+   * @example
+   * ```ts
+   * try {
+   *   clientEncryption.createEncryptedCollection(db, name, options)
+   * } catch (createError) {
+   *    for (const [index, error] of createError.errors.enumerate()) {
+   *      const fieldName = createError.encryptedFields.fields[index].path;
+   *      if (error != null) {
+   *        console.error(`Failed to create dataKey for ${fieldName} with ${error.message}`)
+   *      } else {
+   *        console.log(`Created dataKey for ${fieldName}`)
+   *      }
+   *    }
+   * }
+   * ```
+   */
+  errors: ReadonlyArray<Error | null>;
 }
 
 /**

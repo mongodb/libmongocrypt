@@ -578,36 +578,25 @@ module.exports = function (modules) {
       } = options;
 
       if (Array.isArray(encryptedFields.fields)) {
-        encryptedFields.fields = [...encryptedFields.fields];
-
-        const createDataKeyPromises = [];
-        for (const [index, field] of encryptedFields.fields.entries()) {
-          if (typeof field !== 'object' || field.keyId != null) {
-            continue;
-          }
-
-          createDataKeyPromises.push(
-            (async () => {
-              const keyId = await this.createDataKey(provider, createDataKeyOptions);
-              return { nullKeyIdOffset: index, keyId };
-            })()
-          );
-        }
+        const createDataKeyPromises = [...encryptedFields.fields].map(async field =>
+          typeof field !== 'object' || field.keyId != null
+            ? field
+            : { ...field, keyId: await this.createDataKey(provider, createDataKeyOptions) }
+        );
 
         const createDataKeyResolutions = await Promise.allSettled(createDataKeyPromises);
-        const errors = [];
 
-        for (const resolution of createDataKeyResolutions) {
-          if (resolution.status === 'fulfilled') {
-            const { nullKeyIdOffset, keyId } = resolution.value;
-            const field = encryptedFields.fields[nullKeyIdOffset];
-            encryptedFields.fields[nullKeyIdOffset] = { ...field, keyId };
-          } else {
-            errors.push(resolution.reason);
-          }
-        }
+        encryptedFields.fields = createDataKeyResolutions.map((resolution, index) =>
+          resolution.status === 'fulfilled' ? resolution.value : encryptedFields.fields[index]
+        );
 
-        if (errors.length !== 0) {
+        const wereErrors = createDataKeyResolutions.some(
+          resolution => resolution.status === 'rejected'
+        );
+        if (wereErrors) {
+          const errors = createDataKeyResolutions.map(resolution =>
+            resolution.status === 'rejected' ? resolution.reason : null
+          );
           throw new common.MongoCryptCreateEncryptedCollectionError(
             'Could not complete creating data keys',
             { encryptedFields, errors }
