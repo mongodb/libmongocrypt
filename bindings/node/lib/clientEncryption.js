@@ -582,7 +582,7 @@ module.exports = function (modules) {
       } = options;
 
       if (Array.isArray(encryptedFields.fields)) {
-        const createDataKeyPromises = [...encryptedFields.fields].map(async field =>
+        const createDataKeyPromises = encryptedFields.fields.map(async field =>
           typeof field !== 'object' || field.keyId != null
             ? field
             : { ...field, keyId: await this.createDataKey(provider, createDataKeyOptions) }
