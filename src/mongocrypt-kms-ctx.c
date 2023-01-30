@@ -754,7 +754,7 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
       goto fail;
    }
 
-   uint8_t *result_data = bson_malloc0 (b64_len);
+   uint8_t *result_data = bson_malloc (b64_len);
    BSON_ASSERT (result_data);
    result_len = kms_message_b64_pton (b64_data, result_data, b64_len);
    if (result_len < 0) {
