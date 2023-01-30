@@ -31,32 +31,6 @@ function collectionNamespace(ns) {
   return ns.split('.').slice(1).join('.');
 }
 
-/**
- * @class
- * An error indicating that something went wrong specifically with MongoDB Client Encryption
- */
-class MongoCryptError extends Error {
-  constructor(message) {
-    super(message);
-  }
-
-  get name() {
-    return 'MongoCryptError';
-  }
-}
-
-class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
-  constructor(message, { encryptedFields, errors }) {
-    super(message);
-    this.encryptedFields = encryptedFields;
-    this.errors = errors;
-  }
-
-  get name() {
-    return 'MongoCryptCreateEncryptedCollectionError';
-  }
-}
-
 function maybeCallback(promiseFn, callback) {
   const promise = promiseFn();
   if (callback == null) {
@@ -119,8 +93,6 @@ module.exports = {
   debug,
   databaseNamespace,
   collectionNamespace,
-  MongoCryptError,
-  MongoCryptCreateEncryptedCollectionError,
   promiseOrCallback,
   maybeCallback
 };

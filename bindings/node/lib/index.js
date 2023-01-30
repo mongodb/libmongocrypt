@@ -9,7 +9,11 @@ function loadDefaultModule() {
   return defaultModule;
 }
 
-const { MongoCryptError, MongoCryptCreateEncryptedCollectionError } = require('./common');
+const {
+  MongoCryptError,
+  MongoCryptCreateEncryptedCollectionError,
+  MongoCryptCreateDataKeyForEncryptedCollectionError
+} = require('./errors');
 
 function extension(mongodb) {
   const modules = { mongodb };
@@ -29,6 +33,7 @@ module.exports = {
   extension,
   MongoCryptError,
   MongoCryptCreateEncryptedCollectionError,
+  MongoCryptCreateDataKeyForEncryptedCollectionError,
   get AutoEncrypter() {
     const m = loadDefaultModule();
     delete module.exports.AutoEncrypter;

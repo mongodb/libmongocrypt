@@ -9,6 +9,10 @@ module.exports = function (modules) {
   const maybeCallback = common.maybeCallback;
   const StateMachine = modules.stateMachine.StateMachine;
   const BSON = modules.mongodb.BSON;
+  const {
+    MongoCryptCreateEncryptedCollectionError,
+    MongoCryptCreateDataKeyForEncryptedCollectionError
+  } = require('./errors');
   const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
   const { promisify } = require('util');
@@ -591,8 +595,8 @@ module.exports = function (modules) {
         );
 
         if (createDataKeyResolutions.some(resolution => resolution.status === 'rejected')) {
-          throw new common.MongoCryptCreateEncryptedCollectionError(
-            'Could not complete creating data keys',
+          throw new MongoCryptCreateDataKeyForEncryptedCollectionError(
+            'Unable to complete creating data keys',
             {
               encryptedFields,
               errors: createDataKeyResolutions.map(resolution =>
@@ -603,12 +607,18 @@ module.exports = function (modules) {
         }
       }
 
-      const collection = await db.createCollection(name, {
-        ...createCollectionOptions,
-        encryptedFields
-      });
-
-      return { collection, encryptedFields };
+      try {
+        const collection = await db.createCollection(name, {
+          ...createCollectionOptions,
+          encryptedFields
+        });
+        return { collection, encryptedFields };
+      } catch (cause) {
+        throw new MongoCryptCreateEncryptedCollectionError('Unable to create collection', {
+          encryptedFields,
+          cause
+        });
+      }
     }
 
     /**

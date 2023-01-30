@@ -37,7 +37,10 @@ class MockClient {
 }
 
 const requirements = require('./requirements.helper');
-const { MongoCryptCreateEncryptedCollectionError } = require('../lib/common');
+const {
+  MongoCryptCreateEncryptedCollectionError,
+  MongoCryptCreateDataKeyForEncryptedCollectionError
+} = require('../lib/errors');
 
 describe('ClientEncryption', function () {
   this.timeout(12000);
@@ -895,7 +898,7 @@ describe('ClientEncryption', function () {
       });
     });
 
-    it('throws MongoCryptCreateEncryptedCollectionError if createDataKey rejects', async () => {
+    it('throws MongoCryptCreateDataKeyForEncryptedCollectionError if createDataKey rejects', async () => {
       const customError = new Error('evil!');
       const stub = sinon.stub(clientEncryption, 'createDataKey');
       const keyId = new Binary(Buffer.alloc(16, 0), 4);
@@ -913,7 +916,7 @@ describe('ClientEncryption', function () {
         })
         .catch(error => error);
 
-      expect(error).to.be.instanceOf(MongoCryptCreateEncryptedCollectionError);
+      expect(error).to.be.instanceOf(MongoCryptCreateDataKeyForEncryptedCollectionError);
       expect(error.errors).to.have.lengthOf(createCollectionOptions.encryptedFields.fields.length);
       expect(error.errors[1]).to.equal(customError);
       expect(error.encryptedFields).property('fields').that.is.an('array');
@@ -922,6 +925,34 @@ describe('ClientEncryption', function () {
       );
       expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
       expect(error.encryptedFields.fields).to.not.have.nested.property('[1].keyId');
+      expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');
+    });
+
+    it('throws MongoCryptCreateEncryptedCollectionError if createCollection rejects', async () => {
+      const customError = new Error('evil!');
+      const stubCreateDataKey = sinon.stub(clientEncryption, 'createDataKey');
+      const keyId = new Binary(Buffer.alloc(16, 0), 4);
+      stubCreateDataKey.onCall(0).resolves(keyId);
+      stubCreateDataKey.onCall(1).resolves(keyId);
+      stubCreateDataKey.onCall(2).resolves(keyId);
+
+      sinon.stub(db, 'createCollection').rejects(customError);
+
+      const createCollectionOptions = {
+        encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
+      };
+      const error = await clientEncryption
+        .createEncryptedCollection(db, collectionName, {
+          provider: 'local',
+          createCollectionOptions
+        })
+        .catch(error => error);
+
+      expect(error).to.be.instanceOf(MongoCryptCreateEncryptedCollectionError);
+      expect(error.cause).to.equal(customError);
+      expect(error.encryptedFields).property('fields').that.is.an('array');
+      expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
+      expect(error.encryptedFields.fields).to.have.nested.property('[1].keyId', keyId);
       expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');
     });
 
