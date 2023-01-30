@@ -590,16 +590,15 @@ module.exports = function (modules) {
           resolution.status === 'fulfilled' ? resolution.value : encryptedFields.fields[index]
         );
 
-        const wereErrors = createDataKeyResolutions.some(
-          resolution => resolution.status === 'rejected'
-        );
-        if (wereErrors) {
-          const errors = createDataKeyResolutions.map(resolution =>
-            resolution.status === 'rejected' ? resolution.reason : null
-          );
+        if (createDataKeyResolutions.some(resolution => resolution.status === 'rejected')) {
           throw new common.MongoCryptCreateEncryptedCollectionError(
             'Could not complete creating data keys',
-            { encryptedFields, errors }
+            {
+              encryptedFields,
+              errors: createDataKeyResolutions.map(resolution =>
+                resolution.status === 'rejected' ? resolution.reason : null
+              )
+            }
           );
         }
       }
