@@ -30,14 +30,26 @@ export interface DataKey {
 /**
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
  */
-export class MongoCryptError extends Error {}
+export class MongoCryptError extends Error {
+  cause?: Error;
+}
 
 /**
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
-export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
+export class MongoCryptCreateDataKeyForEncryptedCollectionError extends MongoCryptError {
+  /** @experimental The entire `encryptedFields` that was completed while attempting createEncryptedCollection */
+  encryptedFields: Document;
+  /** The error rejected from db.createCollection() */
+  cause: Error;
+}
+
+/**
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
+ */
+export class MongoCryptCreateDataKeyForEncryptedCollectionError extends MongoCryptError {
   /** @experimental The partial `encryptedFields` that was completed while attempting createEncryptedCollection */
-  encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']>;
+  encryptedFields: Document;
   /**
    * An array of errors that is the same length as `encryptedFields.fields`
    *
@@ -49,14 +61,18 @@ export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
    * try {
    *   clientEncryption.createEncryptedCollection(db, name, options)
    * } catch (createError) {
-   *    for (const [index, error] of createError.errors.enumerate()) {
-   *      const fieldName = createError.encryptedFields.fields[index].path;
-   *      if (error != null) {
-   *        console.error(`Failed to create dataKey for ${fieldName} with ${error.message}`)
-   *      } else {
-   *        console.log(`Created dataKey for ${fieldName}`)
-   *      }
-   *    }
+   *   if(createError instanceof MongoCryptCreateDataKeyForEncryptedCollectionError) {
+   *     for (const [index, error] of createError.errors.enumerate()) {
+   *       const fieldName = createError.encryptedFields.fields[index].path;
+   *       if (error != null) {
+   *         console.error(`Failed to create dataKey for ${fieldName} with ${error.message}`)
+   *       } else {
+   *         console.log(`Created dataKey for ${fieldName}`)
+   *       }
+   *     }
+   *   } else {
+   *     throw createError;
+   *   }
    * }
    * ```
    */
