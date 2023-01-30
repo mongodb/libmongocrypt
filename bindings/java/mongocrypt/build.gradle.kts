@@ -80,10 +80,15 @@ val gitDescribe by lazy {
 val isJavaTag by lazy { gitDescribe.startsWith("java") }
 val gitVersion by lazy { gitDescribe.subSequence(gitDescribe.toCharArray().indexOfFirst { it.isDigit() }, gitDescribe.length).toString() }
 
-val gitHash: String by lazy {
+val defaultDownloadRevision: String by lazy {
+    val gitCommandLine = if (gitVersion == version) {
+        listOf("git", "rev-list", "-n", "1", gitVersion)
+    } else {
+        listOf("git", "rev-parse", "HEAD")
+    }
     val describeStdOut = ByteArrayOutputStream()
     exec {
-        commandLine = listOf("git", "rev-parse", "HEAD")
+        commandLine = gitCommandLine
         standardOutput = describeStdOut
     }
     describeStdOut.toString().trim()
@@ -99,8 +104,8 @@ val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesDir}$
 val jnaResources: String = System.getProperty("jna.library.path", jnaLibsPath)
 
 // Download jnaLibs that match the git to jnaResourcesBuildDir
-val revision: String = System.getProperty("gitRevision", if (gitVersion == version) gitVersion else gitHash)
-val downloadUrl: String = "https://mciuploads.s3.amazonaws.com/libmongocrypt/java/$revision/libmongocrypt-java.tar.gz"
+val downloadRevision: String = System.getProperty("gitRevision", defaultDownloadRevision)
+val downloadUrl: String = "https://mciuploads.s3.amazonaws.com/libmongocrypt/java/$downloadRevision/libmongocrypt-java.tar.gz"
 
 val jnaMapping: Map<String, String> = mapOf(
     "rhel-62-64-bit" to "linux-x86-64",
@@ -308,6 +313,7 @@ tasks.register("publishToSonatype") {
     if (isRelease) {
         dependsOn("downloadJnaLibs")
         dependsOn(tasks.withType<PublishToMavenRepository>())
+        tasks.withType<PublishToMavenRepository>().forEach { t -> t.mustRunAfter("downloadJnaLibs") }
     }
 }
 
