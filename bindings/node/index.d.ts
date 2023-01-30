@@ -540,13 +540,14 @@ export class ClientEncryption {
    * @param db - The database to create the collection within
    * @param name - The name of the new collection
    * @param options - Options for createDataKey and for createCollection. A provider and partially created encryptedFields **must** be provided.
-   * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
+   * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+   * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
    */
   createEncryptedCollection<TSchema extends Document = Document>(db: Db, name: string, options: {
     provider: ClientEncryptionDataKeyProvider;
-    createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & { encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']> };
+    createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & { encryptedFields: Document };
     createDataKeyOptions?: ClientEncryptionCreateDataKeyProviderOptions;
-  }): Promise<{ collection: Collection<TSchema>, encryptedFields: NonNullable<CreateCollectionOptions['encryptedFields']> }>;
+  }): Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>;
 
   /**
    * Explicitly encrypt a provided value.

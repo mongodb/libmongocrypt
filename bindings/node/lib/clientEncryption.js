@@ -569,7 +569,8 @@ module.exports = function (modules) {
      * @param {ClientEncryptionCreateDataKeyProviderOptions} options.createDataKeyOptions - options to pass to createDataKey
      * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
      * @returns {Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>} - created collection and generated encryptedFields
-     * @throws {MongoCryptCreateEncryptedCollectionError} - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
+     * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+     * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
      */
     async createEncryptedCollection(db, name, options) {
       const {
@@ -594,16 +595,13 @@ module.exports = function (modules) {
           resolution.status === 'fulfilled' ? resolution.value : encryptedFields.fields[index]
         );
 
-        if (createDataKeyResolutions.some(resolution => resolution.status === 'rejected')) {
-          throw new MongoCryptCreateDataKeyForEncryptedCollectionError(
-            'Unable to complete creating data keys',
-            {
-              encryptedFields,
-              errors: createDataKeyResolutions.map(resolution =>
-                resolution.status === 'rejected' ? resolution.reason : null
-              )
-            }
-          );
+        if (createDataKeyResolutions.some(({ status }) => status === 'rejected')) {
+          throw new MongoCryptCreateDataKeyForEncryptedCollectionError({
+            encryptedFields,
+            errors: createDataKeyResolutions.map(resolution =>
+              resolution.status === 'rejected' ? resolution.reason : null
+            )
+          });
         }
       }
 
@@ -614,7 +612,7 @@ module.exports = function (modules) {
         });
         return { collection, encryptedFields };
       } catch (cause) {
-        throw new MongoCryptCreateEncryptedCollectionError('Unable to create collection', {
+        throw new MongoCryptCreateEncryptedCollectionError({
           encryptedFields,
           cause
         });

@@ -7,7 +7,7 @@
 class MongoCryptError extends Error {
   constructor(message, options = {}) {
     super(message);
-    if (options.cause instanceof Error) {
+    if (options.cause != null) {
       this.cause = options.cause;
     }
   }
@@ -18,8 +18,8 @@ class MongoCryptError extends Error {
 }
 
 class MongoCryptCreateDataKeyForEncryptedCollectionError extends MongoCryptError {
-  constructor(message, { encryptedFields, errors }) {
-    super(message);
+  constructor({ encryptedFields, errors }) {
+    super('Unable to complete creating data keys');
     this.encryptedFields = encryptedFields;
     this.errors = errors;
   }
@@ -30,8 +30,8 @@ class MongoCryptCreateDataKeyForEncryptedCollectionError extends MongoCryptError
 }
 
 class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
-  constructor(message, { encryptedFields, cause }) {
-    super(message, { cause });
+  constructor({ encryptedFields, cause }) {
+    super('Unable to create collection', { cause });
     this.encryptedFields = encryptedFields;
   }
 
