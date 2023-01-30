@@ -550,7 +550,8 @@ if (!oldKey) {
 ### *clientEncryption*.createEncryptedCollection(db, name, options)
 **Throws**:
 
-- <code>MongoCryptCreateEncryptedCollectionError</code> - If part way through the process createDataKey fails, an error will be rejected that has the `encryptedFields` that were created.
+- <code>MongoCryptCreateDataKeyForEncryptedCollectionError</code> - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+- <code>MongoCryptCreateEncryptedCollectionError</code> - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
 
 
 | Param | Type | Description |
