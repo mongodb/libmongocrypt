@@ -96,7 +96,7 @@ mc_count_leading_zeros_u64 (uint64_t in)
 #ifdef __has_builtin
 #if __has_builtin(__builtin_clzl)
 // Pointer-cast to ensure we are speaking the right type
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ILP32__)
    unsigned long long *p = &in;
    return (size_t) (in ? __builtin_clzll (*p) : 64);
 #else
