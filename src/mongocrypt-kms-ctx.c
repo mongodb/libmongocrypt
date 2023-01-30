@@ -587,7 +587,13 @@ _ctx_done_aws (mongocrypt_kms_ctx_t *kms, const char *json_field)
    BSON_ASSERT (kms->result.data);
 
    result_len = kms_message_b64_pton (b64_str, kms->result.data, b64_strlen);
-   BSON_ASSERT (result_len >= 0);
+   if (result_len < 0) {
+      CLIENT_ERR (
+         "Failed to base64 decode response. HTTP status=%d. Response body=\n%s",
+         http_status,
+         body);
+      goto fail;
+   }
    kms->result.len = (uint32_t) result_len;
    kms->result.owned = true;
    ret = true;
@@ -747,7 +753,13 @@ _ctx_done_azure_wrapkey_unwrapkey (mongocrypt_kms_ctx_t *kms)
    }
    kms->result.data = bson_malloc0 (b64_len);
    result_len = kms_message_b64_pton (b64_data, kms->result.data, b64_len);
-   BSON_ASSERT (result_len >= 0);
+   if (result_len < 0) {
+      CLIENT_ERR (
+         "Failed to base64 decode response. HTTP status=%d. Response body=\n%s",
+         http_status,
+         body);
+      goto fail;
+   }
    kms->result.len = (uint32_t) result_len;
    kms->result.owned = true;
 
