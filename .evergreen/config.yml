@@ -855,14 +855,36 @@ tasks:
         script: |-
           set -o errexit
           set -o xtrace
-          export IS_PATCH="${is_patch}"
-          bash .evergreen/debian_package_build.sh
+          bash .evergreen/debian_package_build.sh --is-patch=${is_patch}
     - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/x-gzip}
+        display_name: "deb.tar.gz"
+
+- name: debian-package-build-i386
+  commands:
+    - func: "fetch source"
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "libmongocrypt"
+        shell: bash
+        script: |-
+          set -o errexit
+          set -o xtrace
+          bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch}
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: deb.tar.gz
+        remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
@@ -1350,6 +1372,7 @@ buildvariants:
   run_on: ubuntu2004-small
   tasks:
   - name: debian-package-build
+  - name: debian-package-build-i386
 - name: macos
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
