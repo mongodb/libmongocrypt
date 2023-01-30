@@ -825,10 +825,10 @@ describe('ClientEncryption', function () {
     expect(ClientEncryption.libmongocryptVersion).to.be.a('string');
   });
 
-  describe.only('createEncryptedCollection()', () => {
+  describe('createEncryptedCollection()', () => {
     /** @type {InstanceType<ClientEncryption>} */
-    const client = new MockClient();
     let clientEncryption;
+    const client = new MockClient();
     let db;
     const collectionName = 'secure';
 
