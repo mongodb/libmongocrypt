@@ -508,10 +508,16 @@ tasks:
     - func: "build and test node"
     - func: "attach node xunit results"
 
-- name: publish-java
+- name: publish-java-snapshots
+  allow_for_git_tag: false
   depends_on:
     - variant: ubuntu2004-64
       name: upload-java
+  commands:
+    - func: "publish java"
+
+- name: publish-java-release
+  git_tag_only: true
   commands:
     - func: "publish java"
 
@@ -1344,7 +1350,8 @@ buildvariants:
   display_name: Java Release
   run_on: ubuntu2004-small
   tasks:
-    - "publish-java"
+    - "publish-java-snapshots"
+    - "publish-java-release" 
 - name: packaging
   display_name: "Linux Distro Packaging"
   run_on: ubuntu2004-small
