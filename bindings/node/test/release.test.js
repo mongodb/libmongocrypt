@@ -1,5 +1,5 @@
 'use strict';
-const expect = require('chai').expect;
+const { expect } = require('chai');
 const tar = require('tar');
 const cp = require('child_process');
 const fs = require('fs');

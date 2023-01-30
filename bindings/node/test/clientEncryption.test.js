@@ -1,8 +1,6 @@
 'use strict';
 const fs = require('fs');
-const chai = require('chai');
-chai.config.truncateThreshold = 0;
-const expect = chai.expect;
+const { expect } = require('chai');
 const sinon = require('sinon');
 const mongodb = require('mongodb');
 const BSON = mongodb.BSON;

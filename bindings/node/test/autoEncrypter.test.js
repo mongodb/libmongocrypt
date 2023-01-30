@@ -13,10 +13,7 @@ const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
 const MongocryptdManager = require('../lib/mongocryptdManager').MongocryptdManager;
 
-const chai = require('chai');
-const expect = chai.expect;
-chai.use(require('chai-subset'));
-chai.use(require('sinon-chai'));
+const { expect } = require('chai');
 
 const sharedLibrarySuffix =
   process.platform === 'win32' ? 'dll' : process.platform === 'darwin' ? 'dylib' : 'so';
