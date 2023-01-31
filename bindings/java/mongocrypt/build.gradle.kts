@@ -312,8 +312,8 @@ tasks.register("publishToSonatype") {
 
     if (isRelease) {
         dependsOn("downloadJnaLibs")
-        dependsOn(tasks.withType<PublishToMavenRepository>())
-        tasks.withType<PublishToMavenRepository>().forEach { t -> t.mustRunAfter("downloadJnaLibs") }
+        finalizedBy(tasks.withType<PublishToMavenRepository>())
+        tasks.withType<PublishToMavenRepository>().forEach { t -> t.mustRunAfter("downloadJnaLibs", "downloadJava", "unzipJava") }
     }
 }
 
