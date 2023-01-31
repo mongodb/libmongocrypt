@@ -189,6 +189,9 @@ env.deb10:
     # A Debian 10.0 environment
     DO +ENV_DEBIAN --version 10.0
 
+env.deb-unstable:
+    DO +ENV_DEBIAN --version=unstable
+
 env.deb11:
     # A Debian 11.0 environment
     DO +ENV_DEBIAN --version 11.0
@@ -245,6 +248,27 @@ rpm-build:
     RUN cp -r /s/libmongocrypt/. .
     RUN awk -f etc/rpm/tweak.awk < libmongocrypt.spec > libmongocrypt.2.spec
     RUN rpmbuild -ba libmongocrypt.2.spec -v -D "_sourcedir $PWD"
+
+# A target to build the debian package. Options:
+#   • --env=[...] (default: deb-unstable)
+#     · Set the environment for the build. Affects which packages are available
+#       for build dependencies.
+# NOTE: Uncommited local changes will be ignored and not affect the result!
+deb-build:
+    ARG env=deb-unstable
+    FROM +env.$env
+    RUN __install git-buildpackage fakeroot debhelper cmake libbson-dev \
+                  libintelrdfpmath-dev
+    DO +COPY_SOURCE
+    WORKDIR /s/libmongocrypt
+    RUN git clean -fdx && git reset --hard
+    RUN python3 etc/calc_release_version.py > VERSION_CURRENT
+    RUN git add -f VERSION_CURRENT && \
+        git -c user.name=anon -c user.email=anon@localhost \
+            commit VERSION_CURRENT -m 'Set version' && \
+        env LANG=C bash debian/build_snapshot.sh && \
+        debc ../*.changes && \
+        dpkg -i ../*.deb
 
 # The main "build" target. Options:
 #   • --env=[...] (default "u22")

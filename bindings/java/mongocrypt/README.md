@@ -13,23 +13,17 @@ Note: libmongocrypt and the java library are continuously built on evergreen. Su
 
 First check the build artifacts locally (~/.m2/repository/org/mongodb/mongocrypt): `./gradlew clean downloadJnaLibs publishToMavenLocal`
 
-**Snapshots**
+**Sonatype**
 
-`./gradlew publishSnapshots` 
-Will push the latest snapshot version to the sonatype snapshot repository.
-
-**Releases**
-
-`./gradlew publishArchives` 
-Will push the latest version to maven central repository. 
-Note: Has to be run on a git tagged version / hash. 
+`./gradlew publishToSonatype`
+Will push the latest snapshot or release version to sonatype repository.
 
 ### Custom gradle flags ###
 
 * `jnaLibsPath`: Custom local JNA library path for inclusion into the build (rather than downloading from s3)<br>
-  Usage: `./gradlew publishSnapshots -DjnaLibsPath=../../../cmake-build-nocrypto`
+  Usage: `./gradlew publishToSonatype -DjnaLibsPath=../../../cmake-build-nocrypto`
 * `gitRevision`: Sets the Git Revision to download the built resources for from s3.<br>
-  Usage: `./gradlew publishSnapshots -DgitRevision=<fullGitHash>`
+  Usage: `./gradlew publishToSonatype -DgitRevision=<fullGitHash>`
 
 These flags can be combined with the `downloadJnaLibs` task:
  

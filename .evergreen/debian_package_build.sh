@@ -1,12 +1,34 @@
-#!/bin/sh
+#!/bin/env bash
 
 #
 # Test libmongocrypt's Debian packaging scripts.
 #
-# Supported/used environment variables:
-#   IS_PATCH    If "true", this is an Evergreen patch build.
+# Supported options:
+#   --is-patch={true,false}
+#       If "true", this is an Evergreen patch build. (Default 'false')
+#   --arch=<arch>
+#       If specified, sets the "--arch" option for debootstrap.
 
 set -euxo pipefail
+
+IS_PATCH=false
+_dbs_args=()
+
+for arg in "$@"; do
+  case $arg in
+    --arch=*)
+      a="${arg#*=}"
+      _dbs_args+=(--arch "$a")
+      ;;
+    --is-patch=*)
+      IS_PATCH="${arg#*=}"
+      ;;
+    *)
+      echo "Unknown argument '$arg'"
+      exit 1
+      ;;
+  esac
+done
 
 on_exit () {
   if [ -e ./unstable-chroot/debootstrap/debootstrap.log ]; then
@@ -38,9 +60,11 @@ fi
 
 cd ..
 
+_dbs_args+=(unstable)
+
 git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
 export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
-sudo -E ./debootstrap.git/debootstrap unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+sudo -E ./debootstrap.git/debootstrap "${_dbs_args[@]}" ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a libmongocrypt ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
   apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake curl ca-certificates libssl-dev pkg-config libbson-dev libintelrdfpmath-dev && \
