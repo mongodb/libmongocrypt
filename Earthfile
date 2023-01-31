@@ -247,7 +247,6 @@ deb-build:
     RUN __install git-buildpackage fakeroot debhelper cmake libbson-dev \
                   libintelrdfpmath-dev
     DO +COPY_SOURCE
-    # COPY .git /s/libmongocrypt/.git
     WORKDIR /s/libmongocrypt
     RUN git clean -fdx && git reset --hard
     RUN python3 etc/calc_release_version.py > VERSION_CURRENT
