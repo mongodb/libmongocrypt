@@ -64,7 +64,10 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
       )
    add_link_options (
-      "$<IF:$<C_COMPILER_ID:MSVC>,/WX;/ignore:4217;/ignore:4049,-Werror>"
+      # Enable link-time warnings. VS 2015 sees LNK4099 spuriously, but it is a
+      # non-fatal issue. LNK4217 and LNK4049 appear when using dllimport on
+      # locally-defined symbols in kms-message.
+      "$<IF:$<C_COMPILER_ID:MSVC>,/WX;/ignore:4217;/ignore:4049;/ignore:4099,-Werror>"
       )
 endif ()
 
