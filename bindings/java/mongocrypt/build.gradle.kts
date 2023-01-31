@@ -104,7 +104,7 @@ val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesDir}$
 val jnaResources: String = System.getProperty("jna.library.path", jnaLibsPath)
 
 // Download jnaLibs that match the git to jnaResourcesBuildDir
-val downloadRevision: String = System.getProperty("gitRevision", defaultDownloadRevision)
+val downloadRevision: String = System.getProperties().computeIfAbsent("gitRevision") { k -> defaultDownloadRevision }.toString()
 val downloadUrl: String = "https://mciuploads.s3.amazonaws.com/libmongocrypt/java/$downloadRevision/libmongocrypt-java.tar.gz"
 
 val jnaMapping: Map<String, String> = mapOf(
