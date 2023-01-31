@@ -25,7 +25,9 @@ function extension(mongodb) {
   return {
     AutoEncrypter: modules.autoEncrypter.AutoEncrypter,
     ClientEncryption: modules.clientEncryption.ClientEncryption,
-    MongoCryptError
+    MongoCryptError,
+    MongoCryptCreateEncryptedCollectionError,
+    MongoCryptCreateDataKeyError
   };
 }
 
