@@ -540,7 +540,7 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
          mongo::mlib
          mongocrypt::intel_dfp
          Threads::Threads
-         bson_static
+         _mongocrypt::libbson_for_static
          )
       add_test ("${test_name}" "${exe_name}")
    endforeach ()
