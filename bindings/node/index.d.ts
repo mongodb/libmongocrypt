@@ -37,7 +37,7 @@ export class MongoCryptError extends Error {
 /**
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
-export class MongoCryptCreateDataKeyForEncryptedCollectionError extends MongoCryptError {
+export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
   /** @experimental The entire `encryptedFields` that was completed while attempting createEncryptedCollection */
   encryptedFields: Document;
   /** The error rejected from db.createCollection() */
@@ -47,36 +47,11 @@ export class MongoCryptCreateDataKeyForEncryptedCollectionError extends MongoCry
 /**
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
  */
-export class MongoCryptCreateDataKeyForEncryptedCollectionError extends MongoCryptError {
+export class MongoCryptCreateDataKeyError extends MongoCryptError {
   /** @experimental The partial `encryptedFields` that was completed while attempting createEncryptedCollection */
   encryptedFields: Document;
-  /**
-   * An array of errors that is the same length as `encryptedFields.fields`
-   *
-   * The position of an error in this array corresponds to the position in `fields` array that encountered an issue.
-   * Successful creations will have a null value in this array.
-   *
-   * @example
-   * ```ts
-   * try {
-   *   clientEncryption.createEncryptedCollection(db, name, options)
-   * } catch (createError) {
-   *   if(createError instanceof MongoCryptCreateDataKeyForEncryptedCollectionError) {
-   *     for (const [index, error] of createError.errors.enumerate()) {
-   *       const fieldName = createError.encryptedFields.fields[index].path;
-   *       if (error != null) {
-   *         console.error(`Failed to create dataKey for ${fieldName} with ${error.message}`)
-   *       } else {
-   *         console.log(`Created dataKey for ${fieldName}`)
-   *       }
-   *     }
-   *   } else {
-   *     throw createError;
-   *   }
-   * }
-   * ```
-   */
-  errors: ReadonlyArray<Error | null>;
+  /** The first error encountered when attempting to `createDataKey` */
+  cause: Error;
 }
 
 /**

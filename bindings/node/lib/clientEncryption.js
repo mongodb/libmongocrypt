@@ -11,7 +11,7 @@ module.exports = function (modules) {
   const BSON = modules.mongodb.BSON;
   const {
     MongoCryptCreateEncryptedCollectionError,
-    MongoCryptCreateDataKeyForEncryptedCollectionError
+    MongoCryptCreateDataKeyError
   } = require('./errors');
   const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
@@ -586,7 +586,13 @@ module.exports = function (modules) {
         const createDataKeyPromises = encryptedFields.fields.map(async field =>
           typeof field !== 'object' || field.keyId != null
             ? field
-            : { ...field, keyId: await this.createDataKey(provider, createDataKeyOptions) }
+            : {
+                ...field,
+                keyId: await this.createDataKey(provider, {
+                  ...createDataKeyOptions,
+                  keyAltNames: undefined
+                })
+              }
         );
 
         const createDataKeyResolutions = await Promise.allSettled(createDataKeyPromises);
@@ -595,13 +601,9 @@ module.exports = function (modules) {
           resolution.status === 'fulfilled' ? resolution.value : encryptedFields.fields[index]
         );
 
-        if (createDataKeyResolutions.some(({ status }) => status === 'rejected')) {
-          throw new MongoCryptCreateDataKeyForEncryptedCollectionError({
-            encryptedFields,
-            errors: createDataKeyResolutions.map(resolution =>
-              resolution.status === 'rejected' ? resolution.reason : null
-            )
-          });
+        const rejection = createDataKeyResolutions.find(({ status }) => status === 'rejected');
+        if (rejection != null) {
+          throw new MongoCryptCreateDataKeyError({ encryptedFields, cause: rejection.reason });
         }
       }
 
@@ -612,10 +614,7 @@ module.exports = function (modules) {
         });
         return { collection, encryptedFields };
       } catch (cause) {
-        throw new MongoCryptCreateEncryptedCollectionError({
-          encryptedFields,
-          cause
-        });
+        throw new MongoCryptCreateEncryptedCollectionError({ encryptedFields, cause });
       }
     }
 

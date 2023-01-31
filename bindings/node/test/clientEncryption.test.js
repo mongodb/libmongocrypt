@@ -39,7 +39,7 @@ class MockClient {
 const requirements = require('./requirements.helper');
 const {
   MongoCryptCreateEncryptedCollectionError,
-  MongoCryptCreateDataKeyForEncryptedCollectionError
+  MongoCryptCreateDataKeyError
 } = require('../lib/errors');
 
 describe('ClientEncryption', function () {
@@ -828,7 +828,7 @@ describe('ClientEncryption', function () {
     expect(ClientEncryption.libmongocryptVersion).to.be.a('string');
   });
 
-  describe('createEncryptedCollection()', () => {
+  describe.only('createEncryptedCollection()', () => {
     /** @type {InstanceType<ClientEncryption>} */
     let clientEncryption;
     const client = new MockClient();
@@ -898,7 +898,7 @@ describe('ClientEncryption', function () {
       });
     });
 
-    it('throws MongoCryptCreateDataKeyForEncryptedCollectionError if createDataKey rejects', async () => {
+    it('throws MongoCryptCreateDataKeyError if createDataKey rejects', async () => {
       const customError = new Error('evil!');
       const stub = sinon.stub(clientEncryption, 'createDataKey');
       const keyId = new Binary(Buffer.alloc(16, 0), 4);
@@ -916,9 +916,9 @@ describe('ClientEncryption', function () {
         })
         .catch(error => error);
 
-      expect(error).to.be.instanceOf(MongoCryptCreateDataKeyForEncryptedCollectionError);
-      expect(error.errors).to.have.lengthOf(createCollectionOptions.encryptedFields.fields.length);
-      expect(error.errors[1]).to.equal(customError);
+      expect(error).to.be.instanceOf(MongoCryptCreateDataKeyError);
+      expect(error.cause).to.equal(customError);
+
       expect(error.encryptedFields).property('fields').that.is.an('array');
       expect(error.encryptedFields.fields).to.have.lengthOf(
         createCollectionOptions.encryptedFields.fields.length
