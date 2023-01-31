@@ -133,6 +133,7 @@ tasks.register<Copy>("unzipJava") {
     }
     into(jnaResourcesDir)
     mustRunAfter("downloadJava")
+    tasks.withType<ProcessResources>().forEach { t -> t.mustRunAfter("unzipJava") }
 
     doLast {
         println("jna.library.path contents: \n  ${fileTree(jnaResourcesDir).files.joinToString(",\n  ")}")
