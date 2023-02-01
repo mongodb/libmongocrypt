@@ -18,6 +18,7 @@ const REQUIRED_FILES = [
   'package/lib/common.js',
   'package/lib/credentialsProvider.js',
   'package/lib/cryptoCallbacks.js',
+  'package/lib/errors.js',
   'package/lib/mongocryptdManager.js',
   'package/lib/stateMachine.js',
   'package/LICENSE',

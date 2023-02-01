@@ -17,7 +17,7 @@ module.exports = function (modules) {
   const debug = common.debug;
   const databaseNamespace = common.databaseNamespace;
   const collectionNamespace = common.collectionNamespace;
-  const MongoCryptError = common.MongoCryptError;
+  const { MongoCryptError } = require('./errors');
   const { BufferPool } = require('./buffer_pool');
 
   // libmongocrypt states
