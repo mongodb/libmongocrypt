@@ -848,7 +848,7 @@ describe('ClientEncryption', function () {
       sinon.restore();
     });
 
-    context.only('validates input', () => {
+    context('validates input', () => {
       it('throws TypeError if options are omitted', async () => {
         const error = await clientEncryption
           .createEncryptedCollection(db, collectionName)
@@ -919,16 +919,18 @@ describe('ClientEncryption', function () {
     });
 
     context('when createDataKey rejects', () => {
-      const customError = new Error('evil!');
+      const customErrorEvil = new Error('evil!');
+      const customErrorGood = new Error('good!');
       const keyId = new Binary(Buffer.alloc(16, 0), 4);
       const createCollectionOptions = {
-        encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
+        encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }, {}] }
       };
       const createDataKeyRejection = async () => {
         const stub = sinon.stub(clientEncryption, 'createDataKey');
         stub.onCall(0).resolves(keyId);
-        stub.onCall(1).rejects(customError);
-        stub.onCall(2).resolves(keyId);
+        stub.onCall(1).rejects(customErrorEvil);
+        stub.onCall(2).rejects(customErrorGood);
+        stub.onCall(4).resolves(keyId);
 
         const error = await clientEncryption
           .createEncryptedCollection(db, collectionName, {
@@ -948,9 +950,9 @@ describe('ClientEncryption', function () {
         expect(error).to.be.instanceOf(MongoCryptCreateDataKeyError);
       });
 
-      it('thrown error has a cause set to the error that was thrown from createDataKey', async () => {
+      it('thrown error has a cause set to the first error that was thrown from createDataKey', async () => {
         const error = await createDataKeyRejection();
-        expect(error.cause).to.equal(customError);
+        expect(error.cause).to.equal(customErrorEvil);
       });
 
       it('thrown error contains partially filled encryptedFields.fields', async () => {
