@@ -123,3 +123,12 @@ diff --git a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/dpml_ux.h b/s
 +#define UX_ZERO_EXPONENT      (- ((UX_EXPONENT_TYPE) 1 << (F_EXP_WIDTH + 2)))
  #define UX_INFINITY_EXPONENT  (-(UX_ZERO_EXPONENT + 1)) 
 
+diff --git a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/src/bid_functions.h b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/src/bid_functions.h
+--- a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/src/bid_functions.h
++++ b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/src/bid_functions.h
+@@ -45,3 +45,3 @@
+ // Fix system header issue on Sun solaris and define required type by ourselves
+-#if !defined(_WCHAR_T) && !defined(_WCHAR_T_DEFINED) && !defined(__QNX__)
++#if !defined(_WCHAR_T) && !defined(_WCHAR_T_DEFINED) && !defined(__QNX__) && !defined(__cplusplus)
+ typedef int   wchar_t;
+ 

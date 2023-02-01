@@ -229,12 +229,25 @@ COPY_SOURCE:
         test/ \
         debian/ \
         src/ \
+        doc/ \
         etc/ \
         LICENSE \
         .evergreen/ \
+        third-party/ \
         CMakeLists.txt \
         "/s/libmongocrypt"
     COPY --dir bindings/cs/ "/s/libmongocrypt/bindings/"
+
+rpm-build:
+    FROM +init --base fedora:rawhide
+    RUN __install rpmdevtools gcc-c++ make openssl-devel unzip git ccache \
+                  findutils patch cmake doxygen "cmake(bson-1.0)" libdfp-devel
+    GIT CLONE https://src.fedoraproject.org/rpms/libmongocrypt.git /R
+    DO +COPY_SOURCE
+    WORKDIR /R
+    RUN cp -r /s/libmongocrypt/. .
+    RUN awk -f etc/rpm/tweak.awk < libmongocrypt.spec > libmongocrypt.2.spec
+    RUN rpmbuild -ba libmongocrypt.2.spec -v -D "_sourcedir $PWD"
 
 # A target to build the debian package. Options:
 #   • --env=[...] (default: deb-unstable)
