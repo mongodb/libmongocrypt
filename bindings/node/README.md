@@ -54,8 +54,6 @@ npm test
 <dt><a href="#MongoCryptError">MongoCryptError</a></dt>
 <dd><p>An error indicating that something went wrong specifically with MongoDB Client Encryption</p>
 </dd>
-<dt><a href="#MongoCryptInvalidArgumentError">MongoCryptInvalidArgumentError</a></dt>
-<dd></dd>
 <dt><a href="#MongoCryptCreateDataKeyError">MongoCryptCreateDataKeyError</a></dt>
 <dd></dd>
 <dt><a href="#MongoCryptCreateEncryptedCollectionError">MongoCryptCreateEncryptedCollectionError</a></dt>
@@ -566,7 +564,7 @@ if (!oldKey) {
 | name | <code>string</code> | The name of the collection to be created |
 | options | <code>object</code> | Options for createDataKey and for createCollection. |
 | options.provider | <code>string</code> | provider name |
-| options.createDataKeyOptions | [<code>ClientEncryptionCreateDataKeyProviderOptions</code>](#ClientEncryptionCreateDataKeyProviderOptions) | options to pass to createDataKey |
+| [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | masterKey to pass to createDataKey |
 | options.createCollectionOptions | <code>CreateCollectionOptions</code> | options to pass to createCollection, must include `encryptedFields` |
 
 Creates a collection that has encrypted document fields
@@ -678,9 +676,6 @@ the original ones.
 ## MongoCryptError
 An error indicating that something went wrong specifically with MongoDB Client Encryption
 
-<a name="MongoCryptInvalidArgumentError"></a>
-
-## MongoCryptInvalidArgumentError
 <a name="MongoCryptCreateDataKeyError"></a>
 
 ## MongoCryptCreateDataKeyError

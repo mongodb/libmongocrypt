@@ -35,12 +35,6 @@ export class MongoCryptError extends Error {
 }
 
 /**
- * An error generated when the user supplies malformed or unexpected arguments
- * or when a required argument or field is not provided.
- */
-export class MongoCryptInvalidArgumentError extends MongoCryptError {}
-
-/**
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
 export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {

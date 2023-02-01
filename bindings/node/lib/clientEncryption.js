@@ -11,8 +11,7 @@ module.exports = function (modules) {
   const BSON = modules.mongodb.BSON;
   const {
     MongoCryptCreateEncryptedCollectionError,
-    MongoCryptCreateDataKeyError,
-    MongoCryptInvalidArgumentError
+    MongoCryptCreateDataKeyError
   } = require('./errors');
   const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
@@ -567,7 +566,7 @@ module.exports = function (modules) {
      * @param {string} name - The name of the collection to be created
      * @param {object} options - Options for createDataKey and for createCollection.
      * @param {string} options.provider - provider name
-     * @param {ClientEncryptionCreateDataKeyProviderOptions} options.createDataKeyOptions - options to pass to createDataKey
+     * @param {AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions} [options.masterKey] - masterKey to pass to createDataKey
      * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
      * @returns {Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>} - created collection and generated encryptedFields
      * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
@@ -576,18 +575,12 @@ module.exports = function (modules) {
     async createEncryptedCollection(db, name, options) {
       const {
         provider,
-        createDataKeyOptions = {},
+        masterKey,
         createCollectionOptions: {
           encryptedFields: { ...encryptedFields },
           ...createCollectionOptions
         }
       } = options;
-
-      if (createDataKeyOptions.keyAltNames != null) {
-        throw new MongoCryptInvalidArgumentError(
-          'Cannot pass createDataKeyOptions with keyAltNames set'
-        );
-      }
 
       if (Array.isArray(encryptedFields.fields)) {
         const createDataKeyPromises = encryptedFields.fields.map(async field =>
@@ -595,7 +588,7 @@ module.exports = function (modules) {
             ? field
             : {
                 ...field,
-                keyId: await this.createDataKey(provider, createDataKeyOptions)
+                keyId: await this.createDataKey(provider, { masterKey })
               }
         );
 

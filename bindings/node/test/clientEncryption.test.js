@@ -11,7 +11,6 @@ const StateMachine = stateMachine.StateMachine;
 const { Binary, EJSON, deserialize } = BSON;
 const {
   MongoCryptCreateEncryptedCollectionError,
-  MongoCryptInvalidArgumentError,
   MongoCryptCreateDataKeyError
 } = require('../lib/errors');
 
@@ -870,17 +869,6 @@ describe('ClientEncryption', function () {
           .catch(error => error);
         expect(error).to.be.instanceOf(TypeError);
       });
-
-      it('throws if options.createDateKeyOptions.keyAltNames are provided', async () => {
-        const error = await clientEncryption
-          .createEncryptedCollection(db, collectionName, {
-            provider: 'aws',
-            createCollectionOptions: { encryptedFields: { fields: [] } },
-            createDataKeyOptions: { keyAltNames: ['blah!'] }
-          })
-          .catch(error => error);
-        expect(error).to.be.instanceOf(MongoCryptInvalidArgumentError, /keyAltNames/);
-      });
     });
 
     context('when input is not the correct type do not validate', () => {
@@ -911,6 +899,20 @@ describe('ClientEncryption', function () {
         expect(options).to.deep.equal({
           encryptedFields: { fields: ['not an array', { keyId: keyId }, { keyId: {} }] }
         });
+      });
+
+      it('only passes options.masterKey to createDataKey', async () => {
+        const masterKey = Symbol('key');
+        const createDataKey = sinon
+          .stub(clientEncryption, 'createDataKey')
+          .resolves(new Binary(Buffer.alloc(16, 0)));
+        const result = await clientEncryption.createEncryptedCollection(db, collectionName, {
+          provider: 'aws',
+          createCollectionOptions: { encryptedFields: { fields: [{}] } },
+          masterKey
+        });
+        expect(result).to.have.property('collection');
+        expect(createDataKey).to.have.been.calledOnceWithExactly('aws', { masterKey });
       });
     });
 

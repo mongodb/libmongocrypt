@@ -40,6 +40,8 @@
     "socks": "^2.6.1"
   },
   "devDependencies": {
+    "@types/sinon": "^10.0.13",
+    "@types/sinon-chai": "^3.2.9",
     "chai": "^4.3.6",
     "chai-subset": "^1.6.0",
     "chalk": "^4.1.2",
