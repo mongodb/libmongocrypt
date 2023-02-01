@@ -559,17 +559,19 @@ module.exports = function (modules) {
     }
 
     /**
-     * Creates a collection that has encrypted document fields
+     * A convenience method for creating an encrypted collection.
+     * This method will create data keys for any encryptedFields that do not have a `keyId` defined
+     * and then create a new collection with the full set of encryptedFields.
      *
      * @template {TSchema} - Schema for the collection being created
      * @param {Db} db - A database to create the collection in
      * @param {string} name - The name of the collection to be created
      * @param {object} options - Options for createDataKey and for createCollection.
-     * @param {string} options.provider - provider name
+     * @param {string} options.provider - KMS provider name
      * @param {AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions} [options.masterKey] - masterKey to pass to createDataKey
      * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
      * @returns {Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>} - created collection and generated encryptedFields
-     * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+     * @throws {MongoCryptCreateDataKeyError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
      * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
      */
     async createEncryptedCollection(db, name, options) {

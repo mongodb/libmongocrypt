@@ -849,21 +849,21 @@ describe('ClientEncryption', function () {
     });
 
     context('validates input', () => {
-      it('throws if options are omitted', async () => {
+      it('throws TypeError if options are omitted', async () => {
         const error = await clientEncryption
           .createEncryptedCollection(db, collectionName)
           .catch(error => error);
         expect(error).to.be.instanceOf(TypeError);
       });
 
-      it('throws if options.createCollectionOptions are omitted', async () => {
+      it('throws TypeError if options.createCollectionOptions are omitted', async () => {
         const error = await clientEncryption
           .createEncryptedCollection(db, collectionName, {})
           .catch(error => error);
         expect(error).to.be.instanceOf(TypeError);
       });
 
-      it('throws if options.createCollectionOptions.encryptedFields are omitted', async () => {
+      it('throws TypeError if options.createCollectionOptions.encryptedFields are omitted', async () => {
         const error = await clientEncryption
           .createEncryptedCollection(db, collectionName, { createCollectionOptions: {} })
           .catch(error => error);
