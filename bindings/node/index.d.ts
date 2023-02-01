@@ -535,7 +535,7 @@ export class ClientEncryption {
    *
    *    `$gt` may also be `$gte`. `$lt` may also be `$lte`.
    */
-  encryptExpression(value: Document, options: ClientEncryptionOptions): Promise<Document>;
+  encryptExpression(value: Document, options: ClientEncryptionEncryptOptions): Promise<Document>;
 
   /**
    * Explicitly decrypt a provided encrypted value
