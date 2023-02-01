@@ -11,6 +11,7 @@ function loadDefaultModule() {
 
 const {
   MongoCryptError,
+  MongoCryptInvalidArgumentError,
   MongoCryptCreateEncryptedCollectionError,
   MongoCryptCreateDataKeyError
 } = require('./errors');
@@ -26,6 +27,7 @@ function extension(mongodb) {
     AutoEncrypter: modules.autoEncrypter.AutoEncrypter,
     ClientEncryption: modules.clientEncryption.ClientEncryption,
     MongoCryptError,
+    MongoCryptInvalidArgumentError,
     MongoCryptCreateEncryptedCollectionError,
     MongoCryptCreateDataKeyError
   };
@@ -34,6 +36,7 @@ function extension(mongodb) {
 module.exports = {
   extension,
   MongoCryptError,
+  MongoCryptInvalidArgumentError,
   MongoCryptCreateEncryptedCollectionError,
   MongoCryptCreateDataKeyError,
   get AutoEncrypter() {

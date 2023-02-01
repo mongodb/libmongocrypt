@@ -9,6 +9,11 @@ const cryptoCallbacks = require('../lib/cryptoCallbacks');
 const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
 const { Binary, EJSON, deserialize } = BSON;
+const {
+  MongoCryptCreateEncryptedCollectionError,
+  MongoCryptInvalidArgumentError,
+  MongoCryptCreateDataKeyError
+} = require('../lib/errors');
 
 function readHttpResponse(path) {
   let data = fs.readFileSync(path, 'utf8').toString();
@@ -37,10 +42,6 @@ class MockClient {
 }
 
 const requirements = require('./requirements.helper');
-const {
-  MongoCryptCreateEncryptedCollectionError,
-  MongoCryptCreateDataKeyError
-} = require('../lib/errors');
 
 describe('ClientEncryption', function () {
   this.timeout(12000);
@@ -828,7 +829,7 @@ describe('ClientEncryption', function () {
     expect(ClientEncryption.libmongocryptVersion).to.be.a('string');
   });
 
-  describe.only('createEncryptedCollection()', () => {
+  describe('createEncryptedCollection()', () => {
     /** @type {InstanceType<ClientEncryption>} */
     let clientEncryption;
     const client = new MockClient();
@@ -867,6 +868,17 @@ describe('ClientEncryption', function () {
         .createEncryptedCollection(db, collectionName, { createCollectionOptions: {} })
         .catch(error => error);
       expect(error).to.be.instanceOf(TypeError);
+    });
+
+    it('throws if options.createDateKeyOptions.keyAltNames are provided', async () => {
+      const error = await clientEncryption
+        .createEncryptedCollection(db, collectionName, {
+          provider: 'aws',
+          createCollectionOptions: { encryptedFields: { fields: [] } },
+          createDataKeyOptions: { keyAltNames: ['blah!'] }
+        })
+        .catch(error => error);
+      expect(error).to.be.instanceOf(MongoCryptInvalidArgumentError, /keyAltNames/);
     });
 
     it('when options.encryptedFields.fields is not an array no key generation is performed', async () => {

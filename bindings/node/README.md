@@ -54,6 +54,12 @@ npm test
 <dt><a href="#MongoCryptError">MongoCryptError</a></dt>
 <dd><p>An error indicating that something went wrong specifically with MongoDB Client Encryption</p>
 </dd>
+<dt><a href="#MongoCryptInvalidArgumentError">MongoCryptInvalidArgumentError</a></dt>
+<dd></dd>
+<dt><a href="#MongoCryptCreateDataKeyError">MongoCryptCreateDataKeyError</a></dt>
+<dd></dd>
+<dt><a href="#MongoCryptCreateEncryptedCollectionError">MongoCryptCreateEncryptedCollectionError</a></dt>
+<dd></dd>
 </dl>
 
 ## Typedefs
@@ -551,7 +557,7 @@ if (!oldKey) {
 **Throws**:
 
 - <code>MongoCryptCreateDataKeyForEncryptedCollectionError</code> - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
-- <code>MongoCryptCreateEncryptedCollectionError</code> - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
+- [<code>MongoCryptCreateEncryptedCollectionError</code>](#MongoCryptCreateEncryptedCollectionError) - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
 
 
 | Param | Type | Description |
@@ -672,6 +678,15 @@ the original ones.
 ## MongoCryptError
 An error indicating that something went wrong specifically with MongoDB Client Encryption
 
+<a name="MongoCryptInvalidArgumentError"></a>
+
+## MongoCryptInvalidArgumentError
+<a name="MongoCryptCreateDataKeyError"></a>
+
+## MongoCryptCreateDataKeyError
+<a name="MongoCryptCreateEncryptedCollectionError"></a>
+
+## MongoCryptCreateEncryptedCollectionError
 <a name="BSONValue"></a>
 
 ## BSONValue

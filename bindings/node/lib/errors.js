@@ -17,6 +17,18 @@ class MongoCryptError extends Error {
   }
 }
 
+/** @class */
+class MongoCryptInvalidArgumentError extends MongoCryptError {
+  constructor(message) {
+    super(message);
+  }
+
+  get name() {
+    return 'MongoCryptInvalidArgumentError';
+  }
+}
+
+/** @class */
 class MongoCryptCreateDataKeyError extends MongoCryptError {
   constructor({ encryptedFields, cause }) {
     super('Unable to complete creating data keys', { cause });
@@ -28,6 +40,7 @@ class MongoCryptCreateDataKeyError extends MongoCryptError {
   }
 }
 
+/** @class */
 class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
   constructor({ encryptedFields, cause }) {
     super('Unable to create collection', { cause });
@@ -41,6 +54,7 @@ class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
 
 module.exports = {
   MongoCryptError,
+  MongoCryptInvalidArgumentError,
   MongoCryptCreateDataKeyError,
   MongoCryptCreateEncryptedCollectionError
 };

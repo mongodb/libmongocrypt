@@ -11,7 +11,8 @@ module.exports = function (modules) {
   const BSON = modules.mongodb.BSON;
   const {
     MongoCryptCreateEncryptedCollectionError,
-    MongoCryptCreateDataKeyError
+    MongoCryptCreateDataKeyError,
+    MongoCryptInvalidArgumentError
   } = require('./errors');
   const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
@@ -582,16 +583,19 @@ module.exports = function (modules) {
         }
       } = options;
 
+      if (createDataKeyOptions.keyAltNames != null) {
+        throw new MongoCryptInvalidArgumentError(
+          'Cannot pass createDataKeyOptions with keyAltNames set'
+        );
+      }
+
       if (Array.isArray(encryptedFields.fields)) {
         const createDataKeyPromises = encryptedFields.fields.map(async field =>
           typeof field !== 'object' || field.keyId != null
             ? field
             : {
                 ...field,
-                keyId: await this.createDataKey(provider, {
-                  ...createDataKeyOptions,
-                  keyAltNames: undefined
-                })
+                keyId: await this.createDataKey(provider, createDataKeyOptions)
               }
         );
 
