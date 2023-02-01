@@ -849,191 +849,199 @@ describe('ClientEncryption', function () {
       sinon.restore();
     });
 
-    it('throws if options are omitted', async () => {
-      const error = await clientEncryption
-        .createEncryptedCollection(db, collectionName)
-        .catch(error => error);
-      expect(error).to.be.instanceOf(TypeError);
-    });
-
-    it('throws if options.createCollectionOptions are omitted', async () => {
-      const error = await clientEncryption
-        .createEncryptedCollection(db, collectionName, {})
-        .catch(error => error);
-      expect(error).to.be.instanceOf(TypeError);
-    });
-
-    it('throws if options.createCollectionOptions.encryptedFields are omitted', async () => {
-      const error = await clientEncryption
-        .createEncryptedCollection(db, collectionName, { createCollectionOptions: {} })
-        .catch(error => error);
-      expect(error).to.be.instanceOf(TypeError);
-    });
-
-    it('throws if options.createDateKeyOptions.keyAltNames are provided', async () => {
-      const error = await clientEncryption
-        .createEncryptedCollection(db, collectionName, {
-          provider: 'aws',
-          createCollectionOptions: { encryptedFields: { fields: [] } },
-          createDataKeyOptions: { keyAltNames: ['blah!'] }
-        })
-        .catch(error => error);
-      expect(error).to.be.instanceOf(MongoCryptInvalidArgumentError, /keyAltNames/);
-    });
-
-    it('when options.encryptedFields.fields is not an array no key generation is performed', async () => {
-      const createCollectionSpy = sinon.spy(db, 'createCollection');
-      const createDataKeySpy = sinon.spy(clientEncryption, 'createDataKey');
-      await clientEncryption.createEncryptedCollection(db, collectionName, {
-        createCollectionOptions: { encryptedFields: { fields: 'not an array' } }
+    context('validates input', () => {
+      it('throws if options are omitted', async () => {
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName)
+          .catch(error => error);
+        expect(error).to.be.instanceOf(TypeError);
       });
 
-      expect(createDataKeySpy.callCount).to.equal(0);
-      const options = createCollectionSpy.getCall(0).args[1];
-      expect(options).to.deep.equal({ encryptedFields: { fields: 'not an array' } });
-    });
-
-    it('skips options.encryptedFields.fields items that are not bson documents', async () => {
-      const createCollectionSpy = sinon.spy(db, 'createCollection');
-      const keyId = new Binary(Buffer.alloc(16, 0));
-      const createDataKeyStub = sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
-      await clientEncryption.createEncryptedCollection(db, collectionName, {
-        createCollectionOptions: {
-          encryptedFields: { fields: ['not an array', { keyId: null }, { keyId: {} }] }
-        }
+      it('throws if options.createCollectionOptions are omitted', async () => {
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName, {})
+          .catch(error => error);
+        expect(error).to.be.instanceOf(TypeError);
       });
 
-      expect(createDataKeyStub.callCount).to.equal(1);
-      const options = createCollectionSpy.getCall(0).args[1];
-      expect(options).to.deep.equal({
-        encryptedFields: { fields: ['not an array', { keyId: keyId }, { keyId: {} }] }
+      it('throws if options.createCollectionOptions.encryptedFields are omitted', async () => {
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName, { createCollectionOptions: {} })
+          .catch(error => error);
+        expect(error).to.be.instanceOf(TypeError);
       });
-    });
 
-    it('throws MongoCryptCreateDataKeyError if createDataKey rejects', async () => {
-      const customError = new Error('evil!');
-      const stub = sinon.stub(clientEncryption, 'createDataKey');
-      const keyId = new Binary(Buffer.alloc(16, 0), 4);
-      stub.onCall(0).resolves(keyId);
-      stub.onCall(1).rejects(customError);
-      stub.onCall(2).resolves(keyId);
-
-      const createCollectionOptions = {
-        encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
-      };
-      const error = await clientEncryption
-        .createEncryptedCollection(db, collectionName, {
-          provider: 'local',
-          createCollectionOptions
-        })
-        .catch(error => error);
-
-      expect(error).to.be.instanceOf(MongoCryptCreateDataKeyError);
-      expect(error.cause).to.equal(customError);
-
-      expect(error.encryptedFields).property('fields').that.is.an('array');
-      expect(error.encryptedFields.fields).to.have.lengthOf(
-        createCollectionOptions.encryptedFields.fields.length
-      );
-      expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
-      expect(error.encryptedFields.fields).to.not.have.nested.property('[1].keyId');
-      expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');
-    });
-
-    it('throws MongoCryptCreateEncryptedCollectionError if createCollection rejects', async () => {
-      const customError = new Error('evil!');
-      const stubCreateDataKey = sinon.stub(clientEncryption, 'createDataKey');
-      const keyId = new Binary(Buffer.alloc(16, 0), 4);
-      stubCreateDataKey.onCall(0).resolves(keyId);
-      stubCreateDataKey.onCall(1).resolves(keyId);
-      stubCreateDataKey.onCall(2).resolves(keyId);
-
-      sinon.stub(db, 'createCollection').rejects(customError);
-
-      const createCollectionOptions = {
-        encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
-      };
-      const error = await clientEncryption
-        .createEncryptedCollection(db, collectionName, {
-          provider: 'local',
-          createCollectionOptions
-        })
-        .catch(error => error);
-
-      expect(error).to.be.instanceOf(MongoCryptCreateEncryptedCollectionError);
-      expect(error.cause).to.equal(customError);
-      expect(error.encryptedFields).property('fields').that.is.an('array');
-      expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
-      expect(error.encryptedFields.fields).to.have.nested.property('[1].keyId', keyId);
-      expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');
-    });
-
-    it('creates keyIds where they are nullish without editing input', async () => {
-      const encryptedFields = Object.freeze({
-        escCollection: 'esc',
-        eccCollection: 'ecc',
-        ecocCollection: 'ecoc',
-        fields: Object.freeze([
-          Object.freeze({ keyId: false }),
-          Object.freeze({
-            keyId: null,
-            path: 'name',
-            bsonType: 'int',
-            queries: Object.freeze({ contentionFactor: 0 })
+      it('throws if options.createDateKeyOptions.keyAltNames are provided', async () => {
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName, {
+            provider: 'aws',
+            createCollectionOptions: { encryptedFields: { fields: [] } },
+            createDataKeyOptions: { keyAltNames: ['blah!'] }
           })
-        ])
+          .catch(error => error);
+        expect(error).to.be.instanceOf(MongoCryptInvalidArgumentError, /keyAltNames/);
       });
-
-      const keyId = new Binary(Buffer.alloc(16, 0), 4);
-      sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
-
-      const { collection, encryptedFields: resultEncryptedFields } =
-        await clientEncryption.createEncryptedCollection(db, collectionName, {
-          provider: 'local',
-          createCollectionOptions: {
-            encryptedFields
-          }
-        });
-
-      expect(collection).to.have.property('namespace', 'createEncryptedCollectionDb.secure');
-      expect(encryptedFields, 'original encryptedFields should be unmodified').nested.property(
-        'fields[0].keyId',
-        false
-      );
-      expect(
-        resultEncryptedFields,
-        'encryptedFields created by helper should have replaced nullish keyId'
-      ).nested.property('fields[1].keyId', keyId);
     });
 
-    it('creates keyIds where they are nullish', async () => {
-      const encryptedFields = Object.freeze({
-        escCollection: 'esc',
-        eccCollection: 'ecc',
-        ecocCollection: 'ecoc',
-        fields: Object.freeze([
-          Object.freeze({ keyId: null }),
-          Object.freeze({ keyId: null }),
-          Object.freeze({ keyId: null })
-        ])
+    context('when input is not the correct type do not validate', () => {
+      it('when options.encryptedFields.fields is not an array no key generation is performed', async () => {
+        const createCollectionSpy = sinon.spy(db, 'createCollection');
+        const createDataKeySpy = sinon.spy(clientEncryption, 'createDataKey');
+        await clientEncryption.createEncryptedCollection(db, collectionName, {
+          createCollectionOptions: { encryptedFields: { fields: 'not an array' } }
+        });
+
+        expect(createDataKeySpy.callCount).to.equal(0);
+        const options = createCollectionSpy.getCall(0).args[1];
+        expect(options).to.deep.equal({ encryptedFields: { fields: 'not an array' } });
       });
 
-      const keyId = new Binary(Buffer.alloc(16, 0), 4);
-      sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
-
-      const { collection, encryptedFields: resultEncryptedFields } =
+      it('when options.encryptedFields.fields elements are not objects they are passed along to createCollection', async () => {
+        const createCollectionSpy = sinon.spy(db, 'createCollection');
+        const keyId = new Binary(Buffer.alloc(16, 0));
+        const createDataKeyStub = sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
         await clientEncryption.createEncryptedCollection(db, collectionName, {
-          provider: 'local',
           createCollectionOptions: {
-            encryptedFields
+            encryptedFields: { fields: ['not an array', { keyId: null }, { keyId: {} }] }
           }
         });
 
-      expect(collection).to.have.property('namespace', 'createEncryptedCollectionDb.secure');
-      expect(resultEncryptedFields.fields).to.have.lengthOf(3);
-      expect(resultEncryptedFields.fields.filter(({ keyId }) => keyId === null)).to.have.lengthOf(
-        0
-      );
+        expect(createDataKeyStub.callCount).to.equal(1);
+        const options = createCollectionSpy.getCall(0).args[1];
+        expect(options).to.deep.equal({
+          encryptedFields: { fields: ['not an array', { keyId: keyId }, { keyId: {} }] }
+        });
+      });
+    });
+
+    context('when subroutines throw the error is wrapped', () => {
+      it('throws MongoCryptCreateDataKeyError if createDataKey rejects', async () => {
+        const customError = new Error('evil!');
+        const stub = sinon.stub(clientEncryption, 'createDataKey');
+        const keyId = new Binary(Buffer.alloc(16, 0), 4);
+        stub.onCall(0).resolves(keyId);
+        stub.onCall(1).rejects(customError);
+        stub.onCall(2).resolves(keyId);
+
+        const createCollectionOptions = {
+          encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
+        };
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName, {
+            provider: 'local',
+            createCollectionOptions
+          })
+          .catch(error => error);
+
+        expect(error).to.be.instanceOf(MongoCryptCreateDataKeyError);
+        expect(error.cause).to.equal(customError);
+
+        expect(error.encryptedFields).property('fields').that.is.an('array');
+        expect(error.encryptedFields.fields).to.have.lengthOf(
+          createCollectionOptions.encryptedFields.fields.length
+        );
+        expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
+        expect(error.encryptedFields.fields).to.not.have.nested.property('[1].keyId');
+        expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');
+      });
+
+      it('throws MongoCryptCreateEncryptedCollectionError if createCollection rejects', async () => {
+        const customError = new Error('evil!');
+        const stubCreateDataKey = sinon.stub(clientEncryption, 'createDataKey');
+        const keyId = new Binary(Buffer.alloc(16, 0), 4);
+        stubCreateDataKey.onCall(0).resolves(keyId);
+        stubCreateDataKey.onCall(1).resolves(keyId);
+        stubCreateDataKey.onCall(2).resolves(keyId);
+
+        sinon.stub(db, 'createCollection').rejects(customError);
+
+        const createCollectionOptions = {
+          encryptedFields: { fields: [{}, {}, { keyId: 'cool id!' }] }
+        };
+        const error = await clientEncryption
+          .createEncryptedCollection(db, collectionName, {
+            provider: 'local',
+            createCollectionOptions
+          })
+          .catch(error => error);
+
+        expect(error).to.be.instanceOf(MongoCryptCreateEncryptedCollectionError);
+        expect(error.cause).to.equal(customError);
+        expect(error.encryptedFields).property('fields').that.is.an('array');
+        expect(error.encryptedFields.fields).to.have.nested.property('[0].keyId', keyId);
+        expect(error.encryptedFields.fields).to.have.nested.property('[1].keyId', keyId);
+        expect(error.encryptedFields.fields).to.have.nested.property('[2].keyId', 'cool id!');
+      });
+    });
+
+    context('when there are nullish keyIds in the encryptedFields.fields array', function () {
+      it('does not mutate the input fields array when generating data keys', async () => {
+        const encryptedFields = Object.freeze({
+          escCollection: 'esc',
+          eccCollection: 'ecc',
+          ecocCollection: 'ecoc',
+          fields: Object.freeze([
+            Object.freeze({ keyId: false }),
+            Object.freeze({
+              keyId: null,
+              path: 'name',
+              bsonType: 'int',
+              queries: Object.freeze({ contentionFactor: 0 })
+            })
+          ])
+        });
+
+        const keyId = new Binary(Buffer.alloc(16, 0), 4);
+        sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
+
+        const { collection, encryptedFields: resultEncryptedFields } =
+          await clientEncryption.createEncryptedCollection(db, collectionName, {
+            provider: 'local',
+            createCollectionOptions: {
+              encryptedFields
+            }
+          });
+
+        expect(collection).to.have.property('namespace', 'createEncryptedCollectionDb.secure');
+        expect(encryptedFields, 'original encryptedFields should be unmodified').nested.property(
+          'fields[0].keyId',
+          false
+        );
+        expect(
+          resultEncryptedFields,
+          'encryptedFields created by helper should have replaced nullish keyId'
+        ).nested.property('fields[1].keyId', keyId);
+      });
+
+      it('generates dataKeys for all null keyIds in the fields array', async () => {
+        const encryptedFields = Object.freeze({
+          escCollection: 'esc',
+          eccCollection: 'ecc',
+          ecocCollection: 'ecoc',
+          fields: Object.freeze([
+            Object.freeze({ keyId: null }),
+            Object.freeze({ keyId: null }),
+            Object.freeze({ keyId: null })
+          ])
+        });
+
+        const keyId = new Binary(Buffer.alloc(16, 0), 4);
+        sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
+
+        const { collection, encryptedFields: resultEncryptedFields } =
+          await clientEncryption.createEncryptedCollection(db, collectionName, {
+            provider: 'local',
+            createCollectionOptions: {
+              encryptedFields
+            }
+          });
+
+        expect(collection).to.have.property('namespace', 'createEncryptedCollectionDb.secure');
+        expect(resultEncryptedFields.fields).to.have.lengthOf(3);
+        expect(resultEncryptedFields.fields.filter(({ keyId }) => keyId === null)).to.have.lengthOf(
+          0
+        );
+      });
     });
   });
 });
