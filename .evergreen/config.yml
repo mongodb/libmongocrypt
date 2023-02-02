@@ -917,7 +917,7 @@ tasks:
     - func: fetch source
     - func: earthly
       vars:
-        args: +rpm-build
+        args: +rpm-runtime-test
 
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
