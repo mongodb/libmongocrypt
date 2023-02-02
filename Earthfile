@@ -223,6 +223,7 @@ CACHE_WARMUP:
 COPY_SOURCE:
     COMMAND
     COPY --dir \
+        .git/ \
         cmake/ \
         kms-message/ \
         test/ \
@@ -301,7 +302,6 @@ deb-build:
     RUN __install git-buildpackage fakeroot debhelper cmake libbson-dev \
                   libintelrdfpmath-dev
     DO +COPY_SOURCE
-    COPY --dir .git /s/libmongocrypt/
     WORKDIR /s/libmongocrypt
     RUN git clean -fdx && git reset --hard
     RUN python3 etc/calc_release_version.py > VERSION_CURRENT
