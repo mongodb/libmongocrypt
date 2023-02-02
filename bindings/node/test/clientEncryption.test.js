@@ -953,6 +953,7 @@ describe('ClientEncryption', function () {
       it('thrown error has a cause set to the first error that was thrown from createDataKey', async () => {
         const error = await createDataKeyRejection();
         expect(error.cause).to.equal(customErrorEvil);
+        expect(error.message).to.include(customErrorEvil.message);
       });
 
       it('thrown error contains partially filled encryptedFields.fields', async () => {
@@ -1002,6 +1003,7 @@ describe('ClientEncryption', function () {
       it('thrown error has a cause set to the error that was thrown from createCollection', async () => {
         const error = await createCollectionRejection();
         expect(error.cause).to.equal(customError);
+        expect(error.message).to.include(customError.message);
       });
 
       it('thrown error contains filled encryptedFields.fields', async () => {
