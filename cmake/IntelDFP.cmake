@@ -23,11 +23,9 @@ set (patch_command)
 if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
     set (patch_command "${CMAKE_COMMAND}" -E true)
 elseif (GIT_EXECUTABLE)
-    set (patch_command "${GIT_EXECUTABLE}")
-    set (dir_arg --work-tree=<SOURCE_DIR>)
+    set (patch_command "${GIT_EXECUTABLE}" --work-tree=<SOURCE_DIR> apply)
 else ()
-    set (patch_command "${PATCH_EXECUTABLE}")
-    set (dir_arg --dir=<SOURCE_DIR>)
+    set (patch_command "${PATCH_EXECUTABLE}" --dir=<SOURCE_DIR>)
 endif ()
 
 # NOTE: The applying of the patch expects the correct input directly from the
@@ -40,7 +38,7 @@ FetchContent_Declare (
     URL "${_default_url}"
     ${_hash_arg}
     PATCH_COMMAND
-        ${patch_command} "${dir_arg}"
+        ${patch_command}
             -p 4 # Strip four path components
             "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
             --verbose
