@@ -885,8 +885,8 @@ describe('ClientEncryption', function () {
       });
     });
 
-    context('when options.encryptedFields.fields elements are', () => {
-      it('not objects they are passed along to createCollection', async () => {
+    context('when options.encryptedFields.fields elements are not objects', () => {
+      it('they are passed along to createCollection', async () => {
         const createCollectionSpy = sinon.spy(db, 'createCollection');
         const keyId = new Binary(Buffer.alloc(16, 0));
         const createDataKeyStub = sinon.stub(clientEncryption, 'createDataKey').resolves(keyId);
@@ -999,7 +999,7 @@ describe('ClientEncryption', function () {
         expect(error).to.be.instanceOf(MongoCryptCreateEncryptedCollectionError);
       });
 
-      it('thrown error has a cause set to the error that was thrown from createDataKey', async () => {
+      it('thrown error has a cause set to the error that was thrown from createCollection', async () => {
         const error = await createCollectionRejection();
         expect(error.cause).to.equal(customError);
       });
