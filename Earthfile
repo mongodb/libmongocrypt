@@ -238,16 +238,58 @@ COPY_SOURCE:
         "/s/libmongocrypt"
     COPY --dir bindings/cs/ "/s/libmongocrypt/bindings/"
 
+BUILD_EXAMPLE_STATE_MACHINE:
+    COMMAND
+    COPY test/example-state-machine.c /s/
+    RUN pkg-config --exists libmongocrypt --print-errors && \
+        gcc /s/example-state-machine.c \
+            -o /s/example-state-machine \
+            $(pkg-config --cflags --libs libmongocrypt)
+    COPY --dir test/example /s/test/example
+    RUN cd /s && /s/example-state-machine
+
 rpm-build:
     FROM +init --base fedora:rawhide
-    RUN __install rpmdevtools gcc-c++ make openssl-devel unzip git ccache \
-                  findutils patch cmake doxygen "cmake(bson-1.0)" libdfp-devel
     GIT CLONE https://src.fedoraproject.org/rpms/libmongocrypt.git /R
+    # Install the packages listed by "BuildRequires" and rpm-build:
+    RUN __install $(awk '/^BuildRequires:/ { print $2 }' /R/libmongocrypt.spec) \
+                  rpm-build
     DO +COPY_SOURCE
-    WORKDIR /R
-    RUN cp -r /s/libmongocrypt/. .
-    RUN awk -f etc/rpm/tweak.awk < libmongocrypt.spec > libmongocrypt.2.spec
-    RUN rpmbuild -ba libmongocrypt.2.spec -v -D "_sourcedir $PWD"
+    RUN cp -r /s/libmongocrypt/. /R
+    RUN awk -f /R/etc/rpm/tweak.awk < /R/libmongocrypt.spec > /R/libmongocrypt.2.spec
+    RUN rpmbuild -ba /R/libmongocrypt.2.spec \
+        -D "_topdir /X" \
+        -D "_sourcedir /R"
+    SAVE ARTIFACT /X/RPMS /
+    SAVE ARTIFACT /X/SRPMS /
+
+rpm-install-runtime:
+    # Install the runtime RPM
+    FROM +init --base fedora:rawhide
+    COPY +rpm-build/RPMS /tmp/libmongocrypt-rpm/
+    RUN dnf makecache
+    RUN __install $(find /tmp/libmongocrypt-rpm/ -name 'libmongocrypt-1.*.rpm')
+
+rpm-install-dev:
+    # Install the development RPM
+    FROM +rpm-install-runtime
+    COPY +rpm-build/RPMS /tmp/libmongocrypt-rpm/
+    RUN dnf makecache
+    RUN __install $(find /tmp/libmongocrypt-rpm/ -name 'libmongocrypt-devel-*.rpm')
+
+rpm-devel-test:
+    # Attempt to build a small app using pkg-config and the dev RPM
+    FROM +rpm-install-dev
+    RUN __install gcc
+    DO +BUILD_EXAMPLE_STATE_MACHINE
+    SAVE ARTIFACT /s/example-state-machine /
+
+rpm-runtime-test:
+    # Attempt to run a libmongocrypt-using app with the runtime RPM installed
+    FROM +rpm-install-runtime
+    COPY +rpm-devel-test/example-state-machine /s/
+    COPY --dir test/example /s/test/example
+    RUN cd /s/ && /s/example-state-machine
 
 # A target to build the debian package. Options:
 #   • --env=[...] (default: deb-unstable)
@@ -269,6 +311,37 @@ deb-build:
         env LANG=C bash debian/build_snapshot.sh && \
         debc ../*.changes && \
         dpkg -i ../*.deb
+    SAVE ARTIFACT /s/*.deb /debs/
+
+deb-install-runtime:
+    # Install the runtime deb package
+    FROM +init --base=docker.io/library/debian:unstable
+    COPY +deb-build/debs/libmongocrypt0*.deb /tmp/lmc.deb
+    RUN __install /tmp/lmc.deb
+
+deb-install-dev:
+    # Install the development deb package
+    FROM +deb-install-runtime
+    COPY +deb-build/debs/libmongocrypt-dev*.deb /tmp/lmc-dev.deb
+    RUN __install /tmp/lmc-dev.deb
+
+deb-dev-test:
+    # Attempt to build a small app using pkg-config and the dev deb package
+    FROM +deb-install-dev
+    RUN __install pkg-config gcc
+    DO +BUILD_EXAMPLE_STATE_MACHINE
+    SAVE ARTIFACT /s/example-state-machine /
+
+deb-runtime-test:
+    # Attempt to run a libmongocrypt-using app with the runtime DEB installed
+    FROM +deb-install-runtime
+    COPY +deb-dev-test/example-state-machine /s/
+    COPY --dir test/example /s/test/example
+    RUN cd /s/ && /s/example-state-machine
+
+packaging-full-test:
+    BUILD +deb-runtime-test
+    BUILD +rpm-runtime-test
 
 # The main "build" target. Options:
 #   • --env=[...] (default "u22")
