@@ -240,14 +240,18 @@ COPY_SOURCE:
 
 rpm-build:
     FROM +init --base fedora:rawhide
-    RUN __install rpmdevtools gcc-c++ make openssl-devel unzip git ccache \
-                  findutils patch cmake doxygen "cmake(bson-1.0)" libdfp-devel
     GIT CLONE https://src.fedoraproject.org/rpms/libmongocrypt.git /R
+    # Install the packages listed by "BuildRequires" and rpm-build:
+    RUN __install $(awk '/^BuildRequires:/ { print $2 }' /R/libmongocrypt.spec) \
+                  rpm-build
     DO +COPY_SOURCE
-    WORKDIR /R
-    RUN cp -r /s/libmongocrypt/. .
-    RUN awk -f etc/rpm/tweak.awk < libmongocrypt.spec > libmongocrypt.2.spec
-    RUN rpmbuild -ba libmongocrypt.2.spec -v -D "_sourcedir $PWD"
+    RUN cp -r /s/libmongocrypt/. /R
+    RUN awk -f /R/etc/rpm/tweak.awk < /R/libmongocrypt.spec > /R/libmongocrypt.2.spec
+    RUN rpmbuild -ba /R/libmongocrypt.2.spec \
+        -D "_topdir /X" \
+        -D "_sourcedir /R"
+    SAVE ARTIFACT /X/RPMS /rpm/
+    SAVE ARTIFACT /X/SRPMS /rpm/
 
 # A target to build the debian package. Options:
 #   • --env=[...] (default: deb-unstable)

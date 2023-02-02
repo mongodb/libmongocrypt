@@ -1,6 +1,7 @@
 
 include (FetchContent)
 find_program (GIT_EXECUTABLE git)
+find_program (PATCH_EXECUTABLE patch)
 
 set (_default_url "${PROJECT_SOURCE_DIR}/third-party/IntelRDFPMathLib20U2.tar.xz")
 
@@ -18,9 +19,15 @@ if (NOT INTEL_DFP_LIBRARY_URL_SHA256 STREQUAL "no-verify")
 endif ()
 
 # Make the PATCH_COMMAND a no-op if it was disabled
-set (_patch_disabler)
+set (patch_command)
 if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
-    set (_patch_disabler "${CMAKE_COMMAND}" -E true)
+    set (patch_command "${CMAKE_COMMAND}" -E true)
+elseif (GIT_EXECUTABLE)
+    set (patch_command "${GIT_EXECUTABLE}")
+    set (dir_arg --work-tree=<SOURCE_DIR>)
+else ()
+    set (patch_command "${PATCH_EXECUTABLE}")
+    set (dir_arg --dir=<SOURCE_DIR>)
 endif ()
 
 # NOTE: The applying of the patch expects the correct input directly from the
@@ -33,8 +40,7 @@ FetchContent_Declare (
     URL "${_default_url}"
     ${_hash_arg}
     PATCH_COMMAND
-        ${_patch_disabler}
-        "${GIT_EXECUTABLE}" --work-tree=<SOURCE_DIR> apply
+        ${patch_command} "${dir_arg}"
             -p 4 # Strip four path components
             "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
             --verbose

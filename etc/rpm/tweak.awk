@@ -10,8 +10,7 @@
 
 # Replace the autosetup with one that copies the source tree into place
 /%autosetup/ {
-    print "cd %{_topdir}/BUILD\n" \
-          "cp -rf %{_sourcedir}/. $PWD\n" \
+    print "cp -rf %{_sourcedir}/. %{_builddir}/\n" \
           "%autopatch 0 -p1"
     next
 }

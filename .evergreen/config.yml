@@ -352,6 +352,12 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
+  earthly:
+    - command: shell.exec
+      params:
+        shell: bash
+        working_dir: ${working_dir|libmongocrypt}
+        script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
 tasks:
 - name: build-and-test-and-upload
@@ -845,6 +851,10 @@ tasks:
         content_type: '${content_type|application/x-gzip}'
 
 - name: debian-package-build
+  run_on: &deb-package-build-run_on
+    - ubuntu2004
+    - ubuntu2004-small
+  tags: [packaging]
   commands:
     - func: "fetch source"
     - command: shell.exec
@@ -868,6 +878,8 @@ tasks:
         display_name: "deb.tar.gz"
 
 - name: debian-package-build-i386
+  run_on: *deb-package-build-run_on
+  tags: [packaging]
   commands:
     - func: "fetch source"
     - command: shell.exec
@@ -889,6 +901,23 @@ tasks:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
+
+- name: rpm-package-build
+  tags: [packaging]
+  run_on: &docker-distros
+    - rhel76-docker
+    - ubuntu2004
+    - ubuntu2004-small
+    - ubuntu1804
+    - ubuntu1804-medium
+    - debian10
+    - debian11
+    - amazon2
+  commands:
+    - func: fetch source
+    - func: earthly
+      vars:
+        args: +rpm-build
 
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
@@ -1369,10 +1398,7 @@ buildvariants:
     - "publish-java"
 - name: packaging
   display_name: "Linux Distro Packaging"
-  run_on: ubuntu2004-small
-  tasks:
-  - name: debian-package-build
-  - name: debian-package-build-i386
+  tasks: [.packaging]
 - name: macos
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
