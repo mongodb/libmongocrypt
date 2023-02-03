@@ -378,7 +378,7 @@ export interface ClientEncryptionRewrapManyDataKeyResult {
 }
 
 /**
- * RangeOpts specifies index options for a Queryable Encryption field supporting "rangePreview" queries.
+ * RangeOptions specifies index options for a Queryable Encryption field supporting "rangePreview" queries.
  * min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
  * For double and decimal128, min/max/precision must all be set, or all be unset.
  */
