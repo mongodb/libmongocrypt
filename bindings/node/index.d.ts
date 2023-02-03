@@ -1,9 +1,14 @@
-import type { Document, Binary, Long } from 'bson';
 import type {
   MongoClient,
   BulkWriteResult,
   DeleteResult,
-  FindCursor
+  FindCursor,
+  Collection,
+  Db,
+  CreateCollectionOptions,
+  Document,
+  Binary,
+  Long
 } from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
@@ -25,7 +30,37 @@ export interface DataKey {
 /**
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
  */
-export class MongoCryptError extends Error {}
+export class MongoCryptError extends Error {
+  cause?: Error;
+}
+
+/**
+ * @experimental Public Technical Preview
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
+ */
+export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
+  /**
+   * @experimental Public Technical Preview
+   * The entire `encryptedFields` that was completed while attempting createEncryptedCollection
+   */
+  encryptedFields: Document;
+  /** The error rejected from db.createCollection() */
+  cause: Error;
+}
+
+/**
+ * @experimental Public Technical Preview
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
+ */
+export class MongoCryptCreateDataKeyError extends MongoCryptError {
+  /**
+   * @experimental Public Technical Preview
+   * The partial `encryptedFields` that was completed while attempting createEncryptedCollection
+   */
+  encryptedFields: Document;
+  /** The first error encountered when attempting to `createDataKey` */
+  cause: Error;
+}
 
 /**
  * A set of options for specifying a Socks5 proxy.
@@ -308,7 +343,7 @@ export interface AzureEncryptionKeyOptions {
  */
 export interface ClientEncryptionCreateDataKeyProviderOptions {
   /**
-   * Idenfities a new KMS-specific key used to encrypt the new data key
+   * Identifies a new KMS-specific key used to encrypt the new data key
    */
   masterKey?:
     | AWSEncryptionKeyOptions
@@ -498,6 +533,24 @@ export class ClientEncryption {
   removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
+   * @experimental Public Technical Preview
+   * A convenience method for creating an encrypted collection.
+   * This method will create data keys for any encryptedFields that do not have a `keyId` defined
+   * and then create a new collection with the full set of encryptedFields.
+   *
+   * @param db - A Node.js driver Db object with which to create the collection
+   * @param name - The name of the new collection
+   * @param options - Options for createDataKey and for createCollection. A provider and partially created encryptedFields **must** be provided.
+   * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+   * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
+   */
+  createEncryptedCollection<TSchema extends Document = Document>(db: Db, name: string, options: {
+    provider: ClientEncryptionDataKeyProvider;
+    createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & { encryptedFields: Document };
+    masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions;
+  }): Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>;
+
+  /**
    * Explicitly encrypt a provided value.
    * Note that either options.keyId or options.keyAltName must be specified.
    * Specifying both options.keyId and options.keyAltName is considered an error.
@@ -525,7 +578,7 @@ export class ClientEncryption {
    *
    * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
    *
-   * @experimental The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form
+   * @experimental The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form
    *
    * The expression to encrypt must be one of the following:
    *  1. A Match Expression of this form:

@@ -9,6 +9,10 @@ module.exports = function (modules) {
   const maybeCallback = common.maybeCallback;
   const StateMachine = modules.stateMachine.StateMachine;
   const BSON = modules.mongodb.BSON;
+  const {
+    MongoCryptCreateEncryptedCollectionError,
+    MongoCryptCreateDataKeyError
+  } = require('./errors');
   const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
   const { promisify } = require('util');
@@ -550,6 +554,67 @@ module.exports = function (modules) {
     }
 
     /**
+     * @experimental Public Technical Preview
+     *
+     * A convenience method for creating an encrypted collection.
+     * This method will create data keys for any encryptedFields that do not have a `keyId` defined
+     * and then create a new collection with the full set of encryptedFields.
+     *
+     * @template {TSchema} - Schema for the collection being created
+     * @param {Db} db - A Node.js driver Db object with which to create the collection
+     * @param {string} name - The name of the collection to be created
+     * @param {object} options - Options for createDataKey and for createCollection
+     * @param {string} options.provider - KMS provider name
+     * @param {AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions} [options.masterKey] - masterKey to pass to createDataKey
+     * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
+     * @returns {Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>} - created collection and generated encryptedFields
+     * @throws {MongoCryptCreateDataKeyError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+     * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
+     */
+    async createEncryptedCollection(db, name, options) {
+      const {
+        provider,
+        masterKey,
+        createCollectionOptions: {
+          encryptedFields: { ...encryptedFields },
+          ...createCollectionOptions
+        }
+      } = options;
+
+      if (Array.isArray(encryptedFields.fields)) {
+        const createDataKeyPromises = encryptedFields.fields.map(async field =>
+          field == null || typeof field !== 'object' || field.keyId != null
+            ? field
+            : {
+                ...field,
+                keyId: await this.createDataKey(provider, { masterKey })
+              }
+        );
+
+        const createDataKeyResolutions = await Promise.allSettled(createDataKeyPromises);
+
+        encryptedFields.fields = createDataKeyResolutions.map((resolution, index) =>
+          resolution.status === 'fulfilled' ? resolution.value : encryptedFields.fields[index]
+        );
+
+        const rejection = createDataKeyResolutions.find(({ status }) => status === 'rejected');
+        if (rejection != null) {
+          throw new MongoCryptCreateDataKeyError({ encryptedFields, cause: rejection.reason });
+        }
+      }
+
+      try {
+        const collection = await db.createCollection(name, {
+          ...createCollectionOptions,
+          encryptedFields
+        });
+        return { collection, encryptedFields };
+      } catch (cause) {
+        throw new MongoCryptCreateEncryptedCollectionError({ encryptedFields, cause });
+      }
+    }
+
+    /**
      * @callback ClientEncryptionEncryptCallback
      * @param {Error} [err] If present, indicates an error that occurred in the process of encryption
      * @param {Buffer} [result] If present, is the encrypted result
@@ -618,7 +683,7 @@ module.exports = function (modules) {
      *
      * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
      *
-     * @experimental The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.
+     * @experimental The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.
      *
      * @param {object} expression a BSON document of one of the following forms:
      *  1. A Match Expression of this form:
@@ -646,7 +711,7 @@ module.exports = function (modules) {
      *
      * @param {Buffer | Binary} value An encrypted value
      * @param {ClientEncryption~decryptCallback} callback Optional callback to invoke when value is decrypted
-     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.
+     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decrypted value, or rejects with an error. If a callback is provided, returns nothing.
      *
      * @example
      * // Decrypting value with callback API

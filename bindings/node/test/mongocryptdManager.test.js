@@ -1,7 +1,7 @@
 'use strict';
 
 const MongocryptdManager = require('../lib/mongocryptdManager').MongocryptdManager;
-const expect = require('chai').expect;
+const { expect } = require('chai');
 
 describe('MongocryptdManager', function () {
   it('should default to having spawnArgs of --idleShutdownTimeoutSecs=60', function () {

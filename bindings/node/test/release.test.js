@@ -1,5 +1,5 @@
 'use strict';
-const expect = require('chai').expect;
+const { expect } = require('chai');
 const tar = require('tar');
 const cp = require('child_process');
 const fs = require('fs');
@@ -18,6 +18,7 @@ const REQUIRED_FILES = [
   'package/lib/common.js',
   'package/lib/credentialsProvider.js',
   'package/lib/cryptoCallbacks.js',
+  'package/lib/errors.js',
   'package/lib/mongocryptdManager.js',
   'package/lib/stateMachine.js',
   'package/LICENSE',
