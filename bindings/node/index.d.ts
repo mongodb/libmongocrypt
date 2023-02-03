@@ -578,7 +578,7 @@ export class ClientEncryption {
    *
    * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
    *
-   * @experimental The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form
+   * @experimental The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form
    *
    * The expression to encrypt must be one of the following:
    *  1. A Match Expression of this form:

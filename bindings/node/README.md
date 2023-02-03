@@ -558,7 +558,9 @@ if (!oldKey) {
 - [<code>MongoCryptCreateDataKeyError</code>](#MongoCryptCreateDataKeyError) - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
 - [<code>MongoCryptCreateEncryptedCollectionError</code>](#MongoCryptCreateEncryptedCollectionError) - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
 
-**Experimental**: A convenience method for creating an encrypted collection.
+**Experimental**: Public Technical Preview
+
+A convenience method for creating an encrypted collection.
 This method will create data keys for any encryptedFields that do not have a `keyId` defined
 and then create a new collection with the full set of encryptedFields.  
 
@@ -617,7 +619,7 @@ async function encryptMyData(value) {
 <a name="ClientEncryption+encryptExpression"></a>
 
 ### *clientEncryption*.encryptExpression(expression, options)
-**Experimental**: The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.  
+**Experimental**: The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -681,13 +683,13 @@ An error indicating that something went wrong specifically with MongoDB Client E
 <a name="MongoCryptCreateDataKeyError"></a>
 
 ## MongoCryptCreateDataKeyError
-**Experimental**:   
+**Experimental**: Public Technical Preview  
 An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
 
 <a name="MongoCryptCreateEncryptedCollectionError"></a>
 
 ## MongoCryptCreateEncryptedCollectionError
-**Experimental**:   
+**Experimental**: Public Technical Preview  
 An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
 
 <a name="BSONValue"></a>

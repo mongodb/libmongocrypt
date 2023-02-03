@@ -683,7 +683,7 @@ module.exports = function (modules) {
      *
      * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
      *
-     * @experimental The Range algorithm is experimental only. It is not intended for public use. It is subject to breaking changes.
+     * @experimental The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.
      *
      * @param {object} expression a BSON document of one of the following forms:
      *  1. A Match Expression of this form:
