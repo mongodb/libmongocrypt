@@ -420,7 +420,7 @@ export interface ClientEncryptionEncryptOptions {
   queryType?: 'equality' | 'rangePreview';
 
   /** @experimental Public Technical Preview: The index options for a Queryable Encryption field supporting "rangePreview" queries.*/
-  rangeOpts?: RangeOptions;
+  rangeOptions?: RangeOptions;
 }
 
 /**
