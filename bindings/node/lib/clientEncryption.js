@@ -583,7 +583,7 @@ module.exports = function (modules) {
 
       if (Array.isArray(encryptedFields.fields)) {
         const createDataKeyPromises = encryptedFields.fields.map(async field =>
-          typeof field !== 'object' || field.keyId != null
+          field == null || typeof field !== 'object' || field.keyId != null
             ? field
             : {
                 ...field,

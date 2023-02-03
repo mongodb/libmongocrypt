@@ -1028,7 +1028,8 @@ describe('ClientEncryption', function () {
               path: 'name',
               bsonType: 'int',
               queries: Object.freeze({ contentionFactor: 0 })
-            })
+            }),
+            null
           ])
         });
 
@@ -1052,6 +1053,10 @@ describe('ClientEncryption', function () {
           resultEncryptedFields,
           'encryptedFields created by helper should have replaced nullish keyId'
         ).nested.property('fields[1].keyId', keyId);
+        expect(encryptedFields, 'original encryptedFields should be unmodified').nested.property(
+          'fields[2]',
+          null
+        );
       });
 
       it('generates dataKeys for all null keyIds in the fields array', async () => {
