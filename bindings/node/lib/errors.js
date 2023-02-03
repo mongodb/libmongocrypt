@@ -17,7 +17,11 @@ class MongoCryptError extends Error {
   }
 }
 
-/** @class */
+/**
+ * @experimental
+ * @class
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
+ */
 class MongoCryptCreateDataKeyError extends MongoCryptError {
   constructor({ encryptedFields, cause }) {
     super(`Unable to complete creating data keys: ${cause.message}`, { cause });
@@ -29,7 +33,11 @@ class MongoCryptCreateDataKeyError extends MongoCryptError {
   }
 }
 
-/** @class */
+/**
+ * @experimental
+ * @class
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
+ */
 class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
   constructor({ encryptedFields, cause }) {
     super(`Unable to create collection: ${cause.message}`, { cause });

@@ -21,13 +21,6 @@ module.exports = function (modules) {
   /** @typedef {BSON.Long} Long A 64 bit integer, represented by the js-bson Long type.*/
 
   /**
-   * @typedef {object} ClientEncryptionCreateDataKeyProviderOptions Options to provide when creating a new data key.
-   * @property {object} [masterKey] Identifies a new KMS-specific key used to encrypt the new data key
-   * @property {string[]} [keyAltNames] An optional list of string alternate names used to reference a key.
-   * @property {Binary} [keyMaterial] experimental
-   */
-
-  /**
    * @typedef {object} KMSProviders Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
    * @property {object} [aws] Configuration options for using 'aws' as your KMS provider
    * @property {string} [aws.accessKeyId] The access key used for the AWS KMS provider
@@ -177,8 +170,10 @@ module.exports = function (modules) {
     /**
      * Creates a data key used for explicit encryption and inserts it into the key vault namespace
      *
-     * @param {string} provider The KMS provider used for this data key.
-     * @param {ClientEncryptionCreateDataKeyProviderOptions} [options] Options for creating the data key
+     * @param {string} provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
+     * @param {object} [options] Options for creating the data key
+     * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key
+     * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
      * @param {ClientEncryptionCreateDataKeyCallback} [callback] Optional callback to invoke when key is created
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with {@link ClientEncryption~dataKeyId the id of the created data key}, or rejects with an error. If a callback is provided, returns nothing.
      * @example
@@ -559,14 +554,16 @@ module.exports = function (modules) {
     }
 
     /**
+     * @experimental
+     *
      * A convenience method for creating an encrypted collection.
      * This method will create data keys for any encryptedFields that do not have a `keyId` defined
      * and then create a new collection with the full set of encryptedFields.
      *
      * @template {TSchema} - Schema for the collection being created
-     * @param {Db} db - A database to create the collection in
+     * @param {Db} db - A Node.js driver Db object with which to create the collection
      * @param {string} name - The name of the collection to be created
-     * @param {object} options - Options for createDataKey and for createCollection.
+     * @param {object} options - Options for createDataKey and for createCollection
      * @param {string} options.provider - KMS provider name
      * @param {AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions} [options.masterKey] - masterKey to pass to createDataKey
      * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`

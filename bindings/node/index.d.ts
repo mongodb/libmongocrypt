@@ -35,16 +35,21 @@ export class MongoCryptError extends Error {
 }
 
 /**
+ * @experimental
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
 export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
-  /** @experimental The entire `encryptedFields` that was completed while attempting createEncryptedCollection */
+  /**
+   * @experimental
+   * The entire `encryptedFields` that was completed while attempting createEncryptedCollection
+   */
   encryptedFields: Document;
   /** The error rejected from db.createCollection() */
   cause: Error;
 }
 
 /**
+ * @experimental
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
  */
 export class MongoCryptCreateDataKeyError extends MongoCryptError {
@@ -525,10 +530,12 @@ export class ClientEncryption {
   removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
-   * Creates a collection that has encrypted document fields.
-   * Will create dataKeys for any fields missing a `keyId`
+   * @experimental
+   * A convenience method for creating an encrypted collection.
+   * This method will create data keys for any encryptedFields that do not have a `keyId` defined
+   * and then create a new collection with the full set of encryptedFields.
    *
-   * @param db - The database to create the collection within
+   * @param db - A Node.js driver Db object with which to create the collection
    * @param name - The name of the new collection
    * @param options - Options for createDataKey and for createCollection. A provider and partially created encryptedFields **must** be provided.
    * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
@@ -537,7 +544,7 @@ export class ClientEncryption {
   createEncryptedCollection<TSchema extends Document = Document>(db: Db, name: string, options: {
     provider: ClientEncryptionDataKeyProvider;
     createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & { encryptedFields: Document };
-    createDataKeyOptions?: ClientEncryptionCreateDataKeyProviderOptions;
+    masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions;
   }): Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>;
 
   /**

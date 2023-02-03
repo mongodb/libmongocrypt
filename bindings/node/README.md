@@ -55,9 +55,11 @@ npm test
 <dd><p>An error indicating that something went wrong specifically with MongoDB Client Encryption</p>
 </dd>
 <dt><a href="#MongoCryptCreateDataKeyError">MongoCryptCreateDataKeyError</a></dt>
-<dd></dd>
+<dd><p>An error indicating that <code>ClientEncryption.createEncryptedCollection()</code> failed to create data keys</p>
+</dd>
 <dt><a href="#MongoCryptCreateEncryptedCollectionError">MongoCryptCreateEncryptedCollectionError</a></dt>
-<dd></dd>
+<dd><p>An error indicating that <code>ClientEncryption.createEncryptedCollection()</code> failed to create a collection</p>
+</dd>
 </dl>
 
 ## Typedefs
@@ -68,9 +70,6 @@ npm test
 </dd>
 <dt><a href="#Long">Long</a> : <code>BSON.Long</code></dt>
 <dd><p>A 64 bit integer, represented by the js-bson Long type.</p>
-</dd>
-<dt><a href="#ClientEncryptionCreateDataKeyProviderOptions">ClientEncryptionCreateDataKeyProviderOptions</a> : <code>object</code></dt>
-<dd><p>Options to provide when creating a new data key.</p>
 </dd>
 <dt><a href="#KMSProviders">KMSProviders</a> : <code>object</code></dt>
 <dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
@@ -341,8 +340,10 @@ new ClientEncryption(mongoClient, {
 
 | Param | Type | Description |
 | --- | --- | --- |
-| provider | <code>string</code> | The KMS provider used for this data key. |
-| [options] | [<code>ClientEncryptionCreateDataKeyProviderOptions</code>](#ClientEncryptionCreateDataKeyProviderOptions) | Options for creating the data key |
+| provider | <code>string</code> | The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'` |
+| [options] | <code>object</code> | Options for creating the data key |
+| [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | Idenfities a new KMS-specific key used to encrypt the new data key |
+| [options.keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id. |
 | [callback] | [<code>ClientEncryptionCreateDataKeyCallback</code>](#ClientEncryptionCreateDataKeyCallback) | Optional callback to invoke when key is created |
 
 Creates a data key used for explicit encryption and inserts it into the key vault namespace
@@ -554,20 +555,21 @@ if (!oldKey) {
 ### *clientEncryption*.createEncryptedCollection(db, name, options)
 **Throws**:
 
-- <code>MongoCryptCreateDataKeyForEncryptedCollectionError</code> - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+- [<code>MongoCryptCreateDataKeyError</code>](#MongoCryptCreateDataKeyError) - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
 - [<code>MongoCryptCreateEncryptedCollectionError</code>](#MongoCryptCreateEncryptedCollectionError) - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
 
+**Experimental**: A convenience method for creating an encrypted collection.
+This method will create data keys for any encryptedFields that do not have a `keyId` defined
+and then create a new collection with the full set of encryptedFields.  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| db | <code>Db</code> | A database to create the collection in |
+| db | <code>Db</code> | A Node.js driver Db object with which to create the collection |
 | name | <code>string</code> | The name of the collection to be created |
-| options | <code>object</code> | Options for createDataKey and for createCollection. |
-| options.provider | <code>string</code> | provider name |
+| options | <code>object</code> | Options for createDataKey and for createCollection |
+| options.provider | <code>string</code> | KMS provider name |
 | [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | masterKey to pass to createDataKey |
 | options.createCollectionOptions | <code>CreateCollectionOptions</code> | options to pass to createCollection, must include `encryptedFields` |
-
-Creates a collection that has encrypted document fields
 
 **Returns**: <code>Promise.&lt;{collection: Collection.&lt;TSchema&gt;, encryptedFields: Document}&gt;</code> - - created collection and generated encryptedFields  
 <a name="ClientEncryption+encrypt"></a>
@@ -679,9 +681,15 @@ An error indicating that something went wrong specifically with MongoDB Client E
 <a name="MongoCryptCreateDataKeyError"></a>
 
 ## MongoCryptCreateDataKeyError
+**Experimental**:   
+An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
+
 <a name="MongoCryptCreateEncryptedCollectionError"></a>
 
 ## MongoCryptCreateEncryptedCollectionError
+**Experimental**:   
+An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
+
 <a name="BSONValue"></a>
 
 ## BSONValue
@@ -691,19 +699,6 @@ any serializable BSON value
 
 ## Long
 A 64 bit integer, represented by the js-bson Long type.
-
-<a name="ClientEncryptionCreateDataKeyProviderOptions"></a>
-
-## ClientEncryptionCreateDataKeyProviderOptions
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| [masterKey] | <code>object</code> | Identifies a new KMS-specific key used to encrypt the new data key |
-| [keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. |
-| [keyMaterial] | <code>Binary</code> | experimental |
-
-Options to provide when creating a new data key.
 
 <a name="KMSProviders"></a>
 
