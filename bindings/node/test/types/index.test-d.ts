@@ -1,5 +1,5 @@
 import { expectAssignable, expectError } from 'tsd';
-import { ClientEncryption } from '../..';
+import { AWSEncryptionKeyOptions, AzureEncryptionKeyOptions, ClientEncryption, GCPEncryptionKeyOptions } from '../..';
 
 type RequiredCreateEncryptedCollectionSettings = Parameters<
   ClientEncryption['createEncryptedCollection']
@@ -26,5 +26,5 @@ expectAssignable<RequiredCreateEncryptedCollectionSettings>({
 expectAssignable<RequiredCreateEncryptedCollectionSettings>({
   provider: 'aws',
   createCollectionOptions: { encryptedFields: {} },
-  createDataKeyOptions: {}
+  masterKey: { } as AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions
 });
