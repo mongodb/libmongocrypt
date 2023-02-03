@@ -7,6 +7,7 @@ libmongocrypt (1.7.1-1) UNRELEASED; urgency=medium
   [ Kyle Kloberdanz ]
   * New upstream release.
   * Add myself to uploaders.
+  * Update to Standards-Version 4.6.2 (no changes)
 
  -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Fri, 03 Feb 2023 12:47:55 -0600
 

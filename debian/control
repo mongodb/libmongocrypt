@@ -10,7 +10,7 @@ Build-Depends: debhelper (>= 10),
                pkg-config,
                libintelrdfpmath-dev (>= 2.0u2-6),
                libbson-dev
-Standards-Version: 4.6.1
+Standards-Version: 4.6.2
 Section: libs
 Homepage: https://github.com/mongodb/libmongocrypt
 
