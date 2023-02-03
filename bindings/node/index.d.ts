@@ -35,12 +35,12 @@ export class MongoCryptError extends Error {
 }
 
 /**
- * @experimental
+ * @experimental Public Technical Preview
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
 export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
   /**
-   * @experimental
+   * @experimental Public Technical Preview
    * The entire `encryptedFields` that was completed while attempting createEncryptedCollection
    */
   encryptedFields: Document;
@@ -49,11 +49,14 @@ export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
 }
 
 /**
- * @experimental
+ * @experimental Public Technical Preview
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
  */
 export class MongoCryptCreateDataKeyError extends MongoCryptError {
-  /** @experimental The partial `encryptedFields` that was completed while attempting createEncryptedCollection */
+  /**
+   * @experimental Public Technical Preview
+   * The partial `encryptedFields` that was completed while attempting createEncryptedCollection
+   */
   encryptedFields: Document;
   /** The first error encountered when attempting to `createDataKey` */
   cause: Error;
@@ -530,7 +533,7 @@ export class ClientEncryption {
   removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
-   * @experimental
+   * @experimental Public Technical Preview
    * A convenience method for creating an encrypted collection.
    * This method will create data keys for any encryptedFields that do not have a `keyId` defined
    * and then create a new collection with the full set of encryptedFields.

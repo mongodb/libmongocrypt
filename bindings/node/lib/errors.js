@@ -18,7 +18,7 @@ class MongoCryptError extends Error {
 }
 
 /**
- * @experimental
+ * @experimental Public Technical Preview
  * @class
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
  */
@@ -34,7 +34,7 @@ class MongoCryptCreateDataKeyError extends MongoCryptError {
 }
 
 /**
- * @experimental
+ * @experimental Public Technical Preview
  * @class
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
