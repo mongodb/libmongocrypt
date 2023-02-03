@@ -1,4 +1,12 @@
 # ChangeLog
+## 1.7.1
+### Improvements
+- Vendor Intel DFP library and allow using system DFP.
+### Fixed
+- Fix possible abort on base64 decode error of KMS messages.
+- Fix ILP32-target builds.
+- Fix LTO build.
+- Fix IntelDFP to not require Git.
 ## 1.7.0
 ### New Features
 - Add encryptExpression helper
