@@ -1,5 +1,5 @@
-import { expectAssignable, expectError } from 'tsd';
-import { AWSEncryptionKeyOptions, AzureEncryptionKeyOptions, ClientEncryption, GCPEncryptionKeyOptions } from '../..';
+import { expectAssignable, expectError, expectType } from 'tsd';
+import { RangeOptions, AWSEncryptionKeyOptions, AzureEncryptionKeyOptions, ClientEncryption, GCPEncryptionKeyOptions, ClientEncryptionEncryptOptions } from '../..';
 
 type RequiredCreateEncryptedCollectionSettings = Parameters<
   ClientEncryption['createEncryptedCollection']
@@ -28,3 +28,9 @@ expectAssignable<RequiredCreateEncryptedCollectionSettings>({
   createCollectionOptions: { encryptedFields: {} },
   masterKey: { } as AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions
 });
+
+{
+  // NODE-5041 - incorrect spelling of rangeOpts in typescript definitions
+  const options = {} as ClientEncryptionEncryptOptions;
+  expectType<RangeOptions | undefined>(options.rangeOptions)
+}
