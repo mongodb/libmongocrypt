@@ -149,12 +149,14 @@ function (_import_bson)
       else ()
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
       endif ()
-      # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
-      target_include_directories (mongoc_static
-         PUBLIC
-            "$<BUILD_INTERFACE:${MONGOCRYPT_MONGOC_DIR}/src/libmongoc/src>"
-            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
-         )
+      if (TARGET mongoc_static)
+         # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
+         target_include_directories (mongoc_static
+            PUBLIC
+               "$<BUILD_INTERFACE:${MONGOCRYPT_MONGOC_DIR}/src/libmongoc/src>"
+               "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
+            )
+      endif ()
    endif ()
 endfunction ()
 
