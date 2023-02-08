@@ -95,6 +95,7 @@ set (MONGOCRYPT_SOURCES
    src/mc-fle2-insert-update-payload.c
    src/mc-fle2-encryption-placeholder.c
    src/mc-fle2-find-equality-payload.c
+   src/mc-fle2-find-equality-payload-v2.c
    src/mc-fle2-payload-iev.c
    src/mc-fle2-payload-uev.c
    src/mc-fle2-rfds.c
