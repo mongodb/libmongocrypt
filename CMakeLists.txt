@@ -522,7 +522,7 @@ add_test (
 
 foreach (test IN ITEMS path str)
    add_executable (mlib.${test}.test src/mlib/${test}.test.c)
-   add_test (mlib.${test} mlib.${test}.test)
+   add_test (NAME mlib.${test} COMMAND mlib.${test}.test)
    target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
 endforeach ()
 
@@ -546,7 +546,7 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
          Threads::Threads
          _mongocrypt::libbson_for_static
          )
-      add_test ("${test_name}" "${exe_name}")
+      add_test (NAME "${test_name}" COMMAND "${exe_name}")
    endforeach ()
 endif ()
 
