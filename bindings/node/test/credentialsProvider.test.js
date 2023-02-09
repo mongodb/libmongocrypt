@@ -31,7 +31,7 @@ describe('#loadCredentials', function () {
     });
   });
 
-  context('aws', () => {
+  context('when using aws', () => {
     const accessKey = 'example';
     const secretKey = 'example';
     const sessionToken = 'example';
@@ -126,36 +126,6 @@ describe('#loadCredentials', function () {
           it('does not refresh credentials', async function () {
             const providers = await loadCredentials(kmsProviders);
             expect(providers).to.deep.equal(kmsProviders);
-          });
-        });
-
-        context.skip('when aws does not exist', function () {
-          const kmsProviders = {
-            local: {
-              key: Buffer.alloc(96)
-            }
-          };
-
-          before(function () {
-            if (!requirements.credentialProvidersInstalled.aws) {
-              this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
-              this.currentTest.skip();
-              return;
-            }
-          });
-
-          it('refreshes ony the aws credentials', async function () {
-            const providers = await loadCredentials(kmsProviders);
-            expect(providers).to.deep.equal({
-              local: {
-                key: Buffer.alloc(96)
-              },
-              aws: {
-                accessKeyId: accessKey,
-                secretAccessKey: secretKey,
-                sessionToken: sessionToken
-              }
-            });
           });
         });
       });
