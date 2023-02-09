@@ -363,7 +363,7 @@ mc_dec128_to_string (mc_dec128 d)
                         l, r, flags ? &flags->bits : &zero_flags.bits);    \
       });                                                                  \
       MC_IF_LIBDFP ({                                                      \
-         bool r;                                                           \
+         bool r = false;                                                   \
          MC_HOLD_FENV (-1, flags)                                          \
          {                                                                 \
             r = l Builtin r;                                               \
