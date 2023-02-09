@@ -16,6 +16,6 @@ const EXPECTED_EXPORTS = [
 
 describe('mongodb-client-encryption entrypoint', () => {
   it('should export all and only the expected keys in expected_exports', () => {
-    expect(mongodbClientEncryption).to.have.keys(EXPECTED_EXPORTS);
+    expect(mongodbClientEncryption).to.have.all.keys(EXPECTED_EXPORTS);
   });
 });
