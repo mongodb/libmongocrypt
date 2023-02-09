@@ -90,6 +90,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/libcrypto.c
    src/crypto/none.c
    src/mc-array.c
+   src/mc-dec128.c
    src/mc-efc.c
    src/mc-fle2-find-range-payload.c
    src/mc-fle2-insert-update-payload.c
