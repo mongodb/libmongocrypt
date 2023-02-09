@@ -69,7 +69,7 @@ main ()
    //* Alas, different dfp implementations render strings differently, so we
    // just check that it rendered anything at all.
    mc_dec128_string s = mc_dec128_to_string (c);
-   CHECK (std::strlen (s.str) > 0);
+   CHECK (std::strlen (s.str) > 0u);
 
    char *str = mc_dec128_to_new_decimal_string (c);
    CHECK (std::string (str) == "2.5");
