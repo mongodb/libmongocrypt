@@ -540,7 +540,7 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       add_executable ("${exe_name}" "${file}")
       target_compile_features ("${exe_name}" PRIVATE cxx_relaxed_constexpr)
       target_link_libraries ("${exe_name}" PRIVATE
-         mongocrypt
+         mongocrypt_static
          mongo::mlib
          mongocrypt::dfp
          Threads::Threads
