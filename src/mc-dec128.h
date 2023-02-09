@@ -14,6 +14,10 @@
 #include <fenv.h>
 #include <stdlib.h>
 
+// IntelDFP tries to be "helpful" and define fenv types on behalf of fenv.h, but
+// it doesn't detect prior <fenv.h> inclusion correctly in some cases. Define
+// a header-guard macro that it looks for:
+#define __FENV_H_INCLUDED
 
 #ifdef _DFP_MATH_H
 // We included libdfp's math.h
@@ -55,8 +59,8 @@ typedef enum mc_dec128_rounding_mode {
 } mc_dec128_rounding_mode;
 
 typedef struct mc_dec128_flagset {
-   MC_IF_IntelDFP (_IDEC_flags bits);
-   MC_IF_LIBDFP (int bits);
+   MC_IF_IntelDFP (_IDEC_flags bits;) //
+      MC_IF_LIBDFP (int bits;)
 } mc_dec128_flagset;
 
 // This alignment conditional is the same conditions used in Intel's DFP
