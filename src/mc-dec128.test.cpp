@@ -1,11 +1,3 @@
-// Required to enable decimal for libdfp in C++
-#define __STDC_WANT_DEC_FP__ 1
-#define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-
-#if __has_include(<decimal/decimal>)
-#include <decimal/decimal>
-#endif
-
 #include <mc-dec128.h>
 
 #include <cstring>
