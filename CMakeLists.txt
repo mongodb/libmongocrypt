@@ -282,7 +282,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
-      mongocrypt::intel_dfp
+      mongocrypt::dfp
       ${CMAKE_DL_LIBS}
    )
 
@@ -340,7 +340,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
-      mongocrypt::intel_dfp
+      mongocrypt::dfp
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
@@ -360,7 +360,7 @@ if (ENABLE_BUILD_FOR_PPA)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -pthread")
 endif ()
 if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM")
-   get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
+   get_property (SYSTEM_DFP_LOC TARGET _mongocrypt::system-dfp PROPERTY IMPORTED_LOCATION)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
 
@@ -541,7 +541,7 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       target_link_libraries ("${exe_name}" PRIVATE
          mongocrypt
          mongo::mlib
-         mongocrypt::intel_dfp
+         mongocrypt::dfp
          Threads::Threads
          _mongocrypt::libbson_for_static
          )
@@ -635,10 +635,6 @@ if (ENABLE_BUILD_FOR_PPA)
       set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} ${RT_LIBRARY}")
    endif ()
    set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} -pthread")
-endif ()
-if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM")
-   get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
-   set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
 set (PKG_CONFIG_CFLAGS "-I\${includedir}")
 set (PKG_CONFIG_STATIC_CFLAGS "${PKG_CONFIG_CFLAGS} -DMONGOCRYPT_STATIC_DEFINE -DKMS_MSG_STATIC")

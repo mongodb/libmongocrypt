@@ -376,30 +376,23 @@ target_compile_definitions (intel_dfp_obj PUBLIC
 target_compile_options (intel_dfp_obj PRIVATE -w)
 target_include_directories(intel_dfp_obj PUBLIC ${intel_dfp_SOURCE_DIR}/LIBRARY/src)
 
-# Define an interface library that attaches the built TUs to the consumer
-add_library (_mongocrypt_intel_dfp INTERFACE)
-add_library (mongocrypt::intel_dfp ALIAS _mongocrypt_intel_dfp)
-
-target_sources (_mongocrypt_intel_dfp
+target_sources (_mongocrypt-dfp
     #[[
-        For targets *within this build* that link with mongocrypt::intel_dfp,
+        For targets *within this build* that link with mongocrypt::dfp,
         inject the generated TUs (object files) from the intel_dfp_obj library.
 
         This will be stripped out of the interface library when it is installed,
-        since we don't want to ship the DFP object separately. Instead, users
+        since we don't want to ship the DFP objects separately. Instead, users
         will link to libmongocrypt, which will contain the necessary TUs for
         the library (because they link to this interface library).
     ]]
     INTERFACE $<BUILD_INTERFACE:$<TARGET_OBJECTS:intel_dfp_obj>>
     )
-target_link_libraries (_mongocrypt_intel_dfp
+target_link_libraries (_mongocrypt-dfp
     INTERFACE
+        # IntelDFP requires that we set certain definitions just to consume its headers:
         $<BUILD_INTERFACE:intel_dfp_obj>
         # We do want to propagate an interface requirement: Some platforms need a
         # separate link library to support special math functions.
         $<$<PLATFORM_ID:Linux>:m>
     )
-
-# Give the installed target a name to indicate its hidden-ness
-set_property (TARGET _mongocrypt_intel_dfp PROPERTY EXPORT_NAME private::intel_dfp_interface)
-install (TARGETS _mongocrypt_intel_dfp EXPORT mongocrypt_targets)
