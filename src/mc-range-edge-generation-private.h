@@ -94,15 +94,10 @@ static inline size_t
 mc_count_leading_zeros_u64 (uint64_t in)
 {
 #ifdef __has_builtin
-#if __has_builtin(__builtin_clzl)
-// Pointer-cast to ensure we are speaking the right type
-#if defined(__APPLE__) || defined(__ILP32__)
-   unsigned long long *p = &in;
-   return (size_t) (in ? __builtin_clzll (*p) : 64);
-#else
-   unsigned long *p = &in;
-   return (size_t) (in ? __builtin_clzl (*p) : 64);
-#endif
+#if __has_builtin(__builtin_clzll)
+   unsigned long long ull = in;
+   BSON_STATIC_ASSERT2 (ull_is_u64, sizeof (ull) == sizeof (in));
+   return (size_t) (in ? __builtin_clzll (ull) : 64);
 #endif
 #endif
    uint64_t bit = UINT64_C (1) << 63;
