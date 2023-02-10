@@ -6,7 +6,6 @@ Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
            Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>
 Build-Depends: debhelper (>= 10),
                cmake,
-               quilt,
                libssl-dev,
                pkg-config,
                libdfp-dev (>= 1.0.16-1),

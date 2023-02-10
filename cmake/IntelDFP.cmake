@@ -332,7 +332,7 @@ set_property (TARGET intel_dfp_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 # DFP needs information about the build target platform. Compute that:
 set (proc_lower $<LOWER_CASE:${CMAKE_SYSTEM_PROCESSOR}>)
-set (ia32_list i386 emscripted x86 arm)
+set (ia32_list i386 i486 i586 i686 pentium3 pentium4 athlon geode emscripted x86 arm)
 set (efi2_list aarch64 arm64 x86_64 ppc64le riscv64)
 
 set (is_linux $<PLATFORM_ID:Linux>)
