@@ -1,3 +1,9 @@
+libmongocrypt (1.7.1-3) UNRELEASED; urgency=medium
+
+  * Drop remove-builtin.patch, integrated upstream
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Fri, 10 Feb 2023 09:33:24 -0600
+
 libmongocrypt (1.7.1-2) unstable; urgency=medium
 
   * Remove builtin which causes 32-bit ARM builds to fail
