@@ -253,7 +253,7 @@ rpm-build:
     GIT CLONE https://src.fedoraproject.org/rpms/libmongocrypt.git /R
     # Install the packages listed by "BuildRequires" and rpm-build:
     RUN __install $(awk '/^BuildRequires:/ { print $2 }' /R/libmongocrypt.spec) \
-                  rpm-build
+                  rpm-build libdfp-devel
     DO +COPY_SOURCE
     RUN cp -r /s/libmongocrypt/. /R
     RUN awk -f /R/etc/rpm/tweak.awk < /R/libmongocrypt.spec > /R/libmongocrypt.2.spec
@@ -300,7 +300,7 @@ deb-build:
     ARG env=deb-unstable
     FROM +env.$env
     RUN __install git-buildpackage fakeroot debhelper cmake libbson-dev \
-                  libintelrdfpmath-dev
+                  libdfp-dev quilt
     DO +COPY_SOURCE
     WORKDIR /s/libmongocrypt
     RUN git clean -fdx && git reset --hard

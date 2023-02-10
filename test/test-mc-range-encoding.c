@@ -766,13 +766,11 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
       .expect = MLIB_INT128_CAST (Expect),                 \
    }
 
-#define ASSERT_EIBB_OVERFLOW(Val, Max, Min, Precision, Expect) \
-   (Decimal128Test)                                            \
-   {                                                           \
-      .value = mc_dec128_from_string (#Val),                   \
-      .min = OPT_MC_DEC128 (mc_dec128_from_string (#Min)),     \
-      .max = OPT_MC_DEC128 (mc_dec128_from_string (#Max)),     \
-      .precision = OPT_U32 (Precision), .expect = Expect,      \
+#define ASSERT_EIBB_OVERFLOW(Val, Max, Min, Precision, Expect)              \
+   (Decimal128Test)                                                         \
+   {                                                                        \
+      .value = Val, .min = OPT_MC_DEC128 (Min), .max = OPT_MC_DEC128 (Max), \
+      .precision = OPT_U32 (Precision), .expect = Expect,                   \
    }
 
       ASSERT_EIBB (0, 1, -1, 3, 1000),
@@ -781,16 +779,16 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
       ASSERT_EIBB (-1E-33, 1, -1E5, 3, 100000000),
 
       ASSERT_EIBB_OVERFLOW (
-         0,
+         MC_DEC128_ZERO,
          MC_DEC128_LARGEST_POSITIVE,
          MC_DEC128_LARGEST_NEGATIVE,
          3,
          mlib_int128_from_string ("170141183460469231731687303715884105728",
                                   NULL)),
       ASSERT_EIBB_OVERFLOW (
-         0,
-         DBL_MAX,
-         DBL_MIN,
+         MC_DEC128_ZERO,
+         mc_dec128_from_double (DBL_MAX),
+         mc_dec128_from_double (-DBL_MAX),
          3,
          mlib_int128_from_string ("170141183460469231731687303715884105728",
                                   NULL)),
@@ -806,9 +804,9 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
       ASSERT_EIBB (-5, -1, -10, 3, 5000),
 
       ASSERT_EIBB_OVERFLOW (
-         1E100,
-         DBL_MAX,
-         DBL_MIN,
+         mc_dec128_from_string ("1E100"),
+         mc_dec128_from_double (DBL_MAX),
+         mc_dec128_from_double (DBL_MIN),
          3,
          mlib_int128_from_string ("232572183460469231731687303715884099485",
                                   NULL)),

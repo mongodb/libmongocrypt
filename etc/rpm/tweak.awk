@@ -8,6 +8,20 @@
 # Drop the source. We're bringing our own
 /Source0/ { next }
 
+/%package devel/ {
+    # Insert a dep on 'libdfp-devel'
+    print
+    print "BuildRequires: libdfp-devel"
+    print "Requires: libdfp"
+    next
+}
+
+/-DMONGOCRYPT_MONGOC_DIR:STRING=USE-SYSTEM/ {
+    print
+    print "   -DMONGOCRYPT_DFP_DIR=USE-SYSTEM \\"
+    next
+}
+
 # Replace the autosetup with one that copies the source tree into place
 /%autosetup/ {
     print "cp -rf %{_sourcedir}/. %{_builddir}/\n" \

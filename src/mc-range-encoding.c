@@ -325,8 +325,8 @@ static mlib_int128
 dec128_to_int128 (mc_dec128 dec)
 {
    // Only normal numbers
-   BSON_ASSERT (mc_dec128_is_finite (dec));
-   BSON_ASSERT (!mc_dec128_is_nan (dec));
+   BSON_ASSERT (mc_dec128_isfinite (dec));
+   BSON_ASSERT (!mc_dec128_isnan (dec));
    // We don't support negative numbers
    BSON_ASSERT (!mc_dec128_is_negative (dec));
    // There is no fractional part:
@@ -362,7 +362,7 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
    }
 
    // We only accept normal numbers
-   if (mc_dec128_is_inf (args.value) || mc_dec128_is_nan (args.value)) {
+   if (mc_dec128_isinf (args.value) || mc_dec128_isnan (args.value)) {
       CLIENT_ERR ("Infinity and Nan Decimal128 values are not supported.");
       return false;
    }
@@ -423,7 +423,7 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
 
       // We can overflow if max = max_dec128 and min = min_dec128 so make sure
       // we have finite number after we do subtraction
-      if (mc_dec128_is_finite (bounds)) {
+      if (mc_dec128_isfinite (bounds)) {
          // This creates a range which is wider then we permit by our min/max
          // bounds check with the +1 but it is as the algorithm is written in
          // WRITING-11907.
@@ -433,7 +433,7 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
          /// precision (as decimal)
          mc_dec128 bits_range_dec = mc_dec128_log2 (precision_scaled_bounds);
 
-         if (mc_dec128_is_finite (bits_range_dec) &&
+         if (mc_dec128_isfinite (bits_range_dec) &&
              mc_dec128_less (bits_range_dec, MC_DEC128 (128))) {
             // We need fewer than 128 bits to hold the result. But round up,
             // just to be sure:
@@ -494,7 +494,8 @@ mc_getTypeInfoDecimal128 (mc_getTypeInfoDecimal128_args_t args,
       v_prime2 = mc_dec128_round_integral_ex (
          v_prime2, MC_DEC128_ROUND_TOWARD_ZERO, NULL);
 
-      BSON_ASSERT (mc_dec128_less (mc_dec128_log2 (v_prime2), MC_DEC128 (128)));
+      BSON_ASSERT (mc_dec128_is_zero (v_prime2) ||
+                   mc_dec128_less (mc_dec128_log2 (v_prime2), MC_DEC128 (128)));
 
       // Resulting OST maximum
       mlib_int128 ost_max =

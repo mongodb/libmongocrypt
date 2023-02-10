@@ -90,6 +90,7 @@ set (MONGOCRYPT_SOURCES
    src/crypto/libcrypto.c
    src/crypto/none.c
    src/mc-array.c
+   src/mc-dec128.c
    src/mc-efc.c
    src/mc-fle2-find-range-payload.c
    src/mc-fle2-insert-update-payload.c
@@ -282,7 +283,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
-      mongocrypt::intel_dfp
+      mongocrypt::dfp
       ${CMAKE_DL_LIBS}
    )
 
@@ -340,7 +341,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
-      mongocrypt::intel_dfp
+      mongocrypt::dfp
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
@@ -360,7 +361,7 @@ if (ENABLE_BUILD_FOR_PPA)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -pthread")
 endif ()
 if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM")
-   get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
+   get_property (SYSTEM_DFP_LOC TARGET _mongocrypt::system-dfp PROPERTY IMPORTED_LOCATION)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
 
@@ -521,7 +522,7 @@ add_test (
 
 foreach (test IN ITEMS path str)
    add_executable (mlib.${test}.test src/mlib/${test}.test.c)
-   add_test (mlib.${test} mlib.${test}.test)
+   add_test (NAME mlib.${test} COMMAND mlib.${test}.test)
    target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
 endforeach ()
 
@@ -539,13 +540,13 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       add_executable ("${exe_name}" "${file}")
       target_compile_features ("${exe_name}" PRIVATE cxx_relaxed_constexpr)
       target_link_libraries ("${exe_name}" PRIVATE
-         mongocrypt
+         mongocrypt_static
          mongo::mlib
-         mongocrypt::intel_dfp
+         mongocrypt::dfp
          Threads::Threads
          _mongocrypt::libbson_for_static
          )
-      add_test ("${test_name}" "${exe_name}")
+      add_test (NAME "${test_name}" COMMAND "${exe_name}")
    endforeach ()
 endif ()
 
@@ -635,10 +636,6 @@ if (ENABLE_BUILD_FOR_PPA)
       set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} ${RT_LIBRARY}")
    endif ()
    set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} -pthread")
-endif ()
-if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM")
-   get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
-   set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
 set (PKG_CONFIG_CFLAGS "-I\${includedir}")
 set (PKG_CONFIG_STATIC_CFLAGS "${PKG_CONFIG_CFLAGS} -DMONGOCRYPT_STATIC_DEFINE -DKMS_MSG_STATIC")
