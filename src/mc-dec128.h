@@ -7,6 +7,16 @@
 #include <mlib/int128.h>
 #include <mlib/endian.h>
 
+// Conditional preprocessor definition set by the usage of an intel_dfp from
+// the ImportDFP.cmake script:
+#ifndef MONGOCRYPT_INTELDFP
+// Notify includers that Decimal128 is not available:
+#define MONGOCRYPT_HAVE_DECIMAL128_SUPPORT 0
+
+#else // With IntelDFP:
+// Tell includers that Decimal128 is okay:
+#define MONGOCRYPT_HAVE_DECIMAL128_SUPPORT 1
+
 // Include the header that declares the DFP functions, which may be macros that
 // expand to renamed symbols:
 #include <bid_conf.h>
@@ -727,5 +737,7 @@ mc_dec128_to_bson_decimal128 (mc_dec128 v)
 }
 
 MLIB_C_LINKAGE_END
+
+#endif /// defined MONGOCRYPT_INTELDFP
 
 #endif // MC_DEC128_H_INCLUDED
