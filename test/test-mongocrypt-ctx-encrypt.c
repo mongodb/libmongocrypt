@@ -2617,6 +2617,7 @@ _test_encrypt_fle2_insert_range_payload_double_precision (
 }
 #undef RNG_DATA
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 #include "./data/fle2-insert-range/decimal128/RNG_DATA.h"
 static void
 _test_encrypt_fle2_insert_range_payload_decimal128 (
@@ -2642,6 +2643,7 @@ _test_encrypt_fle2_insert_range_payload_decimal128_precision (
       tester, "fle2-insert-range/decimal128-precision", &source);
 }
 #undef RNG_DATA
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void
@@ -2689,6 +2691,7 @@ _test_encrypt_fle2_find_range_payload_double_precision (
       tester, "fle2-find-range/double-precision", &source);
 }
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 // FLE2FindRangePayload only uses deterministic token generation.
 static void
 _test_encrypt_fle2_find_range_payload_decimal128 (_mongocrypt_tester_t *tester)
@@ -2707,6 +2710,7 @@ _test_encrypt_fle2_find_range_payload_decimal128_precision (
    _test_encrypt_fle2_encryption_placeholder (
       tester, "fle2-find-range/decimal128-precision", &source);
 }
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 static mongocrypt_t *
 _crypt_with_rng (_test_rng_data_source *rng_source)
@@ -5076,13 +5080,17 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_date);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_double);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_double_precision);
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_decimal128);
    INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_decimal128_precision);
+#endif
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int32);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int64);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_date);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_double);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_double_precision);
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_decimal128);
    INSTALL_TEST (_test_encrypt_fle2_find_range_payload_decimal128_precision);
+#endif
 }

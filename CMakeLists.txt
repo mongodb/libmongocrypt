@@ -45,7 +45,13 @@ include (GNUInstallDirs)
 
 include (LTO)
 include (ImportBSON)
-include (ImportDFP)
+
+option (MONGOCRYPT_ENABLE_DECIMAL128 "Enable extended support for Decimal128" ON)
+mark_as_advanced (MONGOCRYPT_ENABLE_DECIMAL128)
+if (MONGOCRYPT_ENABLE_DECIMAL128)
+   include (ImportDFP)
+endif ()
+set (maybe_dfp_library $<$<BOOL:${MONGOCRYPT_ENABLE_DECIMAL128}>:mongocrypt::intel_dfp>)
 
 if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
    message (FATAL_ERROR "PPA build requires static linking to libbson")
@@ -282,7 +288,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
-      mongocrypt::intel_dfp
+      ${maybe_dfp_library}
       ${CMAKE_DL_LIBS}
    )
 
@@ -340,7 +346,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
-      mongocrypt::intel_dfp
+      ${maybe_dfp_library}
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
@@ -359,7 +365,7 @@ if (ENABLE_BUILD_FOR_PPA)
    endif ()
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -pthread")
 endif ()
-if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM")
+if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM" AND MONGOCRYPT_ENABLE_DECIMAL128)
    get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
@@ -541,7 +547,7 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       target_link_libraries ("${exe_name}" PRIVATE
          mongocrypt
          mongo::mlib
-         mongocrypt::intel_dfp
+         ${maybe_dfp_library}
          Threads::Threads
          _mongocrypt::libbson_for_static
          )
@@ -636,7 +642,7 @@ if (ENABLE_BUILD_FOR_PPA)
    endif ()
    set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} -pthread")
 endif ()
-if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM")
+if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM" AND MONGOCRYPT_ENABLE_DECIMAL128)
    get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
    set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()

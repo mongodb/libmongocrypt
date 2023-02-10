@@ -64,5 +64,7 @@ elseif (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM")
    # users during find_package()
    target_link_libraries (_mongocrypt-intel_dfp INTERFACE $<BUILD_INTERFACE:intel_dfp>)
 
+   # Notify in-tree consumers that IntelDFP is available:
+   target_compile_definitions (_mongocrypt-intel_dfp INTERFACE $<BUILD_INTERFACE:MONGOCRYPT_INTELDFP>)
 endif ()
 

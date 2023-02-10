@@ -380,6 +380,9 @@ target_include_directories(intel_dfp_obj PUBLIC ${intel_dfp_SOURCE_DIR}/LIBRARY/
 add_library (_mongocrypt_intel_dfp INTERFACE)
 add_library (mongocrypt::intel_dfp ALIAS _mongocrypt_intel_dfp)
 
+# Notify in-tree consumers that IntelDFP is available:
+target_compile_definitions (_mongocrypt_intel_dfp INTERFACE $<BUILD_INTERFACE:MONGOCRYPT_INTELDFP>)
+
 target_sources (_mongocrypt_intel_dfp
     #[[
         For targets *within this build* that link with mongocrypt::intel_dfp,

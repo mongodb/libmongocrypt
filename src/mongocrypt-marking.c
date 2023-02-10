@@ -702,6 +702,7 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
    }
 
    else if (value_type == BSON_TYPE_DECIMAL128) {
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
       const mc_dec128 value = mc_dec128_from_bson_iter (&insertSpec->v);
       mc_getEdgesDecimal128_args_t args = {
          .value = value,
@@ -715,6 +716,11 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
          args.precision = insertSpec->precision;
       }
       return mc_getEdgesDecimal128 (args, status);
+#else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
+      CLIENT_ERR ("unsupported BSON type (Decimal128) for range: libmongocrypt "
+                  "was built without extended Decimal128 support");
+      return NULL;
+#endif
    }
 
 
@@ -1177,6 +1183,7 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
       return mc_getMincoverDouble (args, status);
    }
    case BSON_TYPE_DECIMAL128: {
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
       BSON_ASSERT (bson_iter_type (&lowerBound) == BSON_TYPE_DECIMAL128);
       BSON_ASSERT (bson_iter_type (&upperBound) == BSON_TYPE_DECIMAL128);
       BSON_ASSERT (bson_iter_type (&findSpec->edgesInfo.value.indexMin) ==
@@ -1199,6 +1206,11 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
          args.precision = findSpec->edgesInfo.value.precision;
       }
       return mc_getMincoverDecimal128 (args, status);
+#else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
+      CLIENT_ERR ("FLE2 find is not supported for Decimal128: libmongocrypt "
+                  "was built without Decimal128 support");
+      return NULL;
+#endif
    }
 
    case BSON_TYPE_EOD:
