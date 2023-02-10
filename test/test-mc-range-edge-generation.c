@@ -262,6 +262,7 @@ _test_getEdgesDouble (_mongocrypt_tester_t *tester)
 }
 
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 #define MAX_DEC128_EDGES 129
 typedef struct {
    mc_dec128 value;
@@ -334,6 +335,7 @@ _test_getEdgesDecimal128 (_mongocrypt_tester_t *tester)
       mongocrypt_status_destroy (status);
    }
 }
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 static void
 _test_count_leading_zeros (_mongocrypt_tester_t *tester)
@@ -458,7 +460,9 @@ _mongocrypt_tester_install_range_edge_generation (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_getEdgesInt32);
    INSTALL_TEST (_test_getEdgesInt64);
    INSTALL_TEST (_test_getEdgesDouble);
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
    INSTALL_TEST (_test_getEdgesDecimal128);
+#endif
    INSTALL_TEST (_test_count_leading_zeros);
    INSTALL_TEST (_test_convert_to_bitstring);
 }

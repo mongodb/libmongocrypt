@@ -67,6 +67,7 @@ typedef struct {
    const char *expectError;
 } DoubleTest;
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 typedef struct {
    mc_dec128 lowerBound;
    bool includeLowerBound;
@@ -79,6 +80,7 @@ typedef struct {
    const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
    const char *expectError;
 } Decimal128Test;
+#endif
 
 typedef struct _test_getMincover_args {
    mc_mincover_t *(*getMincover) (void *tests,
@@ -147,6 +149,7 @@ _test_getMincoverDouble_helper (void *tests,
       status);
 }
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static mc_mincover_t *
 _test_getMincoverDecimal128_helper (void *tests,
                                     size_t idx,
@@ -168,6 +171,7 @@ _test_getMincoverDecimal128_helper (void *tests,
          .precision = test->precision},
       status);
 }
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 static const char *
 _test_expectError32 (void *tests, size_t idx)
@@ -190,12 +194,14 @@ _test_expectErrorDouble (void *tests, size_t idx)
    return ((DoubleTest *) tests + idx)->expectError;
 }
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static const char *
 _test_expectErrorDecimal128 (void *tests, size_t idx)
 {
    BSON_ASSERT_PARAM (tests);
    return ((Decimal128Test *) tests + idx)->expectError;
 }
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 static const char *const *
 _test_expectMincover32 (void *tests, size_t idx)
@@ -218,12 +224,14 @@ _test_expectMincoverDouble (void *tests, size_t idx)
    return ((DoubleTest *) tests + idx)->expectMincoverStrings;
 }
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static const char *const *
 _test_expectMincoverDecimal128 (void *tests, size_t idx)
 {
    BSON_ASSERT_PARAM (tests);
    return ((Decimal128Test *) tests + idx)->expectMincoverStrings;
 }
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 static void
 _test_dump_32 (void *tests, size_t idx, mc_mincover_t *got)
@@ -321,6 +329,7 @@ _test_dump_Double (void *tests, size_t idx, mc_mincover_t *got)
    fprintf (stderr, "mincover got ... end\n");
 }
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static void
 _test_dump_Decimal128 (void *tests, size_t idx, mc_mincover_t *got)
 {
@@ -354,7 +363,7 @@ _test_dump_Decimal128 (void *tests, size_t idx, mc_mincover_t *got)
    }
    fprintf (stderr, "mincover got ... end\n");
 }
-
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 static void
 _test_getMincover_impl (void *tests,
@@ -568,6 +577,7 @@ _test_getMincoverDouble (_mongocrypt_tester_t *tester)
                                .dump = _test_dump_Double});
 }
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static void
 _test_getMincoverDecimal128 (_mongocrypt_tester_t *tester)
 {
@@ -585,6 +595,7 @@ _test_getMincoverDecimal128 (_mongocrypt_tester_t *tester)
          .expectError = _test_expectErrorDecimal128,
          .dump = _test_dump_Decimal128});
 }
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 void
 _mongocrypt_tester_install_range_mincover (_mongocrypt_tester_t *tester)
@@ -592,5 +603,7 @@ _mongocrypt_tester_install_range_mincover (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_getMincoverInt32);
    INSTALL_TEST (_test_getMincoverInt64);
    INSTALL_TEST (_test_getMincoverDouble);
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
    INSTALL_TEST (_test_getMincoverDecimal128);
+#endif
 }

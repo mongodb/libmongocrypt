@@ -525,6 +525,7 @@ _test_RangeTest_Encode_Double (_mongocrypt_tester_t *tester)
 }
 
 
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 typedef struct {
    mc_dec128 value;
    mc_optional_dec128_t min;
@@ -871,11 +872,15 @@ _test_RangeTest_Encode_Decimal128 (_mongocrypt_tester_t *tester)
    }
 }
 
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+
 void
 _mongocrypt_tester_install_range_encoding (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_RangeTest_Encode_Int32);
    INSTALL_TEST (_test_RangeTest_Encode_Int64);
    INSTALL_TEST (_test_RangeTest_Encode_Double);
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
    INSTALL_TEST (_test_RangeTest_Encode_Decimal128);
+#endif
 }
