@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 10),
                cmake,
                libssl-dev,
                pkg-config,
-               libintelrdfpmath-dev (>= 2.0u2-6),
+               libintelrdfpmath-dev (>= 2.0u2-6) [!mips64el !mipsel],
                libbson-dev
 Standards-Version: 4.6.2
 Section: libs
@@ -20,7 +20,7 @@ Architecture: any
 Multi-Arch: same
 Depends: libbson-dev,
          libmongocrypt0 (= ${binary:Version}),
-         libintelrdfpmath-dev (>= 2.0u2-6),
+         libintelrdfpmath-dev (>= 2.0u2-6) [!mips64el !mipsel],
          ${misc:Depends}
 Description: client-side field level encryption library - dev files
  libmongocrypt facilitates the client-side encryption and decryption,
