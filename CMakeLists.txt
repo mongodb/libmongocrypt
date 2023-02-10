@@ -48,10 +48,11 @@ include (ImportBSON)
 
 option (MONGOCRYPT_ENABLE_DECIMAL128 "Enable extended support for Decimal128" ON)
 mark_as_advanced (MONGOCRYPT_ENABLE_DECIMAL128)
+set (maybe_dfp_library)
 if (MONGOCRYPT_ENABLE_DECIMAL128)
    include (ImportDFP)
+   set (maybe_dfp_library mongocrypt::intel_dfp)
 endif ()
-set (maybe_dfp_library $<$<BOOL:${MONGOCRYPT_ENABLE_DECIMAL128}>:mongocrypt::intel_dfp>)
 
 if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
    message (FATAL_ERROR "PPA build requires static linking to libbson")
