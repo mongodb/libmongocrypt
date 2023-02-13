@@ -1,4 +1,10 @@
 # ChangeLog
+## 1.7.2
+### Improvements
+- Add toggle for Decimal128 Range Support.
+### Fixed
+- Fix i686 (32-bit) build.
+- Fix 32-bit ARM build.
 ## 1.7.1
 ### Improvements
 - Vendor Intel DFP library and allow using system DFP.
