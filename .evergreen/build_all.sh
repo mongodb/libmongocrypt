@@ -4,7 +4,6 @@
 # Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
 #
 
-set -x
 echo "Begin compile process"
 
 . "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
