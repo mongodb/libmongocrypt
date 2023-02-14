@@ -37,16 +37,28 @@ expectAssignable<RequiredCreateEncryptedCollectionSettings>({
 
 {
   // KMSProviders
+  // aws
+  expectAssignable<KMSProviders['aws']>({ accessKeyId: '', secretAccessKey: '' });
+  expectAssignable<KMSProviders['aws']>({ accessKeyId: '', secretAccessKey: '', sessionToken: undefined });
+  expectAssignable<KMSProviders['aws']>({ accessKeyId: '', secretAccessKey: '', sessionToken: '' });
+  // automatic
+  expectAssignable<KMSProviders['aws']>({});
+
   // azure
   expectAssignable<KMSProviders['azure']>({ tenantId: 'a', clientId: 'a', clientSecret: 'a' });
   expectAssignable<KMSProviders['azure']>({ tenantId: 'a', clientId: 'a', clientSecret: 'a' });
   expectAssignable<KMSProviders['azure']>({ tenantId: 'a', clientId: 'a', clientSecret: 'a', identityPlatformEndpoint: undefined });
   expectAssignable<KMSProviders['azure']>({ tenantId: 'a', clientId: 'a', clientSecret: 'a', identityPlatformEndpoint: '' });
   expectAssignable<KMSProviders['azure']>({ accessToken: 'a' });
+  // automatic TODO(NODE-4537): update azure types to accept automatic credentials
+  expectNotAssignable<KMSProviders['azure']>({});
 
   // gcp
   expectAssignable<KMSProviders['gcp']>({ email: 'a', privateKey: 'a' });
   expectAssignable<KMSProviders['gcp']>({ email: 'a', privateKey: 'a', endpoint: undefined });
   expectAssignable<KMSProviders['gcp']>({ email: 'a', privateKey: 'a', endpoint: 'a' });
   expectAssignable<KMSProviders['gcp']>({ accessToken: 'a' });
+  // automatic
+  expectAssignable<KMSProviders['gcp']>({});
+
 }
