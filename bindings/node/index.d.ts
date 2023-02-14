@@ -170,6 +170,11 @@ export interface KMSProviders {
      * Defaults to "login.microsoftonline.com"
      */
     identityPlatformEndpoint?: string | undefined;
+  } | {
+    /**
+     * If present, an access token to authenticate with Azure.
+     */
+    accessToken: string;
   };
 
   /**
@@ -191,6 +196,11 @@ export interface KMSProviders {
      * Defaults to "oauth2.googleapis.com"
      */
     endpoint?: string | undefined;
+  } | {
+    /**
+     * If present, an access token to authenticate with GCP.
+     */
+    accessToken: string;
   };
 }
 
