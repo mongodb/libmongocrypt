@@ -18,31 +18,33 @@
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-traverse-util-private.h"
-#include "mc-fle2-payload-ieev-private.h"
+#include "mc-fle2-payload-iev-private.h"
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-uev-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
 
 static bool
-_replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
-   void *ctx,
-   _mongocrypt_buffer_t *in,
-   bson_value_t *out,
-   mongocrypt_status_t *status)
+_replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
+                                                   _mongocrypt_buffer_t *in,
+                                                   bson_value_t *out,
+                                                   mongocrypt_status_t *status)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev =
-      mc_FLE2IndexedEqualityEncryptedValue_new ();
+   mc_FLE2IndexedEncryptedValue_t *iev = mc_FLE2IndexedEncryptedValue_new ();
    _mongocrypt_buffer_t S_Key = {0};
    _mongocrypt_buffer_t K_Key = {0};
 
-   if (!mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, in, status)) {
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+
+   if (!mc_FLE2IndexedEncryptedValue_parse (iev, in, status)) {
       goto fail;
    }
 
    const _mongocrypt_buffer_t *S_KeyId =
-      mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (ieev, status);
+      mc_FLE2IndexedEncryptedValue_get_S_KeyId (iev, status);
    if (!S_KeyId) {
       goto fail;
    }
@@ -53,13 +55,13 @@ _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
    }
 
    /* Decrypt InnerEncrypted to get K_KeyId. */
-   if (!mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
-          kb->crypt->crypto, ieev, &S_Key, status)) {
+   if (!mc_FLE2IndexedEncryptedValue_add_S_Key (
+          kb->crypt->crypto, iev, &S_Key, status)) {
       goto fail;
    }
 
    const _mongocrypt_buffer_t *K_KeyId =
-      mc_FLE2IndexedEqualityEncryptedValue_get_K_KeyId (ieev, status);
+      mc_FLE2IndexedEncryptedValue_get_K_KeyId (iev, status);
    if (!K_KeyId) {
       goto fail;
    }
@@ -71,19 +73,19 @@ _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
 
    /* Decrypt ClientEncryptedValue. */
    if (!mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
-          kb->crypt->crypto, ieev, &K_Key, status)) {
+          kb->crypt->crypto, iev, &K_Key, status)) {
       goto fail;
    }
 
    const _mongocrypt_buffer_t *clientValue =
-      mc_FLE2IndexedEqualityEncryptedValue_get_ClientValue (ieev, status);
+      mc_FLE2IndexedEncryptedValue_get_ClientValue (iev, status);
    if (!clientValue) {
       goto fail;
    }
 
    uint8_t original_bson_type =
-      mc_FLE2IndexedEqualityEncryptedValue_get_original_bson_type (ieev,
-                                                                   status);
+      (uint8_t) mc_FLE2IndexedEncryptedValue_get_original_bson_type (iev,
+                                                                     status);
    if (0 == original_bson_type) {
       goto fail;
    }
@@ -98,7 +100,7 @@ _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
 fail:
    _mongocrypt_buffer_cleanup (&K_Key);
    _mongocrypt_buffer_cleanup (&S_Key);
-   mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+   mc_FLE2IndexedEncryptedValue_destroy (iev);
    return ret;
 }
 
@@ -114,6 +116,10 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
    mc_FLE2UnindexedEncryptedValue_t *uev =
       mc_FLE2UnindexedEncryptedValue_new ();
    _mongocrypt_buffer_t key = {0};
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
 
    if (!mc_FLE2UnindexedEncryptedValue_parse (uev, in, status)) {
       goto fail;
@@ -139,7 +145,8 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
    }
 
    uint8_t original_bson_type =
-      mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev, status);
+      (uint8_t) mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev,
+                                                                       status);
    if (0 == original_bson_type) {
       goto fail;
    }
@@ -167,6 +174,10 @@ _replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2InsertUpdatePayload_t iup;
    _mongocrypt_buffer_t key = {0};
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
 
    mc_FLE2InsertUpdatePayload_init (&iup);
 
@@ -215,12 +226,14 @@ _replace_ciphertext_with_plaintext (void *ctx,
    uint32_t bytes_written;
    bool ret = false;
 
-   BSON_ASSERT (ctx);
-   BSON_ASSERT (in);
-   BSON_ASSERT (out);
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT (in->data);
 
-   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
-      return _replace_FLE2IndexedEqualityEncryptedValue_with_plaintext (
+   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue ||
+       in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
+      return _replace_FLE2IndexedEncryptedValue_with_plaintext (
          ctx, in, out, status);
    }
 
@@ -250,7 +263,11 @@ _replace_ciphertext_with_plaintext (void *ctx,
       goto fail;
    }
 
-   plaintext.len = _mongocrypt_calculate_plaintext_len (ciphertext.data.len);
+   plaintext.len =
+      _mongocrypt_calculate_plaintext_len (ciphertext.data.len, status);
+   if (plaintext.len == 0) {
+      goto fail;
+   }
    plaintext.data = bson_malloc0 (plaintext.len);
    BSON_ASSERT (plaintext.data);
 
@@ -319,13 +336,13 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    bson_iter_init (&iter, &as_bson);
    bson_init (&final_bson);
-   res = _mongocrypt_transform_binary_in_bson (
-      _replace_ciphertext_with_plaintext,
-      &ctx->kb,
-      TRAVERSE_MATCH_CIPHERTEXT,
-      &iter,
-      &final_bson,
-      ctx->status);
+   res =
+      _mongocrypt_transform_binary_in_bson (_replace_ciphertext_with_plaintext,
+                                            &ctx->kb,
+                                            TRAVERSE_MATCH_CIPHERTEXT,
+                                            &iter,
+                                            &final_bson,
+                                            ctx->status);
    if (!res) {
       bson_destroy (&final_bson);
       return _mongocrypt_ctx_fail (ctx);
@@ -338,22 +355,27 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    return true;
 }
 
+// TODO: rename to _collect_S_KeyID_from_FLE2IndexedEncryptedValue
 static bool
-_collect_S_KeyID_from_FLE2IndexedEqualityEncryptedValue (
-   void *ctx, _mongocrypt_buffer_t *in, mongocrypt_status_t *status)
+_collect_S_KeyID_from_FLE2IndexedEncryptedValue (void *ctx,
+                                                 _mongocrypt_buffer_t *in,
+                                                 mongocrypt_status_t *status)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev;
+   mc_FLE2IndexedEncryptedValue_t *iev;
 
-   ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
 
-   if (!mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, in, status)) {
+   iev = mc_FLE2IndexedEncryptedValue_new ();
+
+   if (!mc_FLE2IndexedEncryptedValue_parse (iev, in, status)) {
       goto fail;
    }
 
    const _mongocrypt_buffer_t *S_KeyId =
-      mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (ieev, status);
+      mc_FLE2IndexedEncryptedValue_get_S_KeyId (iev, status);
    if (!S_KeyId) {
       goto fail;
    }
@@ -365,32 +387,38 @@ _collect_S_KeyID_from_FLE2IndexedEqualityEncryptedValue (
 
    ret = true;
 fail:
-   mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+   mc_FLE2IndexedEncryptedValue_destroy (iev);
    return ret;
 }
 
 static bool
-_collect_K_KeyID_from_FLE2IndexedEqualityEncryptedValue (
-   void *ctx, _mongocrypt_buffer_t *in, mongocrypt_status_t *status)
+_collect_K_KeyID_from_FLE2IndexedEncryptedValue (void *ctx,
+                                                 _mongocrypt_buffer_t *in,
+                                                 mongocrypt_status_t *status)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
-   mc_FLE2IndexedEqualityEncryptedValue_t *ieev;
+   mc_FLE2IndexedEncryptedValue_t *iev;
    _mongocrypt_buffer_t S_Key = {0};
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT (in->data);
+
    /* Ignore other ciphertext types. */
-   if (in->data[0] != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
+   if (in->data[0] != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue &&
+       in->data[0] != MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
       return true;
    }
 
-   ieev = mc_FLE2IndexedEqualityEncryptedValue_new ();
+   iev = mc_FLE2IndexedEncryptedValue_new ();
 
-   if (!mc_FLE2IndexedEqualityEncryptedValue_parse (ieev, in, status)) {
+   if (!mc_FLE2IndexedEncryptedValue_parse (iev, in, status)) {
       goto fail;
    }
 
    const _mongocrypt_buffer_t *S_KeyId =
-      mc_FLE2IndexedEqualityEncryptedValue_get_S_KeyId (ieev, status);
+      mc_FLE2IndexedEncryptedValue_get_S_KeyId (iev, status);
    if (!S_KeyId) {
       goto fail;
    }
@@ -401,14 +429,14 @@ _collect_K_KeyID_from_FLE2IndexedEqualityEncryptedValue (
    }
 
    /* Decrypt InnerEncrypted to get K_KeyId. */
-   if (!mc_FLE2IndexedEqualityEncryptedValue_add_S_Key (
-          kb->crypt->crypto, ieev, &S_Key, status)) {
+   if (!mc_FLE2IndexedEncryptedValue_add_S_Key (
+          kb->crypt->crypto, iev, &S_Key, status)) {
       goto fail;
    }
 
    /* Add request for K_KeyId. */
    const _mongocrypt_buffer_t *K_KeyId =
-      mc_FLE2IndexedEqualityEncryptedValue_get_K_KeyId (ieev, status);
+      mc_FLE2IndexedEncryptedValue_get_K_KeyId (iev, status);
    if (!K_KeyId) {
       goto fail;
    }
@@ -421,7 +449,7 @@ _collect_K_KeyID_from_FLE2IndexedEqualityEncryptedValue (
    ret = true;
 fail:
    _mongocrypt_buffer_cleanup (&S_Key);
-   mc_FLE2IndexedEqualityEncryptedValue_destroy (ieev);
+   mc_FLE2IndexedEncryptedValue_destroy (iev);
    return ret;
 }
 
@@ -431,6 +459,8 @@ fail:
 static bool
 _check_for_K_KeyId (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    if (ctx->kb.state != KB_DONE) {
       return true;
    }
@@ -450,7 +480,7 @@ _check_for_K_KeyId (mongocrypt_ctx_t *ctx)
    bson_iter_init (&iter, &as_bson);
 
    if (!_mongocrypt_traverse_binary_in_bson (
-          _collect_K_KeyID_from_FLE2IndexedEqualityEncryptedValue,
+          _collect_K_KeyID_from_FLE2IndexedEncryptedValue,
           &ctx->kb,
           TRAVERSE_MATCH_CIPHERTEXT,
           &iter,
@@ -473,6 +503,9 @@ _collect_key_uuid_from_FLE2UnindexedEncryptedValue (void *ctx,
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2UnindexedEncryptedValue_t *uev;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
 
    uev = mc_FLE2UnindexedEncryptedValue_new ();
 
@@ -506,6 +539,9 @@ _collect_key_uuid_from_FLE2InsertUpdatePayload (void *ctx,
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2InsertUpdatePayload_t iup;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+
    mc_FLE2InsertUpdatePayload_init (&iup);
 
    if (!mc_FLE2InsertUpdatePayload_parse (&iup, in, status)) {
@@ -531,14 +567,15 @@ _collect_key_from_ciphertext (void *ctx,
    _mongocrypt_ciphertext_t ciphertext;
    _mongocrypt_key_broker_t *kb;
 
-   BSON_ASSERT (ctx);
-   BSON_ASSERT (in);
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT (in->data);
 
    kb = (_mongocrypt_key_broker_t *) ctx;
 
-   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue) {
-      return _collect_S_KeyID_from_FLE2IndexedEqualityEncryptedValue (
-         ctx, in, status);
+   if (in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue ||
+       in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue) {
+      return _collect_S_KeyID_from_FLE2IndexedEncryptedValue (ctx, in, status);
    }
 
    if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValue) {
@@ -567,6 +604,9 @@ _cleanup (mongocrypt_ctx_t *ctx)
 {
    _mongocrypt_ctx_decrypt_t *dctx;
 
+   if (!ctx) {
+      return;
+   }
    dctx = (_mongocrypt_ctx_decrypt_t *) ctx;
    _mongocrypt_buffer_cleanup (&dctx->original_doc);
    _mongocrypt_buffer_cleanup (&dctx->decrypted_doc);
@@ -642,6 +682,8 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
 static bool
 _mongo_done_keys (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    (void) _mongocrypt_key_broker_docs_done (&ctx->kb);
    if (!_check_for_K_KeyId (ctx)) {
       return false;
@@ -652,8 +694,12 @@ _mongo_done_keys (mongocrypt_ctx_t *ctx)
 static bool
 _kms_done (mongocrypt_ctx_t *ctx)
 {
-   _mongocrypt_opts_kms_providers_t *kms_providers =
-      _mongocrypt_ctx_kms_providers (ctx);
+   _mongocrypt_opts_kms_providers_t *kms_providers;
+
+   BSON_ASSERT_PARAM (ctx);
+
+   kms_providers = _mongocrypt_ctx_kms_providers (ctx);
+
    if (!_mongocrypt_key_broker_kms_done (&ctx->kb, kms_providers)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
       return _mongocrypt_ctx_fail (ctx);

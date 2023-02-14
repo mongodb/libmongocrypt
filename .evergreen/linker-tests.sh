@@ -1,15 +1,5 @@
 #!/bin/bash
 
-set -euxo pipefail
-
-system_path () {
-    if [ "${OS-}" == "Windows_NT" ]; then
-        cygpath -a "$1" -w
-    else
-        echo $1
-    fi
-}
-
 # Directory layout
 # .evergreen
 # -linker_tests_deps
@@ -27,80 +17,92 @@ system_path () {
 # --libmongocrypt
 #
 
-if [ ! -e ./.evergreen ]; then
-    echo "Error: run from libmongocrypt root"
-    exit 1;
+. "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
+
+linker_tests_root="$LIBMONGOCRYPT_DIR/linker_tests"
+linker_tests_deps_root="$EVG_DIR/linker_tests_deps"
+
+rm -rf -- "$linker_tests_root"
+mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build}
+
+# Make libbson1
+run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
+MONGOC_DIR="$linker_tests_root/mongo-c-driver"
+
+if test "$OS_NAME" = "windows" && is_false WINDOWS_32BIT && is_false USE_NINJA; then
+    # These options are only needed for VS CMake generators to force it to
+    # generate a 64-bit build. Default is 32-bit. Ninja inherits settings
+    # from the build environment variables.
+    ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
 fi
 
-libmongocrypt_root=$(pwd)
-linker_tests_root=${libmongocrypt_root}/linker_tests
-linker_tests_deps_root=${libmongocrypt_root}/.evergreen/linker_tests_deps
-
-. ${libmongocrypt_root}/.evergreen/setup-env.sh
-
-rm -rf linker_tests
-mkdir -p linker_tests/{install,libmongocrypt-cmake-build,app-cmake-build}
-cd linker_tests
-
-# Make libbson1 and libbson2
-$libmongocrypt_root/.evergreen/prep_c_driver_source.sh
-cd mongo-c-driver
-
-# Use C driver helper script to find cmake binary, stored in $CMAKE.
-if [ "$OS" == "Windows_NT" ]; then
-    CMAKE=/cygdrive/c/cmake/bin/cmake
-    if [ "$WINDOWS_32BIT" != "ON" ]; then
-        ADDITIONAL_CMAKE_FLAGS="-Thost=x64 -A x64"
-    fi
-else
-    # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-    IGNORE_SYSTEM_CMAKE=1 . "$libmongocrypt_root/.evergreen/find-cmake.sh"
-    # Check if on macOS with arm64. Use system cmake. See BUILD-14565.
-    OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
-    MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-    if [ "darwin" = "$OS_NAME" -a "arm64" = "$MARCH" ]; then
-        CMAKE=cmake
-    fi
-fi
-
-if [ "$MACOS_UNIVERSAL" = "ON" ]; then
+if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
-git apply --ignore-whitespace "$(system_path $linker_tests_deps_root/bson_patches/libbson1.patch)"
-mkdir cmake-build
-cd cmake-build
-INSTALL_PATH="$(system_path $linker_tests_root/install/bson1)"
-SRC_PATH="$(system_path ../)"
-$CMAKE -DENABLE_MONGOC=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
-$CMAKE --build . --target install --config RelWithDebInfo
-# Make libbson2
-cd ..
-git reset --hard
-git apply --ignore-whitespace "$(system_path $linker_tests_deps_root/bson_patches/libbson2.patch)"
-LIBBSON2_SRC_DIR="$(system_path "$PWD")"
+common_cmake_args=(
+  $ADDITIONAL_CMAKE_FLAGS
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo
+)
+
+if is_true USE_NINJA; then
+    export NINJA_EXE
+    : "${NINJA_EXE:="$linker_tests_root/ninja$EXE_SUFFIX"}"
+    common_cmake_args+=(
+        -GNinja
+        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
+    )
+    bash "$EVG_DIR/ensure-ninja.sh"
+fi
+
+run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
+
+BUILD_PATH="$MONGOC_DIR/cmake-build"
+BSON1_INSTALL_PATH="$linker_tests_root/install/bson1"
+SRC_PATH="$MONGOC_DIR"
+run_cmake \
+  -DENABLE_MONGOC=OFF \
+  "${common_cmake_args[@]}" \
+  -DCMAKE_INSTALL_PREFIX="$BSON1_INSTALL_PATH" \
+  "-H$SRC_PATH" \
+  "-B$BUILD_PATH"
+run_cmake --build "$BUILD_PATH" --target install --config RelWithDebInfo
+
+# Prepare libbson2
+run_chdir "$MONGOC_DIR" git reset --hard
+run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson2.patch"
+LIBBSON2_SRC_DIR="$MONGOC_DIR"
 
 # Build libmongocrypt, static linking against libbson2
-cd $linker_tests_root/libmongocrypt-cmake-build
-INSTALL_PATH="$(system_path $linker_tests_root/install/libmongocrypt)"
-SRC_PATH="$(system_path $libmongocrypt_root)"
-$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo "-DMONGOCRYPT_MONGOC_DIR=$LIBBSON2_SRC_DIR" $ADDITIONAL_CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX="$INSTALL_PATH" "$SRC_PATH"
-$CMAKE --build . --target install --config RelWithDebInfo
+BUILD_DIR="$linker_tests_root/libmongocrypt-cmake-build"
+LMC_INSTALL_PATH="$linker_tests_root/install/libmongocrypt"
+SRC_PATH="$LIBMONGOCRYPT_DIR"
+run_cmake \
+  "-DMONGOCRYPT_MONGOC_DIR=$LIBBSON2_SRC_DIR" \
+  "${common_cmake_args[@]}" \
+  -DCMAKE_INSTALL_PREFIX="$LMC_INSTALL_PATH" \
+  "-H$SRC_PATH" \
+  "-B$BUILD_DIR"
+run_cmake --build "$BUILD_DIR" --target install --config RelWithDebInfo
 
 echo "Test case: Modelling libmongoc's use"
 # app links against libbson1.so
 # app links against libmongocrypt.so
-cd $linker_tests_root/app-cmake-build
-PREFIX_PATH="$(system_path $linker_tests_root/install/bson1);$(system_path $linker_tests_root/install/libmongocrypt)"
-SRC_PATH="$(system_path $linker_tests_deps_root/app)"
-$CMAKE -DCMAKE_BUILD_TYPE=RelWithDebInfo $ADDITIONAL_CMAKE_FLAGS -DCMAKE_PREFIX_PATH="$PREFIX_PATH" "$SRC_PATH"
-$CMAKE --build . --target app --config RelWithDebInfo
+BUILD_DIR="$linker_tests_root/app-cmake-build"
+PREFIX_PATH="$LMC_INSTALL_PATH;$BSON1_INSTALL_PATH"
+SRC_PATH="$linker_tests_deps_root/app"
+run_cmake \
+  "${common_cmake_args[@]}" \
+  -DCMAKE_PREFIX_PATH="$PREFIX_PATH" \
+  "-H$SRC_PATH" \
+  "-B$BUILD_DIR"
+run_cmake --build "$BUILD_DIR" --target app --config RelWithDebInfo
 
-if [ "$OS" == "Windows_NT" ]; then
-    export PATH="$PATH:$linker_tests_root/install/bson1/bin:$linker_tests_root/install/libmongocrypt/bin"
-    APP_CMD="./RelWithDebInfo/app.exe"
+export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
+if is_true IS_MULTICONF; then
+    APP_CMD="$BUILD_DIR/RelWithDebInfo/app.exe"
 else
-    APP_CMD="./app"
+    APP_CMD="$BUILD_DIR/app"
 fi
 
 check_output () {

@@ -19,19 +19,20 @@ functions:
       params: {directory: libmongocrypt}
     - command: shell.exec
       params:
+        shell: bash
         script: |-
           set -o errexit
-          cd libmongocrypt
-          chmod u+x .evergreen/*.sh
-          ./.evergreen/print-env-info.sh
+          . libmongocrypt/.evergreen/init.sh
+          bash "$EVG_DIR/print-env-info.sh"
 
-          if [ "${is_patch}" != "true" ]; then
-            # determine if we have a release tag present on HEAD
-            head_tag=$(git tag -l --points-at HEAD '[0-9].*')
+          # determine if we have a release tag present on HEAD
+          head_tag=$(run_chdir libmongocrypt/ git tag -l --points-at HEAD '[0-9].*' || true)
+          use_tag=""
+          if test "${is_patch}" != "true"; then
+            echo "Setting tag_upload_location to '$head_tag'"
+            use_tag="$head_tag"
           fi
-          echo "tag_upload_location: $head_tag"
-
-          echo "tag_upload_location: \"$head_tag\"" > ../tag_expansion.yml
+          echo "tag_upload_location: '$use_tag'" > tag_expansion.yml
     - command: expansions.update
       params:
         ignore_missing_file: true
@@ -65,20 +66,27 @@ functions:
   "build and test":
     - command: "shell.exec"
       params:
+        shell: bash
         script: |-
-          set -o errexit
-          set -o xtrace
-          export LSAN_OPTIONS="suppressions=$PWD/libmongocrypt/.lsan-suppressions"
-          ${compile_env|} ./libmongocrypt/.evergreen/build_all.sh
-          cd libmongocrypt
-          ./.evergreen/linker-tests.sh
-          ./.evergreen/pkgconfig-tests.sh
-
+          . libmongocrypt/.evergreen/init.sh
+          export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
+          export VS_VERSION=${vs_version|}
+          export VS_TARGET_ARCH=${vs_target_arch|amd64}
+          export USE_NINJA=ON
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/build_all.sh"
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/linker-tests.sh"
+          env ${compile_env|} \
+            bash "$EVG_DIR/env-run.sh" \
+              bash "$EVG_DIR/pkgconfig-tests.sh"
 
   "create packages and repos":
     - command: "shell.exec"
-      shell: bash
       params:
+        shell: bash
         script: |
           env "WORKDIR=${workdir}" \
               "PYTHON=${python|}" \
@@ -107,7 +115,8 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          env ${compile_env|} CONFIGURE_ONLY=ON CC=clang CXX=clang++ \
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
+          env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
 
@@ -137,13 +146,29 @@ functions:
           NODE_GITHUB_TOKEN: ${node_github_token}
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
+          NODE_NVM_USE_VERSION: ${nvm_use_version|18}
+
+  "build and test node no peer dependencies":
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt/bindings/node"
+        args:
+          - "./.evergreen/test.sh"
+        env:
+          PROJECT_DIRECTORY: ${project_directory}
+          NODE_GITHUB_TOKEN: ${node_github_token}
+          DISTRO_ID: ${distro_id}
+          BUILD_VARIANT: ${build_variant}
+          OMIT_PEER_DEPS: "true"
+          NODE_NVM_USE_VERSION: ${nvm_use_version|18}
 
   "attach node xunit results":
     - command: attach.xunit_results
       params:
         file: ./libmongocrypt/bindings/node/xunit.xml
 
-  "publish snapshot":
+  "publish java":
     - command: git.get_project
       params: {directory: libmongocrypt}
     - command: shell.exec
@@ -159,18 +184,12 @@ functions:
             echo "Patch build detected, skipping"
             exit 0
           fi
-          if [ "${branch_name}" != "master" ]; then
-            echo "publish snapshot is only run on master branch."
-            echo "Detected branch '${branch_name}', skipping."
-            exit 0
-          fi
           export PROJECT_DIRECTORY=${project_directory}
           export NEXUS_USERNAME=${nexus_username}
           export NEXUS_PASSWORD=${nexus_password}
           export SIGNING_PASSWORD=${signing_password}
           export SIGNING_KEY_ID=${signing_keyId}
           export RING_FILE_GPG_BASE64=${ring_file_gpg_base64}
-          export GIT_REVISION=${revision}
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/publish.sh
 
   "download tarball":
@@ -227,8 +246,12 @@ functions:
   "build csharp and test":
     - command: "shell.exec"
       params:
+        shell: bash
         script: |-
-          env ${compile_env|} bash ./libmongocrypt/.evergreen/build_all.sh
+          . libmongocrypt/.evergreen/init.sh
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
+          env ${compile_env|} DEFAULT_BUILD_ONLY=true \
+            bash ./libmongocrypt/.evergreen/build_all.sh
           env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
 
   "build python release macos":
@@ -329,6 +352,12 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
+  earthly:
+    - command: shell.exec
+      params:
+        shell: bash
+        working_dir: ${working_dir|libmongocrypt}
+        script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
 tasks:
 - name: build-and-test-and-upload
@@ -348,7 +377,7 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
+      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
 
 - name: build-and-test-asan
   commands:
@@ -356,6 +385,7 @@ tasks:
   - func: "build and test"
     vars:
       compile_env: >
+        ${compile_env|}
         LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
         ASAN_OPTIONS="detect_leaks=1"
 
@@ -364,14 +394,14 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
 - name: build-and-test-asan-s390x
   commands:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
 - name: test-java
   depends_on:
@@ -471,6 +501,12 @@ tasks:
     - func: "build and test node"
     - func: "attach node xunit results"
 
+- name: build-and-test-node-no-peer-dependencies
+  commands:
+    - func: "fetch source"
+    - func: "build and test node no peer dependencies"
+    - func: "attach node xunit results"
+
 # Note: keep this disabled unless you want master to force-push
 - name: build-and-test-node-force-publish
   commands:
@@ -478,17 +514,18 @@ tasks:
     - func: "build and test node"
     - func: "attach node xunit results"
 
-- name: publish-snapshot
+- name: publish-java
   depends_on:
-    - name: upload-java
+    - variant: ubuntu2004-64
+      name: upload-java
   commands:
-    - func: "publish snapshot"
+    - func: "publish java"
 
 - name: upload-java
   depends_on:
     - variant: rhel-62-64-bit
       name: build-and-test-and-upload
-    - variant: rhel-67-s390x
+    - variant: rhel72-zseries-test
       name: build-and-test-and-upload
     - variant: rhel-71-ppc64el
       name: build-and-test-and-upload
@@ -507,7 +544,7 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "rhel-62-64-bit" }
     - func: "download tarball"
-      vars: { variant_name: "rhel-67-s390x" }
+      vars: { variant_name: "rhel72-zseries-test" }
     - func: "download tarball"
       vars: { variant_name: "rhel-71-ppc64el" }
     - func: "download tarball"
@@ -569,13 +606,13 @@ tasks:
       name: build-and-test-and-upload
     - variant: amazon2-arm64
       name: build-and-test-and-upload
+    - variant: debian11
+      name: build-and-test-and-upload
     - variant: debian10
       name: build-and-test-and-upload
     - variant: debian92
       name: build-and-test-and-upload
     - variant: rhel-62-64-bit
-      name: build-and-test-and-upload
-    - variant: rhel-67-s390x
       name: build-and-test-and-upload
     - variant: rhel-70-64-bit
       name: build-and-test-and-upload
@@ -596,6 +633,10 @@ tasks:
     - variant: ubuntu2004-64
       name: build-and-test-and-upload
     - variant: ubuntu2004-arm64
+      name: build-and-test-and-upload
+    - variant: ubuntu2204-64
+      name: build-and-test-and-upload
+    - variant: ubuntu2204-arm64
       name: build-and-test-and-upload
     - variant: macos
       name: build-and-test-and-upload
@@ -619,13 +660,13 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "amazon2-arm64" }
     - func: "download tarball"
+      vars: { variant_name: "debian11" }
+    - func: "download tarball"
       vars: { variant_name: "debian10" }
     - func: "download tarball"
       vars: { variant_name: "debian92" }
     - func: "download tarball"
       vars: { variant_name: "rhel-62-64-bit" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-67-s390x" }
     - func: "download tarball"
       vars: { variant_name: "rhel-70-64-bit" }
     - func: "download tarball"
@@ -646,6 +687,10 @@ tasks:
       vars: { variant_name: "ubuntu2004-64" }
     - func: "download tarball"
       vars: { variant_name: "ubuntu2004-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2204-64" }
+    - func: "download tarball"
+      vars: { variant_name: "ubuntu2204-arm64" }
     - func: "download tarball"
       vars: { variant_name: "macos" }
     - command: archive.targz_pack
@@ -707,14 +752,6 @@ tasks:
           set -o xtrace
           set -o errexit
           set -o verbose
-
-          # Find cmake.
-          if [ "$OS" == "Windows_NT" ]; then
-            CMAKE=/cygdrive/c/cmake/bin/cmake
-          else
-            # Amazon Linux 2 (arm64) has a very old system CMake we want to ignore
-            IGNORE_SYSTEM_CMAKE=1 . ./.evergreen/find-cmake.sh
-          fi
 
           if [ "${is_patch}" = "true" ]; then
             echo "patch build, skipping packaging publication"
@@ -814,6 +851,10 @@ tasks:
         content_type: '${content_type|application/x-gzip}'
 
 - name: debian-package-build
+  run_on: &deb-package-build-run_on
+    - ubuntu2004
+    - ubuntu2004-small
+  tags: [packaging]
   commands:
     - func: "fetch source"
     - command: shell.exec
@@ -824,8 +865,7 @@ tasks:
         script: |-
           set -o errexit
           set -o xtrace
-          export IS_PATCH="${is_patch}"
-          bash .evergreen/debian_package_build.sh
+          bash .evergreen/debian_package_build.sh --is-patch=${is_patch}
     - command: s3.put
       params:
         aws_key: ${aws_key}
@@ -836,6 +876,48 @@ tasks:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
+
+- name: debian-package-build-i386
+  run_on: *deb-package-build-run_on
+  tags: [packaging]
+  commands:
+    - func: "fetch source"
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "libmongocrypt"
+        shell: bash
+        script: |-
+          set -o errexit
+          set -o xtrace
+          bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch}
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: deb.tar.gz
+        remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/x-gzip}
+        display_name: "deb.tar.gz"
+
+- name: rpm-package-build
+  tags: [packaging]
+  run_on: &docker-distros
+    - rhel76-docker
+    - ubuntu2004
+    - ubuntu2004-small
+    - ubuntu1804
+    - ubuntu1804-medium
+    - debian10
+    - debian11
+    - amazon2
+  commands:
+    - func: fetch source
+    - func: earthly
+      vars:
+        args: +rpm-runtime-test
 
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
@@ -884,11 +966,13 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -901,6 +985,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan-mac
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - build-and-test-csharp
   - test-python
   - test-java
@@ -918,20 +1003,34 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+- name: rhel83-zseries
+  # rhel83-zseries has a new enough g++ to build the C++ tests.
+  # rhel72-zseries-test does not build the C++ tests.
+  display_name: "RHEL 8.3 on zSeries"
+  run_on: rhel83-zseries-small
+  tasks:
+  - build-and-test-and-upload
 - name: windows-vs2015-compile
   display_name: "Windows VS 2015 compile"
   run_on: windows-64-vs2015-test
+  expansions:
+    vs_version: "14"
+    vs_target_arch: amd64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
 - name: windows-test
   display_name: "Windows 2016"
   run_on: windows-64-vs2017-test
+  expansions:
+    vs_version: "15"
+    vs_target_arch: amd64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-csharp
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - windows-upload-check
 - name: windows-test-python
@@ -952,10 +1051,12 @@ buildvariants:
     has_packages: true
     packager_distro: amazon
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -967,11 +1068,13 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -983,14 +1086,33 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: arm64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - name: publish-packages
     distros:
     - rhel70-small
+- name: debian11
+  display_name: "Debian 11.0"
+  run_on: debian11-large
+  expansions:
+    has_packages: true
+    packager_distro: debian11
+    packager_arch: x86_64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
+  - test-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
 - name: debian10
   display_name: "Debian 10.0"
   run_on: debian10-test
@@ -1003,6 +1125,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1014,11 +1137,13 @@ buildvariants:
     has_packages: true
     packager_distro: debian92
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1037,20 +1162,6 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
-- name: rhel-67-s390x
-  display_name: "RHEL 6.7 s390x"
-  run_on: rhel67-zseries-test
-  expansions:
-    has_packages: true
-    packager_distro: rhel67
-    packager_arch: s390x
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
@@ -1058,10 +1169,12 @@ buildvariants:
     has_packages: true
     packager_distro: rhel70
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-python
   - test-java
   - name: publish-packages
@@ -1092,6 +1205,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1103,11 +1217,13 @@ buildvariants:
     has_packages: true
     packager_distro: suse12
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1119,11 +1235,13 @@ buildvariants:
     has_packages: true
     packager_distro: suse15
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1135,11 +1253,13 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: arm64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1151,16 +1271,28 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: x86_64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - build-and-test-csharp
   - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
+- name: ubuntu1804-64-clang7
+  # ubuntu1804-64-clang7 is used to test Ubuntu 18.04 with Clang 7.0.1.
+  # This is a supported configuration built by the MongoDB Server.
+  # The MongoDB Server vendors libmongocrypt. Refer: MONGOCRYPT-501.
+  display_name: "Ubuntu 18.04 64-bit clang7"
+  run_on: ubuntu1804-test
+  expansions:
+    compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DCMAKE_C_COMPILER=/opt/mongodbtoolchain/v3/bin/clang -DCMAKE_CXX_COMPILER=/opt/mongodbtoolchain/v3/bin/clang++"
+  tasks:
+  - build-and-test-and-upload
 - name: ubuntu1804-arm64
   display_name: "Ubuntu 18.04 arm64"
   run_on: ubuntu1804-arm64-build
@@ -1168,11 +1300,13 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: arm64
+    nvm_use_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
@@ -1190,6 +1324,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - build-and-test-csharp
   - test-java
   - upload-java
@@ -1206,22 +1341,64 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
-- name: publish-snapshot
+- name: ubuntu2204-64
+  display_name: "Ubuntu 22.04 64-bit"
+  run_on: ubuntu2204-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2204
+    packager_arch: x86_64
+    clang_env: CC=clang-12 CXX=clang++-12
+  tasks:
+  - clang-tidy
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
+  # see https://jira.mongodb.org/browse/MONGOCRYPT-515
+  #- build-and-test-csharp
+  - test-java
+  - upload-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
+- name: ubuntu2204-arm64
+  display_name: "Ubuntu 22.04 arm64"
+  run_on: ubuntu2204-arm64-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2204
+    packager_arch: arm64
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan
+  - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
+  - test-java
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
+- name: publish
   display_name: "Publish"
   run_on: ubuntu1804-test
   tasks:
     - name: "upload-java"
-    - name: "publish-snapshot"
     - name: "upload-all"
-- name: packaging
-  display_name: "Linux Distro Packaging"
+- name: java-release
+  display_name: Java Release
   run_on: ubuntu2004-small
   tasks:
-  - name: debian-package-build
+    - "publish-java"
+- name: packaging
+  display_name: "Linux Distro Packaging"
+  tasks: [.packaging]
 - name: macos
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
@@ -1230,6 +1407,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-node
+  - build-and-test-node-no-peer-dependencies
   - test-python
   - test-java
 - name: windows-vs2017-32bit
@@ -1238,5 +1416,7 @@ buildvariants:
   run_on: windows-64-vs2017-small
   expansions:
     compile_env: WINDOWS_32BIT=ON
+    vs_version: "15"
+    vs_target_arch: x86
   tasks:
   - build-and-test-and-upload

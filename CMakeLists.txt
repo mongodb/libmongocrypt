@@ -1,14 +1,16 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.12)
 
-if (CMAKE_VERSION VERSION_EQUAL 3.12 OR CMAKE_VERSION VERSION_GREATER 3.12)
-   project (mongocrypt C)
-
-   # Used for the csfle-markup util:
-   enable_language (CXX OPTIONAL)
-else ()
-   # GenerateExportHeader only works with C with 3.12 - https://gitlab.kitware.com/cmake/cmake/commit/de348a9638bd51af4523f36c68884b901d4aff18
-   project (mongocrypt C CXX)
+# Preempt the MSVC_RUNTIME_LIBRARY properties
+if (POLICY CMP0091)
+   cmake_policy (SET CMP0091 NEW)
+elseif (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+   message (WARNING "The CMAKE_MSVC_RUNTIME_LIBRARY variable is set, but CMake is too old to understand it")
 endif ()
+
+project (mongocrypt C)
+
+# Used for the csfle-markup util:
+enable_language (CXX OPTIONAL)
 
 set (CMAKE_C_STANDARD 99)
 
@@ -20,14 +22,43 @@ option (ENABLE_PIC
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
 
+if (ENABLE_WINDOWS_STATIC_RUNTIME)
+   if (POLICY CMP0091)
+      # CMake 3.15 makes this trivial:
+      set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+   else ()
+      # Fix it up the old-fashioned way
+      string (REPLACE "/MDd" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+      string (REPLACE "/MD" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+      string (REPLACE "/MDd" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+      string (REPLACE "/MD" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+      string (APPEND CMAKE_C_FLAGS_DEBUG " /MTd")
+      string (APPEND CMAKE_CXX_FLAGS_DEBUG " /MTd")
+      string (APPEND CMAKE_C_FLAGS_RELEASE " /MT")
+      string (APPEND CMAKE_CXX_FLAGS_RELEASE " /MT")
+   endif ()
+endif ()
+
 list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 include (GNUInstallDirs)
 
+include (LTO)
 include (ImportBSON)
+
+option (MONGOCRYPT_ENABLE_DECIMAL128 "Enable extended support for Decimal128" ON)
+mark_as_advanced (MONGOCRYPT_ENABLE_DECIMAL128)
+set (maybe_dfp_library)
+if (MONGOCRYPT_ENABLE_DECIMAL128)
+   include (ImportDFP)
+   set (maybe_dfp_library mongocrypt::intel_dfp)
+endif ()
 
 if (USE_SHARED_LIBBSON AND ENABLE_BUILD_FOR_PPA)
    message (FATAL_ERROR "PPA build requires static linking to libbson")
+endif ()
+if (DEFINED MONGOCRYPT_DFP_DIR AND ENABLE_BUILD_FOR_PPA)
+   message (FATAL_ERROR "PPA build requires building with vendored Intel DFP")
 endif ()
 
 # Enable a higher warning level and warnings-as-errors
@@ -38,6 +69,12 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       msvc:/W3 msvc:/WX msvc:/wd4996 msvc:/wd4359
       gnu-like:-Wall gnu-like:-Werror
       gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
+      )
+   add_link_options (
+      # Enable link-time warnings. VS 2015 sees LNK4099 spuriously, but it is a
+      # non-fatal issue. LNK4217 and LNK4049 appear when using dllimport on
+      # locally-defined symbols in kms-message.
+      "$<IF:$<C_COMPILER_ID:MSVC>,/WX;/ignore:4217;/ignore:4049;/ignore:4099,-Werror>"
       )
 endif ()
 
@@ -61,14 +98,20 @@ set (MONGOCRYPT_SOURCES
    src/crypto/none.c
    src/mc-array.c
    src/mc-efc.c
+   src/mc-fle2-find-range-payload.c
    src/mc-fle2-insert-update-payload.c
    src/mc-fle2-encryption-placeholder.c
    src/mc-fle2-find-equality-payload.c
-   src/mc-fle2-payload-ieev.c
+   src/mc-fle2-payload-iev.c
    src/mc-fle2-payload-uev.c
+   src/mc-fle2-rfds.c
    src/mc-range-edge-generation.c
+   src/mc-range-mincover.c
    src/mc-range-encoding.c
+   src/mc-rangeopts.c
+   src/mc-reader.c
    src/mc-tokens.c
+   src/mc-writer.c
    src/mongocrypt-binary.c
    src/mongocrypt-buffer.c
    src/mongocrypt-cache.c
@@ -199,10 +242,15 @@ configure_file (
 # nor are its headers installed.
 add_library (_mongo-mlib INTERFACE)
 add_library (mongo::mlib ALIAS _mongo-mlib)
+list (APPEND MLIB_DEFINITIONS MLIB_USER)
+CHECK_INCLUDE_FILE (strings.h HAVE_STRINGS_H)
+if (HAVE_STRINGS_H)
+   list (APPEND MLIB_DEFINITIONS MLIB_HAVE_STRINGS_H)
+endif ()
 set_property(
    TARGET _mongo-mlib
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
-   MLIB_USER
+   ${MLIB_DEFINITIONS}
    )
 set_property(
    TARGET _mongo-mlib
@@ -241,6 +289,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
+      ${maybe_dfp_library}
       ${CMAKE_DL_LIBS}
    )
 
@@ -252,6 +301,15 @@ if (NOT USE_SHARED_LIBBSON)
       message ("compiling with version map to version and hide bson symbols")
       set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.map\"")
    endif ()
+endif ()
+
+if (NOT WIN32 AND CMAKE_VERSION VERSION_GREATER 3.25)
+   # Do not enable conversion warnings with older cmake. Older cmake does not support
+   # including headers as system headers when the headers are added to the project via
+   # the add_subdirectory() CMake command. libbson produces conversion warnings and is
+   # included in ImportBSON.cmake.
+   target_compile_options (mongocrypt PRIVATE -Wconversion -Wsign-conversion)
+   target_compile_options (kms_message_static PRIVATE -Wconversion -Wsign-conversion)
 endif ()
 
 generate_export_header (mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
@@ -289,6 +347,7 @@ target_link_libraries (
       kms_message_static
       $<BUILD_INTERFACE:mongo::mlib>
    PUBLIC
+      ${maybe_dfp_library}
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}
    )
@@ -299,7 +358,7 @@ if (CMAKE_DL_LIBS)
 endif ()
 set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libkms_message-static.a")
 if (ENABLE_BUILD_FOR_PPA)
-   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
+   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-for-libmongocrypt.a")
    #librt needed for libbson on linux for clock_gettime
    find_library (RT_LIBRARY rt)
    if (RT_LIBRARY)
@@ -307,9 +366,9 @@ if (ENABLE_BUILD_FOR_PPA)
    endif ()
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -pthread")
 endif ()
-if (ENABLE_WINDOWS_STATIC_RUNTIME)
-   target_compile_options (mongocrypt_static PUBLIC /MT)
-   target_compile_options (kms_message_static PUBLIC /MT)
+if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM" AND MONGOCRYPT_ENABLE_DECIMAL128)
+   get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
+   set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
 
 
@@ -325,6 +384,21 @@ elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
    target_link_libraries (mongocrypt PRIVATE OpenSSL::SSL OpenSSL::Crypto)
    target_link_libraries (mongocrypt_static PRIVATE OpenSSL::SSL OpenSSL::Crypto)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lssl -lcrypto")
+endif ()
+
+# Link to libm for math functions (pow, log, etc.)
+# Do not link on Apple. On macOS Big Sur, libm resolves to the SDK's tbd file, like:
+# /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libm.tbd
+# Not all consumers can easily link to a tbd file (notably golang will reject a tbd suffix by default)
+# macOS includes libm as part of libSystem (along with libc).
+# It does not need to be explicitly linked.
+if (NOT APPLE)
+   find_library (M_LIBRARY m)
+   if (M_LIBRARY)
+      target_link_libraries (mongocrypt PRIVATE ${M_LIBRARY})
+      target_link_libraries (mongocrypt_static PRIVATE ${M_LIBRARY})
+      set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lm")
+   endif ()
 endif ()
 
 set_target_properties (mongocrypt PROPERTIES
@@ -388,12 +462,17 @@ endif ()
 set (TEST_MONGOCRYPT_SOURCES
    test/test-gcp-auth.c
    test/test-mc-efc.c
-   test/test-mc-fle2-payload-ieev.c
+   test/test-mc-fle2-payload-iev.c
    test/test-mc-fle2-payload-iup.c
    test/test-mc-fle2-payload-uev.c
+   test/test-mc-fle2-rfds.c
    test/test-mc-range-edge-generation.c
+   test/test-mc-range-mincover.c
+   test/test-mc-rangeopts.c
+   test/test-mc-reader.c
    test/test-mc-tokens.c
    test/test-mc-range-encoding.c
+   test/test-mc-writer.c
    test/test-mongocrypt-assert-match-bson.c
    test/test-mongocrypt-buffer.c
    test/test-mongocrypt-cache.c
@@ -452,6 +531,30 @@ foreach (test IN ITEMS path str)
    add_test (mlib.${test} mlib.${test}.test)
    target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
 endforeach ()
+
+if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+   file (GLOB_RECURSE test_files CONFIGURE_DEPENDS src/*.test.cpp)
+   foreach (file IN LISTS test_files)
+      # Compute a nice test name
+      file (RELATIVE_PATH relpath "${CMAKE_CURRENT_LIST_DIR}/src" "${file}")
+      file (TO_CMAKE_PATH "${relpath}" relpath)
+      string (REPLACE "src/" "" relpath "${relpath}")
+      string (REPLACE "/" "." test_name "${relpath}")
+      string (REGEX REPLACE "\\.test\\.cpp$" "" test_name "${test_name}")
+      # Generate a test executable:
+      set (exe_name "${test_name}.test")
+      add_executable ("${exe_name}" "${file}")
+      target_compile_features ("${exe_name}" PRIVATE cxx_relaxed_constexpr)
+      target_link_libraries ("${exe_name}" PRIVATE
+         mongocrypt
+         mongo::mlib
+         ${maybe_dfp_library}
+         Threads::Threads
+         _mongocrypt::libbson_for_static
+         )
+      add_test ("${test_name}" "${exe_name}")
+   endforeach ()
+endif ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable (csfle-markup src/csfle-markup.cpp)
@@ -532,13 +635,17 @@ set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
 set (PKG_CONFIG_LIBS "-L\${libdir} -lmongocrypt")
 if (ENABLE_BUILD_FOR_PPA)
-   set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-1.0.a")
+   set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} \${prefix}/${CMAKE_INSTALL_LIBDIR}/libbson-static-for-libmongocrypt.a")
    #librt needed for libbson on linux for clock_gettime
    find_library (RT_LIBRARY rt)
    if (RT_LIBRARY)
       set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} ${RT_LIBRARY}")
    endif ()
    set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} -pthread")
+endif ()
+if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM" AND MONGOCRYPT_ENABLE_DECIMAL128)
+   get_property (SYSTEM_DFP_LOC TARGET intel_dfp PROPERTY IMPORTED_LOCATION)
+   set (PKG_CONFIG_LIBS "${PKG_CONFIG_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
 set (PKG_CONFIG_CFLAGS "-I\${includedir}")
 set (PKG_CONFIG_STATIC_CFLAGS "${PKG_CONFIG_CFLAGS} -DMONGOCRYPT_STATIC_DEFINE -DKMS_MSG_STATIC")

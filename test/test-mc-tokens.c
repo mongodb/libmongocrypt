@@ -202,9 +202,44 @@ _test_mc_tokens_error (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
+static void
+_test_mc_tokens_raw_buffer (_mongocrypt_tester_t *tester)
+{
+   mc_ServerDataEncryptionLevel1Token_t *token;
+   _mongocrypt_buffer_t test_input;
+   _mongocrypt_buffer_t expected;
+
+   _mongocrypt_buffer_copy_from_hex (
+      &test_input,
+      "6c6a349956c19f9c5e638e612011a71fbb71921edb540310c17cd0208b7f548b");
+
+   /* Make a token from a raw buffer */
+   token = mc_ServerDataEncryptionLevel1Token_new_from_buffer (&test_input);
+
+   /* Assert new_from_buffer did not steal ownership. */
+   ASSERT (test_input.owned);
+   ASSERT (test_input.len == MONGOCRYPT_HMAC_SHA256_LEN);
+
+   _mongocrypt_buffer_copy_from_hex (
+      &expected,
+      "6c6a349956c19f9c5e638e612011a71fbb71921edb540310c17cd0208b7f548b");
+
+   ASSERT_CMPBUF (*mc_ServerDataEncryptionLevel1Token_get (token), expected);
+
+   /* Assert new_from_buffer references original buffer instead of a copy. */
+   test_input.data[0] = '0';
+   expected.data[0] = '0';
+   ASSERT_CMPBUF (*mc_ServerDataEncryptionLevel1Token_get (token), expected);
+
+   _mongocrypt_buffer_cleanup (&test_input);
+   _mongocrypt_buffer_cleanup (&expected);
+   mc_ServerDataEncryptionLevel1Token_destroy (token);
+}
+
 void
 _mongocrypt_tester_install_mc_tokens (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (_test_mc_tokens);
    INSTALL_TEST (_test_mc_tokens_error);
+   INSTALL_TEST (_test_mc_tokens_raw_buffer);
 }

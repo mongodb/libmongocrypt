@@ -53,7 +53,7 @@ HMAC_CTX_free (HMAC_CTX *ctx)
 bool _native_crypto_initialized = false;
 
 void
-_native_crypto_init ()
+_native_crypto_init (void)
 {
    _native_crypto_initialized = true;
 }
@@ -75,11 +75,15 @@ _encrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 
    ctx = EVP_CIPHER_CTX_new ();
 
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
    BSON_ASSERT (ctx);
    BSON_ASSERT (cipher);
    BSON_ASSERT (NULL == args.iv ||
                 EVP_CIPHER_iv_length (cipher) == args.iv->len);
    BSON_ASSERT (EVP_CIPHER_key_length (cipher) == args.key->len);
+   BSON_ASSERT (args.in->len <= INT_MAX);
 
    if (!EVP_EncryptInit_ex (ctx,
                             cipher,
@@ -99,12 +103,13 @@ _encrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
                            args.out->data,
                            &intermediate_bytes_written,
                            args.in->data,
-                           args.in->len)) {
+                           (int) args.in->len)) {
       CLIENT_ERR ("error in EVP_EncryptUpdate: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
+   /* intermediate_bytes_written cannot be negative, so int -> uint32_t is OK */
    *args.bytes_written = (uint32_t) intermediate_bytes_written;
 
    if (!EVP_EncryptFinal_ex (
@@ -114,6 +119,7 @@ _encrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
       goto done;
    }
 
+   BSON_ASSERT (UINT32_MAX - *args.bytes_written >= intermediate_bytes_written);
    *args.bytes_written += (uint32_t) intermediate_bytes_written;
 
    ret = true;
@@ -139,8 +145,14 @@ _decrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
 
    ctx = EVP_CIPHER_CTX_new ();
 
+   BSON_ASSERT_PARAM (cipher);
+   BSON_ASSERT (args.iv);
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
    BSON_ASSERT (EVP_CIPHER_iv_length (cipher) == args.iv->len);
    BSON_ASSERT (EVP_CIPHER_key_length (cipher) == args.key->len);
+   BSON_ASSERT (args.in->len <= INT_MAX);
 
    if (!EVP_DecryptInit_ex (
           ctx, cipher, NULL /* engine */, args.key->data, args.iv->data)) {
@@ -158,13 +170,14 @@ _decrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
                            args.out->data,
                            &intermediate_bytes_written,
                            args.in->data,
-                           args.in->len)) {
+                           (int) args.in->len)) {
       CLIENT_ERR ("error in EVP_DecryptUpdate: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
    }
 
-   *args.bytes_written = intermediate_bytes_written;
+   /* intermediate_bytes_written cannot be negative, so int -> uint32_t is OK */
+   *args.bytes_written = (uint32_t) intermediate_bytes_written;
 
    if (!EVP_DecryptFinal_ex (
           ctx, args.out->data, &intermediate_bytes_written)) {
@@ -173,7 +186,8 @@ _decrypt_with_cipher (const EVP_CIPHER *cipher, aes_256_args_t args)
       goto done;
    }
 
-   *args.bytes_written += intermediate_bytes_written;
+   BSON_ASSERT (UINT32_MAX - *args.bytes_written >= intermediate_bytes_written);
+   *args.bytes_written += (uint32_t) intermediate_bytes_written;
 
    ret = true;
 done:
@@ -206,17 +220,23 @@ _native_crypto_aes_256_ecb_encrypt (aes_256_args_t args)
  * @out is the output. @out must be allocated by the caller with
  * the exact length for the output. E.g. for HMAC 256, @out->len must be 32.
  * Returns false and sets @status on error. @status is required. */
-bool
+static bool
 _hmac_with_hash (const EVP_MD *hash,
                  const _mongocrypt_buffer_t *key,
                  const _mongocrypt_buffer_t *in,
                  _mongocrypt_buffer_t *out,
                  mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (hash);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT (key->len <= INT_MAX);
+
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
    if (!HMAC (hash,
               key->data,
-              key->len,
+              (int) key->len,
               in->data,
               in->len,
               out->data,
@@ -237,7 +257,8 @@ _hmac_with_hash (const EVP_MD *hash,
       return false;
    }
 
-   if (!HMAC_Init_ex (ctx, key->data, key->len, hash, NULL /* engine */)) {
+   if (!HMAC_Init_ex (
+          ctx, key->data, (int) key->len, hash, NULL /* engine */)) {
       CLIENT_ERR ("error initializing HMAC: %s",
                   ERR_error_string (ERR_get_error (), NULL));
       goto done;
@@ -277,7 +298,10 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        uint32_t count,
                        mongocrypt_status_t *status)
 {
-   int ret = RAND_bytes (out->data, count);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT (count <= INT_MAX);
+
+   int ret = RAND_bytes (out->data, (int) count);
    /* From man page: "RAND_bytes() and RAND_priv_bytes() return 1 on success, -1
     * if not supported by the current RAND method, or 0 on other failure. The
     * error code can be obtained by ERR_get_error(3)" */

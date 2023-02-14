@@ -2,6 +2,7 @@
 #define MONGOCRYPT_STR_PRIVATE_H
 
 #include "./user-check.h"
+#include "./macros.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +10,14 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <limits.h> /* INT_MAX */
 #include <stdbool.h>
+
+#if defined(MLIB_HAVE_STRINGS_H)
+#include <strings.h> /* For strncasecmp. */
+#endif
+
+MLIB_C_LINKAGE_BEGIN
 
 /**
  * @brief A simple non-owning string-view type.
@@ -118,11 +126,11 @@ typedef struct mstr_mut {
 /**
  * @brief A null @ref mstr
  */
-#define MSTR_NULL ((mstr){{{.data = NULL, .len = 0}}})
+#define MSTR_NULL (MLIB_INIT (mstr){{{NULL, 0}}})
 /**
  * @brief A null @ref mstr_view
  */
-#define MSTRV_NULL ((mstr_view){.data = NULL, .len = 0})
+#define MSTRV_NULL (MLIB_INIT (mstr_view){NULL, 0})
 
 /**
  * @brief Create an @ref mstr_view that views the given string literal
@@ -145,11 +153,12 @@ static inline mstr_mut
 mstr_new (size_t len)
 {
 #ifndef __clang_analyzer__
-   return (mstr_mut){{{.data = (char *) calloc (1, len + 1), .len = len}}};
+   assert (len < SIZE_MAX);
+   return MLIB_INIT (mstr_mut){{{(char *) calloc (1, len + 1), len}}};
 #else
    // Clang-analyzer is smart enough to see the calloc(), but not smart enough
    // to link it to the free() in mstr_free()
-   return (mstr_mut){};
+   return MLIB_INIT (mstr_mut){};
 #endif
 }
 
@@ -163,7 +172,7 @@ mstr_new (size_t len)
 static inline mstr_view
 mstrv_view_data (const char *s, size_t len)
 {
-   return (mstr_view){.data = s, .len = len};
+   return MLIB_INIT (mstr_view){s, len};
 }
 
 /**
@@ -249,9 +258,11 @@ mstrm_resize (mstr_mut *s, size_t new_len)
 #ifndef __clang_analyzer__
       // Clang-analyzer is smart enough to see the calloc(), but not smart
       // enough to link it to the free() in mstr_free()
+      assert (new_len < SIZE_MAX);
       s->data = (char *) realloc ((char *) s->data, new_len + 1);
 #endif
       s->len = new_len;
+      assert (new_len >= old_len);
       memset (s->data + old_len, 0, new_len - old_len);
    }
    s->data[new_len] = (char) 0;
@@ -305,7 +316,7 @@ mstr_find (mstr_view given, mstr_view needle)
    const char *const scan_end = given.data + given.len;
    const char *const needle_end = needle.data + needle.len;
    for (const char *scan = given.data; scan != scan_end; ++scan) {
-      size_t remain = scan_end - scan;
+      size_t remain = (size_t) (scan_end - scan);
       if (remain < needle.len) {
          break;
       }
@@ -379,6 +390,8 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
    if (del_count > remain) {
       del_count = remain;
    }
+   /* at this point, it is absolutely necessary that del_count <= s.len */
+   assert (s.len - del_count <= SIZE_MAX - insert.len);
    const size_t new_size = s.len - del_count + insert.len;
    mstr_mut ret = mstr_new (new_size);
    char *p = ret.data;
@@ -388,6 +401,8 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
       memcpy (p, insert.data, insert.len);
       p += insert.len;
    }
+   /* 'at <= s.len' was already asserted earlier */
+   assert (s.len - at >= del_count);
    memcpy (p, s.data + at + del_count, s.len - at - del_count);
    return ret.mstr;
 }
@@ -453,6 +468,7 @@ mstr_remove_prefix (mstr_view s, size_t len)
 static inline mstr
 mstr_remove_suffix (mstr_view s, size_t len)
 {
+   assert (s.len >= len);
    return mstr_erase (s, s.len - len, len);
 }
 
@@ -495,7 +511,7 @@ mstrv_subview (mstr_view s, size_t at, size_t len)
    if (len > remain) {
       len = remain;
    }
-   return (mstr_view){.data = s.data + at, .len = len};
+   return mstrv_view_data (s.data + at, len);
 }
 
 /**
@@ -515,6 +531,7 @@ mstrv_remove_prefix (mstr_view s, size_t len)
 static inline mstr_view
 mstrv_remove_suffix (mstr_view s, size_t len)
 {
+   assert (s.len >= len);
    return mstrv_subview (s, 0, s.len - len);
 }
 
@@ -558,7 +575,7 @@ mstr_replace (const mstr_view string,
    size_t whence = 0;
    for (;;) {
       // Chop off the front that has already been processed
-      mstr_view tail = mstrv_subview (ret.view, whence, ~0);
+      mstr_view tail = mstrv_subview (ret.view, whence, SIZE_MAX);
       // Find where in that tail is the next needle
       int pos = mstr_find (tail, find);
       if (pos == -1) {
@@ -566,11 +583,12 @@ mstr_replace (const mstr_view string,
          break;
       }
       // Do the replacement
+      assert (whence <= SIZE_MAX - (size_t) pos);
       mstr_assign (
          &ret, mstr_splice (ret.view, (size_t) pos + whence, find.len, subst));
       // Advance our position by how many chars we skipped and how many we
       // inserted
-      whence += pos + subst.len;
+      whence += (size_t) pos + subst.len;
    }
    return ret;
 }
@@ -585,6 +603,25 @@ mstr_eq (mstr_view left, mstr_view right)
       return false;
    }
    return memcmp (left.data, right.data, left.len) == 0;
+}
+
+/**
+ * @brief Determine whether two strings are equivalent ignoring case.
+ */
+static inline bool
+mstr_eq_ignore_case (mstr_view left, mstr_view right)
+{
+#ifdef _WIN32
+#define _mstr_strncasecmp _strnicmp
+#else
+#define _mstr_strncasecmp strncasecmp
+#endif
+
+   if (left.len != right.len) {
+      return false;
+   }
+   return _mstr_strncasecmp (left.data, right.data, left.len) == 0;
+#undef _mstr_strncasecmp
 }
 
 /// Determine whether the given character is an printable ASCII codepoint
@@ -685,7 +722,7 @@ mstr_ends_with (mstr_view given, mstr_view suffix)
    if (suffix.len > given.len) {
       return false;
    }
-   given = mstrv_subview (given, given.len - suffix.len, ~0);
+   given = mstrv_subview (given, given.len - suffix.len, SIZE_MAX);
    return mstr_eq (given, suffix);
 }
 
@@ -780,16 +817,18 @@ typedef struct mstr_widen_result {
 static inline mstr_widen_result
 mstr_win32_widen (mstr_view str)
 {
+   assert (str.len <= INT_MAX);
    int length = MultiByteToWideChar (
       CP_UTF8, MB_ERR_INVALID_CHARS, str.data, (int) str.len, NULL, 0);
    if (length == 0 && str.len != 0) {
-      return (mstr_widen_result){.wstring = NULL, .error = GetLastError ()};
+      return MLIB_INIT (mstr_widen_result){NULL, (int) GetLastError ()};
    }
-   wchar_t *ret = calloc (length + 1, sizeof (wchar_t));
+   wchar_t *ret = (wchar_t *) calloc (length + 1, sizeof (wchar_t));
+   assert (length < INT_MAX);
    int got_length = MultiByteToWideChar (
       CP_UTF8, MB_ERR_INVALID_CHARS, str.data, (int) str.len, ret, length + 1);
    assert (got_length == length);
-   return (mstr_widen_result){.wstring = ret, .error = 0};
+   return MLIB_INIT (mstr_widen_result){ret, 0};
 }
 
 /**
@@ -825,8 +864,7 @@ mstr_win32_narrow (const wchar_t *wstring)
                                      NULL,
                                      NULL);
    if (length == 0 && wstring[0] != 0) {
-      return (mstr_narrow_result){.string = MSTR_NULL,
-                                  .error = GetLastError ()};
+      return MLIB_INIT (mstr_narrow_result){MSTR_NULL, (int) GetLastError ()};
    }
    // Allocate a new string, not including the null terminator
    mstr_mut ret = mstr_new ((size_t) (length - 1));
@@ -840,7 +878,7 @@ mstr_win32_narrow (const wchar_t *wstring)
                                       NULL,
                                       NULL);
    assert (length == got_len);
-   return (mstr_narrow_result){.string = ret.mstr, .error = 0};
+   return MLIB_INIT (mstr_narrow_result){ret.mstr, 0};
 }
 #endif
 
@@ -848,10 +886,10 @@ mstr_win32_narrow (const wchar_t *wstring)
 struct _mstr_split_iter_ {
    /// What hasn't been parsed yet
    mstr_view remaining;
-   /// The current part
-   mstr_view part;
    /// The string that we split on
    mstr_view splitter;
+   /// The current part
+   mstr_view part;
    /// A once-var for the inner loop. Set to 1 by iter_next, then decremented
    int once;
    /// The loop state. Starts at zero. Set to one when we part the final split.
@@ -884,9 +922,10 @@ _mstr_split_iter_next_ (struct _mstr_split_iter_ *iter)
       iter->state = 1;
    } else {
       // Advance our parts:
-      iter->part = mstrv_subview (iter->remaining, 0, pos);
-      iter->remaining =
-         mstrv_subview (iter->remaining, pos + iter->splitter.len, ~0);
+      iter->part = mstrv_subview (iter->remaining, 0, (size_t) pos);
+      assert (iter->splitter.len <= SIZE_MAX - (size_t) pos);
+      iter->remaining = mstrv_subview (
+         iter->remaining, (size_t) pos + iter->splitter.len, SIZE_MAX);
    }
    // Prime the inner "loop" to execute once
    iter->once = 1;
@@ -896,7 +935,7 @@ _mstr_split_iter_next_ (struct _mstr_split_iter_ *iter)
 static inline struct _mstr_split_iter_
 _mstr_split_iter_begin_ (mstr_view str, mstr_view split)
 {
-   struct _mstr_split_iter_ iter = {.remaining = str, .splitter = split};
+   struct _mstr_split_iter_ iter = {str, split};
    _mstr_split_iter_next_ (&iter);
    return iter;
 }
@@ -911,7 +950,7 @@ _mstr_split_iter_done_ (struct _mstr_split_iter_ *iter)
 // clang-format off
 #define MSTR_ITER_SPLIT(LineVar, String, SplitToken)              \
    /* Open the main outer loop */                                 \
-   for (/* Declare an init the iterator */                        \
+   for (/* Declare and init the iterator */                       \
         struct _mstr_split_iter_ _iter_var_ =                     \
             _mstr_split_iter_begin_ ((String), (SplitToken));     \
          /* Iterate until it is marked as done */                 \
@@ -919,9 +958,71 @@ _mstr_split_iter_done_ (struct _mstr_split_iter_ *iter)
         _mstr_split_iter_next_ (&_iter_var_))                     \
       /* This inner loop will only execute once, but gives us */  \
       /* a point to declare the loop variable: */                 \
-      for (mstr_view LineVar = _iter_var_.part;                   \
+      for (mstr_view const LineVar = _iter_var_.part;             \
            _iter_var_.once;                                       \
            --_iter_var_.once)
 // clang-format on
+
+/**
+ * @brief Equivalent to strlen(), but has a constexpr annotation.
+ */
+static mlib_constexpr_fn size_t
+mlib_strlen (const char *s)
+{
+   size_t r = 0;
+   for (; *s; ++r, ++s) {
+   }
+   return r;
+}
+
+/**
+ * @brief Copy characters into the destination, guaranteed null-terminated and
+ * bounds checked.
+ *
+ * @param dst Pointer to the beginning of the destination array.
+ * @param dst_bufsize The size of the destination array, in characters. MUST be
+ * greater than zero.
+ * @param src Pointer to the beginning of a null-terminated character array.
+ * @param src_bufsize The size of the array pointed-to by `src`.
+ * @return size_t The number `R` of characters written (NOT including the null
+ * terminator). R is guaranteed to be less than dst_bufsize, and
+ * less-than-or-equal-to src_bufsize.
+ *
+ * @note Characters beyond (dst + R) are unmodified. dst[R] is guaranteed to
+ * be a null terminator.
+ */
+static mlib_constexpr_fn size_t
+mlib_strnmcopy (char *dst,
+                size_t dst_bufsize,
+                const char *src,
+                size_t src_bufsize)
+{
+   // No empty destination, since we *must* write a null terminator:
+   assert (dst_bufsize > 0);
+   // The maximum number of characters in the dest is one less than the buffer
+   // size, since we need room for the null terminator:
+   const size_t dstlen = dst_bufsize - 1u;
+   // The actual maximum number of characters we can copy is the less of the
+   // source length and the dest length:
+   const size_t minlen = dstlen < src_bufsize ? dstlen : src_bufsize;
+   // Track what we copy:
+   size_t ncopied = 0;
+   while (ncopied != minlen // Stop if we hit our character limit
+          && *src != 0      // Or if we hit the null terminator in the source
+   ) {
+      // Copy:
+      *dst = *src;
+      // Advance:
+      ++dst;
+      ++src;
+      ++ncopied;
+   }
+   // "dst" now points past the final character we copied (if any), and is still
+   // in-bounds. This will be the null terminator.
+   *dst = 0;
+   return ncopied;
+}
+
+MLIB_C_LINKAGE_END
 
 #endif // MONGOCRYPT_STR_PRIVATE_H

@@ -31,11 +31,14 @@
 #endif
 #endif
 
+#include "mc-check-conversions-private.h"
 #include "mongocrypt-util-private.h"
+#include "mongocrypt-private.h" // CLIENT_ERR
 
 #include "mlib/thread.h"
 
 #include <errno.h>
+#include <math.h> // isinf, isnan, isfinite
 
 #ifdef _WIN32
 #include <windows.h>
@@ -46,6 +49,8 @@
 bool
 size_to_uint32 (size_t in, uint32_t *out)
 {
+   BSON_ASSERT_PARAM (out);
+
    if (in > UINT32_MAX) {
       return false;
    }
@@ -54,7 +59,7 @@ size_to_uint32 (size_t in, uint32_t *out)
 }
 
 current_module_result
-current_module_path ()
+current_module_path (void)
 {
    mstr ret_str = MSTR_NULL;
    int ret_error = 0;
@@ -78,7 +83,7 @@ current_module_path ()
       }
       free (path);
    }
-#elif defined(_GNU_SOURCE) || defined(_DARWIN_C_SOURCE)
+#elif defined(_GNU_SOURCE) || defined(_DARWIN_C_SOURCE) || defined(__FreeBSD__)
    // Darwin/BSD/glibc define extensions for finding dynamic library info from
    // the address of a symbol.
    Dl_info info;
@@ -94,3 +99,105 @@ current_module_path ()
 #endif
    return (current_module_result){.path = ret_str, .error = ret_error};
 }
+
+const char *
+mc_bson_type_to_string (bson_type_t t)
+{
+   switch (t) {
+   case BSON_TYPE_EOD:
+      return "EOD";
+   case BSON_TYPE_DOUBLE:
+      return "DOUBLE";
+   case BSON_TYPE_UTF8:
+      return "UTF8";
+   case BSON_TYPE_DOCUMENT:
+      return "DOCUMENT";
+   case BSON_TYPE_ARRAY:
+      return "ARRAY";
+   case BSON_TYPE_BINARY:
+      return "BINARY";
+   case BSON_TYPE_UNDEFINED:
+      return "UNDEFINED";
+   case BSON_TYPE_OID:
+      return "OID";
+   case BSON_TYPE_BOOL:
+      return "BOOL";
+   case BSON_TYPE_DATE_TIME:
+      return "DATE_TIME";
+   case BSON_TYPE_NULL:
+      return "NULL";
+   case BSON_TYPE_REGEX:
+      return "REGEX";
+   case BSON_TYPE_DBPOINTER:
+      return "DBPOINTER";
+   case BSON_TYPE_CODE:
+      return "CODE";
+   case BSON_TYPE_SYMBOL:
+      return "SYMBOL";
+   case BSON_TYPE_CODEWSCOPE:
+      return "CODEWSCOPE";
+   case BSON_TYPE_INT32:
+      return "INT32";
+   case BSON_TYPE_TIMESTAMP:
+      return "TIMESTAMP";
+   case BSON_TYPE_INT64:
+      return "INT64";
+   case BSON_TYPE_MAXKEY:
+      return "MAXKEY";
+   case BSON_TYPE_MINKEY:
+      return "MINKEY";
+   case BSON_TYPE_DECIMAL128:
+      return "DECIMAL128";
+   default:
+      return "Unknown";
+   }
+}
+
+bool
+mc_iter_document_as_bson (const bson_iter_t *iter,
+                          bson_t *bson,
+                          mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (iter);
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT (status || true);
+
+   uint32_t len;
+   const uint8_t *data;
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      CLIENT_ERR ("expected BSON document for field: %s", bson_iter_key (iter));
+      return false;
+   }
+
+   bson_iter_document (iter, &len, &data);
+   if (!bson_init_static (bson, data, len)) {
+      CLIENT_ERR ("unable to initialize BSON document from field: %s",
+                  bson_iter_key (iter));
+      return false;
+   }
+
+   return true;
+}
+
+/* Avoid a conversion warning on glibc for isnan, isinf, and isfinite. Refer:
+ * MONGOCRYPT-501. */
+MC_BEGIN_CONVERSION_IGNORE
+
+bool
+mc_isnan (double d)
+{
+   return isnan (d);
+}
+bool
+mc_isinf (double d)
+{
+   return isinf (d);
+}
+bool
+mc_isfinite (double d)
+{
+   return isfinite (d);
+}
+
+MC_END_CONVERSION_IGNORE

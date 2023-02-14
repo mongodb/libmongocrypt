@@ -49,16 +49,28 @@ npm test
 <strong>NOTE</strong>: Not meant to be instantiated directly, this is for internal use only.</p>
 </dd>
 <dt><a href="#ClientEncryption">ClientEncryption</a></dt>
-<dd><p>The public interface for explicit client side encryption</p>
+<dd><p>The public interface for explicit in-use encryption</p>
 </dd>
 <dt><a href="#MongoCryptError">MongoCryptError</a></dt>
 <dd><p>An error indicating that something went wrong specifically with MongoDB Client Encryption</p>
+</dd>
+<dt><a href="#MongoCryptCreateDataKeyError">MongoCryptCreateDataKeyError</a></dt>
+<dd><p>An error indicating that <code>ClientEncryption.createEncryptedCollection()</code> failed to create data keys</p>
+</dd>
+<dt><a href="#MongoCryptCreateEncryptedCollectionError">MongoCryptCreateEncryptedCollectionError</a></dt>
+<dd><p>An error indicating that <code>ClientEncryption.createEncryptedCollection()</code> failed to create a collection</p>
 </dd>
 </dl>
 
 ## Typedefs
 
 <dl>
+<dt><a href="#BSONValue">BSONValue</a> : <code>*</code></dt>
+<dd><p>any serializable BSON value</p>
+</dd>
+<dt><a href="#Long">Long</a> : <code>BSON.Long</code></dt>
+<dd><p>A 64 bit integer, represented by the js-bson Long type.</p>
+</dd>
 <dt><a href="#KMSProviders">KMSProviders</a> : <code>object</code></dt>
 <dd><p>Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.</p>
 </dd>
@@ -100,6 +112,13 @@ query for the data key itself against the key vault namespace.</p>
 <dd></dd>
 <dt><a href="#ClientEncryptionEncryptCallback">ClientEncryptionEncryptCallback</a> : <code>function</code></dt>
 <dd></dd>
+<dt><a href="#RangeOptions">RangeOptions</a> : <code>object</code></dt>
+<dd><p>min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
+For double and decimal128, min/max/precision must all be set, or all be unset.</p>
+</dd>
+<dt><a href="#EncryptOptions">EncryptOptions</a> : <code>object</code></dt>
+<dd><p>Options to provide when encrypting data.</p>
+</dd>
 </dl>
 
 <a name="AutoEncrypter"></a>
@@ -143,7 +162,7 @@ Create an AutoEncrypter
 
 **Note**: Supplying `options.schemaMap` provides more security than relying on JSON Schemas obtained from the server.
 It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
-Schemas supplied in the schemaMap only apply to configuring automatic encryption for client side encryption.
+Schemas supplied in the schemaMap only apply to configuring automatic encryption for Client-Side Field Level Encryption.
 Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
 **Example**  
@@ -239,7 +258,7 @@ the underlying C++ Bindings.
 <a name="ClientEncryption"></a>
 
 ## ClientEncryption
-The public interface for explicit client side encryption
+The public interface for explicit in-use encryption
 
 
 * [ClientEncryption](#ClientEncryption)
@@ -263,7 +282,11 @@ The public interface for explicit client side encryption
 
         * [.removeKeyAltName(_id, keyAltName)](#ClientEncryption+removeKeyAltName)
 
+        * [.createEncryptedCollection(db, name, options)](#ClientEncryption+createEncryptedCollection)
+
         * [.encrypt(value, options, [callback])](#ClientEncryption+encrypt)
+
+        * [.encryptExpression(expression, options)](#ClientEncryption+encryptExpression)
 
         * [.decrypt(value, callback)](#ClientEncryption+decrypt)
 
@@ -527,6 +550,30 @@ if (!oldKey) {
  // null is returned if there is no matching document with an id matching the supplied id
 }
 ```
+<a name="ClientEncryption+createEncryptedCollection"></a>
+
+### *clientEncryption*.createEncryptedCollection(db, name, options)
+**Throws**:
+
+- [<code>MongoCryptCreateDataKeyError</code>](#MongoCryptCreateDataKeyError) - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+- [<code>MongoCryptCreateEncryptedCollectionError</code>](#MongoCryptCreateEncryptedCollectionError) - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
+
+**Experimental**: Public Technical Preview
+
+A convenience method for creating an encrypted collection.
+This method will create data keys for any encryptedFields that do not have a `keyId` defined
+and then create a new collection with the full set of encryptedFields.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| db | <code>Db</code> | A Node.js driver Db object with which to create the collection |
+| name | <code>string</code> | The name of the collection to be created |
+| options | <code>object</code> | Options for createDataKey and for createCollection |
+| options.provider | <code>string</code> | KMS provider name |
+| [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | masterKey to pass to createDataKey |
+| options.createCollectionOptions | <code>CreateCollectionOptions</code> | options to pass to createCollection, must include `encryptedFields` |
+
+**Returns**: <code>Promise.&lt;{collection: Collection.&lt;TSchema&gt;, encryptedFields: Document}&gt;</code> - - created collection and generated encryptedFields  
 <a name="ClientEncryption+encrypt"></a>
 
 ### *clientEncryption*.encrypt(value, options, [callback])
@@ -534,10 +581,7 @@ if (!oldKey) {
 | Param | Type | Description |
 | --- | --- | --- |
 | value | <code>\*</code> | The value that you wish to serialize. Must be of a type that can be serialized into BSON |
-| options | <code>object</code> |  |
-| [options.keyId] | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the Binary dataKey to use for encryption |
-| [options.keyAltName] | <code>string</code> | A unique string name corresponding to an already existing dataKey. |
-| [options.algorithm] |  | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'` |
+| options | [<code>EncryptOptions</code>](#EncryptOptions) |  |
 | [callback] | [<code>ClientEncryptionEncryptCallback</code>](#ClientEncryptionEncryptCallback) | Optional callback to invoke when value is encrypted |
 
 Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
@@ -572,6 +616,21 @@ async function encryptMyData(value) {
   return clientEncryption.encrypt(value, { keyAltName: 'mySpecialKey', algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' });
 }
 ```
+<a name="ClientEncryption+encryptExpression"></a>
+
+### *clientEncryption*.encryptExpression(expression, options)
+**Experimental**: The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| expression | <code>object</code> | a BSON document of one of the following forms:  1. A Match Expression of this form:      `{$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}`  2. An Aggregate Expression of this form:      `{$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]}`    `$gt` may also be `$gte`. `$lt` may also be `$lte`. |
+| options | [<code>EncryptOptions</code>](#EncryptOptions) |  |
+
+Encrypts a Match Expression or Aggregate Expression to query a range index.
+
+Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
+
+**Returns**: <code>Promise.&lt;object&gt;</code> - Returns a Promise that either resolves with the encrypted value or rejects with an error.  
 <a name="ClientEncryption+decrypt"></a>
 
 ### *clientEncryption*.decrypt(value, callback)
@@ -583,7 +642,7 @@ async function encryptMyData(value) {
 
 Explicitly decrypt a provided encrypted value
 
-**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.  
+**Returns**: <code>Promise</code> \| <code>void</code> - If no callback is provided, returns a Promise that either resolves with the decrypted value, or rejects with an error. If a callback is provided, returns nothing.  
 **Example**  
 ```js
 // Decrypting value with callback API
@@ -620,6 +679,28 @@ the original ones.
 
 ## MongoCryptError
 An error indicating that something went wrong specifically with MongoDB Client Encryption
+
+<a name="MongoCryptCreateDataKeyError"></a>
+
+## MongoCryptCreateDataKeyError
+**Experimental**: Public Technical Preview  
+An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
+
+<a name="MongoCryptCreateEncryptedCollectionError"></a>
+
+## MongoCryptCreateEncryptedCollectionError
+**Experimental**: Public Technical Preview  
+An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
+
+<a name="BSONValue"></a>
+
+## BSONValue
+any serializable BSON value
+
+<a name="Long"></a>
+
+## Long
+A 64 bit integer, represented by the js-bson Long type.
 
 <a name="KMSProviders"></a>
 
@@ -770,4 +851,35 @@ Configuration options for making an Azure encryption key
 | --- | --- | --- |
 | [err] | <code>Error</code> | If present, indicates an error that occurred in the process of encryption |
 | [result] | <code>Buffer</code> | If present, is the encrypted result |
+
+<a name="RangeOptions"></a>
+
+## RangeOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| min | [<code>BSONValue</code>](#BSONValue) | is required if precision is set. |
+| max | [<code>BSONValue</code>](#BSONValue) | is required if precision is set. |
+| sparsity | <code>BSON.Long</code> |  |
+| precision | <code>number</code> \| <code>undefined</code> | (may only be set for double or decimal128). |
+
+min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
+For double and decimal128, min/max/precision must all be set, or all be unset.
+
+<a name="EncryptOptions"></a>
+
+## EncryptOptions
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [keyId] | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the Binary dataKey to use for encryption. |
+| [keyAltName] | <code>string</code> | A unique string name corresponding to an already existing dataKey. |
+| [algorithm] | <code>string</code> | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'` |
+| [contentionFactor] | <code>bigint</code> \| <code>number</code> | (experimental) - the contention factor. |
+| queryType | <code>&#x27;equality&#x27;</code> \| <code>&#x27;rangePreview&#x27;</code> | (experimental) - the query type supported. |
+| [rangeOptions] | [<code>RangeOptions</code>](#RangeOptions) | (experimental) The index options for a Queryable Encryption field supporting "rangePreview" queries. |
+
+Options to provide when encrypting data.
 

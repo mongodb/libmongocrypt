@@ -1,5 +1,5 @@
 'use strict';
-const expect = require('chai').expect;
+const { expect } = require('chai');
 const tar = require('tar');
 const cp = require('child_process');
 const fs = require('fs');
@@ -16,7 +16,9 @@ const REQUIRED_FILES = [
   'package/lib/buffer_pool.js',
   'package/lib/clientEncryption.js',
   'package/lib/common.js',
+  'package/lib/credentialsProvider.js',
   'package/lib/cryptoCallbacks.js',
+  'package/lib/errors.js',
   'package/lib/mongocryptdManager.js',
   'package/lib/stateMachine.js',
   'package/LICENSE',
@@ -26,7 +28,9 @@ const REQUIRED_FILES = [
   'package/src/mongocrypt.h'
 ];
 
-describe(`Release ${packFile}`, () => {
+describe(`Release ${packFile}`, function () {
+  this.timeout(5000);
+
   let tarFileList;
   before(() => {
     expect(fs.existsSync(packFile)).to.equal(false);

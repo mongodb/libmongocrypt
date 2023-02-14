@@ -1,4 +1,39 @@
 # ChangeLog
+## 1.7.2
+### Improvements
+- Add toggle for Decimal128 Range Support.
+### Fixed
+- Fix i686 (32-bit) build.
+- Fix 32-bit ARM build.
+## 1.7.1
+### Improvements
+- Vendor Intel DFP library and allow using system DFP.
+### Fixed
+- Fix possible abort on base64 decode error of KMS messages.
+- Fix ILP32-target builds.
+- Fix LTO build.
+- Fix IntelDFP to not require Git.
+## 1.7.0
+### New Features
+- Add encryptExpression helper
+- Support for range index. NOTE: The Range algorithm is experimental only. It is not intended for public use.
+## 1.7.0-alpha2
+### New Features
+- Support range index for decimal128. NOTE: The Range algorithm is experimental only. It is not intended for public use.
+## 1.7.0-alpha1
+### New Features
+- Add encryptExpression helper
+## 1.7.0-alpha0
+### New Features
+- Support range index for int32, int64, double, and date. NOTE: The Range algorithm is experimental only. It is not intended for public use.
+
+## 1.6.2
+## Fixed
+- Fix build on FreeBSD.
+- Set context error state during KMS provider validation.
+## 1.6.1
+## Fixed
+- Fix libbson dependency in pkg-config for PPA.
 ## 1.6.0
 ## New Features
 - Support accessToken to authenticate with Azure.

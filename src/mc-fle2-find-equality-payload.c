@@ -29,6 +29,8 @@ mc_FLE2FindEqualityPayload_init (mc_FLE2FindEqualityPayload_t *payload)
 void
 mc_FLE2FindEqualityPayload_cleanup (mc_FLE2FindEqualityPayload_t *payload)
 {
+   BSON_ASSERT_PARAM (payload);
+
    _mongocrypt_buffer_cleanup (&payload->edcDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->escDerivedToken);
    _mongocrypt_buffer_cleanup (&payload->eccDerivedToken);
@@ -89,6 +91,9 @@ mc_FLE2FindEqualityPayload_parse (mc_FLE2FindEqualityPayload_t *out,
    bool has_d = false, has_s = false, has_c = false, has_e = false,
         has_cm = false;
 
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (in);
+
    mc_FLE2FindEqualityPayload_init (out);
    if (!bson_validate (in, BSON_VALIDATE_NONE, NULL) ||
        !bson_iter_init (&iter, in)) {
@@ -127,16 +132,17 @@ fail:
    return false;
 }
 
-#define IUPS_APPEND_BINDATA(name, subtype, value)           \
-   if (!_mongocrypt_buffer_append (                         \
-          &(value), out, name, (uint32_t) strlen (name))) { \
-      return false;                                         \
+#define IUPS_APPEND_BINDATA(name, subtype, value)              \
+   if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
+      return false;                                            \
    }
 
 bool
 mc_FLE2FindEqualityPayload_serialize (
-   bson_t *out, const mc_FLE2FindEqualityPayload_t *payload)
+   const mc_FLE2FindEqualityPayload_t *payload, bson_t *out)
 {
+   BSON_ASSERT_PARAM (payload);
+
    IUPS_APPEND_BINDATA ("d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
    IUPS_APPEND_BINDATA ("s", BSON_SUBTYPE_BINARY, payload->escDerivedToken);
    IUPS_APPEND_BINDATA ("c", BSON_SUBTYPE_BINARY, payload->eccDerivedToken);

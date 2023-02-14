@@ -24,7 +24,7 @@
 bool _native_crypto_initialized = false;
 
 void
-_native_crypto_init ()
+_native_crypto_init (void)
 {
    _native_crypto_initialized = true;
 }
@@ -88,7 +88,8 @@ bool
 _native_crypto_hmac_sha_256 (const _mongocrypt_buffer_t *key,
                              const _mongocrypt_buffer_t *in,
                              _mongocrypt_buffer_t *out,
-                             mongocrypt_status_t *status) {
+                             mongocrypt_status_t *status)
+{
    CLIENT_ERR ("hook not set for _native_crypto_hmac_sha_256");
    return false;
 }

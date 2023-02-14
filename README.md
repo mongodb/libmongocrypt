@@ -87,7 +87,7 @@ cd libmongocrypt
 ./cmake-build/test-mongocrypt
 ```
 
-libmongocrypt is [continuously built and published on evergreen](https://evergreen.mongodb.com/waterfall/libmongocrypt). Submit patch builds to this evergreen project when making changes to test on supported platforms.
+libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
 The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
 
 ### Troubleshooting ###
@@ -113,34 +113,29 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 
 #### Steps to release ####
 Do the following when releasing:
-- Update CHANGELOG.md with any new changes and update the `[Unreleased]` text to the version being released.
+- Update CHANGELOG.md with the version being released.
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, and `CHANGELOG.md`)
    - Create a branch named `rx.y`.
-   - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project to set `Branch Name` to `rx.y`.
-- In the Java binding build.gradle.kts, replace `version = "1.0.0-SNAPSHOT"` with `version = "1.0.0-rc123"` or with `version = "1.0.0"` (depending on whether this is a pre-release or a final release).
+   - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - Commit, create a new git tag, like `1.0.0-rc123` or `1.0.0`, and push.
    - Push both the branch ref and tag ref in the same command: `git push origin master 1.0.0-rc123` or `git push origin r1.0 1.0.0`
    - Pushing the branch ref and the tag ref in the same command eliminates the possibility of a race condition in Evergreen (for building resources based on the presence of a release tag)
    - Note that in the future (e.g., if we move to a PR-based workflow for releases, or if we simply want to take better advantage of advanced Evergreen features), it is possible to use Evergreen's "Trigger Versions With Git Tags" feature by updating both `config.yml` and the project's settings in Evergreen
-- In the Java binding build.gradle.kts, replace `version = "1.0.0-rc123"` with `version = "1.0.0-SNAPSHOT"` (i.e. undo the change for a pre-release) or increment if this is a final release:
-   - If this release is a new minor release (e.g. `x.y.0`), then on the `master` branch, begin the next minor version sequence (i.e., change `version = "1.0.0"` to `version = "1.1.0-SNAPSHOT"`).
-   - For all final releases, on the `rx.y` release branch increment the patch version (i.e., change `version = "1.0.0"` to `version = "1.0.1-SNAPSHOT"`).
-   - For an example of this, see [this commit](https://github.com/mongodb/libmongocrypt/commit/508e21f4abff9f5519e0357a63a4ad30d2c24692) and its parent commit.
-   - Note that if this is a new minor release (e.g. `x.y.0`), then post-release changes to build.gradle.kts happen on two branches.
-- Commit and push.
-- Ensure the version on Evergreen with the tagged commit is scheduled. The upload-all task must run to complete the release. ([Example](https://evergreen.mongodb.com/task/libmongocrypt_publish_snapshot_upload_all_77eec777c14171956c69b60aaaa4f85931c957ba_22_03_02_13_51_38)).
+- Ensure the version on Evergreen with the tagged commit is scheduled. The following tasks must pass to complete the release:
+   - `upload-all`
+   - `windows-upload`. It is scheduled from the `windows-upload-check` task.
 - Create the release from the GitHub releases page from the new tag.
 - Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/135)).
-- File a DOCSP ticket to update the dependent version of bindings in the [CSFLE guide](https://github.com/mongodb-university/csfle-guides). ([Example](https://jira.mongodb.org/browse/DOCSP-19476))
+- If this is a new minor release (e.g. `x.y.0`), file a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-26877))
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 
 ## Installing libmongocrypt From Distribution Packages ##
 Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.
 
 ### Unstable Development Distribution Packages ###
-To install the latest unstable development package, change `1.6` to `development` in the package URLs listed in the subsequent instructions. For example, `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.6` in the instructions would become `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/development`. Do not use the unstable version of libmongocrypt in a production environment.
+To install the latest unstable development package, change `1.7` to `development` in the package URLs listed in the subsequent instructions. For example, `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.7` in the instructions would become `https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/development`. Do not use the unstable version of libmongocrypt in a production environment.
 
 ### .deb Packages (Debian and Ubuntu) ###
 
@@ -150,16 +145,16 @@ First, import the public key used to sign the package repositories:
 sudo sh -c 'curl -s --location https://www.mongodb.org/static/pgp/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
 ```
 
-Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial` or `bionic`, as appropriate to your system):
+Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial`, `bionic`, `focal`, or `jammy`, as appropriate to your system):
 
 ```
-echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.6 universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
+echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/1.7 universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
-For Debian systems (be sure to change `<release>` to `stretch` or `buster`, as appropriate to your system):
+For Debian systems (be sure to change `<release>` to `stretch`, `buster`, or `bullseye`, as appropriate to your system):
 
 ```
-echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/1.6 main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
+echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/1.7 main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
 Third, update the package cache:
@@ -184,7 +179,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.6/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.7/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -203,7 +198,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.6/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.7/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -222,7 +217,7 @@ Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
 ```
 [libmongocrypt]
 name=libmongocrypt repository
-baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.6/x86_64
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.7/x86_64
 gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
@@ -245,7 +240,7 @@ sudo rpm --import https://www.mongodb.org/static/pgp/libmongocrypt.asc
 Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):
 
 ```
-sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/1.6/x86_64" libmongocrypt
+sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/1.7/x86_64" libmongocrypt
 ```
 
 Finally, install the libmongocrypt packages:

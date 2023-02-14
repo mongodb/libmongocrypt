@@ -61,15 +61,20 @@ CCCryptorStatus_to_string (CCCryptorStatus status)
 bool _native_crypto_initialized = false;
 
 void
-_native_crypto_init ()
+_native_crypto_init (void)
 {
    _native_crypto_initialized = true;
 }
 
 
-bool
+static bool
 _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
+   BSON_ASSERT (args.iv);
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
+
    bool ret = false;
    CCCryptorRef ctx = NULL;
    CCCryptorStatus cc_status;
@@ -117,13 +122,15 @@ _native_crypto_aes_256_cbc_encrypt_with_mode (aes_256_args_t args, CCMode mode)
                   (int) cc_status);
       goto done;
    }
-   *args.bytes_written = intermediate_bytes_written;
+   BSON_ASSERT (intermediate_bytes_written <= UINT32_MAX);
+   *args.bytes_written = (uint32_t) intermediate_bytes_written;
 
-
+   BSON_ASSERT (args.out->len >= *args.bytes_written);
    cc_status = CCCryptorFinal (ctx,
                                args.out->data + *args.bytes_written,
                                args.out->len - *args.bytes_written,
                                &intermediate_bytes_written);
+   BSON_ASSERT (UINT32_MAX - *args.bytes_written >= intermediate_bytes_written);
    *args.bytes_written += intermediate_bytes_written;
 
    if (cc_status != kCCSuccess) {
@@ -153,9 +160,14 @@ _native_crypto_aes_256_ctr_encrypt (aes_256_args_t args)
 
 /* Note, the decrypt function is almost exactly the same as the encrypt
  * functions except for the kCCDecrypt and the error message. */
-bool
+static bool
 _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
 {
+   BSON_ASSERT (args.iv);
+   BSON_ASSERT (args.key);
+   BSON_ASSERT (args.in);
+   BSON_ASSERT (args.out);
+
    bool ret = false;
    CCCryptorRef ctx = NULL;
    CCCryptorStatus cc_status;
@@ -202,12 +214,15 @@ _native_crypto_aes_256_cbc_decrypt_with_mode (aes_256_args_t args, CCMode mode)
                   (int) cc_status);
       goto done;
    }
-   *args.bytes_written = intermediate_bytes_written;
+   BSON_ASSERT (intermediate_bytes_written <= UINT32_MAX);
+   *args.bytes_written = (uint32_t) intermediate_bytes_written;
 
+   BSON_ASSERT (args.out->len >= *args.bytes_written);
    cc_status = CCCryptorFinal (ctx,
                                args.out->data + *args.bytes_written,
                                args.out->len - *args.bytes_written,
                                &intermediate_bytes_written);
+   BSON_ASSERT (UINT32_MAX - *args.bytes_written >= intermediate_bytes_written);
    *args.bytes_written += intermediate_bytes_written;
 
    if (cc_status != kCCSuccess) {
@@ -242,7 +257,7 @@ _native_crypto_aes_256_ctr_decrypt (aes_256_args_t args)
  * @out is the output. @out must be allocated by the caller with
  * the expected length @expect_out_len for the output.
  * Returns false and sets @status on error. @status is required. */
-bool
+static bool
 _hmac_with_algorithm (CCHmacAlgorithm algorithm,
                       const _mongocrypt_buffer_t *key,
                       const _mongocrypt_buffer_t *in,
@@ -252,6 +267,10 @@ _hmac_with_algorithm (CCHmacAlgorithm algorithm,
 {
    CCHmacContext *ctx;
 
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+
    if (out->len != expect_out_len) {
       CLIENT_ERR ("out does not contain %" PRIu32 " bytes", expect_out_len);
       return false;
@@ -260,7 +279,7 @@ _hmac_with_algorithm (CCHmacAlgorithm algorithm,
    ctx = bson_malloc0 (sizeof (*ctx));
    BSON_ASSERT (ctx);
 
-
+   /* The ->len members are uint32_t and these functions take size_t */
    CCHmacInit (ctx, algorithm, key->data, key->len);
    CCHmacUpdate (ctx, in->data, in->len);
    CCHmacFinal (ctx, out->data);
@@ -284,6 +303,8 @@ _native_crypto_random (_mongocrypt_buffer_t *out,
                        uint32_t count,
                        mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (out);
+
    CCRNGStatus ret = CCRandomGenerateBytes (out->data, (size_t) count);
    if (ret != kCCSuccess) {
       CLIENT_ERR ("failed to generate random iv: %d", (int) ret);

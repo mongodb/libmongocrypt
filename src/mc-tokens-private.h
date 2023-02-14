@@ -46,11 +46,14 @@
  * ======================== End: FLE 2 Token Reference ========================
  */
 
-
+// TODO: replace `CONCAT` with `BSON_CONCAT` after libbson dependency is
+// upgraded to 1.20.0 or higher.
 #ifndef CONCAT
 #define CONCAT_1(a, b) a##b
 #define CONCAT(a, b) CONCAT_1 (a, b)
 #endif
+// TODO: replace `CONCAT3` with `BSON_CONCAT3` after libbson dependency is
+// upgraded to 1.20.0 or higher.
 #ifndef CONCAT3
 #define CONCAT3(a, b, c) CONCAT (a, CONCAT (b, c))
 #endif
@@ -62,16 +65,18 @@
 #define DECL_TOKEN_TYPE(Name, ...) \
    DECL_TOKEN_TYPE_1 (Name, CONCAT (Name, _t), __VA_ARGS__)
 
-#define DECL_TOKEN_TYPE_1(Prefix, T, ...)                                 \
-   /* Opaque typedef the struct */                                        \
-   typedef struct T T;                                                    \
-   /* Data-getter */                                                      \
-   extern const _mongocrypt_buffer_t *CONCAT (Prefix, _get) (const T *t); \
-   /* Destructor */                                                       \
-   extern void CONCAT (Prefix, _destroy) (T * t);                         \
-   /* Constructor. Parameter list given as variadic args */               \
-   extern T *CONCAT (Prefix, _new) (_mongocrypt_crypto_t * crypto,        \
-                                    __VA_ARGS__,                          \
+#define DECL_TOKEN_TYPE_1(Prefix, T, ...)                                    \
+   /* Opaque typedef the struct */                                           \
+   typedef struct T T;                                                       \
+   /* Data-getter */                                                         \
+   extern const _mongocrypt_buffer_t *CONCAT (Prefix, _get) (const T *t);    \
+   /* Destructor */                                                          \
+   extern void CONCAT (Prefix, _destroy) (T * t);                            \
+   /* Constructor for server to create tokens from raw buffer */             \
+   extern T *CONCAT (Prefix, _new_from_buffer) (_mongocrypt_buffer_t * buf); \
+   /* Constructor. Parameter list given as variadic args */                  \
+   extern T *CONCAT (Prefix, _new) (_mongocrypt_crypto_t * crypto,           \
+                                    __VA_ARGS__,                             \
                                     mongocrypt_status_t * status)
 
 DECL_TOKEN_TYPE (mc_CollectionsLevel1Token, const _mongocrypt_buffer_t *);

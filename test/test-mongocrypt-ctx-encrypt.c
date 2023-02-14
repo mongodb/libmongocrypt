@@ -1510,6 +1510,33 @@ _test_encrypt_per_ctx_credentials (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+// Regression test for MONGOCRYPT-488.
+static void
+_test_encrypt_per_ctx_credentials_given_empty (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+
+   crypt = mongocrypt_new ();
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   mongocrypt_setopt_kms_providers (crypt, TEST_BSON ("{'aws': {}}"));
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_encrypt_init (
+                 ctx, "test", -1, TEST_FILE ("./test/example/cmd.json")),
+              ctx);
+   _mongocrypt_tester_run_ctx_to (
+      tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
+   ASSERT_FAILS (mongocrypt_ctx_provide_kms_providers (ctx, TEST_BSON ("{}")),
+                 ctx,
+                 "no kms provider set");
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_ERROR);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+
 static void
 _test_encrypt_per_ctx_credentials_local (_mongocrypt_tester_t *tester)
 {
@@ -2073,6 +2100,298 @@ _test_FLE2EncryptionPlaceholder_parse (_mongocrypt_tester_t *tester)
    mongocrypt_status_destroy (status);
 }
 
+static void
+_test_FLE2EncryptionPlaceholder_range_parse (_mongocrypt_tester_t *tester)
+{
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "037d0000001074000100000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "0376001e00000010760040e20100106d696e0000000000106d61780087d6120000126"
+         "36d000000000000000000127300010000000000000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeInsertSpec.
+      {
+         mc_FLE2RangeInsertSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeInsertSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.v));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.v), ==, 123456);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.min));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.min), ==, 0);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.max));
+         ASSERT_CMPINT32 (bson_iter_int32 (&spec.max), ==, 1234567);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
+
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "03ec0000001074000200000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "0376008d000000036564676573496e666f005b000000106c6f776572426f756e64000"
+         "0000000086c62496e636c756465640001107570706572426f756e640087d612000875"
+         "62496e636c75646564000110696e6465784d696e000000000010696e6465784d61780"
+         "087d6120000107061796c6f6164496400d20400001066697273744f70657261746f72"
+         "00010000000012636d000000000000000000127300010000000000000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeFindSpec.
+      {
+         mc_FLE2RangeFindSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeFindSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (spec.edgesInfo.set);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.lowerBound));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.value.lowerBound), ==, 0);
+         ASSERT (spec.edgesInfo.value.lbIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.upperBound));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.value.upperBound), ==, 1234567);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.indexMin));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.value.indexMin), ==, 0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_INT32 (&spec.edgesInfo.value.indexMax));
+         ASSERT_CMPINT32 (
+            bson_iter_int32 (&spec.edgesInfo.value.indexMax), ==, 1234567);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT_CMPINT32 (spec.payloadId, ==, 1234);
+
+         ASSERT_CMPINT (spec.firstOperator, ==, FLE2RangeOperator_kGt);
+         ASSERT_CMPINT (spec.secondOperator, ==, FLE2RangeOperator_kNone);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
+
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND with precision.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "030b0100001074000200000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "037600ac000000036564676573496e666f007a000000016c6f776572426f756e64000"
+         "000000000000000086c62496e636c756465640001017570706572426f756e64000000"
+         "000000006940087562496e636c75646564000110707265636973696f6e00020000000"
+         "1696e6465784d696e00000000000000000001696e6465784d61780000000000000069"
+         "4000107061796c6f6164496400d20400001066697273744f70657261746f720001000"
+         "0000012636d000000000000000000127300010000000000000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeFindSpec.
+      {
+         mc_FLE2RangeFindSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeFindSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (spec.edgesInfo.set);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.lowerBound));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.value.lowerBound), ==, 0.0);
+         ASSERT (spec.edgesInfo.value.lbIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.upperBound));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.value.upperBound), ==, 200.0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.indexMin));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.value.indexMin), ==, 0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.edgesInfo.value.indexMax));
+         ASSERT_CMPDOUBLE (
+            bson_iter_double (&spec.edgesInfo.value.indexMax), ==, 200.0);
+         ASSERT (spec.edgesInfo.value.ubIncluded);
+
+         ASSERT_CMPDOUBLE (spec.payloadId, ==, 1234);
+
+         ASSERT_CMPINT (spec.firstOperator, ==, FLE2RangeOperator_kGt);
+         ASSERT (spec.edgesInfo.value.precision.set);
+         ASSERT_CMPUINT32 (spec.edgesInfo.value.precision.value, ==, 2);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
+
+   // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT with precision.
+   {
+      mc_FLE2EncryptionPlaceholder_t placeholder;
+      bson_t as_bson;
+      mongocrypt_status_t *status;
+      _mongocrypt_buffer_t buf;
+
+      status = mongocrypt_status_new ();
+      _mongocrypt_buffer_copy_from_hex (
+         &buf,
+         "03980000001074000100000010610003000000056b690010000000041234567812349"
+         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
+         "0376003900000001760077be9f1a2fdd5e40016d696e000000000000000000016d617"
+         "800000000000000694010707265636973696f6e00020000000012636d000000000000"
+         "000000127300010000000000000000");
+      ASSERT (bson_init_static (&as_bson, buf.data + 1, buf.len - 1));
+      mc_FLE2EncryptionPlaceholder_init (&placeholder);
+      ASSERT_OK_STATUS (
+         mc_FLE2EncryptionPlaceholder_parse (&placeholder, &as_bson, status),
+         status);
+
+      ASSERT (placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
+      ASSERT (placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
+      _mongocrypt_buffer_t expect_index_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_index_key_id,
+                                        "12345678123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.index_key_id, expect_index_key_id);
+      _mongocrypt_buffer_cleanup (&expect_index_key_id);
+
+      _mongocrypt_buffer_t expect_user_key_id;
+      _mongocrypt_buffer_copy_from_hex (&expect_user_key_id,
+                                        "abcdefab123498761234123456789012");
+      ASSERT_CMPBUF (placeholder.user_key_id, expect_user_key_id);
+      _mongocrypt_buffer_cleanup (&expect_user_key_id);
+
+      ASSERT_CMPINT64 (placeholder.sparsity, ==, 1);
+
+      // Parse FLE2RangeInsertSpec.
+      {
+         mc_FLE2RangeInsertSpec_t spec;
+
+         ASSERT_OK_STATUS (
+            mc_FLE2RangeInsertSpec_parse (&spec, &placeholder.v_iter, status),
+            status);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.v));
+         ASSERT_CMPDOUBLE (bson_iter_double (&spec.v), ==, 123.456);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.min));
+         ASSERT_CMPDOUBLE (bson_iter_double (&spec.min), ==, 0.0);
+
+         ASSERT (BSON_ITER_HOLDS_DOUBLE (&spec.max));
+         ASSERT_CMPDOUBLE (bson_iter_double (&spec.max), ==, 200.0);
+
+         ASSERT (spec.precision.set);
+         ASSERT_CMPUINT32 (spec.precision.value, ==, 2);
+      }
+
+      mc_FLE2EncryptionPlaceholder_cleanup (&placeholder);
+      _mongocrypt_buffer_cleanup (&buf);
+      mongocrypt_status_destroy (status);
+   }
+}
+
 
 // Shared implementation for insert and find tests
 typedef struct {
@@ -2206,8 +2525,9 @@ _test_encrypt_fle2_encryption_placeholder (_mongocrypt_tester_t *tester,
 static void
 _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
 {
+   uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
-      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
    _test_encrypt_fle2_encryption_placeholder (tester, "fle2-insert", &source);
 }
 #undef RNG_DATA
@@ -2228,13 +2548,169 @@ _test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
 static void
 _test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
 {
+   uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
-      .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
    _test_encrypt_fle2_encryption_placeholder (
       tester, "fle2-insert-unindexed", &source);
 }
 #undef RNG_DATA
 
+#include "./data/fle2-insert-range/int32/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_int32 (_mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/int32", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/int64/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_int64 (_mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/int64", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/date/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_date (_mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/date", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/double/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_double (_mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/double", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/double-precision/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_double_precision (
+   _mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/double-precision", &source);
+}
+#undef RNG_DATA
+
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#include "./data/fle2-insert-range/decimal128/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_decimal128 (
+   _mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/decimal128", &source);
+}
+#undef RNG_DATA
+
+#include "./data/fle2-insert-range/decimal128-precision/RNG_DATA.h"
+static void
+_test_encrypt_fle2_insert_range_payload_decimal128_precision (
+   _mongocrypt_tester_t *tester)
+{
+   uint8_t rng_data[] = RNG_DATA;
+   _test_rng_data_source source = {
+      .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-insert-range/decimal128-precision", &source);
+}
+#undef RNG_DATA
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_int32 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/int32", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_int64 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/int64", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_date (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/date", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_double (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/double", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_double_precision (
+   _mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/double-precision", &source);
+}
+
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_decimal128 (_mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/decimal128", &source);
+}
+
+// FLE2FindRangePayload only uses deterministic token generation.
+static void
+_test_encrypt_fle2_find_range_payload_decimal128_precision (
+   _mongocrypt_tester_t *tester)
+{
+   _test_rng_data_source source = {{0}};
+   _test_encrypt_fle2_encryption_placeholder (
+      tester, "fle2-find-range/decimal128-precision", &source);
+}
+#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 static mongocrypt_t *
 _crypt_with_rng (_test_rng_data_source *rng_source)
@@ -2266,144 +2742,192 @@ _crypt_with_rng (_test_rng_data_source *rng_source)
    return crypt;
 }
 
+typedef struct {
+   const char *desc;
+   _test_rng_data_source rng_data;
+   const char *algorithm;
+   _mongocrypt_buffer_t *user_key_id;
+   _mongocrypt_buffer_t *index_key_id;
+   mc_optional_int64_t contention_factor;
+   mongocrypt_binary_t *range_opts;
+   const char *query_type;
+   mongocrypt_binary_t *msg;
+   mongocrypt_binary_t *keys_to_feed[3]; // NULL terminated list.
+   mongocrypt_binary_t *expect;
+   const char *expect_finalize_error;
+   const char *expect_init_error;
+   bool is_expression;
+} ee_testcase;
+
+static void
+ee_testcase_run (ee_testcase *tc)
+{
+   printf ("  explicit_encryption_finalize test case: %s ... begin\n",
+           tc->desc);
+   extern void mc_reset_payloadId_for_testing (void);
+   mc_reset_payloadId_for_testing ();
+   mongocrypt_t *crypt;
+   if (tc->rng_data.buf.len > 0) {
+      // Use fixed data for random number generation to produce deterministic
+      // results.
+      crypt = _crypt_with_rng (&tc->rng_data);
+   } else {
+      crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   }
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   if (tc->algorithm) {
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, tc->algorithm, -1), ctx);
+   }
+   if (tc->user_key_id) {
+      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
+                    ctx, _mongocrypt_buffer_as_binary (tc->user_key_id)),
+                 ctx);
+   }
+   if (tc->index_key_id) {
+      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
+                    ctx, _mongocrypt_buffer_as_binary (tc->index_key_id)),
+                 ctx);
+   }
+   if (tc->contention_factor.set) {
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (
+                    ctx, tc->contention_factor.value),
+                 ctx);
+   }
+   if (tc->range_opts) {
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, tc->range_opts),
+                 ctx);
+   }
+   if (tc->query_type) {
+      ASSERT_OK (mongocrypt_ctx_setopt_query_type (ctx, tc->query_type, -1),
+                 ctx);
+   }
+   BSON_ASSERT (tc->msg);
+   {
+      bool ret;
+      if (tc->is_expression) {
+         ret = mongocrypt_ctx_explicit_encrypt_expression_init (ctx, tc->msg);
+      } else {
+         ret = mongocrypt_ctx_explicit_encrypt_init (ctx, tc->msg);
+      }
+      if (tc->expect_init_error) {
+         ASSERT_FAILS (ret, ctx, tc->expect_init_error);
+         goto cleanup;
+      } else {
+         ASSERT_OK (ret, ctx);
+      }
+   }
+
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+   {
+      for (size_t i = 0;
+           i < sizeof (tc->keys_to_feed) / sizeof (tc->keys_to_feed[0]);
+           i++) {
+         mongocrypt_binary_t *key_to_feed = tc->keys_to_feed[i];
+         if (!key_to_feed) {
+            break;
+         }
+         ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, key_to_feed), ctx);
+      }
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+   {
+      mongocrypt_binary_t *got = mongocrypt_binary_new ();
+
+      bool ret = mongocrypt_ctx_finalize (ctx, got);
+      if (tc->expect_finalize_error) {
+         ASSERT_FAILS (ret, ctx, tc->expect_finalize_error);
+      } else {
+         ASSERT_OK (ret, ctx);
+         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (tc->expect, got);
+      }
+      mongocrypt_binary_destroy (got);
+   }
+
+cleanup:
+   printf ("  explicit_encryption_finalize test case: %s ... end\n", tc->desc);
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+// Test the finalized output of explicit encryption.
 static void
 _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
 {
-   _mongocrypt_buffer_t user_key_id;
-   _mongocrypt_buffer_t index_key_id;
+   _mongocrypt_buffer_t keyABC_id;
+   _mongocrypt_buffer_t key123_id;
 
    if (!_aes_ctr_is_supported_by_os) {
       printf ("Common Crypto with no CTR support detected. Skipping.");
       return;
    }
 
-   _mongocrypt_buffer_copy_from_hex (&user_key_id,
+   _mongocrypt_buffer_copy_from_hex (&keyABC_id,
                                      "ABCDEFAB123498761234123456789012");
-   _mongocrypt_buffer_copy_from_hex (&index_key_id,
+   _mongocrypt_buffer_copy_from_hex (&key123_id,
                                      "12345678123498761234123456789012");
 
-   /* Test Unindexed. */
+   mongocrypt_binary_t *keyABC =
+      TEST_FILE ("./test/data/keys/"
+                 "ABCDEFAB123498761234123456789012-local-"
+                 "document.json");
+   mongocrypt_binary_t *key123 =
+      TEST_FILE ("./test/data/keys/"
+                 "12345678123498761234123456789012-local-"
+                 "document.json");
+
    {
+      ee_testcase tc = {0};
+      tc.desc = "Unindexed";
 #define RNG_DATA \
    "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
-      _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+      uint8_t rng_data[] = RNG_DATA;
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
 #undef RNG_DATA
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 'value123'}")),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "12345678123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
-         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_BSON ("{'v': { '$binary': { 'base64': "
-                       "'BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjc"
-                       "dSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ=='"
-                       ", 'subType': '06' } }}"),
-            got);
-         mongocrypt_binary_destroy (got);
-      }
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      tc.algorithm = MONGOCRYPT_ALGORITHM_UNINDEXED_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.msg = TEST_BSON ("{'v': 'value123'}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect =
+         TEST_BSON ("{'v': { '$binary': { 'base64': "
+                    "'BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjc"
+                    "dSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ=='"
+                    ", 'subType': '06' } }}");
+      ee_testcase_run (&tc);
    }
 
-   /* Test Indexed. */
    {
-/* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
- * Second 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
- */
+      ee_testcase tc = {0};
+      tc.desc = "Indexed";
 #define RNG_DATA                                                      \
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-      _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+      uint8_t rng_data[] = RNG_DATA;
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
 #undef RNG_DATA
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 'value123'}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "12345678123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
-         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json"), got);
-         mongocrypt_binary_destroy (got);
-      }
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.msg = TEST_BSON ("{'v': 'value123'}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json");
+      ee_testcase_run (&tc);
    }
 
-   /* Test Indexed with non-zero ContentionFactor. Random number chosen is 0 */
    {
+      ee_testcase tc = {0};
+      tc.desc =
+         "Indexed with non-zero ContentionFactor. Random number chosen is 0";
 /* First 8 bytes are for random ContentionFactor.
  * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
  * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
@@ -2412,61 +2936,25 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    "\x00\x00\x00\x00\x00\x00\x00\x00"                                 \
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-
-      _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+      uint8_t rng_data[] = RNG_DATA;
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
 #undef RNG_DATA
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 'value123'}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "12345678123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
-         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json"), got);
-         mongocrypt_binary_destroy (got);
-      }
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (1);
+      tc.msg = TEST_BSON ("{'v': 'value123'}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE ("./test/data/fle2-explicit/insert-indexed.json");
+      ee_testcase_run (&tc);
    }
 
-   /* Test Indexed with non-zero ContentionFactor. Random number chosen is 1. */
    {
+      ee_testcase tc = {0};
+      tc.desc =
+         "Indexed with non-zero ContentionFactor. Random number chosen is 1";
 /* First 8 bytes are for random ContentionFactor.
  * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
  * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
@@ -2482,272 +2970,359 @@ _test_encrypt_fle2_explicit (_mongocrypt_tester_t *tester)
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
 #endif /* MONGOCRYPT_LITTLE_ENDIAN */
-
-      _test_rng_data_source source = {
-         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+      uint8_t rng_data[] = RNG_DATA;
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
 #undef RNG_DATA
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 'value123'}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "12345678123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
-         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/"
-                       "insert-indexed-contentionFactor1.json"),
-            got);
-         mongocrypt_binary_destroy (got);
-      }
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (1);
+      tc.msg = TEST_BSON ("{'v': 'value123'}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE ("./test/data/fle2-explicit/"
+                             "insert-indexed-contentionFactor1.json");
+      ee_testcase_run (&tc);
    }
 
-   /* Test that omitted index_key_id defaults to using user_key_id. */
    {
-/* First 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
- * Second 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
- */
+      ee_testcase tc = {0};
+      tc.desc = "omitted index_key_id defaults to using user_key_id";
 #define RNG_DATA                                                      \
    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9" \
    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-      _test_rng_data_source source = {
+      uint8_t rng_data[] = RNG_DATA;
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
+#undef RNG_DATA
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.msg = TEST_BSON ("{'v': 'value123'}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect = TEST_FILE ("./test/data/fle2-explicit/"
+                             "insert-indexed-same-user-and-index-key.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Indexed' with query type";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_EQUALITY_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.msg = TEST_BSON ("{'v': 123456}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE ("./test/data/fle2-explicit/find-indexed.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc =
+         "algorithm='Indexed' with query type and non-zero contention factor";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_EQUALITY_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (1);
+      tc.msg = TEST_BSON ("{'v': 123456}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE (
+         "./test/data/fle2-explicit/find-indexed-contentionFactor1.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "Negative contention factor is an error on insert";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (-1);
+      tc.msg = TEST_BSON ("{'v': 123456}");
+      tc.expect_init_error = "contention must be non-negative";
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "INT64_MAX contention factor is an error on insert";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (INT64_MAX);
+      tc.msg = TEST_BSON ("{'v': 123456}");
+      tc.expect_init_error = "contention must be < INT64_MAX";
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with int32";
+#include "./data/fle2-insert-range-explicit/int32/RNG_DATA.h"
+      tc.rng_data = (_test_rng_data_source){
          .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
 #undef RNG_DATA
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 'value123'}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
-         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/"
-                       "insert-indexed-same-user-and-index-key.json"),
-            got);
-         mongocrypt_binary_destroy (got);
-      }
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-insert-range-explicit/"
+                                 "int32/rangeopts.json");
+      tc.msg = TEST_FILE ("./test/data/fle2-insert-range-explicit/int32/"
+                          "value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE ("./test/data/fle2-insert-range-explicit/int32/"
+                             "encrypted-payload.json");
+      ee_testcase_run (&tc);
    }
 
-   /* Test with query type */
    {
-      _test_rng_data_source source = {{0}};
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
-                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 123456}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "12345678123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
-         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE ("./test/data/fle2-explicit/find-indexed.json"), got);
-         mongocrypt_binary_destroy (got);
-      }
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with sparsity=2 with int32";
+#include "./data/fle2-insert-range-explicit/sparsity-2/RNG_DATA.h"
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+#undef RNG_DATA
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-insert-range-explicit/"
+                                 "sparsity-2/rangeopts.json");
+      tc.msg = TEST_FILE ("./test/data/fle2-insert-range-explicit/sparsity-2/"
+                          "value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect =
+         TEST_FILE ("./test/data/fle2-insert-range-explicit/sparsity-2/"
+                    "encrypted-payload.json");
+      ee_testcase_run (&tc);
    }
 
-   /* Test with query type and non-zero contention factor. */
    {
-      _test_rng_data_source source = {{0}};
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_query_type (
-                    ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 1), ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&index_key_id)),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (
-                    ctx, TEST_BSON ("{'v': 123456}")),
-                 ctx);
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
-                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-      {
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "ABCDEFAB123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_feed (
-                       ctx,
-                       TEST_FILE ("./test/data/keys/"
-                                  "12345678123498761234123456789012-local-"
-                                  "document.json")),
-                    ctx);
-         ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
-      }
-
-      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
-      {
-         mongocrypt_binary_t *got = mongocrypt_binary_new ();
-
-         ASSERT_OK (mongocrypt_ctx_finalize (ctx, got), ctx);
-         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (
-            TEST_FILE (
-               "./test/data/fle2-explicit/find-indexed-contentionFactor1.json"),
-            got);
-         mongocrypt_binary_destroy (got);
-      }
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with query_type='range' with int32";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (4);
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+      tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                                 "int32/rangeopts.json");
+      tc.msg = TEST_FILE ("./test/data/fle2-find-range-explicit/int32/"
+                          "value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect = TEST_FILE ("./test/data/fle2-find-range-explicit/int32/"
+                             "encrypted-payload.json");
+      tc.is_expression = true;
+      ee_testcase_run (&tc);
    }
 
-   /* Negative contention factor is an error on insert. */
    {
-      _test_rng_data_source source = {{0}};
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, -1), ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (
-                       ctx, TEST_BSON ("{'v': 123456}")),
-                    ctx,
-                    "contention must be non-negative");
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      ee_testcase tc = {0};
+      tc.desc = "An unsupported range BSON type is an error";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts =
+         TEST_BSON ("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
+      tc.msg = TEST_BSON ("{'v': 'abc'}");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect_finalize_error = "expected matching 'min' and value type";
+      ee_testcase_run (&tc);
    }
 
-   /* INT64_MAX contention factor is an error on insert. */
    {
-      _test_rng_data_source source = {{0}};
-      mongocrypt_t *crypt = _crypt_with_rng (&source);
-      mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
-
-      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
-                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
-                 ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, INT64_MAX), ctx);
-      ASSERT_OK (mongocrypt_ctx_setopt_key_id (
-                    ctx, _mongocrypt_buffer_as_binary (&user_key_id)),
-                 ctx);
-      ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (
-                       ctx, TEST_BSON ("{'v': 123456}")),
-                    ctx,
-                    "contention must be < INT64_MAX");
-
-      mongocrypt_ctx_destroy (ctx);
-      mongocrypt_destroy (crypt);
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with query_type='range' with double with "
+                "precision";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+      tc.range_opts =
+         TEST_FILE ("./test/data/fle2-find-range-explicit/double-precision/"
+                    "rangeopts.json");
+      tc.msg = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                          "double-precision/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                             "double-precision/encrypted-payload.json");
+      tc.is_expression = true;
+      ee_testcase_run (&tc);
    }
 
-   _mongocrypt_buffer_cleanup (&user_key_id);
-   _mongocrypt_buffer_cleanup (&index_key_id);
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with double precision with precision";
+#include "./data/fle2-insert-range-explicit/double-precision/RNG_DATA.h"
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+#undef RNG_DATA
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts =
+         TEST_FILE ("./test/data/fle2-insert-range-explicit/double-precision/"
+                    "rangeopts.json");
+      tc.msg = TEST_FILE ("./test/data/fle2-insert-range-explicit/"
+                          "double-precision/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect =
+         TEST_FILE ("./test/data/fle2-insert-range-explicit/double-precision/"
+                    "encrypted-payload.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with query_type='range' with double without "
+                "precision";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+      tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/double/"
+                                 "rangeopts.json");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-find-range-explicit/double/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE (
+         "./test/data/fle2-find-range-explicit/double/encrypted-payload.json");
+      tc.is_expression = true;
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with double without precision";
+#include "./data/fle2-insert-range-explicit/double/RNG_DATA.h"
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+#undef RNG_DATA
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.index_key_id = &key123_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts =
+         TEST_FILE ("./test/data/fle2-insert-range-explicit/double/"
+                    "rangeopts.json");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-insert-range-explicit/double/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.keys_to_feed[1] = key123;
+      tc.expect = TEST_FILE ("./test/data/fle2-insert-range-explicit/double/"
+                             "encrypted-payload.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' with int32 with default min/max";
+#include "./data/fle2-insert-range-explicit/int32-nominmax/RNG_DATA.h"
+      tc.rng_data = (_test_rng_data_source){
+         .buf = {.data = (uint8_t *) RNG_DATA, .len = sizeof (RNG_DATA) - 1}};
+#undef RNG_DATA
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-insert-range-explicit/"
+                                 "int32-nominmax/rangeopts.json");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-insert-range-explicit/double/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect =
+         TEST_FILE ("./test/data/fle2-insert-range-explicit/int32-nominmax/"
+                    "encrypted-payload.json");
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "algorithm='Range' and query_type='range' with int32 with "
+                "default min/max";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                                 "int32-nominmax/rangeopts.json");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-find-range-explicit/double/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect =
+         TEST_FILE ("./test/data/fle2-find-range-explicit/int32-nominmax/"
+                    "encrypted-payload.json");
+      tc.is_expression = true;
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "min > max for insert";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts =
+         TEST_BSON ("{'min': 1, 'max': 0, 'sparsity': {'$numberLong': '1'}}");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-insert-range-explicit/int32/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect_finalize_error =
+         "minimum value must be less than the maximum value";
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "min > max for find";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts =
+         TEST_BSON ("{'min': 25, 'max': 24, 'sparsity': {'$numberLong': '1'}}");
+      tc.msg = TEST_FILE (
+         "./test/data/fle2-find-range-explicit/int32/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect_finalize_error =
+         "minimum value must be less than the maximum value";
+      tc.is_expression = true;
+      ee_testcase_run (&tc);
+   }
+
+   {
+      ee_testcase tc = {0};
+      tc.desc = "open interval";
+      tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+      tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+      tc.user_key_id = &keyABC_id;
+      tc.contention_factor = OPT_I64 (0);
+      tc.range_opts = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                                 "int32-openinterval/rangeopts.json");
+      tc.msg = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                          "int32-openinterval/value-to-encrypt.json");
+      tc.keys_to_feed[0] = keyABC;
+      tc.expect = TEST_FILE ("./test/data/fle2-find-range-explicit/"
+                             "int32-openinterval/encrypted-payload.json");
+      tc.is_expression = true;
+      ee_testcase_run (&tc);
+   }
+
+   _mongocrypt_buffer_cleanup (&keyABC_id);
+   _mongocrypt_buffer_cleanup (&key123_id);
 }
 
 static void
@@ -4466,6 +5041,7 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_caches_empty_collinfo);
    INSTALL_TEST (_test_encrypt_caches_collinfo_without_jsonschema);
    INSTALL_TEST (_test_encrypt_per_ctx_credentials);
+   INSTALL_TEST (_test_encrypt_per_ctx_credentials_given_empty);
    INSTALL_TEST (_test_encrypt_per_ctx_credentials_local);
    INSTALL_TEST (_test_encrypt_with_encrypted_field_config_map);
    INSTALL_TEST (_test_encrypt_with_encrypted_field_config_map_bypassed);
@@ -4498,4 +5074,23 @@ _mongocrypt_tester_install_ctx_encrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_encrypt_macos_no_ctr);
    INSTALL_TEST (_test_fle1_collmod_with_jsonSchema);
    INSTALL_TEST (_test_fle1_collmod_without_jsonSchema);
+   INSTALL_TEST (_test_FLE2EncryptionPlaceholder_range_parse);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int32);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_int64);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_date);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_double);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_double_precision);
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_decimal128);
+   INSTALL_TEST (_test_encrypt_fle2_insert_range_payload_decimal128_precision);
+#endif
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int32);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_int64);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_date);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_double);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_double_precision);
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_decimal128);
+   INSTALL_TEST (_test_encrypt_fle2_find_range_payload_decimal128_precision);
+#endif
 }

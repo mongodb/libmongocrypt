@@ -1,6 +1,37 @@
 Changelog
 =========
 
+Changes in Version 1.5.1
+------------------------
+
+- Bundle libmongocrypt 1.7.1 in release wheels.
+
+Changes in Version 1.5.0
+------------------------
+
+- Add support for range-based Queryable Encryption with the new "rangePreview"
+  algorithm. NOTE: The "rangePreview" algorithm is experimental only. It is
+  not intended for public use.
+- Bundle libmongocrypt 1.7.0 in release wheels.
+- **Remove support for libmongocrypt <=1.7.0, libmongocrypt >=1.7.0 is now
+  required.** Note this is only relevant for users that install from
+  source or use the ``PYMONGOCRYPT_LIB`` environment variable.
+
+Changes in Version 1.4.1
+------------------------
+
+- Fixed spurious exception traceback at interpreter shutdown:
+  ``AttributeError: 'NoneType' object has no attribute 'mongocrypt_destroy'``
+
+Changes in Version 1.4.0
+------------------------
+
+- Bundle libmongocrypt 1.6.1 in release wheels.
+- Support GCP attached service accounts when using GCP KMS.
+- Support Azure VM-assigned Managed Identity for Automatic KMS Credentials.
+- Support obtaining AWS credentials for CSFLE in the same way as for
+  MONGODB-AWS.
+
 Changes in Version 1.3.1
 ------------------------
 

@@ -18,6 +18,11 @@ export DEB_CFLAGS_MAINT_APPEND  = -fPIC
 # package maintainers to append LDFLAGS
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
+ifneq (,$(filter $(DEB_HOST_ARCH),mipsel mips64el))
+	DFP_CONFIG_OPTION=-DMONGOCRYPT_ENABLE_DECIMAL128=OFF
+else
+	DFP_CONFIG_OPTION=-DMONGOCRYPT_DFP_DIR=USE-SYSTEM
+endif
 
 %:
 	dh $@
@@ -28,6 +33,7 @@ override_dh_auto_configure:
 	-DUSE_SHARED_LIBBSON=ON \
 	-DMONGOCRYPT_MONGOC_DIR=USE-SYSTEM \
 	-DENABLE_ONLINE_TESTS=OFF \
+	$(DFP_CONFIG_OPTION) \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo
 
 override_dh_auto_build:

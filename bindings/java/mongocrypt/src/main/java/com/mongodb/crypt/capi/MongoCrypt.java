@@ -18,7 +18,6 @@
 
 package com.mongodb.crypt.capi;
 
-import org.bson.BsonBinary;
 import org.bson.BsonDocument;
 
 import java.io.Closeable;
@@ -61,6 +60,16 @@ public interface MongoCrypt extends Closeable {
      * @return the context
      */
     MongoCryptContext createExplicitEncryptionContext(BsonDocument document, MongoExplicitEncryptOptions options);
+
+    /**
+     * Create a context to use for encryption
+     *
+     * @param document the document to encrypt, which must be in the form { "v" : BSON value to encrypt }
+     * @param options  the expression encryption options
+     * @return the context
+     * @since 1.7
+     */
+    MongoCryptContext createEncryptExpressionContext(BsonDocument document, MongoExplicitEncryptOptions options);
 
     /**
      * Create a context to use for encryption

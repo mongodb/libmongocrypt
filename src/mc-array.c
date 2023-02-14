@@ -23,7 +23,7 @@
 void
 _mc_array_init (mc_array_t *array, size_t element_size)
 {
-   BSON_ASSERT (array);
+   BSON_ASSERT_PARAM (array);
    BSON_ASSERT (element_size);
 
    array->len = 0;
@@ -52,6 +52,9 @@ _mc_array_init (mc_array_t *array, size_t element_size)
 void
 _mc_array_copy (mc_array_t *dst, const mc_array_t *src)
 {
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (src);
+
    _mc_array_destroy (dst);
 
    dst->len = src->len;
@@ -78,11 +81,14 @@ _mc_array_append_vals (mc_array_t *array, const void *data, uint32_t n_elements)
    size_t off;
    size_t next_size;
 
-   BSON_ASSERT (array);
-   BSON_ASSERT (data);
+   BSON_ASSERT_PARAM (array);
+   BSON_ASSERT_PARAM (data);
 
+   BSON_ASSERT (array->len <= SIZE_MAX / array->element_size);
    off = array->element_size * array->len;
+   BSON_ASSERT (n_elements <= SIZE_MAX / array->element_size);
    len = (size_t) n_elements * array->element_size;
+   BSON_ASSERT (len <= SIZE_MAX - off);
    if ((off + len) > array->allocated) {
       next_size = bson_next_power_of_two (off + len);
       array->data = (void *) bson_realloc (array->data, next_size);
@@ -91,5 +97,6 @@ _mc_array_append_vals (mc_array_t *array, const void *data, uint32_t n_elements)
 
    memcpy ((uint8_t *) array->data + off, data, len);
 
+   BSON_ASSERT (array->len <= SIZE_MAX - n_elements);
    array->len += n_elements;
 }

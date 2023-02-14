@@ -17,11 +17,7 @@
 #include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt-assert.h"
 
-#ifndef _WIN32
-#define MONGOCRYPT_PRINTF_FORMAT(a, b) __attribute__ ((format (__printf__, a, b)))
-#else
-#define MONGOCRYPT_PRINTF_FORMAT(a, b) /* no-op */
-#endif
+#include <mlib/macros.h>
 
 /* string comparison functions for Windows */
 #ifdef _WIN32
@@ -175,7 +171,7 @@ single_quotes_to_double (const char *str)
  *--------------------------------------------------------------------------
  */
 
-MONGOCRYPT_PRINTF_FORMAT (6, 7)
+MLIB_ANNOTATE_PRINTF (6, 7)
 bool
 match_json (const bson_t *doc,
             bool is_command,
@@ -264,7 +260,7 @@ match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
 }
 
 
-MONGOCRYPT_PRINTF_FORMAT (2, 3)
+MLIB_ANNOTATE_PRINTF (2, 3)
 void
 match_err (match_ctx_t *ctx, const char *fmt, ...)
 {
@@ -991,9 +987,10 @@ match_bson_value (const bson_value_t *doc,
       }
       break;
    default:
-      match_err (ctx, "unexpected value type %d: %s",
-                  doc->value_type,
-                  _mongoc_bson_type_to_str (doc->value_type));
+      match_err (ctx,
+                 "unexpected value type %d: %s",
+                 doc->value_type,
+                 _mongoc_bson_type_to_str (doc->value_type));
    }
 
    if (!ret) {

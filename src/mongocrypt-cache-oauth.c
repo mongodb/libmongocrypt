@@ -37,6 +37,8 @@ _mongocrypt_cache_oauth_new (void)
 void
 _mongocrypt_cache_oauth_destroy (_mongocrypt_cache_oauth_t *cache)
 {
+   BSON_ASSERT_PARAM (cache);
+
    _mongocrypt_mutex_cleanup (&cache->mutex);
    bson_destroy (cache->entry);
    bson_free (cache->access_token);
@@ -51,17 +53,29 @@ _mongocrypt_cache_oauth_add (_mongocrypt_cache_oauth_t *cache,
    bson_iter_t iter;
    int64_t expiration_time_us;
    int64_t cache_time_us;
+   int64_t expires_in_s;
+   int64_t expires_in_us;
    const char *access_token;
 
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (oauth_response);
+
+   /* The OAuth spec strongly implies that the value of expires_in is positive,
+    * so the overflow checks in this function don't consider negative values. */
    if (!bson_iter_init_find (&iter, oauth_response, "expires_in") ||
        !BSON_ITER_HOLDS_INT (&iter)) {
       CLIENT_ERR ("OAuth response invalid, no 'expires_in' field.");
       return false;
    }
    cache_time_us = bson_get_monotonic_time ();
-   expiration_time_us = (bson_iter_as_int64 (&iter) * 1000 * 1000) +
-                        cache_time_us -
-                        MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US;
+   expires_in_s = bson_iter_as_int64 (&iter);
+   BSON_ASSERT (expires_in_s <= INT64_MAX / 1000 / 1000);
+   expires_in_us = expires_in_s * 1000 * 1000;
+   BSON_ASSERT (expires_in_us <= INT64_MAX - cache_time_us &&
+                expires_in_us + cache_time_us >
+                   MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US);
+   expiration_time_us =
+      expires_in_us + cache_time_us - MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US;
 
    if (!bson_iter_init_find (&iter, oauth_response, "access_token") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
@@ -88,6 +102,8 @@ char *
 _mongocrypt_cache_oauth_get (_mongocrypt_cache_oauth_t *cache)
 {
    char *access_token;
+
+   BSON_ASSERT_PARAM (cache);
 
    _mongocrypt_mutex_lock (&cache->mutex);
    if (!cache->entry) {

@@ -22,6 +22,9 @@
 bool
 _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
 {
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (msg);
+
    _mongocrypt_set_error (ctx->status,
                           MONGOCRYPT_STATUS_ERROR_CLIENT,
                           MONGOCRYPT_GENERIC_ERROR_CODE,
@@ -34,6 +37,8 @@ _mongocrypt_ctx_fail_w_msg (mongocrypt_ctx_t *ctx, const char *msg)
 bool
 _mongocrypt_ctx_fail (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    if (mongocrypt_status_ok (ctx->status)) {
       return _mongocrypt_ctx_fail_w_msg (
          ctx, "unexpected, failing but no error status set");
@@ -49,7 +54,7 @@ _set_binary_opt (mongocrypt_ctx_t *ctx,
                  _mongocrypt_buffer_t *buf,
                  bson_subtype_t subtype)
 {
-   BSON_ASSERT (ctx);
+   BSON_ASSERT_PARAM (ctx);
 
    if (ctx->state == MONGOCRYPT_CTX_ERROR) {
       return false;
@@ -88,8 +93,10 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
 
    if (ctx->crypt->log.trace_enabled && key_id && key_id->data) {
       char *key_id_val;
+      /* this should never happen, so assert rather than return false */
+      BSON_ASSERT (key_id->len <= INT_MAX);
       key_id_val =
-         _mongocrypt_new_string_from_bytes (key_id->data, key_id->len);
+         _mongocrypt_new_string_from_bytes (key_id->data, (int) key_id->len);
       _mongocrypt_log (&ctx->crypt->log,
                        MONGOCRYPT_LOG_LEVEL_TRACE,
                        "%s (%s=\"%s\")",
@@ -278,27 +285,35 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
                        "%s (%s=\"%.*s\")",
                        BSON_FUNC,
                        "algorithm",
-                       (int) calculated_len,
+                       calculated_len <= (size_t) INT_MAX ? (int) calculated_len
+                                                          : INT_MAX,
                        algorithm);
    }
 
    mstr_view algo_str = mstrv_view_data (algorithm, calculated_len);
-   if (mstr_eq (algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR))) {
+   if (mstr_eq_ignore_case (
+          algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC;
-   } else if (mstr_eq (algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANDOM_STR))) {
+   } else if (mstr_eq_ignore_case (
+                 algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANDOM_STR))) {
       ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM;
-   } else if (mstr_eq (algo_str,
-                       mstrv_lit (MONGOCRYPT_ALGORITHM_INDEXED_STR))) {
+   } else if (mstr_eq_ignore_case (
+                 algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_INDEXED_STR))) {
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_EQUALITY;
       ctx->opts.index_type.set = true;
-   } else if (mstr_eq (algo_str,
-                       mstrv_lit (MONGOCRYPT_ALGORITHM_UNINDEXED_STR))) {
+   } else if (mstr_eq_ignore_case (
+                 algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_UNINDEXED_STR))) {
       ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_NONE;
       ctx->opts.index_type.set = true;
+   } else if (mstr_eq_ignore_case (
+                 algo_str, mstrv_lit (MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR))) {
+      ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW;
+      ctx->opts.index_type.set = true;
    } else {
-      char *error = bson_strdup_printf ("unsupported algorithm string \"%.*s\"",
-                                        (int) algo_str.len,
-                                        algo_str.data);
+      char *error = bson_strdup_printf (
+         "unsupported algorithm string \"%.*s\"",
+         algo_str.len <= (size_t) INT_MAX ? (int) algo_str.len : INT_MAX,
+         algo_str.data);
       _mongocrypt_ctx_fail_w_msg (ctx, error);
       bson_free (error);
       return false;
@@ -353,6 +368,9 @@ mongocrypt_ctx_new (mongocrypt_t *crypt)
 static bool
 _mongo_op_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 {
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
+
    /* Construct the find filter to fetch keys. */
    if (!_mongocrypt_key_broker_filter (&ctx->kb, out)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
@@ -367,6 +385,9 @@ _mongo_feed_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 {
    _mongocrypt_buffer_t buf;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (in);
+
    _mongocrypt_buffer_from_binary (&buf, in);
    if (!_mongocrypt_key_broker_add_doc (
           &ctx->kb, _mongocrypt_ctx_kms_providers (ctx), &buf)) {
@@ -380,6 +401,8 @@ _mongo_feed_keys (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 static bool
 _mongo_done_keys (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    (void) _mongocrypt_key_broker_docs_done (&ctx->kb);
    return _mongocrypt_ctx_state_from_key_broker (ctx);
 }
@@ -387,6 +410,8 @@ _mongo_done_keys (mongocrypt_ctx_t *ctx)
 static mongocrypt_kms_ctx_t *
 _next_kms_ctx (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    return _mongocrypt_key_broker_next_kms (&ctx->kb);
 }
 
@@ -394,8 +419,12 @@ _next_kms_ctx (mongocrypt_ctx_t *ctx)
 static bool
 _kms_done (mongocrypt_ctx_t *ctx)
 {
-   _mongocrypt_opts_kms_providers_t *kms_providers =
-      _mongocrypt_ctx_kms_providers (ctx);
+   _mongocrypt_opts_kms_providers_t *kms_providers;
+
+   BSON_ASSERT_PARAM (ctx);
+
+   kms_providers = _mongocrypt_ctx_kms_providers (ctx);
+
    if (!_mongocrypt_key_broker_kms_done (&ctx->kb, kms_providers)) {
       BSON_ASSERT (!_mongocrypt_key_broker_status (&ctx->kb, ctx->status));
       return _mongocrypt_ctx_fail (ctx);
@@ -415,7 +444,7 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    }
 
    if (!out) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL input");
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL output");
    }
 
    switch (ctx->state) {
@@ -579,11 +608,17 @@ mongocrypt_ctx_provide_kms_providers (
       return false;
    }
 
+   if (!kms_providers_definition) {
+      _mongocrypt_ctx_fail_w_msg (
+         ctx, "KMS provider credential mapping not provided");
+      return false;
+   }
+
    if (!_mongocrypt_parse_kms_providers (kms_providers_definition,
                                          &ctx->per_ctx_kms_providers,
                                          ctx->status,
                                          &ctx->crypt->log)) {
-      return false;
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    if (!_mongocrypt_opts_kms_providers_validate (
@@ -592,7 +627,7 @@ mongocrypt_ctx_provide_kms_providers (
       _mongocrypt_opts_kms_providers_cleanup (&ctx->per_ctx_kms_providers);
       memset (
          &ctx->per_ctx_kms_providers, 0, sizeof (ctx->per_ctx_kms_providers));
-      return false;
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    memcpy (&ctx->kms_providers,
@@ -652,7 +687,7 @@ mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    }
 
    if (!out) {
-      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL input");
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL output");
    }
 
    if (!ctx->vtable.finalize) {
@@ -682,6 +717,10 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *out)
       return false;
    }
 
+   if (!out) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid NULL output");
+   }
+
    if (!mongocrypt_status_ok (ctx->status)) {
       _mongocrypt_status_copy_to (ctx->status, out);
       return false;
@@ -702,6 +741,7 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx)
       ctx->vtable.cleanup (ctx);
    }
 
+   mc_RangeOpts_cleanup (&ctx->opts.rangeopts.value);
    _mongocrypt_opts_kms_providers_cleanup (&ctx->per_ctx_kms_providers);
    _mongocrypt_kek_cleanup (&ctx->opts.kek);
    mongocrypt_status_destroy (ctx->status);
@@ -767,8 +807,10 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
    bson_append_utf8 (&as_bson,
                      MONGOCRYPT_STR_AND_LEN ("provider"),
                      MONGOCRYPT_STR_AND_LEN ("aws"));
+   BSON_ASSERT (region_len <= INT_MAX);
    bson_append_utf8 (
       &as_bson, MONGOCRYPT_STR_AND_LEN ("region"), region, region_len);
+   BSON_ASSERT (cmk_len <= INT_MAX);
    bson_append_utf8 (&as_bson, MONGOCRYPT_STR_AND_LEN ("key"), cmk, cmk_len);
    bin = mongocrypt_binary_new_from_data ((uint8_t *) bson_get_data (&as_bson),
                                           as_bson.len);
@@ -825,6 +867,9 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
 {
    bool has_id = false, has_alt_name = false, has_multiple_alt_names = false;
 
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (opts_spec);
+
    // This condition is guarded in setopt_algorithm:
    BSON_ASSERT (
       !(ctx->opts.index_type.set &&
@@ -855,7 +900,7 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
          return _mongocrypt_ctx_fail_w_msg (ctx, "master key required");
       }
       if (!ctx->crypt->opts.use_need_kms_credentials_state &&
-          !(ctx->opts.kek.kms_provider &
+          !((int) ctx->opts.kek.kms_provider &
             _mongocrypt_ctx_kms_providers (ctx)->configured_providers)) {
          return _mongocrypt_ctx_fail_w_msg (
             ctx, "requested kms provider not configured");
@@ -864,6 +909,16 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
 
    if (opts_spec->kek == OPT_PROHIBITED && ctx->opts.kek.kms_provider) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "master key prohibited");
+   }
+
+   /* Check that the kms provider required by the datakey is configured.  */
+   if (ctx->opts.kek.kms_provider) {
+      if (!((ctx->crypt->opts.kms_providers.need_credentials |
+             ctx->crypt->opts.kms_providers.configured_providers) &
+            (int) ctx->opts.kek.kms_provider)) {
+         return _mongocrypt_ctx_fail_w_msg (
+            ctx, "kms provider required by datakey is not configured");
+      }
    }
 
    /* Special case. key_descriptor applies to explicit encryption. It must be
@@ -917,6 +972,11 @@ _mongocrypt_ctx_init (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "algorithm prohibited");
    }
 
+   if (opts_spec->rangeopts == OPT_PROHIBITED && ctx->opts.rangeopts.set) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "range opts are prohibited on this context");
+   }
+
    _mongocrypt_key_broker_init (&ctx->kb, ctx->crypt);
    return true;
 }
@@ -928,6 +988,8 @@ _mongocrypt_ctx_state_from_key_broker (mongocrypt_ctx_t *ctx)
    mongocrypt_status_t *status;
    mongocrypt_ctx_state_t new_state = MONGOCRYPT_CTX_ERROR;
    bool ret = false;
+
+   BSON_ASSERT_PARAM (ctx);
 
    status = ctx->status;
    kb = &ctx->kb;
@@ -1049,6 +1111,11 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
       return _mongocrypt_ctx_fail_w_msg (ctx, "key encryption key already set");
    }
 
+   if (!bin) {
+      return _mongocrypt_ctx_fail_w_msg (
+         ctx, "invalid NULL key encryption key document");
+   }
+
    if (!_mongocrypt_binary_to_bson (bin, &as_bson)) {
       return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON");
    }
@@ -1074,6 +1141,8 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
 _mongocrypt_opts_kms_providers_t *
 _mongocrypt_ctx_kms_providers (mongocrypt_ctx_t *ctx)
 {
+   BSON_ASSERT_PARAM (ctx);
+
    return ctx->kms_providers.configured_providers
              ? &ctx->kms_providers
              : &ctx->crypt->opts.kms_providers;
@@ -1128,15 +1197,87 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
 
    const size_t calc_len = len == -1 ? strlen (query_type) : (size_t) len;
    mstr_view qt_str = mstrv_view_data (query_type, calc_len);
-   if (mstr_eq (qt_str, mstrv_lit (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR))) {
+   if (mstr_eq_ignore_case (qt_str,
+                            mstrv_lit (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR))) {
       ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_EQUALITY;
       ctx->opts.query_type.set = true;
+   } else if (mstr_eq_ignore_case (
+                 qt_str, mstrv_lit (MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR))) {
+      ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW;
+      ctx->opts.query_type.set = true;
    } else {
+      /* don't check if qt_str.len fits in int; we want the diagnostic output */
       char *error = bson_strdup_printf (
-         "Unsupported query_type \"%.*s\"", (int) qt_str.len, qt_str.data);
+         "Unsupported query_type \"%.*s\"",
+         qt_str.len <= (size_t) INT_MAX ? (int) qt_str.len : INT_MAX,
+         qt_str.data);
       _mongocrypt_ctx_fail_w_msg (ctx, error);
       bson_free (error);
       return false;
    }
+   return true;
+}
+
+const char *
+_mongocrypt_index_type_to_string (mongocrypt_index_type_t val)
+{
+   switch (val) {
+   case MONGOCRYPT_INDEX_TYPE_NONE:
+      return "None";
+   case MONGOCRYPT_INDEX_TYPE_EQUALITY:
+      return "Equality";
+   case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW:
+      return "RangePreview";
+   default:
+      return "Unknown";
+   }
+}
+
+const char *
+_mongocrypt_query_type_to_string (mongocrypt_query_type_t val)
+{
+   switch (val) {
+   case MONGOCRYPT_QUERY_TYPE_EQUALITY:
+      return "Equality";
+   case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW:
+      return "RangePreview";
+   default:
+      return "Unknown";
+   }
+}
+
+bool
+mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t *ctx,
+                                       mongocrypt_binary_t *opts)
+{
+   bson_t as_bson;
+
+   if (!ctx) {
+      return false;
+   }
+
+   if (ctx->initialized) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "cannot set options after init");
+   }
+
+   if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+      return false;
+   }
+
+   if (ctx->opts.rangeopts.set) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "RangeOpts already set");
+   }
+
+
+   if (!_mongocrypt_binary_to_bson (opts, &as_bson)) {
+      return _mongocrypt_ctx_fail_w_msg (ctx, "invalid BSON");
+   }
+
+   if (!mc_RangeOpts_parse (
+          &ctx->opts.rangeopts.value, &as_bson, ctx->status)) {
+      return _mongocrypt_ctx_fail (ctx);
+   }
+
+   ctx->opts.rangeopts.set = true;
    return true;
 }

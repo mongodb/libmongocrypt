@@ -1,5 +1,15 @@
-import type { Document, Binary } from 'bson';
-import type { MongoClient, BulkWriteResult, ClientSession, DeleteResult, FindCursor } from 'mongodb';
+import type {
+  MongoClient,
+  BulkWriteResult,
+  DeleteResult,
+  FindCursor,
+  Collection,
+  Db,
+  CreateCollectionOptions,
+  Document,
+  Binary,
+  Long
+} from 'mongodb';
 
 export type ClientEncryptionDataKeyProvider = 'aws' | 'azure' | 'gcp' | 'local' | 'kmip';
 
@@ -21,6 +31,35 @@ export interface DataKey {
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
  */
 export class MongoCryptError extends Error {
+  cause?: Error;
+}
+
+/**
+ * @experimental Public Technical Preview
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
+ */
+export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
+  /**
+   * @experimental Public Technical Preview
+   * The entire `encryptedFields` that was completed while attempting createEncryptedCollection
+   */
+  encryptedFields: Document;
+  /** The error rejected from db.createCollection() */
+  cause: Error;
+}
+
+/**
+ * @experimental Public Technical Preview
+ * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
+ */
+export class MongoCryptCreateDataKeyError extends MongoCryptError {
+  /**
+   * @experimental Public Technical Preview
+   * The partial `encryptedFields` that was completed while attempting createEncryptedCollection
+   */
+  encryptedFields: Document;
+  /** The first error encountered when attempting to `createDataKey` */
+  cause: Error;
 }
 
 /**
@@ -217,6 +256,9 @@ export interface ClientEncryptionOptions {
 
   /**
    * Optional callback to override KMS providers per-context.
+   *
+   * @deprecated Installing optional dependencies will automatically refresh kms
+   *             provider credentials.
    */
   onKmsProviderRefresh?: () => Promise<KMSProviders>;
 
@@ -311,9 +353,13 @@ export interface AzureEncryptionKeyOptions {
  */
 export interface ClientEncryptionCreateDataKeyProviderOptions {
   /**
-   * Idenfities a new KMS-specific key used to encrypt the new data key
+   * Identifies a new KMS-specific key used to encrypt the new data key
    */
-  masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
+  masterKey?:
+    | AWSEncryptionKeyOptions
+    | AzureEncryptionKeyOptions
+    | GCPEncryptionKeyOptions
+    | undefined;
 
   /**
    * An optional list of string alternate names used to reference a key.
@@ -328,7 +374,11 @@ export interface ClientEncryptionCreateDataKeyProviderOptions {
 /** @experimental */
 export interface ClientEncryptionRewrapManyDataKeyProviderOptions {
   provider: ClientEncryptionDataKeyProvider;
-  masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions | undefined;
+  masterKey?:
+    | AWSEncryptionKeyOptions
+    | AzureEncryptionKeyOptions
+    | GCPEncryptionKeyOptions
+    | undefined;
 }
 
 /** @experimental */
@@ -338,13 +388,30 @@ export interface ClientEncryptionRewrapManyDataKeyResult {
 }
 
 /**
+ * RangeOptions specifies index options for a Queryable Encryption field supporting "rangePreview" queries.
+ * min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
+ * For double and decimal128, min/max/precision must all be set, or all be unset.
+ */
+interface RangeOptions {
+  min?: any;
+  max?: any;
+  sparsity: Long;
+  precision?: number;
+}
+
+/**
  * Options to provide when encrypting data.
  */
 export interface ClientEncryptionEncryptOptions {
   /**
    * The algorithm to use for encryption.
    */
-  algorithm: 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic' | 'AEAD_AES_256_CBC_HMAC_SHA_512-Random' | 'Indexed' | 'Unindexed';
+  algorithm:
+    | 'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'
+    | 'AEAD_AES_256_CBC_HMAC_SHA_512-Random'
+    | 'Indexed'
+    | 'Unindexed'
+    | 'RangePreview';
 
   /**
    * The id of the Binary dataKey to use for encryption
@@ -360,11 +427,14 @@ export interface ClientEncryptionEncryptOptions {
   contentionFactor?: bigint | number;
 
   /** @experimental Public Technical Preview: The query type supported */
-  queryType?: 'equality';
+  queryType?: 'equality' | 'rangePreview';
+
+  /** @experimental Public Technical Preview: The index options for a Queryable Encryption field supporting "rangePreview" queries.*/
+  rangeOptions?: RangeOptions;
 }
 
 /**
- * The public interface for explicit client side encrption.
+ * The public interface for explicit in-use encryption
  */
 export class ClientEncryption {
   /**
@@ -378,9 +448,7 @@ export class ClientEncryption {
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
    * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    */
-  createDataKey(
-    provider: ClientEncryptionDataKeyProvider
-  ): Promise<Binary>;
+  createDataKey(provider: ClientEncryptionDataKeyProvider): Promise<Binary>;
 
   /**
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
@@ -475,16 +543,31 @@ export class ClientEncryption {
   removeKeyAltName(id: Binary, keyAltName: string): Promise<DataKey | null>;
 
   /**
+   * @experimental Public Technical Preview
+   * A convenience method for creating an encrypted collection.
+   * This method will create data keys for any encryptedFields that do not have a `keyId` defined
+   * and then create a new collection with the full set of encryptedFields.
+   *
+   * @param db - A Node.js driver Db object with which to create the collection
+   * @param name - The name of the new collection
+   * @param options - Options for createDataKey and for createCollection. A provider and partially created encryptedFields **must** be provided.
+   * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+   * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
+   */
+  createEncryptedCollection<TSchema extends Document = Document>(db: Db, name: string, options: {
+    provider: ClientEncryptionDataKeyProvider;
+    createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & { encryptedFields: Document };
+    masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions;
+  }): Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>;
+
+  /**
    * Explicitly encrypt a provided value.
    * Note that either options.keyId or options.keyAltName must be specified.
    * Specifying both options.keyId and options.keyAltName is considered an error.
    * @param value The value that you wish to serialize. Must be of a type that can be serialized into BSON
    * @param options
    */
-  encrypt(
-    value: any,
-    options: ClientEncryptionEncryptOptions
-  ): Promise<Binary>;
+  encrypt(value: any, options: ClientEncryptionEncryptOptions): Promise<Binary>;
 
   /**
    * Explicitly encrypt a provided value.
@@ -501,20 +584,34 @@ export class ClientEncryption {
   ): void;
 
   /**
+   * Encrypts a Match Expression or Aggregate Expression to query a range index.
+   *
+   * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
+   *
+   * @experimental The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.The aggregation or match expression you wish to encrypt.  The value must be in the form
+   *
+   * The expression to encrypt must be one of the following:
+   *  1. A Match Expression of this form:
+   *      `{$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}`
+   *  2. An Aggregate Expression of this form:
+   *      `{$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]}`
+   *
+   *    `$gt` may also be `$gte`. `$lt` may also be `$lte`.
+   */
+  encryptExpression(value: Document, options: ClientEncryptionEncryptOptions): Promise<Document>;
+
+  /**
    * Explicitly decrypt a provided encrypted value
    * @param value An encrypted value
    */
-  decrypt(
-    value: Buffer | Binary
-  ): Promise<any>;
+  decrypt(value: Buffer | Binary): Promise<any>;
 
   /**
    * Explicitly decrypt a provided encrypted value
    * @param value An encrypted value
    * @param callback Callback to invoke when value is decrypted
    */
-  decrypt(
-    value: Buffer | Binary,
-    callback: ClientEncryptionDecryptCallback
-  ): void;
+  decrypt(value: Buffer | Binary, callback: ClientEncryptionDecryptCallback): void;
+
+  static readonly libmongocryptVersion: string;
 }

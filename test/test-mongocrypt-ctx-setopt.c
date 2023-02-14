@@ -25,81 +25,93 @@
 static char invalid_utf8[] = {(char) 0x80, (char) 0x00};
 
 /* Convenience macros for setting options */
-#define MASTERKEY_AWS_OK(region, region_len, cmk, cmk_len) \
-   ASSERT_OK (mongocrypt_ctx_setopt_masterkey_aws (        \
-                 ctx, region, region_len, cmk, cmk_len),   \
+#define ASSERT_MASTERKEY_AWS_OK(region, region_len, cmk, cmk_len) \
+   ASSERT_OK (mongocrypt_ctx_setopt_masterkey_aws (               \
+                 ctx, region, region_len, cmk, cmk_len),          \
               ctx);
-#define MASTERKEY_AWS_FAILS(region, region_len, cmk, cmk_len, msg) \
-   ASSERT_FAILS (mongocrypt_ctx_setopt_masterkey_aws (             \
-                    ctx, region, region_len, cmk, cmk_len),        \
-                 ctx,                                              \
+#define ASSERT_MASTERKEY_AWS_FAILS(region, region_len, cmk, cmk_len, msg) \
+   ASSERT_FAILS (mongocrypt_ctx_setopt_masterkey_aws (                    \
+                    ctx, region, region_len, cmk, cmk_len),               \
+                 ctx,                                                     \
                  msg);
 
-#define MASTERKEY_LOCAL_OK \
+#define ASSERT_MASTERKEY_LOCAL_OK \
    ASSERT_OK (mongocrypt_ctx_setopt_masterkey_local (ctx), ctx);
-#define MASTERKEY_LOCAL_FAILS(msg) \
+#define ASSERT_MASTERKEY_LOCAL_FAILS(msg) \
    ASSERT_FAILS (mongocrypt_ctx_setopt_masterkey_local (ctx), ctx, msg);
 
-#define KEY_ENCRYPTION_KEY_OK(bin) \
+#define ASSERT_KEY_ENCRYPTION_KEY_OK(bin) \
    ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (ctx, bin), ctx);
-#define KEY_ENCRYPTION_KEY_FAILS(bin, msg) \
+#define ASSERT_KEY_ENCRYPTION_KEY_FAILS(bin, msg) \
    ASSERT_FAILS (mongocrypt_ctx_setopt_key_encryption_key (ctx, bin), ctx, msg);
 
-#define KEY_ID_OK(key_id) \
+#define ASSERT_KEY_ID_OK(key_id) \
    ASSERT_OK (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx);
-#define KEY_ID_FAILS(key_id, msg) \
+#define ASSERT_KEY_ID_FAILS(key_id, msg) \
    ASSERT_FAILS (mongocrypt_ctx_setopt_key_id (ctx, key_id), ctx, msg);
 
-#define KEY_ALT_NAME_OK(key_alt_name) \
+#define ASSERT_KEY_ALT_NAME_OK(key_alt_name) \
    ASSERT_OK (mongocrypt_ctx_setopt_key_alt_name (ctx, key_alt_name), ctx);
-#define KEY_ALT_NAME_FAILS(key_alt_name, msg) \
-   ASSERT_FAILS (                             \
+#define ASSERT_KEY_ALT_NAME_FAILS(key_alt_name, msg) \
+   ASSERT_FAILS (                                    \
       mongocrypt_ctx_setopt_key_alt_name (ctx, key_alt_name), ctx, msg);
 
-#define KEY_MATERIAL_OK(key_material) \
+#define ASSERT_KEY_MATERIAL_OK(key_material) \
    ASSERT_OK (mongocrypt_ctx_setopt_key_material (ctx, key_material), ctx);
-#define KEY_MATERIAL_FAILS(key_material, msg) \
-   ASSERT_FAILS (                             \
+#define ASSERT_KEY_MATERIAL_FAILS(key_material, msg) \
+   ASSERT_FAILS (                                    \
       mongocrypt_ctx_setopt_key_material (ctx, key_material), ctx, msg);
 
-#define ALGORITHM_OK(algo, algo_len) \
+#define ASSERT_ALGORITHM_OK(algo, algo_len) \
    ASSERT_OK (mongocrypt_ctx_setopt_algorithm (ctx, algo, algo_len), ctx);
-#define ALGORITHM_FAILS(algo, algo_len, msg) \
-   ASSERT_FAILS (                            \
+#define ASSERT_ALGORITHM_FAILS(algo, algo_len, msg) \
+   ASSERT_FAILS (                                   \
       mongocrypt_ctx_setopt_algorithm (ctx, algo, algo_len), ctx, msg);
 
-#define ENDPOINT_OK(endpoint, endpoint_len)                  \
+#define ASSERT_QUERY_TYPE_OK(qt, qt_len) \
+   ASSERT_OK (mongocrypt_ctx_setopt_query_type (ctx, qt, qt_len), ctx);
+#define ASSERT_QUERY_TYPE_FAILS(qt, qt_len, msg) \
+   ASSERT_FAILS (mongocrypt_ctx_setopt_query_type (ctx, qt, qt_len), ctx, msg);
+
+#define ASSERT_ENDPOINT_OK(endpoint, endpoint_len)           \
    ASSERT_OK (mongocrypt_ctx_setopt_masterkey_aws_endpoint ( \
                  ctx, endpoint, endpoint_len),               \
               ctx);
-#define ENDPOINT_FAILS(endpoint, endpoint_len, msg)             \
+#define ASSERT_ENDPOINT_FAILS(endpoint, endpoint_len, msg)      \
    ASSERT_FAILS (mongocrypt_ctx_setopt_masterkey_aws_endpoint ( \
                     ctx, endpoint, endpoint_len),               \
                  ctx,                                           \
                  msg);
 
-#define DATAKEY_INIT_OK ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
-#define DATAKEY_INIT_FAILS(msg) \
+#define ASSERT_DATAKEY_INIT_OK \
+   ASSERT_OK (mongocrypt_ctx_datakey_init (ctx), ctx);
+#define ASSERT_DATAKEY_INIT_FAILS(msg) \
    ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx), ctx, msg);
 
-#define ENCRYPT_INIT_OK(db, db_len, cmd) \
+#define ASSERT_ENCRYPT_INIT_OK(db, db_len, cmd) \
    ASSERT_OK (mongocrypt_ctx_encrypt_init (ctx, db, db_len, cmd), ctx);
 #define ENCRYPT_INIT_FAILS(db, db_len, cmd, msg) \
    ASSERT_FAILS (mongocrypt_ctx_encrypt_init (ctx, db, db_len, cmd), ctx, msg);
 
-#define EX_ENCRYPT_INIT_OK(bin) \
+#define ASSERT_EX_ENCRYPT_INIT_OK(bin) \
    ASSERT_OK (mongocrypt_ctx_explicit_encrypt_init (ctx, bin), ctx);
-#define EX_ENCRYPT_INIT_FAILS(bin, msg) \
+#define ASSERT_EX_ENCRYPT_INIT_FAILS(bin, msg) \
    ASSERT_FAILS (mongocrypt_ctx_explicit_encrypt_init (ctx, bin), ctx, msg);
 
-#define DECRYPT_INIT_OK(bin) \
+#define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bin) \
+   ASSERT_OK (mongocrypt_ctx_explicit_encrypt_expression_init (ctx, bin), ctx);
+#define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bin, msg) \
+   ASSERT_FAILS (                                         \
+      mongocrypt_ctx_explicit_encrypt_expression_init (ctx, bin), ctx, msg);
+
+#define ASSERT_DECRYPT_INIT_OK(bin) \
    ASSERT_OK (mongocrypt_ctx_decrypt_init (ctx, bin), ctx);
-#define DECRYPT_INIT_FAILS(bin, msg) \
+#define ASSERT_DECRYPT_INIT_FAILS(bin, msg) \
    ASSERT_FAILS (mongocrypt_ctx_decrypt_init (ctx, bin), ctx, msg);
 
-#define EX_DECRYPT_INIT_OK(bin) \
+#define ASSERT_EX_DECRYPT_INIT_OK(bin) \
    ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (ctx, bin), ctx);
-#define EX_DECRYPT_INIT_FAILS(bin, msg) \
+#define ASSERT_EX_DECRYPT_INIT_FAILS(bin, msg) \
    ASSERT_FAILS (mongocrypt_ctx_explicit_decrypt_init (ctx, bin), ctx, msg);
 
 #define REFRESH                         \
@@ -121,36 +133,37 @@ _test_setopt_masterkey_aws (_mongocrypt_tester_t *tester)
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    REFRESH;
-   MASTERKEY_AWS_FAILS (NULL, 0, "cmk", 3, "invalid region");
+   ASSERT_MASTERKEY_AWS_FAILS (NULL, 0, "cmk", 3, "invalid region");
    REFRESH;
-   MASTERKEY_AWS_FAILS ("region", 6, NULL, 0, "invalid cmk");
+   ASSERT_MASTERKEY_AWS_FAILS ("region", 6, NULL, 0, "invalid cmk");
    REFRESH;
-   MASTERKEY_AWS_FAILS ("region", 0, "cmk", 0, "invalid region");
+   ASSERT_MASTERKEY_AWS_FAILS ("region", 0, "cmk", 0, "invalid region");
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
    REFRESH;
-   MASTERKEY_AWS_FAILS ("region", -2, "cmk", -1, "invalid region");
+   ASSERT_MASTERKEY_AWS_FAILS ("region", -2, "cmk", -1, "invalid region");
    REFRESH;
-   MASTERKEY_AWS_FAILS ("region", -1, "cmk", -2, "invalid cmk");
+   ASSERT_MASTERKEY_AWS_FAILS ("region", -1, "cmk", -2, "invalid cmk");
 
    /* Test invalid UTF 8 */
    REFRESH;
-   MASTERKEY_AWS_FAILS (invalid_utf8, -1, "cmk", -2, "invalid region");
+   ASSERT_MASTERKEY_AWS_FAILS (invalid_utf8, -1, "cmk", -2, "invalid region");
 
    /* Test double setting. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   MASTERKEY_AWS_FAILS ("region", -1, "cmk", -1, "master key already set");
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_MASTERKEY_AWS_FAILS (
+      "region", -1, "cmk", -1, "master key already set");
 
    /* Cannot be set with local masterkey. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   MASTERKEY_LOCAL_FAILS ("master key already set");
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_MASTERKEY_LOCAL_FAILS ("master key already set");
 
    /* Cannot be set after entering error state. */
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   MASTERKEY_AWS_FAILS ("region", -1, "cmk", -1, "test");
+   ASSERT_MASTERKEY_AWS_FAILS ("region", -1, "cmk", -1, "test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -167,17 +180,18 @@ _test_setopt_masterkey_local (_mongocrypt_tester_t *tester)
 
    /* Test double setting. */
    REFRESH;
-   MASTERKEY_LOCAL_OK;
-   MASTERKEY_LOCAL_FAILS ("master key already set");
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_MASTERKEY_LOCAL_FAILS ("master key already set");
 
    /* Cannot be set with aws masterkey. */
    REFRESH;
-   MASTERKEY_LOCAL_OK;
-   MASTERKEY_AWS_FAILS ("region", -1, "cmk", -1, "master key already set");
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_MASTERKEY_AWS_FAILS (
+      "region", -1, "cmk", -1, "master key already set");
 
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   MASTERKEY_LOCAL_FAILS ("test");
+   ASSERT_MASTERKEY_LOCAL_FAILS ("test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -193,24 +207,28 @@ _test_setopt_key_encryption_key_azure (_mongocrypt_tester_t *tester)
 
    /* Test double setting. */
    REFRESH;
-   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                     "'keyVaultEndpoint': 'example.com' }"));
-   KEY_ENCRYPTION_KEY_FAILS (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                        "'keyVaultEndpoint': 'example.com' }"),
-                             "key encryption key already set");
+   ASSERT_KEY_ENCRYPTION_KEY_OK (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"));
+   ASSERT_KEY_ENCRYPTION_KEY_FAILS (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"),
+      "key encryption key already set");
 
    /* Cannot be set when another masterkey is set. */
    REFRESH;
-   MASTERKEY_LOCAL_OK;
-   KEY_ENCRYPTION_KEY_FAILS (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                        "'keyVaultEndpoint': 'example.com' }"),
-                             "key encryption key already set");
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_KEY_ENCRYPTION_KEY_FAILS (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"),
+      "key encryption key already set");
 
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   KEY_ENCRYPTION_KEY_FAILS (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                        "'keyVaultEndpoint': 'example.com' }"),
-                             "test");
+   ASSERT_KEY_ENCRYPTION_KEY_FAILS (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"),
+      "test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -226,25 +244,25 @@ _test_setopt_key_encryption_key_gcp (_mongocrypt_tester_t *tester)
 
    /* Test double setting. */
    REFRESH;
-   KEY_ENCRYPTION_KEY_OK (
+   ASSERT_KEY_ENCRYPTION_KEY_OK (
       TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
                  "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"));
-   KEY_ENCRYPTION_KEY_FAILS (
+   ASSERT_KEY_ENCRYPTION_KEY_FAILS (
       TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
                  "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"),
       "key encryption key already set");
 
    /* Cannot be set when another masterkey is set. */
    REFRESH;
-   MASTERKEY_LOCAL_OK;
-   KEY_ENCRYPTION_KEY_FAILS (
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_KEY_ENCRYPTION_KEY_FAILS (
       TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
                  "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"),
       "key encryption key already set");
 
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   KEY_ENCRYPTION_KEY_FAILS (
+   ASSERT_KEY_ENCRYPTION_KEY_FAILS (
       TEST_BSON ("{'provider': 'gcp', 'projectId': 'proj', 'location': "
                  "'google.com', 'keyRing': 'ring', 'keyName': 'key' }"),
       "test");
@@ -264,23 +282,23 @@ _test_setopt_key_id (_mongocrypt_tester_t *tester)
 
    /* Test double setting. */
    REFRESH;
-   KEY_ID_OK (TEST_BIN (16));
-   KEY_ID_FAILS (TEST_BIN (16), "option already set");
+   ASSERT_KEY_ID_OK (TEST_BIN (16));
+   ASSERT_KEY_ID_FAILS (TEST_BIN (16), "option already set");
 
    /* Test NULL/empty input */
    REFRESH;
-   KEY_ID_FAILS (NULL, "option must be non-NULL");
+   ASSERT_KEY_ID_FAILS (NULL, "option must be non-NULL");
 
    REFRESH;
-   KEY_ID_FAILS (TEST_BIN (0), "option must be non-NULL");
+   ASSERT_KEY_ID_FAILS (TEST_BIN (0), "option must be non-NULL");
 
    /* Test wrong length */
    REFRESH;
-   KEY_ID_FAILS (TEST_BIN (5), "expected 16 byte UUID");
+   ASSERT_KEY_ID_FAILS (TEST_BIN (5), "expected 16 byte UUID");
 
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   KEY_ID_FAILS (TEST_BIN (16), "test");
+   ASSERT_KEY_ID_FAILS (TEST_BIN (16), "test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -298,31 +316,31 @@ _test_setopt_key_alt_name (_mongocrypt_tester_t *tester)
    /* Test double setting - actually succeeds since multiple key alt names
     * allowed for data keys. */
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'def'}"));
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'def'}"));
 
    /* Test NULL/empty input */
    REFRESH;
-   KEY_ALT_NAME_FAILS (NULL, "option must be non-NULL");
+   ASSERT_KEY_ALT_NAME_FAILS (NULL, "option must be non-NULL");
 
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BIN (0), "option must be non-NULL");
+   ASSERT_KEY_ALT_NAME_FAILS (TEST_BIN (0), "option must be non-NULL");
 
    /* Test wrong type */
    REFRESH;
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 1}"),
-                       "keyAltName expected to be UTF8");
+   ASSERT_KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 1}"),
+                              "keyAltName expected to be UTF8");
 
    /* Test missing key */
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltNames': 'abc'}"),
-                       "keyAltName must have field 'keyAltName'");
+   ASSERT_KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltNames': 'abc'}"),
+                              "keyAltName must have field 'keyAltName'");
 
    /* Test extra key */
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc', 'extra': 1}"),
-                       "unrecognized field");
+   ASSERT_KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc', 'extra': 1}"),
+                              "unrecognized field");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -346,32 +364,34 @@ _test_setopt_key_material (_mongocrypt_tester_t *tester)
 
    /* Test double setting. */
    REFRESH;
-   KEY_MATERIAL_OK (valid);
-   KEY_MATERIAL_FAILS (valid, "keyMaterial already set");
+   ASSERT_KEY_MATERIAL_OK (valid);
+   ASSERT_KEY_MATERIAL_FAILS (valid, "keyMaterial already set");
 
    /* Test NULL input. */
    REFRESH;
-   KEY_MATERIAL_FAILS (NULL, "option must be non-NULL");
+   ASSERT_KEY_MATERIAL_FAILS (NULL, "option must be non-NULL");
 
    /* Test empty input. */
    REFRESH;
-   KEY_MATERIAL_FAILS (TEST_BIN (0), "option must be non-NULL");
+   ASSERT_KEY_MATERIAL_FAILS (TEST_BIN (0), "option must be non-NULL");
 
    /* Test empty key material. */
    REFRESH;
-   KEY_MATERIAL_FAILS (TEST_BSON (pattern, "", ""),
-                       "keyMaterial should have length 96, but has length 0");
+   ASSERT_KEY_MATERIAL_FAILS (
+      TEST_BSON (pattern, "", ""),
+      "keyMaterial should have length 96, but has length 0");
 
    /* Test too short key material. */
    REFRESH;
-   KEY_MATERIAL_FAILS (TEST_BSON (pattern,
-                                  "dG9vc2hvcnQ=", /* "tooshort" */
-                                  ""),
-                       "keyMaterial should have length 96, but has length 8");
+   ASSERT_KEY_MATERIAL_FAILS (
+      TEST_BSON (pattern,
+                 "dG9vc2hvcnQ=", /* "tooshort" */
+                 ""),
+      "keyMaterial should have length 96, but has length 8");
 
    /* Test too long key material. */
    REFRESH;
-   KEY_MATERIAL_FAILS (
+   ASSERT_KEY_MATERIAL_FAILS (
       TEST_BSON (
          pattern,
          /* "0123456789abcdef", repeated 6 times, followed by "toolong". */
@@ -383,25 +403,25 @@ _test_setopt_key_material (_mongocrypt_tester_t *tester)
 
    /* Test invalid keyMaterial options. */
    REFRESH;
-   KEY_MATERIAL_FAILS (TEST_BSON ("{}"), "invalid bson");
+   ASSERT_KEY_MATERIAL_FAILS (TEST_BSON ("{}"), "invalid bson");
 
    REFRESH;
-   KEY_MATERIAL_FAILS (TEST_BSON ("{'a': 1}"),
-                       "keyMaterial must have field 'keyMaterial'");
+   ASSERT_KEY_MATERIAL_FAILS (TEST_BSON ("{'a': 1}"),
+                              "keyMaterial must have field 'keyMaterial'");
 
    REFRESH;
-   KEY_MATERIAL_FAILS (TEST_BSON ("{'keyMaterial': 1}"),
-                       "keyMaterial must be binary data");
+   ASSERT_KEY_MATERIAL_FAILS (TEST_BSON ("{'keyMaterial': 1}"),
+                              "keyMaterial must be binary data");
 
    /* Test extra key. */
    REFRESH;
-   KEY_MATERIAL_FAILS (TEST_BSON (pattern, material, ", 'a': 1"),
-                       "unrecognized field, only keyMaterial expected");
+   ASSERT_KEY_MATERIAL_FAILS (TEST_BSON (pattern, material, ", 'a': 1"),
+                              "unrecognized field, only keyMaterial expected");
 
    /* Test error propagation. */
    REFRESH;
    ASSERT (!_mongocrypt_ctx_fail_w_msg (ctx, "test"));
-   KEY_MATERIAL_FAILS (valid, "test");
+   ASSERT_KEY_MATERIAL_FAILS (valid, "test");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -417,30 +437,79 @@ _test_setopt_algorithm (_mongocrypt_tester_t *tester)
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    REFRESH;
-   ALGORITHM_FAILS (DET, -2, "invalid algorithm length");
+   ASSERT_ALGORITHM_FAILS (DET, -2, "invalid algorithm length");
 
    REFRESH;
-   ALGORITHM_OK (DET, 43);
+   ASSERT_ALGORITHM_OK (DET, 43);
 
    REFRESH;
-   ALGORITHM_FAILS (DET, 42, "unsupported algorithm");
+   ASSERT_ALGORITHM_FAILS (DET, 42, "unsupported algorithm");
 
    /* Check for prior bug. It's "Random", not "Randomized" */
    REFRESH;
-   ALGORITHM_FAILS (RAND "ized", -1, "unsupported algorithm");
+   ASSERT_ALGORITHM_FAILS (RAND "ized", -1, "unsupported algorithm");
 
    /* Test double setting. */
    REFRESH;
-   ALGORITHM_OK (DET, -1);
-   ALGORITHM_FAILS (DET, -1, "already set algorithm");
+   ASSERT_ALGORITHM_OK (DET, -1);
+   ASSERT_ALGORITHM_FAILS (DET, -1, "already set algorithm");
 
    /* Test NULL input */
    REFRESH;
-   ALGORITHM_FAILS (NULL, 0, "passed null algorithm");
+   ASSERT_ALGORITHM_FAILS (NULL, 0, "passed null algorithm");
 
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   ALGORITHM_FAILS (RAND, -1, "test")
+   ASSERT_ALGORITHM_FAILS (RAND, -1, "test")
+
+   /* Test case insensitive. */
+   REFRESH;
+   ASSERT_ALGORITHM_OK ("aEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
+   REFRESH;
+   ASSERT_ALGORITHM_OK ("aEAD_AES_256_CBC_HMAC_SHA_512-Random", -1);
+   REFRESH;
+   ASSERT_ALGORITHM_OK ("indexed", -1);
+   REFRESH;
+   ASSERT_ALGORITHM_OK ("unindexed", -1);
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_setopt_query_type (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx = NULL;
+
+   crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+
+   /* Test valid input. */
+   REFRESH;
+   ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR,
+                         (int) strlen (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR));
+
+   /* Test invalid length. */
+   REFRESH;
+   ASSERT_QUERY_TYPE_FAILS ("foo", -2, "Invalid query_type string length");
+
+   /* Test double setting. */
+   REFRESH;
+   ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1);
+   ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1);
+
+   /* Test NULL input */
+   REFRESH;
+   ASSERT_QUERY_TYPE_FAILS (NULL, 0, "Invalid null query_type string");
+
+   /* Test with failed context. */
+   REFRESH;
+   _mongocrypt_ctx_fail_w_msg (ctx, "test");
+   ASSERT_QUERY_TYPE_FAILS (MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1, "test")
+
+   /* Test case insensitive. */
+   REFRESH;
+   ASSERT_QUERY_TYPE_OK ("Equality", -1);
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -460,73 +529,74 @@ _test_setopt_for_datakey (_mongocrypt_tester_t *tester)
 
    /* Test required and prohibited options. */
    REFRESH;
-   DATAKEY_INIT_FAILS ("master key required");
+   ASSERT_DATAKEY_INIT_FAILS ("master key required");
 
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   DATAKEY_INIT_OK;
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_DATAKEY_INIT_OK;
 
    REFRESH;
-   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                     "'keyVaultEndpoint': 'example.com' }"));
-   DATAKEY_INIT_OK;
+   ASSERT_KEY_ENCRYPTION_KEY_OK (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"));
+   ASSERT_DATAKEY_INIT_OK;
 
    /* Test optional key alt names. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   DATAKEY_INIT_OK;
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_DATAKEY_INIT_OK;
 
    /* Multiple key alt names are okay. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'def'}"));
-   DATAKEY_INIT_OK;
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'def'}"));
+   ASSERT_DATAKEY_INIT_OK;
 
    /* But duplicates are not. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc'}"),
-                       "duplicate keyAltNames found");
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_KEY_ALT_NAME_FAILS (TEST_BSON ("{'keyAltName': 'abc'}"),
+                              "duplicate keyAltNames found");
 
    /* Key Material is okay. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   KEY_MATERIAL_OK (
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_KEY_MATERIAL_OK (
       TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
                  "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
                  "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
                  "WJjZGVm', 'subType': '00'}}}"));
-   DATAKEY_INIT_OK;
+   ASSERT_DATAKEY_INIT_OK;
 
    /* Test each prohibited option. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   KEY_ID_OK (uuid);
-   DATAKEY_INIT_FAILS ("key id and alt name prohibited");
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_DATAKEY_INIT_FAILS ("key id and alt name prohibited");
 
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   ALGORITHM_OK (MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1);
-   DATAKEY_INIT_FAILS ("algorithm prohibited");
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1);
+   ASSERT_DATAKEY_INIT_FAILS ("algorithm prohibited");
 
    /* Test setting options after init. */
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   DATAKEY_INIT_OK;
-   MASTERKEY_AWS_FAILS (
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_DATAKEY_INIT_OK;
+   ASSERT_MASTERKEY_AWS_FAILS (
       "region", -1, "cmk", -1, "cannot set options after init");
 
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   ENDPOINT_OK ("example.com:80", -1);
-   DATAKEY_INIT_OK;
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_ENDPOINT_OK ("example.com:80", -1);
+   ASSERT_DATAKEY_INIT_OK;
 
    REFRESH;
-   MASTERKEY_LOCAL_OK;
-   ENDPOINT_FAILS ("example.com:80", -1, "endpoint prohibited");
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_ENDPOINT_FAILS ("example.com:80", -1, "endpoint prohibited");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -546,31 +616,32 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
 
    /* Test required and prohibited options. */
    REFRESH;
-   ENCRYPT_INIT_OK ("a", -1, cmd);
+   ASSERT_ENCRYPT_INIT_OK ("a", -1, cmd);
 
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "master key prohibited");
 
    REFRESH;
-   MASTERKEY_LOCAL_OK;
+   ASSERT_MASTERKEY_LOCAL_OK;
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "master key prohibited");
 
    REFRESH;
-   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                     "'keyVaultEndpoint': 'example.com' }"));
+   ASSERT_KEY_ENCRYPTION_KEY_OK (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"));
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "master key prohibited");
 
    REFRESH;
-   KEY_ID_OK (uuid);
+   ASSERT_KEY_ID_OK (uuid);
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_MATERIAL_OK (
+   ASSERT_KEY_MATERIAL_OK (
       TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
                  "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
                  "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
@@ -578,7 +649,7 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "key material prohibited");
 
    REFRESH;
-   ALGORITHM_OK (DET, -1);
+   ASSERT_ALGORITHM_OK (DET, -1);
    ENCRYPT_INIT_FAILS ("a", -1, cmd, "algorithm prohibited");
 
    REFRESH;
@@ -586,8 +657,8 @@ _test_setopt_for_encrypt (_mongocrypt_tester_t *tester)
 
    /* Test setting options after init. */
    REFRESH;
-   ENCRYPT_INIT_OK ("a", -1, cmd);
-   MASTERKEY_LOCAL_FAILS ("cannot set options after init");
+   ASSERT_ENCRYPT_INIT_OK ("a", -1, cmd);
+   ASSERT_MASTERKEY_LOCAL_FAILS ("cannot set options after init");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -599,167 +670,189 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
    mongocrypt_ctx_t *ctx = NULL;
-   mongocrypt_binary_t *bson, *uuid;
+   mongocrypt_binary_t *bson, *uuid, *rangeopts;
 
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    uuid = TEST_BIN (16);
    bson = TEST_BSON ("{'v': 'hello'}");
+   rangeopts =
+      TEST_BSON ("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
 
    /* Test required and prohibited options. */
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (RAND, -1);
-   EX_ENCRYPT_INIT_OK (bson);
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_EX_ENCRYPT_INIT_OK (bson);
 
    /* Just keyAltName is ok */
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   ALGORITHM_OK (RAND, -1);
-   EX_ENCRYPT_INIT_OK (bson);
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_EX_ENCRYPT_INIT_OK (bson);
 
    /* Two keyAltNames is invalid */
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'def'}"));
-   ALGORITHM_OK (RAND, -1);
-   EX_ENCRYPT_INIT_FAILS (bson, "must not specify multiple key alt names");
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'def'}"));
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                 "must not specify multiple key alt names");
 
    /* Both keyAltName and keyId is invalid */
    REFRESH;
-   KEY_ID_OK (uuid);
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   ALGORITHM_OK (RAND, -1);
-   EX_ENCRYPT_INIT_FAILS (bson, "cannot have both key id and key alt name");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                 "cannot have both key id and key alt name");
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (RAND, -1);
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   ALGORITHM_OK (RAND, -1);
-   KEY_MATERIAL_OK (
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_KEY_MATERIAL_OK (
       TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
                  "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
                  "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
                  "WJjZGVm', 'subType': '00'}}}"));
-   EX_ENCRYPT_INIT_FAILS (bson, "key material prohibited");
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "key material prohibited");
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (RAND, -1);
-   MASTERKEY_LOCAL_OK;
-   EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (RAND, -1);
-   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                     "'keyVaultEndpoint': 'example.com' }"));
-   EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_KEY_ENCRYPTION_KEY_OK (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"));
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   EX_ENCRYPT_INIT_FAILS (bson, "algorithm or index type required");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "algorithm or index type required");
 
    REFRESH;
-   ALGORITHM_OK (RAND, -1);
-   EX_ENCRYPT_INIT_FAILS (bson, "key id or key alt name required")
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "key id or key alt name required")
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (DET, -1);
-   EX_ENCRYPT_INIT_OK (bson);
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_OK (DET, -1);
+   ASSERT_EX_ENCRYPT_INIT_OK (bson);
 
    /* Just key alt name is ok */
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   ALGORITHM_OK (RAND, -1);
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (DET, -1);
-   EX_ENCRYPT_INIT_OK (bson);
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_OK (DET, -1);
+   ASSERT_EX_ENCRYPT_INIT_OK (bson);
 
    /* Test setting options after init. */
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_OK (RAND, -1);
-   EX_ENCRYPT_INIT_OK (bson);
-   ALGORITHM_FAILS (RAND, -1, "cannot set options after init");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_OK (RAND, -1);
+   ASSERT_EX_ENCRYPT_INIT_OK (bson);
+   ASSERT_ALGORITHM_FAILS (RAND, -1, "cannot set options after init");
 
    /* Test that an option failure validated at the time of 'setopt' persists
     * upon init. */
    REFRESH;
-   KEY_ID_OK (uuid);
-   ALGORITHM_FAILS ("bad-algo", -1, "unsupported algorithm");
-   EX_ENCRYPT_INIT_FAILS (bson, "unsupported algorithm");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_ALGORITHM_FAILS ("bad-algo", -1, "unsupported algorithm");
+   ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "unsupported algorithm");
 
    /* It is an error to set the FLE 1 keyAltName option with any of the FLE 2
-    * options (index_type, index_key_id, contention_factor, or query_type). */
+    * options (index_type, index_key_id, contention_factor, query_type, or
+    * range opts). */
    {
       REFRESH;
-      KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
                  ctx);
-      EX_ENCRYPT_INIT_FAILS (bson,
-                             "cannot set both key alt name and index type");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both key alt name and index type");
 
       REFRESH;
-      KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
       ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (ctx, uuid), ctx);
-      EX_ENCRYPT_INIT_FAILS (bson,
-                             "cannot set both key alt name and index key id");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both key alt name and index key id");
 
       REFRESH;
-      KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 123), ctx);
-      EX_ENCRYPT_INIT_FAILS (
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
          bson, "cannot set both key alt name and contention factor");
 
       REFRESH;
-      KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
       ASSERT_OK (mongocrypt_ctx_setopt_query_type (
                     ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
                  ctx);
-      EX_ENCRYPT_INIT_FAILS (bson,
-                             "cannot set both key alt name and query type");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both key alt name and query type");
+
+      REFRESH;
+      ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both key alt name and range opts");
    }
 
    /* It is an error to set the FLE 1 algorithm option with any of the FLE 2
-    * options (index_type, index_key_id, contention_factor, or query_type). */
+    * options (index_type, index_key_id, contention_factor, query_type, or
+    * range opts). */
    {
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
-      KEY_ID_OK (uuid);
-      ALGORITHM_OK (RAND, -1);
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (RAND, -1);
       ASSERT_OK (mongocrypt_ctx_setopt_index_key_id (ctx, uuid), ctx);
-      EX_ENCRYPT_INIT_FAILS (bson,
-                             "cannot set both algorithm and index key id");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both algorithm and index key id");
 
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
-      KEY_ID_OK (uuid);
-      ALGORITHM_OK (RAND, -1);
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (RAND, -1);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 123), ctx);
-      EX_ENCRYPT_INIT_FAILS (bson,
-                             "cannot set both algorithm and contention factor");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set both algorithm and contention factor");
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
-      KEY_ID_OK (uuid);
-      ALGORITHM_OK (RAND, -1);
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (RAND, -1);
       ASSERT_OK (mongocrypt_ctx_setopt_query_type (
                     ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
                  ctx);
-      EX_ENCRYPT_INIT_FAILS (bson, "cannot set both algorithm and query type");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                    "cannot set both algorithm and query type");
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (RAND, -1);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                    "cannot set both algorithm and range opts");
    }
 
    /* Require either index_type or algorithm */
@@ -767,8 +860,8 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
-      KEY_ID_OK (uuid);
-      EX_ENCRYPT_INIT_FAILS (bson, "algorithm or index type required");
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "algorithm or index type required");
    }
 
    /* It is an error to set contention_factor with index_type ==
@@ -777,13 +870,43 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
-      KEY_ID_OK (uuid);
+      ASSERT_KEY_ID_OK (uuid);
       ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
                  ctx);
-      EX_ENCRYPT_INIT_FAILS (bson,
-                             "cannot set contention factor with no index type");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set contention factor with no index type");
+   }
+
+   /* It is an error to set range opts with index_type ==
+    * MONGOCRYPT_INDEX_TYPE_NONE */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                    "cannot set range opts with no index type");
+   }
+
+   /* It is an error to set range opts with index_type ==
+    * MONGOCRYPT_INDEX_TYPE_EQUALITY */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson, "cannot set range opts with equality index type");
    }
 
    /* It is an error to set query_type with index_type ==
@@ -792,14 +915,15 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
-      KEY_ID_OK (uuid);
+      ASSERT_KEY_ID_OK (uuid);
       ASSERT_OK (mongocrypt_ctx_setopt_query_type (
                     ctx, MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1),
                  ctx);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1),
                  ctx);
-      EX_ENCRYPT_INIT_FAILS (bson, "cannot set query type with no index type");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson,
+                                    "cannot set query type with no index type");
    }
 
    /* Contention factor is required for "Indexed" algorithm. */
@@ -807,11 +931,102 @@ _test_setopt_for_explicit_encrypt (_mongocrypt_tester_t *tester)
       REFRESH;
       /* Set key ID to get past the 'either key id or key alt name required'
        * error */
-      KEY_ID_OK (uuid);
+      ASSERT_KEY_ID_OK (uuid);
       ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
                     ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1),
                  ctx);
-      EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
+   }
+
+   /* Contention factor is required for "rangePreview" algorithm. */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm_range (ctx, rangeopts), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "contention factor is required");
+   }
+
+   /* Range opts is required for "rangePreview" algorithm. */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "range opts are required");
+   }
+
+   /* Negative sparsity is prohibited. */
+   {
+      REFRESH;
+      /* Set key ID to get past the 'either key id or key alt name required'
+       * error */
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_algorithm_range (
+            ctx,
+            TEST_BSON (
+               "{'min': 0, 'max': 1, 'sparsity': { '$numberLong': '-1'}}")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_algorithm (
+                    ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1),
+                 ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "sparsity must be non-negative");
+   }
+
+   /* Error if query_type == "rangePreview" and algorithm != "rangePreview". */
+   {
+      REFRESH;
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_INDEXED_STR, -1);
+      ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR, -1);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (bson, "must match index_type");
+   }
+
+   /* Error if query_type == "rangePreview" for
+    * mongocrypt_ctx_explicit_encrypt_init. */
+   {
+      REFRESH;
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1);
+      ASSERT_QUERY_TYPE_OK (MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR, -1);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_algorithm_range (
+            ctx,
+            TEST_BSON (
+               "{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_EX_ENCRYPT_INIT_FAILS (
+         bson,
+         "Encrypt may not be used for range queries. Use EncryptExpression.");
+   }
+
+   /* Error if query_type is unset for
+    * mongocrypt_ctx_explicit_encrypt_expression_init. */
+   {
+      REFRESH;
+      ASSERT_KEY_ID_OK (uuid);
+      ASSERT_ALGORITHM_OK (MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR, -1);
+      ASSERT_OK (
+         mongocrypt_ctx_setopt_algorithm_range (
+            ctx,
+            TEST_BSON (
+               "{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_setopt_contention_factor (ctx, 0), ctx);
+      ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS (
+         bson, "EncryptExpression may only be used for range queries.");
    }
 
    mongocrypt_ctx_destroy (ctx);
@@ -832,45 +1047,46 @@ _test_setopt_for_decrypt (_mongocrypt_tester_t *tester)
 
    /* Test required and prohibited options. */
    REFRESH;
-   DECRYPT_INIT_OK (bson);
+   ASSERT_DECRYPT_INIT_OK (bson);
 
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   DECRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   MASTERKEY_LOCAL_OK;
-   DECRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                     "'keyVaultEndpoint': 'example.com' }"));
-   DECRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_KEY_ENCRYPTION_KEY_OK (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"));
+   ASSERT_DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_MATERIAL_OK (
+   ASSERT_KEY_MATERIAL_OK (
       TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
                  "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
                  "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
                  "WJjZGVm', 'subType': '00'}}}"));
-   DECRYPT_INIT_FAILS (bson, "key material prohibited");
+   ASSERT_DECRYPT_INIT_FAILS (bson, "key material prohibited");
 
    REFRESH;
-   ALGORITHM_OK (DET, -1);
-   DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
+   ASSERT_ALGORITHM_OK (DET, -1);
+   ASSERT_DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
 
    /* Test setting options after init. */
    REFRESH;
-   DECRYPT_INIT_OK (bson);
-   MASTERKEY_LOCAL_FAILS ("cannot set options after init");
+   ASSERT_DECRYPT_INIT_OK (bson);
+   ASSERT_MASTERKEY_LOCAL_FAILS ("cannot set options after init");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -890,40 +1106,50 @@ _test_setopt_for_explicit_decrypt (_mongocrypt_tester_t *tester)
 
    /* Test required and prohibited options. */
    REFRESH;
-   EX_DECRYPT_INIT_OK (bson);
+   ASSERT_EX_DECRYPT_INIT_OK (bson);
 
    REFRESH;
-   MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
-   EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_MASTERKEY_AWS_OK ("region", -1, "cmk", -1);
+   ASSERT_EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   MASTERKEY_LOCAL_OK;
-   EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_MASTERKEY_LOCAL_OK;
+   ASSERT_EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ENCRYPTION_KEY_OK (TEST_BSON ("{'provider': 'azure', 'keyName': '', "
-                                     "'keyVaultEndpoint': 'example.com' }"));
-   EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
+   ASSERT_KEY_ENCRYPTION_KEY_OK (
+      TEST_BSON ("{'provider': 'azure', 'keyName': '', "
+                 "'keyVaultEndpoint': 'example.com' }"));
+   ASSERT_EX_DECRYPT_INIT_FAILS (bson, "master key prohibited");
 
    REFRESH;
-   KEY_ID_OK (uuid);
-   EX_DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
+   ASSERT_KEY_ID_OK (uuid);
+   ASSERT_EX_DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
-   DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
+   ASSERT_KEY_ALT_NAME_OK (TEST_BSON ("{'keyAltName': 'abc'}"));
+   ASSERT_DECRYPT_INIT_FAILS (bson, "key id and alt name prohibited");
 
    REFRESH;
-   KEY_MATERIAL_OK (
+   ASSERT_KEY_MATERIAL_OK (
       TEST_BSON ("{'keyMaterial': {'$binary': {'base64': "
                  "'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJj"
                  "ZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5Y"
                  "WJjZGVm', 'subType': '00'}}}"));
-   DECRYPT_INIT_FAILS (bson, "key material prohibited");
+   ASSERT_DECRYPT_INIT_FAILS (bson, "key material prohibited");
 
    REFRESH;
-   ALGORITHM_OK (DET, -1);
-   EX_DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
+   ASSERT_ALGORITHM_OK (DET, -1);
+   ASSERT_EX_DECRYPT_INIT_FAILS (bson, "algorithm prohibited");
+
+   // Range opts are prohibited.
+   REFRESH;
+   ASSERT_OK (
+      mongocrypt_ctx_setopt_algorithm_range (
+         ctx,
+         TEST_BSON ("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}")),
+      ctx);
+   ASSERT_EX_DECRYPT_INIT_FAILS (bson, "range opts are prohibited");
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
@@ -941,8 +1167,8 @@ _test_setopt_failure_uninitialized (_mongocrypt_tester_t *tester)
    status = mongocrypt_status_new ();
 
    REFRESH;
-   KEY_ALT_NAME_FAILS (TEST_BSON ("{'fake': 'abc'}"),
-                       "keyAltName must have field 'keyAltName'");
+   ASSERT_KEY_ALT_NAME_FAILS (TEST_BSON ("{'fake': 'abc'}"),
+                              "keyAltName must have field 'keyAltName'");
    /* Though mongocrypt_ctx_t is uninitialized, we should still get failure
     * status. */
    ASSERT_FAILS_STATUS (mongocrypt_ctx_status (ctx, status),
@@ -964,34 +1190,77 @@ _test_setopt_endpoint (_mongocrypt_tester_t *tester)
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
    REFRESH;
-   ENDPOINT_FAILS ("example.com", -2, "Invalid endpoint");
+   ASSERT_ENDPOINT_FAILS ("example.com", -2, "Invalid endpoint");
 
    REFRESH;
-   ENDPOINT_OK ("example.com", -1);
+   ASSERT_ENDPOINT_OK ("example.com", -1);
    BSON_ASSERT (0 == strcmp (ctx->opts.kek.provider.aws.endpoint->host_and_port,
                              "example.com"));
 
    /* Including a port is ok. */
    REFRESH;
-   ENDPOINT_OK ("example.com:80", -1);
+   ASSERT_ENDPOINT_OK ("example.com:80", -1);
    BSON_ASSERT (0 == strcmp (ctx->opts.kek.provider.aws.endpoint->host_and_port,
                              "example.com:80"));
 
    /* Test double setting. */
    REFRESH;
-   ENDPOINT_OK ("example.com", -1);
-   ENDPOINT_FAILS ("example.com", -1, "already set masterkey endpoint");
+   ASSERT_ENDPOINT_OK ("example.com", -1);
+   ASSERT_ENDPOINT_FAILS ("example.com", -1, "already set masterkey endpoint");
 
    /* Test NULL input */
    REFRESH;
-   ENDPOINT_FAILS (NULL, 0, "Invalid endpoint");
+   ASSERT_ENDPOINT_FAILS (NULL, 0, "Invalid endpoint");
 
    REFRESH;
    _mongocrypt_ctx_fail_w_msg (ctx, "test");
-   ENDPOINT_FAILS (RAND, -1, "test")
+   ASSERT_ENDPOINT_FAILS (RAND, -1, "test")
 
    mongocrypt_ctx_destroy (ctx);
    mongocrypt_destroy (crypt);
+}
+
+static void
+_test_createdatakey_with_wrong_kms_provider_helper (
+   _mongocrypt_tester_t *tester, mongocrypt_binary_t *kms_provider)
+{
+   mongocrypt_t *crypt;
+   mongocrypt_ctx_t *ctx;
+   const char *const kek = "{"
+                           "'provider': 'azure',"
+                           "'keyName': 'foo',"
+                           "'keyVaultEndpoint': 'example.com'"
+                           "}";
+
+   crypt = mongocrypt_new ();
+   ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, kms_provider), crypt);
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt);
+   ASSERT_OK (mongocrypt_init (crypt), crypt);
+   ctx = mongocrypt_ctx_new (crypt);
+   ASSERT_OK (mongocrypt_ctx_setopt_key_encryption_key (ctx, TEST_BSON (kek)),
+              ctx);
+   ASSERT_FAILS (mongocrypt_ctx_datakey_init (ctx),
+                 ctx,
+                 "kms provider required by datakey is not configured");
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+}
+
+static void
+_test_setopt_createdatakey_wrong_kms_provider_configured (
+   _mongocrypt_tester_t *tester)
+{
+   _test_createdatakey_with_wrong_kms_provider_helper (
+      tester, TEST_BSON ("{'gcp': { 'accessToken': '1234' } }"));
+}
+
+static void
+_test_setopt_createdatakey_wrong_kms_provider_empty (
+   _mongocrypt_tester_t *tester)
+{
+   _test_createdatakey_with_wrong_kms_provider_helper (
+      tester, TEST_BSON ("{'gcp': {}}"));
 }
 
 
@@ -1008,6 +1277,9 @@ _test_options (_mongocrypt_tester_t *tester)
    _test_setopt_endpoint (tester);
    _test_setopt_key_encryption_key_azure (tester);
    _test_setopt_key_encryption_key_gcp (tester);
+   _test_setopt_query_type (tester);
+   _test_setopt_createdatakey_wrong_kms_provider_empty (tester);
+   _test_setopt_createdatakey_wrong_kms_provider_configured (tester);
 
    /* Test options on different contexts */
    _test_setopt_for_datakey (tester);

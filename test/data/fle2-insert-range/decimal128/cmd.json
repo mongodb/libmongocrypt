@@ -1,0 +1,9 @@
+{
+    "insert": "test",
+    "documents": [
+        {
+            "plainText": "sample",
+            "encrypted": {"$numberDecimal":"1.23000000000000"}
+        }
+    ]
+}

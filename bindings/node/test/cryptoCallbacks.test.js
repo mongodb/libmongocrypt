@@ -1,9 +1,7 @@
 'use strict';
 
 const sinon = require('sinon');
-const chai = require('chai');
-const expect = chai.expect;
-chai.use(require('sinon-chai'));
+const { expect } = require('chai');
 const mongodb = require('mongodb');
 const MongoClient = mongodb.MongoClient;
 const stateMachine = require('../lib/stateMachine')({ mongodb });

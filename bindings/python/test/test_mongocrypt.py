@@ -16,6 +16,7 @@
 
 import base64
 import copy
+import json
 import os
 import sys
 
@@ -29,6 +30,8 @@ from bson.son import SON
 
 sys.path[0:0] = [""]
 
+import pymongocrypt.mongocrypt
+from pymongo_auth_aws.auth import AwsCredential
 from pymongocrypt.auto_encrypter import AutoEncrypter
 from pymongocrypt.binding import lib
 from pymongocrypt.compat import unicode_type, PY3
@@ -41,6 +44,9 @@ from pymongocrypt.mongocrypt import (MongoCrypt,
 from pymongocrypt.state_machine import MongoCryptCallback
 
 from test import unittest, mock
+
+import requests.exceptions
+import requests_mock
 
 
 # Data for testing libbmongocrypt binding.
@@ -95,6 +101,9 @@ class TestMongoCryptOptions(unittest.TestCase):
               'local': {'key': b'1' * 96}}, None),
             ({'local': {'key': to_base64(b'1' * 96)}}, None),
             ({'local': {'key': Binary(b'1' * 96)}}, None),
+            ({'azure': {}}, None),
+            ({'azure': {'clientId': 'foo', 'clientSecret': 'bar'}}, None),
+            ({'gcp': {}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
                       'privateKey': b'1'}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
@@ -123,16 +132,16 @@ class TestMongoCryptOptions(unittest.TestCase):
                 {'aws': {'accessKeyId': 'foo'}},
                 {'aws': {'secretAccessKey': 'foo'}}]:
             with self.assertRaisesRegex(
-                    ValueError, "kms_providers\['aws'\] must contain "
+                    ValueError, r"kms_providers\['aws'\] must contain "
                                 "'accessKeyId' and 'secretAccessKey'"):
                 MongoCryptOptions(invalid_kms_providers)
         with self.assertRaisesRegex(
-                TypeError, "kms_providers\['local'\]\['key'\] must be an "
-                           "instance of bytes or str \(unicode in Python 2\)"):
+                TypeError, r"kms_providers\['local'\]\['key'\] must be an "
+                           r"instance of bytes or str \(unicode in Python 2\)"):
             MongoCryptOptions({'local': {'key': None}})
         with self.assertRaisesRegex(
-                TypeError, "kms_providers\['gcp'\]\['privateKey'\] must be an "
-                           "instance of bytes or str \(unicode in Python 2\)"):
+                TypeError, r"kms_providers\['gcp'\]\['privateKey'\] must be an "
+                           r"instance of bytes or str \(unicode in Python 2\)"):
             MongoCryptOptions({'gcp': {'email': "foo@bar.baz",
                                        "privateKey": None}})
 
@@ -431,7 +440,7 @@ class TestMongoCryptCallback(unittest.TestCase):
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
 
-    def test_need_kms_credentials(self):
+    def test_need_kms_aws_credentials(self):
         kms_providers = { 'aws': {} }
         opts = MongoCryptOptions(kms_providers)
         callback = MockCallback(
@@ -442,8 +451,8 @@ class TestMongoCryptCallback(unittest.TestCase):
         encrypter = AutoEncrypter(callback, opts)
         self.addCleanup(encrypter.close)
 
-        with mock.patch("pymongocrypt.mongocrypt._ask_for_kms_credentials") as m:
-            m.return_value = { "aws": { "accessKeyId": "example", "secretAccessKey": "example"} }
+        with mock.patch("pymongocrypt.credentials.aws_temp_credentials") as m:
+            m.return_value = AwsCredential("example", "example", None)
             decrypted = encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
             self.assertTrue(m.called)
@@ -451,6 +460,154 @@ class TestMongoCryptCallback(unittest.TestCase):
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+    def test_need_kms_gcp_credentials(self):
+        kms_providers = { 'gcp': {} }
+        opts = MongoCryptOptions(kms_providers)
+        callback = MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document-gcp.json')],
+            kms_reply=http_data('kms-reply-gcp.txt'))
+        encrypter = AutoEncrypter(callback, opts)
+        self.addCleanup(encrypter.close)
+
+        with requests_mock.Mocker() as m:
+            data = {"access_token": "foo"}
+            url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+            m.get(url, text=json.dumps(data))
+            decrypted = encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
+        self.assertEqual(bson.decode(decrypted, OPTS),
+                         json_data('command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+
+class TestNeedKMSAzureCredentials(unittest.TestCase):
+    maxDiff = None
+
+    def get_encrypter(self, clear_cache=True):
+        if clear_cache:
+            pymongocrypt.credentials._azure_creds_cache = None
+        kms_providers = { 'azure': {} }
+        opts = MongoCryptOptions(kms_providers)
+        callback = MockCallback(
+            list_colls_result=bson_data('collection-info.json'),
+            mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+            key_docs=[bson_data('key-document-azure.json')],
+            kms_reply=http_data('kms-reply-azure.txt'))
+        encrypter = AutoEncrypter(callback, opts)
+        self.addCleanup(encrypter.close)
+        return encrypter
+
+    def test_success(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            data = {"access_token": "foo", "expires_in": 4000}
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, text=json.dumps(data))
+            decrypted = encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
+        self.assertEqual(bson.decode(decrypted, OPTS),
+                         json_data('command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
+        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+
+    def test_empty_json(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, text=json.dumps({}))
+            with self.assertRaisesRegex(MongoCryptError, "Azure IMDS response must contain"):
+                encrypter.decrypt(bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+
+    def test_bad_json(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, text="a'")
+            with self.assertRaisesRegex(MongoCryptError, "Azure IMDS response must be in JSON format"):
+                encrypter.decrypt(bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+
+    def test_http_404(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, status_code=404)
+            with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token."):
+                encrypter.decrypt(bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+
+    def test_http_500(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, status_code=500)
+            with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token."):
+                encrypter.decrypt(bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+
+    def test_slow_response(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, exc=requests.exceptions.ConnectTimeout)
+            with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token: "):
+                encrypter.decrypt(bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+
+    def test_cache(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            data = {"access_token": "foo", "expires_in": 4000}
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, text=json.dumps(data))
+            decrypted = encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
+        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+
+        # Should use the cached value.
+        decrypted = encrypter.decrypt(bson_data('encrypted-command-reply.json'))
+        self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+
+    def test_cache_expires_soon(self):
+        encrypter = self.get_encrypter()
+        with requests_mock.Mocker() as m:
+            data = {"access_token": "foo", "expires_in": 10}
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, text=json.dumps(data))
+            decrypted = encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
+        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+
+        # Should not use the cached value.
+        encrypter = self.get_encrypter(False)
+        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+        with requests_mock.Mocker() as m:
+            url = "http://169.254.169.254/metadata/identity/oauth2/token"
+            m.get(url, exc=requests.exceptions.ConnectTimeout)
+            with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token: "):
+                encrypter.decrypt(bson_data('encrypted-command-reply.json'))
+            self.assertTrue(m.called)
+
+        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
 
 
 class KeyVaultCallback(MockCallback):
@@ -616,6 +773,24 @@ class TestExplicitEncryption(unittest.TestCase):
         result = encrypter.rewrap_many_data_key({})
         raw_doc = RawBSONDocument(result)
         assert len(raw_doc['v']) == 2
+
+    def test_range_query_int32(self):
+        key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+        key_id = json_data(key_path)['_id']
+        encrypter = ExplicitEncrypter(MockCallback(
+            key_docs=[bson_data(key_path)],
+            kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+        self.addCleanup(encrypter.close)
+
+        range_opts = bson_data("fle2-find-range-explicit/int32/rangeopts.json")
+        value = bson_data("fle2-find-range-explicit/int32/value-to-encrypt.json")
+        expected = json_data("fle2-find-range-explicit/int32/encrypted-payload.json")
+        encrypted = encrypter.encrypt(
+            value, "rangePreview", key_id=key_id, query_type="rangePreview",
+            contention_factor=4, range_opts=range_opts, is_expression=True)
+        encrypted_val = bson.decode(encrypted, OPTS)
+        self.assertEqual(encrypted_val, expected)
+
 
 def read(filename, **kwargs):
     with open(os.path.join(DATA_DIR, filename), **kwargs) as fp:

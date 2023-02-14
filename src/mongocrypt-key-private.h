@@ -32,8 +32,8 @@ typedef struct {
    _mongocrypt_buffer_t id;
    _mongocrypt_key_alt_name_t *key_alt_names;
    _mongocrypt_buffer_t key_material;
-   uint64_t creation_date;
-   uint64_t update_date;
+   int64_t creation_date;
+   int64_t update_date;
    _mongocrypt_kek_t kek;
 } _mongocrypt_key_doc_t;
 
@@ -59,12 +59,7 @@ _mongocrypt_key_parse_owned (const bson_t *bson,
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
 _mongocrypt_key_doc_t *
-_mongocrypt_key_new ();
-
-bool
-_mongocrypt_key_equal (const _mongocrypt_key_doc_t *a,
-                       const _mongocrypt_key_doc_t *b)
-   MONGOCRYPT_WARN_UNUSED_RESULT;
+_mongocrypt_key_new (void);
 
 void
 _mongocrypt_key_doc_copy_to (_mongocrypt_key_doc_t *src,

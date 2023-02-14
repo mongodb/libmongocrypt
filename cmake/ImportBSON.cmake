@@ -134,6 +134,8 @@ function (_import_bson)
       set (ENABLE_STATIC BUILD_ONLY)
       # Disable libzstd, which isn't necessary for libmongocrypt and isn't necessarily available.
       set (ENABLE_ZSTD OFF CACHE BOOL "Toggle libzstd for the mongoc subproject (not required by libmongocrypt)")
+      # Disable snappy, which isn't necessary for libmongocrypt and isn't necessarily available.
+      set (ENABLE_SNAPPY OFF CACHE BOOL "Toggle snappy for the mongoc subproject (not required by libmongocrypt)")
       # Disable deprecated automatic init and cleanup. (May be overridden by the user)
       set (ENABLE_AUTOMATIC_INIT_AND_CLEANUP OFF CACHE BOOL "Enable automatic init and cleanup (GCC only)")
       # Disable over-alignment of bson types. (May be overridden by the user)
@@ -141,13 +143,20 @@ function (_import_bson)
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
-      add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
-      # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
-      target_include_directories (mongoc_static
-         PUBLIC
-            "$<BUILD_INTERFACE:${MONGOCRYPT_MONGOC_DIR}/src/libmongoc/src>"
-            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
-         )
+      # SYSTEM (on applicable CMake versions) to prevent warnings (particularly from -Wconversion/-Wsign-conversion) from the C driver code
+      if (CMAKE_VERSION VERSION_GREATER 3.25)
+         add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL SYSTEM)
+      else ()
+         add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
+      endif ()
+      if (TARGET mongoc_static)
+         # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
+         target_include_directories (mongoc_static
+            PUBLIC
+               "$<BUILD_INTERFACE:${MONGOCRYPT_MONGOC_DIR}/src/libmongoc/src>"
+               "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/_mongo-c-driver/src/libmongoc/src/mongoc>"
+            )
+      endif ()
    endif ()
 endfunction ()
 

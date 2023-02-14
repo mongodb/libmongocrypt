@@ -27,6 +27,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    bson_t array = BSON_INITIALIZER;
 
    BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (out);
 
    BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (&doc, "v", &array));
    {
@@ -69,6 +70,7 @@ _finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
                                         NULL);
 
          /* Preserve key ID of original document. */
+         BSON_ASSERT (iter->doc);
          BSON_ASSERT (BSON_APPEND_BINARY (&elem,
                                           "_id",
                                           BSON_SUBTYPE_UUID,
@@ -170,6 +172,9 @@ _add_new_datakey (mongocrypt_ctx_t *ctx, key_returned_t *key)
 {
    _mongocrypt_ctx_rewrap_many_datakey_t *const rmdctx =
       (_mongocrypt_ctx_rewrap_many_datakey_t *) ctx;
+
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (key);
 
    /* Datakey should be fully decrypted at this stage. */
    BSON_ASSERT (key->decrypted);

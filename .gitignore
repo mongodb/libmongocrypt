@@ -52,3 +52,4 @@ VERSION_CURRENT
 
 .csfle
 *.pyc
+.DS_Store

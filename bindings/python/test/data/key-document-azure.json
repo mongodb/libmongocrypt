@@ -1,0 +1,33 @@
+{
+    "status": {
+        "$numberInt": "1"
+    },
+    "_id": {
+        "$binary": {
+            "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+            "subType": "04"
+        }
+    },
+    "masterKey": {
+        "provider": "azure",
+        "keyVaultEndpoint": "example.com",
+        "keyName": "foo"
+    },
+    "updateDate": {
+        "$date": {
+            "$numberLong": "1557827033449"
+        }
+    },
+    "keyMaterial": {
+        "$binary": {
+            "base64": "AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gEqnsxXlR51T5EbEVezUqqKAAAAwjCBvwYJKoZIhvcNAQcGoIGxMIGuAgEAMIGoBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHa4jo6yp0Z18KgbUgIBEIB74sKxWtV8/YHje5lv5THTl0HIbhSwM6EqRlmBiFFatmEWaeMk4tO4xBX65eq670I5TWPSLMzpp8ncGHMmvHqRajNBnmFtbYxN3E3/WjxmdbOOe+OXpnGJPcGsftc7cB2shRfA4lICPnE26+oVNXT6p0Lo20nY5XC7jyCO",
+            "subType": "00"
+        }
+    },
+    "creationDate": {
+        "$date": {
+            "$numberLong": "1557827033449"
+        }
+    },
+    "keyAltNames": ["name1", "name2"]
+}

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.5.0](https://github.com/mongodb/libmongocrypt/compare/node-v2.4.0...node-v2.5.0) (2023-02-06)
+
+## [2.4.0](https://github.com/mongodb/libmongocrypt/compare/node-v2.4.0-alpha.2...node-v2.4.0) (2023-01-26)
+
+## [2.4.0-alpha.2](https://github.com/mongodb/libmongocrypt/compare/node-v2.4.0-alpha.0...node-v2.4.0-alpha.2) (2023-01-24)
+
+## [2.4.0-alpha.1](https://github.com/mongodb/libmongocrypt/compare/node-v2.4.0-alpha.0...node-v2.4.0-alpha.1) (2023-01-23)
+
+## [2.4.0-alpha.0](https://github.com/mongodb/libmongocrypt/compare/node-v2.3.0...node-v2.4.0-alpha.0) (2023-01-20)
+
+## [2.3.0](https://github.com/mongodb/libmongocrypt/compare/node-v2.2.1...node-v2.3.0) (2022-10-05)
+
+### [2.2.1](https://github.com/mongodb/libmongocrypt/compare/node-v2.2.0...node-v2.2.1) (2022-09-12)
+
 ## [2.2.0](https://github.com/mongodb/libmongocrypt/compare/node-v2.2.0-alpha.6...node-v2.2.0) (2022-08-10)
 
 ## [2.2.0-alpha.6](https://github.com/mongodb/libmongocrypt/compare/node-v2.2.0-alpha.5...node-v2.2.0-alpha.6) (2022-07-29)

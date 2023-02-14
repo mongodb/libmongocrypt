@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -euxo pipefail
-
-evergreen_root="$(pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/init.sh"
 
 : "${ADDITIONAL_CMAKE_FLAGS:=}"
 : "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
@@ -12,16 +10,24 @@ evergreen_root="$(pwd)"
 : "${WINDOWS_32BIT:=}"
 : "${OS:=unspecified}"
 
-[ -d "${MONGOCRYPT_INSTALL_PREFIX:=${evergreen_root}/install/libmongocrypt}" ] || mkdir -p "${MONGOCRYPT_INSTALL_PREFIX}"
-
-if [ "$OS" == "Windows_NT" ]; then
-	MONGOCRYPT_INSTALL_PREFIX=$(cygpath -w "$MONGOCRYPT_INSTALL_PREFIX")
+IS_MULTICONF=OFF
+if test "$OS_NAME" = "windows" && is_false USE_NINJA; then
+    IS_MULTICONF=ON
 fi
+
+: "$IS_MULTICONF"  # Silence shellcheck
+
+evergreen_root="$(dirname "$LIBMONGOCRYPT_DIR")"
+
+: "${MONGOCRYPT_INSTALL_PREFIX:="$evergreen_root/install/libmongocrypt"}"
+MONGOCRYPT_INSTALL_PREFIX="$(native_path "$MONGOCRYPT_INSTALL_PREFIX")"
+
+mkdir -p "$MONGOCRYPT_INSTALL_PREFIX"
 
 if test -f /proc/cpuinfo; then
     # Count the number of lines beginning with "processor" in the cpuinfo
     jobs="$(grep -c '^processor' /proc/cpuinfo)"
-    if command -v bc; then
+    if have_command bc; then
         # Add two (hueristic to compensate for I/O latency)
         jobs="$(echo "$jobs+2" | bc)"
     fi

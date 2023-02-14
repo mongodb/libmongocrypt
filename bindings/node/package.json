@@ -1,6 +1,6 @@
 {
   "name": "mongodb-client-encryption",
-  "version": "2.2.0",
+  "version": "2.5.0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "lib/index.js",
   "types": "index.d.ts",
@@ -17,7 +17,7 @@
   },
   "scripts": {
     "install": "prebuild-install --runtime napi --tag-prefix node-v || node-gyp rebuild",
-    "check:lint": "eslint lib test",
+    "check:lint": "eslint lib test && tsd",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/**/*.js > README.md",
     "test": "mocha test",
     "rebuild": "prebuild --compile",
@@ -40,6 +40,8 @@
     "socks": "^2.6.1"
   },
   "devDependencies": {
+    "@types/sinon": "^10.0.13",
+    "@types/sinon-chai": "^3.2.9",
     "chai": "^4.3.6",
     "chai-subset": "^1.6.0",
     "chalk": "^4.1.2",
@@ -57,10 +59,17 @@
     "sinon": "^13.0.1",
     "sinon-chai": "^3.7.0",
     "standard-version": "^9.3.2",
-    "tar": "^6.1.11"
+    "tar": "^6.1.11",
+    "tsd": "^0.25.0"
   },
   "peerDependencies": {
+    "@aws-sdk/credential-providers": "^3.186.0",
     "mongodb": ">=3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/credential-providers": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=12.9.0"
@@ -74,5 +83,14 @@
     "type": "git",
     "url": "https://github.com/mongodb/libmongocrypt",
     "directory": "bindings/node"
+  },
+  "tsd": {
+    "directory": "test/types",
+    "compilerOptions": {
+      "strict": true,
+      "target": "esnext",
+      "module": "commonjs",
+      "moduleResolution": "node"
+    }
   }
 }

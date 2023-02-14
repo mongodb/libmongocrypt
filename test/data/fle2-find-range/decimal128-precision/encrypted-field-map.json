@@ -1,0 +1,31 @@
+{
+   "db.test": {
+      "escCollection": "fle2.test.esc",
+      "eccCollection": "fle2.test.ecc",
+      "ecocCollection": "fle2.test.ecoc",
+      "fields": [
+         {
+            "keyId": {
+               "$binary": {
+                  "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                  "subType": "04"
+               }
+            },
+            "path": "encrypted",
+            "bsonType": "decimal",
+            "queries": {
+               "queryType": "rangePreview",
+               "contention": {
+                  "$numberInt": "0"
+               },
+               "sparsity": {
+                  "$numberInt": "1"
+               },
+               "min": {"$numberDecimal":"0"},
+               "max":{"$numberDecimal":"1234567890123456789"},
+               "precision":{"$numberInt":"2"}
+            }
+         }
+      ]
+   }
+}

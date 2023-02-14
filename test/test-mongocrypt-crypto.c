@@ -23,7 +23,7 @@ static void
 _test_roundtrip (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
-   mongocrypt_status_t *status;
+   mongocrypt_status_t *const status = mongocrypt_status_new ();
    _mongocrypt_buffer_t key = {0}, iv = {0}, associated_data = {0},
                         plaintext = {0}, ciphertext = {0}, decrypted = {0};
    uint32_t bytes_written;
@@ -33,13 +33,13 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    plaintext.data = (uint8_t *) "test";
    plaintext.len = 5; /* include NULL. */
 
-   ciphertext.len = _mongocrypt_calculate_ciphertext_len (5);
+   ciphertext.len = _mongocrypt_calculate_ciphertext_len (5, status);
    ciphertext.data = bson_malloc (ciphertext.len);
    BSON_ASSERT (ciphertext.data);
 
    ciphertext.owned = true;
 
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
+   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len, status);
    decrypted.data = bson_malloc (decrypted.len);
    BSON_ASSERT (decrypted.data);
 
@@ -53,7 +53,6 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    iv.len = MONGOCRYPT_IV_LEN;
    iv.owned = true;
 
-   status = mongocrypt_status_new ();
    ret = _mongocrypt_do_encryption (crypt->crypto,
                                     &iv,
                                     &associated_data,
@@ -84,7 +83,7 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    ciphertext.data[ciphertext.len - 1] ^= 1;
 
    _mongocrypt_buffer_cleanup (&decrypted);
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len);
+   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len, status);
    decrypted.data = bson_malloc (decrypted.len);
    BSON_ASSERT (decrypted.data);
 
@@ -156,7 +155,7 @@ static void
 _test_mcgrew (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt;
-   mongocrypt_status_t *status;
+   mongocrypt_status_t *const status = mongocrypt_status_new ();
    _mongocrypt_buffer_t key, iv, associated_data, plaintext,
       ciphertext_expected, ciphertext_actual;
    uint32_t bytes_written;
@@ -192,7 +191,8 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
       "930806d0703b1f64dd3b4c088a7f45c216839645b2012bf2e6269a8c56a81"
       "6dbc1b267761955bc5");
 
-   ciphertext_actual.len = _mongocrypt_calculate_ciphertext_len (plaintext.len);
+   ciphertext_actual.len =
+      _mongocrypt_calculate_ciphertext_len (plaintext.len, status);
    ciphertext_actual.data = bson_malloc (ciphertext_actual.len);
    BSON_ASSERT (ciphertext_actual.data);
 
@@ -200,7 +200,6 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
 
    /* Force the crypto stack to initialize with mongocrypt_new */
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
-   status = mongocrypt_status_new ();
    ret = _mongocrypt_do_encryption (crypt->crypto,
                                     &iv,
                                     &associated_data,
@@ -560,10 +559,10 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
          _mongocrypt_buffer_resize (&plaintext_got, plaintext.len);
       }
       _mongocrypt_buffer_init (&ciphertext_got);
+      status = mongocrypt_status_new ();
       _mongocrypt_buffer_resize (
          &ciphertext_got,
-         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext.len));
-      status = mongocrypt_status_new ();
+         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext.len, status));
 
       /* Test encrypt. */
       ret = _mongocrypt_fle2aead_do_encryption (crypt->crypto,
@@ -771,7 +770,7 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_t ciphertext;
       _mongocrypt_buffer_t plaintext_got;
       _mongocrypt_buffer_t ciphertext_got;
-      mongocrypt_status_t *status;
+      mongocrypt_status_t *const status = mongocrypt_status_new ();
       uint32_t bytes_written;
 
       printf ("Begin test '%s'.\n", test->testname);
@@ -787,8 +786,7 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_init (&ciphertext_got);
       _mongocrypt_buffer_resize (
          &ciphertext_got,
-         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len));
-      status = mongocrypt_status_new ();
+         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
 
       /* Test encrypt. */
       ret = _mongocrypt_fle2_do_encryption (crypt->crypto,

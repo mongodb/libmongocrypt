@@ -14,17 +14,13 @@
 
 import copy
 
-try:
-    from pymongo_auth_aws.auth import _aws_temp_credentials
-    _HAVE_AUTH_AWS = True
-except ImportError:
-    _HAVE_AUTH_AWS = False
 
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
 from pymongocrypt.compat import (safe_bytearray_or_base64, str_to_bytes,
                                  unicode_type)
+from pymongocrypt.credentials import _ask_for_kms_credentials
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.state_machine import MongoCryptCallback
 
@@ -37,6 +33,7 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  sha_256,
                                  secure_random,
                                  sign_rsaes_pkcs1_v1_5)
+
 
 class MongoCryptOptions(object):
     def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
@@ -112,22 +109,24 @@ class MongoCryptOptions(object):
             azure = kms_providers["azure"]
             if not isinstance(azure, dict):
                 raise ValueError("kms_providers['azure'] must be a dict")
-            if 'clientId' not in azure or 'clientSecret' not in azure:
-                raise ValueError("kms_providers['azure'] must contain "
-                                 "'clientId' and 'clientSecret'")
+            if len(azure):
+                if 'clientId' not in azure or 'clientSecret' not in azure:
+                    raise ValueError("kms_providers['azure'] must contain "
+                                     "'clientId' and 'clientSecret'")
 
         if 'gcp' in kms_providers:
             gcp = kms_providers['gcp']
             if not isinstance(gcp, dict):
                 raise ValueError("kms_providers['gcp'] must be a dict")
-            if 'email' not in gcp or 'privateKey' not in gcp:
-                raise ValueError("kms_providers['gcp'] must contain "
-                                 "'email' and 'privateKey'")
-            if not isinstance(kms_providers['gcp']['privateKey'],
-                              (bytes, unicode_type)):
-                raise TypeError("kms_providers['gcp']['privateKey'] must "
-                                "be an instance of bytes or str "
-                                "(unicode in Python 2)")
+            if len(gcp):
+                if 'email' not in gcp or 'privateKey' not in gcp:
+                    raise ValueError("kms_providers['gcp'] must contain "
+                                     "'email' and 'privateKey'")
+                if not isinstance(kms_providers['gcp']['privateKey'],
+                                  (bytes, unicode_type)):
+                    raise TypeError("kms_providers['gcp']['privateKey'] must "
+                                    "be an instance of bytes or str "
+                                    "(unicode in Python 2)")
 
         if 'kmip' in kms_providers:
             kmip = kms_providers['kmip']
@@ -254,8 +253,10 @@ class MongoCrypt(object):
 
         if not self.__opts.bypass_encryption:
             lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
-
-        if 'aws' in kms_providers and not len(kms_providers['aws']):
+        on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
+        on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
+        on_demand_azure = 'azure' in kms_providers and not len(kms_providers['azure'])
+        if any([on_demand_aws, on_demand_gcp, on_demand_azure]):
             lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
         if not lib.mongocrypt_init(self.__crypt):
@@ -288,7 +289,11 @@ class MongoCrypt(object):
         """Cleanup resources."""
         if self.__crypt is None:
             return
-        lib.mongocrypt_destroy(self.__crypt)
+        # Since close is called by __del__, we need to be sure to guard
+        # against the case where global variables are set to None at
+        # interpreter shutdown, see PYTHON-3530.
+        if lib is not None:
+            lib.mongocrypt_destroy(self.__crypt)
         self.__crypt = None
 
     def __del__(self):
@@ -335,8 +340,8 @@ class MongoCrypt(object):
         :Returns:
           A :class:`ExplicitEncryptionContext`.
         """
-        return ExplicitEncryptionContext(self._create_context(),
-            self.__opts.kms_providers, value, opts)
+        return ExplicitEncryptionContext(
+            self._create_context(), self.__opts.kms_providers, value, opts)
 
     def explicit_decryption_context(self, value):
         """Creates a context to use for explicit decryption.
@@ -563,9 +568,18 @@ class ExplicitEncryptionContext(MongoCryptContext):
                 if not lib.mongocrypt_ctx_setopt_contention_factor(ctx, opts.contention_factor):
                     self._raise_from_status()
 
+            if opts.range_opts is not None:
+                with MongoCryptBinaryIn(opts.range_opts) as range_opts:
+                    if not lib.mongocrypt_ctx_setopt_algorithm_range(ctx, range_opts.bin):
+                        self._raise_from_status()
+
             with MongoCryptBinaryIn(value) as binary:
-                if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx, binary.bin):
-                    self._raise_from_status()
+                if opts.is_expression:
+                    if not lib.mongocrypt_ctx_explicit_encrypt_expression_init(ctx, binary.bin):
+                        self._raise_from_status()
+                else:
+                    if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx, binary.bin):
+                        self._raise_from_status()
         except Exception:
             # Destroy the context on error.
             self._close()
@@ -792,23 +806,3 @@ class RewrapManyDataKeyContext(MongoCryptContext):
             # Destroy the context on error.
             self._close()
             raise
-
-
-def _ask_for_kms_credentials(kms_providers):
-    """Get on-demand kms credentials.
-
-    This is a separate function so it can be overridden in unit tests."""
-    if 'aws' not in kms_providers:
-        return
-    if len(kms_providers['aws']):
-        return
-    if not _HAVE_AUTH_AWS:
-        raise RuntimeError(
-            "On-demand AWS credentials require pymongo-auth-aws: "
-            "install with: python -m pip install 'pymongo[aws]'"
-        )
-    creds = _aws_temp_credentials()
-    creds_dict = {"accessKeyId": creds.username, "secretAccessKey": creds.password}
-    if creds.token:
-        creds_dict["sessionToken"] = creds.token
-    return { 'aws': creds_dict }

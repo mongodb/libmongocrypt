@@ -52,6 +52,9 @@ _mongocrypt_kek_parse_owned (const bson_t *bson,
    char *kms_provider = NULL;
    bool ret = false;
 
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (kek);
+
    if (!_mongocrypt_parse_required_utf8 (
           bson, "provider", &kms_provider, status)) {
       goto done;
@@ -194,6 +197,9 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
                         bson_t *bson,
                         mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kek);
+   BSON_ASSERT_PARAM (bson);
+
    if (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       BSON_APPEND_UTF8 (bson, "provider", "aws");
       BSON_APPEND_UTF8 (bson, "region", kek->provider.aws.region);
@@ -252,6 +258,9 @@ _mongocrypt_kek_append (const _mongocrypt_kek_t *kek,
 void
 _mongocrypt_kek_copy_to (const _mongocrypt_kek_t *src, _mongocrypt_kek_t *dst)
 {
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
+
    if (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       dst->provider.aws.cmk = bson_strdup (src->provider.aws.cmk);
       dst->provider.aws.region = bson_strdup (src->provider.aws.region);
@@ -286,6 +295,10 @@ _mongocrypt_kek_copy_to (const _mongocrypt_kek_t *src, _mongocrypt_kek_t *dst)
 void
 _mongocrypt_kek_cleanup (_mongocrypt_kek_t *kek)
 {
+   if (!kek) {
+      return;
+   }
+
    if (kek->kms_provider == MONGOCRYPT_KMS_PROVIDER_AWS) {
       bson_free (kek->provider.aws.cmk);
       bson_free (kek->provider.aws.region);

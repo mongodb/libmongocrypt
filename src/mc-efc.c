@@ -18,6 +18,7 @@
 #include "mc-efc-private.h"
 
 #include "mongocrypt-private.h"
+#include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 
 /* _parse_field parses and prepends one field document to efc->fields. */
 static bool
@@ -27,6 +28,10 @@ _parse_field (mc_EncryptedFieldConfig_t *efc,
 {
    bool has_queries = false;
    bson_iter_t field_iter;
+
+   BSON_ASSERT_PARAM (efc);
+   BSON_ASSERT_PARAM (field);
+
    if (!bson_iter_init_find (&field_iter, field, "keyId")) {
       CLIENT_ERR ("unable to find 'keyId' in 'field' document");
       return false;
@@ -74,8 +79,12 @@ mc_EncryptedFieldConfig_parse (mc_EncryptedFieldConfig_t *efc,
                                const bson_t *efc_bson,
                                mongocrypt_status_t *status)
 {
-   memset (efc, 0, sizeof (*efc));
    bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (efc);
+   BSON_ASSERT_PARAM (efc_bson);
+
+   memset (efc, 0, sizeof (*efc));
    if (!bson_iter_init_find (&iter, efc_bson, "fields")) {
       CLIENT_ERR ("unable to find 'fields' in encrypted_field_config");
       return false;
@@ -90,17 +99,8 @@ mc_EncryptedFieldConfig_parse (mc_EncryptedFieldConfig_t *efc,
       return false;
    }
    while (bson_iter_next (&iter)) {
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         CLIENT_ERR ("expected 'fields' to be type document, got: %d",
-                     bson_iter_type (&iter));
-         return false;
-      }
       bson_t field;
-      const uint8_t *field_data;
-      uint32_t field_len;
-      bson_iter_document (&iter, &field_len, &field_data);
-      if (!bson_init_static (&field, field_data, field_len)) {
-         CLIENT_ERR ("unable to initialize 'fields' value as document");
+      if (!mc_iter_document_as_bson (&iter, &field, status)) {
          return false;
       }
       if (!_parse_field (efc, &field, status)) {

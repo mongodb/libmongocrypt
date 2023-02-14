@@ -1,21 +1,19 @@
+#!/bin/bash
+
 # Compiles libmongocrypt dependencies and targets.
 #
 # Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
 #
 
-set -euxo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
 
 echo "Begin compile process"
 
 evergreen_root="$(pwd)"
 
-. ${evergreen_root}/libmongocrypt/.evergreen/setup-env.sh
-
-cd $evergreen_root
-
-if [ "$OS" == "Windows_NT" ]; then
+if [ "$OS_NAME" = "windows" ]; then
     # Make sure libbson.dll is in the path on Windows
-    export PATH=${MONGOCRYPT_INSTALL_PREFIX}/mongo-c-driver/bin:$PATH
+    export PATH="${MONGOCRYPT_INSTALL_PREFIX}/mongo-c-driver/bin:$PATH"
 
     for var in TMP TEMP NUGET_PACKAGES NUGET_HTTP_CACHE_PATH APPDATA; do export $var=z:\\data\\tmp; done
 
@@ -27,6 +25,6 @@ fi
 
 dotnet_tool=$(which dotnet)
 
-"$dotnet_tool" build -c Release libmongocrypt/cmake-build/bindings/cs/cs.sln
+"$dotnet_tool" build -c Release "$LIBMONGOCRYPT_DIR/cmake-build/bindings/cs/cs.sln"
 
-"$dotnet_tool" test -c Release libmongocrypt/cmake-build/bindings/cs/MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj -- RunConfiguration.TargetPlatform=x64
+"$dotnet_tool" test -c Release "$LIBMONGOCRYPT_DIR/cmake-build/bindings/cs/MongoDB.Libmongocrypt.Test/MongoDB.Libmongocrypt.Test.csproj" -- RunConfiguration.TargetPlatform=x64

@@ -53,11 +53,11 @@ mongocrypt_status_set (mongocrypt_status_t *status,
    }
 
    bson_free (status->message);
-   status->message = bson_malloc (message_len);
+   status->message = bson_malloc ((size_t) message_len);
    BSON_ASSERT (status->message);
    status->message[message_len - 1] = '\0';
-   memcpy (status->message, message, message_len - 1);
-   status->len = message_len - 1;
+   memcpy (status->message, message, (size_t) message_len - 1);
+   status->len = (uint32_t) message_len - 1;
    status->type = type;
    status->code = code;
 }
@@ -65,7 +65,7 @@ mongocrypt_status_set (mongocrypt_status_t *status,
 const char *
 mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len)
 {
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (status);
 
    if (mongocrypt_status_ok (status)) {
       return NULL;
@@ -80,7 +80,7 @@ mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len)
 uint32_t
 mongocrypt_status_code (mongocrypt_status_t *status)
 {
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (status);
 
    return status->code;
 }
@@ -89,7 +89,7 @@ mongocrypt_status_code (mongocrypt_status_t *status)
 mongocrypt_status_type_t
 mongocrypt_status_type (mongocrypt_status_t *status)
 {
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (status);
 
    return status->type;
 }
@@ -98,7 +98,7 @@ mongocrypt_status_type (mongocrypt_status_t *status)
 bool
 mongocrypt_status_ok (mongocrypt_status_t *status)
 {
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (status);
 
    return (status->type == MONGOCRYPT_STATUS_OK);
 }
@@ -106,8 +106,8 @@ mongocrypt_status_ok (mongocrypt_status_t *status)
 void
 _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
 {
-   BSON_ASSERT (dst);
-   BSON_ASSERT (src);
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (src);
 
    if (dst == src) {
       return;
@@ -129,7 +129,7 @@ _mongocrypt_status_copy_to (mongocrypt_status_t *src, mongocrypt_status_t *dst)
 void
 _mongocrypt_status_reset (mongocrypt_status_t *status)
 {
-   BSON_ASSERT (status);
+   BSON_ASSERT_PARAM (status);
 
    status->type = MONGOCRYPT_STATUS_OK;
    status->code = 0;
@@ -154,7 +154,12 @@ void
 _mongocrypt_status_append (mongocrypt_status_t *status,
                            mongocrypt_status_t *to_append)
 {
-   char *orig = status->message;
+   char *orig;
+
+   BSON_ASSERT_PARAM (status);
+   BSON_ASSERT_PARAM (to_append);
+
+   orig = status->message;
 
    if (mongocrypt_status_ok (to_append)) {
       return;

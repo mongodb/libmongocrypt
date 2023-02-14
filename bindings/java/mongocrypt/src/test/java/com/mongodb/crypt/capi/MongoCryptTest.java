@@ -23,9 +23,6 @@ import org.bson.BsonBinarySubType;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.RawBsonDocument;
-import org.bson.codecs.BsonDocumentCodec;
-import org.bson.codecs.DecoderContext;
-import org.bson.json.JsonReader;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -167,7 +164,7 @@ public class MongoCryptTest {
     }
 
     @Test
-    public void testExplicitEncryptionDecryption() throws IOException, URISyntaxException {
+    public void testExplicitEncryptionDecryption() {
         MongoCrypt mongoCrypt = createMongoCrypt();
         assertNotNull(mongoCrypt);
 
@@ -201,6 +198,37 @@ public class MongoCryptTest {
     }
 
     @Test
+    public void testExplicitExpressionEncryption() {
+        MongoCrypt mongoCrypt = createMongoCrypt();
+        assertNotNull(mongoCrypt);
+
+        BsonDocument valueToEncrypt = getResourceAsDocument("fle2-find-range-explicit/int32/value-to-encrypt.json");
+        BsonDocument rangeOptions = getResourceAsDocument("fle2-find-range-explicit/int32/rangeopts.json");
+        BsonDocument expectedEncryptedPayload = getResourceAsDocument("fle2-find-range-explicit/int32/encrypted-payload.json");
+
+        MongoExplicitEncryptOptions options = MongoExplicitEncryptOptions.builder()
+                .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("q83vqxI0mHYSNBI0VniQEg==")))
+                .algorithm("RangePreview")
+                .queryType("rangePreview")
+                .contentionFactor(4L)
+                .rangeOptions(rangeOptions)
+                .build();
+        MongoCryptContext encryptor = mongoCrypt.createEncryptExpressionContext(valueToEncrypt, options);
+        assertEquals(State.NEED_MONGO_KEYS, encryptor.getState());
+
+        testKeyDecryptor(encryptor, "fle2-find-range-explicit/int32/key-filter.json", "keys/ABCDEFAB123498761234123456789012-local-document.json");
+
+        assertEquals(State.READY, encryptor.getState());
+
+        RawBsonDocument actualEncryptedPayload = encryptor.finish();
+        assertEquals(State.DONE, encryptor.getState());
+        assertEquals(expectedEncryptedPayload, actualEncryptedPayload);
+
+        encryptor.close();
+        mongoCrypt.close();
+    }
+
+    @Test
     public void testExplicitEncryptionDecryptionKeyAltName() throws IOException, URISyntaxException {
         MongoCrypt mongoCrypt = createMongoCrypt();
         assertNotNull(mongoCrypt);
@@ -213,7 +241,7 @@ public class MongoCryptTest {
         MongoCryptContext encryptor = mongoCrypt.createExplicitEncryptionContext(documentToEncrypt, options);
 
         assertEquals(State.NEED_MONGO_KEYS, encryptor.getState());
-        testKeyDecryptor(encryptor, true);
+        testKeyDecryptor(encryptor, "key-filter-keyAltName.json", "key-document.json");
 
         assertEquals(State.READY, encryptor.getState());
 
@@ -234,16 +262,19 @@ public class MongoCryptTest {
         mongoCrypt.close();
     }
 
-    private void testKeyDecryptor(final MongoCryptContext context) throws URISyntaxException, IOException {
-        testKeyDecryptor(context, false);
+    private void testKeyDecryptor(final MongoCryptContext context) {
+        testKeyDecryptor(context, "key-filter.json", "key-document.json");
     }
 
-    private void testKeyDecryptor(final MongoCryptContext context, final boolean keyAltName) throws URISyntaxException, IOException {
+    private void testKeyDecryptor(final MongoCryptContext context, final String keyFilterPath, final String keyDocumentPath) {
         BsonDocument keyFilter = context.getMongoOperation();
-        String keyFilterJson = keyAltName ? "key-filter-keyAltName.json" : "key-filter.json";
-        assertEquals(getResourceAsDocument(keyFilterJson), keyFilter);
-        context.addMongoOperationResult(getResourceAsDocument("key-document.json"));
+        assertEquals(getResourceAsDocument(keyFilterPath), keyFilter);
+        context.addMongoOperationResult(getResourceAsDocument(keyDocumentPath));
         context.completeMongoOperation();
+        if (context.getState() == State.READY) {
+            return;
+        }
+
         assertEquals(State.NEED_KMS, context.getState());
 
         MongoKeyDecryptor keyDecryptor = context.nextKeyDecryptor();
@@ -278,38 +309,37 @@ public class MongoCryptTest {
                 .build());
     }
 
-    private static BsonDocument getResourceAsDocument(final String fileName) throws URISyntaxException, IOException {
-        URL resource = MongoCryptTest.class.getResource("/" + fileName);
-        if (resource == null) {
-            throw new RuntimeException("Could not find file " + fileName);
-        }
-        File resourceFile = new File(resource.toURI());
-        return new BsonDocumentCodec().decode(new JsonReader(getFileAsString(resourceFile, System.getProperty("line.separator"))),
-                DecoderContext.builder().build());
+    private static BsonDocument getResourceAsDocument(final String fileName)  {
+        return BsonDocument.parse(getFileAsString(fileName, System.getProperty("line.separator")));
     }
 
-    private static ByteBuffer getHttpResourceAsByteBuffer(final String fileName) throws URISyntaxException, IOException {
-        URL resource = MongoCryptTest.class.getResource("/" + fileName);
-        if (resource == null) {
-            throw new RuntimeException("Could not find file " + fileName);
-        }
-        File resourceFile = new File(resource.toURI());
-        return ByteBuffer.wrap(getFileAsString(resourceFile, "\r\n").getBytes(StandardCharsets.UTF_8));
+    private static ByteBuffer getHttpResourceAsByteBuffer(final String fileName) {
+        return ByteBuffer.wrap(getFileAsString(fileName, "\r\n").getBytes(StandardCharsets.UTF_8));
     }
 
-    private static String getFileAsString(final File file, String lineSeparator) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8))) {
-            boolean first = true;
-            while ((line = reader.readLine()) != null) {
-                if (!first) {
-                    stringBuilder.append(lineSeparator);
-                }
-                first = false;
-                stringBuilder.append(line);
+    private static String getFileAsString(final String fileName, String lineSeparator)  {
+        try {
+            URL resource = MongoCryptTest.class.getResource("/" + fileName);
+            if (resource == null) {
+                throw new RuntimeException("Could not find file " + fileName);
             }
+            File file = new File(resource.toURI());
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8))) {
+                boolean first = true;
+                while ((line = reader.readLine()) != null) {
+                    if (!first) {
+                        stringBuilder.append(lineSeparator);
+                    }
+                    first = false;
+                    stringBuilder.append(line);
+                }
+            }
+            return stringBuilder.toString();
+        } catch (Throwable t) {
+            throw new RuntimeException("Could not parse file " + fileName, t);
         }
-        return stringBuilder.toString();
     }
 }

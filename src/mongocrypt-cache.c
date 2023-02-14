@@ -25,7 +25,12 @@ _pair_expired (_mongocrypt_cache_t *cache, _mongocrypt_cache_pair_t *pair)
 {
    int64_t current;
 
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (pair);
+
    current = bson_get_monotonic_time () / 1000;
+   BSON_ASSERT (current >= INT64_MIN + pair->last_updated);
+   BSON_ASSERT (cache->expiration <= INT64_MAX);
    return (current - pair->last_updated) > (int64_t) cache->expiration;
 }
 
@@ -37,6 +42,11 @@ _destroy_pair (_mongocrypt_cache_t *cache,
                _mongocrypt_cache_pair_t *pair)
 {
    _mongocrypt_cache_pair_t *tmp;
+
+   BSON_ASSERT_PARAM (cache);
+   /* prev is checked before being used, so it can be NULL */
+   BSON_ASSERT_PARAM (pair);
+
    tmp = pair->next;
 
    /* Unlink */
@@ -55,10 +65,12 @@ _destroy_pair (_mongocrypt_cache_t *cache,
 }
 
 /* Caller must hold mutex. */
-void
+static void
 _mongocrypt_cache_evict (_mongocrypt_cache_t *cache)
 {
    _mongocrypt_cache_pair_t *pair, *prev;
+
+   BSON_ASSERT_PARAM (cache);
 
    prev = NULL;
    pair = cache->pair;
@@ -77,6 +89,9 @@ static bool
 _mongocrypt_remove_matches (_mongocrypt_cache_t *cache, void *attr)
 {
    _mongocrypt_cache_pair_t *pair, *prev;
+
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (attr);
 
    prev = NULL;
    pair = cache->pair;
@@ -102,6 +117,8 @@ _mongocrypt_remove_matches (_mongocrypt_cache_t *cache, void *attr)
 void
 _mongocrypt_cache_set_expiration (_mongocrypt_cache_t *cache, uint64_t milli)
 {
+   BSON_ASSERT_PARAM (cache);
+
    cache->expiration = milli;
 }
 
@@ -113,6 +130,10 @@ _find_pair (_mongocrypt_cache_t *cache,
             _mongocrypt_cache_pair_t **out)
 {
    _mongocrypt_cache_pair_t *pair;
+
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (attr);
+   BSON_ASSERT_PARAM (out);
 
    *out = NULL;
 
@@ -141,6 +162,9 @@ _pair_new (_mongocrypt_cache_t *cache, void *attr)
 {
    _mongocrypt_cache_pair_t *pair;
 
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (attr);
+
    pair = bson_malloc0 (sizeof (_mongocrypt_cache_pair_t));
    BSON_ASSERT (pair);
 
@@ -157,6 +181,9 @@ _pair_new (_mongocrypt_cache_t *cache, void *attr)
 static void
 _cache_pair_destroy (_mongocrypt_cache_t *cache, _mongocrypt_cache_pair_t *pair)
 {
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (pair);
+
    cache->destroy_attr (pair->attr);
    cache->destroy_value (pair->value);
    bson_free (pair);
@@ -169,6 +196,10 @@ _mongocrypt_cache_get (_mongocrypt_cache_t *cache,
                        void **value /* copied to. */)
 {
    _mongocrypt_cache_pair_t *match;
+
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (attr);
+   BSON_ASSERT_PARAM (value);
 
    *value = NULL;
 
@@ -198,6 +229,10 @@ _cache_add (_mongocrypt_cache_t *cache,
 {
    _mongocrypt_cache_pair_t *pair;
 
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (attr);
+   BSON_ASSERT_PARAM (value);
+
    _mongocrypt_mutex_lock (&cache->mutex);
    _mongocrypt_cache_evict (cache);
    if (!_mongocrypt_remove_matches (cache, attr)) {
@@ -224,6 +259,10 @@ _mongocrypt_cache_add_copy (_mongocrypt_cache_t *cache,
                             void *value,
                             mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (attr);
+   BSON_ASSERT_PARAM (value);
+
    return _cache_add (cache, attr, value, status, false);
 }
 
@@ -234,6 +273,10 @@ _mongocrypt_cache_add_stolen (_mongocrypt_cache_t *cache,
                               void *value,
                               mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (cache);
+   BSON_ASSERT_PARAM (attr);
+   BSON_ASSERT_PARAM (value);
+
    return _cache_add (cache, attr, value, status, true);
 }
 
@@ -241,6 +284,10 @@ void
 _mongocrypt_cache_cleanup (_mongocrypt_cache_t *cache)
 {
    _mongocrypt_cache_pair_t *pair, *tmp;
+
+   if (!cache) {
+      return;
+   }
 
    pair = cache->pair;
    while (pair) {
@@ -257,9 +304,12 @@ _mongocrypt_cache_dump (_mongocrypt_cache_t *cache)
    _mongocrypt_cache_pair_t *pair;
    int count;
 
+   BSON_ASSERT_PARAM (cache);
+
    _mongocrypt_mutex_lock (&cache->mutex);
    count = 0;
    for (pair = cache->pair; pair != NULL; pair = pair->next) {
+      /* don't check that int64_t fits in int, since this is only diagnostic */
       printf ("entry:%d last_updated:%d\n", count, (int) pair->last_updated);
       if (cache->dump_attr) {
          printf ("- attr:");
@@ -277,6 +327,8 @@ _mongocrypt_cache_num_entries (_mongocrypt_cache_t *cache)
 {
    _mongocrypt_cache_pair_t *pair;
    uint32_t count;
+
+   BSON_ASSERT_PARAM (cache);
 
    _mongocrypt_mutex_lock (&cache->mutex);
    count = 0;

@@ -25,6 +25,7 @@
 void
 _mongocrypt_opts_init (_mongocrypt_opts_t *opts)
 {
+   BSON_ASSERT_PARAM (opts);
    memset (opts, 0, sizeof (*opts));
 }
 
@@ -32,6 +33,9 @@ static void
 _mongocrypt_opts_kms_provider_azure_cleanup (
    _mongocrypt_opts_kms_provider_azure_t *kms_provider_azure)
 {
+   if (!kms_provider_azure) {
+      return;
+   }
    bson_free (kms_provider_azure->client_id);
    bson_free (kms_provider_azure->client_secret);
    bson_free (kms_provider_azure->tenant_id);
@@ -44,6 +48,9 @@ static void
 _mongocrypt_opts_kms_provider_gcp_cleanup (
    _mongocrypt_opts_kms_provider_gcp_t *kms_provider_gcp)
 {
+   if (!kms_provider_gcp) {
+      return;
+   }
    bson_free (kms_provider_gcp->email);
    _mongocrypt_endpoint_destroy (kms_provider_gcp->endpoint);
    _mongocrypt_buffer_cleanup (&kms_provider_gcp->private_key);
@@ -54,6 +61,9 @@ void
 _mongocrypt_opts_kms_providers_cleanup (
    _mongocrypt_opts_kms_providers_t *kms_providers)
 {
+   if (!kms_providers) {
+      return;
+   }
    bson_free (kms_providers->aws.secret_access_key);
    bson_free (kms_providers->aws.access_key_id);
    bson_free (kms_providers->aws.session_token);
@@ -69,6 +79,9 @@ _mongocrypt_opts_merge_kms_providers (
    _mongocrypt_opts_kms_providers_t *dest,
    const _mongocrypt_opts_kms_providers_t *source)
 {
+   BSON_ASSERT_PARAM (dest);
+   BSON_ASSERT_PARAM (source);
+
    if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
       memcpy (&dest->aws, &source->aws, sizeof (source->aws));
       dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
@@ -97,6 +110,9 @@ _mongocrypt_opts_merge_kms_providers (
 void
 _mongocrypt_opts_cleanup (_mongocrypt_opts_t *opts)
 {
+   if (!opts) {
+      return;
+   }
    _mongocrypt_opts_kms_providers_cleanup (&opts->kms_providers);
    _mongocrypt_buffer_cleanup (&opts->schema_map);
    _mongocrypt_buffer_cleanup (&opts->encrypted_field_config_map);
@@ -115,6 +131,9 @@ _mongocrypt_opts_kms_providers_validate (
    _mongocrypt_opts_kms_providers_t *kms_providers,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (opts);
+   BSON_ASSERT_PARAM (kms_providers);
+
    if (!kms_providers->configured_providers &&
        !kms_providers->need_credentials) {
       CLIENT_ERR ("no kms provider set");
@@ -159,6 +178,9 @@ _shares_bson_fields (bson_t *one,
    bson_iter_t iter1;
    bson_iter_t iter2;
 
+   BSON_ASSERT_PARAM (one);
+   BSON_ASSERT_PARAM (two);
+   BSON_ASSERT_PARAM (found);
    *found = NULL;
    if (!bson_iter_init (&iter1, one)) {
       CLIENT_ERR ("error iterating one BSON in _shares_bson_fields");
@@ -184,12 +206,15 @@ _shares_bson_fields (bson_t *one,
 
 /* _validate_encrypted_field_config_map_and_schema_map validates that the same
  * namespace is not both in encrypted_field_config_map and schema_map. */
-bool
+static bool
 _validate_encrypted_field_config_map_and_schema_map (
    _mongocrypt_buffer_t *encrypted_field_config_map,
    _mongocrypt_buffer_t *schema_map,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (encrypted_field_config_map);
+   BSON_ASSERT_PARAM (schema_map);
+
    const char *found;
    bson_t schema_map_bson;
    bson_t encrypted_field_config_map_bson;
@@ -230,6 +255,8 @@ bool
 _mongocrypt_opts_validate (_mongocrypt_opts_t *opts,
                            mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (opts);
+
    if (!_validate_encrypted_field_config_map_and_schema_map (
           &opts->encrypted_field_config_map, &opts->schema_map, status)) {
       return false;
@@ -246,6 +273,10 @@ _mongocrypt_parse_optional_utf8 (const bson_t *bson,
 {
    bson_iter_t iter;
    bson_iter_t child;
+
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
 
    *out = NULL;
 
@@ -273,6 +304,10 @@ _mongocrypt_parse_required_utf8 (const bson_t *bson,
                                  char **out,
                                  mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
+
    if (!_mongocrypt_parse_optional_utf8 (bson, dotkey, out, status)) {
       return false;
    }
@@ -293,6 +328,10 @@ _mongocrypt_parse_optional_endpoint (const bson_t *bson,
                                      mongocrypt_status_t *status)
 {
    char *endpoint_raw;
+
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
 
    *out = NULL;
 
@@ -317,6 +356,10 @@ _mongocrypt_parse_required_endpoint (const bson_t *bson,
                                      _mongocrypt_endpoint_parse_opts_t *opts,
                                      mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
+
    if (!_mongocrypt_parse_optional_endpoint (bson, dotkey, out, opts, status)) {
       return false;
    }
@@ -339,6 +382,10 @@ _mongocrypt_parse_optional_binary (const bson_t *bson,
    bson_iter_t iter;
    bson_iter_t child;
 
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
+
    _mongocrypt_buffer_init (out);
 
    if (!bson_iter_init (&iter, bson)) {
@@ -358,6 +405,7 @@ _mongocrypt_parse_optional_binary (const bson_t *bson,
          CLIENT_ERR ("unable to parse base64 from UTF-8 field %s", dotkey);
          return false;
       }
+      BSON_ASSERT (out_len <= UINT32_MAX);
       out->len = (uint32_t) out_len;
       out->owned = true;
    } else if (BSON_ITER_HOLDS_BINARY (&child)) {
@@ -380,6 +428,10 @@ _mongocrypt_parse_required_binary (const bson_t *bson,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (dotkey);
+   BSON_ASSERT_PARAM (out);
+
    if (!_mongocrypt_parse_optional_binary (bson, dotkey, out, status)) {
       return false;
    }
@@ -401,6 +453,8 @@ _mongocrypt_check_allowed_fields_va (const bson_t *bson,
    va_list args;
    const char *field;
    bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (bson);
 
    if (dotkey) {
       bson_iter_t parent;

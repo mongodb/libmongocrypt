@@ -23,7 +23,7 @@ function databaseNamespace(ns) {
 }
 /**
  * @ignore
- * Gets the colleciton portion of a namespace string
+ * Gets the collection portion of a namespace string
  * @param {string} ns A string in the format of a namespace (database.collection)
  * @returns {string} The collection portion of the namespace
  */
@@ -31,19 +31,17 @@ function collectionNamespace(ns) {
   return ns.split('.').slice(1).join('.');
 }
 
-/**
- * @class
- * An error indicating that something went wrong specifically with MongoDB Client Encryption
- */
-class MongoCryptError extends Error {
-  constructor(message) {
-    super(message);
-    Error.captureStackTrace(this, this.constructor);
+function maybeCallback(promiseFn, callback) {
+  const promise = promiseFn();
+  if (callback == null) {
+    return promise;
   }
 
-  get name() {
-    return 'MongoCryptError';
-  }
+  promise.then(
+    result => process.nextTick(callback, undefined, result),
+    error => process.nextTick(callback, error)
+  );
+  return;
 }
 
 /**
@@ -95,6 +93,6 @@ module.exports = {
   debug,
   databaseNamespace,
   collectionNamespace,
-  MongoCryptError,
-  promiseOrCallback
+  promiseOrCallback,
+  maybeCallback
 };

@@ -6,10 +6,19 @@ module.exports = function (modules) {
   const databaseNamespace = common.databaseNamespace;
   const collectionNamespace = common.collectionNamespace;
   const promiseOrCallback = common.promiseOrCallback;
+  const maybeCallback = common.maybeCallback;
   const StateMachine = modules.stateMachine.StateMachine;
   const BSON = modules.mongodb.BSON;
+  const {
+    MongoCryptCreateEncryptedCollectionError,
+    MongoCryptCreateDataKeyError
+  } = require('./errors');
+  const { loadCredentials } = require('./credentialsProvider');
   const cryptoCallbacks = require('./cryptoCallbacks');
   const { promisify } = require('util');
+
+  /** @typedef {*} BSONValue - any serializable BSON value */
+  /** @typedef {BSON.Long} Long A 64 bit integer, represented by the js-bson Long type.*/
 
   /**
    * @typedef {object} KMSProviders Configuration options that are used by specific KMS providers during key generation, encryption, and decryption.
@@ -64,7 +73,7 @@ module.exports = function (modules) {
    */
 
   /**
-   * The public interface for explicit client side encryption
+   * The public interface for explicit in-use encryption
    */
   class ClientEncryption {
     /**
@@ -103,24 +112,22 @@ module.exports = function (modules) {
       this._bson = options.bson || BSON || client.topology.bson;
       this._proxyOptions = options.proxyOptions;
       this._tlsOptions = options.tlsOptions;
+      this._kmsProviders = options.kmsProviders || {};
 
       if (options.keyVaultNamespace == null) {
         throw new TypeError('Missing required option `keyVaultNamespace`');
       }
 
-      Object.assign(options, { cryptoCallbacks });
+      const mongoCryptOptions = { ...options, cryptoCallbacks };
 
-      // kmsProviders will be parsed by libmongocrypt, must be provided as BSON binary data
-      if (options.kmsProviders && !Buffer.isBuffer(options.kmsProviders)) {
-        options.kmsProviders = this._bson.serialize(options.kmsProviders);
-      } else if (!options.onKmsProviderRefresh) {
-        throw new TypeError('Need to specify either kmsProviders ahead of time or when requested');
-      }
+      mongoCryptOptions.kmsProviders = !Buffer.isBuffer(this._kmsProviders)
+        ? this._bson.serialize(this._kmsProviders)
+        : this._kmsProviders;
 
       this._onKmsProviderRefresh = options.onKmsProviderRefresh;
       this._keyVaultNamespace = options.keyVaultNamespace;
       this._keyVaultClient = options.keyVaultClient || client;
-      this._mongoCrypt = new mc.MongoCrypt(options);
+      this._mongoCrypt = new mc.MongoCrypt(mongoCryptOptions);
     }
 
     /**
@@ -263,14 +270,15 @@ module.exports = function (modules) {
           this._keyVaultClient
             .db(dbName)
             .collection(collectionName)
-            .insertOne(dataKey, { writeConcern: { w: 'majority' } }, (err, result) => {
-              if (err) {
+            .insertOne(dataKey, { writeConcern: { w: 'majority' } })
+            .then(
+              result => {
+                return cb(null, result.insertedId);
+              },
+              err => {
                 cb(err, null);
-                return;
               }
-
-              cb(null, result.insertedId);
-            });
+            );
         });
       });
     }
@@ -546,9 +554,90 @@ module.exports = function (modules) {
     }
 
     /**
+     * @experimental Public Technical Preview
+     *
+     * A convenience method for creating an encrypted collection.
+     * This method will create data keys for any encryptedFields that do not have a `keyId` defined
+     * and then create a new collection with the full set of encryptedFields.
+     *
+     * @template {TSchema} - Schema for the collection being created
+     * @param {Db} db - A Node.js driver Db object with which to create the collection
+     * @param {string} name - The name of the collection to be created
+     * @param {object} options - Options for createDataKey and for createCollection
+     * @param {string} options.provider - KMS provider name
+     * @param {AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions} [options.masterKey] - masterKey to pass to createDataKey
+     * @param {CreateCollectionOptions} options.createCollectionOptions - options to pass to createCollection, must include `encryptedFields`
+     * @returns {Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>} - created collection and generated encryptedFields
+     * @throws {MongoCryptCreateDataKeyError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
+     * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
+     */
+    async createEncryptedCollection(db, name, options) {
+      const {
+        provider,
+        masterKey,
+        createCollectionOptions: {
+          encryptedFields: { ...encryptedFields },
+          ...createCollectionOptions
+        }
+      } = options;
+
+      if (Array.isArray(encryptedFields.fields)) {
+        const createDataKeyPromises = encryptedFields.fields.map(async field =>
+          field == null || typeof field !== 'object' || field.keyId != null
+            ? field
+            : {
+                ...field,
+                keyId: await this.createDataKey(provider, { masterKey })
+              }
+        );
+
+        const createDataKeyResolutions = await Promise.allSettled(createDataKeyPromises);
+
+        encryptedFields.fields = createDataKeyResolutions.map((resolution, index) =>
+          resolution.status === 'fulfilled' ? resolution.value : encryptedFields.fields[index]
+        );
+
+        const rejection = createDataKeyResolutions.find(({ status }) => status === 'rejected');
+        if (rejection != null) {
+          throw new MongoCryptCreateDataKeyError({ encryptedFields, cause: rejection.reason });
+        }
+      }
+
+      try {
+        const collection = await db.createCollection(name, {
+          ...createCollectionOptions,
+          encryptedFields
+        });
+        return { collection, encryptedFields };
+      } catch (cause) {
+        throw new MongoCryptCreateEncryptedCollectionError({ encryptedFields, cause });
+      }
+    }
+
+    /**
      * @callback ClientEncryptionEncryptCallback
      * @param {Error} [err] If present, indicates an error that occurred in the process of encryption
      * @param {Buffer} [result] If present, is the encrypted result
+     */
+
+    /**
+     * @typedef {object} RangeOptions
+     * min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
+     * For double and decimal128, min/max/precision must all be set, or all be unset.
+     * @property {BSONValue} min is required if precision is set.
+     * @property {BSONValue} max is required if precision is set.
+     * @property {BSON.Long} sparsity
+     * @property {number | undefined} precision (may only be set for double or decimal128).
+     */
+
+    /**
+     * @typedef {object} EncryptOptions Options to provide when encrypting data.
+     * @property {ClientEncryptionDataKeyId} [keyId] The id of the Binary dataKey to use for encryption.
+     * @property {string} [keyAltName] A unique string name corresponding to an already existing dataKey.
+     * @property {string} [algorithm] The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'`
+     * @property {bigint | number} [contentionFactor] (experimental) - the contention factor.
+     * @property {'equality' | 'rangePreview'} queryType (experimental) - the query type supported.
+     * @property {RangeOptions} [rangeOptions] (experimental) The index options for a Queryable Encryption field supporting "rangePreview" queries.
      */
 
     /**
@@ -556,10 +645,7 @@ module.exports = function (modules) {
      * be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
      *
      * @param {*} value The value that you wish to serialize. Must be of a type that can be serialized into BSON
-     * @param {object} options
-     * @param {ClientEncryptionDataKeyId} [options.keyId] The id of the Binary dataKey to use for encryption
-     * @param {string} [options.keyAltName] A unique string name corresponding to an already existing dataKey.
-     * @param {} [options.algorithm] The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'`
+     * @param {EncryptOptions} options
      * @param {ClientEncryptionEncryptCallback} [callback] Optional callback to invoke when value is encrypted
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.
      *
@@ -589,44 +675,29 @@ module.exports = function (modules) {
      * }
      */
     encrypt(value, options, callback) {
-      const bson = this._bson;
-      const valueBuffer = bson.serialize({ v: value });
-      const contextOptions = Object.assign({}, options);
-      if (options.keyId) {
-        contextOptions.keyId = options.keyId.buffer;
-      }
-      if (options.keyAltName) {
-        const keyAltName = options.keyAltName;
-        if (options.keyId) {
-          throw new TypeError(`"options" cannot contain both "keyId" and "keyAltName"`);
-        }
-        const keyAltNameType = typeof keyAltName;
-        if (keyAltNameType !== 'string') {
-          throw new TypeError(
-            `"options.keyAltName" must be of type string, but was of type ${keyAltNameType}`
-          );
-        }
+      return maybeCallback(() => this._encrypt(value, false, options), callback);
+    }
 
-        contextOptions.keyAltName = bson.serialize({ keyAltName });
-      }
-
-      const stateMachine = new StateMachine({
-        bson,
-        proxyOptions: this._proxyOptions,
-        tlsOptions: this._tlsOptions
-      });
-      const context = this._mongoCrypt.makeExplicitEncryptionContext(valueBuffer, contextOptions);
-
-      return promiseOrCallback(callback, cb => {
-        stateMachine.execute(this, context, (err, result) => {
-          if (err) {
-            cb(err, null);
-            return;
-          }
-
-          cb(null, result.v);
-        });
-      });
+    /**
+     * Encrypts a Match Expression or Aggregate Expression to query a range index.
+     *
+     * Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
+     *
+     * @experimental The Range algorithm is experimental only. It is not intended for production use. It is subject to breaking changes.
+     *
+     * @param {object} expression a BSON document of one of the following forms:
+     *  1. A Match Expression of this form:
+     *      `{$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}`
+     *  2. An Aggregate Expression of this form:
+     *      `{$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]}`
+     *
+     *    `$gt` may also be `$gte`. `$lt` may also be `$lte`.
+     *
+     * @param {EncryptOptions} options
+     * @returns {Promise<object>} Returns a Promise that either resolves with the encrypted value or rejects with an error.
+     */
+    async encryptExpression(expression, options) {
+      return this._encrypt(expression, true, options);
     }
 
     /**
@@ -640,7 +711,7 @@ module.exports = function (modules) {
      *
      * @param {Buffer | Binary} value An encrypted value
      * @param {ClientEncryption~decryptCallback} callback Optional callback to invoke when value is decrypted
-     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decryped value, or rejects with an error. If a callback is provided, returns nothing.
+     * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decrypted value, or rejects with an error. If a callback is provided, returns nothing.
      *
      * @example
      * // Decrypting value with callback API
@@ -685,7 +756,64 @@ module.exports = function (modules) {
      * the original ones.
      */
     async askForKMSCredentials() {
-      return this._onKmsProviderRefresh ? this._onKmsProviderRefresh() : {};
+      return this._onKmsProviderRefresh
+        ? this._onKmsProviderRefresh()
+        : loadCredentials(this._kmsProviders);
+    }
+
+    static get libmongocryptVersion() {
+      return mc.MongoCrypt.libmongocryptVersion;
+    }
+
+    /**
+     * A helper that perform explicit encryption of values and expressions.
+     * Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
+     * be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
+     *
+     * @param {*} value The value that you wish to encrypt. Must be of a type that can be serialized into BSON
+     * @param {boolean} expressionMode - a boolean that indicates whether or not to encrypt the value as an expression
+     * @param {EncryptOptions} options
+     * @returns the raw result of the call to stateMachine.execute().  When expressionMode is set to true, the return
+     *          value will be a bson document.  When false, the value will be a BSON Binary.
+     *
+     * @ignore
+     *
+     */
+    async _encrypt(value, expressionMode, options) {
+      const bson = this._bson;
+      const valueBuffer = bson.serialize({ v: value });
+      const contextOptions = Object.assign({}, options, { expressionMode });
+      if (options.keyId) {
+        contextOptions.keyId = options.keyId.buffer;
+      }
+      if (options.keyAltName) {
+        const keyAltName = options.keyAltName;
+        if (options.keyId) {
+          throw new TypeError(`"options" cannot contain both "keyId" and "keyAltName"`);
+        }
+        const keyAltNameType = typeof keyAltName;
+        if (keyAltNameType !== 'string') {
+          throw new TypeError(
+            `"options.keyAltName" must be of type string, but was of type ${keyAltNameType}`
+          );
+        }
+
+        contextOptions.keyAltName = bson.serialize({ keyAltName });
+      }
+
+      if ('rangeOptions' in options) {
+        contextOptions.rangeOptions = bson.serialize(options.rangeOptions);
+      }
+
+      const stateMachine = new StateMachine({
+        bson,
+        proxyOptions: this._proxyOptions,
+        tlsOptions: this._tlsOptions
+      });
+      const context = this._mongoCrypt.makeExplicitEncryptionContext(valueBuffer, contextOptions);
+
+      const result = await stateMachine.executeAsync(this, context);
+      return result.v;
     }
   }
 

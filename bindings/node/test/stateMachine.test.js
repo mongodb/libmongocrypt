@@ -4,7 +4,7 @@ const { EventEmitter, once } = require('events');
 const net = require('net');
 const tls = require('tls');
 const fs = require('fs');
-const expect = require('chai').expect;
+const { expect } = require('chai');
 const sinon = require('sinon');
 const mongodb = require('mongodb');
 const BSON = mongodb.BSON;
@@ -43,7 +43,7 @@ describe('StateMachine', function () {
 
     beforeEach(function () {
       this.sinon = sinon.createSandbox();
-      runCommandStub = this.sinon.stub();
+      runCommandStub = this.sinon.stub().resolves({});
       dbStub = this.sinon.createStubInstance(mongodb.Db, {
         command: runCommandStub
       });

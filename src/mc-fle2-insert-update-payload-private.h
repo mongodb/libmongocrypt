@@ -19,6 +19,7 @@
 
 #include <bson/bson.h>
 
+#include "mc-array-private.h"
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-buffer-private.h"
@@ -31,7 +32,7 @@
  *
  * struct {
  *   uint8_t fle_blob_subtype = 4;
- *   uint8_t bson[16];
+ *   uint8_t bson[];
  * } FLE2InsertUpdatePayload;
  *
  * bson is a BSON document of this form:
@@ -43,6 +44,7 @@
  * t: <int32>  // Encrypted type
  * v: <binary> // Encrypted value
  * e: <binary> // ServerDataEncryptionLevel1Token
+ * g: array<EdgeTokenSet> // Array of Edges
  *
  * p is the result of:
  * Encrypt(
@@ -68,9 +70,28 @@ typedef struct {
    bson_type_t valueType;                      // t
    _mongocrypt_buffer_t value;                 // v
    _mongocrypt_buffer_t serverEncryptionToken; // e
+   mc_array_t edgeTokenSetArray;               // g
    _mongocrypt_buffer_t plaintext;
    _mongocrypt_buffer_t userKeyId;
 } mc_FLE2InsertUpdatePayload_t;
+
+/**
+ * EdgeTokenSet is the following BSON document:
+ * d: <binary> // EDCDerivedFromDataTokenAndCounter
+ * s: <binary> // ESCDerivedFromDataTokenAndCounter
+ * c: <binary> // ECCDerivedFromDataTokenAndCounter
+ * p: <binary> // Encrypted Tokens
+ *
+ * Instances of mc_EdgeTokenSet_t are expected to be owned by
+ * mc_FLE2InsertUpdatePayload_t and are freed in
+ * mc_FLE2InsertUpdatePayload_cleanup.
+ */
+typedef struct {
+   _mongocrypt_buffer_t edcDerivedToken; // d
+   _mongocrypt_buffer_t escDerivedToken; // s
+   _mongocrypt_buffer_t eccDerivedToken; // c
+   _mongocrypt_buffer_t encryptedTokens; // p
+} mc_EdgeTokenSet_t;
 
 void
 mc_FLE2InsertUpdatePayload_init (mc_FLE2InsertUpdatePayload_t *payload);
@@ -91,7 +112,11 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
 
 bool
 mc_FLE2InsertUpdatePayload_serialize (
-   bson_t *out, const mc_FLE2InsertUpdatePayload_t *payload);
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out);
+
+bool
+mc_FLE2InsertUpdatePayload_serializeForRange (
+   const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out);
 
 void
 mc_FLE2InsertUpdatePayload_cleanup (mc_FLE2InsertUpdatePayload_t *payload);

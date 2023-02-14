@@ -1,3 +1,46 @@
+libmongocrypt (1.7.2-1) unstable; urgency=medium
+
+  [ Kyle Kloberdanz ]
+  * Drop remove-builtin.patch, integrated upstream
+  * Disable Decimal128 on platforms without IntelDFP
+
+  [ Roberto C. Sanchez ]
+  * New upstream release.
+  * Ensure that embedded code copies don't get included in .orig.tar.gz
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 13 Feb 2023 11:10:37 -0500
+
+libmongocrypt (1.7.1-2) unstable; urgency=medium
+
+  * Remove builtin which causes 32-bit ARM builds to fail
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Fri, 03 Feb 2023 16:24:00 -0600
+
+libmongocrypt (1.7.1-1) unstable; urgency=medium
+
+  [ Roberto C. Sanchez ]
+  * Add libintelrdfpmath-dev to Build-Depends rather than using embedded
+    sources.
+
+  [ Kyle Kloberdanz ]
+  * New upstream release.
+  * Add myself to uploaders.
+  * Update to Standards-Version 4.6.2 (no changes)
+
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Fri, 03 Feb 2023 13:25:46 -0600
+
+libmongocrypt (1.6.2-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 06 Dec 2022 23:50:00 -0500
+
+libmongocrypt (1.6.0-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Wed, 07 Sep 2022 20:54:40 -0400
+
 libmongocrypt (1.5.2-1) unstable; urgency=medium
 
   * New upstream release.

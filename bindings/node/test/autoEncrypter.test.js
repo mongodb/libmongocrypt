@@ -13,10 +13,7 @@ const stateMachine = require('../lib/stateMachine')({ mongodb });
 const StateMachine = stateMachine.StateMachine;
 const MongocryptdManager = require('../lib/mongocryptdManager').MongocryptdManager;
 
-const chai = require('chai');
-const expect = chai.expect;
-chai.use(require('chai-subset'));
-chai.use(require('sinon-chai'));
+const { expect } = require('chai');
 
 const sharedLibrarySuffix =
   process.platform === 'win32' ? 'dll' : process.platform === 'darwin' ? 'dylib' : 'so';
@@ -66,6 +63,9 @@ class MockClient {
   }
 }
 
+const originalAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
+const originalSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
 const AutoEncrypter = require('../lib/autoEncrypter')({ mongodb, stateMachine }).AutoEncrypter;
 describe('AutoEncrypter', function () {
   this.timeout(12000);
@@ -100,7 +100,7 @@ describe('AutoEncrypter', function () {
       });
 
     sandbox.stub(StateMachine.prototype, 'fetchKeys').callsFake((client, ns, filter, callback) => {
-      // mock data is already seriaized, our action deals with the result of a cursor
+      // mock data is already serialized, our action deals with the result of a cursor
       const deserializedKey = BSON.deserialize(MOCK_KEYDOCUMENT_RESPONSE);
       callback(null, [deserializedKey]);
     });
@@ -205,6 +205,60 @@ describe('AutoEncrypter', function () {
         });
       });
     });
+
+    context('when using mongocryptd', function () {
+      const client = new MockClient();
+      const autoEncrypterOptions = {
+        mongocryptdBypassSpawn: true,
+        keyVaultNamespace: 'admin.datakeys',
+        logger: () => {},
+        kmsProviders: {
+          aws: { accessKeyId: 'example', secretAccessKey: 'example' },
+          local: { key: Buffer.alloc(96) }
+        }
+      };
+      const autoEncrypter = new AutoEncrypter(client, autoEncrypterOptions);
+
+      it('instantiates a mongo client on the auto encrypter', function () {
+        expect(autoEncrypter)
+          .to.have.property('_mongocryptdClient')
+          .to.be.instanceOf(mongodb.MongoClient);
+      });
+
+      it('sets the 3x legacy client options on the mongo client', function () {
+        expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+        const options = autoEncrypter._mongocryptdClient.s.options;
+        expect(options).to.have.property('useUnifiedTopology', true);
+        expect(options).to.have.property('useNewUrlParser', true);
+      });
+
+      it('sets serverSelectionTimeoutMS to 10000ms', function () {
+        expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+        const options = autoEncrypter._mongocryptdClient.s.options;
+        expect(options).to.have.property('serverSelectionTimeoutMS', 10000);
+      });
+
+      context('when mongocryptdURI is not specified', () => {
+        it('sets the ip address family to ipv4', function () {
+          expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+          const options = autoEncrypter._mongocryptdClient.s.options;
+          expect(options).to.have.property('family', 4);
+        });
+      });
+
+      context('when mongocryptdURI is specified', () => {
+        it('does not set the ip address family to ipv4', function () {
+          const autoEncrypter = new AutoEncrypter(client, {
+            ...autoEncrypterOptions,
+            extraOptions: { mongocryptdURI: MongocryptdManager.DEFAULT_MONGOCRYPTD_URI }
+          });
+
+          expect(autoEncrypter).to.have.nested.property('_mongocryptdClient.s.options');
+          const options = autoEncrypter._mongocryptdClient.s.options;
+          expect(options).not.to.have.property('family', 4);
+        });
+      });
+    });
   });
 
   it('should support `bypassAutoEncryption`', function (done) {
@@ -224,23 +278,6 @@ describe('AutoEncrypter', function () {
       expect(err).to.not.exist;
       expect(encrypted).to.eql({ test: 'command' });
       done();
-    });
-  });
-
-  context('when checking serverSelectionTimeoutMS on the mongocryptd client', function () {
-    const client = new MockClient();
-    const autoEncrypter = new AutoEncrypter(client, {
-      mongocryptdBypassSpawn: true,
-      keyVaultNamespace: 'admin.datakeys',
-      logger: () => {},
-      kmsProviders: {
-        aws: { accessKeyId: 'example', secretAccessKey: 'example' },
-        local: { key: Buffer.alloc(96) }
-      }
-    });
-
-    it('defaults to 10000', function () {
-      expect(autoEncrypter._mongocryptdClient.s.options.serverSelectionTimeoutMS).to.equal(10000);
     });
   });
 
@@ -323,6 +360,85 @@ describe('AutoEncrypter', function () {
         if (err) return done(err);
         expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
         done();
+      });
+    });
+
+    context('when no refresh function is provided', function () {
+      const accessKey = 'example';
+      const secretKey = 'example';
+
+      before(function () {
+        if (!requirements.credentialProvidersInstalled.aws) {
+          this.currentTest.skipReason = 'Cannot refresh credentials without sdk provider';
+          this.currentTest.skip();
+          return;
+        }
+        // After the entire suite runs, set the env back for the rest of the test run.
+        process.env.AWS_ACCESS_KEY_ID = accessKey;
+        process.env.AWS_SECRET_ACCESS_KEY = secretKey;
+      });
+
+      after(function () {
+        // After the entire suite runs, set the env back for the rest of the test run.
+        process.env.AWS_ACCESS_KEY_ID = originalAccessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = originalSecretAccessKey;
+      });
+
+      it('should decrypt mock data with KMS credentials from the environment', function (done) {
+        const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+        const client = new MockClient();
+        const mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: {}
+          }
+        });
+        mc.decrypt(input, (err, decrypted) => {
+          if (err) return done(err);
+          expect(decrypted).to.eql({ filter: { find: 'test', ssn: '457-55-5462' } });
+          done();
+        });
+      });
+    });
+
+    context('when no refresh function is provided and no optional sdk', function () {
+      const accessKey = 'example';
+      const secretKey = 'example';
+
+      before(function () {
+        if (requirements.credentialProvidersInstalled.aws) {
+          this.currentTest.skipReason = 'With optional sdk installed credentials would be loaded.';
+          this.currentTest.skip();
+          return;
+        }
+        // After the entire suite runs, set the env back for the rest of the test run.
+        process.env.AWS_ACCESS_KEY_ID = accessKey;
+        process.env.AWS_SECRET_ACCESS_KEY = secretKey;
+      });
+
+      after(function () {
+        // After the entire suite runs, set the env back for the rest of the test run.
+        process.env.AWS_ACCESS_KEY_ID = originalAccessKeyId;
+        process.env.AWS_SECRET_ACCESS_KEY = originalSecretAccessKey;
+      });
+
+      it('errors without the optional sdk credential provider', function (done) {
+        const input = readExtendedJsonToBuffer(`${__dirname}/data/encrypted-document.json`);
+        const client = new MockClient();
+        const mc = new AutoEncrypter(client, {
+          keyVaultNamespace: 'admin.datakeys',
+          logger: () => {},
+          kmsProviders: {
+            aws: {}
+          }
+        });
+        mc.decrypt(input, err => {
+          expect(err.message).to.equal(
+            'client not configured with KMS provider necessary to decrypt'
+          );
+          done();
+        });
       });
     });
 
@@ -826,5 +942,9 @@ describe('AutoEncrypter', function () {
 
       this.mc.teardown(true, done);
     });
+  });
+
+  it('should provide the libmongocrypt version', function () {
+    expect(AutoEncrypter.libmongocryptVersion).to.be.a('string');
   });
 });
