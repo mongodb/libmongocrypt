@@ -42,6 +42,27 @@ async function loadAWSCredentials(kmsProviders) {
   return kmsProviders;
 }
 
+let gcpMetadata = null;
+/** @ignore */
+async function loadGCPCredentials(kmsProviders) {
+  if (gcpMetadata == null) {
+    try {
+      // Ensure you always wrap an optional require in the try block NODE-3199
+      gcpMetadata = require('gcp-metadata');
+      // eslint-disable-next-line no-empty
+    } catch {}
+  }
+
+  if (gcpMetadata != null) {
+    const { access_token: accessToken } = await gcpMetadata.instance({
+      property: 'service-accounts/default/token'
+    });
+    return { ...kmsProviders, gcp: { accessToken } };
+  }
+
+  return kmsProviders;
+}
+
 /**
  * Load cloud provider credentials for the user provided KMS providers.
  * Credentials will only attempt to get loaded if they do not exist
@@ -56,7 +77,11 @@ async function loadCredentials(kmsProviders) {
   let finalKMSProviders = kmsProviders;
 
   if (isEmptyCredentials('aws', kmsProviders)) {
-    finalKMSProviders = await loadAWSCredentials(kmsProviders);
+    finalKMSProviders = await loadAWSCredentials(finalKMSProviders);
+  }
+
+  if (isEmptyCredentials('gcp', kmsProviders)) {
+    finalKMSProviders = await loadGCPCredentials(finalKMSProviders);
   }
 
   return finalKMSProviders;

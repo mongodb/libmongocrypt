@@ -1,6 +1,7 @@
 'use strict';
 
 const { expect } = require('chai');
+const http = require('http');
 const requirements = require('./requirements.helper');
 const { loadCredentials, isEmptyCredentials } = require('../lib/credentialsProvider');
 
@@ -150,6 +151,90 @@ describe('#loadCredentials', function () {
       it('does not refresh credentials', async function () {
         const providers = await loadCredentials(kmsProviders);
         expect(providers).to.deep.equal(kmsProviders);
+      });
+    });
+  });
+
+  context('when using gcp', () => {
+    const setupHttpServer = status => {
+      let httpServer;
+      before(() => {
+        httpServer = http
+          .createServer((_, res) => {
+            if (status === 200) {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.writeHead(200, { 'Metadata-Flavor': 'Google' });
+              res.end(JSON.stringify({ access_token: 'abc' }));
+            } else {
+              res.writeHead(401, { 'Content-Type': 'application/json' });
+              res.writeHead(401, { 'Metadata-Flavor': 'Google' });
+              res.end('{}');
+            }
+          })
+          .listen(5001);
+        process.env.GCE_METADATA_HOST = 'http://127.0.0.1:5001';
+      });
+
+      after(() => {
+        httpServer.close();
+        delete process.env.GCE_METADATA_HOST;
+      });
+    };
+
+    context('and gcp-metadata is installed', () => {
+      beforeEach(function () {
+        if (!requirements.credentialProvidersInstalled.gcp) {
+          this.currentTest.skipReason = 'Tests require gcp-metadata to be installed';
+          this.currentTest.skip();
+          return;
+        }
+      });
+
+      context('when metadata http response is 200 ok', () => {
+        setupHttpServer(200);
+        context('when the credentials are empty', function () {
+          const kmsProviders = { gcp: {} };
+
+          it('refreshes the gcp credentials', async function () {
+            const providers = await loadCredentials(kmsProviders);
+            expect(providers).to.deep.equal({
+              gcp: {
+                accessToken: 'abc'
+              }
+            });
+          });
+        });
+      });
+
+      context('when metadata http response is 401 bad', () => {
+        setupHttpServer(401);
+        context('when the credentials are empty', function () {
+          const kmsProviders = { gcp: {} };
+
+          it('surfaces error from server', async function () {
+            const error = await loadCredentials(kmsProviders).catch(error => error);
+            expect(error).to.be.instanceOf(Error);
+          });
+        });
+      });
+    });
+
+    context('and gcp-metadata is not installed', () => {
+      beforeEach(function () {
+        if (requirements.credentialProvidersInstalled.gcp) {
+          this.currentTest.skipReason = 'Tests require gcp-metadata to be installed';
+          this.currentTest.skip();
+          return;
+        }
+      });
+
+      context('when the credentials are empty', function () {
+        const kmsProviders = { gcp: {} };
+
+        it('does not modify the gcp credentials', async function () {
+          const providers = await loadCredentials(kmsProviders);
+          expect(providers).to.deep.equal({ gcp: {} });
+        });
       });
     });
   });
