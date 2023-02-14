@@ -16,6 +16,7 @@ bash ./etc/build-static.sh
 
 if [[ $OMIT_PEER_DEPS != "true" ]]; then
     npm install '@aws-sdk/credential-providers'
+    npm install 'gcp-metadata'
 fi
 
 # Run tests

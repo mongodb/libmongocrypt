@@ -24,6 +24,15 @@ function isAWSCredentialProviderInstalled() {
   }
 }
 
+function isGCPCredentialProviderInstalled() {
+  try {
+    require.resolve('gcp-metadata');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
   SKIP_LIVE_TESTS,
   SKIP_AWS_TESTS,
@@ -36,6 +45,7 @@ module.exports = {
   awsKmsProviders,
   awsDataKeyOptions,
   credentialProvidersInstalled: {
-    aws: isAWSCredentialProviderInstalled()
+    aws: isAWSCredentialProviderInstalled(),
+    gcp: isGCPCredentialProviderInstalled()
   }
 };
