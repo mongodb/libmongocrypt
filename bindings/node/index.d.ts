@@ -103,23 +103,25 @@ export interface KMSProviders {
   /**
    * Configuration options for using 'aws' as your KMS provider
    */
-  aws?: {
-    /**
-     * The access key used for the AWS KMS provider
-     */
-    accessKeyId: string;
+  aws?:
+    | {
+        /**
+         * The access key used for the AWS KMS provider
+         */
+        accessKeyId: string;
 
-    /**
-     * The secret access key used for the AWS KMS provider
-     */
-    secretAccessKey: string;
+        /**
+         * The secret access key used for the AWS KMS provider
+         */
+        secretAccessKey: string;
 
-    /**
-     * An optional AWS session token that will be used as the
-     * X-Amz-Security-Token header for AWS requests.
-     */
-    sessionToken?: string;
-  };
+        /**
+         * An optional AWS session token that will be used as the
+         * X-Amz-Security-Token header for AWS requests.
+         */
+        sessionToken?: string;
+      }
+    | Record<string, never>;
 
   /**
    * Configuration options for using 'local' as your KMS provider
@@ -147,61 +149,66 @@ export interface KMSProviders {
   /**
    * Configuration options for using 'azure' as your KMS provider
    */
-  azure?: {
-    /**
-     * The tenant ID identifies the organization for the account
-     */
-    tenantId: string;
+  azure?:
+    | {
+        /**
+         * The tenant ID identifies the organization for the account
+         */
+        tenantId: string;
 
-    /**
-     * The client ID to authenticate a registered application
-     */
-    clientId: string;
+        /**
+         * The client ID to authenticate a registered application
+         */
+        clientId: string;
 
-    /**
-     * The client secret to authenticate a registered application
-     */
-    clientSecret: string;
+        /**
+         * The client secret to authenticate a registered application
+         */
+        clientSecret: string;
 
-    /**
-     * If present, a host with optional port. E.g. "example.com" or "example.com:443".
-     * This is optional, and only needed if customer is using a non-commercial Azure instance
-     * (e.g. a government or China account, which use different URLs).
-     * Defaults to "login.microsoftonline.com"
-     */
-    identityPlatformEndpoint?: string | undefined;
-  } | {
-    /**
-     * If present, an access token to authenticate with Azure.
-     */
-    accessToken: string;
-  };
+        /**
+         * If present, a host with optional port. E.g. "example.com" or "example.com:443".
+         * This is optional, and only needed if customer is using a non-commercial Azure instance
+         * (e.g. a government or China account, which use different URLs).
+         * Defaults to "login.microsoftonline.com"
+         */
+        identityPlatformEndpoint?: string | undefined;
+      }
+    | {
+        /**
+         * If present, an access token to authenticate with Azure.
+         */
+        accessToken: string;
+      };
 
   /**
    * Configuration options for using 'gcp' as your KMS provider
    */
-  gcp?: {
-    /**
-     * The service account email to authenticate
-     */
-    email: string;
+  gcp?:
+    | {
+        /**
+         * The service account email to authenticate
+         */
+        email: string;
 
-    /**
-     * A PKCS#8 encrypted key. This can either be a base64 string or a binary representation
-     */
-    privateKey: string | Buffer;
+        /**
+         * A PKCS#8 encrypted key. This can either be a base64 string or a binary representation
+         */
+        privateKey: string | Buffer;
 
-    /**
-     * If present, a host with optional port. E.g. "example.com" or "example.com:443".
-     * Defaults to "oauth2.googleapis.com"
-     */
-    endpoint?: string | undefined;
-  } | {
-    /**
-     * If present, an access token to authenticate with GCP.
-     */
-    accessToken: string;
-  };
+        /**
+         * If present, a host with optional port. E.g. "example.com" or "example.com:443".
+         * Defaults to "oauth2.googleapis.com"
+         */
+        endpoint?: string | undefined;
+      }
+    | {
+        /**
+         * If present, an access token to authenticate with GCP.
+         */
+        accessToken: string;
+      }
+    | Record<string, never>;
 }
 
 /**
@@ -554,11 +561,17 @@ export class ClientEncryption {
    * @throws {MongoCryptCreateDataKeyForEncryptedCollectionError} - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
    * @throws {MongoCryptCreateEncryptedCollectionError} - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
    */
-  createEncryptedCollection<TSchema extends Document = Document>(db: Db, name: string, options: {
-    provider: ClientEncryptionDataKeyProvider;
-    createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & { encryptedFields: Document };
-    masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions;
-  }): Promise<{ collection: Collection<TSchema>, encryptedFields: Document }>;
+  createEncryptedCollection<TSchema extends Document = Document>(
+    db: Db,
+    name: string,
+    options: {
+      provider: ClientEncryptionDataKeyProvider;
+      createCollectionOptions: Omit<CreateCollectionOptions, 'encryptedFields'> & {
+        encryptedFields: Document;
+      };
+      masterKey?: AWSEncryptionKeyOptions | AzureEncryptionKeyOptions | GCPEncryptionKeyOptions;
+    }
+  ): Promise<{ collection: Collection<TSchema>; encryptedFields: Document }>;
 
   /**
    * Explicitly encrypt a provided value.
