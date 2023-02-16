@@ -343,6 +343,15 @@ packaging-full-test:
     BUILD +deb-runtime-test
     BUILD +rpm-runtime-test
 
+check-format:
+    FROM python:3.11.2-slim-buster
+    RUN pip install pipx
+    COPY etc/format* /X/etc/
+    COPY .evergreen/init.sh /X/.evergreen/
+    RUN /X/etc/format.sh  # Does nothing, but warms the cache
+    COPY --dir .clang-format src test /X/
+    RUN /X/etc/format-all.sh --dry-run -Werror --verbose
+
 # The main "build" target. Options:
 #   • --env=[...] (default "u22")
 #     · Set the environment for the build. Any name of and "env.<name>" targets
