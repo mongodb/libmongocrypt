@@ -83,8 +83,8 @@ mc_FLE2FindEqualityPayloadV2_cleanup (mc_FLE2FindEqualityPayloadV2_t *payload)
 
 bool
 mc_FLE2FindEqualityPayloadV2_parse (mc_FLE2FindEqualityPayloadV2_t *out,
-                                  const bson_t *in,
-                                  mongocrypt_status_t *status)
+                                    const bson_t *in,
+                                    mongocrypt_status_t *status)
 {
    bson_iter_t iter;
    bool has_d = false, has_s = false, has_l = false, has_cm = false;
@@ -128,7 +128,7 @@ fail:
    return false;
 }
 
-#define IUPS_APPEND_BINDATA(name, subtype, value)              \
+#define APPEND_BINDATA(name, subtype, value)                   \
    if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
       return false;                                            \
    }
@@ -139,13 +139,13 @@ mc_FLE2FindEqualityPayloadV2_serialize (
 {
    BSON_ASSERT_PARAM (payload);
 
-   IUPS_APPEND_BINDATA ("d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
-   IUPS_APPEND_BINDATA ("s", BSON_SUBTYPE_BINARY, payload->escDerivedToken);
-   IUPS_APPEND_BINDATA (
+   APPEND_BINDATA ("d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
+   APPEND_BINDATA ("s", BSON_SUBTYPE_BINARY, payload->escDerivedToken);
+   APPEND_BINDATA (
       "l", BSON_SUBTYPE_BINARY, payload->serverDerivedFromDataToken);
    if (!BSON_APPEND_INT64 (out, "cm", payload->maxContentionCounter)) {
       return false;
    }
    return true;
 }
-#undef IUPS_APPEND_BINDATA
+#undef APPEND_BINDATA

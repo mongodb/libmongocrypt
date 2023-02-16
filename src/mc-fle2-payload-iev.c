@@ -146,11 +146,11 @@ mc_FLE2IndexedEncryptedValue_write (
    _mongocrypt_buffer_init (&encryption_out);
 
    CHECK_AND_GOTO (mc_fle2IndexedEncryptedValue_encrypt (crypto,
-                                              ClientEncryptedValue,
-                                              token,
-                                              index_tokens,
-                                              &encryption_out,
-                                              status));
+                                                         ClientEncryptedValue,
+                                                         token,
+                                                         index_tokens,
+                                                         &encryption_out,
+                                                         status));
    uint32_t expected_plaintext_size = 0;
    CHECK_AND_GOTO (safe_uint32_t_sum (
       ClientEncryptedValue->len,
@@ -191,12 +191,10 @@ mc_FLE2IndexedEncryptedValue_write (
 
    const uint8_t bson_type = (uint8_t) original_bson_type;
 
-   CHECK_AND_GOTO (mc_writer_write_u8 (
-      &writer, subtype, status));
-   CHECK_AND_GOTO (mc_writer_write_buffer (
-      &writer, S_KeyId, S_KeyId->len, status));
-   CHECK_AND_GOTO (mc_writer_write_u8 (
-      &writer, bson_type, status));
+   CHECK_AND_GOTO (mc_writer_write_u8 (&writer, subtype, status));
+   CHECK_AND_GOTO (
+      mc_writer_write_buffer (&writer, S_KeyId, S_KeyId->len, status));
+   CHECK_AND_GOTO (mc_writer_write_u8 (&writer, bson_type, status));
 
    CHECK_AND_GOTO (mc_writer_write_buffer (
       &writer, &encryption_out, encryption_out.len, status));

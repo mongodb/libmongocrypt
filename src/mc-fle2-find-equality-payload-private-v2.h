@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MC_FLE2_FIND_EQUALITY_PAYLOAD_PRIVATE_H
-#define MC_FLE2_FIND_EQUALITY_PAYLOAD_PRIVATE_H
+#ifndef MC_FLE2_FIND_EQUALITY_PAYLOAD_PRIVATE_V2_H
+#define MC_FLE2_FIND_EQUALITY_PAYLOAD_PRIVATE_V2_H
 
 #include "mongocrypt.h"
 #include "mongocrypt-private.h"
@@ -33,8 +33,8 @@ mc_FLE2FindEqualityPayloadV2_init (mc_FLE2FindEqualityPayloadV2_t *payload);
 
 bool
 mc_FLE2FindEqualityPayloadV2_parse (mc_FLE2FindEqualityPayloadV2_t *out,
-                                  const bson_t *in,
-                                  mongocrypt_status_t *status);
+                                    const bson_t *in,
+                                    mongocrypt_status_t *status);
 
 bool
 mc_FLE2FindEqualityPayloadV2_serialize (
@@ -43,4 +43,4 @@ mc_FLE2FindEqualityPayloadV2_serialize (
 void
 mc_FLE2FindEqualityPayloadV2_cleanup (mc_FLE2FindEqualityPayloadV2_t *payload);
 
-#endif /* MC_FLE2_FIND_EQUALITY_PAYLOAD_PRIVATE_H */
+#endif /* MC_FLE2_FIND_EQUALITY_PAYLOAD_PRIVATE_V2_H */

@@ -39,7 +39,7 @@ typedef struct mc_dec128_flagset {
 #if defined _M_IX86 && !defined __INTEL_COMPILER
 #define _mcDec128Align(n)
 #else
-#define _mcDec128Align(n) __declspec(align (n))
+#define _mcDec128Align(n) __declspec (align (n))
 #endif
 #else
 #if !defined HPUX_OS
