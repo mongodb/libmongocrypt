@@ -20,7 +20,6 @@
 #include <bson/bson.h>
 
 /* Copied from libmongoc. */
-void
-_assert_match_bson (const bson_t *doc, const bson_t *pattern);
+void _assert_match_bson(const bson_t *doc, const bson_t *pattern);
 
 #endif /* TEST_MONGOCRYPT_ASSERT_MATCH_BSON_H */
