@@ -19,174 +19,158 @@
 #include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
 
-static void
-_test_mc_writer_ints (_mongocrypt_tester_t *tester)
-{
+static void _test_mc_writer_ints(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_status_t *status;
-        status = mongocrypt_status_new ();
+        status = mongocrypt_status_new();
 
         _mongocrypt_buffer_t write_buffer;
-        _mongocrypt_buffer_init_size (&write_buffer, sizeof(uint8_t));
-        
+        _mongocrypt_buffer_init_size(&write_buffer, sizeof(uint8_t));
+
         mc_writer_t writer;
         mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
         uint8_t num = 4;
-        ASSERT_OK_STATUS (mc_writer_write_u8 (&writer, num, status), status);
-        
+        ASSERT_OK_STATUS(mc_writer_write_u8(&writer, num, status), status);
+
         mc_reader_t reader;
-        mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
+        mc_reader_init_from_buffer(&reader, &write_buffer, __FUNCTION__);
 
         uint8_t out;
-        ASSERT_OK_STATUS (mc_reader_read_u8 (&reader, &out, status), status);
+        ASSERT_OK_STATUS(mc_reader_read_u8(&reader, &out, status), status);
 
-        ASSERT_CMPUINT8 (out, ==, num);
+        ASSERT_CMPUINT8(out, ==, num);
 
-        _mongocrypt_buffer_cleanup (&write_buffer);
-        mongocrypt_status_destroy (status);
+        _mongocrypt_buffer_cleanup(&write_buffer);
+        mongocrypt_status_destroy(status);
     }
 
     {
         mongocrypt_status_t *status;
-        status = mongocrypt_status_new ();
+        status = mongocrypt_status_new();
 
         _mongocrypt_buffer_t write_buffer;
-        _mongocrypt_buffer_init_size (&write_buffer, sizeof(uint32_t));
+        _mongocrypt_buffer_init_size(&write_buffer, sizeof(uint32_t));
 
         mc_writer_t writer;
         mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
         uint32_t num = 23832405;
-        ASSERT_OK_STATUS (mc_writer_write_u32 (&writer, num, status), status);
+        ASSERT_OK_STATUS(mc_writer_write_u32(&writer, num, status), status);
 
         mc_reader_t reader;
-        mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
+        mc_reader_init_from_buffer(&reader, &write_buffer, __FUNCTION__);
 
         uint32_t out;
-        ASSERT_OK_STATUS (mc_reader_read_u32 (&reader, &out, status), status);
+        ASSERT_OK_STATUS(mc_reader_read_u32(&reader, &out, status), status);
 
-        ASSERT_CMPUINT32 (out, ==, num);
+        ASSERT_CMPUINT32(out, ==, num);
 
-        _mongocrypt_buffer_cleanup (&write_buffer);
-        mongocrypt_status_destroy (status);
+        _mongocrypt_buffer_cleanup(&write_buffer);
+        mongocrypt_status_destroy(status);
     }
 
     {
         mongocrypt_status_t *status;
-        status = mongocrypt_status_new ();
+        status = mongocrypt_status_new();
 
         _mongocrypt_buffer_t write_buffer;
-        _mongocrypt_buffer_init_size (&write_buffer, sizeof(uint64_t));
+        _mongocrypt_buffer_init_size(&write_buffer, sizeof(uint64_t));
 
         mc_writer_t writer;
         mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
         uint64_t num = 23832405;
-        ASSERT_OK_STATUS (mc_writer_write_u64 (&writer, num, status), status);
+        ASSERT_OK_STATUS(mc_writer_write_u64(&writer, num, status), status);
 
         mc_reader_t reader;
-        mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
+        mc_reader_init_from_buffer(&reader, &write_buffer, __FUNCTION__);
 
         uint64_t out;
-        ASSERT_OK_STATUS (mc_reader_read_u64 (&reader, &out, status), status);
+        ASSERT_OK_STATUS(mc_reader_read_u64(&reader, &out, status), status);
 
-        ASSERT_CMPUINT64 (out, ==, num);
+        ASSERT_CMPUINT64(out, ==, num);
 
-        _mongocrypt_buffer_cleanup (&write_buffer);
-        mongocrypt_status_destroy (status);
+        _mongocrypt_buffer_cleanup(&write_buffer);
+        mongocrypt_status_destroy(status);
     }
-
 }
 
-static void
-_test_mc_writer_buffer (_mongocrypt_tester_t *tester)
-{
+static void _test_mc_writer_buffer(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status;
-    status = mongocrypt_status_new ();
+    status = mongocrypt_status_new();
 
     _mongocrypt_buffer_t input_buffer;
 
-    _mongocrypt_buffer_copy_from_hex (
-        &input_buffer,
-        "07123456781234987612341234567890120243bba14ddf42da823c33569f4689f465a");
+    _mongocrypt_buffer_copy_from_hex(&input_buffer,
+                                     "07123456781234987612341234567890120243bba14ddf42da823c33569f4689f465a");
 
     _mongocrypt_buffer_t write_buffer;
-    _mongocrypt_buffer_init_size (&write_buffer, input_buffer.len);
+    _mongocrypt_buffer_init_size(&write_buffer, input_buffer.len);
 
     mc_writer_t writer;
     mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
-    ASSERT_OK_STATUS (mc_writer_write_buffer(&writer, &input_buffer, input_buffer.len, status), status);
+    ASSERT_OK_STATUS(mc_writer_write_buffer(&writer, &input_buffer, input_buffer.len, status), status);
 
     _mongocrypt_buffer_t read_buffer;
     mc_reader_t reader;
-    mc_reader_init_from_buffer (&reader, &write_buffer, __FUNCTION__);
-    ASSERT_OK_STATUS (mc_reader_read_buffer (&reader, &read_buffer, write_buffer.len, status), status);
+    mc_reader_init_from_buffer(&reader, &write_buffer, __FUNCTION__);
+    ASSERT_OK_STATUS(mc_reader_read_buffer(&reader, &read_buffer, write_buffer.len, status), status);
 
     ASSERT_CMPBUF(input_buffer, read_buffer);
 
-    _mongocrypt_buffer_cleanup (&input_buffer);
-    _mongocrypt_buffer_cleanup (&write_buffer);
-    _mongocrypt_buffer_cleanup (&read_buffer);
-    mongocrypt_status_destroy (status);
+    _mongocrypt_buffer_cleanup(&input_buffer);
+    _mongocrypt_buffer_cleanup(&write_buffer);
+    _mongocrypt_buffer_cleanup(&read_buffer);
+    mongocrypt_status_destroy(status);
 }
 
-static void
-_test_mc_writer_prf (_mongocrypt_tester_t *tester)
-{
+static void _test_mc_writer_prf(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status;
-    status = mongocrypt_status_new ();
+    status = mongocrypt_status_new();
 
     _mongocrypt_buffer_t input_buffer;
-    _mongocrypt_buffer_copy_from_hex (
-        &input_buffer,
-        "c03cd1d0536aa07d4ffaa0301656222fc03cd1d0536aa07d4ffaa0301656222f");
+    _mongocrypt_buffer_copy_from_hex(&input_buffer, "c03cd1d0536aa07d4ffaa0301656222fc03cd1d0536aa07d4ffaa0301656222f");
 
     _mongocrypt_buffer_t write_buffer;
-    _mongocrypt_buffer_init_size (&write_buffer, input_buffer.len);
+    _mongocrypt_buffer_init_size(&write_buffer, input_buffer.len);
 
     mc_writer_t writer;
-    mc_writer_init_from_buffer (&writer, &write_buffer, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
-    ASSERT_OK_STATUS (mc_writer_write_prfblock_buffer (&writer, &input_buffer, status), status);
+    ASSERT_OK_STATUS(mc_writer_write_prfblock_buffer(&writer, &input_buffer, status), status);
     ASSERT_CMPBUF(input_buffer, write_buffer);
 
-    _mongocrypt_buffer_cleanup (&input_buffer);
-    _mongocrypt_buffer_cleanup (&write_buffer);
-    mongocrypt_status_destroy (status);
+    _mongocrypt_buffer_cleanup(&input_buffer);
+    _mongocrypt_buffer_cleanup(&write_buffer);
+    mongocrypt_status_destroy(status);
 }
 
-static void
-_test_mc_writer_uuid (_mongocrypt_tester_t *tester)
-{
+static void _test_mc_writer_uuid(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status;
-    status = mongocrypt_status_new ();
+    status = mongocrypt_status_new();
 
     _mongocrypt_buffer_t input_buffer;
-    _mongocrypt_buffer_copy_from_hex (
-        &input_buffer,
-        "c03cd1d0536aa07d4ffaa0301656222f");
+    _mongocrypt_buffer_copy_from_hex(&input_buffer, "c03cd1d0536aa07d4ffaa0301656222f");
 
     _mongocrypt_buffer_t write_buffer;
-    _mongocrypt_buffer_init_size (&write_buffer, input_buffer.len);
+    _mongocrypt_buffer_init_size(&write_buffer, input_buffer.len);
 
     mc_writer_t writer;
-    mc_writer_init_from_buffer (&writer, &write_buffer, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, &write_buffer, __FUNCTION__);
 
-    ASSERT_OK_STATUS (mc_writer_write_uuid_buffer (&writer, &input_buffer, status), status);
+    ASSERT_OK_STATUS(mc_writer_write_uuid_buffer(&writer, &input_buffer, status), status);
     ASSERT_CMPBUF(input_buffer, write_buffer);
 
-    _mongocrypt_buffer_cleanup (&input_buffer);
-    _mongocrypt_buffer_cleanup (&write_buffer);
-    mongocrypt_status_destroy (status);
+    _mongocrypt_buffer_cleanup(&input_buffer);
+    _mongocrypt_buffer_cleanup(&write_buffer);
+    mongocrypt_status_destroy(status);
 }
 
-void
-_mongocrypt_tester_install_mc_writer (_mongocrypt_tester_t *tester)
-{
-    INSTALL_TEST (_test_mc_writer_ints);
-    INSTALL_TEST (_test_mc_writer_buffer);
-    INSTALL_TEST (_test_mc_writer_prf);
-    INSTALL_TEST (_test_mc_writer_uuid);
+void _mongocrypt_tester_install_mc_writer(_mongocrypt_tester_t *tester) {
+    INSTALL_TEST(_test_mc_writer_ints);
+    INSTALL_TEST(_test_mc_writer_buffer);
+    INSTALL_TEST(_test_mc_writer_prf);
+    INSTALL_TEST(_test_mc_writer_uuid);
 }

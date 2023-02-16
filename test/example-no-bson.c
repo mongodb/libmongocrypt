@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include <mongocrypt.h>
+#include <stdio.h>
 
-int main () {
-   printf ("mongocrypt_version=%s\n", mongocrypt_version(0));
-   return 0;
+int main() {
+    printf("mongocrypt_version=%s\n", mongocrypt_version(0));
+    return 0;
 }
