@@ -39,7 +39,7 @@ typedef struct {
  * FLE2FindRangePayloadV2 has the following data layout:
  *
  * struct {
- *   uint8_t fle_blob_subtype = 10;
+ *   uint8_t fle_blob_subtype = 13;
  *   uint8_t bson[];
  * } FLE2FindRangePayloadV2;
  *
@@ -63,7 +63,7 @@ typedef struct {
 } mc_FLE2FindRangePayloadV2_t;
 
 /**
- * EdgeFindTokenSet is the following BSON document:
+ * EdgeFindTokenSetV2 is the following BSON document:
  * d: <binary> // EDCDerivedFromDataTokenAndCounter
  * s: <binary> // ESCDerivedFromDataTokenAndCounter
  * l: <binary> // ServerDerivedFromDataToken
