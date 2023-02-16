@@ -220,11 +220,26 @@ run_ctest() {
 }
 
 run_python() {
-    if have_command py; then
-        py "$@"
-    else
-        python "$@"
-    fi
+    pys=(
+        py
+        python3.14
+        python3.13
+        python3.12
+        python3.11
+        python3.10
+        python3.9
+        python3.8
+        python3.7
+        python3.6
+        python3
+        python
+    )
+    for cand in "${pys[@]}"; do
+        if have_command "$cand" && "$cand" -c ""; then
+            "$cand" "$@"
+            return $?
+        fi
+    done
 }
 
 EXE_SUFFIX=""
