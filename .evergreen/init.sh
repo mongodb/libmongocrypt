@@ -139,14 +139,15 @@ function os_name() {
 
     debug "Uname is [$(uname -a)]"
     local _uname
-    _uname="$(uname | tr '[:upper:]' '[:lower:]')"
+    _uname="$(uname -a | tr '[:upper:]' '[:lower:]')"
     local _os_name="unknown"
 
-    if [[ "$_uname" =~ .*cywin|windows|mingw|msys.* ]] || have_command cmd.exe; then
+    if [[ "$_uname" =~ .*cygwin|windows|mingw|msys.* ]] || (have_command cmd.exe && ! [[ $_uname =~ .*wsl.* ]]); then
+        # We are running on Windows, and not within a WSL environment
         _os_name="windows"
-    elif test "$_uname" = 'darwin'; then
+    elif [[ $_uname =~ darwin.* ]]; then
         _os_name='macos'
-    elif test "$_uname" = 'linux'; then
+    elif [[ $_uname =~ linux.* ]]; then
         _os_name='linux'
     fi
 
