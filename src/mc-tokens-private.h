@@ -40,7 +40,7 @@
  * EDCDerivedFromDataToken = HMAC(EDCToken, v)
  * ESCDerivedFromDataToken = HMAC(ESCToken, v)
  * ECCDerivedFromDataToken = HMAC(ECCToken, v)  <- deprecated in v2
- * ServerDerivedFromDataToken = HMAC(ServerDataEncryptionLevel1Token, v) <- new
+ * ServerDerivedFromDataToken = HMAC(ServerTokenDerivationLevel1Token, v) <- new
  * in v2
  *
  * EDCDerivedFromDataTokenAndCounter = HMAC(EDCDerivedFromDataToken, u)
