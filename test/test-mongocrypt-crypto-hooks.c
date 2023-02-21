@@ -332,32 +332,35 @@ _test_crypto_hooks_encryption_helper (_mongocrypt_tester_t *tester,
    call_history = bson_string_new (NULL);
 
    if (ctr_hook || ecb_hook) {
+      const _mongocrypt_value_encryption_algorithm_t *fle2iev =
+         _mcFLE2IEVAlgorithm ();
       _mongocrypt_buffer_copy_from_hex (&key, ENCRYPTION_KEY_HEX);
       _mongocrypt_buffer_init (&ciphertext);
       _mongocrypt_buffer_resize (
-         &ciphertext,
-         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
-      ret = _mongocrypt_fle2_do_encryption (crypt->crypto,
-                                            &iv,
-                                            &key,
-                                            &plaintext,
-                                            &ciphertext,
-                                            &bytes_written,
-                                            status);
+         &ciphertext, fle2iev->ciphertext_len (plaintext.len, status));
+      ret = fle2iev->encrypt (crypt->crypto,
+                              &iv,
+                              NULL /* aad */,
+                              &key,
+                              &plaintext,
+                              &ciphertext,
+                              &bytes_written,
+                              status);
    } else {
+      const _mongocrypt_value_encryption_algorithm_t *fle1alg =
+         _mcFLE1Algorithm ();
       _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
       _mongocrypt_buffer_init (&ciphertext);
       _mongocrypt_buffer_resize (
-         &ciphertext,
-         _mongocrypt_calculate_ciphertext_len (plaintext.len, status));
-      ret = _mongocrypt_do_encryption (crypt->crypto,
-                                       &iv,
-                                       &associated_data,
-                                       &key,
-                                       &plaintext,
-                                       &ciphertext,
-                                       &bytes_written,
-                                       status);
+         &ciphertext, fle1alg->ciphertext_len (plaintext.len, status));
+      ret = fle1alg->encrypt (crypt->crypto,
+                              &iv,
+                              &associated_data,
+                              &key,
+                              &plaintext,
+                              &ciphertext,
+                              &bytes_written,
+                              status);
    }
 
    if (0 == strcmp (error_on, "error_on:none")) {
@@ -439,28 +442,35 @@ _test_crypto_hooks_decryption_helper (_mongocrypt_tester_t *tester,
    call_history = bson_string_new (NULL);
 
    if (ctr_hook || ecb_hook) {
+      const _mongocrypt_value_encryption_algorithm_t *fle2iev =
+         _mcFLE2IEVAlgorithm ();
       _mongocrypt_buffer_copy_from_hex (&key, ENCRYPTION_KEY_HEX);
       _mongocrypt_buffer_init (&plaintext);
       _mongocrypt_buffer_resize (
-         &plaintext,
-         _mongocrypt_fle2_calculate_plaintext_len (ciphertext.len, status));
+         &plaintext, fle2iev->plaintext_len (ciphertext.len, status));
 
-      ret = _mongocrypt_fle2_do_decryption (
-         crypt->crypto, &key, &ciphertext, &plaintext, &bytes_written, status);
+      ret = fle2iev->decrypt (crypt->crypto,
+                              NULL /* aad */,
+                              &key,
+                              &ciphertext,
+                              &plaintext,
+                              &bytes_written,
+                              status);
    } else {
+      const _mongocrypt_value_encryption_algorithm_t *fle1alg =
+         _mcFLE1Algorithm ();
       _mongocrypt_buffer_copy_from_hex (&key, KEY_HEX);
       _mongocrypt_buffer_init (&plaintext);
       _mongocrypt_buffer_resize (
-         &plaintext,
-         _mongocrypt_calculate_plaintext_len (ciphertext.len, status));
+         &plaintext, fle1alg->plaintext_len (ciphertext.len, status));
 
-      ret = _mongocrypt_do_decryption (crypt->crypto,
-                                       &associated_data,
-                                       &key,
-                                       &ciphertext,
-                                       &plaintext,
-                                       &bytes_written,
-                                       status);
+      ret = fle1alg->decrypt (crypt->crypto,
+                              &associated_data,
+                              &key,
+                              &ciphertext,
+                              &plaintext,
+                              &bytes_written,
+                              status);
    }
 
    if (0 == strcmp (error_on, "error_on:none")) {
@@ -819,6 +829,8 @@ _aes_256_ecb_encrypt (void *ctx,
 void
 _test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
 {
+   const _mongocrypt_value_encryption_algorithm_t *fle2iev =
+      _mcFLE2IEVAlgorithm ();
    bool ret;
    _mongocrypt_buffer_t key;
    _mongocrypt_buffer_t iv;
@@ -839,32 +851,32 @@ _test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
 
    mongocrypt_t *crypt_reg = mongocrypt_new ();
    _mongocrypt_buffer_init (&ciphertext_reg);
-   _mongocrypt_buffer_resize (
-      &ciphertext_reg,
-      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
-   ret = _mongocrypt_fle2_do_encryption (crypt_reg->crypto,
-                                         &iv,
-                                         &key,
-                                         &plaintext,
-                                         &ciphertext_reg,
-                                         &bytes_written,
-                                         status);
+   _mongocrypt_buffer_resize (&ciphertext_reg,
+                              fle2iev->ciphertext_len (plaintext.len, status));
+   ret = fle2iev->encrypt (crypt_reg->crypto,
+                           &iv,
+                           NULL /* aad */,
+                           &key,
+                           &plaintext,
+                           &ciphertext_reg,
+                           &bytes_written,
+                           status);
    ASSERT_OK (ret, crypt_reg);
 
    mongocrypt_t *crypt_ecb = mongocrypt_new ();
    ret = mongocrypt_setopt_aes_256_ecb (crypt_ecb, _aes_256_ecb_encrypt, NULL);
    ASSERT_OK (ret, crypt_ecb);
    _mongocrypt_buffer_init (&ciphertext_ecb);
-   _mongocrypt_buffer_resize (
-      &ciphertext_ecb,
-      _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
-   ret = _mongocrypt_fle2_do_encryption (crypt_ecb->crypto,
-                                         &iv,
-                                         &key,
-                                         &plaintext,
-                                         &ciphertext_ecb,
-                                         &bytes_written,
-                                         status);
+   _mongocrypt_buffer_resize (&ciphertext_ecb,
+                              fle2iev->ciphertext_len (plaintext.len, status));
+   ret = fle2iev->encrypt (crypt_ecb->crypto,
+                           &iv,
+                           NULL /* aad */,
+                           &key,
+                           &plaintext,
+                           &ciphertext_ecb,
+                           &bytes_written,
+                           status);
    ASSERT_OK (ret, crypt_ecb);
 
    ASSERT (0 == _mongocrypt_buffer_cmp (&ciphertext_reg, &ciphertext_ecb));
@@ -873,14 +885,14 @@ _test_fle2_crypto_via_ecb_hook (_mongocrypt_tester_t *tester)
 
    _mongocrypt_buffer_init (&plaintext_ecb);
    _mongocrypt_buffer_resize (
-      &plaintext_ecb,
-      _mongocrypt_fle2_calculate_plaintext_len (ciphertext_ecb.len, status));
-   ret = _mongocrypt_fle2_do_decryption (crypt_ecb->crypto,
-                                         &key,
-                                         &ciphertext_ecb,
-                                         &plaintext_ecb,
-                                         &bytes_written,
-                                         status);
+      &plaintext_ecb, fle2iev->plaintext_len (ciphertext_ecb.len, status));
+   ret = fle2iev->decrypt (crypt_ecb->crypto,
+                           NULL /* aad */,
+                           &key,
+                           &ciphertext_ecb,
+                           &plaintext_ecb,
+                           &bytes_written,
+                           status);
    ASSERT_OK (ret, crypt_ecb);
 
    ASSERT (0 == _mongocrypt_buffer_cmp (&plaintext, &plaintext_ecb));

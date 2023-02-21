@@ -281,6 +281,8 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
                                     const _mongocrypt_buffer_t *user_key,
                                     mongocrypt_status_t *status)
 {
+   const _mongocrypt_value_encryption_algorithm_t *fle2alg =
+      _mcFLE2Algorithm ();
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iup);
    BSON_ASSERT_PARAM (user_key);
@@ -298,18 +300,17 @@ mc_FLE2InsertUpdatePayload_decrypt (_mongocrypt_crypto_t *crypto,
       return NULL;
    }
 
-   _mongocrypt_buffer_resize (
-      &iup->plaintext,
-      _mongocrypt_fle2aead_calculate_plaintext_len (ciphertext.len, status));
+   _mongocrypt_buffer_resize (&iup->plaintext,
+                              fle2alg->plaintext_len (ciphertext.len, status));
    uint32_t bytes_written; /* ignored */
 
-   if (!_mongocrypt_fle2aead_do_decryption (crypto,
-                                            &iup->userKeyId,
-                                            user_key,
-                                            &ciphertext,
-                                            &iup->plaintext,
-                                            &bytes_written,
-                                            status)) {
+   if (!fle2alg->decrypt (crypto,
+                          &iup->userKeyId,
+                          user_key,
+                          &ciphertext,
+                          &iup->plaintext,
+                          &bytes_written,
+                          status)) {
       return NULL;
    }
    return &iup->plaintext;

@@ -161,7 +161,7 @@ test_FLE2InsertUpdatePayload_decrypt (_mongocrypt_tester_t *tester)
                         status);
       const _mongocrypt_buffer_t *got = mc_FLE2InsertUpdatePayload_decrypt (
          crypt->crypto, &iup, &incorrect_key, status);
-      ASSERT_FAILS_STATUS (got != NULL, status, "decryption error");
+      ASSERT_FAILS_STATUS (got != NULL, status, "HMAC validation failure");
 
       mc_FLE2InsertUpdatePayload_cleanup (&iup);
       _mongocrypt_buffer_cleanup (&input);

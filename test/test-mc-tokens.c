@@ -193,6 +193,7 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ECCToken_destroy (ECCToken);
    mc_ESCToken_destroy (ESCToken);
    mc_EDCToken_destroy (EDCToken);
+   mc_ServerDerivedFromDataToken_destroy (ServerDerivedFromDataToken);
    mc_ServerTokenDerivationLevel1Token_destroy (
       ServerTokenDerivationLevel1Token);
    mc_ServerDataEncryptionLevel1Token_destroy (ServerDataEncryptionLevel1Token);
