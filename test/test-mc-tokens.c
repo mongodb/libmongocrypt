@@ -54,6 +54,17 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
       *mc_ServerDataEncryptionLevel1Token_get (ServerDataEncryptionLevel1Token),
       expected);
 
+   mc_ServerTokenDerivationLevel1Token_t *ServerTokenDerivationLevel1Token =
+      mc_ServerTokenDerivationLevel1Token_new (crypt->crypto, &RootKey, status);
+   ASSERT_OR_PRINT (ServerTokenDerivationLevel1Token, status);
+   _mongocrypt_buffer_cleanup (&expected);
+   _mongocrypt_buffer_copy_from_hex (
+      &expected,
+      "1adc114b462741e6ac9f52eacf3dcb8cbca19827693c571d9418fda570c29d82");
+   ASSERT_CMPBUF (*mc_ServerTokenDerivationLevel1Token_get (
+                     ServerTokenDerivationLevel1Token),
+                  expected);
+
    mc_EDCToken_t *EDCToken =
       mc_EDCToken_new (crypt->crypto, CollectionsLevel1Token, status);
    ASSERT_OR_PRINT (EDCToken, status);
@@ -120,6 +131,18 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    ASSERT_CMPBUF (*mc_ECCDerivedFromDataToken_get (ECCDerivedFromDataToken),
                   expected);
 
+   mc_ServerDerivedFromDataToken_t *ServerDerivedFromDataToken =
+      mc_ServerDerivedFromDataToken_new (
+         crypt->crypto, ServerTokenDerivationLevel1Token, &v, status);
+   ASSERT_OR_PRINT (ServerDerivedFromDataToken, status);
+   _mongocrypt_buffer_cleanup (&expected);
+   _mongocrypt_buffer_copy_from_hex (
+      &expected,
+      "4a671dbf25d68b6c040a077dabb4e63869e03f4d466803609233b16356ec6d66");
+   ASSERT_CMPBUF (
+      *mc_ServerDerivedFromDataToken_get (ServerDerivedFromDataToken),
+      expected);
+
    mc_EDCDerivedFromDataTokenAndCounter_t *EDCDerivedFromDataTokenAndCounter =
       mc_EDCDerivedFromDataTokenAndCounter_new (
          crypt->crypto, EDCDerivedFromDataToken, u, status);
@@ -170,6 +193,8 @@ _test_mc_tokens (_mongocrypt_tester_t *tester)
    mc_ECCToken_destroy (ECCToken);
    mc_ESCToken_destroy (ESCToken);
    mc_EDCToken_destroy (EDCToken);
+   mc_ServerTokenDerivationLevel1Token_destroy (
+      ServerTokenDerivationLevel1Token);
    mc_ServerDataEncryptionLevel1Token_destroy (ServerDataEncryptionLevel1Token);
    mc_CollectionsLevel1Token_destroy (CollectionsLevel1Token);
    _mongocrypt_buffer_cleanup (&v);
