@@ -22,6 +22,8 @@
 static void
 _test_roundtrip (_mongocrypt_tester_t *tester)
 {
+   const _mongocrypt_value_encryption_algorithm_t *fle1alg =
+      _mcFLE1Algorithm ();
    mongocrypt_t *crypt;
    mongocrypt_status_t *const status = mongocrypt_status_new ();
    _mongocrypt_buffer_t key = {0}, iv = {0}, associated_data = {0},
@@ -33,13 +35,13 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    plaintext.data = (uint8_t *) "test";
    plaintext.len = 5; /* include NULL. */
 
-   ciphertext.len = _mongocrypt_calculate_ciphertext_len (5, status);
+   ciphertext.len = fle1alg->get_ciphertext_len (5, status);
    ciphertext.data = bson_malloc (ciphertext.len);
    BSON_ASSERT (ciphertext.data);
 
    ciphertext.owned = true;
 
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len, status);
+   decrypted.len = fle1alg->get_plaintext_len (ciphertext.len, status);
    decrypted.data = bson_malloc (decrypted.len);
    BSON_ASSERT (decrypted.data);
 
@@ -53,25 +55,25 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    iv.len = MONGOCRYPT_IV_LEN;
    iv.owned = true;
 
-   ret = _mongocrypt_do_encryption (crypt->crypto,
-                                    &iv,
-                                    &associated_data,
-                                    &key,
-                                    &plaintext,
-                                    &ciphertext,
-                                    &bytes_written,
-                                    status);
+   ret = fle1alg->do_encrypt (crypt->crypto,
+                              &iv,
+                              &associated_data,
+                              &key,
+                              &plaintext,
+                              &ciphertext,
+                              &bytes_written,
+                              status);
    BSON_ASSERT (ret);
 
    BSON_ASSERT (bytes_written == ciphertext.len);
 
-   ret = _mongocrypt_do_decryption (crypt->crypto,
-                                    &associated_data,
-                                    &key,
-                                    &ciphertext,
-                                    &decrypted,
-                                    &bytes_written,
-                                    status);
+   ret = fle1alg->do_decrypt (crypt->crypto,
+                              &associated_data,
+                              &key,
+                              &ciphertext,
+                              &decrypted,
+                              &bytes_written,
+                              status);
    BSON_ASSERT (ret);
 
 
@@ -83,19 +85,19 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    ciphertext.data[ciphertext.len - 1] ^= 1;
 
    _mongocrypt_buffer_cleanup (&decrypted);
-   decrypted.len = _mongocrypt_calculate_plaintext_len (ciphertext.len, status);
+   decrypted.len = fle1alg->get_plaintext_len (ciphertext.len, status);
    decrypted.data = bson_malloc (decrypted.len);
    BSON_ASSERT (decrypted.data);
 
    decrypted.owned = true;
 
-   ret = _mongocrypt_do_decryption (crypt->crypto,
-                                    &associated_data,
-                                    &key,
-                                    &ciphertext,
-                                    &decrypted,
-                                    &bytes_written,
-                                    status);
+   ret = fle1alg->do_decrypt (crypt->crypto,
+                              &associated_data,
+                              &key,
+                              &ciphertext,
+                              &decrypted,
+                              &bytes_written,
+                              status);
    BSON_ASSERT (!ret);
    BSON_ASSERT (0 == strcmp (mongocrypt_status_message (status, NULL),
                              "HMAC validation failure"));
@@ -103,24 +105,24 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
     * again. */
    ciphertext.data[ciphertext.len - 1] ^= 1;
    _mongocrypt_status_reset (status);
-   ret = _mongocrypt_do_decryption (crypt->crypto,
-                                    &associated_data,
-                                    &key,
-                                    &ciphertext,
-                                    &decrypted,
-                                    &bytes_written,
-                                    status);
+   ret = fle1alg->do_decrypt (crypt->crypto,
+                              &associated_data,
+                              &key,
+                              &ciphertext,
+                              &decrypted,
+                              &bytes_written,
+                              status);
    BSON_ASSERT (ret);
 
    /* Modify parts of the key. */
    key.data[0] ^= 1; /* part of the mac key */
-   ret = _mongocrypt_do_decryption (crypt->crypto,
-                                    &associated_data,
-                                    &key,
-                                    &ciphertext,
-                                    &decrypted,
-                                    &bytes_written,
-                                    status);
+   ret = fle1alg->do_decrypt (crypt->crypto,
+                              &associated_data,
+                              &key,
+                              &ciphertext,
+                              &decrypted,
+                              &bytes_written,
+                              status);
    BSON_ASSERT (!ret);
    BSON_ASSERT (0 == strcmp (mongocrypt_status_message (status, NULL),
                              "HMAC validation failure"));
@@ -130,13 +132,13 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
 
    /* Modify the portion of the key responsible for encryption/decryption */
    key.data[MONGOCRYPT_MAC_KEY_LEN + 1] ^= 1; /* part of the encryption key */
-   ret = _mongocrypt_do_decryption (crypt->crypto,
-                                    &associated_data,
-                                    &key,
-                                    &ciphertext,
-                                    &decrypted,
-                                    &bytes_written,
-                                    status);
+   ret = fle1alg->do_decrypt (crypt->crypto,
+                              &associated_data,
+                              &key,
+                              &ciphertext,
+                              &decrypted,
+                              &bytes_written,
+                              status);
    BSON_ASSERT (!ret);
    BSON_ASSERT (0 == strcmp (mongocrypt_status_message (status, NULL),
                              "error, ciphertext malformed padding"));
@@ -154,6 +156,8 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
 static void
 _test_mcgrew (_mongocrypt_tester_t *tester)
 {
+   const _mongocrypt_value_encryption_algorithm_t *fle1alg =
+      _mcFLE1Algorithm ();
    mongocrypt_t *crypt;
    mongocrypt_status_t *const status = mongocrypt_status_new ();
    _mongocrypt_buffer_t key, iv, associated_data, plaintext,
@@ -191,8 +195,7 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
       "930806d0703b1f64dd3b4c088a7f45c216839645b2012bf2e6269a8c56a81"
       "6dbc1b267761955bc5");
 
-   ciphertext_actual.len =
-      _mongocrypt_calculate_ciphertext_len (plaintext.len, status);
+   ciphertext_actual.len = fle1alg->get_ciphertext_len (plaintext.len, status);
    ciphertext_actual.data = bson_malloc (ciphertext_actual.len);
    BSON_ASSERT (ciphertext_actual.data);
 
@@ -200,16 +203,20 @@ _test_mcgrew (_mongocrypt_tester_t *tester)
 
    /* Force the crypto stack to initialize with mongocrypt_new */
    crypt = _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
-   ret = _mongocrypt_do_encryption (crypt->crypto,
-                                    &iv,
-                                    &associated_data,
-                                    &key,
-                                    &plaintext,
-                                    &ciphertext_actual,
-                                    &bytes_written,
-                                    status);
-   BSON_ASSERT (ret);
+   ret = fle1alg->do_encrypt (crypt->crypto,
+                              &iv,
+                              &associated_data,
+                              &key,
+                              &plaintext,
+                              &ciphertext_actual,
+                              &bytes_written,
+                              status);
+   ASSERT_OR_PRINT (ret, status);
    BSON_ASSERT (ciphertext_actual.len == ciphertext_expected.len);
+   ASSERT_CMPBYTES (ciphertext_expected.data,
+                    ciphertext_expected.len,
+                    ciphertext_actual.data,
+                    ciphertext_actual.len);
    BSON_ASSERT (0 == memcmp (ciphertext_actual.data,
                              ciphertext_expected.data,
                              ciphertext_actual.len));
@@ -488,6 +495,8 @@ typedef struct {
 void
 _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
 {
+   const _mongocrypt_value_encryption_algorithm_t *fle2aead =
+      _mcFLE2AEADAlgorithm ();
    mongocrypt_t *crypt;
    fle2_aead_roundtrip_test_t tests[] = {
       {.testname = "Plaintext is 'test1'",
@@ -561,18 +570,17 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
       _mongocrypt_buffer_init (&ciphertext_got);
       status = mongocrypt_status_new ();
       _mongocrypt_buffer_resize (
-         &ciphertext_got,
-         _mongocrypt_fle2aead_calculate_ciphertext_len (plaintext.len, status));
+         &ciphertext_got, fle2aead->get_ciphertext_len (plaintext.len, status));
 
       /* Test encrypt. */
-      ret = _mongocrypt_fle2aead_do_encryption (crypt->crypto,
-                                                &iv,
-                                                &associated_data,
-                                                &key,
-                                                &plaintext,
-                                                &ciphertext_got,
-                                                &bytes_written,
-                                                status);
+      ret = fle2aead->do_encrypt (crypt->crypto,
+                                  &iv,
+                                  &associated_data,
+                                  &key,
+                                  &plaintext,
+                                  &ciphertext_got,
+                                  &bytes_written,
+                                  status);
 
       if (NULL == test->expect_encrypt_error) {
          ASSERT_OR_PRINT (ret, status);
@@ -583,13 +591,13 @@ _test_fle2_aead_roundtrip (_mongocrypt_tester_t *tester)
          ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
 
          /* Test decrypt. */
-         ret = _mongocrypt_fle2aead_do_decryption (crypt->crypto,
-                                                   &associated_data,
-                                                   &key,
-                                                   &ciphertext,
-                                                   &plaintext_got,
-                                                   &bytes_written,
-                                                   status);
+         ret = fle2aead->do_decrypt (crypt->crypto,
+                                     &associated_data,
+                                     &key,
+                                     &ciphertext,
+                                     &plaintext_got,
+                                     &bytes_written,
+                                     status);
          ASSERT_OR_PRINT (ret, status);
          ASSERT_CMPBYTES (plaintext.data,
                           plaintext.len,
@@ -633,6 +641,8 @@ typedef struct {
 void
 _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
 {
+   const _mongocrypt_value_encryption_algorithm_t *fle2aead =
+      _mcFLE2AEADAlgorithm ();
    mongocrypt_t *crypt;
    fle2_aead_decrypt_test_t tests[] = {
       {.testname = "Mismatched HMAC",
@@ -644,7 +654,7 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
        .plaintext = "74657374310a",
        .ciphertext = "918ab83c8966995dfb528a0020d9bb1070cead40b081ee0cbfe7265dd"
                      "57a84f6c331421b7fe6a9c8375748b46acbed1ec7a1b9983800",
-       .expect_error = "decryption error"},
+       .expect_error = "HMAC validation failure"},
       {.testname = "Ciphertext too small",
        .associated_data = "99f05406f40d1af74cc737a96c1932fdec90",
        .key =
@@ -697,13 +707,13 @@ _test_fle2_aead_decrypt (_mongocrypt_tester_t *tester)
       }
       status = mongocrypt_status_new ();
 
-      ret = _mongocrypt_fle2aead_do_decryption (crypt->crypto,
-                                                &associated_data,
-                                                &key,
-                                                &ciphertext,
-                                                &plaintext,
-                                                &bytes_written,
-                                                status);
+      ret = fle2aead->do_decrypt (crypt->crypto,
+                                  &associated_data,
+                                  &key,
+                                  &ciphertext,
+                                  &plaintext,
+                                  &bytes_written,
+                                  status);
       if (test->expect_error == NULL) {
          ASSERT_OR_PRINT (ret, status);
          ASSERT_CMPBYTES (plaintext.data,
@@ -742,6 +752,8 @@ typedef struct {
 void
 _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
 {
+   const _mongocrypt_value_encryption_algorithm_t *fle2alg =
+      _mcFLE2Algorithm ();
    mongocrypt_t *crypt;
    fle2_aead_roundtrip_test_t tests[] = {
       {.testname = "Plaintext is 'test1'",
@@ -785,17 +797,17 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
       }
       _mongocrypt_buffer_init (&ciphertext_got);
       _mongocrypt_buffer_resize (
-         &ciphertext_got,
-         _mongocrypt_fle2_calculate_ciphertext_len (plaintext.len, status));
+         &ciphertext_got, fle2alg->get_ciphertext_len (plaintext.len, status));
 
       /* Test encrypt. */
-      ret = _mongocrypt_fle2_do_encryption (crypt->crypto,
-                                            &iv,
-                                            &key,
-                                            &plaintext,
-                                            &ciphertext_got,
-                                            &bytes_written,
-                                            status);
+      ret = fle2alg->do_encrypt (crypt->crypto,
+                                 &iv,
+                                 NULL, /* aad */
+                                 &key,
+                                 &plaintext,
+                                 &ciphertext_got,
+                                 &bytes_written,
+                                 status);
 
       if (NULL == test->expect_encrypt_error) {
          ASSERT_OR_PRINT (ret, status);
@@ -806,12 +818,13 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
          ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
 
          /* Test decrypt. */
-         ret = _mongocrypt_fle2_do_decryption (crypt->crypto,
-                                               &key,
-                                               &ciphertext,
-                                               &plaintext_got,
-                                               &bytes_written,
-                                               status);
+         ret = fle2alg->do_decrypt (crypt->crypto,
+                                    NULL, /* aad */
+                                    &key,
+                                    &ciphertext,
+                                    &plaintext_got,
+                                    &bytes_written,
+                                    status);
          ASSERT_OR_PRINT (ret, status);
          ASSERT_CMPBYTES (plaintext.data,
                           plaintext.len,

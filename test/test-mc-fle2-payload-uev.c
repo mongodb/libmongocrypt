@@ -177,7 +177,7 @@ test_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
          mc_FLE2UnindexedEncryptedValue_parse (uev, &input, status), status);
       const _mongocrypt_buffer_t *got = mc_FLE2UnindexedEncryptedValue_decrypt (
          crypt->crypto, uev, &incorrect_key, status);
-      ASSERT_FAILS_STATUS (got != NULL, status, "decryption error");
+      ASSERT_FAILS_STATUS (got != NULL, status, "HMAC validation failure");
       mc_FLE2UnindexedEncryptedValue_destroy (uev);
       _mongocrypt_buffer_cleanup (&incorrect_key);
       mongocrypt_status_destroy (status);
