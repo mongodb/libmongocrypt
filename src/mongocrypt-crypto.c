@@ -441,9 +441,6 @@ _mongocrypt_calculate_ciphertext_len (uint32_t inlen,
 
    if (mode == MODE_CBC) {
       fill = MONGOCRYPT_BLOCK_SIZE - (inlen % MONGOCRYPT_BLOCK_SIZE);
-      if (fill == 0) {
-         fill += MONGOCRYPT_BLOCK_SIZE;
-      }
    } else {
       BSON_ASSERT (mode == MODE_CTR);
       fill = 0;
