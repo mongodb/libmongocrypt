@@ -46,7 +46,7 @@ typedef struct {
 
 typedef uint32_t (*_mongocrypt_ciphertextlen_fn) (uint32_t plaintext_len,
                                                   mongocrypt_status_t *status);
-typedef uint32_t (*_mongocrypt_plaintextlen_fn) (uint32_t plaintext_len,
+typedef uint32_t (*_mongocrypt_plaintextlen_fn) (uint32_t ciphertext_len,
                                                  mongocrypt_status_t *status);
 typedef bool (*_mongocrypt_do_encryption_fn) (
    _mongocrypt_crypto_t *crypto,
