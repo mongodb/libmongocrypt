@@ -4,6 +4,7 @@ const { expect } = require('chai');
 const http = require('http');
 const requirements = require('../requirements.helper');
 const { loadCredentials, isEmptyCredentials } = require('../../lib/providers');
+const { CredentialCacheProvider } = require('../../lib/providers/azure');
 
 const originalAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const originalSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -234,6 +235,106 @@ describe('#loadCredentials', function () {
         it('does not modify the gcp credentials', async function () {
           const providers = await loadCredentials(kmsProviders);
           expect(providers).to.deep.equal({ gcp: {} });
+        });
+      });
+    });
+  });
+
+  context.only('when using azure', () => {
+    context('credential caching', () => {
+      class MockTokenProvider {
+        constructor() {
+          this.mockToken = null;
+          this.getTokenCount = 0;
+        }
+
+        async getToken() {
+          this.getTokenCount++;
+          return this.mockToken;
+        }
+      }
+
+      /**
+       * @type{MockTokenProvider}
+       */
+      let mockTokenProvider;
+
+      /**
+       * @type{CredentialCacheProvider}
+       */
+      let credentialCacheProvider;
+
+      beforeEach(() => {
+        mockTokenProvider = new MockTokenProvider();
+        credentialCacheProvider = new CredentialCacheProvider(mockTokenProvider);
+      });
+
+      context('when there is no cached token', () => {
+        let mockToken = {
+          token: 'mock token',
+          expiresOnTimestamp: Date.now()
+        };
+
+        let token;
+
+        beforeEach(async () => {
+          mockTokenProvider.mockToken = mockToken;
+          token = await credentialCacheProvider.getToken();
+        });
+        it('fetches a token', async () => {
+          expect(token).to.equal(mockToken);
+        });
+        it('caches the token on the class', async () => {
+          expect(credentialCacheProvider.cachedToken).to.equal(mockToken);
+        });
+      });
+
+      context('when there is a cached token', () => {
+        context('when the cached token expires <= 1 minute from the current time', () => {
+          let mockToken = {
+            token: 'mock token',
+            expiresOnTimestamp: Date.now()
+          };
+
+          let token;
+
+          beforeEach(async () => {
+            credentialCacheProvider.cachedToken = {
+              ...mockToken,
+              expiresOnTimestamp: Date.now() + 3000
+            };
+            mockTokenProvider.mockToken = mockToken;
+            token = await credentialCacheProvider.getToken();
+          });
+          it('fetches a token', () => {
+            expect(token).to.equal(mockToken);
+          });
+          it('caches the token on the class', () => {
+            expect(credentialCacheProvider.cachedToken).to.equal(mockToken);
+          });
+        });
+
+        context('when the cached token expires > 1 minute from the current time', () => {
+          let mockToken = {
+            token: 'mock token',
+            expiresOnTimestamp: Date.now()
+          };
+
+          let expectedMockToken = {
+            ...mockToken,
+            expiresOnTimestamp: Date.now() + 10000
+          };
+
+          let token;
+
+          beforeEach(async () => {
+            credentialCacheProvider.cachedToken = expectedMockToken;
+            mockTokenProvider.mockToken = mockToken;
+            token = await credentialCacheProvider.getToken();
+          });
+          it('returns the cached token', () => {
+            expect(token).to.equal(expectedMockToken);
+          });
         });
       });
     });

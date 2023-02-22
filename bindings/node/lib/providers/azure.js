@@ -43,12 +43,8 @@ class CredentialCacheProvider {
    * @param {import('@azure/identity').GetTokenOptions} options
    */
   async getToken(scopes, options) {
-    if (this._tokenNeedsRefresh()) {
-      const token = await this.wrappedProvider.getToken(scopes, options);
-      if (token == null) {
-        throw new Error('Unable to refresh credentials');
-      }
-      this.cachedToken = token;
+    if (this._tokenNeedsRefresh(this.cachedToken)) {
+      this.cachedToken = await this.wrappedProvider.getToken(scopes, options);
     }
 
     return this.cachedToken;
@@ -60,9 +56,9 @@ class CredentialCacheProvider {
    */
   _tokenNeedsRefresh(token) {
     if (token == null) {
-      return false;
+      return true;
     }
-    const timeUntilExpirationMS = Date.now() - token.expiresOnTimestamp;
+    const timeUntilExpirationMS = token.expiresOnTimestamp - Date.now();
     return timeUntilExpirationMS <= MINIMUM_TOKEN_REFRESH_IN_MILLISECONDS;
   }
 }
@@ -88,14 +84,12 @@ async function loadAzureCredentials(kmsProviders) {
     }
 
     const token = await tokenCacheProvider.getToken();
-    if (!token) {
-      throw new Error('asdf');
+    if (token != null) {
+      return { ...kmsProviders, azure: { accessToken: token.token } };
     }
-
-    return { ...kmsProviders, azure: { accessToken: token.token } };
   }
 
   return kmsProviders;
 }
 
-module.exports = { loadAzureCredentials, setMockClient };
+module.exports = { loadAzureCredentials, setMockClient, CredentialCacheProvider };
