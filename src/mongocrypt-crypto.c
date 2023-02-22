@@ -402,7 +402,7 @@ typedef enum {
 } _mongocrypt_key_format_t;
 
 typedef enum {
-   MAC_FORMAT_FLE1,    // HMAC(AAD || S || LEN(AAD) as uint64be)
+   MAC_FORMAT_FLE1,    // HMAC(AAD || IV || S || LEN(AAD) as uint64be)
    MAC_FORMAT_FLE2IEV, // NONE
    MAC_FORMAT_FLE2,    // HMAC(AAD || IV || S)
 } _mongocrypt_mac_format_t;
