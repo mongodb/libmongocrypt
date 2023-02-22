@@ -1,5 +1,8 @@
 'use strict';
 
+const { loadAWSCredentials } = require('./aws');
+const { loadGCPCredentials } = require('./gcp');
+
 /**
  * @ignore
  * Auto credential fetching should only occur when the provider is defined on the kmsProviders map
@@ -17,50 +20,6 @@ function isEmptyCredentials(provider, kmsProviders) {
     typeof kmsProviders[provider] === 'object' &&
     Object.keys(kmsProviders[provider]).length === 0
   );
-}
-
-let awsCredentialProviders = null;
-/** @ignore */
-async function loadAWSCredentials(kmsProviders) {
-  if (awsCredentialProviders == null) {
-    try {
-      // Ensure you always wrap an optional require in the try block NODE-3199
-      awsCredentialProviders = require('@aws-sdk/credential-providers');
-      // eslint-disable-next-line no-empty
-    } catch {}
-  }
-
-  if (awsCredentialProviders != null) {
-    const { fromNodeProviderChain } = awsCredentialProviders;
-    const provider = fromNodeProviderChain();
-    // The state machine is the only place calling this so it will
-    // catch if there is a rejection here.
-    const aws = await provider();
-    return { ...kmsProviders, aws };
-  }
-
-  return kmsProviders;
-}
-
-let gcpMetadata = null;
-/** @ignore */
-async function loadGCPCredentials(kmsProviders) {
-  if (gcpMetadata == null) {
-    try {
-      // Ensure you always wrap an optional require in the try block NODE-3199
-      gcpMetadata = require('gcp-metadata');
-      // eslint-disable-next-line no-empty
-    } catch {}
-  }
-
-  if (gcpMetadata != null) {
-    const { access_token: accessToken } = await gcpMetadata.instance({
-      property: 'service-accounts/default/token'
-    });
-    return { ...kmsProviders, gcp: { accessToken } };
-  }
-
-  return kmsProviders;
 }
 
 /**

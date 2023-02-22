@@ -9,7 +9,7 @@ module.exports = function (modules) {
   const MongoClient = modules.mongodb.MongoClient;
   const MongoError = modules.mongodb.MongoError;
   const BSON = modules.mongodb.BSON;
-  const { loadCredentials } = require('./credentialsProvider');
+  const { loadCredentials } = require('./providers');
   const cryptoCallbacks = require('./cryptoCallbacks');
 
   /**
