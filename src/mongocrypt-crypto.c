@@ -847,7 +847,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       CLIENT_ERR ("unable to create S view from C");
       return false;
    }
-   if (hmac == HMAC_NONE) {
+   if (hmac != HMAC_NONE) {
       S.len -= MONGOCRYPT_HMAC_LEN;
    }
 
