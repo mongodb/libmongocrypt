@@ -240,7 +240,7 @@ describe('#loadCredentials', function () {
     });
   });
 
-  context.only('when using azure', () => {
+  context('when using azure', () => {
     context('credential caching', () => {
       class MockTokenProvider {
         constructor() {
