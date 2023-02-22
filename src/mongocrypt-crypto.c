@@ -684,10 +684,19 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
    /* Construct the input to the HMAC */
    uint32_t num_intermediates = 0;
    _mongocrypt_buffer_t intermediates[3];
-   if (AAD) {
-      intermediates[num_intermediates++] = *AAD;
+   if (AAD &&
+       !_mongocrypt_buffer_from_subrange (
+          &intermediates[num_intermediates++], AAD, 0, AAD->len)) {
+      CLIENT_ERR ("Failed creating MAC view on AD");
+      goto done;
    }
-   intermediates[num_intermediates++] = *iv_and_ciphertext;
+   if (!_mongocrypt_buffer_from_subrange (&intermediates[num_intermediates++],
+                                          iv_and_ciphertext,
+                                          0,
+                                          iv_and_ciphertext->len)) {
+      CLIENT_ERR ("Failed creating MAC view on IV and S");
+      goto done;
+   }
 
    // Up in this lexical scope because it needs to live until buffer_concat.
    uint64_t AL;
@@ -699,6 +708,7 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
        * UINT64_MAX.
        */
       AL = AAD ? BSON_UINT64_TO_BE (8 * (uint64_t) AAD->len) : 0;
+      _mongocrypt_buffer_init (&intermediates[num_intermediates]);
       intermediates[num_intermediates].data = (uint8_t *) &AL;
       intermediates[num_intermediates++].len = sizeof (uint64_t);
 
