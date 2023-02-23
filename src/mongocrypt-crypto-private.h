@@ -93,6 +93,10 @@ _mcFLE2AEADAlgorithm ();
 const _mongocrypt_value_encryption_algorithm_t *
 _mcFLE2Algorithm ();
 
+// FLE2 used with FLE2IndexedEncryptedValue: AES-256-CBC HMAC/SHA-256
+const _mongocrypt_value_encryption_algorithm_t *
+_mcFLE2v2Algorithm ();
+
 bool
 _mongocrypt_random (_mongocrypt_crypto_t *crypto,
                     _mongocrypt_buffer_t *out,

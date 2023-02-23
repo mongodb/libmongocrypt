@@ -8,6 +8,7 @@ MAC_KEY_LENGTH = 32
 HMAC_SHA256_TAG_LENGTH = 32
 IV_LENGTH = 16
 DEK_LENGTH = 96
+BLOCK_LENGTH = 16
 
 def _hmacsha256 (Km, input):
     assert (len(Km) == MAC_KEY_LENGTH)
@@ -25,81 +26,92 @@ class DEK ():
         self.Km = bytesIn[32:64]
         self.TokenKey = bytesIn[64:96]
 
-def fle2_encrypt (M, Ke, IV):
+def _fle2_encrypt (IV, Ke, M, mode, Km = None, AD = None):
     """
-    Compute 
-    S = AES-CTR.Enc(Ke, IV, M)
-
-    Output 
-    C = IV || S
+    Generalized encrypt vector create.
+    S = AES-{mode}.Enc(Ke, IV, M)
+    if Km is not None:
+        T = HMAC/SHA-256(Km, AD || IV || S)
+    C = IV || S || T
     """
-    assert (len(Ke) == ENCRYPTION_KEY_LENGTH)
-    assert (len(IV) == IV_LENGTH)
+    assert len(Ke) == ENCRYPTION_KEY_LENGTH
+    assert len(IV) == IV_LENGTH
+    assert (mode == 'CTR') or (mode == 'CBC')
+    modeObj = modes.CTR(IV) if mode == 'CTR' else modes.CBC(IV)
 
-    # S = AES-CTR.Enc(Ke, IV, M)
-    cipher = Cipher(algorithms.AES(Ke), modes.CTR(IV))
+    # S = AES-{mode}.Env(Ke, IV, M)
+    cipher = Cipher(algorithms.AES(Ke), modeObj)
     encryptor = cipher.encryptor()
+    if mode == 'CBC':
+        # PKCS#7
+        padding_len = BLOCK_LENGTH - (len(M) % BLOCK_LENGTH)
+        M = M + (padding_len.to_bytes(1, 'big') * padding_len)
     S = encryptor.update(M) + encryptor.finalize()
 
-    C = IV + S
-    return C
+    if Km is not None:
+        assert AD is not None
+        assert len(Km) == MAC_KEY_LENGTH
+        # T = HMAC-SHA256(Km, AD || IV || S)
+        T = _hmacsha256 (Km, AD + IV + S)
+    else:
+        assert AD is None
+        T = b''
 
-def fle2_decrypt (C, Ke):
-    assert (len(Ke) == ENCRYPTION_KEY_LENGTH)
-    assert (len(C) > IV_LENGTH)
-
-    IV = C[0:IV_LENGTH]
-    # S = AES-CTR.Enc(Ke, IV, M)
-    cipher = Cipher(algorithms.AES(Ke), modes.CTR(IV))
-    encryptor = cipher.decryptor()
-    M = encryptor.update(C[IV_LENGTH:]) + encryptor.finalize()
-    return M
-
-def fle2aead_encrypt(M, Ke, IV, Km, AD):
-    """
-    Do FLE 2 AEAD encryption.
-    See [AEAD with CTR](https://docs.google.com/document/d/1eCU7R8Kjr-mdyz6eKvhNIDVmhyYQcAaLtTfHeK7a_vE/edit#heading=h.35kjadvlcbty)
-    See [aead_encryption_fle2_test_vectors.sh](https://github.com/mongodb/mongo/blob/ecc66915ac757cbeaa7c40eb443d7ec7bffcb80a/src/mongo/crypto/scripts/aead_encryption_fle2_test_vectors.sh#L15) for how server team is generating this.
-    """
-    assert (len(Ke) == ENCRYPTION_KEY_LENGTH)
-    assert (len(IV) == IV_LENGTH)
-    assert (len(Km) == MAC_KEY_LENGTH)
-
-    # S = AES-CTR.Enc(Ke, IV, M)
-    cipher = Cipher(algorithms.AES(Ke), modes.CTR(IV))
-    encryptor = cipher.encryptor()
-    S = encryptor.update(M) + encryptor.finalize()
-
-    # T = HMAC-SHA256(Km, AD || IV || S)
-    T = _hmacsha256 (Km, AD + IV + S)
-
-    # C = IV || S || T
+    # C = IV + S + T
     C = IV + S + T
     return C
 
 
-def fle2aead_decrypt(C, Km, AD, Ke):
+def fle2_encrypt (M, Ke, IV):
+    """ AES-256-CTR/NONE """
+    return _fle2_encrypt (IV, Ke, M, 'CTR')
+
+def fle2aead_encrypt(M, Ke, IV, Km, AD):
+    """ AES-256-CTR/SHA-256 """
+    return _fle2_encrypt (IV, Ke, M, 'CTR', Km, AD)
+
+def fle2v2_encrypt(M, Ke, IV, Km, AD):
+    """ AES-256-CBC/SHA-256 """
+    return _fle2_encrypt (IV, Ke, M, 'CBC', Km, AD)
+
+def _fle2_decypt (C, Ke, mode, Km = None, AD = None):
     assert (len(Ke) == ENCRYPTION_KEY_LENGTH)
-    assert (len(C) > HMAC_SHA256_TAG_LENGTH + IV_LENGTH)
-    assert (len(Km) == MAC_KEY_LENGTH)
 
-    # Parse C as IV || S || T
+    Tlen = 0 if Km is None else HMAC_SHA256_TAG_LENGTH;
+    assert (len(C) > (IV_LENGTH + Tlen))
+    # C = IV || S || T
     IV = C[0:IV_LENGTH]
-    S = C[IV_LENGTH:-HMAC_SHA256_TAG_LENGTH]
-    T = C[-HMAC_SHA256_TAG_LENGTH:]
+    S = C[IV_LENGTH:-Tlen]
 
-    # Compute T' = HMAC-SHA256(Km, AD || IV || S)
-    Tp = _hmacsha256 (Km, AD + IV + S)
-    if Tp != T:
-        raise Exception("decryption error")
+    if Km is not None:
+        T = C[-Tlen:]
+        assert T == _hmacsha256 (Km, AD + IV + S)
 
-    # Else compute and output M = AES-CTR.Dec(Ke, S)
-    cipher = Cipher(algorithms.AES(Ke), modes.CTR(IV))
-    decryptor = cipher.decryptor()
-    M = decryptor.update(S) + decryptor.finalize()
+    assert (mode == 'CTR') or (mode == 'CBC')
+    modeObj = modes.CTR(IV) if mode == 'CTR' else modes.CBC(IV)
+
+    # M = AES-{mode}.Dec(Ke, IV, S)
+    cipher = Cipher(algorithms.AES(Ke), modeObj)
+    encryptor = cipher.decryptor()
+    if mode == 'CBC':
+        # PKCS#7
+        padding_len = ord(S[-1:])
+        S = S[-padding_len:]
+    M = encryptor.update(S) + encryptor.finalize()
 
     return M
 
+def fle2_decrypt (C, Ke):
+    """AES-256-CTR/NONE"""
+    return _fle2_decrypt (C, Ke, 'CTR')
+
+def fle2aead_decrypt(C, Km, AD, Ke):
+    """AES-256-CTR/SHA-256"""
+    return _fle2_decrypt (C, Ke, 'CTR', Km, AD)
+
+def fle2v2_decrypt(C, Km, AD, Ke):
+    """AES-256-CBC/SHA-256"""
+    return _fle2_decrypt (C, Ke, 'CBC', Km, AD)
 
 def ServerDataEncryptionLevel1Token (rootKey):
     return _hmacsha256 (rootKey, struct.pack("<Q", 3))
