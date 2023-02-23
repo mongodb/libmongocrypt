@@ -396,15 +396,17 @@ typedef enum {
 } _mongocrypt_hmac_type_t;
 
 typedef enum {
-   KEY_FORMAT_FLE1,     // 32 octets MAC key, 32 DATA key, 32 IV key (ignored)
-   KEY_FORMAT_FLE2,     // 32 octets DATA key
-   KEY_FORMAT_FLE2AEAD, // 32 octets DATA key, 32 MAC key, 32 IV key (ignored)
+   KEY_FORMAT_FLE1,       // 32 octets MAC key, 32 DATA key, 32 IV key (ignored)
+   KEY_FORMAT_FLE2,       // 32 octets DATA key
+   KEY_FORMAT_FLE2AEAD,   // 32 octets DATA key, 32 MAC key, 32 IV key (ignored)
+   KEY_FORMAT_FLE2v2AEAD, // 32 octets DATA key, 32 MAC key, 32 IV key (ignored)
 } _mongocrypt_key_format_t;
 
 typedef enum {
-   MAC_FORMAT_FLE1,     // HMAC(AAD || IV || S || LEN(AAD) as uint64be)
-   MAC_FORMAT_FLE2,     // NONE
-   MAC_FORMAT_FLE2AEAD, // HMAC(AAD || IV || S)
+   MAC_FORMAT_FLE1,       // HMAC(AAD || IV || S || LEN(AAD) as uint64be)
+   MAC_FORMAT_FLE2,       // NONE
+   MAC_FORMAT_FLE2AEAD,   // HMAC(AAD || IV || S)
+   MAC_FORMAT_FLE2v2AEAD, // HMAC(AAD || IV || S)
 } _mongocrypt_mac_format_t;
 
 /* ----------------------------------------------------------------------------
@@ -716,7 +718,8 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
 
    } else {
       /* T := HMAC(AAD || IV || S) */
-      BSON_ASSERT (mac_format == MAC_FORMAT_FLE2AEAD);
+      BSON_ASSERT ((mac_format == MAC_FORMAT_FLE2AEAD) ||
+                   (mac_format == MAC_FORMAT_FLE2v2AEAD));
    }
 
    if (!_mongocrypt_buffer_concat (
@@ -1279,6 +1282,9 @@ DECLARE_ALGORITHM (FLE2AEAD, CTR, SHA_256)
 
 // FLE2 used with ESC/ECOC tokens: AES-256-CTR no HMAC
 DECLARE_ALGORITHM (FLE2, CTR, NONE)
+
+// FLE2v2 AEAD general algorithm: AES-256-CBC HMAC/SHA-256
+DECLARE_ALGORITHM (FLE2v2AEAD, CBC, SHA_256)
 
 #undef DECLARE_ALGORITHM
 
