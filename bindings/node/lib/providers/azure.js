@@ -11,17 +11,7 @@ let azureIdentityModule = null;
  */
 let tokenCacheProvider = null;
 
-/**
- * @type{import('@azure/core-rest-pipeline').HttpClient | null}
- */
-let mockHttpClient = null;
-
-/**
- * @param{import('@azure/core-rest-pipeline').HttpClient | null} client
- */
-function setMockClient(client) {
-  mockHttpClient = client;
-}
+const ADDITIONAL_POLICY_SYMBOL = Symbol.for('@@mdb.azureKMSAdditionalPolicies');
 
 /**
  * @ignore
@@ -38,12 +28,11 @@ class CredentialCacheProvider {
   }
 
   /**
-   *
    * @param {string | string[]} scopes
    * @param {import('@azure/identity').GetTokenOptions} options
    */
   async getToken(scopes, options) {
-    if (this._tokenNeedsRefresh(this.cachedToken)) {
+    if (this._tokenNeedsRefresh()) {
       this.cachedToken = await this.wrappedProvider.getToken(scopes, options);
     }
 
@@ -51,19 +40,22 @@ class CredentialCacheProvider {
   }
 
   /**
-   *
+   * Returns true if the cached token should be refreshed, false otherwise.
    * @param {import('@azure/identity').AccessToken | null} token
    */
-  _tokenNeedsRefresh(token) {
-    if (token == null) {
+  _tokenNeedsRefresh() {
+    if (this.cachedToken == null) {
       return true;
     }
-    const timeUntilExpirationMS = token.expiresOnTimestamp - Date.now();
+    const timeUntilExpirationMS = this.cachedToken.expiresOnTimestamp - Date.now();
     return timeUntilExpirationMS <= MINIMUM_TOKEN_REFRESH_IN_MILLISECONDS;
   }
 }
 
-/** @ignore */
+/**
+ * @param {import('../../index').KMSProviders} kmsProviders
+ * @ignore
+ */
 async function loadAzureCredentials(kmsProviders) {
   if (azureIdentityModule == null) {
     try {
@@ -78,12 +70,14 @@ async function loadAzureCredentials(kmsProviders) {
       /**
        * @type{import('@azure/identity').TokenCredentialOptions}
        */
-      const options = mockHttpClient == null ? {} : { httpClient: mockHttpClient };
+      const options = {
+        additionalPolicies: kmsProviders[ADDITIONAL_POLICY_SYMBOL]
+      };
       const provider = new azureIdentityModule.ManagedIdentityCredential(options);
       tokenCacheProvider = new CredentialCacheProvider(provider);
     }
 
-    const token = await tokenCacheProvider.getToken();
+    const token = await tokenCacheProvider.getToken(['https://vault.azure.net']);
     if (token != null) {
       return { ...kmsProviders, azure: { accessToken: token.token } };
     }
@@ -92,4 +86,4 @@ async function loadAzureCredentials(kmsProviders) {
   return kmsProviders;
 }
 
-module.exports = { loadAzureCredentials, setMockClient, CredentialCacheProvider };
+module.exports = { loadAzureCredentials, CredentialCacheProvider };

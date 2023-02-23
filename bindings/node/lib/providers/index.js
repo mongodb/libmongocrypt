@@ -1,6 +1,7 @@
 'use strict';
 
 const { loadAWSCredentials } = require('./aws');
+const { loadAzureCredentials } = require('./azure');
 const { loadGCPCredentials } = require('./gcp');
 
 /**
@@ -10,8 +11,8 @@ const { loadGCPCredentials } = require('./gcp');
  *
  * This is distinct from a nullish provider key.
  *
- * @param {string} provider
- * @param {object} kmsProviders
+ * @param {'aws' | 'gcp' | 'azure'} provider
+ * @param {import('../../index').KMSProviders} kmsProviders
  */
 function isEmptyCredentials(provider, kmsProviders) {
   return (
@@ -27,8 +28,8 @@ function isEmptyCredentials(provider, kmsProviders) {
  * Credentials will only attempt to get loaded if they do not exist
  * and no existing credentials will get overwritten.
  *
- * @param {object} kmsProviders - The user provided KMS providers.
- * @returns {Promise} The new kms providers.
+ * @param {import('../../index').KMSProviders} kmsProviders - The user provided KMS providers.
+ * @returns {Promise<import('../../index').KMSProviders>} The new kms providers.
  *
  * @ignore
  */
@@ -43,6 +44,9 @@ async function loadCredentials(kmsProviders) {
     finalKMSProviders = await loadGCPCredentials(finalKMSProviders);
   }
 
+  if (isEmptyCredentials('azure', kmsProviders)) {
+    finalKMSProviders = await loadAzureCredentials(kmsProviders);
+  }
   return finalKMSProviders;
 }
 
