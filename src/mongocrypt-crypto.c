@@ -631,10 +631,10 @@ _encrypt_step (_mongocrypt_crypto_t *crypto,
  *    Compute the selected HMAC with a secret key.
  *
  * Parameters:
- *    @mac_key a 32 byte key.
- *    @associated_data associated data to add into the HMAC. This may be
+ *    @Km a 32 byte key.
+ *    @AAD associated data to add into the HMAC. This may be
  *    an empty buffer.
- *    @ciphertext the ciphertext to add into the HMAC.
+ *    @iv_and_ciphertext the IV and S components to add into the HMAC.
  *    @out a location for the resulting HMAC tag.
  *    @status set on error.
  *
