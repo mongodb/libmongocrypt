@@ -291,7 +291,7 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
                                    mongocrypt_status_t *status)
 {
    const _mongocrypt_value_encryption_algorithm_t *fle2iev =
-      _mcFLE2IEVAlgorithm ();
+      _mcFLE2Algorithm ();
    BSON_ASSERT_PARAM (kb);
    BSON_ASSERT_PARAM (key);
    BSON_ASSERT_PARAM (in);
@@ -300,7 +300,7 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv;
-   const uint32_t cipherlen = fle2iev->ciphertext_len (in->len, status);
+   const uint32_t cipherlen = fle2iev->get_ciphertext_len (in->len, status);
    if (cipherlen == 0) {
       return false;
    }
@@ -314,7 +314,7 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
       return false;
    }
 
-   if (!fle2iev->encrypt (
+   if (!fle2iev->do_encrypt (
           crypto, &iv, NULL /* aad */, key, in, out, &written, status)) {
       _mongocrypt_buffer_cleanup (out);
       _mongocrypt_buffer_init (out);
@@ -332,7 +332,8 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
                                 _mongocrypt_buffer_t *out,
                                 mongocrypt_status_t *status)
 {
-   const _mongocrypt_value_encryption_algorithm_t *fle2 = _mcFLE2Algorithm ();
+   const _mongocrypt_value_encryption_algorithm_t *fle2 =
+      _mcFLE2AEADAlgorithm ();
    BSON_ASSERT_PARAM (kb);
    BSON_ASSERT_PARAM (keyId);
    BSON_ASSERT_PARAM (in);
@@ -341,7 +342,7 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv, key;
-   const uint32_t cipherlen = fle2->ciphertext_len (in->len, status);
+   const uint32_t cipherlen = fle2->get_ciphertext_len (in->len, status);
    if (cipherlen == 0) {
       return false;
    }
@@ -360,7 +361,7 @@ _fle2_placeholder_aead_encrypt (_mongocrypt_key_broker_t *kb,
    }
 
    _mongocrypt_buffer_init_size (out, cipherlen);
-   res = fle2->encrypt (crypto, &iv, keyId, &key, in, out, &written, status);
+   res = fle2->do_encrypt (crypto, &iv, keyId, &key, in, out, &written, status);
    _mongocrypt_buffer_cleanup (&key);
    _mongocrypt_buffer_cleanup (&iv);
 
@@ -1492,7 +1493,7 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
    }
 
    _mongocrypt_buffer_from_iter (&plaintext, &marking->v_iter);
-   ciphertext->data.len = fle1->ciphertext_len (plaintext.len, status);
+   ciphertext->data.len = fle1->get_ciphertext_len (plaintext.len, status);
    if (ciphertext->data.len == 0) {
       goto fail;
    }
@@ -1516,14 +1517,14 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
          goto fail;
       }
 
-      ret = fle1->encrypt (kb->crypt->crypto,
-                           &iv,
-                           &associated_data,
-                           &key_material,
-                           &plaintext,
-                           &ciphertext->data,
-                           &bytes_written,
-                           status);
+      ret = fle1->do_encrypt (kb->crypt->crypto,
+                              &iv,
+                              &associated_data,
+                              &key_material,
+                              &plaintext,
+                              &ciphertext->data,
+                              &bytes_written,
+                              status);
       break;
    case MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM:
       /* Use randomized encryption.
@@ -1533,14 +1534,14 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
              kb->crypt->crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
          goto fail;
       }
-      ret = fle1->encrypt (kb->crypt->crypto,
-                           &iv,
-                           &associated_data,
-                           &key_material,
-                           &plaintext,
-                           &ciphertext->data,
-                           &bytes_written,
-                           status);
+      ret = fle1->do_encrypt (kb->crypt->crypto,
+                              &iv,
+                              &associated_data,
+                              &key_material,
+                              &plaintext,
+                              &ciphertext->data,
+                              &bytes_written,
+                              status);
       break;
    case MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE:
    default:

@@ -265,7 +265,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
       goto fail;
    }
 
-   plaintext.len = fle1alg->plaintext_len (ciphertext.data.len, status);
+   plaintext.len = fle1alg->get_plaintext_len (ciphertext.data.len, status);
    if (plaintext.len == 0) {
       goto fail;
    }
@@ -280,13 +280,13 @@ _replace_ciphertext_with_plaintext (void *ctx,
       goto fail;
    }
 
-   if (!fle1alg->decrypt (kb->crypt->crypto,
-                          &associated_data,
-                          &key_material,
-                          &ciphertext.data,
-                          &plaintext,
-                          &bytes_written,
-                          status)) {
+   if (!fle1alg->do_decrypt (kb->crypt->crypto,
+                             &associated_data,
+                             &key_material,
+                             &ciphertext.data,
+                             &plaintext,
+                             &bytes_written,
+                             status)) {
       goto fail;
    }
 

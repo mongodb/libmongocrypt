@@ -396,15 +396,15 @@ typedef enum {
 } _mongocrypt_hmac_type_t;
 
 typedef enum {
-   KEY_FORMAT_FLE1, // 32 octets MAC key, 32 octets DATA key, 32 octets ignored
-   KEY_FORMAT_FLE2IEV, // 32 octets DATA key
-   KEY_FORMAT_FLE2, // 32 octets DATA key, 32 octets MAC key, 32 octets ignored
+   KEY_FORMAT_FLE1,     // 32 octets MAC key, 32 DATA key, 32 IV key (ignored)
+   KEY_FORMAT_FLE2,     // 32 octets DATA key
+   KEY_FORMAT_FLE2AEAD, // 32 octets DATA key, 32 MAC key, 32 IV key (ignored)
 } _mongocrypt_key_format_t;
 
 typedef enum {
-   MAC_FORMAT_FLE1,    // HMAC(AAD || IV || S || LEN(AAD) as uint64be)
-   MAC_FORMAT_FLE2IEV, // NONE
-   MAC_FORMAT_FLE2,    // HMAC(AAD || IV || S)
+   MAC_FORMAT_FLE1,     // HMAC(AAD || IV || S || LEN(AAD) as uint64be)
+   MAC_FORMAT_FLE2,     // NONE
+   MAC_FORMAT_FLE2AEAD, // HMAC(AAD || IV || S)
 } _mongocrypt_mac_format_t;
 
 /* ----------------------------------------------------------------------------
@@ -714,7 +714,7 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
 
    } else {
       /* T := HMAC(AAD || IV || S) */
-      BSON_ASSERT (mac_format == MAC_FORMAT_FLE2);
+      BSON_ASSERT (mac_format == MAC_FORMAT_FLE2AEAD);
    }
 
    if (!_mongocrypt_buffer_concat (
@@ -821,7 +821,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   const uint32_t expected_key_len = (key_format == KEY_FORMAT_FLE2IEV)
+   const uint32_t expected_key_len = (key_format == KEY_FORMAT_FLE2)
                                         ? MONGOCRYPT_ENC_KEY_LEN
                                         : MONGOCRYPT_KEY_LEN;
    if (key->len != expected_key_len) {
@@ -1093,7 +1093,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
       return false;
    }
 
-   const uint32_t expected_key_len = (key_format == KEY_FORMAT_FLE2IEV)
+   const uint32_t expected_key_len = (key_format == KEY_FORMAT_FLE2)
                                         ? MONGOCRYPT_ENC_KEY_LEN
                                         : MONGOCRYPT_KEY_LEN;
    if (expected_key_len != key->len) {
@@ -1127,10 +1127,10 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
    }
 
    if (hmac == HMAC_NONE) {
-      BSON_ASSERT (key_format == KEY_FORMAT_FLE2IEV);
+      BSON_ASSERT (key_format == KEY_FORMAT_FLE2);
 
    } else {
-      BSON_ASSERT (key_format != KEY_FORMAT_FLE2IEV);
+      BSON_ASSERT (key_format != KEY_FORMAT_FLE2);
 
       uint8_t hmac_tag_storage[MONGOCRYPT_HMAC_LEN];
       const uint32_t mac_key_offset =
@@ -1272,11 +1272,11 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
 // FLE1 algorithm: AES-256-CBC HMAC/SHA-512-256 (SHA-512 truncated to 256 bits)
 DECLARE_ALGORITHM (FLE1, CBC, SHA_512_256)
 
-// FLE2 general algorithm: AES-256-CTR HMAC/SHA-256
-DECLARE_ALGORITHM (FLE2, CTR, SHA_256)
+// FLE2 AEAD used value algorithm: AES-256-CTR HMAC/SHA-256
+DECLARE_ALGORITHM (FLE2AEAD, CTR, SHA_256)
 
-// FLE2 used with FLE2IndexedEncryptedValue: AES-256-CTR no HMAC
-DECLARE_ALGORITHM (FLE2IEV, CTR, NONE)
+// FLE2 used with ESC/ECOC tokens: AES-256-CTR no HMAC
+DECLARE_ALGORITHM (FLE2, CTR, NONE)
 
 #undef DECLARE_ALGORITHM
 
@@ -1449,21 +1449,21 @@ _mongocrypt_wrap_key (_mongocrypt_crypto_t *crypto,
 
    // _mongocrypt_wrap_key() uses FLE1 algorithm parameters.
    _mongocrypt_buffer_resize (encrypted_dek,
-                              fle1alg->ciphertext_len (dek->len, status));
+                              fle1alg->get_ciphertext_len (dek->len, status));
    _mongocrypt_buffer_resize (&iv, MONGOCRYPT_IV_LEN);
 
    if (!_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status)) {
       goto done;
    }
 
-   if (!fle1alg->encrypt (crypto,
-                          &iv,
-                          NULL /* associated data. */,
-                          kek,
-                          dek,
-                          encrypted_dek,
-                          &bytes_written,
-                          status)) {
+   if (!fle1alg->do_encrypt (crypto,
+                             &iv,
+                             NULL /* associated data. */,
+                             kek,
+                             dek,
+                             encrypted_dek,
+                             &bytes_written,
+                             status)) {
       goto done;
    }
 
@@ -1492,15 +1492,15 @@ _mongocrypt_unwrap_key (_mongocrypt_crypto_t *crypto,
    // _mongocrypt_wrap_key() uses FLE1 algorithm parameters.
    _mongocrypt_buffer_init (dek);
    _mongocrypt_buffer_resize (
-      dek, fle1alg->plaintext_len (encrypted_dek->len, status));
+      dek, fle1alg->get_plaintext_len (encrypted_dek->len, status));
 
-   if (!fle1alg->decrypt (crypto,
-                          NULL /* associated data. */,
-                          kek,
-                          encrypted_dek,
-                          dek,
-                          &bytes_written,
-                          status)) {
+   if (!fle1alg->do_decrypt (crypto,
+                             NULL /* associated data. */,
+                             kek,
+                             encrypted_dek,
+                             dek,
+                             &bytes_written,
+                             status)) {
       return false;
    }
    dek->len = bytes_written;

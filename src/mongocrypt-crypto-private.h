@@ -71,10 +71,10 @@ typedef bool (*_mongocrypt_do_decryption_fn) (
  * encrypting client data values.
  */
 typedef struct {
-   _mongocrypt_ciphertextlen_fn ciphertext_len;
-   _mongocrypt_plaintextlen_fn plaintext_len;
-   _mongocrypt_do_encryption_fn encrypt;
-   _mongocrypt_do_decryption_fn decrypt;
+   _mongocrypt_ciphertextlen_fn get_ciphertext_len;
+   _mongocrypt_plaintextlen_fn get_plaintext_len;
+   _mongocrypt_do_encryption_fn do_encrypt;
+   _mongocrypt_do_decryption_fn do_decrypt;
 } _mongocrypt_value_encryption_algorithm_t;
 
 // FLE1 algorithm: AES-256-CBC HMAC/SHA-512-256 (SHA-512 truncated to 256 bits)
@@ -83,11 +83,11 @@ _mcFLE1Algorithm ();
 
 // FLE2 general algorithm: AES-256-CTR HMAC/SHA-256
 const _mongocrypt_value_encryption_algorithm_t *
-_mcFLE2Algorithm ();
+_mcFLE2AEADAlgorithm ();
 
 // FLE2 used with FLE2IndexedEncryptedValue: AES-256-CTR no HMAC
 const _mongocrypt_value_encryption_algorithm_t *
-_mcFLE2IEVAlgorithm ();
+_mcFLE2Algorithm ();
 
 bool
 _mongocrypt_random (_mongocrypt_crypto_t *crypto,

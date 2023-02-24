@@ -144,7 +144,7 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
                                         mongocrypt_status_t *status)
 {
    const _mongocrypt_value_encryption_algorithm_t *fle2alg =
-      _mcFLE2Algorithm ();
+      _mcFLE2AEADAlgorithm ();
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (uev);
    BSON_ASSERT_PARAM (key);
@@ -172,7 +172,7 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
    memcpy (AD.data + 1, uev->key_uuid.data, uev->key_uuid.len);
    AD.data[1 + uev->key_uuid.len] = uev->original_bson_type;
    const uint32_t plaintext_len =
-      fle2alg->plaintext_len (uev->ciphertext.len, status);
+      fle2alg->get_plaintext_len (uev->ciphertext.len, status);
    if (plaintext_len == 0) {
       return NULL;
    }
@@ -180,13 +180,13 @@ mc_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_crypto_t *crypto,
 
    uint32_t bytes_written;
 
-   if (!fle2alg->decrypt (crypto,
-                          &AD,
-                          key,
-                          &uev->ciphertext,
-                          &uev->plaintext,
-                          &bytes_written,
-                          status)) {
+   if (!fle2alg->do_decrypt (crypto,
+                             &AD,
+                             key,
+                             &uev->ciphertext,
+                             &uev->plaintext,
+                             &bytes_written,
+                             status)) {
       _mongocrypt_buffer_cleanup (&AD);
       return NULL;
    }
@@ -205,7 +205,7 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
                                         mongocrypt_status_t *status)
 {
    const _mongocrypt_value_encryption_algorithm_t *fle2alg =
-      _mcFLE2Algorithm ();
+      _mcFLE2AEADAlgorithm ();
    _mongocrypt_buffer_t iv = {0};
    _mongocrypt_buffer_t AD = {0};
    bool res = false;
@@ -240,13 +240,13 @@ mc_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_crypto_t *crypto,
    /* Encrypt. */
    {
       const uint32_t cipherlen =
-         fle2alg->ciphertext_len (plaintext->len, status);
+         fle2alg->get_ciphertext_len (plaintext->len, status);
       if (cipherlen == 0) {
          goto fail;
       }
       _mongocrypt_buffer_resize (out, cipherlen);
       uint32_t bytes_written; /* unused. */
-      if (!fle2alg->encrypt (
+      if (!fle2alg->do_encrypt (
              crypto, &iv, &AD, key, plaintext, out, &bytes_written, status)) {
          goto fail;
       }

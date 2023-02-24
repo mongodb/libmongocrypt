@@ -121,7 +121,7 @@ mc_FLE2IndexedEncryptedValue_write (
    }
 
    const _mongocrypt_value_encryption_algorithm_t *fle2iev =
-      _mcFLE2IEVAlgorithm ();
+      _mcFLE2Algorithm ();
    bool ok = false;
 
    BSON_ASSERT_PARAM (crypto);
@@ -161,7 +161,7 @@ mc_FLE2IndexedEncryptedValue_write (
       status));
 
    uint32_t expected_cipher_size =
-      fle2iev->ciphertext_len (expected_plaintext_size, status);
+      fle2iev->get_ciphertext_len (expected_plaintext_size, status);
 
    if (expected_cipher_size == 0) {
       CHECK_AND_GOTO (false);
@@ -224,7 +224,7 @@ mc_fle2IndexedEncryptedValue_encrypt (
    }
 
    const _mongocrypt_value_encryption_algorithm_t *fle2iev =
-      _mcFLE2IEVAlgorithm ();
+      _mcFLE2Algorithm ();
    bool ok = false;
    _mongocrypt_buffer_t in;
    _mongocrypt_buffer_t iv;
@@ -242,7 +242,7 @@ mc_fle2IndexedEncryptedValue_encrypt (
    _mongocrypt_buffer_resize (&in, expected_buf_size);
 
    uint32_t ciphertext_len =
-      fle2iev->ciphertext_len (expected_buf_size, status);
+      fle2iev->get_ciphertext_len (expected_buf_size, status);
 
    if (ciphertext_len == 0) {
       return false;
@@ -279,14 +279,14 @@ mc_fle2IndexedEncryptedValue_encrypt (
 
    CHECK_AND_GOTO (_mongocrypt_random (crypto, &iv, MONGOCRYPT_IV_LEN, status));
 
-   CHECK_AND_GOTO (fle2iev->encrypt (crypto,
-                                     &iv,
-                                     NULL /* aad */,
-                                     token_buf,
-                                     &in,
-                                     out,
-                                     &bytes_written,
-                                     status));
+   CHECK_AND_GOTO (fle2iev->do_encrypt (crypto,
+                                        &iv,
+                                        NULL /* aad */,
+                                        token_buf,
+                                        &in,
+                                        out,
+                                        &bytes_written,
+                                        status));
 
    ok = true;
 
@@ -422,7 +422,7 @@ mc_FLE2IndexedEncryptedValue_decrypt (
    mongocrypt_status_t *status)
 {
    const _mongocrypt_value_encryption_algorithm_t *fle2iev =
-      _mcFLE2IEVAlgorithm ();
+      _mcFLE2Algorithm ();
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iev);
    BSON_ASSERT_PARAM (token);
@@ -444,16 +444,17 @@ mc_FLE2IndexedEncryptedValue_decrypt (
    uint32_t bytes_written;
 
    _mongocrypt_buffer_resize (
-      &iev->Inner, fle2iev->plaintext_len (iev->InnerEncrypted.len, status));
+      &iev->Inner,
+      fle2iev->get_plaintext_len (iev->InnerEncrypted.len, status));
 
    /* Decrypt InnerEncrypted. */
-   if (!fle2iev->decrypt (crypto,
-                          NULL /* aad */,
-                          token_buf,
-                          &iev->InnerEncrypted,
-                          &iev->Inner,
-                          &bytes_written,
-                          status)) {
+   if (!fle2iev->do_decrypt (crypto,
+                             NULL /* aad */,
+                             token_buf,
+                             &iev->InnerEncrypted,
+                             &iev->Inner,
+                             &bytes_written,
+                             status)) {
       return false;
    }
 
@@ -541,7 +542,7 @@ mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    mongocrypt_status_t *status)
 {
    const _mongocrypt_value_encryption_algorithm_t *fle2alg =
-      _mcFLE2Algorithm ();
+      _mcFLE2AEADAlgorithm ();
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iev);
    BSON_ASSERT_PARAM (K_Key);
@@ -560,15 +561,15 @@ mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    /* Attempt to decrypt ClientEncryptedValue */
    _mongocrypt_buffer_resize (
       &iev->ClientValue,
-      fle2alg->plaintext_len (iev->ClientEncryptedValue.len, status));
+      fle2alg->get_plaintext_len (iev->ClientEncryptedValue.len, status));
    uint32_t bytes_written;
-   if (!fle2alg->decrypt (crypto,
-                          &iev->K_KeyId,
-                          K_Key,
-                          &iev->ClientEncryptedValue,
-                          &iev->ClientValue,
-                          &bytes_written,
-                          status)) {
+   if (!fle2alg->do_decrypt (crypto,
+                             &iev->K_KeyId,
+                             K_Key,
+                             &iev->ClientEncryptedValue,
+                             &iev->ClientValue,
+                             &bytes_written,
+                             status)) {
       return false;
    }
    iev->client_value_decrypted = true;
