@@ -290,7 +290,7 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
                                    _mongocrypt_buffer_t *out,
                                    mongocrypt_status_t *status)
 {
-   const _mongocrypt_value_encryption_algorithm_t *fle2iev =
+   const _mongocrypt_value_encryption_algorithm_t *fle2alg =
       _mcFLE2Algorithm ();
    BSON_ASSERT_PARAM (kb);
    BSON_ASSERT_PARAM (key);
@@ -300,7 +300,7 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
 
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
    _mongocrypt_buffer_t iv;
-   const uint32_t cipherlen = fle2iev->get_ciphertext_len (in->len, status);
+   const uint32_t cipherlen = fle2alg->get_ciphertext_len (in->len, status);
    if (cipherlen == 0) {
       return false;
    }
@@ -314,7 +314,7 @@ _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_key_broker_t *kb,
       return false;
    }
 
-   if (!fle2iev->do_encrypt (
+   if (!fle2alg->do_encrypt (
           crypto, &iv, NULL /* aad */, key, in, out, &written, status)) {
       _mongocrypt_buffer_cleanup (out);
       _mongocrypt_buffer_init (out);

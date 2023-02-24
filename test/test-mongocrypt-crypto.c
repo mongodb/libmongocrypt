@@ -752,7 +752,7 @@ typedef struct {
 void
 _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
 {
-   const _mongocrypt_value_encryption_algorithm_t *fle2iev =
+   const _mongocrypt_value_encryption_algorithm_t *fle2alg =
       _mcFLE2Algorithm ();
    mongocrypt_t *crypt;
    fle2_aead_roundtrip_test_t tests[] = {
@@ -797,10 +797,10 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
       }
       _mongocrypt_buffer_init (&ciphertext_got);
       _mongocrypt_buffer_resize (
-         &ciphertext_got, fle2iev->get_ciphertext_len (plaintext.len, status));
+         &ciphertext_got, fle2alg->get_ciphertext_len (plaintext.len, status));
 
       /* Test encrypt. */
-      ret = fle2iev->do_encrypt (crypt->crypto,
+      ret = fle2alg->do_encrypt (crypt->crypto,
                                  &iv,
                                  NULL, /* aad */
                                  &key,
@@ -818,7 +818,7 @@ _test_fle2_roundtrip (_mongocrypt_tester_t *tester)
          ASSERT_CMPINT ((int) bytes_written, ==, (int) ciphertext.len);
 
          /* Test decrypt. */
-         ret = fle2iev->do_decrypt (crypt->crypto,
+         ret = fle2alg->do_decrypt (crypt->crypto,
                                     NULL, /* aad */
                                     &key,
                                     &ciphertext,
