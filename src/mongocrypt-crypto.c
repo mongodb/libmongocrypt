@@ -415,7 +415,7 @@ typedef enum {
  * and using fixed iv/hmac lengths.
  *
  * MODE_CBC: Assumes the ciphertext will be padded according to PKCS#7
- * wich rounds up to the next block size, adding up to a complete block
+ * which rounds up to the next block size, adding up to a complete block
  * for block aligned input payloads.
  *
  * MODE_CTR: Assumes no additional padding since CTR is a streaming cipher.
@@ -687,18 +687,20 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
    if (AAD &&
        !_mongocrypt_buffer_from_subrange (
           &intermediates[num_intermediates++], AAD, 0, AAD->len)) {
-      CLIENT_ERR ("Failed creating MAC view on AD");
+      CLIENT_ERR ("Failed creating MAC subrange on AD");
       goto done;
    }
    if (!_mongocrypt_buffer_from_subrange (&intermediates[num_intermediates++],
                                           iv_and_ciphertext,
                                           0,
                                           iv_and_ciphertext->len)) {
-      CLIENT_ERR ("Failed creating MAC view on IV and S");
+      CLIENT_ERR ("Failed creating MAC subrange on IV and S");
       goto done;
    }
 
-   // Up in this lexical scope because it needs to live until buffer_concat.
+   // {AL} must be stored in the function's lexical scope so that
+   // {intermediates}'s reference to it survives until the
+   // _mongocrypt_buffer_concat operation later.
    uint64_t AL;
    if (mac_format == MAC_FORMAT_FLE1) {
       /* T := HMAC(AAD || IV || S || AL)
@@ -756,7 +758,7 @@ done:
  * Parameters:
  *    @iv a 16 byte IV.
  *    @associated_data associated data for the HMAC. May be NULL.
- *    @key a 96 byte key.
+ *    @key is the encryption key. The size depends on @key_format.
  *    @plaintext the plaintext to encrypt.
  *    @ciphertext a location for the resulting ciphertext and HMAC tag.
  *    @bytes_written a location for the resulting bytes written.
@@ -844,7 +846,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
                                           MONGOCRYPT_IV_LEN,
                                           ciphertext->len -
                                              MONGOCRYPT_IV_LEN)) {
-      CLIENT_ERR ("unable to create S view from C");
+      CLIENT_ERR ("unable to create S subrange from C");
       return false;
    }
    if (hmac != HMAC_NONE) {
@@ -856,7 +858,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       (key_format == KEY_FORMAT_FLE1) ? MONGOCRYPT_MAC_KEY_LEN : 0;
    if (!_mongocrypt_buffer_from_subrange (
           &Ke, key, Ke_offset, MONGOCRYPT_ENC_KEY_LEN)) {
-      CLIENT_ERR ("unable to create Ke view from key");
+      CLIENT_ERR ("unable to create Ke subrange from key");
       return false;
    }
 
@@ -878,7 +880,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_t Km;
       if (!_mongocrypt_buffer_from_subrange (
              &Km, key, Km_offset, MONGOCRYPT_MAC_KEY_LEN)) {
-         CLIENT_ERR ("unable to create Km view from key");
+         CLIENT_ERR ("unable to create Km subrange from key");
          return false;
       }
 
@@ -886,7 +888,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_t iv_and_ciphertext;
       if (!_mongocrypt_buffer_from_subrange (
              &iv_and_ciphertext, ciphertext, 0, *bytes_written)) {
-         CLIENT_ERR ("unable to create IV || S view from C");
+         CLIENT_ERR ("unable to create IV || S subrange from C");
          return false;
       }
 
@@ -894,7 +896,7 @@ _mongocrypt_do_encryption (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_t T;
       if (!_mongocrypt_buffer_from_subrange (
              &T, ciphertext, *bytes_written, MONGOCRYPT_HMAC_LEN)) {
-         CLIENT_ERR ("unable to create T view from C");
+         CLIENT_ERR ("unable to create T subrange from C");
          return false;
       }
 
@@ -1106,7 +1108,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
    const uint32_t min_cipherlen =
       _mongocrypt_calculate_ciphertext_len (0, mode, hmac, NULL);
    if (ciphertext->len < min_cipherlen) {
-      CLIENT_ERR ("corrupt ciphertext - must be > %d bytes", min_cipherlen);
+      CLIENT_ERR ("corrupt ciphertext - must be >= %d bytes", min_cipherlen);
       return false;
    }
 
@@ -1115,14 +1117,14 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
       (key_format == KEY_FORMAT_FLE1) ? MONGOCRYPT_MAC_KEY_LEN : 0;
    if (!_mongocrypt_buffer_from_subrange (
           &Ke, key, Ke_offset, MONGOCRYPT_ENC_KEY_LEN)) {
-      CLIENT_ERR ("unable to create Ke view from key");
+      CLIENT_ERR ("unable to create Ke subrange from key");
       return false;
    }
 
    _mongocrypt_buffer_t IV;
    if (!_mongocrypt_buffer_from_subrange (
           &IV, ciphertext, 0, MONGOCRYPT_IV_LEN)) {
-      CLIENT_ERR ("unable to create IV view from ciphertext");
+      CLIENT_ERR ("unable to create IV subrange from ciphertext");
       return false;
    }
 
@@ -1138,7 +1140,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
       _mongocrypt_buffer_t Km;
       if (!_mongocrypt_buffer_from_subrange (
              &Km, key, mac_key_offset, MONGOCRYPT_MAC_KEY_LEN)) {
-         CLIENT_ERR ("unable to create Km view from key");
+         CLIENT_ERR ("unable to create Km subrange from key");
          return false;
       }
 
@@ -1148,7 +1150,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
                                              0,
                                              ciphertext->len -
                                                 MONGOCRYPT_HMAC_LEN)) {
-         CLIENT_ERR ("unable to create IV || S view from C");
+         CLIENT_ERR ("unable to create IV || S subrange from C");
          return false;
       }
 
@@ -1173,7 +1175,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
                                              ciphertext->len -
                                                 MONGOCRYPT_HMAC_LEN,
                                              MONGOCRYPT_HMAC_LEN)) {
-         CLIENT_ERR ("unable to create T view from C");
+         CLIENT_ERR ("unable to create T subrange from C");
          return false;
       }
       if (0 !=
@@ -1191,7 +1193,7 @@ _mongocrypt_do_decryption (_mongocrypt_crypto_t *crypto,
                                           MONGOCRYPT_IV_LEN,
                                           ciphertext->len - MONGOCRYPT_IV_LEN -
                                              hmac_len)) {
-      CLIENT_ERR ("unable to create S view from C");
+      CLIENT_ERR ("unable to create S subrange from C");
       return false;
    }
 
