@@ -39,7 +39,7 @@ def _fle2_encrypt (IV, Ke, M, mode, Km = None, AD = None):
     assert (mode == 'CTR') or (mode == 'CBC')
     modeObj = modes.CTR(IV) if mode == 'CTR' else modes.CBC(IV)
 
-    # S = AES-{mode}.Env(Ke, IV, M)
+    # S = AES-{mode}.Enc(Ke, IV, M)
     cipher = Cipher(algorithms.AES(Ke), modeObj)
     encryptor = cipher.encryptor()
     if mode == 'CBC':
@@ -74,7 +74,7 @@ def fle2v2_encrypt(M, Ke, IV, Km, AD):
     """ AES-256-CBC/SHA-256 """
     return _fle2_encrypt (IV, Ke, M, 'CBC', Km, AD)
 
-def _fle2_decypt (C, Ke, mode, Km = None, AD = None):
+def _fle2_decrypt (C, Ke, mode, Km = None, AD = None):
     assert (len(Ke) == ENCRYPTION_KEY_LENGTH)
 
     Tlen = 0 if Km is None else HMAC_SHA256_TAG_LENGTH;

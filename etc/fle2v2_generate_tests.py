@@ -1,4 +1,4 @@
-# fle2_aead_generate_tests.py is used to generate the test file: ./test/data/roundtrip/fle2v2-generated.json
+# fle2v2_generate_tests.py is used to generate the test file: ./test/data/roundtrip/fle2v2-generated.json
 import json
 import os
 import itertools
