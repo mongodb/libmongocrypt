@@ -4,7 +4,7 @@ const { expect } = require('chai');
 const http = require('http');
 const requirements = require('../requirements.helper');
 const { loadCredentials, isEmptyCredentials } = require('../../lib/providers');
-const { CredentialCacheProvider } = require('../../lib/providers/azure');
+const { AzureCredentialCache } = require('../../lib/providers/azure');
 
 const originalAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const originalSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -260,13 +260,13 @@ describe('#loadCredentials', function () {
       let mockTokenProvider;
 
       /**
-       * @type{CredentialCacheProvider}
+       * @type{AzureCredentialCache}
        */
       let credentialCacheProvider;
 
       beforeEach(() => {
         mockTokenProvider = new MockTokenProvider();
-        credentialCacheProvider = new CredentialCacheProvider(mockTokenProvider);
+        credentialCacheProvider = new AzureCredentialCache(mockTokenProvider);
       });
 
       context('when there is no cached token', () => {

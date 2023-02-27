@@ -1,7 +1,7 @@
 'use strict';
 
 const { loadAWSCredentials } = require('./aws');
-const { loadAzureCredentials } = require('./azure');
+const { loadAzureCredentials, fetchAzureKMSToken } = require('./azure');
 const { loadGCPCredentials } = require('./gcp');
 
 /**
@@ -50,4 +50,4 @@ async function loadCredentials(kmsProviders) {
   return finalKMSProviders;
 }
 
-module.exports = { loadCredentials, isEmptyCredentials };
+module.exports = { loadCredentials, isEmptyCredentials, fetchAzureKMSToken };
