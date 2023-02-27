@@ -323,7 +323,7 @@ mc_FLE2InsertUpdatePayloadV2_decrypt (_mongocrypt_crypto_t *crypto,
 
    _mongocrypt_buffer_resize (
       &iup->plaintext, fle2v2->get_plaintext_len (ciphertext.len, status));
-   uint32_t bytes_written; /* ignored */
+   uint32_t bytes_written;
 
    if (!fle2v2->do_decrypt (crypto,
                             &iup->userKeyId,
@@ -334,5 +334,6 @@ mc_FLE2InsertUpdatePayloadV2_decrypt (_mongocrypt_crypto_t *crypto,
                             status)) {
       return NULL;
    }
+   iup->plaintext.len = bytes_written;
    return &iup->plaintext;
 }
