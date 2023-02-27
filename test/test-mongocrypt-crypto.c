@@ -230,7 +230,7 @@ _parse_roundtrip_test (bson_iter_t *iter, _test_mc_crypto_roundtrip_t *test)
                            "Duplicate field '" #Name "' in test"); \
       ASSERT (BSON_ITER_HOLDS_UTF8 (iter));                        \
       const char *value = bson_iter_utf8 (iter, NULL);             \
-      const uint32_t value_len = strlen (value);                   \
+      const size_t value_len = strlen (value);                     \
       if (value_len > 0) {                                         \
          _mongocrypt_buffer_copy_from_hex (&test->Name, value);    \
          ASSERT (strlen (value) == (test->Name.len * 2));          \
