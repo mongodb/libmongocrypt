@@ -172,10 +172,10 @@ get_algo_by_name (const char *name)
    if (!strcmp (name, "AES-256-CBC/SHA-512-256") || !strcmp (name, "FLE1")) {
       return _mcFLE1Algorithm ();
    }
-   if (!strcmp (name, "AES-256-CTR/SHA-256") || !strcmp (name, "FLE2")) {
+   if (!strcmp (name, "AES-256-CTR/SHA-256") || !strcmp (name, "FLE2AEAD")) {
       return _mcFLE2AEADAlgorithm ();
    }
-   if (!strcmp (name, "AES-256-CTR/NONE") || !strcmp (name, "FLE2AEAD")) {
+   if (!strcmp (name, "AES-256-CTR/NONE") || !strcmp (name, "FLE2")) {
       return _mcFLE2Algorithm ();
    }
    TEST_ERROR ("Unknown algorithm: %s", name);
