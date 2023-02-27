@@ -178,8 +178,8 @@ get_algo_by_name (const char *name)
    if (!strcmp (name, "AES-256-CTR/NONE") || !strcmp (name, "FLE2")) {
       return _mcFLE2Algorithm ();
    }
-   if (!strcmp (name, "AES-256-CBC/SHA-256") || !strcmp (name, "FLE2v2")) {
-      return _mcFLE2v2Algorithm ();
+   if (!strcmp (name, "AES-256-CBC/SHA-256") || !strcmp (name, "FLE2v2AEAD")) {
+      return _mcFLE2v2AEADAlgorithm ();
    }
    TEST_ERROR ("Unknown algorithm: %s", name);
 }
@@ -324,8 +324,9 @@ _test_roundtrip (_mongocrypt_tester_t *tester)
    _test_roundtrip_set (tester, "./test/data/roundtrip/mcgrew.json");
    _test_roundtrip_set (tester, "./test/data/roundtrip/nist.json");
    _test_roundtrip_set (tester, "./test/data/roundtrip/aes-ctr.json");
-   _test_roundtrip_set (tester, "./test/data/roundtrip/fle2v2-fixed.json");
-   _test_roundtrip_set (tester, "./test/data/roundtrip/fle2v2-generated.json");
+   _test_roundtrip_set (tester, "./test/data/roundtrip/fle2v2-aead-fixed.json");
+   _test_roundtrip_set (tester,
+                        "./test/data/roundtrip/fle2v2-aead-generated.json");
    _test_roundtrip_set (tester, "./test/data/roundtrip/fle2aead-fixed.json");
    _test_roundtrip_set (tester,
                         "./test/data/roundtrip/fle2aead-generated.json");

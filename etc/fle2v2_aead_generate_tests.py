@@ -1,4 +1,4 @@
-# fle2v2_generate_tests.py is used to generate the test file: ./test/data/roundtrip/fle2v2-generated.json
+# fle2v2_aead_generate_tests.py is used to generate the test file: ./test/data/roundtrip/fle2v2-aead-generated.json
 import json
 import os
 import itertools
@@ -14,13 +14,13 @@ for (AD_len, M_len) in itertools.product(AD_lens, M_lens):
     IV = os.urandom(16)
     Ke = os.urandom(32)
     Km = os.urandom(32)
-    C = fle2_crypto.fle2v2_encrypt(M=M, Ke=Ke, IV=IV, Km=Km, AD=AD)
+    C = fle2_crypto.fle2v2_aead_encrypt(M=M, Ke=Ke, IV=IV, Km=Km, AD=AD)
 
     # Create the 96 byte data encryption key. The last 32 are unused.
     key = Ke + Km + (b"\x00" * 32)
     out.append({
       'name': "generated test. AD length={}, M length={}".format(AD_len, M_len),
-      'origin': "etc/fle2v2_generate_tests.py",
+      'origin': "etc/fle2v2_aead_generate_tests.py",
       'algo': 'AES-256-CBC/SHA-256',
       'iv': IV.hex(),
       'aad': AD.hex(),

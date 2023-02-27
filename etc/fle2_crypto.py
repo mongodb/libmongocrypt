@@ -70,7 +70,7 @@ def fle2aead_encrypt(M, Ke, IV, Km, AD):
     """ AES-256-CTR/SHA-256 """
     return _fle2_encrypt (IV, Ke, M, 'CTR', Km, AD)
 
-def fle2v2_encrypt(M, Ke, IV, Km, AD):
+def fle2v2_aead_encrypt(M, Ke, IV, Km, AD):
     """ AES-256-CBC/SHA-256 """
     return _fle2_encrypt (IV, Ke, M, 'CBC', Km, AD)
 
@@ -109,7 +109,7 @@ def fle2aead_decrypt(C, Km, AD, Ke):
     """AES-256-CTR/SHA-256"""
     return _fle2_decrypt (C, Ke, 'CTR', Km, AD)
 
-def fle2v2_decrypt(C, Km, AD, Ke):
+def fle2v2_aead_decrypt(C, Km, AD, Ke):
     """AES-256-CBC/SHA-256"""
     return _fle2_decrypt (C, Ke, 'CBC', Km, AD)
 

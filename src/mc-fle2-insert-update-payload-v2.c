@@ -303,7 +303,7 @@ mc_FLE2InsertUpdatePayloadV2_decrypt (_mongocrypt_crypto_t *crypto,
                                       mongocrypt_status_t *status)
 {
    const _mongocrypt_value_encryption_algorithm_t *fle2v2 =
-      _mcFLE2v2Algorithm ();
+      _mcFLE2v2AEADAlgorithm ();
    BSON_ASSERT_PARAM (crypto);
    BSON_ASSERT_PARAM (iup);
    BSON_ASSERT_PARAM (user_key);
