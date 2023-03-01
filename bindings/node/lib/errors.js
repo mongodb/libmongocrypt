@@ -56,18 +56,19 @@ class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
 class MongoCryptAzureKMSRequestError extends Error {
   /**
    * @param {string} message
-   * @param {number | undefined} statusCode
    * @param {object | undefined} body
    */
-  constructor(message, statusCode, body) {
+  constructor(message, body) {
     super(message);
-    this.statusCode = statusCode;
     this.body = body;
   }
 }
 
+class MongoCryptNetworkTimeoutError extends MongoCryptError {}
+
 module.exports = {
   MongoCryptError,
+  MongoCryptNetworkTimeoutError,
   MongoCryptAzureKMSRequestError,
   MongoCryptCreateDataKeyError,
   MongoCryptCreateEncryptedCollectionError

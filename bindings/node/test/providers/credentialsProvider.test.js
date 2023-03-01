@@ -4,7 +4,13 @@ const { expect } = require('chai');
 const http = require('http');
 const requirements = require('../requirements.helper');
 const { loadCredentials, isEmptyCredentials } = require('../../lib/providers');
-const { AzureCredentialCache } = require('../../lib/providers/azure');
+const { tokenCache } = require('../../lib/providers/azure');
+const sinon = require('sinon');
+const utils = require('../../lib/providers/utils');
+const {
+  MongoCryptNetworkTimeoutError,
+  MongoCryptAzureKMSRequestError
+} = require('../../lib/errors');
 
 const originalAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const originalSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -241,100 +247,255 @@ describe('#loadCredentials', function () {
   });
 
   context('when using azure', () => {
+    afterEach(() => tokenCache.resetCache());
+    afterEach(() => sinon.restore());
     context('credential caching', () => {
-      class MockTokenProvider {
-        constructor() {
-          this.mockToken = null;
-          this.getTokenCount = 0;
-        }
-
-        async getToken() {
-          this.getTokenCount++;
-          return this.mockToken;
-        }
-      }
-
-      /**
-       * @type{MockTokenProvider}
-       */
-      let mockTokenProvider;
-
-      /**
-       * @type{AzureCredentialCache}
-       */
-      let credentialCacheProvider;
+      const cache = tokenCache;
 
       beforeEach(() => {
-        mockTokenProvider = new MockTokenProvider();
-        credentialCacheProvider = new AzureCredentialCache(mockTokenProvider);
+        cache.resetCache();
       });
+
+      afterEach(() => sinon.restore());
 
       context('when there is no cached token', () => {
         let mockToken = {
-          token: 'mock token',
+          accessToken: 'mock token',
           expiresOnTimestamp: Date.now()
         };
 
         let token;
 
         beforeEach(async () => {
-          mockTokenProvider.mockToken = mockToken;
-          token = await credentialCacheProvider.getToken();
+          sinon.stub(cache, '_getToken').returns(mockToken);
+          token = await cache.getToken();
         });
         it('fetches a token', async () => {
-          expect(token).to.equal(mockToken);
+          expect(token).to.have.property('accessToken', mockToken.accessToken);
         });
         it('caches the token on the class', async () => {
-          expect(credentialCacheProvider.cachedToken).to.equal(mockToken);
+          expect(cache.cachedToken).to.equal(mockToken);
         });
       });
 
       context('when there is a cached token', () => {
         context('when the cached token expires <= 1 minute from the current time', () => {
           let mockToken = {
-            token: 'mock token',
+            accessToken: 'mock token',
             expiresOnTimestamp: Date.now()
           };
 
           let token;
 
           beforeEach(async () => {
-            credentialCacheProvider.cachedToken = {
-              ...mockToken,
+            cache.cachedToken = {
+              accessToken: 'a new key',
               expiresOnTimestamp: Date.now() + 3000
             };
-            mockTokenProvider.mockToken = mockToken;
-            token = await credentialCacheProvider.getToken();
+            sinon.stub(cache, '_getToken').returns(mockToken);
+            token = await cache.getToken();
           });
+
           it('fetches a token', () => {
-            expect(token).to.equal(mockToken);
+            expect(token).to.have.property('accessToken', mockToken.accessToken);
           });
           it('caches the token on the class', () => {
-            expect(credentialCacheProvider.cachedToken).to.equal(mockToken);
+            expect(cache.cachedToken).to.equal(mockToken);
           });
         });
 
         context('when the cached token expires > 1 minute from the current time', () => {
-          let mockToken = {
+          let expiredToken = {
             token: 'mock token',
             expiresOnTimestamp: Date.now()
           };
 
           let expectedMockToken = {
-            ...mockToken,
+            accessToken: 'a new key',
             expiresOnTimestamp: Date.now() + 10000
           };
 
           let token;
 
           beforeEach(async () => {
-            credentialCacheProvider.cachedToken = expectedMockToken;
-            mockTokenProvider.mockToken = mockToken;
-            token = await credentialCacheProvider.getToken();
+            cache.cachedToken = expiredToken;
+            sinon.stub(cache, '_getToken').returns(expectedMockToken);
+            token = await cache.getToken();
           });
           it('returns the cached token', () => {
-            expect(token).to.equal(expectedMockToken);
+            expect(token).to.have.property('accessToken', expectedMockToken.accessToken);
           });
+        });
+      });
+    });
+
+    context('request configuration', () => {
+      const mockResponse = {
+        status: 200,
+        body: '{ "access_token": "token", "expires_in": "10000" }'
+      };
+
+      let httpSpy;
+
+      beforeEach(async () => {
+        httpSpy = sinon.stub(utils, 'get');
+        httpSpy.callsFake(() => Promise.resolve(mockResponse));
+
+        await loadCredentials({ azure: {} });
+      });
+
+      it('sets the `api-version` param to 2012-02-01', async () => {
+        const url = httpSpy.args[0][0];
+        expect(url).to.be.instanceof(URL);
+        expect(url.searchParams.get('api-version'), '2018-02-01');
+      });
+
+      it('sets the `resource` param to `https://vault.azure.net`', async () => {
+        const url = httpSpy.args[0][0];
+        expect(url).to.be.instanceof(URL);
+        expect(url.searchParams.get('resource'), 'https://vault.azure.net');
+      });
+
+      it('sends the request to `http://169.254.169.254/metadata/identity/oauth2/token`', async () => {
+        const url = httpSpy.args[0][0];
+        expect(url).to.be.instanceof(URL);
+        expect(url.toString()).to.include('http://169.254.169.254/metadata/identity/oauth2/token');
+      });
+
+      it('sets the Metadata header to true', async () => {
+        const options = httpSpy.args[0][1];
+        expect(options).to.have.property('headers').to.have.property('Metadata', true);
+      });
+
+      it('sets the Content-Type header to application/json', async () => {
+        const options = httpSpy.args[0][1];
+        expect(options)
+          .to.have.property('headers')
+          .to.have.property('Content-Type', 'application/json');
+      });
+    });
+
+    context('error handling', () => {
+      afterEach(() => sinon.restore());
+      context('when the request times out', () => {
+        before(() => {
+          sinon
+            .stub(utils, 'get')
+            .callsFake(() => Promise.reject(new MongoCryptNetworkTimeoutError()));
+        });
+
+        it('throws a MongoCryptKMSRequestError', async () => {
+          const error = await loadCredentials({ azure: {} }).catch(e => e);
+          expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+        });
+      });
+
+      context('when the request returns a non-200 error', () => {
+        context('when the request has no body', () => {
+          before(() => {
+            sinon.stub(utils, 'get').callsFake(() => Promise.resolve({ status: 400 }));
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+            expect(error).to.match(/Malformed JSON body in GET request/);
+          });
+        });
+
+        context('when the request has a body', () => {
+          beforeEach(() => {
+            sinon
+              .stub(utils, 'get')
+              .callsFake(() =>
+                Promise.resolve({ status: 400, body: '{ "error": "something went wrong" }' })
+              );
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+          });
+
+          it('attaches the body to the error', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.have.property('body').to.deep.equal({ error: 'something went wrong' });
+          });
+        });
+      });
+
+      context('when the request returns a 200 response', () => {
+        context('when the request has no body', () => {
+          before(() => {
+            sinon.stub(utils, 'get').callsFake(() => Promise.resolve({ status: 200 }));
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+            expect(error).to.match(/Malformed JSON body in GET request/);
+          });
+        });
+
+        context('when the body has no access_token', () => {
+          beforeEach(() => {
+            sinon.stub(utils, 'get').callsFake(() => Promise.resolve({ status: 200, body: '{ }' }));
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+            expect(error).to.match(/missing field `access_token/);
+          });
+        });
+
+        context('when the body has no expires_in', () => {
+          beforeEach(() => {
+            sinon
+              .stub(utils, 'get')
+              .callsFake(() =>
+                Promise.resolve({ status: 200, body: '{ "access_token": "token" }' })
+              );
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+            expect(error).to.match(/missing field `expires_in/);
+          });
+        });
+
+        context('when expires_in cannot be parsed into a number', () => {
+          beforeEach(() => {
+            sinon.stub(utils, 'get').callsFake(() =>
+              Promise.resolve({
+                status: 200,
+                body: '{ "access_token": "token", "expires_in": "foo" }'
+              })
+            );
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+            expect(error).to.match(/unable to parse int from `expires_in` field/);
+          });
+        });
+      });
+
+      context('when a valid token was returned', () => {
+        beforeEach(() => {
+          sinon.stub(utils, 'get').callsFake(() =>
+            Promise.resolve({
+              status: 200,
+              body: '{ "access_token": "token", "expires_in": "10000" }'
+            })
+          );
+        });
+
+        it('returns the token in the `azure` field of the kms providers', async () => {
+          const kmsProviders = await loadCredentials({ azure: {} });
+          expect(kmsProviders).to.have.property('azure').to.deep.equal({ accessToken: 'token' });
         });
       });
     });

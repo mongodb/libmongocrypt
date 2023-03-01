@@ -1,148 +1,136 @@
 'use strict';
 
-const http = require('http');
-const { MongoCryptAzureKMSRequestError } = require('../errors');
+const { MongoCryptAzureKMSRequestError, MongoCryptNetworkTimeoutError } = require('../errors');
+const utils = require('./utils');
 
 const MINIMUM_TOKEN_REFRESH_IN_MILLISECONDS = 6000;
-/**
- * @type{import('@azure/identity')}
- */
-let azureIdentityModule = null;
-
-/**
- * @type{AzureCredentialCache}
- */
-let tokenCacheProvider = null;
 
 /**
  * @ignore
  */
 class AzureCredentialCache {
   constructor() {
+    /**
+     * @type { { accessToken: string, expiresOnTimestamp: number } | null}
+     */
     this.cachedToken = null;
   }
 
   async getToken() {
-    if (this._tokenNeedsRefresh()) {
-      this.cachedToken = await fetchAzureKMSToken();
+    if (this.needsRefresh(this.cachedToken)) {
+      this.cachedToken = await this._getToken();
     }
 
     return { accessToken: this.cachedToken.accessToken };
   }
 
-  /**
-   * Returns true if the cached token should be refreshed, false otherwise.
-   */
-  _tokenNeedsRefresh() {
-    if (this.cachedToken == null) {
+  needsRefresh(token) {
+    if (token == null) {
       return true;
     }
-    const timeUntilExpirationMS = this.cachedToken.expiresOnTimestamp - Date.now();
+    const timeUntilExpirationMS = token.expiresOnTimestamp - Date.now();
     return timeUntilExpirationMS <= MINIMUM_TOKEN_REFRESH_IN_MILLISECONDS;
   }
 
-  reset() {
+  resetCache() {
     this.cachedToken = null;
   }
+
+  _getToken() {
+    return fetchAzureKMSToken();
+  }
+}
+/**
+ * @type{AzureCredentialCache}
+ */
+let tokenCache = new AzureCredentialCache();
+
+/**
+ * @param { {body: string, status: number }} response
+ * @returns { Promise<{ accessToken: string, expiresOnTimestamp: number } >}
+ */
+async function parseResponse(response) {
+  const { status, body: rawBody } = response;
+
+  /**
+   * @type { { access_token?: string, expires_in?: string} }
+   */
+  const body = (() => {
+    try {
+      return JSON.parse(rawBody);
+    } catch {
+      throw new MongoCryptAzureKMSRequestError('Malformed JSON body in GET request.');
+    }
+  })();
+
+  if (status !== 200) {
+    throw new MongoCryptAzureKMSRequestError('Unable to complete request.', body);
+  }
+
+  if (!body.access_token) {
+    throw new MongoCryptAzureKMSRequestError(
+      'Malformed response body - missing field `access_token`.'
+    );
+  }
+
+  if (!body.expires_in) {
+    throw new MongoCryptAzureKMSRequestError(
+      'Malformed response body - missing field `expires_in`.'
+    );
+  }
+
+  const expiresInMS = Number(body.expires_in) * 1000;
+  if (Number.isNaN(expiresInMS)) {
+    throw new MongoCryptAzureKMSRequestError(
+      'Malformed response body - unable to parse int from `expires_in` field.'
+    );
+  }
+
+  return {
+    accessToken: body.access_token,
+    expiresOnTimestamp: Date.now() + expiresInMS
+  };
 }
 
 /**
- * @param {URL | string} url
- * @param {http.RequestOptions} options
+ * @param {object} options
+ * @param {object | undefined} [options.headers]
+ * @param {URL | undefined} [options.url]
  */
-function executeTokenRequest(url, options) {
-  return new Promise((resolve, reject) => {
-    function processBody(body, response) {
-      if (response.statusCode !== 200) {
-        try {
-          const response = JSON.parse(body);
-          reject(
-            new MongoCryptAzureKMSRequestError(
-              'Unable to complete request.',
-              response.statusCode,
-              response
-            )
-          );
-        } catch {
-          reject(
-            new MongoCryptAzureKMSRequestError(
-              'Unable to complete request - unknown error.',
-              response.statusCode
-            )
-          );
-        }
-      } else {
-        try {
-          const response = JSON.parse(body);
-          resolve(response);
-        } catch {
-          reject(
-            new MongoCryptAzureKMSRequestError(
-              'Unable to complete request - malformed JSON response.',
-              response.statusCode
-            )
-          );
-        }
-      }
-    }
-    const request = http
-      .get(url, options, response => {
-        let body = '';
-        response.on('data', chunk => (body += chunk));
-        response.on('end', () => processBody(body, response));
-      })
-      .on('error', error => reject(error))
-      .on('timeout', () =>
-        request.destroy(new MongoCryptAzureKMSRequestError(`request timed out after 10000ms`))
-      )
-      .end();
-  });
+function prepareRequest(options) {
+  const url =
+    options.url == null
+      ? new URL('http://169.254.169.254/metadata/identity/oauth2/token')
+      : new URL(options.url);
+
+  url.searchParams.append('api-version', '2018-02-01');
+  url.searchParams.append('resource', 'https://vault.azure.net');
+
+  const baseHeaders = options.headers != null ? options.headers : {};
+  const headers = { ...baseHeaders, 'Content-Type': 'application/json', Metadata: true };
+  return { headers, url };
 }
 
 /**
  * @ignore
  * exported only for testing purposes in the driver
  *
- * @param {http.RequestOptions} options
- * @returns {Promise<any>}
+ * @param {object} options
+ * @param {object | undefined} [options.headers]
+ * @param {URL | undefined} [options.url]
+ * @returns {Promise<{ accessToken: string, expiresOnTimestamp: number }>}
  */
-async function fetchAzureKMSToken(options) {
-  const url = new URL('http://169.254.169.254/metadata/identity/oauth2/token');
-
-  url.searchParams.append('api-version', '2018-02-01');
-  url.searchParams.append('resource', 'https://vault.azure.net/');
-  url.searchParams.append('Metadata', 'true');
-
-  const token = await executeTokenRequest(url, options);
-
-  if (!token.access_token) {
-    throw new MongoCryptAzureKMSRequestError(
-      'Malformed response body - missing field `access_token`.'
-    );
-  }
-
-  if (!token.expires_in) {
-    throw new MongoCryptAzureKMSRequestError(
-      'Malformed response body - missing field `expires_in`.'
-    );
-  }
-
-  const expiresInMilliseconds = (() => {
-    try {
-      const expiresInSeconds = Number.parseInt(token.expires_in);
-      return expiresInSeconds * 1000;
-    } catch {
-      throw new MongoCryptAzureKMSRequestError(
-        'Malformed response body - unable to parse int from `expires_in` field.'
-      );
+async function fetchAzureKMSToken(options = {}) {
+  const { headers, url } = prepareRequest(options);
+  try {
+    const response = await utils.get(url, { headers });
+    return parseResponse(response);
+  } catch (error) {
+    if (error instanceof MongoCryptNetworkTimeoutError) {
+      throw new MongoCryptAzureKMSRequestError('Azure KMS request timed out after 10s');
     }
-  })();
-
-  return {
-    accessToken: token.access_token,
-    expiresInMilliseconds,
-    expiresOnTimestamp: Date.now() + expiresInMilliseconds
-  };
+    throw error;
+  }
 }
 
 /**
@@ -150,24 +138,8 @@ async function fetchAzureKMSToken(options) {
  * @ignore
  */
 async function loadAzureCredentials(kmsProviders) {
-  if (azureIdentityModule == null) {
-    try {
-      // Ensure you always wrap an optional require in the try block NODE-3199
-      azureIdentityModule = require('@azure/identity');
-      // eslint-disable-next-line no-empty
-    } catch {}
-  }
-
-  if (azureIdentityModule == null) {
-    return kmsProviders;
-  }
-
-  if (tokenCacheProvider == null) {
-    tokenCacheProvider = new AzureCredentialCache();
-  }
-
-  const token = await tokenCacheProvider.getToken();
-  return { ...kmsProviders, azure: { accessToken: token.token } };
+  const azure = await tokenCache.getToken();
+  return { ...kmsProviders, azure };
 }
 
-module.exports = { loadAzureCredentials, AzureCredentialCache, fetchAzureKMSToken };
+module.exports = { loadAzureCredentials, AzureCredentialCache, fetchAzureKMSToken, tokenCache };
