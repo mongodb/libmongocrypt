@@ -1,6 +1,6 @@
 'use strict';
 
-const { MongoCryptNetworkTimeoutError } = require('../errors');
+const { MongoCryptKMSRequestNetworkTimeoutError } = require('../errors');
 const http = require('http');
 
 /**
@@ -22,10 +22,15 @@ function get(url, options = {}) {
           resolve({ status: response.statusCode, body });
         });
       })
-      .on('error', error => reject(error))
+      .on('error', error => {
+        clearTimeout(timeoutId);
+        reject(error);
+      })
       .end();
     timeoutId = setTimeout(() => {
-      request.destroy(new MongoCryptNetworkTimeoutError(`request timed out after 10 seconds`));
+      request.destroy(
+        new MongoCryptKMSRequestNetworkTimeoutError(`request timed out after 10 seconds`)
+      );
     }, 10000);
   });
 }

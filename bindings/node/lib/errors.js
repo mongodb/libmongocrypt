@@ -64,11 +64,11 @@ class MongoCryptAzureKMSRequestError extends MongoCryptError {
   }
 }
 
-class MongoCryptNetworkTimeoutError extends MongoCryptError {}
+class MongoCryptKMSRequestNetworkTimeoutError extends MongoCryptError {}
 
 module.exports = {
   MongoCryptError,
-  MongoCryptNetworkTimeoutError,
+  MongoCryptKMSRequestNetworkTimeoutError,
   MongoCryptAzureKMSRequestError,
   MongoCryptCreateDataKeyError,
   MongoCryptCreateEncryptedCollectionError

@@ -8,7 +8,7 @@ const { tokenCache, fetchAzureKMSToken } = require('../../lib/providers/azure');
 const sinon = require('sinon');
 const utils = require('../../lib/providers/utils');
 const {
-  MongoCryptNetworkTimeoutError,
+  MongoCryptKMSRequestNetworkTimeoutError,
   MongoCryptAzureKMSRequestError
 } = require('../../lib/errors');
 
@@ -256,8 +256,6 @@ describe('#loadCredentials', function () {
         cache.resetCache();
       });
 
-      afterEach(() => sinon.restore());
-
       context('when there is no cached token', () => {
         let mockToken = {
           accessToken: 'mock token',
@@ -339,7 +337,7 @@ describe('#loadCredentials', function () {
 
       beforeEach(async () => {
         httpSpy = sinon.stub(utils, 'get');
-        httpSpy.callsFake(() => Promise.resolve(mockResponse));
+        httpSpy.resolves(mockResponse);
 
         await loadCredentials({ azure: {} });
       });
@@ -384,7 +382,7 @@ describe('#loadCredentials', function () {
         beforeEach(async () => {
           sinon.restore();
           httpSpy = sinon.stub(utils, 'get');
-          httpSpy.callsFake(() => Promise.resolve(mockResponse));
+          httpSpy.resolves(mockResponse);
           await fetchAzureKMSToken({
             url,
             headers: {
@@ -418,9 +416,7 @@ describe('#loadCredentials', function () {
       afterEach(() => sinon.restore());
       context('when the request times out', () => {
         before(() => {
-          sinon
-            .stub(utils, 'get')
-            .callsFake(() => Promise.reject(new MongoCryptNetworkTimeoutError()));
+          sinon.stub(utils, 'get').rejects(new MongoCryptKMSRequestNetworkTimeoutError());
         });
 
         it('throws a MongoCryptKMSRequestError', async () => {
@@ -432,7 +428,7 @@ describe('#loadCredentials', function () {
       context('when the request returns a non-200 error', () => {
         context('when the request has no body', () => {
           before(() => {
-            sinon.stub(utils, 'get').callsFake(() => Promise.resolve({ status: 400 }));
+            sinon.stub(utils, 'get').resolves({ status: 400 });
           });
 
           it('throws a MongoCryptKMSRequestError', async () => {
@@ -446,9 +442,7 @@ describe('#loadCredentials', function () {
           beforeEach(() => {
             sinon
               .stub(utils, 'get')
-              .callsFake(() =>
-                Promise.resolve({ status: 400, body: '{ "error": "something went wrong" }' })
-              );
+              .resolves({ status: 400, body: '{ "error": "something went wrong" }' });
           });
 
           it('throws a MongoCryptKMSRequestError', async () => {
@@ -466,7 +460,7 @@ describe('#loadCredentials', function () {
       context('when the request returns a 200 response', () => {
         context('when the request has no body', () => {
           before(() => {
-            sinon.stub(utils, 'get').callsFake(() => Promise.resolve({ status: 200 }));
+            sinon.stub(utils, 'get').resolves({ status: 200 });
           });
 
           it('throws a MongoCryptKMSRequestError', async () => {
@@ -478,7 +472,7 @@ describe('#loadCredentials', function () {
 
         context('when the body has no access_token', () => {
           beforeEach(() => {
-            sinon.stub(utils, 'get').callsFake(() => Promise.resolve({ status: 200, body: '{ }' }));
+            sinon.stub(utils, 'get').resolves({ status: 200, body: '{ }' });
           });
 
           it('throws a MongoCryptKMSRequestError', async () => {
@@ -490,11 +484,7 @@ describe('#loadCredentials', function () {
 
         context('when the body has no expires_in', () => {
           beforeEach(() => {
-            sinon
-              .stub(utils, 'get')
-              .callsFake(() =>
-                Promise.resolve({ status: 200, body: '{ "access_token": "token" }' })
-              );
+            sinon.stub(utils, 'get').resolves({ status: 200, body: '{ "access_token": "token" }' });
           });
 
           it('throws a MongoCryptKMSRequestError', async () => {
@@ -506,12 +496,10 @@ describe('#loadCredentials', function () {
 
         context('when expires_in cannot be parsed into a number', () => {
           beforeEach(() => {
-            sinon.stub(utils, 'get').callsFake(() =>
-              Promise.resolve({
-                status: 200,
-                body: '{ "access_token": "token", "expires_in": "foo" }'
-              })
-            );
+            sinon.stub(utils, 'get').resolves({
+              status: 200,
+              body: '{ "access_token": "token", "expires_in": "foo" }'
+            });
           });
 
           it('throws a MongoCryptKMSRequestError', async () => {
@@ -524,12 +512,9 @@ describe('#loadCredentials', function () {
 
       context('when a valid token was returned', () => {
         beforeEach(() => {
-          sinon.stub(utils, 'get').callsFake(() =>
-            Promise.resolve({
-              status: 200,
-              body: '{ "access_token": "token", "expires_in": "10000" }'
-            })
-          );
+          sinon
+            .stub(utils, 'get')
+            .resolves({ status: 200, body: '{ "access_token": "token", "expires_in": "10000" }' });
         });
 
         it('returns the token in the `azure` field of the kms providers', async () => {

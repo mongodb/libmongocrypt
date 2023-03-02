@@ -14,7 +14,7 @@ const {
   MongoCryptCreateEncryptedCollectionError,
   MongoCryptCreateDataKeyError,
   MongoCryptAzureKMSRequestError,
-  MongoCryptNetworkTimeoutError
+  MongoCryptKMSRequestNetworkTimeoutError
 } = require('./errors');
 
 const { fetchAzureKMSToken } = require('./providers/index');
@@ -34,7 +34,7 @@ function extension(mongodb) {
     MongoCryptCreateEncryptedCollectionError,
     MongoCryptCreateDataKeyError,
     MongoCryptAzureKMSRequestError,
-    MongoCryptNetworkTimeoutError
+    MongoCryptKMSRequestNetworkTimeoutError
   };
 
   Object.defineProperty(exports, AZURE_PROSE_TESTING_SYMBOL, {
@@ -52,7 +52,7 @@ module.exports = {
   MongoCryptCreateEncryptedCollectionError,
   MongoCryptCreateDataKeyError,
   MongoCryptAzureKMSRequestError,
-  MongoCryptNetworkTimeoutError,
+  MongoCryptKMSRequestNetworkTimeoutError,
   get AutoEncrypter() {
     const m = loadDefaultModule();
     delete module.exports.AutoEncrypter;

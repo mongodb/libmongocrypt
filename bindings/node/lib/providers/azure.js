@@ -1,6 +1,9 @@
 'use strict';
 
-const { MongoCryptAzureKMSRequestError, MongoCryptNetworkTimeoutError } = require('../errors');
+const {
+  MongoCryptAzureKMSRequestError,
+  MongoCryptKMSRequestNetworkTimeoutError
+} = require('../errors');
 const utils = require('./utils');
 
 const MINIMUM_TOKEN_REFRESH_IN_MILLISECONDS = 6000;
@@ -133,7 +136,7 @@ async function fetchAzureKMSToken(options = {}) {
     const response = await utils.get(url, { headers });
     return parseResponse(response);
   } catch (error) {
-    if (error instanceof MongoCryptNetworkTimeoutError) {
+    if (error instanceof MongoCryptKMSRequestNetworkTimeoutError) {
       throw new MongoCryptAzureKMSRequestError('Azure KMS request timed out after 10s');
     }
     throw error;

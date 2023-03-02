@@ -12,7 +12,7 @@ const EXPECTED_EXPORTS = [
   'MongoCryptCreateEncryptedCollectionError',
   'MongoCryptCreateDataKeyError',
   'MongoCryptAzureKMSRequestError',
-  'MongoCryptNetworkTimeoutError',
+  'MongoCryptKMSRequestNetworkTimeoutError',
   'AutoEncrypter',
   'ClientEncryption'
 ];
