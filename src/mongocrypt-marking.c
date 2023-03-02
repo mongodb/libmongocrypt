@@ -285,6 +285,34 @@ DERIVE_TOKEN_IMPL (ECC)
 
 
 static bool
+_fle2_derive_serverDerivedFromDataToken (
+   _mongocrypt_crypto_t *crypto,
+   _mongocrypt_buffer_t *out,
+   const mc_ServerTokenDerivationLevel1Token_t *level1Token,
+   const _mongocrypt_buffer_t *value,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (crypto);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (level1Token);
+   BSON_ASSERT_PARAM (value);
+   BSON_ASSERT_PARAM (status);
+
+   _mongocrypt_buffer_init (out);
+
+   mc_ServerDerivedFromDataToken_t *token =
+      mc_ServerDerivedFromDataToken_new (crypto, level1Token, value, status);
+   if (!token) {
+      return false;
+   }
+
+   _mongocrypt_buffer_copy_to (mc_ServerDerivedFromDataToken_get (token), out);
+   mc_ServerDerivedFromDataToken_destroy (token);
+   return true;
+}
+
+
+static bool
 _fle2_placeholder_aes_ctr_encrypt (_mongocrypt_crypto_t *crypto,
                                    const _mongocrypt_buffer_t *key,
                                    const _mongocrypt_buffer_t *in,
@@ -408,9 +436,12 @@ typedef struct {
    _mongocrypt_buffer_t tokenKey;
    mc_CollectionsLevel1Token_t *collectionsLevel1Token;
    mc_ServerDataEncryptionLevel1Token_t *serverDataEncryptionLevel1Token;
+   mc_ServerTokenDerivationLevel1Token_t
+      *serverTokenDerivationLevel1Token; // v2
    _mongocrypt_buffer_t edcDerivedToken;
    _mongocrypt_buffer_t escDerivedToken;
-   _mongocrypt_buffer_t eccDerivedToken;
+   _mongocrypt_buffer_t eccDerivedToken;            // v1
+   _mongocrypt_buffer_t serverDerivedFromDataToken; // v2
 } _FLE2EncryptedPayloadCommon_t;
 
 static void
@@ -424,9 +455,12 @@ _FLE2EncryptedPayloadCommon_cleanup (_FLE2EncryptedPayloadCommon_t *common)
    mc_CollectionsLevel1Token_destroy (common->collectionsLevel1Token);
    mc_ServerDataEncryptionLevel1Token_destroy (
       common->serverDataEncryptionLevel1Token);
+   mc_ServerTokenDerivationLevel1Token_destroy (
+      common->serverTokenDerivationLevel1Token);
    _mongocrypt_buffer_cleanup (&common->edcDerivedToken);
    _mongocrypt_buffer_cleanup (&common->escDerivedToken);
    _mongocrypt_buffer_cleanup (&common->eccDerivedToken);
+   _mongocrypt_buffer_cleanup (&common->serverDerivedFromDataToken);
    memset (common, 0, sizeof (*common));
 }
 
@@ -530,14 +564,35 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
       goto fail;
    }
 
-   if (!_fle2_derive_ECC_token (crypto,
-                                &ret->eccDerivedToken,
-                                ret->collectionsLevel1Token,
-                                value,
-                                useCounter,
-                                maxContentionCounter,
-                                status)) {
-      goto fail;
+   if (kb->crypt->opts.use_fle2_v2) {
+      /* FLE2v2 */
+      ret->serverTokenDerivationLevel1Token =
+         mc_ServerTokenDerivationLevel1Token_new (
+            crypto, &ret->tokenKey, status);
+      if (!ret->serverTokenDerivationLevel1Token) {
+         CLIENT_ERR ("unable to derive serverTokenDerivationLevel1Token");
+         goto fail;
+      }
+
+      if (!_fle2_derive_serverDerivedFromDataToken (
+             crypto,
+             &ret->serverDerivedFromDataToken,
+             ret->serverTokenDerivationLevel1Token,
+             value,
+             status)) {
+         goto fail;
+      }
+   } else {
+      /* FLE2v1 */
+      if (!_fle2_derive_ECC_token (crypto,
+                                   &ret->eccDerivedToken,
+                                   ret->collectionsLevel1Token,
+                                   value,
+                                   useCounter,
+                                   maxContentionCounter,
+                                   status)) {
+         goto fail;
+      }
    }
 
    _mongocrypt_buffer_cleanup (&indexKey);
@@ -550,9 +605,9 @@ fail:
 }
 
 
-// Shared implementation for insert/update and insert/update ForRange
+// Shared implementation for insert/update and insert/update ForRange (v1)
 static bool
-_mongocrypt_fle2_placeholder_to_insert_update_common (
+_mongocrypt_fle2_placeholder_to_insert_update_common_v1 (
    _mongocrypt_key_broker_t *kb,
    mc_FLE2InsertUpdatePayload_t *out,
    int64_t *contentionFactor,
@@ -567,6 +622,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_common (
    BSON_ASSERT_PARAM (placeholder);
    BSON_ASSERT_PARAM (value_iter);
    BSON_ASSERT (kb->crypt);
+   BSON_ASSERT (kb->crypt->opts.use_fle2_v2 == false);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
 
    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
@@ -653,7 +709,7 @@ fail:
  *  v: value, e: serverToken}
  */
 static bool
-_mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
+_mongocrypt_fle2_placeholder_to_insert_update_ciphertext_v1 (
    _mongocrypt_key_broker_t *kb,
    _mongocrypt_marking_t *marking,
    _mongocrypt_ciphertext_t *ciphertext,
@@ -663,6 +719,8 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    BSON_ASSERT_PARAM (marking);
    BSON_ASSERT_PARAM (ciphertext);
    BSON_ASSERT_PARAM (status);
+   BSON_ASSERT (kb->crypt);
+   BSON_ASSERT (kb->crypt->opts.use_fle2_v2 == false);
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    BSON_ASSERT (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_EQUALITY);
 
@@ -673,7 +731,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    bool res = false;
 
    int64_t contentionFactor = 0; /* ignored */
-   if (!_mongocrypt_fle2_placeholder_to_insert_update_common (
+   if (!_mongocrypt_fle2_placeholder_to_insert_update_common_v1 (
           kb,
           &payload,
           &contentionFactor,
@@ -700,6 +758,40 @@ fail:
    _FLE2EncryptedPayloadCommon_cleanup (&common);
 
    return res;
+}
+
+
+/**
+ * Payload subtype 11: FLE2InsertUpdatePayloadV2
+ * Delegates to ..._insert_update_ciphertext_v1 for subtype 4
+ *   when crypt.opts.use_fle2_v2 == false
+ *
+ * {d: EDC, s: ESC, p: encToken,
+ *  u: indexKeyId, t: valueType, v: value,
+ *  e: serverToken, l: serverDerivedFromDataToken,
+ *  k: contentionFactor}
+ */
+static bool
+_mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+
+   if (!kb->crypt->opts.use_fle2_v2) {
+      return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext_v1 (
+         kb, marking, ciphertext, status);
+   }
+
+   // TODO (MONGOCRYPT-543): InsertUpdatePayloadV2
+   CLIENT_ERR ("FLE2InsertUpdatePayloadV2 not implemented");
+   return false;
 }
 
 
@@ -798,7 +890,7 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
  *      ...]}
  */
 static bool
-_mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
+_mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1 (
    _mongocrypt_key_broker_t *kb,
    _mongocrypt_marking_t *marking,
    _mongocrypt_ciphertext_t *ciphertext,
@@ -827,13 +919,14 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    }
 
    int64_t contentionFactor = 0;
-   if (!_mongocrypt_fle2_placeholder_to_insert_update_common (kb,
-                                                              &payload,
-                                                              &contentionFactor,
-                                                              &common,
-                                                              &marking->fle2,
-                                                              &insertSpec.v,
-                                                              status)) {
+   if (!_mongocrypt_fle2_placeholder_to_insert_update_common_v1 (
+          kb,
+          &payload,
+          &contentionFactor,
+          &common,
+          &marking->fle2,
+          &insertSpec.v,
+          status)) {
       goto fail;
    }
 
@@ -925,8 +1018,49 @@ fail:
 }
 
 
+/**
+ * Payload subtype 11: FLE2InsertUpdatePayloadV2 for range updates
+ * Delegates to ..._insert_update_ciphertextForRange_v1 for subtype 4
+ *   when crypt.opts.use_fle2_v2 == false
+ *
+ * {d: EDC, s: ESC, p: encToken,
+ *  u: indexKeyId, t: valueType, v: value,
+ *  e: serverToken, l: serverDerivedFromDataToken,
+ *  k: contentionFactor,
+ *  g: [{d: EDC, s: ESC, l: serverDerivedFromDataToken, p: encToken},
+ *      {d: EDC, s: ESC, l: serverDerivedFromDataToken, p: encToken},
+ *      ...]}
+ */
 static bool
-_mongocrypt_fle2_placeholder_to_find_ciphertext (
+_mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+
+   if (!kb->crypt->opts.use_fle2_v2) {
+      return _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1 (
+         kb, marking, ciphertext, status);
+   }
+
+   // TODO (MONGOCRYPT-543): InsertUpdatePayloadV2
+   CLIENT_ERR ("FLE2InsertUpdatePayloadV2 not implemented");
+   return false;
+}
+
+/**
+ * Payload subtype 5: FLE2FindEqualityPayload
+ *
+ * {d: EDC, s: ESC, c: ECC, e: serverToken, cm: contentionCounter}
+ */
+static bool
+_mongocrypt_fle2_placeholder_to_find_ciphertext_v1 (
    _mongocrypt_key_broker_t *kb,
    _mongocrypt_marking_t *marking,
    _mongocrypt_ciphertext_t *ciphertext,
@@ -942,6 +1076,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    mc_FLE2FindEqualityPayload_t payload;
    bool res = false;
 
+   BSON_ASSERT (kb->crypt->opts.use_fle2_v2 == false);
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
    _mongocrypt_buffer_init (&value);
@@ -992,6 +1127,34 @@ fail:
 
    return res;
 }
+
+/**
+ * Payload subtype 12: FLE2FindEqualityPayloadV2
+ * Delegates to ..._find_ciphertext_v1 when crypt->opts.use_fle2_v2 == false.
+ *
+ * {d: EDC, s: ESC, l: serverDerivedFromDataToken, cm: contentionCounter}
+ */
+static bool
+_mongocrypt_fle2_placeholder_to_find_ciphertext (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+
+   if (kb->crypt->opts.use_fle2_v2 == false) {
+      return _mongocrypt_fle2_placeholder_to_find_ciphertext_v1 (
+         kb, marking, ciphertext, status);
+   }
+
+   // TODO:(MONGOCRYPT-544) FindEqualityPayloadV2
+   CLIENT_ERR ("FLE2FindEqualityPayloadV2 not implemented");
+   return false;
+}
+
 
 static bool
 isInfinite (bson_iter_t *iter)
@@ -1194,8 +1357,14 @@ mc_get_mincover_from_FLE2RangeFindSpec (mc_FLE2RangeFindSpec_t *findSpec,
    }
 }
 
+/**
+ * Payload subtype 10: FLE2FindRangePayload
+ *
+ * {e: serverToken, cm: contentionCounter,
+ *  g: [{d: EDC, s: ESC, c: ECC}, ...]}
+ */
 static bool
-_mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
+_mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1 (
    _mongocrypt_key_broker_t *kb,
    _mongocrypt_marking_t *marking,
    _mongocrypt_ciphertext_t *ciphertext,
@@ -1213,6 +1382,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    mc_mincover_t *mincover = NULL;
    _mongocrypt_buffer_t tokenKey = {0};
 
+   BSON_ASSERT (kb->crypt->opts.use_fle2_v2 == false);
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    BSON_ASSERT (placeholder);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
@@ -1333,6 +1503,37 @@ fail:
    return res;
 }
 
+
+/**
+ * Payload subtype 13: FLE2FindRangePayloadV2
+ * Delegates to ..._find_ciphertextForRange_v1
+ *   when crypt->opts.use_fle2_v2 is false
+ *
+ * {cm: contentionCounter,
+ *  g: [{d: EDC, s: ESC, l: serverDerivedFromDataToken}, ...]}
+ */
+static bool
+_mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
+   _mongocrypt_key_broker_t *kb,
+   _mongocrypt_marking_t *marking,
+   _mongocrypt_ciphertext_t *ciphertext,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+
+   if (kb->crypt->opts.use_fle2_v2 == false) {
+      return _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1 (
+         kb, marking, ciphertext, status);
+   }
+
+   // TODO:(MONGOCRYPT-545) FindRangePayloadV2
+   CLIENT_ERR ("FLE2FindRangePayloadV2 not implemented");
+   return false;
+}
+
+
 static bool
 _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    _mongocrypt_key_broker_t *kb,
@@ -1343,6 +1544,12 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    BSON_ASSERT_PARAM (kb);
    BSON_ASSERT_PARAM (marking);
    BSON_ASSERT_PARAM (ciphertext);
+
+   if (kb->crypt->opts.use_fle2_v2) {
+      // TODO (MONGOCRYPT-551): UnindexedEncryptedValueV2
+      CLIENT_ERR ("FLE2UnindexedEncryptedValueV2 not implemented");
+      return false;
+   }
 
    _mongocrypt_buffer_t plaintext = {0};
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;

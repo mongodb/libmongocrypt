@@ -87,6 +87,10 @@ typedef struct {
 
    bool use_need_kms_credentials_state;
    bool bypass_query_analysis;
+
+   // When creating new encrypted payloads,
+   // use V2 variants of the FLE2 datatypes.
+   bool use_fle2_v2;
 } _mongocrypt_opts_t;
 
 
