@@ -4,7 +4,7 @@ const { expect } = require('chai');
 const http = require('http');
 const requirements = require('../requirements.helper');
 const { loadCredentials, isEmptyCredentials } = require('../../lib/providers');
-const { tokenCache } = require('../../lib/providers/azure');
+const { tokenCache, fetchAzureKMSToken } = require('../../lib/providers/azure');
 const sinon = require('sinon');
 const utils = require('../../lib/providers/utils');
 const {
@@ -344,34 +344,73 @@ describe('#loadCredentials', function () {
         await loadCredentials({ azure: {} });
       });
 
-      it('sets the `api-version` param to 2012-02-01', async () => {
+      it('sets the `api-version` param to 2012-02-01', () => {
         const url = httpSpy.args[0][0];
         expect(url).to.be.instanceof(URL);
         expect(url.searchParams.get('api-version'), '2018-02-01');
       });
 
-      it('sets the `resource` param to `https://vault.azure.net`', async () => {
+      it('sets the `resource` param to `https://vault.azure.net`', () => {
         const url = httpSpy.args[0][0];
         expect(url).to.be.instanceof(URL);
         expect(url.searchParams.get('resource'), 'https://vault.azure.net');
       });
 
-      it('sends the request to `http://169.254.169.254/metadata/identity/oauth2/token`', async () => {
+      it('sends the request to `http://169.254.169.254/metadata/identity/oauth2/token`', () => {
         const url = httpSpy.args[0][0];
         expect(url).to.be.instanceof(URL);
         expect(url.toString()).to.include('http://169.254.169.254/metadata/identity/oauth2/token');
       });
 
-      it('sets the Metadata header to true', async () => {
+      it('sets the Metadata header to true', () => {
         const options = httpSpy.args[0][1];
         expect(options).to.have.property('headers').to.have.property('Metadata', true);
       });
 
-      it('sets the Content-Type header to application/json', async () => {
+      it('sets the Content-Type header to application/json', () => {
         const options = httpSpy.args[0][1];
         expect(options)
           .to.have.property('headers')
           .to.have.property('Content-Type', 'application/json');
+      });
+
+      context('prose test specific requirements', () => {
+        /**
+         * the driver prose tests require the ability to set custom URL endpoints
+         * for the IMDS call and set custom headers
+         */
+        const url = new URL('http://customentpoint.com');
+
+        beforeEach(async () => {
+          sinon.restore();
+          httpSpy = sinon.stub(utils, 'get');
+          httpSpy.callsFake(() => Promise.resolve(mockResponse));
+          await fetchAzureKMSToken({
+            url,
+            headers: {
+              customHeader1: 'value1',
+              customHeader2: 'value2'
+            }
+          });
+        });
+
+        it('allows a custom URL to be specified', () => {
+          const url = httpSpy.args[0][0];
+          expect(url).to.be.instanceof(URL);
+          expect(url.toString()).to.include('http://customentpoint.com');
+        });
+
+        it('deep copies the provided url', () => {
+          const spiedUrl = httpSpy.args[0][0];
+          expect(spiedUrl).to.be.instanceof(URL);
+          expect(spiedUrl).to.not.equal(url);
+        });
+
+        it('allows custom headers to be specified', () => {
+          const options = httpSpy.args[0][1];
+          expect(options).to.have.property('headers').to.have.property('customHeader1', 'value1');
+          expect(options).to.have.property('headers').to.have.property('customHeader2', 'value2');
+        });
       });
     });
 

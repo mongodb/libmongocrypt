@@ -19,6 +19,8 @@ const REQUIRED_FILES = [
   'package/lib/providers/index.js',
   'package/lib/providers/gcp.js',
   'package/lib/providers/aws.js',
+  'package/lib/providers/azure.js',
+  'package/lib/providers/utils.js',
   'package/lib/cryptoCallbacks.js',
   'package/lib/errors.js',
   'package/lib/mongocryptdManager.js',
