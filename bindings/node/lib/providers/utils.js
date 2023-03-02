@@ -25,7 +25,7 @@ function get(url, options = {}) {
       .on('error', error => reject(error))
       .end();
     timeoutId = setTimeout(() => {
-      request.destroy(new MongoCryptNetworkTimeoutError(`request timed out after 10000ms`));
+      request.destroy(new MongoCryptNetworkTimeoutError(`request timed out after 10 seconds`));
     }, 10000);
   });
 }

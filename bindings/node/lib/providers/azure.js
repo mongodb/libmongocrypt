@@ -114,8 +114,7 @@ function prepareRequest(options) {
   url.searchParams.append('api-version', '2018-02-01');
   url.searchParams.append('resource', 'https://vault.azure.net');
 
-  const baseHeaders = options.headers != null ? options.headers : {};
-  const headers = { ...baseHeaders, 'Content-Type': 'application/json', Metadata: true };
+  const headers = { ...options.headers, 'Content-Type': 'application/json', Metadata: true };
   return { headers, url };
 }
 

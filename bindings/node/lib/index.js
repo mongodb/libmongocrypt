@@ -17,7 +17,7 @@ const {
   MongoCryptNetworkTimeoutError
 } = require('./errors');
 
-const { fetchAzureKMSToken } = require('./providers');
+const { fetchAzureKMSToken } = require('./providers/index');
 const AZURE_PROSE_TESTING_SYMBOL = Symbol.for('@@mdb.azureKMSRefreshProseTest');
 
 function extension(mongodb) {

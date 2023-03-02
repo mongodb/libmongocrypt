@@ -45,7 +45,7 @@ async function loadCredentials(kmsProviders) {
   }
 
   if (isEmptyCredentials('azure', kmsProviders)) {
-    finalKMSProviders = await loadAzureCredentials(kmsProviders);
+    finalKMSProviders = await loadAzureCredentials(finalKMSProviders);
   }
   return finalKMSProviders;
 }
