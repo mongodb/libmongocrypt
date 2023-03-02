@@ -53,7 +53,7 @@ class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
  * @class
  * An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.
  */
-class MongoCryptAzureKMSRequestError extends Error {
+class MongoCryptAzureKMSRequestError extends MongoCryptError {
   /**
    * @param {string} message
    * @param {object | undefined} body

@@ -32,10 +32,18 @@ class AzureCredentialCache {
     return timeUntilExpirationMS <= MINIMUM_TOKEN_REFRESH_IN_MILLISECONDS;
   }
 
+  /**
+   * @ignore
+   * exposed for testing
+   */
   resetCache() {
     this.cachedToken = null;
   }
 
+  /**
+   * @ignore
+   * exposed for testing
+   */
   _getToken() {
     return fetchAzureKMSToken();
   }
