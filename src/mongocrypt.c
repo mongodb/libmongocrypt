@@ -153,20 +153,33 @@ mongocrypt_new (void)
 }
 
 
+#define ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt)                       \
+   {                                                                \
+      const mongocrypt_t *_crypt = (crypt);                         \
+      BSON_ASSERT_PARAM (_crypt);                                   \
+      if (_crypt->initialized) {                                    \
+         mongocrypt_status_t *status = _crypt->status;              \
+         CLIENT_ERR ("options cannot be set after initialization"); \
+         return false;                                              \
+      }                                                             \
+   }
+
+bool
+mongocrypt_setopt_fle2v2 (mongocrypt_t *crypt, bool enable)
+{
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
+
+   crypt->opts.use_fle2_v2 = enable;
+   return true;
+}
+
+
 bool
 mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
                                mongocrypt_log_fn_t log_fn,
                                void *log_ctx)
 {
-   if (!crypt) {
-      return false;
-   }
-
-   if (crypt->initialized) {
-      mongocrypt_status_t *status = crypt->status;
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
    crypt->opts.log_fn = log_fn;
    crypt->opts.log_ctx = log_ctx;
    return true;
@@ -179,16 +192,11 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
                                     const char *aws_secret_access_key,
                                     int32_t aws_secret_access_key_len)
 {
-   BSON_ASSERT_PARAM (crypt);
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    mongocrypt_status_t *status = crypt->status;
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       &crypt->opts.kms_providers;
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
 
    if (0 !=
        (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
@@ -280,16 +288,11 @@ bool
 mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
                               mongocrypt_binary_t *schema_map)
 {
-   BSON_ASSERT_PARAM (crypt);
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    bson_t tmp;
    bson_error_t bson_err;
    mongocrypt_status_t *status = crypt->status;
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
 
    if (!schema_map || !mongocrypt_binary_data (schema_map)) {
       CLIENT_ERR ("passed null schema map");
@@ -321,16 +324,11 @@ bool
 mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
                                               mongocrypt_binary_t *efc_map)
 {
-   BSON_ASSERT_PARAM (crypt);
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    mongocrypt_status_t *status = crypt->status;
    bson_t as_bson;
    bson_error_t bson_err;
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
 
    if (!efc_map || !mongocrypt_binary_data (efc_map)) {
       CLIENT_ERR ("passed null encrypted_field_config_map");
@@ -364,16 +362,11 @@ bool
 mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
                                       mongocrypt_binary_t *key)
 {
-   BSON_ASSERT_PARAM (crypt);
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    mongocrypt_status_t *status = crypt->status;
    _mongocrypt_opts_kms_providers_t *const kms_providers =
       &crypt->opts.kms_providers;
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
 
    if (0 !=
        (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL)) {
@@ -1104,14 +1097,9 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
                                 mongocrypt_hash_fn sha_256,
                                 void *ctx)
 {
-   BSON_ASSERT_PARAM (crypt);
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    mongocrypt_status_t *status = crypt->status;
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
 
    if (!crypt->crypto) {
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
@@ -1166,16 +1154,10 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
    mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
    void *sign_ctx)
 {
-   BSON_ASSERT_PARAM (crypt);
-
-   mongocrypt_status_t *status = crypt->status;
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    if (crypt->opts.sign_rsaes_pkcs1_v1_5) {
+      mongocrypt_status_t *status = crypt->status;
       CLIENT_ERR ("signature hook already set");
       return false;
    }
@@ -1191,18 +1173,13 @@ mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
                                mongocrypt_crypto_fn aes_256_ctr_decrypt,
                                void *ctx)
 {
-   BSON_ASSERT_PARAM (crypt);
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    mongocrypt_status_t *status = crypt->status;
 
    if (!crypt->crypto) {
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
       BSON_ASSERT (crypt->crypto);
-   }
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
    }
 
    if (!aes_256_ctr_encrypt) {
@@ -1226,21 +1203,15 @@ mongocrypt_setopt_aes_256_ecb (mongocrypt_t *crypt,
                                mongocrypt_crypto_fn aes_256_ecb_encrypt,
                                void *ctx)
 {
-   BSON_ASSERT_PARAM (crypt);
-
-   mongocrypt_status_t *status = crypt->status;
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
 
    if (!crypt->crypto) {
       crypt->crypto = bson_malloc0 (sizeof (*crypt->crypto));
       BSON_ASSERT (crypt->crypto);
    }
 
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
-
    if (!aes_256_ecb_encrypt) {
+      mongocrypt_status_t *status = crypt->status;
       CLIENT_ERR ("aes_256_ecb_encrypt not set");
       return false;
    }
@@ -1254,15 +1225,8 @@ bool
 mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
                                  mongocrypt_binary_t *kms_providers_definition)
 {
-   BSON_ASSERT_PARAM (crypt);
+   ASSERT_MONGOCRYPT_PARAM_UNINIT (crypt);
    BSON_ASSERT_PARAM (kms_providers_definition);
-
-   mongocrypt_status_t *const status = crypt->status;
-
-   if (crypt->initialized) {
-      CLIENT_ERR ("options cannot be set after initialization");
-      return false;
-   }
 
    return _mongocrypt_parse_kms_providers (kms_providers_definition,
                                            &crypt->opts.kms_providers,
