@@ -4,7 +4,7 @@
 set -o errexit  # Exit the script with error if any of the commands fail
 
 echo "Setting up environment"
-export NODE_LTS_NAME="hydrogen"
+export NODE_LTS_NAME="gallium"
 source ./.evergreen/install-dependencies.sh
 
 # Handle the circular dependency when testing with a real client.
