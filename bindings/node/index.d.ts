@@ -179,7 +179,8 @@ export interface KMSProviders {
          * If present, an access token to authenticate with Azure.
          */
         accessToken: string;
-      };
+      }
+    | Record<string, never>;
 
   /**
    * Configuration options for using 'gcp' as your KMS provider
