@@ -18,7 +18,6 @@ const {
 } = require('./errors');
 
 const { fetchAzureKMSToken } = require('./providers/index');
-const AZURE_PROSE_TESTING_SYMBOL = Symbol.for('@@mdb.azureKMSRefreshProseTest');
 
 function extension(mongodb) {
   const modules = { mongodb };
@@ -37,7 +36,7 @@ function extension(mongodb) {
     MongoCryptKMSRequestNetworkTimeoutError
   };
 
-  Object.defineProperty(exports, AZURE_PROSE_TESTING_SYMBOL, {
+  Object.defineProperty(exports, '___azureKMSProseTestExports', {
     enumerable: false,
     configurable: false,
     value: fetchAzureKMSToken
@@ -67,7 +66,7 @@ module.exports = {
   }
 };
 
-Object.defineProperty(module.exports, AZURE_PROSE_TESTING_SYMBOL, {
+Object.defineProperty(module.exports, '___azureKMSProseTestExports', {
   enumerable: false,
   configurable: false,
   value: fetchAzureKMSToken

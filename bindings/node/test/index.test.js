@@ -30,17 +30,16 @@ describe('mongodb-client-encryption entrypoint', () => {
     expect(extensionResult).to.have.all.keys(exportsDefault);
   });
 
-  context('symbol exports for driver testing', () => {
-    const AZURE_PROSE_TESTING_SYMBOL = Symbol.for('@@mdb.azureKMSRefreshProseTest');
+  context('exports for driver testing', () => {
     it('exports `fetchAzureKMSToken` in a symbol property', () => {
       expect(mongodbClientEncryption).to.have.property(
-        AZURE_PROSE_TESTING_SYMBOL,
+        '___azureKMSProseTestExports',
         fetchAzureKMSToken
       );
     });
     it('extension exports `fetchAzureKMSToken` in a symbol property', () => {
       const extensionResult = mongodbClientEncryption.extension(require('mongodb'));
-      expect(extensionResult).to.have.property(AZURE_PROSE_TESTING_SYMBOL, fetchAzureKMSToken);
+      expect(extensionResult).to.have.property('___azureKMSProseTestExports', fetchAzureKMSToken);
     });
   });
 });
