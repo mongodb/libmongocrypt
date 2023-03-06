@@ -58,6 +58,9 @@ _mongocrypt_marking_parse_unowned (const _mongocrypt_buffer_t *in,
                                    mongocrypt_status_t *status)
    MONGOCRYPT_WARN_UNUSED_RESULT;
 
+// Callers are expected to initialize `ciphertext` with
+// `_mongocrypt_ciphertext_init before calling,
+// and eventually free it using `_mongocrypt_ciphertext_cleanup`.
 bool
 _mongocrypt_marking_to_ciphertext (void *ctx,
                                    _mongocrypt_marking_t *marking,

@@ -648,7 +648,9 @@ fail:
 /**
  * Payload subtype 4: FLE2InsertUpdatePayload
  *
- * {d: EDC, s: ESC, c: ECC, p: encToken, v: value, e: serverToken}
+ * {d: EDC, s: ESC, c: ECC,
+ *  p: encToken, u: indexKeyId, t: type,
+ *  v: value, e: serverToken}
  */
 static bool
 _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
@@ -657,15 +659,20 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (status);
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_EQUALITY);
+
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
    _FLE2EncryptedPayloadCommon_t common = {{0}};
    mc_FLE2InsertUpdatePayload_t payload;
    mc_FLE2InsertUpdatePayload_init (&payload);
    bool res = false;
 
-   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
-
-   int64_t contentionFactor = 0;
+   int64_t contentionFactor = 0; /* ignored */
    if (!_mongocrypt_fle2_placeholder_to_insert_update_common (
           kb,
           &payload,
@@ -677,7 +684,6 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
       goto fail;
    }
 
-   _mongocrypt_ciphertext_init (ciphertext);
    {
       bson_t out;
       bson_init (&out);
@@ -784,7 +790,9 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
 /**
  * Payload subtype 4: FLE2InsertUpdatePayload for range updates
  *
- * {d: EDC, s: ESC, c: ECC, p: encToken, v: value, e: serverToken,
+ * {d: EDC, s: ESC, c: ECC,
+ *  p: encToken, u: indexKeyId, t: type,
+ *  v: value, e: serverToken,
  *  g: [{d: EDC, s: ESC, c: ECC, p: encToken},
  *      {d: EDC, s: ESC, c: ECC, p: encToken},
  *      ...]}
@@ -796,15 +804,19 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT_PARAM (status);
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
    _FLE2EncryptedPayloadCommon_t common = {{0}};
    mc_FLE2InsertUpdatePayload_t payload;
    mc_FLE2InsertUpdatePayload_init (&payload);
    bool res = false;
    mc_edges_t *edges = NULL;
-
-   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
-   BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
 
    // Parse the value ("v"), min ("min"), and max ("max") from
    // FLE2EncryptionPlaceholder for range insert.
@@ -893,7 +905,6 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
       }
    }
 
-   _mongocrypt_ciphertext_init (ciphertext);
    {
       bson_t out;
       bson_init (&out);
@@ -933,7 +944,6 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
 
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
-   _mongocrypt_ciphertext_init (ciphertext);
    _mongocrypt_buffer_init (&value);
    mc_FLE2FindEqualityPayload_init (&payload);
 
@@ -1207,7 +1217,6 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    BSON_ASSERT (placeholder);
    BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
    BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
-   _mongocrypt_ciphertext_init (ciphertext);
    mc_FLE2FindRangePayload_init (&payload);
 
    // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
@@ -1343,7 +1352,6 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
    BSON_ASSERT (placeholder);
    BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED);
-   _mongocrypt_ciphertext_init (ciphertext);
    _mongocrypt_buffer_from_iter (&plaintext, &placeholder->v_iter);
 
    if (!_mongocrypt_key_broker_decrypted_key_by_id (
@@ -1423,7 +1431,6 @@ _mongocrypt_fle1_marking_to_ciphertext (_mongocrypt_key_broker_t *kb,
       goto fail;
    }
 
-   _mongocrypt_ciphertext_init (ciphertext);
    ciphertext->original_bson_type = (uint8_t) bson_iter_type (&marking->v_iter);
    if (marking->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
       ciphertext->blob_subtype = MC_SUBTYPE_FLE1DeterministicEncryptedValue;
