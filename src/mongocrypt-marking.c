@@ -17,6 +17,7 @@
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-encryption-placeholder-private.h"
 #include "mc-fle2-find-equality-payload-private.h"
+#include "mc-fle2-find-equality-payload-private-v2.h"
 #include "mc-fle2-find-range-payload-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
 #include "mc-fle2-insert-update-payload-private-v2.h"
@@ -1396,9 +1397,60 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
          kb, marking, ciphertext, status);
    }
 
-   // TODO:(MONGOCRYPT-544) FindEqualityPayloadV2
-   CLIENT_ERR ("FLE2FindEqualityPayloadV2 not implemented");
-   return false;
+   _FLE2EncryptedPayloadCommon_t common = {{0}};
+   _mongocrypt_buffer_t value = {0};
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+   mc_FLE2FindEqualityPayloadV2_t payload;
+   bool res = false;
+
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+
+   _mongocrypt_buffer_init (&value);
+   mc_FLE2FindEqualityPayloadV2_init (&payload);
+
+   _mongocrypt_buffer_from_iter (&value, &placeholder->v_iter);
+
+   if (!_mongocrypt_fle2_placeholder_common (
+          kb,
+          &common,
+          &placeholder->index_key_id,
+          &value,
+          false, /* derive tokens without counter */
+          placeholder->maxContentionCounter,
+          status)) {
+      goto fail;
+   }
+   BSON_ASSERT (common.eccDerivedToken.data == NULL);
+
+   // d := EDCDerivedToken
+   _mongocrypt_buffer_steal (&payload.edcDerivedToken, &common.edcDerivedToken);
+   // s := ESCDerivedToken
+   _mongocrypt_buffer_steal (&payload.escDerivedToken, &common.escDerivedToken);
+   // l := serverDerivedFromDataToken
+   _mongocrypt_buffer_steal (&payload.serverDerivedFromDataToken,
+                             &common.serverDerivedFromDataToken);
+
+   // cm := maxContentionCounter
+   payload.maxContentionCounter = placeholder->maxContentionCounter;
+
+   {
+      bson_t out;
+      bson_init (&out);
+      mc_FLE2FindEqualityPayloadV2_serialize (&payload, &out);
+      _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
+   }
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2FindEqualityPayloadV2.
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindEqualityPayloadV2;
+
+   res = true;
+fail:
+   mc_FLE2FindEqualityPayloadV2_cleanup (&payload);
+   _mongocrypt_buffer_cleanup (&value);
+   _FLE2EncryptedPayloadCommon_cleanup (&common);
+
+   return res;
 }
 
 
