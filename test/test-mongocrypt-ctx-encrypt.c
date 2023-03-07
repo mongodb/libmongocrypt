@@ -2423,30 +2423,25 @@ typedef enum {
    kFLE2v2Enable,
 } _test_fle2v2_option;
 
-#define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(                             \
-   tester, data_path, rng_source, v2_failure)                                 \
-   {                                                                          \
-      (rng_source)->pos = 0;                                                  \
-      _test_encrypt_fle2_encryption_placeholder (tester,                      \
-                                                 data_path,                   \
-                                                 rng_source,                  \
-                                                 kFLE2v2Default,              \
-                                                 "encrypted-payload.json",    \
-                                                 NULL);                       \
-      (rng_source)->pos = 0;                                                  \
-      _test_encrypt_fle2_encryption_placeholder (tester,                      \
-                                                 data_path,                   \
-                                                 rng_source,                  \
-                                                 kFLE2v2Disable,              \
-                                                 "encrypted-payload.json",    \
-                                                 NULL);                       \
-      (rng_source)->pos = 0;                                                  \
-      _test_encrypt_fle2_encryption_placeholder (tester,                      \
-                                                 data_path,                   \
-                                                 rng_source,                  \
-                                                 kFLE2v2Enable,               \
-                                                 "encrypted-payload-v2.json", \
-                                                 v2_failure);                 \
+#define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(                \
+   tester, data_path, rng_source, v2_failure)                    \
+   {                                                             \
+      (rng_source)->pos = 0;                                     \
+      _test_encrypt_fle2_encryption_placeholder (                \
+         tester, data_path, rng_source, kFLE2v2Default, NULL);   \
+      (rng_source)->pos = 0;                                     \
+      _test_encrypt_fle2_encryption_placeholder (                \
+         tester, data_path, rng_source, kFLE2v2Disable, NULL);   \
+      char v2path[4096];                                         \
+      /* transitional: Use v1 data path if expecting failure */  \
+      ASSERT (snprintf (v2path,                                  \
+                        sizeof (v2path),                         \
+                        "%s%s",                                  \
+                        data_path,                               \
+                        v2_failure ? "" : "-v2"));               \
+      (rng_source)->pos = 0;                                     \
+      _test_encrypt_fle2_encryption_placeholder (                \
+         tester, v2path, rng_source, kFLE2v2Enable, v2_failure); \
    }
 
 
@@ -2456,7 +2451,6 @@ _test_encrypt_fle2_encryption_placeholder (
    const char *data_path,
    _test_rng_data_source *rng_source,
    _test_fle2v2_option test_fle2v2_option,
-   const char *output_path,
    const char *finalize_failure)
 {
    mongocrypt_t *crypt;
@@ -2550,7 +2544,7 @@ _test_encrypt_fle2_encryption_placeholder (
          ASSERT_FAILS_STATUS (ok, ctx->status, finalize_failure);
       } else {
          ASSERT_OK (ok, ctx);
-         MAKE_PATH (output_path);
+         MAKE_PATH ("encrypted-payload.json");
          ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON (TEST_FILE (pathbuf), out);
       }
       mongocrypt_binary_destroy (out);
@@ -2574,12 +2568,8 @@ _test_encrypt_fle2_insert_payload (_mongocrypt_tester_t *tester)
 
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert", &source, NULL)
 }
 #undef RNG_DATA
 
@@ -2623,12 +2613,8 @@ _test_encrypt_fle2_insert_range_payload_int32 (_mongocrypt_tester_t *tester)
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-range/int32",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert-range/int32", &source, NULL)
 }
 #undef RNG_DATA
 
@@ -2639,12 +2625,8 @@ _test_encrypt_fle2_insert_range_payload_int64 (_mongocrypt_tester_t *tester)
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-range/int64",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert-range/int64", &source, NULL)
 }
 #undef RNG_DATA
 
@@ -2655,12 +2637,8 @@ _test_encrypt_fle2_insert_range_payload_date (_mongocrypt_tester_t *tester)
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-range/date",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert-range/date", &source, NULL)
 }
 #undef RNG_DATA
 
@@ -2671,12 +2649,8 @@ _test_encrypt_fle2_insert_range_payload_double (_mongocrypt_tester_t *tester)
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-range/double",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert-range/double", &source, NULL)
 }
 #undef RNG_DATA
 
@@ -2688,12 +2662,8 @@ _test_encrypt_fle2_insert_range_payload_double_precision (
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-range/double-precision",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert-range/double-precision", &source, NULL)
 }
 #undef RNG_DATA
 
@@ -2706,12 +2676,8 @@ _test_encrypt_fle2_insert_range_payload_decimal128 (
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-range/decimal128",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert-range/decimal128", &source, NULL)
 }
 #undef RNG_DATA
 
@@ -2723,12 +2689,8 @@ _test_encrypt_fle2_insert_range_payload_decimal128_precision (
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-   // TODO (MONGOCRYPT-543): Implement InsertUpdatePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-range/decimal128-precision",
-      &source,
-      "FLE2InsertUpdatePayloadV2 not implemented")
+      tester, "fle2-insert-range/decimal128-precision", &source, NULL)
 }
 #undef RNG_DATA
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
