@@ -2696,12 +2696,8 @@ static void
 _test_encrypt_fle2_find_range_payload_int32 (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-545): Implement FindRangePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-range/int32",
-      &source,
-      "FLE2FindRangePayloadV2 not implemented")
+      tester, "fle2-find-range/int32", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
@@ -2709,12 +2705,8 @@ static void
 _test_encrypt_fle2_find_range_payload_int64 (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-545): Implement FindRangePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-range/int64",
-      &source,
-      "FLE2FindRangePayloadV2 not implemented")
+      tester, "fle2-find-range/int64", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
@@ -2722,12 +2714,8 @@ static void
 _test_encrypt_fle2_find_range_payload_date (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-545): Implement FindRangePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-range/date",
-      &source,
-      "FLE2FindRangePayloadV2 not implemented")
+      tester, "fle2-find-range/date", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
@@ -2735,12 +2723,8 @@ static void
 _test_encrypt_fle2_find_range_payload_double (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-545): Implement FindRangePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-range/double",
-      &source,
-      "FLE2FindRangePayloadV2 not implemented")
+      tester, "fle2-find-range/double", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
@@ -2749,12 +2733,8 @@ _test_encrypt_fle2_find_range_payload_double_precision (
    _mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-545): Implement FindRangePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-range/double-precision",
-      &source,
-      "FLE2FindRangePayloadV2 not implemented")
+      tester, "fle2-find-range/double-precision", &source, NULL)
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
@@ -2763,12 +2743,8 @@ static void
 _test_encrypt_fle2_find_range_payload_decimal128 (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-545): Implement FindRangePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-range/decimal128",
-      &source,
-      "FLE2FindRangePayloadV2 not implemented")
+      tester, "fle2-find-range/decimal128", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
@@ -2777,12 +2753,8 @@ _test_encrypt_fle2_find_range_payload_decimal128_precision (
    _mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-545): Implement FindRangePayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-range/decimal128-precision",
-      &source,
-      "FLE2FindRangePayloadV2 not implemented")
+      tester, "fle2-find-range/decimal128-precision", &source, NULL)
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 

@@ -1,0 +1,8 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$numberDouble": "123.456"
+        }
+    }
+}
