@@ -1,0 +1,52 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "find": "test",
+        "filter": {
+            "encrypted": {
+                "$binary": {
+                    "base64": "AwsBAAAQdAACAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASA3YArAAAAANlZGdlc0luZm8AegAAAAFsb3dlckJvdW5kAAAAAAAAAAAACGxiSW5jbHVkZWQAAQF1cHBlckJvdW5kAAAAAAAAAGlACHViSW5jbHVkZWQAARBwcmVjaXNpb24AAgAAAAFpbmRleE1pbgAAAAAAAAAAAAFpbmRleE1heAAAAAAAAABpQAAQcGF5bG9hZElkANIEAAAQZmlyc3RPcGVyYXRvcgABAAAAABJjbQAAAAAAAAAAABJzAAEAAAAAAAAAAA==",
+                    "subType": "6"
+                }
+            }
+        },
+        "encryptionInformation": {
+            "type": {
+                "$numberInt": "1"
+            },
+            "schema": {
+                "db.test": {
+                    "escCollection": "fle2.test.esc",
+                    "ecocCollection": "fle2.test.ecoc",
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "encrypted",
+                            "bsonType": "double",
+                            "queries": {
+                                "queryType": "range",
+                                "contention": {
+                                    "$numberInt": "0"
+                                },
+                                "sparsity": {
+                                    "$numberInt": "1"
+                                },
+                                "min": 0.0,
+                                "max": 200.0,
+                                "precision": 2
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "hasEncryptedPlaceholders": true
+}

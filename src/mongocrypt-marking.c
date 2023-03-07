@@ -19,6 +19,7 @@
 #include "mc-fle2-find-equality-payload-private.h"
 #include "mc-fle2-find-equality-payload-private-v2.h"
 #include "mc-fle2-find-range-payload-private.h"
+#include "mc-fle2-find-range-payload-private-v2.h"
 #include "mc-fle2-insert-update-payload-private.h"
 #include "mc-fle2-insert-update-payload-private-v2.h"
 #include "mc-fle2-payload-uev-private.h"
@@ -1826,9 +1827,113 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
          kb, marking, ciphertext, status);
    }
 
-   // TODO:(MONGOCRYPT-545) FindRangePayloadV2
-   CLIENT_ERR ("FLE2FindRangePayloadV2 not implemented");
-   return false;
+   mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+   mc_FLE2FindRangePayloadV2_t payload;
+   bool res = false;
+   mc_mincover_t *mincover = NULL;
+   _mongocrypt_buffer_t tokenKey = {0};
+
+   BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+   BSON_ASSERT (placeholder);
+   BSON_ASSERT (placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
+   BSON_ASSERT (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
+   mc_FLE2FindRangePayloadV2_init (&payload);
+
+   // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
+   // range find.
+   mc_FLE2RangeFindSpec_t findSpec;
+   if (!mc_FLE2RangeFindSpec_parse (&findSpec, &placeholder->v_iter, status)) {
+      goto fail;
+   }
+
+   if (findSpec.edgesInfo.set) {
+      // cm := Queryable Encryption max counter
+      payload.payload.value.maxContentionCounter =
+         placeholder->maxContentionCounter;
+
+      // g:= array<EdgeFindTokenSet>
+      {
+         BSON_ASSERT (placeholder->sparsity >= 0 &&
+                      (uint64_t) placeholder->sparsity <= (uint64_t) SIZE_MAX);
+         mincover = mc_get_mincover_from_FLE2RangeFindSpec (
+            &findSpec, (size_t) placeholder->sparsity, status);
+         if (!mincover) {
+            goto fail;
+         }
+
+         for (size_t i = 0; i < mc_mincover_len (mincover); i++) {
+            // Create a EdgeFindTokenSet from each edge.
+            bool loop_ok = false;
+            const char *edge = mc_mincover_get (mincover, i);
+            _mongocrypt_buffer_t edge_buf = {0};
+            _FLE2EncryptedPayloadCommon_t edge_tokens = {{0}};
+            mc_EdgeFindTokenSetV2_t eftc = {{0}};
+
+            if (!_mongocrypt_buffer_from_string (&edge_buf, edge)) {
+               CLIENT_ERR ("failed to copy edge to buffer");
+               goto fail_loop;
+            }
+
+            if (!_mongocrypt_fle2_placeholder_common (
+                   kb,
+                   &edge_tokens,
+                   &placeholder->index_key_id,
+                   &edge_buf,
+                   false, /* derive tokens using counter */
+                   placeholder->maxContentionCounter,
+                   status)) {
+               goto fail_loop;
+            }
+
+            // d := EDCDerivedToken
+            _mongocrypt_buffer_steal (&eftc.edcDerivedToken,
+                                      &edge_tokens.edcDerivedToken);
+            // s := ESCDerivedToken
+            _mongocrypt_buffer_steal (&eftc.escDerivedToken,
+                                      &edge_tokens.escDerivedToken);
+
+            // l := serverDerivedFromDataToken
+            _mongocrypt_buffer_steal (&eftc.serverDerivedFromDataToken,
+                                      &edge_tokens.serverDerivedFromDataToken);
+
+            _mc_array_append_val (&payload.payload.value.edgeFindTokenSetArray,
+                                  eftc);
+
+            loop_ok = true;
+         fail_loop:
+            _FLE2EncryptedPayloadCommon_cleanup (&edge_tokens);
+            _mongocrypt_buffer_cleanup (&edge_buf);
+            if (!loop_ok) {
+               goto fail;
+            }
+         }
+      }
+      payload.payload.set = true;
+   }
+
+   payload.payloadId = findSpec.payloadId;
+   payload.firstOperator = findSpec.firstOperator;
+   payload.secondOperator = findSpec.secondOperator;
+
+   // Serialize.
+   {
+      bson_t out = BSON_INITIALIZER;
+      mc_FLE2FindRangePayloadV2_serialize (&payload, &out);
+      _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
+   }
+   _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->index_key_id);
+
+   // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
+   // not used for FLE2FindRangePayload.
+   ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindRangePayloadV2;
+
+   res = true;
+fail:
+   mc_mincover_destroy (mincover);
+   mc_FLE2FindRangePayloadV2_cleanup (&payload);
+   _mongocrypt_buffer_cleanup (&tokenKey);
+
+   return res;
 }
 
 
