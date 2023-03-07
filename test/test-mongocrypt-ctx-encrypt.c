@@ -2607,8 +2607,8 @@ _test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
 
-   // TODO (SERVER-74139): Implement InsertUpdatePlacePayloadV2 transform
-   // Test kFLE2v2Enable when MONGOCRYPT work done folllowing SERVER work.
+   // TODO (MONGOCRYPT-551): Implement UnindexedEncryptedValueV2 transform
+   // Add kFLE2v2Enable case (or use macro) when the above work complete.
    source.pos = 0;
    _test_encrypt_fle2_encryption_placeholder (tester,
                                               "fle2-insert-unindexed",

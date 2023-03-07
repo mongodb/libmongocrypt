@@ -570,7 +570,7 @@ _mongocrypt_fle2_placeholder_common (_mongocrypt_key_broker_t *kb,
          mc_ServerTokenDerivationLevel1Token_new (
             crypto, &ret->tokenKey, status);
       if (!ret->serverTokenDerivationLevel1Token) {
-         CLIENT_ERR ("unablet to derive serverTokenDerivationLevel1Token");
+         CLIENT_ERR ("unable to derive serverTokenDerivationLevel1Token");
          goto fail;
       }
 
@@ -766,8 +766,10 @@ fail:
  * Delegates to ..._insert_update_ciphertext_v1 for subtype 4
  *   when crypt.opts.use_fle2_v2 == false
  *
- * {d: EDC, s: ESC, p: encToken, v: value,
- *  e: serverToken, l: derivedFromDataToken}
+ * {d: EDC, s: ESC, p: encToken,
+ *  u: indexKeyId, t: valueType, v: value,
+ *  e: serverToken, l: serverDerivedFromDataToken,
+ *  k: contentionFactor}
  */
 static bool
 _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
@@ -776,6 +778,10 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
 
    if (!kb->crypt->opts.use_fle2_v2) {
@@ -1017,10 +1023,12 @@ fail:
  * Delegates to ..._insert_update_ciphertext_v1 for subtype 4
  *   when crypt.opts.use_fle2_v2 == false
  *
- * {d: EDC, s: ESC, p: encToken, v: value,
- *  e: serverToken, l: derivedFromDataToken,
- *  g: [{d: EDC, s: ESC, c: ECC, p: encToken},
- *      {d: EDC, s: ESC, c: ECC, p: encToken},
+ * {d: EDC, s: ESC, p: encToken,
+ *  u: indexKeyId, t: valueType, v: value,
+ *  e: serverToken, l: serverDerivedFromDataToken,
+ *  k: contentionFactor,
+ *  g: [{d: EDC, s: ESC, l: serverDerivedFromDataToken, p: encToken},
+ *      {d: EDC, s: ESC, l: serverDerivedFromDataToken, p: encToken},
  *      ...]}
  */
 static bool
@@ -1030,6 +1038,10 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
    _mongocrypt_ciphertext_t *ciphertext,
    mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (kb);
+   BSON_ASSERT_PARAM (marking);
+   BSON_ASSERT_PARAM (ciphertext);
+   BSON_ASSERT (kb->crypt);
    BSON_ASSERT (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
 
    if (!kb->crypt->opts.use_fle2_v2) {
@@ -1117,10 +1129,10 @@ fail:
 }
 
 /**
- * Payload subtype 12: FLE2FindEqualityPayload
+ * Payload subtype 12: FLE2FindEqualityPayloadV2
  * Delegates to ..._find_ciphertext_v1 when crypt->opts.use_fle2_v2 == false.
  *
- * {d: EDC, s: ESC, l: serverToken, cm: contentionCounter}
+ * {d: EDC, s: ESC, l: serverDerivedFromDataToken, cm: contentionCounter}
  */
 static bool
 _mongocrypt_fle2_placeholder_to_find_ciphertext (
@@ -1497,8 +1509,8 @@ fail:
  * Delegates to ..._find_ciphertextForRange_v1
  *   when crypt->opts.use_fle2_v2 is false
  *
- * {e: serverToken, cm: contentionCounter,
- *  g: [{d: EDC, s: ESC, c: ECC}, ...]}
+ * {cm: contentionCounter,
+ *  g: [{d: EDC, s: ESC, l: serverDerivedFromDataToken}, ...]}
  */
 static bool
 _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
