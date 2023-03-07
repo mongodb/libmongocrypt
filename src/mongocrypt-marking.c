@@ -1020,7 +1020,7 @@ fail:
 
 /**
  * Payload subtype 11: FLE2InsertUpdatePayloadV2 for range updates
- * Delegates to ..._insert_update_ciphertext_v1 for subtype 4
+ * Delegates to ..._insert_update_ciphertextForRange_v1 for subtype 4
  *   when crypt.opts.use_fle2_v2 == false
  *
  * {d: EDC, s: ESC, p: encToken,
@@ -1544,6 +1544,12 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    BSON_ASSERT_PARAM (kb);
    BSON_ASSERT_PARAM (marking);
    BSON_ASSERT_PARAM (ciphertext);
+
+   if (kb->crypt->opts.use_fle2_v2) {
+      // TODO (MONGOCRYPT-551): UnindexedEncryptedValueV2
+      CLIENT_ERR ("FLE2UnindexedEncryptedValueV2 not implemented");
+      return false;
+   }
 
    _mongocrypt_buffer_t plaintext = {0};
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;

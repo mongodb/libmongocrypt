@@ -2608,22 +2608,11 @@ _test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
 
    // TODO (MONGOCRYPT-551): Implement UnindexedEncryptedValueV2 transform
-   // Add kFLE2v2Enable case (or use macro) when the above work complete.
-   source.pos = 0;
-   _test_encrypt_fle2_encryption_placeholder (tester,
-                                              "fle2-insert-unindexed",
-                                              &source,
-                                              kFLE2v2Default,
-                                              "encrypted-payload.json",
-                                              NULL);
-
-   source.pos = 0;
-   _test_encrypt_fle2_encryption_placeholder (tester,
-                                              "fle2-insert-unindexed",
-                                              &source,
-                                              kFLE2v2Disable,
-                                              "encrypted-payload.json",
-                                              NULL);
+   TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
+      tester,
+      "fle2-insert-unindexed",
+      &source,
+      "FLE2UnindexedEncryptedValueV2 not implemented");
 }
 #undef RNG_DATA
 

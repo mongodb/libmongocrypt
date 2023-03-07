@@ -31,7 +31,7 @@
  * FLE2InsertUpdatePayloadV2 has the following data layout:
  *
  * struct {
- *   uint8_t fle_blob_subtype = 4;
+ *   uint8_t fle_blob_subtype = 11;
  *   uint8_t bson[];
  * } FLE2InsertUpdatePayloadV2;
  *

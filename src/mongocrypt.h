@@ -320,7 +320,7 @@ mongocrypt_new (void);
  * @param[in] enable Whether to enable use of FLE2v2 payloads.
  *
  * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_ctx_status
+ * Retrieve it with @ref mongocrypt_status
  */
 MONGOCRYPT_EXPORT
 bool
