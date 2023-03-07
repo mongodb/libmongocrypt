@@ -226,6 +226,11 @@ test_FLE2UnindexedEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
 static void
 test_FLE2UnindexedEncryptedValue_encrypt (_mongocrypt_tester_t *tester)
 {
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
+
    mongocrypt_t *crypt =
       _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
    mongocrypt_status_t *status = mongocrypt_status_new ();

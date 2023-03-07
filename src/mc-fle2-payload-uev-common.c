@@ -120,9 +120,9 @@ _mc_FLE2UnindexedEncryptedValueCommon_decrypt (
    }
    _mongocrypt_buffer_resize (&AD, 1 + key_uuid->len + 1);
 
-   AD.data[0] = fle_blob_subtype;
+   AD.data[0] = (uint8_t) fle_blob_subtype;
    memcpy (AD.data + 1, key_uuid->data, key_uuid->len);
-   AD.data[1 + key_uuid->len] = original_bson_type;
+   AD.data[1 + key_uuid->len] = (uint8_t) original_bson_type;
    const uint32_t plaintext_len =
       fle2aead->get_plaintext_len (ciphertext->len, status);
    if (plaintext_len == 0) {
@@ -193,7 +193,7 @@ _mc_FLE2UnindexedEncryptedValueCommon_encrypt (
          goto fail;
       }
       _mongocrypt_buffer_resize (&AD, 1 + key_uuid->len + 1);
-      AD.data[0] = fle_blob_subtype;
+      AD.data[0] = (uint8_t) fle_blob_subtype;
       memcpy (AD.data + 1, key_uuid->data, key_uuid->len);
       AD.data[1 + key_uuid->len] = (uint8_t) original_bson_type;
    }
