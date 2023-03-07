@@ -2578,12 +2578,8 @@ static void
 _test_encrypt_fle2_find_payload (_mongocrypt_tester_t *tester)
 {
    _test_rng_data_source source = {{0}};
-   // TODO (MONGOCRYPT-544): Implement FindEqualityPayloadV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-find-equality",
-      &source,
-      "FLE2FindEqualityPayloadV2 not implemented")
+      tester, "fle2-find-equality", &source, NULL)
 }
 
 /* 16 bytes of random data are used for IV. This IV produces the expected test
