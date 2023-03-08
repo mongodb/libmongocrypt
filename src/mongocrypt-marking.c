@@ -829,8 +829,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_common (
    _mongocrypt_buffer_steal (&out->escDerivedToken, &common->escDerivedToken);
    BSON_ASSERT (common->eccDerivedToken.data == NULL);
 
-   // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndCounter ||
-   // ECCDerivedFromDataTokenAndCounter)
+   // p := EncryptCBC(ECOCToken, ESCDerivedFromDataTokenAndCounter)
    if (!_fle2_derive_encrypted_token (crypto,
                                       &out->encryptedTokens,
                                       common->collectionsLevel1Token,
@@ -925,7 +924,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertext (
    }
 
    // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
-   // not used for FLE2InsertUpdatePayload.
+   // not used for FLE2InsertUpdatePayloadV2.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2InsertUpdatePayloadV2;
 
    res = true;
@@ -1259,8 +1258,7 @@ _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange (
          _mongocrypt_buffer_steal (&etc.serverDerivedFromDataToken,
                                    &edge_tokens.serverDerivedFromDataToken);
 
-         // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndCounter ||
-         // ECCDerivedFromDataTokenAndCounter)
+         // p := EncryptCBC(ECOCToken, ESCDerivedFromDataTokenAndCounter)
          if (!_fle2_derive_encrypted_token (kb->crypt->crypto,
                                             &etc.encryptedTokens,
                                             edge_tokens.collectionsLevel1Token,
