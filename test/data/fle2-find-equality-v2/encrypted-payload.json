@@ -1,0 +1,40 @@
+{
+   "documents": [
+      {
+         "_id": 1,
+         "value": {
+            "$binary": {
+               "base64": "DIkAAAAFZAAgAAAAAE8KGPgq7h3n9nH5lfHcia8wtOTLwGkZNLBesb6PULqbBXMAIAAAAACq0558QyD3c3jkR5k0Zc9UpQK8ByhXhtn2d1xVQnuJ3AVsACAAAAAAlO36MaVLVRDFW6xrI+0UTkyQdFfSCEBPkZg8sFzuTJYSY20AAAAAAAAAAAAA",
+               "subType": "06"
+            }
+         }
+      }
+   ],
+   "find": "test",
+   "$db": "test",
+   "encryptionInformation": {
+      "type": 1,
+      "schema": {
+         "db.test": {
+             "escCollection": "fle2.test.esc",
+             "ecocCollection": "fle2.test.ecoc",
+             "fields": [
+                 {
+                     "keyId": {
+                         "$binary": {
+                             "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                             "subType": "04"
+                         }
+                     },
+                     "path": "value",
+                     "bsonType": "int32",
+                     "queries": {
+                         "queryType": "equality",
+                         "contention": 0
+                     }
+                 }
+             ]
+         }
+     }
+   }
+}

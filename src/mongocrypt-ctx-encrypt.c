@@ -28,7 +28,8 @@
  * default state collection names for escCollection, eccCollection, and
  * ecocCollection if required. */
 static bool
-_fle2_append_encryptedFieldConfig (bson_t *dst,
+_fle2_append_encryptedFieldConfig (const mongocrypt_ctx_t *ctx,
+                                   bson_t *dst,
                                    bson_t *encryptedFieldConfig,
                                    const char *coll_name,
                                    mongocrypt_status_t *status)
@@ -74,7 +75,7 @@ _fle2_append_encryptedFieldConfig (bson_t *dst,
       }
       bson_free (default_escCollection);
    }
-   if (!has_eccCollection) {
+   if (!has_eccCollection && !ctx->crypt->opts.use_fle2_v2) {
       char *default_eccCollection =
          bson_strdup_printf ("enxcol_.%s.ecc", coll_name);
       if (!BSON_APPEND_UTF8 (dst, "eccCollection", default_eccCollection)) {
@@ -98,7 +99,8 @@ _fle2_append_encryptedFieldConfig (bson_t *dst,
 }
 
 static bool
-_fle2_append_encryptionInformation (bson_t *dst,
+_fle2_append_encryptionInformation (const mongocrypt_ctx_t *ctx,
+                                    bson_t *dst,
                                     const char *ns,
                                     bson_t *encryptedFieldConfig,
                                     bson_t *deleteTokens,
@@ -138,7 +140,8 @@ _fle2_append_encryptionInformation (bson_t *dst,
       return false;
    }
 
-   if (!_fle2_append_encryptedFieldConfig (&encrypted_field_config_bson,
+   if (!_fle2_append_encryptedFieldConfig (ctx,
+                                           &encrypted_field_config_bson,
                                            encryptedFieldConfig,
                                            coll_name,
                                            status)) {
@@ -205,7 +208,8 @@ typedef enum { MC_TO_CSFLE, MC_TO_MONGOCRYPTD, MC_TO_MONGOD } mc_cmd_target_t;
  * @return false Otherwise. Sets a failing status message in this case.
  */
 static bool
-_fle2_insert_encryptionInformation (const char *cmd_name,
+_fle2_insert_encryptionInformation (const mongocrypt_ctx_t *ctx,
+                                    const char *cmd_name,
                                     bson_t *cmd /* in and out */,
                                     const char *ns,
                                     bson_t *encryptedFieldConfig,
@@ -230,8 +234,13 @@ _fle2_insert_encryptionInformation (const char *cmd_name,
       // All commands except "explain" expect "encryptionInformation"
       // at top-level. "explain" sent to mongocryptd expects
       // "encryptionInformation" at top-level.
-      if (!_fle2_append_encryptionInformation (
-             cmd, ns, encryptedFieldConfig, deleteTokens, coll_name, status)) {
+      if (!_fle2_append_encryptionInformation (ctx,
+                                               cmd,
+                                               ns,
+                                               encryptedFieldConfig,
+                                               deleteTokens,
+                                               coll_name,
+                                               status)) {
          goto fail;
       }
       goto success;
@@ -266,7 +275,8 @@ _fle2_insert_encryptionInformation (const char *cmd_name,
       bson_copy_to (&tmp, &explain);
    }
 
-   if (!_fle2_append_encryptionInformation (&explain,
+   if (!_fle2_append_encryptionInformation (ctx,
+                                            &explain,
                                             ns,
                                             encryptedFieldConfig,
                                             deleteTokens,
@@ -644,6 +654,7 @@ _fle2_mongo_op_markings (mongocrypt_ctx_t *ctx, bson_t *out)
    bson_init (out);
    bson_copy_to_excluding_noinit (&cmd_bson, out, "$db", NULL);
    if (!_fle2_insert_encryptionInformation (
+          ctx,
           cmd_name,
           out,
           ectx->ns,
@@ -1110,6 +1121,17 @@ fail_create_cmd:
 
 
 static bool
+_mongocrypt_fle2_insert_update_find (mc_fle_blob_subtype_t subtype)
+{
+   return (subtype == MC_SUBTYPE_FLE2InsertUpdatePayload) ||
+          (subtype == MC_SUBTYPE_FLE2InsertUpdatePayloadV2) ||
+          (subtype == MC_SUBTYPE_FLE2FindEqualityPayload) ||
+          (subtype == MC_SUBTYPE_FLE2FindEqualityPayloadV2) ||
+          (subtype == MC_SUBTYPE_FLE2FindRangePayload) ||
+          (subtype == MC_SUBTYPE_FLE2FindRangePayloadV2);
+}
+
+static bool
 _marking_to_bson_value (void *ctx,
                         _mongocrypt_marking_t *marking,
                         bson_value_t *out,
@@ -1129,9 +1151,7 @@ _marking_to_bson_value (void *ctx,
       goto fail;
    }
 
-   if ((ciphertext.blob_subtype == MC_SUBTYPE_FLE2InsertUpdatePayload) ||
-       (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindEqualityPayload) ||
-       (ciphertext.blob_subtype == MC_SUBTYPE_FLE2FindRangePayload)) {
+   if (_mongocrypt_fle2_insert_update_find (ciphertext.blob_subtype)) {
       /* ciphertext_data is already a BSON object, just need to prepend
        * blob_subtype */
       if (ciphertext.data.len > UINT32_MAX - 1u) {
@@ -1325,17 +1345,8 @@ _check_for_payload_requiring_encryptionInformation (void *ctx,
       return false;
    }
 
-   if (in->data[0] == MC_SUBTYPE_FLE2InsertUpdatePayload) {
-      *out = true;
-      return true;
-   }
-
-   if (in->data[0] == MC_SUBTYPE_FLE2FindEqualityPayload) {
-      *out = true;
-      return true;
-   }
-
-   if (in->data[0] == MC_SUBTYPE_FLE2FindRangePayload) {
+   mc_fle_blob_subtype_t subtype = (mc_fle_blob_subtype_t) in->data[0];
+   if (_mongocrypt_fle2_insert_update_find (subtype)) {
       *out = true;
       return true;
    }
@@ -1654,7 +1665,8 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
 
    /* Append a new 'encryptionInformation'. */
    if (!result.must_omit) {
-      if (!_fle2_insert_encryptionInformation (command_name,
+      if (!_fle2_insert_encryptionInformation (ctx,
+                                               command_name,
                                                &converted,
                                                ectx->ns,
                                                &encrypted_field_config_bson,
