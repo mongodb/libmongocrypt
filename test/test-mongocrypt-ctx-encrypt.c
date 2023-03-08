@@ -2423,22 +2423,25 @@ typedef enum {
    kFLE2v2Enable,
 } _test_fle2v2_option;
 
-#define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(                              \
-   tester, data_path, rng_source, v2_failure)                                  \
-   {                                                                           \
-      (rng_source)->pos = 0;                                                   \
-      _test_encrypt_fle2_encryption_placeholder (                              \
-         tester, data_path, rng_source, kFLE2v2Default, NULL);                 \
-      (rng_source)->pos = 0;                                                   \
-      _test_encrypt_fle2_encryption_placeholder (                              \
-         tester, data_path, rng_source, kFLE2v2Disable, NULL);                 \
-      char v2path[4096];                                                       \
-      /* transitional: Use v1 data path if expecting failure */                \
-      snprintf (                                                               \
-         v2path, sizeof (v2path), "%s%s", data_path, v2_failure ? "" : "-v2"); \
-      (rng_source)->pos = 0;                                                   \
-      _test_encrypt_fle2_encryption_placeholder (                              \
-         tester, v2path, rng_source, kFLE2v2Enable, v2_failure);               \
+#define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(                \
+   tester, data_path, rng_source, v2_failure)                    \
+   {                                                             \
+      (rng_source)->pos = 0;                                     \
+      _test_encrypt_fle2_encryption_placeholder (                \
+         tester, data_path, rng_source, kFLE2v2Default, NULL);   \
+      (rng_source)->pos = 0;                                     \
+      _test_encrypt_fle2_encryption_placeholder (                \
+         tester, data_path, rng_source, kFLE2v2Disable, NULL);   \
+      char v2path[4096];                                         \
+      /* transitional: Use v1 data path if expecting failure */  \
+      ASSERT (snprintf (v2path,                                  \
+                        sizeof (v2path),                         \
+                        "%s%s",                                  \
+                        data_path,                               \
+                        v2_failure ? "" : "-v2"));               \
+      (rng_source)->pos = 0;                                     \
+      _test_encrypt_fle2_encryption_placeholder (                \
+         tester, v2path, rng_source, kFLE2v2Enable, v2_failure); \
    }
 
 
