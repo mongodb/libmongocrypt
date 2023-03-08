@@ -15,7 +15,13 @@
  */
 
 #include "mc-fle2-payload-uev-common-private.h"
+#include "mc-reader-private.h"
 #include "mongocrypt-private.h"
+
+#define CHECK_AND_RETURN(x) \
+   if (!(x)) {              \
+      return false;         \
+   }
 
 bool
 _mc_FLE2UnindexedEncryptedValueCommon_parse (const _mongocrypt_buffer_t *buf,
@@ -31,54 +37,23 @@ _mc_FLE2UnindexedEncryptedValueCommon_parse (const _mongocrypt_buffer_t *buf,
    BSON_ASSERT_PARAM (key_uuid);
    BSON_ASSERT_PARAM (ciphertext);
 
-   uint32_t offset = 0;
-   /* Read fle_blob_subtype. */
-   if (offset + 1 > buf->len) {
-      CLIENT_ERR ("mc_FLE2UnindexedEncryptedValueCommon_parse expected byte "
-                  "length >= %" PRIu32 " got: %" PRIu32,
-                  offset + 1,
-                  buf->len);
-      return false;
-   }
+   mc_reader_t reader;
+   mc_reader_init_from_buffer (&reader, buf, __FUNCTION__);
 
-   *fle_blob_subtype = buf->data[offset];
-   offset += 1;
+   /* Read fle_blob_subtype. */
+   CHECK_AND_RETURN (mc_reader_read_u8 (&reader, fle_blob_subtype, status));
 
    /* Read key_uuid. */
-   if (offset + 16 > buf->len) {
-      CLIENT_ERR ("mc_FLE2UnindexedEncryptedValueCommon_parse expected byte "
-                  "length >= %" PRIu32 " got: %" PRIu32,
-                  offset + 16,
-                  buf->len);
-      return false;
-   }
-   if (!_mongocrypt_buffer_copy_from_data_and_size (
-          key_uuid, buf->data + offset, 16)) {
-      CLIENT_ERR ("mc_FLE2UnindexedEncryptedValueCommon_parse failed to copy "
-                  "data for key_uuid");
-      return false;
-   }
+   CHECK_AND_RETURN (mc_reader_read_buffer (&reader, key_uuid, 16, status));
    key_uuid->subtype = BSON_SUBTYPE_UUID;
-   offset += 16;
 
    /* Read original_bson_type. */
-   if (offset + 1 > buf->len) {
-      CLIENT_ERR ("mc_FLE2UnindexedEncryptedValueCommon_parse expected byte "
-                  "length >= %" PRIu32 " got: %" PRIu32,
-                  offset + 1,
-                  buf->len);
-      return false;
-   }
-   *original_bson_type = buf->data[offset];
-   offset += 1;
+   CHECK_AND_RETURN (mc_reader_read_u8 (&reader, original_bson_type, status));
 
    /* Read ciphertext. */
-   if (!_mongocrypt_buffer_copy_from_data_and_size (
-          ciphertext, buf->data + offset, (size_t) (buf->len - offset))) {
-      CLIENT_ERR ("mc_FLE2UnindexedEncryptedValueCommon_parse failed to copy "
-                  "data for ciphertext");
-      return false;
-   }
+   CHECK_AND_RETURN (mc_reader_read_buffer (
+      &reader, ciphertext, mc_reader_get_remaining_length (&reader), status));
+
    return true;
 }
 
