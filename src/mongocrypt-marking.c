@@ -1924,7 +1924,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertextForRange (
    _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->index_key_id);
 
    // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
-   // not used for FLE2FindRangePayload.
+   // not used for FLE2FindRangePayloadV2.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindRangePayloadV2;
 
    res = true;
