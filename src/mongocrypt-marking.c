@@ -1431,7 +1431,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
    _mongocrypt_buffer_steal (&payload.serverDerivedFromDataToken,
                              &common.serverDerivedFromDataToken);
 
-   // cm := macContentionCounter;
+   // cm := maxContentionCounter
    payload.maxContentionCounter = placeholder->maxContentionCounter;
 
    {
@@ -1441,7 +1441,7 @@ _mongocrypt_fle2_placeholder_to_find_ciphertext (
       _mongocrypt_buffer_steal_from_bson (&ciphertext->data, &out);
    }
    // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
-   // not used for FLE2FindEqualityPayload.
+   // not used for FLE2FindEqualityPayloadV2.
    ciphertext->blob_subtype = MC_SUBTYPE_FLE2FindEqualityPayloadV2;
 
    res = true;
