@@ -29,6 +29,7 @@
  * Integers are represented as uint64_t in little-endian.
  *
  * CollectionsLevel1Token = HMAC(RootKey, 1)
+ * ServerDataEncryptionLevel1Token = HMAC(RootKey, 3)
  *
  * EDCToken = HMAC(CollectionsLevel1Token, 1)
  * ESCToken = HMAC(CollectionsLevel1Token, 2)
@@ -48,8 +49,6 @@
  * Added in FLE2v2:
  *
  * ServerTokenDerivationLevel1Token = HMAC(RootKey, 2)
- * ServerDataEncryptionLevel1Token = HMAC(RootKey, 3)
- *
  * ServerDerivedFromDataToken = HMAC(ServerTokenDerivationLevel1Token, v)
  *
  * ServerCountAndContentionFactorEncryptionToken =
