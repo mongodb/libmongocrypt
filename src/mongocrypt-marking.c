@@ -22,6 +22,7 @@
 #include "mc-fle2-insert-update-payload-private.h"
 #include "mc-fle2-insert-update-payload-private-v2.h"
 #include "mc-fle2-payload-uev-private.h"
+#include "mc-fle2-payload-uev-v2-private.h"
 #include "mc-range-mincover-private.h"
 #include "mc-range-encoding-private.h"
 #include "mc-range-edge-generation-private.h"
@@ -998,7 +999,8 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
       const mc_dec128 value = mc_dec128_from_bson_iter (&insertSpec->v);
       mc_getEdgesDecimal128_args_t args = {
-         .value = value, .sparsity = sparsity,
+         .value = value,
+         .sparsity = sparsity,
       };
       if (insertSpec->precision.set) {
          const mc_dec128 min = mc_dec128_from_bson_iter (&insertSpec->min);
@@ -1843,12 +1845,6 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    BSON_ASSERT_PARAM (marking);
    BSON_ASSERT_PARAM (ciphertext);
 
-   if (kb->crypt->opts.use_fle2_v2) {
-      // TODO (MONGOCRYPT-551): UnindexedEncryptedValueV2
-      CLIENT_ERR ("FLE2UnindexedEncryptedValueV2 not implemented");
-      return false;
-   }
-
    _mongocrypt_buffer_t plaintext = {0};
    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
    _mongocrypt_buffer_t user_key = {0};
@@ -1866,21 +1862,36 @@ _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue (
    }
 
    BSON_ASSERT (kb->crypt);
-   if (!mc_FLE2UnindexedEncryptedValue_encrypt (
-          kb->crypt->crypto,
-          &placeholder->user_key_id,
-          bson_iter_type (&placeholder->v_iter),
-          &plaintext,
-          &user_key,
-          &ciphertext->data,
-          status)) {
+   if (kb->crypt->opts.use_fle2_v2) {
+      res = mc_FLE2UnindexedEncryptedValueV2_encrypt (
+         kb->crypt->crypto,
+         &placeholder->user_key_id,
+         bson_iter_type (&placeholder->v_iter),
+         &plaintext,
+         &user_key,
+         &ciphertext->data,
+         status);
+      ciphertext->blob_subtype = MC_SUBTYPE_FLE2UnindexedEncryptedValueV2;
+   } else {
+      res = mc_FLE2UnindexedEncryptedValue_encrypt (
+         kb->crypt->crypto,
+         &placeholder->user_key_id,
+         bson_iter_type (&placeholder->v_iter),
+         &plaintext,
+         &user_key,
+         &ciphertext->data,
+         status);
+      ciphertext->blob_subtype = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
+   }
+
+   if (!res) {
       goto fail;
    }
 
    _mongocrypt_buffer_steal (&ciphertext->key_id, &placeholder->user_key_id);
    ciphertext->original_bson_type =
       (uint8_t) bson_iter_type (&placeholder->v_iter);
-   ciphertext->blob_subtype = MC_SUBTYPE_FLE2UnindexedEncryptedValue;
+
    res = true;
 fail:
    _mongocrypt_buffer_cleanup (&plaintext);

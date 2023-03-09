@@ -1,0 +1,9 @@
+{
+   "insert": "test",
+   "documents": [
+      {
+         "plainText":"sample",
+         "encrypted":"value123"
+      }
+   ]
+}
