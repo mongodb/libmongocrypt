@@ -106,6 +106,7 @@ set (MONGOCRYPT_SOURCES
    src/mc-fle2-find-equality-payload.c
    src/mc-fle2-find-equality-payload-v2.c
    src/mc-fle2-payload-iev.c
+   src/mc-fle2-payload-iev-v2.c
    src/mc-fle2-payload-uev.c
    src/mc-fle2-rfds.c
    src/mc-range-edge-generation.c
@@ -466,6 +467,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-gcp-auth.c
    test/test-mc-efc.c
    test/test-mc-fle2-payload-iev.c
+   test/test-mc-fle2-payload-iev-v2.c
    test/test-mc-fle2-payload-iup.c
    test/test-mc-fle2-payload-uev.c
    test/test-mc-fle2-rfds.c
