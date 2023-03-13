@@ -50,7 +50,6 @@ expectAssignable<RequiredCreateEncryptedCollectionSettings>({
   expectAssignable<KMSProviders['azure']>({ tenantId: 'a', clientId: 'a', clientSecret: 'a', identityPlatformEndpoint: undefined });
   expectAssignable<KMSProviders['azure']>({ tenantId: 'a', clientId: 'a', clientSecret: 'a', identityPlatformEndpoint: '' });
   expectAssignable<KMSProviders['azure']>({ accessToken: 'a' });
-  // automatic TODO(NODE-4537): update azure types to accept automatic credentials
   expectAssignable<KMSProviders['azure']>({});
 
   // gcp
