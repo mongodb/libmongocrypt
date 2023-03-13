@@ -65,12 +65,12 @@ export class MongoCryptCreateDataKeyError extends MongoCryptError {
 /**
  * An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.
  */
-class MongoCryptAzureKMSRequestError extends MongoCryptError {
+export class MongoCryptAzureKMSRequestError extends MongoCryptError {
   /* The body of the IMDS request that produced the error, if present. */
   body?: Document ;
 }
 
-class MongoCryptKMSRequestNetworkTimeoutError extends MongoCryptError {}
+export class MongoCryptKMSRequestNetworkTimeoutError extends MongoCryptError {}
 
 /**
  * A set of options for specifying a Socks5 proxy.

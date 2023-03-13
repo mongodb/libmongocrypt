@@ -438,7 +438,19 @@ describe('#loadCredentials', function () {
           });
         });
 
-        context('when the request has a body', () => {
+        context('when the request has a non-json body', () => {
+          before(() => {
+            sinon.stub(utils, 'get').resolves({ status: 400, body: 'non-json body' });
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+            expect(error).to.match(/Malformed JSON body in GET request/);
+          });
+        });
+
+        context('when the request has a json body', () => {
           beforeEach(() => {
             sinon
               .stub(utils, 'get')
@@ -470,9 +482,21 @@ describe('#loadCredentials', function () {
           });
         });
 
+        context('when the request has a non-json body', () => {
+          before(() => {
+            sinon.stub(utils, 'get').resolves({ status: 200, body: 'non-json body' });
+          });
+
+          it('throws a MongoCryptKMSRequestError', async () => {
+            const error = await loadCredentials({ azure: {} }).catch(e => e);
+            expect(error).to.be.instanceOf(MongoCryptAzureKMSRequestError);
+            expect(error).to.match(/Malformed JSON body in GET request/);
+          });
+        });
+
         context('when the body has no access_token', () => {
           beforeEach(() => {
-            sinon.stub(utils, 'get').resolves({ status: 200, body: '{ }' });
+            sinon.stub(utils, 'get').resolves({ status: 200, body: '{ "expires_in": "10000" }' });
           });
 
           it('throws a MongoCryptKMSRequestError', async () => {

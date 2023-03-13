@@ -132,15 +132,13 @@ function prepareRequest(options) {
  */
 async function fetchAzureKMSToken(options = {}) {
   const { headers, url } = prepareRequest(options);
-  try {
-    const response = await utils.get(url, { headers });
-    return parseResponse(response);
-  } catch (error) {
+  const response = await utils.get(url, { headers }).catch(error => {
     if (error instanceof MongoCryptKMSRequestNetworkTimeoutError) {
-      throw new MongoCryptAzureKMSRequestError('Azure KMS request timed out after 10s');
+      throw new MongoCryptAzureKMSRequestError(`[Azure KMS] ${error.message}`);
     }
     throw error;
-  }
+  });
+  return parseResponse(response);
 }
 
 /**
