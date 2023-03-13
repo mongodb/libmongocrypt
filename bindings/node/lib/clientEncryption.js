@@ -13,7 +13,7 @@ module.exports = function (modules) {
     MongoCryptCreateEncryptedCollectionError,
     MongoCryptCreateDataKeyError
   } = require('./errors');
-  const { loadCredentials } = require('./credentialsProvider');
+  const { loadCredentials } = require('./providers/index');
   const cryptoCallbacks = require('./cryptoCallbacks');
   const { promisify } = require('util');
 

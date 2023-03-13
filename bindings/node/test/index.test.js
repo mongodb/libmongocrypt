@@ -2,6 +2,7 @@
 
 const { expect } = require('chai');
 const mongodbClientEncryption = require('../lib/index');
+const { fetchAzureKMSToken } = require('../lib/providers');
 
 // Update this as you add exports, helps double check we don't accidentally remove something
 // since not all tests import from the root public export
@@ -10,6 +11,8 @@ const EXPECTED_EXPORTS = [
   'MongoCryptError',
   'MongoCryptCreateEncryptedCollectionError',
   'MongoCryptCreateDataKeyError',
+  'MongoCryptAzureKMSRequestError',
+  'MongoCryptKMSRequestNetworkTimeoutError',
   'AutoEncrypter',
   'ClientEncryption'
 ];
@@ -25,5 +28,18 @@ describe('mongodb-client-encryption entrypoint', () => {
     const exportsDefault = Object.keys(mongodbClientEncryption).filter(exp => exp !== 'extension');
     expect(extensionResult).to.have.all.keys(expectedExports);
     expect(extensionResult).to.have.all.keys(exportsDefault);
+  });
+
+  context('exports for driver testing', () => {
+    it('exports `fetchAzureKMSToken` in a symbol property', () => {
+      expect(mongodbClientEncryption).to.have.property(
+        '___azureKMSProseTestExports',
+        fetchAzureKMSToken
+      );
+    });
+    it('extension exports `fetchAzureKMSToken` in a symbol property', () => {
+      const extensionResult = mongodbClientEncryption.extension(require('mongodb'));
+      expect(extensionResult).to.have.property('___azureKMSProseTestExports', fetchAzureKMSToken);
+    });
   });
 });
