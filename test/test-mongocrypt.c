@@ -972,6 +972,9 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_compact (&tester);
    _mongocrypt_tester_install_fle2_payload_uev (&tester);
    _mongocrypt_tester_install_fle2_payload_iup (&tester);
+   _mongocrypt_tester_install_fle2_payload_iup_v2 (&tester);
+   _mongocrypt_tester_install_fle2_payload_find_equality_v2 (&tester);
+   _mongocrypt_tester_install_fle2_payload_find_range_v2 (&tester);
    _mongocrypt_tester_install_range_encoding (&tester);
    _mongocrypt_tester_install_range_edge_generation (&tester);
    _mongocrypt_tester_install_range_mincover (&tester);

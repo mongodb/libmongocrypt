@@ -59,6 +59,7 @@ mc_FLE2FindRangePayloadV2_cleanup (mc_FLE2FindRangePayloadV2_t *payload)
 }
 
 #define APPEND_BINDATA(out, name, subtype, value)              \
+   value.subtype = subtype;                                    \
    if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
       return false;                                            \
    }
