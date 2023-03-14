@@ -764,7 +764,8 @@ get_edges (mc_FLE2RangeInsertSpec_t *insertSpec,
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
       const mc_dec128 value = mc_dec128_from_bson_iter (&insertSpec->v);
       mc_getEdgesDecimal128_args_t args = {
-         .value = value, .sparsity = sparsity,
+         .value = value,
+         .sparsity = sparsity,
       };
       if (insertSpec->precision.set) {
          const mc_dec128 min = mc_dec128_from_bson_iter (&insertSpec->min);

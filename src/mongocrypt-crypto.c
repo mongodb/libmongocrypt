@@ -686,9 +686,8 @@ _hmac_step (_mongocrypt_crypto_t *crypto,
    /* Construct the input to the HMAC */
    uint32_t num_intermediates = 0;
    _mongocrypt_buffer_t intermediates[3];
-   if (AAD &&
-       !_mongocrypt_buffer_from_subrange (
-          &intermediates[num_intermediates++], AAD, 0, AAD->len)) {
+   if (AAD && !_mongocrypt_buffer_from_subrange (
+                 &intermediates[num_intermediates++], AAD, 0, AAD->len)) {
       CLIENT_ERR ("Failed creating MAC subrange on AD");
       goto done;
    }

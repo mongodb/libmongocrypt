@@ -60,7 +60,6 @@ mc_FLE2FindRangePayload_cleanup (mc_FLE2FindRangePayload_t *payload)
 }
 
 #define APPEND_BINDATA(out, name, subtype, value)              \
-   value.subtype = subtype;                                    \
    if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
       return false;                                            \
    }
@@ -102,6 +101,10 @@ mc_FLE2FindRangePayload_serialize (const mc_FLE2FindRangePayload_t *payload,
          if (!BSON_APPEND_DOCUMENT_BEGIN (&g_bson, g_index_string, &etc_bson)) {
             return false;
          }
+
+         etc.edcDerivedToken.subtype = BSON_SUBTYPE_BINARY;
+         etc.escDerivedToken.subtype = BSON_SUBTYPE_BINARY;
+         etc.eccDerivedToken.subtype = BSON_SUBTYPE_BINARY;
 
          APPEND_BINDATA (
             &etc_bson, "d", BSON_SUBTYPE_BINARY, etc.edcDerivedToken);

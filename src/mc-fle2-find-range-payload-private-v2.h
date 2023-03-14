@@ -28,8 +28,8 @@
  * find query. It is encoded inside an FLE2FindRangePayloadV2.
  */
 typedef struct {
-   mc_array_t edgeFindTokenSetArray;           // g
-   int64_t maxContentionCounter;               // cm
+   mc_array_t edgeFindTokenSetArray; // g
+   int64_t maxContentionCounter;     // cm
 } mc_FLE2FindRangePayloadEdgesInfoV2_t;
 
 /**
@@ -83,7 +83,7 @@ mc_FLE2FindRangePayloadV2_init (mc_FLE2FindRangePayloadV2_t *payload);
 
 bool
 mc_FLE2FindRangePayloadV2_serialize (const mc_FLE2FindRangePayloadV2_t *payload,
-                                   bson_t *out);
+                                     bson_t *out);
 
 void
 mc_FLE2FindRangePayloadV2_cleanup (mc_FLE2FindRangePayloadV2_t *payload);

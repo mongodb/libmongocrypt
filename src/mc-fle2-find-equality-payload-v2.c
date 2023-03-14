@@ -129,7 +129,6 @@ fail:
 }
 
 #define APPEND_BINDATA(name, subtype, value)                   \
-   value.subtype = subtype;                                    \
    if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
       return false;                                            \
    }
