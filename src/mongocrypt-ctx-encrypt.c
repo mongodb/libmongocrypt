@@ -1660,7 +1660,9 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    moe_result result =
       must_omit_encryptionInformation (command_name, &converted, ctx->status);
    if (!result.ok) {
-      return false;
+      bson_destroy (&converted);
+      bson_destroy (deleteTokens);
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    /* Append a new 'encryptionInformation'. */
