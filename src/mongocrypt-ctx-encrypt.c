@@ -1613,7 +1613,6 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    /* If marked_cmd buffer is empty, there are no markings to encrypt. */
    if (_mongocrypt_buffer_empty (&ectx->marked_cmd)) {
       /* Append 'encryptionInformation' to the original command. */
-      bson_init (&converted);
       bson_copy_to (&original_cmd_bson, &converted);
    } else {
       bson_t as_bson;
