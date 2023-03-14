@@ -35,7 +35,7 @@
  * } FLE2UnindexedEncryptedValue;
  *
  * ciphertext is the output of:
- *    EncryptAEAD(
+ *    EncryptAEAD_AES_256_CTR_HMAC_SHA_256(
  *       key=K_Key,
  *       plaintext=ClientValue,
  *       associated_data=(fle_blob_subtype || key_uuid || original_bson_type))
