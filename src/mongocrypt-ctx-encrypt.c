@@ -1602,7 +1602,6 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    /* If marked_cmd buffer is empty, there are no markings to encrypt. */
    if (_mongocrypt_buffer_empty (&ectx->marked_cmd)) {
       /* Append 'encryptionInformation' to the original command. */
-      bson_init (&converted);
       bson_copy_to (&original_cmd_bson, &converted);
    } else {
       bson_t as_bson;
@@ -1649,7 +1648,9 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    moe_result result =
       must_omit_encryptionInformation (command_name, &converted, ctx->status);
    if (!result.ok) {
-      return false;
+      bson_destroy (&converted);
+      bson_destroy (deleteTokens);
+      return _mongocrypt_ctx_fail (ctx);
    }
 
    /* Append a new 'encryptionInformation'. */
