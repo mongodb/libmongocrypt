@@ -5,14 +5,15 @@ const { loadAzureCredentials, fetchAzureKMSToken } = require('./azure');
 const { loadGCPCredentials } = require('./gcp');
 
 /**
- * @ignore
  * Auto credential fetching should only occur when the provider is defined on the kmsProviders map
  * and the settings are an empty object.
  *
  * This is distinct from a nullish provider key.
  *
  * @param {'aws' | 'gcp' | 'azure'} provider
- * @param {import('../../index').KMSProviders} kmsProviders
+ * @param {object} kmsProviders
+ *
+ * @ignore
  */
 function isEmptyCredentials(provider, kmsProviders) {
   return (
@@ -28,8 +29,8 @@ function isEmptyCredentials(provider, kmsProviders) {
  * Credentials will only attempt to get loaded if they do not exist
  * and no existing credentials will get overwritten.
  *
- * @param {import('../../index').KMSProviders} kmsProviders - The user provided KMS providers.
- * @returns {Promise<import('../../index').KMSProviders>} The new kms providers.
+ * @param {object} kmsProviders - The user provided KMS providers.
+ * @returns {object} The new kms providers.
  *
  * @ignore
  */

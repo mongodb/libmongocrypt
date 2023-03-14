@@ -9,6 +9,7 @@ const utils = require('./utils');
 const MINIMUM_TOKEN_REFRESH_IN_MILLISECONDS = 6000;
 
 /**
+ * @class
  * @ignore
  */
 class AzureCredentialCache {
@@ -36,35 +37,45 @@ class AzureCredentialCache {
   }
 
   /**
-   * @ignore
    * exposed for testing
+   * @ignore
    */
   resetCache() {
     this.cachedToken = null;
   }
 
   /**
-   * @ignore
    * exposed for testing
+   * @ignore
    */
   _getToken() {
     return fetchAzureKMSToken();
   }
 }
 /**
- * @type{AzureCredentialCache}
+ * @type{ AzureCredentialCache }
+ * @ignore
  */
 let tokenCache = new AzureCredentialCache();
 
 /**
+ * @typedef {object} KmsRequestResponsePayload
+ * @property {string | undefined} access_token
+ * @property {string | undefined} expires_in
+ *
+ * @ignore
+ */
+
+/**
  * @param { {body: string, status: number }} response
  * @returns { Promise<{ accessToken: string, expiresOnTimestamp: number } >}
+ * @ignore
  */
 async function parseResponse(response) {
   const { status, body: rawBody } = response;
 
   /**
-   * @type { { access_token?: string, expires_in?: string} }
+   * @type { KmsRequestResponsePayload }
    */
   const body = (() => {
     try {
@@ -107,6 +118,8 @@ async function parseResponse(response) {
  * @param {object} options
  * @param {object | undefined} [options.headers]
  * @param {URL | undefined} [options.url]
+ *
+ * @ignore
  */
 function prepareRequest(options) {
   const url =
@@ -122,13 +135,26 @@ function prepareRequest(options) {
 }
 
 /**
+ * @typedef {object} AzureKMSRequestOptions
+ * @property {object | undefined} headers
+ * @property {URL | undefined} url
  * @ignore
+ */
+
+/**
+ * @typedef {object} AzureKMSRequestResponse
+ * @property {string} accessToken
+ * @property {number} expiresOnTimestamp
+ * @ignore
+ */
+
+/**
  * exported only for testing purposes in the driver
  *
- * @param {object} options
- * @param {object | undefined} [options.headers]
- * @param {URL | undefined} [options.url]
- * @returns {Promise<{ accessToken: string, expiresOnTimestamp: number }>}
+ * @param {AzureKMSRequestOptions} options
+ * @returns {Promise<AzureKMSRequestResponse>}
+ *
+ * @ignore
  */
 async function fetchAzureKMSToken(options = {}) {
   const { headers, url } = prepareRequest(options);
@@ -142,7 +168,6 @@ async function fetchAzureKMSToken(options = {}) {
 }
 
 /**
- * @param {import('../../index').KMSProviders} kmsProviders
  * @ignore
  */
 async function loadAzureCredentials(kmsProviders) {

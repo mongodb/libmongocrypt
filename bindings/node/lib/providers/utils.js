@@ -8,6 +8,7 @@ const http = require('http');
  * @param {http.RequestOptions} options
  *
  * @returns { Promise<{ body: string, status: number }> }
+ * @ignore
  */
 function get(url, options = {}) {
   return new Promise((resolve, reject) => {
