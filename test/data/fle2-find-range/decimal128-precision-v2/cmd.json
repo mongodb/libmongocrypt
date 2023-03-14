@@ -1,0 +1,6 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {"$numberDecimal":"4.56000000000000"}
+    }
+}

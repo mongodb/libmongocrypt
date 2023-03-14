@@ -29,23 +29,31 @@
  * Integers are represented as uint64_t in little-endian.
  *
  * CollectionsLevel1Token = HMAC(RootKey, 1)
- * ServerTokenDerivationLevel1Token = HMAC(RootKey, 2)  <- new in v2
  * ServerDataEncryptionLevel1Token = HMAC(RootKey, 3)
  *
  * EDCToken = HMAC(CollectionsLevel1Token, 1)
  * ESCToken = HMAC(CollectionsLevel1Token, 2)
- * ECCToken = HMAC(CollectionsLevel1Token, 3)  <- deprecated in v2
+ * ECCToken = HMAC(CollectionsLevel1Token, 3)
  * ECOCToken = HMAC(CollectionsLevel1Token, 4)
  *
  * EDCDerivedFromDataToken = HMAC(EDCToken, v)
  * ESCDerivedFromDataToken = HMAC(ESCToken, v)
- * ECCDerivedFromDataToken = HMAC(ECCToken, v)  <- deprecated in v2
- * ServerDerivedFromDataToken = HMAC(ServerTokenDerivationLevel1Token, v) <- new
- * in v2
+ * ECCDerivedFromDataToken = HMAC(ECCToken, v)
  *
  * EDCDerivedFromDataTokenAndCounter = HMAC(EDCDerivedFromDataToken, u)
  * ESCDerivedFromDataTokenAndCounter = HMAC(ESCDerivedFromDataToken, u)
  * ECCDerivedFromDataTokenAndCounter = HMAC(ECCDerivedFromDataToken, u)
+ *
+ * Note: ECC related tokens are used in FLE2v1 only.
+ * ----------------------------------------------------------------------------
+ * Added in FLE2v2:
+ *
+ * ServerTokenDerivationLevel1Token = HMAC(RootKey, 2)
+ * ServerDerivedFromDataToken = HMAC(ServerTokenDerivationLevel1Token, v)
+ *
+ * ServerCountAndContentionFactorEncryptionToken =
+ *    HMAC(ServerDerivedFromDataToken, 1)
+ * ServerZerosEncryptionToken = HMAC(ServerDerivedFromDataToken, 2)
  * ======================== End: FLE 2 Token Reference ========================
  */
 
@@ -87,6 +95,7 @@ DECL_TOKEN_TYPE (mc_ServerTokenDerivationLevel1Token,
                  const _mongocrypt_buffer_t *);
 DECL_TOKEN_TYPE (mc_ServerDataEncryptionLevel1Token,
                  const _mongocrypt_buffer_t *);
+
 DECL_TOKEN_TYPE (mc_EDCToken,
                  const mc_CollectionsLevel1Token_t *CollectionsLevel1Token);
 DECL_TOKEN_TYPE (mc_ESCToken,
@@ -95,6 +104,7 @@ DECL_TOKEN_TYPE (mc_ECCToken,
                  const mc_CollectionsLevel1Token_t *CollectionsLevel1Token);
 DECL_TOKEN_TYPE (mc_ECOCToken,
                  const mc_CollectionsLevel1Token_t *CollectionsLevel1Token);
+
 DECL_TOKEN_TYPE (mc_EDCDerivedFromDataToken,
                  const mc_EDCToken_t *EDCToken,
                  const _mongocrypt_buffer_t *v);
@@ -104,10 +114,7 @@ DECL_TOKEN_TYPE (mc_ECCDerivedFromDataToken,
 DECL_TOKEN_TYPE (mc_ESCDerivedFromDataToken,
                  const mc_ESCToken_t *ESCToken,
                  const _mongocrypt_buffer_t *v);
-DECL_TOKEN_TYPE (
-   mc_ServerDerivedFromDataToken,
-   const mc_ServerTokenDerivationLevel1Token_t *ServerTokenDerivationToken,
-   const _mongocrypt_buffer_t *v);
+
 DECL_TOKEN_TYPE (mc_EDCDerivedFromDataTokenAndCounter,
                  const mc_EDCDerivedFromDataToken_t *EDCDerivedFromDataToken,
                  uint64_t u);
@@ -117,6 +124,18 @@ DECL_TOKEN_TYPE (mc_ESCDerivedFromDataTokenAndCounter,
 DECL_TOKEN_TYPE (mc_ECCDerivedFromDataTokenAndCounter,
                  const mc_ECCDerivedFromDataToken_t *ECCDerivedFromDataToken,
                  uint64_t u);
+
+DECL_TOKEN_TYPE (
+   mc_ServerDerivedFromDataToken,
+   const mc_ServerTokenDerivationLevel1Token_t *ServerTokenDerivationToken,
+   const _mongocrypt_buffer_t *v);
+
+DECL_TOKEN_TYPE (
+   mc_ServerCountAndContentionFactorEncryptionToken,
+   const mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken);
+DECL_TOKEN_TYPE (
+   mc_ServerZerosEncryptionToken,
+   const mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken);
 
 #undef DECL_TOKEN_TYPE
 #undef DECL_TOKEN_TYPE_1

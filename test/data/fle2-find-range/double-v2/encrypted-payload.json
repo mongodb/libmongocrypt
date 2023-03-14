@@ -1,0 +1,41 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$binary": {
+                "base64": "DVMKAAADcGF5bG9hZAAjCgAABGcADwoAAAMwAH0AAAAFZAAgAAAAAJam7JYsZe2cN20ZYm2W3v1pisNt5PLiniMzymBLWyMtBXMAIAAAAABxCsKVMZMTn3n+R2L7pVz5nW804r8HcK0mCBw3jUXKXAVsACAAAAAA7j3JGnNtR64P4dJLeUoScFRGfa8ekjh3dvhw46sRFk0AAzEAfQAAAAVkACAAAAAAxetfHSxpn7mA5GbAzYUu5kbqK47ZhL7UgY+gC0MqgoEFcwAgAAAAAMhCzEKvwJ8UpoFzHyQh5LLCcaHskeMpEn28l33Hv3LvBWwAIAAAAABy8FX5LKQNiGZEXJVjAVgH2gEoFIevnkl3PZxd6jCxRAADMgB9AAAABWQAIAAAAAAm83FA9yDUpwkbKTihe7m53u+DivS9BU2b4vQMtCVQ2AVzACAAAAAAz3m1UB/AbZPa4QSKFDnUgHaT78+6iGOFAtouiBorEgEFbAAgAAAAAIgbpyYtJj5513Z5XYqviH/HXG/5+mqR52iBbfqMmDtZAAMzAH0AAAAFZAAgAAAAACUc2CtD1MK/UTxtv+8iA9FoHEyTwdl43HKeSwDw2Lp5BXMAIAAAAACCIduIdw65bQMzRYRfjBJj62bc69T4QqH4QoWanwlvowVsACAAAAAAM0TV7S+aPVVzJOQ+cpSNKHTwyQ0mWa8tcHzfk3nR+9IAAzQAfQAAAAVkACAAAAAAdJodaz92eYj2xzucHnRUHYHOzSQdqkwcJB3JURhjfRMFcwAgAAAAAKRXbaWESNa//38O5t8cEBzAmCAojmYhtIrkvafKqWipBWwAIAAAAABLX2bsNxxDGCvI6wEncawKzfvJ9Co2LUb5Lp8JekSGfgADNQB9AAAABWQAIAAAAAAC/I4TQRtCl12YZmdGz17X4GqSQgfwCPgRBwdHmdwu+QVzACAAAAAAx8f3z2ut/RAZhleari4vCEE+tNIn4ikjoUwzitfQ588FbAAgAAAAAJci0w1ZB8W2spJQ+kMpod6HSCtSR2jrabOH+B0fj3A4AAM2AH0AAAAFZAAgAAAAAAxgeclNl09H7HvzD1oLwb2YpFca5eaX90uStYXHilqKBXMAIAAAAACMU5pSxzIzWlQxHyW170Xs9EhD1hURASQk+qkx7K5Y6AVsACAAAAAAJbMMwJfNftA7Xom8Bw/ghuZmSa3x12vTZxBUbV8m888AAzcAfQAAAAVkACAAAAAAGY7tAP2/FYyYWMgfPXeXI55Xq8dPqZgKxbEXuFv/I6MFcwAgAAAAAJP2WaCSKrO5Ybbhp+7NiIJ4r2CYmppybECu4i6R3TEQBWwAIAAAAABlrT8Uj8aRlHsK1fXxeD1Of3N/GQPRShpK36kg7m3W3gADOAB9AAAABWQAIAAAAAAfPUoy7QyZKhIIURso+mkP9qr1izbjETqF5s22GwjCjAVzACAAAAAAvLMsIDQ/go4VUxeh50UHmsvMvfx51cwyONnRD2odvC0FbAAgAAAAAKMb+1CodEalAFnDrEL1Ndt8ztamZ+9134m9Kp3GQgd+AAM5AH0AAAAFZAAgAAAAABN2alGq9Aats1mwERNGwL/fIwZSvVCe9/8XMHTFlpUpBXMAIAAAAACuDPjJgvvbBYhbLpjMiWUCsVppiYrhvR+yMysNPN8cZAVsACAAAAAAKpADjc4bzIZMi9Q/+oe0EMRJHYQt6dlo1x/lRquagqkAAzEwAH0AAAAFZAAgAAAAAL8YB6VAqGBiWD4CBv16IBscg5J7VQCTZu87n6pj+86KBXMAIAAAAAAmxm8e68geeyAdUjSMWBHzUjneVB0pG9TBXIoE6467hAVsACAAAAAAV76JZAlYpgC/Zl8awx2ArCg1uuyy2XVTSkp0wUMi/7UAAzExAH0AAAAFZAAgAAAAAL4yLkCTV5Dmxa5toBu4JT8ge/cITAaURIOuFuOtFUkeBXMAIAAAAAAXoFNQOMGkAj7qEJP0wQafmFSXgWGeorDVbwyOxWLIsgVsACAAAAAAc4Un6dtIFe+AQ+RSfNWs3q63RTHhmyc+5GKRRdpWRv8AAzEyAH0AAAAFZAAgAAAAAEU8DoUp46YtYjNFS9kNXwdYxQ9IW27vCTb+VcqqfnKNBXMAIAAAAADe7vBOgYReE8X78k5ARuUnv4GmzPZzg6SbConf4L2G3wVsACAAAAAA78YHWVkp6HbZ0zS4UL2z/2pj9vPDcMDt7zTv6NcRsVsAAzEzAH0AAAAFZAAgAAAAAPa4yKTtkUtySuWo1ZQsp2QXtPb5SYqzA5vYDnS1P6c0BXMAIAAAAADKnF58R1sXlHlsHIvCBR3YWW/qk54z9CTDhZydkD1cOQVsACAAAAAAHW3ERalTFWKMzjuXF3nFh0pSrQxM/ojnPbPhc4v5MaQAAzE0AH0AAAAFZAAgAAAAAN5WJnMBmfgpuQPyonmY5X6OdRvuHw4nhsnGRnFAQ95VBXMAIAAAAACwftzu7KVV1rmGKwXtJjs3cJ1gE3apr8+N0SAg1F2cHwVsACAAAAAATDW0reyaCjbJuVLJzbSLx1OBuBoQu+090kgW4RurVacAAzE1AH0AAAAFZAAgAAAAACHvDsaPhoSb6DeGnKQ1QOpGYAgK82qpnqwcmzSeWaJHBXMAIAAAAABRq3C5+dOfnkAHM5Mg5hPB3O4jhwQlBgQWLA7Ph5bhgwVsACAAAAAAqkC8zYASvkVrp0pqmDyFCkPaDmD/ePAJpMuNOCBhni8AAzE2AH0AAAAFZAAgAAAAAOBePJvccPMJmy515KB1AkXF5Pi8NOG4V8psWy0SPRP+BXMAIAAAAAB3dOJG9xIDtEKCRzeNnPS3bFZepMj8UKBobKpSoCPqpgVsACAAAAAAPG3IxQVOdZrr509ggm5FKizWWoZPuVtOgOIGZ3m+pdEAAzE3AH0AAAAFZAAgAAAAABUvRrDQKEXLMdhnzXRdhiL6AGNs2TojPky+YVLXs+JnBXMAIAAAAAD1kYicbEEcPzD4QtuSYQQWDPq8fuUWGddpWayKn3dT9QVsACAAAAAA9+Sf7PbyFcY45hP9oTfjQiOUS3vEIAT8C0vOHymwYSUAAzE4AH0AAAAFZAAgAAAAAOvSnpujeKNen4pqc2HR63C5s5oJ1Vf4CsbKoYQvkwl5BXMAIAAAAACw2+vAMdibzd2YVVNfk81yXkFZP0WLJ82JBxJmXnYE+QVsACAAAAAArQ/E1ACyhK4ZyLqH9mNkCU7WClqRQTGyW9tciSGG/EMAAzE5AH0AAAAFZAAgAAAAAAo0xfGG7tJ3GWhgPVhW5Zn239nTD3PadShCNRc9TwdNBXMAIAAAAADZh243oOhenu0s/P/5KZLBDh9ADqKHtSWcXpO9D2sIjgVsACAAAAAAlgTPaoQKz+saU8rwCT3UiNOdG6hdpjzFx9GBn08ZkBEAABJjbQAAAAAAAAAAAAAQcGF5bG9hZElkANIEAAAQZmlyc3RPcGVyYXRvcgABAAAAAA==",
+                "subType": "6"
+            }
+        }
+    },
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+            "db.test": {
+                "escCollection": "fle2.test.esc",
+                "ecocCollection": "fle2.test.ecoc",
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "encrypted",
+                        "bsonType": "double",
+                        "queries": {
+                            "queryType": "rangePreview",
+                            "contention": {
+                                "$numberInt": "0"
+                            },
+                            "sparsity": {
+                                "$numberInt": "1"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
