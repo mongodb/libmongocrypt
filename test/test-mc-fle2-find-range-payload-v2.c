@@ -39,7 +39,6 @@ _test_FLE2FindRangePayloadV2_roundtrip (_mongocrypt_tester_t *tester)
    _mongocrypt_buffer_t expect_serverDerivedFromDataToken;
    mc_FLE2RangeOperator_t expect_firstOperator = FLE2RangeOperator_kGte;
    mc_FLE2RangeOperator_t expect_secondOperator = FLE2RangeOperator_kLte;
-   int32_t expect_payloadId = 0;
 
    bson_t in_bson;
    bson_t out_bson;
@@ -60,7 +59,6 @@ _test_FLE2FindRangePayloadV2_roundtrip (_mongocrypt_tester_t *tester)
 
    ASSERT (bson_init_static (&in_bson, input.data, input.len));
 
-   mongocrypt_status_t *status = mongocrypt_status_new ();
    mc_FLE2FindRangePayloadV2_init(&payload);
 
     {
