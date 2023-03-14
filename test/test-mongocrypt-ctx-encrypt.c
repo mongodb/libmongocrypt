@@ -2592,13 +2592,8 @@ _test_encrypt_fle2_unindexed_encrypted_payload (_mongocrypt_tester_t *tester)
    uint8_t rng_data[] = RNG_DATA;
    _test_rng_data_source source = {
       .buf = {.data = rng_data, .len = sizeof (rng_data) - 1u}};
-
-   // TODO (MONGOCRYPT-551): Implement UnindexedEncryptedValueV2 transform
    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER (
-      tester,
-      "fle2-insert-unindexed",
-      &source,
-      "FLE2UnindexedEncryptedValueV2 not implemented");
+      tester, "fle2-insert-unindexed", &source, NULL);
 }
 #undef RNG_DATA
 

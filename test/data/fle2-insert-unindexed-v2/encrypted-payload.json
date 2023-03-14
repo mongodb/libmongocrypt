@@ -1,0 +1,14 @@
+{
+   "insert": "test",
+   "documents": [
+      {
+         "plainText": "sample",
+         "encrypted": {
+            "$binary": {
+               "base64": "EKvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFVl3jjP90PgD4T+Mtubn/mm4CKsKGaV1yxlic9Dty1Adef4Y+bsLGKhBbCa5eojM/A==",
+               "subType": "06"
+            }
+         }
+      }
+   ]
+}
