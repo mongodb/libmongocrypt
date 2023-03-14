@@ -173,6 +173,11 @@ test_fle2_ieevv2_test (_mongocrypt_tester_t *tester, const char *path)
 static void
 test_fle2_ieevv2 (_mongocrypt_tester_t *tester)
 {
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
+
    // Producted by Server test: (FLECrudTest, insertOneV2)
    test_fle2_ieevv2_test (tester,
                           "test/data/ieev-v2/FLECrudTest-insertOneV2.json");
