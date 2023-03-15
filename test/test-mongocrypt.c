@@ -545,6 +545,9 @@ _mongocrypt_tester_mongocrypt (tester_mongocrypt_flags flags)
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);
    bson_destroy (kms_providers);
    mongocrypt_binary_destroy (bin);
+   if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_V2) {
+      mongocrypt_setopt_fle2v2 (crypt, true);
+   }
    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
       mongocrypt_setopt_append_crypt_shared_lib_search_path (crypt, "$ORIGIN");
    }
