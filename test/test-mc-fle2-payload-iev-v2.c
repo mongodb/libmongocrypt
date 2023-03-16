@@ -128,8 +128,9 @@ _mc_fle2_iev_v2_test_run (_mongocrypt_tester_t *tester,
                         status);
    } else {
       ASSERT (test->type == kTypeRange);
-      // TODO (MONGOCRYPT-531) FLE2IndexedRangeEncryptedValueV2
-      ASSERT_OR_PRINT_MSG (false, "Type must be 'equality' for now");
+      ASSERT_OK_STATUS (mc_FLE2IndexedRangeEncryptedValueV2_parse (
+                           iev, &test->payload, status),
+                        status);
    }
 
    // Validate S_KeyId as parsed.
@@ -208,6 +209,9 @@ test_fle2_iev_v2 (_mongocrypt_tester_t *tester)
    // Producted by Server test: (FLECrudTest, insertOneV2)
    test_fle2_iev_v2_test (tester,
                           "test/data/iev-v2/FLECrudTest-insertOneV2.json");
+   // Producted by Server test: (FLECrudTest, insertOneRangeV2)
+   test_fle2_iev_v2_test (tester,
+                          "test/data/iev-v2/FLECrudTest-insertOneRangeV2.json");
 }
 
 void
