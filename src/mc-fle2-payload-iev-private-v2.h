@@ -45,6 +45,11 @@ typedef struct _mc_FLE2IndexedEncryptedValueV2_t
 mc_FLE2IndexedEncryptedValueV2_t *
 mc_FLE2IndexedEncryptedValueV2_new (void);
 
+bool
+mc_FLE2IndexedEncryptedValueV2_parse (mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                      const _mongocrypt_buffer_t *buf,
+                                      mongocrypt_status_t *status);
+
 bson_type_t
 mc_FLE2IndexedEncryptedValueV2_get_bson_value_type (
    const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status);
@@ -108,6 +113,33 @@ mc_FLE2IndexedEncryptedValueV2_destroy (mc_FLE2IndexedEncryptedValueV2_t *iev);
 
 bool
 mc_FLE2IndexedEqualityEncryptedValueV2_parse (
+   mc_FLE2IndexedEncryptedValueV2_t *iev,
+   const _mongocrypt_buffer_t *buf,
+   mongocrypt_status_t *status);
+
+/*
+ * FLE2IndexedRangeEncryptedValueV2 has the following data layout:
+ *
+ * struct FLE2IndexedRangeEncryptedValueV2 {
+ *   uint8_t fle_blob_subtype = 15;
+ *   uint8_t S_KeyId[16];
+ *   uint8_t original_bson_type;
+ *   uint8_t edge_count;
+ *   uint8_t ServerEncryptedValue[ServerEncryptedValue.length];
+ *   FLE2TagAndEncryptedMetadataBlock metadata[edge_count];
+ * }
+ *
+ * Note that this format differs from FLE2IndexedEqualityEncryptedValueV2
+ * in only two ways:
+ * 1/ `edge_count` is introduced as an octet following `original_bson_type`.
+ * 2/ Rather than a single metadata block, we have {edge_count} blocks.
+ *
+ * Since libmongocrypt ignores metadata blocks, we can ignore most all
+ * differences between Equality and Range types for IndexedEncrypted data.
+ */
+
+bool
+mc_FLE2IndexedRangeEncryptedValueV2_parse (
    mc_FLE2IndexedEncryptedValueV2_t *iev,
    const _mongocrypt_buffer_t *buf,
    mongocrypt_status_t *status);

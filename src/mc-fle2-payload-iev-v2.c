@@ -27,13 +27,14 @@
 typedef enum {
    kTypeInit,
    kTypeEquality,
-   kTypeRanged, // TODO (MONGOCRYPT-531) FLE2IndexedRangeEncryptedValueV2
+   kTypeRange,
 } _mc_fle2_iev_v2_type;
 
 struct _mc_FLE2IndexedEncryptedValueV2_t {
    // Raw payload values
    uint8_t fle_blob_subtype;
    uint8_t bson_value_type;
+   uint8_t edge_count;
    _mongocrypt_buffer_t S_KeyId;
    _mongocrypt_buffer_t ServerEncryptedValue;
 
@@ -68,6 +69,34 @@ mc_FLE2IndexedEncryptedValueV2_t *
 mc_FLE2IndexedEncryptedValueV2_new (void)
 {
    return bson_malloc0 (sizeof (mc_FLE2IndexedEncryptedValueV2_t));
+}
+
+bool
+mc_FLE2IndexedEncryptedValueV2_parse (
+   mc_FLE2IndexedEncryptedValueV2_t *iev,
+   const _mongocrypt_buffer_t *buf,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (iev);
+   BSON_ASSERT_PARAM (buf);
+
+   if ((buf->data == NULL) || (buf->len == 0)) {
+      CLIENT_ERR ("Empty buffer passed to mc_FLE2IndexedEncryptedValueV2_parse");
+      return false;
+   }
+
+   if (buf->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2) {
+      return mc_FLE2IndexedEqualityEncryptedValueV2_parse (iev, buf, status);
+   } else if (buf->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2) {
+      return mc_FLE2IndexedRangeEncryptedValueV2_parse (iev, buf, status);
+   } else {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValueV2_parse expected "
+                  "fle_blob_subtype %d or %d got: %" PRIu8,
+                  MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2,
+                  MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2,
+                  iev->fle_blob_subtype);
+      return false;
+   }
 }
 
 bson_type_t
@@ -388,5 +417,73 @@ mc_FLE2IndexedEqualityEncryptedValueV2_parse (
    BSON_ASSERT (mc_reader_get_remaining_length (&reader) == kMetadataLen);
 
    iev->type = kTypeEquality;
+   return true;
+}
+
+
+// -----------------------------------------------------------------------
+// Range
+
+bool
+mc_FLE2IndexedRangeEncryptedValueV2_parse (
+   mc_FLE2IndexedEncryptedValueV2_t *iev,
+   const _mongocrypt_buffer_t *buf,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (iev);
+   BSON_ASSERT_PARAM (buf);
+
+   if (iev->type != kTypeInit) {
+      CLIENT_ERR ("mc_FLE2IndexedRangeEncryptedValueV2_parse must not be "
+                  "called twice");
+      return false;
+   }
+
+   mc_reader_t reader;
+   mc_reader_init_from_buffer (&reader, buf, __FUNCTION__);
+
+   CHECK_AND_RETURN (
+      mc_reader_read_u8 (&reader, &iev->fle_blob_subtype, status));
+
+   if (iev->fle_blob_subtype != MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2) {
+      CLIENT_ERR ("mc_FLE2IndexedRangeEncryptedValueV2_parse expected "
+                  "fle_blob_subtype %d got: %" PRIu8,
+                  MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2,
+                  iev->fle_blob_subtype);
+      return false;
+   }
+
+   /* Read S_KeyId. */
+   CHECK_AND_RETURN (
+      mc_reader_read_uuid_buffer (&reader, &iev->S_KeyId, status));
+
+   /* Read original_bson_type. */
+   CHECK_AND_RETURN (
+      mc_reader_read_u8 (&reader, &iev->bson_value_type, status));
+
+   /* Read edge_count */
+   CHECK_AND_RETURN (mc_reader_read_u8 (&reader, &iev->edge_count, status));
+   // Maximum edge_count(255) times kMetadataLen(96) fits easily without
+   // overflow.
+   const uint64_t edges_len = iev->edge_count * kMetadataLen;
+
+   /* Read ServerEncryptedValue. */
+   const uint64_t min_required_len = kMinServerEncryptedValueLen + edges_len;
+   const uint64_t SEV_and_edges_len = mc_reader_get_remaining_length (&reader);
+   if (SEV_and_edges_len < min_required_len) {
+      CLIENT_ERR ("Invalid payload size %" PRIu64
+                  ", smaller than minimum length %" PRIu64,
+                  SEV_and_edges_len,
+                  min_required_len);
+      return false;
+   }
+   const uint64_t SEV_len = SEV_and_edges_len - edges_len;
+   CHECK_AND_RETURN (mc_reader_read_buffer (
+      &reader, &iev->ServerEncryptedValue, SEV_len, status));
+
+   // Ignore Metadata block.
+   BSON_ASSERT (mc_reader_get_remaining_length (&reader) == edges_len);
+
+   iev->type = kTypeRange;
    return true;
 }
