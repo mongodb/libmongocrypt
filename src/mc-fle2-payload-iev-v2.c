@@ -36,7 +36,6 @@ struct _mc_FLE2IndexedEncryptedValueV2_t {
    uint8_t bson_value_type;
    _mongocrypt_buffer_t S_KeyId;
    _mongocrypt_buffer_t ServerEncryptedValue;
-   _mongocrypt_buffer_t EncryptionMetadata;
 
    // Decode State
    _mc_fle2_iev_v2_type type;
@@ -57,7 +56,7 @@ struct _mc_FLE2IndexedEncryptedValueV2_t {
 };
 
 #define kMetadataLen 96U                // encCount(32) + tag(32) + encZeros(32)
-#define kMinServerEncryptedValueLen 17U // IV(16) + EncrtyptCTR(1byte)
+#define kMinServerEncryptedValueLen 17U // IV(16) + EncryptCTR(1byte)
 #define kMinSEVAndMetadataLen (kMinServerEncryptedValueLen + kMetadataLen)
 
 #define CHECK_AND_RETURN(x) \
@@ -81,7 +80,7 @@ mc_FLE2IndexedEncryptedValueV2_get_bson_value_type (
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValueV2_get_bson_value_type "
                   "must be called after "
                   "mc_FLE2IndexedEncryptedValueV2_parse");
-      return false;
+      return BSON_TYPE_EOD;
    }
 
    return (bson_type_t) iev->bson_value_type;
@@ -97,7 +96,7 @@ mc_FLE2IndexedEncryptedValueV2_get_S_KeyId (
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValueV2_get_S_KeyId "
                   "must be called after "
                   "mc_FLE2IndexedEncryptedValueV2_parse");
-      return false;
+      return NULL;
    }
 
    return &iev->S_KeyId;
@@ -219,7 +218,7 @@ mc_FLE2IndexedEncryptedValueV2_get_ClientEncryptedValue (
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValueV2_get_"
                   "ClientEncryptedValue must be called after "
                   "mc_FLE2IndexedEncryptedValueV2_add_S_Key");
-      return false;
+      return NULL;
    }
 
    return &iev->ClientEncryptedValue;
@@ -230,11 +229,13 @@ const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValueV2_get_K_KeyId (
    const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status)
 {
+   BSON_ASSERT_PARAM (iev);
+
    if (!iev->ClientEncryptedValueDecoded) {
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValueV2_get_K_KeyID "
                   "must be called after "
                   "mc_FLE2IndexedEncryptedValueV2_add_S_Key");
-      return false;
+      return NULL;
    }
 
    return &iev->K_KeyId;
@@ -307,7 +308,7 @@ mc_FLE2IndexedEncryptedValueV2_get_ClientValue (
       CLIENT_ERR ("mc_FLE2IndexedEncryptedValueV2_get_ClientValue must "
                   "be called after "
                   "mc_FLE2IndexedEncryptedValueV2_add_K_Key");
-      return false;
+      return NULL;
    }
 
    return &iev->ClientValue;
@@ -316,7 +317,9 @@ mc_FLE2IndexedEncryptedValueV2_get_ClientValue (
 void
 mc_FLE2IndexedEncryptedValueV2_destroy (mc_FLE2IndexedEncryptedValueV2_t *iev)
 {
-   BSON_ASSERT_PARAM (iev);
+   if (!iev) {
+      return;
+   }
 
    _mongocrypt_buffer_cleanup (&iev->ClientValue);
    _mongocrypt_buffer_cleanup (&iev->DecryptedServerEncryptedValue);
