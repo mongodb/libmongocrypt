@@ -23,6 +23,64 @@
 #include "mc-tokens-private.h"
 
 /*
+ * FLE2IndexedEqualityEncryptedValueV2 and FLE2IndexedRangeEncryptedValueV2
+ * share a common internal implementation.  Accessors such as add/get_[SK]_Key
+ * may be called for either type and produce appropriate results,
+ * however the _parse() method is unique per type.
+ *
+ * Lifecycle:
+ * 1. mc_FLE2IndexedEncryptedValueV2_init
+ * 2. mc_FLE2Indexed(Equality|Range)EncryptedValueV2_parse
+ * 3. mc_FLE2IndexedEncryptedValueV2_get_S_KeyId
+ * 4. mc_FLE2IndexedEncryptedValueV2_add_S_Key
+ * 5. mc_FLE2IndexedEncryptedValueV2_get_K_KeyId
+ * 6. mc_FLE2IndexedEncryptedValueV2_add_K_Key
+ * 7. mc_FLE2IndexedEncryptedValueV2_get_ClientValue
+ * 8. mc_FLE2IndexedEncryptedValueV2_destroy
+ */
+
+typedef struct _mc_FLE2IndexedEncryptedValueV2_t
+   mc_FLE2IndexedEncryptedValueV2_t;
+
+mc_FLE2IndexedEncryptedValueV2_t *
+mc_FLE2IndexedEncryptedValueV2_new (void);
+
+bson_type_t
+mc_FLE2IndexedEncryptedValueV2_get_bson_value_type (
+   const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status);
+
+const _mongocrypt_buffer_t *
+mc_FLE2IndexedEncryptedValueV2_get_S_KeyId (
+   const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status);
+
+bool
+mc_FLE2IndexedEncryptedValueV2_add_S_Key (_mongocrypt_crypto_t *crypto,
+                                          mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                          const _mongocrypt_buffer_t *S_Key,
+                                          mongocrypt_status_t *status);
+
+const _mongocrypt_buffer_t *
+mc_FLE2IndexedEncryptedValueV2_get_ClientEncryptedValue (
+   const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status);
+
+const _mongocrypt_buffer_t *
+mc_FLE2IndexedEncryptedValueV2_get_K_KeyId (
+   const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status);
+
+bool
+mc_FLE2IndexedEncryptedValueV2_add_K_Key (_mongocrypt_crypto_t *crypto,
+                                          mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                          const _mongocrypt_buffer_t *K_Key,
+                                          mongocrypt_status_t *status);
+
+const _mongocrypt_buffer_t *
+mc_FLE2IndexedEncryptedValueV2_get_ClientValue (
+   const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status);
+
+void
+mc_FLE2IndexedEncryptedValueV2_destroy (mc_FLE2IndexedEncryptedValueV2_t *iev);
+
+/*
  * FLE2IndexedEqualityEncryptedValueV2 has the following data layout:
  *
  * struct FLE2IndexedEqualityEncryptedValueV2 {
@@ -34,7 +92,7 @@
  * }
  *
  * ServerEncryptedValue :=
- *   EncryptCTR(ServerEncryptionToken, ClientEncryptedValue)
+ *   EncryptCTR(ServerEncryptionToken, K_KeyId || ClientEncryptedValue)
  * ClientEncryptedValue := EncryptCBCAEAD(K_Key, clientValue, AD=K_KeyId)
  *
  * The MetadataBlock is ignored by libmongocrypt,
@@ -48,59 +106,10 @@
  * }
  */
 
-typedef struct _mc_FLE2IndexedEqualityEncryptedValueV2_t
-   mc_FLE2IndexedEqualityEncryptedValueV2_t;
-
-mc_FLE2IndexedEqualityEncryptedValueV2_t *
-mc_FLE2IndexedEqualityEncryptedValueV2_new (void);
-
 bool
 mc_FLE2IndexedEqualityEncryptedValueV2_parse (
-   mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
+   mc_FLE2IndexedEncryptedValueV2_t *iev,
    const _mongocrypt_buffer_t *buf,
    mongocrypt_status_t *status);
-
-bson_type_t
-mc_FLE2IndexedEqualityEncryptedValueV2_get_bson_value_type (
-   const mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
-   mongocrypt_status_t *status);
-
-const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValueV2_get_S_KeyId (
-   const mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
-   mongocrypt_status_t *status);
-
-bool
-mc_FLE2IndexedEqualityEncryptedValueV2_add_S_Key (
-   _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
-   const _mongocrypt_buffer_t *S_Key,
-   mongocrypt_status_t *status);
-
-const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValueV2_get_ClientEncryptedValue (
-   const mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
-   mongocrypt_status_t *status);
-
-const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValueV2_get_K_KeyId (
-   const mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
-   mongocrypt_status_t *status);
-
-bool
-mc_FLE2IndexedEqualityEncryptedValueV2_add_K_Key (
-   _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
-   const _mongocrypt_buffer_t *K_Key,
-   mongocrypt_status_t *status);
-
-const _mongocrypt_buffer_t *
-mc_FLE2IndexedEqualityEncryptedValueV2_get_ClientValue (
-   const mc_FLE2IndexedEqualityEncryptedValueV2_t *iev,
-   mongocrypt_status_t *status);
-
-void
-mc_FLE2IndexedEqualityEncryptedValueV2_destroy (
-   mc_FLE2IndexedEqualityEncryptedValueV2_t *iev);
 
 #endif /* MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_V2_H */

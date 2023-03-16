@@ -17,7 +17,13 @@
 #include "test-mongocrypt.h"
 #include "mc-fle2-payload-iev-private-v2.h"
 
+typedef enum {
+   kTypeEquality,
+   kTypeRange,
+} _mc_fle2_iev_type;
+
 typedef struct {
+   _mc_fle2_iev_type type;
    _mongocrypt_buffer_t payload;
    _mongocrypt_buffer_t S_KeyId;
    _mongocrypt_buffer_t S_Key;
@@ -41,6 +47,8 @@ _mc_fle2_ieevv2_test_destroy (_mc_fle2_ieevv2_test *test)
 static bool
 _mc_fle2_ieevv2_test_parse (_mc_fle2_ieevv2_test *test, bson_iter_t *iter)
 {
+   bool hasType = false;
+
    while (bson_iter_next (iter)) {
       const char *field = bson_iter_key (iter);
       ASSERT (field);
@@ -69,6 +77,18 @@ _mc_fle2_ieevv2_test_parse (_mc_fle2_ieevv2_test *test, bson_iter_t *iter)
          ASSERT_OR_PRINT_MSG ((value > 0) && (value < 128),
                               "Field 'bson_value_type' must be 1..127");
          test->bson_value_type = (uint8_t) value;
+      } else if (!strcmp (field, "type")) {
+         ASSERT_OR_PRINT_MSG (!hasType, "Duplicate field 'type'");
+         ASSERT (BSON_ITER_HOLDS_UTF8 (iter));
+         const char *value = bson_iter_utf8 (iter, NULL);
+         if (!strcmp (value, "equality")) {
+            test->type = kTypeEquality;
+         } else if (!strcmp (value, "range")) {
+            test->type = kTypeRange;
+         } else {
+            TEST_ERROR ("Unknown type '%s'", value);
+         }
+         hasType = true;
       } else {
          TEST_ERROR ("Unknown field '%s'", field);
       }
@@ -83,6 +103,7 @@ _mc_fle2_ieevv2_test_parse (_mc_fle2_ieevv2_test *test, bson_iter_t *iter)
    CHECK_HAS (K_Key);
    CHECK_HAS (bson_value);
 #undef CHECK_HAS
+   ASSERT_OR_PRINT_MSG (hasType, "Missing field 'type'");
    ASSERT_OR_PRINT_MSG (test->bson_value_type,
                         "Missing field 'bson_value_type'");
 
@@ -97,50 +118,56 @@ _mc_fle2_ieevv2_test_run (_mongocrypt_tester_t *tester,
    mongocrypt_t *crypt =
       _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
 
-   mc_FLE2IndexedEqualityEncryptedValueV2_t *iev =
-      mc_FLE2IndexedEqualityEncryptedValueV2_new ();
+   mc_FLE2IndexedEncryptedValueV2_t *iev =
+      mc_FLE2IndexedEncryptedValueV2_new ();
 
    // Parse payload.
-   ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValueV2_parse (
-                        iev, &test->payload, status),
-                     status);
+   if (test->type == kTypeEquality) {
+      ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValueV2_parse (
+                           iev, &test->payload, status),
+                        status);
+   } else {
+      ASSERT (test->type == kTypeRange);
+      // TODO (MONGOCRYPT-531) FLE2IndexedRangeEncryptedValueV2
+      ASSERT_OR_PRINT_MSG (false, "Type must be 'equality' for now");
+   }
 
    // Validate S_KeyId as parsed.
    const _mongocrypt_buffer_t *S_KeyId =
-      mc_FLE2IndexedEqualityEncryptedValueV2_get_S_KeyId (iev, status);
+      mc_FLE2IndexedEncryptedValueV2_get_S_KeyId (iev, status);
    ASSERT_OK_STATUS (S_KeyId, status);
    ASSERT_CMPBUF (*S_KeyId, test->S_KeyId);
 
    // Validate bson_value_type as parsed.
    bson_type_t bson_value_type =
-      mc_FLE2IndexedEqualityEncryptedValueV2_get_bson_value_type (iev, status);
+      mc_FLE2IndexedEncryptedValueV2_get_bson_value_type (iev, status);
    ASSERT_OK_STATUS (bson_value_type, status);
    ASSERT_CMPINT (bson_value_type, ==, test->bson_value_type);
 
    // Decrypt ServerEncryptedValue.
-   ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValueV2_add_S_Key (
+   ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValueV2_add_S_Key (
                         crypt->crypto, iev, &test->S_Key, status),
                      status);
 
    // Validate K_KeyId as decrypted.
    const _mongocrypt_buffer_t *K_KeyId =
-      mc_FLE2IndexedEqualityEncryptedValueV2_get_K_KeyId (iev, status);
+      mc_FLE2IndexedEncryptedValueV2_get_K_KeyId (iev, status);
    ASSERT_OK_STATUS (K_KeyId, status);
    ASSERT_CMPBUF (*K_KeyId, test->K_KeyId);
 
    // Decrypt ClientEncryptedValue.
-   ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValueV2_add_K_Key (
+   ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValueV2_add_K_Key (
                         crypt->crypto, iev, &test->K_Key, status),
                      status);
 
    // Validate decrypted value.
    const _mongocrypt_buffer_t *bson_value =
-      mc_FLE2IndexedEqualityEncryptedValueV2_get_ClientValue (iev, status);
+      mc_FLE2IndexedEncryptedValueV2_get_ClientValue (iev, status);
    ASSERT_OK_STATUS (bson_value, status);
    ASSERT_CMPBUF (*bson_value, test->bson_value);
 
    // All done!
-   mc_FLE2IndexedEqualityEncryptedValueV2_destroy (iev);
+   mc_FLE2IndexedEncryptedValueV2_destroy (iev);
    mongocrypt_destroy (crypt);
    mongocrypt_status_destroy (status);
 }
@@ -162,7 +189,7 @@ test_fle2_ieevv2_test (_mongocrypt_tester_t *tester, const char *path)
    ASSERT (bson_init_static (&test_bson, test_bin->data, test_bin->len));
    ASSERT (bson_validate (&test_bson, BSON_VALIDATE_NONE, NULL));
 
-   _mc_fle2_ieevv2_test test = {{0}};
+   _mc_fle2_ieevv2_test test = {.payload = {0}};
    bson_iter_t iter;
    ASSERT (bson_iter_init (&iter, &test_bson));
    ASSERT (_mc_fle2_ieevv2_test_parse (&test, &iter));
@@ -180,7 +207,7 @@ test_fle2_ieevv2 (_mongocrypt_tester_t *tester)
 
    // Producted by Server test: (FLECrudTest, insertOneV2)
    test_fle2_ieevv2_test (tester,
-                          "test/data/ieev-v2/FLECrudTest-insertOneV2.json");
+                          "test/data/iev-v2/FLECrudTest-insertOneV2.json");
 }
 
 void
