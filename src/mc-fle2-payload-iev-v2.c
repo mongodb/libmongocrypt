@@ -71,6 +71,34 @@ mc_FLE2IndexedEncryptedValueV2_new (void)
    return bson_malloc0 (sizeof (mc_FLE2IndexedEncryptedValueV2_t));
 }
 
+bool
+mc_FLE2IndexedEncryptedValueV2_parse (
+   mc_FLE2IndexedEncryptedValueV2_t *iev,
+   const _mongocrypt_buffer_t *buf,
+   mongocrypt_status_t *status)
+{
+   BSON_ASSERT_PARAM (iev);
+   BSON_ASSERT_PARAM (buf);
+
+   if ((buf->data == NULL) || (buf->len == 0)) {
+      CLIENT_ERR ("Empty buffer passed to mc_FLE2IndexedEncryptedValueV2_parse");
+      return false;
+   }
+
+   if (buf->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2) {
+      return mc_FLE2IndexedEqualityEncryptedValueV2_parse (iev, buf, status);
+   } else if (buf->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2) {
+      return mc_FLE2IndexedRangeEncryptedValueV2_parse (iev, buf, status);
+   } else {
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValueV2_parse expected "
+                  "fle_blob_subtype %d or %d got: %" PRIu8,
+                  MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2,
+                  MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2,
+                  iev->fle_blob_subtype);
+      return false;
+   }
+}
+
 bson_type_t
 mc_FLE2IndexedEncryptedValueV2_get_bson_value_type (
    const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status)
