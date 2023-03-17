@@ -15,6 +15,7 @@
  */
 
 #include "test-mongocrypt.h"
+#include "test-mongocrypt-assert-match-bson.h"
 #include "mc-fle2-payload-iev-private-v2.h"
 
 typedef enum {
@@ -173,6 +174,75 @@ _mc_fle2_iev_v2_test_run (_mongocrypt_tester_t *tester,
    mongocrypt_status_destroy (status);
 }
 
+
+// Synthesize documents using ctx-decrypt workflow.
+static void
+_mc_fle2_iev_v2_test_explicit_ctx (_mongocrypt_tester_t *tester,
+                                   _mc_fle2_iev_v2_test *test)
+{
+   mongocrypt_status_t *status = mongocrypt_status_new ();
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   {
+      // {v: BinData(ENCRYPTED, payload)}
+      bson_t doc;
+      bson_init (&doc);
+      ASSERT (bson_append_binary (&doc,
+                                  "v",
+                                  strlen ("v"),
+                                  BSON_SUBTYPE_ENCRYPTED,
+                                  test->payload.data,
+                                  test->payload.len));
+      mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data (
+         (uint8_t *) bson_get_data (&doc), doc.len);
+      ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (ctx, bin), ctx);
+      mongocrypt_binary_destroy (bin);
+      bson_destroy (&doc);
+   }
+
+   // First we need an S_Key.
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+
+   _test_ctx_wrap_and_feed_key (ctx, &test->S_KeyId, &test->S_Key, status);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+
+   // Next we need an K_Key.
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+
+   _test_ctx_wrap_and_feed_key (ctx, &test->K_KeyId, &test->K_Key, status);
+   ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+
+   // Decryption ready.
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      bson_t out_bson;
+      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+
+      bson_t expect_bson;
+      bson_init (&expect_bson);
+      bson_value_t expect_value;
+      ASSERT (_mongocrypt_buffer_to_bson_value (
+         &test->bson_value, test->bson_value_type, &expect_value));
+      ASSERT (
+         bson_append_value (&expect_bson, "v", strlen ("v"), &expect_value));
+      ASSERT (bson_compare (&out_bson, &expect_bson) == 0);
+      bson_value_destroy (&expect_value);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
+
 static void
 test_fle2_iev_v2_test (_mongocrypt_tester_t *tester, const char *path)
 {
@@ -195,6 +265,7 @@ test_fle2_iev_v2_test (_mongocrypt_tester_t *tester, const char *path)
    ASSERT (bson_iter_init (&iter, &test_bson));
    ASSERT (_mc_fle2_iev_v2_test_parse (&test, &iter));
    _mc_fle2_iev_v2_test_run (tester, &test);
+   _mc_fle2_iev_v2_test_explicit_ctx (tester, &test);
    _mc_fle2_iev_v2_test_destroy (&test);
 }
 
