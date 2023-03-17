@@ -296,4 +296,10 @@ _load_json_as_bson (const char *path, bson_t *out);
 
 extern bool _aes_ctr_is_supported_by_os;
 
+void
+_test_ctx_wrap_and_feed_key (mongocrypt_ctx_t *ctx,
+                             const _mongocrypt_buffer_t *id,
+                             _mongocrypt_buffer_t *key,
+                             mongocrypt_status_t *status);
+
 #endif

@@ -72,16 +72,16 @@ mc_FLE2IndexedEncryptedValueV2_new (void)
 }
 
 bool
-mc_FLE2IndexedEncryptedValueV2_parse (
-   mc_FLE2IndexedEncryptedValueV2_t *iev,
-   const _mongocrypt_buffer_t *buf,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValueV2_parse (mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                      const _mongocrypt_buffer_t *buf,
+                                      mongocrypt_status_t *status)
 {
    BSON_ASSERT_PARAM (iev);
    BSON_ASSERT_PARAM (buf);
 
    if ((buf->data == NULL) || (buf->len == 0)) {
-      CLIENT_ERR ("Empty buffer passed to mc_FLE2IndexedEncryptedValueV2_parse");
+      CLIENT_ERR (
+         "Empty buffer passed to mc_FLE2IndexedEncryptedValueV2_parse");
       return false;
    }
 
@@ -216,6 +216,7 @@ mc_FLE2IndexedEncryptedValueV2_add_S_Key (_mongocrypt_crypto_t *crypto,
          "Error creating K_KeyId subrange from DecryptedServerEncryptedValue");
       return false;
    }
+   iev->K_KeyId.subtype = BSON_SUBTYPE_UUID;
 
    BSON_ASSERT (iev->DecryptedServerEncryptedValue.len > UUID_LEN);
    if (!_mongocrypt_buffer_from_subrange (

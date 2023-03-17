@@ -253,6 +253,77 @@ test_FLE2UnindexedEncryptedValueV2_decrypt (_mongocrypt_tester_t *tester)
 }
 
 static void
+test_FLE2UnindexedEncryptedValueV2_ctx_decrypt (_mongocrypt_tester_t *tester)
+{
+   mongocrypt_status_t *status = mongocrypt_status_new ();
+   mongocrypt_t *crypt =
+      _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+   mongocrypt_ctx_t *ctx = mongocrypt_ctx_new (crypt);
+
+   {
+      // {v: BinData(ENCRYPTED, payload)}
+      _mongocrypt_buffer_t payload;
+      _mongocrypt_buffer_copy_from_hex (&payload, TEST_UEV_HEX);
+      bson_t doc;
+      bson_init (&doc);
+      ASSERT (bson_append_binary (&doc,
+                                  "v",
+                                  (int) strlen ("v"),
+                                  BSON_SUBTYPE_ENCRYPTED,
+                                  payload.data,
+                                  payload.len));
+      mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data (
+         (uint8_t *) bson_get_data (&doc), doc.len);
+      ASSERT_OK (mongocrypt_ctx_explicit_decrypt_init (ctx, bin), ctx);
+      mongocrypt_binary_destroy (bin);
+      bson_destroy (&doc);
+      _mongocrypt_buffer_cleanup (&payload);
+   }
+
+   // Decryption key.
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                       MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+
+   {
+      _mongocrypt_buffer_t keyId;
+      _mongocrypt_buffer_t key;
+      _mongocrypt_buffer_copy_from_hex (&keyId, TEST_KEY_UUID_HEX);
+      _mongocrypt_buffer_copy_from_hex (&key, TEST_KEY_HEX);
+      _test_ctx_wrap_and_feed_key (ctx, &keyId, &key, status);
+      _mongocrypt_buffer_cleanup (&key);
+      _mongocrypt_buffer_cleanup (&keyId);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+   }
+
+   // Value ready.
+   ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+
+   {
+      mongocrypt_binary_t *out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      bson_t out_bson;
+      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+
+      bson_t expect_bson;
+      bson_init (&expect_bson);
+      bson_value_t expect_value;
+      _mongocrypt_buffer_t value_buf = {.data = (uint8_t *) TEST_PLAINTEXT,
+                                        .len = TEST_PLAINTEXT_LEN};
+      ASSERT (_mongocrypt_buffer_to_bson_value (
+         &value_buf, BSON_TYPE_UTF8, &expect_value));
+      ASSERT (bson_append_value (
+         &expect_bson, "v", (int) strlen ("v"), &expect_value));
+      ASSERT (bson_compare (&out_bson, &expect_bson) == 0);
+      bson_value_destroy (&expect_value);
+      mongocrypt_binary_destroy (out);
+   }
+
+   mongocrypt_ctx_destroy (ctx);
+   mongocrypt_destroy (crypt);
+   mongocrypt_status_destroy (status);
+}
+
+static void
 test_FLE2UnindexedEncryptedValueV2_encrypt (_mongocrypt_tester_t *tester)
 {
    mongocrypt_t *crypt =
@@ -316,5 +387,6 @@ _mongocrypt_tester_install_fle2_payload_uev_v2 (_mongocrypt_tester_t *tester)
 {
    INSTALL_TEST (test_FLE2UnindexedEncryptedValueV2_parse);
    INSTALL_TEST (test_FLE2UnindexedEncryptedValueV2_decrypt);
+   INSTALL_TEST (test_FLE2UnindexedEncryptedValueV2_ctx_decrypt);
    INSTALL_TEST (test_FLE2UnindexedEncryptedValueV2_encrypt);
 }
