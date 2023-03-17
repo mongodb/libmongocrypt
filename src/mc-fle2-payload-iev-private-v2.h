@@ -46,10 +46,9 @@ mc_FLE2IndexedEncryptedValueV2_t *
 mc_FLE2IndexedEncryptedValueV2_new (void);
 
 bool
-mc_FLE2IndexedRangeEncryptedValueV2_parse (
-   mc_FLE2IndexedEncryptedValueV2_t *iev,
-   const _mongocrypt_buffer_t *buf,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValueV2_parse (mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                      const _mongocrypt_buffer_t *buf,
+                                      mongocrypt_status_t *status);
 
 bson_type_t
 mc_FLE2IndexedEncryptedValueV2_get_bson_value_type (
