@@ -1113,6 +1113,107 @@ _test_explicit_decrypt_fle2_iup_with_edges (_mongocrypt_tester_t *tester)
    mongocrypt_destroy (crypt);
 }
 
+#define TEST_UEV_BASE64                                                        \
+   "BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjcdSEyxpKKqujlko5Teiz" \
+   "kB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ=="
+
+/* Test decrypting FLE2UnindexedEncryptedValue */
+static void
+_test_decrypt_fle2_uev (_mongocrypt_tester_t *tester)
+{
+   if (!_aes_ctr_is_supported_by_os) {
+      printf ("Common Crypto with no CTR support detected. Skipping.");
+      return;
+   }
+
+   /* Test success with an FLE2UnindexedEncryptedValue. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_DEFAULT);
+      mongocrypt_ctx_t *ctx;
+      mongocrypt_binary_t *out;
+      bson_t out_bson;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (
+         mongocrypt_ctx_decrypt_init (
+            ctx,
+            TEST_BSON ("{'plainText':'sample','encrypted':{'$binary':{'base64':"
+                       "'" TEST_UEV_BASE64 "','subType':'6'}}}")),
+         ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+      _assert_match_bson (
+         &out_bson,
+         TMP_BSON ("{'plainText': 'sample', 'encrypted': 'value123'}"));
+      mongocrypt_binary_destroy (out);
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+}
+
+#undef TEST_UEV_BASE64
+
+#define TEST_UEV_V2_BASE64                                             \
+   "EKvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFVl3jjP90PgD4T+Mtubn/" \
+   "mm4CKsKGaV1yxlic9Dty1Adef4Y+bsLGKhBbCa5eojM/A=="
+
+/* Test decrypting FLE2UnindexedEncryptedValueV2 */
+static void
+_test_decrypt_fle2_uev_v2 (_mongocrypt_tester_t *tester)
+{
+   /* Test success with an FLE2UnindexedEncryptedValue. */
+   {
+      mongocrypt_t *crypt =
+         _mongocrypt_tester_mongocrypt (TESTER_MONGOCRYPT_WITH_CRYPT_V2);
+      mongocrypt_ctx_t *ctx;
+      mongocrypt_binary_t *out;
+      bson_t out_bson;
+
+      ctx = mongocrypt_ctx_new (crypt);
+      ASSERT_OK (
+         mongocrypt_ctx_decrypt_init (
+            ctx,
+            TEST_BSON ("{'plainText':'sample','encrypted':{'$binary':{'base64':"
+                       "'" TEST_UEV_V2_BASE64 "','subType':'6'}}}")),
+         ctx);
+
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx),
+                          MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+      ASSERT_OK (
+         mongocrypt_ctx_mongo_feed (
+            ctx,
+            TEST_FILE ("./test/data/keys/"
+                       "ABCDEFAB123498761234123456789012-local-document.json")),
+         ctx);
+      ASSERT_OK (mongocrypt_ctx_mongo_done (ctx), ctx);
+      ASSERT_STATE_EQUAL (mongocrypt_ctx_state (ctx), MONGOCRYPT_CTX_READY);
+      out = mongocrypt_binary_new ();
+      ASSERT_OK (mongocrypt_ctx_finalize (ctx, out), ctx);
+      ASSERT (_mongocrypt_binary_to_bson (out, &out_bson));
+      _assert_match_bson (
+         &out_bson,
+         TMP_BSON ("{'plainText': 'sample', 'encrypted': 'value123'}"));
+      mongocrypt_binary_destroy (out);
+      mongocrypt_ctx_destroy (ctx);
+      mongocrypt_destroy (crypt);
+   }
+}
+
+#undef TEST_UEV_V2_BASE64
+
 void
 _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
 {
@@ -1131,4 +1232,6 @@ _mongocrypt_tester_install_ctx_decrypt (_mongocrypt_tester_t *tester)
    INSTALL_TEST (_test_decrypt_fle2_irev);
    INSTALL_TEST (_test_explicit_decrypt_fle2_irev);
    INSTALL_TEST (_test_explicit_decrypt_fle2_iup_with_edges);
+   INSTALL_TEST (_test_decrypt_fle2_uev);
+   INSTALL_TEST (_test_decrypt_fle2_uev_v2);
 }

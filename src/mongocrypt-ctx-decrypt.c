@@ -21,6 +21,7 @@
 #include "mc-fle2-payload-iev-private.h"
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-uev-private.h"
+#include "mc-fle2-payload-uev-v2-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
 
 static bool
@@ -104,65 +105,66 @@ fail:
    return ret;
 }
 
-static bool
-_replace_FLE2UnindexedEncryptedValue_with_plaintext (
-   void *ctx,
-   _mongocrypt_buffer_t *in,
-   bson_value_t *out,
-   mongocrypt_status_t *status)
-{
-   bool ret = false;
-   _mongocrypt_key_broker_t *kb = ctx;
-   mc_FLE2UnindexedEncryptedValue_t *uev =
-      mc_FLE2UnindexedEncryptedValue_new ();
-   _mongocrypt_buffer_t key = {0};
-
-   BSON_ASSERT_PARAM (ctx);
-   BSON_ASSERT_PARAM (in);
-   BSON_ASSERT_PARAM (out);
-
-   if (!mc_FLE2UnindexedEncryptedValue_parse (uev, in, status)) {
-      goto fail;
+#define REPLACE_UNINDEXED_WITH_PLAINTEXT(ClassType)                           \
+   static bool _replace_##ClassType##_with_plaintext (                        \
+      void *ctx,                                                              \
+      _mongocrypt_buffer_t *in,                                               \
+      bson_value_t *out,                                                      \
+      mongocrypt_status_t *status)                                            \
+   {                                                                          \
+      bool ret = false;                                                       \
+      _mongocrypt_key_broker_t *kb = ctx;                                     \
+      mc_##ClassType##_t *uev = mc_##ClassType##_new ();                      \
+      _mongocrypt_buffer_t key = {0};                                         \
+                                                                              \
+      BSON_ASSERT_PARAM (ctx);                                                \
+      BSON_ASSERT_PARAM (in);                                                 \
+      BSON_ASSERT_PARAM (out);                                                \
+                                                                              \
+      if (!mc_##ClassType##_parse (uev, in, status)) {                        \
+         goto fail;                                                           \
+      }                                                                       \
+                                                                              \
+      const _mongocrypt_buffer_t *key_uuid =                                  \
+         mc_##ClassType##_get_key_uuid (uev, status);                         \
+      if (!key_uuid) {                                                        \
+         goto fail;                                                           \
+      }                                                                       \
+                                                                              \
+      if (!_mongocrypt_key_broker_decrypted_key_by_id (kb, key_uuid, &key)) { \
+         _mongocrypt_key_broker_status (kb, status);                          \
+         goto fail;                                                           \
+      }                                                                       \
+                                                                              \
+      /* Decrypt ciphertext. */                                               \
+      const _mongocrypt_buffer_t *plaintext =                                 \
+         mc_##ClassType##_decrypt (kb->crypt->crypto, uev, &key, status);     \
+      if (!plaintext) {                                                       \
+         goto fail;                                                           \
+      }                                                                       \
+                                                                              \
+      uint8_t original_bson_type =                                            \
+         (uint8_t) mc_##ClassType##_get_original_bson_type (uev, status);     \
+      if (0 == original_bson_type) {                                          \
+         goto fail;                                                           \
+      }                                                                       \
+                                                                              \
+      if (!_mongocrypt_buffer_to_bson_value (                                 \
+             (_mongocrypt_buffer_t *) plaintext, original_bson_type, out)) {  \
+         CLIENT_ERR ("decrypted plaintext is not valid BSON");                \
+         goto fail;                                                           \
+      }                                                                       \
+                                                                              \
+      ret = true;                                                             \
+   fail:                                                                      \
+      _mongocrypt_buffer_cleanup (&key);                                      \
+      mc_##ClassType##_destroy (uev);                                         \
+      return ret;                                                             \
    }
 
-   const _mongocrypt_buffer_t *key_uuid =
-      mc_FLE2UnindexedEncryptedValue_get_key_uuid (uev, status);
-   if (!key_uuid) {
-      goto fail;
-   }
-
-   if (!_mongocrypt_key_broker_decrypted_key_by_id (kb, key_uuid, &key)) {
-      _mongocrypt_key_broker_status (kb, status);
-      goto fail;
-   }
-
-   /* Decrypt ciphertext. */
-   const _mongocrypt_buffer_t *plaintext =
-      mc_FLE2UnindexedEncryptedValue_decrypt (
-         kb->crypt->crypto, uev, &key, status);
-   if (!plaintext) {
-      goto fail;
-   }
-
-   uint8_t original_bson_type =
-      (uint8_t) mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev,
-                                                                       status);
-   if (0 == original_bson_type) {
-      goto fail;
-   }
-
-   if (!_mongocrypt_buffer_to_bson_value (
-          (_mongocrypt_buffer_t *) plaintext, original_bson_type, out)) {
-      CLIENT_ERR ("decrypted plaintext is not valid BSON");
-      goto fail;
-   }
-
-   ret = true;
-fail:
-   _mongocrypt_buffer_cleanup (&key);
-   mc_FLE2UnindexedEncryptedValue_destroy (uev);
-   return ret;
-}
+REPLACE_UNINDEXED_WITH_PLAINTEXT (FLE2UnindexedEncryptedValue)
+REPLACE_UNINDEXED_WITH_PLAINTEXT (FLE2UnindexedEncryptedValueV2)
+#undef REPLACE_UNINDEXED_WITH_PLAINTEXT
 
 static bool
 _replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
@@ -220,7 +222,7 @@ _replace_ciphertext_with_plaintext (void *ctx,
 {
    const _mongocrypt_value_encryption_algorithm_t *fle1alg =
       _mcFLE1Algorithm ();
-   _mongocrypt_key_broker_t *kb;
+   _mongocrypt_key_broker_t *kb = (_mongocrypt_key_broker_t *) ctx;
    _mongocrypt_ciphertext_t ciphertext;
    _mongocrypt_buffer_t plaintext;
    _mongocrypt_buffer_t key_material;
@@ -249,10 +251,17 @@ _replace_ciphertext_with_plaintext (void *ctx,
          ctx, in, out, status);
    }
 
+   BSON_ASSERT (kb->crypt);
+   if (kb->crypt->opts.use_fle2_v2) {
+      if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValueV2) {
+         return _replace_FLE2UnindexedEncryptedValueV2_with_plaintext (
+            ctx, in, out, status);
+      }
+   }
+
    _mongocrypt_buffer_init (&plaintext);
    _mongocrypt_buffer_init (&associated_data);
    _mongocrypt_buffer_init (&key_material);
-   kb = (_mongocrypt_key_broker_t *) ctx;
 
    if (!_mongocrypt_ciphertext_parse_unowned (in, &ciphertext, status)) {
       goto fail;
@@ -496,40 +505,43 @@ _check_for_K_KeyId (mongocrypt_ctx_t *ctx)
    return true;
 }
 
-static bool
-_collect_key_uuid_from_FLE2UnindexedEncryptedValue (void *ctx,
-                                                    _mongocrypt_buffer_t *in,
-                                                    mongocrypt_status_t *status)
-{
-   bool ret = false;
-   _mongocrypt_key_broker_t *kb = ctx;
-   mc_FLE2UnindexedEncryptedValue_t *uev;
-
-   BSON_ASSERT_PARAM (ctx);
-   BSON_ASSERT_PARAM (in);
-
-   uev = mc_FLE2UnindexedEncryptedValue_new ();
-
-   if (!mc_FLE2UnindexedEncryptedValue_parse (uev, in, status)) {
-      goto fail;
+#define COLLECT_KEY_UUID_FROM_UNINDEXED(ClassType)                      \
+   static bool _collect_key_uuid_from_##ClassType (                     \
+      void *ctx, _mongocrypt_buffer_t *in, mongocrypt_status_t *status) \
+   {                                                                    \
+      bool ret = false;                                                 \
+      _mongocrypt_key_broker_t *kb = ctx;                               \
+      mc_##ClassType##_t *uev;                                          \
+                                                                        \
+      BSON_ASSERT_PARAM (ctx);                                          \
+      BSON_ASSERT_PARAM (in);                                           \
+                                                                        \
+      uev = mc_##ClassType##_new ();                                    \
+                                                                        \
+      if (!mc_##ClassType##_parse (uev, in, status)) {                  \
+         goto fail;                                                     \
+      }                                                                 \
+                                                                        \
+      const _mongocrypt_buffer_t *key_uuid =                            \
+         mc_##ClassType##_get_key_uuid (uev, status);                   \
+      if (!key_uuid) {                                                  \
+         goto fail;                                                     \
+      }                                                                 \
+                                                                        \
+      if (!_mongocrypt_key_broker_request_id (kb, key_uuid)) {          \
+         _mongocrypt_key_broker_status (kb, status);                    \
+         goto fail;                                                     \
+      }                                                                 \
+                                                                        \
+      ret = true;                                                       \
+   fail:                                                                \
+      mc_##ClassType##_destroy (uev);                                   \
+      return ret;                                                       \
    }
 
-   const _mongocrypt_buffer_t *key_uuid =
-      mc_FLE2UnindexedEncryptedValue_get_key_uuid (uev, status);
-   if (!key_uuid) {
-      goto fail;
-   }
-
-   if (!_mongocrypt_key_broker_request_id (kb, key_uuid)) {
-      _mongocrypt_key_broker_status (kb, status);
-      goto fail;
-   }
-
-   ret = true;
-fail:
-   mc_FLE2UnindexedEncryptedValue_destroy (uev);
-   return ret;
-}
+COLLECT_KEY_UUID_FROM_UNINDEXED (FLE2UnindexedEncryptedValue)
+COLLECT_KEY_UUID_FROM_UNINDEXED (FLE2UnindexedEncryptedValueV2)
+#undef COLLECT_KEY_UUID_FROM_UNINDEXED
 
 static bool
 _collect_key_uuid_from_FLE2InsertUpdatePayload (void *ctx,
@@ -588,6 +600,13 @@ _collect_key_from_ciphertext (void *ctx,
       return _collect_key_uuid_from_FLE2InsertUpdatePayload (ctx, in, status);
    }
 
+   BSON_ASSERT (kb->crypt);
+   if (kb->crypt->opts.use_fle2_v2) {
+      if (in->data[0] == MC_SUBTYPE_FLE2UnindexedEncryptedValueV2) {
+         return _collect_key_uuid_from_FLE2UnindexedEncryptedValueV2 (
+            ctx, in, status);
+      }
+   }
    if (!_mongocrypt_ciphertext_parse_unowned (in, &ciphertext, status)) {
       return false;
    }
