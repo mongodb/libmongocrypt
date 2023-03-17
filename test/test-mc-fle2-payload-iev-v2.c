@@ -31,10 +31,10 @@ typedef struct {
    _mongocrypt_buffer_t K_Key;
    uint8_t bson_value_type;
    _mongocrypt_buffer_t bson_value;
-} _mc_fle2_ieevv2_test;
+} _mc_fle2_iev_v2_test;
 
 static void
-_mc_fle2_ieevv2_test_destroy (_mc_fle2_ieevv2_test *test)
+_mc_fle2_iev_v2_test_destroy (_mc_fle2_iev_v2_test *test)
 {
    _mongocrypt_buffer_cleanup (&test->payload);
    _mongocrypt_buffer_cleanup (&test->S_KeyId);
@@ -45,7 +45,7 @@ _mc_fle2_ieevv2_test_destroy (_mc_fle2_ieevv2_test *test)
 }
 
 static bool
-_mc_fle2_ieevv2_test_parse (_mc_fle2_ieevv2_test *test, bson_iter_t *iter)
+_mc_fle2_iev_v2_test_parse (_mc_fle2_iev_v2_test *test, bson_iter_t *iter)
 {
    bool hasType = false;
 
@@ -111,8 +111,8 @@ _mc_fle2_ieevv2_test_parse (_mc_fle2_ieevv2_test *test, bson_iter_t *iter)
 }
 
 static void
-_mc_fle2_ieevv2_test_run (_mongocrypt_tester_t *tester,
-                          _mc_fle2_ieevv2_test *test)
+_mc_fle2_iev_v2_test_run (_mongocrypt_tester_t *tester,
+                          _mc_fle2_iev_v2_test *test)
 {
    mongocrypt_status_t *status = mongocrypt_status_new ();
    mongocrypt_t *crypt =
@@ -173,7 +173,7 @@ _mc_fle2_ieevv2_test_run (_mongocrypt_tester_t *tester,
 }
 
 static void
-test_fle2_ieevv2_test (_mongocrypt_tester_t *tester, const char *path)
+test_fle2_iev_v2_test (_mongocrypt_tester_t *tester, const char *path)
 {
    printf ("Loading test from %s...\n", path);
 
@@ -189,16 +189,16 @@ test_fle2_ieevv2_test (_mongocrypt_tester_t *tester, const char *path)
    ASSERT (bson_init_static (&test_bson, test_bin->data, test_bin->len));
    ASSERT (bson_validate (&test_bson, BSON_VALIDATE_NONE, NULL));
 
-   _mc_fle2_ieevv2_test test = {.payload = {0}};
+   _mc_fle2_iev_v2_test test = {.payload = {0}};
    bson_iter_t iter;
    ASSERT (bson_iter_init (&iter, &test_bson));
-   ASSERT (_mc_fle2_ieevv2_test_parse (&test, &iter));
-   _mc_fle2_ieevv2_test_run (tester, &test);
-   _mc_fle2_ieevv2_test_destroy (&test);
+   ASSERT (_mc_fle2_iev_v2_test_parse (&test, &iter));
+   _mc_fle2_iev_v2_test_run (tester, &test);
+   _mc_fle2_iev_v2_test_destroy (&test);
 }
 
 static void
-test_fle2_ieevv2 (_mongocrypt_tester_t *tester)
+test_fle2_iev_v2 (_mongocrypt_tester_t *tester)
 {
    if (!_aes_ctr_is_supported_by_os) {
       printf ("Common Crypto with no CTR support detected. Skipping.");
@@ -206,12 +206,12 @@ test_fle2_ieevv2 (_mongocrypt_tester_t *tester)
    }
 
    // Producted by Server test: (FLECrudTest, insertOneV2)
-   test_fle2_ieevv2_test (tester,
+   test_fle2_iev_v2_test (tester,
                           "test/data/iev-v2/FLECrudTest-insertOneV2.json");
 }
 
 void
-_mongocrypt_tester_install_fle2_ieevv2_payloads (_mongocrypt_tester_t *tester)
+_mongocrypt_tester_install_fle2_iev_v2_payloads (_mongocrypt_tester_t *tester)
 {
-   INSTALL_TEST (test_fle2_ieevv2);
+   INSTALL_TEST (test_fle2_iev_v2);
 }
