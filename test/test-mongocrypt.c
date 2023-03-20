@@ -1086,15 +1086,20 @@ _test_ctx_wrap_and_feed_key (mongocrypt_ctx_t *ctx,
                                BSON_SUBTYPE_BINARY,
                                encrypted_key.data,
                                encrypted_key.len));
-   ASSERT (bson_append_now_utc (&doc, "creationDate", (int) strlen ("creationDate")));
-   ASSERT (bson_append_now_utc (&doc, "updateDate", (int) strlen ("updateDate")));
+   ASSERT (bson_append_now_utc (
+      &doc, "creationDate", (int) strlen ("creationDate")));
+   ASSERT (
+      bson_append_now_utc (&doc, "updateDate", (int) strlen ("updateDate")));
    ASSERT (bson_append_int32 (&doc, "status", (int) strlen ("status"), 0));
    bson_t masterKey;
    bson_init (&masterKey);
    ASSERT (bson_append_document_begin (
       &doc, "masterKey", (int) strlen ("masterKey"), &masterKey));
-   ASSERT (bson_append_utf8 (
-      &masterKey, "provider", (int) strlen ("provider"), "local", strlen ("local")));
+   ASSERT (bson_append_utf8 (&masterKey,
+                             "provider",
+                             (int) strlen ("provider"),
+                             "local",
+                             (int) strlen ("local")));
    ASSERT (bson_append_document_end (&doc, &masterKey));
    mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (&doc), doc.len);
