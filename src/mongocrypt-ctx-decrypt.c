@@ -44,20 +44,28 @@
    }
 
 static bool
-_replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
-                                                   _mongocrypt_buffer_t *in,
-                                                   bson_value_t *out,
-                                                   mongocrypt_status_t *status)
+_replace_FLE2IndexedEncryptedValue_with_plaintext (
+   void *ctx,
+   _mongocrypt_buffer_t *in,
+   bson_value_t *out,
+   mongocrypt_status_t *providedStatus)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
    mc_FLE2IndexedEncryptedValue_t *iev = mc_FLE2IndexedEncryptedValue_new ();
    _mongocrypt_buffer_t S_Key = {0};
    _mongocrypt_buffer_t K_Key = {0};
+   mongocrypt_status_t *status = providedStatus;
 
    BSON_ASSERT_PARAM (ctx);
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
+
+   if (providedStatus == NULL) {
+      // We accept a NULL status, but add_[SK]_Key require non-NULL.
+      // Make a temporary status object as needed.
+      status = mongocrypt_status_new ();
+   }
 
    // Parse the IEV payload to get S_KeyId.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValue_parse (iev, in, status));
@@ -96,6 +104,9 @@ _replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
 
    ret = true;
 fail:
+   if (status != providedStatus) {
+      mongocrypt_status_destroy (status);
+   }
    _mongocrypt_buffer_cleanup (&K_Key);
    _mongocrypt_buffer_cleanup (&S_Key);
    mc_FLE2IndexedEncryptedValue_destroy (iev);
@@ -108,7 +119,7 @@ _replace_FLE2IndexedEncryptedValueV2_with_plaintext (
    void *ctx,
    _mongocrypt_buffer_t *in,
    bson_value_t *out,
-   mongocrypt_status_t *status)
+   mongocrypt_status_t *providedStatus)
 {
    bool ret = false;
    _mongocrypt_key_broker_t *kb = ctx;
@@ -116,10 +127,17 @@ _replace_FLE2IndexedEncryptedValueV2_with_plaintext (
       mc_FLE2IndexedEncryptedValueV2_new ();
    _mongocrypt_buffer_t S_Key = {0};
    _mongocrypt_buffer_t K_Key = {0};
+   mongocrypt_status_t *status = providedStatus;
 
    BSON_ASSERT_PARAM (ctx);
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
+
+   if (providedStatus == NULL) {
+      // We accept a NULL status, but add_[SK]_Key require non-NULL.
+      // Make a temporary status object as needed.
+      status = mongocrypt_status_new ();
+   }
 
    // Parse the IEV payload to get S_KeyId.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValueV2_parse (iev, in, status));
@@ -156,6 +174,9 @@ _replace_FLE2IndexedEncryptedValueV2_with_plaintext (
 
    ret = true;
 fail:
+   if (status != providedStatus) {
+      mongocrypt_status_destroy (status);
+   }
    _mongocrypt_buffer_cleanup (&K_Key);
    _mongocrypt_buffer_cleanup (&S_Key);
    mc_FLE2IndexedEncryptedValueV2_destroy (iev);
