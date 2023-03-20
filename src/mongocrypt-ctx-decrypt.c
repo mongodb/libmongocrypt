@@ -59,25 +59,33 @@ _replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
 
+   // Parse the IEV payload to get S_KeyId.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValue_parse (iev, in, status));
    const _mongocrypt_buffer_t *S_KeyId =
       mc_FLE2IndexedEncryptedValue_get_S_KeyId (iev, status);
    CHECK_AND_RETURN (S_KeyId);
+
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, S_KeyId, &S_Key));
+
+   // Use S_Key to decrypt envelope and get to K_KeyId.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValue_add_S_Key (
       kb->crypt->crypto, iev, &S_Key, status));
    const _mongocrypt_buffer_t *K_KeyId =
       mc_FLE2IndexedEncryptedValue_get_K_KeyId (iev, status);
    CHECK_AND_RETURN (K_KeyId);
+
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, K_KeyId, &K_Key));
+
+   // Decrypt the actual data value using K_Key.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValue_add_K_Key (
       kb->crypt->crypto, iev, &K_Key, status));
    const _mongocrypt_buffer_t *clientValue =
       mc_FLE2IndexedEncryptedValue_get_ClientValue (iev, status);
    CHECK_AND_RETURN (clientValue);
 
+   // Marshal BSON value and type into a usable bson_value_t.
    bson_type_t original_bson_type =
       mc_FLE2IndexedEncryptedValue_get_original_bson_type (iev, status);
    CHECK_AND_RETURN (original_bson_type != BSON_TYPE_EOD);
@@ -113,12 +121,15 @@ _replace_FLE2IndexedEncryptedValueV2_with_plaintext (
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
 
+   // Parse the IEV payload to get S_KeyId.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValueV2_parse (iev, in, status));
    const _mongocrypt_buffer_t *S_KeyId =
       mc_FLE2IndexedEncryptedValueV2_get_S_KeyId (iev, status);
    CHECK_AND_RETURN (S_KeyId);
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, S_KeyId, &S_Key));
+
+   // Use S_Key to decrypt envelope and get to K_KeyId.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValueV2_add_S_Key (
       kb->crypt->crypto, iev, &S_Key, status));
    const _mongocrypt_buffer_t *K_KeyId =
@@ -126,12 +137,15 @@ _replace_FLE2IndexedEncryptedValueV2_with_plaintext (
    CHECK_AND_RETURN (K_KeyId);
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, K_KeyId, &K_Key));
+
+   // Decrypt the actual data value using K_Key.
    CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValueV2_add_K_Key (
       kb->crypt->crypto, iev, &K_Key, status));
    const _mongocrypt_buffer_t *clientValue =
       mc_FLE2IndexedEncryptedValueV2_get_ClientValue (iev, status);
    CHECK_AND_RETURN (clientValue);
 
+   // Marshal BSON value and type into a usable bson_value_t.
    bson_type_t bson_type =
       mc_FLE2IndexedEncryptedValueV2_get_bson_value_type (iev, status);
    CHECK_AND_RETURN (bson_type != BSON_TYPE_EOD);
@@ -165,6 +179,7 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
 
+   // Parse the UEV payload to get the encryption key.
    CHECK_AND_RETURN (mc_FLE2UnindexedEncryptedValue_parse (uev, in, status));
 
    const _mongocrypt_buffer_t *key_uuid =
@@ -174,12 +189,13 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, key_uuid, &key));
 
-   /* Decrypt ciphertext. */
+   // Decrypt the actual data value using encryption key.
    const _mongocrypt_buffer_t *plaintext =
       mc_FLE2UnindexedEncryptedValue_decrypt (
          kb->crypt->crypto, uev, &key, status);
    CHECK_AND_RETURN (plaintext);
 
+   // Marshal BSON value and type into a usable bson_value_t.
    bson_type_t original_bson_type =
       mc_FLE2UnindexedEncryptedValue_get_original_bson_type (uev, status);
    CHECK_AND_RETURN (original_bson_type != BSON_TYPE_EOD);
@@ -213,6 +229,7 @@ _replace_FLE2UnindexedEncryptedValueV2_with_plaintext (
    BSON_ASSERT_PARAM (in);
    BSON_ASSERT_PARAM (out);
 
+   // Parse the UEV payload to get the encryption key.
    CHECK_AND_RETURN (mc_FLE2UnindexedEncryptedValueV2_parse (uev, in, status));
 
    const _mongocrypt_buffer_t *key_uuid =
@@ -222,12 +239,13 @@ _replace_FLE2UnindexedEncryptedValueV2_with_plaintext (
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, key_uuid, &key));
 
-   /* Decrypt ciphertext. */
+   // Decrypt the actual data value using encryption key.
    const _mongocrypt_buffer_t *plaintext =
       mc_FLE2UnindexedEncryptedValueV2_decrypt (
          kb->crypt->crypto, uev, &key, status);
    CHECK_AND_RETURN (plaintext);
 
+   // Marshal BSON value and type into a usable bson_value_t.
    bson_type_t original_bson_type =
       mc_FLE2UnindexedEncryptedValueV2_get_original_bson_type (uev, status);
    CHECK_AND_RETURN (original_bson_type != BSON_TYPE_EOD);
@@ -261,13 +279,17 @@ _replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
 
    mc_FLE2InsertUpdatePayload_init (&iup);
 
+   // Parse the IUP payload to get the encryption key.
    CHECK_AND_RETURN (mc_FLE2InsertUpdatePayload_parse (&iup, in, status));
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, &iup.userKeyId, &key));
+
+   // Decrypt the actual data value using encryption key.
    const _mongocrypt_buffer_t *plaintext = mc_FLE2InsertUpdatePayload_decrypt (
       kb->crypt->crypto, &iup, &key, status);
    CHECK_AND_RETURN (plaintext);
 
+   // Marshal BSON value and type into a usable bson_value_t.
    bson_type_t original_bson_type = iup.valueType;
    CHECK_AND_RETURN_STATUS (
       _mongocrypt_buffer_to_bson_value (
@@ -298,14 +320,18 @@ _replace_FLE2InsertUpdatePayloadV2_with_plaintext (void *ctx,
 
    mc_FLE2InsertUpdatePayloadV2_init (&iup);
 
+   // Parse the IUP payload to get the encryption key.
    CHECK_AND_RETURN (mc_FLE2InsertUpdatePayloadV2_parse (&iup, in, status));
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, &iup.userKeyId, &key));
+
+   // Decrypt the actual data value using encryption key.
    const _mongocrypt_buffer_t *plaintext =
       mc_FLE2InsertUpdatePayloadV2_decrypt (
          kb->crypt->crypto, &iup, &key, status);
    CHECK_AND_RETURN (plaintext);
 
+   // Marshal BSON value and type into a usable bson_value_t.
    bson_type_t original_bson_type = iup.valueType;
    CHECK_AND_RETURN_STATUS (
       _mongocrypt_buffer_to_bson_value (
