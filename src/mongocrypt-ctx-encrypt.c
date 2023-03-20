@@ -447,8 +447,16 @@ get_command_name (_mongocrypt_buffer_t *cmd, mongocrypt_status_t *status)
 }
 
 static bool
-command_needs_deleteTokens (const char *command_name)
+command_needs_deleteTokens (mongocrypt_ctx_t *ctx, const char *command_name)
 {
+   BSON_ASSERT_PARAM (ctx);
+   BSON_ASSERT_PARAM (command_name);
+   BSON_ASSERT (ctx->kb.crypt);
+
+   if (ctx->crypt->opts.use_fle2_v2) {
+      return false;
+   }
+
    const char *cmds_needing_deleteTokens[] = {
       "delete", "update", "findAndModify"};
 
@@ -462,6 +470,7 @@ command_needs_deleteTokens (const char *command_name)
          return true;
       }
    }
+
    return false;
 }
 
@@ -494,7 +503,7 @@ _fle2_collect_keys_for_deleteTokens (mongocrypt_ctx_t *ctx)
 
    const char *cmd_name = ectx->cmd_name;
 
-   if (!command_needs_deleteTokens (cmd_name)) {
+   if (!command_needs_deleteTokens (ctx, cmd_name)) {
       /* Command does not require deleteTokens. */
       return true;
    }
@@ -1647,7 +1656,7 @@ _fle2_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out)
    }
 
    bson_t *deleteTokens = NULL;
-   if (command_needs_deleteTokens (command_name)) {
+   if (command_needs_deleteTokens (ctx, command_name)) {
       deleteTokens = generate_delete_tokens (
          ctx->crypt->crypto, &ctx->kb, &ectx->efc, ctx->status);
       if (!deleteTokens) {
