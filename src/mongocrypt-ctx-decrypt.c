@@ -72,7 +72,7 @@ _replace_FLE2IndexedEncryptedValue_with_plaintext (void *ctx,
    CHECK_AND_RETURN (K_KeyId);
    CHECK_AND_RETURN_KB_STATUS (
       _mongocrypt_key_broker_decrypted_key_by_id (kb, K_KeyId, &K_Key));
-   CHECK_AND_RETURN (mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
+   CHECK_AND_RETURN (mc_FLE2IndexedEncryptedValue_add_K_Key (
       kb->crypt->crypto, iev, &K_Key, status));
    const _mongocrypt_buffer_t *clientValue =
       mc_FLE2IndexedEncryptedValue_get_ClientValue (iev, status);

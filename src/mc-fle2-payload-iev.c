@@ -535,11 +535,10 @@ mc_FLE2IndexedEncryptedValue_get_K_KeyId (
 }
 
 bool
-mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
-   _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEncryptedValue_t *iev,
-   const _mongocrypt_buffer_t *K_Key,
-   mongocrypt_status_t *status)
+mc_FLE2IndexedEncryptedValue_add_K_Key (_mongocrypt_crypto_t *crypto,
+                                        mc_FLE2IndexedEncryptedValue_t *iev,
+                                        const _mongocrypt_buffer_t *K_Key,
+                                        mongocrypt_status_t *status)
 {
    const _mongocrypt_value_encryption_algorithm_t *fle2aead =
       _mcFLE2AEADAlgorithm ();
@@ -548,13 +547,12 @@ mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
    BSON_ASSERT_PARAM (K_Key);
 
    if (!iev->inner_decrypted) {
-      CLIENT_ERR (
-         "mc_FLE2IndexedEqualityEncryptedValue_add_K_Key must be called after "
-         "mc_FLE2IndexedEncryptedValue_add_S_Key");
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_K_Key must be called after "
+                  "mc_FLE2IndexedEncryptedValue_add_S_Key");
       return false;
    }
    if (iev->client_value_decrypted) {
-      CLIENT_ERR ("mc_FLE2IndexedEqualityEncryptedValue_add_K_Key must not be "
+      CLIENT_ERR ("mc_FLE2IndexedEncryptedValue_add_K_Key must not be "
                   "called twice");
       return false;
    }
@@ -594,7 +592,7 @@ mc_FLE2IndexedEncryptedValue_get_ClientValue (
    if (!iev->client_value_decrypted) {
       CLIENT_ERR (
          "mc_FLE2IndexedEqualityEncryptedValue_getClientValue must be called "
-         "after mc_FLE2IndexedEqualityEncryptedValue_add_K_Key");
+         "after mc_FLE2IndexedEncryptedValue_add_K_Key");
       return NULL;
    }
    return &iev->ClientValue;
