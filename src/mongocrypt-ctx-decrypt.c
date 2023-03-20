@@ -98,8 +98,9 @@ _replace_FLE2IndexedEncryptedValue_with_plaintext (
       mc_FLE2IndexedEncryptedValue_get_original_bson_type (iev, status);
    CHECK_AND_RETURN (original_bson_type != BSON_TYPE_EOD);
    CHECK_AND_RETURN_STATUS (
-      _mongocrypt_buffer_to_bson_value (
-         (_mongocrypt_buffer_t *) clientValue, original_bson_type, out),
+      _mongocrypt_buffer_to_bson_value ((_mongocrypt_buffer_t *) clientValue,
+                                        (uint8_t) original_bson_type,
+                                        out),
       "decrypted clientValue is not valid BSON");
 
    ret = true;
@@ -169,7 +170,7 @@ _replace_FLE2IndexedEncryptedValueV2_with_plaintext (
    CHECK_AND_RETURN (bson_type != BSON_TYPE_EOD);
    CHECK_AND_RETURN_STATUS (
       _mongocrypt_buffer_to_bson_value (
-         (_mongocrypt_buffer_t *) clientValue, bson_type, out),
+         (_mongocrypt_buffer_t *) clientValue, (uint8_t) bson_type, out),
       "decrypted clientValue is not valid BSON");
 
    ret = true;
@@ -223,7 +224,7 @@ _replace_FLE2UnindexedEncryptedValue_with_plaintext (
 
    CHECK_AND_RETURN_STATUS (
       _mongocrypt_buffer_to_bson_value (
-         (_mongocrypt_buffer_t *) plaintext, original_bson_type, out),
+         (_mongocrypt_buffer_t *) plaintext, (uint8_t) original_bson_type, out),
       "decrypted plaintext is not valid BSON");
 
    ret = true;
@@ -273,7 +274,7 @@ _replace_FLE2UnindexedEncryptedValueV2_with_plaintext (
 
    CHECK_AND_RETURN_STATUS (
       _mongocrypt_buffer_to_bson_value (
-         (_mongocrypt_buffer_t *) plaintext, original_bson_type, out),
+         (_mongocrypt_buffer_t *) plaintext, (uint8_t) original_bson_type, out),
       "decrypted plaintext is not valid BSON");
 
    ret = true;
@@ -314,7 +315,7 @@ _replace_FLE2InsertUpdatePayload_with_plaintext (void *ctx,
    bson_type_t original_bson_type = iup.valueType;
    CHECK_AND_RETURN_STATUS (
       _mongocrypt_buffer_to_bson_value (
-         (_mongocrypt_buffer_t *) plaintext, original_bson_type, out),
+         (_mongocrypt_buffer_t *) plaintext, (uint8_t) original_bson_type, out),
       "decrypted plaintext is not valid BSON");
 
    ret = true;
@@ -356,7 +357,7 @@ _replace_FLE2InsertUpdatePayloadV2_with_plaintext (void *ctx,
    bson_type_t original_bson_type = iup.valueType;
    CHECK_AND_RETURN_STATUS (
       _mongocrypt_buffer_to_bson_value (
-         (_mongocrypt_buffer_t *) plaintext, original_bson_type, out),
+         (_mongocrypt_buffer_t *) plaintext, (uint8_t) original_bson_type, out),
       "decrypted plaintext is not valid BSON");
 
    ret = true;
