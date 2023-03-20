@@ -105,4 +105,8 @@ fi
 
 echo "npm version: $(npm -v)"
 
-npm install "${NPM_OPTIONS}"
+# other repos that use this script run npm install after installing Node.
+# we can't in mongodb-client-encryption, because when releasing 
+# npm install will attempt to build from source, which fails
+# because we haven't built libmongocrypt yet.
+# npm install "${NPM_OPTIONS}"
