@@ -3866,7 +3866,7 @@ _test_encrypt_fle2_delete_v1 (_mongocrypt_tester_t *tester)
 }
 
 /* Test encrypting an empty 'delete' command without values to be encrypted.
- * Expect deleteTokens to be applied. */
+ * Expect deleteTokens to not be applied. */
 static void
 _test_encrypt_fle2_delete_v2 (_mongocrypt_tester_t *tester)
 {
@@ -3993,6 +3993,7 @@ _test_encrypt_fle2_delete_v2 (_mongocrypt_tester_t *tester)
       mongocrypt_destroy (crypt);
    }
 
+   /* Test that deleteTokens are no appended when bypassQueryAnalysis is true in v2. */
    {
       mongocrypt_t *crypt = mongocrypt_new ();
       /* Configure crypt. */
@@ -4121,8 +4122,8 @@ _test_encrypt_fle2_delete_v2 (_mongocrypt_tester_t *tester)
       mongocrypt_destroy (crypt);
    }
 
-   /* Test that deleteTokens are appended when using an
-    * encrypted_field_config_map and bypass_query_analysis. */
+   /* Test that deleteTokens are not appended when using an
+    * encrypted_field_config_map and bypass_query_analysis in v2. */
    {
       mongocrypt_t *crypt = mongocrypt_new ();
       /* Configure crypt. */

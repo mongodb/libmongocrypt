@@ -449,19 +449,25 @@ get_command_name (_mongocrypt_buffer_t *cmd, mongocrypt_status_t *status)
 static bool
 command_needs_deleteTokens (mongocrypt_ctx_t *ctx, const char *command_name)
 {
-   if (ctx->kb.crypt->opts.use_fle2_v2 == false) {
-      const char *cmds_needing_deleteTokens[] = {
-         "delete", "update", "findAndModify"};
+   BSON_ASSERT_PARAM(ctx);
+   BSON_ASSERT_PARAM(command_name);
+   BSON_ASSERT(ctx->kb.crypt);
 
-      BSON_ASSERT_PARAM (command_name);
+   if (ctx->crypt->opts.use_fle2_v2) {
+      return false;
+   }
 
-      size_t i;
-      for (i = 0; i < sizeof (cmds_needing_deleteTokens) /
-                        sizeof (cmds_needing_deleteTokens[0]);
-         i++) {
-         if (0 == strcmp (cmds_needing_deleteTokens[i], command_name)) {
-            return true;
-         }
+   const char *cmds_needing_deleteTokens[] = {
+      "delete", "update", "findAndModify"};
+
+   BSON_ASSERT_PARAM (command_name);
+
+   size_t i;
+   for (i = 0; i < sizeof (cmds_needing_deleteTokens) /
+                     sizeof (cmds_needing_deleteTokens[0]);
+      i++) {
+      if (0 == strcmp (cmds_needing_deleteTokens[i], command_name)) {
+         return true;
       }
    }
 
