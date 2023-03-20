@@ -128,7 +128,7 @@ fail:
    return false;
 }
 
-#define APPEND_BINDATA(name, subtype, value)                   \
+#define APPEND_BINDATA(name, value)                            \
    if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
       return false;                                            \
    }
@@ -139,10 +139,9 @@ mc_FLE2FindEqualityPayloadV2_serialize (
 {
    BSON_ASSERT_PARAM (payload);
 
-   APPEND_BINDATA ("d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
-   APPEND_BINDATA ("s", BSON_SUBTYPE_BINARY, payload->escDerivedToken);
-   APPEND_BINDATA (
-      "l", BSON_SUBTYPE_BINARY, payload->serverDerivedFromDataToken);
+   APPEND_BINDATA ("d", payload->edcDerivedToken);
+   APPEND_BINDATA ("s", payload->escDerivedToken);
+   APPEND_BINDATA ("l", payload->serverDerivedFromDataToken);
    if (!BSON_APPEND_INT64 (out, "cm", payload->maxContentionCounter)) {
       return false;
    }

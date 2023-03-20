@@ -59,7 +59,7 @@ mc_FLE2FindRangePayload_cleanup (mc_FLE2FindRangePayload_t *payload)
    _mc_array_destroy (&payload->payload.value.edgeFindTokenSetArray);
 }
 
-#define APPEND_BINDATA(out, name, subtype, value)              \
+#define APPEND_BINDATA(out, name, value)                       \
    if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
       return false;                                            \
    }
@@ -102,12 +102,13 @@ mc_FLE2FindRangePayload_serialize (const mc_FLE2FindRangePayload_t *payload,
             return false;
          }
 
-         APPEND_BINDATA (
-            &etc_bson, "d", BSON_SUBTYPE_BINARY, etc.edcDerivedToken);
-         APPEND_BINDATA (
-            &etc_bson, "s", BSON_SUBTYPE_BINARY, etc.escDerivedToken);
-         APPEND_BINDATA (
-            &etc_bson, "c", BSON_SUBTYPE_BINARY, etc.eccDerivedToken);
+         etc.edcDerivedToken.subtype = BSON_SUBTYPE_BINARY;
+         etc.escDerivedToken.subtype = BSON_SUBTYPE_BINARY;
+         etc.eccDerivedToken.subtype = BSON_SUBTYPE_BINARY;
+
+         APPEND_BINDATA (&etc_bson, "d", etc.edcDerivedToken);
+         APPEND_BINDATA (&etc_bson, "s", etc.escDerivedToken);
+         APPEND_BINDATA (&etc_bson, "c", etc.eccDerivedToken);
 
          if (!bson_append_document_end (&g_bson, &etc_bson)) {
             return false;
@@ -122,10 +123,8 @@ mc_FLE2FindRangePayload_serialize (const mc_FLE2FindRangePayload_t *payload,
       }
 
       // Append "payload.e" and "payload.cm".
-      APPEND_BINDATA (&payload_bson,
-                      "e",
-                      BSON_SUBTYPE_BINARY,
-                      payload->payload.value.serverEncryptionToken);
+      APPEND_BINDATA (
+         &payload_bson, "e", payload->payload.value.serverEncryptionToken);
       if (!BSON_APPEND_INT64 (&payload_bson,
                               "cm",
                               payload->payload.value.maxContentionCounter)) {

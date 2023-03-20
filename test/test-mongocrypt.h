@@ -237,6 +237,15 @@ void
 _mongocrypt_tester_install_fle2_payload_iup (_mongocrypt_tester_t *tester);
 
 void
+_mongocrypt_tester_install_fle2_payload_iup_v2 (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_fle2_payload_find_equality_v2 (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_fle2_payload_find_range_v2 (_mongocrypt_tester_t *tester);
+
+void
 _mongocrypt_tester_install_gcp_auth (_mongocrypt_tester_t *tester);
 
 void
