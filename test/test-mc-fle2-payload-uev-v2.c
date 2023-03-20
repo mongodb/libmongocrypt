@@ -268,7 +268,7 @@ test_FLE2UnindexedEncryptedValueV2_ctx_decrypt (_mongocrypt_tester_t *tester)
       bson_init (&doc);
       ASSERT (bson_append_binary (&doc,
                                   "v",
-                                  strlen ("v"),
+                                  (int) strlen ("v"),
                                   BSON_SUBTYPE_ENCRYPTED,
                                   payload.data,
                                   payload.len));
@@ -311,8 +311,8 @@ test_FLE2UnindexedEncryptedValueV2_ctx_decrypt (_mongocrypt_tester_t *tester)
                                         .len = TEST_PLAINTEXT_LEN};
       ASSERT (_mongocrypt_buffer_to_bson_value (
          &value_buf, BSON_TYPE_UTF8, &expect_value));
-      ASSERT (
-         bson_append_value (&expect_bson, "v", strlen ("v"), &expect_value));
+      ASSERT (bson_append_value (
+         &expect_bson, "v", (int) strlen ("v"), &expect_value));
       ASSERT (bson_compare (&out_bson, &expect_bson) == 0);
       bson_value_destroy (&expect_value);
       mongocrypt_binary_destroy (out);

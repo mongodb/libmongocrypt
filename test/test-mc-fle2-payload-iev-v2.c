@@ -191,7 +191,7 @@ _mc_fle2_iev_v2_test_explicit_ctx (_mongocrypt_tester_t *tester,
       bson_init (&doc);
       ASSERT (bson_append_binary (&doc,
                                   "v",
-                                  strlen ("v"),
+                                  (int) strlen ("v"),
                                   BSON_SUBTYPE_ENCRYPTED,
                                   test->payload.data,
                                   test->payload.len));
@@ -230,8 +230,8 @@ _mc_fle2_iev_v2_test_explicit_ctx (_mongocrypt_tester_t *tester,
       bson_value_t expect_value;
       ASSERT (_mongocrypt_buffer_to_bson_value (
          &test->bson_value, test->bson_value_type, &expect_value));
-      ASSERT (
-         bson_append_value (&expect_bson, "v", strlen ("v"), &expect_value));
+      ASSERT (bson_append_value (
+         &expect_bson, "v", (int) strlen ("v"), &expect_value));
       ASSERT (bson_compare (&out_bson, &expect_bson) == 0);
       bson_value_destroy (&expect_value);
       mongocrypt_binary_destroy (out);
