@@ -30,12 +30,12 @@ static void
 _test_FLE2FindEqualityPayloadV2_roundtrip (_mongocrypt_tester_t *tester)
 {
    _mongocrypt_buffer_t input;
-   mc_FLE2FindEqualityPayloadV2_t payload;
    _mongocrypt_buffer_t expect_edcDerivedToken;
    _mongocrypt_buffer_t expect_escDerivedToken;
    _mongocrypt_buffer_t expect_serverDerivedFromDataToken;
    bson_t in_bson;
    bson_t out_bson;
+   mc_FLE2FindEqualityPayloadV2_t payload;
 
    _mongocrypt_buffer_copy_from_hex (
       &expect_edcDerivedToken,
@@ -66,12 +66,13 @@ _test_FLE2FindEqualityPayloadV2_roundtrip (_mongocrypt_tester_t *tester)
    mc_FLE2FindEqualityPayloadV2_serialize (&payload, &out_bson);
    ASSERT_EQUAL_BSON(&in_bson, &out_bson);
 
+   mongocrypt_status_destroy (status);
    mc_FLE2FindEqualityPayloadV2_cleanup (&payload);
-   bson_destroy (&in_bson);
    bson_destroy (&out_bson);
-   _mongocrypt_buffer_cleanup (&expect_edcDerivedToken);
-   _mongocrypt_buffer_cleanup (&expect_escDerivedToken);
+   bson_destroy (&in_bson);
    _mongocrypt_buffer_cleanup (&expect_serverDerivedFromDataToken);
+   _mongocrypt_buffer_cleanup (&expect_escDerivedToken);
+   _mongocrypt_buffer_cleanup (&expect_edcDerivedToken);
    _mongocrypt_buffer_cleanup (&input);
 }
 

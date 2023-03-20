@@ -132,7 +132,7 @@ fail:
    return false;
 }
 
-#define IUPS_APPEND_BINDATA(name, sub_type, value)             \
+#define PAYLOAD_APPEND_BINDATA(name, value)                    \
    if (!_mongocrypt_buffer_append (&(value), out, name, -1)) { \
       return false;                                            \
    }
@@ -143,14 +143,13 @@ mc_FLE2FindEqualityPayload_serialize (
 {
    BSON_ASSERT_PARAM (payload);
 
-   IUPS_APPEND_BINDATA ("d", BSON_SUBTYPE_BINARY, payload->edcDerivedToken);
-   IUPS_APPEND_BINDATA ("s", BSON_SUBTYPE_BINARY, payload->escDerivedToken);
-   IUPS_APPEND_BINDATA ("c", BSON_SUBTYPE_BINARY, payload->eccDerivedToken);
-   IUPS_APPEND_BINDATA (
-      "e", BSON_SUBTYPE_BINARY, payload->serverEncryptionToken);
+   PAYLOAD_APPEND_BINDATA ("d", payload->edcDerivedToken);
+   PAYLOAD_APPEND_BINDATA ("s", payload->escDerivedToken);
+   PAYLOAD_APPEND_BINDATA ("c", payload->eccDerivedToken);
+   PAYLOAD_APPEND_BINDATA ("e", payload->serverEncryptionToken);
    if (!BSON_APPEND_INT64 (out, "cm", payload->maxContentionCounter)) {
       return false;
    }
    return true;
 }
-#undef IUPS_APPEND_BINDATA
+#undef PAYLOAD_APPEND_BINDATA
