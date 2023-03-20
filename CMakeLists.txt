@@ -106,7 +106,10 @@ set (MONGOCRYPT_SOURCES
    src/mc-fle2-find-equality-payload.c
    src/mc-fle2-find-equality-payload-v2.c
    src/mc-fle2-payload-iev.c
+   src/mc-fle2-payload-iev-v2.c
    src/mc-fle2-payload-uev.c
+   src/mc-fle2-payload-uev-common.c
+   src/mc-fle2-payload-uev-v2.c
    src/mc-fle2-rfds.c
    src/mc-range-edge-generation.c
    src/mc-range-mincover.c
@@ -468,9 +471,11 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-fle2-find-equality-payload-v2.c
    test/test-mc-fle2-find-range-payload-v2.c
    test/test-mc-fle2-payload-iev.c
+   test/test-mc-fle2-payload-iev-v2.c
    test/test-mc-fle2-payload-iup.c
    test/test-mc-fle2-payload-iup-v2.c
    test/test-mc-fle2-payload-uev.c
+   test/test-mc-fle2-payload-uev-v2.c
    test/test-mc-fle2-rfds.c
    test/test-mc-range-edge-generation.c
    test/test-mc-range-mincover.c

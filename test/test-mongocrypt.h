@@ -40,6 +40,8 @@ typedef enum tester_mongocrypt_flags {
    /// crypt_shared library must be present in the same directory as the test
    /// executable.
    TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB = 1 << 0,
+   /// Enable wire protocol version v2
+   TESTER_MONGOCRYPT_WITH_CRYPT_V2 = 1 << 1,
 } tester_mongocrypt_flags;
 
 /* Arbitrary max of 2048 instances of temporary test data. Increase as needed.
@@ -217,6 +219,9 @@ void
 _mongocrypt_tester_install_fle2_payloads (_mongocrypt_tester_t *tester);
 
 void
+_mongocrypt_tester_install_fle2_iev_v2_payloads (_mongocrypt_tester_t *tester);
+
+void
 _mongocrypt_tester_install_efc (_mongocrypt_tester_t *tester);
 
 void
@@ -224,6 +229,9 @@ _mongocrypt_tester_install_compact (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_fle2_payload_uev (_mongocrypt_tester_t *tester);
+
+void
+_mongocrypt_tester_install_fle2_payload_uev_v2 (_mongocrypt_tester_t *tester);
 
 void
 _mongocrypt_tester_install_fle2_payload_iup (_mongocrypt_tester_t *tester);
@@ -298,5 +306,11 @@ void
 _load_json_as_bson (const char *path, bson_t *out);
 
 extern bool _aes_ctr_is_supported_by_os;
+
+void
+_test_ctx_wrap_and_feed_key (mongocrypt_ctx_t *ctx,
+                             const _mongocrypt_buffer_t *id,
+                             _mongocrypt_buffer_t *key,
+                             mongocrypt_status_t *status);
 
 #endif

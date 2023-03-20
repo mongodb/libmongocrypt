@@ -1,0 +1,44 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$binary": {
+                "base64": "DUkDAAADcGF5bG9hZAAZAwAABGcABQMAAAMwAH0AAAAFZAAgAAAAAKfR876j77BmHaWxFf7Px/B695Rn7JAN3upnEpaEqFT+BXMAIAAAAACXqoD16/Q8tNDRR7gP222DxV0SBOSZ4bqsxYILo8a/0wVsACAAAAAA1y7ThR8e87l/kWKzGJThtIrT+i+4I690g9vJeevhk3cAAzEAfQAAAAVkACAAAAAAlpFiajzOojYERTN1LCni1VGk+ZVax/J2Rg3dQeHpMy4FcwAgAAAAAB4PqYOdB4uVsL2LSxWATz5EfrL573g4lDS0nQ+9uVVKBWwAIAAAAABaniO+t61sMSyoQzM/9YtOfA6InAK1+sKIHqbyT7IQygADMgB9AAAABWQAIAAAAAAGWed/HKDT8MkY4RMK+T/F8N9qFjiRfkfp3whoMtqjtwVzACAAAAAAjjy5yZSsBjTwwUXkSpx37XqtMBW93s4a3OwVV7PEVB8FbAAgAAAAAPpRnrDZN/ksgf+tK0r3UNmjdr3yT0e5ZSVYbnxkzYR5AAMzAH0AAAAFZAAgAAAAAFH9l9GGA1I52atJV5jNUf1lx8jBjoEoVoME97v5GFJiBXMAIAAAAAC1qH3Kd78Dr9NGbw7y9D/XYBwv5h1LLO8la5OU7g8UkQVsACAAAAAArZ6atJCYrVfHB8dSNPOFf6nnDADBMJcIEj8ljPvxHp8AAzQAfQAAAAVkACAAAAAAO1tUQja12SujAQx2RpwPbDRjdPc5+Ls8foeYDqw/Rz8FcwAgAAAAAO4FJE6dkcD42BQ8fx3QudYWIOwzZtjxvOMLX56VKwjKBWwAIAAAAABHQbab64A2haSeSv816sVwb58QJXE0izRyptjW39T/QwADNQB9AAAABWQAIAAAAAAId1qXjFZYpDxWI/YS4/n5iKlbeqJgkhe+Vt0zxMclqQVzACAAAAAALEJEZsKnlY9oBhNN6K2+j7ayMw7enQ1N4YEkIvBNsCoFbAAgAAAAANxh2kRNkQHGgUXfFc5mM1ngQ9hpsvdXkytZPGHVjm2XAAASY20AAAAAAAAAAAAAEHBheWxvYWRJZADSBAAAEGZpcnN0T3BlcmF0b3IAAQAAAAA=",
+                "subType": "6"
+            }
+        }
+    },
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+            "db.test": {
+                "escCollection": "fle2.test.esc",
+                "ecocCollection": "fle2.test.ecoc",
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "encrypted",
+                        "bsonType": "double",
+                        "queries": {
+                            "queryType": "range",
+                            "contention": {
+                                "$numberInt": "0"
+                            },
+                            "sparsity": {
+                                "$numberInt": "1"
+                            },
+                            "min": 0.0,
+                            "max": 200.0,
+                            "precision": 2
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

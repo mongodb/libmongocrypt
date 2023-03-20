@@ -1,0 +1,8 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$numberLong": "12345678901234567"
+        }
+    }
+}

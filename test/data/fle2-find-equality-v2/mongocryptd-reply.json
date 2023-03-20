@@ -1,0 +1,19 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "documents": [{
+            "_id": 1,
+            "value": {
+                "$binary": {
+                    "base64": "A1gAAAAQdAACAAAAEGEAAgAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAASrze+rEjSYdhI0EjRWeJASEHYAQOIBABJjbQAAAAAAAAAAAAA=",
+                    "subType": "06"
+                }
+            }
+        }],
+        "find": "test",
+        "$db": "test"
+    },
+    "hasEncryptedPlaceholders": true
+}

@@ -176,19 +176,18 @@ const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValue_get_K_KeyId (
    const mc_FLE2IndexedEncryptedValue_t *iev, mongocrypt_status_t *status);
 
-/* mc_FLE2IndexedEqualityEncryptedValue_add_K_Key decrypts
+/* mc_FLE2IndexedEncryptedValue_add_K_Key decrypts
  * Inner.ClientEncryptedValue. Returns false and sets @status on error. Must
  * not be called before mc_FLE2IndexedEncryptedValue_add_S_Key. */
 bool
-mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
-   _mongocrypt_crypto_t *crypto,
-   mc_FLE2IndexedEncryptedValue_t *iev,
-   const _mongocrypt_buffer_t *K_Key,
-   mongocrypt_status_t *status);
+mc_FLE2IndexedEncryptedValue_add_K_Key (_mongocrypt_crypto_t *crypto,
+                                        mc_FLE2IndexedEncryptedValue_t *iev,
+                                        const _mongocrypt_buffer_t *K_Key,
+                                        mongocrypt_status_t *status);
 
 /* mc_FLE2IndexedEncryptedValue_get_ClientValue returns the decrypted
  * Inner.ClientEncryptedValue. Returns NULL and sets @status on error.
- * It is an error to call before mc_FLE2IndexedEqualityEncryptedValue_add_K_Key.
+ * It is an error to call before mc_FLE2IndexedEncryptedValue_add_K_Key.
  */
 const _mongocrypt_buffer_t *
 mc_FLE2IndexedEncryptedValue_get_ClientValue (

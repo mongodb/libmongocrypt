@@ -1,0 +1,21 @@
+{
+   "root": "6eda88c8496ec990f5d5518dd2ad6f3d9c33b6055904b120f12de82911fbd933",
+   "value": "c07c0df51257948e1a0fc70dd4568e3af99b23b3434c9858237ca7db62db9766",
+   "counter": 1234567890,
+   "collectionsLevel1Token": "ff2103ff205a36f39704f643c270c129919f008c391d9589a6d2c86a7429d0d3",
+   "serverDataEncryptionLevel1Token": "d915ccc1eb81687fb5fc5b799f48c99fbe17e7a011a46a48901b9ae3d790656b",
+   "serverTokenDerivationLevel1Token": "1adc114b462741e6ac9f52eacf3dcb8cbca19827693c571d9418fda570c29d82",
+   "EDCToken": "167d2d2ff8e4144df37ff759db593fde0ecc7d9636f96d62dacad672eccad349",
+   "ESCToken": "bfd480f1658f49f48985734737bc07d0bc36b88210277605c55ff3c9c3ef50b0",
+   "ECCToken": "9d34f9c182d75a5a3347c2f903e3e647105c651d52cf9555c9420ba07ddd3aa2",
+   "ECOCToken": "e354e3b05e81e08b970ca061cb365163fd33dec2f982ddf9440e742ed288a8f8",
+   "EDCDerivedFromDataToken": "53eaa4c23a3ff65e6b7c7dbc4b1389cf0a6151b1ede5383a0673ff9c67855ff9",
+   "ESCDerivedFromDataToken": "acb3fab332131bbeaf112814f29ae0f2b10e97dc94b62db56c594661248e7467",
+   "ECCDerivedFromDataToken": "826cfd35c35dcc7d4fbe13f33a3520749853bd1ea4c47919482252fba3a70cec",
+   "serverDerivedFromDataToken": "4a671dbf25d68b6c040a077dabb4e63869e03f4d466803609233b16356ec6d66",
+   "EDCDerivedFromDataTokenAndCounter": "70fb9a3f760996f2f1438c5bf2a4d52bcba01b0badc3596276f49ffb2f0b136e",
+   "ESCDerivedFromDataTokenAndCounter": "7076c7b05fb4be4fe585eed930b852a6d088a0c55f3c96b50069e8a26ebfb347",
+   "ECCDerivedFromDataTokenAndCounter": "6c6a349956c19f9c5e638e612011a71fbb71921edb540310c17cd0208b7f548b",
+   "serverCountAndContentionFactorEncryptionToken": "a8c4a477e5518a527f718a5a1530919f2dad13b1f3559833e17b479711cbdbb9",
+   "serverZerosEncryptionToken": "95fda1e139ef1dc84260d4d3ebaab7627a9676f4af7aeb1b596c7c14a0b3a2ea"
+}

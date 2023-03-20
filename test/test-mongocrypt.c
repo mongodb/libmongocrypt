@@ -545,6 +545,9 @@ _mongocrypt_tester_mongocrypt (tester_mongocrypt_flags flags)
    ASSERT_OK (mongocrypt_setopt_kms_providers (crypt, bin), crypt);
    bson_destroy (kms_providers);
    mongocrypt_binary_destroy (bin);
+   if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_V2) {
+      ASSERT (mongocrypt_setopt_fle2v2 (crypt, true));
+   }
    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
       mongocrypt_setopt_append_crypt_shared_lib_search_path (crypt, "$ORIGIN");
    }
@@ -968,9 +971,11 @@ main (int argc, char **argv)
    _mongocrypt_tester_install_dll (&tester);
    _mongocrypt_tester_install_mc_tokens (&tester);
    _mongocrypt_tester_install_fle2_payloads (&tester);
+   _mongocrypt_tester_install_fle2_iev_v2_payloads (&tester);
    _mongocrypt_tester_install_efc (&tester);
    _mongocrypt_tester_install_compact (&tester);
    _mongocrypt_tester_install_fle2_payload_uev (&tester);
+   _mongocrypt_tester_install_fle2_payload_uev_v2 (&tester);
    _mongocrypt_tester_install_fle2_payload_iup (&tester);
    _mongocrypt_tester_install_fle2_payload_iup_v2 (&tester);
    _mongocrypt_tester_install_fle2_payload_find_equality_v2 (&tester);
@@ -1061,4 +1066,52 @@ get_os_version_failed:
    }
 
    _mongocrypt_buffer_cleanup (&tester.encrypted_doc);
+}
+
+void
+_test_ctx_wrap_and_feed_key (mongocrypt_ctx_t *ctx,
+                             const _mongocrypt_buffer_t *id,
+                             _mongocrypt_buffer_t *key,
+                             mongocrypt_status_t *status)
+{
+   // Wrap key using local provider.
+   _mongocrypt_buffer_t kek = _mongocrypt_ctx_kms_providers (ctx)->local.key;
+   _mongocrypt_buffer_t encrypted_key;
+   _mongocrypt_buffer_init (&encrypted_key);
+   ASSERT_OK_STATUS (_mongocrypt_wrap_key (
+                        ctx->crypt->crypto, &kek, key, &encrypted_key, status),
+                     status);
+
+   bson_t doc;
+   bson_init (&doc);
+   ASSERT (bson_append_binary (
+      &doc, "_id", (int) strlen ("_id"), BSON_SUBTYPE_UUID, id->data, id->len));
+   ASSERT (bson_append_binary (&doc,
+                               "keyMaterial",
+                               (int) strlen ("keyMaterial"),
+                               BSON_SUBTYPE_BINARY,
+                               encrypted_key.data,
+                               encrypted_key.len));
+   ASSERT (bson_append_now_utc (
+      &doc, "creationDate", (int) strlen ("creationDate")));
+   ASSERT (
+      bson_append_now_utc (&doc, "updateDate", (int) strlen ("updateDate")));
+   ASSERT (bson_append_int32 (&doc, "status", (int) strlen ("status"), 0));
+   bson_t masterKey;
+   bson_init (&masterKey);
+   ASSERT (bson_append_document_begin (
+      &doc, "masterKey", (int) strlen ("masterKey"), &masterKey));
+   ASSERT (bson_append_utf8 (&masterKey,
+                             "provider",
+                             (int) strlen ("provider"),
+                             "local",
+                             (int) strlen ("local")));
+   ASSERT (bson_append_document_end (&doc, &masterKey));
+   mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (&doc), doc.len);
+   ASSERT_OK (mongocrypt_ctx_mongo_feed (ctx, bin), ctx);
+   mongocrypt_binary_destroy (bin);
+   bson_destroy (&doc);
+
+   _mongocrypt_buffer_cleanup (&encrypted_key);
 }

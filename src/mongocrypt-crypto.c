@@ -478,7 +478,7 @@ _mongocrypt_calculate_plaintext_len (uint32_t inlen,
    const uint32_t hmaclen = (hmac == HMAC_NONE) ? 0 : MONGOCRYPT_HMAC_LEN;
    const uint32_t mincipher = (mode == MODE_CTR) ? 0 : MONGOCRYPT_BLOCK_SIZE;
    if (inlen < (MONGOCRYPT_IV_LEN + mincipher + hmaclen)) {
-      CLIENT_ERR ("input ciphertext too small. Must be more than %" PRIu32
+      CLIENT_ERR ("input ciphertext too small. Must be at least %" PRIu32
                   " bytes",
                   MONGOCRYPT_IV_LEN + mincipher + hmaclen);
       return 0;

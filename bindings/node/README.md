@@ -60,6 +60,9 @@ npm test
 <dt><a href="#MongoCryptCreateEncryptedCollectionError">MongoCryptCreateEncryptedCollectionError</a></dt>
 <dd><p>An error indicating that <code>ClientEncryption.createEncryptedCollection()</code> failed to create a collection</p>
 </dd>
+<dt><a href="#MongoCryptAzureKMSRequestError">MongoCryptAzureKMSRequestError</a></dt>
+<dd><p>An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.</p>
+</dd>
 </dl>
 
 ## Typedefs
@@ -691,6 +694,20 @@ An error indicating that `ClientEncryption.createEncryptedCollection()` failed t
 ## MongoCryptCreateEncryptedCollectionError
 **Experimental**: Public Technical Preview  
 An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
+
+<a name="MongoCryptAzureKMSRequestError"></a>
+
+## MongoCryptAzureKMSRequestError
+An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.
+
+<a name="new_MongoCryptAzureKMSRequestError_new"></a>
+
+### new MongoCryptAzureKMSRequestError(message, body)
+
+| Param | Type |
+| --- | --- |
+| message | <code>string</code> | 
+| body | <code>object</code> \| <code>undefined</code> | 
 
 <a name="BSONValue"></a>
 

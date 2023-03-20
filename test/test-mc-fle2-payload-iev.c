@@ -281,7 +281,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       ASSERT_OR_PRINT (got != NULL, status);
       ASSERT_CMPBUF (expect_K_KeyId, *got);
 
-      ASSERT_OK_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
+      ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValue_add_K_Key (
                            crypt->crypto, iev, &correct_K_Key, status),
                         status);
       got = mc_FLE2IndexedEncryptedValue_get_ClientValue (iev, status);
@@ -446,7 +446,7 @@ test_FLE2IndexedEqualityEncryptedValue_decrypt (_mongocrypt_tester_t *tester)
       ASSERT_OK_STATUS (mc_FLE2IndexedEncryptedValue_add_S_Key (
                            crypt->crypto, iev, &correct_S_Key, status),
                         status);
-      ASSERT_FAILS_STATUS (mc_FLE2IndexedEqualityEncryptedValue_add_K_Key (
+      ASSERT_FAILS_STATUS (mc_FLE2IndexedEncryptedValue_add_K_Key (
                               crypt->crypto, iev, &incorrect_K_Key, status),
                            status,
                            "HMAC validation failure");
