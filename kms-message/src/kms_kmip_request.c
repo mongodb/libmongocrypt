@@ -102,6 +102,19 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    /* 0x07 == SecretData */
    kmip_writer_write_enumeration (writer, KMIP_TAG_ObjectType, 0x07);
    kmip_writer_begin_struct (writer, KMIP_TAG_TemplateAttribute);
+   // Add required Cryptographic Usage Mask attribute.
+   {
+      kmip_writer_begin_struct (writer, KMIP_TAG_Attribute);
+      const char *cryptographicUsageMaskStr = "Cryptographic Usage Mask";
+      kmip_writer_write_string (writer,
+                                KMIP_TAG_AttributeName,
+                                cryptographicUsageMaskStr,
+                                strlen (cryptographicUsageMaskStr));
+      // Use 0 because the Secret Data object is not used in cryptographic
+      // operations on the KMIP server.
+      kmip_writer_write_integer (writer, KMIP_TAG_AttributeValue, 0);
+      kmip_writer_close_struct (writer);
+   }
    kmip_writer_close_struct (writer); /* KMIP_TAG_TemplateAttribute */
    kmip_writer_begin_struct (writer, KMIP_TAG_SecretData);
    /* 0x01 = Password */
