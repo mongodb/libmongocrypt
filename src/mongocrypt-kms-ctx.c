@@ -1646,7 +1646,7 @@ _mongocrypt_kms_ctx_init_kmip_register (mongocrypt_kms_ctx_t *kms_ctx,
    kms_ctx->req = kms_kmip_request_register_secretdata_new (
       NULL /* reserved */, secretdata, secretdata_len);
 
-   if (!kms_ctx->req) {
+   if (kms_request_get_error (kms_ctx->req)) {
       CLIENT_ERR ("Error creating KMIP register request: %s",
                   kms_request_get_error (kms_ctx->req));
       goto done;
@@ -1687,7 +1687,7 @@ _mongocrypt_kms_ctx_init_kmip_activate (mongocrypt_kms_ctx_t *kms_ctx,
    kms_ctx->req =
       kms_kmip_request_activate_new (NULL /* reserved */, unique_identifier);
 
-   if (!kms_ctx->req) {
+   if (kms_request_get_error (kms_ctx->req)) {
       CLIENT_ERR ("Error creating KMIP activate request: %s",
                   kms_request_get_error (kms_ctx->req));
       goto done;
@@ -1728,7 +1728,7 @@ _mongocrypt_kms_ctx_init_kmip_get (mongocrypt_kms_ctx_t *kms_ctx,
    kms_ctx->req =
       kms_kmip_request_get_new (NULL /* reserved */, unique_identifier);
 
-   if (!kms_ctx->req) {
+   if (kms_request_get_error (kms_ctx->req)) {
       CLIENT_ERR ("Error creating KMIP get request: %s",
                   kms_request_get_error (kms_ctx->req));
       goto done;
