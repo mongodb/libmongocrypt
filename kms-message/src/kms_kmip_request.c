@@ -120,8 +120,8 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    /* 0x01 = Password */
    kmip_writer_write_enumeration (writer, KMIP_TAG_SecretDataType, 0x02);
    kmip_writer_begin_struct (writer, KMIP_TAG_KeyBlock);
-   /* 0x01 = Raw */
-   kmip_writer_write_enumeration (writer, KMIP_TAG_KeyFormatType, 0x01);
+   /* 0x02 = Opaque */
+   kmip_writer_write_enumeration (writer, KMIP_TAG_KeyFormatType, 0x02);
    kmip_writer_begin_struct (writer, KMIP_TAG_KeyValue);
    kmip_writer_write_bytes (
       writer, KMIP_TAG_KeyMaterial, (const char *) data, len);
