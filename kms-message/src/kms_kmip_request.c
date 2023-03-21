@@ -55,11 +55,15 @@ kms_kmip_request_register_secretdata_new (void *reserved,
      <RequestPayload tag="0x420079" type="Structure">
       <ObjectType tag="0x420057" type="Enumeration" value="7"/>
       <TemplateAttribute tag="0x420091" type="Structure">
+       <Attribute tag="0x420008" type="Structure">
+        <AttributeName tag="0x42000a" type="TextString" value="Cryptographic
+   Usage Mask"/> <AttributeValue tag="0x42000b" type="Integer" value="0"/>
+       </Attribute>
       </TemplateAttribute>
       <SecretData tag="0x420085" type="Structure">
-       <SecretDataType tag="0x420086" type="Enumeration" value="1"/>
+       <SecretDataType tag="0x420086" type="Enumeration" value="2"/>
        <KeyBlock tag="0x420040" type="Structure">
-        <KeyFormatType tag="0x420042" type="Enumeration" value="1"/>
+        <KeyFormatType tag="0x420042" type="Enumeration" value="2"/>
         <KeyValue tag="0x420045" type="Structure">
          <KeyMaterial tag="0x420043" type="ByteString" value="..."/>
         </KeyValue>
