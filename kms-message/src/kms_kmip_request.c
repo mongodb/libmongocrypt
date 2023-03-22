@@ -121,7 +121,7 @@ kms_kmip_request_register_secretdata_new (void *reserved,
    }
    kmip_writer_close_struct (writer); /* KMIP_TAG_TemplateAttribute */
    kmip_writer_begin_struct (writer, KMIP_TAG_SecretData);
-   /* 0x01 = Password */
+   /* 0x02 = Seed */
    kmip_writer_write_enumeration (writer, KMIP_TAG_SecretDataType, 0x02);
    kmip_writer_begin_struct (writer, KMIP_TAG_KeyBlock);
    /* 0x02 = Opaque */
