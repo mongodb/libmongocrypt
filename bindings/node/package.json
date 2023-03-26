@@ -9,6 +9,7 @@
     "CHANGELOG.md",
     "addon",
     "CMakeLists.txt",
+    "etc",
     "lib",
     "src",
     "index.d.ts"
@@ -17,16 +18,16 @@
     "lib": "lib"
   },
   "scripts": {
-    "install": "prebuild-install --runtime napi --tag-prefix node-v || cmake-js compile",
+    "install": "prebuild-install --runtime napi --tag-prefix node-v || node etc/build.js install",
     "build:ts": "tsc",
     "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
     "check:eslint": "eslint src test",
     "check:clang-format": "clang-format --style=file:.clang-format --dry-run --Werror addon/*",
     "test": "mocha test",
     "prepare": "node etc/prepare.js",
-    "rebuild": "prebuild --backend cmake-js --compile",
+    "rebuild": "node etc/build.js prebuild --compile",
     "release": "standard-version --tag-prefix node-v --path bindings/node",
-    "prebuild": "prebuild --backend cmake-js --runtime napi --strip --verbose --tag-prefix node-v --all"
+    "prebuild": "node etc/build.js prebuild --runtime napi --strip --verbose --tag-prefix node-v --all"
   },
   "author": {
     "name": "The MongoDB NodeJS Team",
