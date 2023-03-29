@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.8.0-alpha0
+### Improvements
+- Support Queryable Encryption v2 protocol.
 ## 1.7.2
 ### Improvements
 - Add toggle for Decimal128 Range Support.
