@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.7.3
+### Fixed
+- Fix KMIP Register request for versions 1.12-1.13.0 of Hashicorp Vault.
+- Fix possible memory leak when encrypting malformed BSON with Queryable Encryption.
 ## 1.7.2
 ### Improvements
 - Add toggle for Decimal128 Range Support.
