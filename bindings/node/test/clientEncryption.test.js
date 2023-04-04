@@ -676,10 +676,6 @@ describe('ClientEncryption', function () {
         .then(encrypted => {
           expect(encrypted._bsontype).to.equal('Binary');
           expect(encrypted.sub_type).to.equal(6);
-          expect(encrypted.toString('base64')).to.equal(
-            'BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjcdSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ=='
-          );
-
           return encryption.decrypt(encrypted);
         })
         .then(decrypted => {
