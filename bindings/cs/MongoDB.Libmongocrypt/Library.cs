@@ -76,6 +76,8 @@ namespace MongoDB.Libmongocrypt
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_use_need_kms_credentials_state>(("mongocrypt_setopt_use_need_kms_credentials_state")), true);
             _mongocrypt_crypt_shared_lib_version_string = new Lazy<Delegates.mongocrypt_crypt_shared_lib_version_string>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_crypt_shared_lib_version_string>(("mongocrypt_crypt_shared_lib_version_string")), true);
+            _mongocrypt_setopt_fle2v2 = new Lazy<Delegates.mongocrypt_setopt_fle2v2>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_fle2v2>("mongocrypt_setopt_fle2v2"), true);
             _mongocrypt_crypt_shared_lib_version = new Lazy<Delegates.mongocrypt_crypt_shared_lib_version>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_crypt_shared_lib_version>(("mongocrypt_crypt_shared_lib_version")), true);
 
@@ -242,7 +244,7 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_setopt_use_need_kms_credentials_state mongocrypt_setopt_use_need_kms_credentials_state => _mongocrypt_setopt_use_need_kms_credentials_state.Value;
         internal static Delegates.mongocrypt_crypt_shared_lib_version_string mongocrypt_crypt_shared_lib_version_string => _mongocrypt_crypt_shared_lib_version_string.Value;
         internal static Delegates.mongocrypt_crypt_shared_lib_version mongocrypt_crypt_shared_lib_version => _mongocrypt_crypt_shared_lib_version.Value;
-
+        internal static Delegates.mongocrypt_setopt_fle2v2 mongocrypt_setopt_fle2v2 => _mongocrypt_setopt_fle2v2.Value;
         internal static Delegates.mongocrypt_init mongocrypt_init => _mongocrypt_init.Value;
         internal static Delegates.mongocrypt_destroy mongocrypt_destroy => _mongocrypt_destroy.Value;
         internal static Delegates.mongocrypt_status mongocrypt_status => _mongocrypt_status.Value;
@@ -319,6 +321,7 @@ namespace MongoDB.Libmongocrypt
         private static readonly Lazy<Delegates.mongocrypt_setopt_use_need_kms_credentials_state> _mongocrypt_setopt_use_need_kms_credentials_state;
         private static readonly Lazy<Delegates.mongocrypt_crypt_shared_lib_version_string> _mongocrypt_crypt_shared_lib_version_string;
         private static readonly Lazy<Delegates.mongocrypt_crypt_shared_lib_version> _mongocrypt_crypt_shared_lib_version;
+        private static readonly Lazy<Delegates.mongocrypt_setopt_fle2v2> _mongocrypt_setopt_fle2v2;
 
         private static readonly Lazy<Delegates.mongocrypt_init> _mongocrypt_init;
         private static readonly Lazy<Delegates.mongocrypt_destroy> _mongocrypt_destroy;
@@ -512,6 +515,10 @@ namespace MongoDB.Libmongocrypt
             /// uint64_t mongocrypt_crypt_shared_lib_version(const mongocrypt_t* crypt);
             /// </summary>
             public delegate ulong mongocrypt_crypt_shared_lib_version(MongoCryptSafeHandle handle);
+            /// <summary>
+            /// bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable)
+            /// </summary>
+            public delegate bool mongocrypt_setopt_fle2v2(MongoCryptSafeHandle handle, bool enable);
 
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_init(MongoCryptSafeHandle handle);
