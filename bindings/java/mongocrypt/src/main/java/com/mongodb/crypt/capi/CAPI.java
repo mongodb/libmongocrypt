@@ -550,6 +550,7 @@ public class CAPI {
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
      * @param query_type the query type
+     * @param len the length
      * @return A boolean indicating success. If false, an error status is set.
      * Retrieve it with @ref mongocrypt_ctx_status
      */
@@ -563,10 +564,10 @@ public class CAPI {
      *
      * opts is a BSON document of the form:
      * {
-     *    "min": Optional<BSON value>,
-     *    "max": Optional<BSON value>,
+     *    "min": Optional&#60;BSON value&#62;,
+     *    "max": Optional&#60;BSON value&#62;,
      *    "sparsity": Int64,
-     *    "precision": Optional<Int32>
+     *    "precision": Optional&#60;Int32&#62;
      * }
      *
      * @param ctx The @ref mongocrypt_ctx_t object.
@@ -859,9 +860,9 @@ public class CAPI {
      * FLE2RangeFindDriverSpec is a BSON document with one of these forms:
      *
      * 1. A Match Expression of this form:
-     *    {$and: [{<field>: {<op>: <value1>, {<field>: {<op>: <value2> }}]}
+     *    {$and: [{&#60;field&#62;: {&#60;op&#62;: &#60;value1&#62;, {&#60;field&#62;: {&#60;op&#62;: &#60;value2&#62; }}]}
      * 2. An Aggregate Expression of this form:
-     *    {$and: [{<op>: [<fieldpath>, <value1>]}, {<op>: [<fieldpath>, <value2>]}]
+     *    {$and: [{&#60;op&#62;: [&#60;fieldpath&#62;, &#60;value1&#62;]}, {&#60;op&#62;: [&#60;fieldpath&#62;, &#60;value2&#62;]}]
      *
      * may be $lt, $lte, $gt, or $gte.
      *
