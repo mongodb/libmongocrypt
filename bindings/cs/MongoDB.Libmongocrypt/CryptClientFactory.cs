@@ -109,7 +109,8 @@ namespace MongoDB.Libmongocrypt
                 }
 
                 Library.mongocrypt_setopt_use_need_kms_credentials_state(handle);
-                Library.mongocrypt_setopt_fle2v2(handle, true);
+
+                handle.Check(status, Library.mongocrypt_setopt_fle2v2(handle, true));
 
                 Library.mongocrypt_init(handle);
 

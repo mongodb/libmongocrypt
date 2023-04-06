@@ -492,7 +492,7 @@ namespace MongoDB.Libmongocrypt
             /// </summary>
             [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_encrypted_field_config_map(MongoCryptSafeHandle handle, BinarySafeHandle efc_map);
-            [return: MarshalAs(UnmanagedType.I1),]
+            [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_schema_map(MongoCryptSafeHandle handle, BinarySafeHandle schema);
             /// <summary>
             /// void mongocrypt_setopt_append_crypt_shared_lib_search_path(mongocrypt_t* crypt, const char* path);
@@ -518,6 +518,7 @@ namespace MongoDB.Libmongocrypt
             /// <summary>
             /// bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable)
             /// </summary>
+            [return: MarshalAs(UnmanagedType.I1)]
             public delegate bool mongocrypt_setopt_fle2v2(MongoCryptSafeHandle handle, bool enable);
 
             [return: MarshalAs(UnmanagedType.I1)]
