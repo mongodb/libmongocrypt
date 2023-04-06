@@ -494,9 +494,12 @@ bool _mongocrypt_buffer_copy_from_data_and_size(_mongocrypt_buffer_t *buf, const
     if (!size_to_uint32(len, &buf->len)) {
         return false;
     }
-    buf->data = bson_malloc(len);
-    memcpy(buf->data, data, len);
-    buf->owned = true;
+
+    if ((buf->data = bson_malloc(len))) {
+        memcpy(buf->data, data, len);
+        buf->owned = true;
+    }
+
     return true;
 }
 
