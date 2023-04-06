@@ -52,6 +52,15 @@ run_prebuild() {
 VERSION_AT_HEAD=$(get_version_at_git_rev "HEAD")
 VERSION_AT_HEAD_1=$(get_version_at_git_rev "HEAD~1")
 
+if [[ "$OS" == "macos" ]]; then
+  ARCH=$(uname -m)
+  if [[ "$ARCH" == "arm64" ]]; then
+    # TODO(NODE-5174): node-gyp fails to run prebuild if Python 3.11+
+    echo "Exporting PYTHON location for version $(/opt/homebrew/opt/python@3.9/bin/python3.9 --version)"
+    export PYTHON="/opt/homebrew/opt/python@3.9/bin/python3.9"
+  fi
+fi
+
 if [[ -n $NODE_FORCE_PUBLISH ]]; then
   echo "\$NODE_FORCE_PUBLISH=${NODE_FORCE_PUBLISH} detected"
   echo "Beginning prebuild"
