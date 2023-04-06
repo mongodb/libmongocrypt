@@ -462,6 +462,18 @@ public class CAPI {
     mongocrypt_setopt_bypass_query_analysis (mongocrypt_t crypt);
 
     /**
+     * Enable/disable the use of FLE2v2 payload types for write.
+     *
+     * @param crypt The @ref mongocrypt_t object.
+     * @param enable Whether to enable use of FLE2v2 payloads.
+     *
+     * @return A boolean indicating success. If false, an error status is set. Retrieve it with @ref mongocrypt_status
+     * @since 1.8
+     */
+    public static native boolean
+    mongocrypt_setopt_fle2v2(mongocrypt_t crypt, boolean enable);
+
+    /**
      * Set the contention factor used for explicit encryption.
      * The contention factor is only used for indexed Queryable Encryption.
      *

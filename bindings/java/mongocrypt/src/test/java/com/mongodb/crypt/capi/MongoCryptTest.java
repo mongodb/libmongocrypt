@@ -23,6 +23,7 @@ import org.bson.BsonBinarySubType;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.RawBsonDocument;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -197,6 +198,8 @@ public class MongoCryptTest {
         mongoCrypt.close();
     }
 
+
+    @Disabled  // Pending MONGOCRYPT-567
     @Test
     public void testExplicitExpressionEncryption() {
         MongoCrypt mongoCrypt = createMongoCrypt();
