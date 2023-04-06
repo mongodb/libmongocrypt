@@ -33,4 +33,4 @@ MONGODB_NODE_SKIP_LIVE_TESTS=true npm test
 
 # Run prebuild and deploy
 echo "Running prebuild and deploy"
-NODE_FORCE_PUBLISH=true bash ./.evergreen/prebuild.sh
+bash ./.evergreen/prebuild.sh
