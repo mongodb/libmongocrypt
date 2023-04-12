@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.5.2
+------------------------
+
+- Bundle libmongocrypt 1.7.3 in release wheels.
+
 Changes in Version 1.5.1
 ------------------------
 
