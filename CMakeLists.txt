@@ -7,6 +7,10 @@ elseif (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
    message (WARNING "The CMAKE_MSVC_RUNTIME_LIBRARY variable is set, but CMake is too old to understand it")
 endif ()
 
+if (POLICY CMP0077)
+   cmake_policy (SET CMP0077 NEW)
+endif ()
+
 project (mongocrypt C)
 
 # Used for the csfle-markup util:
@@ -14,6 +18,7 @@ enable_language (CXX OPTIONAL)
 
 set (CMAKE_C_STANDARD 99)
 
+option (ENABLE_SHARED "Build shared libraries" ON)
 option (ENABLE_STATIC "Install static libraries" ON)
 option (ENABLE_PIC
    "Enables building of position independent code for static library components."
@@ -269,57 +274,10 @@ set_property(
 # kms-message
 add_subdirectory (kms-message)
 
-# Define mongocrypt library
-add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
-target_include_directories (
-   mongocrypt
-   PRIVATE
-      "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src"
-      "${CMAKE_CURRENT_SOURCE_DIR}/src"
-   PUBLIC
-      "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
-   )
-target_link_libraries (
-   mongocrypt
-   PRIVATE
-      _mongocrypt::libbson_for_shared
-      kms_message_static
-      $<BUILD_INTERFACE:mongo::mlib>
-   PUBLIC
-      mongocrypt::platform
-      ${maybe_dfp_library}
-   )
-
-if (NOT USE_SHARED_LIBBSON)
-   if (APPLE)
-      message ("compiling with unexported symbols list to hide bson symbols")
-      set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.txt\"")
-   elseif (UNIX)
-      message ("compiling with version map to version and hide bson symbols")
-      set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.map\"")
-   endif ()
-endif ()
-
-if (NOT WIN32 AND CMAKE_VERSION VERSION_GREATER 3.25)
-   # Do not enable conversion warnings with older cmake. Older cmake does not support
-   # including headers as system headers when the headers are added to the project via
-   # the add_subdirectory() CMake command. libbson produces conversion warnings and is
-   # included in ImportBSON.cmake.
-   target_compile_options (mongocrypt PRIVATE -Wconversion -Wsign-conversion)
-   target_compile_options (kms_message_static PRIVATE -Wconversion -Wsign-conversion)
-endif ()
-
-generate_export_header (mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
-
 add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
-# Checking CMAKE_C_FLAGS for -fPIC is not a foolproof way of checking whether
-# -fPIC was set as a compiler flag. However, users were instructed before to
-# pass -fPIC through CMAKE_C_FLAGS. This will prevent redundant output in
-# the common case that users are setting -DCMAKE_C_FLAGS='-fPIC'
-string (FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
-if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
-   target_compile_options (mongocrypt_static PUBLIC -fPIC)
-   message ("Adding -fPIC to compilation of mongocrypt_static components")
+if (NOT WIN32 AND ENABLE_PIC)
+    set_target_properties (mongocrypt_static PROPERTIES POSITION_INDEPENDENT_CODE True)
+    set_target_properties (kms_message_static PROPERTIES POSITION_INDEPENDENT_CODE True)
 endif ()
 target_include_directories (
    mongocrypt_static
@@ -365,17 +323,17 @@ if (MONGOCRYPT_DFP_DIR STREQUAL "USE-SYSTEM" AND MONGOCRYPT_ENABLE_DECIMAL128)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} ${SYSTEM_DFP_LOC}")
 endif ()
 
+set_target_properties (mongocrypt_static PROPERTIES
+   OUTPUT_NAME "mongocrypt-static"
+)
 
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
-   target_link_libraries (mongocrypt PRIVATE "-framework CoreFoundation -framework Security")
    target_link_libraries (mongocrypt_static PRIVATE "-framework CoreFoundation -framework Security")
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -framework CoreFoundation -framework Security")
 elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
-   target_link_libraries (mongocrypt PRIVATE "bcrypt")
    target_link_libraries (mongocrypt_static PRIVATE "bcrypt")
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lbcrypt")
 elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
-   target_link_libraries (mongocrypt PRIVATE OpenSSL::SSL OpenSSL::Crypto)
    target_link_libraries (mongocrypt_static PRIVATE OpenSSL::SSL OpenSSL::Crypto)
    set (PKG_CONFIG_STATIC_LIBS "${PKG_CONFIG_STATIC_LIBS} -lssl -lcrypto")
 endif ()
@@ -393,17 +351,65 @@ if (NOT APPLE)
    endif ()
 endif ()
 
-set_target_properties (mongocrypt PROPERTIES
-   SOVERSION 0
-   VERSION "0.0.0"
-   OUTPUT_NAME "mongocrypt"
-)
+# Define mongocrypt library
+if (ENABLE_SHARED)
+   add_library (mongocrypt SHARED ${MONGOCRYPT_SOURCES})
+   target_include_directories (
+      mongocrypt
+      PRIVATE
+         "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src"
+         "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      PUBLIC
+         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
+      )
+   target_link_libraries (
+      mongocrypt
+      PRIVATE
+         _mongocrypt::libbson_for_shared
+         kms_message
+         $<BUILD_INTERFACE:mongo::mlib>
+      PUBLIC
+         mongocrypt::platform
+         ${maybe_dfp_library}
+      )
 
-set_target_properties (mongocrypt_static PROPERTIES
-   SOVERSION 0
-   VERSION "0.0.0"
-   OUTPUT_NAME "mongocrypt-static"
-)
+   if (NOT USE_SHARED_LIBBSON)
+      if (APPLE)
+         message ("compiling with unexported symbols list to hide bson symbols")
+         set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.txt\"")
+      elseif (UNIX)
+         message ("compiling with version map to version and hide bson symbols")
+         set_target_properties (mongocrypt PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/libmongocrypt-hidden-symbols.map\"")
+      endif ()
+   endif ()
+
+   if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
+      target_link_libraries (mongocrypt PRIVATE "-framework CoreFoundation -framework Security")
+   elseif (MONGOCRYPT_CRYPTO STREQUAL CNG)
+      target_link_libraries (mongocrypt PRIVATE "bcrypt")
+   elseif (MONGOCRYPT_CRYPTO STREQUAL OpenSSL)
+      target_link_libraries (mongocrypt PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+   endif ()
+
+   if (NOT WIN32 AND CMAKE_VERSION VERSION_GREATER 3.25)
+      # Do not enable conversion warnings with older cmake. Older cmake does not support
+      # including headers as system headers when the headers are added to the project via
+      # the add_subdirectory() CMake command. libbson produces conversion warnings and is
+      # included in ImportBSON.cmake.
+      target_compile_options (mongocrypt PRIVATE -Wconversion -Wsign-conversion)
+      target_compile_options (kms_message PRIVATE -Wconversion -Wsign-conversion)
+   endif ()
+
+   set_target_properties (mongocrypt PROPERTIES
+      SOVERSION 0
+      VERSION "0.0.0"
+      OUTPUT_NAME "mongocrypt"
+   )
+else ()
+   add_library (mongocrypt ALIAS mongocrypt_static)
+endif ()
+
+generate_export_header (mongocrypt EXPORT_FILE_NAME src/mongocrypt-export.h BASE_NAME mongocrypt )
 
 if (BUILD_TESTING)
    # Use C++ in the testing DLL to ensure we can load a library with the C++ runtime
@@ -597,9 +603,10 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none AND BUILD_TESTING)
 endif ()
 
 if (ENABLE_STATIC)
-   set (TARGETS_TO_INSTALL mongocrypt mongocrypt_static)
-else ()
-   set (TARGETS_TO_INSTALL mongocrypt)
+   list (APPEND TARGETS_TO_INSTALL mongocrypt_static)
+endif ()
+if (ENABLE_SHARED)
+   list (APPEND TARGETS_TO_INSTALL mongocrypt)
 endif ()
 install (
    TARGETS ${TARGETS_TO_INSTALL}

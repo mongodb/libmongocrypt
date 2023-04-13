@@ -51,16 +51,16 @@ kms_message_b64url_to_b64 (const char *src,
                            size_t targsize);
 
 /* Convenience conversions which return copies. */
-char *
+KMS_MSG_EXPORT (char *)
 kms_message_raw_to_b64 (const uint8_t *raw, size_t raw_len);
 
-uint8_t *
+KMS_MSG_EXPORT (uint8_t *)
 kms_message_b64_to_raw (const char *b64, size_t *out);
 
-char *
+KMS_MSG_EXPORT (char *)
 kms_message_raw_to_b64url (const uint8_t *raw, size_t raw_len);
 
-uint8_t *
+KMS_MSG_EXPORT (uint8_t *)
 kms_message_b64url_to_raw (const char *b64url, size_t *out);
 
 #ifdef __cplusplus
