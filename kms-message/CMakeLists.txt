@@ -100,13 +100,6 @@ if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
    message ("Adding -fPIC to compilation of kms_message_static components")
 endif ()
 
-add_library (
-   kms_message_obj OBJECT
-   ${KMS_MESSAGE_SOURCES}
-)
-
-target_compile_definitions (kms_message_obj PRIVATE ${KMS_MESSAGE_DEFINITIONS})
-
 if (NOT DISABLE_NATIVE_CRYPTO)
    if (WIN32)
       target_link_libraries (kms_message_static "bcrypt" "crypt32")
@@ -129,6 +122,7 @@ endif()
 
 set_target_properties (kms_message_static PROPERTIES
    OUTPUT_NAME "kms_message-static"
+   C_VISIBILITY_PRESET hidden
 )
 
 target_compile_definitions (kms_message_static PRIVATE KMS_MSG_COMPILATION)

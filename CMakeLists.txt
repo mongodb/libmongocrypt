@@ -329,6 +329,7 @@ endif ()
 
 set_target_properties (mongocrypt_static PROPERTIES
    OUTPUT_NAME "mongocrypt-static"
+   C_VISIBILITY_PRESET hidden
 )
 
 if (MONGOCRYPT_CRYPTO STREQUAL CommonCrypto)
