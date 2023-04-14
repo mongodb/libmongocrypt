@@ -8,24 +8,25 @@
     "README.md",
     "CHANGELOG.md",
     "addon",
+    "CMakeLists.txt",
     "lib",
     "src",
-    "binding.gyp"
+    "index.d.ts"
   ],
   "directories": {
     "lib": "lib"
   },
   "scripts": {
-    "install": "prebuild-install --runtime napi --tag-prefix node-v || node-gyp rebuild",
+    "install": "prebuild-install --runtime napi --tag-prefix node-v || cmake-js compile",
     "build:ts": "tsc",
     "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
     "check:eslint": "eslint src test",
     "check:clang-format": "clang-format --style=file:.clang-format --dry-run --Werror addon/*",
     "test": "mocha test",
     "prepare": "node etc/prepare.js",
-    "rebuild": "prebuild --compile",
+    "rebuild": "prebuild --backend cmake-js --compile",
     "release": "standard-version --tag-prefix node-v --path bindings/node",
-    "prebuild": "prebuild --runtime napi --strip --verbose --tag-prefix node-v --all"
+    "prebuild": "prebuild --backend cmake-js --runtime napi --strip --verbose --tag-prefix node-v --all"
   },
   "author": {
     "name": "The MongoDB NodeJS Team",
@@ -51,11 +52,11 @@
     "chai": "^4.3.10",
     "chai-subset": "^1.6.0",
     "clang-format": "^1.8.0",
+    "cmake-js": "^7.3.0",
     "eslint": "^8.55.0",
     "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-prettier": "^4.2.1",
     "mocha": "^10.2.0",
-    "node-gyp": "^9.4.1",
     "prebuild": "^11.0.4",
     "prettier": "^2.8.8",
     "sinon": "^15.2.0",
@@ -69,7 +70,7 @@
   },
   "overrides": {
     "prebuild": {
-      "node-gyp": "$node-gyp"
+      "cmake-js": "$cmake-js"
     }
   },
   "engines": {

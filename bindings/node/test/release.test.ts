@@ -8,9 +8,10 @@ const packFile = `mongodb-client-encryption-${pkg.version}.tgz`;
 
 const REQUIRED_FILES = [
   'package/LICENSE',
+  'package/build.js',
   'package/addon/mongocrypt.cc',
-  'package/binding.gyp',
   'package/addon/mongocrypt.h',
+  'package/CMakeLists.txt',
   'package/lib/index.js',
   'package/package.json',
   'package/lib/index.d.ts.map',
