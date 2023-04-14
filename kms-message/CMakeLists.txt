@@ -243,7 +243,7 @@ install (
 )
 
 # cannot run tests without crypto
-if (NOT DISABLE_NATIVE_CRYPTO)
+if (NOT DISABLE_NATIVE_CRYPTO AND BUILD_TESTING)
    add_executable (
       test_kms_request
       ${KMS_MESSAGE_SOURCES}
@@ -274,9 +274,9 @@ if (NOT DISABLE_NATIVE_CRYPTO)
 endif ()
 
 # build online_tests if OpenSSL is available (to create TLS connections).
-if(DISABLE_NATIVE_CRYPTO)
+if (DISABLE_NATIVE_CRYPTO)
    message ("test_kms_azure_online target disabled: Not building with native crypto.")
-elseif(ENABLE_ONLINE_TESTS)
+elseif (ENABLE_ONLINE_TESTS AND BUILD_TESTING)
    add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms_util.c test/test_kms_online_util.c)
    target_include_directories(test_kms_azure_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_compile_definitions(test_kms_azure_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})

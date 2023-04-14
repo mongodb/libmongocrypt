@@ -19,6 +19,7 @@ option (ENABLE_PIC
    "Enables building of position independent code for static library components."
    ON
 )
+option (ENABLE_TOOLS "Build extra utilities" ON)
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
 
@@ -505,31 +506,35 @@ set (TEST_MONGOCRYPT_SOURCES
    )
 
 # Define test-mongocrypt
-add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
-# Use the static version since it allows the test binary to use private symbols
-target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mlib)
-target_include_directories (test-mongocrypt PRIVATE "${CMAKE_CURRENT_LIST_DIR}/test")
-target_compile_definitions (test-mongocrypt PRIVATE
-   # Set a definition so that testcases can know where test-mongocrypt.exe was written to
-   "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
-   # Tell test-mongocrypt whether we have a real csfle library for testing
-   TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB=$<BOOL:${MONGOCRYPT_TESTING_CRYPT_SHARED_FILE}>
-   )
+if (BUILD_TESTING)
+   add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
+   # Use the static version since it allows the test binary to use private symbols
+   target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
+   target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mlib)
+   target_include_directories (test-mongocrypt PRIVATE "${CMAKE_CURRENT_LIST_DIR}/test")
+   target_compile_definitions (test-mongocrypt PRIVATE
+      ${BSON_DEFINITIONS}
+      ${MONGOCRYPT_DEFINITIONS}
+      # Set a definition so that testcases can know where test-mongocrypt.exe was written to
+      "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
+      # Tell test-mongocrypt whether we have a real csfle library for testing
+      TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB=$<BOOL:${MONGOCRYPT_TESTING_CRYPT_SHARED_FILE}>
+      )
 
-add_test (
-   NAME mongocrypt
-   COMMAND test-mongocrypt
-   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-   )
+   add_test (
+      NAME mongocrypt
+      COMMAND test-mongocrypt
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      )
 
-foreach (test IN ITEMS path str)
-   add_executable (mlib.${test}.test src/mlib/${test}.test.c)
-   add_test (mlib.${test} mlib.${test}.test)
-   target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
-endforeach ()
+   foreach (test IN ITEMS path str)
+      add_executable (mlib.${test}.test src/mlib/${test}.test.c)
+      add_test (mlib.${test} mlib.${test}.test)
+      target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
+   endforeach ()
+endif()
 
-if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES AND BUILD_TESTING)
    file (GLOB_RECURSE test_files CONFIGURE_DEPENDS src/*.test.cpp)
    foreach (file IN LISTS test_files)
       # Compute a nice test name
@@ -552,14 +557,14 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    endforeach ()
 endif ()
 
-if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES AND ENABLE_TOOLS)
    add_executable (csfle-markup src/csfle-markup.cpp)
    target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson_for_static mongo::mlib)
    target_compile_features (csfle-markup PRIVATE cxx_std_20)
 endif ()
 
 # Exclude example-state-machine since it requires native crypto.
-if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
+if (NOT MONGOCRYPT_CRYPTO STREQUAL none AND BUILD_TESTING)
    # Define example-state-machine
    add_executable (example-state-machine test/example-state-machine.c)
    target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared)
