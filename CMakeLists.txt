@@ -97,8 +97,8 @@ include (Platform)
 
 
 set (MONGOCRYPT_PUBLIC_HEADERS
-   src/mongocrypt-compat.h
-   src/mongocrypt.h
+   src/mongocrypt/mongocrypt-compat.h
+   src/mongocrypt/mongocrypt.h
 )
 
 set (MONGOCRYPT_SOURCES
@@ -289,6 +289,7 @@ target_include_directories (
       "${CMAKE_CURRENT_SOURCE_DIR}/src"
    PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/mongocrypt>"
    )
 target_compile_definitions (
    mongocrypt_static
@@ -364,6 +365,7 @@ if (ENABLE_SHARED)
          "${CMAKE_CURRENT_SOURCE_DIR}/src"
       PUBLIC
          "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>"
+         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/mongocrypt>"
       )
    target_link_libraries (
       mongocrypt
