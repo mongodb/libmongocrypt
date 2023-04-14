@@ -41,6 +41,7 @@ FetchContent_Declare (
         ${patch_command}
             -p 4 # Strip four path components
             "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
+            "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
             --verbose
     )
 
