@@ -237,6 +237,7 @@ install (
    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 
+if (BUILD_TESTING)
 # cannot run tests without crypto
 if (NOT DISABLE_NATIVE_CRYPTO)
    add_executable (
@@ -303,3 +304,4 @@ elseif(ENABLE_ONLINE_TESTS)
       SKIP_RETURN_CODE 2
    )
 endif ()
+endif () # BUILD_TESTING

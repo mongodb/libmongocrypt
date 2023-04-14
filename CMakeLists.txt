@@ -465,6 +465,7 @@ if (BUILD_TESTING)
    endif ()
 endif ()
 
+if (BUILD_TESTING)
 set (TEST_MONGOCRYPT_SOURCES
    test/test-gcp-auth.c
    test/test-mc-efc.c
@@ -605,6 +606,7 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
       target_link_libraries (csfle PRIVATE _mongocrypt::mongoc)
    endif ()
 endif ()
+endif () # BUILD_TESTING
 
 if (ENABLE_STATIC)
    set (TARGETS_TO_INSTALL mongocrypt mongocrypt_static)
