@@ -1,0 +1,25 @@
+diff --git a/src/third-party/IntelRDFPMathLib20U2/LIBRARY/float128/dpml_exception.c b/src/third-party/IntelRDFPMathLib20U2/LIBRARY/float128/dpml_exception.c
+index d061a4c..916b41d 100755
+--- a/src/third-party/IntelRDFPMathLib20U2/LIBRARY/float128/dpml_exception.c
++++ b/src/third-party/IntelRDFPMathLib20U2/LIBRARY/float128/dpml_exception.c
+@@ -132,6 +132,7 @@
+     !defined(wnt)
+ 
+ #   include <sys/signal.h>
++#   include <signal.h>
+ #   define DPML_SIGNAL(p)	 raise(SIGFPE)
+ 
+ #else
+diff --git a/src/third-party/IntelRDFPMathLib20U2/LIBRARY/src/bid_internal.h b/src/third-party/IntelRDFPMathLib20U2/LIBRARY/src/bid_internal.h
+index cd08ea7..1892637 100755
+--- a/src/third-party/IntelRDFPMathLib20U2/LIBRARY/src/bid_internal.h
++++ b/src/third-party/IntelRDFPMathLib20U2/LIBRARY/src/bid_internal.h
+@@ -30,6 +30,8 @@
+ #ifndef __BIDECIMAL_H
+ #define __BIDECIMAL_H
+ 
++#include <stdlib.h>
++
+ #define _CRT_SECURE_NO_DEPRECATE
+ #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+ #   pragma warning( disable: 4996 )
