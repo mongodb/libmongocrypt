@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.7.4
+### Fixed
+- Fix build on macOS Ventura.
 ## 1.7.3
 ### Fixed
 - Fix KMIP Register request for versions 1.12-1.13.0 of Hashicorp Vault.
