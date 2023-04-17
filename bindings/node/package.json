@@ -18,7 +18,7 @@
   "scripts": {
     "install": "prebuild-install --runtime napi --tag-prefix node-v || node-gyp rebuild",
     "check:lint": "eslint lib test && tsd",
-    "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/**/*.js > README.md",
+    "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files 'lib/**/*.js' > README.md",
     "test": "mocha test",
     "rebuild": "prebuild --compile",
     "release": "standard-version --tag-prefix node-v --path bindings/node",
