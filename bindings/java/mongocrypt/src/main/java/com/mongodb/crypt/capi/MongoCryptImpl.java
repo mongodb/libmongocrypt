@@ -64,7 +64,6 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_bypass_query_analysi
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_crypto_hooks;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_encrypted_field_config_map;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_fle2v2;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_aws;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_provider_local;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_kms_providers;
@@ -139,8 +138,6 @@ class MongoCryptImpl implements MongoCrypt {
         configure(() -> mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(wrapped, signingRSAESPKCSCallback, null));
         configure(() -> mongocrypt_setopt_aes_256_ctr(wrapped, aesCTR256EncryptCallback, aesCTR256DecryptCallback, null));
 
-        configure(() -> mongocrypt_setopt_fle2v2(wrapped, true));
-        
         if (options.getLocalKmsProviderOptions() != null) {
             try (BinaryHolder localMasterKeyBinaryHolder = toBinary(options.getLocalKmsProviderOptions().getLocalMasterKey())) {
                 configure(() -> mongocrypt_setopt_kms_provider_local(wrapped, localMasterKeyBinaryHolder.getBinary()));
