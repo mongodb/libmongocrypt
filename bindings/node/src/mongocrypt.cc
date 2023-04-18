@@ -479,7 +479,6 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
     }
 
     mongocrypt_setopt_use_need_kms_credentials_state(_mongo_crypt.get());
-    mongocrypt_setopt_fle2v2(_mongo_crypt.get(), true);
 
     // Initialize after all options are set.
     if (!mongocrypt_init(_mongo_crypt.get())) {
