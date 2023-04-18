@@ -3060,7 +3060,6 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
  * Expect deleteTokens to not be applied. */
 static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
     tester_mongocrypt_flags flags = TESTER_MONGOCRYPT_DEFAULT;
-    flags |= TESTER_MONGOCRYPT_WITH_CRYPT_V2;
 
     /* Test success. */
     {
