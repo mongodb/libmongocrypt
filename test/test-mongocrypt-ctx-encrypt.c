@@ -2155,7 +2155,7 @@ static void _test_encrypt_fle2_find_range_payload_decimal128_precision(_mongocry
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
-static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source) {
+static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_v2) {
     mongocrypt_t *crypt;
     mongocrypt_binary_t *localkey;
     /* localkey_data is the KEK used to encrypt the keyMaterial
@@ -2179,7 +2179,7 @@ static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source) {
     mongocrypt_binary_destroy(localkey);
     // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
     // QEv1 is still supported.
-    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
+    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, use_v2), crypt);
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     return crypt;
 }
@@ -2199,6 +2199,7 @@ typedef struct {
     const char *expect_finalize_error;
     const char *expect_init_error;
     bool is_expression;
+    bool use_v2;
 } ee_testcase;
 
 static void ee_testcase_run(ee_testcase *tc) {
@@ -2209,11 +2210,15 @@ static void ee_testcase_run(ee_testcase *tc) {
     if (tc->rng_data.buf.len > 0) {
         // Use fixed data for random number generation to produce deterministic
         // results.
-        crypt = _crypt_with_rng(&tc->rng_data);
+        crypt = _crypt_with_rng(&tc->rng_data, tc->use_v2);
     } else {
+        tester_mongocrypt_flags flags = TESTER_MONGOCRYPT_DEFAULT;
         // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
         // QEv1 is still supported.
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+        if (!tc->use_v2) {
+            flags |= TESTER_MONGOCRYPT_WITH_CRYPT_V1;
+        }
+        crypt = _mongocrypt_tester_mongocrypt(flags);
     }
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -2706,6 +2711,25 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
                               "int32-openinterval/encrypted-payload.json");
         tc.is_expression = true;
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "QEv2 int32 find";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.contention_factor = OPT_I64(4);
+        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit-v2/"
+                                  "int32/rangeopts.json");
+        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit-v2/"
+                           "int32/value-to-encrypt.json");
+        tc.keys_to_feed[0] = keyABC;
+        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit-v2/"
+                              "int32/encrypted-payload.json");
+        tc.is_expression = true;
+        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
