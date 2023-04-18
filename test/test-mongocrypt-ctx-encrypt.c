@@ -1296,6 +1296,9 @@ static void _test_encrypt_with_encrypted_field_config_map(_mongocrypt_tester_t *
         mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
         crypt);
     ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_BSON("{'db.coll': {'fields': []}}")), crypt);
+    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+    // QEv1 is still supported.
+    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
     ASSERT_OK(mongocrypt_init(crypt), crypt);
 
     /* Test encrypting a command on a collection present in the encrypted field
@@ -1403,6 +1406,9 @@ static void _test_encrypt_remote_encryptedfields(_mongocrypt_tester_t *tester) {
     ASSERT_OK(
         mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
         crypt);
+    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+    // QEv1 is still supported.
+    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     /* Test success. */
     {
@@ -1465,6 +1471,9 @@ static void _test_encrypt_remote_encryptedfields(_mongocrypt_tester_t *tester) {
             mongocrypt_setopt_kms_providers(crypt,
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-find-explicit/cmd.json")),
@@ -1512,6 +1521,9 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
             crypt);
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_BSON("{'db.coll': {'fields': []}}")), crypt);
         mongocrypt_setopt_bypass_query_analysis(crypt);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -1541,6 +1553,9 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
         mongocrypt_setopt_bypass_query_analysis(crypt);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -2162,6 +2177,9 @@ static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source) {
               crypt);
 
     mongocrypt_binary_destroy(localkey);
+    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+    // QEv1 is still supported.
+    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     return crypt;
 }
@@ -2193,7 +2211,9 @@ static void ee_testcase_run(ee_testcase *tc) {
         // results.
         crypt = _crypt_with_rng(&tc->rng_data);
     } else {
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
     }
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -2705,6 +2725,9 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_BSON("{'db.coll': {'fields': []}}")), crypt);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
@@ -2803,7 +2826,9 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
 static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
     /* Test success. */
     {
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-delete/success/cmd.json")),
@@ -2854,7 +2879,9 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
     }
     /* Test with no encrypted values. */
     {
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-delete/empty/cmd.json")), ctx);
@@ -2908,6 +2935,10 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
             ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, localkey), crypt);
             mongocrypt_binary_destroy(localkey);
             mongocrypt_setopt_bypass_query_analysis(crypt);
+            // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note:
+            // decrypting
+            // QEv1 is still supported.
+            ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
             ASSERT_OK(mongocrypt_init(crypt), crypt);
         }
 
@@ -2961,6 +2992,10 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
                                                                    TEST_FILE("./test/data/fle2-delete/success/"
                                                                              "encrypted-field-config-map.json")),
                       crypt);
+            // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note:
+            // decrypting
+            // QEv1 is still supported.
+            ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
             ASSERT_OK(mongocrypt_init(crypt), crypt);
         }
 
@@ -3023,6 +3058,10 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
                                                                              "encrypted-field-config-map.json")),
                       crypt);
             mongocrypt_setopt_bypass_query_analysis(crypt);
+            // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note:
+            // decrypting
+            // QEv1 is still supported.
+            ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
             ASSERT_OK(mongocrypt_init(crypt), crypt);
         }
 
@@ -3288,7 +3327,9 @@ static void _test_encrypt_fle2_omits_encryptionInformation(_mongocrypt_tester_t 
     /* 'find' does not include 'encryptionInformation' if no fields are
      * encrypted. */
     {
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
         mongocrypt_ctx_t *ctx;
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -3331,7 +3372,9 @@ static void _test_encrypt_fle2_omits_encryptionInformation(_mongocrypt_tester_t 
     /* 'find' includes encryptionInformation if the initial command includes an
      * explicitly encrypted payload. */
     {
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
         mongocrypt_ctx_t *ctx;
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -3378,7 +3421,9 @@ static void _test_encrypt_fle2_explain_with_mongocryptd(_mongocrypt_tester_t *te
     /* Test with an encrypted value. Otherwise 'encryptionInformation' is not
      * appended. */
     {
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+        // QEv1 is still supported.
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(
@@ -3449,7 +3494,8 @@ static void _test_encrypt_fle2_explain_with_csfle(_mongocrypt_tester_t *tester) 
     /* Test with an encrypted value. Otherwise 'encryptionInformation' is not
      * appended. */
     {
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
+        mongocrypt_t *crypt =
+            _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB | TESTER_MONGOCRYPT_WITH_CRYPT_V1);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-explain/with-csfle/cmd.json")),
@@ -3575,8 +3621,9 @@ static void _test_encrypt_fle1_explain_with_csfle(_mongocrypt_tester_t *tester) 
 // Test that an input command with $db preserves $db in the output.
 static void _test_dollardb_preserved(_mongocrypt_tester_t *tester) {
     /* Test with an encrypted value. */
-
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+    // QEv1 is still supported.
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/dollardb/preserved/cmd.json")), ctx);
@@ -3679,7 +3726,9 @@ static void _test_dollardb_preserved_empty(_mongocrypt_tester_t *tester) {
 
 // Test that an input command with no $db does not include $db in the output.
 static void _test_dollardb_omitted(_mongocrypt_tester_t *tester) {
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+    // QEv1 is still supported.
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/dollardb/omitted/cmd.json")), ctx);
@@ -4110,7 +4159,9 @@ static void _test_encrypt_macos_no_ctr(_mongocrypt_tester_t *tester) {
 
     _mongocrypt_buffer_copy_from_hex(&key_id, "ABCDEFAB123498761234123456789012");
 
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
+    // QEv1 is still supported.
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1), ctx);
