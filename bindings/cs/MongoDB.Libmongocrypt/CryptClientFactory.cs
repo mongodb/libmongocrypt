@@ -110,8 +110,6 @@ namespace MongoDB.Libmongocrypt
 
                 Library.mongocrypt_setopt_use_need_kms_credentials_state(handle);
 
-                handle.Check(status, Library.mongocrypt_setopt_fle2v2(handle, true));
-
                 Library.mongocrypt_init(handle);
 
                 if (options.IsCryptSharedLibRequired)
