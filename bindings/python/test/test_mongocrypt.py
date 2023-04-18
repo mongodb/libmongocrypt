@@ -782,9 +782,9 @@ class TestExplicitEncryption(unittest.TestCase):
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
         self.addCleanup(encrypter.close)
 
-        range_opts = bson_data("fle2-find-range-explicit/int32/rangeopts.json")
-        value = bson_data("fle2-find-range-explicit/int32/value-to-encrypt.json")
-        expected = json_data("fle2-find-range-explicit/int32/encrypted-payload.json")
+        range_opts = bson_data("fle2-find-range-explicit-v2/int32/rangeopts.json")
+        value = bson_data("fle2-find-range-explicit-v2/int32/value-to-encrypt.json")
+        expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload.json")
         encrypted = encrypter.encrypt(
             value, "rangePreview", key_id=key_id, query_type="rangePreview",
             contention_factor=4, range_opts=range_opts, is_expression=True)
