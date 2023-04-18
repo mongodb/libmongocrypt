@@ -1888,12 +1888,12 @@ typedef enum {
 #define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, data_path, rng_source, v2_failure)                            \
     {                                                                                                                  \
         (rng_source)->pos = 0;                                                                                         \
-        _test_encrypt_fle2_encryption_placeholder(tester, data_path, rng_source, kFLE2v2Default, NULL);                \
-        (rng_source)->pos = 0;                                                                                         \
         _test_encrypt_fle2_encryption_placeholder(tester, data_path, rng_source, kFLE2v2Disable, NULL);                \
         char v2path[4096];                                                                                             \
         /* transitional: Use v1 data path if expecting failure */                                                      \
         ASSERT(snprintf(v2path, sizeof(v2path), "%s%s", data_path, v2_failure ? "" : "-v2"));                          \
+        (rng_source)->pos = 0;                                                                                         \
+        _test_encrypt_fle2_encryption_placeholder(tester, v2path, rng_source, kFLE2v2Default, NULL);                   \
         (rng_source)->pos = 0;                                                                                         \
         _test_encrypt_fle2_encryption_placeholder(tester, v2path, rng_source, kFLE2v2Enable, v2_failure);              \
     }
@@ -1922,8 +1922,8 @@ static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *test
         mongocrypt_binary_t *localkey;
 
         crypt = mongocrypt_new();
-        if (test_fle2v2_option != kFLE2v2Default) {
-            ASSERT(mongocrypt_setopt_fle2v2(crypt, test_fle2v2_option == kFLE2v2Enable));
+        if (test_fle2v2_option == kFLE2v2Disable) {
+            ASSERT(mongocrypt_setopt_fle2v2(crypt, false));
         }
         mongocrypt_setopt_log_handler(crypt, _mongocrypt_stdout_log_fn, NULL);
         localkey = mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
