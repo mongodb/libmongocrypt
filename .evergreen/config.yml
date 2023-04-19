@@ -384,7 +384,7 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: >
+      compile_env: >-
         ${compile_env|}
         LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
         ASAN_OPTIONS="detect_leaks=1"
