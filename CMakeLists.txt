@@ -329,8 +329,6 @@ target_include_directories (
    )
 target_compile_definitions (
    mongocrypt_static
-   PRIVATE
-      ${MONGOCRYPT_DEFINITIONS}
    PUBLIC
       MONGOCRYPT_STATIC_DEFINE
       KMS_MSG_STATIC
@@ -509,8 +507,6 @@ target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURC
 target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mlib)
 target_include_directories (test-mongocrypt PRIVATE "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE
-   ${BSON_DEFINITIONS}
-   ${MONGOCRYPT_DEFINITIONS}
    # Set a definition so that testcases can know where test-mongocrypt.exe was written to
    "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
    # Tell test-mongocrypt whether we have a real csfle library for testing
