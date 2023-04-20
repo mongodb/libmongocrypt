@@ -49,6 +49,7 @@ set_property (TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_
 # Link for special math functions:
 if (NOT APPLE)
     find_library (_MONGOCRYPT_M_LIBRARY m)
+    mark_as_advanced (_MONGOCRYPT_M_LIBRARY)
     if (_MONGOCRYPT_M_LIBRARY)
         set_property (TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${_MONGOCRYPT_M_LIBRARY}")
     endif ()
@@ -56,6 +57,7 @@ endif ()
 
 # Special runtime:
 find_library (_MONGOCRYPT_RT_LIBRARY rt)
+mark_as_advanced (_MONGOCRYPT_RT_LIBRARY)
 if (_MONGOCRYPT_RT_LIBRARY)
     set_property (TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${_MONGOCRYPT_RT_LIBRARY}")
 endif ()
