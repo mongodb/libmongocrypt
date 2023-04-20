@@ -1,6 +1,25 @@
 include(CMakeFindDependencyMacro)
 find_dependency(kms_message 0.0.1)
+find_dependency(Threads)
+
 include("${CMAKE_CURRENT_LIST_DIR}/mongocrypt_targets.cmake")
+
+# Link for dlopen():
+set_property(TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${CMAKE_DL_LIBS})
+
+# Link for special math functions:
+if (NOT APPLE)
+    find_library (_MONGOCRYPT_M_LIBRARY m)
+    if (_MONGOCRYPT_M_LIBRARY)
+        set_property(TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${_MONGOCRYPT_M_LIBRARY}")
+    endif ()
+endif ()
+
+# Special runtime:
+find_library (_MONGOCRYPT_RT_LIBRARY rt)
+if (_MONGOCRYPT_RT_LIBRARY)
+    set_property (TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${_MONGOCRYPT_RT_LIBRARY}")
+endif ()
 
 if (DEFINED MONGOCRYPT_LIBBSON_STATIC_USE)
     # The user has named a library that should be linked as the static libbson library
