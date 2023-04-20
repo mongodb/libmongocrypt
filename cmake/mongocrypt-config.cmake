@@ -44,13 +44,13 @@ endif ()
 find_dependency(Threads)
 
 # Link for dlopen():
-set_property(TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${CMAKE_DL_LIBS})
+set_property (TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
 # Link for special math functions:
 if (NOT APPLE)
     find_library (_MONGOCRYPT_M_LIBRARY m)
     if (_MONGOCRYPT_M_LIBRARY)
-        set_property(TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${_MONGOCRYPT_M_LIBRARY}")
+        set_property (TARGET mongo::mongocrypt::platform APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${_MONGOCRYPT_M_LIBRARY}")
     endif ()
 endif ()
 
