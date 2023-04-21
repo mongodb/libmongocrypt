@@ -50,7 +50,13 @@ setup(
     package_data={'pymongocrypt': ['*.dll', '*.so', '*.dylib']},
     zip_safe=False,
     # Note cryptography is uncapped because it does not follow semver.
-    install_requires=["cffi>=1.12.0,<2", "cryptography>=2.0", "requests<3.0.0"],
+    install_requires=[
+        "cffi>=1.12.0,<2",
+        "cryptography>=2.0",
+        # cryptography 40 dropped support for PyPy <7.3.10.
+        "cryptography<40;platform_python_implementation=='PyPy' and implementation_version<'7.3.10'",
+        "requests<3.0.0"
+    ],
     author="Shane Harvey",
     author_email="mongodb-user@googlegroups.com",
     url="https://github.com/mongodb/libmongocrypt/tree/master/bindings/python",

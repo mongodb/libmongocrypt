@@ -116,6 +116,8 @@ mongocrypt_t *mongocrypt_new(void) {
     crypt->status = mongocrypt_status_new();
     _mongocrypt_opts_init(&crypt->opts);
     _mongocrypt_log_init(&crypt->log);
+    // Default to using FLEv2 (aka QEv2)
+    crypt->opts.use_fle2_v2 = true;
     crypt->ctx_counter = 1;
     crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new();
     crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new();
