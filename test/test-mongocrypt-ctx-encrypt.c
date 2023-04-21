@@ -2689,6 +2689,70 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         ee_testcase_run(&tc);
     }
 
+#define RAW_STRING(...) #__VA_ARGS__
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "min is required to insert int for range";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.contention_factor = OPT_I64(0);
+        tc.range_opts = TEST_BSON(RAW_STRING({"max" : {"$numberInt" : "200"}, "sparsity" : {"$numberLong" : "1"}}));
+        tc.msg = TEST_BSON(RAW_STRING({"v" : {"$numberInt" : "1"}}));
+        tc.keys_to_feed[0] = keyABC;
+        tc.expect_finalize_error = "Range option 'min' is required";
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "max is required to insert int for range";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.contention_factor = OPT_I64(0);
+        tc.range_opts = TEST_BSON(RAW_STRING({"min" : {"$numberInt" : "0"}, "sparsity" : {"$numberLong" : "1"}}));
+        tc.msg = TEST_BSON(RAW_STRING({"v" : {"$numberInt" : "1"}}));
+        tc.keys_to_feed[0] = keyABC;
+        tc.expect_finalize_error = "Range option 'max' is required";
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "min is required to find int for range";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.contention_factor = OPT_I64(0);
+        tc.range_opts = TEST_BSON(RAW_STRING({"max" : {"$numberInt" : "200"}, "sparsity" : {"$numberLong" : "1"}}));
+        tc.msg = TEST_BSON(RAW_STRING({
+            "v" : {"$and" :
+                       [ {"age" : {"$gte" : {"$numberInt" : "23"}}}, {"age" : {"$lte" : {"$numberInt" : "35"}}} ]}
+        }));
+        tc.keys_to_feed[0] = keyABC;
+        tc.expect_finalize_error = "Range option 'min' is required";
+        tc.is_expression = true;
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "max is required to find int for range";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.contention_factor = OPT_I64(0);
+        tc.range_opts = TEST_BSON(RAW_STRING({"min" : {"$numberInt" : "0"}, "sparsity" : {"$numberLong" : "1"}}));
+        tc.msg = TEST_BSON(RAW_STRING({
+            "v" : {"$and" :
+                       [ {"age" : {"$gte" : {"$numberInt" : "23"}}}, {"age" : {"$lte" : {"$numberInt" : "35"}}} ]}
+        }));
+        tc.keys_to_feed[0] = keyABC;
+        tc.expect_finalize_error = "Range option 'max' is required";
+        tc.is_expression = true;
+        ee_testcase_run(&tc);
+    }
+
     _mongocrypt_buffer_cleanup(&keyABC_id);
     _mongocrypt_buffer_cleanup(&key123_id);
 }
