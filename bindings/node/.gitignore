@@ -14,6 +14,9 @@ results
 node_modules
 build
 
+# vendored sources
+addon/mongocrypt
+
 npm-debug.log
 .vscode
 deps
