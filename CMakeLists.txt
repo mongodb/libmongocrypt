@@ -25,6 +25,7 @@ option (ENABLE_PIC
    ON
 )
 option (ENABLE_TOOLS "Build extra utilities" ON)
+option (ENABLE_CSHARP "Build C# bindings" OFF)
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
 
@@ -85,7 +86,9 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       )
 endif ()
 
-add_subdirectory (bindings/cs)
+if (ENABLE_CSHARP)
+   add_subdirectory (bindings/cs)
+endif ()
 
 include (GenerateExportHeader)
 
