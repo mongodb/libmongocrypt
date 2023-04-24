@@ -2213,8 +2213,7 @@ static void ee_testcase_run(ee_testcase *tc) {
         crypt = _crypt_with_rng(&tc->rng_data, tc->use_v2);
     } else {
         tester_mongocrypt_flags flags = TESTER_MONGOCRYPT_DEFAULT;
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
+        // TODO(MONGOCRYPT-572): Remove tests cases for QEv1.
         if (!tc->use_v2) {
             flags |= TESTER_MONGOCRYPT_WITH_CRYPT_V1;
         }
