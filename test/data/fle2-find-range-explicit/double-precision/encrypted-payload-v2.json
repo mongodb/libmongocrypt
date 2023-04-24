@@ -1,0 +1,26 @@
+{
+    "v": {
+        "$and": [
+            {
+                "age": {
+                    "$gte": {
+                        "$binary": {
+                            "base64": "DV0FAAADcGF5bG9hZAAZBQAABGcABQUAAAMwAH0AAAAFZAAgAAAAAA5O5YOmDnNEzt4VzOdPJoBsorBvi4P38NSXFCQXBT7lBXMAIAAAAAAlCbJrLprhv7PZAWfpe1J77kmxxrTm5d+VIAzQ1t0f9wVsACAAAAAAJsEPn/IWj5o4yK+N8amVX9KXnsELZG2J1c6Wa2AfBE4AAzEAfQAAAAVkACAAAAAAwVdX7uREzGJG5YAlsRvkOq5eddbRwIMXoUyBxtTOWyMFcwAgAAAAAH7tQpElOGJxNW3nBA/KvOwRjEttzL4Yj7QxAKdseG83BWwAIAAAAAD3pf9mr2hOP/do52J6tCm1L6EW8dcAnjl1AX56PsqCrwADMgB9AAAABWQAIAAAAAB/r0rye8dC3m4mih9d9oBcoQ6Zz99MQLXO5RvpPQ0CxAVzACAAAAAAyAOYAbhDJ52goQxGqSffPOA68Z5ST6MHehKnzrW4NxgFbAAgAAAAABKOFQ4VoYzcavMdAgvpAc9SMLWpJAI/XabuetDojHI3AAMzAH0AAAAFZAAgAAAAAO2Hv6Qd4XbjLmDbLe2/dufbhh+Bc1myy7VrNWQswguHBXMAIAAAAACskbeGL2j0dhv3JUYGLto/8kBwO/CS6CSy2Fz01Qd/oAVsACAAAAAAQD5HxofvNYPA/WXGFJBJ7Aqn4TTxvNEpsZX7QIi8NQEAAzQAfQAAAAVkACAAAAAAtTHP+RbNcKHQQitmLFjax5jU3lSvUFioevRqvngmVrgFcwAgAAAAAJ1FzPG89m3duUQlzzhr10u2bHkrcVrXSqTdRTQRwbuIBWwAIAAAAACDwj7HWLNQncRny0bvqljLDfvtYmGov28d2B/JEHf9sAADNQB9AAAABWQAIAAAAACx7BgZhTiIgBbhrGj1nd8jicXeBh2kUEYz4icmc9ujpAVzACAAAAAAWAUKWWlejF5rygbpZmfnmFlKKi605/AAgxC6jhE+MdgFbAAgAAAAABaV7W7xzxS0nb1Ai7Cfelb3p8bNwTf2fgT/PmQghd9GAAM2AH0AAAAFZAAgAAAAAEyLWJxrA6BmuzegYLP4kUmvxoT1dvr7RttUcJ9+VL81BXMAIAAAAAAUA36oeKJKKyAvckEDg3qz6JDJmyWJzL/PXzUYhrJMUQVsACAAAAAADjxtljJ8f/mlqv2w/jCWJo1UmAzwqtcgQhiqkWBiOQoAAzcAfQAAAAVkACAAAAAAxwM1EBD2yYprO6DgSL/hf7nNswGChKMzNRrdcVAX0QEFcwAgAAAAAPq9JZtWNg4/ZGHjkzpMQx0mwyp0WQQE8lp0l33dC1dzBWwAIAAAAAC42oIAFJNPW5m2erwYVSZPmhQoKD7nxjvqZNuj+lFrhAADOAB9AAAABWQAIAAAAADgeS5YwHbBJYHjnE9rdIFOXCWa4MZgksnq9BCKEBNCQgVzACAAAAAA0ShFMpOeEFx3gMLQEIMhvlkYQJ6DXk/ryqYFXSt0oMAFbAAgAAAAAA4vTg5+jjmTJUB+xkO8YEnaA7fwOph35M9WSK26hQ3nAAM5AH0AAAAFZAAgAAAAAKOQKnHWdirTeER0VaLHcH9Gam5QOhil1vpk11GqLVYsBXMAIAAAAACvxg5olIv89aG/3AhBg4yw2ZJqPMYppPJ8eY1dCIlbIAVsACAAAAAAYmeB3mfKkJlkTw9gbIl2aHKs9G+jxagWBwjubQOomhAAABJjbQAAAAAAAAAAAAAQcGF5bG9hZElkAAAAAAAQZmlyc3RPcGVyYXRvcgACAAAAEHNlY29uZE9wZXJhdG9yAAQAAAAA",
+                            "subType": "06"
+                        }
+                    }
+                }
+            },
+            {
+                "age": {
+                    "$lte": {
+                        "$binary": {
+                            "base64": "DTsAAAAQcGF5bG9hZElkAAAAAAAQZmlyc3RPcGVyYXRvcgACAAAAEHNlY29uZE9wZXJhdG9yAAQAAAAA",
+                            "subType": "06"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
