@@ -1,0 +1,13 @@
+diff --git a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/architecture.h b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/architecture.h
+index ef8a5b7..98d86c1 100644
+--- a/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/architecture.h
++++ b/src/third_party/IntelRDFPMathLib20U1/LIBRARY/float128/architecture.h
+@@ -39,7 +39,7 @@
+ #   define merced
+ #endif
+ 
+-#if defined(ct) || defined(efi2)
++#if defined(ct) || defined(efi2) || defined(__x86_64__)
+ #   undef  _M_AMD64
+ #   define _M_AMD64
+ #endif
