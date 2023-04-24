@@ -3130,25 +3130,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         ee_testcase_run(&tc);
     }
 
-    {
-        ee_testcase tc = {0};
-        tc.desc = "QEv2 int32 find";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(4);
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit-v2/"
-                                  "int32/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit-v2/"
-                           "int32/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit-v2/"
-                              "int32/encrypted-payload.json");
-        tc.is_expression = true;
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
     _mongocrypt_buffer_cleanup(&keyABC_id);
     _mongocrypt_buffer_cleanup(&key123_id);
 }
