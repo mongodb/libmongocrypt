@@ -219,6 +219,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
         if (!_fle2_append_encryptionInformation(ctx, cmd, ns, encryptedFieldConfig, deleteTokens, coll_name, status)) {
             goto fail;
         }
+        bson_destroy(&out);
         goto success;
     }
 
@@ -248,6 +249,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
         if (!mc_iter_document_as_bson(&iter, &tmp, status)) {
             goto fail;
         }
+        bson_destroy(&explain);
         bson_copy_to(&tmp, &explain);
     }
 

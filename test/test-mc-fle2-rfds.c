@@ -383,7 +383,7 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
             _mongocrypt_buffer_cleanup(&p1);
         }
 
-        bson_t out;
+        bson_t out = BSON_INITIALIZER;
         bool ok = mc_FLE2RangeFindDriverSpec_to_placeholders(&spec,
                                                              &range_opts,
                                                              maxContentionCounter,

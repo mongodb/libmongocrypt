@@ -199,6 +199,7 @@ static void _mc_fle2_iev_v2_test_explicit_ctx(_mongocrypt_tester_t *tester, _mc_
         ASSERT(bson_compare(&out_bson, &expect_bson) == 0);
         bson_value_destroy(&expect_value);
         mongocrypt_binary_destroy(out);
+        bson_destroy(&expect_bson);
     }
 
     mongocrypt_ctx_destroy(ctx);

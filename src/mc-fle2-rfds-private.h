@@ -48,6 +48,8 @@ bool mc_FLE2RangeFindDriverSpec_parse(mc_FLE2RangeFindDriverSpec_t *spec,
 
 // mc_FLE2RangeFindDriverSpec_to_placeholders creates a new document with
 // placeholders to encrypt.
+//
+// ACHTUNG: `out` MUST be initialized!
 bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *spec,
                                                 const mc_RangeOpts_t *range_opts,
                                                 int64_t maxContentionCounter,

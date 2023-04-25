@@ -456,8 +456,6 @@ bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *sp
         TRY(bson_iter_init_find(&indexMax, &minMaxDoc, "indexMax"));
     }
 
-    bson_init(out);
-
     mc_makeRangeFindPlaceholder_args_t args = {.isStub = false,
                                                .user_key_id = user_key_id,
                                                .index_key_id = index_key_id,
