@@ -636,7 +636,9 @@ bool _mongocrypt_key_broker_docs_done(_mongocrypt_key_broker_t *kb) {
 
     /* If there are any requests left unsatisfied, error. */
     if (!_all_key_requests_satisfied(kb)) {
-        return _key_broker_fail_w_msg(kb, "not all keys requested were satisfied");
+        return _key_broker_fail_w_msg(
+            kb,
+            "not all keys requested were satisfied. Verify that key vault DB/collection name was correctly specified.");
     }
 
     /* Transition to the next state.
