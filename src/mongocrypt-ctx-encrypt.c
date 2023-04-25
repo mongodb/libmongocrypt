@@ -1801,6 +1801,7 @@ static bool _finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
         bson_t original_cmd_bson;
         if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &original_cmd_bson)) {
+            bson_destroy(&converted);
             return _mongocrypt_ctx_fail_w_msg(ctx, "malformed bson in original_cmd");
         }
 
