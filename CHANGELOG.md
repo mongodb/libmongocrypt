@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.8.0-alpha1
+This release makes backwards breaking changes to Queryable Encryption (QE) behavior added in the 1.8.0-alpha0 release:
+- Do not apply default to min/max values for int/long/date.
+- Enable the QEv2 protocol by default. Remove function to enable QEv2.
 ## 1.8.0-alpha0
 ### Improvements
 - Support Queryable Encryption v2 protocol.
