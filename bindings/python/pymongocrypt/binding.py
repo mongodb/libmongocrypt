@@ -65,8 +65,7 @@ ffi.cdef("""/*
  * @param[out] len  An optional length of the returned string. May be NULL.
  * @returns a NULL terminated version string for libmongocrypt.
  */
-const char *
-mongocrypt_version (uint32_t *len);
+const char *mongocrypt_version(uint32_t *len);
 
 /**
  * A non-owning view of a byte buffer.
@@ -99,8 +98,7 @@ typedef struct _mongocrypt_binary_t mongocrypt_binary_t;
  *
  * @returns A new mongocrypt_binary_t.
  */
-mongocrypt_binary_t *
-mongocrypt_binary_new (void);
+mongocrypt_binary_t *mongocrypt_binary_new(void);
 
 /**
  * Create a new non-owning view of a buffer (data + length).
@@ -111,8 +109,7 @@ mongocrypt_binary_new (void);
  *
  * @returns A new @ref mongocrypt_binary_t.
  */
-mongocrypt_binary_t *
-mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len);
+mongocrypt_binary_t *mongocrypt_binary_new_from_data(uint8_t *data, uint32_t len);
 
 /**
  * Get a pointer to the viewed data.
@@ -121,8 +118,7 @@ mongocrypt_binary_new_from_data (uint8_t *data, uint32_t len);
  *
  * @returns A pointer to the viewed data.
  */
-uint8_t *
-mongocrypt_binary_data (const mongocrypt_binary_t *binary);
+uint8_t *mongocrypt_binary_data(const mongocrypt_binary_t *binary);
 
 /**
  * Get the length of the viewed data.
@@ -131,8 +127,7 @@ mongocrypt_binary_data (const mongocrypt_binary_t *binary);
  *
  * @returns The length of the viewed data.
  */
-uint32_t
-mongocrypt_binary_len (const mongocrypt_binary_t *binary);
+uint32_t mongocrypt_binary_len(const mongocrypt_binary_t *binary);
 
 /**
  * Free the @ref mongocrypt_binary_t.
@@ -141,8 +136,7 @@ mongocrypt_binary_len (const mongocrypt_binary_t *binary);
  *
  * @param[in] binary The mongocrypt_binary_t destroy.
  */
-void
-mongocrypt_binary_destroy (mongocrypt_binary_t *binary);
+void mongocrypt_binary_destroy(mongocrypt_binary_t *binary);
 
 /**
  * Indicates success or contains error information.
@@ -158,10 +152,10 @@ typedef struct _mongocrypt_status_t mongocrypt_status_t;
  * Indicates the type of error.
  */
 typedef enum {
-   MONGOCRYPT_STATUS_OK = 0,
-   MONGOCRYPT_STATUS_ERROR_CLIENT = 1,
-   MONGOCRYPT_STATUS_ERROR_KMS = 2,
-   MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED = 3,
+    MONGOCRYPT_STATUS_OK = 0,
+    MONGOCRYPT_STATUS_ERROR_CLIENT = 1,
+    MONGOCRYPT_STATUS_ERROR_KMS = 2,
+    MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED = 3,
 } mongocrypt_status_type_t;
 
 /**
@@ -173,8 +167,7 @@ typedef enum {
  *
  * @returns A new status object.
  */
-mongocrypt_status_t *
-mongocrypt_status_new (void);
+mongocrypt_status_t *mongocrypt_status_new(void);
 
 /**
  * Set a status object with message, type, and code.
@@ -192,12 +185,11 @@ mongocrypt_status_new (void);
  * to determine the string's length with strlen.
  *
  */
-void
-mongocrypt_status_set (mongocrypt_status_t *status,
-                       mongocrypt_status_type_t type,
-                       uint32_t code,
-                       const char *message,
-                       int32_t message_len);
+void mongocrypt_status_set(mongocrypt_status_t *status,
+                           mongocrypt_status_type_t type,
+                           uint32_t code,
+                           const char *message,
+                           int32_t message_len);
 
 /**
  * Indicates success or the type of error.
@@ -206,8 +198,7 @@ mongocrypt_status_set (mongocrypt_status_t *status,
  *
  * @returns A @ref mongocrypt_status_type_t.
  */
-mongocrypt_status_type_t
-mongocrypt_status_type (mongocrypt_status_t *status);
+mongocrypt_status_type_t mongocrypt_status_type(mongocrypt_status_t *status);
 
 /**
  * Get an error code or 0.
@@ -216,8 +207,7 @@ mongocrypt_status_type (mongocrypt_status_t *status);
  *
  * @returns An error code.
  */
-uint32_t
-mongocrypt_status_code (mongocrypt_status_t *status);
+uint32_t mongocrypt_status_code(mongocrypt_status_t *status);
 
 /**
  * Get the error message associated with a status or NULL.
@@ -228,8 +218,7 @@ mongocrypt_status_code (mongocrypt_status_t *status);
  *
  * @returns A NULL terminated error message or NULL.
  */
-const char *
-mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len);
+const char *mongocrypt_status_message(mongocrypt_status_t *status, uint32_t *len);
 
 /**
  * Returns true if the status indicates success.
@@ -239,26 +228,24 @@ mongocrypt_status_message (mongocrypt_status_t *status, uint32_t *len);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_status_ok (mongocrypt_status_t *status);
+bool mongocrypt_status_ok(mongocrypt_status_t *status);
 
 /**
  * Free the memory for a status object.
  *
  * @param[in] status The status to destroy.
  */
-void
-mongocrypt_status_destroy (mongocrypt_status_t *status);
+void mongocrypt_status_destroy(mongocrypt_status_t *status);
 
 /**
  * Indicates the type of log message.
  */
 typedef enum {
-   MONGOCRYPT_LOG_LEVEL_FATAL = 0,
-   MONGOCRYPT_LOG_LEVEL_ERROR = 1,
-   MONGOCRYPT_LOG_LEVEL_WARNING = 2,
-   MONGOCRYPT_LOG_LEVEL_INFO = 3,
-   MONGOCRYPT_LOG_LEVEL_TRACE = 4
+    MONGOCRYPT_LOG_LEVEL_FATAL = 0,
+    MONGOCRYPT_LOG_LEVEL_ERROR = 1,
+    MONGOCRYPT_LOG_LEVEL_WARNING = 2,
+    MONGOCRYPT_LOG_LEVEL_INFO = 3,
+    MONGOCRYPT_LOG_LEVEL_TRACE = 4
 } mongocrypt_log_level_t;
 
 /**
@@ -270,10 +257,7 @@ typedef enum {
  * @param[in] ctx A context provided by the caller of @ref
  * mongocrypt_setopt_log_handler.
  */
-typedef void (*mongocrypt_log_fn_t) (mongocrypt_log_level_t level,
-                                     const char *message,
-                                     uint32_t message_len,
-                                     void *ctx);
+typedef void (*mongocrypt_log_fn_t)(mongocrypt_log_level_t level, const char *message, uint32_t message_len, void *ctx);
 
 /**
  * The top-level handle to libmongocrypt.
@@ -298,8 +282,7 @@ typedef struct _mongocrypt_t mongocrypt_t;
  *
  * @returns A new @ref mongocrypt_t object.
  */
-mongocrypt_t *
-mongocrypt_new (void);
+mongocrypt_t *mongocrypt_new(void);
 
 /**
  * Set a handler on the @ref mongocrypt_t object to get called on every log
@@ -313,10 +296,7 @@ mongocrypt_new (void);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
-                               mongocrypt_log_fn_t log_fn,
-                               void *log_ctx);
+bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_fn, void *log_ctx);
 
 /**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
@@ -339,12 +319,11 @@ mongocrypt_setopt_log_handler (mongocrypt_t *crypt,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
-                                    const char *aws_access_key_id,
-                                    int32_t aws_access_key_id_len,
-                                    const char *aws_secret_access_key,
-                                    int32_t aws_secret_access_key_len);
+bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
+                                        const char *aws_access_key_id,
+                                        int32_t aws_access_key_id_len,
+                                        const char *aws_secret_access_key,
+                                        int32_t aws_secret_access_key_len);
 
 /**
  * Configure a local KMS provider on the @ref mongocrypt_t object.
@@ -360,9 +339,7 @@ mongocrypt_setopt_kms_provider_aws (mongocrypt_t *crypt,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
-                                      mongocrypt_binary_t *key);
+bool mongocrypt_setopt_kms_provider_local(mongocrypt_t *crypt, mongocrypt_binary_t *key);
 
 /**
  * Configure KMS providers with a BSON document.
@@ -375,9 +352,7 @@ mongocrypt_setopt_kms_provider_local (mongocrypt_t *crypt,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
-                                 mongocrypt_binary_t *kms_providers);
+bool mongocrypt_setopt_kms_providers(mongocrypt_t *crypt, mongocrypt_binary_t *kms_providers);
 
 /**
  * Set a local schema map for encryption.
@@ -391,9 +366,7 @@ mongocrypt_setopt_kms_providers (mongocrypt_t *crypt,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
  */
-bool
-mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
-                              mongocrypt_binary_t *schema_map);
+bool mongocrypt_setopt_schema_map(mongocrypt_t *crypt, mongocrypt_binary_t *schema_map);
 
 /**
  * Set a local EncryptedFieldConfigMap for encryption.
@@ -407,9 +380,7 @@ mongocrypt_setopt_schema_map (mongocrypt_t *crypt,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
  */
-bool
-mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
-                                              mongocrypt_binary_t *efc_map);
+bool mongocrypt_setopt_encrypted_field_config_map(mongocrypt_t *crypt, mongocrypt_binary_t *efc_map);
 
 /**
  * @brief Append an additional search directory to the search path for loading
@@ -439,9 +410,7 @@ mongocrypt_setopt_encrypted_field_config_map (mongocrypt_t *crypt,
  * @ref mongocrypt_setopt_set_crypt_shared_lib_path_override, then paths
  * appended here will have no effect.
  */
-void
-mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
-                                                       const char *path);
+void mongocrypt_setopt_append_crypt_shared_lib_search_path(mongocrypt_t *crypt, const char *path);
 
 /**
  * @brief Set a single override path for loading the crypt_shared dynamic
@@ -466,9 +435,7 @@ mongocrypt_setopt_append_crypt_shared_lib_search_path (mongocrypt_t *crypt,
  * initialize a valid crypt_shared library instance for the path specified, then
  * the initialization of mongocrypt_t will fail with an error.
  */
-void
-mongocrypt_setopt_set_crypt_shared_lib_path_override (mongocrypt_t *crypt,
-                                                      const char *path);
+void mongocrypt_setopt_set_crypt_shared_lib_path_override(mongocrypt_t *crypt, const char *path);
 
 /**
  * @brief Opt-into handling the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state.
@@ -484,8 +451,7 @@ mongocrypt_setopt_set_crypt_shared_lib_path_override (mongocrypt_t *crypt,
  *
  * @param[in] crypt The @ref mongocrypt_t object to update
  */
-void
-mongocrypt_setopt_use_need_kms_credentials_state (mongocrypt_t *crypt);
+void mongocrypt_setopt_use_need_kms_credentials_state(mongocrypt_t *crypt);
 
 /**
  * Initialize new @ref mongocrypt_t object.
@@ -500,8 +466,7 @@ mongocrypt_setopt_use_need_kms_credentials_state (mongocrypt_t *crypt);
  * set
  * options are invalid.
  */
-bool
-mongocrypt_init (mongocrypt_t *crypt);
+bool mongocrypt_init(mongocrypt_t *crypt);
 
 /**
  * Get the status associated with a @ref mongocrypt_t object.
@@ -512,16 +477,14 @@ mongocrypt_init (mongocrypt_t *crypt);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_status (mongocrypt_t *crypt, mongocrypt_status_t *status);
+bool mongocrypt_status(mongocrypt_t *crypt, mongocrypt_status_t *status);
 
 /**
  * Destroy the @ref mongocrypt_t object.
  *
  * @param[in] crypt The @ref mongocrypt_t object to destroy.
  */
-void
-mongocrypt_destroy (mongocrypt_t *crypt);
+void mongocrypt_destroy(mongocrypt_t *crypt);
 
 /**
  * Obtain a nul-terminated version string of the loaded crypt_shared dynamic
@@ -541,9 +504,7 @@ mongocrypt_destroy (mongocrypt_t *crypt);
  * @note For a numeric value that can be compared against, use
  * @ref mongocrypt_crypt_shared_lib_version.
  */
-const char *
-mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
-                                            uint32_t *len);
+const char *mongocrypt_crypt_shared_lib_version_string(const mongocrypt_t *crypt, uint32_t *len);
 
 /**
  * @brief Obtain a 64-bit constant encoding the version of the loaded
@@ -564,8 +525,7 @@ mongocrypt_crypt_shared_lib_version_string (const mongocrypt_t *crypt,
  *
  * For example, version 6.2.1 would be encoded as: 0x0006'0002'0001'0000
  */
-uint64_t
-mongocrypt_crypt_shared_lib_version (const mongocrypt_t *crypt);
+uint64_t mongocrypt_crypt_shared_lib_version(const mongocrypt_t *crypt);
 
 /**
  * Manages the state machine for encryption or decryption.
@@ -581,8 +541,7 @@ typedef struct _mongocrypt_ctx_t mongocrypt_ctx_t;
  * @param[in] crypt The @ref mongocrypt_t object.
  * @returns A new context.
  */
-mongocrypt_ctx_t *
-mongocrypt_ctx_new (mongocrypt_t *crypt);
+mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt);
 
 /**
  * Get the status associated with a @ref mongocrypt_ctx_t object.
@@ -595,8 +554,7 @@ mongocrypt_ctx_new (mongocrypt_t *crypt);
  *
  * @see mongocrypt_status_ok
  */
-bool
-mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
+bool mongocrypt_ctx_status(mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
 
 /**
  * Set the key id to use for explicit encryption.
@@ -612,9 +570,7 @@ mongocrypt_ctx_status (mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
-                              mongocrypt_binary_t *key_id);
+bool mongocrypt_ctx_setopt_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id);
 
 /**
  * Set the keyAltName to use for explicit encryption or
@@ -638,9 +594,7 @@ mongocrypt_ctx_setopt_key_id (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
-                                    mongocrypt_binary_t *key_alt_name);
+bool mongocrypt_ctx_setopt_key_alt_name(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_alt_name);
 
 /**
  * Set the keyMaterial to use for encrypting data.
@@ -657,9 +611,7 @@ mongocrypt_ctx_setopt_key_alt_name (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_key_material (mongocrypt_ctx_t *ctx,
-                                    mongocrypt_binary_t *key_material);
+bool mongocrypt_ctx_setopt_key_material(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_material);
 
 /**
  * Set the algorithm used for encryption to either
@@ -681,10 +633,7 @@ mongocrypt_ctx_setopt_key_material (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
-                                 const char *algorithm,
-                                 int len);
+bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorithm, int len);
 
 /// String constant for setopt_algorithm "Deterministic" encryption
 /// String constant for setopt_algorithm "Random" encryption
@@ -712,12 +661,11 @@ mongocrypt_ctx_setopt_algorithm (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
-                                     const char *region,
-                                     int32_t region_len,
-                                     const char *cmk,
-                                     int32_t cmk_len);
+bool mongocrypt_ctx_setopt_masterkey_aws(mongocrypt_ctx_t *ctx,
+                                         const char *region,
+                                         int32_t region_len,
+                                         const char *cmk,
+                                         int32_t cmk_len);
 
 /**
  * Identify a custom AWS endpoint when creating a data key.
@@ -736,10 +684,7 @@ mongocrypt_ctx_setopt_masterkey_aws (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
-                                              const char *endpoint,
-                                              int32_t endpoint_len);
+bool mongocrypt_ctx_setopt_masterkey_aws_endpoint(mongocrypt_ctx_t *ctx, const char *endpoint, int32_t endpoint_len);
 
 /**
  * Set the master key to "local" for creating a data key.
@@ -751,8 +696,7 @@ mongocrypt_ctx_setopt_masterkey_aws_endpoint (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
+bool mongocrypt_ctx_setopt_masterkey_local(mongocrypt_ctx_t *ctx);
 
 /**
  * Set key encryption key document for creating a data key or for rewrapping
@@ -805,9 +749,7 @@ mongocrypt_ctx_setopt_masterkey_local (mongocrypt_ctx_t *ctx);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
  */
-bool
-mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
-                                          mongocrypt_binary_t *bin);
+bool mongocrypt_ctx_setopt_key_encryption_key(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *bin);
 
 /**
  * Initialize a context to create a data key.
@@ -823,8 +765,7 @@ mongocrypt_ctx_setopt_key_encryption_key (mongocrypt_ctx_t *ctx,
  * @pre A master key option has been set, and an associated KMS provider
  * has been set on the parent @ref mongocrypt_t.
  */
-bool
-mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
+bool mongocrypt_ctx_datakey_init(mongocrypt_ctx_t *ctx);
 
 /**
  * Initialize a context for encryption.
@@ -840,11 +781,7 @@ mongocrypt_ctx_datakey_init (mongocrypt_ctx_t *ctx);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
-                             const char *db,
-                             int32_t db_len,
-                             mongocrypt_binary_t *cmd);
+bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t db_len, mongocrypt_binary_t *cmd);
 
 /**
  * Explicit helper method to encrypt a single BSON object. Contexts
@@ -881,9 +818,7 @@ mongocrypt_ctx_encrypt_init (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
-                                      mongocrypt_binary_t *msg);
+bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *msg);
 
 /**
  * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
@@ -929,9 +864,7 @@ mongocrypt_ctx_explicit_encrypt_init (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_explicit_encrypt_expression_init (mongocrypt_ctx_t *ctx,
-                                                 mongocrypt_binary_t *msg);
+bool mongocrypt_ctx_explicit_encrypt_expression_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *msg);
 
 /**
  * Initialize a context for decryption.
@@ -946,8 +879,7 @@ mongocrypt_ctx_explicit_encrypt_expression_init (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
+bool mongocrypt_ctx_decrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
 
 /**
  * Explicit helper method to decrypt a single BSON object.
@@ -962,9 +894,7 @@ mongocrypt_ctx_decrypt_init (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc);
  * is copied. It is valid to destroy @p msg with @ref mongocrypt_binary_destroy
  * immediately after.
  */
-bool
-mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
-                                      mongocrypt_binary_t *msg);
+bool mongocrypt_ctx_explicit_decrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *msg);
 
 /**
  * @brief Initialize a context to rewrap datakeys.
@@ -978,9 +908,7 @@ mongocrypt_ctx_explicit_decrypt_init (mongocrypt_ctx_t *ctx,
  * @return A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
  */
-bool
-mongocrypt_ctx_rewrap_many_datakey_init (mongocrypt_ctx_t *ctx,
-                                         mongocrypt_binary_t *filter);
+bool mongocrypt_ctx_rewrap_many_datakey_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *filter);
 
 /**
  * Indicates the state of the @ref mongocrypt_ctx_t. Each state requires
@@ -989,14 +917,14 @@ mongocrypt_ctx_rewrap_many_datakey_init (mongocrypt_ctx_t *ctx,
  * for information on what to do for each state.
  */
 typedef enum {
-   MONGOCRYPT_CTX_ERROR = 0,
-   MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1, /* run on main MongoClient */
-   MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2, /* run on mongocryptd. */
-   MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,     /* run on key vault */
-   MONGOCRYPT_CTX_NEED_KMS = 4,
-   MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7, /* fetch/renew KMS credentials */
-   MONGOCRYPT_CTX_READY = 5, /* ready for encryption/decryption */
-   MONGOCRYPT_CTX_DONE = 6,
+    MONGOCRYPT_CTX_ERROR = 0,
+    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1, /* run on main MongoClient */
+    MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2, /* run on mongocryptd. */
+    MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,     /* run on key vault */
+    MONGOCRYPT_CTX_NEED_KMS = 4,
+    MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7, /* fetch/renew KMS credentials */
+    MONGOCRYPT_CTX_READY = 5,                /* ready for encryption/decryption */
+    MONGOCRYPT_CTX_DONE = 6,
 } mongocrypt_ctx_state_t;
 
 /**
@@ -1005,8 +933,7 @@ typedef enum {
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @returns A @ref mongocrypt_ctx_state_t.
  */
-mongocrypt_ctx_state_t
-mongocrypt_ctx_state (mongocrypt_ctx_t *ctx);
+mongocrypt_ctx_state_t mongocrypt_ctx_state(mongocrypt_ctx_t *ctx);
 
 /**
  * Get BSON necessary to run the mongo operation when mongocrypt_ctx_t
@@ -1028,8 +955,7 @@ mongocrypt_ctx_state (mongocrypt_ctx_t *ctx);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
+bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
 
 /**
  * Feed a BSON reply or result when mongocrypt_ctx_t is in
@@ -1053,8 +979,7 @@ mongocrypt_ctx_mongo_op (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *reply);
+bool mongocrypt_ctx_mongo_feed(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *reply);
 
 /**
  * Call when done feeding the reply (or replies) back to the context.
@@ -1063,8 +988,7 @@ mongocrypt_ctx_mongo_feed (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *reply);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_mongo_done (mongocrypt_ctx_t *ctx);
+bool mongocrypt_ctx_mongo_done(mongocrypt_ctx_t *ctx);
 
 /**
  * Manages a single KMS HTTP request/response.
@@ -1084,8 +1008,7 @@ typedef struct _mongocrypt_kms_ctx_t mongocrypt_kms_ctx_t;
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @returns a new @ref mongocrypt_kms_ctx_t or NULL.
  */
-mongocrypt_kms_ctx_t *
-mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx);
+mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx);
 
 /**
  * Get the HTTP request message for a KMS handle.
@@ -1100,9 +1023,7 @@ mongocrypt_ctx_next_kms_ctx (mongocrypt_ctx_t *ctx);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
-bool
-mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
-                            mongocrypt_binary_t *msg);
+bool mongocrypt_kms_ctx_message(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *msg);
 
 /**
  * Get the hostname from which to connect over TLS.
@@ -1118,8 +1039,7 @@ mongocrypt_kms_ctx_message (mongocrypt_kms_ctx_t *kms,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
-bool
-mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms, const char **endpoint);
+bool mongocrypt_kms_ctx_endpoint(mongocrypt_kms_ctx_t *kms, const char **endpoint);
 
 /**
  * Indicates how many bytes to feed into @ref mongocrypt_kms_ctx_feed.
@@ -1127,8 +1047,7 @@ mongocrypt_kms_ctx_endpoint (mongocrypt_kms_ctx_t *kms, const char **endpoint);
  * @param[in] kms The @ref mongocrypt_kms_ctx_t.
  * @returns The number of requested bytes.
  */
-uint32_t
-mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms);
+uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms);
 
 /**
  * Feed bytes from the HTTP response.
@@ -1142,8 +1061,7 @@ mongocrypt_kms_ctx_bytes_needed (mongocrypt_kms_ctx_t *kms);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
-bool
-mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
+bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
 
 /**
  * Get the status associated with a @ref mongocrypt_kms_ctx_t object.
@@ -1153,9 +1071,7 @@ mongocrypt_kms_ctx_feed (mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
  *
  * @returns A boolean indicating success. If false, an error status is set.
  */
-bool
-mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
-                           mongocrypt_status_t *status);
+bool mongocrypt_kms_ctx_status(mongocrypt_kms_ctx_t *kms, mongocrypt_status_t *status);
 
 /**
  * Get the KMS provider identifier associated with this KMS request.
@@ -1172,8 +1088,7 @@ mongocrypt_kms_ctx_status (mongocrypt_kms_ctx_t *kms,
  * @returns One of the NULL terminated static strings: "aws", "azure", "gcp", or
  * "kmip".
  */
-const char *
-mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len);
+const char *mongocrypt_kms_ctx_get_kms_provider(mongocrypt_kms_ctx_t *kms, uint32_t *len);
 
 /**
  * Call when done handling all KMS contexts.
@@ -1183,8 +1098,7 @@ mongocrypt_kms_ctx_get_kms_provider (mongocrypt_kms_ctx_t *kms, uint32_t *len);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
+bool mongocrypt_ctx_kms_done(mongocrypt_ctx_t *ctx);
 
 /**
  * Call in response to the MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS state
@@ -1200,9 +1114,7 @@ mongocrypt_ctx_kms_done (mongocrypt_ctx_t *ctx);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
  */
-bool
-mongocrypt_ctx_provide_kms_providers (
-   mongocrypt_ctx_t *ctx, mongocrypt_binary_t *kms_providers_definition);
+bool mongocrypt_ctx_provide_kms_providers(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *kms_providers_definition);
 
 /**
  * Perform the final encryption or decryption.
@@ -1240,16 +1152,14 @@ mongocrypt_ctx_provide_kms_providers (
  * @returns a bool indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_finalize (mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
+bool mongocrypt_ctx_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
 
 /**
  * Destroy and free all memory associated with a @ref mongocrypt_ctx_t.
  *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  */
-void
-mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
+void mongocrypt_ctx_destroy(mongocrypt_ctx_t *ctx);
 
 /**
  * An crypto AES-256-CBC encrypt or decrypt function.
@@ -1268,13 +1178,13 @@ mongocrypt_ctx_destroy (mongocrypt_ctx_t *ctx);
  * @returns A boolean indicating success. If returning false, set @p status
  * with a message indiciating the error using @ref mongocrypt_status_set.
  */
-typedef bool (*mongocrypt_crypto_fn) (void *ctx,
-                                      mongocrypt_binary_t *key,
-                                      mongocrypt_binary_t *iv,
-                                      mongocrypt_binary_t *in,
-                                      mongocrypt_binary_t *out,
-                                      uint32_t *bytes_written,
-                                      mongocrypt_status_t *status);
+typedef bool (*mongocrypt_crypto_fn)(void *ctx,
+                                     mongocrypt_binary_t *key,
+                                     mongocrypt_binary_t *iv,
+                                     mongocrypt_binary_t *in,
+                                     mongocrypt_binary_t *out,
+                                     uint32_t *bytes_written,
+                                     mongocrypt_status_t *status);
 
 /**
  * A crypto signature or HMAC function.
@@ -1293,11 +1203,11 @@ typedef bool (*mongocrypt_crypto_fn) (void *ctx,
  * @returns A boolean indicating success. If returning false, set @p status
  * with a message indiciating the error using @ref mongocrypt_status_set.
  */
-typedef bool (*mongocrypt_hmac_fn) (void *ctx,
-                                    mongocrypt_binary_t *key,
-                                    mongocrypt_binary_t *in,
-                                    mongocrypt_binary_t *out,
-                                    mongocrypt_status_t *status);
+typedef bool (*mongocrypt_hmac_fn)(void *ctx,
+                                   mongocrypt_binary_t *key,
+                                   mongocrypt_binary_t *in,
+                                   mongocrypt_binary_t *out,
+                                   mongocrypt_status_t *status);
 
 /**
  * A crypto hash (SHA-256) function.
@@ -1312,10 +1222,10 @@ typedef bool (*mongocrypt_hmac_fn) (void *ctx,
  * @returns A boolean indicating success. If returning false, set @p status
  * with a message indiciating the error using @ref mongocrypt_status_set.
  */
-typedef bool (*mongocrypt_hash_fn) (void *ctx,
-                                    mongocrypt_binary_t *in,
-                                    mongocrypt_binary_t *out,
-                                    mongocrypt_status_t *status);
+typedef bool (*mongocrypt_hash_fn)(void *ctx,
+                                   mongocrypt_binary_t *in,
+                                   mongocrypt_binary_t *out,
+                                   mongocrypt_status_t *status);
 
 /**
  * A crypto secure random function.
@@ -1330,20 +1240,16 @@ typedef bool (*mongocrypt_hash_fn) (void *ctx,
  * @returns A boolean indicating success. If returning false, set @p status
  * with a message indiciating the error using @ref mongocrypt_status_set.
  */
-typedef bool (*mongocrypt_random_fn) (void *ctx,
-                                      mongocrypt_binary_t *out,
-                                      uint32_t count,
-                                      mongocrypt_status_t *status);
+typedef bool (*mongocrypt_random_fn)(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status);
 
-bool
-mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
-                                mongocrypt_crypto_fn aes_256_cbc_encrypt,
-                                mongocrypt_crypto_fn aes_256_cbc_decrypt,
-                                mongocrypt_random_fn random,
-                                mongocrypt_hmac_fn hmac_sha_512,
-                                mongocrypt_hmac_fn hmac_sha_256,
-                                mongocrypt_hash_fn sha_256,
-                                void *ctx);
+bool mongocrypt_setopt_crypto_hooks(mongocrypt_t *crypt,
+                                    mongocrypt_crypto_fn aes_256_cbc_encrypt,
+                                    mongocrypt_crypto_fn aes_256_cbc_decrypt,
+                                    mongocrypt_random_fn random,
+                                    mongocrypt_hmac_fn hmac_sha_512,
+                                    mongocrypt_hmac_fn hmac_sha_256,
+                                    mongocrypt_hash_fn sha_256,
+                                    void *ctx);
 
 /**
  * Set a crypto hook for the AES256-CTR operations.
@@ -1360,11 +1266,10 @@ mongocrypt_setopt_crypto_hooks (mongocrypt_t *crypt,
  * Retrieve it with @ref mongocrypt_status
  *
  */
-bool
-mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
-                               mongocrypt_crypto_fn aes_256_ctr_encrypt,
-                               mongocrypt_crypto_fn aes_256_ctr_decrypt,
-                               void *ctx);
+bool mongocrypt_setopt_aes_256_ctr(mongocrypt_t *crypt,
+                                   mongocrypt_crypto_fn aes_256_ctr_encrypt,
+                                   mongocrypt_crypto_fn aes_256_ctr_decrypt,
+                                   void *ctx);
 
 /**
  * Set an AES256-ECB crypto hook for the AES256-CTR operations. If CTR hook was
@@ -1381,10 +1286,7 @@ mongocrypt_setopt_aes_256_ctr (mongocrypt_t *crypt,
  * Retrieve it with @ref mongocrypt_status
  *
  */
-bool
-mongocrypt_setopt_aes_256_ecb (mongocrypt_t *crypt,
-                               mongocrypt_crypto_fn aes_256_ecb_encrypt,
-                               void *ctx);
+bool mongocrypt_setopt_aes_256_ecb(mongocrypt_t *crypt, mongocrypt_crypto_fn aes_256_ecb_encrypt, void *ctx);
 
 /**
  * Set a crypto hook for the RSASSA-PKCS1-v1_5 algorithm with a SHA-256 hash.
@@ -1403,11 +1305,9 @@ mongocrypt_setopt_aes_256_ecb (mongocrypt_t *crypt,
  * Retrieve it with @ref mongocrypt_status
  *
  */
-bool
-mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
-   mongocrypt_t *crypt,
-   mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
-   void *sign_ctx);
+bool mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(mongocrypt_t *crypt,
+                                                         mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5,
+                                                         void *sign_ctx);
 
 /**
  * @brief Opt-into skipping query analysis.
@@ -1418,8 +1318,7 @@ mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5 (
  *
  * @param[in] crypt The @ref mongocrypt_t object to update
  */
-void
-mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt);
+void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt);
 
 /**
  * Set the contention factor used for explicit encryption.
@@ -1431,9 +1330,7 @@ mongocrypt_setopt_bypass_query_analysis (mongocrypt_t *crypt);
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status.
  */
-bool
-mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx,
-                                         int64_t contention_factor);
+bool mongocrypt_ctx_setopt_contention_factor(mongocrypt_ctx_t *ctx, int64_t contention_factor);
 
 /**
  * Set the index key id to use for explicit Queryable Encryption.
@@ -1450,9 +1347,7 @@ mongocrypt_ctx_setopt_contention_factor (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
-                                    mongocrypt_binary_t *key_id);
+bool mongocrypt_ctx_setopt_index_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id);
 
 /**
  * Set the query type to use for explicit Queryable Encryption.
@@ -1464,10 +1359,7 @@ mongocrypt_ctx_setopt_index_key_id (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
-                                  const char *query_type,
-                                  int len);
+bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_type, int len);
 
 /**
  * Set options for explicit encryption with the "rangePreview" algorithm.
@@ -1488,9 +1380,7 @@ mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t *ctx,
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_ctx_status
  */
-bool
-mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t *ctx,
-                                       mongocrypt_binary_t *opts);
+bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /// String constants for setopt_query_type
 // NOTE: The RangePreview algorithm is experimental only. It is not intended for
