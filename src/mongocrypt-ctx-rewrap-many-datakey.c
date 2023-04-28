@@ -36,6 +36,9 @@ static bool _finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
             bson_t elem = BSON_INITIALIZER;
 
             if (!mongocrypt_ctx_finalize(iter->dkctx, &bin)) {
+                BSON_ASSERT(bson_append_array_end(&doc, &array));
+                bson_destroy(&doc);
+                bson_destroy(&elem);
                 return _mongocrypt_ctx_fail_w_msg(ctx, "failed to encrypt datakey with new provider");
             }
 

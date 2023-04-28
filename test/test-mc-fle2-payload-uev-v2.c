@@ -271,6 +271,7 @@ static void test_FLE2UnindexedEncryptedValueV2_ctx_decrypt(_mongocrypt_tester_t 
         ASSERT(bson_compare(&out_bson, &expect_bson) == 0);
         bson_value_destroy(&expect_value);
         mongocrypt_binary_destroy(out);
+        bson_destroy(&expect_bson);
     }
 
     mongocrypt_ctx_destroy(ctx);

@@ -245,21 +245,9 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
         return true;
     }
 
-    if (valueType == BSON_TYPE_INT32) {
-        if (!BSON_APPEND_INT32(out, fieldName, INT32_MIN)) {
-            CLIENT_ERR("failed to append BSON");
-            return false;
-        }
-    } else if (valueType == BSON_TYPE_INT64) {
-        if (!BSON_APPEND_INT64(out, fieldName, INT64_MIN)) {
-            CLIENT_ERR("failed to append BSON");
-            return false;
-        }
-    } else if (valueType == BSON_TYPE_DATE_TIME) {
-        if (!BSON_APPEND_DATE_TIME(out, fieldName, INT64_MIN)) {
-            CLIENT_ERR("failed to append BSON");
-            return false;
-        }
+    if (valueType == BSON_TYPE_INT32 || valueType == BSON_TYPE_INT64 || valueType == BSON_TYPE_DATE_TIME) {
+        CLIENT_ERR("Range option 'min' is required for type: %s", mc_bson_type_to_string(valueType));
+        return false;
     } else if (valueType == BSON_TYPE_DOUBLE) {
         if (!BSON_APPEND_DOUBLE(out, fieldName, -DBL_MAX)) {
             CLIENT_ERR("failed to append BSON");
@@ -309,21 +297,9 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
         return true;
     }
 
-    if (valueType == BSON_TYPE_INT32) {
-        if (!BSON_APPEND_INT32(out, fieldName, INT32_MAX)) {
-            CLIENT_ERR("failed to append BSON");
-            return false;
-        }
-    } else if (valueType == BSON_TYPE_INT64) {
-        if (!BSON_APPEND_INT64(out, fieldName, INT64_MAX)) {
-            CLIENT_ERR("failed to append BSON");
-            return false;
-        }
-    } else if (valueType == BSON_TYPE_DATE_TIME) {
-        if (!BSON_APPEND_DATE_TIME(out, fieldName, INT64_MAX)) {
-            CLIENT_ERR("failed to append BSON");
-            return false;
-        }
+    if (valueType == BSON_TYPE_INT32 || valueType == BSON_TYPE_INT64 || valueType == BSON_TYPE_DATE_TIME) {
+        CLIENT_ERR("Range option 'max' is required for type: %s", mc_bson_type_to_string(valueType));
+        return false;
     } else if (valueType == BSON_TYPE_DOUBLE) {
         if (!BSON_APPEND_DOUBLE(out, fieldName, DBL_MAX)) {
             CLIENT_ERR("failed to append BSON");

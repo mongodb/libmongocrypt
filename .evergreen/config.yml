@@ -384,10 +384,11 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: >
+      compile_env: >-
         ${compile_env|}
         LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
-        ASAN_OPTIONS="detect_leaks=1"
+        # Add detect_odr_violation=0 to ASAN_OPTIONS to ignore odr-violation in IntelDFP symbol: __dpml_bid_globals_table
+        ASAN_OPTIONS="detect_leaks=1 detect_odr_violation=0"
 
 - name: build-and-test-asan-mac
   commands:

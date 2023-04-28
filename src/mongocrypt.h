@@ -279,18 +279,6 @@ MONGOCRYPT_EXPORT
 mongocrypt_t *mongocrypt_new(void);
 
 /**
- * Enable/disable the use of FLE2v2 payload types for write.
- *
- * @param[in] crypt The @ref mongocrypt_t object.
- * @param[in] enable Whether to enable use of FLE2v2 payloads.
- *
- * @returns A boolean indicating success. If false, an error status is set.
- * Retrieve it with @ref mongocrypt_status
- */
-MONGOCRYPT_EXPORT
-bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable);
-
-/**
  * Set a handler on the @ref mongocrypt_t object to get called on every log
  * message.
  *
