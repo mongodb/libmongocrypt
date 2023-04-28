@@ -413,8 +413,7 @@ module.exports = function (modules) {
         .db(dbName)
         .listCollections(filter, {
           promoteLongs: false,
-          promoteValues: false,
-          session: this.options.session
+          promoteValues: false
         })
         .toArray()
         .then(
@@ -476,7 +475,7 @@ module.exports = function (modules) {
       client
         .db(dbName)
         .collection(collectionName, { readConcern: { level: 'majority' } })
-        .find(filter, { session: this.options.session })
+        .find(filter)
         .toArray()
         .then(
           keys => {
