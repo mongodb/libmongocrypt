@@ -223,8 +223,8 @@ install (
 )
 
 # pkg-config.
-set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
-set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
+set (PKG_CONFIG_LIBDIR "${CMAKE_INSTALL_FULL_LIBDIR}")
+set (PKG_CONFIG_INCLUDEDIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 set (PKG_CONFIG_LIBS "-L\${libdir} -lkms_message")
 set (PKG_CONFIG_CFLAGS "-I\${includedir}")
 configure_file (
