@@ -11,7 +11,7 @@ set (INTEL_DFP_LIBRARY_URL_HASH
      "SHA256=ac157e69c05556f3fa468ab34caeb1114a3b88ae18241bd41cc57b85a02dd314"
      CACHE STRING "The hash of the archive that lives at INTEL_DFP_LIBRARY_URL (Spelled: <ALGO>=<digest>)")
 option (INTEL_DFP_LIBRARY_PATCH_ENABLED
-        "Whether to apply the s390x compatibility patch to the Intel DFP library" ON)
+        "Whether to apply patches to the Intel DFP library" ON)
 
 set (_hash_arg)
 if (NOT INTEL_DFP_LIBRARY_URL_SHA256 STREQUAL "no-verify")
@@ -42,6 +42,7 @@ FetchContent_Declare (
             -p 4 # Strip four path components
             "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
             "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
+            "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
             --verbose
     )
 
