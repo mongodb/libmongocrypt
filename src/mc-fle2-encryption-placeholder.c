@@ -289,6 +289,9 @@ fail:
 }
 
 bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(out);
+    BSON_ASSERT_PARAM(in);
+
     bson_iter_t iter = *in;
     bool has_edgesInfo = false, has_payloadId = false, has_firstOperator = false, has_secondOperator = false;
 
