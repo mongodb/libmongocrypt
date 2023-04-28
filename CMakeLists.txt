@@ -558,11 +558,7 @@ endif ()
 if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
    # Define example-state-machine
    add_executable (example-state-machine test/example-state-machine.c)
-   if (UNIX)
-       target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared m)
-   else()
-       target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared)
-   endif()
+   target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared)
    target_include_directories (example-state-machine PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
    add_test (
       NAME example-state-machine
