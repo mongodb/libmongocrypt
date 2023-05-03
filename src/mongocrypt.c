@@ -628,7 +628,6 @@ static void _csfle_drop_global_ref(void) {
             mstr_free(old_state.dll.error_string);
         }
     }
-
 }
 
 /**
