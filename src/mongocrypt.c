@@ -606,28 +606,29 @@ static void _csfle_drop_global_ref(void) {
             old_state = g_csfle_state;
             dropped_last_ref = true;
         }
-    }
 
-    if (dropped_last_ref) {
-        mongo_crypt_v1_status *status = old_state.vtable.status_create();
-        const int destroy_rc = old_state.vtable.lib_destroy(old_state.csfle_lib, status);
-        if (destroy_rc != MONGO_CRYPT_V1_SUCCESS && status) {
-            fprintf(stderr,
-                    "csfle lib_destroy() failed: %s [Error %d, code %d]\n",
-                    old_state.vtable.status_get_explanation(status),
-                    old_state.vtable.status_get_error(status),
-                    old_state.vtable.status_get_code(status));
-        }
-        old_state.vtable.status_destroy(status);
+        if (dropped_last_ref) {
+            mongo_crypt_v1_status *status = old_state.vtable.status_create();
+            const int destroy_rc = old_state.vtable.lib_destroy(old_state.csfle_lib, status);
+            if (destroy_rc != MONGO_CRYPT_V1_SUCCESS && status) {
+                fprintf(stderr,
+                        "csfle lib_destroy() failed: %s [Error %d, code %d]\n",
+                        old_state.vtable.status_get_explanation(status),
+                        old_state.vtable.status_get_error(status),
+                        old_state.vtable.status_get_code(status));
+            }
+            old_state.vtable.status_destroy(status);
 
 #ifndef __linux__
-        mcr_dll_close(old_state.dll);
+            mcr_dll_close(old_state.dll);
 #endif
-        /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in
-        /// the way ld-linux and GCC interact causes static destructors to not run
-        /// during dlclose(). Still, free the error string:
-        mstr_free(old_state.dll.error_string);
+            /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in
+            /// the way ld-linux and GCC interact causes static destructors to not run
+            /// during dlclose(). Still, free the error string:
+            mstr_free(old_state.dll.error_string);
+        }
     }
+
 }
 
 /**
