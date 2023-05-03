@@ -711,6 +711,8 @@ describe('ClientEncryption', function () {
         algorithm: 'RangePreview',
         contentionFactor: 0,
         rangeOptions: {
+          min: new BSON.Long(0),
+          max: new BSON.Long(10),
           sparsity: new BSON.Long(1)
         },
         keyId: dataKey
@@ -763,6 +765,8 @@ describe('ClientEncryption', function () {
         queryType: 'rangePreview',
         contentionFactor: 0,
         rangeOptions: {
+          min: new BSON.Int32(0),
+          max: new BSON.Int32(10),
           sparsity: new BSON.Long(1)
         },
         keyId: dataKey
