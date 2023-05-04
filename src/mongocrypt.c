@@ -611,12 +611,7 @@ static void _csfle_drop_global_ref(void) {
                         g_csfle_state.vtable.status_get_code(status));
             }
             g_csfle_state.vtable.status_destroy(status);
-#ifndef __linux__
             mcr_dll_close(g_csfle_state.dll);
-#endif
-            /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in
-            /// the way ld-linux and GCC interact causes static destructors to not run
-            /// during dlclose(). Still, free the error string:
             mstr_free(g_csfle_state.dll.error_string);
         }
     }
