@@ -681,44 +681,35 @@ _validate_csfle_singleton (mongocrypt_t *crypt, _loaded_csfle found)
  * This should be called as part of mongocrypt_t destruction following a
  * successful loading of csfle.
  */
-static void
-_csfle_drop_global_ref (void)
-{
-   mlib_call_once (&g_csfle_init_flag, init_csfle_state);
+static void _csfle_drop_global_ref(void) {
+    mlib_call_once(&g_csfle_init_flag, init_csfle_state);
 
-   bool dropped_last_ref = false;
-   csfle_global_lib_state old_state = {.refcount = 0};
-   MONGOCRYPT_WITH_MUTEX (g_csfle_state.mtx)
-   {
-      assert (g_csfle_state.refcount > 0);
-      int new_rc = --g_csfle_state.refcount;
-      if (new_rc == 0) {
-         old_state = g_csfle_state;
-         dropped_last_ref = true;
-      }
-   }
-
-   if (dropped_last_ref) {
-      mongo_crypt_v1_status *status = old_state.vtable.status_create ();
-      const int destroy_rc =
-         old_state.vtable.lib_destroy (old_state.csfle_lib, status);
-      if (destroy_rc != MONGO_CRYPT_V1_SUCCESS && status) {
-         fprintf (stderr,
-                  "csfle lib_destroy() failed: %s [Error %d, code %d]\n",
-                  old_state.vtable.status_get_explanation (status),
-                  old_state.vtable.status_get_error (status),
-                  old_state.vtable.status_get_code (status));
-      }
-      old_state.vtable.status_destroy (status);
-
+    MONGOCRYPT_WITH_MUTEX(g_csfle_state.mtx) {
+        assert(g_csfle_state.refcount > 0);
+        int new_rc = --g_csfle_state.refcount;
+        if (new_rc == 0) {
+            mongo_crypt_v1_status *status = g_csfle_state.vtable.status_create();
+            const int destroy_rc = g_csfle_state.vtable.lib_destroy(g_csfle_state.csfle_lib, status);
+            if (destroy_rc != MONGO_CRYPT_V1_SUCCESS && status) {
+                fprintf(stderr,
+                        "csfle lib_destroy() failed: %s [Error %d, code %d]\n",
+                        g_csfle_state.vtable.status_get_explanation(status),
+                        g_csfle_state.vtable.status_get_error(status),
+                        g_csfle_state.vtable.status_get_code(status));
+            }
+            g_csfle_state.vtable.status_destroy(status);
 #ifndef __linux__
-      mcr_dll_close (old_state.dll);
+            mcr_dll_close(g_csfle_state.dll);
+#else
+            /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in
+            /// the way ld-linux and GCC interact causes static destructors to not run
+            /// during dlclose(). Still, free the error string:
+            ///
+            /// Please see: https://jira.mongodb.org/browse/SERVER-63710
+            mstr_free(g_csfle_state.dll.error_string);
 #endif
-      /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in
-      /// the way ld-linux and GCC interact causes static destructors to not run
-      /// during dlclose(). Still, free the error string:
-      mstr_free (old_state.dll.error_string);
-   }
+        }
+    }
 }
 
 /**
