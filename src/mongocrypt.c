@@ -617,6 +617,8 @@ static void _csfle_drop_global_ref(void) {
             /// NOTE: On Linux, skip closing the CSFLE library itself, since a bug in
             /// the way ld-linux and GCC interact causes static destructors to not run
             /// during dlclose(). Still, free the error string:
+            ///
+            /// Please see: https://jira.mongodb.org/browse/SERVER-63710
             mstr_free(g_csfle_state.dll.error_string);
         }
     }
