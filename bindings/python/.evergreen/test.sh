@@ -15,11 +15,7 @@ git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
     export PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
-    PYTHONS=("C:/python/Python27/python.exe"
-             "C:/python/Python34/python.exe"
-             "C:/python/Python35/python.exe"
-             "C:/python/Python36/python.exe"
-             "C:/python/Python37/python.exe"
+    PYTHONS=("C:/python/Python37/python.exe"
              "C:/python/Python38/python.exe"
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe"
@@ -33,12 +29,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
       PYTHONS=("/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
               )
     else
-      PYTHONS=("python"   # Python 2.7 from brew
-               "python3"  # Python 3 from brew
-               "/System/Library/Frameworks/Python.framework/Versions/2.7/bin/python"
-               "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
-               "/Library/Frameworks/Python.framework/Versions/3.5/bin/python3"
-               "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3"
+      PYTHONS=("python3"  # Python 3 from brew
                "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
@@ -51,12 +42,8 @@ elif [ "Darwin" = "$(uname -s)" ]; then
       --version latest --out ../crypt_shared/
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
-    PYTHONS=("/opt/python/2.7/bin/python"
-             "/opt/python/3.4/bin/python3"
-             "/opt/python/3.5/bin/python3"
-             "/opt/python/3.6/bin/python3"
-             "/opt/python/pypy/bin/pypy"
-             "/opt/python/pypy3.6/bin/pypy3")
+    PYTHONS=("/opt/mongodbtoolchain/v3/bin/python3"
+            )
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
       crypt_shared --version latest --out ../crypt_shared/ --target rhel70

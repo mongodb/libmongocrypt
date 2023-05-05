@@ -3,6 +3,9 @@ import sys
 
 from setuptools import setup, find_packages
 
+if sys.version_info[:3] < (3, 7):
+    raise RuntimeError("pymongocrypt requires Python version >= 3.7")
+
 # Make our Windows and macOS wheels platform specific because we embed
 # libmongocrypt. On Linux we ship manylinux2010 wheels which cannot do this or
 # else auditwheel raises the following error:
@@ -64,7 +67,7 @@ setup(
               "bson"],
     test_suite="test",
     license="Apache License, Version 2.0",
-    python_requires=">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*",
+    python_requires=">=3.7",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -72,12 +75,8 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
