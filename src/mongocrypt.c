@@ -362,8 +362,10 @@ typedef struct {
 /**
  * @brief Attempt to open the CSFLE dynamic library and initialize a vtable for
  * it.
+ *
+ * @param status is an optional status to set an error message if `mcr_dll_open` fails.
  */
-static _loaded_csfle _try_load_csfle(const char *filepath, _mongocrypt_log_t *log) {
+static _loaded_csfle _try_load_csfle(const char *filepath, _mongocrypt_log_t *log, mongocrypt_status_t *status) {
     // Try to open the dynamic lib
     mcr_dll lib = mcr_dll_open(filepath);
     // Check for errors, which are represented by strings
@@ -374,6 +376,7 @@ static _loaded_csfle _try_load_csfle(const char *filepath, _mongocrypt_log_t *lo
                         "Error while opening candidate for CSFLE dynamic library [%s]: %s",
                         filepath,
                         lib.error_string.data);
+        CLIENT_ERR("Error while opening candidate for CSFLE dynamic library [%s]: %s", filepath, lib.error_string.data);
         // Free resources, which will include the error string
         mcr_dll_close(lib);
         // Bad:
@@ -476,7 +479,7 @@ static _loaded_csfle _try_find_csfle(mongocrypt_t *crypt) {
             // Do not allow a plain filename to go through, as that will cause the
             // DLL load to search the system.
             mstr_assign(&csfle_cand_filepath, mpath_absolute(csfle_cand_filepath.view, MPATH_NATIVE));
-            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, &crypt->log);
+            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, &crypt->log, crypt->status);
         }
     } else {
         // No override path was specified, so try to find it on the provided
@@ -498,7 +501,7 @@ static _loaded_csfle _try_find_csfle(mongocrypt_t *crypt) {
                 }
             }
             // Try to load the file:
-            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, &crypt->log);
+            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, &crypt->log, NULL /* status */);
             if (candidate_csfle.okay) {
                 // Stop searching:
                 break;
@@ -822,9 +825,11 @@ static bool _try_enable_csfle(mongocrypt_t *crypt) {
     // If a crypt_shared override path was specified, but we did not succeed in
     // loading crypt_shared, that is a hard-error.
     if (crypt->opts.crypt_shared_lib_override_path.data && !found.okay) {
-        CLIENT_ERR("A crypt_shared override path was specified [%s], but we failed to "
-                   "open a dynamic library at that location",
-                   crypt->opts.crypt_shared_lib_override_path.data);
+        // Wrap error with additional information.
+        CLIENT_ERR("A crypt_shared override path was specified [%s], but we failed to open a dynamic "
+                   "library at that location. Load error: [%s]",
+                   crypt->opts.crypt_shared_lib_override_path.data,
+                   mongocrypt_status_message(crypt->status, NULL /* len */));
         return false;
     }
 
