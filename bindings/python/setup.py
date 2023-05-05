@@ -25,8 +25,8 @@ if sys.platform in ('win32', 'darwin'):
 
             def get_tag(self):
                 python, abi, plat = _bdist_wheel.get_tag(self)
-                # Our python source is py2/3 compatible.
-                python, abi = 'py2.py3', 'none'
+                # Our python source is py3 compatible.
+                python, abi = 'py3', 'none'
                 return python, abi, plat
 
         cmdclass['bdist_wheel'] = bdist_wheel

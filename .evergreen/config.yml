@@ -466,7 +466,7 @@ tasks:
     - func: "fetch source"
     - func: "build python release"
     - func: "test python release"
-      vars: { PYTHON: python }
+      vars: { PYTHON: /opt/python/3.7/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -476,7 +476,7 @@ tasks:
     - func: "fetch source"
     - func: "build python release"
     - func: "test python release"
-      vars: { PYTHON: python }
+      vars: { PYTHON: C:/python/Python37/python.exe }
     - func: "upload python release"
 
 - name: "release-python-combine"
