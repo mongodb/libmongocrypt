@@ -242,9 +242,13 @@ Configuration options for a automatic client encryption.
 | [mongocryptdURI] | <code>string</code> |  | A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise |
 | [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | If true, autoEncryption will not attempt to spawn a mongocryptd before connecting |
 | [mongocryptdSpawnPath] | <code>string</code> |  | The path to the mongocryptd executable on the system |
-| [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
+| [mongocryptdSpawnArgs] | <code>string[]</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
+| [cryptSharedLibPath]   | <code>string</code> |  | Full path to a MongoDB Crypt shared library on the system \*|
+| [cryptSharedLibRequired]  | <code>boolean</code> | <code>false</code> | If true, never use mongocryptd and fail when the shared libary cannot be loaded \*|
 
 Extra options related to the mongocryptd process
+
+\* Available in MongoDB 6.0 or higher.
 
 <a name="AutoEncrypter..logger"></a>
 
