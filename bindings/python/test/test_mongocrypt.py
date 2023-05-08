@@ -137,11 +137,11 @@ class TestMongoCryptOptions(unittest.TestCase):
                 MongoCryptOptions(invalid_kms_providers)
         with self.assertRaisesRegex(
                 TypeError, r"kms_providers\['local'\]\['key'\] must be an "
-                           r"instance of bytes or str \(unicode in Python 2\)"):
+                           r"instance of bytes or str"):
             MongoCryptOptions({'local': {'key': None}})
         with self.assertRaisesRegex(
                 TypeError, r"kms_providers\['gcp'\]\['privateKey'\] must be an "
-                           r"instance of bytes or str \(unicode in Python 2\)"):
+                           r"instance of bytes or str"):
             MongoCryptOptions({'gcp': {'email': "foo@bar.baz",
                                        "privateKey": None}})
 

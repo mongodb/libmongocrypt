@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.6.0
+------------------------
+
+- Drop support for Python 2 and Python <3.7. Python >=3.7 is now required.
+
 Changes in Version 1.5.2
 ------------------------
 

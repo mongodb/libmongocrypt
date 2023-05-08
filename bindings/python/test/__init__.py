@@ -25,13 +25,4 @@ try:
 except ImportError:
     pass
 
-# Use assertRaisesRegex if available, otherwise use Python 2.7's
-# deprecated assertRaisesRegexp, with a 'p'.
-if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
-    unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
-
-try:
-    from unittest import mock
-except ImportError:  # python 2
-    import mock
-
+from unittest import mock
