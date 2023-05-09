@@ -267,8 +267,8 @@ Configuration options for a automatic client encryption.
 | [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | If true, autoEncryption will not attempt to spawn a mongocryptd before connecting |
 | [mongocryptdSpawnPath] | <code>string</code> |  | The path to the mongocryptd executable on the system |
 | [mongocryptdSpawnArgs] | <code>string[]</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
-| [cryptSharedLibPath]   | <code>string</code> |  | Full path to a MongoDB Crypt shared library on the system \*|
-| [cryptSharedLibRequired]  | <code>boolean</code> | <code>false</code> | If true, never use mongocryptd and fail when the shared libary cannot be loaded \*|
+| [cryptSharedLibPath]   | <code>string</code> |  | Full path to a MongoDB Crypt shared library on the system. If specified, autoEncryption will not attempt to spawn a mongocryptd, but makes use of the shared library file specified. Note that the path must point to the shared libary file itself, not the folder which contains it. \*|
+| [cryptSharedLibRequired]  | <code>boolean</code> | | If true, never use mongocryptd and fail when the shared libary cannot be loaded. Defaults to true if [`cryptSharedLibPath`] is specified and false otherwise. \*|
 
 Extra options related to the mongocryptd process
 
