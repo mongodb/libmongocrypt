@@ -18,8 +18,7 @@ import copy
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
-from pymongocrypt.compat import (safe_bytearray_or_base64, str_to_bytes,
-                                 unicode_type)
+from pymongocrypt.compat import str_to_bytes, unicode_type
 from pymongocrypt.credentials import _ask_for_kms_credentials
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.state_machine import MongoCryptCallback
@@ -48,12 +47,10 @@ class MongoCryptOptions(object):
                  and optionally a "sessionToken" for temporary credentials.
               - `azure`: Map with "clientId" and "clientSecret" as strings.
               - `gcp`: Map with "email" as a string and "privateKey" as
-                a byte array or a base64-encoded string. On Python 2,
-                base64-encoded strings must be passed as unicode literals.
+                a byte array or a base64-encoded string.
               - `kmip`: Map with "endpoint" as a string.
               - `local`: Map with "key" as a 96-byte array or the equivalent
-                base64-encoded string. On Python 2, base64-encoded strings
-                must be passed as unicode literals.
+                base64-encoded string.
           - `schema_map`: Optional map of collection namespace ("db.coll") to
             JSON Schema.  By default, a collection's JSONSchema is periodically
             polled with the listCollections command. But a JSONSchema may be
@@ -125,8 +122,7 @@ class MongoCryptOptions(object):
                 if not isinstance(kms_providers['gcp']['privateKey'],
                                   (bytes, unicode_type)):
                     raise TypeError("kms_providers['gcp']['privateKey'] must "
-                                    "be an instance of bytes or str "
-                                    "(unicode in Python 2)")
+                                    "be an instance of bytes or str")
 
         if 'kmip' in kms_providers:
             kmip = kms_providers['kmip']
@@ -149,8 +145,7 @@ class MongoCryptOptions(object):
             if not isinstance(kms_providers['local']['key'],
                               (bytes, unicode_type)):
                 raise TypeError("kms_providers['local']['key'] must be an "
-                                "instance of bytes or str (unicode in "
-                                "Python 2)")
+                                "instance of bytes or str")
 
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
@@ -200,17 +195,6 @@ class MongoCrypt(object):
     def __init(self):
         """Internal init helper."""
         kms_providers = self.__opts.kms_providers
-
-        # Make fields that can be passed as binary or string safe to
-        # encode to BSON.
-        base64_or_bytes_fields = [("local", "key"), ("gcp", "privateKey")]
-        for f1, f2 in base64_or_bytes_fields:
-            value = kms_providers.get(f1, {}).get(f2, None)
-            if value is not None:
-                safe_value = safe_bytearray_or_base64(value)
-                if value != safe_value:
-                    kms_providers = copy.deepcopy(kms_providers)
-                    kms_providers[f1][f2] = safe_value
         with MongoCryptBinaryIn(
                 self.__callback.bson_encode(kms_providers)) as kmsopt:
             if not lib.mongocrypt_setopt_kms_providers(
