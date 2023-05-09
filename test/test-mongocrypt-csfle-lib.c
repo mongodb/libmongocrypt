@@ -158,6 +158,18 @@ static void _test_csfle_not_loaded_with_bypassqueryanalysis(_mongocrypt_tester_t
     mongocrypt_destroy(crypt);
 }
 
+// _test_override_error_includes_reason test changes of MONGOCRYPT-576: the error message from mcr_dll_open is
+// propagated.
+static void _test_override_error_includes_reason(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = get_test_mongocrypt(tester);
+    // Set an incorrect override path.
+    mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt, "invalid_path_to_crypt_shared.so");
+    ASSERT_FAILS(mongocrypt_init(crypt), crypt, "Error while opening candidate");
+    BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) == NULL);
+    BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) == 0);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_csfle_no_paths);
     INSTALL_TEST(_test_csfle_not_found);
@@ -168,4 +180,5 @@ void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_csfle_path_override_fail);
     INSTALL_TEST(_test_cur_exe_path);
     INSTALL_TEST(_test_csfle_not_loaded_with_bypassqueryanalysis);
+    INSTALL_TEST(_test_override_error_includes_reason);
 }
