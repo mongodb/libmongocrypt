@@ -272,7 +272,7 @@ Configuration options for a automatic client encryption.
 
 Extra options related to the mongocryptd process
 
-\* Available in MongoDB 6.0 or higher.
+\* _Available in MongoDB 6.0 or higher._
 
 <a name="AutoEncrypter..logger"></a>
 
