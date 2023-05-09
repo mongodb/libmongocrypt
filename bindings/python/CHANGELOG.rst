@@ -6,6 +6,9 @@ Changes in Version 1.6.0
 
 - Drop support for Python 2 and Python <3.7. Python >=3.7 is now required.
 - Bundle libmongocrypt 1.8.0 in release wheels.
+- **Remove support for libmongocrypt <=1.8.0, libmongocrypt >=1.8.0
+  is now required.** Note this is only relevant for users that install from
+  source or use the ``PYMONGOCRYPT_LIB`` environment variable.
 
 Changes in Version 1.5.2
 ------------------------
