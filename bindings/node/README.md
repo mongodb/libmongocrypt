@@ -159,7 +159,6 @@ An internal class to be used by the driver for auto encryption
 | client | <code>MongoClient</code> | The client autoEncryption is enabled on |
 | [options] | [<code>AutoEncryptionOptions</code>](#AutoEncrypter..AutoEncryptionOptions) | Optional settings |
 
-Create an AutoEncrypter
 
 **Note**: Do not instantiate this class directly. Rather, supply the relevant options to a MongoClient
 
@@ -168,7 +167,7 @@ It protects against a malicious server advertising a false JSON Schema, which co
 Schemas supplied in the schemaMap only apply to configuring automatic encryption for Client-Side Field Level Encryption.
 Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
-**Example**  
+**Example**: Create an AutoEncrypter that makes use of mongocryptd
 ```js
 // Enabling autoEncryption via a MongoClient
 const { MongoClient } = require('mongodb');
@@ -186,6 +185,31 @@ const client = new MongoClient(URL, {
 await client.connect();
 // From here on, the client will be encrypting / decrypting automatically
 ```
+
+
+**Example**: Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library 
+```js
+// Enabling autoEncryption via a MongoClient
+const { MongoClient } = require('mongodb');
+const client = new MongoClient(URL, {
+  autoEncryption: {
+    kmsProviders: {
+      aws: {
+        accessKeyId: AWS_ACCESS_KEY,
+        secretAccessKey: AWS_SECRET_KEY
+      }
+    },
+    extraOptions: {
+      cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
+      cryptSharedLibRequired: true
+    }
+  }
+});
+
+await client.connect();
+// From here on, the client will be encrypting / decrypting automatically
+```
+
 <a name="AutoEncrypter+cryptSharedLibVersionInfo"></a>
 
 ### *autoEncrypter*.cryptSharedLibVersionInfo
