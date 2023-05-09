@@ -169,7 +169,7 @@ Other validation rules in the JSON schema will not be enforced by the driver and
 
 **Example**: Create an AutoEncrypter that makes use of mongocryptd
 ```js
-// Enabling autoEncryption via a MongoClient
+// Enabling autoEncryption via a MongoClient using mongocryptd
 const { MongoClient } = require('mongodb');
 const client = new MongoClient(URL, {
   autoEncryption: {
@@ -189,7 +189,7 @@ await client.connect();
 
 **Example**: Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library 
 ```js
-// Enabling autoEncryption via a MongoClient
+// Enabling autoEncryption via a MongoClient using CSFLE shared library
 const { MongoClient } = require('mongodb');
 const client = new MongoClient(URL, {
   autoEncryption: {
