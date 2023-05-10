@@ -193,7 +193,7 @@ const { MongoClient } = require('mongodb');
 const client = new MongoClient(URL, {
   autoEncryption: {
     kmsProviders: {
-      aws: {...}
+      aws: {}
     },
     extraOptions: {
       cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
