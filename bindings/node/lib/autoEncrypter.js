@@ -93,12 +93,14 @@ module.exports = function (modules) {
      *
      * await client.connect();
      * // From here on, the client will be encrypting / decrypting automatically
-     * @example <caption>Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library
+     * @example <caption>Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library</caption>
      * // Enabling autoEncryption via a MongoClient using CSFLE shared library
      * const { MongoClient } = require('mongodb');
      * const client = new MongoClient(URL, {
      * autoEncryption: {
-     *   ...,
+     *   kmsProviders: {
+     *     aws: {...}
+     *   },
      *   extraOptions: {
      *    cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
      *    cryptSharedLibRequired: true

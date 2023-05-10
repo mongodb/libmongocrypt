@@ -168,7 +168,7 @@ It protects against a malicious server advertising a false JSON Schema, which co
 Schemas supplied in the schemaMap only apply to configuring automatic encryption for Client-Side Field Level Encryption.
 Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
-**Example** *(Create and AutoEncrypter that makes use of mongocryptd)*  
+**Example** *(Create an AutoEncrypter that makes use of mongocryptd)*  
 ```js
 // Enabling autoEncryption via a MongoClient using mongocryptd
 const { MongoClient } = require('mongodb');
@@ -186,14 +186,15 @@ const client = new MongoClient(URL, {
 await client.connect();
 // From here on, the client will be encrypting / decrypting automatically
 ```
-**Example**  
+**Example** *(Create an AutoEncrypter that makes use of libmongocrypt&#x27;s CSFLE shared library)*  
 ```js
-<caption>Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library
 // Enabling autoEncryption via a MongoClient using CSFLE shared library
 const { MongoClient } = require('mongodb');
 const client = new MongoClient(URL, {
 autoEncryption: {
-  ...,
+  kmsProviders: {
+    aws: {...}
+  },
   extraOptions: {
    cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
    cryptSharedLibRequired: true
