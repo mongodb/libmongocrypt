@@ -27,11 +27,14 @@ module.exports = function (modules) {
 
   /**
    * Extra options related to the mongocryptd process
+   * \* _Available in MongoDB 6.0 or higher._
    * @typedef {object} AutoEncrypter~AutoEncryptionExtraOptions
    * @property {string} [mongocryptdURI] A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise
    * @property {boolean} [mongocryptdBypassSpawn=false] If true, autoEncryption will not attempt to spawn a mongocryptd before connecting
    * @property {string} [mongocryptdSpawnPath] The path to the mongocryptd executable on the system
    * @property {string[]} [mongocryptdSpawnArgs] Command line arguments to use when auto-spawning a mongocryptd
+   * @property {string} [cryptSharedLibPath] Full path to a MongoDB Crypt shared library on the system. If specified, autoEncryption will not attempt to spawn a mongocryptd, but makes use of the shared library file specified. Note that the path must point to the shared libary file itself, not the folder which contains it \*
+   * @property {boolean} [cryptSharedLibRequired] If true, never use mongocryptd and fail when the MongoDB Crypt shared libary cannot be loaded. Defaults to true if [cryptSharedLibPath] is specified and false otherwise \*
    */
 
   /**
@@ -74,8 +77,8 @@ module.exports = function (modules) {
      * @param {MongoClient} client The client autoEncryption is enabled on
      * @param {AutoEncrypter~AutoEncryptionOptions} [options] Optional settings
      *
-     * @example
-     * // Enabling autoEncryption via a MongoClient
+     * @example <caption>Create an AutoEncrypter that makes use of mongocryptd</caption>
+     * // Enabling autoEncryption via a MongoClient using mongocryptd
      * const { MongoClient } = require('mongodb');
      * const client = new MongoClient(URL, {
      *   autoEncryption: {
@@ -86,6 +89,21 @@ module.exports = function (modules) {
      *       }
      *     }
      *   }
+     * });
+     *
+     * await client.connect();
+     * // From here on, the client will be encrypting / decrypting automatically
+     * @example <caption>Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library
+     * // Enabling autoEncryption via a MongoClient using CSFLE shared library
+     * const { MongoClient } = require('mongodb');
+     * const client = new MongoClient(URL, {
+     * autoEncryption: {
+     *   ...,
+     *   extraOptions: {
+     *    cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
+     *    cryptSharedLibRequired: true
+     *   }
+     *  }
      * });
      *
      * await client.connect();

@@ -159,6 +159,7 @@ An internal class to be used by the driver for auto encryption
 | client | <code>MongoClient</code> | The client autoEncryption is enabled on |
 | [options] | [<code>AutoEncryptionOptions</code>](#AutoEncrypter..AutoEncryptionOptions) | Optional settings |
 
+Create an AutoEncrypter
 
 **Note**: Do not instantiate this class directly. Rather, supply the relevant options to a MongoClient
 
@@ -167,7 +168,7 @@ It protects against a malicious server advertising a false JSON Schema, which co
 Schemas supplied in the schemaMap only apply to configuring automatic encryption for Client-Side Field Level Encryption.
 Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
 
-**Example**: Create an AutoEncrypter that makes use of mongocryptd
+**Example** *(Create and AutoEncrypter that makes use of mongocryptd)*  
 ```js
 // Enabling autoEncryption via a MongoClient using mongocryptd
 const { MongoClient } = require('mongodb');
@@ -185,31 +186,24 @@ const client = new MongoClient(URL, {
 await client.connect();
 // From here on, the client will be encrypting / decrypting automatically
 ```
-
-
-**Example**: Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library 
+**Example**  
 ```js
+<caption>Create an AutoEncrypter that makes use of libmongocrypt's CSFLE shared library
 // Enabling autoEncryption via a MongoClient using CSFLE shared library
 const { MongoClient } = require('mongodb');
 const client = new MongoClient(URL, {
-  autoEncryption: {
-    kmsProviders: {
-      aws: {
-        accessKeyId: AWS_ACCESS_KEY,
-        secretAccessKey: AWS_SECRET_KEY
-      }
-    },
-    extraOptions: {
-      cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
-      cryptSharedLibRequired: true
-    }
+autoEncryption: {
+  ...,
+  extraOptions: {
+   cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
+   cryptSharedLibRequired: true
   }
+ }
 });
 
 await client.connect();
 // From here on, the client will be encrypting / decrypting automatically
 ```
-
 <a name="AutoEncrypter+cryptSharedLibVersionInfo"></a>
 
 ### *autoEncrypter*.cryptSharedLibVersionInfo
@@ -266,12 +260,11 @@ Configuration options for a automatic client encryption.
 | [mongocryptdURI] | <code>string</code> |  | A local process the driver communicates with to determine how to encrypt values in a command. Defaults to "mongodb://%2Fvar%2Fmongocryptd.sock" if domain sockets are available or "mongodb://localhost:27020" otherwise |
 | [mongocryptdBypassSpawn] | <code>boolean</code> | <code>false</code> | If true, autoEncryption will not attempt to spawn a mongocryptd before connecting |
 | [mongocryptdSpawnPath] | <code>string</code> |  | The path to the mongocryptd executable on the system |
-| [mongocryptdSpawnArgs] | <code>string[]</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
-| [cryptSharedLibPath]   | <code>string</code> |  | Full path to a MongoDB Crypt shared library on the system. If specified, autoEncryption will not attempt to spawn a mongocryptd, but makes use of the shared library file specified. Note that the path must point to the shared libary file itself, not the folder which contains it. \*|
-| [cryptSharedLibRequired]  | <code>boolean</code> | | If true, never use mongocryptd and fail when the MongoDB Crypt shared libary cannot be loaded. Defaults to true if [cryptSharedLibPath] is specified and false otherwise. \*|
+| [mongocryptdSpawnArgs] | <code>Array.&lt;string&gt;</code> |  | Command line arguments to use when auto-spawning a mongocryptd |
+| [cryptSharedLibPath] | <code>string</code> |  | Full path to a MongoDB Crypt shared library on the system. If specified, autoEncryption will not attempt to spawn a mongocryptd, but makes use of the shared library file specified. Note that the path must point to the shared libary file itself, not the folder which contains it \* |
+| [cryptSharedLibRequired] | <code>boolean</code> |  | If true, never use mongocryptd and fail when the MongoDB Crypt shared libary cannot be loaded. Defaults to true if [cryptSharedLibPath] is specified and false otherwise \* |
 
 Extra options related to the mongocryptd process
-
 \* _Available in MongoDB 6.0 or higher._
 
 <a name="AutoEncrypter..logger"></a>
