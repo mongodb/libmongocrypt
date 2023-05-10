@@ -554,8 +554,6 @@ module.exports = function (modules) {
     }
 
     /**
-     * @experimental Public Technical Preview
-     *
      * A convenience method for creating an encrypted collection.
      * This method will create data keys for any encryptedFields that do not have a `keyId` defined
      * and then create a new collection with the full set of encryptedFields.

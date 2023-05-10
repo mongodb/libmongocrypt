@@ -583,11 +583,6 @@ if (!oldKey) {
 - [<code>MongoCryptCreateDataKeyError</code>](#MongoCryptCreateDataKeyError) - If part way through the process a createDataKey invocation fails, an error will be rejected that has the partial `encryptedFields` that were created.
 - [<code>MongoCryptCreateEncryptedCollectionError</code>](#MongoCryptCreateEncryptedCollectionError) - If creating the collection fails, an error will be rejected that has the entire `encryptedFields` that were created.
 
-**Experimental**: Public Technical Preview
-
-A convenience method for creating an encrypted collection.
-This method will create data keys for any encryptedFields that do not have a `keyId` defined
-and then create a new collection with the full set of encryptedFields.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -597,6 +592,10 @@ and then create a new collection with the full set of encryptedFields.
 | options.provider | <code>string</code> | KMS provider name |
 | [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | masterKey to pass to createDataKey |
 | options.createCollectionOptions | <code>CreateCollectionOptions</code> | options to pass to createCollection, must include `encryptedFields` |
+
+A convenience method for creating an encrypted collection.
+This method will create data keys for any encryptedFields that do not have a `keyId` defined
+and then create a new collection with the full set of encryptedFields.
 
 **Returns**: <code>Promise.&lt;{collection: Collection.&lt;TSchema&gt;, encryptedFields: Document}&gt;</code> - - created collection and generated encryptedFields  
 <a name="ClientEncryption+encrypt"></a>
@@ -708,13 +707,11 @@ An error indicating that something went wrong specifically with MongoDB Client E
 <a name="MongoCryptCreateDataKeyError"></a>
 
 ## MongoCryptCreateDataKeyError
-**Experimental**: Public Technical Preview  
 An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
 
 <a name="MongoCryptCreateEncryptedCollectionError"></a>
 
 ## MongoCryptCreateEncryptedCollectionError
-**Experimental**: Public Technical Preview  
 An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
 
 <a name="MongoCryptAzureKMSRequestError"></a>
