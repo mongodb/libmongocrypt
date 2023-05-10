@@ -102,10 +102,10 @@ module.exports = function (modules) {
      *       aws: {...}
      *     },
      *     extraOptions: {
-     *      cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
-     *      cryptSharedLibRequired: true
+     *       cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
+     *       cryptSharedLibRequired: true
      *     }
-     *    }
+     *   }
      * });
      *
      * await client.connect();
