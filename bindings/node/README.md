@@ -191,15 +191,15 @@ await client.connect();
 // Enabling autoEncryption via a MongoClient using CSFLE shared library
 const { MongoClient } = require('mongodb');
 const client = new MongoClient(URL, {
-autoEncryption: {
-  kmsProviders: {
-    aws: {...}
-  },
-  extraOptions: {
-   cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
-   cryptSharedLibRequired: true
-  }
- }
+  autoEncryption: {
+    kmsProviders: {
+      aws: {...}
+    },
+    extraOptions: {
+     cryptSharedLibPath: '/path/to/local/crypt/shared/lib',
+     cryptSharedLibRequired: true
+    }
+   }
 });
 
 await client.connect();
