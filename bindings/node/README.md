@@ -913,8 +913,8 @@ For double and decimal128, min/max/precision must all be set, or all be unset.
 | [keyId] | [<code>ClientEncryptionDataKeyId</code>](#ClientEncryptionDataKeyId) | The id of the Binary dataKey to use for encryption. |
 | [keyAltName] | <code>string</code> | A unique string name corresponding to an already existing dataKey. |
 | [algorithm] | <code>string</code> | The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'` |
-| [contentionFactor] | <code>bigint</code> \| <code>number</code> | (experimental) - the contention factor. |
-| queryType | <code>&#x27;equality&#x27;</code> \| <code>&#x27;rangePreview&#x27;</code> | (experimental) - the query type supported. |
+| [contentionFactor] | <code>bigint</code> \| <code>number</code> | the contention factor. |
+| queryType | <code>&#x27;equality&#x27;</code> \| <code>&#x27;rangePreview&#x27;</code> | the query type supported.  only the query type `equality` is stable at this time.  queryType `rangePreview` is experimental. |
 | [rangeOptions] | [<code>RangeOptions</code>](#RangeOptions) | (experimental) The index options for a Queryable Encryption field supporting "rangePreview" queries. |
 
 Options to provide when encrypting data.
