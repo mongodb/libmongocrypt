@@ -554,8 +554,6 @@ module.exports = function (modules) {
     }
 
     /**
-     * @experimental Public Technical Preview
-     *
      * A convenience method for creating an encrypted collection.
      * This method will create data keys for any encryptedFields that do not have a `keyId` defined
      * and then create a new collection with the full set of encryptedFields.
@@ -635,8 +633,8 @@ module.exports = function (modules) {
      * @property {ClientEncryptionDataKeyId} [keyId] The id of the Binary dataKey to use for encryption.
      * @property {string} [keyAltName] A unique string name corresponding to an already existing dataKey.
      * @property {string} [algorithm] The algorithm to use for encryption. Must be either `'AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic'`, `'AEAD_AES_256_CBC_HMAC_SHA_512-Random'`, `'Indexed'` or `'Unindexed'`
-     * @property {bigint | number} [contentionFactor] (experimental) - the contention factor.
-     * @property {'equality' | 'rangePreview'} queryType (experimental) - the query type supported.
+     * @property {bigint | number} [contentionFactor] - the contention factor.
+     * @property {'equality' | 'rangePreview'} queryType - the query type supported.  only the query type `equality` is stable at this time.  queryType `rangePreview` is experimental.
      * @property {RangeOptions} [rangeOptions] (experimental) The index options for a Queryable Encryption field supporting "rangePreview" queries.
      */
 
