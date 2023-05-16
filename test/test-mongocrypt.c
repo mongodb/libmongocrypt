@@ -837,6 +837,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_fle2_payloads(&tester);
     _mongocrypt_tester_install_fle2_iev_v2_payloads(&tester);
     _mongocrypt_tester_install_efc(&tester);
+    _mongocrypt_tester_install_cleanup(&tester);
     _mongocrypt_tester_install_compact(&tester);
     _mongocrypt_tester_install_fle2_payload_uev(&tester);
     _mongocrypt_tester_install_fle2_payload_uev_v2(&tester);

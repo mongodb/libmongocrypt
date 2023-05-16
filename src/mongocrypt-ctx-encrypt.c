@@ -469,9 +469,10 @@ static bool _fle2_collect_keys_for_deleteTokens(mongocrypt_ctx_t *ctx) {
     return true;
 }
 
-/* _fle2_collect_keys_for_compact requests keys required to produce
- * compactionTokens. compactionTokens is only applicable to FLE 2. */
-static bool _fle2_collect_keys_for_compact(mongocrypt_ctx_t *ctx) {
+/* _fle2_collect_keys_for_compaction requests keys required to produce
+ * compactionTokens or cleanupTokens.
+ * compactionTokens and cleanupTokens are only applicable to FLE 2. */
+static bool _fle2_collect_keys_for_compaction(mongocrypt_ctx_t *ctx) {
     _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
 
     BSON_ASSERT_PARAM(ctx);
@@ -483,11 +484,12 @@ static bool _fle2_collect_keys_for_compact(mongocrypt_ctx_t *ctx) {
 
     const char *cmd_name = ectx->cmd_name;
 
-    if (0 != strcmp(cmd_name, "compactStructuredEncryptionData")) {
+    if (0 != strcmp(cmd_name, "compactStructuredEncryptionData")
+        && 0 != strcmp(cmd_name, "cleanupStructuredEncryptionData")) {
         return true;
     }
 
-    /* compactStructuredEncryptionData must not be sent to mongocryptd. */
+    /* (compact/cleanup)StructuredEncryptionData must not be sent to mongocryptd. */
     ectx->bypass_query_analysis = true;
 
     mc_EncryptedField_t *field;
@@ -550,7 +552,7 @@ static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
         return false;
     }
 
-    if (!_fle2_collect_keys_for_compact(ctx)) {
+    if (!_fle2_collect_keys_for_compaction(ctx)) {
         return false;
     }
 
@@ -1232,7 +1234,11 @@ must_omit_encryptionInformation(const char *command_name, const bson_t *command,
     bool found = false;
 
     // prohibited_commands prohibit encryptionInformation on mongod / mongos.
-    const char *prohibited_commands[] = {"compactStructuredEncryptionData", "create", "collMod", "createIndexes"};
+    const char *prohibited_commands[] = {"compactStructuredEncryptionData",
+                                         "cleanupStructuredEncryptionData",
+                                         "create",
+                                         "collMod",
+                                         "createIndexes"};
 
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(command);
@@ -1274,7 +1280,9 @@ must_omit_encryptionInformation(const char *command_name, const bson_t *command,
 }
 
 /* _fle2_append_compactionTokens appends compactionTokens if command_name is
- * "compactStructuredEncryptionData" */
+ * "compactStructuredEncryptionData" or cleanupTokens if command_name is
+ * "cleanupStructuredEncryptionData"
+ */
 static bool _fle2_append_compactionTokens(_mongocrypt_crypto_t *crypto,
                                           _mongocrypt_key_broker_t *kb,
                                           mc_EncryptedFieldConfig_t *efc,
@@ -1290,11 +1298,17 @@ static bool _fle2_append_compactionTokens(_mongocrypt_crypto_t *crypto,
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(out);
 
-    if (0 != strcmp(command_name, "compactStructuredEncryptionData")) {
+    bool cleanup = (0 == strcmp(command_name, "cleanupStructuredEncryptionData"));
+
+    if (0 != strcmp(command_name, "compactStructuredEncryptionData") && !cleanup) {
         return true;
     }
 
-    BSON_APPEND_DOCUMENT_BEGIN(out, "compactionTokens", &result_compactionTokens);
+    if (cleanup) {
+        BSON_APPEND_DOCUMENT_BEGIN(out, "cleanupTokens", &result_compactionTokens);
+    } else {
+        BSON_APPEND_DOCUMENT_BEGIN(out, "compactionTokens", &result_compactionTokens);
+    }
 
     mc_EncryptedField_t *ptr;
     for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
@@ -2461,6 +2475,8 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **colln
         *bypass = true;
     } else if (0 == strcmp(cmd_name, "compactStructuredEncryptionData")) {
         eligible = true;
+    } else if (0 == strcmp(cmd_name, "cleanupStructuredEncryptionData")) {
+        eligible = true;
     } else if (0 == strcmp(cmd_name, "collMod")) {
         eligible = true;
     } else if (0 == strcmp(cmd_name, "hello")) {
@@ -2681,7 +2697,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
         return false;
     }
 
-    if (!_fle2_collect_keys_for_compact(ctx)) {
+    if (!_fle2_collect_keys_for_compaction(ctx)) {
         return false;
     }
 

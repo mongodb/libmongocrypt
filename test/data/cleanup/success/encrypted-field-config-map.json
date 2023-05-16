@@ -1,0 +1,46 @@
+{
+    "db.test": {
+        "escCollection": "esc",
+        "ecocCollection": "ecoc",
+        "fields": [
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                        "subType": "04"
+                    }
+                },
+                "path": "encrypted",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 0
+                }
+            },
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "q83vqxI0mHYSNBI0VniQEg==",
+                        "subType": "04"
+                    }
+                },
+                "path": "nested.encrypted",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 0
+                }
+            },
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                        "subType": "04"
+                    }
+                },
+                "path": "nested.notindexed",
+                "bsonType": "string"
+            }
+        ]
+    }
+}

@@ -165,6 +165,8 @@ void _mongocrypt_tester_install_fle2_iev_v2_payloads(_mongocrypt_tester_t *teste
 
 void _mongocrypt_tester_install_efc(_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_cleanup(_mongocrypt_tester_t *tester);
+
 void _mongocrypt_tester_install_compact(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_fle2_payload_uev(_mongocrypt_tester_t *tester);
