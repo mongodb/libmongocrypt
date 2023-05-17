@@ -959,6 +959,7 @@ static void _test_encrypt_init_each_cmd(_mongocrypt_tester_t *tester) {
     _init_bypass(tester, "{'getCmdLineOpts': 1}");
     _init_bypass(tester, "{'getLog': 1}");
     _init_ok(tester, "{'collMod': 'coll'}");
+    _init_bypass(tester, "{'listSearchIndexes': 'coll' }");
     _init_bypass(tester, "{'createSearchIndex': 'coll' }");
     _init_bypass(tester, "{'dropSearchIndex': 'coll' }");
     _init_bypass(tester, "{'updateSearchIndex': 'coll' }");
