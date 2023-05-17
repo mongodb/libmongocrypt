@@ -2471,6 +2471,14 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **colln
         *bypass = true;
     } else if (0 == strcmp(cmd_name, "getLog")) {
         *bypass = true;
+    } else if (0 == strcmp(cmd_name, "createSearchIndexes")) {
+        *bypass = true;
+    } else if (0 == strcmp(cmd_name, "listSearchIndexes")) {
+        *bypass = true;
+    } else if (0 == strcmp(cmd_name, "dropSearchIndex")) {
+        *bypass = true;
+    } else if (0 == strcmp(cmd_name, "updateSearchIndex")) {
+        *bypass = true;
     }
 
     /* database/client commands are ineligible. */
