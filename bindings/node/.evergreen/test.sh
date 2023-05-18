@@ -8,10 +8,8 @@ echo "Setting up environment"
 export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
 hash -r
 
-export NODE_LTS_NAME="gallium"
+export NODE_LTS_VERSION=20
 source ./.evergreen/install-dependencies.sh
-
-
 
 # Handle the circular dependency when testing with a real client.
 MONGODB_CLIENT_ENCRYPTION_OVERRIDE="$(pwd)"
