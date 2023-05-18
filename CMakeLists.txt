@@ -473,6 +473,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-cache.c
    test/test-mongocrypt-cache-oauth.c
    test/test-mongocrypt-ciphertext.c
+   test/test-mongocrypt-cleanup.c
    test/test-mongocrypt-compact.c
    test/test-mongocrypt-crypto.c
    test/test-mongocrypt-crypto-hooks.c

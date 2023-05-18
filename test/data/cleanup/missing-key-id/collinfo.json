@@ -1,0 +1,20 @@
+{
+    "options": {
+        "encryptedFields": {
+            "escCollection": "fle2.basic.esc",
+            "ecocCollection": "fle2.basic.ecoc",
+            "fields": [
+                {
+                    "path": "missingKeyId",
+                    "bsonType": "string",
+                    "queries": {
+                        "queryType": "equality",
+                        "contention": {
+                            "$numberLong": "0"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
