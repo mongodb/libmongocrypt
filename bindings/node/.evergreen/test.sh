@@ -29,7 +29,3 @@ fi
 echo "Running tests"
 npm run check:lint
 MONGODB_NODE_SKIP_LIVE_TESTS=true npm test
-
-# Run prebuild and deploy
-echo "Running prebuild and deploy"
-bash ./.evergreen/prebuild.sh

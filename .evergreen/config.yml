@@ -163,6 +163,20 @@ functions:
           OMIT_PEER_DEPS: "true"
           NODE_NVM_USE_VERSION: ${nvm_use_version|18}
 
+  "build and publish node":
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt/bindings/node"
+        args:
+          - "./.evergreen/prebuild.sh"
+        env:
+          PROJECT_DIRECTORY: ${project_directory}
+          NODE_GITHUB_TOKEN: ${node_github_token}
+          DISTRO_ID: ${distro_id}
+          BUILD_VARIANT: ${build_variant}
+          NODE_LTS_VERSION: ${nvm_use_version|16}
+
   "attach node xunit results":
     - command: attach.xunit_results
       params:
@@ -501,6 +515,11 @@ tasks:
     - func: "fetch source"
     - func: "build and test node"
     - func: "attach node xunit results"
+
+- name: build-and-publish-node
+  commands:
+    - func: "fetch source"
+    - func: "build and publish node"
 
 - name: build-and-test-node-no-peer-dependencies
   commands:
@@ -984,6 +1003,7 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-node
   - build-and-test-node-no-peer-dependencies
+  - build-and-publish-node
   - test-java
   - name: publish-packages
     distros:
@@ -997,6 +1017,7 @@ buildvariants:
   - build-and-test-asan-mac
   - build-and-test-node
   - build-and-test-node-no-peer-dependencies
+  - build-and-publish-node
   - build-and-test-csharp
   - test-python
   - test-java
@@ -1042,6 +1063,7 @@ buildvariants:
   - build-and-test-csharp
   - build-and-test-node
   - build-and-test-node-no-peer-dependencies
+  - build-and-publish-node
   - test-java
   - windows-upload-check
 - name: windows-test-python
@@ -1271,6 +1293,7 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-node
   - build-and-test-node-no-peer-dependencies
+  - build-and-publish-node
   - test-java
   - name: publish-packages
     distros:
@@ -1424,6 +1447,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-node
   - build-and-test-node-no-peer-dependencies
+  - build-and-publish-node
   - test-python
   - test-java
 - name: windows-vs2017-32bit

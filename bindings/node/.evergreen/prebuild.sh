@@ -5,6 +5,19 @@ if [ -z ${DISTRO_ID+omitted} ]; then echo "DISTRO_ID is unset" && exit 1; fi
 set -o errexit
 set +o xtrace
 
+echo "Setting up environment"
+
+export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
+hash -r
+
+NODE_LTS_VERSION=${NODE_LTS_VERSION:-16}
+export NODE_LTS_VERSION=${NODE_LTS_VERSION}
+source ./.evergreen/install-dependencies.sh
+
+# install node dependencies
+echo "Installing package dependencies (includes a static build)"
+bash ./etc/build-static.sh
+
 # FLE platform matrix (as of Feb 8th 2022)
 # macos   arm64  (compiled on 11.00)
 # macos   x86_64 (compiled on 10.14)
