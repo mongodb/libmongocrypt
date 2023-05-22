@@ -169,10 +169,16 @@ describe('#loadCredentials', function () {
         httpServer = http
           .createServer((_, res) => {
             if (status === 200) {
-              res.writeHead(200, { 'Content-Type': 'application/json', 'Metadata-Flavor': 'Google' });
+              res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Metadata-Flavor': 'Google'
+              });
               res.end(JSON.stringify({ access_token: 'abc' }));
             } else {
-              res.writeHead(200, { 'Content-Type': 'application/json', 'Metadata-Flavor': 'Google' });
+              res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Metadata-Flavor': 'Google'
+              });
               res.end('{}');
             }
           })
