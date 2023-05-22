@@ -18,13 +18,12 @@ source ./.evergreen/install-dependencies.sh
 echo "Installing package dependencies (includes a static build)"
 bash ./etc/build-static.sh
 
-# FLE platform matrix (as of Feb 8th 2022)
+# FLE platform matrix (as of 22 May 2023)
 # macos   arm64  (compiled on 11.00)
 # macos   x86_64 (compiled on 10.14)
-# windows x86_64 (compiled on vs2017)
-# linux   x86_64 (releases on RHEL7)
-# linux   s390x
-# linux   arm64
+# windows x86_64 (compiled on vs2019)
+# linux   x86_64 (compiled on Ubuntu 16.04)
+# linux   arm64  (compiled on Ubuntu 16.04)
 
 # Determines the OS name through uname results
 # Returns 'windows' 'linux' 'macos' or 'unknown'
