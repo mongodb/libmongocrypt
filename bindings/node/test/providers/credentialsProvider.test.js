@@ -175,7 +175,7 @@ describe('#loadCredentials', function () {
               });
               res.end(JSON.stringify({ access_token: 'abc' }));
             } else {
-              res.writeHead(200, {
+              res.writeHead(401, {
                 'Content-Type': 'application/json',
                 'Metadata-Flavor': 'Google'
               });
