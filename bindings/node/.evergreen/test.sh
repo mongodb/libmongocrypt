@@ -8,7 +8,7 @@ echo "Setting up environment"
 export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
 hash -r
 
-export NODE_LTS_VERSION=20
+export NODE_LTS_VERSION=16
 source ./.evergreen/install-dependencies.sh
 
 # Handle the circular dependency when testing with a real client.
@@ -20,8 +20,8 @@ echo "Installing package dependencies (includes a static build)"
 bash ./etc/build-static.sh
 
 if [[ $OMIT_PEER_DEPS != "true" ]]; then
-    npm install '@aws-sdk/credential-providers'
-    npm install 'gcp-metadata'
+  npm install '@aws-sdk/credential-providers'
+  npm install 'gcp-metadata'
 fi
 
 # Run tests
