@@ -8,7 +8,8 @@ echo "Setting up environment"
 export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
 hash -r
 
-export NODE_LTS_VERSION=16
+NODE_LTS_VERSION=${NODE_LTS_VERSION:-16}
+export NODE_LTS_VERSION=${NODE_LTS_VERSION}
 source ./.evergreen/install-dependencies.sh
 
 # Handle the circular dependency when testing with a real client.
