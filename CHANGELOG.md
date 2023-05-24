@@ -1,4 +1,6 @@
 # ChangeLog
+## 1.8.1
+- Bypass search index management commands in automatic encryption
 ## 1.8.0
 This release adds stable support of the Queryable Encryption (QE) feature for the "Indexed" and "Unindexed" algorithms.
 ## 1.8.0-alpha1
