@@ -5,13 +5,25 @@ if [ -z ${DISTRO_ID+omitted} ]; then echo "DISTRO_ID is unset" && exit 1; fi
 set -o errexit
 set +o xtrace
 
-# FLE platform matrix (as of Feb 8th 2022)
+echo "Setting up environment"
+
+export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
+hash -r
+
+NODE_LTS_VERSION=${NODE_LTS_VERSION:-16}
+export NODE_LTS_VERSION=${NODE_LTS_VERSION}
+source ./.evergreen/install-dependencies.sh
+
+# install node dependencies
+echo "Installing package dependencies (includes a static build)"
+bash ./etc/build-static.sh
+
+# FLE platform matrix (as of 22 May 2023)
 # macos   arm64  (compiled on 11.00)
 # macos   x86_64 (compiled on 10.14)
-# windows x86_64 (compiled on vs2017)
-# linux   x86_64 (releases on RHEL7)
-# linux   s390x
-# linux   arm64
+# windows x86_64 (compiled on vs2019)
+# linux   x86_64 (compiled on Ubuntu 16.04)
+# linux   arm64  (compiled on Ubuntu 16.04)
 
 # Determines the OS name through uname results
 # Returns 'windows' 'linux' 'macos' or 'unknown'
@@ -68,27 +80,6 @@ if [[ -n $NODE_FORCE_PUBLISH ]]; then
 elif [[ "$VERSION_AT_HEAD" != "$VERSION_AT_HEAD_1" ]]; then
   echo "Difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
   echo "Beginning prebuild"
-
-  if [[ "$OS" == "linux" ]]; then
-    # Handle limiting which linux gets to publish prebuild
-    ARCH=$(uname -m)
-
-    if [[ $DISTRO_ID == "rhel70-small" ]]; then
-      # only publish x86_64 linux prebuilds from RHEL 7
-      run_prebuild
-    elif [[ "$ARCH" != "x86_64" ]]; then
-      # Non-x86 linux variants should just publish
-      run_prebuild
-    else
-      # Non RHEL 7 linux variants should just test the prebuild task
-      echo "Will prebuild without submit ($OS - $ARCH - $DISTRO_ID)"
-      npm run prebuild
-    fi
-
-    exit 0
-  fi
-
-  # Windows and MacOS
   run_prebuild
 else
   echo "No difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
