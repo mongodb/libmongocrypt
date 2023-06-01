@@ -26,14 +26,19 @@ import datetime
 import re
 import subprocess
 import sys
-if sys.version_info < (3, 9):
-    from distutils.version import LooseVersion as Version
-    from distutils.version import LooseVersion as parse_version
-else:
-    # on newer versions of Python use setuptools rather than distutils
-    # (which has been deprecated)
-    from pkg_resources.extern.packaging.version import Version
-    from pkg_resources import parse_version
+try:
+    # Prefer newer `packaging` over deprecated packages.
+    from packaging.version import Version as Version
+    from packaging.version import parse as parse_version
+except ImportError:
+    # Fallback to deprecated pkg_resources.
+    try:
+        from pkg_resources.extern.packaging.version import Version
+        from pkg_resources import parse_version
+    except ImportError:
+        # Fallback to deprecated distutils.
+        from distutils.version import LooseVersion as Version
+        from distutils.version import LooseVersion as parse_version
 
 DEBUG = len(sys.argv) > 1 and '-d' in sys.argv
 if DEBUG:
@@ -180,7 +185,7 @@ def get_branch_tags(active_branch_name):
 def process_and_sort_tags(tags):
     """
     Given a string (as returned from get_branch_tags), return a sorted list of
-    zero or more tags (sorted based on the LooseVersion comparison) which meet
+    zero or more tags (sorted based on the Version comparison) which meet
     the following criteria:
         - a final release tag (i.e., 1.x.y without any pre-release suffix)
         - a pre-release tag which is not superseded by a release tag (i.e.,
