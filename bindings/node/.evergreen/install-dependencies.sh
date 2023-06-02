@@ -93,10 +93,7 @@ fi
 export PATH="$NODE_ARTIFACTS_PATH/npm_global/bin:$NODE_ARTIFACTS_PATH/nodejs/bin:$PATH"
 hash -r
 
-# Set npm -g prefix to our local artifacts directory
-cat <<EOT > .npmrc
-prefix=$NODE_ARTIFACTS_PATH/npm_global
-EOT
+export npm_config_prefix=$NODE_ARTIFACTS_PATH/npm_global
 
 if [[ $operating_system != "win" ]]; then
   # Update npm to latest when we can
@@ -107,7 +104,7 @@ fi
 echo "npm version: $(npm -v)"
 
 # other repos that use this script run npm install after installing Node.
-# we can't in mongodb-client-encryption, because when releasing 
+# we can't in mongodb-client-encryption, because when releasing
 # npm install will attempt to build from source, which fails
 # because we haven't built libmongocrypt yet.
 # npm install "${NPM_OPTIONS}"
