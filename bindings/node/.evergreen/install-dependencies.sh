@@ -3,7 +3,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 NODE_LTS_VERSION=${NODE_LTS_VERSION:-16}
 
-source "${PROJECT_DIRECTORY}/.evergreen/init-node-and-npm-env.sh"
+source "${PROJECT_DIRECTORY}/bindings/node/.evergreen/init-node-and-npm-env.sh"
 
 CURL_FLAGS=(
   --fail          # Exit code 1 if request fails
