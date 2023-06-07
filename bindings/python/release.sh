@@ -14,7 +14,7 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # The libmongocrypt git revision release to embed in our wheels.
-REVISION=$(git rev-list -n 1 1.8.0)
+REVISION=$(git rev-list -n 1 1.8.1)
 # The libmongocrypt release branch.
 BRANCH="r1.8"
 MACOS_TARGET=${MACOS_TARGET:="macos"}
