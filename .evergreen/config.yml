@@ -474,7 +474,7 @@ tasks:
 
 - name: "release-python-linux"
   tags: ["release_python_tag"]
-  run_on: ubuntu2004-small
+  run_on: rhel76-large
   exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
   commands:
     - func: "fetch source"
@@ -495,7 +495,7 @@ tasks:
 
 - name: "release-python-combine"
   tags: ["release_python_tag"]
-  run_on: ubuntu2004-small
+  run_on: rhel84-small
   depends_on:
     - name: "*"
       variant: ".release_python_tag"
