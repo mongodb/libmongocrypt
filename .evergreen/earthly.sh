@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-: "${EARTHLY_VERSION:=0.6.30}"
+: "${EARTHLY_VERSION:=0.7.8}"
 
 # Calc the arch of the executable we want
 arch="$(uname -m)"
