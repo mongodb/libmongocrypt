@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.6.1
+------------------------
+
+- Bundle libmongocrypt 1.8.1 in release wheels.
+
 Changes in Version 1.6.0
 ------------------------
 
