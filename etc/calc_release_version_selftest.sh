@@ -21,11 +21,18 @@ function assert_eq () {
 SAVED_REF=$(git rev-parse HEAD)
 
 function cleanup () {
-    rm calc_release_version_test.py
+    [[ -e calc_release_version_test.py ]] && rm calc_release_version_test.py
     git checkout $SAVED_REF --quiet
 }
 
 trap cleanup EXIT
+
+: ${PYTHON_INTERP:=python}
+if [[ -z $(command -v "${PYTHON_INTERP}") ]]; then
+    echo "Python interpreter '${PYTHON_INTERP}' is not valid."
+    echo "Set the PYTHON_INTERP environment variable to a valid interpreter."
+    exit 1
+fi
 
 # copy calc_release_version.py to a separate file not tracked by git so it does not change on `git checkout`
 cp calc_release_version.py calc_release_version_test.py
@@ -33,7 +40,7 @@ cp calc_release_version.py calc_release_version_test.py
 echo "Test a tagged commit ... begin"
 {
     git checkout 1.8.1 --quiet
-    got=$(python calc_release_version_test.py)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py)
     assert_eq "$got" "1.8.1"
     git checkout - --quiet
 }
@@ -44,7 +51,7 @@ echo "Test an untagged commit ... begin"
 {
     # b7f8a1f1502d28a5ef440e642fddda8da8f873a1 is commit before 1.8.1
     git checkout b7f8a1f1502d28a5ef440e642fddda8da8f873a1 --quiet
-    got=$(python calc_release_version_test.py)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py)
     assert_eq "$got" "1.8.1-$DATE+gitb7f8a1f150"
     git checkout - --quiet
 }
@@ -53,8 +60,12 @@ echo "Test an untagged commit ... end"
 echo "Test next minor version ... begin"
 {
     CURRENT_SHORTREF=$(git rev-parse --revs-only --short=10 HEAD)
-    got=$(python calc_release_version_test.py --next-minor)
-    # The expected output may need to be updated after a release.
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py --next-minor)
+    # XXX NOTE XXX NOTE XXX
+    # If you find yourself looking at this line because the assertion below
+    # failed, then it is probably because a new major/minor release was made.
+    # Update the expected output to represent the correct next version.
+    # XXX NOTE XXX NOTE XXX
     assert_eq "$got" "1.9.0-$DATE+git$CURRENT_SHORTREF"
 }
 echo "Test next minor version ... end"

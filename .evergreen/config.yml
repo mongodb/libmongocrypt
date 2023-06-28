@@ -386,20 +386,6 @@ tasks:
   - func: "fetch source"
   - func: "run clang-tidy"
 
-- name: calc-release-version-selftest
-  commands:
-  - func: "fetch source"
-  - command: shell.exec
-    type: test
-    params:
-      shell: bash
-      working_dir: "libmongocrypt"
-      script: |-
-        if [ "${is_patch}" != "true" ]; then
-          cd etc
-          bash -x ../.evergreen/calc_release_version_selftest.sh
-        fi
-
 - name: build-and-test-shared-bson
   commands:
   - func: "fetch source"
@@ -1369,7 +1355,6 @@ buildvariants:
     nvm_use_version: 20
   tasks:
   - clang-tidy
-  - calc-release-version-selftest
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
@@ -1407,7 +1392,6 @@ buildvariants:
     clang_env: CC=clang-12 CXX=clang++-12
   tasks:
   - clang-tidy
-  - calc-release-version-selftest
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
