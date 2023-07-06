@@ -241,6 +241,8 @@ functions:
           cat <<EOF > ~/.notary_env.sh
           export NOTARY_TOKEN=${repo_notary_secret}
           export NOTARY_KEY_NAME=${repo_notary_name}
+          export BARQUE_USERNAME=${barque_username}
+          export BARQUE_API_KEY=${barque_api_key}
           EOF
 
   "build csharp and test":
@@ -781,7 +783,7 @@ tasks:
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           ./curator version
-          ./curator repo --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --packages repo
+          ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages https://mciuploads.s3.amazonaws.com/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
 
 - name: windows-upload-check
   depends_on: build-and-test-and-upload
