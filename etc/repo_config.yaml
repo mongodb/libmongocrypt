@@ -55,7 +55,7 @@ repos:
   - name: rhel62
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/redhat/6/libmongocrypt
@@ -64,7 +64,7 @@ repos:
   - name: rhel67
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/redhat/6/libmongocrypt
@@ -73,7 +73,7 @@ repos:
   - name: rhel70
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/redhat/7/libmongocrypt
@@ -82,7 +82,7 @@ repos:
   - name: rhel71
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/redhat/7/libmongocrypt
@@ -91,7 +91,7 @@ repos:
   - name: rhel72
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/redhat/7/libmongocrypt
@@ -100,7 +100,7 @@ repos:
   - name: rhel80
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/redhat/8/libmongocrypt
@@ -109,7 +109,7 @@ repos:
   - name: amazon
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/amazon/2013.03/libmongocrypt
@@ -117,7 +117,7 @@ repos:
   - name: amazon2
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - yum/amazon/2/libmongocrypt
@@ -125,7 +125,7 @@ repos:
   - name: suse12
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - zypper/suse/12/libmongocrypt
@@ -133,7 +133,7 @@ repos:
   - name: suse15
     type: rpm
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     repos:
       - zypper/suse/15/libmongocrypt
@@ -141,7 +141,7 @@ repos:
   - name: debian81
     type: deb
     code_name: "jessie"
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     edition: org
     component: main
@@ -154,7 +154,7 @@ repos:
   - name: debian92
     type: deb
     code_name: "stretch"
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     edition: org
     component: main
@@ -166,7 +166,7 @@ repos:
   - name: debian10
     type: deb
     code_name: "buster"
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     edition: org
     component: main
@@ -178,7 +178,7 @@ repos:
   - name: debian11
     type: deb
     code_name: "bullseye"
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     edition: org
     component: main
@@ -191,7 +191,7 @@ repos:
     type: deb
     code_name: "trusty"
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     component: universe
     architectures:
@@ -204,7 +204,7 @@ repos:
     type: deb
     code_name: "xenial"
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     component: universe
     architectures:
@@ -218,7 +218,7 @@ repos:
     type: deb
     code_name: "bionic"
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     component: universe
     architectures:
@@ -232,7 +232,7 @@ repos:
     type: deb
     code_name: "focal"
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     component: universe
     architectures:
@@ -246,7 +246,7 @@ repos:
     type: deb
     code_name: "jammy"
     edition: org
-    bucket: libmongocrypt
+    bucket: libmongocrypt.s3.amazonaws.com
     region: us-east-1
     component: universe
     architectures:
