@@ -48,21 +48,22 @@ npm test
 <dd><p>An internal class to be used by the driver for auto encryption
 <strong>NOTE</strong>: Not meant to be instantiated directly, this is for internal use only.</p>
 </dd>
-<dt><a href="#ClientEncryption">ClientEncryption</a></dt>
-<dd><p>The public interface for explicit in-use encryption</p>
-</dd>
-<dt><a href="#MongoCryptError">MongoCryptError</a></dt>
+<dt><del><a href="#ClientEncryption">ClientEncryption</a></del></dt>
+<dd></dd>
+<dt><del><a href="#MongoCryptError">MongoCryptError</a></del></dt>
 <dd><p>An error indicating that something went wrong specifically with MongoDB Client Encryption</p>
 </dd>
-<dt><a href="#MongoCryptCreateDataKeyError">MongoCryptCreateDataKeyError</a></dt>
+<dt><del><a href="#MongoCryptCreateDataKeyError">MongoCryptCreateDataKeyError</a></del></dt>
 <dd><p>An error indicating that <code>ClientEncryption.createEncryptedCollection()</code> failed to create data keys</p>
 </dd>
-<dt><a href="#MongoCryptCreateEncryptedCollectionError">MongoCryptCreateEncryptedCollectionError</a></dt>
+<dt><del><a href="#MongoCryptCreateEncryptedCollectionError">MongoCryptCreateEncryptedCollectionError</a></del></dt>
 <dd><p>An error indicating that <code>ClientEncryption.createEncryptedCollection()</code> failed to create a collection</p>
 </dd>
-<dt><a href="#MongoCryptAzureKMSRequestError">MongoCryptAzureKMSRequestError</a></dt>
+<dt><del><a href="#MongoCryptAzureKMSRequestError">MongoCryptAzureKMSRequestError</a></del></dt>
 <dd><p>An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.</p>
 </dd>
+<dt><del><a href="#MongoCryptKMSRequestNetworkTimeoutError">MongoCryptKMSRequestNetworkTimeoutError</a></del></dt>
+<dd></dd>
 </dl>
 
 ## Typedefs
@@ -100,7 +101,7 @@ npm test
 Can be used for <a href="ClientEncryption.encrypt">ClientEncryption.encrypt</a>, and can be used to directly
 query for the data key itself against the key vault namespace.</p>
 </dd>
-<dt><a href="#ClientEncryptionCreateDataKeyCallback">ClientEncryptionCreateDataKeyCallback</a> : <code>function</code></dt>
+<dt><del><a href="#ClientEncryptionCreateDataKeyCallback">ClientEncryptionCreateDataKeyCallback</a> : <code>function</code></del></dt>
 <dd></dd>
 <dt><a href="#AWSEncryptionKeyOptions">AWSEncryptionKeyOptions</a> : <code>object</code></dt>
 <dd><p>Configuration options for making an AWS encryption key</p>
@@ -113,7 +114,7 @@ query for the data key itself against the key vault namespace.</p>
 </dd>
 <dt><a href="#RewrapManyDataKeyResult">RewrapManyDataKeyResult</a> : <code>object</code></dt>
 <dd></dd>
-<dt><a href="#ClientEncryptionEncryptCallback">ClientEncryptionEncryptCallback</a> : <code>function</code></dt>
+<dt><del><a href="#ClientEncryptionEncryptCallback">ClientEncryptionEncryptCallback</a> : <code>function</code></del></dt>
 <dd></dd>
 <dt><a href="#RangeOptions">RangeOptions</a> : <code>object</code></dt>
 <dd><p>min, max, sparsity, and range must match the values set in the encryptedFields of the destination collection.
@@ -282,12 +283,12 @@ the underlying C++ Bindings.
 
 <a name="ClientEncryption"></a>
 
-## ClientEncryption
-The public interface for explicit in-use encryption
+## ~~ClientEncryption~~
+***Deprecated***
 
 
-* [ClientEncryption](#ClientEncryption)
-
+* ~~[ClientEncryption](#ClientEncryption)
+~~
     * [new ClientEncryption(client, options)](#new_ClientEncryption_new)
 
     * _instance_
@@ -318,8 +319,8 @@ The public interface for explicit in-use encryption
         * [.askForKMSCredentials()](#ClientEncryption+askForKMSCredentials)
 
     * _inner_
-        * [~decryptCallback](#ClientEncryption..decryptCallback)
-
+        * ~~[~decryptCallback](#ClientEncryption..decryptCallback)
+~~
 
 <a name="new_ClientEncryption_new"></a>
 
@@ -369,7 +370,7 @@ new ClientEncryption(mongoClient, {
 | [options] | <code>object</code> | Options for creating the data key |
 | [options.masterKey] | [<code>AWSEncryptionKeyOptions</code>](#AWSEncryptionKeyOptions) \| [<code>AzureEncryptionKeyOptions</code>](#AzureEncryptionKeyOptions) \| [<code>GCPEncryptionKeyOptions</code>](#GCPEncryptionKeyOptions) | Idenfities a new KMS-specific key used to encrypt the new data key |
 | [options.keyAltNames] | <code>Array.&lt;string&gt;</code> | An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id. |
-| [callback] | [<code>ClientEncryptionCreateDataKeyCallback</code>](#ClientEncryptionCreateDataKeyCallback) | Optional callback to invoke when key is created |
+| [callback] | [<code>ClientEncryptionCreateDataKeyCallback</code>](#ClientEncryptionCreateDataKeyCallback) | DEPRECATED - Callbacks will be removed in the next major version.  Optional callback to invoke when key is created |
 
 Creates a data key used for explicit encryption and inserts it into the key vault namespace
 
@@ -606,7 +607,7 @@ and then create a new collection with the full set of encryptedFields.
 | --- | --- | --- |
 | value | <code>\*</code> | The value that you wish to serialize. Must be of a type that can be serialized into BSON |
 | options | [<code>EncryptOptions</code>](#EncryptOptions) |  |
-| [callback] | [<code>ClientEncryptionEncryptCallback</code>](#ClientEncryptionEncryptCallback) | Optional callback to invoke when value is encrypted |
+| [callback] | [<code>ClientEncryptionEncryptCallback</code>](#ClientEncryptionEncryptCallback) | DEPRECATED: Callbacks will be removed in the next major version.  Optional callback to invoke when value is encrypted |
 
 Explicitly encrypt a provided value. Note that either `options.keyId` or `options.keyAltName` must
 be specified. Specifying both `options.keyId` and `options.keyAltName` is considered an error.
@@ -662,7 +663,7 @@ Only supported when queryType is "rangePreview" and algorithm is "RangePreview".
 | Param | Type | Description |
 | --- | --- | --- |
 | value | <code>Buffer</code> \| <code>Binary</code> | An encrypted value |
-| callback | [<code>decryptCallback</code>](#ClientEncryption..decryptCallback) | Optional callback to invoke when value is decrypted |
+| callback | [<code>decryptCallback</code>](#ClientEncryption..decryptCallback) | DEPRECATED - Callbacks will be removed in the next major version.  Optional callback to invoke when value is decrypted |
 
 Explicitly decrypt a provided encrypted value
 
@@ -692,7 +693,9 @@ the original ones.
 
 <a name="ClientEncryption..decryptCallback"></a>
 
-### *ClientEncryption*~decryptCallback
+### ~~*ClientEncryption*~decryptCallback~~
+***Deprecated***
+
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -701,22 +704,30 @@ the original ones.
 
 <a name="MongoCryptError"></a>
 
-## MongoCryptError
+## ~~MongoCryptError~~
+***Deprecated***
+
 An error indicating that something went wrong specifically with MongoDB Client Encryption
 
 <a name="MongoCryptCreateDataKeyError"></a>
 
-## MongoCryptCreateDataKeyError
+## ~~MongoCryptCreateDataKeyError~~
+***Deprecated***
+
 An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
 
 <a name="MongoCryptCreateEncryptedCollectionError"></a>
 
-## MongoCryptCreateEncryptedCollectionError
+## ~~MongoCryptCreateEncryptedCollectionError~~
+***Deprecated***
+
 An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
 
 <a name="MongoCryptAzureKMSRequestError"></a>
 
-## MongoCryptAzureKMSRequestError
+## ~~MongoCryptAzureKMSRequestError~~
+***Deprecated***
+
 An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.
 
 <a name="new_MongoCryptAzureKMSRequestError_new"></a>
@@ -727,6 +738,11 @@ An error indicating that mongodb-client-encryption failed to auto-refresh Azure 
 | --- | --- |
 | message | <code>string</code> | 
 | body | <code>object</code> \| <code>undefined</code> | 
+
+<a name="MongoCryptKMSRequestNetworkTimeoutError"></a>
+
+## ~~MongoCryptKMSRequestNetworkTimeoutError~~
+***Deprecated***
 
 <a name="BSONValue"></a>
 
@@ -821,7 +837,9 @@ query for the data key itself against the key vault namespace.
 
 <a name="ClientEncryptionCreateDataKeyCallback"></a>
 
-## ClientEncryptionCreateDataKeyCallback
+## ~~ClientEncryptionCreateDataKeyCallback~~
+***Deprecated***
+
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -881,7 +899,9 @@ Configuration options for making an Azure encryption key
 
 <a name="ClientEncryptionEncryptCallback"></a>
 
-## ClientEncryptionEncryptCallback
+## ~~ClientEncryptionEncryptCallback~~
+***Deprecated***
+
 
 | Param | Type | Description |
 | --- | --- | --- |
