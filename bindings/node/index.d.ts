@@ -28,6 +28,9 @@ export interface DataKey {
 }
 
 /**
+ * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
+ * in the next major version and must be imported from the driver.
+ *
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
  */
 export class MongoCryptError extends Error {
@@ -35,6 +38,9 @@ export class MongoCryptError extends Error {
 }
 
 /**
+ * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
+ * in the next major version and must be imported from the driver.
+ *
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
 export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
@@ -47,6 +53,9 @@ export class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
 }
 
 /**
+ * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
+ * in the next major version and must be imported from the driver.
+ *
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
  */
 export class MongoCryptCreateDataKeyError extends MongoCryptError {
@@ -59,6 +68,9 @@ export class MongoCryptCreateDataKeyError extends MongoCryptError {
 }
 
 /**
+ * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
+ * in the next major version and must be imported from the driver.
+ *
  * An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.
  */
 export class MongoCryptAzureKMSRequestError extends MongoCryptError {
@@ -66,6 +78,11 @@ export class MongoCryptAzureKMSRequestError extends MongoCryptError {
   body?: Document ;
 }
 
+/**
+ * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
+ * in the next major version and must be imported from the driver.
+ *
+ */
 export class MongoCryptKMSRequestNetworkTimeoutError extends MongoCryptError {}
 
 /**
@@ -78,6 +95,10 @@ export interface ProxyOptions {
   proxyPassword?: string;
 }
 
+/**
+ * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+ * use the Promise overloads instead.
+ */
 export interface ClientEncryptionCreateDataKeyCallback {
   /**
    * @param error If present, indicates an error that occurred in the creation of the data key
@@ -86,6 +107,10 @@ export interface ClientEncryptionCreateDataKeyCallback {
   (error?: Error, dataKeyId?: Binary): void;
 }
 
+/**
+ * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+ * use the Promise overloads instead.
+ */
 export interface ClientEncryptionEncryptCallback {
   /**
    * @param error If present, indicates an error that occurred in the process of encryption
@@ -94,6 +119,10 @@ export interface ClientEncryptionEncryptCallback {
   (error?: Error, result?: Binary): void;
 }
 
+/**
+ * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+ * use the Promise overloads instead.
+ */
 export interface ClientEncryptionDecryptCallback {
   /**
    * @param error If present, indicates an error that occurred in the process of decryption
@@ -479,6 +508,9 @@ export class ClientEncryption {
   ): Promise<Binary>;
 
   /**
+   * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+   * use the Promise overloads instead.
+   *
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
    * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    * @param callback Callback to invoke when key is created
@@ -489,6 +521,9 @@ export class ClientEncryption {
   ): void;
 
   /**
+   * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+   * use the Promise overloads instead.
+   *
    * Creates a data key used for explicit encryption and inserts it into the key vault namespace
    * @param provider The KMS provider used for this data key. Must be `'aws'`, `'azure'`, `'gcp'`, or `'local'`
    * @param options Options for creating the data key
@@ -593,6 +628,9 @@ export class ClientEncryption {
   encrypt(value: any, options: ClientEncryptionEncryptOptions): Promise<Binary>;
 
   /**
+   * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+   * use the Promise overloads instead.
+   *
    * Explicitly encrypt a provided value.
    * Note that either options.keyId or options.keyAltName must be specified.
    * Specifying both options.keyId and options.keyAltName is considered an error.
@@ -630,6 +668,9 @@ export class ClientEncryption {
   decrypt(value: Buffer | Binary): Promise<any>;
 
   /**
+   * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+   * use the Promise overloads instead.
+   *
    * Explicitly decrypt a provided encrypted value
    * @param value An encrypted value
    * @param callback Callback to invoke when value is decrypted

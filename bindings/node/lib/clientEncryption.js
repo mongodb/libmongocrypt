@@ -73,6 +73,9 @@ module.exports = function (modules) {
    */
 
   /**
+   * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
+   * in the next major version and must be imported from the driver.
+   *
    * The public interface for explicit in-use encryption
    */
   class ClientEncryption {
@@ -138,6 +141,8 @@ module.exports = function (modules) {
      */
 
     /**
+     * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+     * use the Promise overloads instead.
      * @callback ClientEncryptionCreateDataKeyCallback
      * @param {Error} [error] If present, indicates an error that occurred in the creation of the data key
      * @param {ClientEncryption~dataKeyId} [dataKeyId] If present, returns the id of the created data key
@@ -174,7 +179,7 @@ module.exports = function (modules) {
      * @param {object} [options] Options for creating the data key
      * @param {AWSEncryptionKeyOptions|AzureEncryptionKeyOptions|GCPEncryptionKeyOptions} [options.masterKey] Idenfities a new KMS-specific key used to encrypt the new data key
      * @param {string[]} [options.keyAltNames] An optional list of string alternate names used to reference a key. If a key is created with alternate names, then encryption may refer to the key by the unique alternate name instead of by _id.
-     * @param {ClientEncryptionCreateDataKeyCallback} [callback] Optional callback to invoke when key is created
+     * @param {ClientEncryptionCreateDataKeyCallback} [callback] DEPRECATED - Callbacks will be removed in the next major version.  Optional callback to invoke when key is created
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with {@link ClientEncryption~dataKeyId the id of the created data key}, or rejects with an error. If a callback is provided, returns nothing.
      * @example
      * // Using callbacks to create a local key
@@ -613,6 +618,9 @@ module.exports = function (modules) {
     }
 
     /**
+     * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+     * use the Promise overloads instead.
+     *
      * @callback ClientEncryptionEncryptCallback
      * @param {Error} [err] If present, indicates an error that occurred in the process of encryption
      * @param {Buffer} [result] If present, is the encrypted result
@@ -644,7 +652,7 @@ module.exports = function (modules) {
      *
      * @param {*} value The value that you wish to serialize. Must be of a type that can be serialized into BSON
      * @param {EncryptOptions} options
-     * @param {ClientEncryptionEncryptCallback} [callback] Optional callback to invoke when value is encrypted
+     * @param {ClientEncryptionEncryptCallback} [callback] DEPRECATED: Callbacks will be removed in the next major version.  Optional callback to invoke when value is encrypted
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the encrypted value, or rejects with an error. If a callback is provided, returns nothing.
      *
      * @example
@@ -699,6 +707,9 @@ module.exports = function (modules) {
     }
 
     /**
+     * @deprecated Callback overloads are deprecated and will be removed in the next major version.  Please
+     * use the Promise overloads instead.
+     *
      * @callback ClientEncryption~decryptCallback
      * @param {Error} [err] If present, indicates an error that occurred in the process of decryption
      * @param {object} [result] If present, is the decrypted result
@@ -708,7 +719,7 @@ module.exports = function (modules) {
      * Explicitly decrypt a provided encrypted value
      *
      * @param {Buffer | Binary} value An encrypted value
-     * @param {ClientEncryption~decryptCallback} callback Optional callback to invoke when value is decrypted
+     * @param {ClientEncryption~decryptCallback} callback DEPRECATED - Callbacks will be removed in the next major version.  Optional callback to invoke when value is decrypted
      * @returns {Promise|void} If no callback is provided, returns a Promise that either resolves with the decrypted value, or rejects with an error. If a callback is provided, returns nothing.
      *
      * @example
