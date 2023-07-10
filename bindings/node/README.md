@@ -11,8 +11,8 @@ You can install `mongodb-client-encryption` with the following:
 npm install mongodb-client-encryption
 ```
 
-### Development 
-#### Setup 
+### Development
+#### Setup
 
 Run the following command to build libmongocrypt and setup the node bindings for development:
 
@@ -23,10 +23,10 @@ bash ./etc/build-static.sh
 
 #### Testing
 
-Some tests require a standalone server to be running with authentication enabled.  Set up a single 
+Some tests require a standalone server to be running with authentication enabled.  Set up a single
 server running with the following conditions:
 
-| param     | value     | 
+| param     | value     |
 |-----------|-----------|
 | host      | localhost |
 | port      | 27017     |
@@ -40,6 +40,12 @@ npm test
 ```
 
 # Documentation
+
+## Deprecation Notice
+
+There are breaking changes planned for this package.  In the next major version, callbacks will be removed
+from the public API on all asynchronous functions.  Additionally, the classes documented here will be
+moved into [node-mongodb-native](https://github.com/mongodb/node-mongodb-native).
 
 ## Classes
 
