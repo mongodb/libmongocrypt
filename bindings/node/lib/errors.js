@@ -2,7 +2,7 @@
 
 /**
  * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
- * in the next major version and in the next major version must be imported from the driver.
+ * in the next major version and must be imported from the driver.
  * @class
  * An error indicating that something went wrong specifically with MongoDB Client Encryption
  */
@@ -21,7 +21,7 @@ class MongoCryptError extends Error {
 
 /**
  * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
- * in the next major version and in the next major version must be imported from the driver.
+ * in the next major version and must be imported from the driver.
  * @class
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create data keys
  */
@@ -38,7 +38,7 @@ class MongoCryptCreateDataKeyError extends MongoCryptError {
 
 /**
  * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
- * in the next major version and in the next major version must be imported from the driver.
+ * in the next major version and must be imported from the driver.
  * @class
  * An error indicating that `ClientEncryption.createEncryptedCollection()` failed to create a collection
  */
@@ -55,7 +55,7 @@ class MongoCryptCreateEncryptedCollectionError extends MongoCryptError {
 
 /**
  * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
- * in the next major version and in the next major version must be imported from the driver.
+ * in the next major version and must be imported from the driver.
  * @class
  * An error indicating that mongodb-client-encryption failed to auto-refresh Azure KMS credentials.
  */
@@ -72,7 +72,7 @@ class MongoCryptAzureKMSRequestError extends MongoCryptError {
 
 /**
  * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
- * in the next major version and in the next major version must be imported from the driver.
+ * in the next major version and must be imported from the driver.
  */
 class MongoCryptKMSRequestNetworkTimeoutError extends MongoCryptError {}
 

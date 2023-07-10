@@ -74,7 +74,7 @@ module.exports = function (modules) {
 
   /**
    * @deprecated This class will be moved into the [Node driver](https://github.com/mongodb/node-mongodb-native)
-   * in the next major version and in the next major version must be imported from the driver.
+   * in the next major version and must be imported from the driver.
    *
    * The public interface for explicit in-use encryption
    */
