@@ -7,9 +7,9 @@
   "files": [
     "README.md",
     "CHANGELOG.md",
+    "addon",
     "lib",
     "src",
-    "index.d.ts",
     "binding.gyp"
   ],
   "directories": {
@@ -17,9 +17,11 @@
   },
   "scripts": {
     "install": "prebuild-install --runtime napi --tag-prefix node-v || node-gyp rebuild",
-    "check:lint": "eslint lib test && tsd",
+    "build:ts": "tsc",
+    "check:lint": "eslint src",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files 'lib/**/*.js' > README.md",
     "test": "mocha test",
+    "prepare": "node etc/prepare.js",
     "rebuild": "prebuild --compile",
     "release": "standard-version --tag-prefix node-v --path bindings/node",
     "prebuild": "prebuild --runtime napi --strip --verbose --tag-prefix node-v --all"
@@ -36,44 +38,24 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "node-addon-api": "^4.3.0",
-    "prebuild-install": "^7.1.1",
-    "socks": "^2.7.1"
+    "prebuild-install": "^7.1.1"
   },
   "devDependencies": {
-    "@types/sinon": "^10.0.14",
-    "@types/sinon-chai": "^3.2.9",
+    "@types/bindings": "^1.5.1",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
     "chai": "^4.3.7",
     "chai-subset": "^1.6.0",
-    "chalk": "^4.1.2",
     "clang-format": "^1.8.0",
-    "dmd-clear": "^0.1.2",
     "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "jsdoc-to-markdown": "^8.0.0",
     "mocha": "^10.2.0",
-    "mongodb": "^5.3.0",
     "node-gyp": "^9.3.1",
     "prebuild": "^11.0.4",
     "prettier": "^2.8.8",
-    "sinon": "^15.0.4",
-    "sinon-chai": "^3.7.0",
     "standard-version": "^9.5.0",
     "tar": "^6.1.14",
-    "tsd": "^0.28.1"
-  },
-  "peerDependencies": {
-    "@aws-sdk/credential-providers": "^3.186.0",
-    "gcp-metadata": "^5.2.0",
-    "mongodb": ">=3.4.0"
-  },
-  "peerDependenciesMeta": {
-    "@aws-sdk/credential-providers": {
-      "optional": true
-    },
-    "gcp-metadata": {
-      "optional": true
-    }
+    "typescript": "^5.1.6"
   },
   "engines": {
     "node": ">=12.9.0"

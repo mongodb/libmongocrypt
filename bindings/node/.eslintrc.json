@@ -2,8 +2,11 @@
   "root": true,
   "extends": [
     "eslint:recommended",
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
   ],
+  "ignorePatterns": "lib/**/*",
   "env": {
     "node": true,
     "mocha": true,
@@ -13,6 +16,7 @@
     "ecmaVersion": 2019
   },
   "plugins": [
+    "@typescript-eslint",
     "prettier"
   ],
   "rules": {
@@ -34,8 +38,17 @@
     "prettier/prettier": "error",
     "no-console": "error",
     "valid-typeof": "error",
-    "eqeqeq": ["error", "always", {"null": "ignore"}],
-    "strict": ["error", "global"],
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "strict": [
+      "error",
+      "global"
+    ],
     "no-restricted-syntax": [
       "error",
       {
@@ -58,9 +71,9 @@
   },
   "overrides": [
     {
-      // Settings for javascript test files
+      // Settings for test files
       "files": [
-        "test/**/*.js"
+        "test/**/*.ts"
       ],
       "rules": {
         "no-console": "off",
