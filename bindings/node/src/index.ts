@@ -2,11 +2,6 @@ import * as bindings from 'bindings';
 
 const mc = bindings('mongocrypt');
 
-export interface MongoCryptCtor {
-  new (): MongoCryptInstance;
-  libmongocryptVersion: string;
-}
-
 interface MongoCryptKMSRequest {
   addResponse(response: Buffer): void;
   status: MongoCryptStatus;
@@ -35,7 +30,12 @@ interface MongoCryptContext {
   state: number;
 }
 
-export interface MongoCryptInstance {
+export interface MongoCryptConstructor {
+  new (): MongoCrypt;
+  libmongocryptVersion: string;
+}
+
+export interface MongoCrypt {
   makeEncryptionContext(ns: string, command: Buffer): MongoCryptContext;
   makeExplicitEncryptionContext(
     value: Buffer,
@@ -73,4 +73,4 @@ export interface MongoCryptInstance {
   } | null;
 }
 
-export const MongoCrypt: MongoCryptCtor = mc.MongoCrypt;
+export const MongoCrypt: MongoCryptConstructor = mc.MongoCrypt;

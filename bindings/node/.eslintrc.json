@@ -68,17 +68,5 @@
         "message": "Do not strictly check typeof undefined (NOTE: currently this rule only detects the usage of 'undefined' string literal so this could be a misfire)"
       }
     ]
-  },
-  "overrides": [
-    {
-      // Settings for test files
-      "files": [
-        "test/**/*.ts"
-      ],
-      "rules": {
-        "no-console": "off",
-        "no-restricted-syntax": "off"
-      }
-    }
-  ]
+  }
 }
