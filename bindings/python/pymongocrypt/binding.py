@@ -21,14 +21,6 @@ import cffi
 from pymongocrypt.compat import PY3
 from pymongocrypt.version import _MIN_LIBMONGOCRYPT_VERSION
 
-try:
-    from pkg_resources import parse_version as _parse_version
-except ImportError:
-    from distutils.version import LooseVersion as _LooseVersion
-
-    def _parse_version(version):
-        return _LooseVersion(version)
-
 
 ffi = cffi.FFI()
 
@@ -1443,6 +1435,14 @@ except OSError as exc:
     lib = _Library(exc)
 else:
     # Check the libmongocrypt version when the library is found.
+    def _parse_version(version_str):
+        # libmongocrypt versions start with x.y.z and have an optional
+        # hypen (e.g. 1.8.0 or 1.8.5-alpha1)
+        if '-' in version_str:
+            version_str = version_str[version_str.index('-')]
+        parts = version_str.split('.')[:3]
+        return [int(p) for p in parts]
+
     _limongocrypt_version = _parse_version(libmongocrypt_version())
     if _limongocrypt_version < _parse_version(_MIN_LIBMONGOCRYPT_VERSION):
         exc = RuntimeError(

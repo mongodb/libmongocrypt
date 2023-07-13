@@ -19,7 +19,8 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python38/python.exe"
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe"
-             "C:/python/Python311/python.exe")
+             "C:/python/Python311/python.exe"
+             "C:/python/Python312/python.exe")
     export CRYPT_SHARED_PATH=../crypt_shared/bin/mongo_crypt_v1.dll
     C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
       --version latest --out ../crypt_shared/
