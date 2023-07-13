@@ -55,7 +55,7 @@ setup(
     # Note cryptography is uncapped because it does not follow semver.
     install_requires=[
         "cffi>=1.12.0,<2",
-        "cryptography>=2.0",
+        "cryptography>=2.5",
         # cryptography 40 dropped support for PyPy <7.3.10.
         "cryptography<40;platform_python_implementation=='PyPy' and implementation_version<'7.3.10'",
         "requests<3.0.0"
