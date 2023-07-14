@@ -1439,7 +1439,7 @@ else:
         # libmongocrypt versions start with x.y.z and have an optional
         # hypen (e.g. 1.8.0 or 1.8.5-alpha1)
         if '-' in version_str:
-            version_str = version_str[version_str.index('-')]
+            version_str = version_str[:version_str.index('-')]
         parts = version_str.split('.')[:3]
         return [int(p) for p in parts]
 
