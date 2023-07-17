@@ -1,14 +1,14 @@
-import * as bindings from 'bindings';
+import bindings = require('bindings');
 
 const mc = bindings('mongocrypt');
 
 interface MongoCryptKMSRequest {
   addResponse(response: Buffer): void;
-  status: MongoCryptStatus;
-  bytesNeeded: number;
-  kmsProvider: string;
-  endpoint: string;
-  message: Buffer;
+  readonly status: MongoCryptStatus;
+  readonly bytesNeeded: number;
+  readonly kmsProvider: string;
+  readonly endpoint: string;
+  readonly message: Buffer;
 }
 
 interface MongoCryptStatus {
@@ -26,8 +26,8 @@ interface MongoCryptContext {
   finishKMSRequests(): void;
   finalize(): Buffer;
 
-  status: MongoCryptStatus;
-  state: number;
+  readonly status: MongoCryptStatus;
+  readonly state: number;
 }
 
 export interface MongoCryptConstructor {
@@ -66,8 +66,8 @@ export interface MongoCrypt {
     }
   ): void;
   makeRewrapManyDataKeyContext(filter: Buffer, encryptionKey: Buffer): void;
-  status: MongoCryptStatus;
-  cryptSharedLibVersionInfo: {
+  readonly status: MongoCryptStatus;
+  readonly cryptSharedLibVersionInfo: {
     version: bigint;
     versionStr: string;
   } | null;
