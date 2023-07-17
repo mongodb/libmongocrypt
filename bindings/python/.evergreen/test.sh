@@ -42,7 +42,12 @@ elif [ "Darwin" = "$(uname -s)" ]; then
       --version latest --out ../crypt_shared/
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
-    PYTHONS=("/opt/mongodbtoolchain/v3/bin/python3"
+    PYTHONS=("/opt/python/3.7/bin/python3"
+             "/opt/python/3.8/bin/python3"
+             "/opt/python/3.9/bin/python3"
+             "/opt/python/3.10/bin/python3"
+             "/opt/python/3.11/bin/python3"
+             "/opt/python/3.12/bin/python3"
             )
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
@@ -55,12 +60,13 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
-    python setup.py test
+    python -m pip install -v -e .
+    python -m pytest -v .
     echo "Running tests with CSFLE on dynamic library path..."
     TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=../crypt_shared/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
       LD_LIBRARY_PATH=../crypt_shared/lib:$LD_LIBRARY_PATH \
       PATH=../crypt_shared/bin:$PATH \
-      python setup.py test
+      python -m pytest -v .
     deactivate
     rm -rf .venv
 done
