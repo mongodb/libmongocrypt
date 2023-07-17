@@ -62,7 +62,7 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=../crypt_shared/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
       LD_LIBRARY_PATH=../crypt_shared/lib:$LD_LIBRARY_PATH \
       PATH=../crypt_shared/bin:$PATH \
-      pythom -m pytest
+      python -m pytest
     deactivate
     rm -rf .venv
 done
