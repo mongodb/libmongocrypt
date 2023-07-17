@@ -19,8 +19,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python38/python.exe"
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe"
-             "C:/python/Python311/python.exe"
-             "C:/python/Python312/python.exe")
+             "C:/python/Python311/python.exe")
     export CRYPT_SHARED_PATH=../crypt_shared/bin/mongo_crypt_v1.dll
     C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
       --version latest --out ../crypt_shared/
@@ -43,7 +42,12 @@ elif [ "Darwin" = "$(uname -s)" ]; then
       --version latest --out ../crypt_shared/
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
-    PYTHONS=("/opt/mongodbtoolchain/v3/bin/python3"
+    PYTHONS=("/opt/python/3.7/bin/python3"
+             "/opt/python/3.8/bin/python3"
+             "/opt/python/3.9/bin/python3"
+             "/opt/python/3.10/bin/python3"
+             "/opt/python/3.11/bin/python3"
+             "/opt/python/3.12/bin/python3"
             )
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
