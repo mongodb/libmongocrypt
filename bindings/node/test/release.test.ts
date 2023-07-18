@@ -1,9 +1,9 @@
-const { expect } = require('chai');
-const tar = require('tar');
-const cp = require('child_process');
-const fs = require('fs');
-const pkg = require('../package.json');
+import { expect } from 'chai';
+import * as tar from 'tar';
+import * as cp from 'child_process';
+import * as fs from 'fs';
 
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
 const packFile = `mongodb-client-encryption-${pkg.version}.tgz`;
 
 const REQUIRED_FILES = [
