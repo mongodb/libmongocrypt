@@ -13,7 +13,7 @@
 # limitations under the License.
 import os
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 try:
     from pymongo_auth_aws.auth import aws_temp_credentials
@@ -63,7 +63,7 @@ def _get_azure_credentials():
     # Credentials are considered expired when: Expiration - now < 1 mins.
     creds = _azure_creds_cache
     if creds:
-        if creds.expires_in - datetime.utcnow() < timedelta(seconds=60):
+        if creds.expires_in - datetime.now(tz=timezone.utc) < timedelta(seconds=60):
             _azure_creds_cache = None
         else:
             return { 'accessToken': creds.access_token }
@@ -97,7 +97,7 @@ def _get_azure_credentials():
     except ValueError:
         raise MongoCryptError('Azure IMDS response must contain "expires_in" integer, but was %s.' % response.content)
 
-    expiration_time = datetime.utcnow() + timedelta(seconds=expires_in)
+    expiration_time = datetime.now(tz=timezone.utc) + timedelta(seconds=expires_in)
     _azure_creds_cache = _azure_creds(data['access_token'], expiration_time)
     return { 'accessToken': data['access_token'] }
 
