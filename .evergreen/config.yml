@@ -146,7 +146,7 @@ functions:
           NODE_GITHUB_TOKEN: ${node_github_token}
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
-          NODE_LTS_VERSION: ${nvm_use_version|16}
+          NODE_LTS_VERSION: ${node_lts_version|16}
 
   "build and test node no peer dependencies":
     - command: "subprocess.exec"
@@ -161,7 +161,7 @@ functions:
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
           OMIT_PEER_DEPS: "true"
-          NODE_NVM_USE_VERSION: ${nvm_use_version|18}
+          NODE_LTS_VERSION: ${node_lts_version|18}
 
   "build and publish node":
     - command: "subprocess.exec"
@@ -175,7 +175,7 @@ functions:
           NODE_GITHUB_TOKEN: ${node_github_token}
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
-          NODE_LTS_VERSION: ${nvm_use_version|16}
+          NODE_LTS_VERSION: ${node_lts_version|16}
 
   "attach node xunit results":
     - command: attach.xunit_results
@@ -993,7 +993,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1078,7 +1078,7 @@ buildvariants:
     has_packages: true
     packager_distro: amazon
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1094,7 +1094,7 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1111,7 +1111,7 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: arm64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1159,7 +1159,7 @@ buildvariants:
     has_packages: true
     packager_distro: debian92
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1190,7 +1190,7 @@ buildvariants:
     has_packages: true
     packager_distro: rhel70
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1236,7 +1236,7 @@ buildvariants:
     has_packages: true
     packager_distro: suse12
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1253,7 +1253,7 @@ buildvariants:
     has_packages: true
     packager_distro: suse15
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1270,7 +1270,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: arm64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1288,7 +1288,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: x86_64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1316,7 +1316,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: arm64
-    nvm_use_version: 16
+    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1333,7 +1333,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu2004
     packager_arch: x86_64
-    nvm_use_version: 20
+    node_lts_version: 20
   tasks:
   - clang-tidy
   - build-and-test-and-upload
@@ -1351,7 +1351,7 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu2004
     packager_arch: arm64
-    nvm_use_version: 20
+    node_lts_version: 20
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson

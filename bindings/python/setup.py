@@ -55,10 +55,11 @@ setup(
     # Note cryptography is uncapped because it does not follow semver.
     install_requires=[
         "cffi>=1.12.0,<2",
-        "cryptography>=2.0",
+        "cryptography>=2.5",
         # cryptography 40 dropped support for PyPy <7.3.10.
         "cryptography<40;platform_python_implementation=='PyPy' and implementation_version<'7.3.10'",
-        "requests<3.0.0"
+        "requests<3.0.0",
+        "packaging>=21.0"
     ],
     author="Shane Harvey",
     author_email="mongodb-user@googlegroups.com",
@@ -82,6 +83,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Database"],

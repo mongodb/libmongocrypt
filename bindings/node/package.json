@@ -65,7 +65,7 @@
     "typescript-cached-transpile": "^0.0.6"
   },
   "engines": {
-    "node": ">=12.9.0"
+    "node": ">=16.20.1"
   },
   "binary": {
     "napi_versions": [

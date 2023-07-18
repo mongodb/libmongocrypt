@@ -17,17 +17,13 @@ import os.path
 import sys
 
 import cffi
+from packaging.version import Version
 
-from pymongocrypt.compat import PY3
 from pymongocrypt.version import _MIN_LIBMONGOCRYPT_VERSION
 
-try:
-    from pkg_resources import parse_version as _parse_version
-except ImportError:
-    from distutils.version import LooseVersion as _LooseVersion
 
-    def _parse_version(version):
-        return _LooseVersion(version)
+def _parse_version(version):
+    return Version(version)
 
 
 ffi = cffi.FFI()
@@ -1387,14 +1383,9 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 // public use.
 """)
 
-if PY3:
-    def _to_string(cdata):
-        """Decode a cdata c-string to a Python str."""
-        return ffi.string(cdata).decode()
-else:
-    def _to_string(cdata):
-        """Decode a cdata c-string to a Python str."""
-        return ffi.string(cdata)
+def _to_string(cdata):
+    """Decode a cdata c-string to a Python str."""
+    return ffi.string(cdata).decode()
 
 
 def libmongocrypt_version():
@@ -1442,9 +1433,9 @@ except OSError as exc:
     # Delay the error until the library is actually used.
     lib = _Library(exc)
 else:
-    # Check the libmongocrypt version when the library is found.
-    _limongocrypt_version = _parse_version(libmongocrypt_version())
-    if _limongocrypt_version < _parse_version(_MIN_LIBMONGOCRYPT_VERSION):
+
+    _limongocrypt_version = Version(libmongocrypt_version())
+    if _limongocrypt_version < Version(_MIN_LIBMONGOCRYPT_VERSION):
         exc = RuntimeError(
             "Expected libmongocrypt version %s or greater, found %s" % (
                 _MIN_LIBMONGOCRYPT_VERSION, libmongocrypt_version()))
