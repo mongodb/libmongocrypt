@@ -40,6 +40,6 @@
     "compiler": "typescript-cached-transpile"
   },
   "include": [
-    "src/index.ts"
+    "src/**/*"
   ]
 }
