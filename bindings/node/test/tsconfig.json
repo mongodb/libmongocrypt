@@ -1,0 +1,12 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"strict": false,
+		"allowJs": false,
+		"checkJs": false,
+	},
+	"include": [
+		"../node_modules/@types/mocha/index.d.ts",
+		"./**/*.ts"
+	]
+}

@@ -1,35 +1,24 @@
-'use strict';
-const { expect } = require('chai');
-const tar = require('tar');
-const cp = require('child_process');
-const fs = require('fs');
-const pkg = require('../package.json');
+import { expect } from 'chai';
+import * as tar from 'tar';
+import * as cp from 'child_process';
+import * as fs from 'fs';
 
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
 const packFile = `mongodb-client-encryption-${pkg.version}.tgz`;
 
 const REQUIRED_FILES = [
-  'package/binding.gyp',
-  'package/CHANGELOG.md',
-  'package/index.d.ts',
-  'package/lib/index.js',
-  'package/lib/autoEncrypter.js',
-  'package/lib/buffer_pool.js',
-  'package/lib/clientEncryption.js',
-  'package/lib/common.js',
-  'package/lib/providers/index.js',
-  'package/lib/providers/gcp.js',
-  'package/lib/providers/aws.js',
-  'package/lib/providers/azure.js',
-  'package/lib/providers/utils.js',
-  'package/lib/cryptoCallbacks.js',
-  'package/lib/errors.js',
-  'package/lib/mongocryptdManager.js',
-  'package/lib/stateMachine.js',
   'package/LICENSE',
+  'package/addon/mongocrypt.cc',
+  'package/binding.gyp',
+  'package/addon/mongocrypt.h',
+  'package/lib/index.js',
   'package/package.json',
+  'package/lib/index.d.ts.map',
+  'package/lib/index.js.map',
+  'package/CHANGELOG.md',
   'package/README.md',
-  'package/src/mongocrypt.cc',
-  'package/src/mongocrypt.h'
+  'package/lib/index.d.ts',
+  'package/src/index.ts'
 ];
 
 describe(`Release ${packFile}`, function () {
