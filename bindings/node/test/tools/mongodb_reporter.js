@@ -1,4 +1,8 @@
+/* eslint-disable no-console */
+/* eslint-disable strict */
+/* eslint-disable @typescript-eslint/no-var-requires */
 //@ts-check
+
 'use strict';
 const mocha = require('mocha');
 const chalk = require('chalk');
