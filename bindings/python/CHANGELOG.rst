@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.7.0
+------------------------
+
+- Add support for Python 3.12 on MacOS and Linux.
+- Update required cryptography version to >=2.5.
+
 Changes in Version 1.6.1
 ------------------------
 
